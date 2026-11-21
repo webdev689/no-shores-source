@@ -28,6 +28,12 @@ pub const POISE_IMMUNE: u32 = 180;
 /// A staggered fighter takes this much more.
 pub const STAGGER_TAKEN: f64 = 1.25;
 
+/// A player's healing charges: how many they hold at most, the share of their most health each heals, and how long a
+/// drink lasts before its health comes (about a second).
+pub const CHARGES: u8 = 3;
+pub const DRINK_HEALS: f64 = 0.4;
+pub const DRINK_TICKS: u32 = 60;
+
 /// A press is kept this many ticks: one made while the fighter is busy (a dodge in a swing's blow, a guard late in a
 /// wind-up) is acted on as soon as it can be.
 pub const PRESS_KEPT: u8 = 8;

@@ -228,7 +228,7 @@ fn a_city_s_pads_level_the_ground_dry_and_hold_through_a_window_and_its_saved_fo
     use crate::pads::{Pad, Pads};
     let mut ground = ground_with(&Edits::default());
     let natural = ground.height_at(5_000.0, 5_000.0);
-    ground.pads = Pads::from(vec![Pad { bounds: [4_900.0, 4_900.0, 5_100.0, 5_100.0], level: natural + 7.25 }]);
+    ground.pads = Pads::from(vec![Pad::flat([4_900.0, 4_900.0, 5_100.0, 5_100.0], natural + 7.25)]);
     assert_eq!(ground.height_at(5_000.0, 5_000.0), natural + 7.25);
     assert_eq!(ground.water_at(5_000.0, 5_000.0), WaterAt::Dry);
     assert_ne!(ground.height_at(5_200.0, 5_000.0), natural + 7.25);

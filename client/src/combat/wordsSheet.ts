@@ -31,6 +31,7 @@ export function wordsCss(): string {
 .fight-hud .word.taken .number { color: #ff7468; }
 .fight-hud .word.great .number, .fight-hud .word.good .number { color: #ffd95a; }
 .fight-hud .word.plain .number { color: #bfc8d2; }
+.fight-hud .word.healed .number { color: #7ee06a; }
 .fight-hud .word.warn .number { color: #fff; }
 .fight-hud .word.warn .rise { padding: 2px 6px; background: #a0140c; border: 2px solid #fff; text-shadow: none; }
 .fight-hud .word.loud .rise { font-size: ${WORD_PX.loud}px; }

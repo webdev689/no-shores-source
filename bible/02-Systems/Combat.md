@@ -19,6 +19,12 @@ code:
   - crates/combat/src/status.rs#Statuses
   - crates/room/src/statuses.rs#give
   - crates/room/src/perks.rs#verbs_after
+  - crates/combat/src/drink.rs#can_drink
+  - crates/combat/src/drink.rs#drink
+  - crates/combat/src/drink.rs#recharged
+  - crates/combat/src/tuning.rs#DRINK_HEALS
+  - crates/room/src/recharge.rs#kill_share
+  - crates/room/src/recharge.rs#DEALT_SHARE
 ---
 # Combat
 
@@ -99,11 +105,11 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   stands through a blow until its poise breaks. A blow on a player already flinching does not start the flinch again,
   and a blow in a swing's follow-through or a reload does not flinch at all (that would end it sooner). While no
   poise stagger can begin, blows do not fill the meter; an overreached foe staggers at the first blow whatever.
-- **Presses kept.** A press of the attack, the guard or the dodge is kept 8 ticks: one made while the fighter is busy
-  (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as soon as it can
-  be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press wins over a
-  button only held: a click of the attack swings out of a held guard, and a riposte is struck through one. The guard,
-  held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
+- **Presses kept.** A press of the attack, the guard, the dodge or the drink is kept 8 ticks: one made while the
+  fighter is busy (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as
+  soon as it can be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press
+  wins over a button only held: a click of the attack swings out of a held guard, and a riposte is struck through
+  one. The guard, held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
@@ -242,6 +248,42 @@ gives every one through one door, `Room::give`, for the status's own time unless
   its own from them, and another browser reads a player's veil there. A foe's Expose, its Charge and the immunity after
   it cross with the foe ([[Server]]). Foes' plates and the player's vitals show them ([[Interface]]), and the
   [[Test Ground]] gives each one to try.
+
+## Healing charges
+
+A player holds three healing charges, and drinks one with `3` ([[Three Healing Charges, Refilled by Blows and Kills]]).
+A foe never drinks.
+
+- **The drink.** A press begins it only at rest, standing on the ground and on foot, out of a loadout swap, with a
+  charge held and health short of its most; it is kept 8 ticks as any press, so one made in a swing's or a dodge's
+  last 8 ticks begins as it ends. It lasts a second (60 ticks), in which the player walks, never running, jumping or
+  crouching (Haste still quickens the walk), facing the look, the weapon put away, and casts no Art ([[Arts]]). As it
+  ends it spends its charge and gives back 40% of the player's most health, never past the most, and the room tells
+  the heal. A blow that lands cuts it short with its charge kept, as it flinches the drinker; a stagger, a fall and a
+  Charge's hold cut it too. Leaving the ground (a climb begun, a fall) or taking the saddle puts it down, and one
+  ending at full health (a spell topped the player up) or with no charge left heals nothing: each keeps what it
+  holds. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it ends, and a drink pressed in a
+  dodge never frees it early. Foes take no notice of a drink.
+- **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
+  their meter toward the next charge by the share it took of the foe's most health and most shield together, times
+  half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is
+  theirs. A kill adds the kill's share whole to every player whose blow, or whose companion's, landed on the foe in
+  its last 10 s while it fought, as its XP and drops are shared: a third of a charge for a Minor or a Major, two thirds for
+  an Elite or a Miniboss, a whole one for a Boss. So a Minor fought whole gives half a charge, an Elite a whole one,
+  and a Boss half a charge over its health and a whole one at its end, besides its adds'. A full meter is a charge;
+  none come past three, and the meter stands empty while all three are full, but while a drink is under way the
+  charge it drinks counts as spent: the meter fills to one whole and becomes a charge as the drink spends one. As a
+  share of the foe's own health it is the same at every level and difficulty. A blow on a foe walking home to its
+  post, its fight given up, fills nothing and counts toward no kill. A cast under way holds off a drink press.
+- **Full again.** A player comes into every room, Overlook and the town included, with all three, and stands again
+  after death with all three. The charges are never saved ([[Server]]).
+- **On the wire.** The charges, the meter and the drink's press kept and held cross in the fighter's numbers after its
+  ammunition; the drink is an action of its own, so another browser sees it, and the intent's last number asks for
+  one. The room fills the meter as it settles each blow; the browser predicts the drink, and takes the charges and the
+  meter with its fighter. The vitals show them ([[Interface]]). The page fetches `room.wasm` at an address naming the
+  protocol version, which hashes these layouts ([[Server]]), and refuses rules that count a fighter's, an intent's or
+  a glance's numbers otherwise than it does; another player's figure puts its weapon away as their snapshot shows the
+  drink.
 
 ## Why these numbers
 

@@ -12,9 +12,11 @@ export const EVENT = {
   perfect: 6,
   staggered: 7,
   killed: 8,
+  respawned: 9,
   feinted: 10,
   shielded: 12,
   shieldBroken: 13,
+  healed: 14,
 } as const;
 export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 
@@ -50,9 +52,9 @@ export function blowLook(
   return carried;
 }
 
-/** A word's tone: a great or a good turn for the player, the player's own damage, a bad turn for them, a warning, or
- *  one of no side of theirs. */
-export type Tone = 'great' | 'good' | 'dealt' | 'taken' | 'warn' | 'plain' | 'shield';
+/** A word's tone: a great or a good turn for the player, the player's own damage, a bad turn for them, a warning, one
+ *  of no side of theirs, a shield's, or the health a drink gave the player back. */
+export type Tone = 'great' | 'good' | 'dealt' | 'taken' | 'warn' | 'plain' | 'shield' | 'healed';
 
 /** What each event says, and whether it goes the striker's way (else the defender's) and how loudly when it is the
  *  player's: a great turn or a good one. */
@@ -78,6 +80,9 @@ export function wordOf(event: FightEvent, player: number): { readonly text: stri
     return strikerWins === (side === 'striker') ? good : 'taken';
   };
   if (event.kind === EVENT.feinted) return { text: 'Feint', tone: 'plain' };
+  // A drink's heal says what it gave back, in green over the player who drank.
+  if (event.kind === EVENT.healed)
+    return { text: `+${Math.max(1, Math.round(event.amount))}`, tone: side === null ? 'plain' : 'healed' };
   const special = event.how === HOW.riposte ? 'Riposte' : event.how === HOW.counter ? 'Counter' : null;
   const numbered = (amount: number) => (special ? `${special} ${amount}` : String(amount));
   // What a shield takes is said in its element's colour, for the player's own blows; a blow it held whole reaches no

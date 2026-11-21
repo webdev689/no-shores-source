@@ -69,6 +69,20 @@ export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
 }
 
+/** Whether the figure and the hands hold the weapon out in a fight this frame. While the rules are busy they keep the
+ *  weapon the frame before held (`kept`): they take up another only at rest. The forge has no drinking pose, so it is
+ *  put away while a drink lasts; and the frame after one (`drank`) it comes from the player's own dress (`worn`), as
+ *  the frame before had it put away only for the drink. */
+export function drawnInFight(hands: {
+  readonly holding: boolean;
+  readonly kept: boolean;
+  readonly worn: boolean;
+  readonly drinking: boolean;
+  readonly drank: boolean;
+}): boolean {
+  return hands.holding && !hands.drinking && (hands.drank ? hands.worn : hands.kept);
+}
+
 /** The faction, by its key, whose own colour each part of the first person wears: the gauntlets, the boots and each
  *  hand's weapon, as the outfit names it for the layer it is drawn with (gearLooks.ts). */
 export function ownColours(outfit: Outfit): NonNullable<FirstPersonState['own']> {
@@ -115,6 +129,9 @@ export class Walker {
   castGlow: GlowLook = 0;
   /** What the figure showed last frame, and its dress as text, as a room is told with each tick. */
   look: Look = { anim: 'idle', frame: 0, facing: 0 };
+  /** A fall the player died of, as the figure shows it: tumbling down or lying where it landed, facing `facing`; null
+   *  for none. */
+  fall: { readonly tumbling: boolean; readonly facing: number } | null = null;
   lookDress: string;
   private readonly firstPerson: FirstPerson;
   private readonly forge: Cards;
@@ -133,6 +150,8 @@ export class Walker {
   private readonly loop = new Loop();
   /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
   private drawnBefore = false;
+  /** Whether the fight held the player to a drink last frame, which put the shown weapon away. */
+  private drank = false;
   /** The seconds a tick of the rules lasts, as the last step took them. */
   private tickSeconds = 1 / 60;
 
@@ -157,9 +176,10 @@ export class Walker {
     return this.stride;
   }
 
-  /** Whether the camera is in the head, so the hands are drawn and the figure is not. */
+  /** Whether the camera is in the head, so the hands are drawn and the figure is not: never while a fall is watched
+   *  from where the camera was held, the body seen dropping away from it. */
   get inFirstPerson(): boolean {
-    return this.player.view.shown <= HIDE_FIGURE_M;
+    return this.player.view.shown <= HIDE_FIGURE_M && this.fall === null;
   }
 
   /** What glows this frame: each hand's element while its weapon is drawn, else nothing. */
@@ -230,17 +250,17 @@ export class Walker {
     const own = fight?.own ?? null;
     const fighting = own !== null && own.action.kind !== 'idle' && own.action.kind !== 'dead';
     // The aim held faces the look even in the rules' idle ticks (a swap, a reload's end), as it does drawn.
-    const facing = fighting || (own && fight?.aiming) ? (dodgeFacing(own.action) ?? own.aim) : player.facing;
+    const facing =
+      this.fall?.facing ?? (fighting || (own && fight?.aiming) ? (dodgeFacing(own.action) ?? own.aim) : player.facing);
     Object.assign(you, { x: body.x, y: body.y, z: body.z, facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const worn = shownDress(you.dress, holding);
-    // The rules take up another weapon only at rest: while they are busy, the figure and the hands keep the one held.
     const kept = this.dress.outfit;
+    const drinking = own?.action.kind === 'drink';
+    const drawn = drawnInFight({ holding, kept: kept.drawn, worn: worn.outfit.drawn, drinking, drank: this.drank });
+    this.drank = drinking;
     const dress = fighting
-      ? {
-          ...worn,
-          outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn: holding && kept.drawn },
-        }
+      ? { ...worn, outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn } }
       : worn;
     if (!fighting) this.shownGlow = this.glow;
     const { outfit } = dress;
@@ -320,7 +340,11 @@ export class Walker {
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
         act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
         // A bow's draw plays with the first person's, and a shot's frames over a gun's aim pose.
-        fight: held?.kind === 'draw' && (outfit.right?.startsWith('bow') || swing) ? null : held,
+        fight: this.fall
+          ? { kind: this.fall.tumbling ? 'tumble' : 'down', progress: 1 }
+          : held?.kind === 'draw' && (outfit.right?.startsWith('bow') || swing)
+            ? null
+            : held,
       },
       (anim) => forge.frames(dress.body, anim),
       (anim, drawn) => forge.draws(dress.body, anim, drawn),

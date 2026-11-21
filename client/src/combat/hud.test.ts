@@ -5,6 +5,7 @@ import { Compass, compassCss, SHIP_MARK_COLOURS, UNDER_COMPASS } from '../plus/c
 import { HALO, TONES } from '../plus/tones.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { viewProjection } from '../editor/orbit.ts';
+import { EVENT } from './cues.ts';
 import { blockedBy, clearOf, Hud, type HudFrame, veilOf } from './hud.ts';
 import { Words } from './hitWords.ts';
 import { fightSheetCss } from './hudSheet.ts';
@@ -411,6 +412,31 @@ test('a settled display writes nothing more to the page and reads no layout, wit
     // A taller view moves the Arts and weapons, which stand from its foot, without changing their size or step.
     hud.update({ ...frame, height: 800 }, 1 / 60);
     assert.ok(counted.reads > 0, 'where the corners stand is read again');
+  }));
+
+test('the screen’s red edge comes for a blow the player takes, never for their drink’s heal', () =>
+  onFakePage((root) => {
+    const hud = new Hud(root);
+    const frame: HudFrame = {
+      own: { ...standing, health: 60 },
+      foes: [],
+      where: () => [0, 0, 0],
+      matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+      width: 1280,
+      height: 720,
+      events: [],
+      player: 1,
+      firstPerson: false,
+      pressed: false,
+      lost: null,
+      groundAt: null,
+    };
+    const told = (kind: number) => ({ tick: 0n, kind, how: 0, striker: 1, defender: 1, amount: 40, stroke: 0 });
+    const edge = () => Number(findAll(root, 'hurt')[0]?.style['opacity'] ?? 0);
+    hud.update({ ...frame, events: [told(EVENT.healed)] }, 1 / 60);
+    assert.equal(edge(), 0, 'healed: no red');
+    hud.update({ ...frame, events: [{ ...told(EVENT.hit), striker: 2 }] }, 1 / 60);
+    assert.ok(edge() > 0, 'struck: red');
   }));
 
 test('every word the display stands still on the screen is a whole step of the face’s 11 px grid, so it draws sharp', () => {

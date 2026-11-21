@@ -48,7 +48,8 @@ impl<B: Near + ?Sized> core::fmt::Debug for Surroundings<'_, B> {
 }
 
 /// What a fighter's tick set off, for the host to answer: a swing begun, its blow landing, a telegraphed blow landing
-/// or cut short as a feint, a shot leaving (its owner for the host to fill), a dodge begun, a guard raised.
+/// or cut short as a feint, a shot leaving (its owner for the host to fill), a dodge begun, a guard raised, a drink
+/// ended with the health it gave back.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Happening {
     Swung(Attack),
@@ -58,6 +59,7 @@ pub enum Happening {
     Loosed(Shot),
     Dodged,
     Guarded { window: bool },
+    Drank(f64),
 }
 
 /// One tick of a fighter under its player's or brain's intent.
@@ -69,7 +71,8 @@ pub fn step_fighter<B: Near + ?Sized>(
 ) -> (Fighter, Option<Happening>) {
     let intent = &clean(intent, fighter.aim);
     let input = &intent.combat;
-    let now = Held { attack: input.attack.is_some(), guard: input.guard, dodge: input.dodge, shoot: input.shoot };
+    let (attack, heal) = (input.attack.is_some(), input.heal);
+    let now = Held { attack, guard: input.guard, dodge: input.dodge, shoot: input.shoot, heal };
     // A Charge holds its fighter from the tick's start, so its stagger and its ticks run down together.
     let mut held = *fighter;
     crate::status::held_still(&mut held);
@@ -121,7 +124,8 @@ fn kept(fighter: &Fighter, input: &CombatInput, now: Held) -> Kept {
     let reeling = matches!(fighter.action, Action::Flinch { .. }) || fighter.staggered();
     let held_on = |left: u8| if swapping && !reeling { left } else { age(left) };
     let (attack, shoot) = (held_on(was.attack), held_on(was.shoot));
-    let mut kept = Kept { attack, stroke: was.stroke, guard: age(was.guard), dodge: age(was.dodge), shoot };
+    let (guard, dodge, heal) = (age(was.guard), age(was.dodge), age(was.heal));
+    let mut kept = Kept { attack, stroke: was.stroke, guard, dodge, shoot, heal };
     let overtaken = (now.guard && !fighter.held.guard) || (now.dodge && !fighter.held.dodge);
     if swapping && overtaken {
         (kept.attack, kept.shoot) = (0, 0);
@@ -138,6 +142,9 @@ fn kept(fighter: &Fighter, input: &CombatInput, now: Held) -> Kept {
     }
     if now.dodge && !fighter.held.dodge {
         kept.dodge = PRESS_KEPT;
+    }
+    if now.heal && !fighter.held.heal {
+        kept.heal = PRESS_KEPT;
     }
     if kept.attack == 0 {
         kept.stroke = None;
@@ -243,7 +250,7 @@ fn act<B: Near + ?Sized>(
         }
         Action::Dodge { elapsed, toward } => {
             let elapsed = elapsed + 1;
-            let wants = input.attack.is_some() || input.guard || next.kept != Kept::default();
+            let wants = input.attack.is_some() || input.guard || Kept { heal: 0, ..next.kept } != Kept::default();
             let free = elapsed >= DODGE_TICKS || (elapsed >= DODGE_ATTACK && wants);
             if free && landed(&next.body, around) {
                 next.action = Action::Idle;
@@ -274,13 +281,14 @@ fn act<B: Near + ?Sized>(
         }
         Action::Telegraph(telegraph) => wind_up(next, telegraph, around),
         Action::Draw { elapsed } => draw(next, elapsed, intent, pulled),
+        Action::Drink { elapsed } => crate::drink::drink(next, elapsed, intent.controls),
         Action::Dead { .. } => None,
     }
 }
 
 /// Whether a dodge may start out of what a fighter is doing as its tick begins: at rest, a swing (never on its blow's
 /// own tick: a dodge pressed then is kept for the next), a guard, a parry, a draw, or a flinch from its
-/// `FLINCH_DODGE`th tick; never a dodge, a stagger, a fall, an overreach, a reload or a wind-up.
+/// `FLINCH_DODGE`th tick; never a dodge, a stagger, a fall, an overreach, a reload, a wind-up or a drink.
 #[must_use]
 pub fn dodge_leaves(action: &Action) -> bool {
     match *action {
@@ -302,13 +310,17 @@ fn touching_down<B: Near + ?Sized>(body: &Body, around: &Surroundings<'_, B>) ->
     body.mode == Mode::Air && body.vz <= 0.0 && body.z - ground <= LANDED
 }
 
-/// From rest, in this order: a dodge pressed, a foe's telegraphed blow, a swing pressed, a guard pressed or held (never
-/// with a ranged weapon), a ranged weapon raised to aim, a quick shot, and a swing while the button is held. The
-/// newest press wins over a button only held.
+/// From rest, in this order: a dodge pressed, a drink pressed, a foe's telegraphed blow, a swing pressed, a guard
+/// pressed or held (never with a ranged weapon), a ranged weapon raised to aim, a quick shot, and a swing while the
+/// button is held. The newest press wins over a button only held.
 fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroundings<'_, B>) -> Option<Happening> {
     let input = &intent.combat;
     if next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
         return Some(dodge(next, intent.controls, around));
+    }
+    if next.kept.heal > 0 && crate::drink::can_drink(next, intent.controls) {
+        crate::drink::begin_drink(next);
+        return None;
     }
     if let Some(order) = input.telegraph.filter(|_| !next.is_player()) {
         let body = next.body;
@@ -502,9 +514,9 @@ fn slowed(controls: Controls, share: f64) -> Controls {
     Controls { forward: controls.forward * share, sideways: controls.sideways * share, ..still(controls) }
 }
 
-/// The body moved as the action allows: freely at rest, slowly swinging or guarding, not at all when struck or while
-/// a Charge holds (one waiting out a reload too), and a charge or a leap carried to its landing at the end of its
-/// wind-up.
+/// The body moved as the action allows: freely at rest, slowly swinging or guarding, at a walk drinking, not at all
+/// when struck or while a Charge holds (one waiting out a reload too), and a charge or a leap carried to its landing
+/// at the end of its wind-up.
 fn move_body<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &Surroundings<'_, B>) {
     let allowed = match next.action {
         _ if next.statuses.has(crate::Status::Charge) => still(controls),
@@ -512,6 +524,7 @@ fn move_body<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &
         Action::Attack(_) => slowed(controls, ATTACK_PACE),
         Action::Guard { .. } | Action::Parry { .. } => slowed(controls, GUARD_PACE),
         Action::Draw { .. } => slowed(controls, (AIM_PACE * next.trim.aim_pace).min(1.0)),
+        Action::Drink { .. } => slowed(controls, 1.0),
         Action::Telegraph(telegraph) => {
             if let Some(body) = travel(&next.body, &telegraph, around) {
                 next.body = body;
@@ -576,7 +589,7 @@ fn aim<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroundi
         Action::Guard { .. } | Action::Parry { .. } => {
             turned(next.aim, target.map_or(yaw, |(toward, _)| toward), GUARD_TURN)
         }
-        Action::Draw { .. } | Action::Idle | Action::Flinch { .. } => yaw,
+        Action::Draw { .. } | Action::Idle | Action::Flinch { .. } | Action::Drink { .. } => yaw,
         Action::Reload { .. } if intent.combat.aim => yaw,
         _ => next.aim,
     };

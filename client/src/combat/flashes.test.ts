@@ -69,6 +69,13 @@ test('a blow that does no harm, or harms another, flashes no one', () => {
   assert.equal(flashes.flashOf(2)?.stage, FLASH.whole);
 });
 
+test('a drink’s heal flashes no one, the drinker least of all', () => {
+  const flashes = new Flashes();
+  flashes.update([blow(EVENT.healed, 9, 40, { striker: 9, how: 0 })], 0, { player: 9, look: 0, healthMax: 100 });
+  assert.equal(flashes.flashOf(9), undefined);
+  assert.deepEqual(flashes.knockOf(9, true), [0, 0], 'nor knocks them');
+});
+
 test('a struck figure slides out along the blow in whole pixels and settles back exactly; a kill stays out', () => {
   for (const kind of ['hit', 'staggered', 'killed'] as const) {
     assert.equal(knockAt(kind, 0), 0);

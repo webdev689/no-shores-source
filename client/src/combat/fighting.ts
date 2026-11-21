@@ -45,14 +45,15 @@ export interface KeptFoe extends Omit<SeenFoe, 'glance'> {
 }
 
 /** The fight's buttons for the ticks of a frame: a swing held (and the stroke the next one takes, 1 to 6), a shot's
- *  trigger held, the guard held, a dodge pressed, the look's pitch, a ranged weapon held up to aim and the point an
- *  aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or the guard
- *  was pressed since the last frame (even let go again). */
+ *  trigger held, the guard held, a dodge pressed, a drink pressed, the look's pitch, a ranged weapon held up to aim and
+ *  the point an aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or
+ *  the guard was pressed since the last frame (even let go again). */
 export interface FightButtons {
   readonly swing: boolean;
   readonly shoot: boolean;
   readonly guard: boolean;
   readonly dodge: boolean;
+  readonly heal?: boolean;
   readonly pitch: number;
   readonly aim?: boolean;
   readonly mark?: readonly [number, number, number] | null;
@@ -61,6 +62,8 @@ export interface FightButtons {
   readonly guardPressed?: boolean;
 }
 
+/** The fight's numbers of an intent that fights not at all: no stroke, guard, dodge, shot, pitch or aim, no mark. */
+const STILL_FIGHT = [0, 0, 0, 0, 0, 0, Number.NaN, Number.NaN, Number.NaN] as const;
 const NO_BUTTONS: FightButtons = { swing: false, shoot: false, guard: false, dodge: false, pitch: 0 };
 
 /**
@@ -115,7 +118,13 @@ export class Fighting {
   private seen = 0n;
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
-  private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
+  private readonly latches = {
+    swing: new Latch(),
+    shoot: new Latch(),
+    guard: new Latch(),
+    dodge: new Latch(),
+    heal: new Latch(),
+  };
   private readonly spawnsQueued: { readonly foe: FoeAsk; readonly level: number }[] = [];
   private readonly gearQueued: GearAsk[] = [];
   /** A cast waiting for the next tick's input, and the room's word on the Arts with the room tick it came by. */
@@ -124,8 +133,8 @@ export class Fighting {
   private artsAt = 0;
   private sentDress = '';
   private respawnAsked = false;
-  /** Where the player stands with a node's section, as the room last said: dead past its edge, the room takes their
-   *  inputs without moving them. */
+  /** Where the player stands with a node's section, as the room last said: dead, by a fall or past its edge, the room
+   *  takes their inputs without steering them, and their body falls under its own weight to lie where it lands. */
   standing: Standing = { kind: 'inside' };
   /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
    *  Daggerfall Unity's click chooses among all six, and again once used. */
@@ -202,6 +211,7 @@ export class Fighting {
     if (buttons.shootPressed) this.latches.shoot.press();
     if (buttons.guardPressed) this.latches.guard.press();
     if (buttons.dodge) this.latches.dodge.press();
+    if (buttons.heal) this.latches.heal.press();
   }
 
   /** Asks the room to stand a foe of a type and a rank before the player, at a level (0, a foe of none), or to send
@@ -310,6 +320,7 @@ export class Fighting {
       pitch,
       this.buttons.aim ? 1 : 0,
       ...(this.buttons.mark ?? [Number.NaN, Number.NaN, Number.NaN]),
+      this.latches.heal.tick(false) ? 1 : 0,
     ]);
     const dress = this.dressToSend();
     const view = this.view;
@@ -335,8 +346,11 @@ export class Fighting {
     };
     this.respawnAsked = false;
     this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
-    // Dead past the edge, the room holds the fighter still while it takes the inputs: nothing is swung or shot.
-    if (this.standing.kind === 'dead') return bodyOf(Array.from(this.fighter.subarray(0, 22)));
+    // Dead, the room steps the fighter as it lies, whatever is asked: nothing is swung or shot, and it falls on.
+    if (this.standing.kind === 'dead') {
+      this.fighter = this.lying(this.fighter, view);
+      return bodyOf(Array.from(this.fighter.subarray(0, 22)));
+    }
     const before = this.fighter[BLOWS_AT] ?? 0;
     const drawing = this.fighter[ACTION_AT] === DRAW;
     const predicted = this.rules.predict(this.fighter, intent, this.player, arms, view);
@@ -354,6 +368,17 @@ export class Fighting {
     return bodyOf(Array.from(this.fighter.subarray(0, 22)));
   }
 
+  /** The fighter one tick on as the room steps a body the section killed (the room's `lying_still`): no push, its
+   *  facing kept, letting go of any wall or lip it held, nothing fought and its arms kept, so it falls under its own
+   *  weight and lies where it lands. */
+  private lying(fighter: Float64Array, view: readonly Glanced[]): Float64Array {
+    const body = bodyOf(Array.from(fighter.subarray(0, 22)));
+    const holding = body.mode === 'hang' || body.mode === 'climb';
+    const controls = { forward: 0, sideways: 0, yaw: body.facing, run: false, jump: false, crouch: holding };
+    const intent = new Float64Array([...floatsOfControls({ ...controls, mounted: false }), ...STILL_FIGHT]);
+    return this.rules.predict(fighter, intent, this.player, fighter[ARMS_AT] ?? 0, view).fighter;
+  }
+
   /** Takes a room's snapshot: the player's fighter set by the room's word with every input it has not taken stepped on
    *  top; every other player and foe kept, each foe with its glance at the snapshot before; its shots and events. */
   receive(snapshot: Snapshot): void {
@@ -369,23 +394,20 @@ export class Fighting {
         // The snapshot leaves out the player's trim: it is theirs from their gear.
         const whole = trimmed(seen.fighter, this.link.trim);
         this.standing = seen.standing;
-        const still = seen.standing.kind === 'dead';
-        this.fighter = this.prediction.corrected(
-          whole,
-          seen.acknowledged,
-          (fighter, asked) => {
-            const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
-            // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
-            // has been drawn already.
-            if (replayed.fired && !asked.fired) {
-              this.fired.push(replayed.fired);
-              this.shotsLoosed += 1;
-            }
-            asked.fired = replayed.fired ?? asked.fired;
-            return replayed.fighter;
-          },
-          still,
-        );
+        const dead = seen.standing.kind === 'dead';
+        this.fighter = this.prediction.corrected(whole, seen.acknowledged, (fighter, asked) => {
+          // The room took every input after a death as the body lying, whatever the input asked.
+          if (dead) return this.lying(fighter, asked.view);
+          const replayed = this.rules.predict(fighter, asked.intent, this.player, asked.arms, asked.view);
+          // A shot this input let go only as replayed on the room's word is the player's too; one it let go before
+          // has been drawn already.
+          if (replayed.fired && !asked.fired) {
+            this.fired.push(replayed.fired);
+            this.shotsLoosed += 1;
+          }
+          asked.fired = replayed.fired ?? asked.fired;
+          return replayed.fighter;
+        });
         continue;
       }
       this.others.set(seen.player, seen);

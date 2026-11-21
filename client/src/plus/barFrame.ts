@@ -22,11 +22,12 @@ export const BAR_TONES = {
 /** How far the display's corner pieces stand in from the view's side, top and foot, in CSS pixels at their own size. */
 export const CORNER = { side: 28, top: 14, foot: 22 } as const;
 
-/** Each vital's height, frame and all, the gap between two, and the room kept under them for the buffs' row, at
- *  each step, in CSS pixels: the thin bars' sizes, the vitals' on foot and the ship's at sea. */
+/** Each vital's height, frame and all, the gap between two, the healing charges' diamonds under them on foot, and
+ *  the room kept under those for the buffs' row, at each step, in CSS pixels: the thin bars' sizes, the vitals' on
+ *  foot and the ship's at sea. */
 export const VITAL_SIZES = {
-  base: { health: 12, stamina: 10, poise: 8, gap: 4, buffs: 34 },
-  wide: { health: 16, stamina: 14, poise: 10, gap: 5, buffs: 46 },
+  base: { health: 12, stamina: 10, poise: 8, gap: 4, drinks: 12, buffs: 34 },
+  wide: { health: 16, stamina: 14, poise: 10, gap: 5, drinks: 16, buffs: 46 },
 } as const;
 
 /** How many pixels the frame takes along the bar's top and foot: its outline and its stone line. */
@@ -73,6 +74,47 @@ export function barFrameSvg(height: number, tone: BarTone): string {
 /** The frame as a `border-image` for a bar `height` pixels tall: the picture, its slices and their widths. */
 export function barFrameImage(height: number, tone: BarTone): string {
   const tip = tipOf(height);
-  const url = `url("data:image/svg+xml,${encodeURIComponent(barFrameSvg(height, tone))}")`;
-  return `${url} ${BAR_EDGE} ${tip} / ${BAR_EDGE}px ${tip}px stretch`;
+  return `${svgUrl(barFrameSvg(height, tone))} ${BAR_EDGE} ${tip} / ${BAR_EDGE}px ${tip}px stretch`;
 }
+
+/** The cells of a diamond `size` pixels across (an even number), row by row: each with how many cells in from the
+ *  diamond's edge it lies (0 on the edge) and whether it is on the upper half. */
+function diamondCells(size: number): { x: number; y: number; inward: number; upper: boolean }[] {
+  const half = size / 2;
+  const cells = [];
+  for (let y = 0; y < size; y++) {
+    const fromEdge = y < half ? y : size - 1 - y;
+    const [left, right] = [half - 1 - fromEdge, half + fromEdge];
+    for (let x = left; x <= right; x++) cells.push({ x, y, inward: Math.min(x - left, right - x), upper: y < half });
+  }
+  return cells;
+}
+
+/** Cells as an SVG drawn pixel for pixel. */
+const cellsSvg = (size: number, cells: readonly { x: number; y: number; colour: string }[]): string =>
+  `<svg xmlns='http://www.w3.org/2000/svg' width='${size}' height='${size}' shape-rendering='crispEdges'>${cells
+    .map(({ x, y, colour }) => `<rect x='${x}' y='${y}' width='1' height='1' fill='${colour}'/>`)
+    .join('')}</svg>`;
+
+/** A healing charge's diamond frame `size` pixels across as an SVG, drawn cell by cell as a bar's frame is: the
+ *  outline outermost, then the stone line, lit on the upper half and shaded on the lower; the inside left clear, so
+ *  the track laid in it lies over the world as a bar's does. */
+export function diamondFrameSvg(size: number, tone: BarTone): string {
+  const frame = diamondCells(size).filter((cell) => cell.inward < BAR_EDGE);
+  const colourOf = (cell: (typeof frame)[number]) =>
+    cell.inward === 0 ? TONES.outline : cell.upper ? tone.lit : tone.shade;
+  return cellsSvg(
+    size,
+    frame.map((cell) => ({ ...cell, colour: colourOf(cell) })),
+  );
+}
+
+/** The inside of a diamond frame `size + 2 * BAR_EDGE` across, as a mask `size` pixels across: every cell whole. */
+export const diamondMaskSvg = (size: number): string =>
+  cellsSvg(
+    size,
+    diamondCells(size).map((cell) => ({ ...cell, colour: '#000' })),
+  );
+
+/** An SVG as a CSS image. */
+export const svgUrl = (svg: string): string => `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;

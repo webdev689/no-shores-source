@@ -150,7 +150,7 @@ export class Flashes {
 
   private take(event: FightEvent, told: StruckBy | null): void {
     const player = told?.player ?? null;
-    const harms = event.amount > 0;
+    const harms = event.amount > 0 && event.kind !== EVENT.healed;
     const melee = !notABlow(event);
     if (harms) {
       const own = event.defender === player;

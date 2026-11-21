@@ -78,11 +78,11 @@ pub fn landmark(motif: &str, site: &Site, ground: &Ground) -> Option<Landmark> {
 /// Overlook's Beacon: a round lighthouse-citadel on a stepped base, its fire 300 m over the headland.
 fn beacon(site: &Site) -> Landmark {
     let (centre, level) = (site.centre, site.level);
-    let mut solids = vec![
-        block(centre, level, [150.0, 150.0, 18.0], Material::Stone),
+    let mut solids = hollow_base(site);
+    solids.extend([
         block(centre, level + 18.0, [116.0, 116.0, 16.0], Material::Stone),
         block(centre, level + 34.0, [86.0, 86.0, 14.0], Material::Stone),
-    ];
+    ]);
     for corner in [[-1.0, -1.0], [1.0, -1.0], [1.0, 1.0], [-1.0, 1.0]] {
         let at = [centre[0] + corner[0] * 68.0, centre[1] + corner[1] * 68.0];
         solids.push(column(at, level, 16.0, 30.0, 1.0, Material::Stone));
@@ -109,6 +109,45 @@ fn beacon(site: &Site) -> Landmark {
         column(centre, top + 43.0, 4.0, 40.0, 0.0, Material::Gold),
     ]);
     Landmark { solids, reach: 110.0 }
+}
+
+/// The Beacon's base: its side and height, metres; the Hall of the Arts inside it, across, deep and high; the wall
+/// at the Hall's door, and the door's width and height over the floor.
+pub const BEACON_BASE_M: [f64; 2] = [150.0, 18.0];
+pub const BEACON_HALL_M: [f64; 3] = [68.0, 60.0, 14.0];
+pub const BEACON_WALL_M: f64 = 5.0;
+pub const BEACON_DOOR_M: [f64; 2] = [12.0, 10.4];
+
+/// The Beacon's base, hollow where the Hall of the Arts stands behind its face toward the sea: a back mass, a mass
+/// either side of the Hall, the face's wall either side of the great door and a lintel over it, and the Hall's roof.
+/// Each is a block square to the world, so each is dressed as built stone where it is great enough.
+fn hollow_base(site: &Site) -> Vec<Solid> {
+    let [side, high] = BEACON_BASE_M;
+    let [hall_across, hall_deep, hall_high] = BEACON_HALL_M;
+    let [door_wide, door_high] = BEACON_DOOR_M;
+    let half = side / 2.0;
+    let east_west = site.seaward[0].abs() >= site.seaward[1].abs();
+    let toward = if east_west { [site.seaward[0].signum(), 0.0] } else { [0.0, site.seaward[1].signum()] };
+    let across = [-toward[1], toward[0]];
+    // A block by its span seaward of the base's middle (`near` to `far`) and across it (`left` to `right`).
+    let piece = |near: f64, far: f64, left: f64, right: f64, base: f64, top: f64| {
+        let along = ahead(site.centre, toward, (near + far) / 2.0);
+        let middle = ahead(along, across, (left + right) / 2.0);
+        let (deep, wide) = (far - near, right - left);
+        let size = if east_west { [deep, wide, top - base] } else { [wide, deep, top - base] };
+        block(middle, site.level + base, size, Material::Stone)
+    };
+    let hall_from = half - BEACON_WALL_M - hall_deep;
+    let hall_side = hall_across / 2.0;
+    vec![
+        piece(-half, hall_from, -half, half, 0.0, high),
+        piece(hall_from, half, -half, -hall_side, 0.0, high),
+        piece(hall_from, half, hall_side, half, 0.0, high),
+        piece(half - BEACON_WALL_M, half, -hall_side, -door_wide / 2.0, 0.0, high),
+        piece(half - BEACON_WALL_M, half, door_wide / 2.0, hall_side, 0.0, high),
+        piece(half - BEACON_WALL_M, half, -door_wide / 2.0, door_wide / 2.0, door_high, high),
+        piece(hall_from, half - BEACON_WALL_M, -hall_side, hall_side, hall_high, high),
+    ]
 }
 
 /// Cairnwatch's Span: an aqueduct straight through the city along the coast, its arches 60 m over the highest ground
