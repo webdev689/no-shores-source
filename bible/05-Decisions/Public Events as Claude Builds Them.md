@@ -53,7 +53,7 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The crystal's glow | A byte a vertex in the mesh's spare byte | Bright toward a shard's point, dark at its root, as the Lattice's own props are; every older mesh is unchanged |
 | The props' colours on the page | Each material a colour worked by code, not a picture | The props stand where no city's picture book is loaded |
 | The Lattice's props reused | Its shards, clusters, crusts and boulders, through an adapter | The owner's "just available props"; its whole props are too small for the events |
-| The fissure's chasm | Built under the ground; the page opens the land along its mouth | A crack seen into reads as a crack; a flat glow reads as a pool |
+| The fissure's chasm | Built under the ground; each point of it seen through the mouth is drawn at the depth where the eye's line crosses the land at the foot, 2 to 4% of the way nearer the eye; one seen past the lips is not drawn | A crack seen into reads as a crack; the land round the mouth gives way while a rise or a house nearer the eye keeps its own, with no stencil |
 | How the fissure opens and closes | Widening from a line and deepening; the scar rises as it closes | The marks' health says how far open |
 | How the growth and a banner appear | Rising out of the ground over 2.4 s, sinking over 3 s; a banner driven in over 0.7 s | Seen arriving, not appearing |
 | Which stack a store is | One of three by its id | Three stores in a hamlet, each different |
@@ -63,14 +63,15 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The events' names on the banner | "The Fissure", "The Grey Tithe Raid"; the place by the zone's wilds or hamlet | Destiny names an event and its place |
 | The banner's tones | Gold running, orange heroic, green won, red failed, stone for the next line | Read at a glance, said in words too |
 | The heroic task's words | "Break the growth", "Kill the tithe-taker"; then "Heroic" | The brief's words |
-| The next event's line | One line: what, where, in how many minutes (rounded up) | The room tells the next start to the minute |
+| The next event's line | One line: what, where, in how many minutes (rounded up), and in its last minute m:ss counted on by the page; the metres to its ground beside the place for a player outside it | The room tells the next start to the minute |
+| What runs elsewhere | Between events only, a second line from the room's schedule: what runs (the one with most time left) or else comes next in Saltmere's other zones | The owner's example line; while one runs, the banner is the event's |
 | The stings | The place's fight score: cadence on begin, victory on heroic met and on won, defeat on failed | No new music; the scores already hold these moments |
-| The sounds | Samples already held: `story.deep`, `foe.alert`, `element.cosmic`, `finish.cosmic`, `shield.break`, `kill`, `story.crash`, `sea.ship.break`, `story.creak` | No new samples (the brief) |
+| The sounds | Samples already held: `story.deep`, `foe.alert`, `element.cosmic`, `finish.cosmic`, `shield.break`, `kill`, `story.crash`, `sea.ship.break`, `story.creak`, `cast.charge`, `drop.land`, `amb.social.crowd`; the heroic task met heard where its growth or tithe-taker stood | No new samples (the brief) |
 | A carried shard | At the off hand, 0.32 m left and 0.16 m forward; first person, 0.55 m ahead, 0.3 m left, 0.42 m under the eye | Seen in the hand from either view |
 | A store's bar | 72 px wide, 2.3 m over its foot, while a raid runs | Like a plate over a figure |
 | The ring at the edge | Gold, 0.35 m wide, 72 arcs each on the land, breathing | Seen on a slope, never buried |
 | A shard's pillar | Red, 7 m tall, fading with the shard | Seen from across the ground |
-| An opened chest | Stands open 6 s after the room takes it | The lid's swing is seen whole |
+| An opened chest | Stands open 6 s from the asking, taken or not; one still lying then was refused, and closes; E passes over one asked | The lid's swing is seen whole, and a slow room never shuts it mid-swing |
 | The dev address | `&public=fissure` or `&public=raid` sets a room in the page's clock to that event's start, dev builds only | Every beat can be seen without waiting |
 | The dev play | `&speed=`, `&bots=`, `&heroic=0` on the dev address; bots and the player at level 6, Rare | A slow machine can play an event through and picture each beat |
 | The fissure's tearing and shutting | Tears open over the event's first 3 s, never narrower than 0.3 while it runs, shuts over the result's first 2.5 s as its scar rises; timed by the room's ticks | The opening is seen (not replayed for a page arriving late), and the Warden still comes out of an open crack |
@@ -86,3 +87,19 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | Heroic missed with a result | Told before the win or the failure | The result is the beat a page keeps |
 | The wire's order beside the sea's | The sea's fields first on `Foe` and `Snapshot`, the events' after them; the chest's ask is 21 | The sea's are deployed and the events' are not, so only the events' fields move |
 | The Lattice's pictures in the forge's newer tables | Laid in from run 44851715803's artifacts (`publish-from`), not rendered again | The renders are the same; only the tables they are laid into changed |
+| A page come mid-event | Marks there on the first frame the event is seen stand as long done (a growth broken stays gone, banners stand) | No beat replayed to a late joiner |
+| A room lost | Its event leaves the screen, with its beats and chests, until the room holds again | The page plays on alone |
+| Back from a hidden tab | After a gap of 2 s the last beat slides in; the sounds, stings and chimes kept meanwhile are dropped | They are long over |
+| The heroic chance | Its slide flares orange; the call stands 5 s in the heroic line: "A crystal growth rises: break it!", "The tithe-taker has come to count: kill him before he goes"; `cast.charge` at its target; an orange pillar 9 m over the target while open; the ring turns orange once met | The fix list's words; heard where it rises |
+| The climax on the boss bar | The Warden and Marrow, Minibosses, on the boss bar without the phase line, and the boss's music (the fallback score, `wrath`) while one stands | They are the events' bosses; neither has a score of its own |
+| The music on the ground | Tension at least while the event runs and the player stands within its ring; the peak in its last minute and once heroic is met | As the story holds its least mood |
+| Starting soon | At 60 s and at the start, `drop.land` at the player and a rarity-2 chime, heard all over the zone; the banner slides; a gold beacon 60 m tall over the ground from 60 s before, and while it runs for a player outside its ring | Heard and seen from anywhere in the zone |
+| The Lattice pouring out | Each foe coming within 10 m of a running Fissure's ground climbs out of its death wave played backwards; at the start and each stage the crack flares (glow doubled, dying over 1.2 s) and the ground trembles (0.45, to nothing at 60 m); the stage is `story.deep`, the Warden's with `story.crash` | The Lattice comes up out of the crack |
+| A shard set | Arcs from the carrier's hand into the crack over 0.4 s, 1.2 m high at its top; the crack flares (0.6); a tremor (0.15 to nothing at 25 m); the width follows the room's at 2.5 a second; carrying, "Carrying a shard: take it to the fissure" and the 6 m lip drawn faint red | Felt as well as counted |
+| A store under attack | One losing health within 1.5 s: its bar red and flashing, a red compass mark, "Store under attack" before the objective, a red ring round it filling as it is plundered; the store the tithe-taker counts ringed orange | Seen before it falls |
+| The last minute | The clock red, pulsing; the last ten seconds tick (the interface's `tab`); the Fissure's bonus reads "seal it before 4:00" | The deadline is the countdown's own number |
+| A chest waiting | `drop.land` where it comes; a pillar 5 m (gold, orange for a heroic one) and a compass mark until opened; the tracker's "Open your chest (1:48)" over the two minutes it lies from when the page saw it | Found and opened, not left |
+| The reward feed | A chest opened shows its tier as four pips, "+N XP" and "+N <faction> reputation" beside what it paid | All three rewards seen |
+| The raid's end | Won: its banners topple over 1.4 s, a crowd swell (`amb.social.crowd`) from the hamlet; failed, `story.crash`; a failed Fissure closes into the plain turf, the sealed scar only for a seal | A win and a loss felt apart |
+| The Lattice at night | A Lattice figure's bright, strongly hued texels never lit below 0.8; a warm lamp 6 m round each raid banner's head | The crystal reads in the dark, the raid's ground is lit |
+| The seal from afar | A red shock ring spreading 45 m over 1.6 s, the crack's glow tripled as its flash, a tremor (0.8, to nothing at 120 m); the seal's wave in its picture's own texels | Seen and felt across the down |

@@ -120,3 +120,33 @@ test('Shapes gained and a cosmetic newly kept are gains, each with a picture of 
   assert.ok(gains.every((each) => each.icon?.startsWith('data:image/svg+xml')));
   assert.deepEqual(gainsOf(state({ shapes: 6 }), state({ shapes: 1 })), [], 'Shapes spent are no gain');
 });
+
+test('a chest opened shows its tier in four pips, the XP it gave and the reputation', () => {
+  const chest = {
+    id: 9,
+    rarity: 0,
+    slot: 0,
+    at: [0, 0, 0] as const,
+    kind: 3,
+    from: [0, 0, 0] as const,
+    flying: 0,
+    tier: 3,
+  };
+  const before = state({
+    xp: 1_000n,
+    drops: [chest],
+    standing: { pledge: 2, reputation: [0, 400, 0], packages: [], artLevels: [], artXp: [], artOwned: [] },
+  });
+  const after = state({
+    xp: 4_200n,
+    drops: [],
+    standing: { pledge: 2, reputation: [0, 3_600, 0], packages: [], artLevels: [], artXp: [], artOwned: [] },
+  });
+  const shown = gainsOf(before, after).map((gain) => [gain.name, gain.count, gain.pips ?? null]);
+  assert.deepEqual(shown, [
+    ['Heroic chest', 1, 3],
+    ['XP', 3_200, null],
+    ['Lamplighters reputation', 3_200, null],
+  ]);
+  assert.deepEqual(gainsOf(state({ xp: 0n }), state({ xp: 50n })), [], 'XP alone, with no chest opened, is no row');
+});

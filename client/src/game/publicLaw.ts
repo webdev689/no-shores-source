@@ -53,8 +53,13 @@ export function clockOf(ticks: number): string {
 
 const placeOf = (zone: string, kind: number): string => PLACES[zone]?.[kind === PUBLIC_KIND.raid ? 1 : 0] ?? '';
 /** The place, and how far off it is from `from` (metres) where that is outside the ring of `radius` round `at`. */
-const placeFrom = (place: string, at: readonly number[], radius: number, from: readonly [number, number] | null) => {
-  const metres = from ? Math.hypot((at[0] ?? 0) - from[0], (at[1] ?? 0) - from[1]) : 0;
+const placeFrom = (
+  place: string,
+  ground: readonly number[],
+  radius: number,
+  from: readonly [number, number] | null,
+) => {
+  const metres = from ? Math.hypot((ground[0] ?? 0) - from[0], (ground[1] ?? 0) - from[1]) : 0;
   return from && metres > radius ? `${place} · ${Math.round(metres)} m` : place;
 };
 const over = (event: PublicEvent) => event.phase === PUBLIC_PHASE.won || event.phase === PUBLIC_PHASE.failed;
@@ -164,12 +169,12 @@ export function elsewhereOf(event: PublicEvent, zone: string): string {
   const slot = (place + parity) % 2;
   const now = place * ZONE_APART_MINUTES + slot * PERIOD_MINUTES - event.nextTicks / (TICKS_PER_SECOND * 60);
   const countdown = COUNTDOWN_TICKS / (TICKS_PER_SECOND * 60);
-  const starts = ZONES.flatMap((other, at) =>
-    at === place
+  const starts = ZONES.flatMap((other, its) =>
+    its === place
       ? []
       : [0, 1].map((each) => {
-          const kind = (each + at) % 2 === 0 ? PUBLIC_KIND.fissure : PUBLIC_KIND.raid;
-          const away = (((at * ZONE_APART_MINUTES + each * PERIOD_MINUTES - now) % cycle) + cycle) % cycle;
+          const kind = (each + its) % 2 === 0 ? PUBLIC_KIND.fissure : PUBLIC_KIND.raid;
+          const away = (((its * ZONE_APART_MINUTES + each * PERIOD_MINUTES - now) % cycle) + cycle) % cycle;
           return { kind, where: placeOf(other, kind).replace(/^The /, 'the '), away, left: away - (cycle - countdown) };
         }),
   );

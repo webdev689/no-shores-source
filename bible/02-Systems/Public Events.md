@@ -145,26 +145,53 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   column under the compass and over the boss bar and the target's plate, so neither stands on it. Running: "Public
   event" (or "Heroic public event") over the name and place, the countdown at the right, the objective and its bar
   (shards set of needed; the stores' health, with the wave in the objective), the heroic task with its window's
-  countdown while it is open ("Break the growth", "Kill the tithe-taker") or "Heroic" once met, and the bonus, struck
-  through once lost. Over, for its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Between
-  events, one line: the next event, where, and in how many minutes. Its tone (gold, heroic orange, won green, failed
-  red) runs down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed).
+  countdown while it is open ("Break the growth", "Kill the tithe-taker"; for its first 5 s the call "A crystal growth
+  rises: break it!" or "The tithe-taker has come to count: kill him before he goes") or "Heroic" once met, and the
+  bonus ("seal it before 4:00", "lose no store"), struck through once lost. In the last minute the clock is red and
+  pulses. A player carrying a shard reads "Carrying a shard: take it to the fissure"; a store under attack puts
+  "Store under attack" before the objective. Away from the ground, the metres to it stand beside the place. Over, for
+  its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Between events, one line: the next
+  event, where, and in how many minutes (m:ss in its last minute, counted on by the page), and under it what runs or
+  comes next elsewhere on Saltmere, from the same schedule. Its tone (gold, heroic orange, won green, failed red) runs
+  down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed, the heroic
+  chance opening with an orange flare, the next a minute off). A screen reader hears each beat on a line of its own,
+  never the ticking clocks.
 - **The tracker** (`tasks.ts`) holds the steps while one runs: the shards still to carry or the Warden; the wave and
-  the stores still standing; the heroic task; the bonus while it holds.
+  the stores still standing; the heroic task; the bonus while it holds. After, "Open your chest (1:48)" while a chest
+  lies, over the two minutes it lies.
+- **The boss bar** shows the climax's Miniboss, the Warden or Marrow, without the phase line; the music takes its
+  boss part while one stands. On the ground of a running event the music holds at tension at least, at the peak in
+  its last minute and once heroic is met.
 - **The compass** marks the ground (the next one's between events) with a gold diamond, and the growth or the
-  tithe-taker with an orange one, blinking, while the heroic window is open.
-- **Marks**: a ring at the ground's edge while it runs, laid on the land arc by arc; a pillar of red light over each
-  shard on the ground, fading with it; a small bar over each store while a raid runs.
+  tithe-taker with an orange one, blinking, while the heroic window is open; a chest waiting with a small gold one; a
+  store under attack with a red one.
+- **Marks**: a ring at the ground's edge while it runs, laid on the land arc by arc, orange once heroic is met; a
+  pillar of red light over each shard on the ground, fading with it; an orange one over the growth or the tithe-taker
+  while the heroic window is open; a tall gold beacon over the ground for a player outside it, from a minute before it
+  starts; a pillar over each chest waiting; the fissure's 6 m lip round a player carrying a shard; a small bar over
+  each store while a raid runs (red and flashing under attack, a ring round the store filling as it is plundered, an
+  orange one round the store the tithe-taker counts); the seal's shock ring spreading 45 m. `game/publicMoments.ts`
+  works out these moments from the event as it was and as it is.
 - **Props**: the marks go through `eventProps()` to the props' drawer every frame, each carried shard moved to its
   carrier's off hand as drawn (the player's own low in the left of a first-person view); the player's chests come
   from their drops (drawn as props, not as drop pictures), and E within 2.5 m opens the one in reach (its lid swings
-  and it stands open 6 s after the room has taken it). The crystal's lamps go with them. The Fissure won bursts the
-  Lattice's death wave at four times a man's size where it seals (`sealWave`).
+  and it stands open 6 s from the asking). The crystal's lamps go with them, and a warm one at each raid banner's
+  head. The fissure's chasm is seen through its mouth: each point of it under the ground is drawn at the depth where
+  the eye's line crosses the land at the foot, a little nearer, so the land there gives way and nearer land or houses
+  keep theirs. Its crack flares at each beat, its width eases to the room's, and a shard set arcs into it over 0.4 s.
+  The Fissure won bursts the Lattice's death wave at four times a man's size where it seals (`sealWave`), in its
+  picture's own texels; each Lattice foe coming while it runs climbs out of its wave played backwards. A raid won
+  topples its banners; a failed Fissure closes into the plain turf. A Lattice figure's crystal glows of itself at
+  night. The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
+  A room lost leaves no event on the screen, and a page come mid-event or back from a hidden tab replays no beat.
 - **Sounds**, all samples the game already holds: the ground splitting (`story.deep`) or the Tithe sighted
   (`foe.alert`) as one begins and at each stage; a shard taken (`element.cosmic`, and the player's own chimes) and
   set (`finish.cosmic`); the growth broken (`shield.break`) or the tithe-taker killed (`kill`); the seal's burst
   (`story.crash`); a store plundered (`sea.ship.break`); a chest opened (`story.creak` and the interface's open); a
-  heroic task missed (the interface's refusal). **Stings**, through the music director's `moment`, in the place's own
+  heroic task missed (the interface's refusal); the heroic chance (`cast.charge` at its target); the next a minute off
+  and the start (`drop.land` at the player and a chime); the Warden climbing out (`story.crash`); a chest coming
+  (`drop.land`); the last ten seconds (the interface's tick); a raid won (`amb.social.crowd`) or failed
+  (`story.crash`). A chest opened shows in the reward feed with its tier as four pips, its XP and its reputation. **Stings**, through the music director's `moment`, in the place's own
   fight score: its cadence as one begins, its victory for heroic met and won, its defeat for failed.
 - **Alone**, the page asks its land worker for the node's grounds (`land_grounds`, from
   `layout::grounds::grounds_of`, which the bake calls too, on the same layouts), so a room in the page runs the
@@ -188,3 +215,7 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   so they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them, and each
   fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
+- The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
+  than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
+  behind it.
+- A chest's two minutes in the tracker run from when the page first saw it: a page come later counts the whole two.

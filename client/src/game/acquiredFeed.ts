@@ -107,7 +107,10 @@ export function startAcquiredFeed(
     well.append(iconOf(gain, () => (node.isConnected ? node : undefined)));
     const name = make('span', gain.name, 'acquired-name');
     if (gain.rarity !== null) name.style.color = RARITIES[gain.rarity]?.colour ?? '';
-    const count = make('b', gain.count > 1 || !gain.item ? `+${gain.count.toLocaleString()}` : '', 'acquired-count');
+    const counted = gain.count > 1 || !gain.item ? `+${gain.count.toLocaleString()}` : '';
+    // A chest's tier shows as four pips, so many lit.
+    const pips = gain.pips && `${'◆'.repeat(gain.pips)}${'◇'.repeat(Math.max(0, 4 - gain.pips))}`;
+    const count = make('b', pips || counted, 'acquired-count');
     node.append(well, name, count);
     feed.append(node);
     const row: Row = { node, count, total: gain.count, timer: 0 };

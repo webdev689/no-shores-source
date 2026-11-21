@@ -54,7 +54,8 @@ test('the fissure tears open as its event begins, narrows as its health says but
       ['lattice-fissure-sealed', 0.5],
     ],
   );
-  assert.deepEqual(fissure(PHASE.failed, 0, 0), [['lattice-fissure-sealed', 1, 0]], "shut, the scar's glow died");
+  assert.deepEqual(fissure(PHASE.won, 0, 0), [['lattice-fissure-sealed', 1, 0]], "sealed, the scar's glow died");
+  assert.deepEqual(fissure(PHASE.failed, 0, 0), [], 'failed, it closes into plain turf, no scar');
 });
 
 test('the growth rises over its time, stands, and is gone once it has sunk', () => {
@@ -146,4 +147,19 @@ test("a shard's spin is wrapped to a turn, however long the page has run", () =>
   const shard = { kind: MARK.shard, id: 4, at: [0, 0, 0] as const, health: 1, state: 1 };
   const [prop] = eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [shard] }, [], () => 0, 1e6);
   assert.ok(prop && prop.turn >= 0 && prop.turn < 2 * Math.PI);
+});
+
+test('a beat flares the fissure, its width eases as the page says, and a raid won topples its banners', () => {
+  const marks = [mark(MARK.fissure, { health: 1 }), mark(MARK.banner, { id: 3 })];
+  const drawn = (phase: number, moments: Parameters<typeof eventProps>[4]) =>
+    eventProps({ phase, ticksLeft: 0, marks }, [], aged(99), 0, moments);
+  const plain = drawn(PHASE.running, undefined);
+  const flared = drawn(PHASE.running, { flare: 1, open: 0.6, topple: 0 });
+  const [fissure, flaring] = [plain[0], flared[0]];
+  assert.ok(fissure && flaring && flaring.glow > fissure.glow, 'flared');
+  assert.equal(flaring?.rise, 0.6, 'as open as the page eases it');
+  const toppled = drawn(PHASE.won, { flare: 0, open: null, topple: 1 }).find((prop) => prop.module === 'tithe-banner');
+  assert.equal(toppled?.lid, Math.PI / 2, 'fallen flat');
+  const banners = plain.filter((prop) => prop.module === 'tithe-banner');
+  assert.equal(propLamps(banners).length, 1, 'a warm lamp at the banner');
 });

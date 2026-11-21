@@ -47,6 +47,16 @@ test('the wave is drawn once its frames have come, scaled, and gone when it is o
   assert.equal(asked[0], wavePath(0));
   assert.ok(waveReady());
   assert.ok(laid(0.1) > 0, 'its frame drawn');
+  const layOf = (backward: boolean, fine: boolean, clock: number) => {
+    const played = new LatticeWaves();
+    played.burst([0, 0, 0], 'red', 4, 0, backward, fine);
+    const out: number[] = [];
+    played.lay(out, EYE, clock);
+    return out;
+  };
+  const end = (WAVE.frames - 0.5) * WAVE.frameS;
+  assert.deepEqual(layOf(true, false, 0), layOf(false, false, end), 'played back, its last frame first');
+  assert.ok(layOf(false, true, 0).length > layOf(false, false, 0).length, 'the fine wave in more, smaller cells');
   const big = new LatticeWaves();
   big.burst([0, 0, 0], 'red', 4, 0);
   const bigOut: number[] = [];

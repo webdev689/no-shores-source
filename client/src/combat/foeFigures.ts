@@ -27,7 +27,7 @@ import {
 } from './lattice.ts';
 import { type LatticeShown, WAVE, latticeWaves, layLatticeLooks, waveFade } from './latticeLooks.ts';
 import { overheadMarks } from './overheads.ts';
-import { MARK } from '../network/publicMessages.ts';
+import { MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
 import { officerName } from './companions.ts';
 
 type Point = readonly [number, number, number];
@@ -42,6 +42,8 @@ export interface FoeFeel {
 }
 
 /** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
+/** How far past the Fissure's ground a foe coming still climbs out of it, metres. */
+const POUR_REACH_M = 10;
 const PLAIN_DISSOLVE_AFTER_S = (FIGHT_TICKS.death + 6) / 60;
 
 /** Foes' figures are numbered down from here, never twice in the page's life: the forge keeps each figure's last card
@@ -90,6 +92,8 @@ export class FoeFigures {
   private readonly changes = new Map<number, number>();
   /** When each Lattice foe died (page seconds): its wave burst then, and its figure fades from then. */
   private readonly dying = new Map<number, number>();
+  /** Whether a frame has drawn the foes yet: those there on the first came before the page did. */
+  private seen = false;
 
   /** Each type's dress, from the rules' roster, is made once. */
   constructor(roster: readonly FoeType[]) {
@@ -165,9 +169,12 @@ export class FoeFigures {
       const dress = plain ? LATTICE_PLAIN : typeDress;
       let placed = this.figures.get(kept.id);
       if (!placed) {
-        const { x, y } = kept.view;
+        const { x, y, z } = kept.view;
         placed = { id: nextFoeId--, x, y, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
         this.figures.set(kept.id, placed);
+        // The Fissure pours its foes out: each that comes while it runs climbs out of its death wave, played back.
+        if (kind && this.seen && pouring(fight.public, x, y))
+          latticeWaves.burst([x, y, z], kind.strain, kind.scale, clock, true);
       }
       // Its moves as its drawing shows them, held back while a blow landing holds it.
       const view = feel ? feel.held(kept.id, kept.view) : kept.view;
@@ -271,12 +278,14 @@ export class FoeFigures {
           dissolve,
           smear: feel?.smear?.(kept.id) ?? null,
           ...(plain && kind && { scale: kind.scale }),
+          ...(own && { crystal: true }),
         });
     }
     const keptBy = [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over, this.lattice];
     for (const kept of [...keptBy, this.changes, this.dying])
       for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));
+    this.seen = true;
     return cards;
   }
 
@@ -371,4 +380,10 @@ export class FoeFigures {
       };
     });
   }
+}
+
+/** Whether a foe coming at (`x`, `y`) pours out of a running Fissure: on its ground or by it. */
+function pouring(event: PublicEvent | null, x: number, y: number): boolean {
+  if (event?.kind !== PUBLIC_KIND.fissure || event.phase !== PUBLIC_PHASE.running) return false;
+  return Math.hypot(x - event.ground[0], y - event.ground[1]) <= event.radius + POUR_REACH_M;
 }

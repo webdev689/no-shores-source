@@ -161,17 +161,17 @@ test('the last minute: the clock urgent; starting soon, counted to the second, a
 });
 
 test('elsewhere on Saltmere: what runs, or else what comes next, in the other zones, from the same schedule', () => {
-  const at = (nextKind: number, minutes: number) =>
+  const when = (nextKind: number, minutes: number) =>
     fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextKind, nextTicks: minutes * 3600 });
   assert.equal(
-    elsewhereOf(at(PUBLIC_KIND.raid, 4), 'saltgrass-downs'),
+    elsewhereOf(when(PUBLIC_KIND.raid, 4), 'saltgrass-downs'),
     'Elsewhere on Saltmere: the Fissure at the Gorse Moor, under way',
   );
   assert.equal(
-    elsewhereOf(at(PUBLIC_KIND.fissure, 11), 'saltgrass-downs'),
+    elsewhereOf(when(PUBLIC_KIND.fissure, 11), 'saltgrass-downs'),
     'Elsewhere on Saltmere: the Fissure at the Water Meadows in 1 min',
   );
-  assert.equal(elsewhereOf(at(PUBLIC_KIND.fissure, 11), 'nowhere'), '');
+  assert.equal(elsewhereOf(when(PUBLIC_KIND.fissure, 11), 'nowhere'), '');
 });
 
 test('a chest waiting is a step of its own, with the time it still lies', () => {
