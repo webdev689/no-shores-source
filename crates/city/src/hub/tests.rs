@@ -219,3 +219,31 @@ fn every_market_keeper_is_reached_from_a_way_point_near_their_stall() {
         assert!(away < 25.0, "the keeper at {:?} is reached from {away} m off", post.at);
     }
 }
+
+#[test]
+fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let names: Vec<&str> = social.areas.iter().map(|area| area.name.as_str()).collect();
+    for name in [
+        "Seaward Walk",
+        "Watch Court",
+        "West Court",
+        "Forge Yard",
+        "Beacon Walk",
+        "Hall of the Arts",
+        "Stair Yard",
+        "Quay",
+    ] {
+        assert!(names.contains(&name), "{name} is named: {names:?}");
+    }
+    let inside = |[x, y]: [f64; 2]| {
+        (0..social.ring.len()).fold(false, |inside, at| {
+            let ([x0, y0], [x1, y1]) = (social.ring[at], social.ring[(at + 1) % social.ring.len()]);
+            inside ^ ((y0 > y) != (y1 > y) && x < x0 + (y - y0) / (y1 - y0) * (x1 - x0))
+        })
+    };
+    for area in &social.areas {
+        assert!(inside(area.at), "{} at {:?} stands in the hub", area.name, area.at);
+    }
+}
