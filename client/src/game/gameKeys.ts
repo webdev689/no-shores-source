@@ -81,7 +81,7 @@ export function listenForControls(game: Controlled): void {
   addEventListener('keydown', (event) => {
     const key = keyNameOf(event);
     if (event.repeat || ui.typing) return;
-    if (playing.flow.mode === 'story') return void story?.key(event.key.toLowerCase(), true);
+    if (playing.flow.mode === 'story') return void story?.key(key, true);
     act((id) => BINDS.now[id].keys.includes(key), key === 'escape');
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
