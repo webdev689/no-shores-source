@@ -241,6 +241,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   and gorse in its beds, no rain indoors, procedural iron, gold, bone, cloth and water, ramps on every city's avenues,
   the fall that kills in a social space, townsfolk on the plan's ways, and the harbour way to the pier with its two
   moored ships. Tested offline with the full check; CI baked its modules byte for byte. Not yet seen on a real GPU.
+- **The held map on land**, on `main` (#128), merged with the owner's yes ("Merge and deploy"), which deploys the page
+  ([[The Held Map Comes to the Social Spaces and Every Land Area]], [[Held Map]]): N anywhere on foot raises it from the
+  player's eyes, only to look at, the world going on; a social space's plan, a patrol area's or an island's ground, in
+  the map's inks and washes, every keeper and site an icon glyph from the game's own devices, and a table that says
+  what each is. Audited by two independent reviewers and every finding fixed with a test. Tested offline with the
+  full check; seen headless at Overlook and the Saltgrass Downs. Not yet seen: an island's map, a real GPU, a fall
+  while it is up.
 
 ## Waiting on the owner
 
@@ -252,6 +259,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   the vitals, the drink on `3`, the green word and its sound, and charges coming back in a fight. Left as named in
   the decision: a heal and a blow judged in the same tick or two can both stand, and dying or rejoining refills all
   three.
+- **The held map on land's fog of war**: on land the sheet has none, so all of a land shows the first time the map is
+  raised there; whether it should be fogged as the sea is.
 - **Overlook's hub's flora**: whether "any flora like bushes or trees" also covers the wall ivy and the cut flowers
   sold at the flower stall and cart, which are the hub's own (the world grows no climber; cut flowers are goods).
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
@@ -698,6 +707,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   built page under `vite preview`, never the dev server, which reloads on an edit; a frame there takes seconds, so a
   fight is seen beginning, not fought through.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
-  map, the charted sea's wash laid while the map is up.
+  map, the charted sea's wash laid while the map is up; on land, the relief read off the worker's exact ground past the
+  2 km the camera keeps (a patrol area's far side reads the 1 km grid), and lakes, which only the 1 km grid holds.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.
