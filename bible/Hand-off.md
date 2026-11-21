@@ -251,6 +251,18 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
+  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]], is on `main`, merged with the owner's yes
+  ("Merge and deploy"), which deploys the page and the rooms. Every sound effect and ambience sound plays the owner's
+  Freesound pick (`content/audio/sounds.json`, 185); the synthesiser behind them is deleted but the four the owner
+  kept (the gains' chimes, a hold's build-up, the menu's refusal, the spoken voice). Each recorded bed and thunder
+  keeps the synthesiser's measured level (`recordings.ts` `BED_LOUD`, `player.ts`). No hyena, no separate wave crash;
+  the ice's creak plays the ice's crack, a ship going down the sea's Breaking wood, the story's rain, gulls and
+  thunder the world's picks. Music: calm pieces now and then everywhere with each place's silences, fourteen new calm
+  pieces (`calm.ts`), no note over B5, no FM partial past 6 kHz, no ringing drum, no pitched swell in a fight, held by
+  tests; the owner kept every piece on the sheet (https://claude.ai/artifact/PBSynEeW37HPSvX89EYUbA). Tested offline:
+  the full check, every song rendered and measured headless, the sheet's players. Not yet: anything heard in a running
+  game or on a real GPU.
 - **#120, three healing charges, is on `main`**, merged with the owner's yes ("Merge and deploy"), which deployed the
   rooms and the page ([[Three Healing Charges, Refilled by Blows and Kills]]): built to the owner's picks, then a
   five-part audit (rules and room, wire and prediction, tests and notes, balance against the roster, a design pass
