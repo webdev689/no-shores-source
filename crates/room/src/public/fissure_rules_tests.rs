@@ -258,9 +258,14 @@ fn a_garrison_foe_never_chases_a_player_standing_on_an_event_grounds_own_square_
     assert!(super::fixture::public(&room).running.is_none(), "between events");
     let home = [FISSURE_AT[0], FISSURE_AT[1] + 45.0, 0.0];
     let on_square = [FISSURE_AT[0], FISSURE_AT[1] + 39.0, 0.0];
-    let placed = |at: [f64; 3]| room.nav.nearest_point_from(home, at).map(|near| apart([near[0], near[1]], [at[0], at[1]]));
+    let placed =
+        |at: [f64; 3]| room.nav.nearest_point_from(home, at).map(|near| apart([near[0], near[1]], [at[0], at[1]]));
     assert!(placed(home).is_some_and(|off| off < 1e-6), "the foe stands on the garrison's part");
-    assert!(room.nav.nearest_point(on_square).is_some_and(|near| apart([near[0], near[1]], [on_square[0], on_square[1]]) < 1e-6));
+    assert!(
+        room.nav
+            .nearest_point(on_square)
+            .is_some_and(|near| apart([near[0], near[1]], [on_square[0], on_square[1]]) < 1e-6)
+    );
     assert!(placed(on_square).is_none_or(|off| off > 1.0), "the player stands on the ground's part alone");
     let husk = ::foes::foe_type(::foes::roster::HUSK).expect("a husk");
     let foe = room.stand_foe(husk, Rank::Major, home, 0.0, None);

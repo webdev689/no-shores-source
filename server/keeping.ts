@@ -160,7 +160,6 @@ export class Keeper {
   }
 }
 
-
 /** Lets a player go from a room: their chests are opened for them, then their character's last save reads it, and
  *  only then does the room let them go. `guarded` runs a call into the room, catching a fault in it. */
 export function partFrom(

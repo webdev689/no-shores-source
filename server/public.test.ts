@@ -135,14 +135,14 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
 test('two scripted players seal a heroic Fissure to the same fingerprint through WebAssembly as natively', async () => {
   const { hash, ended, at } = await play(FISSURE_MINUTE);
   assert.deepEqual(ended, [1, 2, 2], 'the Fissure won, heroic');
-  assert.deepEqual(at, doorNumbers('FISSURE_ENDED'), 'the tick it was won at, the Warden\'s stage and the shards set');
+  assert.deepEqual(at, doorNumbers('FISSURE_ENDED'), "the tick it was won at, the Warden's stage and the shards set");
   assert.equal(hash, FISSURE_HASH);
 });
 
 test('two scripted players hold a heroic raid to the same fingerprint through WebAssembly as natively', async () => {
   const { hash, ended, at } = await play(RAID_MINUTE);
   assert.deepEqual(ended, [2, 2, 2], 'the raid held, heroic');
-  assert.deepEqual(at, doorNumbers('RAID_ENDED'), 'the tick it was held at, Marrow\'s wave and the stores left');
+  assert.deepEqual(at, doorNumbers('RAID_ENDED'), "the tick it was held at, Marrow's wave and the stores left");
   assert.equal(hash, RAID_HASH);
 });
 
