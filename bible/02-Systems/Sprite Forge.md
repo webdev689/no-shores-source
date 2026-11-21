@@ -59,7 +59,8 @@ caster's element. They are published as `@art/arts/birds/<bird>-<view>-<beat>.pn
 
 It draws the weapons large for the weapon rows and gear screens (`weaponart.py`,
 [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): each look a loadout's hand takes, in every metal
-the forge makes it in, 99 in all, its model alone at four times the man's pixels a metre (about 250), level with its
+the forge makes it in, each bow long and short, each shield buckler, round, kite and tower, plain or in a metal,
+the orcish short sword and each gun plain and gilded, 145 in all, its model alone at four times the man's pixels a metre (about 250), level with its
 business end to the right. Each is made, lit, graded (a bow's grip on the armour's leather, as the weapon run's) and
 laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin
 (`dagger_iron_l`) is its right hand's picture.
@@ -108,11 +109,15 @@ python -I tools/sprite-forge/layers.py --body male --anims walk,idle --layers he
 python -I tools/sprite-forge/forgepoints.py --body male
 ```
 
-A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
+A layer takes its set's or metal's own grades by its name (`layers.set_of`), a pair's left twin (`_l`) and a short
+sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 The `forge` workflow renders the Arts' birds and the weapons drawn large and adds them to what is published with the
 repository's Cloudflare token whenever `artbirds.py`, `weaponart.py` or their pinned packages change on main, or when
 a run is asked for on a branch; its log ends with the manifest, which a commit takes into `content/forge/renders.json`.
+A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
+either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
+strip reaches R2 from one. A fresh checkout holds no strips, so every strip of each layer named is drawn.
 It installs only the exact wheels `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git
 credential. The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without
 rendering.

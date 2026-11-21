@@ -202,6 +202,9 @@ export interface FightEvent {
    *  say leaves them out. */
   readonly crit?: boolean;
   readonly element?: number;
+  /** The fighter an Atheric's chain blow came from (the foe a leap or burst came from, the player a bite came from),
+   *  on every event of that blow; 0 or left out for none. */
+  readonly from?: number;
 }
 
 /** A shot in flight, or a gun's ball in the tick it stopped: `age` is the ticks it has flown. A stopped ball's last
@@ -468,6 +471,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
         stroke: event?.stroke() ?? 0,
         crit: event?.crit() ?? false,
         element: event?.element() ?? 0,
+        from: event?.from() ?? 0,
       };
     });
     const shots = Array.from({ length: snapshot.shotsLength() }, (unused, index) => {

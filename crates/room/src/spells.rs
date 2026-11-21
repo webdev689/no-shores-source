@@ -25,7 +25,7 @@ const FLARE_BEHIND: f64 = 3.0;
 /// How far past a body's side, and above and below it, an orb or a bolt strikes it (metres).
 const STRIKE_REACH: f64 = 0.25;
 /// How far above or below its foe's feet a spell along the ground (a cone, a ring, a flight) still reaches it.
-const SPELL_HEIGHT: f64 = 2.0;
+pub(crate) const SPELL_HEIGHT: f64 = 2.0;
 /// Tempest's orbs leave fanned over this arc ahead, rising at this angle (radians).
 const ORB_FAN: f64 = core::f64::consts::FRAC_PI_2;
 const ORB_RISE: f64 = 0.3;
@@ -207,7 +207,7 @@ impl Room {
 
     /// The living foes within `radius` of `at` across the ground and `height` above or below it: a player's spell never
     /// touches an ally on their side.
-    fn foes_near(&self, at: [f64; 3], radius: f64, height: f64) -> Vec<FighterId> {
+    pub(crate) fn foes_near(&self, at: [f64; 3], radius: f64, height: f64) -> Vec<FighterId> {
         let near =
             |body: &Body| libm::hypot(body.x - at[0], body.y - at[1]) <= radius && (body.z - at[2]).abs() <= height;
         let living = self.foes.iter().filter(|(_, foe)| enemy(&foe.fighter));
@@ -262,7 +262,8 @@ impl Room {
             element: 0,
             crit: false,
         };
-        let blow = self.empower_as(blow, foe, Some(Loosed { attack, element, trim: Trim::PLAIN }));
+        let blow =
+            self.empower_as(blow, foe, Some(Loosed { attack, element, trim: Trim::PLAIN, aimed: false, item: None }));
         // A dodge passes a spell whole: none of its harm, nor the status it would give.
         if matches!(self.judge_now(&blow, How::Spell, foe, &then, Some(hand)), Verdict::Dodged { .. }) {
             return None;
