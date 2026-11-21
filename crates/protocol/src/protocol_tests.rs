@@ -406,7 +406,6 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let numbers = unpack(ashore.packed().unwrap().bytes(), crate::land::FOE_NUMBERS, MIDDLE).unwrap();
     // A companion's leader, given and family names, and post (the Lookout), last.
     assert_eq!(numbers[crate::land::FOE_NUMBERS - 4..], [9.0, 2.0, 5.0, 4.0]);
-    assert_eq!((ashore.leader(), ashore.post()), (0, 0), "the fields that once carried them cost nothing");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);

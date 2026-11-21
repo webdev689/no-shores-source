@@ -202,27 +202,27 @@ table Seen {
 // leaves after it. Last, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
 // and family names' places in content/gear/crew.json, and its officer's post (0 First Mate to 4 Lookout), which it is
 // dressed by. All of it crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
-// `foe_numbers`); the fields that once carried it are left at their defaults, so they cost nothing.
+// `foe_numbers`); the fields between `id` and `packed` are kept deprecated only so the table's field numbers hold.
 table Foe {
   id: uint;
-  kind: ubyte;
+  kind: ubyte (deprecated);
   glance: [double] (deprecated);
-  level: ubyte;
-  shield_element: ubyte;
-  shield: double;
-  shield_most: double;
-  type: ubyte;
-  rank: ubyte;
-  faction: ubyte;
-  phase: ubyte;
-  alert: ubyte;
-  expose: uint;
-  charge: uint;
-  charge_immune: uint;
-  leader: uint;
-  given: ubyte;
-  family: ubyte;
-  post: ubyte;
+  level: ubyte (deprecated);
+  shield_element: ubyte (deprecated);
+  shield: double (deprecated);
+  shield_most: double (deprecated);
+  type: ubyte (deprecated);
+  rank: ubyte (deprecated);
+  faction: ubyte (deprecated);
+  phase: ubyte (deprecated);
+  alert: ubyte (deprecated);
+  expose: uint (deprecated);
+  charge: uint (deprecated);
+  charge_immune: uint (deprecated);
+  leader: uint (deprecated);
+  given: ubyte (deprecated);
+  family: ubyte (deprecated);
+  post: ubyte (deprecated);
   packed: [ubyte];
   // In a snapshot built on another that held this foe, `packed` holds only the numbers that changed since, a bit set
   // here for each; the rest stand as they stood.

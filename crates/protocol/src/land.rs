@@ -138,7 +138,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
             let (bytes, bits) = changes_of(&quantized(&foe_numbers(foe), snapshot.middle), was);
             let packed = Some(builder.create_vector(&bytes));
             let changed = (!bits.is_empty()).then(|| builder.create_vector(&bits));
-            let args = messages::FoeArgs { id: foe.foe, packed, changed, ..Default::default() };
+            let args = messages::FoeArgs { id: foe.foe, packed, changed };
             messages::Foe::create(&mut builder, &args)
         })
         .collect();

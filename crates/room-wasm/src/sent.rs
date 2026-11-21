@@ -70,7 +70,9 @@ impl Sent {
         if self.now.as_ref().is_some_and(|now| now.tick == tick) {
             return;
         }
-        self.events.extend(room.take_events());
+        // An event the room told between its ticks carries the tick before; it is sent with this one, so a page that
+        // showed that tick still hears it.
+        self.events.extend(room.take_events().into_iter().map(|event| Event { tick: event.tick.max(tick), ..event }));
         self.dresses.extend(room.take_dress_changes().into_iter().map(|(player, dress)| (tick, player, dress)));
         self.lines.extend(room.take_lines().into_iter().map(|line| (tick, line)));
         let now = Now {
@@ -106,7 +108,8 @@ impl Sent {
         let middle = self.middle;
         let (Some(now), Some(latest)) = (self.now.as_ref(), self.held.back()) else { return Vec::new() };
         let (shown, joined) = room.heard(viewer).map_or((0, now.tick), |(_, shown, joined)| (shown, joined));
-        let base = self.held.iter().find(|held| held.tick == shown && shown < now.tick);
+        // Tick 0 is a screen that showed nothing yet, never a base, even where a snapshot was taken before the first tick.
+        let base = self.held.iter().find(|held| held.tick == shown && shown > 0 && shown < now.tick);
         let changed = |was: Option<&Vec<u64>>, is: Option<&Vec<u64>>| base.is_none() || was != is;
         let looked = |id: &PlayerId| base.is_none_or(|held| held.looks.get(id) != latest.looks.get(id));
         let players: Vec<Seen> = now
