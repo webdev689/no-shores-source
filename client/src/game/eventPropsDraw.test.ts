@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
-import { MATERIALS, packLips } from './eventPropsDraw.ts';
+import { EventPropsDraw, MATERIALS, packLips } from './eventPropsDraw.ts';
+import type { Gpu } from '../gpu.ts';
 
 test("the fissure's lips pack station by station along its x, the lower lip's y under the higher's", () => {
   const fissure = moduleNumber('lattice-fissure');
@@ -35,4 +36,29 @@ test("the drawer's materials are the modules' kit's, in its order", () => {
     names(listed).flatMap((name) => (name === '*' ? names(cloths) : [name])),
     [...MATERIALS],
   );
+});
+
+test('the drawer makes its pipelines only once it has props to draw, not as the game boots', () => {
+  const made: string[] = [];
+  // A device whose every call answers another such stand-in, noting each pipeline and shader made.
+  const stand: object = new Proxy(function stub() {}, {
+    get: (_target, key) => (key === 'then' ? undefined : key === Symbol.toPrimitive ? () => 0 : stand),
+    apply: () => stand,
+  });
+  const device = new Proxy(
+    {},
+    {
+      get: (_target, key) =>
+        key === 'createRenderPipeline' || key === 'createShaderModule' ? () => (made.push(String(key)), stand) : stand,
+    },
+  );
+  const fetched = globalThis.fetch;
+  globalThis.fetch = () => new Promise(() => undefined);
+  try {
+    const drawer = new EventPropsDraw({ device, format: 'bgra8unorm' } as unknown as Gpu);
+    drawer.set([]);
+    assert.deepEqual(made, [], 'none at boot');
+  } finally {
+    globalThis.fetch = fetched;
+  }
 });

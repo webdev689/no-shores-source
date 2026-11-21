@@ -443,3 +443,37 @@ test('the crosshair is drawn at the view’s middle, red while it rests on a foe
   assert.match(reticleKey([foeAt(2, 'Aside', 8, 4)], pistolet) ?? '', /^reticle pistolet plain/);
   assert.equal(reticleKey([], null), null);
 });
+
+test('in a short, narrow view (844 by 390) a running banner stands clear of the crosshair at the middle', () => {
+  const [width, height] = [844, 390];
+  const banner = {
+    tone: 'heroic' as const,
+    kicker: 'Heroic public event',
+    title: 'The Fissure',
+    place: 'Saltgrass Downs',
+    clock: '4:12',
+    objective: 'Store under attack · Carry shards to the fissure to seal it',
+    bar: { share: 0.25, label: '3 / 12 shards' },
+    heroic: { text: 'Break the growth', clock: '0:10', met: false },
+    bonus: { text: 'Bonus: seal it before 4:00', state: 'holds' as const },
+  };
+  const matrix = viewProjection(
+    { targetX: 0, targetY: 0, targetZ: 1.7, yaw: 0, pitch: 0, distance: 0.5 },
+    width / height,
+  );
+  const hud = new Hud();
+  const frame = bare({ width, height, matrix, public: { banner, beat: null, places: [], stores: [] } });
+  hud.update(frame, 1);
+  hud.update(frame, 1);
+  const laid = laidOf(drawn(hud, width, height), width, height);
+  const band = laid.find((each) => each.node.picture?.key === 'public banner band')?.box;
+  assert.ok(band, 'the banner is laid');
+  assert.ok(
+    band.y + band.height < height / 2 - 8,
+    `its foot at ${band.y + band.height}, the crosshair at ${height / 2}`,
+  );
+  const said = laid.flatMap((each) => (each.node.text ? [each.node.text.words] : []));
+  for (const words of ['The Fissure', '4:12', 'Break the growth 0:10', '3 / 12 shards'])
+    assert.ok(said.includes(words), words);
+  assert.ok(!said.includes('Bonus: seal it before 4:00'), 'no bonus line in a short view');
+});

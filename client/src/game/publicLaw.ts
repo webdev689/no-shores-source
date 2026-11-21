@@ -196,7 +196,7 @@ export function chestQuestOf(left: number, zone: string, kind: number): Quest {
   return {
     name: NAMES[kind] ?? 'Public event',
     task: placeOf(zone, kind),
-    steps: [{ text: `Open your chest (${shown})` }],
+    steps: [{ text: 'Open your chest', clock: shown }],
   };
 }
 

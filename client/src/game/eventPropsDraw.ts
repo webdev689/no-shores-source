@@ -9,7 +9,7 @@ import type { Drawer } from './scene.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { LIGHT_DEPTH, LIGHT_TARGET, LIGHT_WGSL } from '../combat/lightLayer.ts';
 import { SHADOW_CAST_WGSL, SHADOW_WGSL, ShadowMap, shadowLayouts } from '../shadow.ts';
-import { EVENT_LAMPS } from '../sky/lamps.ts';
+import { EVENT_LAMPS, type LampPlace } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -61,6 +61,9 @@ const STRIDE = 20;
  *  opens, its module's height, and where its lips start in the lips' list and how many stations they have; whether
  *  its canvas is grey. */
 const PROP_FLOATS = 16;
+/** No lamps and nothing drawn, shared, so a place with no props makes nothing a frame. */
+const NO_LAMPS: readonly LampPlace[] = [];
+const NONE_DRAWN: readonly [EventProp, Made, number][] = [];
 /** The props whose canvas is the Tithe's unmarked grey, as its sails are; every other canvas is oiled tan. */
 const GREY_CANVAS: ReadonlySet<PropModule> = new Set(['tithe-banner']);
 
@@ -342,10 +345,9 @@ export function packLips(module: number): Float32Array | null {
 /** The public events' props, drawn as one of the scene's drawers from the list `set` hands it each frame. */
 export class EventPropsDraw implements Drawer {
   private readonly gpu: Gpu;
-  private readonly draw: GPURenderPipeline;
-  private readonly chasm: GPURenderPipeline;
-  private readonly cast: GPURenderPipeline;
-  private readonly light: GPURenderPipeline;
+  /** The pipelines, made the first frame there are props to draw: most of the game's places have none. */
+  private pipes: Record<'draw' | 'chasm' | 'cast' | 'light', GPURenderPipeline> | null = null;
+  private readonly viewLayout: GPUBindGroupLayout;
   private readonly view: GPUBuffer;
   private readonly viewGroup: GPUBindGroup;
   private readonly propsLayout: GPUBindGroupLayout;
@@ -358,19 +360,17 @@ export class EventPropsDraw implements Drawer {
   private props: readonly EventProp[] = [];
   /** The table's rows as written, kept between frames so a frame allocates none. */
   private rows = new Float32Array(16 * PROP_FLOATS);
+  /** The props drawn this frame, and those split by whether they open, kept between frames likewise. */
+  private readonly drawn: [EventProp, Made, number][] = [];
+  private readonly opening: [EventProp, Made, number][] = [];
+  private readonly plain: [EventProp, Made, number][] = [];
   private ready = false;
   /** The frame the table was last written for, and the props it holds, each with its row. */
-  private written: {
-    fromEye: Float32Array;
-    props: readonly EventProp[];
-    drawn: [EventProp, Made, number][];
-  } | null = null;
+  private written: { fromEye: Float32Array | null; props: readonly EventProp[] } = { fromEye: null, props: [] };
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     const { device } = gpu;
-    const module = device.createShaderModule({ code: PROPS_SHADER });
-    const castModule = device.createShaderModule({ code: PROPS_CAST_SHADER });
     const viewLayout = device.createBindGroupLayout({
       entries: [{ binding: 0, visibility: SHADER_STAGE.vertex | SHADER_STAGE.fragment, buffer: {} }],
     });
@@ -388,6 +388,24 @@ export class EventPropsDraw implements Drawer {
       size: LIPS_MOST * 16,
       usage: BUFFER_USAGE.storage | BUFFER_USAGE.copyDestination,
     });
+    this.viewLayout = viewLayout;
+    this.view = device.createBuffer({ size: 64, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
+    this.viewGroup = device.createBindGroup({
+      layout: viewLayout,
+      entries: [{ binding: 0, resource: { buffer: this.view } }],
+    });
+    void loadModules().then(() => {
+      this.ready = true;
+    });
+  }
+
+  /** The pipelines, made once on the first frame that draws a prop. */
+  private pipelines(): NonNullable<EventPropsDraw['pipes']> {
+    if (this.pipes) return this.pipes;
+    const { device } = this.gpu;
+    const { viewLayout } = this;
+    const module = device.createShaderModule({ code: PROPS_SHADER });
+    const castModule = device.createShaderModule({ code: PROPS_CAST_SHADER });
     const shadows = shadowLayouts(device);
     const sky = skyUniformFor(device);
     const layout = device.createPipelineLayout({
@@ -399,49 +417,43 @@ export class EventPropsDraw implements Drawer {
       depthCompare: compare,
     });
     const vertex = { module, entryPoint: 'prop_vertex', buffers: [VERTEX_LAYOUT] };
-    this.draw = device.createRenderPipeline({
+    const draw = device.createRenderPipeline({
       layout,
       vertex,
-      fragment: { module, entryPoint: 'prop_fragment', targets: [{ format: gpu.format }] },
+      fragment: { module, entryPoint: 'prop_fragment', targets: [{ format: this.gpu.format }] },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: depth(true, REVERSED_DEPTH.compare),
       multisample: { count: SAMPLES },
     });
-    this.chasm = device.createRenderPipeline({
+    const chasm = device.createRenderPipeline({
       layout,
       vertex,
-      fragment: { module, entryPoint: 'chasm_fragment', targets: [{ format: gpu.format }] },
+      fragment: { module, entryPoint: 'chasm_fragment', targets: [{ format: this.gpu.format }] },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: depth(true, REVERSED_DEPTH.compare),
       multisample: { count: SAMPLES },
     });
-    this.light = device.createRenderPipeline({
+    const light = device.createRenderPipeline({
       layout,
       vertex,
       fragment: { module, entryPoint: 'light_fragment', targets: [LIGHT_TARGET] },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: LIGHT_DEPTH,
     });
-    this.cast = device.createRenderPipeline({
+    const cast = device.createRenderPipeline({
       layout: device.createPipelineLayout({ bindGroupLayouts: [viewLayout, shadows.caster, this.propsLayout] }),
       vertex: { module: castModule, entryPoint: 'cast_vertex', buffers: [VERTEX_LAYOUT] },
       primitive: { topology: 'triangle-list', cullMode: 'none' },
       depthStencil: { format: 'depth32float', depthWriteEnabled: true, depthCompare: 'less' },
     });
-    this.view = device.createBuffer({ size: 64, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
-    this.viewGroup = device.createBindGroup({
-      layout: viewLayout,
-      entries: [{ binding: 0, resource: { buffer: this.view } }],
-    });
-    void loadModules().then(() => {
-      this.ready = true;
-    });
+    this.pipes = { draw, chasm, cast, light };
+    return this.pipes;
   }
 
   /** The props the next frames draw (eventProps.ts), and the lamps their crystal lights. */
   set(props: readonly EventProp[]): void {
     this.props = props;
-    EVENT_LAMPS.current = propLamps(props);
+    EVENT_LAMPS.current = props.length > 0 ? propLamps(props) : NO_LAMPS;
   }
 
   /** A module made ready to draw, the first time it is drawn after its meshes have come; none before. */
@@ -483,9 +495,9 @@ export class EventPropsDraw implements Drawer {
   /** Writes the view and the props' table for a frame seen from `eye`, and answers the props ready to draw, each with
    *  its row in the table. */
   private prepared(fromEye: Float32Array, eye: readonly [number, number, number]): [EventProp, Made, number][] {
-    if (this.written?.fromEye === fromEye && this.written.props === this.props) return this.written.drawn;
-    const drawn: [EventProp, Made, number][] = [];
-    this.written = { fromEye, props: this.props, drawn };
+    const { written, drawn } = this;
+    if (written.fromEye === fromEye && written.props === this.props) return drawn;
+    [written.fromEye, written.props, drawn.length] = [fromEye, this.props, 0];
     for (const prop of this.props) {
       const made = this.madeOf(prop.module);
       if (made) drawn.push([prop, made, drawn.length]);
@@ -547,9 +559,10 @@ export class EventPropsDraw implements Drawer {
   ): void {
     const drawn = this.prepared(fromEye, shot.eye);
     if (drawn.length === 0 || !this.tableGroup) return;
-    pass.setPipeline(this.cast);
+    const { cast } = this.pipelines();
+    pass.setPipeline(cast);
     pass.setBindGroup(0, this.viewGroup);
-    pass.setBindGroup(1, shadow.casterGroup(this.cast));
+    pass.setBindGroup(1, shadow.casterGroup(cast));
     pass.setBindGroup(2, this.tableGroup);
     this.drawEach(pass, drawn);
   }
@@ -566,10 +579,13 @@ export class EventPropsDraw implements Drawer {
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(2, this.tableGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
-    const [opening, plain] = [drawn.filter(([, made]) => made.lips), drawn.filter(([, made]) => !made.lips)];
+    const [opening, plain] = [this.opening, this.plain];
+    [opening.length, plain.length] = [0, 0];
+    for (const each of drawn) (each[1].lips ? opening : plain).push(each);
+    const { draw, chasm } = this.pipelines();
     for (const [pipeline, some] of [
-      [this.draw, plain],
-      [this.chasm, opening],
+      [draw, plain],
+      [chasm, opening],
     ] as const) {
       if (some.length === 0) continue;
       pass.setPipeline(pipeline);
@@ -579,13 +595,14 @@ export class EventPropsDraw implements Drawer {
   }
 
   lightInto(pass: GPURenderPassEncoder, fromEye: Float32Array): void {
-    const drawn = this.written?.fromEye === fromEye ? this.written.drawn : [];
+    const drawn = this.written.fromEye === fromEye ? this.drawn : NONE_DRAWN;
     if (drawn.length === 0 || !this.tableGroup) return;
-    pass.setPipeline(this.light);
+    const { light } = this.pipelines();
+    pass.setPipeline(light);
     pass.setBindGroup(0, this.viewGroup);
     pass.setBindGroup(2, this.tableGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
-    pass.setBindGroup(1, ShadowMap.none(this.gpu).receiverGroup(this.light));
+    pass.setBindGroup(1, ShadowMap.none(this.gpu).receiverGroup(light));
     this.drawEach(pass, drawn, true);
   }
 }

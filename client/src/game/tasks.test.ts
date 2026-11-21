@@ -95,3 +95,26 @@ test('two quests read alike only when every word, count, key and tick is the sam
     'a key gone',
   );
 });
+
+test('a step’s ticking clock is shown and drawn afresh, but never said aloud', () => {
+  const said: string[] = [];
+  const page = globalThis as unknown as Record<string, unknown>;
+  const chest = (clock: string): Quest => ({
+    name: 'The Fissure',
+    task: 'The High Downs',
+    steps: [{ text: 'Open your chest', clock }],
+  });
+  try {
+    page['document'] = { ariaNotify: (words: string) => said.push(words) };
+    const tracker = new TaskTracker();
+    tracker.show(chest('1:49'), 0);
+    tracker.show(chest('1:48'), 1);
+    tracker.show(chest('1:47'), 2);
+    assert.deepEqual(said, ['The Fissure: The High Downs']);
+    assert.ok(!sameQuest(chest('1:49'), chest('1:48')), 'redrawn as it ticks');
+    const words = JSON.stringify(tracker.node({ width: 1280, height: 720 }, 3, true));
+    assert.ok(words.includes('Open your chest (1:47)'), words);
+  } finally {
+    delete page['document'];
+  }
+});

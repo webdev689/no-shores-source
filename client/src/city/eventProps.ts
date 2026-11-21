@@ -128,14 +128,15 @@ export type Ager = (kind: number, id: number, state: number) => number;
  *  first frame the room's event is seen came before the page did: they stand as long done, so no beat is played
  *  again. A mark not seen for a frame is forgotten. */
 export class StateClock {
-  private readonly since = new Map<string, { state: number; at: number }>();
-  private seen = new Set<string>();
+  /** Keyed by kind and id as one number (kind × 2³²+ id), so a frame makes no key strings. */
+  private readonly since = new Map<number, { state: number; at: number }>();
+  private readonly seen = new Set<number>();
   private begun = false;
 
   /** The clock for one frame at `seconds`: call `age` for each mark drawn, then `done`. */
   ager(seconds: number): Ager {
     return (kind, id, state) => {
-      const key = `${kind}:${id}`;
+      const key = kind * 2 ** 32 + id;
       this.seen.add(key);
       const known = this.since.get(key);
       if (known?.state === state) return seconds - known.at;
@@ -148,7 +149,7 @@ export class StateClock {
   done(seen = this.seen.size > 0): void {
     for (const key of this.since.keys()) if (!this.seen.has(key)) this.since.delete(key);
     this.begun ||= seen;
-    this.seen = new Set();
+    this.seen.clear();
   }
 }
 

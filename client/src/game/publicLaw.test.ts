@@ -179,7 +179,7 @@ test('a chest waiting is a step of its own, with the time it still lies', () => 
   assert.deepEqual(chestQuestOf(108, 'saltgrass-downs', PUBLIC_KIND.raid), {
     name: 'The Grey Tithe Raid',
     task: 'Saltgrass',
-    steps: [{ text: 'Open your chest (1:48)' }],
+    steps: [{ text: 'Open your chest', clock: '1:48' }],
   });
 });
 

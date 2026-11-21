@@ -67,7 +67,7 @@ const HEROIC_WORDS = '#ffb27a';
 const URGENT = '#e0483c';
 
 /** The banner's width at most, CSS pixels, or this share of a narrower view; the slide's and the flares' seconds. */
-const WIDTH = { most: 440, share: 0.76 } as const;
+const WIDTH = { most: 440, share: 0.75 } as const;
 const SLIDE_S = 0.45;
 const FLARE_S = 1.2;
 const CHANCE_S = 1.6;
@@ -119,8 +119,9 @@ export class PublicBanner {
   }
 
   /** The banner `room` CSS pixels of view wide at `zoom`: a dark band fading to its right, its tone down its left
-   *  edge, words on the face's grid; between events one line. */
-  node(room: number, zoom: number): Child {
+   *  edge, words on the face's grid; between events one line. In a `short` view, two lines that stand clear of the
+   *  crosshair: the name, the heroic task and the clock, then the objective and its count. */
+  node(room: number, zoom: number, short = false): Child {
     const banner = this.shown;
     if (!banner) return null;
     const tone = TONE_COLOURS[banner.tone];
@@ -132,19 +133,26 @@ export class PublicBanner {
       ...more,
     });
     const next = banner.tone === 'next';
+    const clockColour = banner.urgent ? URGENT : TONES.word;
+    const titleColour = banner.tone === 'won' || banner.tone === 'failed' ? tone : TONES.word;
     const clock = line({
       words: banner.clock,
       size: next ? zoom : 2 * zoom,
-      colour: banner.urgent ? URGENT : TONES.word,
+      colour: clockColour,
       wrap: false,
     });
     const kicker = line({ words: banner.kicker.toUpperCase(), colour: tone, tracking: 3.5, wrap: false });
     const title = line({
       words: banner.title,
       size: next ? zoom : 2 * zoom,
-      colour: banner.tone === 'won' || banner.tone === 'failed' ? tone : TONES.word,
+      colour: titleColour,
     });
     const urgentDark = !still && !!banner.urgent && blinkDark(this.time, 1);
+    const heroicWords = (heroic: NonNullable<Banner['heroic']>) =>
+      line({
+        words: heroic.met ? heroic.text.toUpperCase() : `${heroic.text} ${heroic.clock}`,
+        colour: heroic.met ? HEROIC : HEROIC_WORDS,
+      });
     const rows: Child[] = next
       ? [
           {
@@ -156,33 +164,59 @@ export class PublicBanner {
           },
           !!banner.elsewhere && line({ words: banner.elsewhere, colour: TONES.wordDim }),
         ]
-      : [
-          {
-            direction: 'row',
-            gap: 12 * zoom,
-            alignY: 'end',
-            children: [kicker, { width: 'grow' }, { ...clock, opacity: urgentDark ? 0.35 : 1 }],
-          },
-          {
-            direction: 'row',
-            wrap: true,
-            gap: 10 * zoom,
-            alignY: 'end',
-            children: [
-              title,
-              banner.place !== '' && line({ words: banner.place, colour: TONES.wordDim, tracking: 1.8 }),
-            ],
-          },
-          banner.objective !== '' && line({ words: banner.objective }, { padding: [3 * zoom, 0, 0, 0] }),
-          banner.bar && this.barNode(banner.bar.label, tone, zoom),
-          banner.heroic && this.heroicNode(banner.heroic, zoom, still),
-          banner.bonus && bonusNode(banner.bonus, tone, zoom),
-          !!banner.elsewhere && line({ words: banner.elsewhere, colour: TONES.wordDim }),
-        ];
+      : short
+        ? [
+            {
+              direction: 'row',
+              width: 'grow',
+              gap: 10 * zoom,
+              alignY: 'end',
+              children: [
+                line({ words: banner.title, colour: titleColour }),
+                banner.heroic && heroicWords(banner.heroic),
+                { width: 'grow' },
+                line({ words: banner.clock, colour: clockColour, wrap: false }, { opacity: urgentDark ? 0.35 : 1 }),
+              ],
+            },
+            {
+              direction: 'row',
+              width: 'grow',
+              gap: 10 * zoom,
+              children: [
+                line({ words: banner.objective }),
+                { width: 'grow' },
+                banner.bar && line({ words: banner.bar.label, colour: tone }),
+              ],
+            },
+          ]
+        : [
+            {
+              direction: 'row',
+              gap: 12 * zoom,
+              alignY: 'end',
+              children: [kicker, { width: 'grow' }, { ...clock, opacity: urgentDark ? 0.35 : 1 }],
+            },
+            {
+              direction: 'row',
+              wrap: true,
+              gap: 10 * zoom,
+              alignY: 'end',
+              children: [
+                title,
+                banner.place !== '' && line({ words: banner.place, colour: TONES.wordDim, tracking: 1.8 }),
+              ],
+            },
+            banner.objective !== '' && line({ words: banner.objective }, { padding: [3 * zoom, 0, 0, 0] }),
+            banner.bar && this.barNode(banner.bar.label, tone, zoom),
+            banner.heroic && this.heroicNode(banner.heroic, zoom, still),
+            banner.bonus && bonusNode(banner.bonus, tone, zoom),
+            !!banner.elsewhere && line({ words: banner.elsewhere, colour: TONES.wordDim }),
+          ];
     return {
-      width: Math.round(Math.min(WIDTH.most, WIDTH.share * room) * zoom),
+      // Short, its two lines take the whole share of the view, so neither wraps.
+      width: Math.round((short && !next ? WIDTH.share * room : Math.min(WIDTH.most, WIDTH.share * room)) * zoom),
       direction: 'column',
-      padding: next ? [4 * zoom, 12 * zoom, 4 * zoom, 10 * zoom] : [6 * zoom, 12 * zoom, 7 * zoom, 14 * zoom],
+      padding: next || short ? [4 * zoom, 12 * zoom, 4 * zoom, 10 * zoom] : [6 * zoom, 12 * zoom, 7 * zoom, 14 * zoom],
       outline: { width: zoom, colour: this.flare(tone, since, still) ?? TONES.outline },
       opacity: slid,
       offset: [0, Math.round(-10 * zoom * (1 - slid))],

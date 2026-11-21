@@ -1,5 +1,5 @@
 // The fissure's crystal spires as the room stands them while the Fissure runs (crates/room/src/public/fissure.rs
-// SPIRES, the lattice-fissure module's parts): a block each, square to the grid at the fissure's mark, on the ground
+// SPIRES, the lattice-fissure module's parts): a block each, square to the grid at the event's ground, on the ground
 // under its middle and sunk a little into it. The page's own movement and fight stand the same blocks beside the
 // place's own, so what the page predicts a body does at a spire is what the room does.
 import { moduleNumber, moduleParts } from '../city/modules.ts';
@@ -43,14 +43,15 @@ export class SpireCourse {
 
   /** Stands the spires as `event` has its fissure open (running, its mark there), or takes them away; nothing for a
    *  frame with no word from the room. */
+  /** Stands the spires as `event` has its fissure open (running, its mark there) at its ground's middle, in the
+   *  room's own f64, or takes them away, as for a frame with no word from the room (lost, or not yet come). */
   frame(event: PublicEvent | null, floor: (x: number, y: number) => number): void {
-    if (!event) return;
-    const open = event.kind === PUBLIC_KIND.fissure && event.phase === PUBLIC_PHASE.running;
-    const mark = open ? event.marks.find((each) => each.kind === MARK.fissure) : undefined;
-    const standing = mark ? `${mark.at[0]},${mark.at[1]}` : '';
+    const open = event?.kind === PUBLIC_KIND.fissure && event.phase === PUBLIC_PHASE.running;
+    const [x, y] = event?.ground ?? [0, 0];
+    const standing = open && event.marks.some((each) => each.kind === MARK.fissure) ? `${x},${y}` : '';
     if (standing === this.standing) return;
     this.standing = standing;
-    const spires = mark ? spireBlocks(mark.at[0], mark.at[1], floor) : [];
+    const spires = standing ? spireBlocks(x, y, floor) : [];
     for (const course of this.courses) course.setCourse([...this.boxes, ...spires]);
   }
 }

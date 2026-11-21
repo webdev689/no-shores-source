@@ -31,8 +31,20 @@ test('the banner shows the event’s words, its heroic window and its bonus, in 
     '3 / 12 shards',
     'Break the growth',
     '0:10',
+    'Bonus: seal it with half the time left',
   ])
     assert.ok(words.includes(each), each);
+  const bonus = allOf(node).find((each) =>
+    each.children?.some((child) => child && child.text?.words === 'Bonus: seal it with half the time left'),
+  );
+  const struck = bonus?.children?.find((child) => child && !child.text);
+  assert.ok(struck && struck.fill && struck.height === 1 && struck.width === 'grow', 'a lost bonus is struck through');
+  const held = new PublicBanner();
+  held.update({ ...shown, bonus: { text: 'Bonus: seal it with half the time left', state: 'holds' } }, 1);
+  const kept = allOf(held.node(1280, 1)).find((each) =>
+    each.children?.some((child) => child && child.text?.words === 'Bonus: seal it with half the time left'),
+  );
+  assert.equal(kept?.children?.filter(Boolean).length, 1, 'a bonus still held is not');
   assert.equal(banner.tone, 'running');
   assert.ok(
     allOf(node).some((each) => each.fill === TONE_COLOURS.running),
@@ -42,7 +54,7 @@ test('the banner shows the event’s words, its heroic window and its bonus, in 
   banner.update(shown, 1, null);
   assert.equal((banner.node(1280, 1) as Node).opacity, 1, 'in place once slid');
   assert.equal((banner.node(1280, 1) as Node).width, 440, 'at most 440 px wide');
-  assert.equal((banner.node(400, 1) as Node).width, 304, 'three quarters of a narrow view');
+  assert.equal((banner.node(400, 1) as Node).width, 300, 'three quarters of a narrow view');
   banner.update(null, 0.016);
   assert.equal(banner.node(1280, 1), null);
   assert.equal(banner.tone, null);
@@ -70,11 +82,14 @@ test('the banner reads out its beats, and never its ticking clocks', () => {
   const said: string[] = [];
   const page = globalThis as unknown as Record<string, unknown>;
   page['document'] = { ariaNotify: (words: string) => said.push(words) };
-  const banner = new PublicBanner();
-  banner.update(shown, 0.016, 'begun');
-  banner.update({ ...shown, clock: '0:59' }, 0.016);
-  banner.update({ ...shown, clock: '0:58' }, 0.016, 'heroic');
-  delete page['document'];
+  try {
+    const banner = new PublicBanner();
+    banner.update(shown, 0.016, 'begun');
+    banner.update({ ...shown, clock: '0:59' }, 0.016);
+    banner.update({ ...shown, clock: '0:58' }, 0.016, 'heroic');
+  } finally {
+    delete page['document'];
+  }
   assert.deepEqual(said, [
     'Public event: The Fissure. Carry shards to the fissure to seal it',
     'Public event: The Fissure. Break the growth',

@@ -43,6 +43,14 @@ const happened = (kind: number, striker = 0, defender = 0) => ({
   amount: 0,
   stroke: 0,
 });
+/** A view whose wall time keeps with its frame clock, as on a page running at full speed. */
+const atPace = (zone: string, feel?: { tremor(trauma: number): void }) => {
+  let wall = 0;
+  const view = new PublicView(zone, feel, null, () => wall);
+  const frame = view.frame.bind(view);
+  view.frame = (...asked) => ((wall = asked[4]), frame(...asked));
+  return view;
+};
 const chest = (id: number, spot: readonly [number, number, number], tier = 3): GearDrop =>
   ({ id, kind: DROPPED.chest, at: spot, from: spot, flying: 0, tier, rarity: 0, slot: 0 }) as unknown as GearDrop;
 
@@ -201,22 +209,47 @@ test('the heroic task met is heard where the growth or the tithe-taker stood', (
 });
 
 test('beats kept while the tab was hidden: the last shows, their sounds and stings are dropped', () => {
-  const view = new PublicView('saltgrass-downs');
+  // The game's frame clock moves at most 0.1 s a frame (gameFrame), however long the tab was hidden; the wall's runs on.
+  let wall = 0;
+  const view = new PublicView('saltgrass-downs', undefined, null, () => wall);
   view.frame(fissure([]), [], [], bodies(), 0, [], () => 0);
+  wall = 40;
   const back = view.frame(
     fissure([]),
     [happened(EVENT.publicBegun), happened(EVENT.shardSet), happened(EVENT.publicWon)],
     [],
     bodies(),
-    40,
+    0.1,
     [],
     () => 0,
   );
   assert.equal(back.shown?.beat, 'won');
   assert.deepEqual(back.sounds, []);
   assert.equal(back.sting, null);
-  const next = view.frame(fissure([]), [happened(EVENT.shardSet)], [], bodies(), 40.02, [], () => 0);
+  wall = 40.02;
+  const next = view.frame(fissure([]), [happened(EVENT.shardSet)], [], bodies(), 0.12, [], () => 0);
   assert.equal(next.sounds.length, 1, 'heard again once frames run');
+});
+
+test('a slow page counts the next event and a chest on the wall’s time, not its capped frame clock', () => {
+  let wall = 0;
+  const view = new PublicView('gullwing-vale', undefined, null, () => wall);
+  const waiting = { ...raid([]), kind: 0, phase: 0, radius: 0, nextTicks: 3600, nextGround: [40, 0, 0] as const };
+  view.frame(waiting, [], [], bodies(), 0, [], () => 0);
+  // Ten frames at 1 s each, the game's clock capped at 0.1 s a frame.
+  let shown = null as ReturnType<PublicView['frame']> | null;
+  for (let frame = 1; frame <= 10; frame += 1) {
+    wall = frame;
+    shown = view.frame(waiting, [], [], bodies(), frame * 0.1, [], () => 0);
+  }
+  assert.equal(shown?.shown?.banner?.clock, '0:50');
+  const lying = [chest(5, [1, 0, 0], 1)];
+  view.frame(raid([], 2), [], lying, bodies(), 1.1, [], () => 0);
+  for (let frame = 1; frame <= 12; frame += 1) {
+    wall = 10 + frame;
+    shown = view.frame(raid([], 2), [], lying, bodies(), 1.1 + frame * 0.1, [], () => 0);
+  }
+  assert.equal(shown?.quest?.steps[0]?.clock, '1:48');
 });
 
 test('with no event (its room lost) no chest is drawn, and E opens none', () => {
@@ -251,7 +284,7 @@ test('the heroic chance opens: an orange beat, its call in the banner, heard at 
 });
 
 test('the next event a minute off: counted to the second, a beat, and a beacon over its ground', () => {
-  const view = new PublicView('gullwing-vale');
+  const view = atPace('gullwing-vale');
   const waiting = (nextTicks: number) => ({
     ...raid([]),
     kind: 0,
@@ -291,14 +324,14 @@ test('a shard set arcs into the crack, the ground trembles, and the player carry
 });
 
 test('a chest thumps in, is marked till opened, and the tracker counts the time it lies', () => {
-  const view = new PublicView('saltgrass-downs');
+  const view = atPace('saltgrass-downs');
   view.frame(raid([], 2), [], [], bodies(), 0, [], () => 0);
   const lying = [chest(5, [1, 0, 0], 1)];
   const come = view.frame(raid([], 2), [], lying, bodies(), 1, [], () => 0);
   assert.deepEqual(come.sounds, [{ cue: 'drop.land', at: [1, 0, 0] }]);
   assert.ok(come.shown?.places.some((place) => place.kind === 'chest'));
   const later = view.frame(raid([], 2), [], lying, bodies(), 13, [], () => 0);
-  assert.equal(later.quest?.steps[0]?.text, 'Open your chest (1:48)');
+  assert.equal(later.quest?.steps[0]?.clock, '1:48');
 });
 
 test('on its ground a running event holds the music at tension, and at its peak in the last minute', () => {
@@ -324,13 +357,13 @@ test("the Fissure's stage splits the ground again, and the Warden's climbs out w
   );
   assert.deepEqual(
     warden.sounds.map((each) => each.cue),
-    ['story.deep', 'story.crash'],
+    ['amb.ice.crack', 'story.crash'],
   );
 });
 
 test('a room lost a while, and back: no chest thumps in again, no banner is driven in again', () => {
   const shook: number[] = [];
-  const view = new PublicView('saltgrass-downs', { tremor: (trauma) => void shook.push(trauma) });
+  const view = atPace('saltgrass-downs', { tremor: (trauma) => void shook.push(trauma) });
   const banner = { kind: MARK.banner, id: 3, at: [2, 0, 0] as const, health: 1, state: 1 };
   const lying = [chest(5, [1, 0, 0], 1)];
   view.frame(null, [], lying, bodies(), 0, [], () => 0);
@@ -344,4 +377,117 @@ test('a room lost a while, and back: no chest thumps in again, no banner is driv
   view.frame(fissure([crack]), [], [], bodies(), 0.4, [], () => 0);
   view.frame(fissure([crack]), [happened(EVENT.shardSet, 2)], [], bodies(), 30, [], () => 0);
   assert.deepEqual(shook, [], 'back from a hidden tab, no tremor');
+});
+
+test('paused, the event’s own interface sounds wait: no chime for a refusal or a chest opened', () => {
+  const view = new PublicView('saltgrass-downs');
+  view.frame(fissure([]), [], [], bodies(), 0, [], () => 0);
+  const missed = [happened(EVENT.heroicMissed)];
+  const paused = view.frame(fissure([]), missed, [], bodies(), 0.02, [], () => 0, { quiet: true });
+  assert.equal(paused.chime, null);
+  assert.equal(view.frame(fissure([]), missed, [], bodies(), 0.04, [], () => 0).chime, 'refused');
+});
+
+test('a raid’s stores stand while the room is lost or rejoining, as their walls do; nothing else of it does', () => {
+  const view = new PublicView('saltgrass-downs');
+  const store = { kind: MARK.store, id: 4, at: [6, 0, 0] as const, health: 1, state: 0 };
+  const banner = { kind: MARK.banner, id: 3, at: [2, 0, 0] as const, health: 1, state: 1 };
+  const held = raid([store, banner], 0);
+  view.frame(held, [], [], bodies(), 0, [], () => 0);
+  const lost = view.frame(null, [], [], bodies(), 0.02, [], () => 0, { held });
+  assert.equal(lost.shown, null);
+  assert.deepEqual(
+    lost.props.map((prop) => prop.module),
+    view
+      .frame(held, [], [], bodies(), 0.04, [], () => 0)
+      .props.map((prop) => prop.module)
+      .filter((name) => name.startsWith('tithe-stores')),
+  );
+  assert.ok(lost.props.length > 0);
+});
+
+test('each beat is heard by its own cue where it happens, and the music stings the begun, heroic and result beats', () => {
+  const crack = { kind: MARK.fissure, id: 1, at: [4, 4, 0] as const, health: 1, state: 1 };
+  const played = (
+    event: PublicEvent,
+    what: ReturnType<typeof happened>[],
+    more: Partial<PublicBodies> = {},
+  ): { cues: string[]; sting: string | null; chime: string | null } => {
+    const view = new PublicView('saltgrass-downs');
+    view.frame(event, [], [], bodies(more), 0, [], () => 0);
+    const heard = view.frame(event, what, [], bodies(more), 0.02, [], () => 0);
+    return { cues: heard.sounds.map((each) => each.cue), sting: heard.sting, chime: heard.chime };
+  };
+  const where = { where: () => [1, 2, 3] as const };
+  const raided = (phase = 1) => ({ ...raid([]), phase });
+  const cases: [string, ReturnType<typeof played>, ReturnType<typeof played>][] = [
+    [
+      'Fissure begun',
+      played(fissure([crack]), [happened(EVENT.publicBegun)]),
+      { cues: ['amb.ice.crack', 'drop.land'], sting: 'cadence', chime: null },
+    ],
+    [
+      'raid begun',
+      played(raided(), [happened(EVENT.publicBegun)]),
+      { cues: ['foe.alert', 'drop.land'], sting: 'cadence', chime: null },
+    ],
+    [
+      'a shard taken',
+      played(fissure([crack]), [happened(EVENT.shardTaken, 2)], where),
+      { cues: ['element.cosmic'], sting: null, chime: null },
+    ],
+    [
+      'the player’s own shard',
+      played(fissure([crack]), [happened(EVENT.shardTaken, 1)], where),
+      { cues: ['element.cosmic'], sting: null, chime: 'shard' },
+    ],
+    [
+      'a shard set',
+      played(fissure([crack]), [happened(EVENT.shardSet, 2)]),
+      { cues: ['finish.cosmic'], sting: null, chime: null },
+    ],
+    [
+      'heroic met',
+      played(fissure([crack]), [happened(EVENT.heroicMet)]),
+      { cues: ['shield.break'], sting: 'victory', chime: null },
+    ],
+    [
+      'heroic missed',
+      played(fissure([crack]), [happened(EVENT.heroicMissed)]),
+      { cues: [], sting: null, chime: 'refused' },
+    ],
+    [
+      'Fissure won',
+      played(fissure([crack]), [happened(EVENT.publicWon)]),
+      { cues: ['story.crash'], sting: 'victory', chime: null },
+    ],
+    [
+      'Fissure failed',
+      played(fissure([crack]), [happened(EVENT.publicFailed)]),
+      { cues: ['amb.ice.crack'], sting: 'defeat', chime: null },
+    ],
+    [
+      'raid won',
+      played(raided(), [happened(EVENT.publicWon)]),
+      { cues: ['story.flash'], sting: 'victory', chime: null },
+    ],
+    [
+      'raid failed',
+      played(raided(), [happened(EVENT.publicFailed)]),
+      { cues: ['story.crash'], sting: 'defeat', chime: null },
+    ],
+    [
+      'a chest opened',
+      played(raided(2), [happened(EVENT.chestOpened, 1)], where),
+      { cues: ['ship.ready'], sting: null, chime: 'open' },
+    ],
+  ];
+  for (const [name, heard, wanted] of cases) assert.deepEqual(heard, wanted, name);
+});
+
+test('heroic met holds the music at its peak on the ground, whatever the time left', () => {
+  const view = new PublicView('saltgrass-downs');
+  const near = bodies({ feet: [50, 50, 2] });
+  const met = { ...raid([]), ticksLeft: 5 * 3600, heroic: 2 };
+  assert.equal(view.frame(met, [], [], near, 0, [], () => 0).shown?.mood, 'peak');
 });
