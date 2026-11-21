@@ -13,13 +13,21 @@ use crate::modules::{all, number_of};
 use crate::solids::Material;
 
 /// A court's open ground (metres seaward of the plaza's middle from and to, and across it from and to), how far apart
-/// its pieces are scattered, metres, and what stands there, each with how often.
+/// its pieces are scattered, metres, and what stands there, each with how often; then the small pieces scattered at
+/// half that between them.
 struct Court {
     toward: [f64; 2],
     across: [f64; 2],
     apart: f64,
     pieces: &'static [(&'static str, u32)],
+    fill: &'static [(&'static str, u32)],
 }
+
+/// The small pieces that fill between a garden court's larger ones, and between a working court's.
+const GARDEN_FILL: &[(&str, u32)] = &[("bench", 3), ("planter", 3), ("potted-tree", 3), ("lamp-post", 1)];
+const WORK_FILL: &[(&str, u32)] = &[("sacks-grain", 3), ("crates-barrels", 3), ("amphorae", 1), ("lamp-post", 1)];
+const MARKET_FILL: &[(&str, u32)] =
+    &[("flower-cart", 1), ("sacks-grain", 2), ("amphorae", 2), ("crates-barrels", 2), ("potted-tree", 1)];
 
 const COURTS: [Court; 5] = [
     // The Watch Court: shade, green and seats round the obelisk.
@@ -36,6 +44,7 @@ const COURTS: [Court; 5] = [
             ("flower-cart", 1),
             ("parasol-table", 1),
         ],
+        fill: GARDEN_FILL,
     },
     // The West Court: a garden and its tables, round the fountain and the band.
     Court {
@@ -51,6 +60,7 @@ const COURTS: [Court; 5] = [
             ("potted-tree", 2),
             ("flower-cart", 1),
         ],
+        fill: GARDEN_FILL,
     },
     // The Forge Yard: the smiths' stores and their work.
     Court {
@@ -67,6 +77,7 @@ const COURTS: [Court; 5] = [
             ("sacks-grain", 2),
             ("table-benches", 1),
         ],
+        fill: WORK_FILL,
     },
     // The Beacon Walk's market, either side of the portico.
     Court {
@@ -87,6 +98,7 @@ const COURTS: [Court; 5] = [
             ("sacks-grain", 1),
             ("crates-barrels", 1),
         ],
+        fill: MARKET_FILL,
     },
     // The Stair Yard round the base's east side, by the stable.
     Court {
@@ -94,19 +106,20 @@ const COURTS: [Court; 5] = [
         across: [96.0, 150.0],
         apart: 9.0,
         pieces: &[("bale-stack", 3), ("hay-cart", 2), ("barrel-stack", 2), ("crates-barrels", 2), ("sacks-grain", 1)],
+        fill: WORK_FILL,
     },
 ];
 
 /// How far a piece keeps from a way's line beyond the way's own clearance, from a way point, a post, an arrival, a
 /// counter, what already stands, another piece and the ring's edge, metres.
-const PAST_WAY_M: f64 = 0.4;
-const FROM_POINT_M: f64 = 2.0;
+const PAST_WAY_M: f64 = 0.25;
+const FROM_POINT_M: f64 = 1.6;
 const FROM_POST_M: f64 = 1.2;
 const OFF_POST_LINE_M: f64 = 0.7;
 const FROM_ARRIVAL_M: f64 = 5.0;
 const FROM_COUNTER_M: f64 = 3.0;
 const FROM_STANDING_M: f64 = 0.6;
-const BETWEEN_M: f64 = 1.0;
+const BETWEEN_M: f64 = 0.9;
 const FROM_EDGE_M: f64 = 0.8;
 /// Only what stands lower than this over the floor is kept clear of: a lamp or a banner overhead is not.
 const OVERHEAD_M: f64 = 2.5;
@@ -114,7 +127,7 @@ const OVERHEAD_M: f64 = 2.5;
 /// its straight walk keeps from every box.
 const OUT_M: f64 = 0.8;
 const REACH_M: f64 = 45.0;
-const WALK_CLEAR_M: f64 = 0.45;
+const WALK_CLEAR_M: f64 = 0.6;
 
 /// A piece laid in a court.
 pub(crate) struct Dressed {
@@ -260,17 +273,24 @@ pub(crate) fn dress(
     let counters: Vec<[f64; 2]> = laid.stations.iter().map(|station| station.counter).collect();
     let mut placed: Vec<Rect> = Vec::new();
     let mut dressed = Vec::new();
-    for (number, court) in COURTS.iter().enumerate() {
-        let total: u32 = court.pieces.iter().map(|&(_, often)| often).sum();
-        let rows = ((court.toward[1] - court.toward[0]) / court.apart).floor() as usize;
-        let columns = ((court.across[1] - court.across[0]) / court.apart).floor() as usize;
+    let passes = COURTS.iter().enumerate().flat_map(|(number, court)| {
+        [(number, court.pieces, court.apart), (number + COURTS.len(), court.fill, court.apart / 2.0)]
+            .map(|(seed, pieces, apart)| (seed, court, pieces, apart))
+    });
+    // Every court's larger pieces first, then the small ones between them.
+    let mut passes: Vec<_> = passes.collect();
+    passes.sort_by_key(|&(seed, ..)| seed);
+    for (number, court, pieces, apart) in passes {
+        let total: u32 = pieces.iter().map(|&(_, often)| often).sum();
+        let rows = ((court.toward[1] - court.toward[0]) / apart).floor() as usize;
+        let columns = ((court.across[1] - court.across[0]) / apart).floor() as usize;
         for row in 0..rows {
             for column in 0..columns {
-                let jitter = |salt| (seeded(number, row, column, salt) - 0.5) * court.apart * 0.7;
-                let toward = court.toward[0] + (row as f64 + 0.5) * court.apart + jitter(1);
-                let across = court.across[0] + (column as f64 + 0.5) * court.apart + jitter(2);
+                let jitter = |salt| (seeded(number, row, column, salt) - 0.5) * apart * 0.7;
+                let toward = court.toward[0] + (row as f64 + 0.5) * apart + jitter(1);
+                let across = court.across[0] + (column as f64 + 0.5) * apart + jitter(2);
                 let mut pick = (seeded(number, row, column, 3) * f64::from(total)) as u32;
-                let Some(&(name, _)) = court.pieces.iter().find(|&&(_, often)| {
+                let Some(&(name, _)) = pieces.iter().find(|&&(_, often)| {
                     let found = pick < often;
                     pick = pick.saturating_sub(often);
                     found

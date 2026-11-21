@@ -118,7 +118,11 @@ fn a_body_walks_from_the_arrivals_through_each_range_into_the_side_courts() {
     let from = hub.plan.social.spawns[1];
     for side in [-1.0, 1.0] {
         for passage in [18.0, -18.0] {
-            let path = [hub.at(30.0, side * 40.0), hub.at(passage, side * 48.0), hub.at(passage, side * 75.0)];
+            // Along the hub's ways, which the courts' pieces keep clear: down the court's side to the passage.
+            let down = [hub.at(54.0, side * 25.0), hub.at(36.0, side * 30.0), hub.at(8.0, side * 30.0)];
+            let turn = if passage > 0.0 { None } else { Some(hub.at(-16.0, side * 36.0)) };
+            let through = [hub.at(passage, side * 50.0), hub.at(passage, side * 70.0), hub.at(passage, side * 75.0)];
+            let path: Vec<[f64; 2]> = down.into_iter().chain(turn).chain(through).collect();
             let (body, passed) = walked(hub, from, &path, 60.0);
             assert_eq!(
                 passed,
