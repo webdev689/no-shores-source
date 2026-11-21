@@ -46,5 +46,6 @@ fn a_point_is_placed_from_a_body_only_on_the_part_the_body_stands_on() {
     assert_eq!(joined.nearest_point_from(at_home, [-3.0, 11.0, 0.0]), home.nearest_point([-3.0, 11.0, 0.0]));
     assert_eq!(joined.nearest_point_from(far, far), apart.nearest_point(far), "from the far part, on it");
     assert_eq!(joined.nearest_point_from(at_home, far), None, "the far part is no ground a body at home walks to");
-    assert_eq!(joined.nearest_point_from([50.0, 0.0, 0.0], at_home), None, "a body on neither part reaches neither");
+    let off = [50.0, 0.0, 0.0];
+    assert_eq!(joined.nearest_point_from(off, far), apart.nearest_point(far), "a body on no part is held to none");
 }

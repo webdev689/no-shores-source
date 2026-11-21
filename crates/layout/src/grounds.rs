@@ -2,8 +2,8 @@
 //! stores (stacked crates, sacks and barrels under a tarp, on clear ground beside its houses near its plaza, off the
 //! ways), the point its raiders come in from (toward the zone's camp, or from the shore where it has none) and the two
 //! banners they plant at its edge; and in one wilds, where its fissure opens (beside the battlefield's obelisk, clear
-//! of its ruins) and the spot its crystal growth rises at. A store and a fissure stand square to the grid, a fissure's long side east and
-//! west, and a body runs into a store on the page and in the room alike.
+//! of its ruins) and the spot its crystal growth rises at. A store and a fissure stand square to the grid, a fissure's
+//! long side east and west, and a body runs into a store on the page and in the room alike.
 
 use crate::areas::Area;
 use crate::brief::AreaKind;

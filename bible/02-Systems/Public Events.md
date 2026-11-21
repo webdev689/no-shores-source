@@ -257,8 +257,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.
 - A snapshot built on a base leaves the events out while they stand as the base's counted on, but whenever anything
   of them changes (a shard's life, the tithe-taker's step, a store's health) they come whole, every mark among them,
-  24 bytes each. Over the door test's two players a raid's snapshots average 602 bytes (884 when the events came in
-  every one), a Fissure's 610 (819); waiting, the events cost a snapshot nothing (256 bytes before).
+  24 bytes each. Over the door test's two players a raid's snapshots average 602 bytes and a Fissure's 610; waiting,
+  the events cost a snapshot nothing.
 - Opening a zone's room bakes both its grounds' navmesh. Measured once in Node's WebAssembly, a release build of commit
   2f6ce090 opening the bake's own node files, fresh each time, three times each on a machine shared with other work:
   Saltgrass Downs 0.75 to 0.95 s, Gullwing Vale 0.71 to 0.82 s, Driftwood Moors 0.85 to 1.0 s (their garrisons alone

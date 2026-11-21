@@ -493,8 +493,9 @@ impl Room {
             .collect()
     }
 
-    /// Whether a kill is the players' work: any but a foe's not at a player's leave (a garrison's fighting the event's).
-    /// The heroic tasks are the players' to meet.
+    /// Whether a kill is the players' work: any but a foe's not at a player's leave (a garrison's fighting the
+    /// event's), so a player who has since left, or a kill the room names no one for, still counts. The heroic tasks
+    /// are the players' to meet.
     pub(crate) fn by_players(&self, killer: FighterId) -> bool {
         !self.foes.contains_key(&killer) || self.is_companion(killer)
     }
@@ -523,8 +524,8 @@ impl Room {
         }
     }
 
-    /// Failed, by its countdown or its stores: its foes withdraw, and it leaves nothing lasting. A growth still standing
-    /// is gone at once and the tithe-taker's round is over, so neither leaves a mark behind.
+    /// Failed, by its countdown or its stores: its foes withdraw, and it leaves nothing lasting. A growth still
+    /// standing is gone at once and the tithe-taker's round is over, so neither leaves a mark behind.
     pub(crate) fn fail(&mut self, running: &mut Running) {
         self.close_heroic(running);
         running.phase = Phase::Failed;
