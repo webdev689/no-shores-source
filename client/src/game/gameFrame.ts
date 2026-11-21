@@ -20,6 +20,7 @@ import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { gearScreenOpen } from './gearWindow.ts';
+import { HINTS } from './hints.ts';
 import type { Hud } from './hud.ts';
 import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
@@ -196,7 +197,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // As E's other use, a gate takes no one while a menu is up or the player is down.
     playing.through = paused || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    hud.hints(shown.hints);
+    hud.hints(looking ? HINTS.landMap : shown.hints);
     hud.marks([]);
     hideSeaHud(hud);
     hud.note(here.roomNote);

@@ -105,9 +105,9 @@ export function clampView(view: View, ink: Size, world: Extent): View {
   };
 }
 
-/** The view a map opens on: centred on `focus`, `FIRST_SPAN_M` across. */
-export function viewOn(focus: readonly [number, number], ink: Size, world: Size): View {
-  const scale = ink.width / FIRST_SPAN_M;
+/** The view a map opens on: centred on `focus`, `span` metres across (at sea `FIRST_SPAN_M`). */
+export function viewOn(focus: readonly [number, number], ink: Size, world: Extent, span = FIRST_SPAN_M): View {
+  const scale = ink.width / span;
   return clampView(
     { left: focus[0] - ink.width / 2 / scale, top: focus[1] - ink.height / 2 / scale, scale },
     ink,

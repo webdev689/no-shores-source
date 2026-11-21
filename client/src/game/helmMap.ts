@@ -168,7 +168,8 @@ export class HelmMap {
       this.landWanted = null;
       if (this.onLand) this.map?.close();
     } else if (this.landWanted && foot.eyes) {
-      this.made.openLand(foot.viewport, this.landWanted, foot.hands);
+      const { origin } = this.landWanted;
+      this.made.openLand(foot.viewport, this.landWanted, foot.hands, [foot.at[0] - origin[0], foot.at[1] - origin[1]]);
       this.landWanted = null;
     }
     const map = this.map;

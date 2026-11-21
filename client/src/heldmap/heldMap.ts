@@ -10,7 +10,6 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { ForgeStore } from '../forge/store.ts';
 import { type CoastField } from './coastField.ts';
 import {
-  clampView,
   CLOSE_S,
   type Extent,
   nearestMark,
@@ -39,7 +38,8 @@ import type { MapWaters } from './watersWash.ts';
 
 /** The world's frame, metres. */
 const WORLD = { width: WORLD_FRAME.widthM, height: WORLD_FRAME.heightM } as const;
-/** The most the map zooms in on land, screen pixels a metre. */
+/** How much of the land the map first shows across, metres, and the most it zooms in there, screen pixels a metre. */
+const LAND_SPAN_M = 400;
 const LAND_SCALE_MOST = 8;
 /** On land the world's ink is turned off the sheet, which shows only what is painted on it. */
 const OFF_WORLD = { left: -1e7, top: -1e7, scale: 1 } as const;
@@ -193,16 +193,17 @@ export class HeldMap {
     this.raise(viewport, gauntlets, (ink) => viewOn(ship, ink, WORLD));
   }
 
-  /** Raises the map on foot, showing the whole of `sheet`, the land the player stands on: only to look at, panned and
-   *  zoomed, never clicked to go anywhere. */
+  /** Raises the map on foot, showing `sheet`, the land the player stands on, centred on them where they stand (`standing`,
+   *  the sheet's metres): only to look at, panned and zoomed, never clicked to go anywhere. */
   openLand(
     viewport: { readonly width: number; readonly height: number },
     sheet: LandSheet,
     gauntlets: string | null,
+    standing: Point2,
   ): void {
     if (this.phase.kind !== 'closed') return;
     [this.land, this.extent] = [sheet, { width: sheet.width, height: sheet.height, most: LAND_SCALE_MOST }];
-    this.raise(viewport, gauntlets, (ink) => clampView({ left: 0, top: 0, scale: 0 }, ink, this.extent));
+    this.raise(viewport, gauntlets, (ink) => viewOn(standing, ink, this.extent, LAND_SPAN_M));
   }
 
   /** Lifts the map from its foot in `gauntlets`, its view as `viewed` lays it on the screen's map. */

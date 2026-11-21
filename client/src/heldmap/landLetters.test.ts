@@ -47,7 +47,11 @@ const SHEET: LandSheet = {
     [390, 10],
     [390, 240],
   ],
-  places: [{ name: 'Watch Court', at: [200, 120] }],
+  places: [
+    { name: 'Watch Court', at: [200, 120] },
+    // A place whose name would fall on the court's.
+    { name: 'Fountain', at: [205, 122] },
+  ],
   marks: [
     { kind: 'vendor', at: [100, 100], name: 'The Mage' },
     // A keeper whose name would fall on the court's.
@@ -72,9 +76,10 @@ test('the land is named, its places and its keepers lettered, and its marks keye
   assert.ok(!words.includes(MARK_WORDS.gate), 'a kind of mark the land has none of is not keyed');
 });
 
-test("a keeper's name that would fall on a place's name is left off; their mark stays", () => {
+test("a name that would fall on one lettered before it is left off; a keeper's mark stays", () => {
   const { texts, calls } = paint();
   assert.ok(!texts().includes('Vault'));
+  assert.ok(!texts().includes('Fountain'));
   const coins = calls.filter((call) => call.name === 'arc' && call.args[2] === 3.5);
   assert.equal(coins.length, 2, 'both stalls are marked');
 });

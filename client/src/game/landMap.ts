@@ -43,8 +43,8 @@ export function landSheetOf(
   const landing: LandMark[] = node.spawns.length ? [{ kind: 'landing', at: local(middleOf(node.spawns)) }] : [];
   const social = node.kind === 'social' ? landmass.drawnPlan : null;
   if (social) {
-    const { landmark, works, social: space } = social;
-    const solids = [...landmark, ...works, ...space.solids].filter((solid) => within([solid.at[0], solid.at[1]]));
+    // Its own solids and the city's landmark; the city's avenues round it are not the social space's.
+    const solids = [...social.landmark, ...social.social.solids].filter((solid) => within([solid.at[0], solid.at[1]]));
     const quads = (keep: (solid: Solid) => boolean) =>
       solids.filter(keep).map((solid): Quad => {
         const [x, y] = local([solid.at[0], solid.at[1]]);

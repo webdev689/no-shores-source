@@ -25,7 +25,13 @@ export const HINTS = {
     ['R', 'Anima'],
     ['Q / G', 'Tenets'],
     ['Wheel', 'Third person'],
+    ['N', 'Map'],
     ['M', 'Menu'],
+  ],
+  landMap: [
+    ['Drag', 'Pan'],
+    ['Wheel', 'Zoom'],
+    ['N / Esc', 'Put the map away'],
   ],
   dead: [['Enter', 'Respawn at the nearest spawn']],
   sea: [

@@ -47,7 +47,7 @@ const landmass = (layouts: readonly NodeLayout[] = []) =>
     plan: { social: { areas: [{ name: 'Watch Court', at: [1100, 2050] }] } },
     drawnPlan: {
       landmark: [solid('stone', 30)],
-      works: [solid('stone', 6, { at: [5000, 5000, 0] })],
+      works: [solid('stone', 6)],
       social: {
         solids: [
           solid('paving', 0.3),
@@ -72,7 +72,7 @@ test("a social space's sheet is its plan: floors, walks and what stands, from it
   assert.deepEqual(sheet.ring[0], [40, 40]);
   assert.equal(sheet.floors.length, 2, 'the paving and the lawn');
   assert.equal(sheet.walks.length, 1);
-  // The landmark and the wall; not the bench-high timber, a module's second group, natural rock or the far works.
+  // The landmark and the wall; not the bench-high timber, a module's second group, natural rock or the city's avenues.
   assert.equal(sheet.standing.length, 2);
   assert.deepEqual(sheet.standing[0]?.[0], [135, 88]);
 });

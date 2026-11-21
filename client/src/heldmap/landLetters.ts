@@ -103,15 +103,17 @@ export function paintLand(
     painter.restore();
   };
   for (const mark of sheet.marks) local(onMap(mark.at), () => paintMark(painter, mark.kind));
-  // The places' names under their middles, clear of a mark standing there; then each keeper's beside their stall
-  // where it keeps clear of every name before it.
+  // The places' names under their middles, clear of a mark standing there; then each keeper's beside their stall:
+  // each where it keeps clear of every name before it.
   const taken: { x: number; y: number; width: number; height: number }[] = [];
   painter.font = `500 ${PORT_PX}px ${FACE}`;
   painter.textAlign = 'center';
   for (const place of sheet.places) {
     const [x, y] = onMap(place.at);
     const [width, middle] = [painter.measureText(place.name).width * scale, y + 10 * scale];
-    taken.push({ x: x - width / 2, y: middle - PORT_PX * 0.6 * scale, width, height: PORT_PX * 1.2 * scale });
+    const box = { x: x - width / 2, y: middle - PORT_PX * 0.6 * scale, width, height: PORT_PX * 1.2 * scale };
+    if (taken.some((other) => overlaps(box, other))) continue;
+    taken.push(box);
     local([x, middle], () => word(painter, place.name, 0, 0, INK));
   }
   painter.font = `500 ${WORD_PX}px ${FACE}`;
