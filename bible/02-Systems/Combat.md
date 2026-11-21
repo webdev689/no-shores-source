@@ -251,28 +251,35 @@ gives every one through one door, `Room::give`, for the status's own time unless
 A player holds three healing charges, and drinks one with `3` ([[Three Healing Charges, Refilled by Blows and Kills]]).
 A foe never drinks.
 
-- **The drink.** A press begins it only at rest, standing on the ground and on foot, with a charge held and health
-  short of its most; it is kept 8 ticks as any press, so one made in a swing or a dodge's air begins as it ends. It
-  lasts a second (60 ticks), in which the player walks, never running, jumping or crouching (Haste still quickens
-  the walk), facing the look, the weapon put away. As it ends it spends its charge and gives back 40% of the player's
-  most health, never past the most, and the room tells the heal. A blow that lands cuts it short with its charge
-  kept, as it flinches the drinker; a stagger, a fall and a Charge's hold cut it too. Leaving the ground (a climb
-  begun, a fall) or taking the saddle puts it down, and one ending at full health (a spell topped the player up)
-  heals nothing: each keeps its charge. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it
-  ends, and a drink pressed in a dodge never frees it early.
+- **The drink.** A press begins it only at rest, standing on the ground and on foot, out of a loadout swap, with a
+  charge held and health short of its most; it is kept 8 ticks as any press, so one made in a swing's or a dodge's
+  last 8 ticks begins as it ends. It lasts a second (60 ticks), in which the player walks, never running, jumping or
+  crouching (Haste still quickens the walk), facing the look, the weapon put away, and casts no Art ([[Arts]]). As it
+  ends it spends its charge and gives back 40% of the player's most health, never past the most, and the room tells
+  the heal. A blow that lands cuts it short with its charge kept, as it flinches the drinker; a stagger, a fall and a
+  Charge's hold cut it too. Leaving the ground (a climb begun, a fall) or taking the saddle puts it down, and one
+  ending at full health (a spell topped the player up) or with no charge left heals nothing: each keeps what it
+  holds. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it ends, and a drink pressed in a
+  dodge never frees it early. Foes take no notice of a drink.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
-  their meter toward the next charge by the share of the foe's most health it took, times half the share its rank's
-  kill gives; the blow that kills adds the kill's share whole: a third of a charge for a Minor or a Major, two
-  thirds for an Elite or a Miniboss, a whole one for a Boss. So a Minor fought whole gives half a charge, an Elite a
-  whole one, and a Boss half a charge over its health and a whole one at its end, besides its adds'. A full meter is
-  a charge; none come past three, and the meter stands empty while all three are full. As a share of the foe's own
-  health it is the same at every level and difficulty. A companion's blows fill no one's.
+  their meter toward the next charge by the share it took of the foe's most health and most shield together, times
+  half the share its rank's kill gives. A kill adds the kill's share whole to every player whose own blow landed on
+  the foe in its last 10 s, as its XP and drops are shared: a third of a charge for a Minor or a Major, two thirds for
+  an Elite or a Miniboss, a whole one for a Boss. So a Minor fought whole gives half a charge, an Elite a whole one,
+  and a Boss half a charge over its health and a whole one at its end, besides its adds'. A full meter is a charge;
+  none come past three, and the meter stands empty while all three are full, but while a drink is under way the
+  charge it drinks counts as spent: the meter fills to one whole and becomes a charge as the drink spends one. As a
+  share of the foe's own health it is the same at every level and difficulty. A companion's blows fill no one's, and
+  a blow on a foe walking home to its post, its fight given up, fills nothing.
 - **Full again.** A player comes into every room, Overlook and the town included, with all three, and stands again
   after death with all three. The charges are never saved ([[Server]]).
 - **On the wire.** The charges, the meter and the drink's press kept and held cross in the fighter's numbers after its
   ammunition; the drink is an action of its own, so another browser sees it, and the intent's last number asks for
   one. The room fills the meter as it settles each blow; the browser predicts the drink, and takes the charges and the
-  meter with its fighter. The vitals show them ([[Interface]]).
+  meter with its fighter. The vitals show them ([[Interface]]). The page fetches `room.wasm` at an address naming the
+  protocol version, which hashes these layouts ([[Server]]), and refuses rules that count a fighter's, an intent's or
+  a glance's numbers otherwise than it does; another player's figure puts its weapon away as their snapshot shows the
+  drink.
 
 ## Why these numbers
 

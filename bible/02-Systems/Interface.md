@@ -196,13 +196,17 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   compass; stamina's and poise's are as long as what they hold beside health's most. No words stand on health or
   stamina; poise says Iron, Staggered or Open beside its bar, and a screen reader reads each bar as a meter. Health at
   a quarter or less flashes its frame to blood; stamina's lights white for a swing or a dodge asked with none; poise's
-  turns brass while open. Under the bars stand the healing charges ([[Combat]], "Healing charges"): three diamonds 12
-  px tall (16 at the larger step) and 4 apart (6), each a fine outline over a stone line lit from the top left; a
-  charge held is whole in health's red, and the next fills from its foot in a darker red as the player's blows fill
-  its meter. A screen reader reads them as a meter, "Healing charges", with how many of the three are held and how
-  far the next has filled. Whole and untouched for 4 s (health and stamina short of no whole point, no poise taken),
-  with no buff and no foe on the target plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s;
-  the first point lost or spent brings them back in two.
+  turns brass while open. Under the bars stand the healing charges ([[Combat]], "Healing charges"):
+  three diamonds 12 px tall (16 at the larger step), as far apart as the bars, each drawn cell by cell as the bars'
+  frames are (`plus/barFrame.ts`), an outline over a stone line lit on its upper half and shaded on its lower, the
+  inside the bars' see-through track. A charge held is whole in health's red, and the next fills from its foot by
+  whole pixel rows in a pale health red as the player's blows fill its meter. A diamond brightens in two steps over
+  0.4 s, near white and then pale red, as a charge is gained or drunk (not under reduced motion). A screen reader
+  reads them as a meter, "Healing charges", with how many of the three are held and how far the next has filled,
+  rounded as the fill is ([[Three Healing Charges, Refilled by Blows and Kills]]). Whole and untouched for 4 s (health
+  and stamina short of no whole point, no poise taken, all three charges held), with no buff and no foe on the target
+  plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s; the first point lost or spent brings
+  them back in two.
 - **The Arts and weapons** stand at the bottom left, 28 px in and 22 up, after Destiny's. The Arts' icons come first
   ([[Arts]], "The ability bar"). Right of them, under a thin brass rule, the weapon in hand is drawn as its forge
   picture (see "Pictures" below) in a 116 by 36 px box (164 by 52 at the larger step), laid level with its point or
@@ -323,8 +327,11 @@ should be ([[HTML Is Avoided Where It Can Be]]).
   notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
   3.5 s), rising in over 0.2 s; one already shown keeps its place.
-- **The key strip** shows the keys of what the player does now, each on a keycap beside its words, wrapping right to
-  left. On foot it keeps to the fight's keys and the body's beyond walking, the Arts' only while one is worn.
+- **The key strip** shows the keys of what the player does now, each on a keycap beside its words, 8 px apart,
+  wrapping right to left. On foot it keeps to the fight's keys and the body's beyond walking, the Arts' only while
+  one is worn; at 1280 by 720 that is two lines, three with Shadow's Dusk Daggers. Past 1440p the strip is zoomed
+  twice over and wraps at half the view's width less 480 px at its own size, as a view half as wide would, so it
+  never runs over the weapons.
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; a part
   still to come shows Later in a chip; Back to the sea stands on its footer. It is built again only when what it
   shows changes.
