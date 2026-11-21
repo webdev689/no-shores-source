@@ -222,6 +222,16 @@
       "page": "https://freesound.org/people/Akkaittou/sounds/819721/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.ice.ping": {
+      "key": "sounds/4a3694c6148c380fa099ecca9f82c43a6d440bc9b59e7e582d54e9340681771b.mp3",
+      "freesound": 145187,
+      "name": "080101-iceskater braking",
+      "author": "Eelke",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Eelke/sounds/145187/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.insect.cicada": {
       "key": "sounds/fc49ce4a508ab9c422565e396b319ef61656896e7f97521edd86a84f45afc66a.mp3",
       "freesound": 57888,
@@ -250,6 +260,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/AmberdeMeillon/sounds/443059/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.insect.mosquito": {
+      "key": "sounds/51742a321ae025bcdd6a90733e3cf33c99e0f4ef79275ff38e20df94176be263.mp3",
+      "freesound": 74942,
+      "name": "20090628.mosquito.02.wav",
+      "author": "dobroide",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/dobroide/sounds/74942/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.jackal": {
@@ -362,6 +382,16 @@
       "page": "https://freesound.org/people/klankbeeld/sounds/428318/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.marmot": {
+      "key": "sounds/7d625cb81c62f53c5127ab87fd3e07c06de33f662d18f0874e5427a5a8f65d7c.mp3",
+      "freesound": 351664,
+      "name": "Marmotte + Torrent.wav",
+      "author": "FrancoisTJP",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/FrancoisTJP/sounds/351664/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.owl.deep": {
       "key": "sounds/8403fe4f425919e9d39b8c0f3d50189d0864da25fb5b80394539754a5cdad20a.mp3",
       "freesound": 868096,
@@ -420,6 +450,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/_stubb/sounds/389618/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.rock.whistle": {
+      "key": "sounds/6068291f2557b1a3f97a9c4612cd3a4223a0c410b70623f62ba496be81a6abd9.mp3",
+      "freesound": 113176,
+      "name": "wind_howling_04.wav",
+      "author": "Fasolt",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Fasolt/sounds/113176/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.sand.gust": {
@@ -692,6 +732,16 @@
       "page": "https://freesound.org/people/TheKingOfGeeks360/sounds/844331/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "amb.swamp.bubbles": {
+      "key": "sounds/daf3458adee1f411b9dc163713dba47ce31b9c83f46148b09bd1c170fd6b5181.mp3",
+      "freesound": 411098,
+      "name": "drippling bubbles like boiling in water",
+      "author": "kernschall",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/kernschall/sounds/411098/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.swamp.heron": {
       "key": "sounds/3826152500f23d682e1724850b61ef045ffdc9b0be0b88f6a604aa3d956082e2.mp3",
       "freesound": 65264,
@@ -790,6 +840,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/BrainClaim/sounds/267179/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.wolf.howl": {
+      "key": "sounds/696b01105236c3f4c174d7f7e7e152d4c7f87ee09534a0b0d172ced0aa453715.mp3",
+      "freesound": 810171,
+      "name": "Lone wolf howling",
+      "author": "mokasza",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/mokasza/sounds/810171/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.wood.creak": {
@@ -1340,6 +1400,16 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/Logicogonist/sounds/796564/",
+      "changes": "Unchanged."
+    },
+    "ship.sinking": {
+      "key": "sounds/e13fc91cfb33d32a4bb31d34f9b8c4525f22d8ff9b6bd78a2bf313c3e18e990c.mp3",
+      "freesound": 178658,
+      "name": "Breaking wood",
+      "author": "jorickhoofd",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/jorickhoofd/sounds/178658/",
       "changes": "Unchanged."
     },
     "ship.swivel": {
