@@ -12,7 +12,7 @@ should feel lively, there shouldnt be so much bare ground. Populate everything"
 ## What it settles
 
 - **The hub feels lively.**
-- **Not so much bare ground**: its courts and walks are filled.
+- **Not so much bare ground.**
 - **Everything is populated.**
 
 How it is done is Claude's: [[Overlook's Hub as Claude Shapes It]].

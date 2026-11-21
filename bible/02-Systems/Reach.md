@@ -47,9 +47,10 @@ walls ([[Layouts]]).
 ## Who judges
 
 In play with others, the node's room alone ([[Server]]). After each of its ticks it judges every player's body where
-its inputs left it, once a tick, whether or not that player sent any. A dead body is still: the room takes its inputs without moving it.
-An input asking to respawn is granted only once the standing offers it, and stands the body on the ground at the
-nearest spawn. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
+its inputs left it, once a tick, whether or not that player sent any; a fall is measured from the height the feet
+last stood at, on the ground, a wall or a lip, never a jump's rise. A dead body is stepped with no controls of its
+own, so one that died in the air falls on and lies where it lands. An input asking to respawn is granted only once
+the standing offers it, and stands the body on the ground at the nearest spawn, its fall measured from there. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
 the browser shows what the room says; it does not judge. Playing alone, the [[Game]] runs the node's room in the
 page, so the same room judges.
 

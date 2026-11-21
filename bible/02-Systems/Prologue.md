@@ -124,14 +124,14 @@ still stands in sight, held at the water or at the town's middle. Leaving Overlo
 part at once, her words with it. The game is the player's from there.
 
 **The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
-first arrival, Elder Maren Hale of the Lamplighters starts at the lane crossing nearest the player that is at least 15 m
-from them, and out of their view where one is, and comes to them by the lanes at 1.5 m/s. She stops 1.8 m before a
-player on the lanes, facing them; for a player off them, she stops at the lane point nearest them and greets them there
+first arrival, Elder Maren Hale of the Lamplighters starts at a point of the townsfolk's ways at least 15 m from the
+player, and out of their view where one is, and comes to them by the ways at 1.5 m/s. She stops 1.8 m before a
+player on the ways, facing them; for a player off them, she stops at the point of the ways nearest them and greets them there
 once they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest
 stop first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the
-Stormcallers, the Veiled and her own Lamplighters, then walks home. She keeps to the townsfolk's lanes, the counters'
-fronts and the parapet's lookers' line, and goes round her counter's end clear of the arcade's columns, so she walks
-through no solid and never through Shape (`welcome/lanes.ts`; the lanes are in `content/world/social.json`). Each stop
+Stormcallers, the Veiled and her own Lamplighters, then walks home. She keeps to the middle of the townsfolk's ways
+(`life/ways.ts`; the ways are the plan's), which keep clear of every solid and of Shape, and goes round her counter's
+end clear of the arcade's columns (`welcome/walk.ts`). Each stop
 is where customers stand before its counter (3.1 m out), a pair's the middle of the two. At each she waits until the
 player is within 6 m, then says its lines in the dialogue box, some of the keepers she names answering her, with no mark
 over a head ([[Speech Blurbs Show Their Text Without Glyphs]]); the HUD says "Follow" over her name past 6 m and clears

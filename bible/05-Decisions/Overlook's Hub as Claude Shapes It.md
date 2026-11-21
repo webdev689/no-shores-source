@@ -52,12 +52,12 @@ flat terraces with walls between; the ramps are laid by the city's plan, so ever
 
 | Call | Choice |
 |---|---|
-| Overlook's banner | Crimson with a gilt border and fringe, a gilt beacon tower with its flame lit; a long one, with a gilt star, down the Beacon's face; two to a range face, inside and out |
-| The factions' banners | In the Hall beside each chapel: the Stormcallers' storm blue with a silver bolt, the Lamplighters' white and gold with a lit lamp, the Veiled's black with a silver crescent and star |
+| Overlook's banner | Crimson with a gilt border and fringe, a gilt beacon tower with its flame lit; a long one, with a gilt star, down the Beacon's face; three to each face of the west range, inside and out, and two to the east range's, whose middle the Mage's study takes |
+| The factions' banners | In the Hall beside each chapel: the Stormcallers' storm blue with a bone-white bolt, the Lamplighters' white and gold with a gold lamp and its flame, the Veiled's black with a bone-white crescent and star |
 | Light | A lantern on a scrolled arm either side of every passage, torch sconces down the Hall, braziers on stepped corbels by the Hall's door and the sealed gates |
 | Signs | One at each stall's end, its device through the board: a star for the Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler |
 | Green | Planters by the passages and along the walks, potted trees, ivy up the ranges' backs and the Beacon's face |
-| Statues | The keeper of the Beacon raising her lit lamp, before the Beacon; sentinels with spear and plain shield at the walks and the Harbour Stair |
+| Statues | The keeper of the Beacon raising her lit lamp, before the Beacon; sentinels with spear and a stone shield charged with a gold chevron at the walks and the Harbour Stair |
 | The rest | Bunting slung between the market lane's lamp posts, a well in the West Court, a long rug from the Hall's door toward the war table, a board of shields and a rack of weapons at the forge, a cart, sacks and amphorae by the market |
 
 ## Fidelity, by procedural textures
@@ -89,7 +89,7 @@ Under the owner's [[The Hub Feels Lively, Its Ground Populated]], then
 | How | Each court a scene, every piece placed for a reason and faced to its way or to what it looks at; one a scene asks for where it would block a way, a post, an arrival or a counter is left out (`hub/dress.rs`) |
 | The Watch Court | Where the arrivals land: an avenue of trees along the seaward walk between its ways in, a garden bed in each quarter round the obelisk and a bench by it, potted trees down the walk to the Beacon, a flower seller by the passage to the Forge Yard |
 | The West Court | A garden for the music: a tree on each quarter of the fountain, benches looking at it, the band's listeners at tables and under parasols beside the bandstand with the drinks' barrels behind it, beds along the parapet |
-| The Forge Yard | At work: fuel stacked by the forge, stores by the armoury, hay by the cart, a table where the smiths eat by their anvils, the charcoal's cart come in |
+| The Forge Yard | At work: fuel stacked by the forge, stores by the armoury, hay by the cart, a table where the smiths eat by their anvils, a cart of crates, a barrel and bolts of cloth come in |
 | The Beacon Walk | A market lane: a row of stalls either side facing it (cloth, bread, flowers, fruit, fish, pots), their deliveries stood behind them |
 | The Stair Yard | The stable's stores: hay, barrels, a hay cart |
 | Who is there | Each new stall's keeper at its counter; a walker's place at each piece (a browser at a stall, drinkers at a table, a porter at a pile, an idler at a bench, a bed or a tree); up to 48 walkers |

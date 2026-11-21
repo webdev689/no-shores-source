@@ -126,14 +126,16 @@ on Cloudflare.
   moves faster than real time and one catching up after a stall replays no faster than three times over.
 - **A player whose inputs stop** is stepped standing still once they fall a view's lag (24 ticks) behind, so nothing
   they were doing (a dodge's safe stretch, a parry window) outlasts its time, and time away is never banked to spend as
-  speed; a body the section killed lies where it fell, but its ticks count the same. Past 30 waiting inputs, the oldest
+  speed; a body the section killed is stepped with no controls of its own, so it falls on and lies where it lands, its
+  ticks counting the same. Past 30 waiting inputs, the oldest
   is let go as though taken, so a burst after a stall never breaks the order. The room tick a player says their screen
   showed moves on at most 4 ticks an input, so they cannot pick the moment they are judged at. A dress change is taken
   at most once a second.
 - **The section:** after each player's inputs a node's room judges their body against the node's section ([[Reach]]):
-  inside, warned with a count, or dead. A body dead past the section is still: its inputs are taken without moving it.
-  An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn nearest where
-  it died. A room with no section never judges.
+  inside, warned with a count, or dead; in a social space a fall of 6 m or more from where the feet last stood kills.
+  A body dead past the section is stepped with no controls of its own: its inputs are taken, and it falls on and lies
+  where it lands. An input that asks to respawn, once the section allows it, stands the body on the ground at the spawn
+  nearest where it died, a fall measured from there. A room with no section never judges.
 - **What it sees:** every player's fighter, where they stand with the section, and the number of their last input it
   took; every foe; the shots in flight, each with the ticks it has flown, and every gun's ball that stopped since it
   was last asked as its last segment, to where it stopped, with the point it left its gun, so every screen ends its

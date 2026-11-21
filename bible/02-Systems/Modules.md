@@ -78,7 +78,7 @@ are written with paving last, since the first group carries the parts and paving
   (`tools/modules/adorn.py`): banners, a lantern, a sconce, a wall brazier, ivy, a board of shields and a rack of
   weapons hung by `wall` at their fixing; a sign for each stall, its device through the board; a planter, a potted
   tree, two statues, a well, a long rug, a cart, sacks and amphorae stood by `front`; and bunting hung from `end-1`.
-  Each stands on its own foot, its lowest point, so a hung one's `wall` stands as high over its foot as it hangs.
+  Each stands on its own foot, so a hung one's `wall` stands as high over its foot as the piece reaches below it.
   What fills its courts (`tools/modules/dress.py`): market stalls of cloth, bread and flowers, a court tree in its
   raised ring bed, a lawn bed, a table with benches (`seat-1` to `seat-4`), a parasol table, a woodpile, a stack of
   barrels, a flower cart and a stack of hay bales, each stood by `front`.
@@ -94,11 +94,16 @@ bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as f
 | `python -I tools/modules/render.py <module> <picture.png> [--parts]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked |
 
 A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats) and normal (3 signed
-bytes), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake makes the same
-bytes from the same scripts on any machine: each group's vertices and triangles are written sorted, since an exact
-boolean's threads hand its faces back in a different order each run, and a zero is written without its sign, since a
-coordinate one machine leaves a hair under zero another leaves a hair over. The `modules` workflow bakes on every change to the module tools, fails if the bake
-does not make the committed manifest, and publishes with the repository's Cloudflare token.
+bytes), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake is made to give
+the same bytes from the same scripts on any machine: each group's vertices and triangles are written sorted, since an
+exact boolean's threads hand its faces back in a different order each run; positions are written to a tenth of a
+millimetre and normals to a thousandth, and the manifest's sockets, parts and pads to the millimetre, each zero
+without its sign, since a coordinate one machine leaves a hair under zero another leaves a hair over. A piece turned
+through an angle (a slanted rod, a turned slab) is still placed by trigonometry another machine's library may round a
+last bit differently, and a coordinate landing on a rounding's edge would then bake other bytes: a thin piece that
+need not slant (a flower's stem) stands upright. A module's random draws are seeded by its place in the
+catalogue, so a new module goes at the catalogue's end. The `modules` workflow bakes on every change to the module
+tools, fails if the bake does not make the committed manifest, and publishes with the repository's Cloudflare token.
 
 ## In the game
 

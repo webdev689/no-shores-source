@@ -11,7 +11,7 @@ needs to tell a story, and the pathway needs to be a different texture from the 
 
 ## What it settles
 
-- **The courts are too crowded** as filled: fewer pieces.
+- **The courts as filled are way too crowded.**
 - **Where a piece stands makes sense**, and the placing **tells a story**.
 - **The paths are a different texture from the ground.**
 

@@ -73,7 +73,8 @@ kind's own layer, on dry ground whatever its growth or clearings say; its form, 
 from its point as a slot's are from its place. A planting may carry its own foot's height, turn and scale: it then
 stands on that foot, whatever the land under it, turned so and its drawn size scaled so; a sea island's trees,
 shrubs and grass are planted so, each where the island grew it ([[Islands]]), and so are a city's trees and bushes
-(Overlook's hub's beds, pots and planters, [[Cities]]): a tree as its climate's commonest tree, a bush as its
+(Overlook's hub's beds, pots and planters, [[Cities]], [[The Hub's Plants Are the World's Low-Poly Ones]]): a tree as
+its climate's commonest tree, a bush as its
 commonest shrub (`client/src/game/cityPlants.ts`). A ground that does not grow
 (`grows: false`) stands only what is planted.
 

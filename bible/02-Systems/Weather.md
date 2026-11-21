@@ -66,10 +66,13 @@ the tundra's fall is snow by night and sleet by day.
   m/s, each swaying up to 0.4 m round its path, drawn larger within 4 m; sand runs low, a little faster than
   the wind.
 - **Shelter.** On foot nothing falls, wets, puddles or snows under something a body meets overhead: a roof, a
-  ceiling, an arch, a bridge. A grid 128 m round the eye holds the highest underside of the node's boxes over each
-  2 m cell, laid again when the eye strays 16 m (`client/src/sky/shelter.ts`); it rides in the sky's uniform, so every
-  sunlit shader reads it (`sky_sheltered`). A face is read 0.6 m out from itself, so a wall's outside is not its room.
-  Under an awning or a tree, which no body meets, it still rains.
+  ceiling, an arch, a bridge ([[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]). A grid 224 m
+  round the eye, so the far end of a great hall is on it, holds over each 2 m cell the highest underside of the
+  node's boxes reaching a quarter of a cell or more into it, so a roof ending on a wall's face shelters the floor up
+  to it; a box narrower than a cell (a brazier, a lamp's head) shelters nothing. It is laid again when the eye strays
+  16 m (`client/src/sky/shelter.ts`), and rides in the sky's uniform, so every sunlit shader reads it
+  (`sky_sheltered`). A face is read 0.6 m out from itself, so a wall's outside is not its room. Under an awning or a
+  tree, which no body meets, it still rains.
 - **How it moves.** Each frame carries each kind on by its wind and its fall over that frame, at most a tenth of a
   second, so a change of wind changes how fast it moves, never where it stands. Each takes the sky's light, brighter
   in a flash. What stands nearer in the scene hides them, and none falls under the sea. Above 300 m over the ground
@@ -88,4 +91,5 @@ the tundra's fall is snow by night and sleet by day.
 ## Limits
 
 - A place's weather is read in its own air: at a coast the sea's and the island's are two airs over one pattern.
-- Shelter is to the 2 m cell: under a roof's edge the rain stops up to a metre in or out of the line it would.
+- Shelter is to the 2 m cell: past a roof's open edge (an eave, an arch's mouth) the ground stays dry up to a
+  metre and a half out.
