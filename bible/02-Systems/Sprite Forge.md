@@ -45,9 +45,13 @@ fists and kicks, held things, and the hands that cast, climb, run, ride and work
 folder as its site's art; they are published with the rest. So are the instruments' first-person frames, and the
 pictures of things the forge renders from models of its own: items, props and the light set's pieces
 ([[The Audit Branch's Forge Renders Come Over]]), and the material nodes a patrol gathers
-(`items/nodes.py`, `specs/pictures/nodes.json`): an outcrop of ore, a patch of herbs, felled timber and piled
-salvage, each laid from the forge's own models of ore, stone, leaves, logs, crates and the boat's parts, and each as it
-looks spent ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
+(`items/nodes.py`, `items/nodeplants.py`, `specs/pictures/nodes.json`), one for each island's resource and drawn as
+it: brineglass as salt cubes in a tide pool, cairn iron as rust-dark seams in a stone cairn, heartwood resin as amber
+beads on an old stump, sunstone as glowing stones on sand, goldgrass seed as a clump of tall grass in seed, mistbloom as
+pale flowers over low green, windthistle as purple thistles going to down, bog pearl as mussels and pearls in black
+water, and rimecrystal as frost crystals on rock. Each is laid from the forge's own models of stone, ore, crystal,
+amber and leaves where one fits, and each also as it looks spent, the same spot picked over and drawn at the same scale
+([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
 
 Each strip is a layer in one move: a row for each view, a cell for each frame, at 62 pixels a metre. A strip may be
 2304 texels wide (nine cells of 256, as a standing thrust's reach needs) and 2048 tall. Its twin, `_z`,

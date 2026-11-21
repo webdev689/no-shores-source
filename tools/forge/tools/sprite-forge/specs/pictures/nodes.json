@@ -1,12 +1,22 @@
 {
   "pictures": {
-    "nodes/ore": {"model": "nodeOre", "px": 128, "span": 0.99, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9100},
-    "nodes/ore-spent": {"model": "nodeOreSpent", "px": 128, "span": 0.99, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9101},
-    "nodes/herbs": {"model": "nodeHerbs", "px": 128, "span": 1.15, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9102},
-    "nodes/herbs-spent": {"model": "nodeHerbsSpent", "px": 128, "span": 1.15, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9103},
-    "nodes/timber": {"model": "nodeTimber", "px": 128, "span": 1.35, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9104},
-    "nodes/timber-spent": {"model": "nodeTimberSpent", "px": 128, "span": 1.35, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9105},
-    "nodes/salvage": {"model": "nodeSalvage", "px": 128, "span": 1.24, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9106},
-    "nodes/salvage-spent": {"model": "nodeSalvageSpent", "px": 128, "span": 1.24, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9107}
+    "nodes/brineglass": {"model": "nodeBrineglass", "px": 128, "span": 1.06, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9100},
+    "nodes/brineglass-spent": {"model": "nodeBrineglassSpent", "px": 128, "span": 1.06, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9101},
+    "nodes/cairn_iron": {"model": "nodeCairnIron", "px": 128, "span": 0.97, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9102},
+    "nodes/cairn_iron-spent": {"model": "nodeCairnIronSpent", "px": 128, "span": 0.97, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9103},
+    "nodes/heartwood_resin": {"model": "nodeHeartwoodResin", "px": 128, "span": 1.02, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9104},
+    "nodes/heartwood_resin-spent": {"model": "nodeHeartwoodResinSpent", "px": 128, "span": 1.02, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9105},
+    "nodes/sunstone": {"model": "nodeSunstone", "px": 128, "span": 1.07, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9106},
+    "nodes/sunstone-spent": {"model": "nodeSunstoneSpent", "px": 128, "span": 1.07, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9107},
+    "nodes/goldgrass_seed": {"model": "nodeGoldgrassSeed", "px": 128, "span": 1.23, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9108},
+    "nodes/goldgrass_seed-spent": {"model": "nodeGoldgrassSeedSpent", "px": 128, "span": 1.23, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9109},
+    "nodes/mistbloom": {"model": "nodeMistbloom", "px": 128, "span": 1.11, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9110},
+    "nodes/mistbloom-spent": {"model": "nodeMistbloomSpent", "px": 128, "span": 1.11, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9111},
+    "nodes/windthistle": {"model": "nodeWindthistle", "px": 128, "span": 1.06, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9112},
+    "nodes/windthistle-spent": {"model": "nodeWindthistleSpent", "px": 128, "span": 1.06, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9113},
+    "nodes/bog_pearl": {"model": "nodeBogPearl", "px": 128, "span": 1.09, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9114},
+    "nodes/bog_pearl-spent": {"model": "nodeBogPearlSpent", "px": 128, "span": 1.09, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9115},
+    "nodes/rimecrystal": {"model": "nodeRimecrystal", "px": 128, "span": 1.02, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9116},
+    "nodes/rimecrystal-spent": {"model": "nodeRimecrystalSpent", "px": 128, "span": 1.02, "words": {}, "elevation": 18, "canvas": [128, 128], "anchor": "foot", "seed": 9117}
   }
 }
