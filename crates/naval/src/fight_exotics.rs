@@ -21,7 +21,9 @@ impl super::fitting::Fitting {
     /// Its last stand, for a ball's `hurt` about to be applied to its `damage` at `floor`: once a fight, a ball that
     /// would sink it leaves it its trim's share of its hull. Answers the floor the ball is applied at.
     pub(crate) fn stand(&mut self, damage: &mut Damage, hurt: &Hurt, floor: f64) -> f64 {
-        let sinks = hurt.hull.trunc() >= damage.hull && matches!(damage.state, State::Afloat | State::Wrecked);
+        // A ship held afloat already (an ambush's least hull, a floor) is not one the ball would sink.
+        let held = damage.least_hull > 0.0 || floor > 0.0;
+        let sinks = !held && hurt.hull.trunc() >= damage.hull && matches!(damage.state, State::Afloat | State::Wrecked);
         if self.stood || self.trim.last_stand <= 0.0 || !sinks {
             return floor;
         }

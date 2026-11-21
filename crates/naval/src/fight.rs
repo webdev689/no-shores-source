@@ -437,6 +437,7 @@ impl Fight {
         self.ships.remove(&id);
         self.stems.remove(&id);
         self.fittings.remove(&id);
+        self.webbed.remove(&id);
         for vessel in self.ships.values_mut() {
             if let Sailor::Captain(command) = &mut vessel.sailor {
                 command.mind.forget(id);

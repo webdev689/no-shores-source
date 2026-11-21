@@ -185,9 +185,14 @@ fn a_ship_fitted_with_none_of_them_fights_the_same_to_the_bit() {
     for _ in 0..600 {
         let one = plain.step(&[(PLAYER, firing)], &Open, &|_| [6.0, 2.0], 0.0);
         let other = fitted.step(&[(PLAYER, firing)], &Open, &|_| [6.0, 2.0], 0.0);
-        hits += one.iter().filter(|event| matches!(event, Event::Hit { .. })).count();
+        hits += one.iter().filter(|event| matches!(event, Event::Hit { ship: PLAYER, .. })).count();
         assert_eq!(one, other);
     }
-    assert!(hits > 0, "the captain's balls struck it");
+    assert!(hits == 0, "the captain held its fire, so its balls strike it here");
+    for zone in [Zone::Hull, Zone::Holed, Zone::Rig, Zone::Hull, Zone::Hull] {
+        assert_eq!(strike(&mut plain, CAPTAIN, PLAYER, zone), strike(&mut fitted, CAPTAIN, PLAYER, zone));
+        plain.exotics(1.0);
+        fitted.exotics(1.0);
+    }
     assert_eq!((plain.ships, plain.balls), (fitted.ships, fitted.balls));
 }

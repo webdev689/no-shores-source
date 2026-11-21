@@ -100,7 +100,7 @@ are in [[Crew]].
   |---|---|---|
   | Kraken's Roar (guns) | **From the Deep**: its balls in a ship's waterline band hole it twice as hard | **Feeding**: a ship it sinks reloads both its sides at once |
   | Leviathan's Rib (hull) | **Living Bone**: afloat in a fight its hull mends 1% of its whole a second, with a Carpenter or none | **Hard to Kill**: once a fight, a ball that would sink it leaves it a tenth of its hull |
-  | Stormcaller's Sheet (sails) | **Own Wind**: torn canvas costs it no way | **Squall**: each ball that strikes it gives it 3% more way for 6 s, to 15% |
+  | Stormcaller's Sheet (sails) | **Own Wind**: torn canvas costs it no way while any canvas stands; with none left it sails as any ship does | **Squall**: each ball that strikes it gives it 3% more way for 6 s, to 15% |
   | The Spider's Web (rigging) | **Web**: four more hands board with it, and a ship its balls strike in the rigging turns 30% slower for 6 s | **Snare**: a ship of another flag within 30 m of it sails 15% slower |
 
   A ship sinks to the ball that takes the last of its hull: that ball's shooter sank it. Only a player's ship is

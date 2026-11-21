@@ -273,7 +273,7 @@ impl Catalogue {
             _ => {}
         }
         if item.rarity == Rarity::Atheric && item.kind.module() && item.intrinsic.is_none() {
-            problems.push(format!("{id}: an Atheric module has an intrinsic"));
+            problems.push(format!("{id}: an Atheric module needs an intrinsic"));
         }
         let wanted: Vec<Column> =
             columns(item.rarity, item.kind.weapon_grid()).iter().copied().filter(|column| column.traits()).collect();

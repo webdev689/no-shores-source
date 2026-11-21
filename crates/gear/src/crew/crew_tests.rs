@@ -105,7 +105,7 @@ fn an_atheric_module_has_an_intrinsic_and_a_module_short_of_perks_may_offer_one_
         "layout": [["a", "a"], ["b", "a"], ["a", "b"]]}]}"#;
     let parsed = crate::catalogue::Catalogue::parse(traits, items, r#"{"resources": []}"#, r#"{"names": {}}"#);
     let problems = parsed.expect("well formed").problems();
-    assert!(problems.iter().any(|problem| problem == "web: an Atheric module has an intrinsic"), "{problems:#?}");
+    assert!(problems.iter().any(|problem| problem == "web: an Atheric module needs an intrinsic"), "{problems:#?}");
     let twice: Vec<&String> = problems.iter().filter(|problem| problem.contains("offered twice")).collect();
     assert_eq!(twice, ["twice: a is offered twice"], "within one column alone");
 }
