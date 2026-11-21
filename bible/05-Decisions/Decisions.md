@@ -197,6 +197,11 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foe Groups as Claude Builds Them]]
 - [[Aiming, the Figure Faces Straight Ahead]]
 - [[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]
+- [[The Prologue's Fights Are Heard Louder]]
+- [[A Held Aim Keeps the Camera on Its Side]]
+- [[Climbing Is Off in the Prologue]]
+- [[The Prologue's Elites Are as Hard to Bring Down as a Major]]
+- [[The Wreck's Boarders Are One Side]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

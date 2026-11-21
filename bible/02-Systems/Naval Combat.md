@@ -575,8 +575,11 @@ The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and
 DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
 
 - **The eye** (`AimCamera`, in the game's fight) eases out to the aim eye over DFO's 0.22 s, smoothstepped, and home
-  again on the release; swinging the look across the ship's bow carries it to the other battery's eye eased in the ship's own frame,
-  so its way never drags it. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
+  again on the release; a look carried onto the other battery carries it to that battery's eye eased in the ship's own
+  frame, so its way never drags it. Once the look lays on a side, it is held there until the aim is let go: no drag
+  and no turn of the ship takes it out of that side's arc, past 35° off the bow and short of 40° off the stern, where
+  the guns bear ([[A Held Aim Keeps the Camera on Its Side]]); an aim taken over the bow holds nothing until the look
+  first lays on a side. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
   waterline's box, from its draught to a metre over its upper gun line). A crippled ship's guns are silent: its eye
   never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
 - **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water
