@@ -7,7 +7,16 @@ import bpy  # noqa: I001 - Blender's own modules load once bpy has
 from mathutils import Vector
 
 from ship_mesh import Piece
-from wreck_damage import carve, faces_where, pieces_where, snap_mast, splinter_break, splinter_rim, tear_sails
+from wreck_damage import (
+    carve,
+    faces_where,
+    pieces_where,
+    small_pieces_where,
+    snap_mast,
+    splinter_break,
+    splinter_rim,
+    tear_sails,
+)
 from wreck_pieces import seeded
 from wreck_ships import SEA_Z, bake_placement, build_ship, meshes, move, placing, split
 
@@ -171,6 +180,48 @@ def clear_lane(groups, box, low, high):
             lane.objects.link(item)
             pieces_where(lane, lambda point: x0 < point.x < x1 and y0 < point.y < y1 and low < point.z < high)
             bpy.data.collections.remove(lane)
+
+
+# What stands in a body's way where a ramp meets a deck or a raft is cleared within this much of the ramp's line to
+# either side, this far before its start and past its end, from just under it to over a head, metres; no piece longer
+# than WAY_PIECE_M goes, so the decks and hulls a ramp lands on stay.
+WAY_HALF_M = 1.3
+WAY_PAST_M = 1.0
+WAY_UNDER_M = 0.3
+WAY_OVER_M = 2.0
+WAY_PIECE_M = 2.0
+
+
+def on_way(ends, point):
+    """Whether `point` stands on a ramp's way, its `ends` (start, end): within WAY_HALF_M of its line across, from
+    WAY_PAST_M before its start to as far past its end, from WAY_UNDER_M under it to WAY_OVER_M over it."""
+    start, end = (Vector(end) for end in ends)
+    run = Vector((end.x - start.x, end.y - start.y))
+    length = run.length
+    if length < 1e-6:
+        return False
+    along_unit = run / length
+    offset = Vector((point.x - start.x, point.y - start.y))
+    along = offset.dot(along_unit)
+    if along < -WAY_PAST_M or along > length + WAY_PAST_M:
+        return False
+    if abs(offset.x * along_unit.y - offset.y * along_unit.x) > WAY_HALF_M:
+        return False
+    height = start.z + (end.z - start.z) * min(1.0, max(0.0, along / length))
+    return height - WAY_UNDER_M < point.z < height + WAY_OVER_M
+
+
+def clear_ways(groups, ramps):
+    """Clears each ramp's way where it meets a deck or a raft: the splinters along a break or a hole's rim, the stubs
+    of beams and the fittings standing on it, which with no climbing would close it (`on_way`). Hulls stay, as does
+    what a body walks."""
+    ways = [item['ends'] for item in meshes(ramps) if 'ends' in item]
+    for group in groups:
+        for item in [item for item in meshes(group) if not item.get('walk') and 'Hull' not in item.name.split('.')]:
+            way = bpy.data.collections.new('Way')
+            way.objects.link(item)
+            small_pieces_where(way, lambda point: any(on_way(ends, point) for ends in ways), WAY_PIECE_M)
+            bpy.data.collections.remove(way)
 
 
 def assemble(sloop_source, sloop_shaped, seed=7):
