@@ -12,6 +12,9 @@ status: in force
 > Shown the public events built, with what was not yet pictured and what still looked wrong: "Do a comprehensive audit
 > and deep detail pass. Make this perfect"
 
+> Told where the audit's fixes, the detail pass and the last pictures stood: "Do one more comprehensive audit. Ensure
+> this is perfect"
+
 ## What it settles
 
 - **The public events are built in full before the story missions** are talked through
