@@ -189,8 +189,8 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   it and it casts its shadow. Its door is its door quad's middle, turned and lifted.
 - **Going in.** Within 2.5 m of a door E offers "Enter" and the dungeon's name, the room module's own `room_dungeon`
   asked with the patrol's id, its name and the entrance's number. Taken, the veil says "Entering" the dungeon; the page
-  leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--rough--` or
-  `--storm--` before `dungeon` at harder seas), alone a room opened in the page from the patrol's node file with
+  leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--elite--` or
+  `--abyss--` before `dungeon` at a harder difficulty), alone a room opened in the page from the patrol's node file with
   `room_open_dungeon`. The player stands at its way in, facing into its room. A trip in or out keeps the seas of the
   room the player stands in, so a company stays together at its seas. "Go to them" for a member in a dungeon goes
   into that dungeon, at their seas, the veil saying "Joining your company at" its name.

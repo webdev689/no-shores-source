@@ -306,7 +306,7 @@ each dungeon's room of a locked patrol. The bake takes about 17 s for the nine c
 and writes about 15.2 MB in all, a patrol area's file the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and
 rock's boxes). `server`, `server:bundle` and `server:deploy` run it first. It fails, writing nothing, when two nodes of
 the world share an id, when one is called `index`, or when an id is too long for its rooms' longest name,
-`node-<id>--storm--dungeon-2`, of at most 64 characters.
+`node-<id>--abyss--dungeon-2`, of at most 64 characters.
 
 ## Messages
 
