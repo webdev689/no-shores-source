@@ -241,6 +241,8 @@ fn a_race_run_late_starts_again_and_one_in_time_meets_it() {
     let mut room = node_room("gullwing-vale", &places);
     let player = joined(&mut room, &on_road(1, 4), [60.0, 190.0]);
     run(&mut room, 2);
+    // The road's own clock, as the file gives it.
+    let seconds = gear::quests::quests().quests[1].tasks[4].goals[0].seconds.expect("a race's seconds");
     assert_eq!(
         (room.step_seen(player).clock, room.quest_at(player)),
         (-1.0, Some([0.0, 150.0, 48.0])),
@@ -248,11 +250,11 @@ fn a_race_run_late_starts_again_and_one_in_time_meets_it() {
     );
     stand_at(&mut room, player, [0.0, 150.0]);
     run(&mut room, 1);
-    assert!(room.step_seen(player).clock > 149.0, "the clock runs from the mill");
+    assert!(room.step_seen(player).clock > seconds - 1.0, "the clock runs from the mill");
     stand_at(&mut room, player, [0.0, 0.0]);
     run(&mut room, 1);
     assert_eq!(room.quest_at(player), Some([0.0, -150.0, 65.0]), "the meadows next");
-    run(&mut room, 150 * 60);
+    run(&mut room, (seconds * 60.0) as u32);
     assert_eq!((room.step_seen(player).fails[0], room.step_seen(player).clock), (1, -1.0), "late: again from the mill");
     for at in [[0.0, 150.0], [0.0, 0.0], [0.0, -150.0]] {
         stand_at(&mut room, player, at);
