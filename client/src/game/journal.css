@@ -472,8 +472,16 @@ img.journal-modifier-seas {
   image-rendering: pixelated;
 }
 #hud .gear-hourglass:hover img,
-#hud .gear-hourglass:focus-visible img {
+#hud .gear-hourglass:focus-visible img,
+#hud .gear-hourglass[aria-expanded='true'] img {
   transform: rotate(180deg);
+}
+/* Its sand runs both ways alike, so the turn alone hardly shows: under the pointer, or while its timers are down, the
+   brass catches the light as well. */
+#hud .gear-hourglass:hover img,
+#hud .gear-hourglass:focus-visible img,
+#hud .gear-hourglass[aria-expanded='true'] img {
+  filter: drop-shadow(2px 2px 0 rgba(0, 0, 0, 0.8)) brightness(1.3);
 }
 @media (prefers-reduced-motion: no-preference) {
   #hud .gear-hourglass:hover img,

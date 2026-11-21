@@ -327,9 +327,10 @@ between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
 username or Discord and hollow for a guest's; pressed, it opens Settings. On the Journal its place is DFO's timer
-hourglass, which turns half over in four steps under the pointer; pressed, or T, it drops the timers from the
-Journal's top ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). Under them, the whole width of the menu,
-stands the player's banner
+hourglass, which turns half over in four steps under the pointer, its brass catching the light, and stays turned
+while its timers are down; pressed, or T, it drops the timers from the Journal's top
+([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). Under them, the whole width of
+the menu, stands the player's banner
 ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]): their emblem drawn to the banner's width at three times its
 cells, so it is never cut off, their name, level, Prestige and Defense over it, and their Aurem at its end, left blank
 on the Inventory, which shows it. Once shown it stays, though the room's word goes; only its numbers wait for it. It opens with a short

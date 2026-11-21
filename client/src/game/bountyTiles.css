@@ -1,16 +1,19 @@
 /* A bounty's tile and card (bountyTiles.ts), after Destiny's Bounty Tracker, and the board's screen laid with them
    (bountyBoard.ts): tiles in a row a kind, each kind on its own ground, a bar to the next board, and the card. */
-.bounty-tile {
+/* The menu's presses carry a press's padding; a tile is its mark alone, so it carries none. */
+#hud .bounty-tile {
   position: relative;
+  box-sizing: border-box;
   width: var(--bounty-tile, 64px);
   height: var(--bounty-tile, 64px);
   display: grid;
   place-items: center;
   padding: 0;
 }
+/* Four times its twelve pixels, so every pixel of the mark stands whole. */
 .bounty-tile-mark {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   image-rendering: pixelated;
 }
 .bounty-tile .bounty-gauge {
