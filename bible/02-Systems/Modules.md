@@ -134,11 +134,14 @@ which need nothing more.
 A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes)
 and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at
 most 32,000 triangles. The bake makes the same bytes from the same scripts, on any machine: the event props write a
-coordinate that rounds to nothing as a plain zero, since a float residue's sign differs between machines (the older
-modules keep the bytes they were published with). The `modules` workflow bakes on every change to the module tools,
-to the Lattice's builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make
-the committed manifest or if a second bake does not make the same bytes, and a second job, which installs nothing,
-publishes the first bake's meshes with the repository's Cloudflare token.
+coordinate that rounds to nothing as a plain zero, since a float residue's sign differs between machines, and work
+each corner's normal out from the rounded positions in doubles (the area-weighted faces it smooths with), since
+Blender's own single-float normals differ between CPUs in their last bits (`_steady_normals`; the older modules keep
+the bytes they were published with). The `modules` workflow bakes on every change to the module tools, to the
+Lattice's builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make the
+committed manifest or if a second bake does not make the same bytes, keeping a differing bake for a week
+(`modules-differed`) to set beside another machine's, and a second job, which installs nothing, publishes the first
+bake's meshes with the repository's Cloudflare token.
 
 ## In the game
 

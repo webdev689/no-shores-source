@@ -329,6 +329,35 @@ def _rounded(value, steady):
     return round(value, 4) + 0.0 if steady else round(value, 4)
 
 
+def _steady_normals(mesh, blender):
+    """Each corner's normal from the rounded positions alone, in doubles: the area-weighted sum of the faces at its
+    point that share its smoothing (Blender's own normals for them nearly equal). Blender works its normals out in
+    single floats that differ from one CPU to another in their last bits, which a rounding can turn into a different
+    byte; Blender's normals only choose which faces a corner smooths with, a choice far from any edge."""
+    at = lambda loop: tuple(_rounded(v, True) for v in mesh.vertices[mesh.loops[loop].vertex_index].co)
+    faces, face_of, corners = {}, {}, {}
+    for triangle in mesh.loop_triangles:
+        a, b, c = (at(loop) for loop in triangle.loops)
+        u, v = [b[i] - a[i] for i in range(3)], [c[i] - a[i] for i in range(3)]
+        cross = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+        face = faces.setdefault(triangle.polygon_index, [0.0, 0.0, 0.0])
+        for axis in range(3):
+            face[axis] += cross[axis]
+        for loop, point in zip(triangle.loops, (a, b, c)):
+            if loop not in face_of:
+                face_of[loop] = triangle.polygon_index
+                corners.setdefault(point, []).append(loop)
+    steady = {}
+    for loops in corners.values():
+        for loop in loops:
+            mine = blender[loop]
+            smoothed = {face_of[other] for other in loops if mine.dot(blender[other]) > 0.999}
+            total = [sum(faces[face][axis] for face in sorted(smoothed)) for axis in range(3)]
+            length = math.sqrt(sum(value * value for value in total))
+            steady[loop] = mathutils.Vector([value / length for value in total]) if length > 0.0 else mine
+    return [steady.get(loop, normal) for loop, normal in enumerate(blender)]
+
+
 def exported(module):
     """The module's surfaces by material, each a list of vertices (position, normal, glow) and triangles, its parts and its
     sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
@@ -342,6 +371,8 @@ def exported(module):
         mesh.transform(item.matrix_world)
         mesh.calc_loop_triangles()
         normals = [corner.vector.copy() for corner in mesh.corner_normals]
+        if module.steady:
+            normals = _steady_normals(mesh, normals)
         slots = module.slots[item.name]
         for triangle in mesh.loop_triangles:
             material, glow = slots[min(triangle.material_index, len(slots) - 1)]
