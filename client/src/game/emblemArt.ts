@@ -36,7 +36,7 @@ export function emblemOf(which: number | string | null | undefined): Emblem {
 /** The sign's square and the nameplate's length, in cells; and a band's, a nameplate run on behind a long row. */
 export const SIGN_CELLS = 24;
 export const PLATE_CELLS = 120;
-const BAND_CELLS = 320;
+export const BAND_CELLS = 320;
 
 /** How an emblem is drawn: its sign alone; its nameplate, framed all round; a band, the nameplate run on unframed at
  *  its end, behind a row of any length, which the colour it ends in fills on past it; or a banner, as Destiny 2 heads
@@ -168,5 +168,5 @@ export function emblemImage(emblem: Emblem, shape: Shape, cells = WIDTHS[shape])
 export function plateEnd(emblem: Emblem): string {
   const pixels = emblemPixels(emblem, 'band');
   const end = (SIGN_CELLS / 2) * BAND_CELLS * 4 + (BAND_CELLS - 1) * 4;
-  return `rgb(${pixels[end] ?? 0} ${pixels[end + 1] ?? 0} ${pixels[end + 2] ?? 0})`;
+  return `rgb(${pixels[end] ?? 0},${pixels[end + 1] ?? 0},${pixels[end + 2] ?? 0})`;
 }

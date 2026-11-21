@@ -2,7 +2,8 @@
 // nodes each frame (`ui/`): it reads what was done to it through `ui`, asks the room through `ask`, shows the one
 // hover card through `card` (the menu floats it beside what it describes, over everything, on the screen), says what
 // X opens through `details`, holds through `holds`, and leaves the footer's hints and presses to the menu, which
-// chooses them by the view. A page still made of elements (`PageContext`) stands in a temporary island the menu lays
+// chooses them by the view; a page that needs no gear takes only its part of it (`PlainContext`). A page still made of
+// elements (`PageContext`) stands in a temporary island the menu lays
 // over its body (gearIsland.ts) until it too is drawn.
 
 import type { GearAsk, GearItem, GearState } from '../network/gearMessages.ts';
@@ -41,6 +42,10 @@ export interface MenuContext {
   /** Opens the Appearance screen, where the menu has one. */
   readonly appearance?: () => void;
 }
+
+/** What a drawn page that needs no gear (Ship, Social, Settings, a page to come) draws from: the part of `MenuContext`
+ *  the menu gives with or without gear. */
+export type PlainContext = Pick<MenuContext, 'ui' | 'room' | 'sizes' | 'holds'>;
 
 /** What a page of elements draws from, in its island (shortcut: goes once the Arts, Appearance and keepers' screens
  *  are drawn and take `MenuContext`). */

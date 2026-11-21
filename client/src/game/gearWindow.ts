@@ -1,6 +1,5 @@
 import './gearScreen.css';
 import './menu.css';
-import './roster.css';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, answerText, itemName } from '../player/gear.ts';
@@ -14,6 +13,7 @@ import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
 import { accountMark } from './accountMark.ts';
+import { AccountPanel } from './accountTab.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
@@ -42,10 +42,10 @@ import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNo
 import { inventoryPage } from './inventoryPage.ts';
 import { ITEM_NAME, itemPage } from './itemPage.ts';
 import { KEEPERS } from './keepers.ts';
-import type { MenuContext, PageContext } from './menuPage.ts';
+import type { MenuContext, PageContext, PlainContext } from './menuPage.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import { isKeeperView, npcChoosing, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
-import { rosterPage } from './rosterTab.ts';
+import { RosterPage, socialPage } from './rosterTab.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { chime, play } from './uiSounds.ts';
 
@@ -135,6 +135,9 @@ export function startGearWindow(
   let focusNext: string | null = null;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
+  /** The Roster and the account, asked of the accounts as Social or Settings opens and kept while it shows. */
+  let roster: RosterPage | null = null;
+  let accountPanel: AccountPanel | null = null;
   /** A page of elements, kept while what it shows stays the same; and whether it is held down. */
   let built: { key: string; page: HTMLElement } | null = null;
   let pressing = false;
@@ -167,7 +170,7 @@ export function startGearWindow(
     beneath(false);
     tip.hide();
     // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
-    built = null;
+    [built, roster, accountPanel] = [null, null, null];
     island.show(null, null, null);
     ui?.focusOn(null);
   };
@@ -190,7 +193,7 @@ export function startGearWindow(
     holds.letGo();
     tip.hide();
     const opening = view === null;
-    [view, slot, inspecting, built] = [wanted, null, null, null];
+    [view, slot, inspecting, built, roster, accountPanel] = [wanted, null, null, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
@@ -206,6 +209,7 @@ export function startGearWindow(
    *  either way the hold under way is let go, so a step back never buys what was being held. */
   const stepOnce = () => {
     holds.letGo();
+    if (inspecting === null && view === 'social' && roster?.back()) return play('back');
     const step = new Event(STEP_BACK, { cancelable: true });
     const page = inspecting === null ? island.page : null;
     if (page?.dispatchEvent(step) !== false) back();
@@ -234,15 +238,12 @@ export function startGearWindow(
   };
 
   /** A page that needs no gear: a page to come, the Ship, Social or Settings. */
-  const plainPage = (shown: View): HTMLElement => {
-    const panel = shown === 'ship' ? ship() : null;
-    return islandPage(JSON.stringify([shown, panel]), () => {
-      const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
-      if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
-      if (shown === 'ship') return shipPage(panel);
-      if (shown === 'social') return rosterPage(link, travel);
-      return settingsPage(link);
-    });
+  const plainPage = (shown: View, plain: PlainContext): Node => {
+    const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
+    if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
+    if (shown === 'ship') return shipPage(ship(), plain.sizes);
+    if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
+    return settingsPage(plain, link ? (accountPanel ??= new AccountPanel(link)) : null);
   };
 
   /** The figure, drawn once a dress, for the Character page and the account's mark. */
@@ -299,7 +300,7 @@ export function startGearWindow(
     let aside: readonly Hint[] | null = null;
     let answer = '';
     let colour: string = INK.answer;
-    if (!ofGear(shown)) element = plainPage(shown);
+    if (!ofGear(shown)) page = plainPage(shown, { ui: frame, room, sizes, holds });
     else if (!now || !gear) {
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
@@ -503,7 +504,10 @@ export function startGearWindow(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
-      const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      const typing =
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        Boolean(view !== null && ui?.typing);
       const opens = !typing && !resting() && (key === 'i' || key === 'o');
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.

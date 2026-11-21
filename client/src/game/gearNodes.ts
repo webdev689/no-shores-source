@@ -10,7 +10,7 @@ import type { Picture as Pixels } from '../player/picture.ts';
 import type { Child, Drawing, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
 import { elementSvg } from './elementGlyphs.ts';
-import { type Emblem, SIGN_CELLS, type Shape, emblemPixels } from './emblemArt.ts';
+import { BAND_CELLS, type Emblem, SIGN_CELLS, type Shape, emblemPixels, plateEnd } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
 import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 
@@ -435,6 +435,37 @@ export function emblemNode(emblem: Emblem, shape: Shape, cells: number, width: n
       source: { pixels: () => new Uint8Array(emblemPixels(emblem, shape, cells).buffer) },
       pixel: { width: Math.max(SIGN_CELLS, Math.round(cells)), height: SIGN_CELLS },
     },
+  };
+}
+
+/** An emblem's nameplate behind a row `height` pixels tall, run on as its band at whole cells and the colour it ends
+ *  in filling on past it; `children` stand over it from `inset` pixels in, in a column. */
+export function plateNode(
+  emblem: Emblem,
+  height: number,
+  inset: number,
+  children: readonly Child[],
+  more: Partial<Node> = {},
+): Node {
+  return {
+    width: 'grow',
+    height,
+    clip: true,
+    fill: plateEnd(emblem),
+    children: [
+      emblemNode(emblem, 'band', BAND_CELLS, (BAND_CELLS * height) / SIGN_CELLS, height),
+      {
+        width: 'grow',
+        height: 'grow',
+        float: { to: 'parent', clipped: true },
+        direction: 'column',
+        alignY: 'center',
+        gap: 4,
+        padding: [0, 0, 0, inset],
+        ...more,
+        children,
+      },
+    ],
   };
 }
 
