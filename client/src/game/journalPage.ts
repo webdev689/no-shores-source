@@ -48,7 +48,7 @@ function questCard(card: QuestCard): HTMLElement {
   const tale = make('p', card.tale, 'journal-card-tale');
   [name.title, tale.title] = [card.name, card.tale];
   const step = make('p', '', 'journal-card-step');
-  step.append(make('span', String(card.step), `journal-step-number ${ROLES.chip}`), make('span', card.stepName));
+  step.append(make('span', String(card.step), 'journal-step-number'), make('span', card.stepName));
   if (card.done) step.append(make('span', 'Done', `gear-chip ${ROLES.chip}`));
   words.append(name, tale, step);
   item.append(banner, words);
