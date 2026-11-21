@@ -9,6 +9,7 @@ import { Boarding } from './deckBoarding.ts';
 import type { DeckSea } from './deckFight.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
 import type { StandOnDeck } from './deckFight.ts';
+import { type BindId, DEFAULTS } from '../player/binds.ts';
 import { deckKey, fightAsk } from './seaWord.ts';
 
 /** A ship of the fight lying at (x, y), still on the water. */
@@ -107,7 +108,7 @@ test('a struck captain alongside is boarded with E: the boarder stands on its de
   assert.equal(fightAsk(atSea), null, 'E asks nothing while its crew fights');
 });
 
-test('its deck won holds the boarder a minute, its time left and its hold’s take shown; E or the minute’s end brings them back aboard their own ship', async () => {
+test('its deck won holds the boarder a minute, its time left and its hold’s take shown; Use or the minute’s end brings them back aboard their own ship', async () => {
   const foot = standOnFoot();
   const { sea, asked } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
@@ -129,7 +130,7 @@ test('its deck won holds the boarder a minute, its time left and its hold’s ta
   assert.equal(boarding.won, true);
   assert.equal(boarding.words?.place, 'Its deck is yours');
   assert.equal(boarding.words?.line, 'Its hold: 2 crates, a chest');
-  assert.deepEqual(boarding.words?.hints[0], ['E', 'Back aboard your ship · 60 s left']);
+  assert.deepEqual(boarding.words?.hints[0], ['use', 'Back aboard your ship · 60 s left']);
   assert.equal(fightAsk({ boarding, sighted: sea }), 'leave-deck');
   assert.deepEqual(asked, ['leave-deck']);
   // The room has the boarder back aboard their own ship: the view is the sea's fight's again, at their helm.
@@ -176,14 +177,16 @@ test('two boarders of one deck each fight there as themselves: the page’s own 
   assert.equal(boarding.frame(sea, fight('struck'), INPUT), null);
 });
 
-test('on its deck the sea’s own keys wait: E asks, Enter respawns, the menu’s keys are the game’s, every other the foot’s', async () => {
+test('on its deck the sea’s own controls wait: Use asks, Respawn respawns, the menu and Escape are the game’s, every other the foot’s', async () => {
   const foot = standOnFoot();
   const { sea, asked } = seaRoom();
   const boarding = new Boarding(CONTEXT, foot.stand);
   let respawned = 0;
   const atSea = { fight: { view: fight('struck') }, boarding, sighted: sea };
+  /** The controls a key is bound to by default. */
+  const keyed = (key: string) => (id: BindId) => DEFAULTS[id].keys.includes(key);
   assert.equal(
-    deckKey(' ', atSea, () => undefined),
+    deckKey(keyed(' '), false, atSea, () => undefined),
     false,
     'off its deck the sea has its keys',
   );
@@ -193,23 +196,33 @@ test('on its deck the sea’s own keys wait: E asks, Enter respawns, the menu’
   boarding.frame(sea, fight('struck'), INPUT);
   for (const key of [' ', '[', 'n', 'h', 'l'])
     assert.equal(
-      deckKey(key, atSea, () => undefined),
+      deckKey(keyed(key), false, atSea, () => undefined),
       true,
       key,
     );
   assert.equal(
-    deckKey('enter', atSea, () => (respawned += 1)),
+    deckKey(keyed('enter'), false, atSea, () => (respawned += 1)),
     true,
   );
   assert.equal(respawned, 1);
   assert.equal(
-    deckKey('m', atSea, () => undefined),
+    deckKey(keyed('m'), false, atSea, () => undefined),
     false,
+  );
+  assert.equal(
+    deckKey(
+      () => false,
+      true,
+      atSea,
+      () => undefined,
+    ),
+    false,
+    'Escape',
   );
   sea.deck = { ...sea.deck, holdLeft: 600 };
   boarding.frame(sea, fight('struck'), INPUT);
   assert.equal(
-    deckKey('e', atSea, () => undefined),
+    deckKey(keyed('e'), false, atSea, () => undefined),
     true,
   );
   assert.deepEqual(asked, ['leave-deck']);

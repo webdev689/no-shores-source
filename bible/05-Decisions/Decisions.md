@@ -79,6 +79,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Rooms Deploy on Each Merge]]
 - [[Gear and Power Follow Destiny 1 Vanilla]]
 - [[Gear as Claude Shapes It]]
+- [[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]]
+- [[The Perk Pass as Claude Shapes It]]
 - [[Accounts Start as Guests, on Cloudflare D1]]
 - [[Clothing Is Armour, With a Wardrobe Later]]
 - [[The Accounts Deploy on Each Merge, and the Owner Adds Their Keys]]
@@ -220,6 +222,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue's Camera Flights Stand Clear and Go Slower]]
 - [[Three Healing Charges, Refilled by Blows and Kills]]
 - [[The Wreck Opens by Teaching the Player]]
+- [[The Key Strip Follows the Moment, and K Opens Every Control]]
+- [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]
+- [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]
 - [[Foes Walk and Run at Three Quarters of a Player's Pace]]
 - [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 

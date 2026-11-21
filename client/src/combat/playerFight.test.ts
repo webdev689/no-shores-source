@@ -8,7 +8,7 @@ import type { GearMessage, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { type Dress, plainDress } from '../player/dressing.ts';
 import { KINDS } from '../player/gear.ts';
-import type { Action, InputFrame } from '../player/input.ts';
+import { type Action, BINDS, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
@@ -183,6 +183,16 @@ test('the sights follow the weapon in hand: a gun chosen mid-swing brings them u
     'no crosshair or shots shown while the sword is still swung',
   );
   assert.equal(seen.at(-1)?.sights, true, "the gun's sights once the rules take it up");
+});
+
+test("a ranged weapon in hand turns the pad's triggers round, whichever page the player fights on", () => {
+  const { walker, frame } = fightingPlayer();
+  frame(controls());
+  assert.equal(BINDS.ranged, false, 'a sword: RT swings');
+  walker.you.dress = { ...walker.you.dress, outfit: { ...walker.you.dress.outfit, right: 'pistolet' } };
+  for (let tick = 0; tick < 60; tick++) frame(controls());
+  assert.equal(BINDS.ranged, true, 'a gun: RT fires');
+  BINDS.ranged = false;
 });
 
 test('a climb begun while the rules reload puts the held weapon away, though the rules still hold it', () => {

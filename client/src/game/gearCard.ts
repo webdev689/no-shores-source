@@ -186,20 +186,28 @@ export function compareNode(compare: NonNullable<Card['compare']>, size: number,
   };
 }
 
-/** A trait as a card or a page lists it: its column's glyph, its name and its words. */
+/** A trait as a card or a page lists it: its column's glyph, its name and its words. What a perk that gives and takes
+ *  costs stands apart, in the colour of a loss; a word says where an Atheric's perk stands, and its own node not yet
+ *  chosen is drawn dim. */
 export function traitNode(trait: Trait, size: number): Node {
+  const lit = trait.off ? INK.brass : INK.brassLit;
   return {
     width: 'grow',
     gap: 8,
     padding: [4, 0],
     children: [
-      nodeGlyphNode(trait.kind, INK.brassLit),
+      nodeGlyphNode(trait.kind, lit),
       {
         width: 'grow',
         direction: 'column',
         children: [
-          words(trait.name, size, INK.brassLit),
-          { width: 'grow', text: { words: trait.words, size, colour: INK.faint } },
+          words(trait.name, size, trait.off ? INK.faint : lit),
+          {
+            width: 'grow',
+            text: { words: trait.takes ? (trait.gives ?? trait.words) : trait.words, size, colour: INK.faint },
+          },
+          trait.takes ? { width: 'grow', text: { words: trait.takes, size, colour: INK.loss } } : null,
+          trait.note ? label(trait.note, size) : null,
         ],
       },
     ],

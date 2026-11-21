@@ -249,18 +249,39 @@ Where the work stands now, for the next session. Each session rewrites this note
   full check; seen headless at Overlook and the Saltgrass Downs. Not yet seen: an island's map, a real GPU, a fall
   while it is up.
 
+- **The perk pass**, on `main` (#119), merged with the owner's yes ("Merge and deploy"), which deploys the page and the
+  rooms ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]], [[The Perk Pass as Claude Shapes It]]):
+  ten Atheric weapons, each with an intrinsic and an own node (Gullwing's lightning leaping foe to foe, the owner's
+  example); six weapon and eleven ship perks that give and take; the ship's near-duplicate perks merged; the four
+  Atheric modules as exotics in the naval fight; every forge weapon and armour model worn on both bodies, named pieces
+  each their own look and rolled ones climbing the ladders with rarity and level; the 145 large weapon pictures
+  published (`content/forge/renders.json`). Audited twice, then by four area auditors and a design pass, and every
+  open item fixed after ("Fix anything"), each with a test: kept pieces keep the perks they bought, never a trade-off
+  pressed on them; chain blows strike once and only from the living; a shot takes its own bow's perks; Snare reaches
+  the oars; an Atheric's two perks head its page, a trade-off's cost reads as a cost. The `forge` workflow can draw
+  figure strips (`figures`), the repository's key being an Actions secret ("Key is in the repo"). Tested offline with
+  the full check; Gullwing seen headless in the Test Ground. Not yet seen on a real GPU.
+
 ## Waiting on the owner
 
-- **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), audited (an independent read-only audit and a ponytail
-  review, their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a
-  death), tested offline (`cargo xtask check`), waits on the owner's yes to merge. The player's melee swings chain side
-  cut, overhead and thrust, starting over after a second without a swing
-  ([[The Player's Swings Chain Side Cut, Overhead and Thrust]]); foes walk and run at three quarters of a player's pace
-  ([[Foes Walk and Run at Three Quarters of a Player's Pace]]); the prologue's parry freeze reads the player's aim, as
-  the rules judge a guard. Not yet played live or seen in a browser. Its open points: whether the one-second reset and
-  the pace feel right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge
-  of reach every swing thrusts), or the chain kept strictly and a short stroke left to miss; the raised shield's walk,
-  deferred by the owner (Next).
+- **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), merged with the owner's yes ("Lets go ahead and queue up
+  the deploy"), which deploys the page and the rooms; audited (an independent read-only audit and a ponytail review,
+  their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a death),
+  tested offline (`cargo xtask check`). The player's melee swings chain side cut, overhead and thrust, starting over
+  after a second without a swing ([[The Player's Swings Chain Side Cut, Overhead and Thrust]]); foes walk and run at
+  three quarters of a player's pace ([[Foes Walk and Run at Three Quarters of a Player's Pace]]); the prologue's parry
+  freeze reads the player's aim, as the rules judge a guard. Not yet played live or seen in a browser. Its open points:
+  whether the one-second reset and the pace feel right in play; whether a stroke that would not reach the locked foe is
+  passed over, as now (at the edge of reach every swing thrusts), or the chain kept strictly and a short stroke left to
+  miss, asked and not yet answered; the raised shield's walk, deferred by the owner (Next).
+- **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
+  after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
+  and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
+  moves, every set and both bodies, must be, about 27,000 solid frames a body with its cloth, some 400 Actions minutes
+  through the `forge` workflow's `figures`. Until then the game holds it as before. And the design note's calls: the
+  Atheric armour pieces keep their one signature; a rolled Rare reaches daedric at level 20; a faction's shield and
+  bow keep one make; whether named weapons keep an element of their own (a leap is Volt on any Gullwing); a blow on a
+  foe four or more levels above sets off no chain blow, since the blow itself does nothing.
 - **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
   [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]], is on `main`, merged with the owner's yes
   ("Merge and deploy"), which deploys the page and the rooms. Every sound effect and ambience sound plays the owner's

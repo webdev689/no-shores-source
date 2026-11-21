@@ -17,10 +17,12 @@ impl Room {
     /// already Charged or still immune, and the dead take nothing.
     pub fn give(&mut self, fighter: FighterId, status: Status, ticks: Option<u32>, from: Option<FighterId>) -> bool {
         let ticks = ticks.unwrap_or_else(|| self.lasts(fighter, status));
+        let held = self.fighter(fighter).map_or(0, |now| now.statuses.left(status));
         let Some(next) = self.fighter(fighter).and_then(|now| give(now, status, ticks, from)) else { return false };
         self.set_fighter(fighter, next);
-        // A Sunwell keeps its share as it gives Linked; any other giver's Linked heals as written.
-        if status == Status::Linked {
+        // A Sunwell keeps its share as it gives Linked; any other giver's Linked heals as written, once it outlasts the
+        // one held, which a status given again keeps when it is the longer.
+        if status == Status::Linked && ticks >= held {
             self.spells.linked.remove(&fighter);
         }
         // Overload: a foe the player Charges is Exposed too, as long as the Art that holds it lasts at its level; a

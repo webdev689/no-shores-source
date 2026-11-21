@@ -1,14 +1,14 @@
 // The page as the game's worker sees it. A worker has no page, so the game's code, written for one, finds stand-ins
 // where a page's would be: its storage (read here, every write sent on), its address, its size, its media queries,
-// its document (hidden or not, the pointer's lock, a screen reader's announcements), and its canvas (the page's,
-// drawn on from here, its events heard as the page sends them). Each asks the page, through `send`, for what only a
+// its document (hidden or not, the pointer's lock, a screen reader's announcements), its pads (as the page read them
+// last), and its canvas (the page's, drawn on from here, its events heard as the page sends them). Each asks the page, through `send`, for what only a
 // page can do.
 import { canvasSize } from '../canvasSize.ts';
 import { hearFromAway, type PageEvents } from '../ui/canvasEvents.ts';
 import { type KeptSignIn, useSignIns } from '../ui/page.ts';
 import { useSvgDrawer } from '../ui/pictures.ts';
 import type { Typing, UiEvent } from '../ui/ui.ts';
-import { HEARD, type Pointer, type Start, type ToGame, type ToPage, type View } from './pageOps.ts';
+import { HEARD, type PadRead, type Pointer, type Start, type ToGame, type ToPage, type View } from './pageOps.ts';
 
 type Send = (message: ToPage, transfer?: Transferable[]) => void;
 
@@ -238,6 +238,9 @@ export function pageAway(start: Start, send: Send): Away {
   });
   const window = phasedWindow();
   const ticks = ticksOf(send);
+  // A worker has no Gamepad API: the pads are read as the page last sent them.
+  let pads: readonly PadRead[] = [];
+  Object.defineProperty(navigator, 'getGamepads', { value: () => pads, configurable: true });
   hearFromAway(events);
   // Only a page decodes SVG: the page draws it, and sends the picture.
   const drawing = new Map<number, (picture: ImageBitmap | null) => void>();
@@ -297,6 +300,9 @@ export function pageAway(start: Start, send: Send): Away {
           return;
         case 'tick':
           ticks?.();
+          return;
+        case 'pads':
+          pads = message.pads;
           return;
         case 'svg':
           drawing.get(message.id)?.(message.picture);

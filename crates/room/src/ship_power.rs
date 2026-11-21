@@ -38,6 +38,14 @@ pub fn trim_of(trim: &ShipTrim) -> Trim {
         gunner: trim.post(Post::Gunner),
         bosun: trim.post(Post::Bosun),
         carpenter: trim.post(Post::Carpenter),
+        holing: trim.holing,
+        mend: trim.mend,
+        last_stand: trim.last_stand,
+        feeding: trim.feeding,
+        own_wind: trim.own_wind,
+        squall: trim.squall,
+        web: trim.web,
+        snare: trim.snare,
     }
 }
 
@@ -58,7 +66,7 @@ pub fn fitted(power: ShipPower, trim: Trim, levels: impl Iterator<Item = (ShipId
         dealt.insert(id, power.harm_dealt(level));
         taken.insert(id, power.harm_taken(level) / gear::power::foe_health_times(level));
     }
-    Fitting { dealt, taken, trim, patching: 0.0 }
+    Fitting { dealt, taken, trim, ..Fitting::default() }
 }
 
 impl Fights {
@@ -67,7 +75,9 @@ impl Fights {
         for fought in &mut self.list {
             for (player, crew) in &fought.crews {
                 if let Some(character) = characters.get(player) {
-                    fought.fight.fit(crew.ship, fitting(character, &fought.hostiles));
+                    // A player back in the fight whose last stand it spent has none again.
+                    let stood = fought.stood.contains(player);
+                    fought.fight.fit(crew.ship, Fitting { stood, ..fitting(character, &fought.hostiles) });
                 }
             }
         }

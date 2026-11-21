@@ -3,8 +3,12 @@
 // themselves (swing, guard, drink a healing charge); then meets a Tithe boarder one on one, whose first blow the fight
 // freezes on until they parry and whose next until they dodge. Each step is ticked once it is done, read from what
 // their body and their fight did, and steps done early stay done. The wreck's waves wait until the boarder falls.
+import type { BindId } from '../../player/binds.ts';
+import { BINDS } from '../../player/input.ts';
 import { RUNNING } from '../../player/others.ts';
 import type { FighterView } from '../../rules/fighters.ts';
+import { askedKey } from '../controls.ts';
+import { keysOf } from '../hints.ts';
 import type { Quest, Step } from '../tasks.ts';
 
 /** The quest the prologue's tasks stand under. */
@@ -15,8 +19,9 @@ const MOVED_M = 2;
 const LOOKED_RAD = 1;
 /** How long a task stays up once all of it is met, seconds, so its last step is seen ticked. */
 const MET_HOLD_S = 1.5;
-/** Once both the parry and the dodge are made, a short reminder of both, for this long, seconds. */
-export const REMINDER = 'F parries a blow as it lands; V dodges it';
+/** Once both the parry and the dodge are made, a short reminder of both, for this long, seconds, naming their keys
+ *  as bound now on the keys or the pad. */
+export const reminder = (): string => `${askedKey('guard')} parries a blow as it lands; ${askedKey('dodge')} dodges it`;
 const REMIND_S = 6;
 
 /** Where the player's sword and shield are: on the deck, in their pack, or worn. */
@@ -49,24 +54,37 @@ export interface Done {
 export const STAGES = ['find', 'equip', 'feet', 'ready', 'duel', 'fight'] as const;
 export type Stage = (typeof STAGES)[number];
 
-/** Every step taught, each with its words and keys, as foot's keys name them (hints.ts). */
+/** Every step taught, each with its words and what does it: the controls it names (as the key strip names them,
+ *  `hints.ts`), every key of each shown, or the one key the frozen fight asks for. */
+interface Taught {
+  readonly text: string;
+  readonly keys?: string;
+  readonly asks?: BindId;
+}
 const STEPS = {
   take: { text: 'Take them up' },
-  open: { text: 'Open your Character page', keys: ['I'] },
+  open: { text: 'Open your Character page', keys: 'character' },
   equip: { text: 'Equip them from the Melee slot' },
-  close: { text: 'Close it', keys: ['Esc'] },
-  move: { text: 'Move', keys: ['W', 'A', 'S', 'D'] },
-  look: { text: 'Look round', keys: ['Mouse'] },
-  run: { text: 'Run', keys: ['Shift'] },
-  jump: { text: 'Jump', keys: ['Space'] },
-  swing: { text: 'Swing', keys: ['Right button'] },
-  guard: { text: 'Guard', keys: ['Left button', 'F'] },
-  drink: { text: 'Drink a healing charge', keys: ['3'] },
-  parry: { text: 'Parry a blow', keys: ['F'] },
-  dodge: { text: 'Dodge a blow', keys: ['V'] },
+  close: { text: 'Close it', keys: 'Esc' },
+  move: { text: 'Move', keys: 'forward / left / back / right' },
+  look: { text: 'Look round', keys: 'Mouse|turnLeft / Mouse|turnRight / Mouse|lookUp / Mouse|lookDown' },
+  run: { text: 'Run', keys: 'run' },
+  jump: { text: 'Jump', keys: 'jump' },
+  swing: { text: 'Swing', keys: 'swing' },
+  guard: { text: 'Guard', keys: 'guard' },
+  drink: { text: 'Drink a healing charge', keys: 'heal' },
+  parry: { text: 'Parry a blow', asks: 'guard' },
+  dodge: { text: 'Dodge a blow', asks: 'dodge' },
   fell: { text: 'Bring the boarder down' },
-} as const satisfies Record<string, Step>;
+} as const satisfies Record<string, Taught>;
 type Learned = keyof typeof STEPS;
+
+/** Step `learned` as the tracker shows it, its keys as bound now on the keys or the pad played last. */
+function stepOf(learned: Learned, done: boolean): Step {
+  const { text, keys, asks }: Taught = STEPS[learned];
+  const shown = asks ? [askedKey(asks, true)] : keys ? keysOf(keys, BINDS.device, BINDS.now, true) : [];
+  return { text, ...(shown.length > 0 && { keys: shown.filter(Boolean) }), done };
+}
 
 /** Each stage's task and its steps. */
 const TASKS: Readonly<Record<Exclude<Stage, 'fight'>, { readonly task: string; readonly steps: readonly Learned[] }>> =
@@ -101,7 +119,7 @@ export class Tutorial {
 
   /** The reminder to show now, for a while once both lessons are learned, whichever came last; else none. */
   get reminder(): string | null {
-    return this.remindFor > 0 ? REMINDER : null;
+    return this.remindFor > 0 ? reminder() : null;
   }
 
   /** Whether a boarder should stand now: as the duel begins, and again should one fall before both lessons are
@@ -129,7 +147,7 @@ export class Tutorial {
     const { task, steps } = TASKS[stage];
     const met = steps.every((step) => this.learned.has(step));
     this.metFor = met ? this.metFor + done.seconds : 0;
-    const shown = { name: QUEST, task, steps: steps.map((step) => ({ ...STEPS[step], done: this.learned.has(step) })) };
+    const shown = { name: QUEST, task, steps: steps.map((step) => stepOf(step, this.learned.has(step))) };
     if (this.metFor >= MET_HOLD_S) [this.reached, this.metFor] = [this.reached + 1, 0];
     return shown;
   }

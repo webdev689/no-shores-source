@@ -3,6 +3,7 @@
 import { sloopBuildText } from '../network/localRoom.ts';
 import { fetchRoomWasm } from '../rules/combatRules.ts';
 import { capital } from '../player/gear.ts';
+import { withKey } from './controls.ts';
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
 export interface SloopBuild {
@@ -147,7 +148,7 @@ export function shipPanelOf(
             },
           ]
         : []),
-      ...(kept ? [{ heading: 'Repair', rows: [['Repair the ship  R', kept.repair]] as const }] : []),
+      ...(kept ? [{ heading: 'Repair', rows: [[withKey('Repair the ship', 'repair'), kept.repair]] as const }] : []),
     ],
   };
 }

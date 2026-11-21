@@ -19,7 +19,7 @@ import type { Nameplate } from './nameplate.ts';
 import { Overboard } from './overboard.ts';
 import { headOnView } from './stage.ts';
 import type { Story } from './story.ts';
-import { REMINDER } from './tutorial.ts';
+import { reminder } from './tutorial.ts';
 import { Wake } from './wake.ts';
 import { courseOf, readWreck, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
@@ -491,7 +491,7 @@ test('the teaching on the wreck: bare hands until the arms are worn, a boarder o
   state.events = [{ kind: EVENT.perfect, striker: 2, defender: 1 } as FightEvent];
   step();
   step();
-  assert.ok(calls.includes(`stage.parts.hud.toast(${REMINDER})`), 'then the reminder');
+  assert.ok(calls.includes(`stage.parts.hud.toast(${reminder()})`), 'then the reminder');
   state.boarder = 'fallen';
   onFor(2);
   assert.equal(waves.at(-1), false, 'the boarder down, the waves come');

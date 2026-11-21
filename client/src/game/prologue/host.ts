@@ -2,6 +2,7 @@
 // helm for a player back from Discord who has not played it through; or, if it cannot start, the player sent on to
 // Overlook), its frames, keys, pointer and touches, and its end, which lets the story's own parts go and hands the
 // player to the game with the epilogue to play on foot and their look to dress them.
+import type { Context } from '../../player/binds.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { GearHere } from '../gearScreen.ts';
@@ -27,15 +28,16 @@ export class StoryHost {
   private readonly ready = new Promise<Started | null>((resolve) => (this.started = resolve));
   private readonly canvas: HTMLCanvasElement;
 
-  constructor(stack: Stack, canvas: HTMLCanvasElement) {
+  /** The story on `canvas`, its pointer let alone while `covered` (the sheet of every control over it takes it). */
+  constructor(stack: Stack, canvas: HTMLCanvasElement, covered: () => boolean = () => false) {
     this.canvas = canvas;
     void tapToStart(stack, this.ready).then(async () => (this.story = await this.ready));
-    canvas.addEventListener('pointerdown', () => this.story?.prologue.press());
+    canvas.addEventListener('pointerdown', () => covered() || this.story?.prologue.press());
     // A touch held anywhere on the view skips, so it is heard from the window.
     addEventListener('pointerdown', (event) => event.pointerType === 'touch' && this.story?.prologue.touch(true));
     for (const ending of ['pointerup', 'pointercancel'] as const)
       addEventListener(ending, (event) => event.pointerType === 'touch' && this.story?.prologue.touch(false));
-    fightPointer(canvas, () => this.story?.prologue.fight ?? null);
+    fightPointer(canvas, () => (covered() ? null : (this.story?.prologue.fight ?? null)));
   }
 
   /** Starts the story on the game's parts, once the rooms' module has compiled; `failed` if it cannot start. */
@@ -63,6 +65,21 @@ export class StoryHost {
 
   key(key: string, down: boolean): void {
     this.story?.prologue.key(key, down);
+  }
+
+  /** Where the player's controls act in the story: in its sea fight while one is on, else on foot. */
+  get context(): Context {
+    return this.story?.prologue.fight ? 'fight' : 'foot';
+  }
+
+  /** The pad's part of a frame, for the story's sea fight while one is on. */
+  padFrame(pad: InputFrame, seconds: number): void {
+    this.story?.prologue.fight?.padFrame(pad, seconds);
+  }
+
+  /** A tap or click, as the pad's A is one: the title's beginning, or the stranger's hand taken. */
+  press(): void {
+    this.story?.prologue.press();
   }
 
   /** The player's gear for the menu, while the story keeps any: on the wreck, as they play it. */
