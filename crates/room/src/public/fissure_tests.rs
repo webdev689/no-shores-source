@@ -13,24 +13,24 @@ use super::{COUNTDOWN_TICKS, Heroic, Phase, Play};
 use crate::{Dropped, EventKind, PlayerId, Room};
 use combat::fighter::FighterId;
 
-fn fissure(room: &Room) -> &super::fissure::Fissure {
+pub(super) fn fissure(room: &Room) -> &super::fissure::Fissure {
     let Play::Fissure(fissure) = &running(room).play else { panic!("a Fissure") };
     fissure
 }
 
-fn fissure_mut(room: &mut Room) -> &mut super::fissure::Fissure {
+pub(super) fn fissure_mut(room: &mut Room) -> &mut super::fissure::Fissure {
     let Play::Fissure(fissure) = &mut running_mut(room).play else { panic!("a Fissure") };
     fissure
 }
 
 /// The event's foes standing but its growth and its Warden.
-fn lesser(room: &Room) -> Vec<FighterId> {
+pub(super) fn lesser(room: &Room) -> Vec<FighterId> {
     let (growth, warden) = (fissure(room).growth, fissure(room).warden);
     standing(room).into_iter().filter(|id| Some(*id) != growth && Some(*id) != warden).collect()
 }
 
 /// A player fells one of the Fissure's lesser foes, walks onto the shard it dropped and carries it to the lip.
-fn seal_one(room: &mut Room, player: PlayerId) {
+pub(super) fn seal_one(room: &mut Room, player: PlayerId) {
     // Off the lip, where the foes pour out, so the shard is not taken as it falls.
     place(room, player, [FISSURE_AT[0] + 20.0, FISSURE_AT[1]]);
     // A wave comes WAVE_SOONEST after the last at the soonest: wait for one if none stands.
@@ -51,7 +51,7 @@ fn seal_one(room: &mut Room, player: PlayerId) {
     room.tick();
 }
 
-fn chests(room: &Room, player: PlayerId) -> Vec<u8> {
+pub(super) fn chests(room: &Room, player: PlayerId) -> Vec<u8> {
     let tier = |drop: &crate::Drop| if let Dropped::Chest { tier, .. } = drop.what { Some(tier) } else { None };
     room.drops_for(player).filter_map(tier).collect()
 }
@@ -63,7 +63,7 @@ fn felled_foes_drop_shards_and_a_player_sealing_them_quickly_wins_the_bonus_ches
     let blocks = room.blocks.len();
     room.tick();
     assert_eq!(told(&mut room, EventKind::PublicBegun).len(), 1);
-    assert_eq!(fissure(&room).needed(), SHARDS_FIRST, "alone, eight");
+    assert_eq!(fissure(&room).needed(), SHARDS_FIRST, "alone, sixteen");
     assert!(standing(&room).len() >= 3, "the first wave poured out");
     for _ in 0..SHARDS_FIRST {
         seal_one(&mut room, player);
@@ -382,7 +382,8 @@ fn the_growth_left_standing_sinks_for_as_long_as_the_page_sinks_it_before_it_is_
 fn its_foes_fight_a_player_shooting_from_past_its_ground_without_giving_them_up() {
     let (mut room, players) = room_at(FISSURE_MINUTE, 1);
     // Fifteen metres past the edge of its ground, as a player shoots into the fight from.
-    place(&mut room, players[0], [FISSURE_AT[0] + 45.0, FISSURE_AT[1]]);
+    let edge = super::fixture::grounds().fissure.unwrap().radius;
+    place(&mut room, players[0], [FISSURE_AT[0] + edge + 15.0, FISSURE_AT[1]]);
     room.tick();
     let foes = lesser(&room);
     ticks(&mut room, 60);

@@ -157,10 +157,7 @@ fn opened_in_person_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_t
     assert_eq!(room.open_chest(player, chest), 0);
     let character = &room.players[&player].character;
     assert_eq!(character.vestiges_held(true), gear::character::VAULT_MOST, "the vault kept to its limit");
-    let lying: Vec<[f64; 3]> = room
-        .drops_for(player)
-        .filter(|drop| matches!(drop.what, Dropped::Vestige(_)))
-        .map(|drop| drop.at)
-        .collect();
+    let lying: Vec<[f64; 3]> =
+        room.drops_for(player).filter(|drop| matches!(drop.what, Dropped::Vestige(_))).map(|drop| drop.at).collect();
     assert_eq!(lying, [at], "laid on the ground where the chest stood");
 }

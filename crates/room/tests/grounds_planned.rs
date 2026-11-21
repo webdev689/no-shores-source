@@ -215,8 +215,8 @@ fn saltmeres_fissures_open_on_clear_ground_beside_their_battlefields_obelisk_nev
 #[test]
 fn saltmeres_grounds_keep_every_distance_the_bake_plans_them_by() {
     use layout::grounds::{
-        APPROACH_M, BANNERS_APART, BANNERS_M, FISSURE_CLEAR, FISSURE_HALF, RAID_LEAST, RAID_PAST, STORE_CLEAR, STORE_HALF,
-        STORE_OFF_WAYS, STORES_APART, STORES_FROM_PLAZA,
+        APPROACH_M, BANNERS_APART, BANNERS_M, FISSURE_CLEAR, FISSURE_HALF, RAID_LEAST, RAID_PAST, STORE_CLEAR,
+        STORE_HALF, STORE_OFF_WAYS, STORES_APART, STORES_FROM_PLAZA,
     };
     let layouts = continent_one();
     for id in bake::EVENT_ZONES {
