@@ -64,6 +64,8 @@ const takes = (node: Node) =>
     node.text ||
     node.scroll,
   );
+/** Whether the pointer passes through `laid`: it, or what holds it, lets it through. */
+const through = (laid: Laid | null): boolean => Boolean(laid && (laid.node.through || through(laid.parent)));
 const acts = (node: Node) => Boolean((node.press || node.field || node.focusable) && !node.disabled && node.id);
 const inside = (box: Box, x: number, y: number) =>
   x >= box.x && y >= box.y && x < box.x + box.width && y < box.y + box.height;
@@ -282,7 +284,7 @@ export class Interface {
   private hitAt(x: number, y: number): Laid | null {
     for (let index = this.laid.length - 1; index >= 0; index--) {
       const laid = this.laid[index];
-      if (laid && takes(laid.node) && inside(laid.box, x, y) && inside(laid.clip, x, y)) return laid;
+      if (laid && takes(laid.node) && inside(laid.box, x, y) && inside(laid.clip, x, y) && !through(laid)) return laid;
     }
     return null;
   }

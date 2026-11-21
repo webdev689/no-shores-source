@@ -126,6 +126,9 @@ export interface Node {
   readonly keys?: readonly string[];
   /** Takes the pointer even with nothing to press, so a click on it does not fall through to the world. */
   readonly solid?: boolean;
+  /** Lets the pointer through, it and all it holds, to what lies under it, as words laid over the world do: nothing
+   *  in it is pressed, hovered or scrolled. */
+  readonly through?: boolean;
   readonly draw?: Drawing;
 }
 

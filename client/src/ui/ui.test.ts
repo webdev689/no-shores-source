@@ -198,3 +198,21 @@ test('the view’s size is answered in CSS pixels, as the frame was given it at 
   ui.frame({ width: 800, height: 600, scale: 2 }, [], 1 / 60);
   assert.deepEqual(ui.size, { width: 400, height: 300 });
 });
+
+test('words laid over the world let the pointer through, and all they hold, so a click there is the world’s', () => {
+  const ui = new Interface(renderer());
+  const root: Node = {
+    width: 'grow',
+    height: 'grow',
+    children: [
+      { width: 100, height: 40, through: true, children: [{ id: 'held', press: true, width: 40, height: 20 }] },
+      { text: { words: 'over the world' }, through: true },
+    ],
+  };
+  step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
+  step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
+  assert.equal(ui.takesPointer, false);
+  assert.equal(ui.hovered('held'), false);
+  step(ui, root, [{ kind: 'pointer', x: 110, y: 5 }]);
+  assert.equal(ui.takesPointer, false, 'the words too');
+});
