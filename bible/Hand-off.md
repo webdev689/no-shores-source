@@ -305,15 +305,24 @@ Built on the branch, `main` merged in (#98, #102, #107):
   routines on the world clock, the band heard by distance, Maren on the ways. `life/check.rs` walks every way and
   every post a walker comes to; a kept post (a market keeper, a smith) is checked standing clear, not walked to.
 
-Tested offline: `cargo test -p city`, `cargo test -p room --test hub_walked`, `cargo test -p reach`.
+Tested offline: the full `cargo xtask check`. Seen headless in the built page (morning, in rain), twelve views: the
+Watch Court from the walk and from above, the east passage, the West Court, the Forge Yard, the Beacon Walk and its
+market, the portico, the Hall from its door and from the war table, and a sealed gate. Banners, lanterns, bunting,
+ivy, planters, the well, the rug, the war table and the townsfolk all stand where placed. The views are taken with
+`webgpu-shot.cjs`, a `views` list (the hub's middle is east 2809214, south 1201297; seaward is north, bearing 0),
+`?at=overlook-social&spawn=2809214,1201241,180`, an `init` shifting `Date.now` to the hour wanted (a day is one real
+hour from `EPOCH_UNIX_MS`), and `routes` to a local bake's meshes until CI publishes them.
 
 Left to do, in order:
-1. `cargo xtask check` whole on the head, and CI's `modules` run publishing the meshes to R2.
-2. Pictures of the built page (`?at=overlook-social&spawn=...`, `webgpu-shot.cjs` with a `views` list; the hub's
-   middle is east 2809214, south 1201297, seaward is north) of every court, the Hall, the Harbour Stair, the road and
-   the pier; the fall; the townsfolk. Look at the signs on their stalls and the banners on the ranges: neither has
-   been seen in place.
-3. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Reach, Movement, Navmesh, Ambience, Interface,
+1. **In the Hall from first person**, its floor and rug are not drawn and the land's grass shows through; from 6 m up
+   they are. Find which of the city's tiers (`client/src/city/tiers.ts`) drops the Hall's floor with the eye inside.
+2. **Rain falls inside the Hall and the portico**, and puddles lie on their floors: the weather's known limit
+   ([[Weather]], "Rain falls through roofs"), most seen here. Shelter under a roof is the fix.
+3. The Forge Yard reads bare at ground level, a wide court with an anvil yard, a cart and crates: more of the
+   court's own work (a smithy's lean-to, a quench, racks, carts of ore) would fill it.
+4. Pictures not yet taken: the Harbour Stair, the road and the pier, a stall's sign close up, the fall, the
+   townsfolk at work. CI's `modules` run publishes the meshes; until then a picture routes them from a local bake.
+5. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Reach, Movement, Navmesh, Ambience, Interface,
    Code Map), independent audits, then the draft pull request's description for the owner.
 - Coordination: the activities session (#97) reads `Social.board` from its branch and checks its board against the
   ways; whichever merges second sets `Social.board` from `hub::BOARD_LANDING_M`. It keeps `gear::clock`'s moves.

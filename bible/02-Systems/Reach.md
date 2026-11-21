@@ -36,6 +36,8 @@ walls ([[Layouts]]).
 | Inside | Inside while inside or on the ring; outside, warned with a count of 10 s (600 ticks) |
 | Warned | Back inside, the count ends. Outside, it runs down a tick; at 0 the body dies |
 | Inside or warned, 60 m or more past the edge | Dead at once |
+| Where falls kill (a social space), in the air 6 m or more below where its feet last stood | Dead at once, by a fall, inside the ring or out |
+| Where falls kill, inside and leaving the ring in the air | Still inside until its feet are down, so a fall shows no warning; a count already running keeps running |
 | Dead | Dead a tick longer, wherever the body is: only a respawn ends it |
 
 - **Respawning.** A respawn is offered once the body has been dead 4 s (240 ticks). It comes back at the section's
