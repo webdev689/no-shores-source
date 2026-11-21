@@ -235,6 +235,19 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#118, every sound from Freesound and the music's pass** (draft, `ccr-c504a08b-gyns6o`), the owner's words in
+  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]. On it: 93 Freesound cues for every sound
+  the synthesiser still made, each wired where it plays (the synthesiser's until picked); calm pieces now and then
+  everywhere with each place's silences; fourteen new calm pieces (`calm.ts`); and no note over B5, no FM partial past
+  6 kHz, no ringing drum, held by tests. Tested offline: the full check, and every song rendered and measured headless.
+  Waiting: the owner's picks and verdicts on the sound sheet, https://claude.ai/artifact/PBSynEeW37HPSvX89EYUbA (the
+  music is on it; the sounds' candidates come from the `freesound` workflow's run, about three hours for the whole
+  list, and are loaded with the session scratchpad's `cues.py`). The old sound sheet (YT29RAFbgdPRLByLUVC7nh) could
+  not be opened from this session. Next, once the picks are in: set each cue's `picked` (or `skip` for None of
+  these, with fresh words), let the workflow publish, take its `sounds.json`, then delete the synthesiser behind
+  sound effects and ambience (`beds.ts`, `calls.ts`, `songs.ts`, `noises.ts`, the cinema's voices, `uiSounds`' tones
+  and the voice's buzz) and the fallbacks that call it. The gains and the hold need code to play their picks
+  (`uiSounds` `chime` and `charge`).
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
