@@ -237,3 +237,29 @@ fn a_fight_takes_the_weather_where_it_began_and_keeps_it() {
     ticks(&mut sea, 120);
     assert_eq!(sea.fights.of_mut(player).unwrap().0.wind, wind, "kept while it lasts");
 }
+
+#[test]
+fn a_ship_that_goes_down_counts_once_toward_the_sea_bounty_of_each_kept_player_who_fought_her() {
+    let (mut sea, player) = met(60.0, Rank::Elite);
+    let friday_nine = 29_919_420;
+    sea.minute = friday_nine;
+    let day = gear::clock::day_of(friday_nine);
+    let place = gear::bounties::board(day)
+        .iter()
+        .position(|bounty| matches!(bounty.objective, gear::objectives::Objective::Sink { .. }))
+        .and_then(|place| u8::try_from(place).ok())
+        .expect("the board holds a sea bounty");
+    let mut character = gear::Character::starting();
+    character.activity.today = gear::activity::Today { day, bounties: [(place, 0)].into(), ..Default::default() };
+    assert!(sea.restore_character(player, &character.to_json()));
+    let fought = &mut sea.fights.of_mut(player).unwrap().0;
+    fought.fought.push(player);
+    let vessel = fought.fight.ships.get_mut(&CAPTAIN).unwrap();
+    vessel.damage.hull = 0.0;
+    vessel.damage.scuttle();
+    sea.harbour.changed.clear();
+    ticks(&mut sea, 22 * 60);
+    let held = &sea.harbour.characters[&player];
+    assert_eq!(held.activity.today.bounties.get(&place), Some(&1), "once, though listed twice among her fighters");
+    assert!(sea.harbour.changed.contains(&player), "the count is saved and sent");
+}

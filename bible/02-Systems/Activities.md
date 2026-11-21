@@ -9,6 +9,7 @@ code:
   - crates/gear/src/activities.rs#week_dungeons
   - crates/gear/src/clears.rs#clear_of_the_day
   - crates/gear/src/objectives.rs#saw
+  - crates/room/src/sea_ports.rs#count_down
   - crates/gear/src/bounties.rs#board
   - crates/gear/src/quests.rs#step_at
   - client/src/game/journalPage.ts#startJournal
@@ -32,8 +33,8 @@ Dungeon a Week]], [[The Story Opens Places, Levels Open Tiers, and the Campaign'
 Difficulty]] and [[The Tiers Are Normal, Elite and Abyss]]. Everything else here is Claude's call, listed at the end,
 and the owner can change any of it. The owner approved it to be built in full, the story's missions apart
 ([[The Activities Are Built in Full, Before the Story's Missions]]). All five steps are built: the core, the
-dungeons, the screens, companies of four with Find a Company, and the quests and bounties; no ship counts yet, since
-the sea's room keeps no characters.
+dungeons, the screens, companies of four with Find a Company, and the quests and bounties, ships sunk at sea among
+them.
 
 ## What it is for
 
@@ -207,10 +208,11 @@ One engine counts both, since the owner's side quests and the board's bounties a
   The refusals read "The bounty board opens after the prologue.", "That bounty is no longer on the board.", "You
   already hold that bounty.", "That bounty is not done yet." and "That bounty is turned in already."; they are
   numbered 80 to 84, apart from the rest.
-- **At sea** no ship counts yet: the sea's room keeps no characters, and no other room's character is borrowed for
-  it. When the sea's room keeps its sailors' characters, it counts each ship sunk or taken, by her water and rank, on
-  the character it holds for each player who fought her, once each however often they are listed
-  (`gear::objectives::count_ship_down`).
+- **At sea** the sea's room keeps its sailors' characters ([[Accounts]], "At sea") and counts each captain's ship
+  that goes down, sunk or taken (a ship taken is scuttled once her boarders leave her), on the character it keeps for
+  each player who fought her, once each however often they are listed, by the water she went down in (its
+  continent's id, none off every water) and her captain's rank, on the sea's day (`Sea::count_down`,
+  `gear::objectives::count_ship_down`). A count that moves is saved and sent.
 - **Quests** (side quests, and the story's missions as quests of kind story) use the same objectives, kept until
   done, and are written as data (`content/gear/quests.json`, read by `gear::quests`, none written yet): each its id,
   its kind (story or side), its name, one line of its tale, an optional banner key (else the Journal gives it one of

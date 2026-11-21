@@ -11,7 +11,7 @@ use crate::players::GEAR_EVERY_TICKS;
 use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 
 /// A player who leaves a fight with less than this share of their hull is kept as a sunk ship comes back.
@@ -44,6 +44,22 @@ impl Sea {
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
             self.harbour.changed.extend(crate::ship_power::pay_sinking(ship, &mut self.harbour.characters));
+            self.count_down(ship);
+        }
+    }
+
+    /// Counts a captain's ship sunk or taken toward the bounties and quests of each player who fought her whose
+    /// character the sea keeps, once each, by the water she went down in and her captain's rank, on the sea's day
+    /// (`gear::objectives::count_ship_down`); a count that moved is saved and sent.
+    fn count_down(&mut self, sank: &Sank) {
+        let water = self.chart.water_id(sank.at);
+        let (rank, day) = (sank.pirate.commission.rank.number(), gear::clock::day_of(self.minute));
+        let fought: BTreeSet<PlayerId> = sank.players.iter().copied().collect();
+        for player in fought {
+            let Some(character) = self.harbour.characters.get_mut(&player) else { continue };
+            if gear::objectives::count_ship_down([character], water, rank, day) {
+                self.harbour.changed.insert(player);
+            }
         }
     }
 
