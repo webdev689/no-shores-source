@@ -1,6 +1,7 @@
-//! Healing charges in the room: a player's blow fills their meter by the share of its foe's most health it took,
-//! weighed by the foe's rank, and a kill by its rank's share; a full meter is a charge, none past three; a player joins
-//! and stands again with all three; and their drink's heal is told.
+//! Healing charges in the room: a player's blow, a swing, a shot or a spell, fills their meter by the share it took of
+//! its foe's most health and most shield, weighed by the foe's rank; a kill gives its rank's share to every player who
+//! struck the foe in its last ten seconds; a blow on a dead foe gives nothing. A full meter is a charge, none past
+//! three; a player joins and stands again with all three; and their drink's heal is told.
 
 use super::*;
 use crate::judging::How;
@@ -8,7 +9,7 @@ use crate::recharge::{DEALT_SHARE, kill_share};
 use ::foes::Rank;
 use combat::judge::{Blow, BlowKind};
 use combat::tuning::CHARGES;
-use combat::{CombatInput, Intent, Stroke};
+use combat::{CombatInput, Intent, Ranged, Stroke};
 use std::collections::BTreeMap;
 
 /// A foe of the roster's type `number` at `rank`, put straight into the room 1.5 m north of the origin.
@@ -31,11 +32,11 @@ fn holding(charges: u8, meter: f64) -> (Room, PlayerId) {
     (room, player)
 }
 
-/// The player's blow on `foe`, landing for `damage`.
-fn strike(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64) {
+/// The player's blow of `kind` on `foe`, landing for `damage`.
+fn strike_with(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64, kind: BlowKind) {
     let blow = Blow {
         striker: player,
-        kind: BlowKind::Swing(Stroke::Down),
+        kind,
         from: [0.0, 0.0],
         damage,
         poise: 0.0,
@@ -48,7 +49,17 @@ fn strike(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64) {
         element: 0,
         crit: false,
     };
-    room.settle(&blow, How::Swing, foe, Verdict::Hit { damage, poise: 0.0 }, None);
+    let how = match kind {
+        BlowKind::Shot(_) => How::Shot,
+        BlowKind::Spell(_) => How::Spell,
+        _ => How::Swing,
+    };
+    room.settle(&blow, how, foe, Verdict::Hit { damage, poise: 0.0 }, None);
+}
+
+/// The player's swing on `foe`, landing for `damage`.
+fn strike(room: &mut Room, player: PlayerId, foe: FighterId, damage: f64) {
+    strike_with(room, player, foe, damage, BlowKind::Swing(Stroke::Down));
 }
 
 fn charges(room: &Room, player: PlayerId) -> (u8, f64) {
@@ -69,6 +80,74 @@ fn a_hit_fills_the_meter_by_its_share_of_the_foes_health_weighed_by_its_rank() {
     strike(&mut room, player, elite, most / 10.0);
     let (_, after) = charges(&room, player);
     assert!((after - meter - kill_share(Rank::Elite) * DEALT_SHARE / 10.0).abs() < 1e-12, "an Elite's weighs more");
+}
+
+#[test]
+fn a_shot_and_a_spell_fill_the_meter_as_a_swing_does_and_a_blow_on_a_dead_foe_fills_nothing() {
+    let swung = {
+        let (mut room, player) = holding(0, 0.0);
+        let foe = stand(&mut room, ::foes::roster::COLLECTOR, Rank::Minor);
+        strike(&mut room, player, foe, 5.0);
+        charges(&room, player).1
+    };
+    assert!(swung > 0.0);
+    for kind in [BlowKind::Shot(Ranged::Pistolet), BlowKind::Spell(1)] {
+        let (mut room, player) = holding(0, 0.0);
+        let foe = stand(&mut room, ::foes::roster::COLLECTOR, Rank::Minor);
+        strike_with(&mut room, player, foe, 5.0, kind);
+        assert!((charges(&room, player).1 - swung).abs() < 1e-12, "{kind:?} fills as a swing does");
+    }
+    let (mut room, player) = holding(0, 0.0);
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, Rank::Minor);
+    room.foes.get_mut(&foe).expect("standing").fighter.health = 0.0;
+    strike(&mut room, player, foe, 5.0);
+    assert_eq!(charges(&room, player), (0, 0.0), "the dead give nothing");
+}
+
+#[test]
+fn a_shield_counts_in_the_share_so_a_shielded_foe_fought_whole_gives_what_a_bare_one_does() {
+    let whole = |shielded: bool| {
+        let (mut room, player) = holding(0, 0.0);
+        let foe = stand(&mut room, ::foes::roster::COLLECTOR, Rank::Minor);
+        let found = room.foes.get_mut(&foe).expect("standing");
+        let most = found.fighter.health_max;
+        if shielded {
+            found.shield = Some(gear::element::Shield::whole(gear::Element::Blaze, most));
+        }
+        // Blow by blow, its shield then its health, to its end.
+        while !room.fighter(foe).expect("in").dead() {
+            strike(&mut room, player, foe, most / 4.0);
+        }
+        charges(&room, player)
+    };
+    let (bare, shielded) = (whole(false), whole(true));
+    assert_eq!(bare.0, shielded.0);
+    assert!((bare.1 - 0.5).abs() < 1e-9 && (shielded.1 - 0.5).abs() < 1e-9, "{bare:?} and {shielded:?}");
+}
+
+#[test]
+fn a_kill_gives_its_share_to_every_player_who_struck_it_in_its_last_ten_seconds_once_each() {
+    let (mut room, first) = holding(0, 0.0);
+    let second = room.join().expect("a room with space");
+    let late = room.join().expect("a room with space");
+    for player in [second, late] {
+        let found = room.players.get_mut(&player).expect("in");
+        (found.fighter.charges, found.fighter.meter) = (0, 0.0);
+    }
+    let foe = stand(&mut room, ::foes::roster::COLLECTOR, Rank::Minor);
+    let most = room.fighter(foe).expect("standing").health_max;
+    strike(&mut room, late, foe, 1.0);
+    room.clock += gear::rewards::SHARE_TICKS + 60;
+    strike(&mut room, second, foe, 1.0);
+    strike(&mut room, second, foe, 1.0);
+    strike(&mut room, first, foe, most - 3.0);
+    assert!(room.fighter(foe).expect("lying").dead());
+    let blow = |dealt: f64| kill_share(Rank::Minor) * DEALT_SHARE * dealt / most;
+    let kill = kill_share(Rank::Minor);
+    let near = |player, meter: f64| (charges(&room, player).1 - meter).abs() < 1e-9;
+    assert!(near(first, blow(most - 3.0) + kill), "the killer: {:?}", charges(&room, first));
+    assert!(near(second, blow(2.0) + kill), "who struck it twice, once: {:?}", charges(&room, second));
+    assert!(near(late, blow(1.0)), "who struck it 11 s before, none: {:?}", charges(&room, late));
 }
 
 #[test]

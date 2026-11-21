@@ -150,7 +150,7 @@ impl Room {
                 self.director.killed();
             }
         }
-        self.recharge(blow.striker, defender, lost + took, after.dead());
+        self.recharge(blow.striker, defender, lost + took);
         // A blow too far below its foe's level to harm it shares nothing of its kill; a companion's is their leader's.
         if let Some((sharer, hand)) = self.credited(blow.striker, hand)
             && blow.damage > 0.0
@@ -165,6 +165,7 @@ impl Room {
         self.verbs_after(blow, defender, &verdict, after.dead());
         self.arts_after(blow, &before, &verdict, after.dead() && self.foes.contains_key(&defender));
         if after.dead() && self.foes.contains_key(&defender) {
+            self.recharge_kill(defender);
             self.pay_kill(defender);
         }
         // A spell leaves its caster's soft lock alone: it is not their blade's.

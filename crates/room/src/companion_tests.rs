@@ -1,6 +1,7 @@
 //! Officers ashore beside their player: they stand behind them on the players' side, follow them and are put back
 //! when they stray, fight the factions' foes by gear's power at their level, are never struck by a player, are
-//! knocked out and rest eight minutes, go when sent aboard or when their player leaves, and their kills are shared.
+//! knocked out and rest eight minutes, go when sent aboard or when their player leaves, and their kills are shared,
+//! though nothing of theirs fills a healing meter.
 
 use super::*;
 use crate::foes::pirate_in;
@@ -323,4 +324,37 @@ fn the_fights_heat_counts_what_a_companion_deals_kills_and_takes_as_a_players() 
     let mut dealt_only = ::foes::director::Director { heat: taken };
     dealt_only.dealt(left / gear::power::foe_health_times(1));
     assert!(room.director.heat > dealt_only.heat, "and their kill heats it as a player's does");
+}
+
+#[test]
+fn a_companions_blows_and_kill_fill_no_ones_healing_meter() {
+    let mut room = room();
+    let (player, ids) = with_officers(&mut room, &[Post::FirstMate], 1);
+    let found = room.players.get_mut(&player).unwrap();
+    (found.fighter.charges, found.fighter.meter) = (0, 0.0);
+    room.tick();
+    let (companion, _) = companions(&room)[&ids[0]];
+    let foe = tithe(&mut room, 1, -30.0);
+    let left = room.foes[&foe].fighter.health;
+    let blow = Blow {
+        striker: companion,
+        kind: BlowKind::Swing(Stroke::Down),
+        from: [0.0, 0.0],
+        damage: left / 2.0,
+        poise: 0.0,
+        guard: 0.0,
+        parryable: true,
+        blockable: true,
+        knocks_down: false,
+        through: 1.0,
+        stagger: 1.0,
+        element: 0,
+        crit: false,
+    };
+    for _ in 0..3 {
+        room.settle(&blow, How::Swing, foe, Verdict::Hit { damage: left / 2.0, poise: 0.0 }, None);
+    }
+    assert!(room.foes[&foe].fighter.dead(), "the companion fells the foe");
+    let fighter = room.players[&player].fighter;
+    assert_eq!((fighter.charges, fighter.meter), (0, 0.0), "their leader's meter stands empty");
 }
