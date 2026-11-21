@@ -243,3 +243,5 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - The marks that never move (the stores, the banners, the approach) go in every snapshot: a land room's snapshot is
   one for every player, so sending them only when they change would need the welcome to carry them and the page to
   keep them; packed, they are 24 bytes each.
+- The page stands the fissure's spires on its movement's floor, which counts a box a step high; the room stands them
+  on the bare ground. They agree because a fissure's ground is chosen clear of everything standing.
