@@ -58,7 +58,7 @@ jobs:
           python-version: '3.13'
       - name: Install Blender's module
         run: |
-          pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
+          pip install --require-hashes --only-binary=:all: -r tools/lattice/requirements.txt
       - name: Check the publisher lays renders in
         if: matrix.foe == 'wave'
         run: python -I tools/test_forge_lattice.py
@@ -113,7 +113,7 @@ jobs:
       - name: Install the publisher's packages
         if: steps.token.outputs.set == 'true'
         run: |
-          pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
+          pip install --require-hashes --only-binary=:all: -r tools/lattice/requirements.txt
       - uses: actions/download-artifact@v4
         if: steps.token.outputs.set == 'true'
         with:
