@@ -55,10 +55,10 @@ pub const WARDEN_NAME: &str = "The Warden of the Fissure";
 /// east, y south, z up; west, north, bottom, east, south, top), as tools/modules' lattice-fissure has its parts, the
 /// fissure square to the grid; sunk this far, so a slope never leaves a gap under one.
 pub(crate) const SPIRES: [[f64; 6]; 4] = [
-    [-2.8, -0.37, 0.0, -2.4, 0.03, 2.04],
-    [0.2, -0.381, 0.0, 0.6, 0.019, 2.76],
-    [2.9, 0.047, 0.0, 3.3, 0.447, 1.74],
-    [-1.1, -0.698, 0.0, -0.7, -0.298, 1.32],
+    [-2.8, -0.37, 0.0, -2.4, 0.03, 0.78],
+    [0.2, -0.381, 0.0, 0.6, 0.019, 1.14],
+    [2.9, 0.047, 0.0, 3.3, 0.447, 0.66],
+    [-1.1, -0.698, 0.0, -0.7, -0.298, 0.48],
 ];
 const SPIRE_SUNK: f64 = 0.3;
 
