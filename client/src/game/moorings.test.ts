@@ -1,29 +1,36 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MOORED_SWELL, mooredPlaces, mooredShips } from './moorings.ts';
+import type { Swell } from '../rules/landRules.ts';
+import { hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
+import { poseOnSwell } from '../ships/swellPose.ts';
+import { mooredShips } from './moorings.ts';
 
-test('a moored ship lies at her place on the sea, her bow along her bearing, riding a swell no higher than its own', () => {
-  const moorings = [
-    [100, 200, 0.5],
-    [130, 260, 0.5],
-  ] as const;
-  for (const time of [0, 1.3, 4.5, 60]) {
-    const places = mooredPlaces(moorings, time);
-    assert.equal(places.length, 2);
-    places.forEach((place, index) => {
-      assert.equal(place.x, moorings[index]?.[0]);
-      assert.equal(place.y, moorings[index]?.[1]);
-      assert.equal(place.heading, 0.5);
-      assert.ok(Math.abs(place.z) <= MOORED_SWELL.heave + 1e-12);
-      assert.ok(Math.abs(place.roll) <= MOORED_SWELL.roll + 1e-12);
-    });
+/** One wave running north, 60 m long and a metre high. */
+const SWELL: Swell = {
+  waves: [{ direction: [0, -1], number: (2 * Math.PI) / 60, frequency: 0.8, amplitude: 1, shift: 0, phase: 0 }],
+  fullDepthM: 20,
+  goneDepthM: 2,
+  bearing: 0,
+};
+const deep = () => Infinity;
+
+test('a moored ship rides the swell as every ship does, and lies level in still water', () => {
+  const moorings = [[100, 200, 0.5]] as const;
+  const { lengthM, beamM } = hullWaterline(SLOOP_HULL);
+  for (const time of [0, 1.3, 4.5]) {
+    const [ship] = mooredShips(moorings, time, { swell: SWELL, depthAt: deep }).ships;
+    const pose = poseOnSwell(SWELL, deep, { x: 100, y: 200, heading: 0.5 }, lengthM / 2, beamM / 2, time);
+    assert.deepEqual(
+      [ship?.place.z, ship?.place.pitch, ship?.place.roll, ship?.place.heading],
+      [pose.heave, pose.pitch, pose.roll, 0.5],
+    );
   }
-  const [one, two] = mooredPlaces(moorings, 2);
-  assert.notEqual(one?.z, two?.z, 'the two ride on beats of their own');
+  const [still] = mooredShips(moorings, 3, { swell: undefined, depthAt: deep }).ships;
+  assert.deepEqual([still?.place.z, still?.place.pitch, still?.place.roll], [0, 0, 0]);
 });
 
 test('the moored ships are drawn as friendly sloops, each with a still footprint at her place', () => {
-  const { ships, hulls } = mooredShips([[100, 200, 0.5]], 3);
+  const { ships, hulls } = mooredShips([[100, 200, 0.5]], 3, { swell: undefined, depthAt: deep });
   assert.equal(ships.length, 1);
   assert.equal(ships[0]?.look.side, 'friendly');
   assert.deepEqual([hulls[0]?.x, hulls[0]?.y, hulls[0]?.heading, hulls[0]?.way], [100, 200, 0.5, 0]);

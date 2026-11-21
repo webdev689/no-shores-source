@@ -9,10 +9,8 @@ import type { Body } from '../rules/movementRules.ts';
 import type { Shot } from './camera.ts';
 import { fallPlayed, fallShown, heldShot, tumbleFacing } from './fallLaw.ts';
 import { FallSounds } from './fallSounds.ts';
+import { TICKS_A_SECOND } from './hudLaw.ts';
 import { worldOutput } from './uiSounds.ts';
-
-/** The rules' ticks a second, which the room's word on a death counts in. */
-const TICKS_A_SECOND = 60;
 
 /** The fall as the figure shows it: tumbling down, or lying where it landed, facing `facing`. */
 export interface FigureFall {

@@ -57,6 +57,8 @@ function placePanner(panner: PannerNode, place: Point3): void {
 export class FallSounds {
   private readonly live: () => Output;
   private readonly whistles = new Map<number, Whistle>();
+  /** The bodies whose fall was heard to its end (landed, or cut short by the menu), heard again once they stand. */
+  private readonly over = new Set<number>();
 
   constructor(live: () => Output) {
     this.live = live;
@@ -68,9 +70,12 @@ export class FallSounds {
     const seen = new Set<number>();
     for (const body of bodies) {
       seen.add(body.id);
+      if (!body.falling && !body.lying) this.over.delete(body.id);
       const whistle = this.whistles.get(body.id);
       const near = Math.hypot(body.at[0] - eye[0], body.at[1] - eye[1], body.at[2] - eye[2]) <= MOST_M;
-      if (body.falling && !whistle && output && near) this.whistles.set(body.id, this.whistle(output, body.at));
+      const fresh = !this.over.has(body.id);
+      if (body.falling && !whistle && output && near && fresh)
+        this.whistles.set(body.id, this.whistle(output, body.at));
       else if (body.falling && whistle) this.follow(whistle, body.at, seconds);
       else if (!body.falling && whistle) {
         this.stop(body.id);
@@ -79,6 +84,7 @@ export class FallSounds {
       }
     }
     for (const id of this.whistles.keys()) if (!seen.has(id) || !output) this.stop(id);
+    for (const id of this.over) if (!seen.has(id)) this.over.delete(id);
   }
 
   /** Stops every whistle at once, as the player leaves. */
@@ -120,6 +126,7 @@ export class FallSounds {
     const whistle = this.whistles.get(id);
     if (!whistle) return;
     this.whistles.delete(id);
+    this.over.add(id);
     const when = whistle.voice.context.currentTime;
     whistle.gain.gain.cancelScheduledValues(when);
     whistle.gain.gain.setTargetAtTime(0.0001, when, 0.015);

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { Post } from '../nodes.ts';
 import { inPlaza } from '../townsfolk.ts';
 import { FRAME, POSTS, SHAPE_SPOTS, WAYS, solidAt } from '../welcome/plazaForTests.ts';
-import { type Doing, WALK_M_S, doingAt } from './routine.ts';
+import { type Doing, WALK_M_S, doingAt, stayRange } from './routine.ts';
 import { TownLife } from './townLife.ts';
 import { LOOP_S, walkersFor } from './walkers.ts';
 
@@ -90,8 +90,7 @@ test('walkers visit the counters, views and benches, staying as long as each tas
   assert.ok(seen.size > visited.length * 0.8, `${seen.size} of ${visited.length} posts visited in a loop`);
   const stays = walkers.flatMap((walker) => walker.legs.slice(1, -1).filter((leg) => leg.post));
   for (const { start, end, post } of stays) {
-    const [least, most] =
-      post?.task === 'idle' ? [8, 16] : post?.task === 'hold' ? [6, 14] : post?.task === 'drink' ? [20, 40] : [20, 40];
+    const [least, most] = stayRange(post?.task ?? 'idle');
     assert.ok(end - start >= least - 1e-9 && end - start <= most + 1e-9, `a stay of ${end - start} s at ${post?.task}`);
   }
 });

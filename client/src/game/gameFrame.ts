@@ -21,7 +21,7 @@ import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import type { Hud } from './hud.ts';
-import { ISLANDS, placeWords, type Standing } from './hudLaw.ts';
+import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
 import { arrivalFacing } from './nodes.ts';
@@ -129,7 +129,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.reach(shown);
     // Death's grey on the canvas is the one mark of it, once death is told (a fall plays out in colour first):
     // leaving a place takes it off.
-    const [dead, wasDead] = [shown.kind === 'dead' && shown.told, canvas.classList.contains('dead')];
+    const [dead, wasDead] = [greyed(shown), canvas.classList.contains('dead')];
     if (dead && !wasDead) document.exitPointerLock();
     if (dead !== wasDead) canvas.classList.toggle('dead', dead);
   };
@@ -151,7 +151,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
-    const fleet = traffic.onFoot(shown.shot.eye, parts.waterHere(), seconds, clock);
+    const water = parts.waterHere();
+    const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
     const met = playing.after.frame(
       shown.shot,
@@ -165,7 +166,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
-    const moored = mooredShips(moorings, clock);
+    const moored = mooredShips(moorings, clock, water);
     const more = { after: hands, hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS), carried };
     const ships = [...moored.ships, ...fleet.ships];
     scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);

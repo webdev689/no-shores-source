@@ -19,7 +19,7 @@ export type Standing =
  *  in seconds of 60 ticks. The browser reads them off a standing's ticks. */
 export const WARNING_SECONDS = 10;
 export const RESPAWN_SECONDS = 4;
-const TICKS_A_SECOND = 60;
+export const TICKS_A_SECOND = 60;
 
 /** A standing given in ticks, as the movement door's reach rules and a room's snapshots give it (the ticks left of a
  *  warning, or the ticks dead), as the player reads it: in seconds, with Respawn offered once the body has lain dead
@@ -29,6 +29,11 @@ export function standingOf(kind: Standing['kind'], ticks: number, fell = false, 
   if (kind === 'warned') return { kind, secondsLeft: ticks / TICKS_A_SECOND };
   const secondsDead = ticks / TICKS_A_SECOND;
   return { kind, secondsDead, canRespawn: secondsDead >= RESPAWN_SECONDS, fell, told: told || !fell };
+}
+
+/** Whether the world drains to grey: once death is told, so a fall plays out in colour first. */
+export function greyed(standing: Standing): boolean {
+  return standing.kind === 'dead' && standing.told;
 }
 
 /** The words under "You died": how the player died. */

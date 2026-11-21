@@ -42,16 +42,16 @@ const STAYS_S = {
   work: [16, 28],
 } as const satisfies Record<string, readonly [number, number]>;
 
+/** How long a stay at a post of `task` may last, seconds at least and at most. */
+export function stayRange(task: Post['task']): readonly [number, number] {
+  if (task === 'idle') return STAYS_S.view;
+  if (task === 'hold') return STAYS_S.stall;
+  return task === 'gesture' || task === 'drink' ? STAYS_S.talk : STAYS_S.work;
+}
+
 /** How long a stay at `post` lasts, drawn from `random`, seconds. */
 export function stayAt(post: Post, random: () => number): number {
-  const [least, most] =
-    post.task === 'idle'
-      ? STAYS_S.view
-      : post.task === 'hold'
-        ? STAYS_S.stall
-        : post.task === 'gesture' || post.task === 'drink'
-          ? STAYS_S.talk
-          : STAYS_S.work;
+  const [least, most] = stayRange(post.task);
   return least + random() * (most - least);
 }
 

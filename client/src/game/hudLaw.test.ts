@@ -5,6 +5,7 @@ import { startMovementRules } from '../rules/movementRules.ts';
 import {
   countdownText,
   deathWords,
+  greyed,
   distanceText,
   placeWords,
   RESPAWN_SECONDS,
@@ -92,4 +93,11 @@ test("the warning's count and the wait to respawn are the reach rules' own, read
 test("a place's words name its kind, and its island where the owner has named one", () => {
   assert.equal(placeWords({ kind: 'social', continent: 'continent-1' }), 'Social space · Saltmere');
   assert.equal(placeWords({ kind: 'patrol', continent: 'continent-9' }), 'Patrol');
+});
+
+test('the world goes grey only once death is told, so a fall plays out in colour', () => {
+  assert.equal(greyed(standingOf('dead', 30, true, false)), false);
+  assert.equal(greyed(standingOf('dead', 30, true, true)), true);
+  assert.equal(greyed(standingOf('dead', 0, false)), true, 'a death by straying is told at once');
+  assert.equal(greyed(standingOf('warned', 300)), false);
 });

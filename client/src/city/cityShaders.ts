@@ -26,7 +26,7 @@ const JAG_M = 3;
 const CLOTH_CASES = Object.entries(CLOTH_COLOURS)
   .map(([cloth, colour]) => {
     const layer = COLOUR_LAYERS[cloth as keyof typeof CLOTH_COLOURS];
-    return `    case ${layer}u: { return vec3f(${colour.map((channel) => channel.toFixed(3)).join(', ')}) * weave; }`;
+    return `    case ${layer}u: { return vec3f(${colour.map((channel) => channel.toFixed(3)).join(', ')}) * weave_of(texel, threads, fade); }`;
   })
   .join('\n');
 
@@ -106,6 +106,14 @@ fn texel_hash(cell: vec2i) -> f32 {
   return f32(hash ^ (hash >> 15u)) / 4294967296.0;
 }
 
+// Cloth's weave over its dye: its threads crossing, a thread here and there thicker, the dye taken unevenly.
+fn weave_of(texel: vec2f, threads: vec2f, fade: f32) -> f32 {
+  let crossing = abs(fract(threads) - 0.5) * 2.0;
+  let slub = texel_hash(vec2i(i32(floor(threads.y)), 7)) - 0.5;
+  return (1.0 - 0.1 * fade * max(crossing.x, crossing.y)) * (1.0 + 0.08 * fade * slub)
+    * (0.95 + 0.1 * sky_noise(texel / 10.0));
+}
+
 // A plain colour's albedo, or the sampled picture's. A plain colour is painted on the texels a picture would have
 // (PLAIN_TEXELS to its uv), so its grain reads as painted, as the pictures' does: wrought iron's hammer marks, pits and
 // rust; gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth its dye under a fine weave
@@ -116,11 +124,8 @@ fn colour_of(layer: u32, sampled: vec3f, uv: vec2f, place: vec3f, normal: vec3f)
   let cell = vec2i(texel);
   let mark = texel_hash(cell) - 0.5;
   let threads = uv * 160.0;
+  // the threads fade where they are finer than a pixel: their derivative is taken here, before any branch
   let fade = clamp(1.5 - 2.0 * max(length(fwidth(threads)), 0.0), 0.0, 1.0);
-  let crossing = abs(fract(threads) - 0.5) * 2.0;
-  let slub = texel_hash(vec2i(i32(floor(threads.y)), 7)) - 0.5;
-  let weave = (1.0 - 0.1 * fade * max(crossing.x, crossing.y)) * (1.0 + 0.08 * fade * slub)
-    * (0.95 + 0.1 * sky_noise(texel / 10.0));
   switch layer {
     case GOLD: {
       let worn = smoothstep(0.62, 0.8, sky_noise(texel / 5.0));
@@ -149,8 +154,8 @@ ${CLOTH_CASES}
 // weather wets it. A glowing solid is a flame: brighter when the night round it is dark.
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
-    // Each flame flickers on its own, a few times a second, by where it burns.
-    let place = floor((from_eye + view.eye.xyz) * 2.0);
+    // Each flame flickers on its own, a few times a second, by where it burns: all of one fire together.
+    let place = floor((from_eye + view.eye.xyz) / 3.0);
     let flicker = 0.86 + 0.16 * sky_noise(vec2f(view.eye.w * 7.0, place.x * 13.0 + place.y * 7.0 + place.z));
     return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * flicker;
   }

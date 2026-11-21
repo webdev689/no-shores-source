@@ -39,3 +39,32 @@ test('a grid serves an eye near its middle and is laid again further off', () =>
   assert.ok(stillServes(shelter, [EYE[0] + 10, EYE[1] - 10, EYE[2]]));
   assert.ok(!stillServes(shelter, [EYE[0] + 40, EYE[1], EYE[2]]));
 });
+
+test('a roof ending at a wall off the grid lattice still shelters the floor up to the wall', () => {
+  const roof = { minX: 1000, minY: 2000, maxX: 1020.9, maxY: 2020, top: 114, bottom: 112 };
+  const wall = { minX: 1020.9, minY: 2000, maxX: 1025.9, maxY: 2020, top: 114, bottom: 99 };
+  const shelter = shelterOver([roof, wall], EYE);
+  assert.ok(sheltered(shelter, [1020.5, 2010, 100.6]), 'the floor by the wall');
+  assert.ok(!sheltered(shelter, [1028, 2010, 100.6]), 'the ground outside the wall');
+});
+
+test('the far end of a long hall is sheltered from wherever in it the grid was laid', () => {
+  const hall = { minX: 1000, minY: 2000, maxX: 1068, maxY: 2060, top: 114, bottom: 112 };
+  const laidAt = [1034, 2078, 101.7] as const;
+  const shelter = shelterOver([hall], laidAt);
+  const door = [1034, 2062, 101.7] as const;
+  assert.ok(stillServes(shelter, door));
+  for (const end of [
+    [1034, 2001],
+    [1001, 2030],
+    [1067, 2030],
+  ] as const)
+    assert.ok(sheltered(shelter, [end[0], end[1], 100.6]), `${end.join(',')} at the hall's far side`);
+});
+
+test('a piece narrower than a cell overhead (a brazier, a lamp) keeps no square of ground dry', () => {
+  const bowl = { minX: 1100.5, minY: 2000.5, maxX: 1101.5, maxY: 2001.5, top: 101.6, bottom: 101.1 };
+  const shelter = shelterOver([bowl], [1100, 2000, 101.7]);
+  assert.ok(!sheltered(shelter, [1101.9, 2001, 100]), 'beside the bowl');
+  assert.ok(shelter.undersides.every((under) => under === OPEN_SKY));
+});

@@ -364,6 +364,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       playing.sea?.leaveRoom();
       ashore = held;
       playing.foot = foot;
+      scene.sky.shelterUnder(foot.boxes);
     });
   };
 
