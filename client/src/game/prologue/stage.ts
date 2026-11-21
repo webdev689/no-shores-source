@@ -147,6 +147,9 @@ export class Stage {
 
   /** Every frame of the story, drawn or not: the beds and spot sounds move on, and the scenes' time. */
   step(seconds: number): void {
+    // The figures' frames asked for past the most kept are let go before this frame asks for any, as on foot: in a
+    // cutscene nothing else does, and every view and frame of every figure shown would be kept.
+    this.parts.forge.pump();
     this.parts.ambience.frame(seconds);
     this.tick(seconds);
   }

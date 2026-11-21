@@ -84,6 +84,8 @@ export class BloodView {
   private readonly ringBuffer: GPUBuffer;
   private readonly billboardBuffer: GPUBuffer;
   private readonly indexBuffer: GPUBuffer;
+  /** The sheet's and the droplet's pictures and their flags, let go with the rest. */
+  private readonly art: (GPUTexture | GPUBuffer)[] = [];
   private readonly billboardFloats = new Float32Array(BILLBOARDS * QUAD_FLOATS);
   private ranges: [number, number][] = [];
   private chunks = 0;
@@ -156,6 +158,7 @@ export class BloodView {
       device.queue.writeTexture({ texture }, art.colours, { bytesPerRow: art.width * 4 }, [art.width, art.height]);
       const flag = buffer(16, BUFFER_USAGE.uniform);
       device.queue.writeBuffer(flag, 0, new Float32Array([picture, 0, 0, 0]));
+      this.art.push(texture, flag);
       return device.createBindGroup({
         layout: artLayout,
         entries: [
@@ -205,6 +208,7 @@ export class BloodView {
   /** Lets go of the blood's buffers and pictures; it draws nothing after. */
   destroy(): void {
     for (const buffer of [this.sceneBuffer, this.ringBuffer, this.billboardBuffer, this.indexBuffer]) buffer.destroy();
+    for (const held of this.art.splice(0)) held.destroy();
     this.ranges = [];
     [this.chunks, this.droplets] = [0, 0];
   }
