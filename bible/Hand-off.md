@@ -290,30 +290,31 @@ Where the work stands now, for the next session. Each session rewrites this note
   asked: sixteen across the owner's four kinds, each on its own patch of corrupted ground, drawn as pictures in both
   crystals ([[The Lattice Has Props of Its Own, Made in Blender]], `tools/lattice/props.py`); tested offline, every
   one rendered in red and purple and looked at.
+- **The public events**, on #124 (stacked on #77), not yet merged: built in full on Claude's autonomy
+  ([[Public Events Are Built in Full, on Claude's Autonomy]]) after the owner's decisions
+  ([[Public Events Run on a Clock, After Destiny 1]]), the system in [[Public Events]] and every call of Claude's in
+  [[Public Events as Claude Builds Them]]. On Saltmere's three zones, on a clock: the Fissure in each wilds, beside
+  its battlefield's obelisk, and the Grey Tithe raid in each hamlet, each with its heroic task, a bonus, and a chest
+  for each player who took part (XP, faction reputation, a Vestige, materials). The Lattice is in the rules (faction
+  3, types 39 to 45) and in the game: its five event foes rendered and published by `lattice.yml`, their moves and
+  death wave drawn. Thirteen props made in Blender through the modules pipeline and published by `modules.yml`; a
+  crystal material and chalk, turf and canvas. The page's banner, marks, props, lights and sounds; offline play;
+  dev-only `&public=`, `&speed=`, `&bots=`, `&heroic=0`. Paced by scripted players at Saltmere's levels; one read-only
+  audit, its findings each tested first and fixed. Tested offline: `cargo xtask check`, native and WebAssembly
+  agreeing, both events played through on the built page and pictured; not tested live.
 
 ## Waiting on the owner
 
-- **The Lattice in the game, being talked through** ([[The Lattice Comes Into the Game Meaningfully, Talked Through
-  First]]): the owner wants it in "in a meaningful way" and to talk first about the patrol spaces' world events and
-  the nine story missions. The public events are settled ([[Public Events Run on a Clock, After Destiny 1]]): on a
-  clock, nothing lasting when failed, paying gear, materials and faction reputation; the Fissure and the Grey Tithe
-  raid, each with a simple mechanic of its own and a heroic task, on Saltmere's zones only for now; their numbers
-  Claude's to tune. The talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
-  missions as three acts of three or one chain through
-  the islands, where the Lattice and the Heart come in, how near the ninth comes to the Cube; who gives the side
-  quests. Read with them: #82 (the loop, the nine missions) and #97 (activities, the
-  quest engine), both open.
-- **When it is built**: the owner's named yes covers uploading the Lattice's pictures (every move from all five
-  sides, and the wave) to R2 with the Cloudflare key; where its foes appear first and their skin are Claude's. A map
-  of the way in: the forge's `looks` table and packs (`tools/forge_publish.py`, `merge_roll` as the pattern for
-  merging the Lattice's bodies), a dress per type in `client/src/player/foeDress.ts` naming its body and layers, a
-  per-type move map after `shownMove` in `client/src/combat/foeFigures.ts`, the wave at a death beside
-  `KillLooks.update` (`client/src/combat/killLooks.ts`) after `forgedBirds.ts`'s brightness maps, and the faction and
-  six rows in `crates/foes/src/factions.rs` and `roster.rs` with their counts in tests.
-- #77's merge waits on the owner's yes ("Not yet").
-- **The Lattice's props**: the owner has the sheets of all sixteen, with no word on them yet. Painting them with the
-  game's pictures, exporting them as meshes the game loads, publishing them to R2 and placing them wait on the talk
-  above.
+- **#124, the public events**: its merge, the owner's yes; it holds #77 beneath it, and #77's merge waits on the
+  owner ("Not yet"), so merging #124 merges both. Its points for the owner are in its description: the Heart not yet
+  rendered; events at the top of Saltmere's band; the Grey Tithe's garrison joining the Fissure's fight; others' numbers
+  crowding an event; the Tithe-Taker without a ledger; a leaver's vault past 20.
+- **The Lattice's story**: the talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
+  nine story missions as three acts of three or one chain through the islands, where the Lattice and the Heart come
+  in, how near the ninth comes to the Cube; who gives the side quests. Read with them: #82 (the loop, the nine
+  missions) and #97 (activities, the quest engine), both open; #97's one clock can replace the events' own schedule.
+- **The Lattice's other props**: thirteen of the events' props are meshes now; the rest of the sixteen sheets wait on
+  where its corrupted areas lie.
 - **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
   without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
   something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
@@ -512,6 +513,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **The public events' last pictures** (#124): a store plundered, the tithe-taker counting and leaving, Marrow, the
+  Tithe giving up, the raid's chest, the growth sinking unbroken, a lid swinging open and the scar risen are built and
+  tested but not pictured; headless frames took 10 to 20 s here. The scripts are the showcase worker's (dev play:
+  `&public=`, `&speed=`, `&bots=`), best run on a quiet machine or a real GPU. Seen and left: the Lattice's figures read
+  nearly black at night, and the seal's wave reads as a blocky band from afar.
 - **The Lattice's armour and weapons in Daedric's place**, on hold by the owner's word for the Lattice's foes
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]). The armour is built after the owner's reference and
   the owner likes it (`tools/lattice/armoury.py`, drawn standing still on the man's and the woman's bodies). Still to
