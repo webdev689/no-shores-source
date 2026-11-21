@@ -94,7 +94,7 @@ on Cloudflare.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
 - **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands where its layout
-  stands its nodes ([[Layouts]], "The sites"), which the bake writes into the node's file (`resources`) and the room
+  stands its nodes ([[Layouts]], "The sites"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file (`resources`) and the room
   numbers in that order, as the page does; a third of them hold a node at once, the next third every three minutes, and each player may gather each node once while it
   stands. A kill, in any node, pays by
   the room's seas ([[Gear]], "Where foes stand").

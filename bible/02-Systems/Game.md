@@ -197,8 +197,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
   only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player. Each resource node stands as the forge's picture of its island's resource (`nodeCards`, [[Sprite Forge]]),
-  every resource at one scale, about knee high, before the place its resource comes from, while the room
+  player. Each resource node stands as the forge's picture of its island's resource (`nodeCards`, [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]),
+  every resource at one scale, before the place its resource comes from, while the room
   stands it for the player, and as it looks spent once they gathered it, until its turn comes round; a place resting
   its turn shows only its dressing. The picture alone marks a node: no ring, no beam. Each drop lying for them stands
   as its own picture under its rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.

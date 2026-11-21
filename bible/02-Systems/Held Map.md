@@ -180,7 +180,7 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
     and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
     door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
-    a cut stone, named in the table for the island's resource ("Brineglass"). The player's red-brown arrow points
+    a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
     where they look.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what

@@ -222,7 +222,7 @@ from the sea, fresh water and the claim's edge), then:
    turns its rubble solids to the `chalk` material, a picture of the same stone tile brought to white).
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
-   paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent), each beacon and resource
+   paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
    5 m clear of every way's edge, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies off
    the section's floor), and a patrol stands its material nodes there, a third at a time ([[Server]]). Each beacon and

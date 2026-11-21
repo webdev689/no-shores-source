@@ -109,7 +109,7 @@ The sea room holds its islands (`sea_islands.rs`):
   module one time in five. It is rolled at the middle of the island's water's band raised by the room's seas, and paid
   straight into the player's ship materials, a module carried as any item. The wrecks spent for them are told them in
   their gear's `scavenged`, so the page offers them no more.
-- **Resource nodes.** Each island carries the resource of the island whose waters it lies in ([[Gear]]): two to four
+- **Resource nodes.** Each island carries the resource of the island whose waters it lies in ([[Gear]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]): two to four
   nodes inland, a third to three fifths of the way from its middle to its coast on gentle shores, 20 m apart and 15 m
   from every other place, laid on a draw of their own and kept clear by the dressing. Its room stands them all at once;
   each is gathered by holding E as a patrol's is, once by each account while the room is open, and stands again on the

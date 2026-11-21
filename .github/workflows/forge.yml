@@ -14,6 +14,7 @@ on:
       # The material nodes are laid from the item forge's models, any of which may change them.
       - tools/forge/tools/sprite-forge/items/**
       - tools/forge/tools/sprite-forge/itempics.py
+      - tools/forge/tools/sprite-forge/specs/item-ramps.json
       - tools/forge/tools/sprite-forge/specs/pictures/nodes.json
       - tools/forge/tools/sprite-forge/artbirds-requirements.txt
       - .github/workflows/forge.yml
