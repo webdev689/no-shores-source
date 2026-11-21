@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { layout } from '../ui/layout.ts';
 import type { Node } from '../ui/node.ts';
+import type { UiEvent } from '../ui/ui.ts';
 import { FAKE_FACE, fakeInterface, laidWith, wordsOf } from '../ui/uiForTests.ts';
 import { CONTROL_GROUPS } from './controls.ts';
-import { ControlsSheet, columnsOf } from './controlsSheet.ts';
+import { ControlsSheet, columnsOf, spokenKeys } from './controlsSheet.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 
 /** The sheet hearing the page's keys, with a listener after it standing for the game. */
@@ -83,6 +84,33 @@ test('the sheet lists every control once, inside the view from a phone to 1440p'
     const list = laidWith(laid, 'controls:list');
     assert.ok(list && list.box.x + list.box.width <= width, `its list in the view at ${width} by ${height}`);
   }
+});
+
+test('the keys move among its controls, the interface hearing them only while it is open', () => {
+  const sheet = new ControlsSheet();
+  const { ui } = fakeInterface(1280, 720);
+  const view = { width: 1280, height: 720, big: false };
+  // As the game's frame runs it: no menu up, so the interface takes the keys only while the sheet is open.
+  const step = (events: UiEvent[] = []) => {
+    ui.frame({ width: 1280, height: 720, scale: 1 }, events, 1 / 60, true, sheet.open);
+    ui.draw({ width: 'grow', height: 'grow', children: [sheet.node(ui, view)] });
+  };
+  sheet.toggle();
+  step();
+  step();
+  assert.equal(ui.focusedId, 'controls:Move:0');
+  step([{ kind: 'key', key: 'Tab' }]);
+  assert.equal(ui.focusedId, 'controls:Move:1');
+  step([{ kind: 'key', key: 'ArrowDown' }]);
+  assert.equal(ui.focusedId, 'controls:Move:2');
+  step([{ kind: 'key', key: 'Tab', shift: true }]);
+  assert.equal(ui.focusedId, 'controls:Move:1');
+});
+
+test('a screen reader hears a sign key by its name', () => {
+  assert.equal(spokenKeys(','), 'Comma');
+  assert.equal(spokenKeys('[ / ]'), 'Left bracket or Right bracket');
+  assert.equal(spokenKeys('W / A'), 'W or A');
 });
 
 test('its Close press closes it', () => {

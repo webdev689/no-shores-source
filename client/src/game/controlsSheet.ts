@@ -22,8 +22,14 @@ const GAP = 24;
 const COLUMN = 400;
 const KEYS = 132;
 
-/** A control's keys as a screen reader hears them, "or" between keys that do the same. */
-export const spokenKeys = (keys: string): string => keys.split(' / ').join(' or ');
+/** The signs a screen reader may pass over, by the words it says for them. */
+const SPOKEN: Readonly<Record<string, string>> = { ',': 'Comma', '[': 'Left bracket', ']': 'Right bracket' };
+/** A control's keys as a screen reader hears them, each sign by its name, "or" between keys that do the same. */
+export const spokenKeys = (keys: string): string =>
+  keys
+    .split(' / ')
+    .map((key) => SPOKEN[key] ?? key)
+    .join(' or ');
 
 /** The groups in `count` columns, in their order, each column holding near an even share of the rows. */
 export function columnsOf(groups: readonly ControlGroup[], count: number): ControlGroup[][] {

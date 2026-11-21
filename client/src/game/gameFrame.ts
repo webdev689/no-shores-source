@@ -328,7 +328,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys() || creationOpen());
+    // The keys are the interface's while a menu, the gear screen, the creation or the sheet of every control is up.
+    const keys = menuUp || gearTakesKeys() || creationOpen() || hud.controls.open;
+    const tookWheel = ui.hear(seconds, !input.locked, keys);
     const heard = input.frame();
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
