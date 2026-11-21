@@ -7,7 +7,7 @@ import type { GearState } from '../../network/gearMessages.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { RARITIES } from '../../player/gear.ts';
 import { EMBLEMS } from '../emblemArt.ts';
-import { owned } from '../factionNames.ts';
+import { owned } from '../../player/factionNames.ts';
 
 /** A row of the screen: the emblems, or one kind of cosmetic. */
 export type AppearanceKind = 'emblem' | CosmeticKind;

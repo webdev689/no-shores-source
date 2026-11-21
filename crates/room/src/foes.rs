@@ -8,7 +8,7 @@
 use crate::judging::{Check, Group, How, Pending};
 use crate::{EventKind, Room, SpawnAsk};
 use ::foes::noises::{Noise, landed, running, shot, swing};
-use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, World, aimed_shot, foe_type, notice, spawn, think};
+use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, aimed_shot, foe_type, notice, spawn};
 use combat::fighter::{Action, FighterId, Side};
 use combat::judge::telegraph_blow;
 use combat::shapes::{Shape, Telegraph};
@@ -83,19 +83,19 @@ type Placed = ([f64; 3], Option<[f64; 3]>);
 /// and straight on where the mesh knows no way; at a link's start, square along it. Each foe's way is kept for the
 /// next tick, and a goal off the mesh is placed on it once a tick, however many foes walk for it.
 #[derive(Debug)]
-struct MeshRoutes<'mesh> {
+pub(crate) struct MeshRoutes<'mesh> {
     mesh: &'mesh NavMesh,
     floor: &'mesh crate::Floor,
     blocks: &'mesh [Block],
     /// The foe thinking now, whose way is walked.
-    asking: Cell<FighterId>,
-    ways: RefCell<BTreeMap<FighterId, Way>>,
+    pub asking: Cell<FighterId>,
+    pub ways: RefCell<BTreeMap<FighterId, Way>>,
     /// The goals off the mesh this tick, each with the nearest point the mesh has to it.
     placed: RefCell<Vec<Placed>>,
 }
 
 impl<'mesh> MeshRoutes<'mesh> {
-    fn new(
+    pub(crate) fn new(
         mesh: &'mesh NavMesh,
         floor: &'mesh crate::Floor,
         blocks: &'mesh [Block],
@@ -171,8 +171,8 @@ fn ahead(points: &[[f64; 3]], from: [f64; 3], to: [f64; 3]) -> [f64; 3] {
 
 /// The firing spots baked with the room's navmesh.
 #[derive(Debug)]
-struct MeshSpots<'mesh> {
-    mesh: &'mesh NavMesh,
+pub(crate) struct MeshSpots<'mesh> {
+    pub mesh: &'mesh NavMesh,
 }
 
 impl foes::Spots for MeshSpots<'_> {
@@ -235,7 +235,7 @@ impl Room {
             // Along the player's aim, which follows their look: a body standing still keeps the way it last walked.
             let (sin, cos) = (libm::sin(player.aim), libm::cos(player.aim));
             let ahead = [player.body.x + sin * SPAWN_AHEAD, player.body.y - cos * SPAWN_AHEAD, player.body.z];
-            let spot = self.nav.nearest_point(ahead).unwrap_or(ahead);
+            let spot = self.mesh_at(ahead).nearest_point(ahead).unwrap_or(ahead);
             let facing = combat::sight::bearing([spot[0], spot[1]], [player.body.x, player.body.y]);
             let id = self.stand_foe(foe_type, rank, spot, facing, Some(asker));
             self.gird(id, level, gear::Element::from_number(shield));
@@ -290,9 +290,10 @@ impl Room {
     }
 
     /// The foes standing alive: a garrison stands again and a Boss calls only while these leave room under the limit,
-    /// so the fallen, lying their ten seconds, never hold them back. Companions are not foes.
+    /// so the fallen, lying their ten seconds, never hold them back. Companions and wards are not foes.
     pub(crate) fn living_foes(&self) -> usize {
-        self.foes.iter().filter(|(id, foe)| !foe.fighter.dead() && !self.is_companion(**id)).count()
+        let counted = |id: &FighterId| !self.is_companion(*id) && !self.quests.wards.contains(id);
+        self.foes.iter().filter(|(id, foe)| !foe.fighter.dead() && counted(id)).count()
     }
 
     /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the
@@ -318,7 +319,7 @@ impl Room {
             let bearing = at.aim + side * FRAC_PI_2;
             let (sin, cos) = (libm::sin(bearing), libm::cos(bearing));
             let beside = [from_x + sin * out, from_y - cos * out, at.body.z];
-            let spot = self.nav.nearest_point(beside).unwrap_or(beside);
+            let spot = self.mesh_at(beside).nearest_point(beside).unwrap_or(beside);
             let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
             // A called foe fights at its caller's level, and stands with no shield.
             self.gird(id, self.foes.get(&caller).map_or(0, |found| found.level), None);
@@ -365,29 +366,7 @@ impl Room {
             .filter(|(id, _)| self.players.get(id).is_none_or(|found| found.graced <= clock))
             .copied()
             .collect();
-        let ids: Vec<FighterId> = self.foes.keys().copied().collect();
-        let mut intents = Vec::with_capacity(ids.len());
-        let routes = MeshRoutes::new(&self.nav, &self.floor, &self.blocks, std::mem::take(&mut self.ways));
-        {
-            let spots = MeshSpots { mesh: &self.nav };
-            let world = World {
-                tick: self.clock,
-                seed: self.world_seed,
-                fighters: &noticed,
-                blocks: &self.blocks,
-                routes: &routes,
-                spots: &spots,
-                director: self.director,
-            };
-            for id in &ids {
-                let Some(foe) = self.foes.get(id) else { continue };
-                routes.asking.set(*id);
-                intents.push((*id, think(*id, &foe.brain, &mut self.board, &world)));
-            }
-        }
-        self.ways = routes.ways.into_inner();
-        let foes = &self.foes;
-        self.ways.retain(|id, _| foes.contains_key(id));
+        let intents = self.think_foes(&noticed);
         let (mut crews, mut shouts) = (Vec::new(), Vec::new());
         for (id, (mut brain, intent)) in intents {
             let target = brain.target();
@@ -580,7 +559,9 @@ impl Room {
 
     /// Every foe as the room last stepped it, in the order of their numbers.
     pub fn foes_seen(&self) -> impl Iterator<Item = FoeSeen> + '_ {
-        self.foes.iter().map(|(&foe, found)| {
+        // A ward is its player's alone, sent them with their gear (`steps.rs`).
+        let shown = self.foes.iter().filter(|(foe, _)| !self.quests.wards.contains(foe));
+        shown.map(|(&foe, found)| {
             let brain = &found.brain;
             FoeSeen {
                 foe,

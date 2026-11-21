@@ -96,6 +96,21 @@ test('after a cast the keys wait for the room’s word that it was spent, howeve
   assert.ok(framed(casting, word, keys(['tenetOne'])).cast, 'a room joined afresh starts them afresh');
 });
 
+test('a key whose ability its road has not earned sends nothing, so the earned ones are never held shut by it', () => {
+  // Storm worn, only the Art earned: the Stormcallers' road before its fourth task's end. Every share full.
+  const storm = { ...state(1), earned: [0b001, 0, 0] };
+  assert.equal(abilitiesAt(storm, 0, 0)?.earned, 0b001);
+  const casting = new CastKeys();
+  assert.equal(framed(casting, storm, keys(['tenetOne'])).cast, null, 'Quicken, not earned, is not sent');
+  assert.equal(framed(casting, storm, keys(['tenetTwo'])).cast, null, 'nor Arc Lash');
+  assert.deepEqual(framed(casting, storm, keys(['anima'])).cast, { spell: SPELLS.tempest, aim: null }, 'the Anima');
+  // Shadow worn, Dusk Daggers not earned: its key draws no ring.
+  const shadow = { ...state(3), earned: [0, 0, 0b001] };
+  const held = framed(new CastKeys(), shadow, keys([ABILITY_ACTIONS[DAGGERS]]), [3, 4, 0]);
+  assert.deepEqual(held, { cast: null, ring: null }, 'Dusk Daggers neither aimed nor cast');
+  assert.ok(framed(new CastKeys(), { ...shadow, earned: [0, 0, 0b011] }, keys([ABILITY_ACTIONS[DAGGERS]])).ring);
+});
+
 test('Dusk Daggers ask for the mark as it is, draw their ring where the room lays it, and cast as the key is let go', () => {
   const casting = new CastKeys();
   const shadow = state(3);

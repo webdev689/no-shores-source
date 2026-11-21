@@ -64,6 +64,8 @@ export interface HudFrame {
   readonly ammoFull?: boolean;
   /** The loadouts as the weapons' rows show them; none hides them. */
   readonly arms?: ArmsShown | null;
+  /** Where the houses' roads' next goal stands in the room (x, y), which the compass marks; none for none. */
+  readonly questAt?: readonly [number, number] | null;
 }
 
 /** A foe winding up an iron blow this near is told to be dodged. */
@@ -169,6 +171,8 @@ export class Hud {
   private veil: ReturnType<typeof veilOf> = null;
   private ammo: { readonly ammo: number | null | undefined; readonly most: number | null } = { ammo: null, most: null };
   private heading: number | null = null;
+  /** The quest's mark on the compass and where the player stands, as the last frame had them. */
+  private quest: { readonly at: readonly [number, number]; readonly from: readonly [number, number] } | null = null;
   private lockSpot: { readonly x: number; readonly y: number } | null = null;
   private targetShare = 0;
   private rings: readonly {
@@ -221,6 +225,7 @@ export class Hud {
       locked: lock,
     };
     this.heading = viewing.camera ? headingOf(viewing.camera.forward) : this.heading;
+    this.quest = frame.questAt && own ? { at: frame.questAt, from: [own.x, own.y] } : null;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
     const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
     this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
@@ -359,7 +364,15 @@ export class Hud {
       width: 'grow',
       float: { to: 'screen', y: stacked ? compassTop : COMPASS.top * zoom, z: 1 },
       children: [
-        this.heading !== null && compassNode(Math.min(COMPASS.width, COMPASS.share * room) * zoom, this.heading, zoom),
+        this.heading !== null &&
+          compassNode(
+            Math.min(COMPASS.width, COMPASS.share * room) * zoom,
+            this.heading,
+            zoom,
+            this.quest?.from,
+            [],
+            this.quest?.at ?? null,
+          ),
         this.foeBars.bossNode(Math.round(Math.min(PLATES.boss.width, PLATES.boss.share * room) * zoom), zoom),
         this.targetShare > 0 && this.targetNode(room, zoom),
       ],
