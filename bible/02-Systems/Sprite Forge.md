@@ -115,6 +115,9 @@ sword (`_short`) their metal's as the right hand's. A strip whose inputs did not
 The `forge` workflow renders the Arts' birds and the weapons drawn large and adds them to what is published with the
 repository's Cloudflare token whenever `artbirds.py`, `weaponart.py` or their pinned packages change on main, or when
 a run is asked for on a branch; its log ends with the manifest, which a commit takes into `content/forge/renders.json`.
+A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
+either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
+strip reaches R2 from one. A fresh checkout holds no strips, so every strip of each layer named is drawn.
 It installs only the exact wheels `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git
 credential. The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without
 rendering.

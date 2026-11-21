@@ -266,10 +266,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   fixed: a shot takes the perks of the bow it was loosed from; rigging hits take the canvas and crew perks; a player
   back in a sea fight keeps a spent Hard to Kill and no ship number is given twice; Shape's purchase names the piece
   shown; a kept rolled perk left in another column is replaced; the figure's left twin and short sword take their
-  metal's grade (`layers.set_of`). Their 26 layers were drawn again for both bodies and look right, but are not
-  published: the cloud environment holds no Cloudflare token, and the `forge` workflow draws only the birds and the
-  large weapons. Until they are, the figure draws them ungraded, as before this branch. Main (#120 and the hub) is
-  merged in and the check passes on it. Open for the owner, each a call made in the design note: the Atheric armour pieces keep their one signature; a rolled Rare reaches daedric at level 20; a faction's
+  metal's grade (`layers.set_of`), their 26 layers being drawn and published by the `forge` workflow's new `figures`
+  input, the repository's key being an Actions secret ("Key is in the repo"). Main (#120 and the hub) is merged in and the check
+  passes on it. The Thunderlock at port arms is held trigger to the front, as drill holds it, after the owner's "fix the
+  thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`); its rest, walk and sprint are not drawn again,
+  the owner's "Blades only for now": the arms move, so every layer in those three moves, every set and body, must be,
+  about 27,000 solid frames a body with its cloth, some 400 Actions minutes. Until then the game holds it as before.
+  Open for the owner, each a call made in the design note: the Atheric armour pieces keep their one signature; a
+  rolled Rare reaches daedric at level 20; a faction's
   shield and bow keep one make; whether named weapons keep an element of their own (a leap is Volt on any Gullwing);
   a blow on a foe four or more levels above sets off no chain blow, since the blow itself does nothing. Not yet seen
   on a real GPU.
