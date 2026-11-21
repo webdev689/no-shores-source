@@ -251,6 +251,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), tested offline (`cargo xtask check`), waits on the
+  owner's yes to merge. The player's melee swings chain side cut, overhead and thrust, starting over after a second
+  without a swing ([[The Player's Swings Chain Side Cut, Overhead and Thrust]]); foes walk and run at three quarters
+  of a player's pace ([[Foes Walk and Run at Three Quarters of a Player's Pace]]); the prologue's parry freeze reads
+  the player's aim, as the rules judge a guard. Not yet played live or seen in a browser. Its open points: whether
+  the one-second reset and the pace feel right in play; the raised shield's walk, deferred by the owner (Next).
 - **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
   [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]], is on `main`, merged with the owner's yes
   ("Merge and deploy"), which deploys the page and the rooms. Every sound effect and ambience sound plays the owner's
@@ -505,6 +511,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
+  `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
+  `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
+  draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
 - **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a frame's cost on a real GPU with some 125 figures and
   the courts' pieces; the audit's risks left open (a walker's step to the side of a post's line or round a sharp turn
   is not walked against the real hub's boxes, kept posts' people are not booked against walkers, routines' maths may
