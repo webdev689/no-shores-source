@@ -191,7 +191,7 @@ One engine counts both, since the owner's side quests and the board's bounties a
   feat (`Feat`) as it happens, and `Character::saw` counts it toward each bounty held today and each side quest held,
   up to its target; the account keeps the count. A room whose day is not the record's counts no bounty.
 - **The rooms count** each foe felled for each player who shares its kill, but on a ship's deck, which is no island,
-  so a boarding counts toward no land bounty; each resource node gathered, and each
+  so a boarding counts toward no bounty or quest; each resource node gathered, and each
   dungeon cleared for each player the room keeps as its cache opens, the way the clear pays. A dungeon's room counts
   its clear for an account once a day at most (`Run::count_clear`), though its end post stands again and its cache
   opens again, so one dungeon farms no "Clear 3 dungeons."; a run is a room of its own, so each run counts. A room
@@ -217,8 +217,10 @@ One engine counts both, since the owner's side quests and the board's bounties a
   continent's id, none off every water) and her captain's rank, on the sea's day (`Sea::count_down`,
   `gear::objectives::count_ship_down`), one fighting on a captain's deck among them: stepping off, they keep it
   (`step_off`). A count that moves is saved and sent to the player at once, their gear written at the sea's minute so
-  its bounties are the day's (`sea_gear_bytes`); the Journal reads it at sea, so a count shows as the ship goes down,
-  not when the player lands.
+  its bounties are the day's (`sea_gear_bytes`), by a room that holds that sailor alone, so it carries their own
+  story only. On a captain's deck their gear is the deck room's, which keeps the sea's minute too; stepping off, they
+  are sent the sea's again. The Journal reads the sea's word while the player is on the sea or choosing where to land,
+  so a count shows as the ship goes down, not when the player lands.
 - **Quests** (side quests, and the story's missions as quests of kind story) use the same objectives, kept until
   done, and are written as data (`content/gear/quests.json`, read by `gear::quests`, none written yet): each its id,
   its kind (story or side), its name, one line of its tale, an optional banner key (else the Journal gives it one of
@@ -265,9 +267,9 @@ One engine counts both, since the owner's side quests and the board's bounties a
   held, each counting to its reset. A shut line says why in its gate's words. "Taken" is the character's record as
   their gear last carried it, judged against the page's own day and week, so yesterday's clear reads as not taken
   today. Its right column holds the day's bounties taken, as the gear last carried them, as tiles with no press, or
-  before the prologue the board's shut line alone. Gear of another day than the page's (at sea, the last land's gear
-  is kept through the reset) shows no bounty, only "Six a day, from the board in Overlook’s plaza.", as before any
-  room sent one. Its middle holds the quests held.
+  before the prologue the board's shut line alone. Gear of another day than the page's (a word heard before the reset,
+  as at sea, where the character is sent only as it changes) shows no bounty, only "Six a day, from the board in
+  Overlook’s plaza.", as before any room sent one. Its middle holds the quests held.
 - **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), after
   Destiny's Bounty Tracker: "Bounties for XP and Aurem, posted each day.", the day's six as tiles in a row a kind
   (land, sea, dungeons), a bar counting to the next board, and the chosen tile's card (its name, its kind, its words,
@@ -304,6 +306,6 @@ Each is Claude's, open to the owner's change: the resets at 09:00 UTC and Tuesda
 rather than one, with three rewards a day across them; Elite and Abyss seas opening at levels 10 and 20; the week's two
 with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a run starting short after a minute, Find
 a Company's bands of ten levels, and a group found sharing one run without becoming a company; five shared revives,
-restored by a wipe; the modifier set; the rewards above and the quarter-more boon; a kill on a ship's deck counting
-toward no land bounty and earning no boon; six bounties a day paying XP and Aurem; one engine for quests and bounties;
-and the screen's names, Find a Company and the Journal's Timers.
+restored by a wipe; the modifier set; the rewards above and the quarter-more boon; a foe felled on a ship's deck
+counting toward no bounty or quest and earning no Abyss boon; six bounties a day paying XP and Aurem; one engine for
+quests and bounties; and the screen's names, Find a Company and the Journal's Timers.

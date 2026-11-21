@@ -106,7 +106,8 @@ export interface BountyColumn {
 }
 
 /** The bounties a player took from the day's board, as the Journal's column shows them on the page's `day`: none known
- *  while the gear is of another day's board (at sea, the last land's gear is kept through the reset). */
+ *  while the gear is of another day's board, a word heard before the reset (at sea, sent only as the character
+ *  changes). */
 export function bountyColumnOf(gear: GearState | null, day: number | null = null): BountyColumn {
   if (!gear?.bounties || (day !== null && gear.day !== day))
     return { taken: [], slots: 0, said: 'Six a day, from the board in Overlook’s plaza.' };
