@@ -4,7 +4,14 @@ status: live
 code:
   - client/index.html
   - client/src/main.ts
+  - client/src/gameWorker.ts
+  - client/src/thread/pageHost.ts#PageHost
+  - client/src/thread/pageAway.ts#pageAway
+  - client/src/thread/audioAway.ts#soundAway
+  - client/src/thread/audioHost.ts#AudioHost
   - client/src/game/game.ts#startGame
+  - client/src/game/drain.ts#Drain
+  - client/src/game/drain.ts#DrainView
   - client/src/game/gameBoot.ts#bootGame
   - client/src/game/gameFrame.ts#startFrames
   - client/src/game/pageWaters.ts#watersOnce
@@ -17,6 +24,7 @@ code:
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
   - client/src/game/footGear.ts#groundRings
+  - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/sea.ts#Sea
@@ -56,10 +64,34 @@ player arrives in Overlook, plays on foot in one node at a time, returns to thei
 views an island's side from above and lands at another node. Each way between them passes through a veil while the
 place loads, as Destiny's orbit does.
 
+## Threads
+
+The game runs in a thread of its own, a worker, as the owner asked ([[Work Leaves the Main Thread Where It Can]]): its
+loop, the rules' prediction, the room's connection and every draw, WebGPU drawing on the page's one canvas handed to
+it (`transferControlToOffscreen`). The page keeps what a browser allows nowhere else (`PageHost`): the player's keys,
+pointer, wheel and pad, the pointer's lock and capture, typing through `EditContext`, sound, storage, the address and
+the screen reader's announcements.
+
+- **What the page hears** it sends on as it comes: the interface's input as plain events (`CanvasEvents`), and every
+  key, pointer and wheel event the game's code listens for, made again in the worker on the canvas or the window. The
+  page keeps a key's own work (scroll, find, the focus moving) from every key of the game's unless words are typed,
+  the browser's shortcuts and function keys aside, and a wheel's and a right click's on the canvas always.
+- **What the game finds in the worker** stands in for the page (`pageAway`): storage read there and each change sent
+  to the page's at once; the page's address, its size, its media queries and its document; the canvas, its pointer's
+  lock and capture asked of the page. The game's own code runs unchanged: the stand-ins answer as a page's do.
+- **Sound** is made on the page's audio, its cues sent ahead by the worker (`soundAway`, `AudioHost`): every node,
+  parameter and buffer the game's sound code makes there is a number the page keeps, each call sent with the rest of
+  its task's and carried out on the page; the page's clock is sent back now and then, and the worker runs it on
+  between. The page makes its audio at the player's first press or key, as a browser lets sound start only then.
+- **Measured** headless on SwiftShader at 480 by 270, the world drawn at Overlook's social space for 30 seconds with
+  W pressed every two: the page's thread is busy 0.0 ms a frame at the median and keeps 60 frames a second while the
+  worker draws, with 4 long tasks (0.26 s in all); the worker is busy 25 ms a frame. SwiftShader draws on the CPU, so
+  its frames come seconds apart: only the threads' busy times say anything of a real GPU.
+
 ## The flow
 
 `flow.ts` holds where the player is: loading behind a veil, on foot in a node, at sea, or over an island's side
-choosing a landing; on foot and at sea a menu may be open. It is pure: the page hands it what happened and draws what
+choosing a landing; on foot and at sea a menu may be open. It is pure: the game hands it what happened and draws what
 it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
 `game.ts` keeps the flow, the travel between places and the player's actions, and `gameFrame.ts` draws each frame of
 the mode the flow is in; each mode is its own module.
@@ -81,7 +113,7 @@ A way that fails stays on the veil, saying why, and Enter tries it again.
 
 ## Arriving
 
-The page reads the world (`loadWorld`: the layout and every continent's edits file) and opens Saltmere, continent 1,
+The game reads the world (`loadWorld`: the layout and every continent's edits file) and opens Saltmere, continent 1,
 in the [[Land]]'s worker, kept, with the RMB index's blocks, so its city is settled on it as the bake settles it
 ([[Cities]]). Overlook's plan comes from that worker; its social space is the node `overlook-social`, the plaza beside
 the Beacon. The player stands at its first spawn, 4 m inside the seaward parapet, facing out from the landmark and
@@ -92,7 +124,7 @@ With `?at=<node id>` in the address the player arrives at that node instead, on 
 is `<city id>-social`): a way to look round the world. An id the world does not hold arrives at Overlook, and so
 does a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
 never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
-(the page waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
+(the game waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
 name says "Ruins" (`placeWords`). With
 `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's spawn,
 offline: a way to look at one place.
@@ -114,18 +146,19 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   released, with a frame of its element round the screen ([[Arts]]).
 - **The world goes on.** The body is stepped every frame, with the pointer locked or not; while a menu is open,
   with nothing pressed. Click the view to look round with the mouse.
-- **The room.** The node's room is the authority, always. Alone, the room crate runs in the page, ticked by its clock,
+- **The room.** The node's room is the authority, always. Alone, the room crate runs in the game's worker, ticked by its clock,
   on a node file made from the same window and boxes, as the sea's does ([[Server]]); online, the server's.
 - **The fight.** The player fights as on the Test Ground, by its keys and its modules ([[Combat]]): Z readies the
-  weapon, 1 draws the Melee loadout and 2 the Ranged, the right button swings or aims, the left button or F guards,
-  parries or fires, V or Mouse5 dodges, R, Q and G cast the worn Art's spells ([[Arts]]), and the soft lock holds a
-  foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
+  weapon, 1 draws the Melee loadout and 2 the Ranged, 3 drinks a healing charge ([[Combat]], "Healing charges";
+  [[Three Healing Charges, Refilled by Blows and Kills]]), the right button swings or aims, the left button or F
+  guards, parries or fires, V or Mouse5 dodges, R, Q and G cast the worn Art's spells ([[Arts]]), and the soft lock
+  holds a foe. The fighter is predicted by the room's own rules on the node's land, and the room's word is
   taken. Shots stop on that land, and the aimed shot's crosshair and the player's own arrows meet it. The key strip
   shows the fight's keys and the body's beyond walking, the Arts' (R Anima, Q and G Tenets) only while an Art is worn,
   and how to aim Dusk Daggers only while Shadow is. Every key hint, on foot and at sea, is a key on its keycap and
   its action, with no colon. Where the HUD is wide and not doubled (1500 by 900 and up, under 2400 by 1300), its keys
-  stand at 22 px, at the bottom right ([[Interface]]), and the place line's small words under its name at 16 px (20
-  px over the held map).
+  stand at 22 px, at the bottom right ([[Interface]]), and the place line's small words under its name at the face's 11 px
+  (22 over the held map; [[Interface]], "Limits").
 - **The foes.** Every foe the room holds stands as a figure in its type's dress ([[Enemies]]), with the Test Ground's
   display: the compass at the top with the boss bar and the target's plate under it, the vitals at the top left, the
   Arts and weapons at the bottom left, each foe's name and bar, the parry rings, the words, the arrows to foes out of
@@ -148,7 +181,7 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   forth and back every 0.4 s (a flinch plays them once), and circles three gold stars round its head in eighth-turns,
   once a second; a Charge's stagger holds it still. A foe slain dissolves once its fall is over: plain, it greys and
   crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in an element (the player's own in
-  their weapon's glow as their page shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
+  their weapon's glow as their game shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
   from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
   A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
   [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
@@ -157,11 +190,12 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
-- **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
-  plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
-  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step, the walk's frames at
-  the pace they stroll. The floor under each is found again only once they have walked a step. The fight never takes
-  them for targets.
+- **A social space's people** (`PlazaLife`, `life/`): its keepers stand behind their counters and at their stalls
+  and work, and its townsfolk walk the plan's ways (the city crate's `life`) from post to post, looking out, browsing,
+  drinking, talking or carrying, keeping to the right; each keeps a routine laid on the world clock from the plan and a
+  seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the
+  ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
+  only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
   player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
   patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
@@ -217,9 +251,9 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   down DFO's ladder, the dial's step, then 60, 40, 30, 20, 10 and 5, to 1, the world's own time, a step each 0.15 s, so
   it sails at its true speed, 12 m/s, while watched close; as the view rises it eases back up to the dial the same way.
   The dial itself is not changed, and the voyage's time left is read at it. Each step goes to the sea room with the ship's
-  course; the room takes one course each half second, so it sails the ship at the latest step it has, and the page sails
+  course; the room takes one course each half second, so it sails the ship at the latest step it has, and the game sails
   the ship at the room's pace until it takes the next. Once the room's word on the ship comes and its pace is not the one the ship is
-  sailed at, a step it refused, the page asks it again with the ship's course, until the two agree (`paceToAskAgain`); a
+  sailed at, a step it refused, the game asks it again with the ship's course, until the two agree (`paceToAskAgain`); a
   slower word with a hostile ship within 1.7 km is the room holding the ship, not a refusal. While the pace is eased, and
   the room sails the ship at it, the voyage's line adds "Sailing at true speed while you watch close."
 - **Sailing.** A click on the sea or the land plans a route round the land (`planSeaRoute`): on the open landmass's
@@ -280,7 +314,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
   It marks each hostile ship within its sight of the ship in red, other players' within 900 m in bone, a fight's struck
   captains grey ([[Interface]]). It hides while the held map is up at the helm.
-- **The waters.** The page opens the waters once, just after its first frame (`pageWaters.ts`), with the port
+- **The waters.** The game opens the waters once, just after its first frame (`pageWaters.ts`), with the port
   cities from the land files (`portsOf`, which the server reads too); the held map, the friendly ships and the sea all
   read that one opening, the ship's first putting to sea awaiting it. The place's line at sea, at the helm and in
   Manage names
@@ -290,7 +324,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   sighted, 12 km off."), the nearest first.
 - **Pirates and the Grey Tithe** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at its
   voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of the ship, and the voyage's line says so;
-  the page sails its ship at the pace the room sailed it at, drawn to where the room has it. A bold one that comes
+  the game sails its ship at the pace the room sailed it at, drawn to where the room has it. A bold one that comes
   within 750 m meets the ship: the ship heaves to, its voyage kept, and the view pans down to the fight, every ship in it
   easing to its true size as on any view near the ship (above), its plate over it (its faction's emblem, its name over a bar
   of its hull coloured by its rank), then back up when it ends. Ships of two factions that meet fight each other, drawn
@@ -311,12 +345,12 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   reach from the waters' table; out of the sea, "Repairs are made at sea, by a port city"). The chase's meeting reach
   and the voyage's hold reach come from that table too (`SeaFacts`); it holds every ship's name as well, which the
   page's own names (`shipBars.ts` `shipName`) are tested against. A voyage set at Elite or Abyss sails in that
-  difficulty's sea room (`sea--elite`, `sea--abyss`), the page leaving one for the other as the voyage sets out. The ship's
+  difficulty's sea room (`sea--elite`, `sea--abyss`), the game leaving one for the other as the voyage sets out. The ship's
   voyage sails at the way its kept canvas leaves it, as the room sails it (`seaLaw.ts` `followed`). Back at sea
   after a session, it lies where the room last kept it.
 - **Friendly ships** sail between the three port cities all the time ([[World Map]], "Traffic";
-  `friendlyShips.ts`). The page asks the waters' rules where they are at world time, seconds since the Unix epoch by
-  the page's clock (the sea room sends none), four times a second within the sea view's reach of the ship (its far plane),
+  `friendlyShips.ts`). The game asks the waters' rules where they are at world time, seconds since the Unix epoch by
+  the browser's clock (the sea room sends none), four times a second within the sea view's reach of the ship (its far plane),
   and between answers reckons each on along its leg at the pace the waters' table gives (5 m/s); a new answer's gap,
   as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its destination's
   roadstead, no way on it, until it is gone. Of each hull only as many as the ships layer has slots for are drawn,
@@ -362,20 +396,20 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
   joined again, they are a new player there, standing where the room puts them, their dress and session sent again.
   A room that sends the player away is lost: the display says so and they play on alone.
-  With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the page
+  With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the game
   makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
   the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played
-  alone, the room in the page keeps no gear.
+  alone, the room in the game's worker keeps no gear.
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as it lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on the ship
-  is taken 60 ticks after its course is sent, a round trip's allowance of a second: until then the page sails it at
+  is taken 60 ticks after its course is sent, a round trip's allowance of a second: until then the game sails it at
   the pace the room last held it to, then draws it to where the room has it. Where the room has it at rest short
-  of its voyage's end, a course it would not take, the page heaves it to there. Leaving the helm while a course
+  of its voyage's end, a course it would not take, the game heaves it to there. Leaving the helm while a course
   waits its turn sends the course first, then the leave, so the room takes the course from the helm. While the sea
-  room is joined again after its socket closed, the page sails the ship alone and shows none of the room's ships, a fight in it
+  room is joined again after its socket closed, the game sails the ship alone and shows none of the room's ships, a fight in it
   over, and the voyage's line says "Reconnecting…"; joined again, the player is called to the helm and the ship puts to sea
   where it lies, on its voyage. A sea room that sends the player away is lost: they are called to the helm and sail
-  on alone, the voyage's line saying so. While the room is well, the line says nothing of it (`roomWords`). Playing alone, the same sea room runs in the page, so its pirates and
+  on alone, the voyage's line saying so. While the room is well, the line says nothing of it (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its pirates and
   fights are the same law.
 
 ## Drawing
@@ -399,7 +433,7 @@ come from the pages' `world/` folder; the blocks are kept for every later city. 
 land is tinted with its biome's woods past where its trees are drawn, so forests read from the sea.
 
 **The ground's pictures.** The land wears its climate's ground tiles ([[Procedural Textures]], `groundTiles`), painted
-off the page's thread by the city's painter: the terrain set's grass on the low ground, its dirt on the highlands and
+off the game's thread by the city's painter: the terrain set's grass on the low ground, its dirt on the highlands and
 roads, its stone on bare rock, its winter grass under snow and the desert's sand on beaches. Each class keeps its
 biome's colour and takes its tile's grain over it (`groundColour.ts`), a tile to 6.4 m as Daggerfall laid them, read
 again 34 m wide and turned so its repeats do not line up, and cast from three sides on cliffs so a face is not
@@ -445,13 +479,22 @@ a fight's captains) are handed to the water at the size each is drawn; it keeps 
 way.
 Under way the player's ship stirs the water's ripples at its bow and quarters, as the World Editor's does, and the
 ripples follow it.
-In death the world drains to grey, and comes back in colour on respawn or on leaving.
+In death the world drains to grey once death is told (a fall plays out in colour first, the camera holding and turning
+after the body, no key listed until Respawn is offered), and comes back in colour on respawn or on leaving: over 1.4 s
+each way, eased out, grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last into its own
+picture, so the interface the game draws over the world keeps its colour.
 
 ## Limits
 
+- A save the game makes as the tab closes is sent from the worker to the page's storage. A closing test page still
+  stored it; whether a real tab's close always does is unchecked.
+- A sound's samples are held twice: those the game fills itself are copied to the page, not moved, and every recording
+  the page decodes is kept there as its buffer and in the worker as a copy of its samples, for the game to read.
+- A browser that cannot hand its canvas to a worker says so and does not start.
+
 - Until the city's tables and blocks have come, the land shows without its city.
 - A voyage is the browser's word; the sea room refuses a course that touches a coast it judges exactly, and the ship
-  then rests short of it, the page drawing it where the room has it.
+  then rests short of it, the game drawing it where the room has it.
 - Only the open landmass is drawn; another continent appears once the ship is within 60 km of its coast.
 - The browser predicts nothing of the edge: a warning, a death or a respawn shows as the room's snapshot says it.
 - The land is drawn a little off the ground bodies stand on, so the fight's marks and blood are drawn 0.12 m over

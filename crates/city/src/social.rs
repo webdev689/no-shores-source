@@ -3,8 +3,9 @@
 //! walled all round with a parapet and laid out as a courtyard (`courtyard`); from it the city below and the harbour
 //! are seen whole and never reached.
 
-use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, visitor_spots};
+use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, townsfolk_life, visitor_spots};
 use crate::landmarks::{Landmark, ahead};
+use crate::life::{Post, Ways};
 use crate::solids::{Material, Shape, Solid};
 use crate::stations::{Station, stations};
 use land::ground::Ground;
@@ -20,7 +21,7 @@ const SPAWN_INSET_M: f64 = 4.0;
 const APART_M: f64 = 10.0;
 
 /// The social space: its plaza's bounds (west, north, east, south) and level, its section's ring, its spawns, its
-/// parapets, retaining walls and courtyard, and its stations.
+/// parapets, retaining walls and courtyard, its stations, and its townsfolk's ways and posts.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Social {
     pub bounds: [f64; 4],
@@ -32,6 +33,15 @@ pub struct Social {
     pub stations: Vec<Station>,
     /// Where a visitor of no counter may stand, one a week (`visitor_spots`): Shape's places.
     pub visitor_spots: Vec<[f64; 2]>,
+    /// The ways its townsfolk walk, and the posts where they work, play or stay a while (`life`).
+    pub ways: Ways,
+    pub posts: Vec<Post>,
+    /// Where ships lie moored beside its pier, if it reaches one: each one's middle (east, south) and the bearing her
+    /// bow points along (radians clockwise from north), drawn while a player walks it (`hub::harbour`).
+    pub moorings: Vec<[f64; 3]>,
+    /// The trees and bushes its beds, pots and planters stand, drawn as the world's own plants (`hub::plants`).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub plants: Vec<crate::hub::plants::Plant>,
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -54,8 +64,10 @@ pub fn plaza_bounds(centre: [f64; 2], seaward: [f64; 2], reach: f64) -> ([f64; 4
 
 /// The plaza beside a landmark: square to the world, its long side across the seaward way, so the whole length of it
 /// looks out over the city to the sea. A ruined city's plaza is empty: its counters stand bare and keep no station.
+/// The city of the hub (`hub::HUB_CITY`) lays its own on it.
 #[must_use]
 pub fn plaza(
+    city_id: &str,
     ground: &Ground,
     centre: [f64; 2],
     level: f64,
@@ -67,6 +79,11 @@ pub fn plaza(
     let (extent_x, extent_y) = (bounds[2] - bounds[0], bounds[3] - bounds[1]);
     let middle = [(bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0];
     let depth = if along_seaward[0] == 0.0 { extent_y } else { extent_x };
+    let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
+    if city_id == crate::hub::HUB_CITY {
+        let frame = Frame { middle, seaward: along_seaward, depth, length, level };
+        return crate::hub::overlook(ground, &frame, bounds);
+    }
     // The section is the plaza's own edge, along the parapet's middle: the floor is walked right to the parapet to look
     // down over it, and only climbing onto it or over it warns.
     let ring = vec![[bounds[0], bounds[1]], [bounds[2], bounds[1]], [bounds[2], bounds[3]], [bounds[0], bounds[3]]];
@@ -101,11 +118,23 @@ pub fn plaza(
         [extent_x, extent_y, 0.05],
         Material::Paving,
     ));
-    let length = if along_seaward[0] == 0.0 { extent_x } else { extent_y };
     let frame = Frame { middle, seaward: along_seaward, depth, length, level };
     solids.extend(courtyard(&frame));
     let (stations, stalls) = stations(&frame, ruined);
     solids.extend(stalls);
     let visitor_spots = visitor_spots(&frame);
-    Social { bounds, level, ring, spawns, solids, stations, visitor_spots }
+    let (ways, posts) = townsfolk_life(&frame, &stations);
+    Social {
+        bounds,
+        level,
+        ring,
+        spawns,
+        solids,
+        stations,
+        visitor_spots,
+        ways,
+        posts,
+        moorings: Vec::new(),
+        plants: Vec::new(),
+    }
 }

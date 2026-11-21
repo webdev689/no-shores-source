@@ -1,6 +1,7 @@
-//! The Sloop's deck and build, for the sea room and for a browser. Its deck is read from the ships manifest the game is
-//! built with (content/ships/ships.json, which tools/ships/deck.py writes), so the room and every browser stand a
-//! walker on the same heights; its build is what the naval rules say it is, for a browser to show.
+//! The Sloop's deck and build, for the sea room and for a browser, and a captain's deck opened as a room alone. Its
+//! deck is read from the ships manifest the game is built with (content/ships/ships.json, which tools/ships/deck.py
+//! writes), so the room and every browser stand a walker on the same heights; its build is what the naval rules say
+//! it is, for a browser to show.
 
 use movement::Heights;
 use naval::arms::{LARGE_BOAT, SLOOP_ARMS};
@@ -84,6 +85,30 @@ pub fn sloop_build_json() -> String {
         SLOOP_ARMS.starboard.len(),
         loads.join(","),
     )
+}
+
+/// Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's deck by its number, its faction's
+/// deck crew for its rank (1 Minor to 5 Boss) at its level. The page's tests and pictures of the fight on its deck
+/// stand on it; the sea opens its own. Answers whether the hull and the rank are ones.
+#[must_use]
+pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
+    let (Some(deck), Some(rank)) = (hull_decks().get(usize::from(hull)), foes::Rank::from_number(rank)) else {
+        return false;
+    };
+    crate::keep(crate::Opened::Land {
+        room: Box::new(room::Room::deck(deck, faction, rank, level.max(1))),
+        node: None,
+        refusal: None,
+        sent: Box::default(),
+    });
+    true
+}
+
+/// Opens a captain's deck as a room alone (`open_deck`); 1 if it opened, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_open_deck(hull: u32, faction: u32, rank: u32, level: u32) -> u32 {
+    let byte = |number: u32| u8::try_from(number).unwrap_or(u8::MAX);
+    u32::from(open_deck(byte(hull), byte(faction), byte(rank), byte(level)))
 }
 
 #[cfg(test)]

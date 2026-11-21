@@ -15,7 +15,7 @@ import type { NodeInfo } from '../../worldData.ts';
 import { type Place, placeOf } from '../place.ts';
 import { Bank } from './bank.ts';
 import type { Random } from './dsp.ts';
-import { type AmbienceKey, ambienceOf, fadeGain, nearness, phasesAt, stepLevel, wayOf } from './law.ts';
+import { type AmbienceKey, ambienceOf, fadeGain, nearness, phasesAt, stepLevel, walkedOn, wayOf } from './law.ts';
 import { type Lay, shoreOf } from './places.ts';
 import { type Heard, MOST_CALLS, ScapePlayer, jobsOf } from './player.ts';
 import { SCAPES } from './scapes.ts';
@@ -37,8 +37,6 @@ const COAST_ON_FOOT: readonly [number, number] = [60, 500];
  *  page's frames stop). */
 const THUNDER_AHEAD_S = 0.25;
 const THUNDER_LATE_S = 1.5;
-/** The feet moved farther than this in a frame, metres, were set down elsewhere rather than walked. */
-const STRIDE_MOST_M = 2;
 
 /** Where the ambience plays: a context and the node it goes into; null while it may not sound. */
 export type AmbienceOutput = () => { readonly audio: BaseAudioContext; readonly out: AudioNode } | null;
@@ -286,7 +284,7 @@ export class Ambience {
       return;
     }
     const moved = kept ? Math.hypot(feet.x - kept.x, feet.y - kept.y) : Infinity;
-    const walked = (kept?.walked ?? 0) + (moved <= STRIDE_MOST_M && feet.mode === 'ground' ? moved : 0);
+    const walked = feet.mode === 'ground' ? walkedOn(kept?.walked ?? 0, moved) : (kept?.walked ?? 0);
     if (kept && stepsBetween(kept.walked, walked) > 0) this.stepped = true;
     this.feet = { x: feet.x, y: feet.y, walked };
   }

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { SeenPirate } from '../network/messages.ts';
 import { eyeFor, poseOf, TILT } from '../overworld/overworldCamera.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
-import { emblemUrl, markPicture } from '../plus/emblems.ts';
+import { emblemSvg, markPicture } from '../plus/emblems.ts';
 import { rankColour } from '../ships/shipBars.ts';
 import {
   hostileLook,
@@ -58,9 +58,9 @@ test('its mark bears its name on its hull, its faction’s emblem, its rank’s 
     [rankColour(1), rankColour(2), rankColour(3), rankColour(4)],
   );
   assert.ok(rankColour(1) !== rankColour(2) && rankColour(2) !== rankColour(3) && rankColour(3) === rankColour(4));
-  assert.equal(miniboss?.badge, markPicture('miniboss').url);
+  assert.equal(miniboss?.badge, markPicture('miniboss').svg);
   assert.deepEqual([minor?.badge, major?.badge, elite?.badge], [null, null, null], 'only a Miniboss bears the mark');
-  assert.equal(minor?.emblem, emblemUrl(1));
+  assert.equal(minor?.emblem, emblemSvg(1));
   assert.equal(hostileNote(pirate(1, 0), 12_000), 'Level 23 · 12.0 km');
   assert.equal(hostileNote(pirate(1, 0, { level: 0 }), 600), '600 m', 'no level from a room that sends none');
 });

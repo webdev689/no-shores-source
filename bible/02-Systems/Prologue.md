@@ -83,8 +83,8 @@ wreck still drawn); the Frigate's view is made only once a beat draws it, so a p
 makes it.
 
 A story that cannot begin at all (its cast or scenes refused, a ship's model not loaded, a part failing as it is made)
-gives back everything it took, the last first: the screen hands the page back its touches and the canvas its ease,
-the dialogue box, the marks over heads and the nameplate leave the HUD, the GPU lets go of what was made, and the
+gives back everything it took, the last first: the screen hands the page back its touches, the dialogue box, the
+marks over heads and the nameplate leave the game's interface, the GPU lets go of what was made, and the
 player wears the look the game gave them. The player then arrives at Overlook.
 
 | Beat | What happens | Played or shown |
@@ -126,14 +126,14 @@ still stands in sight, held at the water or at the town's middle. Leaving Overlo
 part at once, her words with it. The game is the player's from there.
 
 **The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
-first arrival, Elder Maren Hale of the Lamplighters starts at the lane crossing nearest the player that is at least 15 m
-from them, and out of their view where one is, and comes to them by the lanes at 1.5 m/s. She stops 1.8 m before a
-player on the lanes, facing them; for a player off them, she stops at the lane point nearest them and greets them there
+first arrival, Elder Maren Hale of the Lamplighters starts at a point of the townsfolk's ways at least 15 m from the
+player, and out of their view where one is, and comes to them by the ways at 1.5 m/s. She stops 1.8 m before a
+player on the ways, facing them; for a player off them, she stops at the point of the ways nearest them and greets them there
 once they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest
 stop first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the
-Stormcallers, the Veiled and her own Lamplighters, then walks home. She keeps to the townsfolk's lanes, the counters'
-fronts and the parapet's lookers' line, and goes round her counter's end clear of the arcade's columns, so she walks
-through no solid and never through Shape (`welcome/lanes.ts`; the lanes are in `content/world/social.json`). Each stop
+Stormcallers, the Veiled and her own Lamplighters, then walks home. She keeps to the middle of the townsfolk's ways
+(`life/ways.ts`; the ways are the plan's), which keep clear of every solid and of Shape, and goes round her counter's
+end clear of the arcade's columns (`welcome/walk.ts`). Each stop
 is where customers stand before its counter (3.1 m out), a pair's the middle of the two. At each she waits until the
 player is within 6 m, then says its lines in the dialogue box, some of the keepers she names answering her, with no mark
 over a head ([[Speech Blurbs Show Their Text Without Glyphs]]); the HUD says "Follow" over her name past 6 m and clears
@@ -296,13 +296,13 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   it; no standing heap walked, or climbed as high as a jump reaches (1.05 m), round; a wave and three crew in every
   zone but the first and the arena; and at least 2,000 m2 of ground walked.
 - **Nothing falls off.** The room over the sea holds a rim round the wreck's ground, a grid of 0.3 m cells, open
-  where a block covers a cell and a wall everywhere else, as a ship's deck holds her crew ([[Movement]]): a body
+  where a block covers a cell and a wall everywhere else, as a ship's deck holds its crew ([[Movement]]): a body
   walks, jumps and vaults anywhere over the decks and the rafts and is held at their edge, its rails and open breaks
   alike, while what falls or flies over the sea meets it at 0 m. No body climbs there
   ([[Climbing Is Off in the Prologue]]): no wall is taken hold of, no lip hung from, and only a lip within a vault
   (1.2 m) of the floor is gone over; the foes' navmesh over the sea is baked by the same rule. The page's own steps, its walk and its fight's prediction alike, stand on the same rim,
   made by the rules from the blocks (`setRim`), to the bit. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
-  back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, her gun deck and
+  back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, its gun deck and
   the Sloop's side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
   itself. The HUD shows no death panel and no Respawn; a toast says "You will rise at the last checkpoint."
@@ -323,7 +323,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   with his head on the view, so a cry unheard spends no gap; he tells the player to kneel again only once they have
   struck him since. The throw overboard is framed so Thule and his crier stand on the view on any screen, a tall one
   from further back.
-- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the page's own on the
+- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the game's own, in its worker, on the
   layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave
   fights and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is
   entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the

@@ -94,6 +94,7 @@ test("in a fight, the page's own prediction holds the player at the wreck's edge
         Number.NaN,
         Number.NaN,
         Number.NaN,
+        0,
       ]);
       fighter = combat.predict(fighter, intent, 1, swordAndShield, []).fighter;
     }

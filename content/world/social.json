@@ -1,12 +1,6 @@
 {
-  "about": "Which cities' social spaces are open, and which Shape visits on his weekends, by city id. The other two port cities' open later (\"later\"), and the six desolate cities' never do. Read by the city crate (the bake marks every social node not open closed) and the page (it says the two later ones open later, and marks the desolate ones' not at all). Its lanes are where the townsfolk walk a social space's plaza, in metres of the plaza's own frame from its middle: the rows at so many metres toward the sea (the first the landward lane, before the arcades), the columns at so many metres across it, the line customers stand on before the counters and the line lookers stand on at the parapet. They are read by the page, which walks the townsfolk and Elder Maren Hale on them, and by the city crate's test that keeps Shape's places off them.",
+  "about": "Which cities' social spaces are open, and which Shape visits on his weekends, by city id. The other two port cities' open later (\"later\"), and the six desolate cities' never do. Read by the city crate (the bake marks every social node not open closed) and the page (it says the two later ones open later, and marks the desolate ones' not at all).",
   "open": ["overlook"],
   "later": ["sunspire", "rimeholt"],
-  "shapeVisits": ["overlook"],
-  "lanes": {
-    "toward": [-38, -14, 14, 34],
-    "across": [-110, -70, -20, 20, 70, 110],
-    "atCounter": -48.5,
-    "atParapet": 52
-  }
+  "shapeVisits": ["overlook"]
 }

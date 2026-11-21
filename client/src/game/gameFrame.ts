@@ -10,6 +10,7 @@ import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
 import type { Ambience } from './audio/ambience/ambience.ts';
 import type { HelmMap } from './helmMap.ts';
+import { musiciansOf } from './audio/music/band.ts';
 import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
 import type { Discovered } from './discovered.ts';
@@ -19,8 +20,13 @@ import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { gearScreenOpen } from './gearWindow.ts';
+import { gearTakesKeys } from './gearScreen.ts';
+import type { Drain } from './drain.ts';
+import type { DrawnInterface } from './drawnInterface.ts';
+import { creationOpen } from './prologue/creation.ts';
+import type { Stack } from '../ui/stack.ts';
 import type { Hud } from './hud.ts';
-import { ISLANDS, placeWords, type Standing } from './hudLaw.ts';
+import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
 import { arrivalFacing } from './nodes.ts';
@@ -36,6 +42,8 @@ import type { AfterStory } from './welcome/afterStory.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
+import { mooredShips } from './moorings.ts';
+import { HULLS } from '../water/hullMask.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -68,6 +76,10 @@ export interface FrameParts {
   readonly gpu: Gpu;
   readonly canvas: HTMLCanvasElement;
   readonly hud: Hud;
+  /** The interface the game draws, its layers, and death's grey drawn under it. */
+  readonly ui: DrawnInterface;
+  readonly stack: Stack;
+  readonly drain: Drain;
   readonly input: Input;
   readonly scene: GameScene;
   readonly walker: Walker;
@@ -104,6 +116,7 @@ export interface FrameParts {
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
 export function startFrames(parts: FrameParts, playing: Playing): void {
   const { gpu, canvas, hud, input, scene, walker, firstPerson, footView, traffic, discovered, charting } = parts;
+  const { ui, stack, drain } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
 
@@ -124,10 +137,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   const showStanding = (shown: Standing) => {
     hud.reach(shown);
-    // Death's grey on the canvas is the one mark of it: leaving a place takes it off.
-    const [dead, wasDead] = [shown.kind === 'dead', canvas.classList.contains('dead')];
+    // Death's grey over the world is the one mark of it, once death is told (a fall plays out in colour first):
+    // leaving a place takes it off.
+    const [dead, wasDead] = [greyed(shown), drain.dead];
     if (dead && !wasDead) document.exitPointerLock();
-    if (dead !== wasDead) canvas.classList.toggle('dead', dead);
+    drain.toward(dead);
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
@@ -135,7 +149,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
-    parts.music.onFoot(parts.world, here.node, shown.fight, seconds);
+    const listener = [walker.player.body.x, walker.player.body.y] as const;
+    parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
@@ -146,7 +161,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
-    const fleet = traffic.onFoot(shown.shot.eye, parts.waterHere(), seconds, clock);
+    const water = parts.waterHere();
+    const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
     const met = playing.after.frame(
       shown.shot,
@@ -159,8 +175,16 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       paused,
     );
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
-    const more = { after: hands, hulls: fleet.hulls, carried };
-    scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, [...shown.figures, ...met], fight), more);
+    const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
+    const moored = mooredShips(moorings, clock, water);
+    const more = {
+      after: hands,
+      hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS),
+      carried,
+      drain: drain.share,
+    };
+    const ships = [...moored.ships, ...fleet.ships];
+    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     // As E's other use, a gate takes no one while a menu is up or the player is down.
@@ -219,7 +243,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const fleet = traffic.atSea(shown, parts.waterHere(), seconds, clock);
     // Walking its deck, what the player carries lights round them as it does ashore.
     const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
-    const more = { hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, ...(swell ? { swell } : {}) };
+    const more = {
+      ...{ hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share },
+      ...(swell ? { swell } : {}),
+    };
     const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
     showStanding(here.boarding.standing ?? { kind: 'inside' });
@@ -273,7 +300,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const seconds = Math.min(0.1, elapsed);
     last = now;
     clock += seconds;
-    const controls = input.frame();
+    drain.step(seconds);
+    const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
+    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys() || creationOpen());
+    const heard = input.frame();
+    // The wheel turned over the interface scrolls it, not the camera.
+    const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
     const size = { width: canvas.width, height: canvas.height };
     const { flow, foot, sea, ready } = playing;
     const shown = flow.mode === 'loading' ? (ready ? flow.then : null) : flow;
@@ -283,6 +315,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     parts.ambience.frame(seconds);
+    ui.present(stack);
     if (playing.flow.mode === 'loading' && playing.ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
       playing.waited += elapsed;

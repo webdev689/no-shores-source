@@ -14,8 +14,8 @@ import type { Shot } from './camera.ts';
 import type { Foot, FootContext, FootFrame } from './foot.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** How the player is stood on foot on its deck: `Foot.onDeck`, handed in, since the land's scene on foot brings in
- *  the page's styles, which tests run without. */
+/** How the player is stood on foot on its deck: `Foot.onDeck`, handed in, so tests of the deck run without the land's
+ *  scene on foot. */
 export type StandOnDeck = (typeof Foot)['onDeck'];
 
 /** What the fight on its deck needs of the sea room: the deck the player stands on, their number at sea, the link's

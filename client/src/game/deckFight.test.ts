@@ -5,6 +5,7 @@ import course from '../../../content/testground/course.json' with { type: 'json'
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { readFromRoom } from '../network/messages.ts';
+import { SnapshotKeeper } from '../network/snapshots.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
@@ -140,7 +141,7 @@ test('the sea room hands each snapshot of the deck the player stands on, decoded
   door.open(course.start, course.blocks);
   const boarder = door.join();
   door.tick();
-  const deckBytes = door.snapshot();
+  const deckBytes = door.snapshot(boarder);
   let hand: (snapshot: Snapshot) => void = () => undefined;
   const link = {
     player: 1,
@@ -185,6 +186,7 @@ test('the page predicts its boarder on its deck exactly as its deck room steps t
   assert.equal(door.openDeck(9, 2, 1, 5), false, 'no such hull');
   door.openDeck(1, 2, 1, 5);
   let fight: Fighting | null = null;
+  const kept = new SnapshotKeeper();
   const link: RoomLink = {
     player: door.join(),
     dressed: [],
@@ -194,8 +196,10 @@ test('the page predicts its boarder on its deck exactly as its deck room steps t
     send: (bytes) => void door.input(link.player, bytes),
     pump: () => {
       door.tick();
-      const message = readFromRoom(door.snapshot());
-      if (message?.kind === 'snapshot') fight?.receive(message);
+      // Each snapshot made whole from the changes it carries, as a room's connection makes it.
+      const message = readFromRoom(door.snapshot(link.player));
+      const whole = message?.kind === 'snapshot' ? kept.whole(message) : null;
+      if (whole) fight?.receive(whole);
     },
   };
   const rules = startCombatRules(compiled);

@@ -191,11 +191,18 @@ const THINNEST_SLICE_M: f64 = 0.5;
 /// east, south, top, bottom, as the city's boxes); a part turned off the world's axes in slices along its longer side.
 #[must_use]
 pub fn boxes(solid: &Solid) -> Vec<Box2> {
+    sliced(solid, parts(solid.shape, solid.size))
+}
+
+/// Boxes of a solid's parts (boxes of its own frame: low x, y, z, then high), each square to the world round its turned
+/// corners; a part turned off the world's axes in slices along its longer side.
+#[must_use]
+pub fn sliced(solid: &Solid, parts: Vec<[f64; 6]>) -> Vec<Box2> {
     let square = (solid.turn / std::f64::consts::FRAC_PI_2 - (solid.turn / std::f64::consts::FRAC_PI_2).round()).abs()
         < 1e-9
         && solid.lean == 0.0
         && solid.roll == 0.0;
-    parts(solid.shape, solid.size)
+    parts
         .into_iter()
         .flat_map(|[west, north, bottom, east, south, top]| {
             let (long, along_x) =

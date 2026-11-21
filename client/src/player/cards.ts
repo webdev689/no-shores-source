@@ -50,6 +50,8 @@ export interface CardAt {
     readonly colour: readonly [number, number, number];
   } | null;
   readonly surge?: number;
+  /** Leaned to face the eye rather than standing upright, as a fallen body seen from above is drawn. */
+  readonly facesEye?: boolean;
 }
 
 /** Whatever turns a composed picture into a card it can draw, and an outline's field into a texture: the Test

@@ -3,7 +3,7 @@
 // pictures, are lit as the land is, and dither between tiers by the same thresholds the CPU's tiers test.
 import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
-import { COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
+import { CLOTH_COLOURS, COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
 import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
@@ -21,6 +21,14 @@ const PLATE_DROP_M = 0.03;
 const SCORCH = 0.78;
 /** How far under its break a ruin's wall edge falls at most, metres, so the break is ragged. */
 const JAG_M = 3;
+
+/** Each cloth's case of `colour_of`: its dye under the weave. */
+const CLOTH_CASES = Object.entries(CLOTH_COLOURS)
+  .map(([cloth, colour]) => {
+    const layer = COLOUR_LAYERS[cloth as keyof typeof CLOTH_COLOURS];
+    return `    case ${layer}u: { return vec3f(${colour.map((channel) => channel.toFixed(3)).join(', ')}) * weave_of(texel, threads, fade); }`;
+  })
+  .join('\n');
 
 const VIEW = /* wgsl */ `
 ${SHARED_WGSL}
@@ -52,6 +60,9 @@ const GOLD = ${COLOUR_LAYERS.gold}u;
 const IRON = ${COLOUR_LAYERS.iron}u;
 const BONE = ${COLOUR_LAYERS.bone}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
+const WATER = ${COLOUR_LAYERS.water}u;
+// A plain colour's texels to its uv: the size of the picture it would be (cityBuild lays a plain one as 64 square).
+const PLAIN_TEXELS = 64.0;
 const PAVED = ${PAVED_TILE}u;
 const TIER_ALWAYS = 0u;
 const TIER_WHOLE = 1u;
@@ -88,12 +99,60 @@ fn kept(tier: u32, fades: vec2f, pixel: vec2f) -> bool {
   }
 }
 
-fn colour_of(layer: u32, sampled: vec3f) -> vec3f {
+// A texel's own number, the same wherever the texel is drawn.
+fn texel_hash(cell: vec2i) -> f32 {
+  var hash = (u32(cell.x) * 0x8da6b343u) ^ (u32(cell.y) * 0xd8163841u);
+  hash = (hash ^ (hash >> 15u)) * 0x2c1b3c6du;
+  hash = (hash ^ (hash >> 12u)) * 0x297a2d39u;
+  return f32(hash ^ (hash >> 15u)) / 4294967296.0;
+}
+
+// Cloth's weave over its dye: its threads crossing, a thread here and there thicker, the dye taken unevenly.
+fn weave_of(texel: vec2f, threads: vec2f, fade: f32) -> f32 {
+  let crossing = abs(fract(threads) - 0.5) * 2.0;
+  let slub = texel_hash(vec2i(i32(floor(threads.y)), 7)) - 0.5;
+  return (1.0 - 0.1 * fade * max(crossing.x, crossing.y)) * (1.0 + 0.08 * fade * slub)
+    * (0.95 + 0.1 * sky_noise(texel / 10.0));
+}
+
+// A plain colour's albedo, or the sampled picture's. A plain colour is painted on the texels a picture would have
+// (PLAIN_TEXELS to its uv), so its grain reads as painted, as the pictures' does: wrought iron's hammer marks, pits and
+// rust; gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth its dye under a fine weave
+// of uneven threads, the dye taken unevenly; still water stirring. A picture is lighter or darker in patches some
+// metres wide, so its
+// repeats do not line up across a wall.
+fn colour_of(layer: u32, sampled: vec3f, uv: vec2f, place: vec3f, normal: vec3f) -> vec3f {
+  let texel = floor(uv * PLAIN_TEXELS);
+  let cell = vec2i(texel);
+  let mark = texel_hash(cell) - 0.5;
+  let threads = uv * 160.0;
+  // the threads fade where they are finer than a pixel: their derivative is taken here, before any branch
+  let fade = clamp(1.5 - 2.0 * max(length(fwidth(threads)), 0.0), 0.0, 1.0);
   switch layer {
-    case GOLD: { return vec3f(0.86, 0.66, 0.26); }
-    case IRON: { return vec3f(0.24, 0.25, 0.27); }
-    case BONE: { return vec3f(0.86, 0.83, 0.74); }
-    default: { return sampled; }
+    case GOLD: {
+      let worn = smoothstep(0.62, 0.8, sky_noise(texel / 5.0));
+      let glint = select(0.0, 0.16, texel_hash(cell + vec2i(31, 17)) > 0.93);
+      let gilt = vec3f(0.86, 0.66, 0.26) * (1.0 + 0.18 * mark + glint);
+      return mix(gilt, vec3f(0.5, 0.33, 0.14) * (1.0 + 0.2 * mark), worn * 0.8);
+    }
+    case IRON: {
+      let pit = select(1.0, 0.55, texel_hash(cell + vec2i(7919, 1049)) > 0.94);
+      let bloom = smoothstep(0.55, 0.85, sky_noise(texel / 6.0) + 0.25 * max(normal.z, 0.0));
+      let iron = vec3f(0.24, 0.25, 0.27) * (1.0 + 0.22 * mark) * pit;
+      return mix(iron, vec3f(0.35, 0.19, 0.11) * (1.0 + 0.3 * mark), bloom * 0.7);
+    }
+    case BONE: {
+      let grain = sin(texel.y * 0.9 + sky_noise(texel / 9.0) * 9.0) * 0.5 + 0.5;
+      let aged = sky_noise(texel / 12.0);
+      return mix(vec3f(0.88, 0.86, 0.78), vec3f(0.8, 0.72, 0.55), aged * 0.6) * (0.94 + 0.08 * grain + 0.06 * mark);
+    }
+    case WATER: {
+      // still water, deep green-blue, its face stirring slowly in light and shade
+      let stir = sky_noise(place.xy * 1.6 + vec2f(view.eye.w * 0.25, view.eye.w * 0.17));
+      return vec3f(0.12, 0.27, 0.31) * (0.85 + 0.3 * stir);
+    }
+${CLOTH_CASES}
+    default: { return sampled * (0.93 + 0.14 * sky_noise(place.xy / 7.0)); }
   }
 }
 
@@ -102,7 +161,10 @@ fn colour_of(layer: u32, sampled: vec3f) -> vec3f {
 // weather wets it. A glowing solid is a flame: brighter when the night round it is dark.
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
-    return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w);
+    // Each flame flickers on its own, a few times a second, by where it burns: all of one fire together.
+    let place = floor((from_eye + view.eye.xyz) / 3.0);
+    let flicker = 0.86 + 0.16 * sky_noise(vec2f(view.eye.w * 7.0, place.x * 13.0 + place.y * 7.0 + place.z));
+    return mix(vec3f(2.0, 1.25, 0.55), vec3f(1.4, 1.0, 0.5), sky_state.sun.w) * flicker;
   }
   let facing = normalize(normal);
   // A clear noon's ambient was AMBIENT, more on a wall by the bounce, the sun lighting the rest.
@@ -111,10 +173,12 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
   // Fresh snow lies on the flat stone as on the ground round it, the city standing on the eye's own ground. Flat stone
   // (the plaza, a flat roof) holds puddles where no snow lies; walls and sloping roofs are only darkened and sheened.
+  // Nothing is wet or snowed on under shelter: read a little out from the face, so a wall's outside is not its room.
+  let open = select(1.0, 0.0, sky_sheltered(from_eye + facing * 0.6));
   let rise = sqrt(max(1.0 - facing.z * facing.z, 0.0)) / max(facing.z, 1e-3);
-  let snow = sky_fresh_snow(sky_state.puddle_place.z, rise);
-  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95) * (1.0 - snow);
-  let wet = max(sky_state.ambient_sky.w * 0.7 * (1.0 - snow), puddle);
+  let snow = sky_fresh_snow(sky_state.puddle_place.z, rise) * open;
+  let puddle = select(0.0, sky_puddle(from_eye, 0.0), facing.z > 0.95) * (1.0 - snow) * open;
+  let wet = max(sky_state.ambient_sky.w * 0.7 * (1.0 - snow), puddle) * open;
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
   let surface = sky_soaked(sky_snowed(albedo, snow), wet);
   return surface * (light + sky_lamps(from_eye, facing)) + sky_sheen(facing, from_eye, wet);
@@ -144,6 +208,10 @@ fn jagged(point: vec3f) -> f32 {
 @fragment
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
+  // a ruin's open shell is drawn from inside too, lit from the side seen
+  let normal = select(-surface.normal, surface.normal, facing);
+  // coloured before any discard: the colour's derivatives want the whole quad
+  let albedo = colour_of(surface.layer, sampled, surface.uv, surface.from_eye + view.eye.xyz, normal);
   if !kept(surface.tier, surface.fades, surface.clip.xy) {
     discard;
   }
@@ -156,11 +224,8 @@ fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @l
   if broken && (surface.ruin.x > surface.ruin.y - jag || slab) {
     discard;
   }
-  // a ruin's open shell is drawn from inside too, lit from the side seen
-  let normal = select(-surface.normal, surface.normal, facing);
   let scorch = select(0.0, ${SCORCH} * pow(clamp(surface.ruin.x / max(surface.ruin.y, 1e-3), 0.0, 1.0), 1.5), broken);
-  let albedo = colour_of(surface.layer, sampled) * (1.0 - scorch);
-  return vec4f(lit(surface.layer, albedo, normal, surface.from_eye), 1.0);
+  return vec4f(lit(surface.layer, albedo * (1.0 - scorch), normal, surface.from_eye), 1.0);
 }
 `;
 

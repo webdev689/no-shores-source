@@ -1,4 +1,3 @@
-import { make } from '../editor/dom.ts';
 import { CLOTHING_DYES } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type Outfit } from '../forge/outfit.ts';
@@ -6,34 +5,11 @@ import type { HairColours } from '../forge/skins.ts';
 import { type Dress, LIGHTS, type Race, PLAIN_DYE, RACES, lookOutfit, wardrobeOf } from '../player/dressing.ts';
 import type { Placed } from '../player/figures.ts';
 import { KINDS, kindName, slotOf } from '../player/gear.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
+import { LOOK, field, heading, hint, labelled, pick, slide, tick } from './panelKit.ts';
 
 const pairs = (keys: readonly string[]) => keys.map((key) => [key, key] as const);
-
-/** A control with its name before it, on one row. */
-export function labelled(text: string, control: HTMLElement): HTMLLabelElement {
-  const label = make('label', '', 'row');
-  label.append(make('span', text), control);
-  return label;
-}
-
-/** A drop-down of `[value, text]` options that calls `onPick` with the value chosen. */
-export function choice(
-  options: readonly (readonly [string, string])[],
-  value: string,
-  onPick: (value: string) => void,
-): HTMLSelectElement {
-  const select = make('select');
-  for (const [key, text] of options) select.append(new Option(text, key, false, key === value));
-  select.addEventListener('change', () => onPick(select.value));
-  return select;
-}
-
-function checkbox(checked: boolean, onChange: (checked: boolean) => void): HTMLInputElement {
-  const box = make('input');
-  Object.assign(box, { type: 'checkbox', checked });
-  box.addEventListener('change', () => onChange(box.checked));
-  return box;
-}
 
 /** The player's own hands: the kinds their gear wears in its Melee and Ranged loadouts (0 for none), and the ask that
  *  wears another kind; the light their left carries (a forge layer, or null), and the pick of another. */
@@ -62,32 +38,77 @@ export const loadoutKinds = (slot: number) =>
 
 /** What the player's hands hold: a loadout of each kind their gear can wear, worn through it when picked, since the
  *  room fights only with what a worn loadout puts in their hands; and one of the `lights` the body carries. */
-function ownHands(hands: OwnHands, lights: readonly string[]): HTMLElement[] {
-  const pick = (slot: number, worn: number) => {
-    const shown = worn ? String(worn) : '';
-    const select = choice([...(worn ? [] : [['', 'none worn'] as const]), ...loadoutKinds(slot)], shown, (value) => {
-      // It keeps showing what is worn until the room's answer wears another, so a refused kind is never shown.
-      select.value = shown;
-      if (value) hands.wear(Number(value));
-    });
-    return select;
-  };
+function ownHands(ui: Interface, hands: OwnHands, lights: readonly string[]): Node[] {
+  // Each keeps showing what is worn until the room's answer wears another, so a refused kind is never shown.
+  const loadout = (slot: number, worn: number) =>
+    pick(
+      ui,
+      `tg:dress:loadout${slot}`,
+      [...(worn ? [] : [['', 'none worn'] as const]), ...loadoutKinds(slot)],
+      worn ? String(worn) : '',
+      (value) => value && hands.wear(Number(value)),
+    );
   return [
-    labelled('Melee', pick(0, hands.worn.melee)),
-    labelled('Ranged', pick(1, hands.worn.ranged)),
+    labelled('Melee', loadout(0, hands.worn.melee)),
+    labelled('Ranged', loadout(1, hands.worn.ranged)),
     labelled(
       'Left',
-      choice([['', 'what the loadout holds'], ...pairs(lights)], hands.light ?? '', (value) =>
+      pick(ui, 'tg:dress:light', [['', 'what the loadout holds'], ...pairs(lights)], hands.light ?? '', (value) =>
         hands.carry(value || null),
       ),
     ),
-    make(
-      'p',
+    hint(
       'Your hands hold what your gear wears. Picking a weapon wears it; 1 and 2 draw them. A light goes in the left ' +
         'only beside a weapon that leaves it free.',
-      'hint',
     ),
   ];
+}
+
+/** The skin tone's slider, from 0 to 100: the tone is set as the slider is let go, as each tone is composed afresh. */
+function toneSlider(ui: Interface, tone: number, set: (tone: number) => void): Node {
+  const id = 'tg:dress:tone';
+  const kept = Math.round(tone * 100);
+  const dragged = ui.store.get(id);
+  const made = slide(ui, id, typeof dragged === 'number' ? dragged : kept, { low: 0, high: 100, step: 1 });
+  if (ui.pressing(id)) ui.store.set(id, made.value);
+  else {
+    ui.store.delete(id);
+    if (made.value !== kept) set(made.value / 100);
+  }
+  return { ...made.node, label: `Skin tone: ${made.value}` };
+}
+
+/** The garments to wear, those worn first, filtered by the words in the filter's field; each ticked to wear it, worn
+ *  in the order they are ticked. */
+function garmentList(
+  ui: Interface,
+  garments: readonly string[],
+  worn: readonly string[],
+  wear: (garments: string[]) => void,
+): Node {
+  const filter = ui.fieldText('tg:dress:filter');
+  const wearing = new Set(worn);
+  const shown = garments
+    .filter((garment) => garment.includes(filter))
+    .sort((first, second) => Number(wearing.has(second)) - Number(wearing.has(first)));
+  return {
+    id: 'tg:dress:garments',
+    direction: 'column',
+    width: 'grow',
+    maxHeight: 320,
+    scroll: true,
+    padding: [4, 6],
+    gap: 6,
+    outline: { width: 1, colour: LOOK.line },
+    children: shown.map((garment) => {
+      const ticked = tick(ui, `tg:dress:garment:${garment}`, garment, wearing.has(garment));
+      if (ticked.ticked !== wearing.has(garment)) {
+        const others = worn.filter((each) => each !== garment);
+        wear(ticked.ticked ? [...others, garment] : others);
+      }
+      return ticked.node;
+    }),
+  };
 }
 
 /**
@@ -95,14 +116,14 @@ function ownHands(hands: OwnHands, lights: readonly string[]): HTMLElement[] {
  * whether it is drawn, each garment's dye, and one of the forge's dressed looks to start from. `changed` follows each edit.
  * The player's own hands (`own`) hold what their gear wears, so theirs pick a loadout to wear and a light instead.
  */
-export function dressControls(
+export function dressNodes(
+  ui: Interface,
   looks: ForgeLooks,
   hair: HairColours,
   placed: Placed,
-  garmentFilter: { text: string },
   changed: () => void,
   own: OwnHands | null = null,
-): HTMLElement[] {
+): Node[] {
   const drawn = looks.bodies[placed.dress.body]?.layers ?? {};
   const wardrobe = wardrobeOf(placed.dress.body, drawn);
   const { outfit } = placed.dress;
@@ -111,10 +132,6 @@ export function dressControls(
     changed();
   };
   const wear = (patch: Partial<Outfit>) => set({ outfit: { ...outfit, ...patch } });
-
-  const tone = make('input');
-  Object.assign(tone, { type: 'range', min: '0', max: '100', value: String(Math.round(placed.dress.tone * 100)) });
-  tone.addEventListener('change', () => set({ tone: Number(tone.value) / 100 }));
   const raceKey = RACES[placed.dress.race] ?? '*';
   const colours = Object.keys(hair.bodies[placed.dress.body]?.[raceKey] ?? hair.bodies[placed.dress.body]?.['*'] ?? {});
   const styles = placed.dress.race === 'anole' ? [] : wardrobe.hairStyles;
@@ -122,52 +139,30 @@ export function dressControls(
   const armour = ARMOUR_PIECES.map((piece) =>
     labelled(
       piece,
-      choice([['', 'none'], ...pairs(wardrobe.sets[piece])], outfit.armour[piece] ?? '', (value) =>
-        wear({ armour: { ...outfit.armour, [piece]: value || undefined } }),
+      pick(
+        ui,
+        `tg:dress:${piece}`,
+        [['', 'none'], ...pairs(wardrobe.sets[piece])],
+        outfit.armour[piece] ?? '',
+        (value) => wear({ armour: { ...outfit.armour, [piece]: value || undefined } }),
       ),
     ),
   );
   const allSets = [...new Set(wardrobe.sets.cuirass)];
-  const wholeSet = choice([['', 'pick a whole set'], ...pairs(allSets)], '', (value) =>
+  const wholeSet = pick(ui, 'tg:dress:set', [['', 'pick a whole set'], ...pairs(allSets)], '', (value) =>
     wear({
       armour: Object.fromEntries(
         ARMOUR_PIECES.filter((piece) => wardrobe.sets[piece].includes(value)).map((piece) => [piece, value]),
       ),
     }),
   );
-
-  const search = make('input');
-  Object.assign(search, { type: 'search', placeholder: 'Filter clothes', value: garmentFilter.text });
-  const list = make('div', '', 'gear');
-  const listGarments = () => {
-    list.replaceChildren();
-    const worn = new Set(outfit.garments);
-    const shown = wardrobe.garments.filter((garment) => garment.includes(garmentFilter.text));
-    for (const garment of shown.sort((first, second) => Number(worn.has(second)) - Number(worn.has(first)))) {
-      const row = make('label', '', 'row');
-      row.append(
-        checkbox(worn.has(garment), (checked) => {
-          const others = outfit.garments.filter((each) => each !== garment);
-          wear({ garments: checked ? [...others, garment] : others });
-        }),
-        make('span', garment),
-      );
-      list.append(row);
-    }
-  };
-  search.addEventListener('input', () => {
-    garmentFilter.text = search.value;
-    listGarments();
-  });
-  listGarments();
-
   const dyeable = new Set(looks.dye ?? []);
   const dyeChoices = outfit.garments
     .filter((garment) => Object.keys(drawn).some((layer) => dyeable.has(layer) && layer.startsWith(garment)))
     .map((garment) =>
       labelled(
         garment,
-        choice(pairs(CLOTHING_DYES), outfit.dyes[garment] ?? PLAIN_DYE, (dye) =>
+        pick(ui, `tg:dress:dye:${garment}`, pairs(CLOTHING_DYES), outfit.dyes[garment] ?? PLAIN_DYE, (dye) =>
           wear({ dyes: { ...outfit.dyes, [garment]: dye } }),
         ),
       ),
@@ -181,17 +176,21 @@ export function dressControls(
           [...look.gear.filter((layer) => !/^(face|under)/.test(layer)), look.weapon].filter(Boolean).join(', '),
         ] as const,
     );
+  const drawnOut = tick(ui, 'tg:dress:drawn', '', outfit.drawn);
+  if (drawnOut.ticked !== outfit.drawn) wear({ drawn: drawnOut.ticked });
 
   return [
     labelled(
       'Body',
-      choice(pairs(Object.keys(looks.bodies)), placed.dress.body, (body) =>
+      pick(ui, 'tg:dress:body', pairs(Object.keys(looks.bodies)), placed.dress.body, (body) =>
         set({ body, outfit: { ...outfit, hair: null } }),
       ),
     ),
     labelled(
       'Race',
-      choice(
+      pick(
+        ui,
+        'tg:dress:race',
         [
           ['human', 'Human'],
           ['felid', 'Felid'],
@@ -201,63 +200,60 @@ export function dressControls(
         (race) => set({ race: race as Race, outfit: race === 'anole' ? { ...outfit, hair: null } : outfit }),
       ),
     ),
-    ...(placed.dress.race === 'human' ? [labelled('Skin tone', tone)] : []),
+    placed.dress.race === 'human' &&
+      labelled(
+        'Skin tone',
+        toneSlider(ui, placed.dress.tone, (tone) => set({ tone })),
+      ),
     labelled(
       'Hair',
-      choice([['', 'none'], ...pairs(styles)], outfit.hair?.style ?? '', (style) =>
+      pick(ui, 'tg:dress:hair', [['', 'none'], ...pairs(styles)], outfit.hair?.style ?? '', (style) =>
         wear({ hair: style ? { style, colour: outfit.hair?.colour ?? colours[0] ?? 'black' } : null }),
       ),
     ),
-    ...(outfit.hair
-      ? [
-          labelled(
-            'Hair colour',
-            choice(pairs(colours), outfit.hair.colour, (colour) =>
-              wear({ hair: outfit.hair && { ...outfit.hair, colour } }),
-            ),
-          ),
-        ]
-      : []),
+    outfit.hair &&
+      labelled(
+        'Hair colour',
+        pick(ui, 'tg:dress:hairColour', pairs(colours), outfit.hair.colour, (colour) =>
+          wear({ hair: outfit.hair && { ...outfit.hair, colour } }),
+        ),
+      ),
     labelled(
       'Dress as',
-      choice([['', 'one of the forge’s looks'], ...presets], '', (key) => {
+      pick(ui, 'tg:dress:look', [['', 'one of the forge’s looks'], ...presets], '', (key) => {
         const look = looks.looks?.[key];
         if (look) wear(lookOutfit(look, outfit));
       }),
     ),
-    make('h2', 'Armour'),
+    heading('Armour'),
     labelled('Set', wholeSet),
     ...armour,
-    make('h2', 'In hand'),
+    heading('In hand'),
     ...(own
       ? ownHands(
+          ui,
           own,
           wardrobe.left.filter((layer) => LIGHTS.includes(layer)),
         )
       : [
           labelled(
             'Right',
-            choice([['', 'nothing'], ...pairs(wardrobe.right)], outfit.right ?? '', (value) =>
+            pick(ui, 'tg:dress:right', [['', 'nothing'], ...pairs(wardrobe.right)], outfit.right ?? '', (value) =>
               wear({ right: value || null }),
             ),
           ),
           labelled(
             'Left',
-            choice([['', 'nothing'], ...pairs(wardrobe.left)], outfit.left ?? '', (value) =>
+            pick(ui, 'tg:dress:left', [['', 'nothing'], ...pairs(wardrobe.left)], outfit.left ?? '', (value) =>
               wear({ left: value || null }),
             ),
           ),
         ]),
-    labelled(
-      'Drawn',
-      checkbox(outfit.drawn, (drawnOut) => wear({ drawn: drawnOut })),
-    ),
-    make('h2', 'Dyes'),
-    ...(dyeChoices.length > 0
-      ? dyeChoices
-      : [make('p', 'Wear a garment to dye it. Metal takes its set’s colour.', 'hint')]),
-    make('h2', 'Clothes'),
-    search,
-    list,
-  ];
+    labelled('Drawn', { ...drawnOut.node, label: `Drawn: ${outfit.drawn ? 'on' : 'off'}` }),
+    heading('Dyes'),
+    ...(dyeChoices.length > 0 ? dyeChoices : [hint('Wear a garment to dye it. Metal takes its set’s colour.')]),
+    heading('Clothes'),
+    field('tg:dress:filter', 'Filter clothes', { placeholder: 'Filter clothes' }),
+    garmentList(ui, wardrobe.garments, outfit.garments, (garments) => wear({ garments })),
+  ].filter((child): child is Node => Boolean(child));
 }

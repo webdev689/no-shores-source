@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Placed } from '../player/figures.ts';
 import { PlazaLife, SERVED_M, offerAt } from './plazaLife.ts';
-import { WALKERS } from './townsfolk.ts';
+import { POSTS, WAYS } from './welcome/plazaForTests.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const STATIONS = [
@@ -28,7 +28,12 @@ const PLAZA: NodeInfo = {
   ],
   centre: [1000, 2000],
   stations: STATIONS,
+  ways: WAYS,
+  posts: POSTS,
 };
+/** How many of the plaza's people keep routines on its ways: a person at each kept post, the round's and the
+ *  walkers. */
+const TOWNSFOLK = POSTS.filter((post) => post.keep === 'kept').length + 1 + 14;
 
 test('a counter that deals with the player opens its screen; a trader’s, and one out of reach, offer nothing', () => {
   assert.deepEqual(offerAt(STATIONS, 960.8, 1950), { words: 'The Mage', opens: { view: 'mage' } });
@@ -49,12 +54,21 @@ test('the plaza’s people are placed once, moved each frame on its floor, and t
     remove: (figure: Placed) => void placed.splice(placed.indexOf(figure), 1),
   };
   const life = new PlazaLife(PLAZA, others, () => 30);
-  life.frame(0.5);
-  assert.equal(placed.length, STATIONS.length + WALKERS);
-  for (let frame = 0; frame < 120; frame++) life.frame(0.25);
-  assert.equal(placed.length, STATIONS.length + WALKERS, 'placed once');
+  life.frame(1_000_000);
+  assert.equal(placed.length, STATIONS.length + TOWNSFOLK);
+  const first = placed.map((figure) => [figure.x, figure.y]);
+  for (let frame = 1; frame <= 120; frame++) life.frame(1_000_000 + frame * 0.25);
+  assert.equal(placed.length, STATIONS.length + TOWNSFOLK, 'placed once');
   assert.ok(placed.every((figure) => figure.z === 30));
   assert.ok(placed.some((figure) => figure.anim === 'walk'));
+  assert.ok(
+    placed.some((figure) => figure.anim === 'play_lute'),
+    'at their posts’ moves',
+  );
+  assert.ok(
+    placed.some((figure, nth) => figure.x !== first[nth]?.[0]),
+    'moved on with the clock',
+  );
   life.close();
   assert.equal(placed.length, 0);
 });
