@@ -1,7 +1,7 @@
 // The Postmaster's letters, where a keeper's wares stand (npcScreen.ts): every letter the game wrote, oldest first,
 // each a well holding the tile of what it holds (an item's picture, a module's or a Vestige's glyph, framed in its
-// rarity, its card on hover or focus), its name and words, and its Take press; Take all over them. A click or E takes
-// one. Nothing here judges a rule: the room refuses what there is no room for, and the menu's footer says why.
+// rarity, its card on hover or focus), its name and words (`letterWords`), and its Take press; Take all over them. A
+// click or E takes one. Nothing here judges a rule: the room refuses what there is no room for, and the menu's footer says why.
 import { make } from '../../editor/dom.ts';
 import { ASKS, type GearAsk, type GearState, type GearVestige } from '../../network/gearMessages.ts';
 import type { GearLetter } from '../../network/mailMessages.ts';
@@ -27,12 +27,30 @@ export const MAIL_MOST = 50;
 /** A tile's picture box, in pixels. */
 const TILE_PX = 48;
 const TAKE_HINTS: readonly Hint[] = [['Click / E', 'Take']];
+/** Each source's words, by its number (the gear crate's `mail::Source`): where what a letter holds came from. */
+const FROM_WORDS: readonly string[] = [
+  'You left this lying where it fell. It was picked up before it was lost.',
+  'You left before you picked this up, so it was sent on.',
+  'Your reward for a first clear. Your ten Vestiges and the vault were full, so it came here.',
+  'Found in flotsam you gathered. You carried ten Vestiges, so it came here.',
+  'Salvage you took. Its slot carried nine, so it came here.',
+];
+/** What a letter that came to a full mailbox adds. */
+const CROWDED = 'Your mailbox was full, so the oldest letter holding the least was let go.';
+
+/** A letter's words: where what it holds came from (a source a later room adds, in general words), and whether a
+ *  letter went to make room for it. */
+export function letterWords(letter: GearLetter): string {
+  const words = FROM_WORDS[letter.from] ?? 'This was sent on to you.';
+  return letter.crowded ? `${words} ${CROWDED}` : words;
+}
 
 /** A letter as its row shows it: what it holds, named ("Rare Vestige", an item's own name, empty for nothing), its
- *  rarity, and what taking it asks. */
+ *  rarity, its words, and what taking it asks. */
 export interface LetterRow {
   readonly letter: GearLetter;
   readonly holds: string;
+  readonly words: string;
   readonly rarity: number | null;
   readonly take: GearAsk;
 }
@@ -45,6 +63,7 @@ export function letterRows(gear: GearState): { readonly rows: readonly LetterRow
     return {
       letter,
       holds,
+      words: letterWords(letter),
       rarity: item?.rarity ?? vestige?.rarity ?? null,
       take: { kind: ASKS.takeLetter, item: letter.id },
     };
@@ -86,11 +105,25 @@ function heldTile(context: PageContext, row: LetterRow): HTMLElement {
     if (item) return cardNode(cardOf(item), module ? null : context.picture(item), TAKE_HINTS);
     return vestige ? vestigeCard(row.holds, vestige) : make('div');
   });
-  tile.addEventListener('click', () => {
-    context.tip.hide();
-    context.ask(row.take);
-  });
+  tile.addEventListener(
+    'click',
+    once(() => {
+      context.tip.hide();
+      context.ask(row.take);
+    }),
+  );
   return tile;
+}
+
+/** A letter's take asked once: the page is drawn anew as the gear changes, so a second click before then would ask
+ *  for a letter already taken, and be refused. */
+function once(run: () => void): () => void {
+  let asked = false;
+  return () => {
+    if (asked) return;
+    asked = true;
+    run();
+  };
 }
 
 /** The Postmaster's letters: their count of the most kept, Take all, and each letter's row. */
@@ -108,7 +141,7 @@ export function mailPage(context: PageContext): HTMLElement {
     page.append(all);
   } else page.append(make('p', 'No letters wait for you.', 'gear-hint npc-empty'));
   const letters = make('div', '', 'npc-letters');
-  for (const row of rows) {
+  for (const [place, row] of rows.entries()) {
     const line = make('div', '', `npc-letter ${ROLES.well}`);
     if (row.holds) line.append(heldTile(context, row));
     const words = make('div', '', 'npc-letter-words');
@@ -117,11 +150,15 @@ export function mailPage(context: PageContext): HTMLElement {
       name.style.color = row.rarity === null ? '' : (RARITIES[row.rarity]?.colour ?? '');
       words.append(name);
     }
-    words.append(make('p', row.letter.words, 'gear-hint'));
-    const take = pressOf('Take', () => context.ask(row.take), 'button', 'E');
+    words.append(make('p', row.words, 'gear-hint'));
+    const take = pressOf(
+      'Take',
+      once(() => context.ask(row.take)),
+      'button',
+    );
     take.classList.add('npc-take');
     take.dataset['key'] = `npc-take-${row.letter.id}`;
-    take.setAttribute('aria-label', `Take ${row.holds || 'the letter'}`);
+    take.setAttribute('aria-label', `Take ${row.holds || 'the letter'}, ${place + 1} of ${rows.length}`);
     line.append(words, take);
     letters.append(line);
   }

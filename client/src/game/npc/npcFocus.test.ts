@@ -30,8 +30,8 @@ function asElement(from: Node | null): Element | null {
       return asElement(sibling(from, -1));
     },
     closest(selector: string) {
-      const wanted = selector.slice(1);
-      for (let up: Node | null = from; up; up = up.parent) if (up.className === wanted) return asElement(up);
+      const wanted = selector.split(',').map((one) => one.trim().slice(1));
+      for (let up: Node | null = from; up; up = up.parent) if (wanted.includes(up.className)) return asElement(up);
       return null;
     },
     querySelectorAll: () => keyed(from).map(asElement),
@@ -51,6 +51,16 @@ test('the focus left by a keeper’s tile goes to the tiles beside its holder, t
   const alone = node('npc-row', null, node('npc-tiles', null, ware('last')));
   node('npc-rows', null, alone, opened);
   assert.deepEqual(keyBeside(asElement(alone.children[0]?.children[0]?.children[0] ?? null)), ['opened']);
+});
+
+test('the focus left by a taken letter goes to the next letter, else the one before', () => {
+  const letter = (id: string) =>
+    node('npc-letter', null, node('gear-cell', `letter-${id}`), node('npc-take', `take-${id}`));
+  const letters = node('npc-letters', null, letter('1'), letter('2'), letter('3'));
+  node('npc-row', null, node('gear-heading', null), letters);
+  const take = (place: number) => asElement(letters.children[place]?.children[1] ?? null);
+  assert.deepEqual(keyBeside(take(1)), ['letter-3', 'take-1']);
+  assert.deepEqual(keyBeside(take(2)), ['take-2']);
 });
 
 test('elsewhere in the menu the focus goes to the press beside it, as before', () => {

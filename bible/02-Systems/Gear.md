@@ -249,23 +249,26 @@ DFO's spoils ([[Pick - Loot Drops]]).
 ("The mail"), after Destiny's Postmaster.
 
 - **Letters.** Each character keeps a mailbox (`Character.mail`, `gear::mail`): letters only the game writes, oldest
-  first, each its number, which no item, Vestige or officer of theirs shares, its words, and what it holds, a Vestige
-  or an item, or neither. A letter keeps any key a later build wrote on it, as items and Vestiges do.
+  first, each its number, which no item, Vestige or officer of theirs shares, where what it holds came from (a
+  `mail::Source`, kept as its number, which the page words), whether it came to a full mailbox, and what it holds, a
+  Vestige or an item, or neither. A letter keeps any key a later build wrote on it, as items and Vestiges do; taken,
+  one holding such a key gives what this build knows of it and stays, so a rollback loses nothing.
 - **What goes there.** What a player owned and would lose: a Vestige drop that lay its two minutes out, or still lay
-  as they left the room ("Drops"); a first clear's Vestige while the carried ten were full ([[Activities]], "Where it
-  is paid"); a Vestige in flotsam gathered while the ten were full; a module salvaged while its slot carried nine
-  ([[Ship Power]]). Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
+  as they left the room ("Drops"); a first clear's Vestige while the carried ten and the vault were full
+  ([[Activities]], "Where it is paid"); a Vestige in flotsam gathered while the ten were full; a module salvaged while
+  its slot carried nine ([[Ship Power]]). Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
   past their most are not items, and stay as they were.
-- **Fifty letters.** A mailbox keeps 50 (`MAIL_MOST`). One more lets the oldest go, and the new letter says so, so
-  nothing leaves the mail unsaid; 50 is more than the carried ten and the vault's twenty Vestiges together, and keeps
+- **Fifty letters.** A mailbox keeps 50 (`MAIL_MOST`). One more lets go the letter holding the least (by rarity, a
+  letter holding what this build does not know above all), the oldest of those and the new one among them, and the
+  new letter, kept, says so, so nothing leaves the mail unsaid; 50 is more than the carried ten and the vault's twenty Vestiges together, and keeps
   a save far under what the [[Accounts]] keep.
 - **Taking.** At the mail counter in Overlook's plaza only ([[Interface]], "The social space's counters"), free: 67
   takes one letter by its number in `item`, its Vestige into the carried ten or its item into its slot's nine, each
   numbered anew; refused while there is no room ("You already carry ten Vestiges.", "That slot already carries
   nine."), and a letter not there is refused as "There is no such letter." 68 takes every letter there is room for,
   oldest first, leaving the rest, and is refused only when it can take none.
-- **Sent.** The gear message carries the letters, oldest first (`GearLetter`): each its number, its words, and its
-  Vestige or its item with every column of its nodes, as a carried piece's.
+- **Sent.** The gear message carries the letters, oldest first (`GearLetter`): each its number, its source, whether it
+  came to a full mailbox, and its Vestige or its item with every column of its nodes, as a carried piece's.
 
 ## Ammo
 

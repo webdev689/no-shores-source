@@ -61,7 +61,15 @@ test('a players own gear the server wrote reads back whole, every column spelled
       [undefined, undefined, undefined, 25, 6],
     ],
   );
-  assert.ok(gear.mail?.every((letter) => letter.words !== '' && letter.id > 0 && !letter.vestige?.vaulted));
+  assert.deepEqual(
+    gear.mail?.map((letter) => [letter.from, letter.crowded]),
+    [
+      [0, false],
+      [4, false],
+    ],
+    'left lying, then salvage',
+  );
+  assert.ok(gear.mail?.every((letter) => letter.id > 0 && !letter.vestige?.vaulted));
   assert.ok((gear.mail?.[1]?.item?.columns.length ?? 0) > 0, 'its nodes spelled out');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);

@@ -122,7 +122,7 @@ test('Shapes gained and a cosmetic newly kept are gains, each with a picture of 
 });
 
 test('letters newly in the mail are told as sent there, counted together; those already waiting are not', () => {
-  const letter = (id: number) => ({ id, words: 'Kept.', vestige: null, item: null });
+  const letter = (id: number) => ({ id, from: 0, crowded: false, vestige: null, item: null });
   const before = state({ mail: [letter(1)] });
   const after = state({ mail: [letter(1), letter(5), letter(6)] });
   const sent = gainsOf(before, after).filter((gained) => gained.key === 'mail');

@@ -139,7 +139,7 @@ impl Room {
         };
         let Some(vestige) = vestige else { return };
         found.gear_changed = true;
-        character.carry_or_post(vestige, gear::mail::Source::Clear);
+        character.keep_paid(vestige);
     }
 }
 

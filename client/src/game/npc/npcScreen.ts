@@ -1,8 +1,8 @@
 // The one screen every keeper of a social space opens, after Destiny 1's vendors: the keeper large at the left over a
 // ground lit in their colour, their mark and title above them; at the right their words, the currencies they deal in
 // (and a faction's rank and its meter), the band they speak in, their wares in rows under engraved headings (the
-// vault keeper's two sides of the vault in their place, the Postmaster's letters in theirs), and at the foot the time to the next stock, or to Shape's
-// leaving. The menu (gearWindow.ts) frames it with its header and footer.
+// vault keeper's two sides of the vault in their place, the Postmaster's letters in theirs), and at the foot the time
+// to the next stock, or to Shape's leaving. The menu (gearWindow.ts) frames it with its header and footer.
 import './npcScreen.css';
 import { make } from '../../editor/dom.ts';
 import type { GearAsk, GearState } from '../../network/gearMessages.ts';
@@ -143,7 +143,7 @@ const keysIn = (node: Element | null | undefined) =>
  *  beside it, or for a keeper's tile, which stands in a holder with its price, the tiles beside its holder, then the
  *  next row's first and the row before's last. The menu takes the first its new page still holds. */
 export function keyBeside(held: Element | null | undefined): string[] {
-  const holder = held?.closest('.npc-ware');
+  const holder = held?.closest('.npc-ware, .npc-letter');
   const row = holder?.closest('.npc-row');
   const keys = holder
     ? [

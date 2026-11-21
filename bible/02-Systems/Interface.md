@@ -659,9 +659,9 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   nothing; LETTERS and how many of the 50 wait, then Take all (a primary press) while any waits, or "No letters wait
   for you."; then each letter oldest first, a sunk well holding the tile of what it holds (an item's own picture, a
   module's or a Vestige's glyph, framed in its rarity with its pips, its card on hover or focus: an item's as its
-  page's, a Vestige's its slot and level), its name in its rarity's colour, the letter's words, and Take with E on its
-  keycap. A click on the tile or Take, or E on either while it holds the focus, takes that letter; the arrows move
-  among the presses. A letter there is no room for stays, the footer saying why, and he speaks only to thank. The
+  page's, a Vestige's its slot and level), its name in its rarity's colour, the letter's words (`letterWords`), and
+  Take. A click on the tile or Take, or E on either while it holds the focus, takes that letter, once until the gear
+  comes again; the focus then goes to the next letter, or the one before; the arrows move among the presses. A letter there is no room for stays, the footer saying why, and he speaks only to thank. The
   footer: Click / E (Take).
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a

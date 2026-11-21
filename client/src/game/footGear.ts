@@ -1,7 +1,7 @@
 // What a player's gear lays on the ground on foot: each resource node they may still gather, a ring in sea green
 // under a beam of light seen across the patrol, so a route can be planned through them; each station that deals with
-// them, a brass ring at its counter, beating at the mail's while letters wait, and Shape's spot while he is here. The drops lying for them stand as their own
-// pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's offer opened, or a node within
+// them, a brass ring at its counter, beating at the mail's while letters wait, and Shape's spot while he is here. The
+// drops lying for them stand as their own pictures (`combat/drops.ts`). And what E does where they stand: a station's or Shape's offer opened, or a node within
 // reach gathered. The room judges every gather; the rings only show where.
 
 import { markRing } from '../combat/marks.ts';

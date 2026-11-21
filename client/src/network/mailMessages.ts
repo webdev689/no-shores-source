@@ -2,11 +2,13 @@ import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts'
 import type { GearItem as GearItemTable } from '../../../generated/messages/ts/overlook/wire/gear-item.ts';
 import type { GearItem, GearVestige } from './gearMessages.ts';
 
-/** A letter of the game's mail (protocol's `GearLetter`): its number, its words, and what it holds, a Vestige or an
+/** A letter of the game's mail (protocol's `GearLetter`): its number, where what it holds came from (the gear crate's
+ *  `mail::Source`, worded by `letterWords`), whether it came to a full mailbox, and what it holds, a Vestige or an
  *  item, or neither. */
 export interface GearLetter {
   readonly id: number;
-  readonly words: string;
+  readonly from: number;
+  readonly crowded: boolean;
   readonly vestige: GearVestige | null;
   readonly item: GearItem | null;
 }
@@ -20,7 +22,8 @@ export function mailOf(gear: Gear, itemOf: (item: GearItemTable) => GearItem): G
     const item = letter.item();
     return {
       id: letter.id(),
-      words: letter.words() ?? '',
+      from: letter.from(),
+      crowded: letter.crowded(),
       vestige: vestige
         ? { id: vestige.id(), rarity: vestige.rarity(), slot: vestige.slot(), level: vestige.level(), vaulted: false }
         : null,

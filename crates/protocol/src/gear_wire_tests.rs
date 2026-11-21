@@ -208,7 +208,7 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
 }
 
 #[test]
-fn a_players_mail_crosses_with_each_letters_words_and_what_it_holds() {
+fn a_players_mail_crosses_with_where_each_letters_holding_came_from_and_what_it_holds() {
     let (room, player) = furnished();
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
@@ -219,8 +219,8 @@ fn a_players_mail_crosses_with_each_letters_words_and_what_it_holds() {
         kept.iter().map(|letter| letter.id).collect::<Vec<_>>()
     );
     assert_eq!(
-        letters.iter().map(|letter| letter.words()).collect::<Vec<_>>(),
-        [Some(Source::LeftLying.words()), Some(Source::Salvage.words())]
+        letters.iter().map(|letter| (letter.from(), letter.crowded())).collect::<Vec<_>>(),
+        [(Source::LeftLying as u8, false), (Source::Salvage as u8, false)]
     );
     let vestige = letters[0].vestige().expect("its Vestige");
     assert_eq!((vestige.rarity(), vestige.slot(), vestige.level(), vestige.vaulted()), (2, Slot::Arms as u8, 9, false));

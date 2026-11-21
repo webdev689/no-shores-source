@@ -1,11 +1,11 @@
 //! The game's mail keeps what a player would have lost, and hands it over at its counter as there is room.
 
 use crate::asks::{Ask, Here, Refusal};
-use crate::character::{At, CARRIED_MOST, Character, VESTIGES_MOST, Vestige};
+use crate::character::{At, CARRIED_MOST, Character, VAULT_MOST, VESTIGES_MOST, Vestige};
 use crate::dice::Dice;
 use crate::item::Item;
 use crate::kinds::{Kind, Slot};
-use crate::mail::{MAIL_MOST, OLDEST_WENT, Posted, Source};
+use crate::mail::{MAIL_MOST, Posted, Source};
 use crate::rarity::Rarity;
 use crate::ship::found::Salvage;
 
@@ -41,22 +41,29 @@ fn carrying_nine_hulls() -> Character {
 }
 
 #[test]
-fn a_vestige_without_room_in_the_carried_ten_goes_to_the_mail_with_words_of_where_it_came_from() {
+fn a_vestige_without_room_in_the_carried_ten_goes_to_the_mail_saying_where_it_came_from() {
     let mut character = Character::starting();
-    assert!(character.carry_or_post(vestige(Rarity::Rare), Source::Clear), "carried while there is room");
+    assert!(character.carry_or_post(vestige(Rarity::Rare), Source::Flotsam), "carried while there is room");
     assert!(character.mail.is_empty());
     let mut character = carrying_ten();
-    assert!(!character.carry_or_post(vestige(Rarity::Legendary), Source::Clear));
+    assert!(!character.carry_or_post(vestige(Rarity::Legendary), Source::Flotsam));
     assert_eq!(character.vestiges_held(false), VESTIGES_MOST, "the ten untouched");
     let letter = &character.mail[0];
     assert_eq!(letter.vestige.as_ref().map(|kept| kept.rarity), Some(Rarity::Legendary));
-    assert!(!letter.words.is_empty());
-    let mut words: Vec<&str> = [Source::LeftLying, Source::LeftBehind, Source::Clear, Source::Flotsam, Source::Salvage]
-        .map(Source::words)
-        .to_vec();
-    words.sort_unstable();
-    words.dedup();
-    assert_eq!(words.len(), 5, "each source says its own");
+    assert_eq!((letter.from, letter.crowded), (Source::Flotsam as u8, false));
+}
+
+#[test]
+fn a_first_clears_vestige_is_carried_else_vaulted_else_posted_and_never_lost() {
+    let mut character = carrying_ten();
+    for _ in 0..VAULT_MOST {
+        character.keep_paid(vestige(Rarity::Legendary));
+    }
+    assert_eq!((character.vestiges_held(false), character.vestiges_held(true)), (VESTIGES_MOST, VAULT_MOST));
+    assert!(character.mail.is_empty(), "the vault before the mail");
+    character.keep_paid(vestige(Rarity::Legendary));
+    assert_eq!(character.mail[0].from, Source::Clear as u8, "both full: posted");
+    assert!(character.vestiges.iter().all(|(id, (kept, _))| *id == kept.id), "each numbered as it is kept");
 }
 
 #[test]
@@ -69,19 +76,49 @@ fn a_salvaged_module_whose_slot_carries_nine_goes_to_the_mail() {
 }
 
 #[test]
-fn a_full_mailbox_lets_its_oldest_letter_go_and_the_new_letter_says_so() {
+fn a_full_mailbox_lets_go_the_oldest_letter_holding_the_least_and_the_new_letter_says_so() {
     let mut character = Character::starting();
+    character.post(Source::Clear, Posted::Vestige(vestige(Rarity::Legendary)));
+    for _ in 1..MAIL_MOST {
+        character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Normal)));
+    }
+    assert!(character.mail.iter().all(|letter| !letter.crowded), "none went while there was room");
+    let (legendary, least) = (character.mail[0].id, character.mail[1].id);
+    character.post(Source::LeftBehind, Posted::Vestige(vestige(Rarity::Atheric)));
+    assert_eq!(character.mail.len(), MAIL_MOST);
+    assert!(character.mail.iter().any(|letter| letter.id == legendary), "the oldest, holding more, stays");
+    assert!(character.mail.iter().all(|letter| letter.id != least), "the oldest holding the least went");
+    let newest = character.mail.last().expect("a letter");
+    assert_eq!(newest.vestige.as_ref().map(|kept| kept.rarity), Some(Rarity::Atheric));
+    assert!(newest.crowded, "the new letter tells of it");
+    let full = character.mail.clone();
+    character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Normal)));
+    let ids = |mail: &[crate::mail::Letter]| mail.iter().map(|letter| letter.id).collect::<Vec<_>>();
+    let mut kept = ids(&full);
+    kept.remove(1);
+    assert_eq!(ids(&character.mail)[..MAIL_MOST - 1], kept, "among those holding the least, the oldest goes first");
+}
+
+#[test]
+fn a_letter_holding_what_this_room_does_not_know_gives_what_it_knows_and_stays() {
+    let mut character = Character::starting();
+    character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Rare)));
+    character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Magic)));
+    character.mail[0].unknown.insert("later".to_owned(), serde_json::json!("kept"));
+    let later = character.mail[0].id;
+    assert!(character.ask(Ask::TakeAllLetters, AT_THE_COUNTER, &DICE).is_ok());
+    assert_eq!(character.vestiges_held(false), 2, "both Vestiges taken");
+    assert_eq!(character.mail.len(), 1, "the later room's letter stays");
+    let kept = &character.mail[0];
+    assert_eq!(
+        (kept.id, kept.vestige.is_none(), kept.unknown.get("later")),
+        (later, true, Some(&serde_json::json!("kept")))
+    );
+    character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Normal)));
     for _ in 0..MAIL_MOST {
         character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Normal)));
     }
-    assert!(character.mail.iter().all(|letter| !letter.words.ends_with(OLDEST_WENT)), "none went while there was room");
-    let oldest = character.mail[0].id;
-    character.post(Source::LeftBehind, Posted::Vestige(vestige(Rarity::Atheric)));
-    assert_eq!(character.mail.len(), MAIL_MOST);
-    assert!(character.mail.iter().all(|letter| letter.id != oldest), "the oldest went");
-    let newest = character.mail.last().expect("a letter");
-    assert_eq!(newest.vestige.as_ref().map(|kept| kept.rarity), Some(Rarity::Atheric));
-    assert!(newest.words.ends_with(OLDEST_WENT), "the new letter tells of it");
+    assert!(character.mail.iter().any(|letter| letter.id == later), "nor does a full mailbox let it go");
 }
 
 #[test]

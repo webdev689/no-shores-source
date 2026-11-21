@@ -459,8 +459,9 @@ so every decision is Rust and the shell only carries bytes and time.
   player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. As a
   player leaves, the host first has the room send every Vestige still lying for them to their mail (`mailLying`, at sea
   from the captain's deck they stand on; [[Gear]], "The mail"), then reads their character for its last save, then lets
-  the room take them out, so the save keeps what they left lying. A socket there that sends no token within five seconds
-  of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no session, is closed with 4003 and "Sign in to
+  the room take them out, so the save keeps what they left lying. Not yet so: a player whose socket a second sign-in
+  replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket
+  there that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no session, is closed with 4003 and "Sign in to
   play online." (in a run, "Sign in to enter this run."), so sockets that never sign in cannot hold a room's places;
   every page of the game sends one, a guest's included. While the accounts do not answer a claim, the player plays on
   unkept. The Test Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts

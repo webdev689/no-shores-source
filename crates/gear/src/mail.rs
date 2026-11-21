@@ -1,48 +1,34 @@
 //! The game's mail, after Destiny's Postmaster: letters only the game writes to a player, kept with their character
-//! and handed over at the mail counter in Overlook's social space. A letter is its words and, for something the player
-//! would have lost, that thing: a Vestige left lying out its time or as they left, a Vestige a first clear or flotsam
-//! paid while the carried ten were full, or a module salvaged while its slot carried nine. A mailbox keeps
-//! `MAIL_MOST` letters; one more lets the oldest go, and the new letter says so.
+//! and handed over at the mail counter in Overlook's social space. A letter is where what it holds came from and, for
+//! something the player would have lost, that thing: a Vestige left lying out its time or as they left, a Vestige a
+//! first clear paid while the carried ten and the vault were full or flotsam paid while the carried ten were, or a
+//! module salvaged while its slot carried nine. A mailbox keeps `MAIL_MOST` letters; one more lets go the letter
+//! holding the least, the oldest of those, and the new letter says so. The page words each letter by its source.
 
 use crate::asks::{Done, Here, Refusal};
-use crate::character::{At, CARRIED_MOST, Character, UnknownKeys, VESTIGES_MOST, Vestige};
+use crate::character::{At, CARRIED_MOST, Character, UnknownKeys, VAULT_MOST, VESTIGES_MOST, Vestige};
 use crate::item::Item;
+use crate::rarity::Rarity;
 use serde::{Deserialize, Serialize};
 
 /// How many letters a mailbox keeps: more than the carried ten and the vault's twenty Vestiges together, and few
 /// enough that a character's save stays far under what the accounts keep.
 pub const MAIL_MOST: usize = 50;
 
-/// What a letter says when the mailbox was full and its oldest letter went to make room for it.
-pub const OLDEST_WENT: &str = "Your mailbox was full, so its oldest letter was let go.";
-
-/// Where a letter's Vestige or item came from.
+/// Where a letter's Vestige or item came from, kept and sent as its number (`Letter::from`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u8)]
 pub enum Source {
     /// A drop that lay where it fell until its time was out.
-    LeftLying,
+    LeftLying = 0,
     /// A drop still lying when its player left the place.
-    LeftBehind,
-    /// A first clear's Vestige, paid while the carried ten were full.
-    Clear,
+    LeftBehind = 1,
+    /// A first clear's Vestige, paid while the carried ten and the vault were full.
+    Clear = 2,
     /// A Vestige in flotsam gathered while the carried ten were full.
-    Flotsam,
+    Flotsam = 3,
     /// A module salvaged while its slot carried nine.
-    Salvage,
-}
-
-impl Source {
-    /// The letter's words: where what it holds came from, and why it came by mail.
-    #[must_use]
-    pub fn words(self) -> &'static str {
-        match self {
-            Source::LeftLying => "You left this lying where it fell. It was picked up before it was lost.",
-            Source::LeftBehind => "You left before you picked this up, so it was sent on.",
-            Source::Clear => "Your reward for a first clear. You carried ten Vestiges, so it came here.",
-            Source::Flotsam => "Found in flotsam you gathered. You carried ten Vestiges, so it came here.",
-            Source::Salvage => "Salvage you took. Its slot carried nine, so it came here.",
-        }
-    }
+    Salvage = 4,
 }
 
 /// What a letter holds.
@@ -52,11 +38,14 @@ pub enum Posted {
     Item(Item),
 }
 
-/// One letter: its number, which no item, Vestige or officer of the character shares, its words, and what it holds.
+/// One letter: its number, which no item, Vestige or officer of the character shares, where what it holds came from
+/// (a `Source`'s number, one a later room adds kept as read), whether it came to a full mailbox, and what it holds.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 pub struct Letter {
     pub id: u32,
-    pub words: String,
+    pub from: u8,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub crowded: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub vestige: Option<Vestige>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -67,20 +56,47 @@ pub struct Letter {
     pub unknown: UnknownKeys,
 }
 
+impl Letter {
+    /// What a full mailbox weighs to choose the letter it lets go: the rarity of what it holds, and one holding
+    /// nothing this room knows above all, as a later room may have put in it what this one cannot see.
+    fn worth(&self) -> (bool, Option<Rarity>) {
+        let rarity = self.vestige.as_ref().map(|vestige| vestige.rarity);
+        let rarity = rarity.or_else(|| self.item.as_ref().map(|item| item.rarity));
+        (rarity.is_none(), rarity)
+    }
+}
+
 impl Character {
-    /// Posts a letter from the game. With the mailbox full its oldest letter goes, and the new one says so.
+    /// Posts a letter from the game. With the mailbox full the letter holding the least goes, the oldest of those
+    /// and the new one among them, and the new one, kept, says so.
     pub fn post(&mut self, source: Source, posted: Posted) {
-        let mut words = source.words().to_owned();
-        if self.mail.len() >= MAIL_MOST {
-            self.mail.drain(..=self.mail.len() - MAIL_MOST);
-            words = format!("{words} {OLDEST_WENT}");
-        }
         let (vestige, item) = match posted {
             Posted::Vestige(vestige) => (Some(vestige), None),
             Posted::Item(item) => (None, Some(item)),
         };
         let id = self.take_id();
-        self.mail.push(Letter { id, words, vestige, item, unknown: UnknownKeys::new() });
+        let letter = Letter { id, from: source as u8, crowded: false, vestige, item, unknown: UnknownKeys::new() };
+        self.mail.push(letter);
+        while self.mail.len() > MAIL_MOST {
+            let least = (0..self.mail.len()).min_by_key(|&at| self.mail[at].worth()).unwrap_or(0);
+            self.mail.remove(least);
+            if let Some(new) = self.mail.last_mut().filter(|letter| letter.id == id) {
+                new.crowded = true;
+            }
+        }
+    }
+
+    /// Keeps a Vestige a first clear pays: in the carried ten, else in the vault, else posted, so it is never lost.
+    pub fn keep_paid(&mut self, vestige: Vestige) {
+        if self.pick_up(vestige.clone()) {
+            return;
+        }
+        if self.vestiges_held(true) < VAULT_MOST {
+            let id = self.take_id();
+            self.vestiges.insert(id, (Vestige { id, ..vestige }, true));
+        } else {
+            self.post(Source::Clear, Posted::Vestige(vestige));
+        }
     }
 
     /// Takes a Vestige into the carried ten, or with them full posts it from `source`; whether it was carried.
@@ -110,8 +126,13 @@ impl Character {
         }
         let (mut at, mut took, mut refused) = (0, false, None);
         while at < self.mail.len() {
+            let letters = self.mail.len();
             match self.open_letter(at) {
-                Ok(_) => took = true,
+                Ok(_) => {
+                    took = true;
+                    // A letter that stays (holding what this room does not know) is passed over.
+                    at += usize::from(self.mail.len() == letters);
+                }
                 Err(refusal) => {
                     refused.get_or_insert(refusal);
                     at += 1;
@@ -121,7 +142,8 @@ impl Character {
         if took { Ok(None) } else { Err(refused.unwrap_or(Refusal::NoSuchLetter)) }
     }
 
-    /// Opens the letter at `at` in the mailbox, if there is room for all it holds.
+    /// Opens the letter at `at` in the mailbox, if there is room for all it holds. A letter holding what this room
+    /// does not know (a later room's keys) gives what it knows and stays with the rest, so a rollback loses nothing.
     fn open_letter(&mut self, at: usize) -> Result<Option<Done>, Refusal> {
         let letter = &self.mail[at];
         if letter.vestige.is_some() && self.vestiges_held(false) >= VESTIGES_MOST {
@@ -130,11 +152,17 @@ impl Character {
         if letter.item.as_ref().is_some_and(|item| self.carried_in(item.bucket) >= CARRIED_MOST) {
             return Err(Refusal::CarriedFull);
         }
-        let letter = self.mail.remove(at);
-        if let Some(vestige) = letter.vestige {
+        let (vestige, item) = if self.mail[at].unknown.is_empty() {
+            let letter = self.mail.remove(at);
+            (letter.vestige, letter.item)
+        } else {
+            let kept = &mut self.mail[at];
+            (kept.vestige.take(), kept.item.take())
+        };
+        if let Some(vestige) = vestige {
             self.pick_up(vestige);
         }
-        if let Some(item) = letter.item {
+        if let Some(item) = item {
             let id = self.take_id();
             self.items.insert(id, (Item { id, ..item }, At::Carried));
         }

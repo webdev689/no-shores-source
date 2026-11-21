@@ -10,8 +10,8 @@ Shown that a first clear's Vestige could be lost (laid on the floor once the rec
 > "Another session is working on the social space. Implement a mail vendor who acts as a mailbox for lost items,
 > ingame mail, etc"
 
-Asked whether players may also send mail to each other, the owner chose game mail only: only the game writes, of lost
-items, rewards that did not fit and notices; players do not write to each other.
+Asked whether players may also send mail to each other, the owner chose "Game mail only": only the game writes, of
+lost items, rewards that did not fit and notices; players do not write to each other.
 
 ## What it settles
 

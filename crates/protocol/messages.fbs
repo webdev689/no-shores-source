@@ -464,11 +464,13 @@ table GearDrop {
   flying: ubyte;
 }
 
-// A letter of the game's mail: its number, its words, and what it holds, a Vestige (never in the vault) or an item,
-// each numbered anew as it is taken; a letter may hold neither.
+// A letter of the game's mail: its number, where what it holds came from (the gear crate's `mail::Source`, which the
+// page words), whether it came to a full mailbox, and what it holds, a Vestige (never in the vault) or an item, each
+// numbered anew as it is taken; a letter may hold neither.
 table GearLetter {
   id: uint;
-  words: string;
+  from: ubyte;
+  crowded: bool;
   vestige: GearVestige;
   item: GearItem;
 }
