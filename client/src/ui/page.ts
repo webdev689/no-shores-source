@@ -80,7 +80,7 @@ export interface KeptSignIn {
   readonly password: string;
 }
 
-/** The browser's own password store (Chromium's credential manager, "Claude Makes the Four Points' Open Calls"): a
+/** The browser's own password store (Chromium's credential manager): a
  *  sign-in that worked is offered to be kept, and a kept one fills the drawn fields. Where the browser has no such
  *  store, nothing is kept or offered. */
 export interface SignIns {

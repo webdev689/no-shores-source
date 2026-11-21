@@ -25,17 +25,13 @@ async function begin(start: Start): Promise<void> {
   hear = (message) => (message.kind === 'audio' ? answered(message.reply) : away.heard(message));
   for (const message of waiting.splice(0)) hear(message);
   try {
-    const [{ GpuUnavailable, startGpu }, { startGame }] = await Promise.all([
+    const [{ GpuUnavailable, startGpu, stopWhenLost }, { startGame }] = await Promise.all([
       import('./gpu.ts'),
       import('./game/game.ts'),
     ]);
     try {
       const gpu = await startGpu(away.canvas);
-      // A device lost (a driver's reset, the GPU taken away) leaves nothing to draw with: the player is told.
-      void gpu.device.lost.then((lost) => {
-        if (lost.reason !== 'destroyed')
-          send({ kind: 'stopped', message: `The graphics device was lost (${lost.message}). Reload the page.` });
-      });
+      stopWhenLost(gpu.device, (message) => send({ kind: 'stopped', message }));
       await startGame(gpu, away.canvas);
       send({ kind: 'started' });
     } catch (error) {

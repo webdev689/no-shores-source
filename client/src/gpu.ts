@@ -52,3 +52,11 @@ export const BUFFER_USAGE = {
   storage: 0x80,
 } as const;
 export const SHADER_STAGE = { vertex: 0x1, fragment: 0x2, compute: 0x4 } as const;
+
+/** Says so through `stop` once `device` is lost (a driver's reset, the GPU taken away), which leaves nothing to draw
+ *  with; a device destroyed on purpose says nothing. */
+export function stopWhenLost(device: Pick<GPUDevice, 'lost'>, stop: (message: string) => void): void {
+  void device.lost.then((lost) => {
+    if (lost.reason !== 'destroyed') stop(`The graphics device was lost (${lost.message}). Reload the page.`);
+  });
+}

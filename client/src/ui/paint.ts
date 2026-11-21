@@ -1,5 +1,5 @@
-// The kit's roles as the GPU paints them: the frame, bevels, grounds and shadows `plus/kit.ts` gives a page's
-// surfaces, as quads under a surface's words. Every length is in CSS pixels, drawn at `scale` device pixels each, so
+// The kit's roles as the GPU paints them: each surface's frame, bevels, ground and shadows, as quads under its
+// words. Every length is in CSS pixels, drawn at `scale` device pixels each, so
 // a whole scale keeps every edge on whole pixels.
 import { BAND, framePixels, FRAME_SIDE, OUTSET } from '../plus/frame.ts';
 import { BEVELS, TONES } from '../plus/tones.ts';
@@ -24,7 +24,7 @@ interface Shade {
 
 /** A role's paint in one state. */
 export interface Look {
-  /** The bevel's four edges, top, right, bottom, left, as `border-color` takes them. */
+  /** The bevel's four edges in one string, their colours apart by spaces: top, right, bottom, left. */
   readonly bevel?: string;
   readonly ground?: string;
   /** A lit band along the top and a shaded one along the foot, inside the bevel. */
@@ -76,7 +76,7 @@ function pressLooks(
   };
 }
 
-/** Each role's look in each state, as `plus/kit.ts` writes them for a page. */
+/** Each role's look in each state. */
 export const LOOKS: Record<PaintedRole, Record<State, Look>> = {
   window: same({
     ground: TONES.ground,

@@ -1,4 +1,4 @@
-import { GpuUnavailable, startGpu, TEXTURE_USAGE } from '../gpu.ts';
+import { GpuUnavailable, startGpu, TEXTURE_USAGE, stopWhenLost } from '../gpu.ts';
 import { startWorldRules, type WorldRules } from '../rules/worldRules.ts';
 import type { Node } from '../ui/node.ts';
 import { ask, saveFile, stopped } from '../ui/page.ts';
@@ -15,7 +15,6 @@ import { areaStanding, rangeFraction, references } from './measure.ts';
 import { overlayMarks, type PinnedReference, type Ruler } from './overlay.ts';
 import { PANEL_WIDTH, panelCss, press, row } from './panelKit.ts';
 import { labelNode } from './viewMarks.ts';
-import { stopWhenLost } from './gpuLost.ts';
 
 const LAYOUT_URL = `${import.meta.env.BASE_URL}world/layout.json`;
 /** Where this browser keeps the painting between visits, until it is saved. */

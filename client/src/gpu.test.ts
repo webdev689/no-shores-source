@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { stopWhenLost } from './gpuLost.ts';
+import { stopWhenLost } from './gpu.ts';
 
 const lostAs = (reason: 'destroyed' | 'unknown', message: string) => ({
   lost: Promise.resolve({ reason, message } as GPUDeviceLostInfo),

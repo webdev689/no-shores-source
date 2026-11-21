@@ -1,5 +1,5 @@
 import { FirstPerson } from '../firstperson/firstPerson.ts';
-import { type Gpu, GpuUnavailable, TEXTURE_USAGE, startGpu } from '../gpu.ts';
+import { type Gpu, GpuUnavailable, TEXTURE_USAGE, startGpu, stopWhenLost } from '../gpu.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
 import { crosshairOf } from '../combat/reticle.ts';
@@ -20,7 +20,6 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
 import { readFace } from '../ui/faceReader.ts';
 import { stopped } from '../ui/page.ts';
-import { stopWhenLost } from '../editor/gpuLost.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';

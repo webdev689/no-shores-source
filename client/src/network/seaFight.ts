@@ -103,7 +103,7 @@ export { feelOf };
 /** Who a fight's captain is: its name, its faction and its rank. */
 export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 
-/** The first captain's number in a fight (crates/naval CAPTAIN); every other carries her own on the wire. */
+/** The first captain's number in a fight (crates/naval CAPTAIN); every other carries its own on the wire. */
 const CAPTAIN_SHIP = 1;
 /** A captain the room has not named: a Major of the pirates. */
 const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 };
