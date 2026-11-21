@@ -6,7 +6,6 @@ import type { ForgeLooks } from '../forge/looks.ts';
 import type { Gpu } from '../gpu.ts';
 import { type Climb, ClimbHands, type ClimbShown, GRIP, REACH_HEIGHT } from './climbHands.ts';
 import { climbFrame, climbPicture, climbPlace } from './climbing.ts';
-import { strokeFrame, type Tool, toolPath, toolPicture, toolPlace } from './working.ts';
 import { FirstPersonView, type ScreenQuad } from './firstPersonView.ts';
 import {
   type FrameSource,
@@ -80,8 +79,6 @@ export interface FirstPersonState {
   readonly stride: number;
   readonly casting: boolean;
   readonly climbing: number;
-  /** A material node worked, the weapon hands lowered: with which tool, and how long so far (`working.ts`). */
-  readonly working?: { readonly tool: Tool; readonly seconds: number } | null;
   /** The climb the hands are on, which they follow; none off the wall. */
   readonly climb?: Climb | null;
   /** How far the view looks down, radians, negative up: the fists on a wall stay on it as the view tilts. */
@@ -173,7 +170,6 @@ export class FirstPerson {
   private readonly ride: RideMotion;
   private plan: HandsPlan | null = null;
   private lower = 0;
-  private working: FirstPersonState['working'] = null;
   private readonly climbHands = new ClimbHands();
   private climbShown: ClimbShown = { grips: [], reach: null };
   /** The screen's width over its height when last drawn with a size, the lens the hands on a wall are pinned through. */
@@ -275,9 +271,7 @@ export class FirstPerson {
       this.castClock += seconds;
       if (this.castClock >= CAST_SEQUENCE.length * CAST_STEP) this.castClock = null;
     }
-    this.lower = lowerStep(this.lower, Math.max(state.climbing, state.working ? 1 : 0), seconds);
-    // The tool lowers away with the hands once the work ends, its last frame held.
-    this.working = state.working ?? (this.lower > 0.001 ? this.working : null);
+    this.lower = lowerStep(this.lower, state.climbing, seconds);
     const look = { yaw: state.yaw ?? 0, pitch: state.pitch ?? 0, fov: state.fov ?? 0, aspect: this.aspect };
     this.climbShown = this.climbHands.step(seconds, state.climb ?? null, look, this.lower);
     const free = this.castClock === null && this.lower < 0.5;
@@ -359,13 +353,6 @@ export class FirstPerson {
       }
     }
     if (this.lower > 0.001 && !shot) wanted.push(...this.climbWanted(worn));
-    const work = this.working;
-    if (work && this.lower > 0.001 && !shot) {
-      const frame = strokeFrame(work.tool, work.seconds);
-      const ask = () => toolPicture(this.source, work.tool, frame, worn.hands);
-      const key = `work ${toolPath(work.tool, frame, worn.hands)}`;
-      wanted.push({ key, ask, place: () => toolPlace(work.tool, this.lower) });
-    }
     return wanted;
   }
 

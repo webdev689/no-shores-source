@@ -55,14 +55,6 @@ export class GatherHold {
     if (this.now - held.since < GATHER_S) this.letGo();
   }
 
-  /** What the gather under way works, as the figure shows it: what its node's place holds (`places`, numbered as the
-   *  room numbers its nodes), and how long it has been held; null with none. */
-  worked(places: readonly { readonly holds?: string }[]): { readonly holds: string; readonly seconds: number } | null {
-    const held = this.held;
-    const holds = held && places[held.node]?.holds;
-    return held && holds ? { holds, seconds: this.now - held.since } : null;
-  }
-
   /** How far the gather under way has been held at `now` (0 to 1), or null with none. One whose body stirred or was
    *  hurt since the frame before, or that E can no longer do (`able`), is let go of; one the room refused, or whose
    *  node it no longer stands for the player, is done (or was let go there), as is one held well past its time. */

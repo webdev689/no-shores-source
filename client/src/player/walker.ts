@@ -16,7 +16,6 @@ import type { InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
 import { likelyMoves, Loop, type Shown, shownMove } from './playerMoves.ts';
-import { STROKE_S, type Tool, TOOL_OF } from '../firstperson/working.ts';
 
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
@@ -133,9 +132,6 @@ export class Walker {
   /** A fall the player died of, as the figure shows it: tumbling down or lying where it landed, facing `facing`; null
    *  for none. */
   fall: { readonly tumbling: boolean; readonly facing: number } | null = null;
-  /** A material node worked, by what its place holds (ore, herbs, timber or salvage), and how long so far; set each
-   *  frame on foot, none while none is. */
-  working: { readonly holds: string; readonly seconds: number } | null = null;
   lookDress: string;
   private readonly firstPerson: FirstPerson;
   private readonly forge: Cards;
@@ -184,23 +180,6 @@ export class Walker {
    *  from where the camera was held, the body seen dropping away from it. */
   get inFirstPerson(): boolean {
     return this.player.view.shown <= HIDE_FIGURE_M && this.fall === null;
-  }
-
-  /** The tool the first person works a node with, and how long it has. */
-  private tool(): { readonly tool: Tool; readonly seconds: number } | null {
-    const tool = this.working && TOOL_OF[this.working.holds];
-    return tool && this.working ? { tool, seconds: this.working.seconds } : null;
-  }
-
-  /** The figure working a node, stroke by stroke: an outcrop or timber struck with the forge's overhead chop, herbs
-   *  and salvage worked kneeling. shortcut: the forge draws no figure holding a tool, so a chop stands in for the pick
-   *  and the axe; render tools' moves for every body to show them. */
-  private workMove(body: Dress['body']): { readonly anim: string; readonly progress: number } | null {
-    const working = this.working;
-    if (!working) return null;
-    const strikes = (working.holds === 'ore' || working.holds === 'timber') && this.forge.draws(body, 'chop', null);
-    const progress = (working.seconds % STROKE_S) / STROKE_S;
-    return { anim: strikes ? 'chop' : 'crouch_idle', progress };
   }
 
   /** What glows this frame: each hand's element while its weapon is drawn, else nothing. */
@@ -310,7 +289,6 @@ export class Walker {
       casting: player.cast !== null,
       ...(this.castGlow ? { element: ART_LIGHTS[this.castGlow], castGlow: this.castGlow } : {}),
       climbing: holding ? 0 : 1,
-      working: this.tool(),
       climb: climbOf(body),
       mounted: player.mounted,
       horse: { coat: outfit.coat ?? null, barding: outfit.barding ?? null },
@@ -360,9 +338,7 @@ export class Walker {
           lands: swing.lands,
         },
         cast: player.cast === null ? null : player.cast / CAST_SECONDS,
-        act:
-          this.workMove(dress.body) ??
-          (player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds }),
+        act: player.act && { anim: player.act.anim, progress: player.act.elapsed / player.act.seconds },
         // A bow's draw plays with the first person's, and a shot's frames over a gun's aim pose.
         fight: this.fall
           ? { kind: this.fall.tumbling ? 'tumble' : 'down', progress: 1 }

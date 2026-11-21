@@ -80,13 +80,3 @@ test('E where nothing is gathered begins nothing', () => {
   hold.begin(undefined, standing(true));
   assert.equal(hold.share(1, true, standing(true)), null);
 });
-
-test('a gather under way tells what it works by its node, and how long it has been held', () => {
-  const { hold } = holding();
-  const places = [{ holds: 'timber' }, { holds: 'herbs' }, { holds: 'salvage' }, { holds: 'ore' }];
-  assert.equal(hold.worked(places), null, 'nothing before E');
-  hold.share(3, true, standing(true));
-  hold.begin(3, standing(true));
-  hold.share(4.5, true, standing(true));
-  assert.deepEqual(hold.worked(places), { holds: 'ore', seconds: 1.5 });
-});
