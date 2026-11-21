@@ -90,22 +90,24 @@ are written with paving last, since the first group carries the parts and paving
   arches and meet the stone where it is seen.
 
 - **The public events' props**, drawn by the page where an event stands, never placed by a layout:
-  - The Fissure (`lattice-fissure`, 12 m long): a crack nearly 3 m deep and 3 across at its widest, its walls white
-    chalk under the turf, then the Lattice's crystal brightening down to its alight heart; slabs of turf over a band of
-    dark soil over chalk torn up and tipped back along both lips, turf and roots hanging off their edges, a smaller row
-    behind; chalk broken out across the turf; crystal teeth leaning in over it, clusters grown out of its walls, four
-    spires standing up out of its heart, veins of light crept out through the grass and crusts of crystal at its ends.
-    Its mouth, the outline of the crack at the ground, is in the manifest (`mouth`), so the page opens the land there.
-  - Its scar (`lattice-fissure-sealed`): the crack grown shut, a low dark ridge of crystal along the line, faintly lit
-    at its crest, crusted over with scabs of crystal; the slabs settled back nearly flat, chalk heaped along it and the
-    teeth broken off and lying in the grass.
+  - The Fissure (`lattice-fissure`, 12 m long): a crack nearly 3 m deep and 4 across at its widest, its walls the
+    Lattice's crystal from the lip down, brightening to its alight heart, so from eye height the far wall reads as a
+    glowing slit; slabs of turf over a band of dark soil over chalk lying low and few along both lips, turf and roots
+    hanging off their edges, a row tipped up further back; chalk broken out across the turf; crystal teeth leaning in
+    over it, clusters grown out of its walls, four spires standing up out of its heart, veins of light crept out
+    through the grass and crusts of crystal at its ends. Its mouth, the outline of the crack at the ground, is in the
+    manifest (`mouth`), so the page opens the land there.
+  - Its scar (`lattice-fissure-sealed`): grey-white chalk broken and heaped along where the crack was, dull stubs of
+    dark crystal standing out of it, their glow dying with the crack; the slabs settled back nearly flat and the teeth
+    broken off and lying in the grass.
   - The growth (`lattice-growth`, 5 m): a spire of crystal out of a heave of chalk, five lesser spires leaning out from
     its root, shards crowding its foot, the turf it broke through tipped up round it and crusted.
   - The shard (`lattice-shard`, half a metre): a hand's length of crystal, two lesser points off its root, alight.
   - The Grey Tithe's three stores (`tithe-stores-a`, `-b`, `-c`): crates of weathered boards bound with iron at their
-    corners, barrels, sacks of grey canvas and a pallet, each stack under a grey tarp pegged out at its corners; the
-    plundered store (`tithe-stores-plundered`): a crate broken open, one tipped on its side, boards strewn, sacks slit
-    with their grain spilt in heaps, a barrel stove in and rolled away, the tarp dragged off.
+    corners, barrels, sacks of grey canvas (on store c's pallet laid flat, their tied necks out) and a pallet, each
+    stack under a grey tarp pegged out at its corners; the plundered store (`tithe-stores-plundered`): a crate broken
+    open, one tipped on its side, boards strewn, sacks slit with their grain spilt in heaps, a barrel stove in and
+    rolled away, the tarp dragged off.
   - The Tithe's banner (`tithe-banner`): a grey cloth, unmarked, on a 4 m pole, its foot cut into two tails and lifting
     in the wind, an iron spike at its head, stones packed round its foot.
   - The chests (`event-chest`, iron-bound; `event-chest-heroic`, gilded and set with crystal at its corners) and their

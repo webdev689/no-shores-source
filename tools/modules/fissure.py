@@ -51,8 +51,8 @@ def crack(seed=7):
 
 
 def chasm(module, stations):
-    """The chasm's walls from each lip down to its floor, chalk then crystal brightening downward, and its floor, the
-    crystal's heart. The walls are cut jagged: each row stands in or out of the straight fall by noise."""
+    """The chasm's walls from each lip down to its floor, crystal from the lip down brightening as it goes, and its
+    floor, the crystal's heart. The walls are cut jagged: each row stands in or out of the straight fall by noise."""
     draw = random.Random(module.random.random())
     rows = len(WALL_ROWS)
     points, faces, kinds = [], [], []
@@ -225,8 +225,8 @@ def veins(module, stations, count):
 
 
 def fissure(module):
-    """The open crack: some 12 m long and 3 across at its widest, nearly 3 m deep; turf and chalk slabs tipped up
-    along its lips; crystal teeth leaning in over it, clusters grown out of its walls and spires standing up out of
+    """The open crack: some 12 m long and 4 across at its widest, nearly 3 m deep; turf and chalk slabs lying low
+    along its lips, a few more tipped up further back; crystal teeth leaning in over it, clusters grown out of its walls and spires standing up out of
     its heart, crusts of crystal crept out across the turf at either end."""
     m = latticekit.kinds()
     pick = latticekit.picker(module.random.randrange(1 << 30))
@@ -293,7 +293,7 @@ def sealed(module):
             latticekit.shard(module, m, (x, middle + draw.uniform(-0.3, 0.3) * wide, -0.05),
                              (draw.uniform(-0.4, 0.4), draw.uniform(-0.4, 0.4), 1.0), draw.uniform(0.12, 0.38),
                              draw.uniform(0.05, 0.11), draw.uniform(0, 3), widest=0.8, dim=0.05)
-    module.part((-LENGTH_M / 2, -0.4, 0.0), (LENGTH_M / 2, 0.4, 0.2))
+    module.part((-LENGTH_M / 2, -1.5, 0.0), (LENGTH_M / 2, 1.5, 0.35))
     slabs(module, stations, 0.14, sunk=0.03, keep=0.7)
     rubble(module, m, pick, stations, 50, 1.8)
     for _ in range(20):   # the teeth broken off, lying in the grass

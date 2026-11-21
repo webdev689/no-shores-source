@@ -50,6 +50,7 @@ test('the fissure opens as far as its health says, and once the event is over it
     shut.map((prop) => [prop.module, prop.rise]),
     [['lattice-fissure-sealed', 1]],
   );
+  assert.equal(shut[0]?.glow, 0, "the scar's glow has died with the crack");
 });
 
 test('the growth rises over its time, stands, and is gone once it has sunk', () => {

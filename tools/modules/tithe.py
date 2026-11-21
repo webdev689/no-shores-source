@@ -64,17 +64,16 @@ def stores_c(module):
     floor = 0.13
     # Sacks laid flat across the pallet in two rows, feet together in the middle and necks outward, and three more
     # laid over them; a laid sack runs from its foot toward -y, turned half round for the row running +y.
-    for k in range(4):
-        x = -0.48 + k * 0.32
+    for x in (-0.46, 0.0, 0.46):
         for y, turn in ((0.02, math.pi), (-0.02, 0.0)):
-            sack(module, Frame((x, y, floor + 0.1), turn + module.draw(-0.1, 0.1), (math.pi / 2 - 0.04, 0.0)),
+            sack(module, Frame((x, y, floor + 0.085), turn + module.draw(-0.1, 0.1), (math.pi / 2 - 0.04, 0.0)),
                  (0.2, 0.64), flat=0.5)
-    for k in range(3):
-        sack(module, Frame((-0.32 + k * 0.32, -0.25 + 0.5 * (k % 2), floor + 0.28),
-                           (0.0 if k % 2 else math.pi) + module.draw(-0.15, 0.15), (math.pi / 2 - 0.06, 0.0)),
+    for k, x in enumerate((-0.23, 0.23)):
+        sack(module, Frame((x, -0.25 + 0.5 * k, floor + 0.27),
+                           (0.0 if k else math.pi) + module.draw(-0.15, 0.15), (math.pi / 2 - 0.06, 0.0)),
              (0.2, 0.6), flat=0.5)
     crate(module, Frame((1.15, -0.3, 0.0), 0.5), SMALL)
-    tarp(module, (0.0, 0.0), (1.9, 0.9), [(-0.75, -0.35, 0.75, 0.35, floor + 0.44)], sag=0.04)
+    tarp(module, (0.0, 0.0), (1.9, 0.95), [(-0.5, -0.3, 0.5, 0.3, floor + 0.37)], sag=0.04)
     standing(module, (2.4, 1.8), 1.0)
 
 
