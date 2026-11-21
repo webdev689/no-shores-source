@@ -99,6 +99,7 @@ export function mailPage(context: PageContext): HTMLElement {
   const page = make('section', '', 'npc-row npc-mail');
   const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
   heading.append(make('span', 'Letters'), make('span', `${rows.length}/${MAIL_MOST}`));
+  heading.setAttribute('aria-label', `Letters, ${rows.length} of ${MAIL_MOST} kept`);
   page.append(heading);
   if (takeAll) {
     const all = pressOf('Take all', () => context.ask(takeAll), 'primary');

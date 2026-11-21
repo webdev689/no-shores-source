@@ -186,6 +186,11 @@
 .npc-row .gear-heading {
   margin: 0 0 8px;
 }
+/* The Postmaster's letters: how many are kept of the most, at the heading's right, as the Vestiges' count stands. */
+.npc-mail .gear-heading {
+  display: flex;
+  justify-content: space-between;
+}
 .npc-tiles {
   display: flex;
   flex-wrap: wrap;
@@ -368,4 +373,14 @@
 }
 .npc-letter-words p {
   margin: 0;
+}
+/* On a phone a letter stands in one column: what it holds, its words the letter's whole width, then its press. */
+@media (max-width: 599.98px) {
+  .npc-letter {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: start;
+  }
+  .npc-letter > .npc-take {
+    justify-self: end;
+  }
 }
