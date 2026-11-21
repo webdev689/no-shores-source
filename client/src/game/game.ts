@@ -557,21 +557,10 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     // the pointer stays free, though the click comes before the interface has heard where it is.
     if (ui.takesPointer || gearScreenOpen()) return;
     if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
-    if (
-      playing.flow.mode === 'foot' &&
-      !playing.flow.menu &&
-      !playing.helmMap.looking &&
-      playing.foot?.standing.kind !== 'dead' &&
-      !input.locked
-    )
-      input.lock();
-    if (
-      playing.flow.mode === 'sea' &&
-      !playing.flow.menu &&
-      !input.locked &&
-      (playing.sea?.aboard.walking || playing.sea?.boarding.onDeck)
-    )
-      input.lock();
+    const { flow, foot, sea, helmMap } = playing;
+    const onFoot = flow.mode === 'foot' && !flow.menu && !helmMap.looking && foot?.standing.kind !== 'dead';
+    const onDeck = flow.mode === 'sea' && !flow.menu && (sea?.aboard.walking || sea?.boarding.onDeck);
+    if (!input.locked && (onFoot || onDeck)) input.lock();
   });
   seaPointer(canvas, input, {
     // On a struck ship's deck the pointer and the wheel are the fight's on foot.
