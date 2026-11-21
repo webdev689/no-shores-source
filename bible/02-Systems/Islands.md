@@ -114,7 +114,7 @@ The sea room holds its islands (`sea_islands.rs`):
   (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,
   `DungeonDoor`), and the trip goes in (`enterSeaDungeon`): shared at Normal, a run at Elite or Abyss ([[Game]], "A
   sea island's dungeon"). Its room opens only behind the door of an island the sea holds, for accounts the sea has
-  landed there ([[Server]], "The sea"). Leaving it, the player goes back to the sea at their ship.
+  landed there ([[Server]], "The sea"; [[The Server Is the Authority Over Everything]]). Leaving it, the player goes back to the sea at their ship.
 
 ## On the page
 

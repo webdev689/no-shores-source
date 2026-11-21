@@ -102,7 +102,7 @@ does a social space still locked: only Overlook's opens for now ([[Cities]], "Op
 never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
 (the page waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
 name says "Ruins" (`placeWords`). Online, a node's room lets a kept character in only by a way that leads there
-([[Server]], "Where a character comes from"), so any other room than Overlook's sends it back to its ship, the veil
+([[Server]], "Where a character comes from"; [[The Server Is the Authority Over Everything]]), so any other room than Overlook's sends it back to its ship, the veil
 saying "You cannot reach this place from where you were.". With
 `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's spawn,
 offline: a way to look at one place.
