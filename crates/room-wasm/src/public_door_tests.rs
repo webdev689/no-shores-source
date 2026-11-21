@@ -89,7 +89,11 @@ fn read(bytes: &[u8]) -> Read {
         (player.player(), [numbers[0], numbers[1]])
     });
     let glance = combat::floats::GLANCE_FLOATS;
-    let foes = seen.foes().unwrap().iter().map(|foe| (foe.id(), unpacked(foe.packed().unwrap().bytes(), protocol::land::FOE_NUMBERS)));
+    let foes = seen
+        .foes()
+        .unwrap()
+        .iter()
+        .map(|foe| (foe.id(), unpacked(foe.packed().unwrap().bytes(), protocol::land::FOE_NUMBERS)));
     // Standing: its health (the glance's eleventh) left. Its type and faction follow its glance and its role.
     let foes = foes
         .filter(|(_, numbers)| numbers[10] > 0.0)

@@ -263,8 +263,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   audits (the rules and server, the page, the assets and pipelines, the bible's truth, the design's detail), whose
   rules, page, assets and bible fixes are merged into #124's branch; still to come, a
   picture pass of every beat on a quiet machine. Tested offline: `cargo xtask check`, native and WebAssembly agreeing,
-  both events played through on the built page and pictured; not tested live. The `modules` workflow bakes and
-  publishes on #124's branch byte for byte (the event props' normals worked out in doubles). `main` is merged in again
+  both events played through on the built page and pictured; not tested live. The `modules` workflow baked and
+  published #124's branch byte for byte at 421cbd38 (the event props' normals worked out in doubles); after this
+  merge the 13 event modules' meshes have new keys (main's sorted vertex order, the same geometry), which wait on the
+  workflow's run on the merge before a page built from it can draw the props. `main` is merged in again
   after the hub, the healing charges and the ship's burst: the events' banner, store bars and compass marks are drawn
   as nodes of the game's own interface, the events' fight events moved up to 15 to 24 past main's heal (14), and
   their wire fields appended after main's packed, delta snapshots.
@@ -521,7 +523,6 @@ Where the work stands now, for the next session. Each session rewrites this note
   and shields; and the game's own names (gear tiers, dyes, outfits, first person's metals, the swing's tint, their
   tests) from Daedric to Lattice. The horse's Daedric barding is left out by the owner and still bears Bethesda's name
   ([[Open Questions]]).
-
 - **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a frame's cost on a real GPU with some 125 figures and
   the courts' pieces; the audit's risks left open (a walker's step to the side of a post's line or round a sharp turn
   is not walked against the real hub's boxes, kept posts' people are not booked against walkers, routines' maths may

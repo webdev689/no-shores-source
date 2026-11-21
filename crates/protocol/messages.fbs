@@ -202,7 +202,7 @@ table Seen {
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
 // leaves after it. Then, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
 // and family names' places in content/gear/crew.json, and its officer's post (0 First Mate to 4 Lookout), which it is
-// dressed by. All of it crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
+// dressed by. All of it but the name below crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
 // `foe_numbers`); the fields between `id` and `packed` are kept deprecated only so the table's field numbers hold.
 // Last, the name it stands under in place of its type's (absent for none), sent each time the foe is: a public
 // event's Warden or Marrow, or the Fissure's growth.

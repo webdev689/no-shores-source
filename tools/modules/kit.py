@@ -34,8 +34,8 @@ class Module:
         self.objects = []
         # An object's materials by its faces' material index, with each one's glow: [(material, glow), ...].
         self.slots = {}
-        # Whether a coordinate that rounds to nothing is written as a plain zero (`_rounded`). The older modules keep the
-        # bytes they were published with, which CI's bake already makes.
+        # Whether each corner's normal is worked out from the rounded positions in doubles (`_steady_normals`): the event
+        # props'; the other modules keep Blender's own normals.
         self.steady = False
         # Where the module opens the land under its foot (a chasm's mouth): its two lips, each a line of points along
         # it at the ground, the land between them not drawn.

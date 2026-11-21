@@ -93,7 +93,6 @@ pub fn foes() -> Vec<FoeSeen> {
     vec![brute, FoeSeen { shield: None, companion: Some(companion), ..ashore }]
 }
 
-
 pub const EVENTS: [Event; 2] = [
     Event {
         tick: 1233,
