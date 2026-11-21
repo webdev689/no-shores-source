@@ -5,20 +5,6 @@ type: handoff
 
 Where the work stands now, for the next session. Each session rewrites this note at its end; history stays in git.
 
-## In flight
-
-- The sea, on draft pull request #75 (`claude/waters-from-islands`, based on `main`), holds main through #98 (the
-  prologue's second playthrough) with ship power and crew, the procedural islands and their plants, the Enhanced Plus
-  readout and ships as "it"; its full check passed at `ac12d3bf`, tested offline. Merging it into `main` waits for
-  the owner's yes. `claude/f-main`, where the #98 merge was first saved, is wholly in it.
-- The owner's two calls are made: the sea fight's ship plate wears the vitals' thin bars
-  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]), at the top left with its chips and rose under them, and
-  a sea fight's wind holds from its start ("Whatever is best", Claude's call in [[The Sea as Claude Shapes It]]).
-  Tested offline: the full check, and the game's HUD with a sea fight on it pictured headless at 1280x720, 1920x1080
-  and 2560x1440. Not yet seen in a real sea fight or on a real GPU.
-- Three cloud sessions build on the sea branch: islands, ship power and activities (bounties count in the sea room
-  through `Sea.minute`; the island dungeon trip is one line once #88's stack meets #75).
-
 ## Done
 
 - The scaffold: the TypeScript client on WebGPU, the Rust repo checks, CI, this vault.
@@ -249,6 +235,16 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
+  the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
+  and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
+  #98 merged in. The owner's last two calls are in it: the sea fight's ship plate wears the vitals' thin bars
+  ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]), at the top left with its chips and rose under them, and
+  a sea fight's wind holds from its start (Claude's call under "Whatever is best", [[The Sea as Claude Shapes It]]).
+  Tested offline: the full check, and the game's HUD with a sea fight on it pictured headless at 1280x720, 1920x1080
+  and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
+  sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
+  room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
 - #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
   then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
   the owner's yes to merge: foes show their level, patrol
