@@ -142,10 +142,11 @@ impl DungeonGround {
     }
 
     /// The cells a straight line crosses, from its first end's to its last's or to the grid's edge, by each grid line it
-    /// passes; empty when its first end lies off the grid.
-    fn cells_along(&self, from: [f64; 2], to: [f64; 2]) -> Vec<usize> {
-        let Some(start) = self.cell_at(from[0], from[1]) else { return Vec::new() };
+    /// passes; none when its first end lies off the grid. Walked as asked, since a look or a shot asks every tick.
+    fn cells_along(&self, from: [f64; 2], to: [f64; 2]) -> impl Iterator<Item = usize> + '_ {
+        let start = self.cell_at(from[0], from[1]);
         let end = self.cell_at(to[0], to[1]).unwrap_or((usize::MAX, usize::MAX));
+        let (first_column, first_row) = start.unwrap_or((0, 0));
         // How far along the line (0 to 1) the next grid line lies on an axis, how far apart they lie, and the step.
         let crossing = |at: f64, index: usize, delta: f64| -> (f64, f64, isize) {
             if delta > 0.0 {
@@ -156,15 +157,18 @@ impl DungeonGround {
                 (f64::INFINITY, f64::INFINITY, 0)
             }
         };
-        let (mut next_column, gap_column, step_column) = crossing(from[0], start.0, to[0] - from[0]);
-        let (mut next_row, gap_row, step_row) = crossing(from[1], start.1, to[1] - from[1]);
-        let (mut column, mut row) = (start.0 as isize, start.1 as isize);
-        let mut cells = Vec::new();
-        while column >= 0 && row >= 0 && (column as usize) < self.columns && (row as usize) < self.rows {
-            cells.push(row as usize * self.columns + column as usize);
-            if (column as usize, row as usize) == end || cells.len() > self.columns + self.rows {
-                break;
+        let (mut next_column, gap_column, step_column) = crossing(from[0], first_column, to[0] - from[0]);
+        let (mut next_row, gap_row, step_row) = crossing(from[1], first_row, to[1] - from[1]);
+        let (mut column, mut row) = (first_column as isize, first_row as isize);
+        let (mut walked, mut done) = (0, start.is_none());
+        core::iter::from_fn(move || {
+            let inside = column >= 0 && row >= 0 && (column as usize) < self.columns && (row as usize) < self.rows;
+            if done || !inside {
+                return None;
             }
+            let cell = row as usize * self.columns + column as usize;
+            walked += 1;
+            done = (column as usize, row as usize) == end || walked > self.columns + self.rows;
             if next_column < next_row {
                 column += step_column;
                 next_column += gap_column;
@@ -172,19 +176,19 @@ impl DungeonGround {
                 row += step_row;
                 next_row += gap_row;
             }
-        }
-        cells
+            Some(cell)
+        })
     }
 
     /// Whether the line passes through a jamb, a pillar or a prop below its top: only the solids near the cells it
     /// crosses are looked at, each against the line by the slabs between its sides.
     fn solid_across(&self, from: [f64; 3], to: [f64; 3]) -> bool {
-        let cells = self.cells_along([from[0], from[1]], [to[0], to[1]]);
+        let mut cells = self.cells_along([from[0], from[1]], [to[0], to[1]]).peekable();
         let below = |number: &usize| crosses_below(&self.solids[*number], from, to);
-        if cells.is_empty() {
+        if cells.peek().is_none() {
             return (0..self.solids.len()).any(|number| below(&number));
         }
-        cells.iter().any(|&cell| self.near[cell].iter().any(below))
+        cells.any(|cell| self.near[cell].iter().any(below))
     }
 }
 
@@ -281,13 +285,13 @@ impl Terrain for DungeonGround {
     /// A shot enters the first rock cell it crosses at that cell's side, the grid's edge as rock, or a jamb, a pillar
     /// or a prop where it passes into the box below its top, whichever it meets first.
     fn wall_entry(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
-        let cells = self.cells_along([from[0], from[1]], [to[0], to[1]]);
+        let cells = || self.cells_along([from[0], from[1]], [to[0], to[1]]);
         let (deep, high) = (-1.0e9, 1.0e9);
         let square = |cell: usize| {
             let (west, north) = ((cell % self.columns) as f64 * self.cell, (cell / self.columns) as f64 * self.cell);
             entry([west, north, deep], [west + self.cell, north + self.cell, high], from, to)
         };
-        let rock = cells.iter().find(|&&cell| !self.open[cell]).and_then(|&cell| square(cell));
+        let rock = cells().find(|&cell| !self.open[cell]).and_then(square);
         // Past the grid is rock: a segment that leaves it enters rock where it does.
         let (east, south) = (self.columns as f64 * self.cell, self.rows as f64 * self.cell);
         let outside = (to[0] < 0.0 || to[1] < 0.0 || to[0] > east || to[1] > south)
@@ -300,9 +304,8 @@ impl Terrain for DungeonGround {
             })
             .filter(|share| *share <= 1.0)
             .map(|share| share.max(0.0));
-        let solid = cells
-            .iter()
-            .flat_map(|&cell| &self.near[cell])
+        let solid = cells()
+            .flat_map(|cell| &self.near[cell])
             .filter_map(|&number| {
                 let [min_x, min_y, max_x, max_y, top] = self.solids[number];
                 entry([min_x, min_y, deep], [max_x, max_y, top], from, to)
