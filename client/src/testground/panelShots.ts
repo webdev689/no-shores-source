@@ -227,7 +227,7 @@ function built(): (ui: Interface) => Node {
         ...artsNodes(ui, none, SAMPLE_ARTS, SAMPLE_STANDING),
         ...feel.node(ui),
       ],
-      gear.node(ui, view, 1 / 60),
+      gear.node(ui, ui.store.get('shot:waiting') ? { ...view, gear: null } : view, 1 / 60),
     );
   };
 }
@@ -245,5 +245,11 @@ export const testgroundShot = (ui: Interface): Node => once(ui);
 /** The same, the first worn item's nodes open. */
 export function testgroundNodesShot(ui: Interface): Node {
   ui.store.set('shot:open', true);
+  return once(ui);
+}
+
+/** The same before the room has sent the gear. */
+export function testgroundWaitingShot(ui: Interface): Node {
+  ui.store.set('shot:waiting', true);
   return once(ui);
 }

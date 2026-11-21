@@ -126,11 +126,11 @@ test('a slider in steps of a fraction keeps whole steps, never a float that stra
   ui.frame(VIEW, click(2, 5), 0.016);
   ui.draw(build());
   assert.equal(value, 0.3);
-  for (let step = 0; step < 3; step++) {
+  for (let step = 0; step < 6; step++) {
     ui.frame(VIEW, [{ kind: 'key', key: 'ArrowRight' }], 0.016);
     ui.draw(build());
   }
-  assert.equal(value, 0.45);
+  assert.equal(value, 0.6, 'never 0.6000000000000001');
 });
 
 test("a choice's long list scrolls inside a height of its own, so every option can be reached", () => {
