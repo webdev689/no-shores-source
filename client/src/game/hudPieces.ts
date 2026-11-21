@@ -1,4 +1,4 @@
-// The heads-up display's pieces as nodes, each set against the view as the page's sheet stood it: the place's name,
+// The heads-up display's pieces as nodes, each set against the view where it stands: the place's name,
 // the warning and its count, death's words, the key strip, the status line, the notices, the sea bar and the offers
 // over it, Manage's panel and the menu. Each answers its node for a frame, or nothing while it does not show; presses
 // run what they are handed.
@@ -7,7 +7,8 @@ import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { Hint } from './gearNodes.ts';
-import { edges, footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
+import { edged } from '../combat/barDraw.ts';
+import { footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
 /** The view as the display lays itself against it: its size, whether its words take their larger step (1500 by 900
@@ -44,7 +45,7 @@ export interface Choice {
 export function placeNode(view: HudView, title: string, kind: string): Node | null {
   if (view.bossed || view.plates || view.seaFight || (title === '' && kind === '')) return null;
   const zoom = view.doubled ? 2 : 1;
-  // The page's 16 px at the larger step and the map's 13 px stand at the face's 11, and the map's 20 px at its 22.
+  // The kind's words at the view's zoom, and a step larger on the map at the larger view.
   const kindSize = view.map && view.big && !view.doubled ? 2 : zoom;
   const kindWords = view.map
     ? { words: kind, size: kindSize, tracking: 2 / kindSize }
@@ -241,7 +242,7 @@ export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void)
   return {
     role: 'window',
     direction: 'column',
-    // The page's 300 was its words' room, its padding and border besides.
+    // 300 px of room for its words, and its padding and border besides.
     width: 340,
     padding: 2,
     solid: true,
@@ -288,7 +289,7 @@ export function shipPanelNode(ui: Interface, panel: ShipPanel, back: () => void)
   };
 }
 
-/** A menu in the middle of the view: its title over its choices, each a press. */
+/** A menu in the middle of the view: its title over its choices, each a press, holding the keys while it is up. */
 export function menuNode(ui: Interface, title: string, choices: readonly Choice[]): Node {
   return {
     role: 'window',
@@ -296,6 +297,7 @@ export function menuNode(ui: Interface, title: string, choices: readonly Choice[
     minWidth: 288,
     padding: 2,
     solid: true,
+    modal: true,
     float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0.5] },
     children: [
       {
@@ -318,7 +320,7 @@ export function menuNode(ui: Interface, title: string, choices: readonly Choice[
 }
 
 /** The notices at the top right under the status line, the newest last (`NOTICE_LOOK`): each a panel hugging its words,
- *  its left edge in yellow, sliding in from the right as it comes. The page's 14 px words stand at the face's 11. */
+ *  its left edge in yellow, sliding in from the right as it comes, its words at the face's 11 px. */
 export function noticesNode(
   ui: Interface,
   view: HudView,
@@ -347,7 +349,7 @@ export function noticesNode(
         bevel: 0,
         maxWidth: Math.min(look.most, look.mostShare * view.width),
         padding: [top + inside[0], right + inside[1], bottom + inside[2], left + inside[3]],
-        draw: edges({ top: [top, TONES.stoneLit], bottom: [bottom, TONES.stoneDark], left: [left, look.edgeColour] }),
+        draw: edged([TONES.stoneLit, '', TONES.stoneDark, look.edgeColour], [top, 0, bottom, left]),
         offset: [Math.round((1 - come) * 1.1 * width), 0],
         opacity: come,
         children: [said(row.text, { colour: look.colour, edge: 'halo' })],

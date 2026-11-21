@@ -113,10 +113,30 @@ test("the card is the target plate under the compass: the faction's emblem frame
   assert.ok(card, 'the card');
   const emblem = allOf(card).find((node) => node.picture?.key === 'emblem 2');
   assert.ok(emblem, "the pirates' emblem");
-  assert.deepEqual(wordsIn(card), ['Pirate Brig', 'BRIG - 140 M', 'HOSTILE']);
+  assert.deepEqual(
+    wordsIn(card),
+    ['Pir', 'ate Brig', 'BRIG - 140 M', 'HOSTILE'],
+    'the name its first letters and the rest',
+  );
   assert.equal(allOf(card).filter((node) => node.role === 'track').length, 1, 'one bar, the hull, as a foe has');
   assert.ok(coloursDrawn(card).has(written(FILLS.orange)), "a Major's orange");
   assert.deepEqual([card.width, card.maxWidth], ['76%', 340], 'as wide as the target plate');
+});
+
+test('long class and state words leave the name its first letters, cut short after them', () => {
+  const struck = {
+    ...MODEL.card!,
+    name: 'Pirate Sloop',
+    sub: 'Frigate - 1,254 m',
+    state: 'struck' as const,
+    boardKey: 'E',
+  };
+  const root = readoutOf({ ...MODEL, ship: null, card: struck }).node();
+  assert.ok(root);
+  const shown = laidOf(root)
+    .filter((each) => each.node.text && each.box.y < 80)
+    .map((each) => each.lines.map((line) => line.map((span) => span.words).join('')).join(''));
+  assert.match(shown.join(''), /^Pir.*\.\.\./, `the name kept as "Pir..." (${JSON.stringify(shown)})`);
 });
 
 test("an ally's card shows no emblem, its name in the players' colour and its bar in their blue", () => {
@@ -128,7 +148,11 @@ test("an ally's card shows no emblem, its name in the players' colour and its ba
     allOf(card).some((node) => node.picture?.key.startsWith('emblem')),
     false,
   );
-  assert.equal(allOf(card).find((node) => node.text?.words === 'Tithe Schooner')?.text?.colour, TONES.ally);
+  const named = allOf(card).filter((node) => node.text?.words === 'Tit' || node.text?.words === 'he Schooner');
+  assert.deepEqual(
+    named.map((node) => node.text?.colour),
+    [TONES.ally, TONES.ally],
+  );
   assert.ok(card && coloursDrawn(card).has(written(FILLS.ally)));
 });
 
@@ -155,6 +179,25 @@ test('the warning pulses in steps, its lit look the second half of each half sec
   assert.equal(colourAt(0.1), '#ffd9cf');
   assert.equal(colourAt(0.3), '#ff9c8a');
   assert.equal(colourAt(0.3, true), '#ffd9cf');
+});
+
+test('the warning is said to a screen reader once as it comes, and again only when it comes again', () => {
+  const said: string[] = [];
+  const page = globalThis as { document?: unknown };
+  const was = page.document;
+  page.document = { ariaNotify: (words: string) => said.push(words) };
+  try {
+    const warned = { ...MODEL, warn: 'Broadside! Brace' };
+    const readout = readoutOf(MODEL, 0);
+    readout.update(warned, 0.1);
+    readout.update(warned, 0.2);
+    assert.deepEqual(said, ['Broadside! Brace'], 'once while it stands');
+    readout.update(MODEL, 0.3);
+    readout.update(warned, 0.4);
+    assert.deepEqual(said, ['Broadside! Brace', 'Broadside! Brace'], 'and again once it comes back');
+  } finally {
+    page.document = was;
+  }
 });
 
 test("a side's chip fills from its foot as it loads, glows gold round where the look lays it, and flashes as it comes ready", () => {

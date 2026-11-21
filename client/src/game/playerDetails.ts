@@ -1,5 +1,5 @@
 import type { Details } from '../network/accounts.ts';
-import { RARITIES, SLOTS, itemName } from '../player/gear.ts';
+import { RARITIES, SLOTS, capital, itemName } from '../player/gear.ts';
 import type { Node } from '../ui/node.ts';
 import { emblemOf } from './emblemArt.ts';
 import {
@@ -21,8 +21,6 @@ import { placeWords } from './rosterRows.ts';
 const TILE_PX = 64;
 const PIECE_PX = 220;
 const PAGE_PX = 760;
-
-const capital = (words: string) => `${words[0]?.toUpperCase() ?? ''}${words.slice(1)}`;
 
 /** The press back from a player's details to the Roster's columns. */
 export const DETAILS_BACK = 'roster-back';

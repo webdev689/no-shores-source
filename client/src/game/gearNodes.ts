@@ -3,11 +3,12 @@
 // pixel glyphs, and a tile: Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside, with
 // what it shows of the item beyond its picture (its element in the corner, its growth's gauge, its gilded frame).
 
+import { edged } from '../combat/barDraw.ts';
 import type { GearItem } from '../network/gearMessages.ts';
 import { ELEMENTS, RARITIES, fullyUpgraded, upgraded } from '../player/gear.ts';
 import { diagonalFit, drawnBounds, fitIcon, shrunkCanvas } from '../player/iconFit.ts';
 import type { Picture as Pixels } from '../player/picture.ts';
-import type { Child, Drawing, Node, Text } from '../ui/node.ts';
+import type { Child, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
 import { elementSvg } from '../player/elementGlyphs.ts';
 import { BAND_CELLS, type Emblem, SIGN_CELLS, type Shape, emblemPixels, plateEnd } from './emblemArt.ts';
@@ -46,7 +47,8 @@ export interface Sizes {
   readonly ratio: number;
 }
 
-/** The menu's sizes on a view `width` by `height` CSS pixels, as its sheet's media queries chose them. */
+/** The menu's sizes on a view `width` by `height` CSS pixels: larger words on a wide view, a step taller on a wide
+ *  and tall one, and the slots a step less on a short one. */
 export function sizesOf(width: number, height: number, ratio: number): Sizes {
   const wide = (width >= 1500 && width < 2400) || (width >= 2400 && height < 1300);
   const tall = wide && height >= 900;
@@ -73,47 +75,6 @@ export function over(rgb: string, alpha: number, base: string): string {
   return `rgb(${mixed.join(',')})`;
 }
 
-/** A bevel's four edges (top, right, bottom, left), each `depth` deep, as `border-color` and `border-width` take
- *  them; with `ring`, a 1 px line of it outside, as the sheet's outline shadow; faded to `alpha`. */
-export function edges(
-  colours: readonly [string, string, string, string],
-  depth: number | readonly [number, number, number, number] = 2,
-  ring: string | null = null,
-  alpha = 1,
-): Drawing {
-  const [top, right, bottom, left] = typeof depth === 'number' ? [depth, depth, depth, depth] : depth;
-  return (ui, box, scale, clip, shown) => {
-    const tone = (css: string) => {
-      const [red, green, blue, opacity] = colourOf(css);
-      return [red, green, blue, opacity * alpha * shown] as const;
-    };
-    const { x, y, width, height } = box;
-    if (ring) {
-      const line = scale;
-      for (const part of [
-        { x: x - line, y: y - line, width: width + 2 * line, height: line },
-        { x: x - line, y: y + height, width: width + 2 * line, height: line },
-        { x: x - line, y, width: line, height },
-        { x: x + width, y, width: line, height },
-      ])
-        ui.quads.add(part, tone(ring), clip);
-    }
-    const [deepTop, deepRight, deepBottom, deepLeft] = [top * scale, right * scale, bottom * scale, left * scale];
-    ui.quads.add({ x, y, width, height: deepTop }, tone(colours[0]), clip);
-    ui.quads.add({ x, y: y + deepTop, width: deepLeft, height: height - deepTop }, tone(colours[3]), clip);
-    ui.quads.add(
-      { x: x + deepLeft, y: y + height - deepBottom, width: width - deepLeft, height: deepBottom },
-      tone(colours[2]),
-      clip,
-    );
-    ui.quads.add(
-      { x: x + width - deepRight, y: y + deepTop, width: deepRight, height: height - deepTop - deepBottom },
-      tone(colours[1]),
-      clip,
-    );
-  };
-}
-
 /** The four edges of a frame in a rarity, lit top and left; the kit's plain stone without one. */
 export function rarityEdges(rarity: number | null): [string, string, string, string] {
   const found = rarity === null ? undefined : RARITIES[rarity];
@@ -130,7 +91,7 @@ export function words(said: string, size = 1, colour?: string, more: Partial<Tex
   return { text: { words: said, size, wrap: false, ...(colour && { colour }), ...more } };
 }
 
-/** A label as the sheet writes it: in capitals, faint. */
+/** A label: in capitals, faint. */
 export const label = (said: string, size = 1, colour: string = INK.faint): Node =>
   words(said.toUpperCase(), size, colour);
 
@@ -170,7 +131,7 @@ export function keycap(key: string, size = 1): Node {
   const line = size === 1 ? 16 : 28;
   return {
     fill: INK.key,
-    draw: edges([INK.stoneHi, INK.stoneLo, INK.stoneLo, INK.stoneHi], [1, 1, 2, 1]),
+    draw: edged([INK.stoneHi, INK.stoneLo, INK.stoneLo, INK.stoneHi], [1, 1, 2, 1]),
     padding: [1, 5, 2, 5],
     minWidth: 18,
     height: line + 3,
@@ -410,7 +371,7 @@ export function tileNode(
     alignY: 'center',
     fill: lit ? INK.wellLit : INK.well,
     picture: glow(rgb, lit || state === 'open'),
-    draw: edges(bevel, 2, INK.outline, faded),
+    draw: edged(bevel, 2, INK.outline, faded),
     ...(faded < 1 && { opacity: faded }),
     ...node,
     children: [
@@ -499,7 +460,7 @@ export function plateNode(
   };
 }
 
-/** The keys' focus round a press `width` by `height`: a white ring 2 px out, as the sheet marks what is selected. */
+/** The keys' focus round a press `width` by `height`: a white ring 2 px out, clear of the press's own edges. */
 export function focusRing(width: number, height: number): Node {
   return {
     width: width + 8,

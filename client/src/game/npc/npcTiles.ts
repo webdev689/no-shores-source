@@ -216,8 +216,7 @@ export function meter(share: number, said: string, colour: string, look: KeeperL
         bevel: 1,
         padding: 1,
         label: said,
-        // Kept within its track, however far past full the share runs; one that is no number (a bar of no length) full,
-        // as the page's was.
+        // Kept within its track, however far past full the share runs; one that is no number (a bar of no length) full.
         children: [
           {
             width: `${Number.isFinite(share) ? Math.round(Math.min(1, Math.max(0, share)) * 100) : 100}%`,

@@ -8,13 +8,12 @@ import { motionReduced } from '../plus/kit.ts';
 import { BEVELS, FILLS, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import type { Node, Picture } from '../ui/node.ts';
-import type { Box } from '../ui/quads.ts';
 import type { FoeShield, FoeStatuses } from '../network/messages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { type RankBand, rankBand, rankMark } from '../rules/roster.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { Meter } from '../plus/meter.ts';
-import { bands, drawMeter, faded, hatch, markAt, paintBox, type Pen, ring, span } from './barDraw.ts';
+import { bands, drawMeter, edges, faded, grownBy, hatch, markAt, paintBox, ring, span } from './barDraw.ts';
 import { foeDebuffs, StatusRow } from './statusIcons.ts';
 
 /** A foe as the display marks it: its number, its type's name, its glance (its place as it is drawn), its rank (1 Minor
@@ -143,13 +142,9 @@ class PoiseTrack {
               const pen = { ui, box, scale: unit * scale, clip, fade };
               ring(pen, box, TONES.outline);
               const edge = pen.scale;
-              const inner = {
-                x: box.x + edge,
-                y: box.y + edge,
-                width: box.width - 2 * edge,
-                height: box.height - 2 * edge,
-              };
-              edges(pen, box, state === 'open' ? 'rgba(241,192,79,0.9)' : BEVELS.sunk);
+              const inner = grownBy(box, -edge);
+              const sunk = BEVELS.sunk.match(/rgba?\([^)]*\)|#[0-9a-f]+/gi) ?? [];
+              edges(pen, box, state === 'open' ? ['rgba(241,192,79,0.9)'] : sunk);
               paintBox(pen, inner, TONES.groundTrack);
               const filled = span({ ...pen, box: inner }, 0, fill);
               if (state === 'iron') hatch(pen, filled);
@@ -171,29 +166,6 @@ class PoiseTrack {
         : [],
     };
   }
-}
-
-/** `box` grown by `step` device pixels on every side. */
-const grownBy = (box: Box, step: number): Box => ({
-  x: box.x - step,
-  y: box.y - step,
-  width: box.width + 2 * step,
-  height: box.height + 2 * step,
-});
-
-/** A 1 px border round the inside of `box` in a bevel's four colours (top, right, bottom, left) or one colour. */
-function edges(pen: Pen, box: Box, colours: string): void {
-  const [top, right = top, bottom = top, left = right] = colours.match(/rgba?\([^)]*\)|#[0-9a-f]+/gi) ?? [];
-  const step = pen.scale;
-  if (top) paintBox(pen, { ...box, height: step }, top);
-  if (bottom) paintBox(pen, { ...box, y: box.y + box.height - step, height: step }, bottom);
-  if (left) paintBox(pen, { ...box, y: box.y + step, width: step, height: box.height - 2 * step }, left);
-  if (right)
-    paintBox(
-      pen,
-      { ...box, x: box.x + box.width - step, y: box.y + step, width: step, height: box.height - 2 * step },
-      right,
-    );
 }
 
 /** What a plate holds besides its level, name and health: a poise track under the health; and whether its health breaks
@@ -291,7 +263,7 @@ export class FoePlate {
       picture
         ? {
             key: `rank ${mark}`,
-            source: { svg: decodeURIComponent(picture.url.slice(picture.url.indexOf(',') + 1)) },
+            source: { svg: picture.svg },
             pixel: { width: picture.width, height: picture.height },
             ...(tint ? { tint } : {}),
           }

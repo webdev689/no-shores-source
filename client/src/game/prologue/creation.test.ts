@@ -241,3 +241,26 @@ test('a step the story moves on from takes its window and its keys with it', asy
   assert.deepEqual(words(), []);
   assert.equal(creationOpen(), false);
 });
+
+test("the look's window holds the keys: Tab walks its presses alone, never a press under it", async () => {
+  page();
+  const { stack, frame, ui } = drawn();
+  stack.add(() => ({ id: 'under', press: true, width: 40, height: 20 }));
+  running(
+    lookStep(
+      stack,
+      FIRST_LOOK,
+      () => undefined,
+      () => undefined,
+      ending(),
+    ),
+  );
+  frame();
+  const seen = new Set<string | null>();
+  for (let step = 0; step < 80; step++) {
+    frame([{ kind: 'key', key: 'Tab' }]);
+    seen.add(ui.focusedId);
+  }
+  assert.ok(seen.has('creation-done'), 'its own presses are walked');
+  assert.equal(seen.has('under'), false);
+});

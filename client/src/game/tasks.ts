@@ -6,7 +6,8 @@ import { TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
 import { cubicBezier } from '../ui/ease.ts';
 import type { Node } from '../ui/node.ts';
-import { edges, header, keycap } from './hudParts.ts';
+import { edged } from '../combat/barDraw.ts';
+import { header, keycap } from './hudParts.ts';
 
 /** One step of a task: its words, the keys that do it (each on a keycap), what is left of it, and whether it is met. */
 export interface Step {
@@ -57,7 +58,7 @@ export class TaskTracker {
       this.met = [];
       announce(`${quest.name}: ${quest.task}`);
     } else if (quest && before) {
-      // As the page's status region told each change: a step met or its count changed.
+      // Each change is told: a step met or its count changed.
       for (const step of quest.steps) {
         const was = before.steps.find((each) => each.text === step.text);
         if (was && was.done === step.done && was.count === step.count) continue;
@@ -133,7 +134,7 @@ function stepNode(step: Step, size: number, flash: number): Node {
     fill: flash > 0 ? `rgba(243,207,134,${(0.32 * flash).toFixed(3)})` : undefined,
     children: [
       step.done
-        ? { width: box, height: box, fill: TONES.brass, draw: edges(BRASS_EDGE) }
+        ? { width: box, height: box, fill: TONES.brass, draw: edged(BRASS_EDGE) }
         : { width: box, height: box, role: 'well', bevel: 1 },
       { padding: [0, 2, 0, 0], children: [{ text: { words: step.text, size, colour } }] },
       ...(step.keys ?? []).map((key) => keycap(key, size)),
@@ -144,9 +145,4 @@ function stepNode(step: Step, size: number, flash: number): Node {
 }
 
 /** A ticked box's brass bevel, a pixel deep. */
-const BRASS_EDGE = {
-  top: [1, '#f3cf86'],
-  right: [1, '#7a5424'],
-  bottom: [1, '#5c3f1a'],
-  left: [1, '#c08a3e'],
-} as const;
+const BRASS_EDGE = ['#f3cf86', '#7a5424', '#5c3f1a', '#c08a3e'];

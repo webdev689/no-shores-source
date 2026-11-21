@@ -3,15 +3,11 @@
 import { TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
 import type { Node } from '../ui/node.ts';
-import { edges } from './hudParts.ts';
+import { edged } from '../combat/barDraw.ts';
 
 /** The keycap's brass bevel, its foot deeper. */
-const BRASS_KEY = {
-  top: [1, '#f3cf86'],
-  left: [1, '#f3cf86'],
-  right: [1, '#8a5f17'],
-  bottom: [3, '#8a5f17'],
-} as const;
+const BRASS_KEY = ['#f3cf86', '#8a5f17', '#8a5f17', '#f3cf86'];
+const BRASS_KEY_DEPTHS = [1, 1, 3, 1];
 
 export class UsePrompt {
   private said: string | null = null;
@@ -41,7 +37,7 @@ export class UsePrompt {
           padding: [2, 7, 4, 7],
           fill: 'rgba(192,138,62,0.15)',
           alignX: 'center',
-          draw: edges(BRASS_KEY),
+          draw: edged(BRASS_KEY, BRASS_KEY_DEPTHS),
           children: [{ text: { words: 'E', colour: TONES.brassHi, wrap: false } }],
         },
         { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },

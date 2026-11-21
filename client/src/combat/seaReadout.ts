@@ -7,15 +7,15 @@
 import { BAR_TONES, CORNER, VITAL_SIZES } from '../plus/barFrame.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { UNDER_COMPASS } from '../plus/compass.ts';
-import { EMBLEM_PIXELS, emblemUrl } from '../plus/emblems.ts';
+import { EMBLEM_PIXELS, emblemSvg } from '../plus/emblems.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { lowShare, Meter } from '../plus/meter.ts';
 import { CARD_GAP, type RoseSide, SHIP_BARS, type SeaFightModel, seaFightWords } from '../plus/seaFight.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
+import { announce } from '../ui/announce.ts';
 import type { Drawing, Node, Text } from '../ui/node.ts';
-import type { Box } from '../ui/quads.ts';
 import { lineHeight } from '../ui/text.ts';
-import { drawMeter, faded, paintBox, type Pen, ring, thinBarNode } from './barDraw.ts';
+import { drawMeter, edges, faded, grownBy, paintBox, ring, thinBarNode } from './barDraw.ts';
 
 /** The hull's low blink (on for its first half), a side's flash as it comes ready (two of 0.35 s, lit for the second
  *  half of each) and the warning's pulse (its lit look for the second half of each 0.5 s), in seconds. */
@@ -28,10 +28,12 @@ const EMBLEM_SQUARE = EMBLEM_PIXELS * 3 + 4;
 const cardTall = (ally: boolean) => (ally ? lineHeight(1) + 3 + 12 : EMBLEM_SQUARE);
 /** The warning's height: its words' line, 3 px over and 4 under them, inside a 2 px edge. */
 const WARN_TALL = lineHeight(1) + 3 + 4 + 4;
+/** The letters of the card's name kept however long the words after it, as a browser's row shrinks them all. */
+const NAME_KEPT = 3;
 /** The rose's width, as wide as its longest words ("Heated 88s" a side), so it never shifts as they change. */
 const ROSE_WIDE = 172;
-/** The colours the sheet wrote that the palette does not name: the fire's chip, a state going down and a blow's edge,
- *  the warning's words and edges, the tally's miss. */
+/** The colours the palette does not name: the fire's chip, a state going down and a blow's edge, the warning's words
+ *  and edges, the tally's miss. */
 const INKS = {
   fire: '#ffb066',
   sinking: '#ee5745',
@@ -46,8 +48,8 @@ const WARN_EDGES = {
   lit: ['#ff8a76', '#7a1a12', '#52110c', '#e0584a'],
 } as const;
 
-/** Words of the readout: in the face's 11 px, outlined as the display's words are, in capitals spaced as the sheet
- *  spaced them where `tracking` is given. */
+/** Words of the readout: in the face's 11 px, outlined as the display's words are, in capitals spaced `tracking` 22nds
+ *  of the size apart where it is given. */
 const words = (said: string, colour: string, tracking?: number): Text => ({
   words: tracking ? said.toUpperCase() : said,
   colour,
@@ -55,20 +57,6 @@ const words = (said: string, colour: string, tracking?: number): Text => ({
   wrap: false,
   ...(tracking ? { tracking } : {}),
 });
-
-/** A 1 px edge round the inside of `box`, each side its own colour (top, right, bottom, left), `width` CSS pixels. */
-function edges(pen: Pen, box: Box, colours: readonly string[], width = 1): void {
-  const [top = '', right = top, bottom = top, left = right] = colours;
-  const step = width * pen.scale;
-  paintBox(pen, { ...box, height: step }, top);
-  paintBox(pen, { ...box, y: box.y + box.height - step, height: step }, bottom);
-  paintBox(pen, { ...box, y: box.y + step, width: step, height: box.height - 2 * step }, left);
-  paintBox(
-    pen,
-    { ...box, x: box.x + box.width - step, y: box.y + step, width: step, height: box.height - 2 * step },
-    right,
-  );
-}
 
 /** The readout: the plate with its rose, the card and the tally, kept from frame to frame and drawn by the interface. */
 export class SeaFightReadout {
@@ -121,6 +109,8 @@ export class SeaFightReadout {
       this.carded = card.name;
       this.cardHull.set(card.hull, seconds);
     }
+    // The warning is said as it comes, once, as a page's alert is.
+    if (model?.warn && this.since.warn === null) announce(model.warn);
     this.mark('warn', !!model && model.warn !== null);
     // The warning under the card, or the compass while none shows: clear of the sight and the ship aimed at; the
     // ships' plates under both.
@@ -275,7 +265,7 @@ export class SeaFightReadout {
    *  hidden). */
   private cardNode(card: NonNullable<SeaFightModel['card']>, state: string): Node {
     const ally = card.band === 'ally';
-    const emblem = ally ? null : emblemUrl(card.faction);
+    const emblem = ally ? null : emblemSvg(card.faction);
     const side = EMBLEM_PIXELS * 3;
     const fill = FILLS[card.band as keyof typeof FILLS] ?? FILLS.red;
     const stateColour =
@@ -303,7 +293,7 @@ export class SeaFightReadout {
               height: side,
               picture: {
                 key: `emblem ${card.faction}`,
-                source: { svg: decodeURIComponent(emblem.slice(emblem.indexOf(',') + 1)) },
+                source: { svg: emblem },
                 pixel: { width: EMBLEM_PIXELS, height: EMBLEM_PIXELS },
               },
             },
@@ -314,7 +304,7 @@ export class SeaFightReadout {
           width: 'grow',
           ...(ally ? {} : { height: EMBLEM_SQUARE }),
           gap: 3,
-          // The words at the top and the bar at the foot, as the sheet spaced them between.
+          // The words at the top and the bar at the foot, the room between them.
           children: [
             {
               direction: 'row',
@@ -323,7 +313,14 @@ export class SeaFightReadout {
               alignY: 'center',
               clip: true,
               children: [
-                { text: { ...words(card.name, ally ? TONES.ally : TONES.word), ellipsis: true } },
+                {
+                  children: [
+                    { text: words(card.name.slice(0, NAME_KEPT), ally ? TONES.ally : TONES.word) },
+                    card.name.length > NAME_KEPT && {
+                      text: { ...words(card.name.slice(NAME_KEPT), ally ? TONES.ally : TONES.word), ellipsis: true },
+                    },
+                  ],
+                },
                 { text: words(card.sub, TONES.wordDim, 3) },
                 state !== '' && { text: words(state, stateColour, 3) },
               ],
@@ -369,11 +366,3 @@ const blowEdge =
   (zoom: number): Drawing =>
   (ui, box, scale, clip, fade) =>
     ring({ ui, box, scale: scale * zoom, clip, fade }, box, INKS.sinking, 2);
-
-/** `box` grown by `step` device pixels on every side (shrunk for a step below none). */
-const grownBy = (box: Box, step: number): Box => ({
-  x: box.x - step,
-  y: box.y - step,
-  width: box.width + 2 * step,
-  height: box.height + 2 * step,
-});

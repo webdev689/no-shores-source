@@ -7,7 +7,7 @@ import type { LostLook, Meter } from '../plus/meter.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Box } from '../ui/quads.ts';
 import { colourOf } from '../ui/quads.ts';
-import type { Node } from '../ui/node.ts';
+import type { Drawing, Node } from '../ui/node.ts';
 import { baselineOf, lineHeight } from '../ui/text.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
 
@@ -83,6 +83,46 @@ export function ring(pen: Pen, box: Box, css: string, width = 1): void {
   paintBox(pen, { x: box.x + box.width, y: box.y, width: step, height: box.height }, css);
 }
 
+/** `box` grown by `step` device pixels on every side (shrunk for a step below none). */
+export const grownBy = (box: Box, step: number): Box => ({
+  x: box.x - step,
+  y: box.y - step,
+  width: box.width + 2 * step,
+  height: box.height + 2 * step,
+});
+
+/** A border round the inside of `box`, its sides as CSS's `border-color` and `border-width` list them (top, right,
+ *  bottom, left; one left out takes the one across from it), each depth in CSS pixels. A side with no colour is not
+ *  drawn and takes no room; the top and the bottom run the box's width, the sides between them. */
+export function edges(pen: Pen, box: Box, colours: readonly string[], depths: number | readonly number[] = 1): void {
+  const [top = '', right = top, bottom = top, left = right] = colours;
+  const [up = 1, across = up, down = up, back = across] = typeof depths === 'number' ? [depths] : depths;
+  const deep = (colour: string, depth: number) => (colour ? depth * pen.scale : 0);
+  const [high, wide, low, near] = [deep(top, up), deep(right, across), deep(bottom, down), deep(left, back)];
+  const between = { y: box.y + high, height: box.height - high - low };
+  const sides: (readonly [Box, string])[] = [
+    [{ ...box, height: high }, top],
+    [{ ...box, y: box.y + box.height - low, height: low }, bottom],
+    [{ ...box, ...between, width: near }, left],
+    [{ ...box, ...between, x: box.x + box.width - wide, width: wide }, right],
+  ];
+  for (const [part, colour] of sides) if (colour && part.width > 0 && part.height > 0) paintBox(pen, part, colour);
+}
+
+/** `edges` as a node's drawing, faded to `fade` with the node; with `outline`, a 1 px ring of it round the outside. */
+export const edged =
+  (
+    colours: readonly string[],
+    depths: number | readonly number[] = 1,
+    outline: string | null = null,
+    fade = 1,
+  ): Drawing =>
+  (ui, box, scale, clip, shown) => {
+    const pen = { ui, box, scale, clip, fade: fade * shown };
+    if (outline) ring(pen, box, outline);
+    edges(pen, box, colours, depths);
+  };
+
 /** The kit's fill (its `meter` role) over `box` in `fill`: a lit top line, a shaded 2 px foot and a lit right end. */
 export function kitFill(pen: Pen, box: Box, fill: string): void {
   if (box.width <= 0) return;
@@ -97,7 +137,7 @@ export function kitFill(pen: Pen, box: Box, fill: string): void {
   paintBox(pen, { ...box, x: box.x + box.width - end, width: end }, 'rgba(255,255,255,0.42)');
 }
 
-/** The iron hatch, red stripes running up to the right 4 px wide and dark 2 px between, as the sheets laid it. */
+/** The iron hatch, red stripes running up to the right 4 px wide and dark 2 px between. */
 const HATCH_SIDE = 8;
 function hatchPixels(): Uint8Array {
   const pixels = new Uint8Array(HATCH_SIDE * HATCH_SIDE * 4);

@@ -46,7 +46,8 @@ function menu(gear: GearState) {
   });
   Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });
   const asked: GearAsk[] = [];
-  const here = () => ({ gear, ask: (ask: GearAsk) => asked.push(ask), forge: null, dress: null });
+  const state = { gear };
+  const here = () => ({ gear: state.gear, ask: (ask: GearAsk) => asked.push(ask), forge: null, dress: null });
   const stack = new Stack();
   stack.add(
     startGearWindow(
@@ -87,7 +88,7 @@ function menu(gear: GearState) {
     frame();
     frame();
   };
-  return { ui, frame, key, click, open, asked, middle };
+  return { ui, frame, key, click, open, asked, middle, state };
 }
 
 test("the Art's screen opens from its diamond at its Anima, sets a fragment owned, and steps back by Escape", () => {
@@ -182,6 +183,22 @@ test("the vault's cells move a piece across with a click", () => {
   assert.ok(cell?.press);
   click(`cell-${cell.key}`);
   assert.deepEqual(asked, [cell.press.ask]);
+});
+
+test("a focused vault cell that goes leaves the focus on the one beside it, as the inventory's do", () => {
+  const gear = sampleGear();
+  const { ui, frame, open, state } = menu(gear);
+  open('vault');
+  const cells = vaultOf(gear).carried.flatMap((shelf) => shelf.cells.map((cell) => `cell-${cell.key}`));
+  const [first, second] = cells;
+  assert.ok(first && second && ui.boxOf(first) && ui.boxOf(second), 'two carried cells are laid');
+  ui.focusOn(first);
+  frame();
+  const gone = Number(first.slice('cell-item-'.length));
+  state.gear = { ...gear, items: gear.items.filter((item) => item.id !== gone), answered: 1 };
+  frame();
+  frame();
+  assert.equal(ui.focusedId, second);
 });
 
 test("a smith's ware is bought by holding it, never by a click", async () => {

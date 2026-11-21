@@ -66,7 +66,7 @@ export class Objective {
       float: { to: 'screen', y: Math.round(height * 0.15), z: OBJECTIVE_Z },
       children: [
         {
-          // The kit's window ground and its drop, without its frame: the sheet's clear border hid the frame.
+          // The kit's window ground and its drop, without its frame, so the objective stands light over the view.
           draw: windowGround,
           direction: 'column',
           alignX: 'center',

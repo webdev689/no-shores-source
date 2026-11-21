@@ -30,9 +30,8 @@ const TITLE_RULE = ruleOf('cinema rule', [
   [0.82, '#b8975a'],
 ]);
 
-/** An eyelid, its edge toward the eye an ellipse 22% of its height deep, as the sheet's
- *  `border-radius: 0 0 50% 50% / 0 0 22% 22%` rounded it, drawn a row of device pixels at a time; `top` for the
- *  upper lid. */
+/** An eyelid, its edge toward the eye half an ellipse across its width and 22% of its height deep, drawn a row of
+ *  device pixels at a time; `top` for the upper lid. */
 function lidOf(top: boolean): Drawing {
   const [red, green, blue] = colourOf(LID);
   return (renderer, box, _scale, clip, fade) => {

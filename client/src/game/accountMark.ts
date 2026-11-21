@@ -45,6 +45,9 @@ const headFor = (figure: Picture): Picture | null => {
   return heads.get(figure) ?? null;
 };
 
+/** The name the mark stands for: the player's, a guest's, or none while offline. */
+export const markName = (account: Account | null): string => account?.username ?? (account ? 'Guest' : 'Offline');
+
 /** Whether an account is kept anywhere (a username or Discord), rather than in this browser alone, as a guest's is. */
 const keptAnywhere = (account: Account | null): boolean => !!account && (!!account.username || !!account.discord);
 
@@ -61,7 +64,7 @@ export function accountMark(
   ratio: number,
 ): Node {
   const kept = keptAnywhere(account);
-  const name = account?.username ?? (account ? 'Guest' : 'Offline');
+  const name = markName(account);
   const words = account ? (kept ? 'kept with this account' : 'kept in this browser') : 'not kept';
   if (ui.clicked(MARK)) open();
   const lit = ui.hovered(MARK) || (ui.focused(MARK) && ui.keyFocused);

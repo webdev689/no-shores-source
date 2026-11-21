@@ -237,7 +237,7 @@ export class WeaponRows {
       ...(inHand && this.reload > 0 ? { opacity: 0.5 } : {}),
       children: [
         // None left reads as a large 0, as a count does, its words small where the capacity stands.
-        // Its line as tall as its letters, as the sheet set it, so the row is no taller than they are.
+        // Its line as tall as its letters, so the row is no taller than they are.
         {
           ...words(shown.empty ? '0' : (shown.shots ?? ''), inHand ? large : middle, shotsColour),
           height: counted * 11,
@@ -297,7 +297,7 @@ export class WeaponRows {
         ...(this.swapping > 0 && still && inHand ? { outline: { width: zoom, colour: TONES.brassHi } } : {}),
         children: [
           {
-            // A pixel of the outline round it, past its own box, as the sheet's drop shadows laid it.
+            // A pixel of the outline round it, past its own box, so it reads on any ground.
             width: (fit.width + 2) * zoom,
             height: (fit.height + 2) * zoom,
             ...(away ? { opacity: 0.6 } : {}),
@@ -342,7 +342,7 @@ export class WeaponRows {
     return {
       direction: 'row',
       alignY: 'center',
-      // Both rows as wide as the wider, as the sheet's grid stretched them.
+      // Both rows as wide as the wider, so their ends line up.
       width: 'grow',
       gap: (wide ? 12 : 8) * zoom,
       padding: [3 * zoom, 28 * zoom, 3 * zoom, 6 * zoom],

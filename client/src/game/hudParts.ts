@@ -1,42 +1,12 @@
-// The heads-up display's small drawn parts, shared by its pieces: a border of four colours as a sheet writes one, the
-// kit's header, footer, rule and rail bands (which `ui/paint.ts` leaves to a sheet), a key on its keycap, words over
-// the world, a press of the display, and a value that eases to each new one it is set to, as a CSS transition does.
+// The heads-up display's small drawn parts, shared by its pieces: the kit's header, footer, rule and rail bands (which
+// `ui/paint.ts` leaves to the parts that draw them), a key on its keycap, words over the world, a press of the display,
+// and a value that eases to each new one it is set to, as a CSS transition does.
+import { edged } from '../combat/barDraw.ts';
 import type { Hint } from './gearNodes.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Drawing, Node, Text } from '../ui/node.ts';
-import { colourOf, type Box } from '../ui/quads.ts';
+import { colourOf } from '../ui/quads.ts';
 import type { Interface } from '../ui/ui.ts';
-
-/** One side of a border: its width in CSS pixels and its colour. */
-type Side = readonly [width: number, colour: string];
-
-/** Draws a border inside the box, each side its own width and colour, as `border-width` and `border-color` write it,
- *  faded by `fade`. */
-export function edges(
-  sides: { readonly top?: Side; readonly right?: Side; readonly bottom?: Side; readonly left?: Side },
-  fade = 1,
-): Drawing {
-  return (ui, box, scale, clip, shown) => {
-    const tone = (css: string) => {
-      const [red, green, blue, alpha] = colourOf(css);
-      return [red, green, blue, alpha * fade * shown] as const;
-    };
-    const [top, right, bottom, left] = [sides.top, sides.right, sides.bottom, sides.left].map(
-      (side) => (side?.[0] ?? 0) * scale,
-    ) as [number, number, number, number];
-    const parts: [Box, string | undefined][] = [
-      [{ x: box.x, y: box.y, width: box.width, height: top }, sides.top?.[1]],
-      [{ x: box.x, y: box.y + box.height - bottom, width: box.width, height: bottom }, sides.bottom?.[1]],
-      [{ x: box.x, y: box.y + top, width: left, height: box.height - top - bottom }, sides.left?.[1]],
-      [
-        { x: box.x + box.width - right, y: box.y + top, width: right, height: box.height - top - bottom },
-        sides.right?.[1],
-      ],
-    ];
-    for (const [part, colour] of parts)
-      if (colour && part.width > 0 && part.height > 0) ui.quads.add(part, tone(colour), clip);
-  };
-}
 
 /** Several drawings, one after another. */
 export const drawings =
@@ -64,10 +34,6 @@ export const header = (fade = 1): Partial<Node> => ({
 /** The kit's rule along a foot: a dark line, the groove's light under it left to the next part's top. */
 export const ruleUnder = (fade = 1): Drawing => strip(-1, 1, 'rgba(5,6,8,0.6)', fade);
 
-/** The kit's rule along a top, as the guns' row of her ship's panel stands under one. */
-export const ruleOver = (fade = 1): Drawing =>
-  drawings(strip(0, 1, 'rgba(5,6,8,0.6)', fade), strip(1, 1, 'rgba(163,152,128,0.13)', fade));
-
 /** The kit's footer band: a shaded ground under an outline with a groove under it. */
 export const footer = (): Partial<Node> => ({
   fill: 'rgba(0,0,0,0.2)',
@@ -76,7 +42,7 @@ export const footer = (): Partial<Node> => ({
 
 /** The kit's rail: an upright engraved down the left, a dark line with a lit one inside it. */
 export const rail = (): Drawing =>
-  drawings(edges({ left: [1, 'rgba(5,6,8,0.75)'] }), (ui, box, scale, clip, shown) =>
+  drawings(edged(['', '', '', 'rgba(5,6,8,0.75)']), (ui, box, scale, clip, shown) =>
     ui.quads.add({ ...box, x: box.x + scale, width: scale }, [163 / 255, 152 / 255, 128 / 255, 0.13 * shown], clip),
   );
 
@@ -93,12 +59,7 @@ export function keycap(key: string, size = 1): Node {
     fill: '#16181d',
     alignX: 'center',
     alignY: 'center',
-    draw: edges({
-      top: [1, '#6d6252'],
-      left: [1, '#6d6252'],
-      right: [1, '#231e18'],
-      bottom: [2, '#231e18'],
-    }),
+    draw: edged(['#6d6252', '#231e18', '#231e18', '#6d6252'], [1, 1, 2, 1]),
     children: [{ text: { words: key, size, colour: '#efe8d6', wrap: false } }],
   };
 }

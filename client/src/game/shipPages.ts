@@ -65,7 +65,7 @@ export const SHIP_PARTS = [
   { id: 'crew', name: 'Crew' },
 ] as const;
 
-/** A heading over its rule, with the room the sheet's margin gave it. */
+/** A heading over its rule, 4 px clear above and 10 px below, unless `padding` says. */
 const heading = (said: string, padding: readonly [number, number, number, number] = [4, 0, 10, 0]): Node => ({
   width: 'grow',
   padding,

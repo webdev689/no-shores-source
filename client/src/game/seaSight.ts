@@ -54,7 +54,7 @@ export function aimLineOf(lay: FightLay | null, player: FightVessel): Sight | nu
 
 /** How far under the view's middle the aim line stands, CSS pixels, as DFO's stands. */
 const AIM_DOWN = 34;
-/** The aim line's colours, as the sheet wrote them: its words and its range, plain, burning red or dimmed. */
+/** The aim line's colours: its words and its range, plain, burning red or dimmed. */
 const AIM_INKS = {
   plain: { words: '#efe8d6', range: TONES.brassHi },
   hot: { words: '#ffb4a6', range: '#ff8a76' },
@@ -120,13 +120,13 @@ export class SeaSight {
           width: 'grow',
           alignX: 'center',
           float: { to: 'screen', at: [0, 0.5], y: AIM_DOWN, z: 1 },
-          // No wider than four fifths of the view, its lines evened, as the sheet's `max-width: 80vw` held it.
+          // No wider than four fifths of the view, its lines evened, so a long line never reaches its edges.
           children: [
             {
               width: '80%',
               alignX: 'center',
               children: [
-                // Under its outline a hard shade 2 px down and right, as the sheet's last text shadow laid it.
+                // Under its outline a hard shade 2 px down and right, so the words stand off the sea behind them.
                 { text: line('rgba(0,0,0,0.7)'), offset: [2, 2] },
                 { text: { ...line(), edge: 'halo' }, float: { anchor: [0.5, 0], at: [0.5, 0], z: 2 } },
               ],

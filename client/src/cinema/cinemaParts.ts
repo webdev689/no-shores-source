@@ -1,6 +1,6 @@
 // What the story's screens draw with, shared by the cinema's screen, the tap to start, the boss's nameplate and the
 // objective: a value eased to each new one over a time of its own, as a CSS transition eases, words with a hard shadow
-// dropped straight down under them, as the sheets wrote `text-shadow: 0 4px 0`, and a rule faded at both ends.
+// dropped straight down 4 px under them, and a rule faded at both ends.
 import { easeInOut } from '../ui/ease.ts';
 import type { Node, Picture, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
@@ -43,8 +43,7 @@ export class Eased {
   }
 }
 
-/** A prompt's breath: whole, down to 0.35 and back over `period` seconds, eased in and out each way, as the sheets'
- *  `breathe` keyframes ran. */
+/** A prompt's breath: whole, down to 0.35 and back over `period` seconds, eased in and out each way. */
 export function breath(now: number, period = 2.2): number {
   const into = (((now % period) + period) % period) / period;
   const half = into < 0.5 ? into * 2 : (1 - into) * 2;
@@ -61,7 +60,7 @@ export function dropped(text: Text, shadow: string, drop: number, more: Partial<
   };
 }
 
-/** A horizontal gradient through `stops` (colour at share), clear at both ends: a rule as the sheets drew one. */
+/** A horizontal gradient through `stops` (colour at share), clear at both ends: a rule. */
 export function ruleOf(key: string, stops: readonly (readonly [number, string])[]): Picture {
   return {
     key,

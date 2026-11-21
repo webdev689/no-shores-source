@@ -8,7 +8,7 @@ import { ELEMENTS } from '../../player/gear.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import type { Child, Node } from '../../ui/node.ts';
 import { emblemOf, emblemPixels } from '../emblemArt.ts';
-import { cardFrame } from '../gearCard.ts';
+import { cardFrame, nameCard } from '../gearCard.ts';
 import { type Hint, INK, glyphNode, rgba, svgNode, words } from '../gearNodes.ts';
 import type { View } from '../gearScreen.ts';
 import { KEEPERS, KEEPER_KINDS, type KeeperKind } from '../keepers.ts';
@@ -139,16 +139,23 @@ function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): No
   const purse: Node = {
     gap: 22,
     wrap: true,
-    children: purseOf(kind, context.gear).map((coin): Node => ({
-      gap: 6,
-      alignY: 'center',
-      // The glyph says nothing to a screen reader, so the currency's name is read with its number.
-      label: `${coin.amount.toLocaleString('en')} ${coin.name}`,
-      children: [
-        coin.glyph === 'shapes' ? coinGlyph('shapes') : glyphNode(coin.glyph, 22),
-        words(coin.amount.toLocaleString('en'), 2, INK.word),
-      ],
-    })),
+    children: purseOf(kind, context.gear).map((coin, place): Node => {
+      const id = `npc-coin-${place}`;
+      // Its glyph alone does not name the currency: a card does on hover or focus.
+      context.card(id, () => nameCard(sizes, coin.name));
+      return {
+        id,
+        focusable: true,
+        gap: 6,
+        alignY: 'center',
+        // The glyph says nothing to a screen reader, so the currency's name is read with its number.
+        label: `${coin.amount.toLocaleString('en')} ${coin.name}`,
+        children: [
+          coin.glyph === 'shapes' ? coinGlyph('shapes') : glyphNode(coin.glyph, 22),
+          words(coin.amount.toLocaleString('en'), 2, INK.word),
+        ],
+      };
+    }),
   };
   const faction = KEEPERS[kind].faction;
   if (faction === undefined) return purse;

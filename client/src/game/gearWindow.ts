@@ -10,7 +10,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
-import { accountMark } from './accountMark.ts';
+import { MARK, accountMark, markName } from './accountMark.ts';
 import { AccountPanel } from './accountTab.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
@@ -20,6 +20,7 @@ import { ARTS_HINTS, ART_DIAMOND_KEY, artsPage } from './artsPage.ts';
 import { spellKey } from './artsRows.ts';
 import { characterPage } from './characterPage.ts';
 import { CompanyHud } from './companyHud.ts';
+import { nameCard } from './gearCard.ts';
 import { emblemOf } from './emblemArt.ts';
 import { HINTS, SHELF_HINTS } from './gearHints.ts';
 import { Holds } from './gearHold.ts';
@@ -63,10 +64,10 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || v
  * The menu, after Destiny's, in the Enhanced Plus kit, drawn by the game: Character (I), Inventory (O), Journal, Ship,
  * Social, Guild and Settings under a header of tabs; a station's screen (the vault, a vendor's stall) in their place
  * when its counter is used; and an item's page laid over either when one is inspected. While it is open the world
- * behind it is dimmed, the pointer is free and the game's keys rest; Escape steps back: the item's page, then a slot's
- * flyout, then the menu. Gear shows as the player's room last sent it, each press an ask the room answers; where no
- * room keeps gear it says so. While `resting` (the story plays) it never opens, so its keys stay the story's. Answers
- * the layer that draws it, with the company and what the player gains, which show in play too.
+ * behind it is dimmed, the pointer is free and the keys and the pad are its; Escape or the pad's B steps back: the
+ * item's page, then a slot's flyout, then the menu. Gear shows as the player's room last sent it, each press an ask
+ * the room answers; where no room keeps gear it says so. While `resting` (the story plays) it never opens, so its keys
+ * stay the story's. Answers the layer that draws it, with the company and what the player gains, shown in play too.
  */
 export function startGearWindow(
   fighting: () => boolean,
@@ -102,6 +103,8 @@ export function startGearWindow(
   let focusNext: string | null = null;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
+  /** The press the menu last built with the focus, and the presses beside it, nearest first. */
+  let held: { readonly id: string; readonly beside: readonly string[] } | null = null;
   /** The Roster and the account, asked of the accounts as Social or Settings opens and kept while it shows. */
   let roster: RosterPage | null = null;
   let accountPanel: AccountPanel | null = null;
@@ -136,8 +139,11 @@ export function startGearWindow(
       npcStepBack();
     }
     if (inspecting !== null) [inspecting, focusNext] = [null, returnTo];
-    else if (slot !== null) slot = null;
-    else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
+    else if (slot !== null) {
+      // A key's focus goes back to the slot whose flyout closes; a pointer's would open the slot's card.
+      if (view === 'character' && ui?.keyFocused) focusNext = `slot-${slot}`;
+      slot = null;
+    } else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
     else if (npcStepBack()) return play('back');
     else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
     else if (appearance) [appearance, focusNext] = [false, APPEARANCE_KEY];
@@ -233,6 +239,10 @@ export function startGearWindow(
       height: Math.max(0, (body?.height ?? 0) - aroundY),
     };
     let card: { beside: string; content: () => Node } | null = null;
+    /** Shows `content` in the hover card beside `beside` while `id` is under the pointer or has the keys' focus. */
+    const cardFor = (id: string, content: () => Node, beside = id) => {
+      if (frame.hovered(id) || (frame.focused(id) && frame.keyFocused)) card = { beside, content };
+    };
     details = new Map();
     const dress = now?.dress ?? null;
     const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
@@ -274,9 +284,7 @@ export function startGearWindow(
         room,
         sizes,
         holds,
-        card: (id, content, beside = id) => {
-          if (frame.hovered(id) || (frame.focused(id) && frame.keyFocused)) card = { beside, content };
-        },
+        card: cardFor,
         inspect: (inspected) => {
           inspecting = inspected.id;
           // The page is read from its name; once it closes, the focus goes back to the tile it was asked from.
@@ -369,6 +377,7 @@ export function startGearWindow(
         !(item && sizes.short) &&
         bannerNode(frame, emblemOf(bannerGear?.emblem ?? 0), named, bannerGear, gear, shown !== 'inventory', sizes),
     ];
+    cardFor(MARK, () => nameCard(sizes, markName(account)));
     const bodyNode: Node = {
       id: 'gear-body',
       width: 'grow',
@@ -392,9 +401,25 @@ export function startGearWindow(
     return [...screen, shownCard && cardFloat(frame, shownCard, sizes.card, layer)];
   };
 
+  /** The focus given where the page built anew asks: to the press asked for, or, should the focused press have gone
+   *  (dismantled, worn, sold), to the one beside it still there, else to the chosen tab. */
+  const keepFocus = (frame: Interface, built: Node) => {
+    const presses = pressesIn(built);
+    if (focusNext !== null && presses.includes(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
+    const focused = frame.focusedId;
+    if (focused !== null && held?.id === focused && !presses.includes(focused)) {
+      const tab = view !== null && isTab(view) ? tabId(view) : null;
+      frame.focusOn(held.beside.find((id) => presses.includes(id)) ?? tab);
+    }
+    const now = frame.focusedId;
+    held = now !== null && presses.includes(now) ? { id: now, beside: besideOf(built, now) } : null;
+  };
+
   /** The layer: the company, the menu while it is open, what the player gains, and where holds acted. */
   const layer: Layer = (frame) => {
     ui = frame;
+    // Escape, or the pad's B, steps back once, letting go of a hold under way before it could act.
+    if (view !== null && frame.escaped) stepOnce();
     holds.frame(frame);
     const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
     if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
@@ -408,7 +433,9 @@ export function startGearWindow(
       ...holds.burstNodes(),
     ];
     holds.end();
-    return { id: LAYER, width: 'grow', height: 'grow', children };
+    const built: Node = { id: LAYER, width: 'grow', height: 'grow', children };
+    if (view !== null) keepFocus(frame, built);
+    return built;
   };
 
   addEventListener(OPEN_AT, (event) => {
@@ -426,10 +453,9 @@ export function startGearWindow(
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.
       if (view !== null) event.stopPropagation();
-      if (key === 'escape') {
-        event.preventDefault();
-        stepOnce();
-      } else if (key === 'x' && !typing) {
+      // Escape steps back as the drawn menu hears it (`escaped`), as the pad's B does.
+      if (key === 'escape') event.preventDefault();
+      else if (key === 'x' && !typing) {
         // X shows the focused piece's details, as a right press does.
         const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
         if (!shown) return;
@@ -466,9 +492,11 @@ function cardFloat(
   const near = ui.boxOf(card.beside);
   if (!near) return null;
   const gap = 10;
+  // As last laid, so a card only as wide as its words stands as near as a full one.
   const height = ui.boxOf('gear-card')?.height ?? 0;
+  const wide = ui.boxOf('gear-card')?.width ?? width;
   const right = near.x + near.width + gap;
-  const left = right + width + gap > view.width ? near.x - gap - width : right;
+  const left = right + wide + gap > view.width ? near.x - gap - wide : right;
   const floor = ui.boxOf('gear-foot')?.y ?? view.height;
   const top = Math.min(Math.max(gap, near.y), floor - height - gap);
   return {
@@ -478,4 +506,38 @@ function cardFloat(
     float: { to: 'screen', x: Math.max(gap, left), y: Math.max(gap, top), z: 40 },
     children: [card.content()],
   };
+}
+
+/** The ids of what takes the focus under `node`, as the interface walks them: presses, fields and the focusable. */
+function pressesIn(node: Child): string[] {
+  if (!node) return [];
+  const own = (node.press || node.field || node.focusable) && !node.disabled && node.id ? [node.id] : [];
+  return [...own, ...(node.children ?? []).flatMap(pressesIn)];
+}
+
+/** The nodes from `node` down to the one named `id`, or null where it holds none. */
+function pathTo(node: Node, id: string): Node[] | null {
+  if (node.id === id) return [node];
+  for (const child of node.children ?? []) {
+    const below = child ? pathTo(child, id) : null;
+    if (below) return [node, ...below];
+  }
+  return null;
+}
+
+/** The presses to take the focus should `id` go, nearest first: the next and the last before it among what holds
+ *  it, then among what holds that, and so on out to the menu's body. A keeper's tile, held with its price, so finds
+ *  the tiles beside it, then the next row's first and the last row's last. */
+function besideOf(root: Node, id: string): string[] {
+  const path = pathTo(root, id) ?? [];
+  const found: string[] = [];
+  for (let level = path.length - 1; level > 0 && path[level]?.id !== 'gear-body'; level--) {
+    const [holder, held] = [path[level - 1], path[level]];
+    const children = holder?.children ?? [];
+    const place = children.indexOf(held);
+    const [after] = children.slice(place + 1).flatMap(pressesIn);
+    const before = children.slice(0, place).flatMap(pressesIn).at(-1);
+    found.push(...[after, before].filter((each): each is string => each !== undefined));
+  }
+  return found;
 }

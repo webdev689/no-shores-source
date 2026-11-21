@@ -1,6 +1,7 @@
 // What Manage shows of the player's Sloop: what the naval rules say it is, its measure, where its voyage stands and
 // its repair. Its power, modules and crew come with the player's gear (`shipGear.ts`).
 import { sloopBuildText } from '../network/localRoom.ts';
+import { capital } from '../player/gear.ts';
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
 export interface SloopBuild {
@@ -92,7 +93,6 @@ export function compassOf(heading: number): string {
 }
 
 const metres = (value: number) => `${value.toFixed(1)} m`;
-const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
 /** The panel once its build is read, none before: for its build, its measure and its voyage, if it is under one. */
 export function shipPanelOnceBuilt(

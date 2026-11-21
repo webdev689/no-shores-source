@@ -9,7 +9,6 @@ import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { KIND_WORDS, type MarkKind } from './hudLaw.ts';
 import type { HostileLook } from './seaHostiles.ts';
-import { svgOf } from './shipPlates.ts';
 
 /** A mark on the screen: a node, a port or a hostile ship, where it stands in CSS pixels, its size there, and what it
  *  says. */
@@ -156,7 +155,7 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
     const [x, y] = [Math.round(mark.x), Math.round(mark.y)];
     const look = mark.hostile;
     const colour = mark.locked ? KIND_COLOURS.locked : (look?.colour ?? KIND_COLOURS[mark.kind]);
-    // An emblem's ground stands as it is under the pointer too, as the page's did.
+    // An emblem's ground stands as it is under the pointer too, so the emblem's own colours stay true.
     const hovered = ui.hovered(id) && !look?.emblem;
     const held = mark.arrowDegrees !== null;
     const glyph = mark.locked ? LOCK_GLYPH : GLYPHS[mark.kind];
@@ -205,23 +204,23 @@ export function markNodes(ui: Interface, marks: readonly ScreenMark[], chosen: (
   });
 }
 
-/** A hostile ship's emblem in its ring, 62% of it across and its pixels kept hard, as the page drew it. */
-function emblemNode(url: string, size: number): Node {
+/** A hostile ship's emblem in its ring, 62% of it across and its pixels kept hard. */
+function emblemNode(svg: string, size: number): Node {
   const side = Math.round(0.62 * size);
   return {
     width: side,
     height: side,
     float: { at: [0.5, 0.5], anchor: [0.5, 0.5] },
     picture: {
-      key: `mark emblem ${url}`,
-      source: { svg: svgOf(url) },
+      key: `mark emblem ${svg}`,
+      source: { svg },
       pixel: { width: EMBLEM_PIXELS, height: EMBLEM_PIXELS },
     },
   };
 }
 
 /** A Miniboss's mark over the ring, fitted into a box 14 by 8 px whose top stands 12 px above the ring's. */
-function badgeNode(url: string): Node {
+function badgeNode(svg: string): Node {
   const { width, height } = markPicture('miniboss');
   const fit = Math.min(14 / width, 8 / height);
   return {
@@ -234,7 +233,7 @@ function badgeNode(url: string): Node {
       {
         width: Math.round(width * fit),
         height: Math.round(height * fit),
-        picture: { key: `mark badge ${url}`, source: { svg: svgOf(url) }, pixel: { width, height } },
+        picture: { key: 'mark badge', source: { svg }, pixel: { width, height } },
       },
     ],
   };

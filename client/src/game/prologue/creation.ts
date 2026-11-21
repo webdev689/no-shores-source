@@ -6,6 +6,7 @@ import { type KeptSignIn, SIGN_INS } from '../../ui/page.ts';
 import { type Account, type AccountLink, DISCORD_LINKED, DISCORD_SIGNED_IN } from '../../network/accounts.ts';
 import { TONES } from '../../plus/tones.ts';
 import { type Race } from '../../player/dressing.ts';
+import { capital } from '../../player/gear.ts';
 import { announce } from '../../ui/announce.ts';
 import { button, slider } from '../../ui/controls.ts';
 import type { Child, Node, Picture } from '../../ui/node.ts';
@@ -47,7 +48,6 @@ const BODY_WORDS: readonly (readonly [Look['body'], string])[] = [
   ['male', 'Male'],
   ['female', 'Female'],
 ];
-const capitalised = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 const WORD = '#efe8d6';
 const FAINT = '#a89f88';
 const REFUSED = '#e8968a';
@@ -80,7 +80,7 @@ const wideIn = (ui: Interface) => ui.size.width >= 1500 && ui.size.height >= 900
 /** Words in the window's own ink, with the HUD's hard shadow. */
 const words = (said: string, size: number, colour = WORD): Node => ({
   width: 'grow',
-  // The sheet's lines half again as tall as the words.
+  // Lines half again as tall as the words, so wrapped lines stand clear of each other.
   text: { words: said, size, leading: Math.ceil(size * 16.5), colour, edge: 'shadow', edgeColour: '#000' },
 });
 
@@ -107,6 +107,8 @@ export function windowNode(ui: Interface, title: string, body: readonly Child[])
     role: 'window',
     label: title,
     solid: true,
+    // The keys are the window's while it asks: nothing under it takes the focus or a press.
+    modal: true,
     scroll: true,
     direction: 'column',
     padding: [2, 2, 20, 2],
@@ -140,7 +142,7 @@ function press(
 ): Node {
   const { on, ...rest } = more;
   const size = wideIn(ui) ? 2 : 1;
-  // The sheet's 6 by 12 px round the words, within its 2 px border.
+  // 6 by 12 px round the words, inside the press's 2 px border.
   const made = button(ui, id, said, run, { padding: [8, 14], ...rest });
   // The one chosen is edged in brass, as a press under the pointer is.
   const state = on && ui.stateOf(id, more.disabled) === 'rest' ? 'hover' : undefined;
@@ -167,7 +169,7 @@ function fieldNode(ui: Interface, id: string, label: string, secret: boolean): N
         role: 'well',
         fill: '#101216',
         width: 'grow',
-        // The sheet's padding within its 2 px border.
+        // Room round the words, inside the field's 2 px border.
         padding: wideIn(ui) ? [10, 13] : [8, 10],
         height: lineHeight(size) + (wideIn(ui) ? 20 : 16),
       },
@@ -230,7 +232,7 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
     let offered: ReturnType<typeof goingOn> = null;
     let offeredWords = '';
     let said = '';
-    /** Says `words` under the form, and to a screen reader, as the page's status line told it. */
+    /** Says `words` under the form, and to a screen reader. */
     const say = (words: string) => {
       said = words;
       if (words) announce(words);
@@ -461,7 +463,7 @@ export function lookStep(
       resolve(look);
     };
     const layer = (ui: Interface): Child => {
-      // The chosen body takes the focus first, as the page's first chosen press took it.
+      // The chosen body takes the focus first, so the keys start from what is chosen.
       if (focusFirst && !tapStanding()) {
         ui.focusOn(`creation-Body:${look.body}`);
         focusFirst = false;
@@ -483,13 +485,13 @@ export function lookStep(
         });
       }
       if (hair) {
-        const styles = hairStylesOf(look.body).map((style) => [style, capitalised(style)] as const);
+        const styles = hairStylesOf(look.body).map((style) => [style, capital(style)] as const);
         parts.push(choices(ui, 'Hair', styles, hair.style, (style) => set(withHair(look, { ...hair, style }))));
         parts.push(
           choices(
             ui,
             'Hair colour',
-            HAIR_COLOURS.map((colour) => [colour, capitalised(colour)] as const),
+            HAIR_COLOURS.map((colour) => [colour, capital(colour)] as const),
             hair.colour,
             (colour) => set(withHair(look, { ...hair, colour })),
             SWATCHES,

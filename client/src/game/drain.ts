@@ -1,6 +1,6 @@
 // In death the world drains to grey, and comes back in colour on respawn or on leaving. It is drawn into the scene's
-// own picture, last, so the interface the game draws over it keeps its colour. The look is the page's old filter on
-// the canvas, `grayscale(0.92) brightness(0.72) contrast(1.05)`, eased out over 1.4 s each way as CSS eased it.
+// own picture, last, so the interface the game draws over it keeps its colour. The look is CSS's filter
+// `grayscale(0.92) brightness(0.72) contrast(1.05)`, eased out over 1.4 s each way.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { easeOut } from '../ui/ease.ts';
 

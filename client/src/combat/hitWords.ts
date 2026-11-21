@@ -282,7 +282,7 @@ export class Words {
         text: { words: words.toUpperCase(), size: step * grow, colour: STAMP_GOLD, wrap: false, ...outline(2) },
         offset: [0, -Math.round(baselineRise(step * grow, size))],
       });
-      // Its middle where a line as tall as its letters would stand, as the sheet set the line.
+      // Its middle where a line as tall as its letters would stand, so its rise is the letters' own.
       const tall = (loud ? 3 : 2) * 11 + (warn ? 8 : 0);
       return [
         {

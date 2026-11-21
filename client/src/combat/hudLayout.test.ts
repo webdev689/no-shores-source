@@ -31,7 +31,7 @@ const BUFFS = 4;
 const meets = (one: Box, other: Box) =>
   Math.max(one[0], other[0]) < Math.min(one[2], other[2]) && Math.max(one[1], other[1]) < Math.min(one[3], other[3]);
 
-/** The vitals' pieces in a view, as the sheet lays them at the layout's step and zoom: each bar (a player's health and
+/** The vitals' pieces in a view, as the layout lays them at its step and zoom: each bar (a player's health and
  *  stamina 100, poise 40), poise's word beside it, and the buffs' row under them. */
 function vitalsOf(width: number, height: number): Record<string, Box> {
   const { wide, zoom, length } = hudLayout(width, height);

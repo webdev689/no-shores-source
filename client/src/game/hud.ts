@@ -349,7 +349,7 @@ export class Hud {
         height: 'grow',
         float: { to: 'screen' },
         draw: (renderer, box, scale) => {
-          const shown = { width: box.width / scale, height: box.height / scale, panelShown: false };
+          const shown = { width: box.width / scale, height: box.height / scale };
           drawToasts(renderer, layToasts(renderer.face, this.toasts, shown, clock, still), scale);
         },
       },
@@ -395,7 +395,7 @@ export class Hud {
 
   /** The veil over the view while a place loads, its words breathing; it takes the pointer while it stands. */
   private veilNode(clock: number, still: boolean): Node | null {
-    // Reduced motion stills the words' breath, never the veil's fade, as the page's did.
+    // Reduced motion stills the words' breath, never the veil's fade, which only shows and hides it.
     const shown = this.veilShade.value(clock);
     if (shown <= 0) return null;
     const breath = still ? 1 : 1 - 0.55 * easeInOut(1 - Math.abs(((clock / BREATH_S) % 1) * 2 - 1));

@@ -2,7 +2,7 @@
 // under it, and a rule of iron red between, struck in and held while they cry out, then gone. Drawn by the game as a
 // layer of its interface; a screen reader hears the name and faction as the plate is struck.
 import { dropped, Eased, pageClock, ruleOf } from '../../cinema/cinemaParts.ts';
-import { EMBLEM_PIXELS, emblemUrl } from '../../plus/emblems.ts';
+import { EMBLEM_PIXELS, emblemSvg } from '../../plus/emblems.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import { announce } from '../../ui/announce.ts';
 import { cubicBezier, ease } from '../../ui/ease.ts';
@@ -39,7 +39,7 @@ export class Nameplate {
 
   /** Strikes the plate in: the name, its faction by number and name. */
   show(name: string, faction: number, factionName: string): void {
-    this.plate = { name, faction: factionName, emblem: emblemUrl(faction) };
+    this.plate = { name, faction: factionName, emblem: emblemSvg(faction) };
     this.since = this.clock();
     this.strike = !motionReduced();
     this.shown.set(1, 0.35, this.since);
@@ -63,8 +63,8 @@ export class Nameplate {
     if (!plate || shown <= 0) return null;
     const { width, height } = ui.size;
     const into = now - this.since;
-    // The name strikes in: its fade, 0 to whole over the first 60% of the strike. Grown and shrunk as the sheet's
-    // `scale` did, it cannot be: the face is drawn in whole steps.
+    // The name strikes in: its fade, 0 to whole over the first 60% of the strike. It fades rather than grows, as the
+    // face is drawn in whole steps.
     const nameShown = this.strike ? Math.min(1, into / (0.6 * STRIKE_S)) : 1;
     // The rule draws out from the middle as the plate strikes in, and back in as it goes, each after its hold.
     const drawn = (since: number) => struck(Math.min(1, Math.max(0, (since - RULE_HOLD_S) / RULE_S)));
@@ -82,9 +82,9 @@ export class Nameplate {
           width: 55,
           height: 55,
           picture: {
-            key: plate.emblem,
+            key: `emblem ${plate.faction}`,
             // The emblem's SVG, drawn by the page: its data URL's own markup.
-            source: { svg: decodeURIComponent(plate.emblem.slice(plate.emblem.indexOf(',') + 1)) },
+            source: { svg: plate.emblem },
             pixel: { width: EMBLEM_PIXELS, height: EMBLEM_PIXELS },
           },
         },

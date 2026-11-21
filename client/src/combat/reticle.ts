@@ -78,8 +78,7 @@ export interface ReticleLook {
   readonly mark: { readonly kind: Landed; readonly opacity: number } | null;
 }
 
-/** The inks, as the display's sheet wrote them: the plain one, a foe's red, the reload's half-faded white, the draw's
- *  gold and the ring's empty part. */
+/** The inks: the plain one, a foe's red, the reload's half-faded white, the draw's gold and the ring's empty part. */
 const INKS = { plain: '#f2f2f2', foe: FOE_RED, reloading: 'rgba(242,242,242,0.5)' } as const;
 const GOLD = '#ffd95a';
 const RING_EMPTY = 'rgba(255,255,255,0.22)';
@@ -184,8 +183,8 @@ export class Crosshair {
   }
 }
 
-/** Draws `paint` twice over: under a soft dark edge a pixel deep, as the sheet's drop shadow laid it, and, for a full
- *  draw, a gold glow 4 px deep first. */
+/** Draws `paint` twice over: under a soft dark edge a pixel deep, so it reads on any ground, and, for a full draw, a
+ *  gold glow 4 px deep first. */
 function shaded(context: OffscreenCanvasRenderingContext2D, unit: number, glow: boolean, paint: () => void): void {
   const pass = (colour: string, blur: number) => {
     context.save();
@@ -199,7 +198,7 @@ function shaded(context: OffscreenCanvasRenderingContext2D, unit: number, glow: 
 }
 
 /** The reticle `look` shows, `unit` device pixels a CSS pixel, its ring filled `steps` of `RING_STEPS`. The 22 px
- *  crosshair stands in the picture's middle; every length is the sheet's. */
+ *  crosshair stands in the picture's middle; every length is in CSS pixels. */
 function drawReticle(context: OffscreenCanvasRenderingContext2D, unit: number, look: ReticleLook, steps: number): void {
   const middle = (SIDE / 2) * unit;
   const ink = look.reticle === 'melee' ? (look.reach ? FOE_RED : INKS.plain) : INKS[look.ink];

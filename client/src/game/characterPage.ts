@@ -6,7 +6,7 @@
 // opens the item's page.
 
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { ELEMENTS, RANGED_SLOT, RARITIES, SLOTS, itemName } from '../player/gear.ts';
+import { ELEMENTS, RANGED_SLOT, RARITIES, SLOTS, capital, itemName } from '../player/gear.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { rarityNumber } from './appearance/appearanceModel.ts';
@@ -52,7 +52,6 @@ const FIGURE_LEAST = 240;
 const FIGURE_MOST = 720;
 const FIGURE_AROUND = 264;
 
-const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 /** What a worn slot's presses do, and a carried piece's. */
 const SLOT_HINTS: readonly Hint[] = [
   ['Click', 'Swap'],
@@ -394,7 +393,7 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
           key: 'figure floor',
           source: {
             draw: (drawing, across, down) => {
-              // The sheet's ellipse 34% by 9% of the stand, at its foot, round as a gradient is when scaled flat.
+              // A floor of light: an ellipse 34% by 9% of the stand at its foot, drawn round and scaled flat.
               const [wide, tall] = [across * 0.34, down * 0.09];
               drawing.translate(across / 2, down * 0.97);
               drawing.scale(1, tall / wide);
@@ -428,7 +427,7 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
 /** The Character page, `open` the slot whose flyout is open; `choose` opens or closes one. */
 export function characterPage(context: MenuContext, open: number | null, choose: (slot: number | null) => void): Node {
   const { sizes, room } = context;
-  // Its three columns as the sheet's grid shares them: 1, 1.6 and 1 of the room between their gaps, each at least so wide.
+  // Three columns share the room between their gaps 1, 1.6 and 1, the figure's widest, each at least so wide.
   const share = (room.width - 48) / 3.6;
   const [side, middle] = [Math.max(220, Math.floor(share)), Math.max(300, Math.floor(share * 1.6))];
   const gap = sizes.short ? 10 : 14;
@@ -458,7 +457,7 @@ export function characterPage(context: MenuContext, open: number | null, choose:
     width: 'grow',
     minHeight: room.height,
     direction: 'column',
-    // The three columns stand from their tops, and together in the middle of the room, as the sheet's grid does.
+    // The three columns stand from their tops, together in the middle of the room.
     alignY: 'center',
     children: [{ gap: 24, children: [left, middleNode(context, middle, open !== null), right] }],
   };

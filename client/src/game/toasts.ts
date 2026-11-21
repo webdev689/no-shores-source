@@ -22,9 +22,6 @@ const FOOT = 268;
 /** How long a toast takes to rise in, seconds, and how far it rises, CSS pixels. */
 const RISE_S = 0.2;
 const RISE = 6;
-/** Narrow, while her ship's panel shows, the toasts stand right of it. */
-const NARROW = 890;
-const BESIDE_PANEL = 292;
 
 /** A toast said, and when it came, seconds. */
 export interface Toast {
@@ -45,16 +42,15 @@ export interface LaidToast {
 }
 
 /** Lays `toasts` in a view `width` by `height` CSS pixels at `clock`: a column centred, its foot `FOOT` above the
- *  view's; narrow with her ship's panel shown, left-aligned right of the panel. Still when motion is reduced. */
+ *  view's. Still when motion is reduced. */
 export function layToasts(
   face: Face,
   toasts: readonly Toast[],
-  view: { readonly width: number; readonly height: number; readonly panelShown: boolean },
+  view: { readonly width: number; readonly height: number },
   clock: number,
   still: boolean,
 ): LaidToast[] {
-  const beside = view.panelShown && view.width <= NARROW;
-  const most = beside ? view.width - (BESIDE_PANEL + 28) : view.width - 56;
+  const most = view.width - 56;
   const inset = 2 * (PAD.across + BORDER);
   const tall = lineHeight(SIZE);
   const shaped = toasts.map((toast) => {
@@ -66,7 +62,7 @@ export function layToasts(
   });
   let top = view.height - FOOT - shaped.reduce((sum, each) => sum + each.height, 0) - GAP * (shaped.length - 1);
   return shaped.map(({ toast, lines, widths, width, height }) => {
-    const x = beside ? BESIDE_PANEL : Math.round((view.width - width) / 2);
+    const x = Math.round((view.width - width) / 2);
     const share = still ? 1 : Math.min(1, Math.max(0, (clock - toast.since) / RISE_S));
     const come = cubicBezier(0.16, 1, 0.3, 1, share);
     const box = { x, y: top, width, height };

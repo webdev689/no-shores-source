@@ -3,6 +3,7 @@
 // same as a row still shown adds to that row. It shows in play and over the menu alike, so a piece dismantled or a
 // Vestige opened shows what it gave as soon as the room answers, and each batch chimes for its rarest gain.
 
+import { edged } from '../combat/barDraw.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
 import type { ItemPictures } from '../player/itemPictures.ts';
@@ -20,7 +21,6 @@ import {
   itemIconNode,
   rarityEdges,
   rarityRgb,
-  edges,
   rgba,
   svgNode,
   words,
@@ -192,7 +192,7 @@ export class AcquiredFeed {
               alignX: 'center',
               alignY: 'center',
               fill: INK.well,
-              draw: edges(rarityEdges(rarity), 2),
+              draw: edged(rarityEdges(rarity), 2),
               picture: {
                 key: `acquired glow ${rarityRgb(rarity)}`,
                 source: {

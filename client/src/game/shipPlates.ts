@@ -1,17 +1,14 @@
-// The plates over captains' ships (`shipBars.ts`) as the game draws them: her faction's emblem in a square at the
-// left and, to its right, her name, her rank's mark and a Boss's faction over a long thin bar of her hull, coloured by
-// her rank, over a dark trough with a hairline edge, her losses pale where the bar stood, bites falling off it and its
-// edge flashing with them.
+// The plates over captains' ships (`shipBars.ts`) as the game draws them: the ship's faction's emblem in a square at
+// the left and, to its right, the ship's name, its rank's mark and a Boss's faction over a long thin bar of its hull,
+// coloured by its rank, over a dark trough with a hairline edge: the hull's losses pale where the bar stood, bites
+// falling off it and its edge flashing with them.
 import { pieceAt } from '../plus/barLoss.ts';
-import { EMBLEM_PIXELS, emblemUrl, markPicture } from '../plus/emblems.ts';
+import { EMBLEM_PIXELS, emblemSvg, markPicture } from '../plus/emblems.ts';
 import { TONES } from '../plus/tones.ts';
 import { rankMark } from '../rules/roster.ts';
 import type { Drawing, Node } from '../ui/node.ts';
 import { type Box, colourOf } from '../ui/quads.ts';
 import type { PlacedBar } from '../ships/shipBars.ts';
-
-/** The SVG markup an emblem's data URL holds. */
-export const svgOf = (url: string) => decodeURIComponent(url.slice(url.indexOf(',') + 1));
 
 /** The cream a bar's losses are lit with, and a colour `share` of the way to it. */
 const CREAM = '#fff6e4';
@@ -23,7 +20,7 @@ function toward(colour: string, share: number): string {
   return `rgba(${red}, ${green}, ${blue}, 1)`;
 }
 
-/** The bar of her hull inside the box it is drawn over: trough, losses, fill, its lit top, its edge, the flash of a
+/** The bar of a ship's hull inside the box it is drawn over: trough, losses, fill, its lit top, its edge, the flash of a
  *  bite and the pieces falling. */
 function hullBar(bar: PlacedBar): Drawing {
   return (ui, box, scale, clip, shown) => {
@@ -76,7 +73,7 @@ export function shipPlateNodes(bars: readonly PlacedBar[]): Node[] {
   return bars.map((bar): Node => {
     const square = bar.height;
     const side = Math.floor((square - 4) / EMBLEM_PIXELS) * EMBLEM_PIXELS;
-    const emblem = emblemUrl(bar.faction);
+    const emblem = emblemSvg(bar.faction);
     const mark = rankMark(bar.rank);
     const markShown = mark && markPicture(mark);
     const large = bar.bar > 8;
@@ -101,7 +98,7 @@ export function shipPlateNodes(bars: readonly PlacedBar[]): Node[] {
                   height: side,
                   picture: {
                     key: `emblem ${bar.faction}`,
-                    source: { svg: svgOf(emblem) },
+                    source: { svg: emblem },
                     pixel: { width: EMBLEM_PIXELS, height: EMBLEM_PIXELS },
                   },
                 }
@@ -126,7 +123,7 @@ export function shipPlateNodes(bars: readonly PlacedBar[]): Node[] {
                   height: markShown.height * 2,
                   picture: {
                     key: `rank mark ${mark}`,
-                    source: { svg: svgOf(markShown.url) },
+                    source: { svg: markShown.svg },
                     pixel: { width: markShown.width, height: markShown.height },
                   },
                 },

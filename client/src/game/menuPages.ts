@@ -77,7 +77,7 @@ function pagePanel(id: string, most: number, children: readonly Child[]): Node {
   };
 }
 
-/** The panel a page's parts stand in: its 2 px frame, then the sheet's 18 by 22 px. */
+/** The panel a page's parts stand in: its 2 px frame, then 18 by 22 px of room round them. */
 const panelOf = (children: readonly Child[]): Node => ({
   role: 'panel',
   width: 'grow',

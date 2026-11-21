@@ -76,7 +76,7 @@ test('a body in the sea reaches no zone, and the sea brings no one back who lies
   for (let frame = 0; frame < 30; frame++) assert.equal(progress.frame(sea(0, { dead: true }), 0.1).bringBack, null);
 });
 
-test("the wreck's own ground lower than the sea's line, as her gun deck, is never the sea", () => {
+test("the wreck's own ground lower than the sea's line, as its gun deck, is never the sea", () => {
   const progress = new WreckProgress(layout);
   layout.zones.slice(0, 7).forEach((unused, index) => progress.frame(standing(index), 0.016));
   const [x, y] = [-1.6, 27.0];

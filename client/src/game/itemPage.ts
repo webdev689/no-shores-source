@@ -6,6 +6,7 @@
 // bought is chosen by a click. To the right, the item itself drawn large on a lit floor; what may be done with it goes
 // to the menu's footer.
 
+import { edged } from '../combat/barDraw.ts';
 import type { GearItem } from '../network/gearMessages.ts';
 import { CARRIED, type NodeShown, RARITIES, WORN } from '../player/gear.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
@@ -15,7 +16,6 @@ import { cardOf, traitsShown } from './gearCards.ts';
 import { HOLD_MS, dismantleMs, fillNode, quiver } from './gearHold.ts';
 import {
   INK,
-  edges,
   focusRing,
   glyphNode,
   label,
@@ -43,6 +43,15 @@ const PRESTIGE_MOST = 30;
 const GLYPH_PX = 264;
 /** A node's tile, in pixels. */
 const NODE_TILE = 44;
+/** The words' column, in pixels: the least it takes, and the most at the first words' size and at the larger; then the
+ *  page's edge, the body's padding across and the gap before the art. The column takes what room it can within those
+ *  and the art the rest, as a grid's `minmax(380px, 660px) 1fr` lays them. */
+const WORDS_LEAST = 380;
+const WORDS_MOST = 660;
+const WORDS_MOST_LARGE = 880;
+const PAGE_EDGE = 2;
+const BODY_ACROSS = 24;
+const ART_GAP = 32;
 /** The id of the item's art, which charges as a hold on its page is held. */
 export const ITEM_ART = 'item-art';
 /** The id of the item's name, which takes the focus as its page opens, so the page is read from it. */
@@ -147,7 +156,7 @@ function nodePress(
     alignX: 'center',
     alignY: 'center',
     fill: ground,
-    draw: edges(hover && state !== 'chosen' ? lit : bevel, 2, state === 'chosen' ? INK.outline : null),
+    draw: edged(hover && state !== 'chosen' ? lit : bevel, 2, state === 'chosen' ? INK.outline : null),
     children: [
       state === 'open' && {
         width: 'grow',
@@ -194,7 +203,7 @@ export function nodeGrid(
   };
 }
 
-/** A heading over a rule, as the page's sections are named. */
+/** A heading over a rule, naming a part of the page. */
 function heading(said: string, size: number): Node {
   return {
     width: 'grow',
@@ -240,6 +249,8 @@ export function itemPage(
     detail.columns.length > 0 && nodeGrid(context, item, detail.columns),
   ];
   const box = Math.min(ART_MOST, Math.max(ART_LEAST, room.height - ART_AROUND));
+  // The page stands over the menu's body, as wide as it.
+  const wordsRoom = (ui.boxOf('gear-body')?.width ?? 0) - 2 * (PAGE_EDGE + BODY_ACROSS) - ART_GAP;
   const picture = context.picture(item);
   // A module's glyph stands for its picture, drawn large at eleven times its cells, in the middle of the art's box.
   const glyph = moduleGlyph(item.kind);
@@ -258,7 +269,7 @@ export function itemPage(
     direction: 'column',
     fill: INK.ground,
     solid: true,
-    padding: 2,
+    padding: PAGE_EDGE,
     float: { to: 'parent', z: 25 },
     picture: {
       key: `item glow ${rgb}`,
@@ -304,11 +315,12 @@ export function itemPage(
         width: 'grow',
         height: 'grow',
         scroll: true,
-        padding: [14, 24, 18, 24],
-        gap: 32,
+        padding: [14, BODY_ACROSS, 18, BODY_ACROSS],
+        gap: ART_GAP,
         children: [
           {
-            width: Math.min(size > 1 ? 880 : 660, Math.max(380, Math.floor((room.width - 80) / 2))),
+            id: 'item-words',
+            width: Math.min(size > 1 ? WORDS_MOST_LARGE : WORDS_MOST, Math.max(WORDS_LEAST, wordsRoom)),
             direction: 'column',
             children: left,
           },
@@ -348,7 +360,7 @@ export function itemPage(
                 },
               },
             },
-            // Stood a tenth of the art's width off its foot, as the sheet pads it, the floor's light under it.
+            // Stood a tenth of the art's width off its foot, so the floor's light shows under it.
             children: [
               {
                 padding: [0, 0, glyph ? 0 : Math.round((ui.boxOf(ITEM_ART)?.width ?? 0) * 0.1), 0],

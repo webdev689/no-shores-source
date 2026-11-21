@@ -134,6 +134,20 @@ test('a menu’s choices run, and the veil stands over all and takes the pointer
   assert.equal(ran, 1);
 });
 
+test('while a menu is up the keys walk its choices alone, never the sea bar under it', () => {
+  const [ui, hud] = [new Interface(renderer()), new Hud()];
+  hud.veil(null);
+  hud.seaBar(SEA);
+  hud.menu({ title: 'Overlook', choices: [{ label: 'Resume', run: () => undefined }] });
+  frame(ui, hud);
+  const seen = new Set<string | null>();
+  for (let step = 0; step < 20; step++) {
+    frame(ui, hud, [{ kind: 'key', key: 'Tab' }]);
+    seen.add(ui.focusedId);
+  }
+  assert.deepEqual([...seen], ['menu:0']);
+});
+
 test('on foot beside the fight’s display the place’s name stands at the right, and gives way to a boss’s bar', () => {
   const [ui, hud] = [new Interface(renderer()), new Hud()];
   hud.veil(null);

@@ -193,7 +193,7 @@ export function shelvesNode(
 ): Node {
   return {
     role: 'well',
-    // Its 2 px frame, then the sheet's 2 by 6 px.
+    // Its 2 px frame, then 2 by 6 px of room round the words.
     padding: [4, 8],
     gap: 2,
     wrap: true,

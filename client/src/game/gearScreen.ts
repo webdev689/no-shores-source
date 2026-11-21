@@ -14,6 +14,7 @@ import {
   SLOTS,
   VAULTED,
   WORN,
+  capital,
   isModule,
   itemWords,
   nodeShown,
@@ -83,7 +84,6 @@ export interface Tile {
   readonly power: string;
 }
 
-const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 const colourOf = (rarity: number) => RARITIES[rarity]?.colour ?? '';
 
 export function tileOf(item: GearItem): Tile {

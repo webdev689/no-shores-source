@@ -3,6 +3,7 @@
 // replace, and along its foot what may be done with it. Every card of the menu (a cell's, a node's) wears the same
 // frame (`cardFrame`).
 
+import { edged } from '../combat/barDraw.ts';
 import { ELEMENTS, RARITIES } from '../player/gear.ts';
 import type { Picture } from '../player/picture.ts';
 import type { Child, Node } from '../ui/node.ts';
@@ -12,7 +13,6 @@ import {
   INK,
   type Sizes,
   elementNode,
-  edges,
   hintsNode,
   label,
   nodeGlyphNode,
@@ -64,7 +64,7 @@ export function cardFrame(
     direction: 'column',
     fill: INK.ground,
     padding: 2,
-    draw: edges([tone.lit, tone.shade, tone.shade, tone.lit], 2),
+    draw: edged([tone.lit, tone.shade, tone.shade, tone.lit], 2),
     children: [
       {
         width: 'grow',
@@ -81,6 +81,11 @@ export function cardFrame(
       hints.length > 0 && { width: 'grow', padding: [7, 12, 8, 12], children: [hintsNode(hints, 1, 12)] },
     ],
   };
+}
+
+/** A card that only names what it stands beside (a currency, the account), as wide as the name. */
+export function nameCard(sizes: Sizes, name: string): Node {
+  return { ...cardFrame(sizes, rarityTone(null), [cardName(name, null)], []), width: 'fit' };
 }
 
 /** A card's name, in its rarity's lit tone (a Normal piece's in its own white). */

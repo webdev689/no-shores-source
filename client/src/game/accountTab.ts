@@ -37,7 +37,7 @@ export class AccountPanel {
   private blocked: readonly string[] | string | null = null;
   private blockedSaid = '';
   private unblocking = false;
-  /** Whether the fields have been emptied since the panel was made, as the page's own fields started empty. */
+  /** Whether the fields have been emptied since the panel was made, so they start empty. */
   private emptied = false;
   /** The place in the list whose press takes the focus once the list comes again, after an unblock. */
   private focusAt: number | null = null;

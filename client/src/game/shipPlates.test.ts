@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { shipPlateNodes } from './shipPlates.ts';
 
-test('each plate stands where it was laid, its emblem’s square as tall as it, a Boss’s with her faction', () => {
+test('each plate stands where it was laid, its emblem’s square as tall as it, a Boss’s with its faction', () => {
   const bar = {
     key: 1,
     left: 10.4,
@@ -22,6 +22,6 @@ test('each plate stands where it was laid, its emblem’s square as tall as it, 
   assert.equal(plate?.through, true, 'the world is clicked through it');
   const square = plate?.children?.[0];
   assert.ok(square && square.width === 26 && square.height === 26);
-  assert.ok(JSON.stringify(plate).includes('rank mark elite'), 'an Elite wears her mark');
+  assert.ok(JSON.stringify(plate).includes('rank mark elite'), 'an Elite wears its mark');
   assert.ok(JSON.stringify(boss).includes('THE GREY TITHE'));
 });

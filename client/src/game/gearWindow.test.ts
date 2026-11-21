@@ -7,9 +7,12 @@ import { Stack } from '../ui/stack.ts';
 import { type Face, widthOf } from '../ui/text.ts';
 import { Interface, type UiEvent } from '../ui/ui.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
+import { wordsOf } from '../ui/uiForTests.ts';
+import type { Laid } from '../ui/node.ts';
 import { OPEN_AT, gearTakesKeys } from './gearScreen.ts';
 import { sampleGear } from './gearShots.ts';
 import { startGearWindow } from './gearWindow.ts';
+import { Hud } from './hud.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
@@ -42,13 +45,15 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false, pape
   });
   Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });
   const asked: GearAsk[] = [];
-  const here = gear && (() => ({ gear, ask: (ask: GearAsk) => asked.push(ask), forge: null, dress: null }));
+  const state = { gear };
+  const here = () =>
+    state.gear && { gear: state.gear, ask: (ask: GearAsk) => asked.push(ask), forge: null, dress: null };
   const stack = new Stack();
   stack.add(
     startGearWindow(
       () => false,
       null,
-      here ?? (() => null),
+      here,
       () => papers,
       () => null,
       resting,
@@ -60,9 +65,11 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false, pape
     ui.frame(VIEW, events, 1 / 60);
     ui.draw(stack.node(ui));
   };
+  /** A key as the page sends it: to the window's listeners, and a key going down to the interface's next frame. */
   const key = (name: string, kind = 'keydown') => {
     const event = new FakeEvent(kind, { key: name });
     window.dispatchEvent(event);
+    if (kind === 'keydown') frame([{ kind: 'key', key: name }]);
   };
   /** A click on what `id` names, laid last frame. */
   const click = (id: string, button = 0) => {
@@ -81,7 +88,7 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false, pape
     frame();
     frame();
   };
-  return { ui, frame, key, click, open, asked, window };
+  return { ui, frame, key, click, open, asked, window, state };
 }
 
 test('while the story plays the menu never opens, by its keys or when asked, so the keys stay with the story', () => {
@@ -258,4 +265,129 @@ test('the Ship tab steps back from an officer’s page with Escape, and shows it
   const away = menu(null, () => false, papers);
   away.open('ship');
   assert.ok(away.ui.boxOf('page-ship'), 'with no gear, its papers still show');
+});
+
+test("the pad's B steps the menu back as Escape does: the flyout first, then the menu", () => {
+  const { ui, frame, click, open } = menu();
+  open('character');
+  click('slot-0');
+  assert.ok(ui.boxOf('flyout'), 'the flyout is open');
+  frame([{ kind: 'pad', button: 'back' }]);
+  frame();
+  assert.equal(ui.boxOf('flyout'), null, 'B closes the flyout');
+  assert.ok(ui.boxOf('gear-screen'), 'and leaves the menu open');
+  frame([{ kind: 'pad', button: 'back' }]);
+  frame();
+  assert.equal(ui.boxOf('gear-screen'), null, 'B again closes the menu');
+});
+
+test("a key's focus in a slot's flyout goes back to its slot as Escape closes it", () => {
+  const { ui, frame, key, open } = menu();
+  open('character');
+  ui.focusOn('slot-0');
+  frame([{ kind: 'key', key: 'Enter' }]);
+  frame();
+  assert.ok(ui.boxOf('flyout'), 'Enter on the slot opens its flyout');
+  ui.focusOn('item-8');
+  frame([{ kind: 'key', key: 'ArrowLeft' }]);
+  assert.equal(ui.focusedId, 'item-7', 'the keys walk the flyout');
+  key('Escape');
+  frame();
+  assert.equal(ui.boxOf('flyout'), null);
+  assert.equal(ui.focusedId, 'slot-0', 'the focus is back on its slot');
+});
+
+test('a focused carried piece that goes (dismantled, worn, sold) leaves the focus on the one beside it', () => {
+  const { ui, frame, click, open, state } = menu();
+  open('character');
+  click('slot-0');
+  ui.focusOn('item-8');
+  frame([{ kind: 'key', key: 'ArrowLeft' }]);
+  assert.equal(ui.focusedId, 'item-7');
+  const gear = sampleGear();
+  state.gear = { ...gear, items: gear.items.filter((item) => item.id !== 7), answered: 1 };
+  frame();
+  frame();
+  assert.equal(ui.focusedId, 'item-8', 'the next piece takes the focus');
+  assert.ok(ui.keyFocused, 'as the keys left it');
+});
+
+test("an item's words take its page's room as a grid's minmax(380px, 660px) 1fr does, the art the rest", () => {
+  const { ui, click, open, frame } = menu();
+  open('character');
+  click('slot-0', 2);
+  frame();
+  const [words, art] = [ui.boxOf('item-words'), ui.boxOf('item-art')];
+  assert.ok(words && art);
+  assert.equal(words.width, 660, 'at 1280 by 720, as wide as the grid lets it');
+  assert.equal(art.x - (words.x + words.width), 32, 'the grid’s gap before the art');
+});
+
+test("a keeper's coin and the account's mark are named in a card on hover, and on a key's focus", () => {
+  const { ui, open, frame } = menu();
+  open('weaponsmith');
+  const laid = () => (ui as unknown as { laid: readonly Laid[] }).laid;
+  const card = () => wordsOf(laid().filter((each) => ui.boxOf('gear-card') && inside(each, 'gear-card')));
+  const inside = (each: Laid, id: string): boolean =>
+    each.node.id === id || (each.parent !== null && inside(each.parent, id));
+  const coin = laid().find((each) => each.node.label?.endsWith('Aurem'));
+  assert.ok(coin?.node.id, 'the purse shows Aurem, which the pointer and the keys reach');
+  frame([{ kind: 'pointer', x: coin.box.x + 4, y: coin.box.y + 4 }]);
+  frame();
+  frame();
+  assert.ok(card().includes('Aurem'), `the currency is named on hover (${JSON.stringify(card())})`);
+  frame([{ kind: 'leave' }]);
+  ui.focusOn('account-mark');
+  frame([
+    { kind: 'key', key: 'Tab', shift: true },
+    { kind: 'key', key: 'Tab' },
+  ]);
+  frame();
+  frame();
+  assert.equal(ui.focusedId, 'account-mark');
+  assert.ok(card().includes('Offline'), `the account is named on a key's focus (${JSON.stringify(card())})`);
+});
+
+test('with the menu open, Tab never reaches the sea bar under it, and Enter presses nothing there', () => {
+  const { window } = fakePage();
+  Object.assign(globalThis, { devicePixelRatio: 1, innerWidth: VIEW.width, innerHeight: VIEW.height });
+  Object.assign(globalThis.document, { exitPointerLock: () => undefined, hidden: false });
+  const gear = sampleGear();
+  const hud = new Hud();
+  hud.veil(null);
+  let left = 0;
+  hud.onLeaveHelm(() => left++);
+  hud.seaBar({ pace: 2, sailing: true, resumable: false, landfall: null, canLeave: true, canManage: true });
+  const stack = new Stack();
+  stack.add((ui) => hud.node(ui));
+  const here = () => ({ gear, ask: () => undefined, forge: null, dress: null });
+  stack.add(
+    startGearWindow(
+      () => false,
+      null,
+      here,
+      () => null,
+    ),
+  );
+  const ui = new Interface(renderer());
+  ui.speak = () => undefined;
+  const frame = (events: UiEvent[] = []) => {
+    ui.frame(VIEW, events, 1 / 60);
+    ui.draw(stack.node(ui));
+  };
+  frame();
+  window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view: 'ship' } }));
+  frame();
+  frame();
+  assert.ok(ui.boxOf('gear-screen') && ui.boxOf('sea:leave'), 'the menu open over the sea bar');
+  const seen = new Set<string | null>();
+  for (let step = 0; step < 60; step++) {
+    frame([{ kind: 'key', key: 'Tab' }]);
+    seen.add(ui.focusedId);
+  }
+  assert.equal(seen.has('sea:leave'), false, 'Tab walks the menu alone');
+  ui.focusOn('sea:leave');
+  frame([{ kind: 'key', key: 'Enter' }]);
+  frame();
+  assert.equal(left, 0, 'Enter presses nothing under the menu');
 });

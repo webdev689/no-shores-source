@@ -1,8 +1,6 @@
-// Sample gear for checking the menu's pages headless (`tools/uiShot.mjs`): a player wearing a piece in every slot,
-// carrying more, with Vestiges, stocks and resources, and small pixel pictures standing in for the forge's. The game
-// never imports it.
+// Sample gear for checking the menu's pages in tests: a player wearing a piece in every slot, carrying more, with
+// Vestiges, stocks and resources. The game never imports it.
 import type { GearItem, GearState } from '../network/gearMessages.ts';
-import type { Picture } from '../player/picture.ts';
 
 const perk = (kind: number, growth: number) => ({
   kind,
@@ -122,21 +120,3 @@ export function sampleGear(): GearState {
     standing: { pledge: 0, reputation: [], packages: [], artLevels: [3], artXp: [0], artOwned: [0] },
   };
 }
-
-/** A picture `width` by `height` of a few colours in a lozenge, standing in for an item's own. */
-export function samplePicture(width: number, height: number, hue: number): Picture {
-  const pixels = new Uint8ClampedArray(width * height * 4);
-  for (let row = 0; row < height; row++)
-    for (let column = 0; column < width; column++) {
-      const across = Math.abs(column - (width - 1) / 2) / (width / 2);
-      const down = Math.abs(row - (height - 1) / 2) / (height / 2);
-      if (across + down > 1) continue;
-      const lit = (column + row) % 4 === 0 ? 60 : 0;
-      pixels.set([(hue * 3 + lit) % 256, (120 + lit) % 256, (hue + 90) % 256, 255], (row * width + column) * 4);
-    }
-  return { width, height, pixels };
-}
-
-/** Each sample item's picture: a long thin one for a weapon, a squat one for armour. */
-export const samplePictureOf = (item: GearItem): Picture =>
-  item.attack > 0 ? samplePicture(6, 22, item.id * 40) : samplePicture(14, 12, item.id * 40);

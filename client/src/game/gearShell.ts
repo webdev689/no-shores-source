@@ -177,7 +177,8 @@ export function footerNode(
 const stepped = (age: number, seconds: number, still: boolean) =>
   still ? 1 : Math.min(1, Math.floor((age / seconds) * 4 + 1e-9) / 4);
 
-/** The world dimmed behind the menu, taking the pointer, and the menu's window over it: `head`, `body` and `foot`. */
+/** The world dimmed behind the menu, taking the pointer, and the menu's window over it, holding the keys: `head`,
+ *  `body` and `foot`. */
 export function screenNode(
   ui: Interface,
   view: { readonly width: number; readonly height: number },
@@ -202,6 +203,8 @@ export function screenNode(
       role: 'window',
       label: 'Menu',
       solid: true,
+      // The keys and the pad are the menu's while it is open: nothing under it takes the focus or a press.
+      modal: true,
       direction: 'column',
       width: view.width - 2 * across,
       height: view.height - 2 * down,
