@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BANNER_KEYS, HOURGLASS_URL, bannerUrl, poolMarkUrl } from './journalArt.ts';
+import { BANNER_KEYS, HOURGLASS_URL, bannerUrl } from './journalArt.ts';
 import { pixelsOf } from './pixelsForTests.ts';
 import { TONES } from './tones.ts';
 
@@ -27,11 +27,4 @@ test('a story mission’s banner and a side quest’s differ, and a key not draw
   assert.equal(bannerUrl('a-kind-to-come'), bannerUrl('side'));
   for (const key of BANNER_KEYS)
     for (const tone of pixelsOf(bannerUrl(key)).pixels.values()) assert.ok(PALETTE.has(tone));
-});
-
-test('each of the board’s three pools has its own mark, eleven square, and no other pool has one', () => {
-  const marks = [0, 1, 2].map((pool) => poolMarkUrl(pool) ?? '');
-  assert.equal(new Set(marks).size, 3);
-  for (const url of marks) assert.deepEqual([pixelsOf(url).width, pixelsOf(url).height], [11, 11]);
-  assert.equal(poolMarkUrl(3), null);
 });

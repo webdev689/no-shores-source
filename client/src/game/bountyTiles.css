@@ -13,15 +13,6 @@
   height: 44px;
   image-rendering: pixelated;
 }
-.bounty-tile.bounty-pool-0 {
-  background-color: #3a352a;
-}
-.bounty-tile.bounty-pool-1 {
-  background-color: #1d2a33;
-}
-.bounty-tile.bounty-pool-2 {
-  background-color: #3d0d0a;
-}
 .bounty-tile .bounty-gauge {
   position: absolute;
   inset: auto 4px 4px;
@@ -43,11 +34,10 @@
 .bounty-tile-paid .bounty-tile-mark {
   opacity: 0.45;
 }
-.bounty-tile-check {
+img.bounty-tile-check {
   position: absolute;
-  right: 4px;
+  right: 2px;
   bottom: 2px;
-  color: var(--brass-lit);
 }
 /* The tile whose card shows: white, as Destiny marks what is selected and the menu marks its focus. */
 #hud .bounty-tile-chosen {
@@ -60,8 +50,8 @@
 .bounty-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 12px 14px 14px;
   font-size: var(--type-s);
 }
 .bounty-card-name {
@@ -69,17 +59,25 @@
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--word);
 }
+/* Its kind by its mark, small under its name, as Destiny's tracker says "Crucible Bounty" under a bounty's. */
 .bounty-card-kind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: -2px;
   font-size: var(--type-xs);
-  color: var(--faint);
-  text-transform: uppercase;
   letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
 }
-.bounty-card-words,
-.bounty-card-pay,
+.bounty-card-words {
+  margin: 4px 0 0;
+}
 .bounty-card-state {
-  margin: 0;
+  margin: 2px 0 0;
+  color: var(--faint);
 }
 .bounty-card-count {
   display: flex;
@@ -92,7 +90,22 @@
   height: 6px;
 }
 .bounty-card-pay {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  margin: 2px 0 0;
   color: var(--gain);
+  font-variant-numeric: tabular-nums;
+}
+.bounty-card-aurem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.bounty-card > .plus-button,
+.bounty-card > .plus-primary {
+  margin-top: 6px;
 }
 
 .gear-board {

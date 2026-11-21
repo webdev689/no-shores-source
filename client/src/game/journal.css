@@ -1,16 +1,28 @@
-/* The Journal's timers panel, after DFO's timers window: it lies over the page from its top, its head standing still
-   and its list scrolling under it. */
+/* The Journal's timers panel, after DFO's timers window: it lies over the page from its top, its head and its foot
+   standing still and its list scrolling between them. Each row leads with its icon in a sunk well, its countdown the
+   number that leads at its right; the foot says in words whatever the pointer or the focus rests on. */
 .journal-timers {
   box-sizing: border-box;
   position: absolute;
   inset: 0 0 auto;
   z-index: 5;
   margin-inline: auto;
-  width: min(640px, 100%);
+  width: min(720px, 100%);
   max-height: 100%;
   display: flex;
   flex-direction: column;
-  padding: 16px 20px 18px;
+  padding: 16px 20px 0;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55);
+}
+/* While the timers are down the page under them rests, dimmed as DFO's stage dims what is behind its window. */
+.journal:has(> .journal-timers:not([hidden]))::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  background-color: rgba(8, 10, 15, 0.72);
+  /* Out over the body's own margin, which clips it: a shadow widens nothing a scrollbar would measure. */
+  box-shadow: 0 0 0 24px rgba(8, 10, 15, 0.72);
 }
 /* DFO's window ground, solid, so nothing under the panel shows through the kit's panel role. */
 #hud .journal-timers {
@@ -24,79 +36,210 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  padding-bottom: 8px;
 }
 .journal-timers-title {
   margin: 0;
   font-size: var(--type-l);
-  letter-spacing: 0.18em;
+  font-weight: 500;
+  letter-spacing: round(up, calc(5em / 22), 1px);
   text-transform: uppercase;
-}
-.journal-timers-lead {
-  margin: 6px 0 4px;
 }
 .journal-timers-list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding: 0 4px 8px 0;
+  scrollbar-color: var(--edge) transparent;
+  scrollbar-width: thin;
 }
 .journal-timers-group {
-  margin: 14px 0 6px;
+  margin: 18px 0 6px;
+  padding-bottom: 4px;
   font-size: var(--type-xs);
+  font-weight: 500;
   letter-spacing: 0.2em;
   text-transform: uppercase;
-}
-.journal-timer-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 0;
-}
-.journal-timer-row + .journal-timer-row {
-  border-top: 1px solid rgba(163, 152, 128, 0.18);
-}
-.journal-timer-name,
-.journal-timer-week .gear-week-dungeon > .gear-week-row:first-child .gear-week-what b {
-  font-size: var(--type-m);
-  font-weight: 500;
-}
-.journal-timer-name::before {
-  content: '◆ ';
   color: var(--brass);
 }
+.journal-timers-group:first-child {
+  margin-top: 6px;
+}
+.journal-timer-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  column-gap: 14px;
+  align-items: start;
+  padding: 10px 8px;
+}
+.journal-timer-row + .journal-timer-row {
+  border-top: 1px solid rgba(163, 152, 128, 0.12);
+}
+.journal-timer-row:hover {
+  background-color: rgba(243, 207, 134, 0.035);
+}
+/* The menu's white focus, drawn inside the row so the list's edge never cuts it. */
+#hud .journal-timer-row:focus-visible {
+  outline-offset: -2px;
+}
+.journal-timer-well {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+}
+img.journal-icon {
+  flex: none;
+  image-rendering: pixelated;
+}
+.journal-timer-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding-top: 3px;
+}
+.journal-timer-name {
+  font-size: var(--type-m);
+  font-weight: 500;
+  color: var(--word);
+  overflow-wrap: anywhere;
+}
+.journal-marks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.journal-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.journal-mark-words {
+  font-size: var(--type-xs);
+  color: var(--faint);
+}
+/* A tier's seas and how this character stands with them, and a modifier, each set in a small well; a shut tier's
+   seas rest. */
+.journal-standing,
+.journal-modifier {
+  gap: 2px;
+  padding: 1px 3px 1px 1px;
+  border: 1px solid rgba(163, 152, 128, 0.2);
+  background-color: rgba(6, 7, 9, 0.55);
+}
+.journal-modifier {
+  gap: 4px;
+  padding-right: 6px;
+}
+/* What a run pays, held apart from its rules by a hairline. */
+.journal-rewards {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 10px;
+  border-left: 1px solid rgba(163, 152, 128, 0.25);
+}
+.journal-shut > img:first-child {
+  filter: grayscale(0.7);
+  opacity: 0.55;
+}
+.journal-level {
+  padding: 1px 6px;
+  border: 1px solid rgba(192, 138, 62, 0.5);
+  font-size: var(--type-s);
+  color: var(--brass-lit);
+  font-variant-numeric: tabular-nums;
+}
+/* The seas a modifier is on, small before its flame. */
+img.journal-modifier-seas {
+  width: 12px;
+  height: 12px;
+}
+.journal-isles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(156px, 1fr));
+  gap: 0 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.journal-isle {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(163, 152, 128, 0.08);
+  font-size: var(--type-xs);
+}
+.journal-isle-name {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--faint);
+}
+.journal-isle-band {
+  flex: none;
+  color: var(--brass-lit);
+  font-variant-numeric: tabular-nums;
+}
 .journal-timer-clock {
-  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 2px;
+  gap: 3px;
+  padding-top: 2px;
   text-align: right;
 }
 .journal-timer-count {
-  font-size: var(--type-m);
+  font-size: var(--type-l);
+  line-height: 1;
   color: var(--brass-lit);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .journal-timer-live .journal-timer-count {
   color: #9fe8b4;
 }
 .journal-timer-now {
-  font-size: 10px;
+  padding: 0 5px;
+  font-size: var(--type-xs);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #9fe8b4;
+  color: #0a0c11;
+  background-color: #9fe8b4;
 }
 .journal-timer-when {
   font-size: var(--type-xs);
   color: var(--faint);
+  white-space: nowrap;
 }
+.journal-timers-said {
+  flex: none;
+  min-height: 2.6em;
+  margin: 0 -20px;
+  padding: 10px 20px 12px;
+  border-top: 1px solid rgba(163, 152, 128, 0.18);
+  background-color: rgba(243, 207, 134, 0.03);
+  font-size: var(--type-s);
+  color: var(--word);
+}
+/* On a phone a row's countdown goes under its name, its words beside it. */
 @media (max-width: 560px) {
   .journal-timer-row {
-    flex-wrap: wrap;
+    grid-template-columns: 44px minmax(0, 1fr);
   }
   .journal-timer-clock {
-    align-items: flex-start;
+    grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    padding-top: 6px;
     text-align: left;
   }
 }
@@ -248,9 +391,40 @@
   min-width: 100%;
   margin-top: 10px;
 }
+/* With nothing held, the banners a quest wears rest over the line that says why. */
+.journal-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 56px 16px 24px;
+  text-align: center;
+}
+.journal-empty-banners {
+  display: flex;
+  gap: 20px;
+  opacity: 0.32;
+  filter: grayscale(0.35);
+}
+.journal-empty p {
+  max-width: 44ch;
+  margin: 0;
+}
 @media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
   .journal-cards {
     grid-auto-rows: 128px;
+  }
+  /* Where names stand at their own size, a row's icon steps up to four times its twelve. */
+  .journal-timer-row {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+  }
+  .journal-timer-well {
+    width: 56px;
+    height: 56px;
+  }
+  .journal-timer-well > img.journal-icon {
+    width: 48px;
+    height: 48px;
   }
 }
 /* Where two columns of cards do not fit, one; the bounties stay at the right while they fit beside it. */
@@ -306,25 +480,4 @@
   #hud .gear-hourglass:focus-visible img {
     transition: transform 240ms steps(4);
   }
-}
-
-/* In the timers a line's words and its state wrap within the row, so a long word on a week's dungeon or a gate's
-   reason never pushes past the clock at its right. */
-.journal-timer-row > :first-child {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-/* A week's dungeon is a row as the others are: its name marked and in the names' colour. */
-.journal-timer-week .gear-week-dungeon > .gear-week-row:first-child .gear-week-what b::before {
-  content: '◆ ';
-  color: var(--brass);
-}
-.journal-timer-row .gear-week-row {
-  flex-wrap: wrap;
-}
-.journal-timer-row .gear-week-what > * {
-  white-space: normal;
-}
-.journal-timer-row .gear-week-state {
-  flex: 0 1 auto;
 }

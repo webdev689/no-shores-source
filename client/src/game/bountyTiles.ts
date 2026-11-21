@@ -3,12 +3,14 @@
 // rest: its name and kind, its words, its count, what it pays, and at the board its press.
 import './bountyTiles.css';
 import { make } from '../editor/dom.ts';
-import { poolMarkUrl } from '../plus/journalArt.ts';
 import { ROLES } from '../plus/kit.ts';
-import type { BountyRow } from './bountyBoard.ts';
+import type { BountyRow, Pay } from './bountyBoard.ts';
+import { glyphImage } from './gearDom.ts';
+import { type IconName, POOL_GROUNDS, iconImage, poolMarkUrl } from './journalIcons.ts';
 
-/** Each pool's kind, as a card names it under the bounty's name. */
+/** Each pool's kind, as a card names it under the bounty's name, with its mark. */
 export const BOUNTY_KINDS: readonly string[] = ['Land bounty', 'Sea bounty', 'Dungeon bounty'];
+const KIND_MARKS: readonly IconName[] = ['land', 'sea', 'dungeon'];
 
 /** A gauge of a count toward its target. */
 function gauge(count: number, target: number): HTMLElement {
@@ -26,6 +28,7 @@ export function bountyTile(row: BountyRow, size: number): HTMLButtonElement {
   tile.type = 'button';
   tile.dataset['key'] = `bounty-${row.place}`;
   tile.style.setProperty('--bounty-tile', `${size}px`);
+  tile.style.backgroundColor = POOL_GROUNDS[row.pool] ?? '';
   const said = { open: 'Not taken', held: row.progress, done: 'Done', paid: 'Turned in' }[row.state];
   tile.setAttribute('aria-label', `${row.name}: ${row.words} ${said}`);
   const mark = make('img', '', 'bounty-tile-mark');
@@ -33,24 +36,32 @@ export function bountyTile(row: BountyRow, size: number): HTMLButtonElement {
   tile.append(mark);
   if (row.state === 'held' || row.state === 'done') tile.append(gauge(row.count, row.target));
   if (row.state === 'paid') {
-    const check = make('span', '✓', 'bounty-tile-check');
-    check.setAttribute('aria-hidden', 'true');
+    const check = iconImage('taken', '', 24);
+    check.classList.add('bounty-tile-check');
     tile.append(check);
   }
   return tile;
 }
 
-/** A bounty's card: its name, its kind under it, its words, a gauge with its count, what it pays, and `foot` (the
- *  board's press, or a word on its state). */
-export function bountyCard(row: BountyRow, pay: readonly [string, string], foot: HTMLElement | null): HTMLElement {
+/** A bounty's card: its name, its kind under it by its mark, its words, a gauge with its count, what it pays (its XP,
+ *  and its Aurem by the Aurem glyph), and `foot` (the board's press, or a word on its state). */
+export function bountyCard(row: BountyRow, pay: Pay, foot: HTMLElement | null): HTMLElement {
   const card = make('div', '', `bounty-card ${ROLES.panel}`);
   card.dataset['key'] = 'bounty-card';
-  card.append(make('b', row.name, 'bounty-card-name'), make('span', BOUNTY_KINDS[row.pool] ?? '', 'bounty-card-kind'));
-  card.append(make('p', row.words, 'bounty-card-words'));
+  const kind = make('span', '', 'bounty-card-kind');
+  kind.append(iconImage(KIND_MARKS[row.pool] ?? 'land', '', 24), make('span', BOUNTY_KINDS[row.pool] ?? ''));
+  card.append(make('b', row.name, 'bounty-card-name'), kind, make('p', row.words, 'bounty-card-words'));
   const counted = make('div', '', 'bounty-card-count');
   counted.append(gauge(row.state === 'paid' ? row.target : row.count, row.target));
   counted.append(make('span', `${row.state === 'paid' ? row.target : row.count} / ${row.target}`));
-  card.append(counted, make('p', pay[0], 'bounty-card-pay'), make('p', pay[1], 'bounty-card-pay'));
+  const paid = make('p', '', 'bounty-card-pay');
+  const aurem = glyphImage('aurem');
+  [aurem.width, aurem.height, aurem.alt] = [24, 24, 'Aurem'];
+  aurem.classList.add('journal-icon');
+  const aurems = make('span', '', 'bounty-card-aurem');
+  aurems.append(aurem, make('span', `+${pay.aurem.toLocaleString()}`));
+  paid.append(make('span', `+${pay.xp.toLocaleString()} XP`), aurems);
+  card.append(counted, paid);
   if (foot) card.append(foot);
   return card;
 }

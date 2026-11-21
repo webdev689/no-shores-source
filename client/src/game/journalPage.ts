@@ -6,7 +6,7 @@ import type { GearState } from '../network/gearMessages.ts';
 import { HOURGLASS_URL, bannerUrl } from '../plus/journalArt.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { ThisWeek } from './activityWords.ts';
-import { type BountyRow, bountyWords, payLines } from './bountyBoard.ts';
+import { type BountyRow, bountyWords, payOf } from './bountyBoard.ts';
 import { bountyCard, bountyTile, chooseTile, moveAmongTiles } from './bountyTiles.ts';
 import { pressOf } from './gearDom.ts';
 import { STEP_BACK } from './gearScreen.ts';
@@ -119,7 +119,16 @@ export function startJournal(source: JournalSource | null, now: () => number = (
         written === 0
           ? 'No quests yet. The story’s missions and side quests come later.'
           : 'No quests held. Quests you take up are kept here.';
-      quests.append(make('p', said, 'gear-hint gear-empty'));
+      // The two banners a quest wears stand over the line, resting, so the page reads as waiting rather than empty.
+      const empty = make('div', '', 'journal-empty');
+      const banners = make('div', '', 'journal-empty-banners');
+      for (const key of ['story', 'side']) {
+        const banner = make('img', '', 'journal-banner');
+        [banner.src, banner.alt] = [bannerUrl(key), ''];
+        banners.append(banner);
+      }
+      empty.append(banners, make('p', said, 'gear-hint'));
+      quests.append(empty);
       return;
     }
     head.append(make('span', `Page ${pageAt + 1} / ${count}`, 'journal-page-at'));
@@ -143,15 +152,15 @@ export function startJournal(source: JournalSource | null, now: () => number = (
   const buildBounties = (gear: GearState | null, day: number | null) => {
     const column = bountyColumnOf(gear, day);
     const head = make('div', '', 'journal-bounties-head');
-    head.append(
-      make('h3', 'Bounties', 'journal-title'),
-      make('span', `${column.taken.length} / ${column.slots}`, `gear-chip ${ROLES.chip}`),
-    );
+    head.append(make('h3', 'Bounties', 'journal-title'));
+    // How many are taken of the board's, once there is a board to count.
+    if (column.slots > 0)
+      head.append(make('span', `${column.taken.length} / ${column.slots}`, `gear-chip ${ROLES.chip}`));
     const grid = make('div', '', 'journal-tiles');
     const said = make('div', '', 'journal-bounty-said');
     said.dataset['key'] = 'bounty-said';
     said.setAttribute('aria-live', 'polite');
-    const pay = gear ? payLines(gear) : (['', ''] as const);
+    const pay = gear ? payOf(gear) : { xp: 0, aurem: 0 };
     const tiles: HTMLElement[] = [];
     const show = (row: BountyRow) => {
       chosen = row.place;
@@ -195,8 +204,8 @@ export function startJournal(source: JournalSource | null, now: () => number = (
         keyed.clear();
         buildQuests(cards, written.length);
         buildBounties(gear, day);
-        // A control gone (a tile as the day turns, an arrow as the last quest goes) leaves the focus on the page's first.
-        if (focused) (keyed.get(focused) ?? [...keyed.values()][0] ?? hourglass).focus();
+        // A control gone (a tile as the day turns, an arrow as the last quest goes) leaves the focus on the hourglass.
+        if (focused) (keyed.get(focused) ?? hourglass).focus();
       }
       panel.show(week, now());
       return node;

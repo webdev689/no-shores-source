@@ -257,7 +257,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
 - **At the bounty board**, E opens its screen in the menu ([[Interface]], "The social space's counters"), after
   Destiny's Bounty Tracker: "Bounties for XP and Aurem, posted each day.", the day's six as tiles in a row a kind
   (land, sea, dungeons), a bar counting to the next board, and the chosen tile's card (its name, its kind, its words,
-  its count, what it pays, and its press, Take or Turn in, with E). Arrows move between tiles; E or a click takes or
+  its count, what it pays, and its press, Take or Turn in, with E). Each bounty has a short name of its own, as
+  Destiny's do (`gear::bounties`, "Tithe Collector" to "Deep Delver"), carried with the board to the page. Arrows move between tiles; E or a click takes or
   turns one in. Before the prologue the tiles are grey and the card says why.
 - **At a dungeon's entrance**, E opens a card ([[Interface]], "At a dungeon's entrance"): the run's tier and level,
   its rules and modifiers, what it pays or that it is taken, and why it is shut if it is, with Enter. A patrol's

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearState } from '../network/gearMessages.ts';
-import { boardPage, bountyRows, bountyWords, payLines } from './bountyBoard.ts';
+import { boardPage, bountyRows, bountyWords, payOf } from './bountyBoard.ts';
 import type { PageContext } from './characterPage.ts';
 import { type FakeElement, FakeEvent, fakePage } from './pageForTests.ts';
 
@@ -42,7 +42,7 @@ test('each of the day’s bounties is taken, counted, turned in once done, and t
   );
   assert.deepEqual(rows[0]?.press?.ask, { kind: ASKS.takeBounty, node: 0, item: 20_778 }, 'by the day it was shown');
   assert.deepEqual(rows[2]?.press?.ask, { kind: ASKS.turnInBounty, node: 2, item: 20_778 });
-  assert.deepEqual(payLines(gear), ['+3,500 XP', '+210 Aurem']);
+  assert.deepEqual(payOf(gear), { xp: 3_500, aurem: 210 });
   assert.ok(
     bountyRows({ ...gear, prologueDone: false }).every((row) => row.press === null),
     'shut until the prologue',
@@ -105,10 +105,14 @@ test('the board is the day’s six as tiles, a row a kind, with no words on a ti
     ],
   );
   const tiles = classed(root, 'bounty-tile');
+  assert.ok(
+    tiles.every((tile) => tile.textContent === ''),
+    'no words on a tile: a mark and a look',
+  );
   assert.deepEqual(
-    tiles.map((tile) => tile.textContent),
-    ['', '', '', '✓', '', ''],
-    'a mark and a look, a check once turned in',
+    tiles.map((tile) => tile.all().filter((node) => node.tagName === 'IMG').length),
+    [1, 1, 1, 2, 1, 1],
+    'its mark, and a drawn tick once turned in',
   );
   assert.deepEqual(
     tiles.map((tile) =>
@@ -123,15 +127,14 @@ test('the board is the day’s six as tiles, a row a kind, with no words on a ti
 test('the chosen tile’s card says its name, kind, words, count and pay, and E or a click takes or turns it in', () => {
   const { root, asked, done } = boardOf(sixOnTheBoard);
   const card = () => keyed(root, 'bounty-card');
-  for (const words of [
-    'Tithe Collector',
-    'Land bounty',
-    'Defeat 30 Grey Tithe foes.',
-    '0 / 30',
-    '+3,500 XP',
-    '+210 Aurem',
-  ])
+  for (const words of ['Tithe Collector', 'Land bounty', 'Defeat 30 Grey Tithe foes.', '0 / 30', '+3,500 XP', '+210'])
     assert.ok(card()?.find(words), words);
+  assert.ok(
+    card()
+      ?.all()
+      .some((node) => node.tagName === 'IMG' && node['alt' as never] === 'Aurem'),
+    'its Aurem by the Aurem glyph',
+  );
   assert.ok(labelled(root, 'Take: Tithe Collector'), 'its press, E on its keycap');
   keyed(root, 'bounty-2')?.dispatchEvent(new FakeEvent('pointerenter'));
   assert.ok(card()?.find('Broadside') && card()?.find('Sea bounty') && labelled(root, 'Turn in: Broadside'));

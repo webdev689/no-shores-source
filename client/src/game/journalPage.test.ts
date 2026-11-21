@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
-import { bannerUrl, poolMarkUrl } from '../plus/journalArt.ts';
+import { bannerUrl } from '../plus/journalArt.ts';
+import { poolMarkUrl } from './journalIcons.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { STEP_BACK } from './gearScreen.ts';
 import { type JournalSource, startJournal } from './journalPage.ts';
@@ -39,7 +40,7 @@ const geared = (quests: readonly { id: string; step: number; done: boolean }[], 
   ({ prologueDone: true, day: 20_778, bounties, quests, bountyXp: 3_500, bountyAurem: 210 }) as unknown as GearState;
 /** A day's and a week's word with nothing on but their resets. */
 const weekEnding = (endsAt: number, day = 20_778): ThisWeek => ({
-  today: { day, endsAt, pays: '', modifier: null, tiers: [], dungeons: [] },
+  today: { day, endsAt, pays: '', rewards: [], modifier: null, tiers: [], dungeons: [] },
   week: { endsAt: endsAt + 3 * 86_400_000, dungeons: [], boon: null },
 });
 function journalOf(source: JournalSource, now = () => FRIDAY_AT) {
@@ -143,6 +144,7 @@ test('gear of another day’s board, kept at sea through the reset, shows no bou
   const { root } = journalOf({ week: () => weekEnding(FRIDAY_AT, 20_779), kept: () => geared([]), written: [] });
   assert.equal(classed(root, 'bounty-tile').length, 0);
   assert.ok(root.find('Six a day, from the board in Overlook’s plaza.'));
+  assert.equal(root.find('0 / 0'), undefined, 'no count without a board to count');
 });
 
 test('the hourglass or T drops the timers from the top; Escape, Close or the hourglass take them up, the focus going back', () => {

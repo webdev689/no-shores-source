@@ -23,6 +23,13 @@ Asked whether bounties should carry names, as Destiny's do:
 
 > "Yeah come up with catchy short names"
 
+Looking over the pictures of the built Journal, the owner wrote:
+
+> "I want you to really go deep and make this as detailed as possible. The timers themselves need to utilize more
+> icons and less text.
+>
+> Everything needs to be beautiful. Dont come back until this is perfection"
+
 ## What it settles
 
 - **The Journal is built in full now.**
@@ -32,6 +39,7 @@ Asked whether bounties should carry names, as Destiny's do:
 - **On the Journal tab, DFO's timer hourglass stands in the account portrait's place.**
 - **Bounties look like Destiny's Bounty Tracker**: icon tiles and one card, not lines of text.
 - **Each bounty has a catchy short name.**
+- **The timers lead with icons and say less in words.**
 
 ## Claude's calls
 
@@ -43,13 +51,16 @@ Asked whether bounties should carry names, as Destiny's do:
 | The order | Story missions first, then side quests, then kinds to come | The story leads |
 | Steps | Each step asks its own feat and counts in turn, over the one count kept | Missions need steps that ask different things, and nothing new is saved |
 | The empty lines | "No quests yet. The story’s missions and side quests come later." and "No quests held. Quests you take up are kept here." | The page says plainly why it is empty |
-| The tiles | A square tile a bounty, marked by where it counts (a peak, waves, an arched door) on its kind's ground: stone for land, sea blue for the sea, blood for dungeons | Destiny's rows of colour, in the kit's tones |
+| The tiles | A square tile a bounty, marked by where it counts (two peaks, a wave, an arched door) on its kind's ground: stone for land, deep water for the sea (a tone the kit gains), blood for dungeons | Destiny's rows of colour, in the kit's tones |
 | The tiles' states | Open, plain; taken, a gauge of its count along its foot; done, a gold edge; turned in, dimmed with a check | A state read from the tile, with no words on it |
 | The card | The bounty's name, its kind in small type under it, its words, a gauge with its count, its rewards, and at the board its press | Destiny's card on the tile under the pointer |
 | The names | Tithe Collector, A Cut Above, Honest Work, Big Game, Broadside, Bigger Fish, Sea Wolf, Into the Dark, Deeper Still and Deep Delver, each at most 16 letters | Short and catchy, at the owner's ask |
 | The board | Its title, one line, the tiles in three rows of two, a bar counting to the daily reset ("New bounties in"), and the card beside them; arrows move between tiles, and E or a click takes or turns one in | The Bounty Tracker's right half |
 | The Journal's bounties | Six slots in two columns of three under "Bounties" with how many are taken, the same tiles and card with no press | Bounties are taken and turned in at the board alone |
 | The timers | Under Today, This week and Later, the resets as rows; a row under way says Now; no bar of groups | DFO's timers window with our own rows, and few enough of them to need no filter |
+| The timers' icons | Each row its icon in a well, its marks drawn: the seas of each tier with a tick, a ring or a padlock; each modifier its own icon and name, Burn's flame in its Art's colours; the pay by the gear's own glyphs and a chest; the Abyss's revives a heart and its wipe a skull | More icons and less text, at the owner's word, in the gear glyphs' style so the screens share one hand |
+| The timers' words | Said at the panel's foot for whatever is pointed at or focused, and read to a screen reader, never written on the rows; the arrows step between the rows | The words stay one look away, and no mark is a sign without a meaning |
+| The page under the timers | Dimmed as DFO's stage is | So the panel reads as over the page, not beside it |
 | The key | T drops the timers, with its keycap in the footer | T was free on foot, at sea and in the menu |
 | The panel | It lies over the page, which rests under it, and goes up as the Journal is left | So the timers never stand over another tab |
 | This Week | Its title goes, its rows becoming the timers' | The owner's drop-down holds them |

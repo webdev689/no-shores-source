@@ -16,7 +16,11 @@ const module = WebAssembly.compile(bytes);
 const FRIDAY_NINE = 29_919_420;
 const named: Named = { dungeon: (patrol, number) => `${patrol} ${number}`, place: (id) => id };
 const record = { day: 20_778, cleared: [1], week: 2_968, elite: true, abyss: false, boon: true };
-const burn = { name: 'Burn (Shadow)', words: 'Shadow spells deal double damage. Wearing Shadow, you take double.' };
+const burn = {
+  key: 'burn-shadow',
+  name: 'Burn (Shadow)',
+  words: 'Shadow spells deal double damage. Wearing Shadow, you take double.',
+};
 const revives = '5 revives for the company. A wipe starts the run over.';
 
 test('an island’s band reads as its levels, or one level where it is fixed', () => {
@@ -43,7 +47,15 @@ test('This Week says what is on, what each pays, and what this character has tak
     about: 'Levels 1 to 4',
     state: null,
     shut: false,
+    standing: null,
+    band: [1, 4],
   });
+  assert.deepEqual(
+    board.today.tiers.map((row) => row.standing),
+    ['open', 'taken', 'open'],
+    'each tier’s mark as its state says it',
+  );
+  assert.deepEqual(board.today.rewards, ['vestige', 'cache']);
   assert.deepEqual([board.today.dungeons.length, board.today.dungeons[8]?.about], [9, 'Levels 26 to 30']);
   const [elite, abyss] = board.week.dungeons;
   assert.deepEqual(
@@ -67,6 +79,19 @@ test('This Week says what is on, what each pays, and what this character has tak
     ],
   );
   assert.equal(abyss?.pays, 'Once a week: a Legendary or Atheric Vestige, Essence, and the Abyss boon.');
+  assert.deepEqual(
+    [elite?.kind, elite?.level, elite?.revives, elite?.standing, elite?.rewards],
+    ['elite', 26, null, 'taken', ['legendary-vestige', 'essence']],
+  );
+  assert.deepEqual(
+    [abyss?.kind, abyss?.level, abyss?.revives, abyss?.standing, abyss?.rewards],
+    ['abyss', 30, 5, 'shut', ['atheric-vestige', 'essence', 'boon']],
+  );
+  assert.deepEqual(
+    abyss?.modifiers.map((one) => one.key),
+    ['lightswitch', 'burn-divine', 'juggler'],
+    'each by the key its icon is drawn by',
+  );
   assert.equal(board.week.boon, 'Abyss boon: 25% more XP until the week turns.');
 });
 

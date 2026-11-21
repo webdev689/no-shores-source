@@ -50,11 +50,14 @@ export function bountyRows(gear: GearState): readonly BountyRow[] {
   });
 }
 
-/** What each bounty pays the player now, as the card's two lines. */
-export function payLines(gear: GearState): readonly [string, string] {
-  const [earned, aurem] = [gear.bountyXp ?? 0, gear.bountyAurem ?? 0];
-  return [`+${earned.toLocaleString()} XP`, `+${aurem.toLocaleString()} Aurem`];
+/** What each bounty pays the player now, at their level: its XP and its Aurem. */
+export interface Pay {
+  readonly xp: number;
+  readonly aurem: number;
 }
+
+/** What each bounty pays the player now, as the room's word on their gear says it. */
+export const payOf = (gear: GearState): Pay => ({ xp: gear.bountyXp ?? 0, aurem: gear.bountyAurem ?? 0 });
 
 /** A bounty's state in words: its count while held, done, turned in, or not taken. */
 export function bountyWords(row: BountyRow): string {
@@ -76,7 +79,7 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
   const grid = make('div', '', `gear-board-grid${shut ? ' gear-board-shut' : ''}`);
   const card = make('div', '', 'gear-board-card');
   card.setAttribute('aria-live', 'polite');
-  const pay = payLines(gear);
+  const pay = payOf(gear);
   const footOf = (row: BountyRow): HTMLElement => {
     if (!row.press) return make('p', row.state === 'paid' ? 'Turned in' : '', 'bounty-card-state');
     const { ask, label } = row.press;

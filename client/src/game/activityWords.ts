@@ -24,20 +24,39 @@ export function levelWords([low, high]: readonly [number, number]): string {
   return low === high ? `Level ${low}` : `Levels ${low} to ${high}`;
 }
 
-/** A line of This Week: what it is, what is said of it, and this character's word on it: taken, not taken, or why it
- *  is shut (null where the character is not yet known, or the line has none). */
+/** How a line stands for this character, as its mark draws it: taken, not taken, shut, or not yet known. */
+export type Standing = 'taken' | 'open' | 'shut' | null;
+
+/** What a run pays once, as the timers draw it; its words are the line's `pays`. */
+export type Reward = 'vestige' | 'legendary-vestige' | 'atheric-vestige' | 'cache' | 'essence' | 'boon';
+
+/** A modifier as the rules name and word it, with its key ("burn-shadow", "brawler", ...) its icon is drawn by. */
+export interface KeyedModifier extends ModifierShown {
+  readonly key: string;
+}
+
+/** A line of the timers: what it is, what is said of it, and this character's word on it: taken, not taken, or why it
+ *  is shut (null where the character is not yet known, or the line has none), with the same as its mark; and an
+ *  island's band where it has one. */
 export interface WeekRow {
   readonly name: string;
   readonly about: string;
   readonly state: string | null;
   readonly shut: boolean;
+  readonly standing: Standing;
+  readonly band: readonly [number, number] | null;
 }
 
-/** One of the week's two, with its rules, modifiers and pay. */
+/** One of the week's two, with the level its foes stand at, its rules (and an Abyss run's revives), modifiers and
+ *  pay. */
 export interface WeekDungeon extends WeekRow {
+  readonly kind: 'elite' | 'abyss';
+  readonly level: number;
+  readonly revives: number | null;
   readonly rules: readonly string[];
-  readonly modifiers: readonly ModifierShown[];
+  readonly modifiers: readonly KeyedModifier[];
   readonly pays: string;
+  readonly rewards: readonly Reward[];
 }
 
 export interface ThisWeek {
@@ -47,7 +66,8 @@ export interface ThisWeek {
     /** When it resets, in Unix milliseconds. */
     readonly endsAt: number;
     readonly pays: string;
-    readonly modifier: ModifierShown | null;
+    readonly rewards: readonly Reward[];
+    readonly modifier: KeyedModifier | null;
     readonly tiers: readonly WeekRow[];
     readonly dungeons: readonly WeekRow[];
   };
@@ -65,8 +85,16 @@ export interface Named {
 }
 
 /** The modifiers of these keys, as the rules name and word them. */
-const shown = (drawn: Activities, keys: readonly string[]): ModifierShown[] =>
-  keys.flatMap((key) => (drawn.modifiers[key] ? [drawn.modifiers[key]] : []));
+const shown = (drawn: Activities, keys: readonly string[]): KeyedModifier[] =>
+  keys.flatMap((key) => {
+    const modifier = drawn.modifiers[key];
+    return modifier ? [{ key, ...modifier }] : [];
+  });
+
+/** What each pays once, drawn as its words say it. */
+const DAY_REWARDS: readonly Reward[] = ['vestige', 'cache'];
+const ELITE_REWARDS: readonly Reward[] = ['legendary-vestige', 'essence'];
+const ABYSS_REWARDS: readonly Reward[] = ['atheric-vestige', 'essence', 'boon'];
 
 /** The line Abyss's rules add: the revives its company shares. */
 const revivesWords = (drawn: Activities) => `${drawn.revives} revives for the company. A wipe starts the run over.`;
@@ -86,6 +114,13 @@ function stateOf(shut: string | null, record: ActivityRecord | null, taken: bool
   return taken ? 'Taken' : 'Not taken';
 }
 
+/** A line's mark, as its state says it. */
+function standingOf(shut: string | null, record: ActivityRecord | null, taken: boolean): Standing {
+  if (shut !== null) return 'shut';
+  if (record === null) return null;
+  return taken ? 'taken' : 'open';
+}
+
 /** An island's band at a tier, as its foes are raised; none for a continent with no island. */
 const bandAt = (drawn: Activities, continent: string, tier: number) => drawn.bands[continent]?.[tier] ?? null;
 
@@ -99,24 +134,34 @@ export function thisWeekOf(
 ): ThisWeek {
   const tiers = SEAS.map((name, tier) => {
     const shut = gates?.day[tier] ?? null;
-    return { name, about: '', state: stateOf(shut, record, takenToday(drawn, record, tier)), shut: shut !== null };
+    const taken = takenToday(drawn, record, tier);
+    const [state, standing] = [stateOf(shut, record, taken), standingOf(shut, record, taken)];
+    return { name, about: '', state, shut: shut !== null, standing, band: null };
   });
   const dungeons = drawn.ofTheDay.map(({ continent, patrol, number }) => {
     const band = bandAt(drawn, continent, 0);
-    return { name: named.dungeon(patrol, number), about: band ? levelWords(band) : '', state: null, shut: false };
+    const about = band ? levelWords(band) : '';
+    return { name: named.dungeon(patrol, number), about, state: null, shut: false, standing: null, band };
   });
   const weekly = (which: 'elite' | 'abyss'): WeekDungeon => {
     const weekOn = which === 'elite' ? drawn.weekElite : drawn.weekAbyss;
     const shut = (which === 'elite' ? gates?.weekElite : gates?.weekAbyss) ?? null;
     const words = which === 'elite' ? 'Elite Dungeon of the week' : 'Abyss Dungeon of the week';
+    const taken = takenThisWeek(drawn, record, which);
     return {
       name: named.place(weekOn.place),
       about: `${words} · Level ${weekOn.level}`,
-      state: stateOf(shut, record, takenThisWeek(drawn, record, which)),
+      state: stateOf(shut, record, taken),
       shut: shut !== null,
+      standing: standingOf(shut, record, taken),
+      band: null,
+      kind: which,
+      level: weekOn.level,
+      revives: which === 'abyss' ? drawn.revives : null,
       rules: which === 'abyss' ? [revivesWords(drawn)] : [],
       modifiers: shown(drawn, weekOn.modifiers),
       pays: which === 'elite' ? ELITE_PAYS : ABYSS_PAYS,
+      rewards: which === 'elite' ? ELITE_REWARDS : ABYSS_REWARDS,
     };
   };
   const boon = record?.week === drawn.week && record.boon ? BOON : null;
@@ -125,7 +170,8 @@ export function thisWeekOf(
       day: drawn.day,
       endsAt: (drawn.minute + drawn.untilDay) * 60_000,
       pays: DAY_PAYS,
-      modifier: drawn.modifiers[drawn.dayModifier] ?? null,
+      rewards: DAY_REWARDS,
+      modifier: shown(drawn, [drawn.dayModifier])[0] ?? null,
       tiers,
       dungeons,
     },
