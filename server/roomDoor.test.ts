@@ -359,10 +359,10 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
 /** How often, in ticks, the room sends one player's gear (`room::GEAR_EVERY_TICKS`). */
 const GEAR_EVERY_TICKS = 12;
 
-test('a room told to forbid Arts sends gear with no Art worn, so the page shows no ability bar', () => {
+test("a room playing the prologue's wreck sends gear with no Art worn, so the page shows no ability bar", () => {
   const room = startRoomDoor(compiled);
   assert.equal(room.open(course.start, course.blocks, true), true);
-  room.forbidArts();
+  room.storyWreck();
   const player = room.join();
   room.tick();
   const gear = readFromRoom(room.gear(player));

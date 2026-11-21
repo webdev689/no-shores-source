@@ -1,7 +1,7 @@
 // The owner's eighth beat: in first person, flat on the deck, the eyes blinking, the view swimming, the ears ringing;
 // rising to the feet and looking round at two ships jammed into one and burning; then the camera pulls back out of the
-// eyes and rushes the length of the wreck, past its factions fighting each other, to the arena at its end, and comes
-// back over the player's shoulder, where their control begins.
+// eyes and rushes the length of the wreck, past its boarders fighting the Brig's crew, to the arena at its end, and
+// comes back over the player's shoulder, where their control begins.
 import { Cues } from '../../cinema/cues.ts';
 import { type Point3, type RailKey, railShot } from '../../cinema/rail.ts';
 import type { FoeType } from '../../rules/roster.ts';
@@ -14,6 +14,7 @@ import type { Hearing } from '../audio/music/directorLaw.ts';
 import { fought, hushed } from './music.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
+import { CREW_TYPES } from './wreckCrew.ts';
 import { titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
@@ -50,31 +51,34 @@ export function lidsAt(time: number): number {
   return 0;
 }
 
-/** The fights the camera passes: in each zone, each Grey Tithe foe paired with a pirate beside them. */
+/** The fights the camera passes: in each zone, each Grey Tithe boarder against one of the Brig's crew, the two
+ *  standing where it and the pirate beside it are posted. The boarders are one side, as they fight. */
 export function stagedFights(layout: WreckLayout, roster: readonly FoeType[]): Pairing[] {
   const pairs: Pairing[] = [];
+  const drawn = (type: number | undefined) => roster.some((each) => each.type === type);
   for (const zone of layout.zones.slice(0, layout.arena.zone)) {
     const tithes = zone.wave.filter((foe) => titheCrew(foe.type));
     const pirates = zone.wave.filter((foe) => !titheCrew(foe.type));
     tithes.forEach((foe, index) => {
       const pirate = pirates[index];
-      if (!pirate || !roster.some((each) => each.type === foe.type)) return;
+      const crew = CREW_TYPES[pairs.length % CREW_TYPES.length];
+      if (!pirate || crew === undefined || !drawn(foe.type) || !drawn(crew)) return;
       const [x, y] = [(foe.at[0] + pirate.at[0]) / 2, (foe.at[1] + pirate.at[1]) / 2];
       const facing = Math.atan2(pirate.at[0] - foe.at[0], foe.at[1] - pirate.at[1]);
-      pairs.push({ first: foe.type, second: pirate.type, at: [x, y, topAt(layout.course, x, y)], facing });
+      pairs.push({ first: foe.type, second: crew, at: [x, y, topAt(layout.course, x, y)], facing });
     });
   }
   return pairs;
 }
 
-/** The points over each staged fighter's head, by pair: 'fight-<pair>-tithe' and 'fight-<pair>-pirate'. */
+/** The points over each staged fighter's head, by pair: 'fight-<pair>-tithe' and 'fight-<pair>-crew'. */
 export function pairHeads(pairs: readonly Pairing[]): Map<string, readonly [number, number, number]> {
   const heads = new Map<string, readonly [number, number, number]>();
   pairs.forEach((pair, index) => {
     const [east, south] = [Math.sin(pair.facing) * 0.9, -Math.cos(pair.facing) * 0.9];
     const [x, y, z] = pair.at;
     heads.set(`fight-${index}-tithe`, [x - east, y - south, z + 2.1]);
-    heads.set(`fight-${index}-pirate`, [x + east, y + south, z + 2.1]);
+    heads.set(`fight-${index}-crew`, [x + east, y + south, z + 2.1]);
   });
   return heads;
 }
@@ -270,12 +274,12 @@ export class Wake implements Beat {
     };
     const pair = this.pairs.findIndex((unused, index) =>
       [this.since, this.since + HEARD_S].every(
-        (time) => seen(`fight-${index}-tithe`, time) && seen(`fight-${index}-pirate`, time),
+        (time) => seen(`fight-${index}-tithe`, time) && seen(`fight-${index}-crew`, time),
       ),
     );
     if (pair < 0) return;
     this.cried = true;
-    void this.story.stage.play('wreck', true, { tithe: `fight-${pair}-tithe`, pirate: `fight-${pair}-pirate` });
+    void this.story.stage.play('wreck', true, { tithe: `fight-${pair}-tithe`, crew: `fight-${pair}-crew` });
   }
 
   /** Whether the player's own figure shows: once the camera has left their eyes. */

@@ -38,6 +38,8 @@ function wreckRoom(
 ): { room: LocalRoom; last: () => Snapshot } {
   let last: Snapshot | null = null;
   const room = LocalRoom.openOverSea(compiled, { x: spawnX, y: spawnY }, blocks, (snapshot) => (last = snapshot));
+  // As the wreck plays it: the story's sword and shield, and the boarders as one side.
+  room.storyWreck();
   room.pump(ONE_TICK);
   return {
     room,
@@ -143,7 +145,7 @@ function short([x, y]: readonly [number, number], toward: readonly [number, numb
   return [x + ((toward[0] - x) * apart) / length, y + ((toward[1] - y) * apart) / length];
 }
 
-test("each wave's two sides fight each other and the player standing by them, on the decks far out at sea", () => {
+test('each wave fights the player standing by it as one side, never each other, on the decks far out at sea', () => {
   const placed = layoutAt(layout, FAR_OUT[1] ?? [0, 0]);
   const blocks = courseOf(placed);
   placed.zones.forEach((zone, index) => {
@@ -156,10 +158,10 @@ test("each wave's two sides fight each other and the player standing by them, on
       for (const foe of zone.wave) room.standFoe(foe.type, foe.rank, foe.at[0], foe.at[1], foe.facing, 1);
     });
     assert.ok(fought.player < 100, `${zone.name}: the player standing by is struck (${index})`);
-    // The player never strikes: a foe struck was struck by the other side.
+    // The player never strikes: a foe struck would have been struck by another.
     assert.ok(
-      fought.foes.some((foe) => foe.lowest < foe.most),
-      `${zone.name}: its two sides fight: ${JSON.stringify(fought.foes)}`,
+      fought.foes.every((foe) => foe.lowest === foe.most),
+      `${zone.name}: no boarder strikes another: ${JSON.stringify(fought.foes)}`,
     );
   });
 });

@@ -15,7 +15,8 @@ import { Overboard } from './overboard.ts';
 import { headOnView } from './stage.ts';
 import type { Story } from './story.ts';
 import { stagedFights, Wake } from './wake.ts';
-import { courseOf, readWreck, topAt } from './wreckLayout.ts';
+import { CREW_TYPES } from './wreckCrew.ts';
+import { courseOf, readWreck, titheCrew, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { WreckFight } from './wreckFight.ts';
 import type { WreckScenery } from './wreckScenery.ts';
@@ -293,9 +294,14 @@ test("Thule's cry with his head off the view is not counted: he cries once it is
 });
 
 test("the wake's staged fighters stand clear of what stands on the deck, its heaps among them", () => {
-  const roster = Array.from({ length: 20 }, (unused, type) => ({ type }) as unknown as FoeType);
+  const roster = Array.from({ length: 21 }, (unused, type) => ({ type }) as unknown as FoeType);
   const pairs = stagedFights(layout, roster);
   assert.ok(pairs.length >= 4, `${pairs.length} pairs`);
+  for (const { first, second } of pairs)
+    assert.ok(
+      titheCrew(first) && CREW_TYPES.includes(second),
+      `a Tithe boarder against the Brig's crew: ${first}, ${second}`,
+    );
   const standing = [...courseOf(layout), ...layout.zones.flatMap((zone) => (zone.gate ? [zone.gate] : []))];
   for (const { at, facing } of pairs)
     for (const side of [-1, 1]) {
