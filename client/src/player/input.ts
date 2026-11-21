@@ -114,13 +114,23 @@ export class Input {
       this.down.delete(name);
       this.releasedSince.add(name);
     };
+    // A key is let go under the name it went down with: on a layout whose sign Shift changes, the name may differ.
+    const named = new Map<string, string>();
     addEventListener('keydown', (event) => {
       if (typing()) return;
-      press(keyNameOf(event));
+      const name = keyNameOf(event);
+      if (event.code) named.set(event.code, name);
+      press(name);
       if (this.locked && event.key === ' ') event.preventDefault();
     });
-    addEventListener('keyup', (event) => release(keyNameOf(event)));
-    addEventListener('blur', () => this.down.clear());
+    addEventListener('keyup', (event) => {
+      release(named.get(event.code) ?? keyNameOf(event));
+      named.delete(event.code);
+    });
+    addEventListener('blur', () => {
+      this.down.clear();
+      named.clear();
+    });
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
     canvas.addEventListener('mousedown', (event) => {
       if (!this.locked) return;
@@ -235,7 +245,22 @@ export class Input {
   }
 }
 
-/** A key's name as it is bound: a digit by its place on the row, not its character, since Shift (the run) turns 2
- *  into '@' and other layouts differ; any other key by its own name in lower case. */
+/** The signs' keys by their place, named as they type without Shift. */
+const SIGNS: Readonly<Record<string, string>> = {
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Semicolon: ';',
+  Quote: "'",
+  BracketLeft: '[',
+  BracketRight: ']',
+  Backslash: '\\',
+  Minus: '-',
+  Equal: '=',
+  Backquote: '`',
+};
+
+/** A key's name as it is bound: a digit or a sign by its place on the row, not its character, since Shift (the run)
+ *  turns 2 into '@' and ',' into '<' and other layouts differ; any other key by its own name in lower case. */
 export const keyNameOf = (event: Pick<KeyboardEvent, 'code' | 'key'>): string =>
-  /^Digit\d$/.test(event.code) ? event.code.slice('Digit'.length) : event.key.toLowerCase();
+  /^Digit\d$/.test(event.code) ? event.code.slice('Digit'.length) : (SIGNS[event.code] ?? event.key.toLowerCase());

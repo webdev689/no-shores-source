@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HOLD_S } from './binds.ts';
-import { BINDS, Input, type InputFrame, axis } from './input.ts';
+import { BINDS, Input, type InputFrame, axis, keyNameOf } from './input.ts';
 import type { PadState } from './pad.ts';
 
 /** A page with one standard pad whose buttons `held` are down (a trigger by its pull) and sticks at `axes`, read
@@ -33,7 +33,8 @@ function padPage() {
     clock += seconds * 1000;
     return input.frame();
   };
-  const key = (name: string) => listeners.get('keydown')?.({ key: name, code: '', preventDefault: () => undefined });
+  const key = (name: string, code = '', kind = 'keydown') =>
+    listeners.get(kind)?.({ key: name, code, preventDefault: () => undefined });
   const done = () => {
     input.context = 'foot';
     performance.now = now;
@@ -174,5 +175,30 @@ test('what the pad held is let go as a window takes it, a stick come to rest und
   pad.axes = [0, 0, 0, 0];
   assert.ok(frame().released('fightLeft'), 'the stick let go under the sheet');
   assert.ok(input.padAlone.released('fightLeft'));
+  done();
+});
+
+test('a sign is named by its key, Shift or not, and is let go under the name it went down with', () => {
+  assert.deepEqual(
+    [
+      keyNameOf({ code: 'Comma', key: '<' }),
+      keyNameOf({ code: 'Digit2', key: '@' }),
+      keyNameOf({ code: 'KeyA', key: 'A' }),
+    ],
+    [',', '2', 'a'],
+  );
+  const { frame, key, done } = padPage();
+  key(',', 'Comma');
+  assert.equal(frame().pressed('mount'), true);
+  key('Shift', 'ShiftLeft');
+  key('<', 'Comma', 'keyup');
+  assert.equal(frame().held('mount'), false, 'let go with Shift held');
+  key('<', 'Comma');
+  assert.equal(frame().pressed('mount'), true, 'pressed again while galloping');
+  // On a layout whose ',' is another key's sign, Shift still lets go of the ',' that went down.
+  key('<', 'Comma', 'keyup');
+  key(',', 'KeyM');
+  key('?', 'KeyM', 'keyup');
+  assert.equal(frame().held('mount'), false);
   done();
 });
