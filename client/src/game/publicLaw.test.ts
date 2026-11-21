@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
 import {
@@ -189,4 +190,57 @@ test("the raid's next wave counts down in its objective while one is coming", ()
     'Hold the stores: wave 2 of 3 · Next wave 0:22',
   );
   assert.equal(bannerOf(raid({ nextWaveTicks: 0 }), 'driftwood-moors')?.objective, 'Hold the stores: wave 2 of 3');
+});
+
+test("the page's schedule is the room's: every minute of a day, the shift to each event and what runs elsewhere", async () => {
+  // Written by `cargo test -p room` (crates/room/src/public/schedule_tests.rs): each zone's [kind, start] a minute.
+  const text = await readFile(new URL('../../../target/protocol/schedule.json', import.meta.url), 'utf8').catch(() => {
+    throw new Error('run `cargo test -p room` first: it writes target/protocol/schedule.json');
+  });
+  const { first, countdown, zones } = JSON.parse(text) as {
+    first: number;
+    countdown: number;
+    zones: Record<string, [number, number][]>;
+  };
+  const at = (zone: string, minute: number): [number, number] => {
+    const slot = zones[zone]?.[minute - first];
+    assert.ok(slot, `${zone} at ${minute} is in the file`);
+    return slot;
+  };
+  const where: Record<string, [string, string]> = {
+    'saltgrass-downs': ['the High Downs', 'Saltgrass'],
+    'gullwing-vale': ['the Water Meadows', 'Gullwing'],
+    'driftwood-moors': ['the Gorse Moor', 'Moorend'],
+  };
+  const named = (kind: number) => (kind === PUBLIC_KIND.fissure ? 'the Fissure' : 'the Grey Tithe Raid');
+  const names = Object.keys(zones);
+  assert.equal(names.length, 3);
+  for (let minute = first; minute < first + 1440; minute += 1) {
+    for (const zone of names) {
+      for (const kind of [PUBLIC_KIND.fissure, PUBLIC_KIND.raid]) {
+        let shift = 0;
+        while (at(zone, minute + shift)[0] !== kind || at(zone, minute + shift)[1] !== minute + shift) shift += 1;
+        const asked = kind === PUBLIC_KIND.fissure ? 'fissure' : 'raid';
+        assert.equal(minuteShift(zone, asked, minute), shift, `${zone}'s next ${asked} from ${minute}`);
+      }
+      // The zone's next event as the room tells it (crates/room/src/public/seen.rs), and the others' slots.
+      const [nextKind, nextStart] = at(zone, at(zone, minute)[1] + 15);
+      const event = fissure({ kind: PUBLIC_KIND.none, phase: PUBLIC_PHASE.waiting, nextKind });
+      const shown = elsewhereOf({ ...event, nextTicks: (nextStart - minute) * 3600 }, zone);
+      const others = names.filter((other) => other !== zone).map((other) => ({ other, slot: at(other, minute) }));
+      const placed = (other: string, kind: number) => where[other]?.[kind === PUBLIC_KIND.fissure ? 0 : 1];
+      const running = others
+        .filter(({ slot }) => minute - slot[1] < countdown)
+        .sort((one, two) => two.slot[1] - one.slot[1])[0];
+      const next = others
+        .map(({ other, slot }) => ({ other, slot: at(other, slot[1] + 15) }))
+        .sort((one, two) => one.slot[1] - two.slot[1])[0];
+      const wanted = running
+        ? `Elsewhere on Saltmere: ${named(running.slot[0])} at ${placed(running.other, running.slot[0])}, under way`
+        : `Elsewhere on Saltmere: ${named(next?.slot[0] ?? 0)} at ${placed(next?.other ?? '', next?.slot[0] ?? 0)} in ${
+            (next?.slot[1] ?? 0) - minute
+          } min`;
+      assert.equal(shown, wanted, `${zone} at ${minute}`);
+    }
+  }
 });

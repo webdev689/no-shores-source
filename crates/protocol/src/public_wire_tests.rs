@@ -2,7 +2,7 @@
 use super::*;
 
 /// The public event the client's test expects: a heroic Fissure in its second stage, eleven of fourteen shards set,
-/// its bonus held, with its fissure and a shard carried by player 9.
+/// its bonus held, 27.5 m round, its window's ticks 1,234, with its fissure and a shard carried by player 9.
 pub(crate) fn public() -> room::public::PublicSeen {
     let mark = |kind: u8, id: u32, at: [f64; 3], health: f32, state: u8| room::public::PublicMark {
         kind,
@@ -15,7 +15,7 @@ pub(crate) fn public() -> room::public::PublicSeen {
         kind: 1,
         phase: 1,
         ground: [10.0, -20.5, 3.25],
-        radius: 30.0,
+        radius: 27.5,
         ticks_left: 12_000,
         next_kind: 2,
         next_ground: [140.0, 60.0, 4.5],
@@ -25,7 +25,7 @@ pub(crate) fn public() -> room::public::PublicSeen {
         progress: 11,
         needed: 14,
         heroic: 2,
-        heroic_ticks: 0,
+        heroic_ticks: 1_234,
         bonus: true,
         marks: vec![mark(1, 0, [10.0, -20.5, 3.25], 0.25, 0), mark(5, 9, [12.0, -18.0, 3.5], 1.0, 0)],
         next_wave_ticks: 1_500,

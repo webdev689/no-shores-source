@@ -178,7 +178,9 @@ export function elsewhereOf(event: PublicEvent, zone: string): string {
       : [0, 1].map((each) => {
           const kind = (each + its) % 2 === 0 ? PUBLIC_KIND.fissure : PUBLIC_KIND.raid;
           const away = (((its * ZONE_APART_MINUTES + each * PERIOD_MINUTES - now) % cycle) + cycle) % cycle;
-          return { kind, where: placeOf(other, kind).replace(/^The /, 'the '), away, left: away - (cycle - countdown) };
+          // Started `since` minutes ago: one starting this very minute is under way, not a cycle off.
+          const since = (cycle - away) % cycle;
+          return { kind, where: placeOf(other, kind).replace(/^The /, 'the '), away, left: countdown - since };
         }),
   );
   const named = (kind: number) => `the ${(NAMES[kind] ?? '').replace(/^The /, '')}`;
