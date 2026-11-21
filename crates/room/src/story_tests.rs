@@ -139,3 +139,25 @@ fn the_wreck_takes_only_the_melee_a_player_carries_or_wears_once_and_its_arms_ar
     let character = &room.players[&player].character;
     assert!(character.worn(Slot::Melee).is_some(), "a second word of the story strips nothing");
 }
+
+#[test]
+fn on_the_wreck_one_of_the_crew_posted_on_walks_there_but_never_a_boarder() {
+    let mut room = Room::over_sea(
+        vec![Block { min_x: -6.0, min_y: -4.0, max_x: 16.0, max_y: 4.0, top: 2.3, bottom: 0.0 }],
+        (0.0, 0.0),
+    );
+    room.join().expect("a room with space");
+    let crew_before = room.stand_foe_at(19, 1, (-4.0, 0.0), 0.0, 1).expect("a hand of the Brig's");
+    assert!(!room.story_post(crew_before, (12.0, 0.0), 0.0), "outside the story, none is posted");
+    room.story_wreck();
+    let crew = room.stand_foe_at(19, 1, (-4.0, 1.0), 0.0, 1).expect("a hand of the Brig's");
+    let boarder = room.stand_foe_at(8, 1, (14.0, -3.0), 0.0, 1).expect("a Tithe hookman");
+    assert!(!room.story_post(boarder, (12.0, 0.0), 0.0), "a boarder keeps its own post");
+    assert!(room.story_post(crew, (12.0, 0.0), 0.0));
+    room.foes.remove(&boarder);
+    for _ in 0..60 * 12 {
+        room.tick();
+    }
+    let body = room.foes[&crew].fighter.body;
+    assert!((body.x - 12.0).abs() < 1.5 && body.y.abs() < 1.5, "he walked there: {}, {}", body.x, body.y);
+}

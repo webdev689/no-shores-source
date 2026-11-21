@@ -126,7 +126,10 @@ code:
   - client/src/game/gains.ts#gainsOf
   - client/src/game/uiSounds.ts#play
   - client/src/soundSamples.ts#playSample
+  - client/src/soundSamples.ts#Samples
   - client/src/soundSamples.ts#soundCredits
+  - client/src/soundMeasure.ts#measuredOf
+  - client/src/contentCache.ts#contentBytes
   - client/src/game/uiSounds.ts#worldOutput
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/combat/worldCues.ts#eventCues
@@ -824,6 +827,19 @@ facing its yaw. At most 16 play at once: the farthest gives way to a nearer one.
 already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
 The Test Ground makes its own sound at full volume on the first click into its view.
+
+## How recordings load
+
+Recordings come as they are wanted, as the owner decided areas load ([[Areas Load in Chunks With Proper Caching]]):
+the short sounds of play (every cue but the ambience's and the story's) once the page's sound wakes, the ambience's and
+the story's the first time each is asked for, silent until it has come (`soundSamples.ts`, `Samples`). A recording
+longer than a chunk (1 MB, about a minute) is fetched a chunk at a time, a stretch of its bytes that decodes on its
+own, and the next chunk fetched as one plays, so a bed's minutes are never held at once, two chunks at most. The page
+decodes each and keeps it; the worker holds only its shape and how it measures, its level and its loudness over each
+window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
+played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
+fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
+changes, so one let go comes back from the disk.
 
 ## The sea fight's readout
 

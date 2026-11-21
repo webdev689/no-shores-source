@@ -143,6 +143,8 @@ export interface RoomDoor {
   storyTakeArms(player: number): boolean;
   /** On the wreck, sends a foe at a player, alert, as a foe called to a fight is sent; whether it was. */
   storyHunt(foe: number, player: number): boolean;
+  /** On the wreck, moves one of the Brig's crew's post, where he walks and keeps; whether it was. */
+  storyPost(crew: number, x: number, y: number, facing: number): boolean;
   /** A page alone: stands a block on the course at once, as a way closing; false with no room on land. */
   standBlock(block: CourseBlock): boolean;
   /** A page alone: takes a block from the course at once, as a way opening; false when the room holds no such block. */
@@ -199,6 +201,7 @@ interface RoomExports {
   room_put_player(player: number, x: number, y: number): number;
   room_story_take_arms(player: number): number;
   room_story_hunt(foe: number, player: number): number;
+  room_story_post(crew: number, x: number, y: number, facing: number): number;
   room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
   room_take_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
 }
@@ -337,6 +340,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
     storyTakeArms: (player) => exports.room_story_take_arms(player) === 1,
     storyHunt: (foe, player) => exports.room_story_hunt(foe, player) === 1,
+    storyPost: (crew, x, y, facing) => exports.room_story_post(crew, x, y, facing) === 1,
     standBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>
       exports.room_stand_block(minX, minY, maxX, maxY, top, bottom) === 1,
     takeBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>

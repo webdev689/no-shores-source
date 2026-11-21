@@ -51,7 +51,13 @@ export async function ashoreOn(
     return link;
   };
   const place = { boxes, facing: held.plan.facing, uses: isleUses(held, enter, gear, { continent, seas }), gear };
-  return Foot.onDeck(context, node, Array.from(held.heights), open, place);
+  try {
+    return await Foot.onDeck(context, node, Array.from(held.heights), open, place);
+  } catch (error) {
+    // A landing that fails leaves no socket open behind it, joining the island's room again and again.
+    if (link instanceof RoomConnection) link.close();
+    throw error;
+  }
 }
 
 /** The tiers by their number in the rooms. */

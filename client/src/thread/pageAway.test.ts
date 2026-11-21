@@ -136,6 +136,20 @@ test("an event the page heard on its canvas reaches the canvas's listeners, then
     away.heard({ kind: 'signIn', id: signIn.id, kept: { id: 'Wren', password: 'hunter22' } });
     assert.deepEqual(await asked, { id: 'Wren', password: 'hunter22' });
     useSignIns(BROWSERS_SIGN_INS);
+    // Frames run on the page's ticks: one callback that throws is reported, and the rest of the tick still runs.
+    const framed: string[] = [];
+    const quiet = console.error;
+    console.error = (error: unknown) => framed.push(`reported ${String(error)}`);
+    try {
+      requestAnimationFrame(() => {
+        throw new Error('a layer failed');
+      });
+      requestAnimationFrame(() => framed.push('the game'));
+      away.heard({ kind: 'tick' });
+    } finally {
+      console.error = quiet;
+    }
+    assert.deepEqual(framed, ['reported Error: a layer failed', 'the game']);
   } finally {
     for (const [name, descriptor] of before)
       if (descriptor) Object.defineProperty(globalThis, name, descriptor);

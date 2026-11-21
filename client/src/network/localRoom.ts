@@ -165,6 +165,12 @@ export class LocalRoom implements RoomLink {
     return this.door.storyTakeArms(this.player);
   }
 
+  /** On the wreck, moves one of the Brig's crew's post to (`x`, `y`), facing `facing` (`RoomDoor.storyPost`): whether
+   *  it was. */
+  storyPost(crew: number, x: number, y: number, facing: number): boolean {
+    return this.door.storyPost(crew, x, y, facing);
+  }
+
   /** On the wreck, sends the foe `foe` at the player (`RoomDoor.storyHunt`): whether it was. */
   storyHunt(foe: number): boolean {
     return this.door.storyHunt(foe, this.player);

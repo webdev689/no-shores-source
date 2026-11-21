@@ -16,6 +16,7 @@ import type { Charting } from './charting.ts';
 import type { Discovered } from './discovered.ts';
 import type { FigureView } from './figureView.ts';
 import { type Flow, type Happening, next } from './flow.ts';
+import { FrameGuard } from '../frameGuard.ts';
 import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
@@ -337,7 +338,16 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
+  const guard = new FrameGuard();
   const frame = (now: number) => {
+    guard.run(() => step(now));
+    // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
+    const previous = inFlight;
+    inFlight = gpu.device.queue.onSubmittedWorkDone();
+    const again = () => requestAnimationFrame(frame);
+    void previous.then(again, again);
+  };
+  const step = (now: number) => {
     const elapsed = (now - last) / 1000;
     const seconds = Math.min(0.1, elapsed);
     last = now;
@@ -373,10 +383,6 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         parts.syncMenu();
       }
     }
-    // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
-    const previous = inFlight;
-    inFlight = gpu.device.queue.onSubmittedWorkDone();
-    void previous.then(() => requestAnimationFrame(frame));
   };
   requestAnimationFrame(frame);
 }
