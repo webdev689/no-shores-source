@@ -27,6 +27,7 @@ import { askedArrival, type GateWay, gateWay } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
+import { gearTakesKeys } from './gearScreen.ts';
 import { HelmMap } from './helmMap.ts';
 import { accountOf, nodeOfRoom, roomsFrom } from './rooms.ts';
 import { Drain } from './drain.ts';
@@ -354,7 +355,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   // The Ship tab's papers: her voyage only while she is at sea.
   const shipNow = () => shipPanelOnceBuilt(builtSloop(), sloop.waterline, flow.mode === 'sea' ? sea : null);
   const gearHere = () => (flow.mode === 'foot' ? (foot?.gear ?? null) : null);
-  startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story');
+  stack.add(startGearWindow(hudRoot, link, gearHere, shipNow, joinAt, () => flow.mode === 'story'));
   addEventListener('keyup', (event) => void (flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)));
   addEventListener('keydown', (event) => {
     const key = event.key.toLowerCase();
@@ -380,8 +381,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if ((key === '[' || key === ']') && flow.mode === 'sea') sea?.stepPace(key === ']' ? 1 : -1);
   });
   canvas.addEventListener('click', () => {
-    // A click on what the game draws of its interface is the interface's, not a look round.
-    if (ui.takesPointer) return;
+    // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open
+    // the pointer stays free, though the click comes before the interface has heard where it is.
+    if (ui.takesPointer || gearScreenOpen()) return;
     if (flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
     if (flow.mode === 'foot' && !flow.menu && foot?.standing.kind !== 'dead' && !input.locked) input.lock();
     if (flow.mode === 'sea' && !flow.menu && sea?.aboard.walking && !input.locked) input.lock();
@@ -565,7 +567,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in flow && Boolean(flow.menu);
-    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearScreenOpen());
+    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys());
     const heard = input.frame();
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;

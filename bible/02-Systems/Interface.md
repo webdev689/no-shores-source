@@ -77,7 +77,16 @@ code:
   - client/src/game/inventoryPage.ts#inventoryPage
   - client/src/game/gearDom.ts#holdOn
   - client/src/game/gearDom.ts#dismantleOnHold
-  - client/src/game/acquiredFeed.ts#startAcquiredFeed
+  - client/src/game/acquiredFeed.ts#AcquiredFeed
+  - client/src/game/menuPage.ts#MenuContext
+  - client/src/game/menuPage.ts#PageContext
+  - client/src/game/gearIsland.ts#Island
+  - client/src/game/gearHold.ts#Holds
+  - client/src/game/gearNodes.ts#tileNode
+  - client/src/game/gearNodes.ts#pictureNode
+  - client/src/game/gearCard.ts#cardNode
+  - client/src/game/gearShell.ts#screenNode
+  - client/src/game/accountMark.ts#accountMark
   - client/src/game/gains.ts#gainsOf
   - client/src/game/uiSounds.ts#play
   - client/src/soundSamples.ts#playSample
@@ -97,16 +106,16 @@ code:
   - client/src/game/rosterRows.ts#actionsFor
   - client/src/game/playerDetails.ts#detailsPage
   - client/src/game/emblemArt.ts#emblemPixels
-  - client/src/game/appearanceButton.ts#appearanceButton
+  - client/src/game/appearanceButton.ts#emblemCard
   - client/src/game/appearance/appearancePage.ts#appearancePage
   - client/src/forge/cosmetics.ts#rampOf
-  - client/src/game/companyHud.ts#startCompanyHud
+  - client/src/game/companyHud.ts#CompanyHud
   - client/src/game/stationPages.ts#vaultPage
   - client/src/game/npc/npcScreen.ts#npcPage
   - client/src/game/npc/factionRows.ts#factionRows
   - content/story/keepers.json
   - client/src/game/gearDom.ts#itemMarks
-  - client/src/game/gearDom.ts#nodeRing
+  - client/src/game/gearNodes.ts#ringNode
   - client/src/game/elementGlyphs.ts#elementSvg
   - client/src/face.css
   - client/src/face.ts#useMendedFace
@@ -116,7 +125,7 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-The game draws its toasts itself; its other panels, plates and words are still HTML laid over the canvas, and by the
+The game draws its toasts and its menu itself; its other panels, plates and words are still HTML laid over the canvas, and by the
 owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each moves to the game's own drawing
 ("Drawn by the game", below).
 
@@ -150,6 +159,17 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
   a worker. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
 - **Controls.** A press with words, a toggle, a slider (dragged, or stepped by its arrows) and a choice from a list
   that opens under it are built once, for every screen (`controls.ts`).
+- **The menu.** The menu's frame (its tabs, the account's mark, the banner, the footer and the world dimmed behind
+  it), the Character and Inventory pages, an item's page, the hover card, the holds and their bursts, what the player
+  gains and the company on the heads-up display are one layer of the game's drawing (`startGearWindow`).
+- **A page of the menu** is a function of what the menu gives it (`MenuContext`) answering its nodes each frame: the
+  gear and the way to ask of it, the pictures, the room its body leaves, the menu's sizes on this screen, the holds,
+  the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
+  everything on the screen and kept above the footer), what X opens, and the Art's and Appearance screens' doors. It
+  reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view, and
+  Escape's steps. A page still made of elements (Ship, Social, Settings, the pages to come, the Art's screen,
+  Appearance and the keepers' screens with the vault) takes `PageContext` and stands in an island laid over the drawn
+  body each frame, with its own hover card, until it is drawn; while its controls have the focus the keys are its own.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -601,7 +621,9 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
-- Drawn by the game: the toasts and the fight's display. A word's soft shade past its hard outline is not drawn, as a
+- Drawn by the game: the toasts, the fight's display and the menu; the menu's Ship, Social, Settings, Art,
+  Appearance and keepers' pages stand in their island of elements. Tab does not cross from the drawn menu into the
+  island: the pointer reaches it, or a press of its own. A word's soft shade past its hard outline is not drawn, as a
   blur has no crisp form; the fight's glows (the soft lock's mark, the charged crosshair, a full Anima, a ready Tenet,
   the poise's break, the struck edge's red) stand in hard rings and bands instead.
 - A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller and never the
@@ -613,9 +635,17 @@ button's corner and screen, and the Tailor's wares.
   page it stood over everything.
 - The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
   interface speaking what is not focused.
+- The company on the heads-up display is drawn under the HUD's elements, so the veil, still an element, hides it while
+  the player travels, until the veil is drawn too.
+- The drawn menu is not doubled past 1440p: the interface draws at one scale, so the menu there stands at 1280 by
+  720's sizes rather than twice them. Words keep the face's one letter spacing, so the sheet's wide capitals (headings,
+  labels) are as tightly spaced as other words. A tile's soft glow and a card's drop shadow are drawn as hard light
+  and no shadow; a charging picture quivers but does not brighten. A word's soft shade past its hard outline is not
+  drawn, as a blur has no crisp form.
 - A cutscene's blur is still a filter on the canvas, which would blur what the game draws over it too. It moves into
   the scene's own drawing with the cinema's screen.
-- A screen reader hears a toast only in Chromium (`ariaNotify`), and nothing else the game draws.
+- A screen reader hears a toast, a press's label as the keys reach it, the menu's answers and what is gained only in
+  Chromium (`ariaNotify`), and nothing else the game draws.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not

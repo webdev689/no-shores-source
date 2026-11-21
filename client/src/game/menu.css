@@ -1,33 +1,5 @@
-/* The menu's own pages (client/src/game/menuPages.ts and stationPages.ts) and its tabs still to come; the Roster has
-   its own sheet (roster.css).
-   The gear screen's sheet gives the words, wells and headings they share. */
-
-/* A tab still to come reads as resting, Later under its name. */
-#hud .gear-tab.gear-tab-to-come:not(.gear-chosen) {
-  color: var(--faint);
-}
-.gear-tab-later {
-  margin-left: 6px;
-  font-size: var(--type-xs);
-  color: var(--brass);
-  letter-spacing: round(up, calc(1em / 22), 1px);
-  text-transform: none;
-}
-/* A station's name stands where the tabs do. */
-.gear-station-name {
-  margin: 0;
-  font-size: var(--type-l);
-  font-weight: 500;
-  letter-spacing: round(up, calc(3em / 22), 1px);
-  text-transform: uppercase;
-  color: var(--brass-lit);
-  text-align: center;
-  line-height: 48px;
-}
-.gear-station-name[hidden],
-.gear-tabs-top[hidden] {
-  display: none;
-}
+/* The menu's own pages still made of elements (client/src/game/menuPages.ts and stationPages.ts); the Roster has its
+   own sheet (roster.css). The gear screen's sheet gives the words, wells and headings they share. */
 
 /* A page of the menu: a panel set back from the window's edges. */
 .gear-later,

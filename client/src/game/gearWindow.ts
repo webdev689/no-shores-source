@@ -1,61 +1,56 @@
 import './gearScreen.css';
 import './menu.css';
 import './roster.css';
-import { make } from '../editor/dom.ts';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, answerText, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
-import { ROLES } from '../plus/kit.ts';
-import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artDiamond, artsPage } from './artsPage.ts';
-import { coresOf, gearAskOf } from './artsCards.ts';
-import { type PageContext, characterPage } from './characterPage.ts';
+import { ItemPictures } from '../player/itemPictures.ts';
+import { motionReduced } from '../plus/kit.ts';
+import { announce } from '../ui/announce.ts';
+import type { Child, Node } from '../ui/node.ts';
+import type { Layer } from '../ui/stack.ts';
+import type { Interface } from '../ui/ui.ts';
+import { uiScale } from '../ui/uiRenderer.ts';
+import { accountMark } from './accountMark.ts';
+import { AcquiredFeed } from './acquiredFeed.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
-import { DISMANTLE_KEY, type Hint, HoverCard, glyphImage, hintLine, letGoHold, pressOf } from './gearDom.ts';
+import { coresOf, gearAskOf } from './artsCards.ts';
+import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artsPage } from './artsPage.ts';
+import { characterPage } from './characterPage.ts';
+import { CompanyHud } from './companyHud.ts';
+import { emblemOf } from './emblemArt.ts';
+import { HoverCard } from './gearDom.ts';
+import { DISMANTLE_KEY, Holds } from './gearHold.ts';
+import { Island } from './gearIsland.ts';
+import { type Hint, INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import {
   ACCOUNT_CHANGED,
   type GearHere,
   OPEN_AT,
   type Opening,
+  STEP_BACK,
   TABS,
   type Tab,
-  STEP_BACK,
   type View,
-  characterOf,
   setGearScreenOpen,
+  setIslandFocused,
 } from './gearScreen.ts';
+import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNode } from './gearShell.ts';
 import { inventoryPage } from './inventoryPage.ts';
-import { itemPage } from './itemPage.ts';
-import { ItemPictures } from '../player/itemPictures.ts';
-
-export { gearScreenOpen } from './gearScreen.ts';
-import { laterPage, settingsPage, shipPage } from './menuPages.ts';
-import type { ShipPanel } from './shipPanel.ts';
-import { rosterPage } from './rosterTab.ts';
+import { ITEM_NAME, itemPage } from './itemPage.ts';
 import { KEEPERS } from './keepers.ts';
-import { isKeeperView, keyBeside, npcChoosing, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
-import { type Emblem, SIGN_CELLS, emblemImage, emblemOf } from './emblemArt.ts';
-import { startCompanyHud } from './companyHud.ts';
-import { accountMark } from './accountMark.ts';
-import { startAcquiredFeed } from './acquiredFeed.ts';
+import type { MenuContext, PageContext } from './menuPage.ts';
+import { laterPage, settingsPage, shipPage } from './menuPages.ts';
+import { isKeeperView, npcChoosing, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
+import { rosterPage } from './rosterTab.ts';
+import type { ShipPanel } from './shipPanel.ts';
 import { chime, play } from './uiSounds.ts';
 
-/** Each tab's name, the key that opens it, and, for one still to come, what it will hold. */
-const TAB_PRESSES: Readonly<Record<Tab, { readonly label: string; readonly key: string; readonly later?: string }>> = {
-  character: { label: 'Character', key: 'I' },
-  inventory: { label: 'Inventory', key: 'O' },
-  journal: { label: 'Journal', key: '', later: 'Your quests will be kept here.' },
-  ship: { label: 'Ship', key: '' },
-  social: { label: 'Social', key: '' },
-  guild: { label: 'Guild', key: '', later: 'Your guild will gather here.' },
-  settings: { label: 'Settings', key: '' },
-};
-/** How many pixels each of the banner's cells takes: three, so its 24 cells stand 72 px tall. */
-const BANNER_SCALE = 3;
-/** How often the menu looks for new gear while open, in milliseconds. */
-const LOOK_MS = 100;
+export { gearScreenOpen } from './gearScreen.ts';
+
 /** What the footer says each view's presses and keys do, and an item's page's. */
 const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = {
   // A worn piece is not dismantled; a carried one's card in the flyout says how.
@@ -84,33 +79,21 @@ const SHELF_HINTS: Readonly<Record<string, readonly Hint[]>> = {
 };
 /** The inventory's shelf shown first. */
 const FIRST_SHELF = 'consumables';
+/** The layer's own id, whose box is the view. */
+const LAYER = 'gear-layer';
 
 const isTab = (view: View): view is Tab => (TABS as readonly string[]).includes(view);
 /** The views drawn from the player's gear; the rest need none. */
 const ofGear = (view: View) => view === 'character' || view === 'inventory' || !isTab(view);
 
-/** A tab's press: its name, the key that opens it on a keycap, and Later on one still to come. */
-function tabPress(tab: Tab, open: () => void): HTMLButtonElement {
-  const { label, key, later } = TAB_PRESSES[tab];
-  const node = pressOf('', open, 'button', key);
-  node.prepend(make('span', label));
-  // The keycap is shown, and said as the tab's shortcut rather than as part of its name.
-  node.querySelector('kbd')?.setAttribute('aria-hidden', 'true');
-  if (key) node.setAttribute('aria-keyshortcuts', key);
-  if (later) node.append(make('span', 'Later', 'gear-tab-later'));
-  node.classList.add('gear-tab');
-  node.classList.toggle('gear-tab-to-come', later !== undefined);
-  return node;
-}
-
 /**
- * The menu, after Destiny's, in the Enhanced Plus kit: Character (I), Inventory (O), Journal, Ship, Social, Guild and
- * Settings under a header of tabs; a station's screen (the vault, a vendor's stall) in their place when its counter is
- * used; and an item's page laid over either when one is inspected. While it is open the world behind it is dimmed,
- * the pointer is free and the game's keys rest; Escape steps back: the item's page, then a slot's flyout, then the
- * menu. Gear shows as the player's room last sent it, built again only when that changes or the player moves within
- * it, each press an ask the room answers; where no room keeps gear it says so. While `resting` (the story plays) it
- * never opens, so its keys stay the story's.
+ * The menu, after Destiny's, in the Enhanced Plus kit, drawn by the game: Character (I), Inventory (O), Journal, Ship,
+ * Social, Guild and Settings under a header of tabs; a station's screen (the vault, a vendor's stall) in their place
+ * when its counter is used; and an item's page laid over either when one is inspected. While it is open the world
+ * behind it is dimmed, the pointer is free and the game's keys rest; Escape steps back: the item's page, then a slot's
+ * flyout, then the menu. Gear shows as the player's room last sent it, each press an ask the room answers; where no
+ * room keeps gear it says so. While `resting` (the story plays) it never opens, so its keys stay the story's. Answers
+ * the layer that draws it, with the company and what the player gains, which show in play too.
  */
 export function startGearWindow(
   root: HTMLElement,
@@ -119,55 +102,17 @@ export function startGearWindow(
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
-): void {
-  const screen = make('div', '', `gear-screen ${ROLES.window}`);
-  screen.hidden = true;
-  screen.setAttribute('role', 'dialog');
-  screen.setAttribute('aria-modal', 'true');
-  screen.setAttribute('aria-label', 'Menu');
-  const header = make('div', '', `gear-head ${ROLES.header}`);
-  const tabRow = make('div', '', 'gear-tabs-top');
-  tabRow.setAttribute('role', 'tablist');
-  const title = make('h2', '', 'gear-station-name');
-  title.id = 'gear-station-name';
-  title.tabIndex = -1;
-  // Under the tabs, the player's banner the whole width of the menu: their emblem, name and power, and their Aurem.
-  const banner = make('div', '', 'gear-banner');
-  const who = make('div', '', 'gear-who');
-  const purse = make('div', '', 'gear-purse');
-  banner.append(who, purse);
-  // The top line: the tabs, or a station's name, and the account's mark at its right, as DFO's stands in its corner.
-  const mark = accountMark(() => open('settings'));
-  const top = make('div', '', 'gear-top');
-  top.append(tabRow, title, mark.node);
-  header.append(top, banner);
-  // The room's answer to the last press, in the footer beside what the presses do.
-  const answer = make('div', '', 'gear-answer');
-  answer.setAttribute('role', 'status');
-  answer.setAttribute('aria-live', 'polite');
-  const body = make('div', '', 'gear-body');
-  body.id = 'gear-body';
-  body.setAttribute('role', 'tabpanel');
-  const footer = make('div', '', `gear-foot ${ROLES.footer}`);
-  const said = make('div', '', 'gear-said');
-  const actions = make('div', '', 'gear-actions');
-  footer.append(said, actions);
-  // The answer stays where it is, so a screen reader hears it; only the hints beside it change.
-  said.append(answer);
-  const hinted = (hints: readonly Hint[]) => {
-    while (said.lastChild && said.lastChild !== answer) said.lastChild.remove();
-    said.append(hintLine(hints));
-  };
-  screen.append(header, body, footer);
-  // The world behind the menu, dimmed and softened while it is open.
-  const scrim = make('div', '', 'gear-scrim');
-  scrim.hidden = true;
-  root.append(scrim, screen);
+): Layer {
+  // The pages still made of elements stand in an island over the body, with their hover card.
+  const island = new Island(root);
   const tip = new HoverCard(root);
+  setIslandFocused(() => island.focused);
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
   const picturesOf = (forge: Cards) => (pictures ??= new ItemPictures(forge));
-  const feed = startAcquiredFeed(root, here, picturesOf);
+  const feed = new AcquiredFeed(here, picturesOf);
+  const company = new CompanyHud(link);
+  const holds = new Holds();
   let view: View | null = null;
   let slot: number | null = null;
   /** Whether the Character page shows the worn Art's screen, and the Core slot whose flyout is open on it. */
@@ -181,412 +126,451 @@ export function startGearWindow(
   let artPending: number | null = null;
   let shelf = FIRST_SHELF;
   let inspecting: number | null = null;
-  /** The gear and the state of the menu it was last built for. */
-  let shownGear: GearState | null = null;
-  let shownState = '';
-  let drawn = 0;
-  let pressing = false;
   /** How many asks the room had answered when the menu opened: only a newer answer is shown. */
   let heard: number | null = null;
-  /** The answer a refusal was last heard for. */
+  /** The answer a refusal was last heard for, and the words last said. */
   let refusedAt: number | null = null;
+  let said = '';
+  /** The press to give the focus to on the next frame: a tab as the menu opens, a tile as a page over it closes. */
+  let focusNext: string | null = null;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
-  /** The view the tabs and title were last written for. */
-  let tabbed: View | null = null;
-  /** A page that needs no gear, kept while its view and what it shows stay the same. */
-  let plain: { key: string; page: HTMLElement } | null = null;
+  /** A page of elements, kept while what it shows stays the same; and whether it is held down. */
+  let built: { key: string; page: HTMLElement } | null = null;
+  let pressing = false;
+  let drawn = 0;
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
+  /** The player's name and account, once the accounts give them; and the gear the banner last showed. */
+  let named: string | null = null;
+  let account: Account | null = null;
+  let bannerGear: GearState | null = null;
+  /** The interface last drawn with, and the presses X opens the details of, by their ids. */
+  let ui: Interface | null = null;
+  let details = new Map<string, GearItem>();
   const redraw = () => drawn++;
 
-  /** The HUD's other parts, out of reach of the keys and a screen reader while the menu is open. */
+  /** The HUD's other parts, out of reach of the keys and a screen reader while the menu is open, and out of sight:
+   *  shortcut: they are elements over the canvas the menu is drawn on, so they would stand over it; they go once the
+   *  HUD is drawn, under the menu's layer. */
   const beneath = (asleep: boolean) => {
+    root.classList.toggle('gear-open', asleep);
     for (const part of root.children)
-      if (part instanceof HTMLElement && ![screen, scrim, tip.node, feed].includes(part)) part.inert = asleep;
+      if (part instanceof HTMLElement && ![island.node, tip.node].includes(part)) part.inert = asleep;
   };
-  /** Lets go of every press held, so none acts once its page has gone. */
-  const letGo = () => letGoHold();
   const shut = () => {
-    tabbed = null;
-    letGo();
-    if (document.activeElement instanceof HTMLElement && screen.contains(document.activeElement))
+    holds.letGo();
+    if (document.activeElement instanceof HTMLElement && island.node.contains(document.activeElement))
       document.activeElement.blur();
     view = null;
-    screen.hidden = scrim.hidden = true;
     play('close');
     setGearScreenOpen(false);
     beneath(false);
     tip.hide();
     // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
-    body.replaceChildren();
-    [plain, shownGear] = [null, null];
+    built = null;
+    island.show(null, null, null);
+    ui?.focusOn(null);
   };
   /** Escape's one step back: the item's page, then the flyout, then the Art's screen, then the menu. With no gear
    *  shown (the room lost), none of those stands on the page, so the menu closes at once. */
   const back = () => {
-    letGo();
+    holds.letGo();
     if (!here()?.gear) [inspecting, slot, artSlot, arts, appearance] = [null, null, null, false, false];
-    if (inspecting !== null) inspecting = null;
+    if (inspecting !== null) [inspecting, focusNext] = [null, returnTo];
     else if (slot !== null) slot = null;
     else if (artSlot !== null) artSlot = null;
-    else if (arts) [arts, returnTo] = [false, ART_DIAMOND_KEY];
-    else if (appearance) [appearance, returnTo] = [false, APPEARANCE_KEY];
+    else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
+    else if (appearance) [appearance, focusNext] = [false, APPEARANCE_KEY];
     else return shut();
     play('back');
   };
   const open = (wanted: View, onShelf?: string) => {
     if (view === wanted && onShelf === undefined) return shut();
-    // A hold under way on the page left behind does not act on it unseen.
-    letGo();
+    // A hold under way on the page left behind does not act on it unseen, nor does its card stay.
+    holds.letGo();
+    tip.hide();
     const opening = view === null;
-    [view, slot, inspecting, plain, shownGear, returnTo] = [wanted, null, null, null, null, null];
+    [view, slot, inspecting, built] = [wanted, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
     npcOpened(wanted);
     play(opening ? 'open' : 'tab');
-    screen.hidden = scrim.hidden = false;
     setGearScreenOpen(true);
     beneath(true);
     document.exitPointerLock();
-    render();
-    // Opened, or moved to a station while the focus was on a page now gone: the tab or the station's first press.
-    if (opening || !screen.contains(document.activeElement))
-      // A station is read from its name, so no ware's card opens over the stall unasked.
-      (tabs.find((node) => node.dataset['tab'] === wanted) ?? (isTab(wanted) ? null : title))?.focus();
+    // Opened, or moved to a station: the tab, or the station's first press.
+    focusNext = isTab(wanted) ? tabId(wanted) : null;
   };
-  const tabs = TABS.map((name) => {
-    // The tab already shown stays shown; Escape or Close shuts the menu.
-    const node = tabPress(name, () => view !== name && open(name));
-    node.id = `gear-tab-${name}`;
-    node.dataset['tab'] = name;
-    node.dataset['key'] = `tab-${name}`;
-    node.setAttribute('role', 'tab');
-    node.setAttribute('aria-controls', 'gear-body');
-    return node;
-  });
-  tabRow.append(...tabs);
-  // The arrows move between the tabs, each opened as it is reached.
-  tabRow.addEventListener('keydown', (event) => {
-    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
-    const from = tabs.findIndex((node) => node === document.activeElement);
-    if (step === 0 || from < 0) return;
-    event.preventDefault();
-    const next = tabs[(from + step + tabs.length) % tabs.length];
-    next?.focus();
-    next?.click();
-  });
-  const close = pressOf('Close', shut, 'button', 'Esc');
-  /** The player's name, for their nameplate, once the accounts give it. */
-  let named: string | null = null;
-  /** The account last heard of, for the mark. */
-  let account: Account | null = null;
+  /** The page shown takes the step first when it has one of its own (a panel, a player's details, a keeper's choice);
+   *  either way the hold under way is let go, so a step back never buys what was being held. */
+  const stepOnce = () => {
+    holds.letGo();
+    const step = new Event(STEP_BACK, { cancelable: true });
+    const page = inspecting === null ? island.page : null;
+    if (page?.dispatchEvent(step) !== false) back();
+    else play('back');
+  };
   const nameAgain = () =>
     void link?.session().then((found) => {
       account = found;
       named = found?.username ?? null;
-      mark.show(account, figure.picture);
-      if (view !== null) ends(here()?.gear ?? null);
     });
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
-  startCompanyHud(root, link);
-  // The page shown takes the step first when it has one of its own (a panel, a player's details, a keeper's choice);
-  // either way the hold under way is let go, so a step back never buys what was being held.
-  const stepOnce = () => {
-    letGo();
-    const step = new Event(STEP_BACK, { cancelable: true });
-    if (body.firstElementChild?.dispatchEvent(step) !== false) back();
-    else play('back');
-    render();
-  };
-  const stepBack = pressOf('Back', stepOnce, 'button', 'Esc');
 
-  /** The banner's emblem, drawn again to the banner's width whenever that changes. */
-  let bannered: Emblem | null = null;
-  const paintBanner = () => {
-    const cells = Math.floor(banner.clientWidth / BANNER_SCALE);
-    if (!bannered || cells < SIGN_CELLS) return;
-    banner.style.backgroundImage = `url(${emblemImage(bannered, 'banner', cells)})`;
-    banner.style.backgroundSize = `${cells * BANNER_SCALE}px 100%`;
-  };
-  new ResizeObserver(paintBanner).observe(banner);
-
-  /** The header's banner, after Destiny's: the player's emblem behind their name, level and power, and their Aurem
-   *  at its end, hidden where the inventory's page shows it. */
-  /** The gear the banner last showed: once the player's emblem is known it stays, though the room's word goes. */
-  let bannerGear: GearState | null = null;
-  const ends = (gear: GearState | null) => {
-    who.replaceChildren();
-    purse.replaceChildren();
-    bannerGear = gear ?? bannerGear;
-    const known = gear ?? bannerGear;
-    // Shown from the first word of who they are on; without the room's word, only the numbers go.
-    banner.hidden = !known && !named;
-    const emblem = emblemOf(known?.emblem ?? 0);
-    if (emblem !== bannered) {
-      bannered = emblem;
-      paintBanner();
-    }
-    const level = known ? `Level ${characterOf(known).level}` : '';
-    who.append(make('strong', named ?? level));
-    if (!gear) return;
-    who.append(
-      make(
-        'span',
-        `${named ? `${level} · ` : ''}Prestige ${gear.prestige} · Defense ${gear.defense}`,
-        'gear-who-power',
-      ),
-    );
-    purse.append(glyphImage('aurem'), make('b', gear.aurem.toLocaleString()), make('span', 'Aurem', 'gear-hint'));
-    purse.style.visibility = view === 'inventory' ? 'hidden' : '';
+  /** A page of elements, built again only when what it shows changes, and never while it is held down. */
+  const islandPage = (key: string, build: () => HTMLElement): HTMLElement => {
+    const holding = pressing || island.node.querySelector('.gear-holding') !== null;
+    if (built && (built.key === key || holding)) return built.page;
+    // The focused control is found again in the page built anew, by what it is.
+    const held = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focused = held && island.node.contains(held) ? held.dataset['key'] : undefined;
+    tip.hide();
+    built = { key, page: build() };
+    const again = focused ? built.page.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`) : null;
+    if (again) requestAnimationFrame(() => again.focus());
+    return built.page;
   };
 
-  /** A page that needs no gear, built again only when what it shows changes. */
+  /** A page that needs no gear: a page to come, the Ship, Social or Settings. */
   const plainPage = (shown: View): HTMLElement => {
     const panel = shown === 'ship' ? ship() : null;
-    const key = JSON.stringify([shown, panel]);
-    if (plain?.key === key) return plain.page;
-    const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
-    const page =
-      later !== undefined
-        ? laterPage(TAB_PRESSES[shown as Tab].label, later)
-        : shown === 'ship'
-          ? shipPage(panel)
-          : shown === 'social'
-            ? rosterPage(link, travel)
-            : settingsPage(link);
-    plain = { key, page };
-    return page;
+    return islandPage(JSON.stringify([shown, panel]), () => {
+      const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
+      if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
+      if (shown === 'ship') return shipPage(panel);
+      if (shown === 'social') return rosterPage(link, travel);
+      return settingsPage(link);
+    });
   };
 
-  function render(): void {
-    if (view === null) return;
-    const station = isTab(view) ? null : KEEPERS[view].title;
-    // The tabs, title and labels change only with the view, so the menu writes nothing while it stands open.
-    if (view !== tabbed) {
-      tabbed = view;
-      for (const node of tabs) {
-        const chosen = node.dataset['tab'] === view;
-        node.classList.toggle('gear-chosen', chosen);
-        node.setAttribute('aria-selected', String(chosen));
-        // One tab is a stop for Tab; the arrows move between them.
-        node.tabIndex = chosen || (station !== null && node === tabs[0]) ? 0 : -1;
-      }
-      tabRow.hidden = station !== null;
-      title.hidden = station === null;
-      title.textContent = station ?? '';
-      body.setAttribute('aria-labelledby', isTab(view) ? `gear-tab-${view}` : 'gear-station-name');
-    }
-    const now = here();
-    const gear = now?.gear ?? null;
-    if (!ofGear(view)) {
-      const page = plainPage(view);
-      if (gear !== shownGear) [shownGear] = [gear, ends(gear)];
-      if (body.firstChild !== page) {
-        tip.hide();
-        answer.textContent = '';
-        body.replaceChildren(page);
-        hinted(HINTS[view] ?? []);
-        actions.replaceChildren(close);
-      }
-      return;
-    }
-    plain = null;
-    if (now?.forge) picturesOf(now.forge);
+  /** The figure, drawn once a dress, for the Character page and the account's mark. */
+  const figureOf = (now: GearHere | null): Picture | null => {
     const dress = now?.dress ?? null;
-    const figureKey = dress ? JSON.stringify(dress) : '';
-    if (now?.forge && dress && figureKey !== figure.key) {
-      figure = { key: figureKey, picture: null };
+    const key = dress ? JSON.stringify(dress) : '';
+    if (now?.forge && dress && key !== figure.key) {
+      figure = { key, picture: null };
       void now.forge
         .picture(dress, 'idle', 0)
         .catch(() => null)
         .then((picture) => {
-          if (figure.key === figureKey) figure.picture = picture;
-          mark.show(account, figure.picture);
+          if (figure.key === key) figure.picture = picture;
           redraw();
         });
     }
-    // Built again only when the room's word on the gear is new, or the player moved within the menu.
-    const state = JSON.stringify([view, slot, arts, appearance, artSlot, artPending, shelf, inspecting, drawn, !now]);
-    // Nor while a press is held, by the pointer or a key: its page stays under it until it is let go.
-    const holding = pressing || screen.querySelector('.gear-holding') !== null;
-    if (holding || (gear === shownGear && state === shownState)) {
-      tip.keep();
-      return;
-    }
+    return figure.picture;
+  };
+
+  /** The menu this frame: the scrim and the window, its page, its footer, and the hover card. */
+  const menu = (frame: Interface, shown: View, layer: { width: number; height: number }): Child[] => {
+    const sizes = sizesOf(layer.width, layer.height, uiScale(devicePixelRatio));
+    const now = here();
+    const gear = now?.gear ?? null;
+    const station = isTab(shown) ? null : KEEPERS[shown].title;
+    figureOf(now);
+    if (now?.forge) picturesOf(now.forge);
     // The room's word has come, so no ask of the Art's screen waits any more.
-    if (gear !== shownGear) artPending = null;
-    [shownGear, shownState] = [gear, state];
-    // The focused control is found again in the page built anew, by what it is; should it be gone (dismantled, opened),
-    // the one beside it takes the focus, else the tab or station it is under.
-    const held = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const focused = held?.dataset['key'];
-    const beside = keyBeside(held);
-    // A key's focus in a slot's grid goes back to its slot as the grid closes; a pointer's would open the slot's card.
-    const slotted = held?.matches(':focus-visible')
-      ? held.closest('.gear-slot-holder')?.querySelector<HTMLElement>('.gear-slot')?.dataset['key']
-      : undefined;
-    const within = held !== null && screen.contains(held);
-    tip.hide();
-    ends(gear);
-    if (!now || !gear) {
-      answer.textContent = '';
+    if (gear && gear !== bannerGear) artPending = null;
+    bannerGear = gear ?? bannerGear;
+    // Tabs, their arrows, and the presses of the frame.
+    for (const tab of TABS) {
+      const id = tabId(tab);
+      if (frame.clicked(id) && view !== tab) open(tab);
+      for (const key of frame.keysOn(id)) {
+        const next = TABS[(TABS.indexOf(tab) + (key === 'arrowright' ? 1 : -1) + TABS.length) % TABS.length];
+        if (next) open(next);
+      }
+    }
+    if (view !== shown) return [];
+    if (frame.clicked('press-close')) shut();
+    if (frame.clicked('press-step')) stepOnce();
+    if (view !== shown) return [];
+    const body = frame.boxOf('gear-body');
+    const room = { width: Math.max(0, (body?.width ?? 0) - 40), height: Math.max(0, (body?.height ?? 0) - 24) };
+    let card: { beside: string; content: () => Node } | null = null;
+    details = new Map();
+    const dress = now?.dress ?? null;
+    const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
+    // Without gear, a station or the gear's pages say why; the plain pages need none.
+    let page: Node | null = null;
+    let element: HTMLElement | null = null;
+    let item: ReturnType<typeof itemPage> | null = null;
+    let aside: readonly Hint[] | null = null;
+    let answer = '';
+    let colour: string = INK.answer;
+    if (!ofGear(shown)) element = plainPage(shown);
+    else if (!now || !gear) {
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
       const why = now ? 'Loading…' : (lost ?? 'Your gear shows here on foot, when playing online.');
-      body.replaceChildren(make('p', why, 'gear-hint gear-empty'));
-      hinted([]);
-      actions.replaceChildren(close);
-      return;
-    }
-    const opened = gear.items.find((each) => each.id === gear.identified);
-    const fresh = gear.answered !== heard;
-    // A refusal is heard once, when it comes.
-    if (fresh && gear.answer !== 0 && gear.answered !== refusedAt) play('refused');
-    if (fresh) refusedAt = gear.answered;
-    answer.textContent = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
-    answer.style.color = opened ? (RARITIES[opened.rarity]?.colour ?? '') : '';
-    const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
-    const context: PageContext = {
-      gear,
-      ask: (asked) => now.ask(asked),
-      tip,
-      picture,
-      figure: figure.picture,
-      room: body.clientHeight,
-      inspect: (item) => {
-        inspecting = item.id;
-        // Back to the tile it was asked from: a worn piece's slot or its tile in a list.
-        const from = document.activeElement instanceof HTMLElement ? document.activeElement.dataset['key'] : undefined;
-        returnTo = from ?? `item-${item.id}`;
-        render();
-      },
-      atVault: view === 'vault',
-      ...(gear.arts && {
-        art: artDiamond(gear.arts.art, () => ((arts = true), (artSlot = slot = null), render()), tip, gear.standing),
-      }),
-      appearance: () => ((appearance = true), (slot = null), render()),
-      forge: now.forge ?? null,
-      dress,
-    };
-    const dressing = view === 'character' && appearance;
-    const closeLooks = () => ((appearance = false), (returnTo = APPEARANCE_KEY), render());
-    const looks = dressing ? appearancePage({ ...context, forge: now.forge ?? null, dress, close: closeLooks }) : null;
-    const worn = view === 'character' && arts ? gear.arts : undefined;
-    const cores = worn ? coresOf(worn) : {};
-    const core = worn ? (cores[worn.art] ?? []) : [];
-    // The screen comes in once as it opens and again as another Art is worn; a slot the room has just set flares.
-    const entrance: ArtsEntrance = !worn ? null : !artsBuilt ? 'open' : artsBuilt.art !== worn.art ? 'wear' : null;
-    const before = worn && artsBuilt?.art === worn.art ? artsBuilt.core : null;
-    const justSet = before
-      ? core.findIndex((chosen, place) => chosen !== null && chosen !== (before[place] ?? null))
-      : -1;
-    if (justSet >= 0) chime(0);
-    artsBuilt = worn ? { art: worn.art, core } : null;
-    const page = worn
-      ? artsPage(
-          {
-            worn: worn.art,
-            cores,
-            standing: gear.standing,
-            ask: (asked) => {
-              if (asked.kind === 'setCore') artPending = asked.slot;
-              now.ask(gearAskOf(asked));
+      page = {
+        width: 'grow',
+        alignX: 'center',
+        padding: [48, 0],
+        children: [{ maxWidth: 420, text: { words: why, size: sizes.name, colour: INK.faint, align: 'center' } }],
+      };
+    } else {
+      const opened = gear.items.find((each) => each.id === gear.identified);
+      const fresh = gear.answered !== heard;
+      // A refusal is heard once, when it comes.
+      if (fresh && gear.answer !== 0 && gear.answered !== refusedAt) play('refused');
+      if (fresh) refusedAt = gear.answered;
+      answer = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerText(gear.answer);
+      colour = opened ? (RARITIES[opened.rarity]?.colour ?? INK.answer) : INK.answer;
+      const context: MenuContext = {
+        ui: frame,
+        gear,
+        ask: (asked) => now.ask(asked),
+        picture,
+        figure: figure.picture,
+        room,
+        sizes,
+        holds,
+        card: (id, content, beside = id) => {
+          if (frame.hovered(id) || (frame.focused(id) && frame.keyFocused)) card = { beside, content };
+        },
+        inspect: (inspected) => {
+          inspecting = inspected.id;
+          // The page is read from its name; once it closes, the focus goes back to the tile it was asked from.
+          [returnTo, focusNext] = [frame.focusedId ?? `item-${inspected.id}`, ITEM_NAME];
+          tip.hide();
+        },
+        details: (id, detailed) => details.set(id, detailed),
+        atVault: shown === 'vault',
+        ...(gear.arts && { arts: () => ((arts = true), (artSlot = slot = null)) }),
+        appearance: () => ((appearance = true), (slot = null)),
+      };
+      const pageContext: PageContext = {
+        gear,
+        ask: (asked) => now.ask(asked),
+        tip,
+        picture,
+        figure: figure.picture,
+        room: room.height,
+        inspect: context.inspect,
+        atVault: shown === 'vault',
+        appearance: context.appearance,
+        forge: now.forge ?? null,
+        dress,
+      };
+      const worn = shown === 'character' && arts ? gear.arts : undefined;
+      if (worn) {
+        const cores = coresOf(worn);
+        const core = cores[worn.art] ?? [];
+        // The screen comes in once as it opens and again as another Art is worn; a slot the room has just set flares.
+        const entrance: ArtsEntrance = !artsBuilt ? 'open' : artsBuilt.art !== worn.art ? 'wear' : null;
+        const before = artsBuilt?.art === worn.art ? artsBuilt.core : null;
+        const justSet = before
+          ? core.findIndex((chosen, place) => chosen !== null && chosen !== (before[place] ?? null))
+          : -1;
+        const key = JSON.stringify(['arts', gear.answered, worn, artSlot, artPending, drawn]);
+        element = islandPage(key, () => {
+          if (justSet >= 0) chime(0);
+          artsBuilt = { art: worn.art, core };
+          return artsPage(
+            {
+              worn: worn.art,
+              cores,
+              standing: gear.standing,
+              ask: (asked) => {
+                if (asked.kind === 'setCore') artPending = asked.slot;
+                now.ask(gearAskOf(asked));
+              },
+              tip,
+              close: () => ((arts = false), (focusNext = ART_DIAMOND_KEY)),
+              entrance,
+              justSet: justSet >= 0 ? justSet : null,
+              pending: artPending,
             },
-            tip,
-            close: () => ((arts = false), (returnTo = ART_DIAMOND_KEY), render()),
-            entrance,
-            justSet: justSet >= 0 ? justSet : null,
-            pending: artPending,
-          },
-          artSlot,
-          (chosen) => ((artSlot = chosen), render()),
-        )
-      : view === 'character'
-        ? (looks ?? characterPage(context, slot, (chosen) => ((slot = chosen), render())))
-        : isKeeperView(view)
-          ? npcPage(context, view, now.forge, redraw)
-          : inventoryPage(context, shelf, (chosen) => ((shelf = chosen), render()));
-    const inspected = gear.items.find((each) => each.id === inspecting);
-    if (!inspected) inspecting = null;
-    const shown = inspected ? itemPage(context, inspected, () => ((inspecting = null), render())) : null;
-    // Under an item's page, the menu is out of reach of the pointer, the keys and a screen reader.
-    page.inert = shown !== null;
-    body.replaceChildren(page, ...(shown ? [shown.page] : []));
-    // One footer: what the presses and keys do here, the room's answer, and what may be done: an item's presses on its
-    // page, else a step back while a flyout is open, else closing the menu.
+            artSlot,
+            (chosen) => (artSlot = chosen),
+          );
+        });
+        aside = ARTS_HINTS;
+      } else artsBuilt = null;
+      if (!worn && shown === 'character' && appearance) {
+        const close = () => ((appearance = false), (focusNext = APPEARANCE_KEY));
+        element = islandPage(JSON.stringify(['looks', gear.answered, drawn, dress]), () =>
+          appearancePage({ ...pageContext, forge: now.forge ?? null, dress, close }),
+        );
+        aside = APPEARANCE_HINTS;
+      }
+      // Under an item's page the menu's own page is not laid, so neither the pointer nor the keys reach it.
+      const inspected = gear.items.find((each) => each.id === inspecting);
+      if (!inspected) inspecting = null;
+      if (inspected || worn || appearance || !ofGear(shown)) page = null;
+      else if (shown === 'character') page = characterPage(context, slot, (chosen) => (slot = chosen));
+      else if (shown === 'inventory') page = inventoryPage(context, shelf, (chosen) => (shelf = chosen));
+      else if (isKeeperView(shown)) {
+        element = islandPage(JSON.stringify([shown, gear.answered, gear.items.length, drawn, room.height]), () =>
+          npcPage(pageContext, shown, now.forge, redraw),
+        );
+        if (npcChoosing()) aside = npcHints(shown);
+      }
+      item = inspected ? itemPage(context, inspected, back) : null;
+    }
+    if (answer !== said && answer) announce(answer);
+    said = answer;
     // A Vestige opens with a click only at the Mage's counter, so the footer offers it only there.
     const opens: readonly Hint[] =
-      gear.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
-    const shelfHints = [...opens, ...(SHELF_HINTS[shelf] ?? [])];
-    const aside = worn
-      ? ARTS_HINTS
-      : dressing
-        ? APPEARANCE_HINTS
-        : isKeeperView(view) && npcChoosing()
-          ? npcHints(view)
-          : null;
-    const hints = shown ? HINTS.item : (aside ?? (view === 'inventory' ? shelfHints : (HINTS[view] ?? npcHints(view))));
-    hinted(hints ?? []);
-    actions.replaceChildren(...(shown ? [shown.presses] : slot !== null || aside ? [stepBack] : [close]));
-    // The focus is found again by what it held; on an item's page it stays on the page, and once the page closes it
-    // goes back to the item's tile.
-    const found = (key: string | null | undefined) =>
-      key ? screen.querySelector<HTMLElement>(`[data-key="${CSS.escape(key)}"]`) : null;
-    const again = found(focused);
-    if (shown && !(again && shown.page.contains(again)))
-      // The page is read from its name, so no card opens over it unasked.
-      shown.page.querySelector<HTMLElement>('.gear-item-name')?.focus();
-    else {
-      const next = again ?? found(returnTo) ?? beside.map(found).find(Boolean) ?? found(slotted);
-      // Given back once, the tile to return to is forgotten, so it never takes the focus from a later choice.
-      returnTo = null;
-      if (next) next.focus();
-      else if (within && !screen.contains(document.activeElement))
-        (tabs.find((node) => node.classList.contains('gear-chosen')) ?? title).focus();
-    }
-  }
-
-  // A press is never lost to a new build under it: none is made while one is held down.
-  screen.addEventListener('pointerdown', () => (pressing = true));
-  const released = () => {
-    pressing = false;
-    window.setTimeout(render, 0);
+      gear?.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
+    const hints = !ofGear(shown)
+      ? (HINTS[shown] ?? [])
+      : !gear
+        ? []
+        : item
+          ? HINTS.item
+          : (aside ??
+            (shown === 'inventory'
+              ? [...opens, ...(SHELF_HINTS[shelf] ?? [])]
+              : (HINTS[shown] ?? npcHints(shown) ?? [])));
+    const actions: Child[] = item
+      ? [...item.presses]
+      : [
+          slot !== null || aside
+            ? pressNode('press-step', 'Back', 'button', 'Esc', sizes.label)
+            : pressNode('press-close', 'Close', 'button', 'Esc', sizes.label),
+        ];
+    // The island stands over the body unless an item's page lies over it.
+    island.show(item ? null : element, body, element && !item ? canvasOf(root) : null);
+    const head: Child[] = [
+      topNode(
+        station
+          ? { width: 'grow', children: [words(station, 2, INK.word)] }
+          : tabsNode(frame, shown, (frame.boxOf('gear-top')?.width ?? layer.width - 64) - 36 - 60, layer, sizes.label),
+        accountMark(frame, account, figure.picture, () => open('settings'), sizes.ratio),
+      ),
+      // On a short screen an item's page takes the banner's height back for its nodes.
+      (named !== null || bannerGear !== null) &&
+        !(item && sizes.short) &&
+        bannerNode(frame, emblemOf(bannerGear?.emblem ?? 0), named, bannerGear, gear, shown !== 'inventory', sizes),
+    ];
+    const bodyNode: Node = {
+      id: 'gear-body',
+      width: 'grow',
+      height: 'grow',
+      scroll: element === null && item === null,
+      padding: [10, 20, 14, 20],
+      children: [page, item?.page],
+    };
+    const screen = screenNode(
+      frame,
+      layer,
+      head,
+      bodyNode,
+      footerNode(answer, colour, hints ?? [], actions, sizes),
+      motionReduced(),
+    );
+    const shownCard: { beside: string; content: () => Node } | null = card;
+    return [...screen, shownCard && cardFloat(frame, shownCard, sizes.card, layer)];
   };
-  for (const event of ['pointerup', 'pointercancel', 'blur']) addEventListener(event, released);
+
+  /** The layer: the company, the menu while it is open, what the player gains, and where holds acted. */
+  const layer: Layer = (frame) => {
+    ui = frame;
+    holds.frame(frame);
+    const box = frame.boxOf(LAYER) ?? { width: innerWidth, height: innerHeight };
+    if (focusNext && view !== null && frame.boxOf(focusNext)) [focusNext] = [null, frame.focusOn(focusNext)];
+    // The company stands under the fight's vitals while they show, as game.ts marks them.
+    const fighting = root.dataset['fight'] !== undefined;
+    const sizes = sizesOf(box.width, box.height, uiScale(devicePixelRatio));
+    const shown = view;
+    const children: Child[] = [
+      company.node(fighting),
+      ...(shown !== null ? menu(frame, shown, box) : []),
+      feed.node(sizes, box, view !== null),
+      ...holds.burstNodes(),
+    ];
+    if (view === null) island.show(null, null, null);
+    holds.end();
+    return { id: LAYER, width: 'grow', height: 'grow', children };
+  };
+
+  // A press of elements is never lost to a new build under it: none is made while one is held down.
+  island.node.addEventListener('pointerdown', () => (pressing = true));
+  for (const event of ['pointerup', 'pointercancel', 'blur']) addEventListener(event, () => (pressing = false));
   addEventListener(OPEN_AT, (event) => {
     if (resting()) return;
     const { view: wanted, shelf: onShelf } = (event as CustomEvent<Opening>).detail;
     if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
   });
-  // A key on the menu's own controls goes to them and no further, so typing in its fields reaches no game key.
-  screen.addEventListener('keydown', (event) => {
+  // A key on the island's own controls goes to them and no further, so typing in its fields reaches no game key.
+  island.node.addEventListener('keydown', (event) => {
     if (view !== null) event.stopPropagation();
   });
   addEventListener(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
-      const typing = event.target instanceof HTMLInputElement;
+      const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
       const opens = !typing && !resting() && (key === 'i' || key === 'o');
       if (!opens && view === null) return;
-      // While the menu is open, a key meant for nothing on it never reaches the game.
-      if (view !== null && !(event.target instanceof Node && screen.contains(event.target))) event.stopPropagation();
+      // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.
+      const inIsland =
+        event.target instanceof Node && (island.node.contains(event.target) || tip.node.contains(event.target));
+      if (view !== null && !inIsland) event.stopPropagation();
       if (key === 'escape') {
         event.preventDefault();
         stepOnce();
-      } else if (key === 'x' && !typing && document.activeElement instanceof HTMLElement) {
-        // X shows the focused piece's details, as a right-click does.
-        if (document.activeElement.dataset['details'] === undefined) return;
+      } else if (key === 'x' && !typing && island.focused) {
+        // On a page of elements, X sends the focused piece a right press, which opens its details.
+        const focused = document.activeElement;
+        if (!(focused instanceof HTMLElement) || focused.dataset['details'] === undefined) return;
         event.preventDefault();
-        document.activeElement.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+        focused.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+      } else if (key === 'x' && !typing) {
+        // X shows the focused piece's details, as a right press does.
+        const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
+        if (!shown) return;
+        event.preventDefault();
+        inspecting = shown.id;
+        [returnTo, focusNext] = [ui?.focusedId ?? null, ITEM_NAME];
       } else if (opens && !event.repeat) {
         event.preventDefault();
         open(key === 'i' ? 'character' : 'inventory');
+      } else if (key === 'tab' && !island.focused) {
+        // Tab walks the drawn menu, which has heard it, and never the page's elements behind it.
+        event.preventDefault();
+      } else if (!typing && !island.focused) {
+        const chord = event.ctrlKey || event.metaKey || event.altKey;
+        if (holds.key(event.key, true, event.repeat, chord)) event.preventDefault();
       }
     },
     { capture: true },
   );
-  window.setInterval(render, LOOK_MS);
+  addEventListener('keyup', (event) => holds.key(event.key, false), true);
+  // A window left mid-hold never hears its keys let go there, so leaving it lets go.
+  addEventListener('blur', () => holds.blur());
+  document.addEventListener('visibilitychange', () => holds.blur());
+  return layer;
+}
+
+/** The canvas the interface is drawn on, beside `root`, for laying the island over its body. */
+function canvasOf(root: HTMLElement): HTMLElement | null {
+  return root.parentElement?.querySelector('canvas') ?? null;
+}
+
+/** The hover card beside what it describes, kept on the screen and above the footer, whose keys stay readable. */
+function cardFloat(
+  ui: Interface,
+  card: { readonly beside: string; readonly content: () => Node },
+  width: number,
+  view: { readonly width: number; readonly height: number },
+): Node | null {
+  const near = ui.boxOf(card.beside);
+  if (!near) return null;
+  const gap = 10;
+  const height = ui.boxOf('gear-card')?.height ?? 0;
+  const right = near.x + near.width + gap;
+  const left = right + width + gap > view.width ? near.x - gap - width : right;
+  const floor = ui.boxOf('gear-foot')?.y ?? view.height;
+  const top = Math.min(Math.max(gap, near.y), floor - height - gap);
+  return {
+    id: 'gear-card',
+    // Measured once laid, it shows from the next frame, where it fits.
+    opacity: height > 0 ? 1 : 0,
+    float: { to: 'screen', x: Math.max(gap, left), y: Math.max(gap, top), z: 40 },
+    children: [card.content()],
+  };
 }

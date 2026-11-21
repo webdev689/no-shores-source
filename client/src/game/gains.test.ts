@@ -117,6 +117,6 @@ test('Shapes gained and a cosmetic newly kept are gains, each with a picture of 
       ['cosmetic-25', 'Wraith Mist', 1],
     ],
   );
-  assert.ok(gains.every((each) => each.icon?.startsWith('data:image/svg+xml')));
+  assert.ok(gains.every((each) => each.icon?.startsWith('<svg')));
   assert.deepEqual(gainsOf(state({ shapes: 6 }), state({ shapes: 1 })), [], 'Shapes spent are no gain');
 });

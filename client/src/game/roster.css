@@ -299,58 +299,7 @@
   margin-left: 18px;
 }
 
-/* The company on the heads-up display: each other member's nameplate at its own cells, over the veil and under the menu. */
-#hud .company-hud {
-  position: absolute;
-  top: 96px;
-  left: 28px;
-  z-index: 18;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-/* On foot the vitals hold the top left: the company stands under them, and under a boss's bar where it reaches. */
-#hud[data-fight] .company-hud {
-  top: 140px;
-}
-.company-plate {
-  position: relative;
-  display: flex;
-  align-items: center;
-  box-sizing: border-box;
-  width: 240px;
-  height: 48px;
-  padding-left: 56px;
-  background: left top / 240px 48px no-repeat;
-  image-rendering: pixelated;
-}
-.company-words {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  text-shadow:
-    1px 1px 0 #000,
-    -1px 0 0 #000;
-}
-.company-words span {
-  color: rgba(242, 239, 230, 0.8);
-}
-/* An invite on the HUD stands on a ground of its own, so it reads over the sky. */
-.company-invite {
-  width: fit-content;
-  margin: 4px 0 0;
-  padding: 4px 8px;
-  color: var(--warn, #f0b545);
-}
-
 /* An emblem's sign and nameplate keep their pixels whole. */
-.gear-emblem-sign,
 .gear-emblem-plate {
   image-rendering: pixelated;
-}
-/* On a screen past 1440p the company on the HUD stands at twice its size, as the menu does. */
-@media (min-width: 2400px) and (min-height: 1300px) {
-  #hud .company-hud {
-    zoom: 2;
-  }
 }

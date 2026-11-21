@@ -9,7 +9,7 @@ import type { GearState } from '../../network/gearMessages.ts';
 import type { Cards } from '../../player/cards.ts';
 import { ELEMENTS } from '../../player/gear.ts';
 import { ROLES } from '../../plus/kit.ts';
-import type { PageContext } from '../characterPage.ts';
+import type { PageContext } from '../menuPage.ts';
 import { emblemImage, emblemOf } from '../emblemArt.ts';
 import { type Hint, glyphImage } from '../gearDom.ts';
 import { STEP_BACK, type View } from '../gearScreen.ts';

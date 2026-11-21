@@ -236,3 +236,31 @@ test('a node’s own drawing is told how faded it stands, its parents’ opacity
   ui.draw({ opacity: 0.5, children: [{ opacity: 0.5, width: 10, height: 10, draw: (...args) => told.push(args[4]) }] });
   assert.deepEqual(told, [0.25]);
 });
+
+test('a right press is heard on what it is over, and the focus says whether the keys moved it', () => {
+  const ui = new Interface(renderer());
+  step(ui, presses());
+  step(ui, presses(), [{ kind: 'down', x: 15, y: 15, button: 2 }]);
+  assert.ok(ui.rightClicked('one'));
+  assert.ok(!ui.clicked('one'), 'a right press is no press');
+  step(ui, presses());
+  assert.ok(!ui.rightClicked('one'), 'heard for one frame');
+  step(ui, presses(), [{ kind: 'down', x: 70, y: 15, button: 0 }]);
+  assert.equal(ui.focusedId, 'two');
+  assert.ok(!ui.keyFocused, 'a click gives focus, not the keys');
+  step(ui, presses(), [{ kind: 'key', key: 'Tab' }]);
+  assert.equal(ui.focusedId, 'one');
+  assert.ok(ui.keyFocused);
+  step(ui, presses(), [{ kind: 'down', x: 15, y: 15, button: 2 }], false);
+  assert.ok(!ui.rightClicked('one'), 'nothing is pressed while the pointer looks round');
+});
+
+test('the pointer is where it last moved while free, and nowhere once it leaves or looks round', () => {
+  const ui = new Interface(renderer());
+  step(ui, presses(), [{ kind: 'pointer', x: 12, y: 30 }]);
+  assert.deepEqual(ui.pointerAt, { x: 12, y: 30 });
+  step(ui, presses(), [{ kind: 'leave' }]);
+  assert.equal(ui.pointerAt, null);
+  step(ui, presses(), [{ kind: 'pointer', x: 12, y: 30 }], false);
+  assert.equal(ui.pointerAt, null);
+});
