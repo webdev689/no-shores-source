@@ -33,6 +33,9 @@ const RECORDED: Partial<Record<Cue, string>> = {
   open: 'ui.open',
   dismantle: 'hold.dismantle',
   feed: 'hold.feed',
+  tab: 'ui.tab',
+  close: 'ui.close',
+  refused: 'ui.refused',
 };
 /** What a press is: buttons and what acts like them. */
 const PRESSABLE = 'button, a[href], summary, select, [role="button"], [role="tab"], input[type="checkbox"]';

@@ -4,6 +4,7 @@
 
 import type { BedKey } from './beds.ts';
 import { type AmbienceKey, type ByPhase, always } from './law.ts';
+import { RECORDINGS } from './recordings.ts';
 import type { SoundKey } from './sounds.ts';
 
 /** Where a voice is placed round the listener: in the open round them, on the ground near, in the trees, high in the
@@ -117,18 +118,22 @@ const voice = (
   spot: Spot,
   perMinute: ByPhase,
   more: Partial<Voice> = {},
-): Voice => ({
-  sounds: typeof sounds === 'string' ? [sounds] : sounds,
-  perMinute,
-  bout: [1, 1],
-  spacing: [0, 0],
-  at: spot,
-  ...SPOTS[spot],
-  gain: [0.5, 1],
-  pitch: [0.94, 1.06],
-  drift: 0,
-  ...more,
-});
+): Voice => {
+  const list = typeof sounds === 'string' ? [sounds] : sounds;
+  return {
+    sounds: list,
+    recorded: list[0] && RECORDINGS[list[0]],
+    perMinute,
+    bout: [1, 1],
+    spacing: [0, 0],
+    at: spot,
+    ...SPOTS[spot],
+    gain: [0.5, 1],
+    pitch: [0.94, 1.06],
+    drift: 0,
+    ...more,
+  };
+};
 /** A voice heard only as its Freesound recording, silent until the owner picks one. */
 const recordedOnly = (cue: string, spot: Spot, perMinute: ByPhase, more: Partial<Voice> = {}): Voice => ({
   ...voice([], spot, perMinute, more),
@@ -138,6 +143,7 @@ const recordedOnly = (cue: string, spot: Spot, perMinute: ByPhase, more: Partial
 const bed = (key: BedKey, gain: number, more: Partial<BedLayer> = {}): BedLayer => ({
   bed: key,
   gain,
+  recorded: RECORDINGS[key],
   when: always(1),
   breath: 0.4,
   at: 'wide',
@@ -478,7 +484,7 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
     beds: [
       bed('insects.marsh', 1, { when: { day: 1, dusk: 1.2, night: 1.4, dawn: 1 }, breath: 0.35 }),
       bed('frogs.chorus', 0.9, { when: { day: 0.3, dawn: 0.5, dusk: 0.8, night: 1 }, breath: 0.4 }),
-      bed('shore.lap', 0.35, { breath: 0.4 }),
+      bed('shore.lap', 0.35, { breath: 0.4, recorded: 'amb.swamp.water' }),
       bed('wind.breeze', 0.25, { gust: 0.5, breath: 0.3 }),
       RIVER(0.5),
       SURF(0.6),
