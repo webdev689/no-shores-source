@@ -1,6 +1,6 @@
 // The interface as the GPU draws it: one list of quads a frame, each a rectangle in device pixels with its colour, a
 // rectangle of the atlas it shows (stretched over it, or tiled at a texel's size), and the rectangle it is clipped to,
-// drawn in one instanced draw (`uiShader.ts`).
+// drawn in one instanced draw (`uiShader.ts`); a turned quad is clipped by the pixel instead.
 
 /** A colour, its four channels 0 to 1, not premultiplied. */
 export type Colour = readonly [number, number, number, number];
@@ -33,9 +33,10 @@ export function colourOf(css: string): Colour {
   return [red / 255, green / 255, blue / 255, alpha];
 }
 
-/** An atlas rectangle a quad shows: its texels, and, tiled, the device pixels a texel covers. */
+/** An atlas rectangle a quad shows: its texels on its layer, and, tiled, the device pixels a texel covers. */
 export interface Texels extends Box {
   readonly tile?: number;
+  readonly layer?: number;
 }
 
 /** A frame's quads, grown as they are added and handed whole to the GPU. */
@@ -53,8 +54,9 @@ export class QuadList {
     return this.floats.subarray(0, this.count * QUAD_FLOATS);
   }
 
-  /** `box` filled with `colour`, showing `texels` of the atlas where given, inside `clip`. */
-  add(box: Box, colour: Colour, clip: Box = UNCLIPPED, texels?: Texels): void {
+  /** `box` filled with `colour`, showing `texels` of the atlas where given, inside `clip`, turned `turn` radians
+   *  clockwise about its middle. */
+  add(box: Box, colour: Colour, clip: Box = UNCLIPPED, texels?: Texels, turn = 0): void {
     if (box.width <= 0 || box.height <= 0 || colour[3] <= 0) return;
     if ((this.count + 1) * QUAD_FLOATS > this.floats.length) {
       const grown = new Float32Array(this.floats.length * 2);
@@ -80,8 +82,8 @@ export class QuadList {
         right(clip),
         bottom(clip),
         texels?.tile ?? 0,
-        0,
-        0,
+        texels?.layer ?? 0,
+        turn,
         0,
       ],
       start,

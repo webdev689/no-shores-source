@@ -11,6 +11,13 @@ code:
   - client/src/ui/text.ts#layLine
   - client/src/ui/uiRenderer.ts#UiRenderer
   - client/src/ui/uiRenderer.ts#uiScale
+  - client/src/ui/layout.ts#layout
+  - client/src/ui/node.ts#Node
+  - client/src/ui/ui.ts#Interface
+  - client/src/ui/canvasEvents.ts#CanvasEvents
+  - client/src/ui/controls.ts#slider
+  - client/src/ui/pictures.ts#Pictures
+  - client/src/ui/field.ts#typed
   - client/src/ui/paint.ts#paint
   - client/src/ui/announce.ts#announce
   - client/src/game/toasts.ts#layToasts
@@ -118,7 +125,28 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
 - **The roles, painted.** `paint` lays a role's drop shadows, ground, bands, inner shades and bevel or carved frame as
   the kit's sheet paints them for a page; at a whole scale they match the page's pixels. A CSS pixel is drawn at the
   screen's ratio rounded to a whole pixel (`uiScale`), so a ratio of 1.5 draws at 2.
-- **Announced.** A toast's words go to a screen reader through `document.ariaNotify` where the browser has it.
+- **Announced.** A toast's words, and each press's label as focus reaches it, go to a screen reader through
+  `document.ariaNotify` where the browser has it.
+- **A tree of the game's own.** Each frame the interface is built afresh as plain nodes (`Node`): a box that is a
+  fixed size, fits its content, grows into the room left or takes a share of its parent; lays its children in a row,
+  a column or wrapping lines, with padding, gaps and alignment; and shows a role's paint, a fill, an outline, words
+  (spans in their own colours, wrapped or cut short with '...', with a hard shadow or a halo), a picture, or its own
+  drawing. A node can float over the rest, against its parent or the screen, clip or scroll its children, and be
+  drawn moved or faded. `layout` lays it out after Clay's model, every length in whole CSS pixels.
+- **Pictures.** A picture is laid into the atlas at the size it is drawn, as it is first wanted: a file, SVG markup,
+  RGBA pixels, 2D drawing, or a live image copied in again as its version changes; pixel art keeps its own texels. The
+  atlas grows a layer at a time, up to 8 of 2048 square, and a quad can turn about its middle, as an arrow does.
+- **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the
+  pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
+  way, or by the pad's cross, A pressing and B going back; the wheel scrolling the list under it, and focus by keys
+  scrolling its list to it. A field takes words through the browser's `EditContext` where it has one (Chromium), so
+  composition and on-screen keyboards work on the canvas, and through keys and paste elsewhere; copy and cut take
+  its selection. The page's side is `CanvasEvents`; the interface hears plain events, so it can run with the game in
+  a worker. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
+- **Controls.** A press with words, a toggle, a slider (dragged, or stepped by its arrows) and a choice from a list
+  that opens under it are built once, for every screen (`controls.ts`).
+- **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
+  writes a PNG; `ui/gallery.ts` holds every kind of node.
 
 ## How it works
 

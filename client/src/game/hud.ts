@@ -4,7 +4,7 @@ import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { motionReduced, ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
-import type { UiRenderer } from '../ui/uiRenderer.ts';
+import type { Interface } from '../ui/ui.ts';
 import { type Hint, hintLine } from './gearDom.ts';
 import './hud.css';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
@@ -251,10 +251,16 @@ export class Hud {
 
   /** Draws what the game draws of the HUD with `ui`, in a view `width` by `height` device pixels at `scale` device
    *  pixels a CSS pixel: the toasts. */
-  drawn(ui: UiRenderer, view: { readonly width: number; readonly height: number; readonly scale: number }): void {
+  drawn(ui: Interface, view: { readonly width: number; readonly height: number; readonly scale: number }): void {
     const { width, height, scale } = view;
     const shown = { width: width / scale, height: height / scale, panelShown: this.fightPanel.shown };
-    drawToasts(ui, layToasts(ui.face, this.toasts, shown, performance.now() / 1000, motionReduced()), scale);
+    const { renderer } = ui;
+    drawToasts(
+      renderer,
+      layToasts(renderer.face, this.toasts, shown, performance.now() / 1000, motionReduced()),
+      scale,
+    );
+    ui.draw({});
   }
 
   /** A line of what is happening (a voyage, a connection), or none. */

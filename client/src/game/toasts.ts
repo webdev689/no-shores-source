@@ -2,6 +2,7 @@
 // of the view above the dialogue box's top, the newest last. A toast still said keeps the moment it came, so only a
 // new one rises in.
 import { TONES } from '../plus/tones.ts';
+import { cubicBezier } from '../ui/ease.ts';
 import type { Box } from '../ui/quads.ts';
 import { paint } from '../ui/paint.ts';
 import { lineHeight, widthOf, wrapped } from '../ui/text.ts';
@@ -34,19 +35,6 @@ export interface Toast {
 /** The toasts said `now`, the newest `MOST_TOASTS`: one already shown keeps its moment; a new one comes at `clock`. */
 export function keptToasts(shown: readonly Toast[], now: readonly string[], clock: number): Toast[] {
   return now.slice(-MOST_TOASTS).map((text) => shown.find((toast) => toast.text === text) ?? { text, since: clock });
-}
-
-/** The CSS `cubic-bezier()` easing through its two inner points at `share` of the way. */
-export function cubicBezier(fromX: number, fromY: number, toX: number, toY: number, share: number): number {
-  const along = (one: number, two: number, time: number) =>
-    3 * (1 - time) ** 2 * time * one + 3 * (1 - time) * time ** 2 * two + time ** 3;
-  let [low, high] = [0, 1];
-  for (let step = 0; step < 30; step++) {
-    const middle = (low + high) / 2;
-    if (along(fromX, toX, middle) < share) low = middle;
-    else high = middle;
-  }
-  return along(fromY, toY, (low + high) / 2);
 }
 
 /** A toast as laid: its chip's box and its lines' tops, in CSS pixels, and how far in it has come, 0 to 1. */

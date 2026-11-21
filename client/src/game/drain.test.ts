@@ -1,20 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { DRAIN_S, Drain, drainOf, easeOut } from './drain.ts';
+import { easeOut } from '../ui/ease.ts';
+import { DRAIN_S, Drain, drainOf } from './drain.ts';
 
 const near = (actual: number, expected: number, within = 1e-4) =>
   assert.ok(Math.abs(actual - expected) <= within, `${actual} is not within ${within} of ${expected}`);
-
-test("the ease is CSS's ease-out: still at its ends, quick at first", () => {
-  near(easeOut(0), 0, 1e-6);
-  near(easeOut(1), 1, 1e-6);
-  // Chromium's ease-out, read off an animation a quarter, half and three quarters through.
-  near(easeOut(0.25), 0.37814);
-  near(easeOut(0.5), 0.68464);
-  near(easeOut(0.75), 0.90654);
-  near(easeOut(-1), 0, 1e-6);
-  near(easeOut(2), 1, 1e-6);
-});
 
 test('the filter runs from none to the full grey, each function on its own line', () => {
   assert.deepEqual(drainOf(0), { grey: 0, bright: 1, contrast: 1 });

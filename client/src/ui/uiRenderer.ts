@@ -1,10 +1,12 @@
-// The interface's renderer: its atlas of glyphs and tiles, and each frame's quads drawn in one pass over whatever the
-// frame drew before it, at the frame's end, on the canvas's own texture.
+// The interface's renderer: its atlas of glyphs, tiles and pictures, and each frame's quads drawn in one pass over
+// whatever the frame drew before it, at the frame's end, on the canvas's own texture.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
-import { ATLAS_SIZE, Shelves } from './atlas.ts';
+import { ATLAS_SIZE, Layers, type Placed } from './atlas.ts';
 import type { Glyph } from './glyphs.ts';
+import type { Picture } from './node.ts';
+import { Pictures } from './pictures.ts';
 import { type Box, type Colour, colourOf, QUAD_FLOATS, QuadList, UNCLIPPED } from './quads.ts';
-import { type Face, layLine } from './text.ts';
+import { type Face, layLine, widthOf } from './text.ts';
 import { UI_SHADER } from './uiShader.ts';
 
 /** Device pixels a CSS pixel of the interface takes: the screen's ratio to a whole pixel, so every cell and edge
@@ -19,11 +21,12 @@ export class UiRenderer {
   readonly face: Face;
   private readonly gpu: Gpu;
   private readonly pipeline: GPURenderPipeline;
-  private readonly atlas: GPUTexture;
+  private atlas: GPUTexture;
   private readonly view: GPUBuffer;
-  private readonly binding: GPUBindGroup;
-  private readonly shelves = new Shelves();
-  private readonly placed = new Map<Glyph | string, Box | null>();
+  private binding: GPUBindGroup;
+  private readonly layers = new Layers();
+  private readonly placed = new Map<Glyph | string, Placed | null>();
+  private readonly pictures: Pictures;
   private instances: GPUBuffer | null = null;
 
   constructor(gpu: Gpu, face: Face) {
@@ -58,25 +61,68 @@ export class UiRenderer {
       },
       primitive: { topology: 'triangle-strip' },
     });
-    this.atlas = device.createTexture({
-      size: [ATLAS_SIZE, ATLAS_SIZE],
-      format: 'rgba8unorm',
-      usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination,
-    });
     this.view = device.createBuffer({ size: 16, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
-    this.binding = device.createBindGroup({
+    this.atlas = this.atlasOf(1);
+    this.binding = this.bindingOf(this.atlas);
+    this.pictures = new Pictures(
+      device,
+      (width, height) => this.room(width, height),
+      () => this.atlas,
+    );
+  }
+
+  /** The atlas with `count` layers. */
+  private atlasOf(count: number): GPUTexture {
+    return this.gpu.device.createTexture({
+      size: [ATLAS_SIZE, ATLAS_SIZE, count],
+      format: 'rgba8unorm',
+      // Copied into from pictures (which asks for drawing too), and copied from when it grows.
+      usage:
+        TEXTURE_USAGE.textureBinding |
+        TEXTURE_USAGE.copyDestination |
+        TEXTURE_USAGE.copySource |
+        TEXTURE_USAGE.renderAttachment,
+    });
+  }
+
+  private bindingOf(atlas: GPUTexture): GPUBindGroup {
+    return this.gpu.device.createBindGroup({
       layout: this.pipeline.getBindGroupLayout(0),
       entries: [
         { binding: 0, resource: { buffer: this.view } },
-        { binding: 1, resource: this.atlas.createView() },
+        { binding: 1, resource: atlas.createView({ dimension: '2d-array' }) },
       ],
     });
   }
 
+  /** Room in the atlas for a `width` by `height` picture, a layer more opened when the last is full. */
+  private room(width: number, height: number): Placed | null {
+    const box = this.layers.place(width, height);
+    if (box && box.layer >= this.atlas.depthOrArrayLayers) {
+      const grown = this.atlasOf(this.layers.count);
+      const encoder = this.gpu.device.createCommandEncoder();
+      encoder.copyTextureToTexture({ texture: this.atlas }, { texture: grown }, [
+        ATLAS_SIZE,
+        ATLAS_SIZE,
+        this.atlas.depthOrArrayLayers,
+      ]);
+      this.gpu.device.queue.submit([encoder.finish()]);
+      this.atlas.destroy();
+      this.atlas = grown;
+      this.binding = this.bindingOf(grown);
+    }
+    return box;
+  }
+
+  /** The width of `words` at `size`, in CSS pixels. */
+  measure(words: string, size: number): number {
+    return widthOf(this.face, words, size);
+  }
+
   /** Where `glyph` lies in the atlas, laid there as it is first wanted: its cells white, the rest clear. */
-  glyphTexels(glyph: Glyph): Box | null {
+  glyphTexels(glyph: Glyph): Placed | null {
     if (this.placed.has(glyph)) return this.placed.get(glyph) ?? null;
-    const box = this.shelves.place(glyph.width, glyph.height);
+    const box = this.room(glyph.width, glyph.height);
     if (box) {
       const pixels = new Uint8Array(glyph.cells.length * 4);
       glyph.cells.forEach((cell, index) => pixels.fill(cell ? 255 : 0, index * 4, index * 4 + 4));
@@ -87,9 +133,9 @@ export class UiRenderer {
   }
 
   /** Where the tile `key` lies in the atlas, laid there from `pixels` (RGBA, `width` by `height`) the first time. */
-  tileTexels(key: string, width: number, height: number, pixels: () => Uint8Array): Box | null {
+  tileTexels(key: string, width: number, height: number, pixels: () => Uint8Array): Placed | null {
     if (this.placed.has(key)) return this.placed.get(key) ?? null;
-    const box = this.shelves.place(width, height);
+    const box = this.room(width, height);
     if (box) this.write(box, pixels());
     this.placed.set(key, box);
     return box;
@@ -158,9 +204,19 @@ export class UiRenderer {
     this.quads.clear();
   }
 
-  private write(box: Box, pixels: Uint8Array): void {
+  /** `picture` over `box` (device pixels) inside `clip`, faded by `fade`; nothing until its pixels have come. */
+  picture(picture: Picture, box: Box, clip: Box = UNCLIPPED, fade = 1): void {
+    const width = picture.pixel?.width ?? Math.round(box.width);
+    const height = picture.pixel?.height ?? Math.round(box.height);
+    const texels = this.pictures.texels(picture, width, height);
+    if (!texels) return;
+    const [red, green, blue, alpha] = picture.tint ? colourOf(picture.tint) : [1, 1, 1, 1];
+    this.quads.add(box, [red, green, blue, alpha * fade], clip, texels, ((picture.turn ?? 0) * Math.PI) / 180);
+  }
+
+  private write(box: Placed, pixels: Uint8Array): void {
     this.gpu.device.queue.writeTexture(
-      { texture: this.atlas, origin: [box.x, box.y] },
+      { texture: this.atlas, origin: [box.x, box.y, box.layer] },
       pixels as Uint8Array<ArrayBuffer>,
       { bytesPerRow: box.width * 4 },
       [box.width, box.height],

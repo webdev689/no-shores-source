@@ -22,11 +22,13 @@ export const wordSpacing = (size: number): number => Math.ceil((3 * WORDS_PX * s
 /** What stands in for a glyph the face does not hold. */
 const MISSING = '?'.codePointAt(0) ?? 63;
 
-/** A glyph as laid: the glyph, and where its top-left cell stands from the line's left and its top, in units. */
+/** A glyph as laid: the glyph, where its top-left cell stands from the line's left and its top, in units, and which
+ *  character of the words it is, counted by code point. */
 export interface Laid {
   readonly glyph: Glyph;
   readonly x: number;
   readonly y: number;
+  readonly index: number;
 }
 
 /** A line of words at `size`: its glyphs, and its width in units from its first pen to its last. */
@@ -35,7 +37,9 @@ export function layLine(face: Face, words: string, size: number): { readonly wid
   const scale = (WORDS_PX * size) / 1000;
   const baseline = baselineOf(size);
   let pen = 0;
+  let index = -1;
   for (const char of words) {
+    index += 1;
     const code = char.codePointAt(0) ?? 0;
     const glyph = face.glyph(code) ?? face.glyph(MISSING);
     if (!glyph) continue;
@@ -43,7 +47,7 @@ export function layLine(face: Face, words: string, size: number): { readonly wid
       // The ink's first column stands where Pixelify puts it (60 units in, 90 a column), from a whole unit.
       const x = Math.round(pen) + Math.round((60 + 90 * glyph.left) * scale);
       const y = baseline - (glyph.bottom + glyph.height) * size;
-      glyphs.push({ glyph, x, y });
+      glyphs.push({ glyph, x, y, index });
     }
     pen += glyph.advance * scale + letterSpacing(size) + (char === ' ' ? wordSpacing(size) : 0);
   }

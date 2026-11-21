@@ -2,28 +2,13 @@
 // own picture, last, so the interface the game draws over it keeps its colour. The look is the page's old filter on
 // the canvas, `grayscale(0.92) brightness(0.72) contrast(1.05)`, eased out over 1.4 s each way as CSS eased it.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { easeOut } from '../ui/ease.ts';
 
 /** How long the world takes to drain, or to come back, in seconds. */
 export const DRAIN_S = 1.4;
 
 /** The drain at its fullest: how grey, how bright and how much contrast. */
 const FULL = { grey: 0.92, bright: 0.72, contrast: 1.05 } as const;
-
-/** CSS's `ease-out`, `cubic-bezier(0, 0, 0.58, 1)`, at `time` from 0 to 1. */
-export function easeOut(time: number): number {
-  if (time <= 0) return 0;
-  if (time >= 1) return 1;
-  // Along the curve, its x is 1.74a² − 0.74a³, rising from 0 to 1: halve toward the a whose x is the time, then give
-  // its y, 3a² − 2a³.
-  let [low, high] = [0, 1];
-  for (let step = 0; step < 24; step++) {
-    const along = (low + high) / 2;
-    if (1.74 * along * along - 0.74 * along ** 3 < time) low = along;
-    else high = along;
-  }
-  const along = (low + high) / 2;
-  return 3 * along * along - 2 * along ** 3;
-}
 
 /** The filter at `share` of the drain (0 none, 1 full), as CSS sets each function between none and its own. */
 export function drainOf(share: number): { grey: number; bright: number; contrast: number } {

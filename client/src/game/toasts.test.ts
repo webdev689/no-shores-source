@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { glyphDrawn } from '../ui/glyphs.ts';
 import type { Face } from '../ui/text.ts';
-import { cubicBezier, keptToasts, layToasts, MOST_TOASTS } from './toasts.ts';
+import { keptToasts, layToasts, MOST_TOASTS } from './toasts.ts';
 
 /** A face whose every glyph is a 600-unit block. */
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
@@ -17,13 +17,6 @@ test('a toast still said keeps its moment, a new one comes now, and only the new
   ]);
   assert.equal(keptToasts([], ['a', 'b', 'c', 'd'], 0).length, MOST_TOASTS);
   assert.equal(keptToasts([], ['a', 'b', 'c', 'd'], 0)[0]?.text, 'b');
-});
-
-test("the page's rise eases as CSS's cubic-bezier does: from 0 to 1, most of the way early", () => {
-  assert.ok(Math.abs(cubicBezier(0.16, 1, 0.3, 1, 0)) < 1e-6);
-  assert.ok(Math.abs(cubicBezier(0.16, 1, 0.3, 1, 1) - 1) < 1e-6);
-  assert.ok(cubicBezier(0.16, 1, 0.3, 1, 0.3) > 0.8);
-  assert.ok(Math.abs(cubicBezier(0.25, 0.25, 0.75, 0.75, 0.4) - 0.4) < 1e-6, 'a straight curve is linear');
 });
 
 test('toasts stand centred, the newest last, the column 268 px above the foot; narrow beside the ship panel', () => {

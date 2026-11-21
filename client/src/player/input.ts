@@ -61,7 +61,8 @@ export class Input {
   private wheel = 0;
   private readonly canvas: HTMLCanvasElement;
 
-  constructor(canvas: HTMLCanvasElement) {
+  /** Listens on `canvas`; while `typing` says words are being typed into the interface, keys are not the game's. */
+  constructor(canvas: HTMLCanvasElement, typing: () => boolean = () => false) {
     this.canvas = canvas;
     const press = (name: string) => {
       if (!this.down.has(name)) this.pressedSince.add(name);
@@ -75,7 +76,7 @@ export class Input {
     const keyName = (event: KeyboardEvent) =>
       /^Digit\d$/.test(event.code) ? event.code.slice('Digit'.length) : event.key.toLowerCase();
     addEventListener('keydown', (event) => {
-      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement || typing()) return;
       press(keyName(event));
       if (this.locked && event.key === ' ') event.preventDefault();
     });
