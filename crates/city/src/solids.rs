@@ -50,6 +50,15 @@ pub enum Material {
     Rubble,
     /// Glows at night: a beacon's fire, a lantern.
     Glow,
+    /// The white rock of a chalk down, torn up in slabs.
+    Chalk,
+    /// Grass and its roots, on a slab of ground torn up.
+    Turf,
+    /// Grey sailcloth: a tarp, a sack, a banner.
+    Canvas,
+    /// The Lattice's red crystal, drawn by code: graded purple in its shadows, its facets catching the sun, its core
+    /// glowing as much as its vertices say.
+    Crystal,
 }
 
 /// One solid: its shape, the middle of its base in world metres (z up), its size (width, depth, height), its turn
@@ -142,6 +151,20 @@ mod tests {
         assert!((south - (190.0 * sine + 10.0 * cosine)).abs() < 1e-9, "{south}");
         assert!((north + 10.0 * cosine).abs() < 1e-9 && (west + 10.0).abs() < 1e-9 && (east - 10.0).abs() < 1e-9);
         assert!((bottom + 10.0 * sine).abs() < 1e-9 && (top - (190.0 * cosine + 10.0 * sine)).abs() < 1e-9);
+    }
+
+    #[test]
+    fn the_modules_materials_read_by_their_kit_names() {
+        // tools/modules/kit.py MATERIALS: a manifest naming one the rules do not know would read as no modules at all.
+        for (name, material) in [
+            ("chalk", Material::Chalk),
+            ("turf", Material::Turf),
+            ("canvas", Material::Canvas),
+            ("gold", Material::Gold),
+            ("crystal", Material::Crystal),
+        ] {
+            assert_eq!(serde_json::from_str::<Material>(&format!("\"{name}\"")).ok(), Some(material));
+        }
     }
 
     #[test]

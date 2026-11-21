@@ -48,3 +48,13 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The wire's field | `public_event` on the snapshot, read into `public` on the page | `public` is a TypeScript keyword: flatc names its reader `public_` |
 | The scripted players | Level 6, Rare gear at 6, guarding between swings and varying their strokes | Two level-1 players never broke a heroic raid's third wave |
 | The events' level | The top of the island's band (Saltmere: 4) | As Destiny 1's events stand at their area's level: two levels under, a pair runs out of time |
+| The props' new materials | Chalk, turf and canvas beside crystal | The Fissure is torn out of a chalk down; the stores and banner are grey canvas |
+| The crystal's glow | A byte a vertex in the mesh's spare byte | Bright toward a shard's point, dark at its root, as the Lattice's own props are; every older mesh is unchanged |
+| The props' colours on the page | Each material a colour worked by code, not a picture | The props stand where no city's picture book is loaded |
+| The Lattice's props reused | Its shards, clusters, crusts and boulders, through an adapter | The owner's "just available props"; its whole props are too small for the events |
+| The fissure's chasm | Built under the ground; the page opens the land along its mouth | A crack seen into reads as a crack; a flat glow reads as a pool |
+| How the fissure opens and closes | Widening from a line and deepening; the scar rises as it closes | The marks' health says how far open |
+| How the growth and a banner appear | Rising out of the ground over 2.4 s, sinking over 3 s; a banner driven in over 0.7 s | Seen arriving, not appearing |
+| Which stack a store is | One of three by its id | Three stores in a hamlet, each different |
+| A shard on the ground | Turning, bobbing, blinking once a third of its life is left | Seen from afar, and its fading seen |
+| A chest's lid | Swinging open over 0.6 s to 112 degrees about its hinge | The lid swings, light spills (the spec) |

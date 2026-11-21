@@ -13,6 +13,8 @@ export interface LampPlace {
 
 /** What the city drawn now lights, set by its view as it is shown and cleared with it. */
 export const CITY_LAMPS: { current: readonly LampPlace[] } = { current: [] };
+/** What the public events' props light now (their crystal, a chest opened), set each frame they are drawn. */
+export const EVENT_LAMPS: { current: readonly LampPlace[] } = { current: [] };
 
 /** A fire's light, linear red, green and blue. */
 export const FIRELIGHT = [1.0, 0.62, 0.3] as const;

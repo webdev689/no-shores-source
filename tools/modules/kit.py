@@ -13,8 +13,9 @@ import bmesh
 import mathutils
 
 # The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture, in the order
-# its groups are written: paving last, as the first group carries the parts and paving is never run into.
-MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'paving')
+# its groups are written: paving last, as the first group carries the parts and paving is never run into. Crystal is
+# the Lattice's: drawn by code, not a picture, its core glowing as much as its vertices' glow says.
+MATERIALS = ('stone', 'trim', 'rubble', 'chalk', 'turf', 'timber', 'canvas', 'iron', 'gold', 'crystal', 'paving')
 
 
 class Module:
@@ -27,6 +28,11 @@ class Module:
         self.pads = []
         self.random = random.Random(seed)
         self.objects = []
+        # An object's materials by its faces' material index, with each one's glow: [(material, glow), ...].
+        self.slots = {}
+        # Where the module opens the land under its foot (a chasm's mouth): its two lips, each a line of points along
+        # it at the ground, the land between them not drawn.
+        self.mouth = None
 
     def part(self, low, high):
         """A box a body stands on and runs into, from its low corner to its high one."""
@@ -50,12 +56,53 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def _object(module, name, mesh, material):
+def _object(module, name, mesh, material, glow=0.0):
     item = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(item)
-    item['material'] = material
     module.objects.append(item)
+    module.slots[item.name] = [(material, glow)]
     return item
+
+
+def faced(module, item, slots):
+    """Gives an object one material a face, by the face's material index: `slots` is [(material, glow), ...], glow
+    from 0 (crystal dark to its depths) to 1 (its core alight); only crystal glows."""
+    module.slots[item.name] = list(slots)
+    return item
+
+
+def adopted(module, item, slots):
+    """Takes an object built elsewhere in this scene (the Lattice's props) into the module, its faces' materials as
+    `faced` gives them."""
+    if item.name not in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.link(item)
+    module.objects.append(item)
+    return faced(module, item, slots)
+
+
+def oriented(points, faces, toward):
+    """Each face wound so it faces `toward(middle)` (a direction from its middle): a chasm's walls face into it."""
+    out = []
+    for face in faces:
+        a, b, c = (points[i] for i in face[:3])
+        normal = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
+                  (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
+                  (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+        middle = [sum(points[i][axis] for i in face) / len(face) for axis in range(3)]
+        hint = toward(middle)
+        out.append(tuple(face) if sum(n * h for n, h in zip(normal, hint)) >= 0 else tuple(reversed(face)))
+    return out
+
+
+def solid_of(module, name, points, faces, material='stone', glow=0.0, smooth=False):
+    """An object of `points` and `faces` (each a tuple of point numbers, wound to face out) in one material, its faces
+    flat unless `smooth`, so a facet or a split board catches the light on its own."""
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata([tuple(point) for point in points], [], [tuple(face) for face in faces])
+    mesh.update()
+    for polygon in mesh.polygons:
+        polygon.use_smooth = smooth
+    return _object(module, f'{name}{len(module.objects)}', mesh, material, glow)
 
 
 def _box_mesh(size):
@@ -273,7 +320,7 @@ def battlements(module, start, end, z, thick, material='stone', every=2.0, wide=
 
 
 def exported(module):
-    """The module's surfaces by material, each a list of vertices (position, normal) and triangles, its parts and its
+    """The module's surfaces by material, each a list of vertices (position, normal, glow) and triangles, its parts and its
     sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
     depsgraph = bpy.context.evaluated_depsgraph_get()
     groups = {}
@@ -285,15 +332,17 @@ def exported(module):
         mesh.transform(item.matrix_world)
         mesh.calc_loop_triangles()
         normals = [corner.vector.copy() for corner in mesh.corner_normals]
-        group = groups.setdefault(item['material'], dict(vertices=[], index={}, triangles=[]))
+        slots = module.slots[item.name]
         for triangle in mesh.loop_triangles:
+            material, glow = slots[min(triangle.material_index, len(slots) - 1)]
+            group = groups.setdefault(material, dict(vertices=[], index={}, triangles=[]))
             corners = []
             for loop in triangle.loops:
                 point = mesh.vertices[mesh.loops[loop].vertex_index].co
                 normal = normals[loop]
                 game = (round(point.x, 4), round(-point.y, 4), round(point.z, 4))
                 facing = (round(normal.x, 3), round(-normal.y, 3), round(normal.z, 3))
-                key = (game, facing)
+                key = (game, facing, round(glow, 3))
                 if key not in group['index']:
                     group['index'][key] = len(group['vertices'])
                     group['vertices'].append(key)
@@ -314,5 +363,6 @@ def exported(module):
     sockets = [dict(name=s['name'], at=[s['at'][0], -s['at'][1], s['at'][2]], facing=[s['facing'][0], -s['facing'][1]])
                for s in module.sockets]
     size = [max(abs(low[0]), abs(high[0])) * 2, max(abs(low[1]), abs(high[1])) * 2, high[2]]
+    mouth = module.mouth and [[[x, -y] for x, y, _ in lip] for lip in module.mouth]
     return dict(groups={name: groups[name] for name in MATERIALS if name in groups}, parts=parts, sockets=sockets,
-                pads=pads, size=[round(side, 3) for side in size])
+                pads=pads, size=[round(side, 3) for side in size], mouth=mouth)

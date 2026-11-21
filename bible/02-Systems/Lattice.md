@@ -121,7 +121,9 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 - Where its foes appear (the Fissure) and their numbers are the rules' ([[Public Events as Claude Builds Them]]).
 - The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
   first person and its weapons and shields are not yet drawn, and the game still names Daedric.
-- The props are pictures only here; those the events need are made as modules ([[Modules]]).
+- The props are pictures only, not placed in the world, except what the public events draw ([[Modules]]): the
+  Fissure, its scar, the growth and the shard are meshes built from the props' own shards, clusters, crusts and
+  boulders.
 - The Tithe-Taker holds no ledger: the forge has no ledger to give him.
 - The Idol's beam and the Ravager's shards are drawn along the foe's facing when it aims at no fighter the page
   knows; the Heart's moves are drawn but it is in no event.

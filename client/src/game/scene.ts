@@ -7,7 +7,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { BoltView } from '../sky/bolts.ts';
 import { FallView } from '../sky/fall.ts';
-import { CITY_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { CITY_LAMPS, EVENT_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
@@ -297,7 +297,7 @@ export class GameScene {
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
-      this.lamps.length > 0 ? [...CITY_LAMPS.current, ...this.lamps] : CITY_LAMPS.current,
+      [...CITY_LAMPS.current, ...EVENT_LAMPS.current, ...this.lamps],
       light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,

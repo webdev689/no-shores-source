@@ -11,6 +11,7 @@ import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
+import { EventPropsDraw } from './eventPropsDraw.ts';
 import { FigureView } from './figureView.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
@@ -84,6 +85,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
+  /** The public events' props, drawn from the list the event's view sets each frame. */
+  const eventProps = new EventPropsDraw(gpu);
   const { world, landTexts, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const after = afterStoryOn(hudRoot, forge, (x, y) => scene.groundAt(x, y));
   const { continents } = world;
@@ -392,6 +395,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       figureView,
       figures,
       fight,
+      eventProps,
     );
 
   /** The way through the gate the player stands in, if any, and going through it to the node it leads to. */
