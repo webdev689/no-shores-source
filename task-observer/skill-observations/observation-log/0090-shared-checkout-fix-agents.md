@@ -1,5 +1,5 @@
 ---
-id: 84
+id: 90
 title: "Fix agents sharing one checkout work when each owns its files and none writes to git"
 status: open
 type: open-source
