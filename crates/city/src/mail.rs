@@ -10,9 +10,12 @@ use crate::stations::{Station, StationKind};
 /// How far behind the counter its keeper stands, and the rack behind them, metres.
 const KEEPER_BACK_M: f64 = 1.6;
 const RACK_BACK_M: f64 = 3.0;
+/// How far before the counter a player is served, as a stall's counter point stands before its counter, so the ring
+/// round it clears the rack behind the keeper.
+const SERVED_BEFORE_M: f64 = 1.0;
 
 /// The mail counter standing at `at` (east, south) on a floor at `level`, its keeper facing along `facing` (a unit
-/// vector) over it: its station, and its solids.
+/// vector) over it: its station, served a metre before it, and its solids.
 #[must_use]
 pub fn mail_counter(at: [f64; 2], level: f64, facing: [f64; 2]) -> (Station, Vec<Solid>) {
     // Laid in a frame of its own whose sea is the way its keeper faces.
@@ -35,7 +38,7 @@ pub fn mail_counter(at: [f64; 2], level: f64, facing: [f64; 2]) -> (Station, Vec
         kind: StationKind::Mail,
         keeper: frame.at(-KEEPER_BACK_M, 0.0),
         facing: turn_toward(facing),
-        counter: at,
+        counter: frame.at(SERVED_BEFORE_M, 0.0),
     };
     (station, solids)
 }

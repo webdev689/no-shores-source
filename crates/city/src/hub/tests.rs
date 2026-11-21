@@ -278,6 +278,8 @@ fn the_postmasters_counter_stands_in_the_watch_court_clear_of_every_other_counte
         let apart = libm::hypot(at[0] - x, at[1] - y);
         assert!(apart > 8.0, "something {apart:.1} m from the mail counter");
     }
+    // Served before the counter, as a stall is, its keeper behind it: the ring round where it is served clears the rack
+    // 3 m behind the counter.
     let keeper = mail[0].keeper;
-    assert!(libm::hypot(keeper[0] - at[0], keeper[1] - at[1]) > 1.0, "its keeper behind it");
+    assert!(libm::hypot(keeper[0] - at[0], keeper[1] - at[1]) > 2.4, "its keeper behind the counter");
 }

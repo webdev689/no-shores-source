@@ -57,7 +57,7 @@ fn overlook_is_planned_as_it_was() {
     let mail = plan.social.stations.iter().filter(|station| station.kind == city::stations::StationKind::Mail);
     assert_eq!(mail.count(), 1, "and the mail counter");
     // The plan with its hub's bounty board and mail counter, pinned: a port city's plan must not change with the ruins.
-    assert_eq!(fingerprint(&plan), "b1cf535a55f2690f");
+    assert_eq!(fingerprint(&plan), "86c5eeff16a29d8e");
 }
 
 #[test]

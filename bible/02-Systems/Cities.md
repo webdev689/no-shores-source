@@ -128,7 +128,8 @@ city stands on it:
    It is no station and no keeper stands at it; a player reads it from 2 m before its face, where its counter is. On
    the court's west side between the landing and the west vault house, 12 m landward of the middle and 42 m across,
    stands the mail counter (`mail`, [[Gear]], "The mail"), a station of its own: a timber counter with two parcels,
-   the Postmaster behind it facing the court, and behind him a rack of pigeonholes holding letters under a lamp, more
+   the Postmaster behind it facing the court, served a metre before it as a stall is, and behind him a rack of
+   pigeonholes holding letters under a lamp, more
    than 8 m from every other counter, Shape's spots, the arrivals and the board. Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
