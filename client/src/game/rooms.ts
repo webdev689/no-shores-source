@@ -47,14 +47,24 @@ export function accountOf(
   return { link, session: () => first.then(() => link.token) };
 }
 
-/** A node's room's name: a patrol, mission, dungeon or boss at a voyage's harder seas is its own room
- *  (`node-<id>--rough`); a social space is one for everyone, whatever the seas. */
+/** A node's room's name: a patrol, mission, dungeon or boss at a voyage's harder difficulty is its own room
+ *  (`node-<id>--elite`); a social space is one for everyone, whatever the difficulty. */
 export function nodeRoom(node: { readonly id: string; readonly kind: string }, difficulty: Difficulty): string {
-  return node.kind === 'social' || difficulty === 'calm' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
+  return node.kind === 'social' || difficulty === 'normal' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
 }
 
-/** The node and seas a node's room is for (`node-<id>`, `node-<id>--rough`); null for any other room. */
+/** The sea's room a voyage at `difficulty` sails in: `sea` at Normal, else `sea--elite` or `sea--abyss`. */
+export function seaRoomName(difficulty: Difficulty): string {
+  return difficulty === 'normal' ? 'sea' : `sea--${difficulty}`;
+}
+
+/** Other names for Elite and Abyss, which a place the accounts kept may still carry. */
+const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
+
+/** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`); null for any other room. */
 export function nodeOfRoom(room: string): { readonly id: string; readonly seas: Difficulty } | null {
-  const found = /^node-([a-z0-9-]+?)(?:--(rough|storm))?$/.exec(room);
-  return found?.[1] ? { id: found[1], seas: (found[2] as Difficulty | undefined) ?? 'calm' } : null;
+  const found = /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?$/.exec(room);
+  if (!found?.[1]) return null;
+  const named = found[2];
+  return { id: found[1], seas: named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty)) };
 }

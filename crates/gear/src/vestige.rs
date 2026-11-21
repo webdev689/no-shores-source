@@ -22,7 +22,7 @@ const OPENS: [[u32; 5]; 5] =
 
 /// Colour weights as `level` allows them: too low for the best colours, what would have been one is the best its level
 /// allows.
-fn gated(mut weights: [u32; 5], level: u8) -> [u32; 5] {
+pub(crate) fn gated(mut weights: [u32; 5], level: u8) -> [u32; 5] {
     if level < ATHERIC_FROM {
         weights[3] += weights[4];
         weights[4] = 0;

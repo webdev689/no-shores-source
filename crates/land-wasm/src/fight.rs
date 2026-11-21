@@ -1,7 +1,7 @@
-//! A fight over the open landmass: the player's Sloop and one pirate captain's, or the captains a begin request sets
-//! upon her (the naval crate's `Fight`). It stays here between calls, as the open landmass does; a request begins
-//! one, steps it, or ends it. Requests and answers
-//! are JSON: the fight's own numbers never cross, so a request carries only the player's orders.
+//! A fight over the open landmass: the player's Sloop and one pirate captain in its rank's hull, or the captains a
+//! begin request sets upon it (the naval crate's `Fight`). It stays here between calls, as the open landmass does; a
+//! request begins one, steps it, or ends it. Requests and answers are JSON: the fight's own numbers never cross, so a
+//! request carries only the player's orders.
 
 use super::OPEN;
 use super::sail::{MOST_WAY, helm_from, ship_from, ticks_from};
@@ -11,7 +11,7 @@ use naval::arms::Side;
 use naval::ballistics::flight;
 use naval::captain::Mode;
 use naval::damage::{SINK_SECONDS, State, Zone, founder};
-use naval::fight::{Aim, CAPTAIN, Command, End, Event, Fight, Orders, PLAYER, Refusal, Sailor, Vessel};
+use naval::fight::{Aim, CAPTAIN, Command, End, Event, Fight, Orders, PLAYER, Part, Piece, Refusal, Sailor, Vessel};
 use naval::guns::Shot;
 use naval::ranks::{Commission, Rank};
 use naval::shots::ShotEvent;
@@ -29,7 +29,7 @@ thread_local! {
 /// The farthest a look may lay, metres: past every gun's reach.
 const MOST_RANGE_M: f64 = 1e5;
 
-/// Ends the fight, if one is on: the captain is gone and her balls with her.
+/// Ends the fight, if one is on: the captain is gone and its balls with it.
 pub fn end_fight() {
     FIGHT.with(|fight| *fight.borrow_mut() = None);
 }
@@ -73,6 +73,7 @@ fn mode_name(mode: Mode) -> &'static str {
 fn vessel_json(vessel: &Vessel) -> Value {
     let (damage, guns) = (&vessel.damage, &vessel.guns);
     json!({
+        "hull_kind": vessel.hull.number(),
         "ship": vessel.ship.to_floats(),
         "pose": vessel.pose.to_floats(),
         "hull": damage.hull, "max_hull": damage.max_hull,
@@ -89,8 +90,44 @@ fn vessel_json(vessel: &Vessel) -> Value {
     })
 }
 
+/// A piece of what floats by its look's name.
+fn piece_name(piece: Piece) -> &'static str {
+    match piece {
+        Piece::Crate => "crate",
+        Piece::Barrel => "barrel",
+        Piece::Chest => "chest",
+    }
+}
+
+/// A tick's events as the page reads them: a ball's hit carries where on the ship it struck, in the ship's own frame,
+/// and the part it struck, from the hit the fight tells just before it.
+fn events_json(events: &[Event]) -> Vec<Value> {
+    let mut told = Vec::new();
+    let mut struck = None;
+    for event in events {
+        if let Event::Hit { ship, at, part } = *event {
+            struck = Some((ship, at, part));
+        }
+        let Some(mut shown) = event_json(event) else { continue };
+        // The struck ship's torn rig and state may be told between the two: the hit waits for its ball's.
+        if let Event::Shot(ShotEvent::Hit { target, .. }) = event
+            && let Some((_, at, part)) = struck.take_if(|(ship, ..)| ship == target)
+        {
+            let part = match part {
+                Part::Hull => "hull",
+                Part::Sail => "sail",
+                Part::Rig => "rig",
+            };
+            shown["at"] = json!(at);
+            shown["part"] = json!(part);
+        }
+        told.push(shown);
+    }
+    told
+}
+
 fn event_json(event: &Event) -> Option<Value> {
-    // The editor's fight has one player, so what happens to her ship goes without its number.
+    // The editor's fight has one player, so what happens to their ship goes without its number.
     Some(match *event {
         Event::Shot(ShotEvent::Muzzle { shooter, point, launch }) => {
             json!({ "kind": "muzzle", "ship": shooter, "point": point, "launch": launch })
@@ -115,6 +152,17 @@ fn event_json(event: &Event) -> Option<Value> {
         Event::Ram { ship, by, point, dealt } => {
             json!({ "kind": "ram", "ship": ship, "by": by, "point": point, "dealt": dealt })
         }
+        Event::SailLost { ship, sail } => json!({ "kind": "SailLost", "ship": ship, "sail": sail }),
+        Event::MastFell { ship, mast } => json!({ "kind": "MastFell", "ship": ship, "mast": mast }),
+        Event::Struck { ship } => json!({ "kind": "Struck", "ship": ship }),
+        Event::Sinking { ship } => json!({ "kind": "Sinking", "ship": ship }),
+        Event::Boarding { ship } => json!({ "kind": "Boarding", "ship": ship }),
+        Event::Flotsam { id, at, kind } => {
+            json!({ "kind": "Flotsam", "id": id, "at": at, "kind_of": piece_name(kind) })
+        }
+        Event::Gathered { id, by } => json!({ "kind": "Gathered", "id": id, "by": by }),
+        // A ball's own splash and hit are told with its shot's (`events_json`).
+        Event::Splash { .. } | Event::Hit { .. } => return None,
     })
 }
 
@@ -136,7 +184,7 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
     })
 }
 
-/// The editor's fight's two ships: her Sloop and the captain's, with the captain's command.
+/// The editor's fight's two ships: the player's Sloop and the captain's, with the captain's command.
 fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &Command), String> {
     let player = fight.vessel(PLAYER).ok_or("the fight has no player's ship")?;
     let captain = fight.vessel(CAPTAIN).ok_or("the fight has no captain")?;
@@ -144,29 +192,29 @@ fn the_two(fight: &Fight) -> Result<(&Vessel, &Vessel, &Command), String> {
     Ok((player, captain, command))
 }
 
-/// A captain's Sloop as the browser shows her: her hurts, her commission, her mind, her sides run out, and what her
-/// hurts and her going down do to her pose (settled metres, trim, list), for a drawing on a swell of its own.
+/// A captain's ship as the browser shows it: its hurts, its commission, its mind, its sides run out, and what its
+/// hurts and its going down do to its pose (settled metres, trim, list), for a drawing on a swell of its own.
 fn captain_json(vessel: &Vessel, command: &Command) -> Value {
-    let her = &command.her;
+    let mind = &command.mind;
     let mut captain = vessel_json(vessel);
-    let (settled, trim, list) = founder(&vessel.damage, her.seed, command.under);
+    let (settled, trim, list) = founder(&vessel.damage, mind.seed, command.under);
     captain["founder"] = json!([settled, trim, list]);
-    // A drawing that lets go of the fight while she goes down carries her on under from these: how she will lie
+    // A drawing that lets go of the fight while it goes down carries it on under from these: how it will lie
     // once sunk, and in how many seconds.
     if vessel.damage.state == State::Sinking {
         let mut gone = vessel.damage.clone();
         gone.state = State::Sunk;
-        let (settled, trim, list) = founder(&gone, her.seed, command.under);
+        let (settled, trim, list) = founder(&gone, mind.seed, command.under);
         captain["sunk_founder"] = json!([settled, trim, list]);
         captain["sinks_in"] = json!((SINK_SECONDS - vessel.damage.sink_t).max(0.0));
     }
-    captain["name"] = json!(her.build.name);
-    captain["faction"] = json!(her.commission.faction);
-    captain["rank"] = json!(her.commission.rank.number());
-    captain["mode"] = json!(mode_name(her.mode));
-    captain["hostile"] = json!(her.hostile_to(PLAYER));
+    captain["name"] = json!(mind.build.name);
+    captain["faction"] = json!(mind.commission.faction);
+    captain["rank"] = json!(mind.commission.rank.number());
+    captain["mode"] = json!(mode_name(mind.mode));
+    captain["hostile"] = json!(mind.hostile_to(PLAYER));
     captain["run_out"] = json!(
-        Side::BOTH.iter().filter(|side| her.run.out(**side).is_some()).map(|side| side.name()).collect::<Vec<_>>()
+        Side::BOTH.iter().filter(|side| mind.run.out(**side).is_some()).map(|side| side.name()).collect::<Vec<_>>()
     );
     captain
 }
@@ -209,17 +257,17 @@ fn view(fight: &Fight, events: &[Event], aim: Option<&Aim>, waters: &impl Waters
         "others": others,
         "balls": balls,
         "lay": lay_json(fight, aim, waters, time),
-        "events": events.iter().filter_map(event_json).collect::<Vec<_>>(),
+        "events": events_json(events),
         "over": over_name(fight),
         "fingerprint": format!("{:016x}", fingerprint(fight.numbers())),
     })
 }
 
-/// A captain as the fight enlists her: her Sloop, her commission and her seed.
+/// A captain as the fight enlists it: its ship, its commission and its seed.
 type Enlisted = (Ship, Commission, u32);
 
-/// The captains a begin request sets at sea, each checked: where she is, her heading (radians) and her commission,
-/// her temper drawn from the fight's seed and her place in the list. None given: the plain fight's one captain.
+/// The captains a begin request sets at sea, each checked: where it is, its heading (radians) and its commission,
+/// its temper drawn from the fight's seed and its place in the list. None given: the plain fight's one captain.
 fn captains_of(request: &Value, seed: u32) -> Result<Option<Vec<Enlisted>>, String> {
     let Some(captains) = request.get("captains").filter(|captains| !captains.is_null()) else { return Ok(None) };
     let captains =
@@ -235,7 +283,7 @@ fn captains_of(request: &Value, seed: u32) -> Result<Option<Vec<Enlisted>>, Stri
         let commission = whole("faction")
             .and_then(|faction| Commission::of(faction, rank))
             .ok_or("a captain's faction is one whose captains sail")?;
-        // A captain given her way comes on under sail at it, as she was seen coming; else she lies at rest.
+        // A captain given its way comes on under sail at it, as it was seen coming; else it lies at rest.
         let way = match &captain["way"] {
             Value::Null => 0.0,
             way => number(way, "a captain's way")?,
@@ -266,6 +314,16 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         .and_then(|seed| u32::try_from(seed).ok())
         .ok_or("a fight's seed is a whole number under 2^32")?;
     let (time, _) = ticks_from(number(&request["time"], "the time")?, 0.0)?;
+    // The captain's rank, a Major's unless asked: it sails that rank's hull.
+    let rank = match &request["rank"] {
+        Value::Null => Rank::Major,
+        asked => asked
+            .as_u64()
+            .and_then(|number| u8::try_from(number).ok())
+            .and_then(Rank::numbered)
+            .ok_or("a fight's rank is a whole number from 1 to 5")?,
+    };
+    let commission = Commission { rank, ..Commission::default() };
     let captains = captains_of(&request, seed)?;
     OPEN.with(|open| {
         let open = open.borrow();
@@ -274,7 +332,7 @@ fn begin(request: &[u8]) -> Result<Value, String> {
         let waters = LandWaters { ground: &landmass.surface, swell: &swell };
         let fight = match &captains {
             Some(captains) => Fight::ambush(ship, captains, seed, &waters, time)?,
-            None => Fight::begin(ship, seed, &waters, time)?,
+            None => Fight::begin(ship, commission, seed, &waters, time)?,
         };
         let answer = view(&fight, &[], None, &waters, time);
         FIGHT.with(|slot| *slot.borrow_mut() = Some(fight));
@@ -328,7 +386,7 @@ fn orders_of(request: &Value) -> Result<Step, String> {
             let bearing_deg = number(&aim["bearing"], "the look's bearing")?;
             let range_m = number(&aim["range"], "the look's range")?;
             if !(-180.0..=180.0).contains(&bearing_deg) || !(0.0..=MOST_RANGE_M).contains(&range_m) {
-                return Err("a look bears within 180 degrees of her bow and lays within 100 km".into());
+                return Err("a look bears within 180 degrees of its bow and lays within 100 km".into());
             }
             let ray = match &aim["ray"] {
                 Value::Null => None,

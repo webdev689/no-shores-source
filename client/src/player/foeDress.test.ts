@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { CLOTHING_DYES } from '../forge/dyes.ts';
 import { factionsOf, rankChoices, rosterOf, shownType } from '../rules/roster.ts';
-import { foeDress } from './foeDress.ts';
+import { foeDress, officerDress } from './foeDress.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const roster = rosterOf(
@@ -72,4 +72,29 @@ test('a foe from an older room, sent with no type, is shown as the pirates’ ty
   );
   assert.equal(shownType(roster, { type: 4, kind: 3 })?.name, 'Enforcer', 'a type sent is its own');
   assert.equal(shownType(roster, { type: 0, kind: 0 }), undefined);
+});
+
+test('each post ashore wears its own clothes, so a Gunner and a Lookout fighting as one type never look alike', () => {
+  const archer = roster.find((type) => type.name === 'Archer');
+  assert.ok(archer);
+  const posts = [0, 1, 2, 3, 4].map((post) => officerDress(archer, post));
+  const looks = posts.map((dress, post) => {
+    assert.ok(dress, `post ${post} is dressed`);
+    assert.deepEqual([dress.outfit.right, dress.outfit.left, dress.outfit.drawn], [archer.right, archer.left, true]);
+    assert.deepEqual(
+      Object.keys(dress.outfit.dyes),
+      [...dress.outfit.garments],
+      `post ${post}: a dye for each garment`,
+    );
+    for (const dye of Object.values(dress.outfit.dyes))
+      assert.ok(
+        CLOTHING_DYES.some((known) => known === dye),
+        dye,
+      );
+    assert.ok(Object.values(dress.outfit.dyes).includes('Blue'), `post ${post} wears the crew's blue`);
+    return JSON.stringify([dress.body, dress.tone, dress.outfit.armour, dress.outfit.dyes, dress.outfit.hair]);
+  });
+  assert.equal(new Set(looks).size, 5, 'no two posts alike');
+  assert.notEqual(looks[1], looks[4], 'the Gunner and the Lookout apart');
+  assert.equal(officerDress(archer, 5), null, 'no post past the Lookout');
 });

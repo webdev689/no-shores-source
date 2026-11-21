@@ -1,13 +1,17 @@
 import {
+  type CaptainMode,
   type FightCaptain,
   type FightEvent,
   type FightLook,
   type FightOrders,
+  type FightVessel,
   type FightView,
   SHOT_CYCLE,
+  type ShipState,
 } from '../rules/fightRules.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { helmOf } from '../ships/helmKeys.ts';
+import { sightedWords } from '../ships/shipBars.ts';
 import { MOST_TICKS, TICK_SECONDS } from './sailing.ts';
 
 /** Where a fight is fought: the land's rules, over the open landmass; null when another landmass is open. */
@@ -17,7 +21,7 @@ export interface FightSource {
   fightEnd(): Promise<void>;
 }
 
-/** What the player does in a frame: the keys held (the helm's, and C to brace), a rung press, the look she lays
+/** What the player does in a frame: the keys held (the helm's, and C to brace), a rung press, the look they lay
  *  while aiming, a release of the guns, and steps of the load. */
 export interface FightInput {
   readonly held: ReadonlySet<string>;
@@ -30,9 +34,22 @@ export interface FightInput {
 /** How long a message stays on the panel, seconds. */
 const MESSAGE_S = 3.5;
 const SIDE_WORDS = { port: 'port', starboard: 'starboard' } as const;
+/** The panel has a line for each captain within this of the player's ship, metres. */
+export const LINE_REACH_M = 400;
+/** What a captain is about, in plain words: the rules' modes, and its state once it is not afloat. */
+const MODE_WORDS: Readonly<Record<CaptainMode | ShipState, string>> = {
+  engage: 'closing',
+  cruise: 'cruising',
+  flee: 'running',
+  afloat: 'afloat',
+  struck: 'struck',
+  sinking: 'going down',
+  sunk: 'sunk',
+  wrecked: 'crippled',
+};
 
-/** DFO's words for what happened, as the panel says them, or none. */
-export function wordsFor(event: FightEvent, captain: string): string | null {
+/** DFO's words for what happened, as the panel says them, or none; a captain's ship is named by its number. */
+export function wordsFor(event: FightEvent, nameOf: (ship: number) => string): string | null {
   if (event.kind === 'refused') {
     if (event.why === 'no-guns') return 'No guns bear there.';
     if (event.why === 'silent') return 'Your guns are silent. The ship is crippled.';
@@ -43,18 +60,14 @@ export function wordsFor(event: FightEvent, captain: string): string | null {
   if (event.kind === 'ram' && event.by === 0) return 'You ram the ship!';
   if (event.kind === 'no-sail')
     return event.wrecked ? 'The ship is crippled. No sail will set.' : 'The rigging is shot away. No sail will set.';
-  if (event.kind === 'state' && event.ship !== 0 && event.state === 'struck') return `The ${captain} surrenders!`;
-  if (event.kind === 'state' && event.ship !== 0 && event.state === 'sinking') return `The ${captain} is going down!`;
+  if (event.kind === 'state' && event.ship > 0 && event.state === 'struck')
+    return `The ${nameOf(event.ship)} surrenders!`;
+  if (event.kind === 'state' && event.ship > 0 && event.state === 'sinking')
+    return `The ${nameOf(event.ship)} is going down!`;
   if (event.kind === 'state' && event.ship === 0 && event.state === 'wrecked')
     return 'Your ship is crippled! The sails hang in rags.';
-  if (event.kind === 'state' && event.ship === 0 && event.state === 'afloat')
-    return 'Your hands have her afloat again.';
+  if (event.kind === 'state' && event.ship === 0 && event.state === 'afloat') return 'Your hands have it afloat again.';
   return null;
-}
-
-/** The name of the captain a ship number names in a view, by the number each carries, if it carries her. */
-function captainNamed(view: FightView, ship: number): string | null {
-  return [view.captain, ...(view.others ?? [])].find((captain) => captain.id === ship)?.name ?? null;
 }
 
 /** The owner's fight in the World Editor: the rules' last answer, the ticks the page owes it, the presses waiting
@@ -72,28 +85,27 @@ export class Fighting {
   private events: FightEvent[] = [];
   /** The look held last while aiming: each release fires it, as the aim lets go the frame it is let go. */
   private lastLook: FightLook | null = null;
-  private messages: { readonly text: string; readonly until: number }[] = [];
-  /** Her ship's kind, as the panel names her. */
-  private readonly own: string;
+  private said: { readonly text: string; readonly until: number }[] = [];
+  /** The player's ship's kind, as the readout names it. */
+  readonly own: string;
 
   private constructor(source: FightSource, id: string, answer: FightView, now: number, own = 'Sloop') {
+    this.own = own;
     this.source = source;
     this.id = id;
     this.answer = answer;
-    this.own = own;
-    const [ownX = 0, ownY = 0] = answer.player.ship;
-    const captains = [answer.captain, ...(answer.others ?? [])].filter((captain) => captain.state !== 'sunk');
-    const off = (captain: FightCaptain) => Math.hypot((captain.ship[0] ?? 0) - ownX, (captain.ship[1] ?? 0) - ownY);
-    const nearest = Math.round(Math.min(...captains.map(off)));
+    // Begun with several captains, the fight sights them all at once, by how many and the nearest.
+    const afloat = captainsOf(answer).filter((captain) => captain.state !== 'sunk');
+    const nearest = Math.round(Math.min(...afloat.map((captain) => apart(answer, captain))));
     this.say(
-      captains.length > 1
-        ? `${captains.length} ships are sighted, the nearest ${nearest} m off.`
-        : `A ${answer.captain.name} is sighted, ${Math.round(off(answer.captain))} m off.`,
+      afloat.length > 1
+        ? `${afloat.length} ships are sighted, the nearest ${nearest} m off.`
+        : sightedWords(answer.captain.name, apart(answer, answer.captain)),
       now,
     );
   }
 
-  /** Calls a pirate captain onto the ring round her `ship`, or says why none comes. The rules decide where. */
+  /** Calls a pirate captain onto the ring round the player's `ship`, or says why none comes. The rules decide where. */
   static async begin(
     source: FightSource,
     id: string,
@@ -110,7 +122,7 @@ export class Fighting {
   }
 
   /** A fight begun elsewhere (the sea room's, or the story's), its first view `answer`; `source` steps it. `own` is
-   *  her ship's kind as the panel names her. */
+   *  the player's ship's kind as the readout names it. */
   static joined(source: FightSource, id: string, answer: FightView, now: number, own?: string): Fighting {
     return new Fighting(source, id, answer, now, own);
   }
@@ -119,14 +131,14 @@ export class Fighting {
     return this.answer;
   }
 
-  /** The player's Sloop as the fight last left her. */
+  /** The player's Sloop as the fight last left it. */
   get player(): { readonly ship: ShipFloats; readonly pose: Pose } {
     const [heave = 0, pitch = 0, roll = 0, aground = 0] = this.answer.player.pose;
     return { ship: new Float64Array(this.answer.player.ship), pose: { heave, pitch, roll, aground: aground !== 0 } };
   }
 
   private say(text: string, now: number): void {
-    this.messages = [...this.messages.filter((message) => message.text !== text), { text, until: now + MESSAGE_S }];
+    this.said = [...this.said.filter((message) => message.text !== text), { text, until: now + MESSAGE_S }];
   }
 
   /** Owes the fight `seconds` more and, unless a step is with the rules, sends the whole ticks owed (a second's at
@@ -162,8 +174,7 @@ export class Fighting {
         this.answer = answer;
         this.events.push(...answer.events);
         for (const event of answer.events) {
-          const name = captainNamed(answer, 'ship' in event ? event.ship : 1);
-          const words = name === null ? null : wordsFor(event, name);
+          const words = wordsFor(event, (ship) => nameOf(answer, ship));
           if (words) this.say(words, time);
         }
         if (answer.over === 'gone') this.say(`The ${answer.captain.name} is gone.`, time);
@@ -181,42 +192,67 @@ export class Fighting {
     return taken;
   }
 
-  /** The panel's lines at `now`: her hurts and her guns, each captain's afloat, the broadside warning, and the
-   *  messages. */
+  /** The panel's lines at `now`: each captain's within `LINE_REACH_M`, nearest first, the lay (on target only while
+   *  its side can fire), the broadside warning naming the nearest captain running out, and the messages. */
   lines(now: number): string[] {
-    const { player, captain, lay } = this.answer;
-    const [ownX = 0, ownY = 0] = player.ship;
-    const side = (index: 0 | 1) => (player.guns.left[index] > 0 ? `${player.guns.left[index].toFixed(1)} s` : 'ready');
+    const { player, lay } = this.answer;
+    const near = captainsOf(this.answer)
+      .filter((captain) => captain.state !== 'sunk')
+      .map((captain) => ({ captain, apart: Math.round(apart(this.answer, captain)) }))
+      .filter(({ apart }) => apart <= LINE_REACH_M)
+      .sort((one, other) => one.apart - other.apart);
     const whole = (have: number, most: number) => `${Math.ceil(have)}/${most}`;
-    const described = (each: FightCaptain) => {
-      const [x = 0, y = 0] = each.ship;
-      const apart = Math.round(Math.hypot(x - ownX, y - ownY));
-      return (
-        `${each.name}, ${apart} m off, ${each.state === 'afloat' ? each.mode : each.state}: hull ` +
-        `${whole(each.hull, each.max_hull)}, sails ${whole(each.sail, each.max_sail)}, ${Math.round(each.crew)} men.`
-      );
-    };
-    const captains = [captain, ...(this.answer.others ?? [])].filter((each) => each.state !== 'sunk');
+    // The player's own hurts and guns are the readout's plate and rose.
     const lines = [
-      `Your ${this.own}: hull ${whole(player.hull, player.max_hull)}, sails ${whole(player.sail, player.max_sail)}.` +
-        ` Port ${side(0)}, starboard ${side(1)}. ${player.guns.load[0]?.toUpperCase() ?? ''}${player.guns.load.slice(1)} shot.` +
-        (player.guns.braced ? ' Braced.' : ''),
-      ...captains.map(described),
+      ...near.map(
+        ({ captain, apart }) =>
+          `${captain.name}, ${apart} m off, ${MODE_WORDS[captain.state === 'afloat' ? captain.mode : captain.state]}: ` +
+          `hull ${whole(captain.hull, captain.max_hull)}, sails ${whole(captain.sail, captain.max_sail)}, ` +
+          `${Math.round(captain.crew)} men.`,
+      ),
     ];
-    if (lay) lines.push(`Laying the ${lay.side} guns${lay.on_target ? ': on target.' : '.'}`);
-    if (captains.some((each) => each.run_out.length > 0 && each.state === 'afloat'))
-      lines.push('BROADSIDE! Brace (C).');
-    return [...lines, ...this.said(now)];
+    if (lay)
+      lines.push(`Laying the ${lay.side} guns${lay.on_target && sideReady(player, lay.side) ? ': on target.' : '.'}`);
+    const warning = captainsOf(this.answer)
+      .filter((captain) => captain.run_out.length > 0 && captain.state === 'afloat')
+      .sort((one, other) => apart(this.answer, one) - apart(this.answer, other))[0];
+    if (warning) lines.push(`Broadside from the ${warning.name}: C to brace.`);
+    return [...lines, ...this.messages(now)];
   }
 
-  /** DFO's messages still standing at `now`, oldest first. */
-  said(now: number): string[] {
-    this.messages = this.messages.filter((message) => message.until > now);
-    return this.messages.map((message) => message.text);
+  /** The messages standing at `now`, the newest last: what happened, each for `MESSAGE_S`. */
+  messages(now: number): string[] {
+    this.said = this.said.filter((message) => message.until > now);
+    return this.said.map((message) => message.text);
   }
 
-  /** Ends the fight: the captain and her balls are gone. */
+  /** Ends the fight: the captain and its balls are gone. */
   end(): Promise<void> {
     return this.source.fightEnd();
   }
+}
+
+/** Whether the ship's `side` can fire now: it is afloat, not braced, and its guns are loaded. */
+export function sideReady(
+  player: { readonly state: string; readonly guns: Pick<FightVessel['guns'], 'braced' | 'left'> },
+  side: 'port' | 'starboard',
+): boolean {
+  return player.state === 'afloat' && !player.guns.braced && (player.guns.left[side === 'port' ? 0 : 1] ?? 0) <= 0;
+}
+
+/** Every captain in the fight: the first, then any other. */
+function captainsOf(view: FightView): readonly FightCaptain[] {
+  return [view.captain, ...(view.others ?? [])];
+}
+
+/** The name of the ship the fight's events number `ship`, by the number each captain carries. */
+function nameOf(view: FightView, ship: number): string {
+  return captainsOf(view).find((captain) => captain.id === ship)?.name ?? view.captain.name;
+}
+
+/** How far a captain lies from the player's ship, metres. */
+function apart(view: FightView, captain: FightCaptain): number {
+  const [x = 0, y = 0] = captain.ship;
+  const [ownX = 0, ownY = 0] = view.player.ship;
+  return Math.hypot(x - ownX, y - ownY);
 }

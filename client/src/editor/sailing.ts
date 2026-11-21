@@ -16,8 +16,8 @@ export interface SailSource {
 const STILL: Helm = { steer: 0, crab: false, climb: 0 };
 export { SAILS_RUNG } from './afloat.ts';
 
-/** The Sloop under the owner's hand in the World Editor: her numbers as the rules last answered them, the ticks the
- *  page owes her, and the rung presses waiting for a step. One step is with the rules at a time. */
+/** The Sloop under the owner's hand in the World Editor: its numbers as the rules last answered them, the ticks the
+ *  page owes it, and the rung presses waiting for a step. One step is with the rules at a time. */
 export class Sailing extends Afloat {
   private readonly source: SailSource;
   private readonly id: string;
@@ -33,7 +33,7 @@ export class Sailing extends Afloat {
     this.id = id;
   }
 
-  /** Puts her to sea at world (x, y), heading as the camera looks, or says why she cannot be. The rules decide. */
+  /** Puts it to sea at world (x, y), heading as the camera looks, or says why it cannot be. The rules decide. */
   static async putToSea(
     source: SailSource,
     id: string,
@@ -46,7 +46,7 @@ export class Sailing extends Afloat {
     const within = ((heading % turn) + turn) % turn;
     const sailed = await source.sail(id, new Float64Array([x, y, within, 0, 0, 0, 0, 0]), STILL, time, 0);
     if (!sailed) return 'Open this landmass to sail on it.';
-    if (sailed.pose.aground) return 'The Sloop needs water deeper than her draught: put her to sea off the coast.';
+    if (sailed.pose.aground) return 'The Sloop needs water deeper than its draught: put it to sea off the coast.';
     return new Sailing(source, id, sailed);
   }
 
@@ -55,7 +55,7 @@ export class Sailing extends Afloat {
     if (isRungKey(key)) this.presses.push(key);
   }
 
-  /** Owes her `seconds` more and, unless a step is with the rules, sends the whole ticks owed (a second's at most), the last
+  /** Owes it `seconds` more and, unless a step is with the rules, sends the whole ticks owed (a second's at most), the last
    *  ending at `time`, with the helm the keys held and the next press ask. */
   advance(seconds: number, held: ReadonlySet<string>, time: number, fail: (error: unknown) => void): void {
     this.owed = Math.min(this.owed + seconds, MOST_TICKS * TICK_SECONDS);
@@ -79,12 +79,12 @@ export class Sailing extends Afloat {
       });
   }
 
-  /** Settles once no step is with the rules: a fight begins from her numbers as they are then. */
+  /** Settles once no step is with the rules: a fight begins from its numbers as they are then. */
   whenStill(): Promise<void> {
     return this.inFlight;
   }
 
-  /** Takes her numbers and pose as a fight's answer left them, her run since then stirring her wake. */
+  /** Takes its numbers and pose as a fight's answer left them, its run since then stirring its wake. */
   adopt(sailed: Sailed): void {
     this.moveTo(sailed.ship, sailed.pose);
   }

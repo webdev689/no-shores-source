@@ -13,6 +13,10 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   it is built ([[Overlook Is a Shared World After Destiny 1]]). The prologue's first attackers at sea are pirates, its
   own call; the lore has the opening's ships the Grey Tithe's, unknown under grey sails. The chart that disagrees with
   the coast is not in it yet ([[The Game Shows the Mystery and Explains Almost None of It]]).
+- **Friendly ships' port factions.** Which port faction each friendly ship belongs to
+  ([[The Waters Come From the Islands]]).
+- **Ship materials.** Which materials there are, what each upgrade costs, and the small islands' wreckage, all
+  planned and not built ([[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]).
 - **Crew as companions.** Which of DFO's companion systems the crew comes from: its naval `crewCompanions`, its
   fleet's `companionSlots`, or another.
 - **The Grey Tithe.** Its roster, its boss on land and where its garrisons stand are built as Claude chose them, to
@@ -34,8 +38,8 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **The one mystery.** What the Cube is called, how long it stays unseen, and what calls in the deep
   ([[Raum's Lore Is Adapted Into One Mystery]]).
 - **The islands.** The owner's "Islands dont come and go" beside the discoveries that fade when nobody is near
-  ([[The World Map]]) and the small islands of the sea that appear and fade in the owner's loop decisions, on their
-  own branch.
+  ([[The World Map]]) and the small islands of the sea that fade once nothing holds them ([[Islands]], "Held and
+  faded").
 - **The factions' people.** The Stormcallers' and the Veiled's keepers in Overlook have no names of their own yet, as
   the Lamplighters' Elder Maren Hale has; their speakers are "Stormcaller" and "The Veiled"
   ([[Factions and Vendors as Claude Shapes Them]]).

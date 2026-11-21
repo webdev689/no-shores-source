@@ -7,8 +7,8 @@ use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
 
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
-const AFIELD: Here = Here { social: false, day: 0, week: 0 };
-const AT_THE_COUNTER: Here = Here { social: true, day: 0, week: 0 };
+const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0, week: 0 };
+const AT_THE_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
 
 /// A starting character wearing a level 1 Normal Ranged loadout of this kind.
 fn wearing(kind: Kind) -> Character {

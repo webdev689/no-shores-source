@@ -22,6 +22,8 @@ export const TONES = {
   groove: 'rgba(163,152,128,0.26)',
   word: '#fbf8f0',
   wordDim: '#e2dccd',
+  /** The players' side: a companion's name over their head. */
+  ally: '#9fd4ff',
 } as const;
 
 /** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a soft
@@ -52,14 +54,18 @@ export const BEVELS = {
   bloodSunk: '#3d0d0a #b83a2e #e0584a #5a130f',
 } as const;
 
-/** A bar's fill by what it measures: a foe's or a ship's health in the band its rank is drawn in, an ally's in green,
+/** A bar's fill by what it measures: a foe's or a ship's health in the band its rank is drawn in, a companion's in blue
+ *  (`ally`) and another fighting on the players' side in green,
  *  and the player's three vitals. */
 export const FILLS = {
   red: '#c8382f',
   orange: '#e07a2a',
   yellow: '#e8c23a',
+  ally: '#3f86c8',
   green: '#4fae4a',
   health: '#b53a2e',
   stamina: '#2f9152',
   poise: '#c08a3e',
+  // A ship's sails, in a dusky bone the bar's light words still read on.
+  sails: '#9c8f68',
 } as const;

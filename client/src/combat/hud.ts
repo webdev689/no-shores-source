@@ -13,12 +13,13 @@ import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
 import { wearFightSheet } from './hudSheet.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import { UNABLE } from './casting.ts';
 import { type HudLayout, hudLayout } from './hudLayout.ts';
+import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
 import { type ArmsShown, WeaponRows } from './weapons.ts';
 
@@ -39,8 +40,8 @@ export interface HudFrame {
   readonly pressed: boolean;
   readonly lost: string | null;
   readonly rejoining?: boolean;
-  /** The crosshair, while a ranged weapon aims or is out in first person, with a bow's charge (0 to 1) while it aims. */
-  readonly crosshair?: { readonly charge: number | null } | null;
+  /** The crosshair: a ranged one while it aims or is out in first person, the melee one while a melee weapon is drawn. */
+  readonly crosshair?: CrosshairFrame | null;
   /** The shots left, beside the crosshair, while the Ranged loadout is drawn; null while they are not shown. */
   readonly ammo?: number | null;
   /** The Ranged loadout's capacity, by which few shots left read as low; null unknown. */
@@ -154,7 +155,7 @@ export class Hud {
   private readonly over: HTMLElement;
   private readonly hurt: HTMLElement;
   private readonly veil: HTMLElement;
-  private readonly crosshair: HTMLElement;
+  private readonly crosshair: Crosshair;
   private readonly ammo: AmmoCounter;
   private readonly foeBars: FoeBars;
   private readonly foeTarget = new FoeTarget();
@@ -200,9 +201,7 @@ export class Hud {
     this.weapons = new WeaponRows(this.arms, forge && new ItemPictures(forge));
     this.mark = element('div', 'mark', root);
     this.over = element('div', 'over', root);
-    this.crosshair = element('div', 'crosshair', root);
-    this.crosshair.hidden = true;
-    element('div', 'charge', this.crosshair);
+    this.crosshair = new Crosshair(root);
     this.ammo = new AmmoCounter(root);
     this.column = element('div', 'compass-column', root);
     this.compass = new Compass(this.column);
@@ -247,11 +246,6 @@ export class Hud {
       if (this.veil.textContent !== veil.words) this.veil.textContent = veil.words;
       this.veil.classList.toggle('link', veil.link);
     }
-    const charge = frame.crosshair?.charge ?? null;
-    showNode(this.crosshair, !!frame.crosshair);
-    this.crosshair.classList.toggle('charging', charge !== null);
-    this.crosshair.classList.toggle('full', charge !== null && charge >= 1);
-    setStyle(this.crosshair, '--charge', `${Math.round(Math.min(1, charge ?? 0) * 360)}deg`);
     this.ammo.update(frame.ammo, frame.ammoMost);
     const overHead = (view: FighterView) => {
       const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
@@ -277,6 +271,8 @@ export class Hud {
       seconds,
     );
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
+    const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
+    this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
     this.markTarget(frame, chosen, boss, seconds);
     this.vitals.update(own, seconds, this.staminaFlash > 0, !!chosen || !!boss);
     if (frame.abilities) this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''));

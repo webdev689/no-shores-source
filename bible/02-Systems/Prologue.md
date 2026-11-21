@@ -54,7 +54,7 @@ code:
 
 The game's first story mission and the way into the game, as the owner set it
 ([[The Game Opens With a Story Mission at Sea]]): a tap to start, an intro over the islands, the title over
-Saltmere, a storm at sea aboard a brig, character creation at her helm, a fight at sea, a ram, a wreck fought through
+Saltmere, a storm at sea aboard a brig, character creation at its helm, a fight at sea, a ram, a wreck fought through
 on foot to a boss who cannot be beaten, the deep, and waking on Saltmere's shore. Claude's calls are in
 [[The Prologue as Claude Shapes It]]; how it is drawn and heard is [[Cinema]] and [[Speech]].
 
@@ -77,7 +77,7 @@ its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the 
 has played the story to its end (kept in the browser, `overlook.prologue`) sees the intro and the title, and Begin
 takes them straight to Overlook's social space. While the story plays the menu (I, O) does not open. At its end the
 story lets go of what it alone drew with on the GPU (the Brig's and the Frigate's views, the birds, the fire and any
-wreck still drawn); the Frigate's view is made only once a beat draws her, so a player who sees only the intro never
+wreck still drawn); the Frigate's view is made only once a beat draws it, so a player who sees only the intro never
 makes it.
 
 A story that cannot begin at all (its cast or scenes refused, a ship's model not loaded, a part failing as it is made)
@@ -88,12 +88,12 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | Beat | What happens | Played or shown |
 |---|---|---|
 | `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen; Space begins too) | shown |
-| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along her side, over her working crew to her helm, where it ends in the helm's own shot, riding her deck as the helm's camera does (all her rise and fall, a quarter of her pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
+| `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, along its side, over its working crew to its helm, where it ends in the helm's own shot, riding its deck as the helm's camera does (all its rise and fall, a quarter of its pitch and roll), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
-| `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down her deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over her stern as three pirate Sloops come out of the dark, and comes down behind her through the fight's own lens | shown |
-| `battle` | The sea's own fight against the three, every ship taken up under the sail and way she was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as hers, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting her still afloat and "No need to sink them", until every one is beaten, sunk or struck; her ship's panel, the fight's keys and DFO's messages as toasts | played |
-| `calm` | The wind drops, the rain eases, the camera eases down from the fight's to her deck; the beaten ships lie where and as the fight left them, each in her own settle, trim and list, and her sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them, then pushing in on her until she reads however far off she lies, until he cuts the mate off | shown |
-| `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round her; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at her side at 6 m/s (about 12 knots), lightning striking past her at 2.3 s and 4.8 s so her masts and sails stand against it: Captain Brannoc Thule's Frigate at her own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of her stem first touches the Brig's side where her hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
+| `sighted` | From the shot the creation last drew (turned as it was, framed for the screen it was framed for), the camera turns from the player to look down its deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over its stern as three pirate Sloops come out of the dark, and comes down behind it through the fight's own lens | shown |
+| `battle` | The sea's own fight against the three, every ship taken up under the sail and way it was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as its own, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting the player still afloat and "No need to sink them", until every one is beaten, sunk or struck; the fight's readout, its keys and DFO's messages as toasts | played |
+| `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them, then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
+| `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
 | `wake` | First person on the deck: the eyes blinking, the view swimming, the heart and the ringing; up on the feet, looking round; the camera rushes the length of the wreck past its fights, a pair on the view crying out, and back over the player's shoulder, where play begins | shown |
 | `wreck` | Fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck | shown |
@@ -158,9 +158,9 @@ none so, the place with the fewest shallows is taken.
 page started there plays as it would in turn; `?prologue=battle` takes the ships where they would be sighted
 (`inboundAt`) and `?prologue=calm` or `?prologue=ram` lays them there as struck wrecks. Every hand-off at sea is
 whole: the sighting starts from the shot the creation last drew; each ship's rig (`Sailing.rigOf`) is handed to the
-fight and back, so her sails go on as they were; the fight's beaten ships are carried to the calm and on to the ram
+fight and back, so its sails go on as they were; the fight's beaten ships are carried to the calm and on to the ram
 (`Wreck`, `settledOn`) in the pose the fight left them. Every cry is said with its speaker's head on the view: a
-battle cry waits for its speaker to come on the view (the player aiming out over her side looks away from the crew)
+battle cry waits for its speaker to come on the view (the player aiming out over its side looks away from the crew)
 for up to 2.5 s, and is let go unsaid after, with no gap spent on it, so the next of its kind is heard. Every scene a
 beat waits on either ends it or, refused, is thrown from its next frame,
 and each beat's moments run on its own clock: skipped, its moments left still change the world (the weather, the
@@ -221,22 +221,22 @@ scene of its own, built in Blender ([[The Prologue Is Brought to Life With Music
 the cutscenes, the camera's moves, the nameplate, the fires and the lines are the story's.
 
 - **The scene** (`tools/wreck/`), spread out at true size ([[The Wreck Is Spread Out Much Larger, True to Scale]]).
-  The ships tool builds the Brig, the Frigate and the Sloop, each at her own size. The Frigate lies north to south,
-  her bow driven into where the Brig's waist was. The Brig is broken in two, her halves thrown some 35 m apart, each
-  turned about its far end and settled a little lower at its break. Her mainmast is down, her waist on the struck
-  side fallen into her hold, her foremast standing with its canvas burnt to rags. The Frigate's bowsprit is torn
-  away and her mizzen down; her deck is burnt through over her gun deck, her side stove in amidships and abreast her
-  gun deck to port, and her port bulwark broken forward. A pirate Sloop sunk in the fight at sea floats on her beam
-  ends east of the Frigate's bow, high enough that her side stays out of the swell.
+  The ships tool builds the Brig, the Frigate and the Sloop, each at its own size. The Frigate lies north to south,
+  its bow driven into where the Brig's waist was. The Brig is broken in two, its halves thrown some 35 m apart, each
+  turned about its far end and settled a little lower at its break. Its mainmast is down, its waist on the struck
+  side fallen into its hold, its foremast standing with its canvas burnt to rags. The Frigate's bowsprit is torn
+  away and its mizzen down; its deck is burnt through over its gun deck, its side stove in amidships and abreast its
+  gun deck to port, and its port bulwark broken forward. A pirate Sloop sunk in the fight at sea floats on its beam
+  ends east of the Frigate's bow, high enough that its side stays out of the swell.
 - **The wreckage** (`wreck_fields.py`). Six wide rafts of torn decking, each laid within an ellipse a little over the
-  sea, on lengths of mast and casks: the wreckage of the Brig's waist and her torn deck between her halves, one beside
-  her fore deck, the wreckage the Sloop drifted into, and two off the Frigate's port bow and port quarter. Broken
+  sea, on lengths of mast and casks: the wreckage of the Brig's waist and its torn deck between its halves, one beside
+  its fore deck, the wreckage the Sloop drifted into, and two off the Frigate's port bow and port quarter. Broken
   timbers ring each, under its planking.
-- **The way through.** Ramps of fallen timber lead off the Brig's stern half onto the wreckage of her waist, from her
-  torn deck up onto her bow half, from her fore deck onto the raft beside her and down from it onto the Sloop's side,
-  off the Sloop onto the wreckage she drifted into and up from it into the Frigate's stove-in waist, out over her
-  port bow, down into her gun deck, up through her quarterdeck's broken front, and out of her gun deck onto the
-  wreckage off her port quarter. Splintered timber stands along every break. Wreckage is strewn on the decks and the
+- **The way through.** Ramps of fallen timber lead off the Brig's stern half onto the wreckage of its waist, from its
+  torn deck up onto its bow half, from its fore deck onto the raft beside it and down from it onto the Sloop's side,
+  off the Sloop onto the wreckage it drifted into and up from it into the Frigate's stove-in waist, out over its
+  port bow, down into its gun deck, up through its quarterdeck's broken front, and out of its gun deck onto the
+  wreckage off its port quarter. Splintered timber stands along every break. Wreckage is strewn on the decks and the
   rafts' edges, kept off the way through, and flotsam floats all round.
 - **The ground** is measured from the model (`wreck_course.py`), as a ship's deck is. A face looking up is ground
   where it is hull or deck, or timber laid as a way. What is solid in the room a body takes over the ground stands as
@@ -253,15 +253,15 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   the player wakes, the path, the zones with their waves and the Brig's crew, the arena, Thule's place and the
   camera's way back from its flight. Figures stand at the middle of their square of ground, never on the edge between
   two blocks.
-- **The path** runs from the Brig's quarterdeck, where the player wakes by her wheel, down through her thrown-down
-  breast rail into her waist, along her port gangway past the fallen waist, off her broken end across the wreckage of
-  her waist and her torn deck, up onto her fore deck, out onto the raft beside it, down onto the Sloop's side, along
-  it and across the wreckage she drifted into, up into the Frigate's waist east of her boat, past her mainmast, down
-  into her gun deck and up onto her quarterdeck. Every lane of it is a body wide, and every figure the level stands
+- **The path** runs from the Brig's quarterdeck, where the player wakes by its wheel, down through its thrown-down
+  breast rail into its waist, along its port gangway past the fallen waist, off its broken end across the wreckage of
+  its waist and its torn deck, up onto its fore deck, out onto the raft beside it, down onto the Sloop's side, along
+  it and across the wreckage it drifted into, up into the Frigate's waist east of its boat, past its mainmast, down
+  into its gun deck and up onto its quarterdeck. Every lane of it is a body wide, and every figure the level stands
   a body's radius clear of anything a step over or under its feet.
-- **Zones.** Eight along the path: the Brig's stern, the wreckage of her waist, the torn deck over the gap, her fore
-  deck and the raft beside it, the Sloop and the wreckage she drifted into, the Frigate's waist and the wreckage off
-  her port bow, her gun deck and the wreckage off her port quarter, and her quarterdeck. Each is an area with a
+- **Zones.** Eight along the path: the Brig's stern, the wreckage of its waist, the torn deck over the gap, its fore
+  deck and the raft beside it, the Sloop and the wreckage it drifted into, the Frigate's waist and the wreckage off
+  its port bow, its gun deck and the wreckage off its port quarter, and its quarterdeck. Each is an area with a
   checkpoint; entered, its checkpoint is where the next respawn stands the player. The first, where the player
   wakes, is quiet: no wave, nothing across its way on, room to walk, look and swing. Each between it and the arena
   holds a wave of Grey Tithe crew and pirates, Minor and Major, in pairs fighting each other, stood as the player
@@ -278,10 +278,10 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   takes one of them for a foe. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at
   once, so the boarders always have room. A zone is cleared once its boarders are down, whatever became of its crew.
 - **Heaps across the way.** Each zone but the first and the arena has a heap of wreckage across the way on from it,
-  piled 2.9 m over its deck and out over the bulwarks (the arena's 3.7 m, past a jump from her quarterdeck), standing
+  piled 2.9 m over its deck and out over the bulwarks (the arena's 3.7 m, past a jump from its quarterdeck), standing
   from the start. It is cleared once its zone's wave has stood whole and
-  fallen. The Frigate's gangways beside her gun deck are closed for good by heaps on cores of stacked crates, higher
-  than her rails. A player who climbs over a heap still standing is brought back to their last checkpoint.
+  fallen. The Frigate's gangways beside its gun deck are closed for good by heaps on cores of stacked crates, higher
+  than its rails. A player who climbs over a heap still standing is brought back to their last checkpoint.
 - **The level's check.** The export refuses a level its own ground does not hold, measured twice, the second half a
   square across and along: every zone, checkpoint, foe and crewman reached in order, each with a body's room round
   it; no standing heap walked, or climbed as high as a jump reaches (1.05 m), round; a wave and three crew in every
@@ -296,13 +296,13 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   the Sloop's side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
   itself. The HUD shows no death panel and no Respawn; a toast says "You will rise at the last checkpoint."
-- **The arena** is the Frigate's quarterdeck, 9.8 m across between her rails' inner faces and 8.5 m from her
-  quarterdeck's broken front to her taffrail, open but for her wheel (her binnacle and skylight swept away), no wave in
-  it. Its heap stands below its front, on the way up out of her gun deck. When the boss fight begins, its heap closes
+- **The arena** is the Frigate's quarterdeck, 9.8 m across between its rails' inner faces and 8.5 m from its
+  quarterdeck's broken front to its taffrail, open but for its wheel (its binnacle and skylight swept away), no wave in
+  it. Its heap stands below its front, on the way up out of its gun deck. When the boss fight begins, its heap closes
   the way in behind the player, every other foe is sent away, and Captain Brannoc Thule stands before the wheel facing
   the player, three levels over them: their blows land at 0.94 of their worth (0.47 for the levels, doubled by the
-  balance pass). A player back over the heap is brought back in; anywhere aft of the heap, on her deck or up on her
-  rails, is never brought back, and her rails hold them.
+  balance pass). A player back over the heap is brought back in; anywhere aft of the heap, on its deck or up on its
+  rails, is never brought back, and its rails hold them.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.
@@ -353,8 +353,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 - The look and whether the story was played are kept in the browser, not with the account.
 - The story's songs are written to its beats' lengths, not timed to their moments: a song begins on the director's
   bar line, so a moment can fall up to a bar from its music.
-- The decks are boxes half a metre across: a deck's camber and the slope of her sheer are steps of 5 cm, a mast or a
-  gun inside her deck is walked through, and her hatches are walked over.
+- The decks are boxes half a metre across: a deck's camber and the slope of its sheer are steps of 5 cm, a mast or a
+  gun inside its deck is walked through, and its hatches are walked over.
 - Every wall is climbable ([[Movement]]): a player climbs a rail, or a heap still standing, and is held at its top by
   the wreck's rim, or brought back by the level.
 - The heaps are not in the foes' navmesh: a foe that runs at one stops against it until it clears.

@@ -5,6 +5,7 @@ import type { BuildingTable, PropTable } from '../models/tables.ts';
 import { parseBlockFile, type RmbBlock, TILES } from './blocks.ts';
 import { buildCity, retaining, runs } from './cityBuild.ts';
 import { clearedGround, groundPlates, PAVED_TILE, plateSkirts, sideOf } from './cityGround.ts';
+import { MASS_FLOATS, MASS_RUIN } from './cityMasses.ts';
 import { emptyMesh } from './mesh.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
@@ -206,4 +207,60 @@ test("a terrace's retaining wall is told from the landmark's platform and the ha
   assert.ok(!retaining(wall([CELL_M, 1.2, 52])), 'the platform under the plaza');
   assert.ok(!retaining(wall([10, 180, 7], 'timber')), 'a pier');
   assert.ok(!retaining(wall([6, 29, 18])), 'a length of the city wall');
+});
+
+/** FNV-1a over what a city's drawing holds: its masses and hulls, its solids' corners and every near model's place. */
+function drawingFingerprint(data: ReturnType<typeof buildCity>): string {
+  const near = [...data.near.entries()].flatMap(([cell, list]) =>
+    list.flatMap((each) => [cell, each.model, ...each.at]),
+  );
+  const bytes = [
+    new Uint8Array(data.masses),
+    new Uint8Array(new Float32Array(data.solids.positions).buffer),
+    new Uint8Array(new Float32Array(near).buffer),
+  ];
+  let hash = 0x811c9dc5;
+  for (const each of bytes) for (const byte of each) hash = Math.imul(hash ^ byte, 0x01000193) >>> 0;
+  return hash.toString(16);
+}
+
+const TABLES = {
+  buildings: JSON.parse(content('forged/buildings.json')) as BuildingTable,
+  props: JSON.parse(content('forged/props.json')) as PropTable,
+};
+const TEMPERATE = { climate: 'temperate', season: 'summer' } as const;
+
+test("a port city's drawing is as it was before ruins were laid", () => {
+  const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
+  assert.equal(drawingFingerprint(port), '91122aa6');
+  assert.ok(!port.ruined && [...port.near.values()].flat().every((each) => each.cut === 0));
+});
+
+test('a ruin breaks every building the same every time: some fallen to heaps, the rest roofless and lower', () => {
+  const port = buildCity(madePlan(), TEMPERATE, blocksOf(), TABLES);
+  const ruin = buildCity({ ...madePlan(), ruined: true }, TEMPERATE, blocksOf(), TABLES);
+  assert.ok(ruin.ruined);
+  assert.equal(
+    drawingFingerprint(ruin),
+    drawingFingerprint(buildCity({ ...madePlan(), ruined: true }, TEMPERATE, blocksOf(), TABLES)),
+  );
+  const near = [...ruin.near.values()].flat();
+  const broken = near.filter((each) => each.cut > 0);
+  assert.ok(broken.length > 0, 'its standing buildings are broken off');
+  assert.ok(near.length < [...port.near.values()].flat().length, 'a fallen building stands no model');
+  // A fallen building's heap is among the solids; every mass is lower and flat-topped, and marked a ruin's.
+  assert.ok(ruin.solids.indices.length > port.solids.indices.length, 'the heaps are meshed');
+  const tops = (data: typeof ruin): number => {
+    const [floats, whole] = [new Float32Array(data.masses), new Uint32Array(data.masses)];
+    let highest = -Infinity;
+    for (let k = 0; k < floats.length / MASS_FLOATS; k++) {
+      highest = Math.max(highest, floats[k * MASS_FLOATS + 6] + floats[k * MASS_FLOATS + 7]);
+      if (data === ruin) {
+        assert.equal(floats[k * MASS_FLOATS + 7], 0, 'roofless');
+        assert.ok(whole[k * MASS_FLOATS + 11] & MASS_RUIN);
+      }
+    }
+    return highest;
+  };
+  assert.ok(tops(ruin) < tops(port), `${tops(ruin)} under ${tops(port)}`);
 });

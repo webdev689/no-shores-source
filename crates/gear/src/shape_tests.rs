@@ -58,7 +58,7 @@ fn no_week_sells_one_piece_twice() {
 fn a_piece_is_bought_with_shapes_at_his_place() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(20);
-    let here = Here { social: true, day: 0, week: 5_000 };
+    let here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 5_000 };
     assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE), Err(Refusal::Short));
     character.add_shapes(500);
     assert_eq!(character.materials.shapes, 200, "held to the most");
@@ -77,10 +77,10 @@ fn a_piece_is_bought_with_shapes_at_his_place() {
 #[test]
 fn shapes_come_only_from_the_elite_and_abyss_seas() {
     let dice = |tick| Dice { seed: 11, tick, player: 2 };
-    assert_eq!((0..2_000).map(|tick| found(false, Difficulty::Calm, &dice(tick))).sum::<u16>(), 0);
-    assert_eq!(found(true, Difficulty::Calm, &dice(0)), 0, "not even a Boss at Normal");
-    assert_eq!((found(true, Difficulty::Rough, &dice(0)), found(true, Difficulty::Storm, &dice(0))), (2, 4));
-    let elite: u16 = (0..4_000).map(|tick| found(false, Difficulty::Rough, &dice(tick))).sum();
-    let abyss: u16 = (0..4_000).map(|tick| found(false, Difficulty::Storm, &dice(tick))).sum();
+    assert_eq!((0..2_000).map(|tick| found(false, Difficulty::Normal, &dice(tick))).sum::<u16>(), 0);
+    assert_eq!(found(true, Difficulty::Normal, &dice(0)), 0, "not even a Boss at Normal");
+    assert_eq!((found(true, Difficulty::Elite, &dice(0)), found(true, Difficulty::Abyss, &dice(0))), (2, 4));
+    let elite: u16 = (0..4_000).map(|tick| found(false, Difficulty::Elite, &dice(tick))).sum();
+    let abyss: u16 = (0..4_000).map(|tick| found(false, Difficulty::Abyss, &dice(tick))).sum();
     assert!((80..160).contains(&elite) && (180..300).contains(&abyss), "{elite} {abyss}");
 }

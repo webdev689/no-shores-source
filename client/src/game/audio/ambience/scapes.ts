@@ -8,7 +8,7 @@ import type { SoundKey } from './sounds.ts';
 
 /** Where a voice is placed round the listener: in the open round them, on the ground near, in the trees, high in the
  *  sky, on the highest ground near, at the sea's edge or over the water past it; in a port city, at its harbour, in
- *  its streets below, on its plaza's ledges or at its smith; aboard, in her hull or her rigging; or at the ear. */
+ *  its streets below, on its plaza's ledges or at its smith; aboard, in its hull or its rigging; or at the ear. */
 export type Spot =
   | 'around'
   | 'ground'
@@ -25,7 +25,7 @@ export type Spot =
   | 'rigging'
   | 'ear';
 
-/** What scales a bed or a voice besides the hour: a ship's way, her stillness, the coast's nearness, the deck's
+/** What scales a bed or a voice besides the hour: a ship's way, its stillness, the coast's nearness, the deck's
  *  nearness to the ear, the wind's strength, how hard rain falls, and how hard sand blows. */
 export type Drive = 'way' | 'still' | 'coast' | 'deck' | 'wind' | 'rain' | 'sand';
 

@@ -4,7 +4,7 @@
 // It slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed).
 import type { PlaceMark } from '../plus/compass.ts';
 import { HALO, TONES } from '../plus/tones.ts';
-import { element, Meter, setStyle, showNode } from './meter.ts';
+import { element, Meter, setStyle, showNode } from '../plus/meter.ts';
 
 /** The banner's tone: an event running, one turned heroic, its result, or the next event's line between them. */
 export type BannerTone = 'running' | 'heroic' | 'won' | 'failed' | 'next';

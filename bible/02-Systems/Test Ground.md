@@ -5,6 +5,7 @@ code:
   - client/testground/index.html
   - client/src/testground/rockRow.ts#ROCK_ROW
   - client/src/testground/testgroundMain.ts
+  - client/src/combat/reticle.ts#Crosshair
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/testground/aimPanel.ts
   - client/src/testground/statusPanel.ts#startStatusPanel
@@ -142,7 +143,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   it for two frames, and leaves five puffs of smoke that rise, drift the shot's way and thin out over 1.2 s; its
   sizes are held to a share of the view, so first person's flash stays small. An arrow or a bolt trails the last
   0.3 s of its falling flight, its tail broken up. The player's own shots draw at once from the
-  weapon as drawn, the first person's muzzle in its firing frame or the figure's along the shot, joining the shot's
+  weapon as drawn, the first person's muzzle in its firing frame or the figure's gun as it faces, joining the shot's
   true flight within 0.15 s; one the room's word makes an input fire that it had not first predicted draws as that word
   comes. Others' come from the room's word, each ball's line from the one snapshot that carries it; a foe's ball, which
   flies, is one tracer whose head keeps its own speed a tick behind the room's word, with one flash at its muzzle,
@@ -203,7 +204,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     for a kill, a stagger or a guard broken; a blow of theirs stopped by a guard knocks the view back; a blow landing
     on the player jolts it and shakes it as hard as the harm; and the view leans into their own swing as it lands. A
     blow's hit and the kill it made punch once, as does one stroke however many it strikes, as hard as the hardest; a
-    shot kicks nothing; while a crosshair shows, the kick moves the view but never turns it, so the crosshair stays
+    shot kicks nothing; while a ranged crosshair shows, the kick moves the view but never turns it, so the crosshair stays
     where shots land. Its strength is set.
   - *Lunge.* The striker's figure drives into its blow and settles back: a thrust 0.32 m, an overhead or a slant 0.2 m,
     a sweep 0.14 m; through the eyes, the eye goes half as far. Its distance is set.
@@ -215,9 +216,18 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
     by a 3 by 3 box, tripled, cut to none, half or all of each colour, and added over the view in blocks of 4 screen
     pixels, 0.35 at most, before the first person's hands. A white-hot effect's halo is a block of full light past its
     edge, a light stop's a block of half; a lone spark lights nothing. On as made, as the game plays it.
-- **The crosshair.** While a ranged weapon aims, and whenever the Ranged loadout is drawn in first person (read from
-  the outfit shown, the pointer held or not), a crosshair marks the view's middle, where an aimed shot lands; a bow
-  aiming rings it with its draw, gold once at full power. The shots left stand beside it while it shows ([[Interface]]).
+- **The crosshair** ([[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]). While a ranged
+  weapon aims, and whenever the Ranged loadout is drawn in first person (read from the outfit shown, the pointer held
+  or not), a crosshair marks the view's middle, where an aimed shot lands, in its weapon's own shape: a bow's a
+  chevron, a crossbow's brackets, a pistolet's a dot with four ticks, a thunderlock's a circle. It turns red while it
+  rests on a foe's body (the foe the plates' cone takes there). A bow aiming rings it with its draw, gold once at full
+  power; a reload rings it in white as it runs, the shape dimmed under it. A shot of the player's that lands marks it
+  for a quarter of a second, fading: white for a hit that harms, gold for a crit, red for a kill. A double pistolet's
+  wait between its barrels shows no ring, and the held aiming view with no ranged weapon drawn shows the pistolet's
+  plain cross. With a melee weapon drawn, bare fists too, in either view, while the hands are the player's and the
+  player lives, a small dot marks the middle, closing into red brackets while the foe under it stands within the
+  weapon's longest stroke (`Fighting.reach`) and a stroke's height. A companion or a boarding hand under it is no foe. The shots left stand beside a ranged one while it
+  shows ([[Interface]]).
 - **The display.** It lays its own sheet over the [[Interface]]'s kit. The compass across the top's middle, turned with
   the view; health, stamina and poise as long thin pointed bars at the top left, a faint strip holding what a loss took
   before it drains, the health's frame flashing blood at a quarter or less and the stamina's flashing when a swing or a
@@ -346,9 +356,10 @@ so a tick the rules hold it still between steps shows no stand. A sword's swing 
 the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
 the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
 it faces where it runs, and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It
-Sprints]]). Swinging or casting, it turns to face where the camera looks. Dodging, a
-figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
-though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
+Sprints]]). Swinging, casting or aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the
+Figure Faces Straight Ahead]]). Dodging, a figure (the player's, another player's or a foe's) faces the way its hop
+goes, so its roll is drawn going that way, though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls
+the Way It Goes]]).
 
 ## Dressing
 

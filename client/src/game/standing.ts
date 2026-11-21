@@ -1,7 +1,6 @@
-// What stands on the open landmass in a frame, as every view of the game draws it: the land's city and layouts, the
-// public events' props (before the nature, as the fissure opens the land under it), the nature, the fight's blood
-// under the figures, the ships and what a fight at sea draws with them, the figures themselves (casting their shadows
-// first), and the fight's marks over them.
+// What stands on the open landmass in a frame, as every view of the game draws it: the land's city, layouts and
+// nature, the fight's blood under the figures, the ships and what a fight at sea draws with them, the figures
+// themselves (casting their shadows first), and the fight's marks over them.
 import type { CardAt } from '../player/cards.ts';
 import type { ShipCamera } from '../ships/shipView.ts';
 import type { FigureView } from './figureView.ts';
@@ -14,12 +13,10 @@ export function standingDrawers(
   figureView: FigureView,
   figures: readonly CardAt[],
   fight?: { readonly under: Drawer; readonly over: Drawer },
-  props?: Drawer,
 ): Drawer[] {
   const found: (Drawer | null | undefined)[] = [
     land?.city,
     land?.layouts,
-    props,
     land?.nature,
     fight?.under,
     { drawInto: (pass, fromEye, shot, time) => ships(pass, { fromEye, eye: shot.eye }, time) },

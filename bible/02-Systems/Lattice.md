@@ -116,8 +116,8 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 
 ## Limits
 
-- The Heart's pictures are not published: the first run rendered only the five foes the events use. A push that
-  names it in `tools/lattice/render-request.txt` renders it.
+- The Heart's pictures are not published: the first run rendered only the five foes the events use. A push to a
+  branch other than `main` that names it in `tools/lattice/render-request.txt` renders it.
 - Where its foes appear (the Fissure) and their numbers are the rules' ([[Public Events as Claude Builds Them]]).
 - The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
   first person and its weapons and shields are not yet drawn, and the game still names Daedric.

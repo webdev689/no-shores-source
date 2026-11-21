@@ -57,7 +57,7 @@ export type LandRequest =
     }
   | { readonly kind: 'fight-end' };
 
-/** A ship after her ticks, and how she lies. */
+/** A ship after its ticks, and how it lies. */
 export interface Sailed {
   readonly ship: ShipFloats;
   readonly pose: Pose;
@@ -119,7 +119,7 @@ export interface LandWorker {
   ground(left: number, top: number, step: number, width: number, height: number): Promise<CloseGround>;
   /** A ship sailed over the open landmass. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed>;
-  /** A fight begun round the ship over the open landmass (with `captains`, those set upon her), stepped by the
+  /** A fight begun round the ship over the open landmass (with `captains`, those set upon it), stepped by the
    *  player's orders, and ended. */
   fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): Promise<FightView>;
   /** A step of the fight in the world's wind, or in the weather's `wind` (m/s east and south) a story tells it. */

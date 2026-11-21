@@ -76,7 +76,7 @@ export interface HeardFoe {
 }
 
 /** The sea as the music hears it: whether the player is in a fight, the hostile captains in it and the strongest's
- *  rank, the player's hull as a share, the hostile ships near, and whether she lies off a coast to land on. */
+ *  rank, the player's hull as a share, the hostile ships near, and whether it lies off a coast to land on. */
 export interface HeardSea {
   readonly fighting: boolean;
   readonly captains: number;
@@ -146,7 +146,7 @@ export interface Memory {
   /** The sea song playing out of danger and when it ends; none before the clock reaches `restUntil`. */
   readonly voyage: { readonly song: SeaSong; readonly until: number } | null;
   readonly restUntil: number;
-  /** Whether she lay off a coast to land on last frame, and when landfall last began. */
+  /** Whether it lay off a coast to land on last frame, and when landfall last began. */
   readonly offCoast: boolean;
   readonly landedAt: number;
 }
@@ -200,7 +200,7 @@ function voyageOf(
   hearing: Hearing,
   songs: SongClock,
 ): Pick<Memory, 'voyage' | 'restUntil' | 'offCoast' | 'landedAt'> {
-  // Ashore she lies at the coast: sailing out from it is no landfall.
+  // Ashore it lies at the coast: sailing out from it is no landfall.
   const offCoast = hearing.sea ? hearing.sea.landfall : true;
   const rest = () => clock + REST_S[0] + (REST_S[1] - REST_S[0]) * songs.random();
   let { voyage, restUntil, landedAt } = memory;

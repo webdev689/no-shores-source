@@ -84,3 +84,5 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | A room left empty | Its running event held to the clock when its minute jumps: past its end, ended quietly (no result, no chests, its foes gone); else its countdown cut to what its start minute leaves | A room's Durable Object may stay in memory, unticked, and come back late |
 | A leaver's Vestige, ten and vault full | Into the vault over its limit | A leaver's chest is never lost; the ground would lose it, and the gear crate holds nothing else waiting for a player |
 | Heroic missed with a result | Told before the win or the failure | The result is the beat a page keeps |
+| The wire's order beside the sea's | The sea's fields first on `Foe` and `Snapshot`, the events' after them; the chest's ask is 21 | The sea's are deployed and the events' are not, so only the events' fields move |
+| The Lattice's pictures in the forge's newer tables | Laid in from run 44851715803's artifacts (`publish-from`), not rendered again | The renders are the same; only the tables they are laid into changed |

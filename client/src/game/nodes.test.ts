@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { arrivalFacing, bearingTo, type CityPlan, clearedBy, socialNode, windowRect } from './nodes.ts';
+import { arrivalFacing, bearingTo, type CityPlan, clearedBy, portOf, socialNode, windowRect } from './nodes.ts';
 
 const plan: CityPlan = {
   id: 'overlook',
@@ -63,4 +63,15 @@ test("the city's pads are cleared ground; the land beyond them is not", () => {
   const cleared = clearedBy(plan.pads);
   assert.equal(cleared(1000, 1150), true);
   assert.equal(cleared(1000, 1300), false);
+});
+
+test('a port city has a port where ships dock; a ruin, named as one, has none, and its plaza no station', () => {
+  assert.deepEqual(portOf(plan), { name: 'Overlook', harbour: [1000, 2000] });
+  const ruin: CityPlan = { ...plan, id: 'mistfall', name: 'Ruins of Mistfall', ruined: true };
+  assert.equal(portOf(ruin), null);
+  assert.equal(portOf(null), null);
+  const node = socialNode({ ...ruin, social: { ...ruin.social, stations: [] } }, 'continent-6');
+  assert.equal(node.id, 'mistfall-social');
+  assert.equal(node.name, 'Ruins of Mistfall');
+  assert.deepEqual(node.stations, []);
 });

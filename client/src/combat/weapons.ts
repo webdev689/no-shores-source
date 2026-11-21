@@ -5,14 +5,15 @@
 // flashes the weapon and one put away dims. The pictures are the forge's, as the gear screens draw them.
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Dress } from '../player/dressing.ts';
-import { itemName, KINDS, kindName, MELEE, RANGED_SLOT, RARITIES, worn } from '../player/gear.ts';
+import { elementSvg } from '../player/elementGlyphs.ts';
+import { ELEMENTS, itemName, KINDS, kindName, MELEE, RANGED_SLOT, RARITIES, worn } from '../player/gear.ts';
 import type { ItemPictures } from '../player/itemPictures.ts';
 import type { Picture } from '../player/picture.ts';
 import { HALO, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { ammoWords } from './ammoCounter.ts';
-import { EDGE } from './hudLayout.ts';
-import { element, setStyle, showNode } from './meter.ts';
+import { CORNER } from '../plus/barFrame.ts';
+import { element, setStyle, showNode } from '../plus/meter.ts';
 import { weaponCanvas } from './weaponPicture.ts';
 
 /** How long a swap between loadouts takes, in seconds (crates/combat/src/tuning.rs SWAP_TICKS, at 60 a second). */
@@ -82,7 +83,8 @@ export function weaponWords(shown: WeaponShown, inHand: boolean, drawn: boolean)
   const most = shown.most === null ? '' : ` of ${shown.most}`;
   const shots = shown.empty ? ', no ammo' : shown.shots ? `, ${shown.shots}${most} shots` : '';
   const where = inHand ? (drawn ? 'In hand' : 'Put away') : `Press ${shown.key} to draw`;
-  return `${where}: ${shown.name}${shots}`;
+  const element = ELEMENTS[shown.item.element]?.name;
+  return `${where}: ${shown.name}${element ? `, ${element}` : ''}${shots}`;
 }
 
 /** One row's parts, and the item and picture it last drew. */
@@ -93,6 +95,7 @@ interface Row {
   readonly most: HTMLElement;
   readonly name: HTMLElement;
   readonly picture: HTMLElement;
+  readonly glyph: HTMLElement;
   readonly reload: HTMLElement;
   item: GearItem | null;
   drawn: Picture | null;
@@ -133,8 +136,11 @@ export class WeaponRows {
       const most = element('span', 'most', count);
       const name = element('span', 'name', lead);
       const picture = element('span', 'picture', root);
+      // The weapon's element in its picture's corner, as a gear tile shows it; the row's words name it.
+      const glyph = element('i', 'element', picture);
+      glyph.ariaHidden = 'true';
       const reload = element('i', 'reload', root);
-      return { root, key, shots, most, name, picture, reload, item: null, drawn: null };
+      return { root, key, shots, most, name, picture, glyph, reload, item: null, drawn: null };
     };
     this.rows = [row('hand'), row('next')];
   }
@@ -206,7 +212,8 @@ export class WeaponRows {
     if (shown.item === row.item && picture === row.drawn) return;
     [row.item, row.drawn] = [shown.item, picture];
     const [width, height] = (this.wide ? PICTURE_BOXES.wide : PICTURE_BOXES.base)[inHand ? 'hand' : 'next'];
-    row.picture.replaceChildren(...(picture ? [weaponCanvas(picture, width, height, this.ratio)] : []));
+    row.glyph.innerHTML = elementSvg(shown.item.element);
+    row.picture.replaceChildren(...(picture ? [weaponCanvas(picture, width, height, this.ratio), row.glyph] : []));
   }
 }
 
@@ -223,7 +230,9 @@ ${scope} .weapon .most, ${scope} .weapon .name, ${scope} .weapon kbd {
   font-size: ${small}px; }
 ${scope} .weapon kbd { min-width: ${wide ? 28 : 18}px; line-height: ${wide ? 24 : 14}px; }
 ${scope} .weapon.hand .picture { width: ${boxes.hand[0]}px; height: ${boxes.hand[1]}px; }
-${scope} .weapon.next .picture { width: ${boxes.next[0]}px; height: ${boxes.next[1]}px; }`;
+${scope} .weapon.next .picture { width: ${boxes.next[0]}px; height: ${boxes.next[1]}px; }
+${scope} .weapon.hand .element { width: ${wide ? 22 : 16}px; height: ${wide ? 22 : 16}px; }
+${scope} .weapon.next .element { width: ${wide ? 16 : 12}px; height: ${wide ? 16 : 12}px; }`;
 }
 
 /** The rows' sheet: a brass rule over two rows, each its lead and its picture; few shots in brass and none in the loss
@@ -231,7 +240,7 @@ ${scope} .weapon.next .picture { width: ${boxes.next[0]}px; height: ${boxes.next
  *  line, and the weapon put away dimmed. */
 export function weaponsCss(): string {
   return `
-.fight-hud .arms { position: absolute; left: ${EDGE.side}px; bottom: ${EDGE.foot}px; display: flex;
+.fight-hud .arms { position: absolute; left: ${CORNER.side}px; bottom: ${CORNER.foot}px; display: flex;
   align-items: flex-end; gap: 14px; pointer-events: none; }
 .fight-hud.wide .arms { gap: 20px; }
 .fight-hud.double .arms { zoom: 2; }
@@ -257,7 +266,12 @@ export function weaponsCss(): string {
   background: #16181d; font: inherit; text-align: center; text-shadow: none; box-shadow: 0 0 0 1px ${TONES.outline}; }
 .fight-hud .weapon.low .shots { color: #f1c04f; }
 .fight-hud .weapon.empty .shots, .fight-hud .weapon.empty .most { color: #e8968a; }
-.fight-hud .weapon .picture { display: flex; align-items: center; }
+.fight-hud .weapon .picture { position: relative; display: flex; align-items: center; }
+/* The glyph stands just past its picture's top right, in the row's own margin, clear of a blade's point. */
+.fight-hud .weapon .element { position: absolute; top: 0; left: calc(100% + 4px);
+  filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
+.fight-hud .weapon .element:empty { display: none; }
+.fight-hud .weapon .element svg { display: block; width: 100%; height: 100%; }
 .fight-hud .weapon .picture canvas { display: block; image-rendering: pixelated;
   filter: drop-shadow(1px 0 0 ${TONES.outline}) drop-shadow(-1px 0 0 ${TONES.outline})
     drop-shadow(0 1px 0 ${TONES.outline}) drop-shadow(0 -1px 0 ${TONES.outline}); }

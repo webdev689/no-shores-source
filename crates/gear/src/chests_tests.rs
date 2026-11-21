@@ -39,7 +39,7 @@ fn a_heroic_chest_draws_the_better_colours_and_the_bonus_keeps_the_better_of_two
 
 #[test]
 fn a_chest_pays_reputation_to_the_faction_pledged_while_its_cape_is_worn() {
-    let here = Here { social: true, day: 0, week: 0 };
+    let here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
     let mut character = Character::starting();
     character.materials.aurem = 20_000;
     assert!(character.ask(Ask::Pledge { faction: 1 }, here, &DICE).is_ok());

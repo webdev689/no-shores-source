@@ -169,6 +169,9 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
   },
 };
 
+/** The Harbourmaster's screen's name: the counter of the Shipwright's modules, whose keeper is none of these. */
+export const HARBOURMASTER = 'The Harbourmaster';
+
 /** The keeper of a station's kind, or none for a station whose keeper deals with no one. */
 export function keeperOf(kind: string): Keeper | null {
   return (KEEPER_KINDS as readonly string[]).includes(kind) ? KEEPERS[kind as KeeperKind] : null;

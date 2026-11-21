@@ -9,7 +9,7 @@ use crate::factions::factions;
 use crate::rewards::Foe;
 use crate::world::Difficulty;
 
-const AT_COUNTER: Here = Here { social: true, day: 0, week: 0 };
+const AT_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
 const DICE: Dice = Dice { seed: 3, tick: 2, player: 1 };
 
 fn stocked() -> Character {
@@ -30,11 +30,11 @@ fn stocked() -> Character {
 fn kills_fill_the_worn_arts_bar_and_stop_when_it_is_full() {
     let mut character = Character::starting();
     assert_eq!((character.art_level(1), character.art_xp(1)), (1, 0));
-    let reward = character.reward_kill(Foe::Brute, 5, None, Difficulty::Calm, &DICE);
+    let reward = character.reward_kill(Foe::Brute, 5, None, Difficulty::Normal, &DICE);
     assert_eq!(character.art_xp(1), reward.xp, "Storm is worn");
     assert_eq!(character.art_xp(2), 0, "only the worn Art grows");
     for _ in 0..200 {
-        character.reward_kill(Foe::Captain, 20, None, Difficulty::Storm, &DICE);
+        character.reward_kill(Foe::Captain, 20, None, Difficulty::Abyss, &DICE);
     }
     assert_eq!(character.art_xp(1), bar(1), "a full bar takes no more");
     assert!(character.art_ready(1));

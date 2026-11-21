@@ -129,12 +129,12 @@ fn shapes_for(rank: ::foes::Rank, difficulty: gear::Difficulty) -> u16 {
 fn a_boss_or_miniboss_slain_at_the_abyss_seas_gives_shapes_and_at_normal_none() {
     for rank in [::foes::Rank::Boss, ::foes::Rank::Miniboss] {
         for (difficulty, shapes) in
-            [(gear::Difficulty::Calm, 0), (gear::Difficulty::Rough, 2), (gear::Difficulty::Storm, 4)]
+            [(gear::Difficulty::Normal, 0), (gear::Difficulty::Elite, 2), (gear::Difficulty::Abyss, 4)]
         {
             assert_eq!(shapes_for(rank, difficulty), shapes, "{rank:?} at {difficulty:?}");
         }
     }
-    let elite = shapes_for(::foes::Rank::Elite, gear::Difficulty::Storm);
+    let elite = shapes_for(::foes::Rank::Elite, gear::Difficulty::Abyss);
     assert!(elite <= 1, "an Elite gives a chance of one, never a great foe's {elite}");
 }
 

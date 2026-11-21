@@ -4,10 +4,13 @@ name: lattice
 # to R2 beside the forge's published renders with the repository's Cloudflare token, only when a run is asked for. A
 # job a move renders in parallel; one job lays them all in and publishes, and its log ends with the forge's manifest
 # on one line, which a commit then takes into content/forge/renders.json. A run is asked for by a push that changes
-# tools/lattice/render-request.txt (a manual run starts only a workflow on the default branch); it names the foes on
-# its first line.
+# tools/lattice/render-request.txt on a branch other than main (on main it runs only by hand); the file names the
+# foes on its first line. A first line `publish-from <run id>` renders nothing: the publish job lays in that earlier
+# run's pictures (its `lattice-*` artifacts, while they are kept) over the tables as published now.
 on:
   push:
+    # Never on main, where it runs only by hand: merging a branch that asked for a run must not start one there.
+    branches-ignore: [main]
     paths:
       - tools/lattice/render-request.txt
   workflow_dispatch:
@@ -28,8 +31,9 @@ jobs:
     timeout-minutes: 5
     outputs:
       jobs: ${{ steps.plan.outputs.jobs }}
+      from: ${{ steps.plan.outputs.from }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
       - name: Plan a job a move
@@ -38,11 +42,18 @@ jobs:
           FOES: ${{ inputs.foes }}
         run: |
           foes=${FOES:-$(head -n 1 tools/lattice/render-request.txt)}
-          echo "jobs=$(python3 -I tools/lattice/jobs.py "$foes")" >> "$GITHUB_OUTPUT"
+          case "$foes" in
+            publish-from\ *)
+              from=${foes#publish-from }
+              [[ "$from" =~ ^[0-9]+$ ]] || { echo "::error::publish-from wants a run's number, not '$from'"; exit 1; }
+              echo "from=$from" >> "$GITHUB_OUTPUT" ;;
+            *) echo "jobs=$(python3 -I tools/lattice/jobs.py "$foes")" >> "$GITHUB_OUTPUT" ;;
+          esac
 
   # No token here: the renders read only the forge's public tables.
   render:
     needs: plan
+    if: needs.plan.outputs.from == ''
     runs-on: ubuntu-latest
     timeout-minutes: 150
     strategy:
@@ -50,10 +61,10 @@ jobs:
       matrix:
         include: ${{ fromJSON(needs.plan.outputs.jobs) }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.13'
       - name: Install Blender's module
@@ -79,7 +90,7 @@ jobs:
               --out "$RUNNER_TEMP/lattice/$MOVE"
           fi
           echo "::notice::$MOVE rendered in $(( $(date +%s) - start )) s"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: lattice-${{ matrix.move }}
           path: ${{ runner.temp }}/lattice/${{ matrix.move }}
@@ -87,8 +98,14 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: render
+    needs: [plan, render]
+    # After the renders, or with none when it publishes an earlier run's.
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (needs.render.result == 'success' || needs.plan.outputs.from != '') }}
     runs-on: ubuntu-latest
+    # Reading another run's artifacts needs the run's own token to read the repository's actions.
+    permissions:
+      contents: read
+      actions: read
     # It publishes the same tables as the forge workflow: its publishing waits for theirs, and theirs for it.
     concurrency:
       group: forge
@@ -97,10 +114,10 @@ jobs:
     # The token reaches only the two steps that check it and publish; what they import is installed as the exact
     # wheels the requirements name by their hashes, and the checkout keeps no git credential.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.13'
       - name: Check the token is set
@@ -114,11 +131,18 @@ jobs:
         if: steps.token.outputs.set == 'true'
         run: |
           pip install --require-hashes --only-binary=:all: -r tools/lattice/requirements.txt
-      - uses: actions/download-artifact@v4
-        if: steps.token.outputs.set == 'true'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.token.outputs.set == 'true' && needs.plan.outputs.from == ''
         with:
           pattern: lattice-*
           path: ${{ runner.temp }}/lattice
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.token.outputs.set == 'true' && needs.plan.outputs.from != ''
+        with:
+          pattern: lattice-*
+          path: ${{ runner.temp }}/lattice
+          run-id: ${{ needs.plan.outputs.from }}
+          github-token: ${{ github.token }}
       # The published tables first, then the Lattice laid in, then its pictures beside what is published.
       - name: Publish them
         if: steps.token.outputs.set == 'true'

@@ -1,6 +1,6 @@
 import {
   beginRequest,
-  type CaptainAt,
+  type FightBegun,
   type FightOrders,
   type FightView,
   readFight,
@@ -65,15 +65,15 @@ export interface Swell {
 }
 
 /** What the helm asks for a tick (crates/sailing/src/ship.rs Helm): the rudder from -1 (port) to 1 (starboard), the
- *  oars pulling her sideways, and a rung up or down the ladder for the first tick. */
+ *  oars pulling it sideways, and a rung up or down the ladder for the first tick. */
 export interface Helm {
   readonly steer: number;
   readonly crab: boolean;
   readonly climb: -1 | 0 | 1;
 }
 
-/** How a ship lies: her waterline's height (metres), her bow's rise and her heel to starboard (radians), and whether
- *  her keel touches the ground. */
+/** How a ship lies: its waterline's height (metres), its bow's rise and its heel to starboard (radians), and whether
+ *  its keel touches the ground. */
 export interface Pose {
   readonly heave: number;
   readonly pitch: number;
@@ -176,12 +176,12 @@ export interface LandRules {
   cityPlan(): string | null;
   /** The open landmass's nodes' layouts, as a JSON list. */
   layouts(): string;
-  /** The ship sailed `ticks` ticks over the open landmass from `time`, seconds of world time, and her pose after. */
-  /** Her ship sailed `ticks` from the swell's `time`, in the weather's wind at world time `world` (seconds). */
+  /** The ship sailed `ticks` ticks from the swell's `time`, in the weather's wind at world time `world` (seconds), and
+   *  its pose after. */
   sail(ship: ShipFloats, helm: Helm, time: number, ticks: number, world: number): { ship: ShipFloats; pose: Pose };
-  /** A fight begun round the ship: a pirate captain put to sea, or `captains` set upon her where given, every chance
-   *  drawn from `seed`. */
-  fightBegin(ship: ShipFloats, seed: number, time: number, captains?: readonly CaptainAt[]): FightView;
+  /** A fight begun round the ship: a pirate captain put to sea in its rank's hull (a Major's unless `begun` names a
+   *  rank), or `begun`'s captains set upon it where given, every chance drawn from `seed`. */
+  fightBegin(ship: ShipFloats, seed: number, time: number, begun?: FightBegun): FightView;
   /** The fight stepped `ticks` ticks from `time` by the player's orders. */
   /** A step of the fight in the world's wind at `world`, or in the weather's `wind` (m/s east and south) if told. */
   fightStep(
@@ -359,8 +359,8 @@ export async function startLand(moduleBytes: BufferSource): Promise<LandRules> {
         exports.release(address, length);
       }
     },
-    fightBegin: (ship, seed, time, captains) =>
-      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, captains)))),
+    fightBegin: (ship, seed, time, begun) =>
+      readFight(takeText(exports, send(exports.land_fight_begin, beginRequest(ship, seed, time, begun)))),
     fightStep: (orders, time, ticks, world, wind) =>
       readFight(takeText(exports, send(exports.land_fight_step, stepRequest(orders, time, ticks, world, wind)))),
     fightEnd: () => {

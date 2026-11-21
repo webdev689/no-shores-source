@@ -3,7 +3,7 @@ import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import { FIGHT_TICKS, dodgeFacing, foeDoing, overProgress } from '../player/fightMoves.ts';
 import { cardStand, type Placed, viewOf } from '../player/figures.ts';
-import { foeDress } from '../player/foeDress.ts';
+import { foeDress, officerDress } from '../player/foeDress.ts';
 import { Glides } from '../player/glide.ts';
 import { likelyMoves, Loop, shownMove } from '../player/playerMoves.ts';
 import type { FighterView } from '../rules/fighters.ts';
@@ -28,6 +28,7 @@ import {
 import { type LatticeShown, WAVE, latticeWaves, layLatticeLooks, waveFade } from './latticeLooks.ts';
 import { overheadMarks } from './overheads.ts';
 import { MARK } from '../network/publicMessages.ts';
+import { officerName } from './companions.ts';
 
 type Point = readonly [number, number, number];
 
@@ -67,6 +68,8 @@ const CHEST_M = 1.2;
 export class FoeFigures {
   private readonly roster: readonly FoeType[];
   private readonly dresses: ReadonlyMap<number, Dress | null>;
+  /** Each companion's dress by their post and type, made once. */
+  private readonly officerDresses = new Map<string, Dress | null>();
   /** The foes dressed in their own clothes, by the room's number. */
   private readonly dressed = new Map<number, Dress>();
   private readonly figures = new Map<number, Placed>();
@@ -106,10 +109,21 @@ export class FoeFigures {
     this.dissolves.set(id, { look, start });
   }
 
-  /** The dress a foe's figure is drawn in: its own if it was dressed, else its type's; none for a type the roster
-   *  does not know. */
+  /** The dress a foe's figure is drawn in: its own if it was dressed, else its type's; a companion's, their post's
+   *  clothes with their type's weapons; none for a type the roster does not know. */
   dressOf(kept: KeptFoe): Dress | null {
-    return this.dressed.get(kept.id) ?? this.dresses.get(shownType(this.roster, kept)?.type ?? kept.type) ?? null;
+    const own = this.dressed.get(kept.id);
+    if (own) return own;
+    const type = shownType(this.roster, kept);
+    if (kept.companion) {
+      const key = `${kept.companion.post}:${type?.type ?? kept.type}`;
+      const made = this.officerDresses.get(key);
+      if (made !== undefined) return made;
+      const dress = type ? officerDress(type, kept.companion.post) : null;
+      this.officerDresses.set(key, dress);
+      return dress;
+    }
+    return this.dresses.get(type?.type ?? kept.type) ?? null;
   }
 
   /** Dresses the foe the room numbers `id`, of roster type `type`, in `look` with its type's weapons drawn, in place
@@ -130,7 +144,7 @@ export class FoeFigures {
   cards(
     fight: Fighting,
     forge: Cards,
-    eye: { readonly x: number; readonly y: number },
+    eye: { readonly x: number; readonly y: number; readonly nearest?: number },
     clock: number,
     frameTicks: number,
     tickSeconds: number,
@@ -240,7 +254,7 @@ export class FoeFigures {
       else this.lattice.delete(kept.id);
       if (dissolve && dissolve.share >= 1) continue;
       const card = forge.card(placed.id, drawnDress, move.anim, side, frameShown, flip);
-      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
+      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
       if (card)
         cards.push({
           card,
@@ -336,12 +350,15 @@ export class FoeFigures {
   }
 
   /** Each foe as the display marks it: its own name (a public event's Warden, Marrow or growth) or else its type's, and
-   *  its faction from the roster, where its figure is drawn. */
+   *  its faction from the roster, where its figure is drawn; a companion by their officer's own name, an ally of no
+   *  faction. */
   marked(fight: Fighting): MarkedFoe[] {
     return [...fight.foes.values()].map((kept) => {
       const figure = this.figures.get(kept.id);
       const view = figure ? { ...kept.view, x: figure.x, y: figure.y, z: figure.z } : kept.view;
       const type = shownType(this.roster, kept);
+      if (kept.companion)
+        return { ...kept, name: officerName(kept.companion), faction: '', factionNumber: 0, view, ally: true };
       return {
         ...kept,
         name: kept.name || (type?.name ?? 'Foe'),

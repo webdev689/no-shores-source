@@ -20,6 +20,7 @@ import type { MovementRules } from '../../rules/movementRules.ts';
 import type { FoeType } from '../../rules/roster.ts';
 import type { MarkView } from '../../ships/markView.ts';
 import { loadShip, shipSails } from '../../ships/shipMesh.ts';
+import { HULL_NAMES, hullPaint } from '../../ships/hulls.ts';
 import { ShipView } from '../../ships/shipView.ts';
 import { castOf, scenesOf } from '../../speech/cast.ts';
 import { DialogueBox } from '../../speech/dialogue.ts';
@@ -98,20 +99,16 @@ export async function startStory(game: StoryGame, from: BeatName | null): Promis
   const readCast = castOf(cast);
   const readScenes = scenesOf(scenes, readCast);
   const [brigMesh, frigateMesh] = await Promise.all([loadShip('brig'), loadShip('frigate')]);
+  // The ships' views open on the device's kit, so both are opened before the story takes them.
+  const [brigView, frigateView] = await Promise.all([
+    ShipView.open(gpu, brigMesh, shipSails('brig'), hullPaint(HULL_NAMES.indexOf('brig'))),
+    ShipView.open(gpu, frigateMesh, shipSails('frigate'), hullPaint(HULL_NAMES.indexOf('frigate'))),
+  ]);
   return takeOrGiveBack((took) => {
-    const brigView = new ShipView(gpu, brigMesh, shipSails('brig'));
-    let frigateView: ShipView | null = null;
     took(() => {
-      for (const view of [brigView, frigateView]) view?.destroy();
+      for (const view of [brigView, frigateView]) view.destroy();
     });
-    const hulls = {
-      brig: brigView,
-      sloop: game.sloop,
-      get frigate(): ShipView {
-        frigateView ??= new ShipView(gpu, frigateMesh, shipSails('frigate'));
-        return frigateView;
-      },
-    };
+    const hulls = { brig: brigView, sloop: game.sloop, frigate: frigateView };
     const [birds, flames] = [new Birds(gpu), new Flames(gpu)];
     took(() => birds.destroy());
     took(() => flames.destroy());

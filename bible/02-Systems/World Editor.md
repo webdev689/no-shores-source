@@ -15,6 +15,7 @@ code:
   - client/src/rules/worldRules.ts#startWorldRules
   - crates/world-wasm/src/lib.rs#check_layout
   - client/src/editor/landEditor.ts#startLandEditor
+  - client/src/editor/isleEditor.ts#startIsleEditor
   - client/src/editor/placeTools.ts#PlaceTools
   - client/src/editor/siteDrawing.ts#siteMarks
   - client/src/editor/layoutDrawing.ts#layoutMarks
@@ -87,9 +88,9 @@ the layout as drafted generates in the background, the chosen one first; each ro
 | Height | Multiplies heights in the 3D view, 1 to 10 times, so relief reads from afar. Within 3 km heights are true to scale; they ease to the chosen height by 30 km |
 | Layouts (`L`) | Shows or hides the nodes' layouts over both views, with a legend of their colours |
 | Walk (`G`) | Drops to a walker's eyes on the ground: `W` `A` `S` `D` or the arrow keys to move (6 m/s, 40 with `Shift` on land), drag to look round. In water the walker wades, then swims; `C` dives and `Space` rises ([[Water]]). `G` again, the 2D map or `V` stops. Brushes and place tools do nothing while walking |
-| Sail (`B`) | Puts the owner's Sloop to sea at the camera's target, heading where the camera looks, and follows her ([[Sailing]]). `W` and `S` (or the up and down arrows) climb and come down the helm's ladder: oars astern, at rest, ahead, then sails set. `A` and `D` steer; on her oars, `Shift` with `A` or `D` rows her sideways. Where the water is shallower than her draught she is refused, the panel says why and the camera stands back off. `B` again, Walk, another landmass, the 2D map or `V` brings her in |
-| Fight (`F`, while sailing) | Calls a pirate captain onto the ring round the Sloop, or sends her off ([[Naval Combat]]). Hold the right mouse to aim (the camera stands past the ports on the side looked at, and where the look meets the water is the range); let go to fire, left click to hold fire, the wheel to change shot, `C` to brace. The panel shows both ships, the guns, DFO's messages and the warning to brace |
-| In a fleet (`?room=` in the address) | Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep or more: `?room=<name>` the deployed rooms' `fleet-<name>`, a local server's address its `fleet-editor`. Every other player's Sloop and every captain is drawn; `F` calls a captain round her, four at most in the room, and `X` sends them all off; aiming, firing, the brace and the load are as alone |
+| Sail (`B`) | Puts the owner's Sloop to sea at the camera's target, heading where the camera looks, and follows it ([[Sailing]]). `W` and `S` (or the up and down arrows) climb and come down the helm's ladder: oars astern, at rest, ahead, then sails set. `A` and `D` steer; on its oars, `Shift` with `A` or `D` rows it sideways. Where the water is shallower than its draught it is refused, the panel says why and the camera stands back off. `B` again, Walk, another landmass, the 2D map or `V` brings it in |
+| Fight (`F`, while sailing) | Calls a pirate captain onto the ring round the Sloop, or sends it off ([[Naval Combat]]). Hold the right mouse to aim (the camera stands past the ports on the side looked at, and where the look meets the water is the range); let go to fire, left click to hold fire, the wheel to change shot, `C` to brace. The panel shows both ships, the guns, DFO's messages and the warning to brace |
+| In a fleet (`?room=` in the address) | Sail joins a fleet room on the [[Server]] instead, from open water 15 m deep or more: `?room=<name>` the deployed rooms' `fleet-<name>`, a local server's address its `fleet-editor`. Every other player's Sloop and every captain is drawn; `F` calls a captain round it, four at most in the room, and `X` sends them all off; aiming, firing, the brace and the load are as alone |
 | In 2D: drag, wheel | Shapes with a brush (or pans with Look, or with the right button), and zooms, 1 m to 20 km a pixel |
 | In 3D: left-drag, right-drag, middle-drag, wheel | Left-drag shapes with a brush (or orbits with Look); right-drag orbits (or pans with Look); middle-drag pans along the ground; the wheel zooms, 3 m to 5,000 km from the target |
 
@@ -164,6 +165,14 @@ Each landmass's row says when it has unsaved shaping. This browser keeps each la
 redo included, until it is saved, and offers to restore it the first time Land mode opens; Cancel forgets it. If the
 browser cannot keep it, the status says so. To keep shaping done on the site, put the downloaded file in
 `content/world/land/` through a pull request, or hand it to Claude.
+
+## Islands mode
+
+The Islands mode shows one of the sea's islands at a time, from a seed and a climate, built through the page's
+`room.wasm` exactly as its room builds it and drawn with the sea round it ([[Island Drawing]]). Next seed steps the
+seed; Next isle steps to the next ruin or quarry; Close up looks from about 40 m over its middle and From 3 km from
+afar. The panel counts the triangles and draws. `?mode=islands&isleSeed=<seed>&isleClimate=<climate>&isleView=afar`
+opens on an island, and `?islePacks=<prefix>` reads the build's packs before they are published.
 
 ## How it works
 

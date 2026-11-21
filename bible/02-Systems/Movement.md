@@ -71,7 +71,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   climbed as steeply as the path rises. The rise is the terrain's own, so a block sunk into a slope is walked onto
   and off again. Climbing down a wall stops at the terrain.
 - **A grid of heights.** One terrain is a grid of square cells, each with its height or none (`Heights`), as a
-  ship's deck is ([[Sailing]], "Her deck"). In a cell with a height, the ground blends the four cell centres round
+  ship's deck is ([[Sailing]], "Its deck"). In a cell with a height, the ground blends the four cell centres round
   the point by nearness, leaving out any that hold none; a cell with none, or past the grid's end, stands 10 m over
   the highest cell, a wall at that cell's edge that no step or slope takes and no climb starts on, a climb holding
   to blocks alone. A wall is judged along the whole of a move, each cell it passes through in turn and both cells
@@ -82,7 +82,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   `RIM_CELL_M`): open under the blocks wherever one covers a cell's middle, a wall everywhere else, so no body leaves
   the blocks for the sea. The browser's doors make the same rim from the blocks (`movement_set_rim`, `fighter_rim`).
   A body standing on it
-  faces north (her bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
+  faces north (its bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
   none), the same numbers the sea room stands its walkers on.
 - **Foes move by the same rules.** A foe's brain asks for the controls a player's keys would, and its room steps its
   body by them as it steps a player's ([[Foes]]); the [[Navmesh]] tries each of its climbs and drops by these rules,
