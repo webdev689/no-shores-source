@@ -240,8 +240,8 @@ pub fn take_foe_asks() {
     });
 }
 
-/// Plays the prologue's wreck in the open room: no Art, the story's sword and shield, and every boarder on one side
-/// and held to a Major; see `Room::story_wreck`.
+/// Plays the prologue's wreck in the open room: no Art, the player waking hurt with no weapon, and every boarder on
+/// one side and held to a Major; see `Room::story_wreck`.
 pub fn story_wreck() {
     with_open(|opened| {
         if let Opened::Land { room, .. } = opened {

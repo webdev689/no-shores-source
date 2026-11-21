@@ -1,10 +1,10 @@
 // An item's page, laid over the menu as Destiny 1's weapon page is: its name on a band of its rarity, its kind,
-// level and words, its main number large over a meter of it, what it changes over the piece worn, the perks it gives,
-// each beside its column's glyph, and its node grid, column by column, each node its kind's glyph in a tile: brass
-// when chosen, lit when bought, glowing when it can be bought now, sunk while locked, a ring inside it filling as the
-// item grows toward it, its card on hover or focus. A node is bought by holding it, as Destiny holds an upgrade; one
-// bought is chosen by a click. To the right, the item itself drawn large on a lit floor; what may be done with it goes
-// to the menu's footer.
+// level, an Atheric's intrinsic and own perk apart from its nodes, its words, its main number large over a meter of
+// it, what it changes over the piece worn, the perks it gives, each beside its column's glyph, and its node grid,
+// column by column, each node its kind's glyph in a tile: brass when chosen, lit when bought, glowing when it can be
+// bought now, sunk while locked, a ring inside it filling as the item grows toward it, its card on hover or focus. A
+// node is bought by holding it, as Destiny holds an upgrade; one bought is chosen by a click. To the right, the item
+// itself drawn large on a lit floor; what may be done with it goes to the menu's footer.
 
 import { edged } from '../combat/barDraw.ts';
 import type { GearItem } from '../network/gearMessages.ts';
@@ -12,7 +12,7 @@ import { CARRIED, type NodeShown, RARITIES, WORN } from '../player/gear.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { cardFrame, cardName, compareNode, kindLine, rarityTone, traitNode } from './gearCard.ts';
-import { cardOf, traitsShown } from './gearCards.ts';
+import { ATHERIC_OWN, cardOf, intrinsicOf, ownOf, traitsShown } from './gearCards.ts';
 import { HOLD_MS, dismantleMs, fillNode, quiver } from './gearHold.ts';
 import {
   INK,
@@ -231,8 +231,12 @@ export function itemPage(
       : null;
   const worn = item.at === CARRIED ? context.gear.items.find((each) => each.at === WORN + item.bucket) : undefined;
   const compare = worn ? cardOf(item, worn).compare : null;
-  const traits = traitsShown(item);
+  const traits = traitsShown(item).filter((trait) => trait.kind !== ATHERIC_OWN);
+  // An Atheric's two perks of its own head its page together, its own node's shown even before it is chosen.
+  const atheric = [intrinsicOf(item), ownOf(item)].filter((trait) => trait !== null);
   const left: Child[] = [
+    atheric.length > 0 && heading('Atheric', size),
+    ...atheric.map((trait) => traitNode(trait, size)),
     detail.words !== '' && { width: 'grow', padding: [4, 0], text: { words: detail.words, size, colour: INK.faint } },
     main && {
       gap: 8,

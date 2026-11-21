@@ -18,10 +18,25 @@ export const EVENT = {
   shieldBroken: 13,
   healed: 14,
 } as const;
-export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7 } as const;
+export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 
-/** The element a blow burns in where it lands: a spell's in its caster's Art's, the player's own blow or shot in their
- *  weapon's glow as their page shows it, and any other in what the room says it carried. */
+/** Whether a blow lands as a spell's does, no weapon's swing behind it: a spell, or an Atheric's leap or burst. */
+export const landsAsSpell = (event: FightEvent): boolean =>
+  event.how === HOW.spell || event.how === HOW.leap || event.how === HOW.burst;
+
+/** The fighter a blow came from, which way it pushes its defender and throws its motes: a leap's or a burst's source
+ *  foe, else its striker. */
+export const cameFrom = (event: FightEvent): number =>
+  (event.how === HOW.leap || event.how === HOW.burst) && event.from ? event.from : event.striker;
+
+/** Whether a blow is no weapon's own swing or shot on its foe: a shot, a blow that lands as a spell's, or an Atheric's
+ *  bite back on a block, which flashes on the foe bitten but neither kicks the view, holds the fight nor flares the arc. */
+export const notABlow = (event: FightEvent): boolean =>
+  event.how === HOW.shot || event.how === HOW.bite || landsAsSpell(event);
+
+/** The element a blow burns in where it lands: a spell's in its caster's Art's, an Atheric's leap or burst in its
+ *  perk's own, the player's own blow or shot in their weapon's glow as their page shows it, and any other in what the
+ *  room says it carried. */
 export function blowLook(
   event: FightEvent,
   {
@@ -32,6 +47,7 @@ export function blowLook(
 ): GlowLook {
   const carried = event.element === 1 || event.element === 2 || event.element === 3 ? event.element : 0;
   if (event.how === HOW.spell) return carried || (spellLook?.(event.striker) ?? 0);
+  if (event.how === HOW.leap || event.how === HOW.burst) return carried;
   if (event.striker === player && own) return own;
   return carried;
 }
