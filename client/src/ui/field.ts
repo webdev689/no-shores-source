@@ -103,3 +103,37 @@ export function wordAt(state: FieldState, place: number): FieldState {
   while (alike(end)) end++;
   return { text, caret: end, anchor: start };
 }
+
+/** What a key does to a field's words, caret and selection, as a page's field does it; null for a key that changes
+ *  neither. Backspace and Delete are already done where the browser's own typing typed them (`typedAlready`). */
+export function keyed(
+  state: FieldState,
+  key: string,
+  shift: boolean,
+  ctrl: boolean,
+  typedAlready: boolean,
+): FieldState | null {
+  if (key === 'backspace' || key === 'delete')
+    return typedAlready ? null : erased(state, key === 'backspace' ? -1 : 1, ctrl);
+  if (key === 'arrowleft' || key === 'arrowright') return moved(state, key === 'arrowleft' ? -1 : 1, shift, ctrl);
+  if (key === 'home' || key === 'end') return moved(state, key === 'home' ? 'start' : 'end', shift);
+  return ctrl && key === 'a' ? allSelected(state) : null;
+}
+
+/** A field after the browser's typing replaced `from` to `to` with `text`, its caret and selection where the browser
+ *  put them, within the words kept where the `most` cut short what it typed. */
+export function edited(
+  state: FieldState,
+  edit: {
+    readonly from: number;
+    readonly to: number;
+    readonly text: string;
+    readonly caret: number;
+    readonly anchor: number;
+  },
+  most: number,
+): FieldState {
+  const next = replaced(state, edit.from, edit.to, edit.text, most);
+  const within = (place: number) => Math.max(0, Math.min(next.text.length, place));
+  return { ...next, caret: within(edit.caret), anchor: within(edit.anchor) };
+}

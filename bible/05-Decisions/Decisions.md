@@ -222,6 +222,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue's Camera Flights Stand Clear and Go Slower]]
 - [[Three Healing Charges, Refilled by Blows and Kills]]
 - [[The Wreck Opens by Teaching the Player]]
+- [[The Key Strip Follows the Moment, and K Opens Every Control]]
+- [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]
+- [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]
 - [[Areas Load in Chunks With Proper Caching]]
 
 - [[Overlook Is Our Own Game]]

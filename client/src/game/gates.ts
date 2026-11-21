@@ -1,6 +1,7 @@
 // Where a player stands on foot besides a node's own spawns: the address's `&spawn=` (a way to look at one place)
 // and the far side of a layout's gate, when the player goes through it.
 import { passageAt } from '../layout/passage.ts';
+import { boundWord } from './controls.ts';
 import type { Happening } from './flow.ts';
 import type { Landmass } from './landmass.ts';
 import { bearingTo } from './nodes.ts';
@@ -31,7 +32,9 @@ export function gateWay(landmass: Pick<Landmass, 'layouts' | 'nodes'>, here: str
   const node = passage && landmass.nodes.find((each) => each.id === passage.to);
   if (!passage || !node) return null;
   return {
-    offer: node.locked ? lockedWords(node.name) : `${passage.into ? 'Enter' : 'Return to'} ${passage.name}  E`,
+    offer: node.locked
+      ? lockedWords(node.name)
+      : `${passage.into ? 'Enter' : 'Return to'} ${passage.name}  ${boundWord('use')}`,
     happening: node.locked ? null : { kind: 'pass', node: node.id, name: node.name, into: passage.into },
     node: { ...node, spawns: [passage.arrive] },
     facing: bearingTo(passage.arrive, node.centre),

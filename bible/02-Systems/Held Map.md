@@ -134,7 +134,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   fill. A press that moves more than 6 px is a pan, not a click.
 - **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
-  sail (Enter), or says why no way leads there. Escape lets the choice go, then lowers the map.
+  sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once
@@ -155,7 +155,7 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
 - **Raising.** On foot, N anywhere (with no menu or gear screen up): the view goes into the player's eyes (from third
   person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
   pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
-  waits; N or Escape turns back. Up, N or Escape lowers it, and the view goes back as it was. The fight's crosshair,
+  waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
   plates and compass, and a gate's offer, give way while it is up.
 - **The view** opens centred on the player, 400 m across, held to the land's sheet: its ring and 40 m past it. A drag
   pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.

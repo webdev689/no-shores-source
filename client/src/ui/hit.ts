@@ -34,3 +34,22 @@ export function targetAt(laid: readonly Laid[], x: number, y: number): Laid | nu
   for (let each = hitAt(laid, x, y); each; each = each.parent) if (acts(each.node)) return each;
   return null;
 }
+
+/** Scrolls the innermost list under the point by `rolled`, kept within what it holds; answers whether the interface
+ *  is under the point, so the wheel there is its own. */
+export function scrolledAt(
+  laid: readonly Laid[],
+  x: number,
+  y: number,
+  rolled: number,
+  scrolls: Map<string, number>,
+): boolean {
+  for (let each = hitAt(laid, x, y); each; each = each.parent) {
+    const id = each.node.id;
+    if (each.node.scroll && id) {
+      scrolls.set(id, Math.max(0, Math.min((scrolls.get(id) ?? 0) + rolled, each.content - each.box.height)));
+      return true;
+    }
+  }
+  return hitAt(laid, x, y) !== null;
+}
