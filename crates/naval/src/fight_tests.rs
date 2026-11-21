@@ -270,6 +270,32 @@ fn a_look_past_it_lays_for_the_water() {
 }
 
 #[test]
+fn a_look_from_an_eye_past_the_fight_cameras_boom_lays_for_the_water_whatever_its_ray_meets() {
+    let fight = alongside(50.0, Temper::Wary);
+    let hull = Sighted::of(CAPTAIN, captain(&fight)).target().hull;
+    // An eye 150 m beyond the captain, looking back through its hull: no camera of the player's stands there.
+    let beyond = [hull.centre[0] + 150.0, hull.centre[1], hull.centre[2]];
+    let aim = Aim { bearing_deg: 90.0, range_m: 300.0, ray: Some([beyond, [-1.0, 0.0, 0.0]]) };
+    let water = fight.laid(PLAYER, &Aim { ray: None, ..aim });
+    assert_eq!(fight.laid(PLAYER, &aim), water);
+    assert_ne!(fight.laid(PLAYER, &looked(&fight, hull.centre)), water, "from its own aim eye the look lays on it");
+}
+
+#[test]
+fn a_look_on_a_ship_off_its_bow_lays_its_guns_square_to_their_side_within_their_carriage() {
+    let mut fight = alongside(50.0, Temper::Wary);
+    captain_mut(&mut fight).ship = sloop_at(10.0, -60.0);
+    let hull = Sighted::of(CAPTAIN, captain(&fight)).target().hull;
+    let aim = looked(&fight, hull.centre);
+    let square = fight.laid(PLAYER, &Aim { ray: None, ..aim }).expect("the starboard side bears");
+    let laid = fight.laid(PLAYER, &aim).expect("the starboard side bears");
+    let (low, high) = (laid.gun.min_el_deg.to_radians(), laid.gun.max_el_deg.to_radians());
+    assert_ne!(laid.elevation, square.elevation, "laid on the ship its ray meets, not the water's 300 m");
+    assert_eq!((laid.side, laid.dir), (square.side, square.dir), "its guns fire square to their side");
+    assert!((low..=high).contains(&laid.elevation), "{} within {low}..{high}", laid.elevation);
+}
+
+#[test]
 fn each_gun_ends_where_an_unscattered_ball_fired_by_the_fight_stops() {
     let fight = alongside(50.0, Temper::Wary);
     for range_m in [50.0, 30.0] {

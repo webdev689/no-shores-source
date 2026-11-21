@@ -350,7 +350,8 @@ an older reader skips them.
 
 A fight at sea crosses as the naval crate's numbers (`naval::wire`). Orders, sixteen: the helm's steer (-1 port to 1
 starboard), crab and climb; whether a look is laid, its bearing off its bow (degrees) and range (metres); whether it
-has a ray, and the ray's eye (east, south, up) and the way it looks, so a look on the captain lays on it; the fire, the
+has a ray, and the ray's eye (east, south, up) and the way it looks, so a look on the captain lays on it (the eye
+within 100 m of the player's ship, else the ray lays nothing, [[Naval Combat]]); the fire, the
 brace, and a load (0 none, else 1 and its place among round, grape, chain and heated). The view: the clock and its
 end (0 on, 1 sunk, 2 gone); each ship, the player's then the captain's, 27 numbers (its own 8, its pose's 4, hull,
 canvas and men with their most, its state, its fires, each side's seconds left and progress, its load and brace, and
