@@ -654,7 +654,7 @@ button's corner and screen, and the Tailor's wares.
   offers nor keeps them; nothing stands in for it (no passkeys, no browser's store), and the player types them.
 - Settings' volumes are the kit's drawn sliders, a brass fill in a track, where the page showed the browser's own; a
   credit's link opens its page in a new tab from a press, and the browser's own menu for a link (copy, open in a
-  window) is not offered.
+  window) is not offered. A slider steps by its arrows only: Home, End and Page Up or Down do not move it.
 - A Roster row's words and a player's worn pieces keep to their line, cut short with '...' where they do not fit,
   where the page wrapped a long status under itself. A column's arrow at its first or last page is drawn dimmed and
   takes no press, as the page's did, and in a column of one page neither takes the focus.
