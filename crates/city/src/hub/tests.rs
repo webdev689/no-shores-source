@@ -275,9 +275,9 @@ fn the_postmasters_counter_stands_in_the_watch_court_clear_of_every_other_counte
     let spots = social.visitor_spots.iter().chain(&social.spawns).copied();
     // Twice a counter's reach (the room's 4 m) apart, so where the mail serves no other counter does.
     for [x, y] in others.chain(spots).chain([board]) {
-        let apart = (at[0] - x).hypot(at[1] - y);
+        let apart = libm::hypot(at[0] - x, at[1] - y);
         assert!(apart > 8.0, "something {apart:.1} m from the mail counter");
     }
     let keeper = mail[0].keeper;
-    assert!((keeper[0] - at[0]).hypot(keeper[1] - at[1]) > 1.0, "its keeper behind it");
+    assert!(libm::hypot(keeper[0] - at[0], keeper[1] - at[1]) > 1.0, "its keeper behind it");
 }
