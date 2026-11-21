@@ -121,7 +121,8 @@ const BUCKET_M = 1000;
 /** How far from a river its distance is known: past this, a point is far from it. */
 const RIVER_REACH_M = 400;
 
-function chaikin(points: readonly (readonly number[])[]): number[][] {
+/** A course's corners cut once, Chaikin's way: each segment's quarter and three-quarter points, its ends kept. */
+export function chaikin(points: readonly (readonly number[])[]): number[][] {
   if (points.length < 3) return points.map((point) => [...point]);
   const out: number[][] = [[...(points[0] ?? [])]];
   for (let index = 1; index < points.length; index++) {

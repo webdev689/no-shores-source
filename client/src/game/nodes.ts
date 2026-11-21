@@ -28,6 +28,8 @@ export interface CityPlan {
     readonly visitor_spots?: readonly Point[];
     readonly ways?: Ways;
     readonly posts?: readonly Post[];
+    /** Its places by name, as the held map names them: a court, a walk, the quay. */
+    readonly areas?: readonly { readonly name: string; readonly at: Point }[];
     /** Ships moored beside its pier: each one's middle (east, south) and her bow's bearing. */
     readonly moorings?: readonly (readonly [number, number, number])[];
   };

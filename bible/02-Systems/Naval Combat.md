@@ -459,8 +459,9 @@ captain's number comes with them in the view, so one leaving the fight never mov
   `ship.hit` (16, 1000); a magazine `ship.blast` (26, 1800); a boarding's grapnels `ship.grapple` (6, 240); a captain
   running out `ship.runout` (24, 900); a side of the player's come ready `ship.ready` (10, 80); a ship going down
   `ship.sinking` (18, 420); a ball going by the player's ship `ship.whistle` (8, 90); a ball in the water `shot.splash` (12, 600).
-  The `ship.` cues are on the sound sheet with DFO's own synthesised sounds as their candidates
-  ([[DFO's Own Sounds Join the Sound Sheet]]); each stays silent until the owner picks one.
+  Each `ship.` cue plays the owner's Freesound pick
+  ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]), the sinking the sea's break-up; each is
+  silent until its recording has come.
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
 - **The readout** (drawn by `combat/seaReadout.ts` from `plus/seaFight.ts`'s words, fed by `ships/fightDisplay.ts`,

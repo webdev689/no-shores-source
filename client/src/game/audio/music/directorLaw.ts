@@ -1,10 +1,10 @@
-// The music director's law: what plays, from what the game hears each frame. Roaming is silent, ambience alone. A foe
+// The music director's law: what plays, from what the game hears each frame. Out of danger a calm piece comes now and
+// then, at sea, in the social space and on the islands, in fair skies, with minutes of silence between pieces. A foe
 // near turning alert (at sea, a hostile ship closing) brings in the tension layers of the place's fight score; the
 // player fighting brings in the fight's layers; several foes, an Elite or a Miniboss, or low health the peak; a Boss
 // engaged plays its own score, its phase by its health. Each mood holds a few seconds after its cause. A death, a
-// boss's fall or waking and a fight won are stings. At sea out of danger a sea song comes now and then, in fair skies.
-// The story tells it what to play. Pure: the game's state, the memory and a die in, the mood, the score and any sting
-// out; the director plays them on bar lines.
+// boss's fall or waking and a fight won are stings. The story tells it what to play. Pure: the game's state, the memory
+// and a die in, the mood, the score and any sting out; the director plays them on bar lines.
 
 import { PUBLIC_CLIMAX } from '../../../rules/roster.ts';
 import type { Climate, Place } from '../place.ts';
@@ -38,12 +38,13 @@ export type BossPart = 1 | 2 | 3 | 'last';
 
 export type Mood = 'silent' | 'tension' | 'combat' | 'peak' | 'boss';
 
-/** What plays: nothing, the social space's theme, a family's fight score, a sea song, a boss's part, or a song of
- *  the story's own. */
+/** What plays: nothing, a piece of the social space's, a family's fight score or one of its roaming pieces, a sea
+ *  song, a boss's part, or a song of the story's own. */
 export type Cue =
   | { readonly kind: 'none' }
-  | { readonly kind: 'social' }
+  | { readonly kind: 'social'; readonly piece: number }
   | { readonly kind: 'family'; readonly family: Family }
+  | { readonly kind: 'roam'; readonly family: Family; readonly piece: number }
   | { readonly kind: 'sea'; readonly song: SeaSong }
   | { readonly kind: 'boss'; readonly boss: Boss; readonly part: BossPart }
   | { readonly kind: 'story'; readonly song: StorySong };
@@ -146,9 +147,12 @@ export interface Memory {
   readonly fell: number;
   readonly mood: Mood;
   readonly cue: Cue;
-  /** The sea song playing out of danger and when it ends; none before the clock reaches `restUntil`. */
-  readonly voyage: { readonly song: SeaSong; readonly until: number } | null;
+  /** The calm piece playing out of danger and when it ends; none before the clock reaches `restUntil`. */
+  readonly roaming: { readonly cue: Cue; readonly until: number } | null;
   readonly restUntil: number;
+  /** Where the last frame was heard, for its pieces and its rests; and the piece last begun, never begun twice running. */
+  readonly where: Where | null;
+  readonly lastPiece: Cue | null;
   /** Whether it lay off a coast to land on last frame, and when landfall last began. */
   readonly offCoast: boolean;
   readonly landedAt: number;
@@ -166,14 +170,32 @@ export const QUIET: Memory = {
   fell: -Infinity,
   mood: 'silent',
   cue: { kind: 'none' },
-  voyage: null,
+  roaming: null,
   restUntil: -Infinity,
+  where: null,
+  lastPiece: null,
   offCoast: false,
   landedAt: -Infinity,
 };
 
+/** Where the calm pieces are chosen: the sea, the social space, or an island by its climate's family. */
+export type Where = 'sea' | 'social' | Family;
+export const whereOf = (place: Place): Where =>
+  place.kind === 'sea' ? 'sea' : place.kind === 'social' ? 'social' : FAMILY_OF[place.climate];
+
 /** After a sea song, or danger, this many seconds of silence at least, and at most, before another may come. */
 export const REST_S: readonly [number, number] = [4 * 60, 8 * 60];
+/** Each place's silences, seconds: `after` a piece, at least and at most; and `least` on arriving and after danger,
+ *  before the first may come. A social space is where players wait, so its pieces come soonest and most often; an
+ *  island's, between fights, least. */
+export const RESTS: Readonly<
+  Record<'sea' | 'social' | 'island', { readonly after: readonly [number, number]; readonly least: number }>
+> = {
+  sea: { after: REST_S, least: REST_S[0] },
+  social: { after: [150, 300], least: 30 },
+  island: { after: [300, 540], least: 120 },
+};
+const restsOf = (where: Where) => RESTS[where === 'sea' || where === 'social' ? where : 'island'];
 /** A sea song is never played in rain or snow this hard, a storm this strong, or fog this thick. */
 const FOUL = { falling: 0.05, storm: 0.15, fog: 0.3 } as const;
 /** Under this wind, m/s, the sea is still. */
@@ -187,34 +209,59 @@ export const fairForSong = (sky: HeardSky | null): boolean =>
 export const voyageSongFor = (sky: HeardSky | null): SeaSong =>
   sky?.night ? 'night' : sky && sky.windMS < STILL_WIND_MS ? 'calm' : 'open';
 
-/** How the law hears the sea songs: each one's length played once through, seconds, and a die for the rests. */
+/** How the law hears the calm pieces: each one's length played once through, seconds; how many pieces a place has;
+ *  and a die for the rests and the choices. */
 export interface SongClock {
-  readonly lengthOf: (song: SeaSong) => number;
+  readonly lengthOf: (cue: Cue) => number;
+  readonly pieces: (where: Exclude<Where, 'sea'>) => number;
   readonly random: () => number;
 }
-const SONG_CLOCK: SongClock = { lengthOf: () => 180, random: Math.random };
+const SONG_CLOCK: SongClock = { lengthOf: () => 180, pieces: () => 1, random: Math.random };
 
-/** The sea song out of danger this frame, and when the next may come. Danger, leaving the sea or a sky turning foul
- *  ends one and begins a rest; landfall plays as the ship comes off a coast, whatever the rest or the sky. */
-function voyageOf(
+/** The calm piece for `where` under `sky`: at sea the sky's song; elsewhere one of the place's, by the die, never the
+ *  one last begun while there is another. None where nothing is written. */
+function pieceFor(where: Where, sky: HeardSky | null, last: Cue | null, songs: SongClock): Cue | null {
+  if (where === 'sea') return { kind: 'sea', song: voyageSongFor(sky) };
+  const count = songs.pieces(where);
+  if (count < 1) return null;
+  const cue = (piece: number): Cue =>
+    where === 'social' ? { kind: 'social', piece } : { kind: 'roam', family: where, piece };
+  const first = Math.min(count - 1, Math.floor(songs.random() * count));
+  const again = last !== null && sameCue(last, cue(first)) && count > 1;
+  return cue(again ? (first + 1 + Math.min(count - 2, Math.floor(songs.random() * (count - 1)))) % count : first);
+}
+
+/** The calm piece out of danger this frame, and when the next may come. Danger, a new place or a sky turning foul ends
+ *  one and begins a rest; a new place waits its own least before its first. Landfall plays as the ship comes off a
+ *  coast, whatever the rest or the sky. */
+function roamOf(
   memory: Memory,
   clock: number,
   calm: boolean,
   hearing: Hearing,
   songs: SongClock,
-): Pick<Memory, 'voyage' | 'restUntil' | 'offCoast' | 'landedAt'> {
+): Pick<Memory, 'roaming' | 'restUntil' | 'offCoast' | 'landedAt' | 'where' | 'lastPiece'> {
   // Ashore it lies at the coast: sailing out from it is no landfall.
   const offCoast = hearing.sea ? hearing.sea.landfall : true;
-  const rest = () => clock + REST_S[0] + (REST_S[1] - REST_S[0]) * songs.random();
-  let { voyage, restUntil, landedAt } = memory;
-  const ended = voyage && (!calm || clock >= voyage.until || (voyage.song !== 'landfall' && !fairForSong(hearing.sky)));
-  if (ended) [voyage, restUntil] = [null, rest()];
-  if (!calm) return { voyage, restUntil: Math.max(restUntil, clock + REST_S[0]), offCoast, landedAt };
-  const begin = (song: SeaSong) => ({ song, until: clock + songs.lengthOf(song) });
+  const where = whereOf(hearing.place);
+  const { after, least } = restsOf(where);
+  const moved = where !== memory.where;
+  let { roaming, restUntil, landedAt, lastPiece } = memory;
+  if (moved) [roaming, restUntil] = [null, clock + least];
+  const landfall = roaming?.cue.kind === 'sea' && roaming.cue.song === 'landfall';
+  const ended = roaming && (!calm || clock >= roaming.until || (!landfall && !fairForSong(hearing.sky)));
+  if (ended) [roaming, restUntil] = [null, clock + after[0] + (after[1] - after[0]) * songs.random()];
+  const kept = { offCoast, landedAt, where, lastPiece };
+  if (!calm) return { ...kept, roaming, restUntil: Math.max(restUntil, clock + least) };
+  const begin = (cue: Cue) => ({ cue, until: clock + songs.lengthOf(cue) });
   // A ship along the edge of a coast's reach comes off it again and again: landfall comes once in a rest's while.
-  if (offCoast && !memory.offCoast && clock - landedAt >= REST_S[0]) [voyage, landedAt] = [begin('landfall'), clock];
-  else if (!voyage && clock >= restUntil && fairForSong(hearing.sky)) voyage = begin(voyageSongFor(hearing.sky));
-  return { voyage, restUntil, offCoast, landedAt };
+  if (where === 'sea' && offCoast && !memory.offCoast && clock - landedAt >= REST_S[0])
+    [roaming, landedAt] = [begin({ kind: 'sea', song: 'landfall' }), clock];
+  else if (!roaming && clock >= restUntil && fairForSong(hearing.sky)) {
+    const cue = pieceFor(where, hearing.sky, lastPiece, songs);
+    if (cue) [roaming, lastPiece] = [begin(cue), cue];
+  }
+  return { roaming, restUntil, offCoast, landedAt, where, lastPiece };
 }
 
 export interface Verdict {
@@ -334,21 +381,20 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   const mood = atLeast(story ? atLeast(heard, story.least) : heard, hearing.least ?? 'silent');
   const playing = mood !== 'silent';
   const seaSong = atSea && playing ? (memory.seaSong ?? seaSongFor(sea)) : null;
-  const voyage = voyageOf(memory, clock, atSea && !playing && !boss, hearing, songs);
+  const roam = roamOf(memory, clock, !playing && !boss, hearing, songs);
   let cue: Cue = { kind: 'none' };
   if (boss) cue = { kind: 'boss', boss: boss.boss, part: bossPart(bossFoe?.health ?? 1) };
   else if (seaSong) cue = { kind: 'sea', song: seaSong };
-  else if (voyage.voyage) cue = { kind: 'sea', song: voyage.voyage.song };
+  else if (roam.roaming) cue = roam.roaming.cue;
   else if (playing && story?.score) cue = { kind: 'boss', boss: story.score, part: 1 };
   else if (playing && place.kind !== 'sea') cue = { kind: 'family', family: FAMILY_OF[place.climate] };
-  else if (place.kind === 'social') cue = { kind: 'social' };
   // A boss part holds while the boss is out of sight a moment: its health is not heard then.
   if (boss && !bossFoe && memory.cue.kind === 'boss') cue = memory.cue;
   const fightOver = (memory.mood === 'combat' || memory.mood === 'peak') && (mood === 'tension' || mood === 'silent');
   const killed = (memory.killed || hearing.kills > 0) && mood !== 'silent' && mood !== 'tension';
   if (!sting && fightOver) sting = { kind: memory.killed ? 'victory' : 'cadence', cue: memory.cue };
   const next: Memory = {
-    ...voyage,
+    ...roam,
     clock,
     lastFight,
     lastPeak,

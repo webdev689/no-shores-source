@@ -64,6 +64,12 @@ export function moduleMouth(module: number): readonly (readonly (readonly [numbe
   return listed.modules[module]?.mouth;
 }
 
+/** A module's parts, the boxes a body runs into, in its own frame (x east, y south, z up from its foot): each
+ *  `[west, north, low, east, south, high]`. None for a module with none listed. */
+export function moduleParts(module: number): readonly (readonly number[])[] {
+  return (manifest as Listed).modules[module]?.parts ?? [];
+}
+
 /** A group's mesh, once loaded. */
 export function moduleMesh(module: number, group: number): ModuleMesh | undefined {
   return meshes.get(`${module}:${group}`);
