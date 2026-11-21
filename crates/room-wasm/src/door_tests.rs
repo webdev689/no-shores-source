@@ -618,12 +618,24 @@ fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_change
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     room_tick();
     assert!(gear_door::gear(player).is_empty(), "no character held yet");
+    // A Friday's 09:00 UTC, the sea's minute: a bounty held that day is counted on it.
+    let minute = 20_778 * 1_440 + 540;
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.minute = minute;
+        }
+    });
     let mut character = gear::Character::starting();
     character.materials.add_aurem(777);
+    character.activity.today.day = gear::clock::day_of(minute);
+    character.activity.today.bounties.insert(2, 1);
     assert!(gear_door::restore_character(player, character.to_json().as_bytes()));
     let bytes = gear_door::gear(player);
     let gear = messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear");
     assert_eq!(gear.aurem(), character.materials.aurem, "the character given back");
+    assert_eq!(u64::from(gear.day()), gear::clock::day_of(minute), "the sea's day");
+    let held = gear.bounties().expect("the board").get(2);
+    assert_eq!((held.held(), held.count()), (true, 1), "the bounty counted at sea, today's");
     assert!(gear_door::gear(player).is_empty(), "sent once until it changes again");
 }
 

@@ -216,7 +216,9 @@ One engine counts both, since the owner's side quests and the board's bounties a
   each player who fought her, once each however often they are listed, by the water she went down in (its
   continent's id, none off every water) and her captain's rank, on the sea's day (`Sea::count_down`,
   `gear::objectives::count_ship_down`), one fighting on a captain's deck among them: stepping off, they keep it
-  (`step_off`). A count that moves is saved and sent.
+  (`step_off`). A count that moves is saved and sent to the player at once, their gear written at the sea's minute so
+  its bounties are the day's (`sea_gear_bytes`); the Journal reads it at sea, so a count shows as the ship goes down,
+  not when the player lands.
 - **Quests** (side quests, and the story's missions as quests of kind story) use the same objectives, kept until
   done, and are written as data (`content/gear/quests.json`, read by `gear::quests`, none written yet): each its id,
   its kind (story or side), its name, one line of its tale, an optional banner key (else the Journal gives it one of
