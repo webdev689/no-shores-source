@@ -88,6 +88,7 @@ Under the owner's [[The Hub Feels Lively, Its Ground Populated]]:
 | The Forge Yard | The smiths' stores: woodpiles under lean-tos, stacked barrels, crates, hay bales, carts, sacks, a table for the workers |
 | The Beacon Walk | A market either side of the portico: stalls of cloth, bread, flowers, fruit, fish and pots, parasol tables, carts and goods |
 | The Stair Yard | The stable's stores: hay bales, a hay cart, barrels, crates, sacks |
+| Between them | A second pass at half the spacing of small pieces: benches, planters, potted trees and lamps in the gardens; sacks, crates and jars in the yards and the market |
 | Who is there | Each new stall's keeper at its counter; a walker's place at each piece (a browser at a stall, drinkers at a table, a porter at a pile, an idler at a bench, a bed or a tree), reached straight from the nearest way point that sees it; up to 48 walkers, from 24 |
 
 ## The townsfolk
