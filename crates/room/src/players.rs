@@ -401,6 +401,14 @@ impl Room {
         self.players.get(&player).map(|found| found.character.to_json())
     }
 
+    /// No character is kept for a player (they play unkept, or their account gave none back): the one the room holds is
+    /// their own from now on, so their page shows its word.
+    pub fn none_kept(&mut self, player: PlayerId) {
+        if let Some(found) = self.players.get_mut(&player) {
+            (found.gear_changed, found.claimed) = (true, true);
+        }
+    }
+
     /// Gives a player the character kept for them, trimming their fight by it and sending them their gear, its quest
     /// log told they arrived here; false if they are not in the room or the text is not a character.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {

@@ -210,3 +210,19 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
   assert.ok((road.quests?.counts[KILL] ?? 0) >= 1, `a kill counts: ${JSON.stringify(road.quests)}`);
   assert.equal(road.quests?.task, 1);
 });
+
+test('a player whose page keeps no character plays the room’s as their own, and its word says so', () => {
+  const door = startRoomDoor(compiled);
+  assert.equal(door.openNode(JSON.stringify(HALL)), true);
+  const player = door.join();
+  const claimed = () => {
+    const bytes = door.gear(player);
+    return FromRoom.getRootAsFromRoom(new flatbuffers.ByteBuffer(bytes)).gear()?.claimed();
+  };
+  assert.equal(claimed(), false, 'a claim may still come');
+  // The worker says so once the player speaks with no token, or once a claim gives nothing back.
+  door.noneKept(player);
+  // A room sends a player's gear at most every 12 ticks.
+  for (let tick = 0; tick < 12; tick++) door.tick();
+  assert.equal(claimed(), true, 'none will: the room’s is theirs, so their page shows its road');
+});

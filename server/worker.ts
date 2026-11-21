@@ -238,8 +238,9 @@ export class RoomHost extends DurableObject<Env> {
       return;
     }
     held.count = count;
-    // At sea an input before any token sails at once; a token after it still gives the ship back where it was kept.
-    if (seaRoom(this.name) !== null && !held.signed && !held.spoke) {
+    // An input before any token plays unkept: at sea the ship sails at once (a token after it still gives the ship back
+    // where it was kept), and on land the character the room holds is the player's own.
+    if (!held.signed && !held.spoke) {
       held.spoke = true;
       this.guarded(() => this.room.noneKept(player), undefined);
     }

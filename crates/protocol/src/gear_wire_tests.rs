@@ -100,6 +100,19 @@ fn the_gear_message_says_its_character_is_the_players_own_only_once_their_accoun
 }
 
 #[test]
+fn a_player_with_no_character_kept_plays_the_rooms_as_their_own_and_their_page_shows_it() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let claimed = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("a player of the room");
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear").claimed()
+    };
+    assert!(!claimed(&room), "a claim may still come");
+    room.none_kept(player);
+    assert!(claimed(&room), "none will: the room's is theirs");
+}
+
+#[test]
 fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where_its_place_stands() {
     let bytes = quest_gear(&gear::Character::starting());
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
