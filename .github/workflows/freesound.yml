@@ -4,7 +4,7 @@ name: freesound
 # changes: each cue's first few CC0 or Attribution sounds of its length, their previews and who made them, kept as
 # the run's download for the audio test sheet. It needs no key: it reads Freesound's public pages, as a person
 # browsing would. Freesound refuses Claude's cloud machines, so the search runs here, and so does the publish of the
-# owner's picks to R2, with the repository's Cloudflare token.
+# owner's picks to R2, with the repository's R2 token.
 on:
   push:
     paths: [content/audio/freesound.json, tools/freesound/**, .github/workflows/freesound.yml]
@@ -33,15 +33,15 @@ jobs:
         run: sudo apt-get install -y -q ffmpeg > /dev/null
       - name: Cut the long picks
         run: python3 -I tools/freesound/publish.py --cut freesound-candidates
-      # The owner's picks go to R2 with the repository's Cloudflare token, each named by its hash, so a run changes
+      # The owner's picks go to R2 with the repository's R2 token, each named by its hash, so a run changes
       # nothing already there; this step runs no ffmpeg. The game's list of them is kept with the download
       # (sounds.json) for a commit to take in. Without the token the run says so and publishes nothing.
       - name: Publish the picks to R2
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: |
           if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: no pick is published"
+            echo "::warning::the repository has no R2_TOKEN secret: no pick is published"
             exit 0
           fi
           python3 -I tools/freesound/publish.py freesound-candidates

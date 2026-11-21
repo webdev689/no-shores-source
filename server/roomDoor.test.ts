@@ -48,7 +48,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     protocol,
     epoch: 0,
   });
-  assert.equal(room.input(first, asking(1, walk, walking, '{"body":"male"}')), 'taken');
+  assert.equal(room.input(first, asking(1, walk, walking, '{"body":"male","outfit":{}}')), 'taken');
   for (let sequence = 2; sequence <= 30; sequence++)
     assert.equal(room.input(first, asking(sequence, walk, walking)), 'taken');
   assert.equal(room.input(first, asking(40, walk, walking)), 'out of order');
@@ -65,14 +65,14 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   assert.deepEqual(walker?.standing, { kind: 'inside' }, 'a course has no section to leave');
   // The walker's look came with its last input, and its dress once, to everyone and to whoever joins after.
   assert.deepEqual([walker?.anim, walker?.frame], ['walk', 2]);
-  assert.deepEqual(snapshot.dressed, [{ player: first, dress: '{"body":"male"}' }]);
+  assert.deepEqual(snapshot.dressed, [{ player: first, dress: '{"body":"male","outfit":{}}' }]);
   room.tick();
   assert.deepEqual((readFromRoom(room.snapshot()) as { dressed: unknown }).dressed, []);
   const third = room.join();
   assert.deepEqual(readFromRoom(room.joined(third)), {
     kind: 'joined',
     player: third,
-    dressed: [{ player: first, dress: '{"body":"male"}' }],
+    dressed: [{ player: first, dress: '{"body":"male","outfit":{}}' }],
     node: null,
     protocol,
     epoch: 0,

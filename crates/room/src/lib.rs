@@ -304,7 +304,8 @@ impl Room {
         }
         found.received = input.sequence;
         // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
-        if let Some(dress) = input.dress.take() {
+        // One that does not read is refused, and the last that did is kept.
+        if let Some(dress) = input.dress.take().filter(|dress| gear::cosmetics::read_dress(dress).is_some()) {
             found.dress_next = (dress != found.dress_sent).then_some(dress);
         }
         // A player never begins a telegraphed blow.
@@ -362,6 +363,11 @@ impl Room {
                     self.take_ask(id, asked);
                 }
                 self.ask_cast(id, input.cast.filter(|_| !input.intent.controls.mounted));
+                // Nothing is fought from the saddle, as the page never asks it: no swing, guard, shot or aim.
+                if input.intent.controls.mounted {
+                    let pitch = input.intent.combat.pitch;
+                    input.intent.combat = combat::CombatInput { pitch, ..combat::CombatInput::default() };
+                }
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
