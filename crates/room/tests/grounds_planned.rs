@@ -111,7 +111,11 @@ fn saltmeres_fissures_open_on_clear_ground_beside_their_battlefields_obelisk_nev
             [west, north, east, south, 0.0, 0.0]
         });
         for print in standing.chain(laid.seating.solids.iter().map(|solid| solid.bounds())) {
-            assert!(!overlaps(fissure.at, half, 0.0, print), "{id}: the fissure at {:?} stands on {print:?}", fissure.at);
+            assert!(
+                !overlaps(fissure.at, half, 0.0, print),
+                "{id}: the fissure at {:?} stands on {print:?}",
+                fissure.at
+            );
         }
     }
 }
