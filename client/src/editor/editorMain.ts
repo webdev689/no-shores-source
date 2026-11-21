@@ -1,15 +1,19 @@
-import { canvasSize } from '../canvasSize.ts';
-import { GpuUnavailable, startGpu } from '../gpu.ts';
+import { GpuUnavailable, startGpu, TEXTURE_USAGE } from '../gpu.ts';
 import { startWorldRules, type WorldRules } from '../rules/worldRules.ts';
+import type { Node } from '../ui/node.ts';
+import { ask, saveFile } from '../ui/page.ts';
+import type { Interface } from '../ui/ui.ts';
 import { type Camera, fitFrame, niceLength, pan, screenToWorld, zoomAt } from './camera.ts';
-import { buildPanel, type Tool } from './editorPanel.ts';
-import { button, downloadJson } from './dom.ts';
+import { EditorFrame, type EditorDrawn, type EditorFrameView } from './editorFrame.ts';
+import { continentsPanel, type PanelHandlers, type Tool } from './editorPanel.ts';
 import { startLandEditor, type LandEditor } from './landEditor.ts';
 import { type CellRect, CELL_M, LandMask } from './landMask.ts';
 import { draftLayout, type Issue, type LayoutContent, slotIdsFor } from './layoutDraft.ts';
 import { MapView } from './mapView.ts';
 import { areaStanding, rangeFraction, references } from './measure.ts';
-import { drawOverlay, type PinnedReference, type Ruler } from './overlay.ts';
+import { overlayMarks, type PinnedReference, type Ruler } from './overlay.ts';
+import { PANEL_WIDTH, press, row } from './panelKit.ts';
+import { labelNode } from './viewMarks.ts';
 
 const LAYOUT_URL = `${import.meta.env.BASE_URL}world/layout.json`;
 /** Where this browser keeps the painting between visits, until it is saved. */
@@ -28,6 +32,14 @@ function element<T extends Element>(selector: string): T {
   const found = document.querySelector<T>(selector);
   if (!found) throw new Error(`the editor page has no ${selector}`);
   return found;
+}
+
+/** The two modes' presses, over each mode's panel. */
+function modesRow(ui: Interface, mode: 'continents' | 'land', setMode: (next: 'continents' | 'land') => void): Node {
+  return row([
+    press(ui, 'mode:continents', 'Continents', () => setMode('continents'), { chosen: mode === 'continents' }),
+    press(ui, 'mode:land', 'Land', () => setMode('land'), { chosen: mode === 'land' }),
+  ]);
 }
 
 function joinRects(first: CellRect | null, second: CellRect | null): CellRect | null {
@@ -49,9 +61,20 @@ async function loadLayoutText(): Promise<{ text: string; saved: boolean }> {
 
 /** The editor: one land mask, painted with the brush, checked by the Rust rules after every stroke. */
 async function start(): Promise<void> {
-  const canvas = element<HTMLCanvasElement>('#map');
-  const svg = element<SVGSVGElement>('#overlay');
+  const canvas = element<HTMLCanvasElement>('#editor');
   const gpu = await startGpu(canvas);
+  // The land's 3D view is drawn aside and copied into the canvas right of the panel.
+  gpu.context.configure({
+    device: gpu.device,
+    format: gpu.format,
+    alphaMode: 'opaque',
+    usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource | TEXTURE_USAGE.copyDestination,
+  });
+  const editor = new EditorFrame(canvas, gpu);
+  const requestFrame = () => editor.request();
+  /** The view right of the panel, CSS pixels, and a pointer's place on it. */
+  const viewWidth = () => Math.max(1, canvas.clientWidth - PANEL_WIDTH);
+  const onView = (event: MouseEvent) => ({ x: event.offsetX - PANEL_WIDTH, y: event.offsetY });
   const rules: WorldRules = await startWorldRules(
     await (await fetch(`${import.meta.env.BASE_URL}world.wasm`)).arrayBuffer(),
   );
@@ -64,7 +87,7 @@ async function start(): Promise<void> {
   let layout: LayoutContent = { continents: [], isles: [] };
   let slotIds: string[] = [];
   let loadedCells = mask.cells.slice();
-  let camera: Camera = fitFrame(constants.frameWidthM, constants.frameHeightM, canvas.clientWidth, canvas.clientHeight);
+  let camera: Camera = fitFrame(constants.frameWidthM, constants.frameHeightM, viewWidth(), canvas.clientHeight);
   let tool: Tool = 'paint';
   let slot = 1;
   let brushKm = 40;
@@ -78,7 +101,6 @@ async function start(): Promise<void> {
   let counts = mask.counts();
   let countedAt = 0;
   let status = loaded.saved ? 'Loaded content/world/layout.json.' : 'No layout file found: starting empty.';
-  let frameQueued = false;
 
   const isSimple = (outline: readonly (readonly [number, number])[]) =>
     rules.check(JSON.stringify({ continents: [{ id: 'probe', outline }], isles: [] })).continents.get('probe')
@@ -118,7 +140,7 @@ async function start(): Promise<void> {
   const restoreKept = () => {
     const kept = readKept();
     if (!kept || kept.width !== mask.width || kept.height !== mask.height || !Array.isArray(kept.runs)) return;
-    if (!window.confirm('Restore the painting you left unsaved in this browser? Cancel opens the saved layout.')) {
+    if (!ask('Restore the painting you left unsaved in this browser? Cancel opens the saved layout.')) {
       forget();
       return;
     }
@@ -151,7 +173,7 @@ async function start(): Promise<void> {
     return true;
   };
 
-  const panel = buildPanel(element<HTMLElement>('#continents-panel'), constants, shapes, {
+  const handlers: PanelHandlers = {
     tool: (next) => {
       tool = next;
       requestFrame();
@@ -183,7 +205,7 @@ async function start(): Promise<void> {
     },
     open: (text) => {
       const unsaved = mask.changedLabels(loadedCells).size > 0;
-      if (unsaved && !window.confirm('Open this file in place of the painting you have not saved?')) return;
+      if (unsaved && !ask('Open this file in place of the painting you have not saved?')) return;
       if (load(text)) {
         forget();
         status = 'Opened a layout file.';
@@ -194,18 +216,18 @@ async function start(): Promise<void> {
       camera = { centreX: x, centreY: y, metresPerPixel: Math.min(camera.metresPerPixel, SHOW_METRES_PER_PIXEL) };
       requestFrame();
     },
-  });
+  };
 
   /** The layout as the file holds it, or null if the owner chose not to save with continents left out. */
   const written = (): { text: string; whole: boolean } | null => {
     const { layout: drafted, heldBack } = draft();
     const names = heldBack.join(', ');
     const leaveOut = `${names} ${heldBack.length === 1 ? 'is' : 'are'} in pieces and will be left out of the file.`;
-    if (heldBack.length > 0 && !window.confirm(`${leaveOut} Save the rest anyway?`)) return null;
+    if (heldBack.length > 0 && !ask(`${leaveOut} Save the rest anyway?`)) return null;
     return { text: rules.write(JSON.stringify(drafted)), whole: heldBack.length === 0 };
   };
 
-  const download = (text: string) => downloadJson(text, 'layout.json');
+  const download = (text: string) => saveFile(text, 'layout.json');
 
   const save = async () => {
     const file = written();
@@ -253,17 +275,17 @@ async function start(): Promise<void> {
     }
   };
 
-  const frame = () => {
-    frameQueued = false;
-    const ratio = window.devicePixelRatio || 1;
-    const size = canvasSize(canvas.clientWidth, canvas.clientHeight, ratio);
-    if (canvas.width !== size.width || canvas.height !== size.height)
-      [canvas.width, canvas.height] = [size.width, size.height];
-    const world = screenToWorld(camera, canvas.clientWidth, canvas.clientHeight, pointer.x, pointer.y);
+  /** The coasts' map and its overlay, drawn into the view right of the panel, and the Continents panel. */
+  const drawContinents = (frame: EditorFrameView): EditorDrawn => {
+    const { ui, size, scale, flat } = frame;
+    const world = screenToWorld(camera, flat.width, flat.height, pointer.x, pointer.y);
     const showBrush = pointer.inside && (tool === 'paint' || tool === 'erase');
+    // The map is drawn over the whole canvas, its middle moved right by half the panel, so the view's middle is the
+    // camera's.
+    const shifted = { ...camera, centreX: camera.centreX - (PANEL_WIDTH / 2) * camera.metresPerPixel };
     view.draw(
       {
-        camera: { ...camera, metresPerPixel: camera.metresPerPixel / (size.width / canvas.clientWidth) },
+        camera: { ...shifted, metresPerPixel: camera.metresPerPixel / scale },
         gridStepM: Math.max(CELL_M, niceLength(camera.metresPerPixel, 90)),
         selected: slot,
         brushX: world.x,
@@ -278,41 +300,49 @@ async function start(): Promise<void> {
       tool === 'reference' && pointer.inside && floatingShape
         ? { reference: floatingShape, x: world.x, y: world.y }
         : null;
-    drawOverlay(svg, { camera, width: canvas.clientWidth, height: canvas.clientHeight, pinned, floating, ruler });
-    panel.update({
-      tool,
-      slot,
-      brushKm,
-      referenceKey,
-      slots: slotIds.slice(1).map((id, index) => {
-        const areaKm2 = counts[index + 1] ?? 0;
-        return {
-          slot: index + 1,
-          id,
-          areaKm2,
-          standing: areaStanding(areaKm2, constants),
-          fraction: rangeFraction(areaKm2, constants),
-        };
-      }),
-      problems,
-      cursor: pointer.inside
-        ? `${Math.round(world.x / 1000).toLocaleString('en-US')} km east, ${Math.round(world.y / 1000).toLocaleString('en-US')} km south`
-        : '',
-      status,
-    });
+    const overlay = overlayMarks({ camera, width: flat.width, height: flat.height, pinned, floating, ruler });
+    const panel = continentsPanel(
+      ui,
+      constants,
+      shapes,
+      {
+        tool,
+        slot,
+        brushKm,
+        referenceKey,
+        slots: slotIds.slice(1).map((id, index) => {
+          const areaKm2 = counts[index + 1] ?? 0;
+          return {
+            slot: index + 1,
+            id,
+            areaKm2,
+            standing: areaStanding(areaKm2, constants),
+            fraction: rangeFraction(areaKm2, constants),
+          };
+        }),
+        problems,
+        cursor: pointer.inside
+          ? `${Math.round(world.x / 1000).toLocaleString('en-US')} km east, ${Math.round(world.y / 1000).toLocaleString('en-US')} km south`
+          : '',
+        status,
+      },
+      handlers,
+    );
+    return {
+      inks: overlay.inks,
+      over: overlay.labels.map((label) => labelNode(label, PANEL_WIDTH)),
+      panel: [modesRow(ui, mode, (next) => void setMode(next)), ...panel],
+      cursor: 'crosshair',
+    };
   };
-
-  function requestFrame() {
-    if (frameQueued) return;
-    frameQueued = true;
-    requestAnimationFrame(frame);
-  }
 
   canvas.addEventListener('contextmenu', (event) => event.preventDefault());
   canvas.addEventListener('pointerdown', (event) => {
+    if (mode !== 'continents' || editor.takes(event.offsetX, event.offsetY)) return;
     canvas.setPointerCapture(event.pointerId);
-    const world = screenToWorld(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY);
-    if (event.button !== 0) panning = { x: event.offsetX, y: event.offsetY };
+    const spot = onView(event);
+    const world = screenToWorld(camera, viewWidth(), canvas.clientHeight, spot.x, spot.y);
+    if (event.button !== 0) panning = spot;
     else if (tool === 'paint' || tool === 'erase') paintTo(world.x, world.y);
     else if (tool === 'fill') fillAt(world.x, world.y);
     else if (tool === 'ruler') ruler = { fromX: world.x, fromY: world.y, toX: world.x, toY: world.y };
@@ -323,11 +353,13 @@ async function start(): Promise<void> {
     requestFrame();
   });
   canvas.addEventListener('pointermove', (event) => {
-    pointer = { x: event.offsetX, y: event.offsetY, inside: true };
-    const world = screenToWorld(camera, canvas.clientWidth, canvas.clientHeight, event.offsetX, event.offsetY);
+    if (mode !== 'continents') return;
+    const spot = onView(event);
+    pointer = { ...spot, inside: !editor.takes(event.offsetX, event.offsetY) };
+    const world = screenToWorld(camera, viewWidth(), canvas.clientHeight, spot.x, spot.y);
     if (panning) {
-      camera = pan(camera, event.offsetX - panning.x, event.offsetY - panning.y);
-      panning = { x: event.offsetX, y: event.offsetY };
+      camera = pan(camera, spot.x - panning.x, spot.y - panning.y);
+      panning = spot;
     } else if (stroke) {
       paintTo(world.x, world.y);
       if (event.timeStamp - countedAt > 250) [counts, countedAt] = [mask.counts(), event.timeStamp];
@@ -351,20 +383,15 @@ async function start(): Promise<void> {
     'wheel',
     (event) => {
       event.preventDefault();
-      camera = zoomAt(
-        camera,
-        canvas.clientWidth,
-        canvas.clientHeight,
-        event.offsetX,
-        event.offsetY,
-        Math.exp(event.deltaY * 0.0015),
-      );
+      if (mode !== 'continents' || editor.takes(event.offsetX, event.offsetY)) return;
+      const spot = onView(event);
+      camera = zoomAt(camera, viewWidth(), canvas.clientHeight, spot.x, spot.y, Math.exp(event.deltaY * 0.0015));
       requestFrame();
     },
     { passive: false },
   );
   window.addEventListener('keydown', (event) => {
-    if (mode !== 'continents' || event.target instanceof HTMLInputElement) return;
+    if (mode !== 'continents' || editor.typing) return;
     const digit = Number(event.key);
     if (digit >= 1 && digit <= constants.continentCount) slot = digit;
     const byKey: Record<string, Tool> = { p: 'paint', e: 'erase', f: 'fill', r: 'ruler', c: 'reference' };
@@ -373,42 +400,30 @@ async function start(): Promise<void> {
     if (event.key === 'Escape') ruler = null;
     requestFrame();
   });
-  new ResizeObserver(requestFrame).observe(canvas);
 
   // The Land mode works on the layout as drafted now, so a coast painted a moment ago is land there too.
   let mode: 'continents' | 'land' = 'continents';
   let landEditor: Promise<LandEditor> | null = null;
-  const landCanvas = element<HTMLCanvasElement>('#land');
-  const continentsButton = button('Continents', () => void setMode('continents'));
-  const landButton = button('Land', () => void setMode('land'));
-  element<HTMLElement>('#modes').append(continentsButton, landButton);
+  let land: LandEditor | null = null;
   const setMode = async (next: 'continents' | 'land') => {
     mode = next;
-    continentsButton.classList.toggle('active', next === 'continents');
-    landButton.classList.toggle('active', next === 'land');
-    element<HTMLElement>('#continents-panel').hidden = next !== 'continents';
-    element<HTMLElement>('#land-panel').hidden = next !== 'land';
-    canvas.hidden = next !== 'continents';
-    svg.toggleAttribute('hidden', next !== 'continents');
-    landCanvas.hidden = next !== 'land';
-    element('#land-overlay').toggleAttribute('hidden', next !== 'land');
+    pointer = { ...pointer, inside: false };
     if (next === 'land') {
       // One Land editor for the page: a second click while it starts waits for the same one.
-      landEditor ??= startLandEditor(
-        landCanvas,
-        element<SVGSVGElement>('#land-overlay'),
-        element<HTMLElement>('#land-panel'),
-        {
-          widthM: constants.frameWidthM,
-          heightM: constants.frameHeightM,
-        },
-      );
-      const land = await landEditor;
+      landEditor ??= startLandEditor(editor, { widthM: constants.frameWidthM, heightM: constants.frameHeightM });
+      land = await landEditor;
       if (mode === 'land') land.activate(rules.write(JSON.stringify(draft().layout)));
-    } else void landEditor?.then((land) => land.deactivate());
+    } else void landEditor?.then((started) => started.deactivate());
     requestFrame();
   };
-  continentsButton.classList.add('active');
+  editor.keys = () => mode === 'continents' || (land?.keys() ?? true);
+  editor.draw = (frame) => {
+    if (mode === 'continents') return drawContinents(frame);
+    const modes = modesRow(frame.ui, mode, (next) => void setMode(next));
+    if (!land) return { inks: [], over: [], panel: [modes] };
+    const drawn = land.draw(frame);
+    return { ...drawn, panel: [modes, ...drawn.panel] };
+  };
 
   // The shipped layout passes the content check, so a page that cannot read it has nothing to edit.
   if (!load(loaded.text)) throw new Error(status);

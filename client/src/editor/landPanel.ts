@@ -1,8 +1,27 @@
 import { RANKS, SHIP_FACTIONS } from '../ships/shipBars.ts';
-import { button, make } from './dom.ts';
-import { LAYOUT_LEGEND } from './layoutDrawing.ts';
+import type { Child } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
 import { chooseCaptain, chosenCaptain } from './fleetLink.ts';
-import { buildSitePanel, type SitePanelHandlers, type SitePanelView } from './sitePanel.ts';
+import { LAYOUT_LEGEND } from './layoutDrawing.ts';
+import {
+  type Block,
+  bulleted,
+  chooser,
+  heading,
+  inline,
+  INK,
+  listRow,
+  paragraph,
+  press,
+  range,
+  readable,
+  row,
+  said,
+  spaced,
+  stacked,
+  words,
+} from './panelKit.ts';
+import { type SitePanelHandlers, type SitePanelView, siteFields, siteList } from './sitePanel.ts';
 
 /** How far along a landmass's land is. */
 export type LandState = 'waiting' | 'generating' | 'ready' | 'failed';
@@ -119,200 +138,194 @@ const STATE_TEXT: Record<LandState, string> = {
   failed: 'could not generate',
 };
 
-/** Builds the Land panel once into `root`; `update` refreshes what changed. */
-export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
-  root.replaceChildren();
-  root.append(make('p', 'The land the generator makes from your coasts. Pick a landmass, then shape it.', 'hint'));
+/** A slider in its own line with its words before and after, 10 px under what is above it. */
+function sliding(
+  ui: Interface,
+  id: string,
+  label: string,
+  value: number,
+  limits: { readonly low: number; readonly high: number; readonly step: number },
+  said: (value: number) => string,
+  set: (value: number) => void,
+): Block {
+  const made = range(ui, id, value, limits);
+  if (made.value !== value) set(made.value);
+  return { node: inline(label, made.node, said(made.value)), top: 10 };
+}
 
-  const tools = make('div', '', 'row');
-  const toolButtons = LAND_TOOLS.map(([tool, text], index) => {
-    const node = button(`${text} (${(index + 1) % 10})`, () => handlers.tool(tool));
-    tools.append(node);
-    return [tool, node] as const;
-  });
-  root.append(tools);
-  const siteTools = make('div', '', 'row');
-  for (const [tool, text, key] of SITE_TOOLS) {
-    const node = button(`${text} (${key.toUpperCase()})`, () => handlers.tool(tool));
-    siteTools.append(node);
-    toolButtons.push([tool, node]);
-  }
-  root.append(siteTools);
-  const slider = (label: string, min: number, max: number, onInput: (value: number) => void) => {
-    const row = make('label', '', 'brush');
-    const input = make('input');
-    Object.assign(input, { type: 'range', min: String(min), max: String(max), step: '1' });
-    const text = make('span');
-    input.addEventListener('input', () => onInput(Number(input.value)));
-    row.append(label, input, text);
-    root.append(row);
-    return { row, input, text };
-  };
-  const radius = slider('Radius ', 1, 200, (value) => handlers.radius(value));
-  const strength = slider('Strength ', 1, 500, (value) => handlers.strength(value));
-  const width = slider('Width ', 2, 300, (value) => handlers.width(value));
-  const depth = slider('Depth ', 1, 30, (value) => handlers.depth(value));
-  const siteFields = make('div');
-  root.append(siteFields);
-  const hint = make('p', '', 'hint');
-  root.append(hint);
-  const history = make('div', '', 'row');
-  history.append(
-    button('Undo (Ctrl+Z)', () => handlers.undo()),
-    button('Redo (Ctrl+Y)', () => handlers.redo()),
+/** The Land panel's nodes: the tools, the brush's and the places' settings, the history, the views, the
+ *  landmasses, the port city and the nodes, the problems, the cursor's readout, the fight and the status. */
+export function landPanel(ui: Interface, view: LandPanelView, handlers: LandPanelHandlers): Child[] {
+  const tool = (each: LandTool, text: string) =>
+    press(ui, `land-tool:${each}`, text, () => handlers.tool(each), { chosen: each === view.tool });
+  const sculpting = BRUSHES.includes(view.tool);
+  const pressing = view.tool === 'raise' || view.tool === 'lower';
+  const road = view.tool === 'road';
+  const toggle = (id: string, text: string, chosen: boolean, run: () => void) => press(ui, id, text, run, { chosen });
+  const captain = chosenCaptain();
+  const faction = chooser(
+    ui,
+    'captain-faction',
+    String(captain.faction),
+    SHIP_FACTIONS.map((each) => ({ value: String(each.faction), words: each.name })),
   );
-  history.append(button('Save', () => handlers.save()));
-  root.append(history);
-
-  const views = make('div', '', 'row');
-  const flat = button('2D map (V)', () => handlers.view('2d'));
-  const solid = button('3D view (V)', () => handlers.view('3d'));
-  const walk = button('Walk (G)', () => handlers.walk());
-  const sail = button('Sail (B)', () => handlers.sail());
-  const layouts = button('Layouts (L)', () => handlers.layouts());
-  const buildings = button('Buildings (K)', () => handlers.buildings());
-  views.append(flat, solid, walk, sail, layouts, buildings);
-  const legend = make('p', '', 'hint');
-  legend.append(
-    ...LAYOUT_LEGEND.map(([name, colour]) => {
-      const key = make('span', `■ ${name}`);
-      // An item never breaks across lines, so each name stays beside its colour.
-      Object.assign(key.style, { color: colour, display: 'inline-block', marginRight: '0.8em' });
-      return key;
+  const rank = chooser(
+    ui,
+    'captain-rank',
+    String(captain.rank),
+    RANKS.map((name, index) => ({ value: String(index + 1), words: name })),
+  );
+  if (faction.chosen !== String(captain.faction) || rank.chosen !== String(captain.rank))
+    chooseCaptain({ faction: Number(faction.chosen), rank: Number(rank.chosen) });
+  const landmasses = view.landmasses.map(({ id, state, unsaved }) =>
+    listRow(ui, `landmass:${id}`, id, id === view.selected, () => handlers.select(id), {
+      gap: 8,
+      children: [
+        words(id, INK.words, { width: 'grow' }),
+        words(`${STATE_TEXT[state]}${unsaved ? ' · unsaved' : ''}`, INK.dim),
+      ],
     }),
   );
-  const walkHint = make(
-    'p',
-    'Walking: W A S D to move, Shift to run, C to dive, Space to rise, drag to look round, G to stop.',
-    'hint',
-  );
-  const sailHint = make(
-    'p',
-    'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows her sideways, B to stop.',
-    'hint',
-  );
-  const fightHint = make(
-    'p',
-    'F calls a pirate, or sends her off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
-      ' A left click holds fire, the wheel changes shot, and C braces. In a fleet (?room= in the address), F calls' +
-      ' a captain and X sends them all off.',
-    'hint',
-  );
-  // The captain F calls in a fleet: her faction and rank.
-  const calling = make('label', 'In a fleet, F calls ', 'brush');
-  const pick = (options: readonly (readonly [number, string])[], value: number) => {
-    const select = make('select');
-    for (const [key, text] of options) select.append(new Option(text, String(key), false, key === value));
-    select.addEventListener('change', () =>
-      chooseCaptain({ faction: Number(faction.value), rank: Number(rank.value) }),
-    );
-    return select;
-  };
-  const faction = pick(
-    SHIP_FACTIONS.map((each) => [each.faction, each.name] as const),
-    chosenCaptain().faction,
-  );
-  const rank = pick(
-    RANKS.map((name, index) => [index + 1, name] as const),
-    chosenCaptain().rank,
-  );
-  calling.append(faction, ' ', rank);
-  root.append(views, legend, walkHint, sailHint, fightHint, calling);
-
-  const exaggerationLabel = make('label', '', 'brush');
-  const exaggeration = make('input');
-  Object.assign(exaggeration, { type: 'range', min: '1', max: '10', step: '0.5' });
-  const exaggerationText = make('span');
-  exaggeration.addEventListener('input', () => handlers.exaggeration(Number(exaggeration.value)));
-  exaggerationLabel.append('Height ', exaggeration, exaggerationText);
-  root.append(exaggerationLabel);
-
-  root.append(make('h2', 'Landmasses'));
-  const list = make('ol', '', 'slots');
-  root.append(list);
-  const siteList = make('div');
-  root.append(siteList);
-  const sites = buildSitePanel(siteFields, siteList, handlers);
-  root.append(make('h2', 'Problems'));
-  const problems = make('ul', '', 'problems');
-  root.append(problems);
-  const cursor = make('p', '', 'cursor');
-  const fight = make('div', '', 'fight');
-  const status = make('p', '', 'status');
-  root.append(cursor, fight, status);
-  let shownFight = '';
-  let shownIds = '';
-  let rows = new Map<string, { row: HTMLLIElement; state: HTMLSpanElement }>();
-
-  return {
-    update(view: LandPanelView): void {
-      const ids = view.landmasses.map((landmass) => landmass.id).join('\n');
-      if (ids !== shownIds) {
-        shownIds = ids;
-        rows = new Map(
-          view.landmasses.map(({ id }) => {
-            const row = make('li');
-            // These rows carry no swatch: the name takes the list's first column whole.
-            row.style.gridTemplateColumns = '1fr auto';
-            const name = make('span', id, 'name');
-            name.dataset['id'] = id;
-            const state = make('span', '', 'area');
-            row.append(name, state);
-            row.addEventListener('click', () => handlers.select(id));
-            return [id, { row, state }] as const;
-          }),
-        );
-        list.replaceChildren(...[...rows.values()].map(({ row }) => row));
-      }
-      for (const landmass of view.landmasses) {
-        const shown = rows.get(landmass.id);
-        if (!shown) continue;
-        shown.row.classList.toggle('active', landmass.id === view.selected);
-        shown.state.textContent = `${STATE_TEXT[landmass.state]}${landmass.unsaved ? ' · unsaved' : ''}`;
-      }
-      for (const [tool, node] of toolButtons) node.classList.toggle('active', tool === view.tool);
-      const sculpting = BRUSHES.includes(view.tool);
-      radius.row.hidden = !sculpting;
-      strength.row.hidden = !sculpting;
-      width.row.hidden = view.tool !== 'river' && view.tool !== 'road';
-      depth.row.hidden = view.tool !== 'river';
-      width.input.min = view.tool === 'road' ? '2' : '5';
-      width.input.max = view.tool === 'road' ? '30' : '300';
-      width.input.value = String(view.widthM);
-      width.text.textContent = ` ${view.widthM} m`;
-      depth.input.value = String(view.depthM);
-      depth.text.textContent = ` ${view.depthM} m`;
-      hint.textContent = TOOL_HINTS[view.tool] ?? '';
-      problems.replaceChildren(...(view.problems.length ? view.problems : ['None.']).map((text) => make('li', text)));
-      radius.input.value = String(view.radiusKm);
-      radius.text.textContent = ` ${view.radiusKm} km`;
-      strength.input.max = view.tool === 'raise' || view.tool === 'lower' ? '500' : '100';
-      strength.input.value = String(view.strength);
-      strength.text.textContent = ` ${strengthText(view.tool, view.strength)}`;
-      flat.classList.toggle('active', view.view === '2d');
-      solid.classList.toggle('active', view.view === '3d');
-      walk.classList.toggle('active', view.walking);
-      walkHint.hidden = !view.walking;
-      sail.classList.toggle('active', view.sailing);
-      layouts.classList.toggle('active', view.layouts);
-      legend.hidden = !view.layouts;
-      buildings.classList.toggle('active', view.buildings);
-      buildings.hidden = view.view !== '3d';
-      sailHint.hidden = !view.sailing;
-      fightHint.hidden = !view.sailing;
-      calling.hidden = !view.sailing;
-      exaggerationLabel.hidden = view.view !== '3d';
-      exaggeration.value = String(view.exaggeration);
-      exaggerationText.textContent = ` ${view.exaggeration}× in 3D`;
-      sites.update(view);
-      cursor.textContent = view.cursor;
-      if (view.fight.join('\n') !== shownFight) {
-        shownFight = view.fight.join('\n');
-        fight.replaceChildren(
-          ...view.fight.map((line) => make('p', line, line.startsWith('BROADSIDE') ? 'warning' : 'told')),
-        );
-      }
-      status.textContent = view.status;
+  const hint = (text: string, shown: boolean): Block => ({ node: shown && paragraph(text), top: 11, bottom: 11 });
+  return stacked([
+    said('The land the generator makes from your coasts. Pick a landmass, then shape it.'),
+    { node: row(LAND_TOOLS.map(([each, text], index) => tool(each, `${text} (${(index + 1) % 10})`))) },
+    { node: row(SITE_TOOLS.map(([each, text, key]) => tool(each, `${text} (${key.toUpperCase()})`))) },
+    ...(sculpting
+      ? [
+          sliding(
+            ui,
+            'radius',
+            'Radius',
+            view.radiusKm,
+            { low: 1, high: 200, step: 1 },
+            (kilometres) => `${kilometres} km`,
+            handlers.radius,
+          ),
+          sliding(
+            ui,
+            `strength:${pressing ? 'metres' : 'share'}`,
+            'Strength',
+            view.strength,
+            { low: 1, high: pressing ? 500 : 100, step: 1 },
+            (value) => strengthText(view.tool, value),
+            handlers.strength,
+          ),
+        ]
+      : []),
+    ...(road || view.tool === 'river'
+      ? [
+          sliding(
+            ui,
+            `width:${view.tool}`,
+            'Width',
+            view.widthM,
+            { low: road ? 2 : 5, high: road ? 30 : 300, step: 1 },
+            (metres) => `${metres} m`,
+            handlers.width,
+          ),
+        ]
+      : []),
+    ...(view.tool === 'river'
+      ? [
+          sliding(
+            ui,
+            'depth',
+            'Depth',
+            view.depthM,
+            { low: 1, high: 30, step: 1 },
+            (metres) => `${metres} m`,
+            handlers.depth,
+          ),
+        ]
+      : []),
+    ...siteFields(ui, view, handlers),
+    said(TOOL_HINTS[view.tool] ?? ''),
+    {
+      node: row([
+        press(ui, 'undo', 'Undo (Ctrl+Z)', () => handlers.undo()),
+        press(ui, 'redo', 'Redo (Ctrl+Y)', () => handlers.redo()),
+        press(ui, 'land-save', 'Save', () => handlers.save()),
+      ]),
     },
-  };
+    {
+      node: row([
+        toggle('view-2d', '2D map (V)', view.view === '2d', () => handlers.view('2d')),
+        toggle('view-3d', '3D view (V)', view.view === '3d', () => handlers.view('3d')),
+        toggle('walk', 'Walk (G)', view.walking, () => handlers.walk()),
+        toggle('sail', 'Sail (B)', view.sailing, () => handlers.sail()),
+        toggle('layouts', 'Layouts (L)', view.layouts, () => handlers.layouts()),
+        view.view === '3d' && toggle('buildings', 'Buildings (K)', view.buildings, () => handlers.buildings()),
+      ]),
+    },
+    {
+      node:
+        view.layouts &&
+        row(
+          // An item never breaks across lines, so each name stays beside its colour.
+          LAYOUT_LEGEND.map(([name, colour]) => ({
+            padding: [0, 9, 0, 0],
+            gap: 5,
+            children: [
+              { padding: [3, 0, 0, 0], children: [{ width: 7, height: 7, fill: readable(colour) }] },
+              words(name, readable(colour)),
+            ],
+          })),
+          0,
+        ),
+      top: 11,
+      bottom: 11,
+    },
+    hint(
+      'Walking: W A S D to move, Shift to run, C to dive, Space to rise, drag to look round, G to stop.',
+      view.walking,
+    ),
+    hint(
+      'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows her sideways, B to stop.',
+      view.sailing,
+    ),
+    hint(
+      'F calls a pirate, or sends her off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
+        ' A left click holds fire, the wheel changes shot, and C braces. In a fleet (?room= in the address), F calls' +
+        ' a captain and X sends them all off.',
+      view.sailing,
+    ),
+    {
+      node: view.sailing && row([spaced(words('In a fleet, F calls')), spaced(faction.node), rank.node], 2),
+      top: 10,
+    },
+    ...(view.view === '3d'
+      ? [
+          sliding(
+            ui,
+            'exaggeration',
+            'Height',
+            view.exaggeration,
+            { low: 1, high: 10, step: 0.5 },
+            (times) => `${times}× in 3D`,
+            handlers.exaggeration,
+          ),
+        ]
+      : []),
+    { node: heading('Landmasses'), top: 16, bottom: 6 },
+    { node: { width: 'grow', direction: 'column', children: landmasses } },
+    ...siteList(ui, view, handlers),
+    { node: heading('Problems'), top: 16, bottom: 6 },
+    {
+      node: {
+        width: 'grow',
+        direction: 'column',
+        children: (view.problems.length ? view.problems : ['None.']).map((text) =>
+          bulleted(paragraph(text, INK.words)),
+        ),
+      },
+    },
+    said(view.cursor),
+    ...view.fight.map((line) => ({
+      node: paragraph(line, line.startsWith('BROADSIDE') ? INK.warning : INK.dim),
+      top: 2,
+      bottom: 2,
+    })),
+    said(view.status),
+  ]);
 }
