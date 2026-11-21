@@ -58,16 +58,30 @@ export class CanvasEvents {
       return { x: event.clientX - rect.left, y: event.clientY - rect.top };
     };
     const locked = () => document.pointerLockElement === canvas;
-    canvas.addEventListener('pointermove', (event) => {
-      if (!locked()) this.events.push({ kind: 'pointer', ...placed(event) });
-    });
+    // Heard as the pointer goes down to the canvas, before the world's own handlers there, which may stop it.
+    const first = { capture: true };
+    canvas.addEventListener(
+      'pointermove',
+      (event) => {
+        if (!locked()) this.events.push({ kind: 'pointer', ...placed(event) });
+      },
+      first,
+    );
     canvas.addEventListener('pointerleave', () => this.events.push({ kind: 'leave' }));
-    canvas.addEventListener('pointerdown', (event) => {
-      if (!locked()) this.events.push({ kind: 'down', ...placed(event), button: event.button });
-    });
-    addEventListener('pointerup', (event) => {
-      if (!locked()) this.events.push({ kind: 'up', ...placed(event), button: event.button });
-    });
+    canvas.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (!locked()) this.events.push({ kind: 'down', ...placed(event), button: event.button });
+      },
+      first,
+    );
+    addEventListener(
+      'pointerup',
+      (event) => {
+        if (!locked()) this.events.push({ kind: 'up', ...placed(event), button: event.button });
+      },
+      first,
+    );
     canvas.addEventListener('wheel', (event) => {
       if (!locked()) this.events.push({ kind: 'wheel', ...placed(event), dy: event.deltaY });
     });
