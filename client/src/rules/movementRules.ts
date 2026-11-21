@@ -144,13 +144,13 @@ const flag = (value: boolean): number => (value ? 1 : 0);
 export const BODY_FLOATS = 22;
 export const CONTROLS_FLOATS = 7;
 
-/** A body's numbers in the movement crate's order: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded;
- *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving. */
 /** Blocks as the movement crate reads them (`Block::from_floats`): every list of blocks the rules take. */
 export function blockFloats(blocks: readonly Block[]): number[] {
   return blocks.flatMap((block) => [block.minX, block.minY, block.maxX, block.maxY, block.top, block.bottom]);
 }
 
+/** A body's numbers in the movement crate's order: x, y, z, vx, vy, vz, facing, mode, crouched, crouch, grounded;
+ *  whether it is going over a lip, and that move's start, end, progress and seconds; then lip and moving. */
 export function floatsOf(body: Body): number[] {
   const over = body.over ?? { from: [0, 0, 0], to: [0, 0, 0], progress: 0, seconds: 0 };
   return [

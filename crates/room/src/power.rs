@@ -3,8 +3,7 @@
 //! player's blow on a foe strikes `PLAYER_HARM` times that, and every foe's on a player `FOE_HARM` times; a foe of
 //! level 0 fights by combat's own numbers and those two alone. A player holds only what a loadout they wear puts in
 //! their hands. A foe's kill pays everyone who struck it in its last seconds, each their own XP, Aurem and what it
-//! drops for them alone (`drops.rs`), and counts
-//! toward their bounties (`bounties.rs`).
+//! drops for them alone (`drops.rs`), and counts toward their bounties (`bounties.rs`).
 
 use crate::{Foe, PlayerId, Room};
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};

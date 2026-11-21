@@ -106,9 +106,9 @@ export interface RoomDoor {
   /** The Sloop's build as the naval rules hold it, as JSON: her name, hull and canvas whole, crew, guns on each side,
    *  and the loads her guns take. */
   sloop(): string;
-  /** Every enemy type the rules know, as JSON, in their order: each one's number (`type`), name, faction (`faction`
-   *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
-   *  first), and its right and left forge layers. */
+  /** Every foe type the rules know (the Brig's crew among them, on the players' side), as JSON, in their order: each
+   *  one's number (`type`), name, faction (`faction` and `faction_name`), domain (land or deck), role (`role` and
+   *  `role_name`), ranks (their numbers, the plainest first), and its right and left forge layers. */
   roster(): string;
   /** A patrol's dungeon by its patrol's id and name and its number, as JSON (crates/room-wasm/src/dungeon_door.rs),
    *  or "null" for an ask that does not read. */

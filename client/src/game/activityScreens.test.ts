@@ -50,9 +50,8 @@ test('This Week reads the last word a room sent of the character, kept at sea, a
   look();
   assert.equal(screens.kept()?.level, 12, 'the last word of the character, kept at sea');
   assert.equal(screens.week()?.today.tiers[1]?.state, 'Taken', 'at sea, as last heard');
-  const ends = screens.week()?.today.endsAt;
   clock += 60_000;
-  assert.equal(screens.week()?.today.endsAt, ends, 'the same reset, a minute on');
+  assert.equal(screens.week()?.today.endsAt, (FRIDAY_NINE + 1_440) * 60_000, 'the same reset, a minute on');
 });
 
 test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goes in, Escape closes it', async () => {

@@ -60,7 +60,7 @@ pub fn set_dungeon(text: &[u8]) -> bool {
 }
 
 /// Keeps the rim round a course laid over the sea for predicting a fighter without a room, from its blocks' numbers,
-/// five each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
+/// six each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
 /// as the room holds it. Answers whether the numbers were blocks.
 pub fn set_rim(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);

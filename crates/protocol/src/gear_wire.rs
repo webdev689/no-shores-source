@@ -504,10 +504,6 @@ fn bounties_offset<'built>(
     builder.create_vector(&rows)
 }
 
-#[cfg(test)]
-#[path = "gear_wire_tests.rs"]
-mod gear_wire_tests;
-
 /// The quests a character holds that the content still has, each at the step its count stands at.
 fn quests_offset<'built>(
     builder: &mut FlatBufferBuilder<'built>,
@@ -527,3 +523,7 @@ fn quests_offset<'built>(
         .collect();
     builder.create_vector(&rows)
 }
+
+#[cfg(test)]
+#[path = "gear_wire_tests.rs"]
+mod gear_wire_tests;
