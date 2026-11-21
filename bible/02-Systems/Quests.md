@@ -151,6 +151,7 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
 - **Figures, wards and points are the player's own**: they stand where the room's last word put them, unglided, and
   show only from the room the player is in, once it has spoken; other players do not see them.
+- **A word that ends two tasks at once** says each task's end and the next task's start in turn.
 - **The first word on the player's own character is where they stand**: it says nothing. A word that goes back is never
   news.
 - **A quest's `begin` is said once for an account in a browser**, which keeps it (`overlook.roads.begun.<account>`):

@@ -48,13 +48,8 @@ function heard(first: GearState): QuestWatch {
   return watch;
 }
 
-/** The place of a quest by its id, counted from 1, and of a task in it by its id. */
+/** The place of a quest by its id, counted from 1. */
 const questOf = (id: string): number => QUESTS.findIndex((quest) => quest.id === id) + 1;
-const taskOf = (quest: number, id: string): number => {
-  const place = QUESTS[quest - 1]?.tasks.findIndex((task) => task.id === id) ?? -1;
-  assert.ok(place >= 0, `${id} is a task`);
-  return place;
-};
 const [STORM, LAMP] = [questOf('stormcallers'), questOf('lamplighters')];
 /** The scenes a task of a road says as it ends and as it begins. */
 const ending = (quest: number, task: number) => QUESTS[quest - 1]?.tasks[task]?.end;
@@ -191,8 +186,9 @@ test('what a road gives is toasted: its Art, each Tenet, a fragment to choose, a
 });
 
 test("a goal's own line is said as its failures rise, once while it waits or is said; dropped while the welcome holds", () => {
-  const holding = (fails: number[]) => gear(STORM, taskOf(STORM, 'hold-glass-high'), { pledge: 1, fails });
-  const lost = QUESTS[STORM - 1]?.tasks[taskOf(STORM, 'hold-glass-high')]?.goals.find((goal) => goal.lost)?.lost;
+  const defence = QUESTS[STORM - 1]?.tasks.findIndex((task) => task.goals.some((goal) => goal.lost)) ?? -1;
+  const holding = (fails: number[]) => gear(STORM, defence, { pledge: 1, fails });
+  const lost = QUESTS[STORM - 1]?.tasks[defence]?.goals.find((goal) => goal.lost)?.lost;
   const watch = new QuestWatch();
   assert.deepEqual(watch.look(holding([2]), true).moments, [], 'not on the first word');
   assert.deepEqual(watch.look(holding([3]), true).moments, said(lost), 'broken again');

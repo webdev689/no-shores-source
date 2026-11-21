@@ -75,12 +75,21 @@ test("a figure's look is a speaker's face, a keeper's own dress, or a roster typ
   assert.ok(faceOf(lookOf('mate'), [])?.dress, 'a speaker with no face of their own in plain dress');
 });
 
-/** The Lamplighters' road at the task `id`, with the varied fields `more`. */
-function lamp(id: string, more: Partial<QuestState> = {}): QuestState {
+/** The Lamplighters' road at its first task holding a goal of `kind` (its first task for none), with the varied fields
+ *  `more`. */
+function lamp(kind: string | null, more: Partial<QuestState> = {}): QuestState {
   const quest = QUESTS.findIndex((each) => each.id === 'lamplighters');
-  const task = QUESTS[quest]?.tasks.findIndex((each) => each.id === id) ?? -1;
+  const holds = (task: { goals: readonly { kind: string }[] }) => task.goals.some((goal) => goal.kind === kind);
+  const task = kind === null ? 0 : (QUESTS[quest]?.tasks.findIndex(holds) ?? -1);
+  assert.ok(task >= 0, `a ${kind} step on the Lamplighters' road`);
   return { quest: quest + 1, task, counts: [], done: [0, 0, 0, 0], choices: [0, 0, 0], at: null, ...more };
 }
+
+/** The Lamplighters' first defence's ward, by its name in the file. */
+const wardName = (): string | undefined => {
+  const quest = lamp('defend');
+  return QUESTS[quest.quest - 1]?.tasks[quest.task]?.goals.find((goal) => goal.kind === 'defend')?.ward;
+};
 
 test('the figures a step walks stand where the room sends them, walking or standing by their state, facing as sent', () => {
   const figures = [
@@ -90,7 +99,7 @@ test('the figures a step walks stand where the room sends them, walking or stand
     { look: 999, x: 0, y: 0, z: 0, facing: 0, state: 1 },
     { look: lookOf('tobin'), x: 50, y: 60, z: 2, facing: 2.5, state: 3 },
   ];
-  const actors = questActors(lamp('bring-tobin-moorend', { figures }), [COLLECTOR], ground);
+  const actors = questActors(lamp('escort', { figures }), [COLLECTOR], ground);
   assert.deepEqual(
     actors.map(({ anim, x, y, z, facing, scale }) => [anim, x, y, z, facing, scale]),
     [
@@ -103,20 +112,20 @@ test('the figures a step walks stand where the room sends them, walking or stand
   );
   assert.equal(new Set(actors.map((actor) => actor.id)).size, 4, 'each its own figure');
   assert.deepEqual(questActors(undefined, [], ground), []);
-  assert.deepEqual(questActors(lamp('bring-tobin-moorend', { figures, claimed: false }), [COLLECTOR], ground), []);
+  assert.deepEqual(questActors(lamp('escort', { figures, claimed: false }), [COLLECTOR], ground), []);
 });
 
 test("the ward stands with a plate in the players' green, its name and health; a named one has no figure", () => {
-  const wounded = lamp('hold-saltgrass', { ward: { x: 40, y: -2, health: 0.25 } });
+  const wounded = lamp('defend', { ward: { x: 40, y: -2, health: 0.25 } });
   assert.deepEqual(questActors(wounded, [], ground), [], 'the wounded are a mark on the ground');
   const plate = wardPlate(wounded, CAST, ground);
   assert.ok(plate);
   assert.deepEqual(
     [plate.id, plate.name, plate.ally, plate.held, plate.view.side, plate.view.health / plate.view.healthMax],
-    [WARD_PLATE_ID, 'The wounded', true, true, 'players', 0.25],
+    [WARD_PLATE_ID, wardName(), true, true, 'players', 0.25],
     'held in view as a fought foe’s',
   );
   assert.deepEqual([plate.view.x, plate.view.y, plate.view.z], [40, -2, 5], 'over its mark');
-  assert.equal(wardPlate(lamp('hold-saltgrass'), CAST, ground), null, 'none in this room');
-  assert.equal(wardPlate(lamp('walk-strand', { ward: { x: 0, y: 0, health: 1 } }), CAST, ground), null, 'no defence');
+  assert.equal(wardPlate(lamp('defend'), CAST, ground), null, 'none in this room');
+  assert.equal(wardPlate(lamp(null, { ward: { x: 0, y: 0, health: 1 } }), CAST, ground), null, 'no defence');
 });

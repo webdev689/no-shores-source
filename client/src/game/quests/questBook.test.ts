@@ -115,8 +115,8 @@ test('a step says its scenes in order: each task done, then the task now begun; 
   assert.deepEqual(linesBetween(walk(STORM, 0), walk(STORM, 1)), sceneList(tasks[0]?.end, tasks[1]?.start));
   assert.deepEqual(
     linesBetween(walk(STORM, 0), walk(STORM, 2)),
-    sceneList(tasks[0]?.end, tasks[1]?.end, tasks[2]?.start),
-    'two at once',
+    sceneList(tasks[0]?.end, tasks[1]?.start, tasks[1]?.end, tasks[2]?.start),
+    'two at once, the one between begun and done',
   );
   assert.deepEqual(linesBetween(walk(STORM, 2), walk(STORM, 2)), [], 'a count alone says nothing');
   assert.deepEqual(linesBetween(walk(1, 1), walk(STORM, 0, [1, 0, 0, 0])), [], 'pledged: the begin is the watch’s');

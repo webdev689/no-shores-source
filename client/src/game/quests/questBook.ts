@@ -179,15 +179,18 @@ export interface Walked {
   readonly done: readonly number[];
 }
 
-/** The scenes said as a character goes from `before` to `after`, in order: on the same quest, the end of each task
- *  done and the start of the task now; on another, the end of the last task of the one finished. A quest's `begin` is
- *  never among them: whether it was said before is the browser's to know (questWatch.ts). */
+/** The scenes said as a character goes from `before` to `after`, in order: on the same quest, each task done's end
+ *  and the next task's start, a task begun and done in one word saying both; on another, the end of the last task of
+ *  the one finished. A quest's `begin` is never among them: whether it was said before is the browser's to know
+ *  (questWatch.ts). */
 export function linesBetween(before: Walked, after: Walked): string[] {
   const quest = QUESTS[after.quest - 1];
   if (before.quest === after.quest) {
     if (!quest || after.task <= before.task) return [];
-    const ends = quest.tasks.slice(before.task, after.task).map((task) => task.end);
-    return [...ends, quest.tasks[after.task]?.start].filter((scene) => scene !== undefined);
+    const done = quest.tasks.slice(before.task, after.task);
+    return done
+      .flatMap((task, index) => [task.end, quest.tasks[before.task + index + 1]?.start])
+      .filter((scene) => scene !== undefined);
   }
   const left = QUESTS[before.quest - 1];
   const finished = left && after.done[before.quest - 1] === 1 && before.done[before.quest - 1] !== 1;
