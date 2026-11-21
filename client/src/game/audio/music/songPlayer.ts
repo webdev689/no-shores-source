@@ -7,7 +7,7 @@
 // layers in and out on a bar line; a note is only built while its layer plays. Under the song's own level, its press
 // and a fader for fades, the whole stands at MUSIC_GAIN in the music's bus.
 
-import { PERCUSSION_CHANNEL, drumOf, fmVoice, noteToHz, panPosition, velocityGain } from './fmBank.ts';
+import { type FmVoice, PERCUSSION_CHANNEL, drumOf, fmVoice, noteToHz, panPosition, velocityGain } from './fmBank.ts';
 import { type Note, type Press, ROLES, type Role, type Song, TICKS_PER_BEAT, type Track } from './score.ts';
 
 /** How far ahead each wake schedules, and how often it wakes: the window must outlast the wait. */
@@ -17,6 +17,14 @@ const PUMP_MS = 100;
 export const MUSIC_GAIN = 0.22;
 /** How far ahead of now a song begins when asked to begin at once. */
 export const START_LEAD_S = 0.06;
+
+/** The highest a note's partials reach, hertz: its modulation is held under it, so a high note dulls rather than
+ *  ringing, or folding back into the band as a whine. A note low or in the middle keeps its voice's whole depth. */
+export const PARTIALS_HZ = 6000;
+/** A note's deepest modulation, hertz: its voice's, held so the carrier and its widest sidebands stay under
+ *  PARTIALS_HZ. */
+export const depthOf = (spec: FmVoice, hertz: number): number =>
+  Math.max(1, Math.min(spec.index * hertz, PARTIALS_HZ - hertz * (spec.car + spec.mod)));
 /** Every song is high-passed here before its press: a 1:1 FM voice's lower sideband reaches 0 Hz, a standing offset
  *  no speaker plays, which the press would answer by pressing the whole song and which thumps as a song fades. */
 const FLOOR_HZ = 30;
@@ -427,7 +435,7 @@ export class SongPlayer {
       if (cents) [carrier.detune.value, modulator.detune.value] = [cents, cents];
       // The modulation's depth in hertz, settling: a bright attack dulls into its sustain.
       const depth = audio.createGain();
-      const deepest = Math.max(1, spec.index * hertz);
+      const deepest = depthOf(spec, hertz);
       depth.gain.setValueAtTime(deepest, when);
       depth.gain.exponentialRampToValueAtTime(Math.max(1, deepest * 0.12), when + Math.max(0.02, spec.idxDecay));
       modulator.connect(depth).connect(carrier.frequency);

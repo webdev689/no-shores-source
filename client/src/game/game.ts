@@ -35,6 +35,7 @@ import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
 import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
+import { landSheetOf } from './landMap.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
@@ -206,6 +207,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     playing.foot?.leave();
     playing.foot = null;
     playing.sea?.leaveRoom();
+    // The held map's coasts are worked out behind the veil, not on its first raising on land.
+    void playing.helmMap.made;
     playing.foot = await Foot.enter(footContext, node, facing, seas);
     // The rain stops under whatever a body meets overhead there: a roof, a ceiling, an arch.
     scene.sky.shelterUnder(playing.foot.boxes);
@@ -434,9 +437,17 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     }
   };
 
-  /** Takes the view down to the ship's helm, where the map is raised. */
+  /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
+   *  pointer let go to pan it. */
   const openMap = () => {
-    if (playing.flow.mode === 'sea' && !playing.flow.menu && playing.sea) playing.helmMap.open(playing.sea);
+    const { flow, sea, foot } = playing;
+    if (flow.mode === 'sea' && !flow.menu && sea) playing.helmMap.open(sea);
+    else if (flow.mode === 'foot' && !flow.menu && !gearScreenOpen() && foot && !foot.fallen) {
+      // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
+      // player): the ground drawn by then is the truest.
+      playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
+      document.exitPointerLock();
+    }
   };
 
   /** Opens Manage over its deck, or closes it. */
@@ -539,7 +550,13 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     // the pointer stays free, though the click comes before the interface has heard where it is.
     if (ui.takesPointer || gearScreenOpen()) return;
     if (playing.flow.mode === 'story' && story?.wantsPointer && !input.locked) input.lock();
-    if (playing.flow.mode === 'foot' && !playing.flow.menu && playing.foot?.standing.kind !== 'dead' && !input.locked)
+    if (
+      playing.flow.mode === 'foot' &&
+      !playing.flow.menu &&
+      !playing.helmMap.looking &&
+      playing.foot?.standing.kind !== 'dead' &&
+      !input.locked
+    )
       input.lock();
     if (
       playing.flow.mode === 'sea' &&

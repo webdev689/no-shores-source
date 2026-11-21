@@ -77,11 +77,12 @@ test('a jar of the eye is no sound', () => {
   assert.equal(played.length, 0);
 });
 
-test("every sea sound is a cue on the sound sheet, DFO's own synthesised sounds its candidates", () => {
+test('every sea sound is a cue searched on Freesound, never one of the synthesiser', () => {
   const sheet = new Map(listed.cues.map((cue) => [cue.id, cue]));
-  for (const cue of Object.keys(SEA_SOUNDS)) assert.ok(sheet.has(cue), `${cue} is on the sheet`);
-  for (const cue of Object.keys(SEA_SOUNDS).filter((id) => id.startsWith('ship.')))
-    assert.ok('dfo' in (sheet.get(cue) ?? {}), `${cue} offers DFO's own`);
+  for (const cue of Object.keys(SEA_SOUNDS)) {
+    assert.ok(sheet.has(cue), `${cue} is on the sheet`);
+    assert.ok(!('dfo' in (sheet.get(cue) ?? {})), `${cue} is searched, not DFO's synthesised`);
+  }
 });
 
 test("a far volley's guns spread over frames roll once", () => {

@@ -10,7 +10,8 @@ on the sheet, and asked whether DFO's were another author's: "They're in an unpu
 
 ## What it settles
 
-- DFO's own sounds come to the sound sheet as candidates for the world's cues, judged there like Freesound's
+- DFO's own sounds come to the sound sheet as candidates for the world's cues (its synthesised ones no longer, by
+  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]), judged there like Freesound's
   ([[The World Sounds From the Sound Picker]]). These are the sounds DFO's synthesiser made (its climbing, gathering,
   lock, kill-effect, portal and naval sounds), drawn again from DFO's tools at 44.1 kHz rather than DFO's small baked
   copies, and the CC0 Freesound recordings DFO's guns play, offered by their Freesound numbers.

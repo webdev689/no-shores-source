@@ -1,11 +1,11 @@
 // Wet: the fight in the rainforest and the swamp. F sharp Aeolian in 4/4 at 104, its beat split three, three, three,
-// three and four: everything leans across the bar. A pan flute's tune over a marimba's ostinato in that grouping, a
-// clarinet's counter-line low under it, congas, log drums and a deep drum. The danger near is drips and a pulse: a
+// three and four: everything leans across the bar. A low clarinet's tune over a marimba's ostinato in that grouping, a
+// second clarinet's counter-line under it, congas, log drums and a deep drum. The danger near is drips and a pulse: a
 // kalimba falling in dotted eighths against the beat, a log drum's heartbeat, insects in the shaker and a bassoon
-// creeping a half step. The peak sets the strings an octave over the tune, the choir's oohs, the horns swelling on
-// each chord, and a reverse cymbal into each section. The plan: a vamp, the tune, the clarinet's tune under the flute's
-// long notes, a break, the tune again. The cadence turns G, C sharp, F sharp minor; the victory rises D, E into F
-// sharp major; the defeat lets the clarinet sink to the low F sharp.
+// creeping a half step. The peak sets the strings an octave over the tune, the choir's oohs, the horns swelling on each
+// chord, and noise swelling into each section, as a reverse cymbal does. The plan: a vamp, the tune, the second
+// clarinet's tune under the first's long notes, a break, the tune again. The cadence turns G, C sharp, F sharp minor;
+// the victory rises D, E into F sharp major; the defeat lets the clarinet sink to the low F sharp.
 
 import { chordAt, type Held, keys, measured, plan, progression, runsOf } from './craft.ts';
 import { type Edge, type Song, type Writer, lay, makeSong } from './score.ts';
@@ -46,12 +46,12 @@ const TRACKS = {
     role: 'pulse',
     voice: { mod: 4, index: 1.4, idxDecay: 0.04, decay: 0.32, sustain: 0.02, release: 0.18, gain: 0.8 },
   },
-  flute: {
-    program: 75,
-    volume: 107,
+  reed: {
+    program: 71,
+    volume: 118,
     pan: 58,
     role: 'lead',
-    voice: { attack: 0.05, index: 1, idxDecay: 0.5, unison: 2, cents: 5, spread: 0.12 },
+    voice: { attack: 0.04, index: 1.7, idxDecay: 0.6, unison: 2, cents: 5, spread: 0.12 },
   },
   clarinet: { program: 71, volume: 119, pan: 76, role: 'lead', voice: { attack: 0.04, index: 1.9, idxDecay: 0.6 } },
   strings: {
@@ -75,13 +75,6 @@ const TRACKS = {
     role: 'peak',
     voice: { attack: 0.35, decay: 0.3, sustain: 0.9, release: 0.5, index: 2.2, idxDecay: 0.8 },
   },
-  swell: {
-    program: 119,
-    volume: 120,
-    pan: 64,
-    role: 'peak',
-    voice: { mod: 3.73, index: 6, idxDecay: 4, attack: 1.6, decay: 0.02, sustain: 1, release: 0.05, gain: 0.45 },
-  },
 } as const;
 type Track = keyof typeof TRACKS;
 
@@ -90,7 +83,7 @@ type Track = keyof typeof TRACKS;
 const KIT = {
   volume: 109,
   role: 'combat',
-  roles: { heart: 'tension', insects: 'tension' },
+  roles: { heart: 'tension', insects: 'tension', riser: 'peak' },
   keys: {
     kick: 36,
     deep: 86,
@@ -103,6 +96,7 @@ const KIT = {
     crash: 49,
     heart: 41,
     insects: 82,
+    riser: 55,
   },
   drums: {
     kick: { hz: 52, decay: 0.3, gain: 1, click: 0.35 },
@@ -116,6 +110,8 @@ const KIT = {
     crash: { decay: 1.6, q: 0.55, gain: 0.55 },
     heart: { hz: 92, decay: 0.3, gain: 1, drop: 0.85, click: 0.2 },
     insects: { hz: 7400, q: 2, decay: 0.04, gain: 0.2 },
+    // A swell of noise rising into the bar line, a reverse cymbal: noise, so it never whines as a pitched sweep does.
+    riser: { hz: 2600, q: 0.6, attack: 1.6, decay: 0.12, gain: 0.6 },
   },
 } as const;
 type Drum = keyof typeof KIT.keys;
@@ -253,8 +249,7 @@ function underneath(w: Write): void {
     });
     drums(w, bar, drive, inBar % 4 === 3);
     if (inBar === 0) w.hit('crash', bar, 0, 96);
-    if ((PLAN[bar + 1]?.inBar ?? 0) === 0)
-      for (const n of keys('F#5 C#6')) w.note('swell', bar + 1, -(1.6 * BPM) / 60, (1.6 * BPM) / 60, n, 84);
+    if ((PLAN[bar + 1]?.inBar ?? 0) === 0) w.hit('riser', bar + 1, -(1.6 * BPM) / 60, 84);
   });
 }
 
@@ -264,14 +259,14 @@ function tunes(w: Write): void {
   PLAN.forEach(({ section, inBar, pass }, bar) => {
     if (inBar !== 0) return;
     if (section === 'a') {
-      lay(w, 'flute', bar, THEME, 100 + pass * 4, { legato: 0.94 });
+      lay(w, 'reed', bar, THEME, 100 + pass * 4, { octave: -1, legato: 0.94 });
       lay(w, 'clarinet', bar, COUNTER, 80, { legato: 0.96, accent: 4 });
-      lay(w, 'strings', pass ? bar : bar + 8, THEME, 70, { octave: 1, legato: 0.96, accent: 4, from: pass ? 0 : 8 });
+      lay(w, 'strings', pass ? bar : bar + 8, THEME, 70, { legato: 0.96, accent: 4, from: pass ? 0 : 8 });
     } else if (section === 'b') {
       lay(w, 'clarinet', bar, CLARINET_TUNE, 98, { legato: 0.95 });
-      lay(w, 'flute', bar, FLUTE_OVER, 82, { legato: 0.97, accent: 4 });
-      lay(w, 'strings', bar, CLARINET_TUNE, 66, { octave: 1, legato: 0.96, accent: 4 });
-    } else if (section === 'break') lay(w, 'flute', bar, BREAK_CALL, 96, { legato: 0.94 });
+      lay(w, 'reed', bar, FLUTE_OVER, 82, { octave: -1, legato: 0.97, accent: 4 });
+      lay(w, 'strings', bar, CLARINET_TUNE, 66, { legato: 0.96, accent: 4 });
+    } else if (section === 'break') lay(w, 'reed', bar, BREAK_CALL, 96, { octave: -1, legato: 0.94 });
   });
 }
 
@@ -297,7 +292,10 @@ function stingBed(w: Write, bars: readonly Held<Chord>[][], loud: number): void 
 const cadence = (): Song =>
   makeSong({ ...SONG, name: 'wet-cadence', bars: 3, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('G | C# | F#m'), 0.9);
-    lay(w, 'flute', 0, tune('G4:.75 B4:.75 A4:.5 G4:1 F#4:1 | F4:1 G#4:1 C#5:2 | F#4:4'), 92, { legato: 0.97 });
+    lay(w, 'reed', 0, tune('G4:.75 B4:.75 A4:.5 G4:1 F#4:1 | F4:1 G#4:1 C#5:2 | F#4:4'), 92, {
+      octave: -1,
+      legato: 0.97,
+    });
     lay(w, 'clarinet', 0, tune('D4:2 B3:1 D4:1 | C#4:2 F3:1 G#3:1 | A3:4'), 74, { legato: 0.98 });
     w.hit('deep', 2, 0, 84);
     w.hit('heart', 2, 0.75, 60);
@@ -308,7 +306,7 @@ const victory = (): Song =>
   makeSong({ ...SONG, name: 'wet-victory', bars: 4, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('D | E | F# | F#'), 1);
     const rise = tune('D5:.75 F#5:.75 A5:.5 F#5:2 | E5:.75 G#5:.75 B5:.5 G#5:2 | F#5:.75 A#5:.75 C#6:.5 A#5:2 | F#5:4');
-    lay(w, 'flute', 0, rise, 104);
+    lay(w, 'reed', 0, rise, 104, { octave: -1 });
     lay(w, 'strings', 0, rise, 80, { octave: -1 });
     for (let bar = 0; bar < 2; bar++) drums(w, bar, 2, bar === 1);
     for (const n of keys('F#3 C#4 A#4')) w.note('horn', 2, 0, 7, n, 92);

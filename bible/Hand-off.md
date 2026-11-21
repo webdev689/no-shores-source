@@ -241,9 +241,28 @@ Where the work stands now, for the next session. Each session rewrites this note
   and gorse in its beds, no rain indoors, procedural iron, gold, bone, cloth and water, ramps on every city's avenues,
   the fall that kills in a social space, townsfolk on the plan's ways, and the harbour way to the pier with its two
   moored ships. Tested offline with the full check; CI baked its modules byte for byte. Not yet seen on a real GPU.
+- **The held map on land**, on `main` (#128), merged with the owner's yes ("Merge and deploy"), which deploys the page
+  ([[The Held Map Comes to the Social Spaces and Every Land Area]], [[Held Map]]): N anywhere on foot raises it from the
+  player's eyes, only to look at, the world going on; a social space's plan, a patrol area's or an island's ground, in
+  the map's inks and washes, every keeper and site an icon glyph from the game's own devices, and a table that says
+  what each is. Audited by two independent reviewers and every finding fixed with a test. Tested offline with the
+  full check; seen headless at Overlook and the Saltgrass Downs. Not yet seen: an island's map, a real GPU, a fall
+  while it is up.
 
 ## Waiting on the owner
 
+- **#118, every sound from Freesound and the music's pass** (`ccr-c504a08b-gyns6o`), the owner's words in
+  [[Every Sound Comes From Freesound, and the Music Rests Between Pieces]], is on `main`, merged with the owner's yes
+  ("Merge and deploy"), which deploys the page and the rooms. Every sound effect and ambience sound plays the owner's
+  Freesound pick (`content/audio/sounds.json`, 185); the synthesiser behind them is deleted but the four the owner
+  kept (the gains' chimes, a hold's build-up, the menu's refusal, the spoken voice). Each recorded bed and thunder
+  keeps the synthesiser's measured level (`recordings.ts` `BED_LOUD`, `player.ts`). No hyena, no separate wave crash;
+  the ice's creak plays the ice's crack, a ship going down the sea's Breaking wood, the story's rain, gulls and
+  thunder the world's picks. Music: calm pieces now and then everywhere with each place's silences, fourteen new calm
+  pieces (`calm.ts`), no note over B5, no FM partial past 6 kHz, no ringing drum, no pitched swell in a fight, held by
+  tests; the owner kept every piece on the sheet (https://claude.ai/artifact/PBSynEeW37HPSvX89EYUbA). Tested offline:
+  the full check, every song rendered and measured headless, the sheet's players. Not yet: anything heard in a running
+  game or on a real GPU.
 - **#120, three healing charges, is on `main`**, merged with the owner's yes ("Merge and deploy"), which deployed the
   rooms and the page ([[Three Healing Charges, Refilled by Blows and Kills]]): built to the owner's picks, then a
   five-part audit (rules and room, wire and prediction, tests and notes, balance against the roster, a design pass
@@ -252,6 +271,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   the vitals, the drink on `3`, the green word and its sound, and charges coming back in a fight. Left as named in
   the decision: a heal and a blow judged in the same tick or two can both stand, and dying or rejoining refills all
   three.
+- **The held map on land's fog of war**: on land the sheet has none, so all of a land shows the first time the map is
+  raised there; whether it should be fogged as the sea is.
 - **Overlook's hub's flora**: whether "any flora like bushes or trees" also covers the wall ivy and the cut flowers
   sold at the flower stall and cart, which are the hub's own (the world grows no climber; cut flowers are goods).
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
@@ -714,6 +735,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   built page under `vite preview`, never the dev server, which reloads on an edit; a frame there takes seconds, so a
   fight is seen beginning, not fought through.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
-  map, the charted sea's wash laid while the map is up.
+  map, the charted sea's wash laid while the map is up; on land, the relief read off the worker's exact ground past the
+  2 km the camera keeps (a patrol area's far side reads the 1 km grid), and lakes, which only the 1 km grid holds.
 - Isles: how many, how big and how they are placed are the owner's to decide; the layout and its rules hold them
   already.

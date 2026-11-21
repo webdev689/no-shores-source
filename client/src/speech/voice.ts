@@ -61,6 +61,16 @@ export function speakSyllable(
   const syllable = syllableOf(voice, options.emphasis ?? false);
   const start = options.when ?? audio.currentTime;
   const end = start + syllable.lengthS;
+  const muffle = new BiquadFilterNode(audio, { type: 'lowpass', frequency: syllable.muffleHz, Q: 1 });
+  const envelope = new GainNode(audio, { gain: 0 });
+  envelope.gain.setValueAtTime(0, start);
+  envelope.gain.linearRampToValueAtTime(syllable.volume, start + ATTACK_S);
+  envelope.gain.setValueAtTime(syllable.volume * 0.85, start + syllable.lengthS * 0.7);
+  envelope.gain.linearRampToValueAtTime(0, end);
+  muffle
+    .connect(envelope)
+    .connect(new StereoPannerNode(audio, { pan: options.pan ?? 0 }))
+    .connect(out);
   const buzz = new OscillatorNode(audio, { type: 'sawtooth', frequency: syllable.pitchHz });
   const vowel = new GainNode(audio);
   for (const [frequency, sharpness] of [
@@ -69,17 +79,7 @@ export function speakSyllable(
   ]) {
     buzz.connect(new BiquadFilterNode(audio, { type: 'bandpass', frequency, Q: sharpness })).connect(vowel);
   }
-  const muffle = new BiquadFilterNode(audio, { type: 'lowpass', frequency: syllable.muffleHz, Q: 1 });
-  const envelope = new GainNode(audio, { gain: 0 });
-  envelope.gain.setValueAtTime(0, start);
-  envelope.gain.linearRampToValueAtTime(syllable.volume, start + ATTACK_S);
-  envelope.gain.setValueAtTime(syllable.volume * 0.85, start + syllable.lengthS * 0.7);
-  envelope.gain.linearRampToValueAtTime(0, end);
-  vowel
-    .connect(muffle)
-    .connect(envelope)
-    .connect(new StereoPannerNode(audio, { pan: options.pan ?? 0 }))
-    .connect(out);
+  vowel.connect(muffle);
   buzz.start(start);
   buzz.stop(end + 0.02);
 }
