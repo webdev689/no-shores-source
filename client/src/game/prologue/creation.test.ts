@@ -104,11 +104,15 @@ test('Discord linked to a named account is said with the offer, in one line', as
 
 test('a Discord sign-in that went nowhere is said under the form, as a refusal', async () => {
   page();
+  const said: string[] = [];
+  Object.assign(globalThis, { document: { ariaNotify: (words: string) => said.push(words) } });
   const { stack, frame, words, node } = drawn();
   running(accountStep(stack, accounts(account({}), 'Discord sign-in was cancelled.'), ending()));
   await settle();
   frame();
   assert.ok(words().includes('Discord sign-in was cancelled.'));
+  assert.deepEqual(said, ['Discord sign-in was cancelled.'], 'and told to a screen reader');
+  Object.assign(globalThis, { document: undefined });
   assert.equal(node('creation-go-on'), undefined, 'a guest is offered nothing past the form');
 });
 
@@ -144,6 +148,7 @@ test('an account made at the helm is the one the page shows from then on, and th
   press('creation-create');
   assert.deepEqual(await ended, { kind: 'account', username: 'Mack' });
   assert.equal(heard, 1, 'the menu, its mark and the company hear of the new account');
+  assert.equal(ui.fieldText('creation-password'), '', 'no password stays behind the window');
   frame();
   assert.deepEqual(words(), [], 'the window goes');
   assert.equal(creationOpen(), false);

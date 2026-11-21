@@ -5,6 +5,7 @@
 import { type Account, type AccountLink, DISCORD_LINKED, DISCORD_SIGNED_IN } from '../../network/accounts.ts';
 import { TONES } from '../../plus/tones.ts';
 import { type Race } from '../../player/dressing.ts';
+import { announce } from '../../ui/announce.ts';
 import { button, slider } from '../../ui/controls.ts';
 import type { Child, Node, Picture } from '../../ui/node.ts';
 import type { Stack } from '../../ui/stack.ts';
@@ -226,6 +227,17 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
     let offered: ReturnType<typeof goingOn> = null;
     let offeredWords = '';
     let said = '';
+    /** Says `words` under the form, and to a screen reader, as the page's status line told it. */
+    const say = (words: string) => {
+      said = words;
+      if (words) announce(words);
+    };
+    /** The interface last drawn on, whose fields are emptied as the window goes, so no password stays behind. */
+    let drawnOn: Interface | null = null;
+    const forget = () => {
+      drawnOn?.setFieldText('creation-username', '');
+      drawnOn?.setFieldText('creation-password', '');
+    };
     let waiting = false;
     let focusNext: string | null = link === null ? 'creation-go-on' : 'creation-username';
     const typed = { name: '', password: '' };
@@ -234,6 +246,7 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
       if (!up) return;
       up = false;
       close();
+      forget();
       // Going on without an account changed nothing, and asking again would only wait on accounts out of reach.
       if (outcome.kind !== 'alone') dispatchEvent(new Event(ACCOUNT_CHANGED));
       resolve(outcome);
@@ -261,7 +274,7 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
       if (typeof answer !== 'string') return done(answer);
       if (answer === OUT_OF_REACH) offer(null, null);
       // Words the offer above already says are not said twice.
-      said = answer === offered?.words ? '' : answer;
+      say(answer === offered?.words ? '' : answer);
     };
     const ask = (what: AccountAsk) => {
       if (!link) return;
@@ -280,6 +293,7 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
       });
     };
     const layer = (ui: Interface): Child => {
+      drawnOn = ui;
       if (focusNext) ui.focusOn(focusNext);
       focusNext = null;
       const size = wideIn(ui) ? 2 : 1;
@@ -316,6 +330,7 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
     };
     const close = windowOn(stack, layer, signal, (reason) => {
       up = false;
+      forget();
       reject(reason);
     });
     if (!up || link === null) return;
@@ -325,7 +340,7 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
       const told = link.said;
       const through = told === DISCORD_SIGNED_IN || told === DISCORD_LINKED;
       offer(account, through ? told : null);
-      if (told && !through && said === '' && told !== offered?.words) said = told;
+      if (told && !through && said === '' && told !== offered?.words) say(told);
     });
   });
 }

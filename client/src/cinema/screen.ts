@@ -10,6 +10,7 @@ import { colourOf } from '../ui/quads.ts';
 import { touchesHeld } from '../ui/page.ts';
 import type { Layer, Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
+import { ease } from '../ui/ease.ts';
 import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
 
 /** The title as the screen shows it. */
@@ -58,7 +59,7 @@ export class Screen {
   private readonly barred = new Eased(0);
   private readonly titled = new Eased(0);
   private readonly prompted = new Eased(0);
-  private readonly skipShown = new Eased(0, (share) => share);
+  private readonly skipShown = new Eased(0, ease);
   private shut = 0;
   private blurred = 0;
   private prompt = '';

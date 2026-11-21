@@ -5,7 +5,7 @@ import { dropped, Eased, pageClock, ruleOf } from '../../cinema/cinemaParts.ts';
 import { EMBLEM_PIXELS, emblemUrl } from '../../plus/emblems.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import { announce } from '../../ui/announce.ts';
-import { cubicBezier } from '../../ui/ease.ts';
+import { cubicBezier, ease } from '../../ui/ease.ts';
 import type { Child } from '../../ui/node.ts';
 import type { Stack } from '../../ui/stack.ts';
 import type { Interface } from '../../ui/ui.ts';
@@ -24,11 +24,12 @@ const IRON_RULE = ruleOf('nameplate rule', [
 const struck = (share: number) => cubicBezier(0.2, 0.9, 0.2, 1, share);
 
 export class Nameplate {
-  private readonly shown = new Eased(0, (share) => share);
+  private readonly shown = new Eased(0, ease);
   private readonly clock: () => number;
   private readonly removeLayer: () => void;
   private plate: { readonly name: string; readonly faction: string; readonly emblem: string | null } | null = null;
   private since = 0;
+  private hiddenAt = 0;
   private strike = false;
 
   constructor(stack: Stack, clock: () => number = pageClock) {
@@ -46,7 +47,8 @@ export class Nameplate {
   }
 
   hide(): void {
-    this.shown.set(0, 0.35, this.clock());
+    this.hiddenAt = this.clock();
+    this.shown.set(0, 0.35, this.hiddenAt);
   }
 
   remove(): void {
@@ -64,7 +66,9 @@ export class Nameplate {
     // The name strikes in: its fade, 0 to whole over the first 60% of the strike. Grown and shrunk as the sheet's
     // `scale` did, it cannot be: the face is drawn in whole steps.
     const nameShown = this.strike ? Math.min(1, into / (0.6 * STRIKE_S)) : 1;
-    const rule = this.shown.target > 0 ? struck(Math.min(1, Math.max(0, (into - RULE_HOLD_S) / RULE_S))) : 1;
+    // The rule draws out from the middle as the plate strikes in, and back in as it goes, each after its hold.
+    const drawn = (since: number) => struck(Math.min(1, Math.max(0, (since - RULE_HOLD_S) / RULE_S)));
+    const rule = this.shown.target > 0 ? drawn(into) : 1 - drawn(now - this.hiddenAt);
     const ruleWide = Math.min(660, Math.round(width * 0.8));
     return {
       width,
