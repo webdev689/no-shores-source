@@ -57,6 +57,11 @@ test('no key casts two things, the DFO keys stay where they were, and the abilit
   );
   assert.ok((BINDINGS.guard as readonly string[]).includes('f'), 'F still guards');
   assert.deepEqual(BINDINGS.crouch, ['c'], 'C still crouches');
+  assert.deepEqual(
+    [BINDINGS.melee, BINDINGS.ranged, BINDINGS.heal],
+    [['1'], ['2'], ['3']],
+    'a drink beside the loadouts',
+  );
 });
 
 test('the bar runs each share on by its recharge from the room’s word, and holds it at full', () => {

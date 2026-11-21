@@ -48,9 +48,9 @@ export class PlayerFight {
    * One frame: `steps` the fight's movement rules, the room's clock run while `running`, the fight's buttons taken
    * only while `hands` (the pointer held), an aimed shot laid on `markOf`'s point (the crosshair's), and the first
    * person's hands zoomed with the view by `zoomOf` once the player has stepped, moving `handsSeconds` on. The buttons:
-   * a swing or a shot only with the weapon already out, on foot, the hands free; a guard on foot; a dodge whenever
-   * pressed (the rules refuse one in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's button aims
-   * it and the guard's fires it, and no guard rises behind it.
+   * a swing or a shot only with the weapon already out, on foot, the hands free; a guard on foot; a dodge and a drink
+   * whenever pressed (the rules refuse them in the air or the saddle). A bow, a crossbow or a gun drawn: the swing's
+   * button aims it and the guard's fires it, and no guard rises behind it.
    */
   frame(
     controls: InputFrame,
@@ -86,6 +86,7 @@ export class PlayerFight {
       shoot: ranged && controls.held('guard'),
       guard: guards && controls.held('guard'),
       dodge: hands && controls.pressed('dodge'),
+      heal: hands && controls.pressed('heal'),
       pitch: -player.pitch,
       aim: aiming,
       mark: aiming ? markOf() : null,

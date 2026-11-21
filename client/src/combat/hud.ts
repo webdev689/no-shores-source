@@ -5,7 +5,7 @@ import type { Block } from '../rules/movementRules.ts';
 import { Compass, headingOf } from '../plus/compass.ts';
 import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
 import { AmmoCounter } from './ammoCounter.ts';
-import { edgeArrow, parryCue, threatens } from './cues.ts';
+import { EVENT, edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
@@ -292,11 +292,14 @@ export class Hud {
     }
   }
 
-  /** The stamina bar flashes for a swing or a dodge asked with no stamina; the screen's edge, red, for a blow taken. */
+  /** The stamina bar flashes for a swing or a dodge asked with no stamina; the screen's edge, red, for a blow taken
+   *  (never for a drink's heal). */
   private flash(frame: HudFrame, seconds: number): void {
     const { own } = frame;
     if (frame.pressed && own && own.stamina <= 0) this.staminaFlash = FLASH_SECONDS;
-    const struck = frame.events.some((event) => event.defender === frame.player && event.amount > 0);
+    const struck = frame.events.some(
+      (event) => event.defender === frame.player && event.amount > 0 && event.kind !== EVENT.healed,
+    );
     if (struck) this.hurtFlash = FLASH_SECONDS;
     this.staminaFlash = Math.max(0, this.staminaFlash - seconds);
     this.hurtFlash = Math.max(0, this.hurtFlash - seconds);

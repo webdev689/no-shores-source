@@ -21,6 +21,10 @@ const SHEET_ID = 'fight-hud';
 const THIRD_EDGE = `color-mix(in srgb, ${TONES.wordDim} 60%, transparent)`;
 /** Each plate's level square, as large as a ship's emblem square at the same scale, inside a 2 px edge. */
 const SQUARE_SCALE = { overhead: 2, target: 3, boss: 4 } as const;
+/** A healing charge's diamond, and the meter's fill rising in it toward the next: health's red, darkened, so a whole
+ *  charge is told from one filling by its height as well as its tone. */
+const DIAMOND = 'polygon(50% 0, 100% 50%, 50% 100%, 0 50%)';
+const FILLING = `color-mix(in srgb, ${FILLS.health} 55%, ${TONES.outline})`;
 const { overhead, boss } = PLATES;
 
 /** The plates' sheet: a level square, a title line and the bars under it, sized for each place a plate stands. */
@@ -140,6 +144,8 @@ function vitalStepCss(scope: string, wide: boolean): string {
   return `${scope} .vital.poise .poise-word { left: calc(100% + ${tipOf(sizes.poise) + (wide ? 10 : 6)}px); }
 ${scope} .vitals { left: ${CORNER.side}px; top: ${CORNER.top}px; gap: ${sizes.gap}px; }
 ${scope} .vitals .poise-word { font-size: ${wide ? 22 : 11}px; line-height: ${wide ? 22 : 12}px; }
+${scope} .vitals .drinks { gap: ${wide ? 6 : 4}px; }
+${scope} .vitals .drink { width: ${sizes.drinks}px; height: ${sizes.drinks}px; }
 ${wide ? `${scope} .vitals .poise-word { top: -${BAR_EDGE}px; translate: none; }` : ''}
 ${scope} .vitals > .statuses .status { --size: ${wide ? 36 : 24}px; }`;
 }
@@ -167,6 +173,15 @@ ${thinBarsCss('.fight-hud', VITAL_BARS)}
 .fight-hud .vital.poise-iron .poise-word { color: #ff6a5a; }
 .fight-hud .vital.poise-open .poise-word { color: #f1c04f; }
 .fight-hud .vitals > .statuses { margin-top: 4px; gap: 6px; }
+/* The healing charges under the bars: three diamonds in a fine outline over a stone line lit from the top left, each
+   charge held whole in health's red, the next filling from its foot as the player's blows fill the meter. */
+.fight-hud .drinks { display: flex; }
+.fight-hud .drink { position: relative; flex: none; background: ${TONES.outline}; clip-path: ${DIAMOND}; }
+.fight-hud .drink::before, .fight-hud .drink::after { content: ''; position: absolute; clip-path: ${DIAMOND}; }
+.fight-hud .drink::before { inset: 1px; background: linear-gradient(135deg, ${TONES.stoneLit} 50%, ${TONES.stoneDim} 50%); }
+.fight-hud .drink::after { inset: 2px;
+  background: linear-gradient(0deg, ${FILLING} var(--fill, 0%), ${TONES.groundTrack} var(--fill, 0%)); }
+.fight-hud .drink.full::after { background: ${FILLS.health}; }
 /* Whole and untouched, the vitals rest: they go in six steps, and come back in two at the first change. */
 .fight-hud .vitals { transition: opacity 120ms steps(2, end); }
 .fight-hud .vitals.rest { opacity: 0; transition: opacity 1200ms steps(6, end); }

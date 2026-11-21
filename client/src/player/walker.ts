@@ -133,6 +133,8 @@ export class Walker {
   private readonly loop = new Loop();
   /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
   private drawnBefore = false;
+  /** Whether the fight held the player to a drink last frame, which put the shown weapon away. */
+  private drank = false;
   /** The seconds a tick of the rules lasts, as the last step took them. */
   private tickSeconds = 1 / 60;
 
@@ -235,12 +237,13 @@ export class Walker {
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const worn = shownDress(you.dress, holding);
     // The rules take up another weapon only at rest: while they are busy, the figure and the hands keep the one held.
+    // The forge has no drink, so the weapon is put away while one lasts, and is back in hand as it ends.
     const kept = this.dress.outfit;
+    const drinking = own?.action.kind === 'drink';
+    const drawn = holding && (this.drank ? worn.outfit.drawn : kept.drawn) && !drinking;
+    this.drank = drinking;
     const dress = fighting
-      ? {
-          ...worn,
-          outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn: holding && kept.drawn },
-        }
+      ? { ...worn, outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn } }
       : worn;
     if (!fighting) this.shownGlow = this.glow;
     const { outfit } = dress;

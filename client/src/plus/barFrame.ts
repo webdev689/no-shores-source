@@ -22,11 +22,12 @@ export const BAR_TONES = {
 /** How far the display's corner pieces stand in from the view's side, top and foot, in CSS pixels at their own size. */
 export const CORNER = { side: 28, top: 14, foot: 22 } as const;
 
-/** Each vital's height, frame and all, the gap between two, and the room kept under them for the buffs' row, at
- *  each step, in CSS pixels: the thin bars' sizes, the vitals' on foot and the ship's at sea. */
+/** Each vital's height, frame and all, the gap between two, the healing charges' diamonds under them on foot, and
+ *  the room kept under those for the buffs' row, at each step, in CSS pixels: the thin bars' sizes, the vitals' on
+ *  foot and the ship's at sea. */
 export const VITAL_SIZES = {
-  base: { health: 12, stamina: 10, poise: 8, gap: 4, buffs: 34 },
-  wide: { health: 16, stamina: 14, poise: 10, gap: 5, buffs: 46 },
+  base: { health: 12, stamina: 10, poise: 8, gap: 4, drinks: 12, buffs: 34 },
+  wide: { health: 16, stamina: 14, poise: 10, gap: 5, drinks: 16, buffs: 46 },
 } as const;
 
 /** How many pixels the frame takes along the bar's top and foot: its outline and its stone line. */

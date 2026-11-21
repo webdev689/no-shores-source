@@ -3,7 +3,17 @@ import { test } from 'node:test';
 import type { FighterView } from '../rules/fighters.ts';
 import { LOSS_DRAIN, LOSS_HOLD, LOSS_HOLD_MOST, type Loss, stepLoss } from '../plus/barLoss.ts';
 import { findAll, onFakePage } from './page.test.ts';
-import { calmFor, healthLow, LOW_HEALTH, REST_SECONDS, Vitals, vitalOf, vitalsOf, vitalsWhole } from './vitals.ts';
+import {
+  calmFor,
+  chargesShown,
+  healthLow,
+  LOW_HEALTH,
+  REST_SECONDS,
+  Vitals,
+  vitalOf,
+  vitalsOf,
+  vitalsWhole,
+} from './vitals.ts';
 
 const fighter: FighterView = {
   x: 0,
@@ -157,5 +167,37 @@ test('health low marks its bar to flash blood, and a press with no stamina marks
     assert.equal(findAll(root, 'vital', 'stamina', 'flash').length, 1);
     vitals.update(fighter, 1 / 60, false, false);
     assert.equal(findAll(root, 'low').length + findAll(root, 'flash').length, 0);
+  });
+});
+
+test('the healing charges stand as three diamonds under the bars: each held whole, the next filling by the meter', () => {
+  assert.deepEqual(chargesShown({ ...fighter, charges: 1, meter: 0.4 }), {
+    fills: [1, 0.4, 0],
+    held: 1,
+    text: '1 of 3, the next 40% filled',
+  });
+  assert.deepEqual(chargesShown({ ...fighter, charges: 3, meter: 0.7 }), { fills: [1, 1, 1], held: 3, text: '3 of 3' });
+  assert.deepEqual(chargesShown(null).fills, [1, 1, 1], 'before the fighter comes: all three');
+  onFakePage((root) => {
+    const vitals = new Vitals(root);
+    vitals.update({ ...fighter, charges: 2, meter: 0.25 }, 1 / 60, false, false);
+    const pips = findAll(root, 'drink');
+    assert.deepEqual(
+      pips.map((pip) => [pip.classList.contains('full'), pip.style['--fill']]),
+      [
+        [true, '100%'],
+        [true, '100%'],
+        [false, '25%'],
+      ],
+    );
+    const { role, ariaLabel, ariaValueNow, ariaValueMax, ariaValueText } = findAll(
+      root,
+      'drinks',
+    )[0] as unknown as Record<string, string>;
+    assert.deepEqual(
+      [role, ariaLabel, ariaValueNow, ariaValueMax, ariaValueText],
+      ['meter', 'Healing charges', '2', '3', '2 of 3, the next 25% filled'],
+      'a screen reader reads them as a meter',
+    );
   });
 });

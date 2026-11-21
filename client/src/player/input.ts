@@ -15,6 +15,8 @@ export const BINDINGS = {
   ready: ['z'],
   melee: ['1'],
   ranged: ['2'],
+  // A healing charge, beside the loadouts' keys.
+  heal: ['3'],
   swing: ['mouse2'],
   guard: ['mouse0', 'f'],
   dodge: ['v', 'mouse4'],
