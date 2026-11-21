@@ -39,6 +39,10 @@ code:
   - server/roomNames.ts#nodeRoom
   - server/roomNames.ts#runAsk
   - server/keeping.ts#forCompany
+  - server/keeping.ts#judgingArrivals
+  - server/arrival.ts#arrives
+  - server/arrival.ts#cameOutOf
+  - crates/room/src/entrances.rs#stand_at_spawn
   - crates/room-wasm/src/lib.rs#refusal
   - crates/room/src/course.rs#stand_foe_at
   - crates/room-wasm/src/course_door.rs#stand_foe
@@ -74,7 +78,8 @@ on Cloudflare.
   the node's spawns in turn, the first player at the first spawn, the next at the next; elsewhere at the room's spawn,
   on the top of the block under it (or the ground where none stands), and a respawn stands them there too.
   A patrol's room may instead stand a player 1.5 m before one of its entrances' doors, facing away from it, as they
-  come out of that entrance's dungeon. A room holds 16 players; past that, it turns the next away.
+  come out of that entrance's dungeon, and stand them at the next spawn after all (`stand_at_spawn`), as an ordinary
+  join, when its host learns they did not. A room holds 16 players; past that, it turns the next away.
 - **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused, as is one with a
   number in it that is not a number. An input is one tick's intent, the controls ([[Movement]]) and the fight's
   buttons ([[Combat]]), with what the player's hands hold and the room tick their screen last showed. It steps that
@@ -332,7 +337,9 @@ the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the three fact
 (`shape_spots`, Overlook's alone) and in Overlook's, `board`, the bounty board's counter, where a player stands before
 it (none in any other node); and whether it is locked: each patrol area and mission the open list,
 `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"), and each social space but
-Overlook's ([[Only Overlook's Social Space Opens for Now]]). A locked node's room opens but takes no player, and so does
+Overlook's ([[Only Overlook's Social Space Opens for Now]]); and its gates: the nodes its layout's gates and way in
+lead to, each with a layout of its own, as the [[Game]]'s passages go. The index lists each node's id, kind, name,
+continent, rect and gates, which the host reads to judge arrivals. A locked node's room opens but takes no player, and so does
 each dungeon's room of a locked patrol, its runs among them, which open only with the patrol's file. The bake takes
 about 17 s for the nine continents' 99 nodes, a few at a time, and writes about 15.2 MB in all, a patrol area's file
 the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and rock's boxes). `server`, `server:bundle` and
@@ -439,7 +446,10 @@ so every decision is Rust and the shell only carries bytes and time.
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
 - A WebSocket joins the room and is welcomed with the player's number; in a patrol's room, `?entrance=<number>` on
-  its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. Each
+  its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. They
+  stay there only once the room keeps their character as come out of that entrance's dungeon or its run: one whose
+  character came from anywhere else, who sends no token within five seconds or who plays unkept is stood at the next
+  spawn (`outOfDoor`). Each
   binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
@@ -458,6 +468,19 @@ so every decision is Rust and the shell only carries bytes and time.
   room knows (a slot, a rarity) reads as a broken save, which is left untouched, and a list longer than the room's Arts
   or factions is cut to them. At sea the room also tells the accounts the player is there, again every 30 seconds, and
   that they left, for the Roster. A second text message, or any other, closes the socket.
+- **Where a character comes from** ([[The Server Is the Authority Over Everything]]): each claim says which room held
+  the character before ([[Accounts]], "Moving between rooms"), and a node's room, its dungeons' and its runs' judge by
+  it alone how it arrives (`arrival.ts`), never by the page. Overlook's social space, where every session begins and
+  where a new character first stands, takes anyone. Any other node's room takes a character that rejoins it; that
+  lands from the sea at the room's seas (a social space's from any), the ship the sea kept in it (`ship_at`) lying
+  within the landfall's 30 km of the node's island's coast, and 2 km more, since the ship heaves to a moment after
+  the page offers it; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
+  `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
+  takes one from its node's room at its seas, and an Elite Dungeon's run at Normal from its node at any. A character
+  that came by none of these ways may still join one of its company who plays in the room, as the Roster's "Go to
+  them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
+  this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is
+  not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
 - A full room closes the socket saying so; past 64 sockets, the sea's guard, or a run's eight, a join is turned
@@ -547,7 +570,12 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - A room bakes its navmesh as it opens: 0.1 to 0.2 s of WebAssembly for the [[Test Ground]]'s course, its links
   among it (tested offline, on a busy machine). The
   account's Workers Paid plan gives a Durable Object 30 s of CPU an event.
-- Any page can join a room, under any name; a player is known only by the session their page gives ([[Accounts]]).
+- Any page can join a room, under any name; a player is known only by the session their page gives ([[Accounts]]),
+  and a kept character is let into a node's room only by a way that leads there ("The host").
+- A character kept before the rooms said where it came from was held nowhere: its first room is Overlook's social
+  space, the sea, or one of its company's.
+- A landing is judged by the island the ship lies off, not by the side of it the page shows, so a player may land at
+  any node of an island they have sailed to.
 - A full sea of sockets each asking for the costliest course it may holds about a third of the sea's time: 40
   snapshots a second against 57, with 63 such sockets on the local runtime (tested offline).
 - A snapshot sends every player's whole fighter and look and every foe's glance every tick. The runtime deflates it
@@ -575,9 +603,9 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - A dungeon's room bakes its navmesh over the dungeon's whole rectangle: two to five blocks laid in a chain that never
   crosses itself (an Elite Dungeon's four or five), so up to five blocks one way. Each of the 27 patrols lays all three
   entrances; a dungeon's room opens for its number whether or not its patrol's land found room for its entrance. A
-  patrol's room takes `?entrance=` at the joiner's word, so a player may come back at any of its three entrances, as
-  `?at=` lands a player at any node. Movement has no ceilings; a dungeon's are never reached, as nothing in it can be
-  climbed.
+  patrol's room takes `?entrance=` only from a character that came out of that entrance's dungeon; a player who
+  plays unkept stands there for up to five seconds, until the host stands them at a spawn. Movement has no ceilings;
+  a dungeon's are never reached, as nothing in it can be climbed.
 - **A course a page plays alone** may be asked six things more, which no server ever asks and no message carries
   (`course.rs`, through the door's `room_stand_foe`, `room_clear_foes`, `room_set_spawn`, `room_put_player`,
   `room_stand_block` and `room_take_block`): a foe of the roster stood where the page puts it, on the top of the block

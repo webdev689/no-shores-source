@@ -3,8 +3,9 @@ import course from '../content/testground/course.json' with { type: 'json' };
 import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
+import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { type Count, counted } from './budget.ts';
-import { Keeper, TOKEN } from './keeping.ts';
+import { Keeper, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import {
   canonicalRoom,
   isleRoom,
@@ -83,7 +84,15 @@ export class RoomHost extends DurableObject<Env> {
    *  a player let go of is gone from it, though their socket may still be closing. */
   private readonly players = new Map<
     WebSocket,
-    { readonly player: number; count: Count | undefined; signed: boolean; spoke: boolean; token: string | null }
+    {
+      readonly player: number;
+      count: Count | undefined;
+      signed: boolean;
+      spoke: boolean;
+      token: string | null;
+      /** The entrance a player was joined before, until the room learns whether they came out of its dungeon. */
+      door: number | null;
+    }
   >();
   private keeper: Keeper | null = null;
   /** The wait before an emptied run is forgotten, while it runs. */
@@ -138,9 +147,11 @@ export class RoomHost extends DurableObject<Env> {
     }
     if (this.players.size >= socketsMost(this.name)) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
-    // A join at an entrance that is not one is the room's ordinary join.
+    // A join at an entrance that is not one is the room's ordinary join; one at an entrance stays there only once the
+    // room keeps the player's character as come out of its dungeon (`outOfDoor`).
     const entrance = entranceOf(request);
-    const player = this.guarded(() => (entrance === null ? 0 : this.room.joinAt(entrance)) || this.room.join(), 0);
+    const atDoor = entrance === null ? 0 : this.guarded(() => this.room.joinAt(entrance), 0);
+    const player = atDoor || this.guarded(() => this.room.join(), 0);
     if (player === 0) {
       // A full room, or a locked node's, still takes the socket, to say why it closes.
       const locked = this.guarded(() => this.room.refusal(), null);
@@ -150,8 +161,9 @@ export class RoomHost extends DurableObject<Env> {
     }
     server.binaryType = 'arraybuffer';
     server.accept();
-    const held = { player, count: undefined, signed: false, spoke: false, token: null };
+    const held = { player, count: undefined, signed: false, spoke: false, token: null, door: atDoor ? entrance : null };
     this.players.set(server, held);
+    if (held.door !== null) setTimeout(() => !held.signed && this.outOfDoor(server), TOKEN_WAIT_MS);
     void this.keeper?.tokenDue(
       player,
       () => held.signed,
@@ -201,6 +213,12 @@ export class RoomHost extends DurableObject<Env> {
       if (socket) this.dismiss(socket, code, why ?? 'your character joined another room');
     });
     if (privateRun(name)) this.keeper.forCompany();
+    // A node's room, its dungeons' and its runs' judge where each kept character comes from.
+    const reached = name.startsWith('node-') ? nodeRoom(name.slice('node-'.length)) : null;
+    if (reached) {
+      const reach = await this.reachOf(reached.id);
+      this.keeper.judgingArrivals((from, body) => arrives(name, from, shipOf(body), reach));
+    }
     // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept it.
     if (seas !== null)
       return (
@@ -241,6 +259,23 @@ export class RoomHost extends DurableObject<Env> {
       text !== null && (named.dungeon === null ? this.room.openNode(text) : this.room.openDungeon(text, named.dungeon));
     const opened = ready && this.room.difficulty(named.seas);
     return opened && this.room.reseed(seeds) && this.room.minute(Math.floor(Date.now() / MINUTE_MS));
+  }
+
+  /** Where a node lies and what leads into it, from the bake's index (`arrival.ts`); null when the index is missing. */
+  private async reachOf(id: string): Promise<ReturnType<typeof reachOf>> {
+    const index = await this.env.NODES.fetch('https://nodes/index.json');
+    return index.ok ? reachOf((await index.json()) as Listed[], layout.continents, id) : null;
+  }
+
+  /** Stands a player joined before an entrance at a spawn, as an ordinary join, unless the room keeps their character
+   *  as come out of that entrance's dungeon or run. */
+  private outOfDoor(socket: WebSocket): void {
+    const held = this.players.get(socket);
+    if (!held || held.door === null) return;
+    const door = held.door;
+    held.door = null;
+    if (!cameOutOf(this.name, this.keeper?.cameFrom(held.player) ?? null, door))
+      this.guarded(() => this.room.standAtSpawn(held.player), false);
   }
 
   /** A node's baked file's text, or null when there is none. */
@@ -315,6 +350,7 @@ export class RoomHost extends DurableObject<Env> {
         .catch(() => false)
         .then(() => {
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
+          this.outOfDoor(socket);
         });
       // At sea the room also says who is there, for the Roster.
       if (seaRoom(this.name) !== null) {
