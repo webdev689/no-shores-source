@@ -266,8 +266,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   fixed: a shot takes the perks of the bow it was loosed from; rigging hits take the canvas and crew perks; a player
   back in a sea fight keeps a spent Hard to Kill and no ship number is given twice; Shape's purchase names the piece
   shown; a kept rolled perk left in another column is replaced; the figure's left twin and short sword take their
-  metal's grade (`layers.set_of`), their 26 layers being drawn and published by the `forge` workflow's new `figures`
-  input, the repository's key being an Actions secret ("Key is in the repo"). Main (#120 and the hub) is merged in and the check
+  metal's grade (`layers.set_of`) when the forge draws them here. What is published already had it: of their 558
+  strips drawn again, 526 match R2's to the texel and the rest differ in a few texels of one move, so nothing was
+  published again. A run asked for of the `forge` workflow now draws figure strips too (`figures`), the repository's
+  key being an Actions secret ("Key is in the repo"). Main (#120 and the hub) is merged in and the check
   passes on it. The Thunderlock at port arms is held trigger to the front, as drill holds it, after the owner's "fix the
   thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`); its rest, walk and sprint are not drawn again,
   the owner's "Blades only for now": the arms move, so every layer in those three moves, every set and body, must be,
