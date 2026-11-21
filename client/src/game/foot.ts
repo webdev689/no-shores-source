@@ -19,8 +19,6 @@ import type { CardAt } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
-import { heldElements } from '../player/gear.ts';
-import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
@@ -49,7 +47,7 @@ import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
-import { otherCards } from './footFigures.ts';
+import { dressInGear, otherCards } from './footFigures.ts';
 import { type AtEntrance, type FootContext, type Heard, type Held, type Opened, stand } from './footPlace.ts';
 import { hearing, nextOtherId, rulesOf } from './footRoom.ts';
 
@@ -323,14 +321,7 @@ export class Foot {
     const { loadout } = walker.player;
     if (!gear || (gear === this.dressedIn && loadout === this.dressedLoadout)) return;
     [this.dressedIn, this.dressedLoadout] = [gear, loadout];
-    const wardrobe = forge.wardrobe(walker.you.dress.body);
-    if (wardrobe) {
-      const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
-      walker.you.dress = { ...walker.you.dress, outfit };
-      walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
-    }
-    walker.glow = heldElements(gear, loadout);
-    walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
+    dressInGear(walker, forge, gear);
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */

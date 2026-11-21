@@ -27,6 +27,7 @@ code:
   - crates/bake/src/lib.rs#MARGIN_M
   - crates/bake/src/lib.rs#lock
   - crates/protocol/messages.fbs
+  - crates/protocol/gear.fbs
   - crates/protocol/src/lib.rs#read_input
   - crates/protocol/src/lib.rs#read_course
   - crates/protocol/src/lib.rs#snapshot_bytes
@@ -312,8 +313,8 @@ the world share an id, when one is called `index`, or when an id is too long for
 
 ## Messages
 
-Every message is defined once, in `crates/protocol/messages.fbs`, and `flatc` makes the Rust and the TypeScript for
-it ([[Messages Are FlatBuffers]]). A body and controls cross as the movement crate's numbers, in its order: a body's
+Every message is defined once, in `crates/protocol/messages.fbs` and the player's gear in `gear.fbs`, which it
+includes, and `flatc` makes the Rust and the TypeScript for them ([[Messages Are FlatBuffers]]). A body and controls cross as the movement crate's numbers, in its order: a body's
 22 and the controls' 7, the same as through the browser's WebAssembly door. A table gains fields only at its end, so
 an older reader skips them.
 

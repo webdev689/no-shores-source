@@ -40,7 +40,7 @@ code:
 - **`flatc` 25.12.19**, Google's own release ([[Messages Are FlatBuffers]]). `tools/install-flatc.sh` holds the
   version and the checksum of its download, and refuses a download that does not match. It fetches the Linux build
   only.
-- **`npm run schema`** makes the Rust and the TypeScript from `crates/protocol/messages.fbs` into
+- **`npm run schema`** makes the Rust and the TypeScript from `crates/protocol/messages.fbs` (and `gear.fbs`) into
   `generated/messages/` (not in git). On its first run on a machine it installs the pinned `flatc` into
   `target/flatc/`, so nothing is installed by hand, in a cloud session, CI or the Pages build; it refuses any other
   `flatc`. `cargo xtask check`, `dev` and `build` run it first.

@@ -1,15 +1,19 @@
 // The figures on foot that are neither the player's nor the foes': other players, gliding to where the room last saw
-// them, and a social space's people (`folkCards`).
+// them, and a social space's people (`folkCards`); and the player's own figure dressed in their gear.
 import type { DrawnFigure } from '../combat/attackFeel.ts';
 import type { FightEffects } from '../combat/fightEffects.ts';
 import type { Fighting } from '../combat/fighting.ts';
 import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
+import { heldElements } from '../player/gear.ts';
+import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { Glides } from '../player/glide.ts';
 import type { OtherPlayers } from '../player/others.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
+import type { Walker } from '../player/walker.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { OTHERS_FPS, folkCards } from './footRoom.ts';
 
@@ -67,4 +71,17 @@ export function otherCards(
   otherGlides.keep(new Set(folk.otherPlayers.placed.keys()));
   const seconds = frameTicks * folk.tickSeconds;
   return [...cards, ...folkCards(folk.folk, folk.folkLoops, forge, [eyeX, eyeY], clock, seconds)];
+}
+
+/** Dresses the player's figure in their gear, its hands the loadout drawn, its weapons glowing in their element. */
+export function dressInGear(walker: Walker, forge: Cards, gear: GearState): void {
+  const { loadout } = walker.player;
+  const wardrobe = forge.wardrobe(walker.you.dress.body);
+  if (wardrobe) {
+    const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
+    walker.you.dress = { ...walker.you.dress, outfit };
+    walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
+  }
+  walker.glow = heldElements(gear, loadout);
+  walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
 }

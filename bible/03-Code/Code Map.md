@@ -95,7 +95,7 @@ decision, made in the same change as its entry here.
 | `crates/sailing` | [[Sailing]]: how a ship sails, its helm, its sails against the wind, its pose on the swell and where it grounds, one tick at a time |
 | `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, emblems and cosmetics, the [[Arts]] a player wears and their levels, the [[Factions]] they pledge to, Shape and his Shapes, and what a player holds and shows others |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, a ship's rigging shot away (`rigging.rs`), the events a fight sends (`fight_events.rs`), and a captain who fights, one tick at a time |
-| `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
+| `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs` and the gear's `gear.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
 | `crates/room-wasm/src/waters_door.rs` | The waters and the friendly traffic for the browser: the water at a point, the held map's grid as bytes, the ships near a point ([[World Map]]) |
 | `crates/room-wasm/src/snapshot_door.rs` | The room's snapshot after its tick, sent to each player as theirs: at sea what floats, a ship's kept hurts, what the sea tells and a boarded deck only to the player they are for ([[Server]]) |
