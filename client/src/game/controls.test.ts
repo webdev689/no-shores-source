@@ -46,6 +46,8 @@ test('a key that can be bound stands in its slot, a written one in none, and a c
     ],
   );
   assert.equal(cellsOf(rowDoing('Look round'), 'keys', DEFAULTS)[0]?.slot, null);
+  const [sailOn] = cellsOf(rowDoing('Sail on'), 'pad', DEFAULTS);
+  assert.deepEqual(sailOn, { name: 'pad:LS up', slot: null }, "a stick's way is shown, never bound");
   assert.deepEqual(cellsOf(rowDoing('Fire'), 'keys', DEFAULTS), [
     { name: '—', slot: { id: 'fire', device: 'keys', place: 0 } },
   ]);

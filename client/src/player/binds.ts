@@ -1,9 +1,10 @@
 // Every control the player binds: the keys and the pad's buttons each is on until the player binds it otherwise, and
 // where in the game it acts, so binding a key that another control there holds swaps the two. A key is
 // `KeyboardEvent.key` in lower case (a digit by its place on the row, so Shift's 2 is still 2), the mouse's buttons
-// `mouse0` (left) to `mouse4` (the forward side button). The pad's are the standard pad's, named as printed; a
-// stick's ways ('LS up') are fixed, never bound; a button held is `B hold`, and two pressed together `LB+RB`. What
-// the player changed is kept with their account (`readOverrides`), and the accounts check it against this table.
+// `mouse0` (left) to `mouse4` (the forward side button), bound only to a control that hears the mouse. The pad's are
+// the standard pad's, named as printed; a stick's ways ('LS up') are fixed, never bound; a button held is `B hold`, and
+// two pressed together `LB+RB`. What the player changed is kept with their account (`readOverrides`), and the accounts
+// check it against this table.
 
 /** Where a control acts: on foot (on land or a deck), dead, in a window, at the helm, or in a fight at sea. */
 export type Context = 'foot' | 'dead' | 'menu' | 'helm' | 'fight';
@@ -125,6 +126,16 @@ export const DEFAULTS: Binds = Object.fromEntries(
   BIND_IDS.map((id) => [id, { keys: CONTROLS[id].keys, pad: CONTROLS[id].pad }]),
 ) as Binds;
 
+/** The controls that act on a key going down or the pad's press, or at the helm, whose pointer is free: none hears a
+ *  mouse button. */
+const KEYS_ONLY: ReadonlySet<BindId> = new Set<BindId>([
+  ...(['use', 'menu', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
+  ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'controls'] as const),
+  ...(['steerLeft', 'steerRight', 'sailOn', 'heaveTo'] as const),
+]);
+/** Whether a mouse button bound to `id` is heard. */
+export const hearsMouse = (id: BindId): boolean => !KEYS_ONLY.has(id);
+
 /** Keys known by name; a key that types one character is named by it. Escape and Tab are the windows' own, the
  *  function keys the browser's. */
 const NAMED_KEYS = new Set([
@@ -162,6 +173,13 @@ export function isPadName(name: string): boolean {
   return more.length === 0 && first !== second && BUTTONS.has(first) && BUTTONS.has(second);
 }
 
+/** Whether `name` is one of a stick's ways, which walk, steer and look and are never bound. */
+export const isStickWay = (name: string): boolean => /^[LR]S (up|down|left|right)$/.test(name);
+
+/** Whether `name` may be bound to `id` on `device`: a key, or a mouse button where `id` hears one; or a pad's button. */
+export const fits = (id: BindId, device: Device, name: string): boolean =>
+  device === 'keys' ? isKeyName(name) && (!name.startsWith('mouse') || hearsMouse(id)) : isPadName(name);
+
 /** The buttons of two pressed together, in the pad's order, so `RB+LB` is `LB+RB`. */
 export function chordOf(first: string, second: string): string {
   const place = (button: string) => PAD_BUTTONS.indexOf(button as (typeof PAD_BUTTONS)[number]);
@@ -185,29 +203,61 @@ export function overridesOf(binds: Binds): Overrides {
   return changed;
 }
 
-export const withOverrides = (overrides: Overrides): Binds =>
-  Object.fromEntries(BIND_IDS.map((id) => [id, { ...DEFAULTS[id], ...overrides[id] }])) as Binds;
-
-/** Overrides as sent or kept, checked strictly: an object of known controls, each with only `keys` and `pad`, each a
- *  list of at most `MOST_EACH` distinct known names, a stick's ways kept as they are; null for anything else. */
-export function readOverrides(read: unknown): Overrides | null {
-  if (typeof read !== 'object' || read === null || Array.isArray(read)) return null;
-  const known: ReadonlySet<string> = new Set(BIND_IDS);
-  const listOf = (list: unknown, fits: (name: string) => boolean, fixed: readonly string[]) =>
-    Array.isArray(list) &&
-    list.length <= MOST_EACH &&
-    new Set(list).size === list.length &&
-    list.every((name) => typeof name === 'string' && (fits(name) || fixed.includes(name)));
-  for (const [id, bound] of Object.entries(read)) {
-    if (!known.has(id) || typeof bound !== 'object' || bound === null || Array.isArray(bound)) return null;
-    const sticks = CONTROLS[id as BindId].pad.filter((name) => name.includes(' ') && !name.endsWith(' hold'));
-    for (const [part, list] of Object.entries(bound)) {
-      if (part === 'keys' && listOf(list, isKeyName, [])) continue;
-      if (part === 'pad' && listOf(list, isPadName, sticks)) continue;
-      return null;
-    }
+/** The binds `overrides` make of the defaults. A kept bind that clashes with another where the two act alike, as one
+ *  kept while the defaults were otherwise may, goes back to its default, until none clashes. */
+export function withOverrides(overrides: Overrides): Binds {
+  const kept: Partial<Record<BindId, Partial<Bound>>> = { ...overrides };
+  const bindsOf = () => Object.fromEntries(BIND_IDS.map((id) => [id, { ...DEFAULTS[id], ...kept[id] }])) as Binds;
+  let binds = bindsOf();
+  for (let clash = clashOf(binds); clash; clash = clashOf(binds)) {
+    const { device } = clash;
+    const dropped = [clash.one, clash.other].filter((id) => kept[id]?.[device] !== undefined);
+    // The defaults never clash; were they to, nothing kept is to blame.
+    if (dropped.length === 0) break;
+    for (const id of dropped)
+      kept[id] = Object.fromEntries(Object.entries(kept[id] ?? {}).filter(([part]) => part !== device));
+    binds = bindsOf();
   }
-  return read as Overrides;
+  return binds;
+}
+
+/** The first two controls in `binds` that act somewhere alike on one key or button, if any do. */
+export function clashOf(binds: Binds): { one: BindId; other: BindId; device: Device } | null {
+  for (const [place, one] of BIND_IDS.entries())
+    for (const other of BIND_IDS.slice(place + 1)) {
+      if (!meet(one, other)) continue;
+      for (const device of ['keys', 'pad'] as const)
+        if (binds[one][device].some((name) => binds[other][device].includes(name))) return { one, other, device };
+    }
+  return null;
+}
+
+/** Overrides as sent or kept, each part checked strictly: a known control's `keys` or `pad`, a list of at most
+ *  `MOST_EACH` distinct names it may be bound to, a stick's ways kept as they are. What does not read (a control
+ *  since renamed, a name unknown) is left out, so binds kept by another build keep the rest; null for no object. */
+export function readOverrides(read: unknown): Overrides | null {
+  const isObject = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+  if (!isObject(read)) return null;
+  const known: ReadonlySet<string> = new Set(BIND_IDS);
+  const kept: Partial<Record<BindId, Partial<Bound>>> = {};
+  for (const [name, bound] of Object.entries(read)) {
+    if (!known.has(name) || !isObject(bound)) continue;
+    const id = name as BindId;
+    const sticks = CONTROLS[id].pad.filter(isStickWay);
+    const reads = (device: Device, list: unknown): list is string[] =>
+      Array.isArray(list) &&
+      list.length <= MOST_EACH &&
+      new Set(list).size === list.length &&
+      list.every(
+        (each) => typeof each === 'string' && (fits(id, device, each) || (device === 'pad' && sticks.includes(each))),
+      );
+    const parts = (['keys', 'pad'] as const).flatMap((device) =>
+      reads(device, bound[device]) ? [[device, bound[device]]] : [],
+    );
+    if (parts.length > 0) kept[id] = Object.fromEntries(parts) as Partial<Bound>;
+  }
+  return kept;
 }
 
 /** Whether two controls act anywhere alike, where one key cannot do both. */
@@ -221,28 +271,37 @@ export interface Slot {
   readonly place: number;
 }
 
-/** Binding `name` to `slot`: the binds after, and the control that gave `name` up for the slot's old one; or, where
- *  that control would be left with nothing, refused, naming it. */
+/** Binding `name` to `slot`: the binds after, and the controls that gave `name` up for the slot's old one or let it
+ *  go; or, where one would be left with nothing, refused, naming it. */
 export type Rebound =
-  { readonly binds: Binds; readonly swapped: BindId | null } | { readonly refused: BindId; readonly binds?: undefined };
+  | { readonly binds: Binds; readonly swapped: readonly BindId[] }
+  | { readonly refused: BindId; readonly binds?: undefined };
 
+/** `name` bound to `slot`. Every other control acting alike that holds `name` gives it up, taking the slot's old one
+ *  where that clashes with nothing it acts alike with and it can hear it, else keeping the rest of its own. A stick's
+ *  way is never bound, nor given. */
 export function rebind(binds: Binds, slot: Slot, name: string): Rebound {
   const { id, device, place } = slot;
   const own = [...binds[id][device]];
   const old = own[place];
-  if (old === name) return { binds, swapped: null };
-  const holder = BIND_IDS.find((other) => other !== id && meet(id, other) && binds[other][device].includes(name));
-  const given = holder ? [...binds[holder][device]] : [];
-  if (holder) {
+  if (old === name || isStickWay(name) || (old !== undefined && isStickWay(old))) return { binds, swapped: [] };
+  const after: Record<BindId, Bound> = { ...binds };
+  const holders = BIND_IDS.filter((other) => other !== id && meet(id, other) && binds[other][device].includes(name));
+  for (const holder of holders) {
+    const given = [...binds[holder][device]];
     const taken = given.indexOf(name);
-    if (old !== undefined && !given.includes(old)) given[taken] = old;
+    const clashes = (key: string) =>
+      BIND_IDS.some(
+        (other) => other !== id && other !== holder && meet(holder, other) && binds[other][device].includes(key),
+      );
+    if (old !== undefined && !given.includes(old) && fits(holder, device, old) && !clashes(old)) given[taken] = old;
     else if (given.length > 1) given.splice(taken, 1);
     else return { refused: holder };
+    after[holder] = { ...binds[holder], [device]: given };
   }
   const already = own.indexOf(name);
   if (already >= 0) own[already] = old ?? name;
   own[Math.min(place, own.length)] = name;
-  const after: Record<BindId, Bound> = { ...binds, [id]: { ...binds[id], [device]: [...new Set(own)] } };
-  if (holder) after[holder] = { ...binds[holder], [device]: given };
-  return { binds: after, swapped: holder ?? null };
+  after[id] = { ...binds[id], [device]: [...new Set(own)] };
+  return { binds: after, swapped: holders };
 }

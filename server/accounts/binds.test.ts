@@ -3,7 +3,7 @@ import { mock, test } from 'node:test';
 // The page's side of the binds against the Worker's rules on a real database.
 import { KEEP_AFTER_MS, keepBinds } from '../../client/src/game/bindsKept.ts';
 import { AccountLink, type Kept } from '../../client/src/network/accounts.ts';
-import { DEFAULTS, rebind } from '../../client/src/player/binds.ts';
+import { BIND_IDS, DEFAULTS, rebind } from '../../client/src/player/binds.ts';
 import { LiveBinds } from '../../client/src/player/input.ts';
 import { handle } from './accounts.ts';
 import { accounts } from './accountsForTests.ts';
@@ -20,17 +20,41 @@ test("a player's binds are kept with their account alone, and only binds the gam
   assert.deepEqual((await ask('GET', '/v1/binds', undefined, token)).body, { binds });
   const other = (await ask('POST', '/v1/guest')).body['token'] as string;
   assert.deepEqual((await ask('GET', '/v1/binds', undefined, other)).body, { binds: null }, "another's are their own");
-  for (const refused of [
-    { fly: { keys: ['w'] } },
-    { jump: { keys: ['escape'] } },
-    { jump: { pad: ['Q'] } },
-    { jump: { keys: ['a', 'b', 'c', 'd'] } },
-    'jump',
-  ])
+  for (const refused of ['jump', ['jump'], null])
     assert.equal((await ask('PUT', '/v1/binds', { binds: refused }, token)).status, 400, JSON.stringify(refused));
   const huge = { binds: { jump: { keys: ['a'] } }, padding: 'x'.repeat(BINDS_MOST) };
   assert.equal((await ask('PUT', '/v1/binds', huge, token)).status, 400, 'past its size');
   assert.deepEqual((await ask('GET', '/v1/binds', undefined, token)).body, { binds }, 'what was kept stands');
+});
+
+test('a page of another build keeps what this one knows of its binds, and the rest is left out', async () => {
+  const { ask } = accounts();
+  const token = (await ask('POST', '/v1/guest')).body['token'] as string;
+  const binds = {
+    fly: { keys: ['w'] },
+    jump: { keys: ['escape'], pad: ['B'] },
+    dodge: { pad: ['Q'] },
+    crouch: { keys: ['a', 'b', 'c', 'd'] },
+    use: { keys: ['mouse0'] },
+    heal: { keys: ['mouse5'] },
+    ready: { keys: ['h'] },
+  };
+  assert.equal((await ask('PUT', '/v1/binds', { binds }, token)).status, 200);
+  const kept = { jump: { pad: ['B'] }, ready: { keys: ['h'] } };
+  assert.deepEqual((await ask('GET', '/v1/binds', undefined, token)).body, { binds: kept });
+});
+
+test('every control bound anew to the longest names fits the body with room to spare', async () => {
+  const { ask } = accounts();
+  const token = (await ask('POST', '/v1/guest')).body['token'] as string;
+  const full = (id: string) => ({
+    keys: ['pagedown', 'arrowright', 'capslock'],
+    pad: id === 'forward' ? ['LS up', 'Start hold', 'View hold'] : ['Start hold', 'View hold', 'Right+Start'],
+  });
+  const binds = Object.fromEntries(BIND_IDS.map((id) => [id, full(id)]));
+  const body = JSON.stringify({ binds });
+  assert.ok(body.length < BINDS_MOST * 0.75, `${body.length} of ${BINDS_MOST}`);
+  assert.equal((await ask('PUT', '/v1/binds', JSON.parse(body), token)).status, 200);
 });
 
 test('the page reads the binds kept once signed in, keeps each change after a quiet, and plays on without the accounts', async () => {

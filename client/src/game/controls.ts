@@ -1,7 +1,7 @@
 // Every control the game binds, as the sheet K opens lists them: in groups, each row a few words on what it does, the
 // controls it stands for (`binds.ts`), and its keys and the pad's buttons as bound now. A mouse's gesture or a
 // window's own key is written where it is not bound.
-import type { BindId, Binds, Device, Slot } from '../player/binds.ts';
+import { type BindId, type Binds, type Device, type Slot, isStickWay } from '../player/binds.ts';
 import { BINDS } from '../player/input.ts';
 
 /** One row of the sheet: what it does (on the pad, where that differs), the controls it stands for, and the keys or
@@ -151,7 +151,7 @@ export interface Cell {
 }
 
 /** What a row shows for `device` under `binds`: each bound key or button in its slot (a control bound to none shows
- *  an empty one, `—`), or the written keys, which no slot holds. */
+ *  an empty one, `—`), or the written keys, which no slot holds; a stick's way is never bound, so stands in none. */
 export function cellsOf(control: Row, device: Device, binds: Binds): Cell[] {
   const written = device === 'keys' ? control.keys : control.pad;
   if (written !== undefined) return written.split(' / ').map((name) => ({ name, slot: null }));
@@ -159,7 +159,7 @@ export function cellsOf(control: Row, device: Device, binds: Binds): Cell[] {
   return control.binds.flatMap((id) => {
     const bound = binds[id][device];
     if (bound.length === 0) return [{ name: '—', slot: { id, device, place: 0 } }];
-    return bound.map((name, place) => ({ name: named(name), slot: { id, device, place } }));
+    return bound.map((name, place) => ({ name: named(name), slot: isStickWay(name) ? null : { id, device, place } }));
   });
 }
 

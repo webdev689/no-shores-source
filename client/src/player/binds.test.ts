@@ -11,6 +11,9 @@ import {
   overridesOf,
   readOverrides,
   rebind,
+  fits,
+  hearsMouse,
+  type Binds,
   withOverrides,
 } from './binds.ts';
 
@@ -72,11 +75,11 @@ test("the pad is Destiny's, but B taps to dodge and is held to crouch", () => {
 test('a key another control acts with where this one does is swapped between them', () => {
   const after = rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, 'c');
   assert.ok(after.binds);
-  assert.equal(after.swapped, 'crouch');
+  assert.deepEqual(after.swapped, ['crouch']);
   assert.deepEqual([after.binds?.jump.keys, after.binds?.crouch.keys], [['c'], [' ']]);
   const padded = rebind(DEFAULTS, { id: 'dodge', device: 'pad', place: 0 }, 'A');
   assert.ok(padded.binds);
-  assert.deepEqual([padded.binds.dodge.pad, padded.binds.jump.pad, padded.swapped], [['A'], ['B'], 'jump']);
+  assert.deepEqual([padded.binds.dodge.pad, padded.binds.jump.pad, padded.swapped], [['A'], ['B'], ['jump']]);
   const second = rebind(DEFAULTS, { id: 'guard', device: 'keys', place: 1 }, 'v');
   assert.deepEqual(
     [second.binds?.guard.keys, second.binds?.dodge.keys],
@@ -90,7 +93,7 @@ test('a key another control acts with where this one does is swapped between the
 test('a key held only elsewhere is shared, and one bound twice to a control moves within it', () => {
   const helm = rebind(DEFAULTS, { id: 'voyage', device: 'keys', place: 0 }, 'e');
   assert.ok(helm.binds);
-  assert.deepEqual([helm.binds.voyage.keys, helm.binds.use.keys, helm.swapped], [['e'], ['e'], null]);
+  assert.deepEqual([helm.binds.voyage.keys, helm.binds.use.keys, helm.swapped], [['e'], ['e'], []]);
   const within = rebind(DEFAULTS, { id: 'guard', device: 'keys', place: 0 }, 'f');
   assert.deepEqual(within.binds?.guard.keys, ['f', 'mouse0']);
   assert.equal(rebind(DEFAULTS, { id: 'jump', device: 'keys', place: 0 }, ' ').binds, DEFAULTS, 'the same key');
@@ -119,10 +122,8 @@ test('binds read from outside are checked strictly: known controls, known keys a
   assert.deepEqual(readOverrides({ forward: { pad: ['LS up'], keys: ['arrowup'] } }), {
     forward: { pad: ['LS up'], keys: ['arrowup'] },
   });
-  for (const refused of [
-    null,
-    [],
-    'jump',
+  for (const refused of [null, [], 'jump']) assert.equal(readOverrides(refused), null, JSON.stringify(refused));
+  for (const dropped of [
     { fly: { keys: ['w'] } },
     { jump: { keys: ['escape'] } },
     { jump: { keys: ['f5'] } },
@@ -139,7 +140,7 @@ test('binds read from outside are checked strictly: known controls, known keys a
     { jump: [] },
     { constructor: { keys: ['a'] } },
   ])
-    assert.equal(readOverrides(refused), null, JSON.stringify(refused));
+    assert.deepEqual(readOverrides(dropped), {}, JSON.stringify(dropped));
   assert.ok(isPadName('B hold') && isPadName('LB+RB') && !isPadName('LB+RB+A') && !isPadName('LS up'));
   assert.ok(isKeyName('é') && isKeyName(';') && !isKeyName('A') && !isKeyName('tab') && !isKeyName('mouse5'));
 });
@@ -147,4 +148,81 @@ test('binds read from outside are checked strictly: known controls, known keys a
 test('every control acts somewhere, and the menus and the sheet everywhere', () => {
   for (const id of BIND_IDS) assert.ok(CONTROLS[id].where.length > 0, id);
   for (const id of ['menu', 'character', 'controls'] as const) assert.equal(CONTROLS[id].where.length, 5, id);
+});
+
+/** Every two controls that act somewhere alike and share a key or button: none may. */
+const clashesIn = (binds: Binds): string[] =>
+  BIND_IDS.flatMap((one) =>
+    BIND_IDS.flatMap((other) =>
+      one < other && meet(one, other)
+        ? (['keys', 'pad'] as const).flatMap((device) =>
+            binds[one][device]
+              .filter((name) => binds[other][device].includes(name))
+              .map((name) => `${one} and ${other} share ${name}`),
+          )
+        : [],
+    ),
+  );
+
+test('every rebind from the defaults leaves no two controls that act alike on one key or button', () => {
+  const names = (device: 'keys' | 'pad') => [
+    ...new Set([
+      ...BIND_IDS.flatMap((id) => DEFAULTS[id][device]),
+      ...(device === 'keys' ? ['x', 'mouse1'] : ['Y hold']),
+    ]),
+  ];
+  for (const id of BIND_IDS)
+    for (const device of ['keys', 'pad'] as const)
+      for (let place = 0; place <= DEFAULTS[id][device].length; place++)
+        for (const name of names(device)) {
+          const after = rebind(DEFAULTS, { id, device, place }, name);
+          if (after.binds) assert.deepEqual(clashesIn(after.binds), [], `${id} ${device} ${place} to ${name}`);
+        }
+  const used = rebind(DEFAULTS, { id: 'use', device: 'keys', place: 0 }, 'c');
+  assert.deepEqual([used.binds?.use.keys, used.binds?.crouch.keys, used.binds?.brace.keys], [['c'], ['e'], ['e']]);
+  assert.deepEqual(used.binds && used.swapped, ['crouch', 'brace'], 'each control that gave it up is named');
+  const sheet = rebind(DEFAULTS, { id: 'controls', device: 'pad', place: 0 }, 'A');
+  assert.deepEqual(
+    (['jump', 'respawn', 'confirm'] as const).map((id) => sheet.binds?.[id].pad),
+    [['View'], ['View'], ['View']],
+  );
+  assert.deepEqual(rebind(DEFAULTS, { id: 'crouch', device: 'keys', place: 0 }, 'e'), { refused: 'use' });
+});
+
+test("a stick's ways are never bound, nor swapped into another control", () => {
+  for (const name of ['LS up', 'RS left'])
+    assert.deepEqual(rebind(DEFAULTS, { id: 'voyage', device: 'pad', place: 0 }, name).binds, DEFAULTS, name);
+  assert.deepEqual(rebind(DEFAULTS, { id: 'sailOn', device: 'pad', place: 0 }, 'X').binds, DEFAULTS);
+});
+
+test('a control that hears no mouse button takes none, bound or given in a swap', () => {
+  for (const id of ['use', 'menu', 'confirm', 'repair', 'controls', 'sailOn'] as const) assert.ok(!hearsMouse(id), id);
+  for (const id of ['swing', 'guard', 'dodge', 'perspective', 'aim', 'jump'] as const) assert.ok(hearsMouse(id), id);
+  assert.ok(!fits('use', 'keys', 'mouse0') && fits('jump', 'keys', 'mouse0') && !fits('jump', 'keys', 'mouse5'));
+  // Swing gives up the right button where it takes E from Use, which cannot hear it, so Use keeps E.
+  assert.deepEqual(rebind(DEFAULTS, { id: 'swing', device: 'keys', place: 0 }, 'e'), { refused: 'use' });
+  assert.deepEqual(readOverrides({ use: { keys: ['mouse0'] }, jump: { keys: ['mouse1'] } }), {
+    jump: { keys: ['mouse1'] },
+  });
+});
+
+test('binds kept by another build keep what still reads; a kept key a default now holds leaves no clash', () => {
+  assert.deepEqual(
+    readOverrides({
+      fly: { keys: ['w'] },
+      jump: { keys: ['c'], pad: ['Z'], mouse: ['mouse0'] },
+      voyage: { pad: ['LS up'] },
+      crouch: 'c',
+    }),
+    { jump: { keys: ['c'] } },
+  );
+  // Kept from a build where Jump was on X and Dodge on E, with Details on X now and Use on E: Jump and Details never
+  // act alike, so both stand; Dodge goes back to its own, as Use holds E.
+  const kept = withOverrides({ jump: { keys: ['x'] }, dodge: { keys: ['e'] } });
+  assert.deepEqual(clashesIn(kept), []);
+  assert.deepEqual(
+    [kept.jump.keys, kept.details.keys, kept.dodge.keys, kept.use.keys],
+    [['x'], ['x'], ['v', 'mouse4'], ['e']],
+  );
+  assert.deepEqual(withOverrides({ crouch: { keys: [' '] } }).crouch.keys, ['c'], "Space is Jump's, on its default");
 });

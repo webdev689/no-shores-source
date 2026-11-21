@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { layout } from '../ui/layout.ts';
 import type { Node } from '../ui/node.ts';
 import { FAKE_FACE, fakeInterface, laidWith, wordsOf } from '../ui/uiForTests.ts';
-import { DEFAULTS } from '../player/binds.ts';
+import { DEFAULTS, overridesOf, readOverrides } from '../player/binds.ts';
 import { BINDS } from '../player/input.ts';
 import { CONTROL_GROUPS, cellsOf, doesFor } from './controls.ts';
 import { ControlsSheet, columnsOf, slotId } from './controlsSheet.ts';
@@ -198,4 +198,20 @@ test('with the pad played last, the sheet says what the pad does, and its B step
   step(root, [{ kind: 'pad', button: 'back' }]);
   assert.ok(!sheet.open);
   BINDS.device = 'keys';
+});
+
+test('a mouse button binds only a control that hears one, and only one the accounts would keep', () => {
+  const { sheet, footWords } = bindingSheet();
+  sheet.rebinding.start({ id: 'use', device: 'keys', place: 0 }, new Set());
+  sheet.rebinding.mouse(0);
+  assert.deepEqual(BINDS.now, DEFAULTS, 'Use acts on a key going down, which no mouse button is');
+  assert.equal(sheet.rebinding.slot, null);
+  assert.ok(footWords().includes('Use takes keys only'));
+  sheet.rebinding.start({ id: 'jump', device: 'keys', place: 0 }, new Set());
+  sheet.rebinding.mouse(5);
+  assert.deepEqual(sheet.rebinding.slot, { id: 'jump', device: 'keys', place: 0 }, 'a sixth button is no name kept');
+  sheet.rebinding.mouse(1);
+  assert.deepEqual(BINDS.now.jump.keys, ['mouse1']);
+  assert.deepEqual(readOverrides(JSON.parse(JSON.stringify(overridesOf(BINDS.now)))), overridesOf(BINDS.now));
+  BINDS.set(DEFAULTS);
 });

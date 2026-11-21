@@ -1,8 +1,8 @@
 // Binding a control anew from the sheet of every control: a slot chosen waits for the next key or mouse button (a
-// key's slot) or the pad's next button, tap, hold or two together (a pad's slot); Escape, or a wait past `WAIT_S`,
-// cancels. A key another control acts with in the same place is swapped between the two (`rebind`), and the sheet
-// says so.
-import { DEFAULTS, type Slot, isKeyName, rebind } from '../player/binds.ts';
+// key's slot, a mouse button only for a control that hears one) or the pad's next button, tap, hold or two together
+// (a pad's slot); Escape, or a wait past `WAIT_S`, cancels. A key other controls act with in the same place is
+// swapped between them (`rebind`), and the sheet says so.
+import { DEFAULTS, type Slot, fits, isKeyName, rebind } from '../player/binds.ts';
 import { BINDS } from '../player/input.ts';
 import { PadCapture } from '../player/pad.ts';
 import { controlWords } from './controls.ts';
@@ -43,11 +43,18 @@ export class Rebinding {
     else if (this.waiting?.slot.device === 'keys' && isKeyName(name)) this.bind(name);
   }
 
-  /** A mouse button pressed while a slot waits: a key's slot takes it, and the click it makes presses nothing. */
+  /** A mouse button pressed while a slot waits: a key's slot takes one its control hears, and refuses one it does not
+   *  (a button past the fifth waits on); the click it makes presses nothing. */
   mouse(button: number): void {
-    if (this.waiting?.slot.device !== 'keys') return;
-    this.bind(`mouse${button}`);
+    const slot = this.waiting?.slot;
+    if (slot?.device !== 'keys') return;
+    const name = `mouse${button}`;
     this.swallowing = true;
+    if (fits(slot.id, 'keys', name)) this.bind(name);
+    else if (isKeyName(name)) {
+      this.waiting = null;
+      this.said = `${controlWords(slot.id)} takes keys only`;
+    }
   }
 
   /** A mouse button let go: the click it made is the next frame's, and goes unheard. */
@@ -91,6 +98,8 @@ export class Rebinding {
       return;
     }
     BINDS.set(rebound.binds);
-    this.said = rebound.swapped ? `Swapped with ${controlWords(rebound.swapped)}` : '';
+    const names = rebound.swapped.map(controlWords);
+    const last = names.pop();
+    this.said = last ? `Swapped with ${[names.join(', '), last].filter(Boolean).join(' and ')}` : '';
   }
 }
