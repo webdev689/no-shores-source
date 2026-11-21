@@ -386,7 +386,7 @@ const GROUNDS: [([f64; 2], [f64; 2], Material); 3] = [
     ([-52.0, 46.0], [66.0, 128.0], Material::Earth),
 ];
 /// The ground's cells' side, how far a cell keeps from a walk's edge and from what stands, and how thick it is laid.
-const CELL_M: f64 = 2.0;
+const CELL_M: f64 = 1.0;
 const OFF_WALK_M: f64 = 0.4;
 const OFF_STANDING_M: f64 = 0.3;
 const GROUND_HIGH_M: f64 = 0.03;
