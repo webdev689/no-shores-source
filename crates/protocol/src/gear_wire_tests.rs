@@ -407,9 +407,9 @@ fn every_daily_list_a_player_is_sent_turns_at_nine_utc_and_not_at_midnight() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.counters = Some(vec![Counter { kind: CounterKind::Mage, at: [500.0, 500.0] }]);
     let player = room.join().expect("a room with space");
-    let level = room.player(player).expect("in the room").character.level();
-    // What the player is sent at a minute, and what the rules sell on a day: the smiths' wares, the Tailor's emblems,
-    // the Tailor's and the Tack's cosmetics, and the day they are of.
+    let character = room.player(player).expect("in the room").character.clone();
+    // What the player is sent at a minute, and what the rules sell on a day: the smiths' wares and the Shipwright's
+    // modules, the Tailor's emblems, the Tailor's and the Tack's cosmetics, and the day they are of.
     let sent = |room: &mut Room, minute: u64| {
         room.set_minute(minute);
         let bytes = gear_bytes(room, player).expect("written");
@@ -422,9 +422,12 @@ fn every_daily_list_a_player_is_sent_turns_at_nine_utc_and_not_at_midnight() {
     };
     let sold = |day: u64| {
         use gear::cosmetics::{Seller, sold_on};
-        let wares = [gear::vendor::Vendor::Armorsmith, gear::vendor::Vendor::Weaponsmith]
+        let wares = gear::vendor::Vendor::ALL
             .into_iter()
-            .flat_map(|vendor| gear::vendor::wares(vendor, day, level))
+            .flat_map(|vendor| {
+                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
+                gear::vendor::wares(vendor, day, level)
+            })
             .map(|ware| (ware.kind as u8, ware.rarity as u8))
             .collect();
         let cosmetics = [Seller::Tailor, Seller::Tack].into_iter().flat_map(|seller| sold_on(seller, day)).collect();

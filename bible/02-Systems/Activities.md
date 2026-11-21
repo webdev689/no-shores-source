@@ -57,8 +57,8 @@ Company]]).
 - **A day** runs from 09:00 UTC to 09:00 UTC, and **a week** from Tuesday 09:00 UTC, as Destiny 1's resets did.
 - `gear::clock` gives the day and the week from Unix minutes, which the room's host passes in, and the minutes to
   the next of each. The rules keep no clock of their own.
-- **Everything that turns reads it**: the smiths' wares, the Tailor's emblems and dyes and the Tack's pieces, each
-  a day's; Shape's week, his place and his wares (he comes Friday 09:00 and goes Sunday 21:00 inside it); the
+- **Everything that turns reads it**: the smiths' wares, the Tailor's emblems and dyes, the Tack's pieces, the
+  Shipwright's modules and the officers at each muster ([[Ship Power]], [[Crew]]), each a day's; Shape's week, his place and his wares (he comes Friday 09:00 and goes Sunday 21:00 inside it); the
   keepers' countdowns to the next stock and to Shape's leaving, which the page reads from the rules; and the
   activities, the bounties and the quests.
 
