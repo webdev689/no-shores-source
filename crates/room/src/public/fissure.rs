@@ -24,10 +24,12 @@ pub const LIP_REACH: f64 = 6.0;
 pub const SHARDS_FIRST: u16 = 16;
 pub const SHARDS_PER_PLAYER: u16 = 6;
 pub const SHARDS_MOST: u16 = 40;
-/// The growth rises at this share of the seal, stands this long, and takes this long to rise and to sink.
+/// The growth rises at this share of the seal, stands this long, takes this long to rise, and the last this long of
+/// its time sinks back (the page's `growthRiseS` and `growthSinkS`, client/src/city/eventProps.ts).
 pub const HEROIC_AT_PERCENT: u32 = 40;
 pub const GROWTH_TICKS: u64 = 45 * 60;
-pub const GROWTH_EASE: u64 = 2 * 60;
+pub const GROWTH_RISE: u64 = 144;
+pub const GROWTH_SINK: u64 = 3 * 60;
 /// A wave comes when the event's living foes fall to WAVE_LOW (but never sooner than WAVE_SOONEST after the last, so
 /// the shards come at a pace a group must keep up with), or WAVE_EVERY after the last, while fewer than LIVING_MOST
 /// stand; it holds WAVE_SIZE foes and one more for each player on the ground beyond the first, to
@@ -39,6 +41,8 @@ const LIVING_MOST: usize = 10;
 const WAVE_SIZE: usize = 3;
 const WAVE_MOST: usize = 6;
 const POUR_OUT: f64 = 4.0;
+// Its most foes at once fit the room the zone keeps for its event: the living short of a wave, a full one, the growth.
+const _: () = assert!(LIVING_MOST - 1 + WAVE_MOST + 1 <= super::EVENT_ROOM);
 const WAVE: [(u8, Rank); 6] =
     [(HUSK, Minor), (HUSK, Major), (FLICKER, Minor), (FLICKER, Major), (IDOL, Major), (RAVAGER, Major)];
 /// The heroic task's growth, the Warden and their names over their bars.
@@ -112,14 +116,14 @@ impl Room {
     /// One tick of the Fissure.
     pub(crate) fn play_fissure(&mut self, public: &Public, running: &mut Running) {
         let Play::Fissure(mut fissure) = core::mem::replace(&mut running.play, Play::Aside) else { return };
-        let (middle, radius) = self.ground_of(public, running.kind);
-        let here = self.players.values().filter(|player| {
-            !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], middle) <= radius
-        });
-        fissure.players_most = fissure.players_most.max(u16::try_from(here.count()).unwrap_or(u16::MAX));
+        // Sealed, the seal holds: more players coming later never raise what it needed.
+        if fissure.set < fissure.needed() {
+            let here = self.players_on(public, running.kind);
+            fissure.players_most = fissure.players_most.max(u16::try_from(here).unwrap_or(u16::MAX));
+        }
         self.fissure_kills(running, &mut fissure);
         self.carry_shards(running, &mut fissure);
-        self.keep_growth(running, &mut fissure);
+        self.keep_growth(public, running, &mut fissure);
         let sealed = fissure.set >= fissure.needed();
         if sealed && running.heroic == Heroic::Met && fissure.warden.is_none() {
             self.raise_warden(public, running, &mut fissure);
@@ -203,7 +207,7 @@ impl Room {
                 if apart([at[0], at[1]], [fissure.at[0], fissure.at[1]]) <= LIP_REACH {
                     fissure.carried.remove(&player);
                     fissure.set += 1;
-                    running.parts.entry(player).or_default().did = true;
+                    running.parts.entry(self.who(player)).or_default().did = true;
                     self.tell(EventKind::ShardSet, None, player, 0, f64::from(fissure.set));
                 }
                 continue;
@@ -221,15 +225,16 @@ impl Room {
     }
 
     /// The growth rises once the seal reaches HEROIC_AT_PERCENT, and sinks back unbroken once its time is up.
-    fn keep_growth(&mut self, running: &mut Running, fissure: &mut Fissure) {
+    fn keep_growth(&mut self, public: &Public, running: &mut Running, fissure: &mut Fissure) {
         let reached = u32::from(fissure.set) * 100 >= HEROIC_AT_PERCENT * u32::from(fissure.needed());
         if running.heroic == Heroic::NotYet && reached {
             let facing = combat::sight::bearing(
                 [fissure.growth_spot[0], fissure.growth_spot[1]],
                 [fissure.at[0], fissure.at[1]],
             );
-            let home = (fissure.growth_spot, 0);
+            let home = (fissure.growth_spot, public.level);
             if let Some(id) = self.stand_event_foe(running, GROWTH, (fissure.growth_spot, facing), home) {
+                self.toughen(id, usize::from(fissure.players_most));
                 self.inert.insert(id);
                 self.names.insert(id, GROWTH_NAME);
                 (fissure.growth, fissure.growth_at) = (Some(id), self.clock);
@@ -279,6 +284,7 @@ impl Room {
         let at = fissure.at;
         let place = [at[0], at[1] - POUR_OUT, at[2]];
         if let Some(id) = self.stand_event_foe(running, (BULWARK, Miniboss), (place, 0.0), (at, public.level)) {
+            self.toughen(id, usize::from(fissure.players_most));
             self.names.insert(id, WARDEN_NAME);
             fissure.warden = Some(id);
             running.stage = 2;

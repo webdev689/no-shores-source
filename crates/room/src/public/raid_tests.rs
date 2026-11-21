@@ -183,7 +183,9 @@ fn saltmeres_rooms() -> Vec<(&'static str, Room, super::RaidGround)> {
             };
             let section = crate::Section { ring: node.ring.clone(), spawns: node.spawns.clone() };
             let blocks = node.boxes.iter().map(movement::Block::from_floats).collect();
-            let mut room = Room::node(crate::Floor::Land(Box::new(node.ground.clone())), blocks, section);
+            let floor = crate::Floor::Land(Box::new(node.ground.clone()));
+            let levels = gear::world::island_levels(&node.continent);
+            let mut room = Room::garrisoned(floor, blocks, section, node.kind, (zone, levels));
             room.open_public(zone, super::Grounds { fissure: None, raid: Some(raid.clone()) }, None);
             (zone, room, raid)
         })
@@ -196,6 +198,15 @@ fn on_saltmeres_real_grounds_the_raiders_come_in_and_make_for_their_home_on_the_
         let minute =
             (15_000..15_030).find(|minute| super::schedule(zone, *minute) == Some((super::Kind::Raid, *minute)));
         room.minute = minute.expect("a raid within half an hour");
+        // A player at the far store from where the raiders come in.
+        let player = room.join().expect("room for a player");
+        let far = ground.stores.iter().copied().max_by(|one, two| {
+            let out = |at: &[f64; 2]| combat::sight::apart(*at, ground.approach);
+            out(one).total_cmp(&out(two))
+        });
+        let [x, y, z] = room.on_ground(far.expect("its stores"));
+        let body = &mut room.players.get_mut(&player).expect("the player").fighter.body;
+        (body.x, body.y, body.z) = (x, y, z);
         room.tick();
         let on_mesh = |point: [f64; 3]| {
             room.nav
@@ -207,5 +218,122 @@ fn on_saltmeres_real_grounds_the_raiders_come_in_and_make_for_their_home_on_the_
         assert!(on_mesh(raid(&room).approach), "{zone}: the approach {:?} is on the navmesh", raid(&room).approach);
         assert!(on_mesh(home), "{zone}: the raiders' home {home:?} is on the navmesh");
         assert!(room.nav.find_path(raid(&room).approach, home).is_some(), "{zone}: a way in");
+        let formed = raid(&room).formed;
+        assert!(on_mesh(formed), "{zone}: where its waves form {formed:?} is on the navmesh");
+        assert!(room.nav.find_path(formed, home).is_some(), "{zone}: a way in from where they form");
+        let out = combat::sight::apart([home[0], home[1]], [formed[0], formed[1]]);
+        assert!(running(&room).leash > out + 10.0, "{zone}: they fight from where they form, {out} m out");
+        let wave = raid(&room).wave_foes.clone();
+        assert!(wave.iter().all(|id| room.foes[id].brain.target().is_some()), "{zone}: every raider hunts");
     }
+}
+
+#[test]
+fn on_harder_seas_the_tithe_taker_stands_at_the_events_raised_level() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    room.public.as_mut().unwrap().level = 5;
+    room.difficulty = gear::Difficulty::Elite;
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker came with the second wave");
+    assert_eq!(room.foes[&found].level, gear::Difficulty::Elite.raise(5));
+}
+
+#[test]
+fn the_tithe_taker_killed_late_brings_the_heroic_strength_eased_for_a_small_party() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker");
+    break_wave(&mut room, players[0]);
+    assert_eq!(raid(&room).wave, 3);
+    strike(&mut room, players[0], found, 1.0e7);
+    room.tick();
+    let came: Vec<u8> = raid(&room).wave_foes[5..].iter().map(|id| room.foes[id].brain.foe_type.number).collect();
+    assert_eq!(came, [::foes::roster::ENFORCER, ::foes::roster::CROSSBOWMAN], "a lone player meets no Marksman");
+}
+
+#[test]
+fn a_tithe_taker_the_room_has_no_room_for_with_the_second_wave_comes_once_it_has() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    room.foes_most = 5;
+    break_wave(&mut room, players[0]);
+    assert_eq!((raid(&room).wave, raid(&room).wave_foes.len()), (2, 5), "the second wave filled the room");
+    assert!(taker(&room).is_none() && running(&room).heroic == Heroic::NotYet, "no room for him yet");
+    room.foes_most = super::EVENT_FOES_MOST;
+    room.tick();
+    assert!(taker(&room).is_some() && running(&room).heroic == Heroic::Offered, "he comes once there is room");
+}
+
+#[test]
+fn a_zone_whose_garrison_fills_its_own_places_still_stands_its_events_fullest_wave() {
+    let (mut room, players) = room_at(RAID_MINUTE, 16);
+    for player in &players {
+        place(&mut room, *player, [100.0, 0.0]);
+    }
+    let husk = ::foes::foe_type(::foes::roster::HUSK).unwrap();
+    for nth in 0..crate::NODE_FOES_MOST {
+        room.stand_foe(husk, ::foes::Rank::Minor, [-150.0 + nth as f64 * 2.0, 150.0, 0.0], 0.0, None);
+    }
+    assert_eq!(room.others_most(), crate::NODE_FOES_MOST, "the garrison keeps a node's own places");
+    room.tick();
+    assert_eq!(raid(&room).wave_foes.len(), 5 + 3, "the first wave and its three Runners more for a full party");
+    let mut running = room.public.as_mut().unwrap().running.take().unwrap();
+    let member = (::foes::roster::RUNNER, ::foes::Rank::Minor);
+    let more = (0..super::EVENT_ROOM)
+        .map_while(|_| room.stand_event_foe(&mut running, member, ([100.0, -30.0, 0.0], 0.0), ([100.0, 0.0, 0.0], 0)))
+        .count();
+    assert_eq!(5 + 3 + more, super::EVENT_ROOM, "the event has every place it keeps, and no more");
+}
+
+#[test]
+fn a_broken_wave_tells_the_page_how_long_until_the_next() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    assert_eq!(room.public_seen().unwrap().next_wave_ticks, 0, "a wave standing: none on its way");
+    for foe in raid(&room).wave_foes.clone() {
+        strike(&mut room, players[0], foe, 1.0e7);
+    }
+    room.tick();
+    assert_eq!(room.public_seen().unwrap().next_wave_ticks, u32::try_from(WAVE_GAP).unwrap());
+    ticks(&mut room, 60);
+    assert_eq!(room.public_seen().unwrap().next_wave_ticks, u32::try_from(WAVE_GAP - 60).unwrap());
+}
+
+#[test]
+fn a_wave_forms_out_of_sight_beyond_the_approach_and_marches_in() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    let middle = [super::fixture::RAID_AT[0], super::fixture::RAID_AT[1]];
+    let approach = raid(&room).approach;
+    let out = |room: &Room, id: &FighterId| {
+        let body = room.foes[id].fighter.body;
+        combat::sight::apart([body.x, body.y], middle)
+    };
+    let wave = raid(&room).wave_foes.clone();
+    let approach_out = combat::sight::apart([approach[0], approach[1]], middle);
+    assert!(wave.iter().all(|id| out(&room, id) > approach_out + 8.0), "formed beyond the approach");
+    let formed: Vec<f64> = wave.iter().map(|id| out(&room, id)).collect();
+    ticks(&mut room, 3 * 60);
+    assert!(wave.iter().zip(&formed).all(|(id, was)| out(&room, id) < was - 5.0), "they march in");
+}
+
+#[test]
+fn the_tithe_taker_keeps_his_way_from_tick_to_tick_and_lets_it_go_once_killed() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker");
+    ticks(&mut room, 2);
+    assert!(room.inert_ways.contains_key(&found), "his way kept for the next tick");
+    strike(&mut room, players[0], found, 1.0e7);
+    ticks(&mut room, 2);
+    assert!(!room.inert_ways.contains_key(&found), "let go");
 }

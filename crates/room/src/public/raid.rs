@@ -15,7 +15,7 @@ use combat::sight::{apart, bearing};
 use core::f64::consts::TAU;
 use std::collections::BTreeMap;
 
-/// The next wave comes this long after the last is broken; a wave stands this far round the approach.
+/// The next wave comes this long after the last is broken; a wave forms this far round the point it forms at.
 pub const WAVE_GAP: u64 = 30 * 60;
 const COME_IN: f64 = 3.0;
 /// A Collector plunders a store standing within this of its middle; alone, it plunders a whole store in this long.
@@ -53,6 +53,8 @@ const THIRD: &[(u8, Rank)] =
     &[(COLLECTOR, Major), (COLLECTOR, Major), (ENFORCER, Major), (MARKSMAN, Elite), (REEVE, Elite)];
 const HEROIC_MORE: &[(u8, Rank)] = &[(ENFORCER, Elite), (MARKSMAN, Elite)];
 const FOURTH: &[(u8, Rank)] = &[(REEVE, Miniboss), (COLLECTOR, Major), (COLLECTOR, Major), (ENFORCER, Elite)];
+// Its fullest wave, with its Runners more and the tithe-taker, fits the room the zone keeps for its event.
+const _: () = assert!(THIRD.len() + HEROIC_MORE.len() + MORE_MOST + 1 <= super::EVENT_ROOM);
 
 /// The tithe-taker on his round: where he goes in turn (each a store's place, or the approach last), whether each is
 /// a store he counts, how far along he is, the tick his count ends, and his pace.
@@ -65,14 +67,15 @@ pub(crate) struct Taker {
     pub pace: f64,
 }
 
-/// A raid as it plays: each store's middle and health (0 to 1), where a Collector stands at each, the approach, the
-/// raiders' home (the stores' middle; both on the navmesh), the banners, the wave and how many come, the foes of the
+/// A raid as it plays: each store's middle and health (0 to 1), where a Collector stands at each, the approach, where
+/// its waves form out of sight beyond it, the raiders' home (the stores' middle; all three on the navmesh), the banners, the wave and how many come, the foes of the
 /// wave standing, the tick the next comes, each Collector's store, and the tithe-taker.
 #[derive(Debug)]
 pub(crate) struct Raid {
     pub stores: Vec<([f64; 3], f64)>,
     pub posts: Vec<[f64; 3]>,
     pub approach: [f64; 3],
+    pub formed: [f64; 3],
     pub home: [f64; 3],
     pub banners: Vec<[f64; 3]>,
     pub wave: u8,
@@ -96,7 +99,7 @@ impl Room {
     pub(crate) fn raid_of(&self, ground: &super::RaidGround) -> Raid {
         // Off the navmesh no path is found to or from a point, and a walker the room moves goes straight through boxes.
         let on_mesh = |at: [f64; 2]| self.nav.nearest_point(self.on_ground(at)).unwrap_or(self.on_ground(at));
-        let (approach, home) = (on_mesh(ground.approach), on_mesh(ground.at));
+        let (approach, formed, home) = (on_mesh(ground.approach), on_mesh(ground.formed()), on_mesh(ground.at));
         let stores: Vec<([f64; 3], f64)> = ground.stores.iter().map(|&at| (self.on_ground(at), 1.0)).collect();
         let posts = stores
             .iter()
@@ -110,6 +113,7 @@ impl Room {
             stores,
             posts,
             approach,
+            formed,
             home,
             banners: ground.banners.iter().map(|&at| self.on_ground(at)).collect(),
             wave: 0,
@@ -141,7 +145,8 @@ impl Room {
                 self.tell(EventKind::HeroicMet, None, killer, foe, f64::from(running.kind as u8));
                 // Killed once the third wave has come: its heroic strength comes in now, beside it.
                 if raid.wave == 3 {
-                    self.raid_members(public, running, &mut raid, HEROIC_MORE.to_vec());
+                    let more = self.wave_members(public, running.kind, HEROIC_MORE, false);
+                    self.raid_members(public, running, &mut raid, more);
                 }
             }
         }
@@ -159,7 +164,7 @@ impl Room {
             running.play = Play::Raid(raid);
             self.win(public, running);
             if let Play::Raid(raid) = &running.play {
-                let to = raid.approach;
+                let to = raid.formed;
                 self.withdraw(running, to);
             }
             return;
@@ -170,6 +175,10 @@ impl Room {
         if raid.next_wave.is_some_and(|tick| self.clock >= tick) {
             raid.next_wave = None;
             self.raid_wave(public, running, &mut raid);
+        }
+        // He comes with the second wave, or as soon after it as the room has room for him.
+        if raid.wave >= 2 && running.heroic == Heroic::NotYet && raid.taker.is_none() {
+            self.send_taker(public, running, &mut raid);
         }
         running.play = Play::Raid(raid);
     }
@@ -219,28 +228,19 @@ impl Room {
         }
     }
 
-    /// The next wave comes in round the approach: its Collectors for the stores, the rest for the players; with the
-    /// second comes the tithe-taker, while the heroic task is not yet offered. A wave the room has no room for comes
-    /// once the gap has passed again.
+    /// The next wave comes in round the approach: its Collectors for the stores, the rest for the players. A wave the
+    /// room has no room for comes once the gap has passed again.
     fn raid_wave(&mut self, public: &Public, running: &mut Running, raid: &mut Raid) {
         raid.wave += 1;
         let heroic = running.heroic == Heroic::Met;
-        let mut members: Vec<(u8, Rank)> = match raid.wave {
+        let members = match raid.wave {
             1 => FIRST.to_vec(),
             2 => SECOND.to_vec(),
             3 if heroic => [THIRD, HEROIC_MORE].concat(),
             3 => THIRD.to_vec(),
             _ => FOURTH.to_vec(),
         };
-        let (middle, radius) = self.ground_of(public, running.kind);
-        let here = self.players.values().filter(|player| {
-            !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], middle) <= radius
-        });
-        let here = here.count();
-        members.extend(core::iter::repeat_n((RUNNER, Major), here.saturating_sub(1).min(MORE_MOST)));
-        if here <= SMALL_PARTY {
-            members = members.into_iter().map(eased).collect();
-        }
+        let members = self.wave_members(public, running.kind, &members, true);
         raid.wave_foes.clear();
         self.raid_members(public, running, raid, members);
         if raid.wave_foes.is_empty() {
@@ -252,29 +252,41 @@ impl Room {
         if raid.wave > 1 {
             self.tell(EventKind::PublicStage, None, 0, 0, f64::from(raid.wave));
         }
-        if raid.wave == 2 && running.heroic == Heroic::NotYet {
-            self.send_taker(running, raid);
-        }
     }
 
-    /// Stands a wave's foes round the approach and adds them to it: its Collectors for the stores, the rest for the
-    /// players.
+    /// A wave's foes as the players on the ground meet them: a Runner more for each beyond the first (`more`), and a
+    /// small party's eased.
+    fn wave_members(&self, public: &Public, kind: super::Kind, members: &[(u8, Rank)], more: bool) -> Vec<(u8, Rank)> {
+        let here = self.players_on(public, kind);
+        let mut members = members.to_vec();
+        if more {
+            members.extend(core::iter::repeat_n((RUNNER, Major), here.saturating_sub(1).min(MORE_MOST)));
+        }
+        if here <= SMALL_PARTY {
+            members = members.into_iter().map(eased).collect();
+        }
+        members
+    }
+
+    /// Stands a wave's foes where it forms, out of sight, and adds them to it: they march in, its Collectors for the
+    /// stores, the rest for the players.
     fn raid_members(&mut self, public: &Public, running: &mut Running, raid: &mut Raid, members: Vec<(u8, Rank)>) {
         let (middle, _) = self.ground_of(public, running.kind);
         let mut draws = self.wave_draws(running, u32::from(raid.wave) * 8 + raid.wave_foes.len() as u32);
         let start = draws.draw() * TAU;
-        let (approach, home) = (raid.approach, raid.home);
+        let (formed, home) = (raid.formed, raid.home);
         let count = members.len();
         for (turn, member) in members.into_iter().enumerate() {
             let facing = start + TAU * turn as f64 / count as f64;
-            let place =
-                [approach[0] + libm::sin(facing) * COME_IN, approach[1] - libm::cos(facing) * COME_IN, approach[2]];
-            let toward = bearing([approach[0], approach[1]], middle);
+            let place = [formed[0] + libm::sin(facing) * COME_IN, formed[1] - libm::cos(facing) * COME_IN, formed[2]];
+            let toward = bearing([formed[0], formed[1]], middle);
             let Some(id) = self.stand_event_foe(running, member, (place, toward), (home, public.level)) else {
                 continue;
             };
             raid.wave_foes.push(id);
             if member == (REEVE, Miniboss) {
+                let here = self.players_on(public, running.kind);
+                self.toughen(id, here);
                 self.names.insert(id, MARROW_NAME);
             }
             if member.0 == COLLECTOR {
@@ -283,9 +295,10 @@ impl Room {
         }
     }
 
-    /// The tithe-taker comes in at the approach to walk his round of the standing stores, nearest first, and back.
-    fn send_taker(&mut self, running: &mut Running, raid: &mut Raid) {
-        let from = raid.approach;
+    /// The tithe-taker comes in from where the waves form to walk his round of the standing stores, nearest first, and
+    /// back out.
+    fn send_taker(&mut self, public: &Public, running: &mut Running, raid: &mut Raid) {
+        let from = raid.formed;
         let mut left: Vec<usize> = (0..raid.stores.len()).filter(|at| raid.stores[*at].1 > 0.0).collect();
         let mut round = Vec::new();
         let mut at = from;
@@ -307,7 +320,7 @@ impl Room {
         let walking = TITHE_TAKER_TICKS.saturating_sub(counted).max(60) as f64 / 60.0;
         let pace = (length / walking).clamp(WALK_LEAST, WALK_MOST);
         let facing = bearing([from[0], from[1]], [round[0].0[0], round[0].0[1]]);
-        let home = (raid.home, 0);
+        let home = (raid.home, public.level);
         let Some(foe) = self.stand_event_foe(running, (TITHE_TAKER, Elite), (from, facing), home) else { return };
         self.inert.insert(foe);
         raid.taker = Some(Taker { foe, round, leg: 0, counting: None, pace });

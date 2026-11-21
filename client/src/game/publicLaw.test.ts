@@ -20,6 +20,7 @@ const fissure = (more: Partial<PublicEvent> = {}): PublicEvent => ({
   heroicTicks: 0,
   bonus: true,
   marks: [],
+  nextWaveTicks: 0,
   ...more,
 });
 const raid = (more: Partial<PublicEvent> = {}): PublicEvent =>

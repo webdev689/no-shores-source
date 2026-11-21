@@ -39,6 +39,7 @@ pub(crate) fn public_offset<'built>(
         heroic_ticks: seen.heroic_ticks,
         bonus: seen.bonus,
         marks,
+        next_wave_ticks: seen.next_wave_ticks,
     };
     messages::PublicEvent::create(builder, &args)
 }

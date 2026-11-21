@@ -456,7 +456,7 @@ impl Room {
             let near = self.players.values().any(|player| {
                 apart([player.fighter.body.x, player.fighter.body.y], [found.at[0], found.at[1]]) <= CLEAR_AROUND
             });
-            let room_for = self.living_foes() + found.members.len() <= self.foes_most;
+            let room_for = self.living_foes() + found.members.len() <= self.others_most();
             if self.clock >= cleared + STAND_AGAIN && !near && room_for {
                 self.stand_post(post);
             }

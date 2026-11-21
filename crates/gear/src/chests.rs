@@ -6,6 +6,7 @@ use crate::character::{Character, Stuff, Vestige};
 use crate::dice::Dice;
 use crate::kinds::Stock;
 use crate::vestige;
+use crate::world::Difficulty;
 
 /// What a chest of each tier (1 won, 2 won with the bonus, 3 heroic, 4 heroic with the bonus) holds at level 5, and
 /// at a level as a kill's worth grows: XP, Aurem, each Fragment, each Essence and the island's resource.
@@ -38,11 +39,21 @@ fn chest_vestige(tier: u8, level: u8, dice: &Dice) -> Option<(crate::Rarity, cra
 }
 
 impl Character {
-    /// Opens a chest of `tier` (1 to 4) from an event at `level`, in a zone of island `resource` (its place in the
-    /// catalogue's list, if any); none for a tier there is no chest of.
-    pub fn open_chest(&mut self, tier: u8, level: u8, resource: Option<usize>, dice: &Dice) -> Option<Chest> {
+    /// Opens a chest of `tier` (1 to 4) from an event at `level` on a voyage of `difficulty`, in a zone of island
+    /// `resource` (its place in the catalogue's list, if any); none for a tier there is no chest of. A harder voyage
+    /// pays more XP and Aurem, as a kill's does.
+    pub fn open_chest(
+        &mut self,
+        tier: u8,
+        (level, difficulty): (u8, Difficulty),
+        resource: Option<usize>,
+        dice: &Dice,
+    ) -> Option<Chest> {
         let at = usize::from(tier).checked_sub(1).filter(|at| *at < CHEST_XP.len())?;
-        let grown = |amount: u32| amount * (5 + u32::from(level)) / 10;
+        let grown = |amount: u32| {
+            let raised = libm::round(f64::from(amount * (5 + u32::from(level)) / 10) * difficulty.reward());
+            u32::try_from(raised as u64).unwrap_or(u32::MAX)
+        };
         let (xp, aurem) = (grown(CHEST_XP[at]), grown(CHEST_AUREM[at]));
         self.earn_art_xp(xp);
         self.earn_reputation(xp);

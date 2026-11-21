@@ -114,6 +114,7 @@ pub fn public() -> room::public::PublicSeen {
         heroic_ticks: 0,
         bonus: true,
         marks: vec![mark(1, 0, [10.0, -20.5, 3.25], 0.25, 0), mark(5, 9, [12.0, -18.0, 3.5], 1.0, 0)],
+        next_wave_ticks: 1_500,
     }
 }
 

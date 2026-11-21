@@ -33,12 +33,21 @@ pub const COUNTDOWN_TICKS: u64 = COUNTDOWN_MINUTES * TICKS_PER_MINUTE;
 pub const RESULT_TICKS: u64 = 12 * 60;
 /// A player took part who stood on the ground this long, or struck one of its foes, or set a shard.
 pub const PRESENT_TICKS: u32 = 30 * 60;
-/// The most foes a zone's room that holds events stands alive, its garrison's and its event's together.
-pub const EVENT_FOES_MOST: usize = 32;
-/// How far past each ground (and a raid's approach) its room bakes navmesh of its own.
-const SQUARE_PAST: f64 = 4.0;
+/// The places a zone's room that holds events keeps for its event's foes, the most of them that stand at once (a
+/// Fissure's living lesser foes short of a wave, its fullest wave and its growth or Warden), and the most foes it
+/// stands alive, its garrison's and its event's together: the garrison, its calls and its arrivals keep a node's own.
+pub const EVENT_ROOM: usize = 16;
+pub const EVENT_FOES_MOST: usize = crate::NODE_FOES_MOST + EVENT_ROOM;
+/// How far past each ground (and a raid's approach and the point its waves form at) its room bakes navmesh of its own,
+/// and its foes fight a player: as far as a player shoots into the fight from.
+const SQUARE_PAST: f64 = 16.0;
 /// The event's draws come from a stream of their own, apart from the garrison's.
 const STREAM: u64 = 0x7075_626c_6963;
+/// An event's great foes (its growth, the Warden, Marrow) stand this much more health for each player at the event
+/// beyond the first.
+const HEALTH_PER_PLAYER: f64 = 0.75;
+/// How far beyond a raid's approach its waves form.
+const FORMED_PAST: f64 = 14.0;
 
 /// Which event.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -109,6 +118,14 @@ pub(crate) struct Part {
     pub did: bool,
 }
 
+/// Who takes part: a player's account, so one who leaves and comes back keeps their part; a player with none (a guest,
+/// or one whose account the host has not told yet), by their number.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub(crate) enum Who {
+    Account(String),
+    Player(PlayerId),
+}
+
 /// What a running event plays by; set aside while a tick of it plays.
 #[derive(Debug)]
 pub(crate) enum Play {
@@ -118,8 +135,9 @@ pub(crate) enum Play {
 }
 
 /// The event running: what, from which minute, how it stands, its countdown (or its result's time left), its stage,
-/// its heroic task and the time left to do it, whether its bonus holds, its foes and those of them whose fall it has
-/// counted, each player's part, and its foes withdrawing, each with where it goes and the tick it is gone by.
+/// its heroic task and the time left to do it, whether its bonus holds, how far from their place its foes fight, its
+/// foes and those of them whose fall it has counted, each player's part, and its foes withdrawing, each with where it
+/// goes and the tick it is gone by.
 #[derive(Debug)]
 pub(crate) struct Running {
     pub kind: Kind,
@@ -131,9 +149,10 @@ pub(crate) struct Running {
     pub heroic: Heroic,
     pub heroic_ticks: u64,
     pub bonus: bool,
+    pub leash: f64,
     pub foes: Vec<FighterId>,
     pub fallen: BTreeSet<FighterId>,
-    pub parts: BTreeMap<PlayerId, Part>,
+    pub parts: BTreeMap<Who, Part>,
     pub withdrawing: Vec<(FighterId, [f64; 3], u64)>,
     pub play: Play,
 }
@@ -148,6 +167,28 @@ pub(crate) struct Public {
     pub handled: Option<u64>,
     pub minute: u64,
     pub running: Option<Running>,
+}
+
+impl RaidGround {
+    /// Where its waves form, out of sight of the hamlet: FORMED_PAST beyond its approach, away from its middle.
+    #[must_use]
+    pub fn formed(&self) -> [f64; 2] {
+        let [east, south] = [self.approach[0] - self.at[0], self.approach[1] - self.at[1]];
+        let far = libm::hypot(east, south).max(1e-9);
+        [self.approach[0] + east / far * FORMED_PAST, self.approach[1] + south / far * FORMED_PAST]
+    }
+}
+
+/// How far an event of `kind` reaches from its ground's middle: its radius, or its farthest point past it.
+fn reach(grounds: &Grounds, kind: Kind) -> f64 {
+    let (middle, radius, also) = match kind {
+        Kind::Fissure => grounds.fissure.as_ref().map(|ground| (ground.at, ground.radius, vec![ground.growth])),
+        Kind::Raid => {
+            grounds.raid.as_ref().map(|ground| (ground.at, ground.radius, vec![ground.approach, ground.formed()]))
+        }
+    }
+    .unwrap_or_default();
+    also.iter().map(|point| apart(*point, middle)).fold(radius, f64::max)
 }
 
 /// Navmesh over the rectangle round a ground's circle and the points given, SQUARE_PAST further, baked as the
@@ -185,7 +226,7 @@ impl Room {
             squares.push(square(&self.floor, &self.blocks, (fissure.at, fissure.radius), &[fissure.growth]));
         }
         if let Some(raid) = &grounds.raid {
-            squares.push(square(&self.floor, &self.blocks, (raid.at, raid.radius), &[raid.approach]));
+            squares.push(square(&self.floor, &self.blocks, (raid.at, raid.radius), &[raid.approach, raid.formed()]));
         }
         self.nav.join(squares);
         let level = levels.map_or(0, |(_, high)| high);
@@ -268,6 +309,7 @@ impl Room {
             heroic: Heroic::NotYet,
             heroic_ticks: 0,
             bonus: true,
+            leash: reach(&public.grounds, kind) + SQUARE_PAST,
             foes: Vec::new(),
             fallen: BTreeSet::new(),
             parts: BTreeMap::new(),
@@ -287,20 +329,26 @@ impl Room {
         let (middle, radius) = self.ground_of(public, running.kind);
         for (id, player) in &self.players {
             let body = player.fighter.body;
-            let part = running.parts.entry(*id).or_default();
+            let part = running.parts.entry(self.who(*id)).or_default();
             if !player.fighter.dead() && apart([body.x, body.y], middle) <= radius {
                 part.present += 1;
             }
         }
         for foe in running.foes.iter().filter_map(|id| self.foes.get(id)) {
             for player in foe.struck_by.keys() {
-                running.parts.entry(*player).or_default().did = true;
+                running.parts.entry(self.who(*player)).or_default().did = true;
             }
         }
         match running.kind {
             Kind::Fissure => self.play_fissure(public, running),
             Kind::Raid => self.play_raid(public, running),
         }
+    }
+
+    /// Who a player is to the event: their account, or their number while they have none.
+    pub(crate) fn who(&self, player: PlayerId) -> Who {
+        let owner = self.players.get(&player).and_then(|found| found.owner.clone());
+        owner.map_or(Who::Player(player), Who::Account)
     }
 
     /// The middle and radius of the ground an event of `kind` is fought on.
@@ -311,6 +359,20 @@ impl Room {
             }
             Kind::Raid => public.grounds.raid.as_ref().map_or(([0.0; 2], 0.0), |ground| (ground.at, ground.radius)),
         }
+    }
+
+    /// The most living foes the room stands for anything but its event: all of them in a room that holds none.
+    pub(crate) fn others_most(&self) -> usize {
+        self.foes_most.saturating_sub(if self.public.is_some() { EVENT_ROOM } else { 0 })
+    }
+
+    /// The living players on the ground an event of `kind` is fought on.
+    pub(crate) fn players_on(&self, public: &Public, kind: Kind) -> usize {
+        let (middle, radius) = self.ground_of(public, kind);
+        let on = |player: &&crate::players::Player| {
+            !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], middle) <= radius
+        };
+        self.players.values().filter(on).count()
     }
 
     /// A point on the ground: its height there.
@@ -332,17 +394,33 @@ impl Room {
         }
         let place = self.nav.nearest_point(at).unwrap_or(at);
         let id = self.stand_foe(foe_type(number)?, rank, place, facing, None);
-        let level = if level == 0 { 0 } else { self.difficulty.raise(level) };
-        self.gird(id, level, None);
+        self.gird(id, self.event_level(level), None);
         let hunted = self.nearest_player([home[0], home[1]]);
         let clock = self.clock;
         let foe = self.foes.get_mut(&id)?;
         foe.brain.posted_at(home, facing);
+        foe.brain.leashed(running.leash);
         if let Some((player, at)) = hunted {
             foe.brain.hunt(player, at, clock);
         }
         running.foes.push(id);
         Some(id)
+    }
+
+    /// One of an event's great foes made a match for `players` at the event: more health for each beyond the first.
+    pub(crate) fn toughen(&mut self, id: FighterId, players: usize) {
+        let Some(foe) = self.foes.get_mut(&id) else { return };
+        let times = 1.0 + HEALTH_PER_PLAYER * players.saturating_sub(1) as f64;
+        foe.fighter.health *= times;
+        foe.fighter.health_max *= times;
+        if let Some(shield) = foe.shield.as_mut() {
+            (shield.left, shield.most) = (shield.left * times, shield.most * times);
+        }
+    }
+
+    /// The level an event's foes and chests stand at: the island's, raised by the voyage's seas; 0 (no level) kept.
+    pub(crate) fn event_level(&self, level: u8) -> u8 {
+        if level == 0 { 0 } else { self.difficulty.raise(level) }
     }
 
     /// The living player nearest a point, and where they stand.
@@ -399,10 +477,11 @@ impl Room {
         self.tell(EventKind::PublicWon, None, 0, 0, f64::from(running.kind as u8));
         let tier = 1 + u8::from(running.bonus) + if running.heroic == Heroic::Met { 2 } else { 0 };
         let (middle, _) = self.ground_of(public, running.kind);
-        let earned: Vec<PlayerId> =
-            running.parts.iter().filter(|(_, part)| took_part(part)).map(|(id, _)| *id).collect();
+        let took = |player: &PlayerId| running.parts.get(&self.who(*player)).is_some_and(took_part);
+        let earned: Vec<PlayerId> = self.players.keys().copied().filter(took).collect();
+        let level = self.event_level(public.level);
         for player in earned {
-            self.lay_chest(player, tier, middle, public.level);
+            self.lay_chest(player, tier, middle, level);
         }
     }
 
@@ -415,7 +494,7 @@ impl Room {
         self.tell(EventKind::PublicFailed, None, 0, 0, f64::from(running.kind as u8));
         let to = match &running.play {
             Play::Fissure(fissure) => fissure.at,
-            Play::Raid(raid) => raid.approach,
+            Play::Raid(raid) => raid.formed,
             Play::Aside => return,
         };
         self.withdraw(running, to);

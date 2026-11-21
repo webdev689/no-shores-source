@@ -134,6 +134,8 @@ pub struct Brain {
     /// before it walks back there.
     pub(crate) side: Side,
     pub(crate) heel: Option<f64>,
+    /// How far from its place it fights: LEASH, but for a foe given its own (`leashed`).
+    pub(crate) leash: f64,
     /// What its group asks of it; until when it is broken, the cover it falls back behind, and whether it rages; who
     /// last struck it, and when.
     pub(crate) orders: Orders,
@@ -178,6 +180,7 @@ impl Brain {
             returning: None,
             side: foe_type.side(),
             heel: None,
+            leash: crate::tuning::LEASH,
             orders: Orders::default(),
             broken_until: 0,
             cover: None,
@@ -202,6 +205,11 @@ impl Brain {
     #[must_use]
     pub fn home(&self) -> Option<Home> {
         self.home
+    }
+
+    /// Gives it a leash of its own: it fights a fighter within `leash` of its place, LEASH's distance or not.
+    pub fn leashed(&mut self, leash: f64) {
+        self.leash = leash;
     }
 
     /// Makes it a companion: it fights on the players' side and heels to its post (`posted_at`), which its room moves

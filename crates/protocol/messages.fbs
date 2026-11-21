@@ -384,7 +384,7 @@ table PublicMark {
 // the minute; its stage of how many (the Fissure: 1 sealing, 2 the Warden; the raid: its wave); its progress toward
 // what it needs (the Fissure: shards set of shards needed; the raid: the stores' health left per mille of 1000); its
 // heroic task (0 not yet offered, 1 offered, 2 met, 3 missed) and the ticks left of its window; whether its bonus
-// still holds or was met; and its marks.
+// still holds or was met; its marks; and the ticks until a raid's next wave comes in (0 while none is on its way).
 table PublicEvent {
   kind: ubyte;
   phase: ubyte;
@@ -402,6 +402,7 @@ table PublicEvent {
   heroic_ticks: uint;
   bonus: bool;
   marks: [PublicMark];
+  next_wave_ticks: uint;
 }
 
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
