@@ -4,13 +4,17 @@
 import type { Gpu } from '../gpu.ts';
 import { CanvasEvents } from '../ui/canvasEvents.ts';
 import { readFace } from '../ui/faceReader.ts';
+import type { Stack } from '../ui/stack.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
+import { drawnPress, drawnReach } from './uiSounds.ts';
 
 export class DrawnInterface {
   private ui: Interface | null = null;
   private readonly canvas: HTMLCanvasElement;
   private readonly events: CanvasEvents;
+  /** When this frame's input was heard, so a press sounds unless its own sound played since. */
+  private heardAt = 0;
 
   constructor(gpu: Gpu, canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -34,16 +38,20 @@ export class DrawnInterface {
    *  (a menu up) it takes the keys and the pad. Answers whether it took the wheel. */
   hear(seconds: number, free: boolean, keys: boolean): boolean {
     const taken = this.events.take();
+    this.heardAt = performance.now();
     this.ui?.frame(this.view, taken, seconds, free, keys);
     return Boolean(this.ui?.tookWheel);
   }
 
-  /** Builds its tree with `draw` and draws it over the frame. */
-  present(draw: (ui: Interface, view: { width: number; height: number; scale: number }) => void): void {
+  /** Draws `stack`'s layers over the frame. */
+  present(stack: Stack): void {
     const ui = this.ui;
     if (!ui) return;
     const view = this.view;
-    draw(ui, view);
+    ui.draw(stack.node(ui));
+    // As a page's presses sound: a tick as a control is reached, the press unless what it did sounded already.
+    if (ui.reached) drawnReach();
+    if (ui.pressed) drawnPress(this.heardAt);
     ui.renderer.present(view.width, view.height);
     this.events.sync(ui.typing, ui.cursor);
   }

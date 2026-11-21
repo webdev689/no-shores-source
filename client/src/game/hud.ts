@@ -4,7 +4,7 @@ import { type ShipBar, ShipPlates } from '../ships/shipBars.ts';
 import { Compass, type ShipMark, wearCompass } from '../plus/compass.ts';
 import { motionReduced, ROLES, type Role, wearKit } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
-import type { Interface } from '../ui/ui.ts';
+import type { Node } from '../ui/node.ts';
 import { type Hint, hintLine } from './gearDom.ts';
 import './hud.css';
 import { countdownText, KIND_WORDS, type MarkKind, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
@@ -249,18 +249,17 @@ export class Hud {
     this.toasts = kept;
   }
 
-  /** Draws what the game draws of the HUD with `ui`, in a view `width` by `height` device pixels at `scale` device
-   *  pixels a CSS pixel: the toasts. */
-  drawn(ui: Interface, view: { readonly width: number; readonly height: number; readonly scale: number }): void {
-    const { width, height, scale } = view;
-    const shown = { width: width / scale, height: height / scale, panelShown: this.fightPanel.shown };
-    const { renderer } = ui;
-    drawToasts(
-      renderer,
-      layToasts(renderer.face, this.toasts, shown, performance.now() / 1000, motionReduced()),
-      scale,
-    );
-    ui.draw({});
+  /** What the game draws of the HUD: the toasts. */
+  node(): Node {
+    return {
+      width: 'grow',
+      height: 'grow',
+      draw: (renderer, box, scale) => {
+        const shown = { width: box.width / scale, height: box.height / scale, panelShown: this.fightPanel.shown };
+        const laid = layToasts(renderer.face, this.toasts, shown, performance.now() / 1000, motionReduced());
+        drawToasts(renderer, laid, scale);
+      },
+    };
   }
 
   /** A line of what is happening (a voyage, a connection), or none. */

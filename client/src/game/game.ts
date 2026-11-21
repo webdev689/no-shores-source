@@ -44,6 +44,7 @@ import { afterStoryOn } from './welcome/afterStory.ts';
 import { StoryHost } from './prologue/host.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
+import { Stack } from '../ui/stack.ts';
 import { DrawnInterface } from './drawnInterface.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
@@ -62,7 +63,10 @@ const CHART_EVERY_S = 1;
  * the flow; each mode is its own module.
  */
 export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement): Promise<void> {
+  /** The interface's layers, each part of it drawn over the whole view. */
+  const stack = new Stack();
   const hud = new Hud(hudRoot);
+  stack.add(() => hud.node());
   // The first tap or key wakes the sound, so the story's intro begins heard.
   installInterfaceSounds(hudRoot);
   const asked = new URLSearchParams(location.search).get('at');
@@ -572,7 +576,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     ambience.frame(seconds);
-    ui.present((drawn, view) => hud.drawn(drawn, view));
+    ui.present(stack);
     if (flow.mode === 'loading' && ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
       waited += elapsed;

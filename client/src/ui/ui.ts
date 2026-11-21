@@ -88,6 +88,7 @@ export class Interface {
   readonly store = new Map<string, unknown>();
   private readonly submits = new Set<string>();
   private escape = false;
+  private reach = false;
   private wheel = false;
   private readonly scrolls = new Map<string, number>();
   private readonly fields = new Map<string, FieldState>();
@@ -120,6 +121,8 @@ export class Interface {
     this.dropped = null;
     this.submits.clear();
     [this.escape, this.wheel, this.keyMoved] = [false, false, false];
+    const before = this.hover;
+    this.reach = false;
     for (const event of events) {
       const typingNow = this.typing !== null;
       if ((event.kind === 'key' || event.kind === 'pad') && !keys && !typingNow) continue;
@@ -127,6 +130,17 @@ export class Interface {
     }
     const over = free && this.pointer ? this.targetAt(this.pointer.x, this.pointer.y) : null;
     this.hover = over?.node.id ?? null;
+    if (this.hover && this.hover !== before) this.reach = true;
+  }
+
+  /** Whether anything was pressed this frame, for its sound. */
+  get pressed(): boolean {
+    return this.clicks.size > 0;
+  }
+
+  /** Whether the pointer or the keys reached a control this frame, for its tick. */
+  get reached(): boolean {
+    return this.reach;
   }
 
   /** Whether `id` was pressed this frame: clicked, or Enter, Space or the pad's A on it with focus. */
@@ -448,6 +462,7 @@ export class Interface {
     this.focus = laid.node.id;
     this.focusByKeys = true;
     this.keyMoved = true;
+    this.reach = true;
     if (laid.node.label) this.speak(laid.node.label);
   }
 

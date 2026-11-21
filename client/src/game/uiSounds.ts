@@ -377,6 +377,19 @@ export function charge(holdMs: number): () => void {
 }
 
 /** Hears every press and every control reached in `root`, and plays its tick or its press. */
+/** A press the game draws, let go at `when` (`performance.now()`): it sounds, unless a sound of its own played since. */
+export function drawnPress(when: number): void {
+  if (lastCueAt < when) play('press');
+}
+
+/** A control the game draws, reached by the pointer or the keys: a tick, no oftener than a patter. */
+export function drawnReach(): void {
+  const now = performance.now();
+  if (now - Math.max(lastTickAt, lastCueAt) < TICK_MS) return;
+  lastTickAt = now;
+  play('hover');
+}
+
 export function installInterfaceSounds(root: HTMLElement): void {
   let gestureAt = -Infinity;
   let keyed = false;

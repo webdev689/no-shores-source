@@ -27,7 +27,8 @@ let failed = false;
 try {
   const page = await browser.newPage();
   page.on('console', (message) => {
-    if (message.type() === 'error' || message.type() === 'warning') console.log(`page ${message.type()}: ${message.text()}`);
+    if (message.type() === 'error' || message.type() === 'warning')
+      console.log(`page ${message.type()}: ${message.text()}`);
   });
   page.on('pageerror', (error) => {
     failed = true;

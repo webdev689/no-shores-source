@@ -59,6 +59,7 @@ test('a press is clicked by the pointer let go over it, not when let go elsewher
     0.016,
   );
   assert.equal(ui.clicked('one'), true);
+  assert.equal(ui.pressed, true, 'for its sound');
   assert.equal(ui.clicked('two'), false);
   ui.draw(presses());
   ui.frame(VIEW, [], 0.016);
@@ -91,6 +92,10 @@ test('under the pointer a press is lit, held it sinks, and a disabled one is nei
   step(ui, presses(), [{ kind: 'pointer', x: 65, y: 15 }]);
   ui.frame(VIEW, [{ kind: 'pointer', x: 65, y: 15 }], 0.016);
   assert.equal(ui.stateOf('two'), 'hover');
+  assert.equal(ui.reached, true, 'reached, for its tick');
+  ui.draw(presses());
+  ui.frame(VIEW, [{ kind: 'pointer', x: 66, y: 15 }], 0.016);
+  assert.equal(ui.reached, false, 'once, on the frame it came');
   assert.equal(ui.stateOf('one'), 'rest');
   ui.draw(presses());
   ui.frame(VIEW, [{ kind: 'down', x: 65, y: 15, button: 0 }], 0.016);
