@@ -280,7 +280,8 @@ mod tests {
         assert!(!nodes.is_empty(), "the glade lays resources");
         for site in glade.sites.iter().filter(resource).filter(|site| site.node.is_some()) {
             let [x, y] = site.node.expect("a resource's node");
-            let off = (x - site.at[0]).hypot(y - site.at[1]);
+            let (east, south) = (x - site.at[0], y - site.at[1]);
+            let off = (east * east + south * south).sqrt();
             assert!((off - layout::sites::NODE_FRONT_M).abs() < 1e-6, "before its dressing: {off}");
         }
         assert_eq!(node.resources, nodes, "each where its node stands, before its dressing");
