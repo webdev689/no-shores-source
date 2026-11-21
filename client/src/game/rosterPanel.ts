@@ -42,6 +42,9 @@ export interface PanelActs {
   readonly open: (panel: Panel) => void;
 }
 
+/** The panel's fields, emptied each time it opens. */
+export const FIELD_IDS = ['Username', 'Invite', 'Motto', 'Guild name', 'Tag'].map((label) => `roster-field-${label}`);
+
 /** A row's press's id. */
 export const rowId = (row: Row): string => `roster-${row.key}`;
 
@@ -53,6 +56,7 @@ export function panelPress(
   run: () => void,
   role: 'button' | 'primary' | 'warn' = 'button',
   held = false,
+  label = said,
 ): Node {
   const id = `roster-action-${index}`;
   const charged = held ? holds.press(ui, id, run) : 0;
@@ -64,7 +68,7 @@ export function panelPress(
     width: 'grow',
     padding: PRESS_PADDING,
     alignY: 'center',
-    label: said,
+    label,
     children: [{ text: { words: said } }, held ? fillNode(charged, role === 'warn') : null],
   };
 }
@@ -139,13 +143,13 @@ export function panelParts(
     return {
       heading: 'Who may join your company',
       parts: leading
-        ? PRIVACIES.map((privacy, place) =>
-            press(
-              privacy,
-              () => acts.doing({ label: privacy, path: 'company/privacy', body: { privacy: place } }, null),
-              privacy === roster.privacy ? 'primary' : 'button',
-            ),
-          )
+        ? PRIVACIES.map((privacy, place) => {
+            // The privacy that applies is pressed in, in brass, and says so.
+            const chosen = privacy === roster.privacy;
+            const run = () => acts.doing({ label: privacy, path: 'company/privacy', body: { privacy: place } }, null);
+            const role = chosen ? 'primary' : 'button';
+            return panelPress(context, next(), privacy, run, role, false, chosen ? `${privacy}, chosen` : privacy);
+          })
         : [hintNode('Your company’s leader chooses this.')],
     };
   }

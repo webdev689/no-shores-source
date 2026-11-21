@@ -37,6 +37,8 @@ export class AccountPanel {
   private blocked: readonly string[] | string | null = null;
   private blockedSaid = '';
   private unblocking = false;
+  /** Whether the fields have been emptied since the panel was made, as the page's own fields started empty. */
+  private emptied = false;
   /** The place in the list whose press takes the focus once the list comes again, after an unblock. */
   private focusAt: number | null = null;
 
@@ -58,8 +60,12 @@ export class AccountPanel {
     if (said) announce(said);
   }
 
-  private listBlocked(): void {
-    void this.link.roster().then((roster) => (this.blocked = typeof roster === 'string' ? roster : roster.blocked));
+  /** Asks for the players blocked; with `focusAt`, the press at that place takes the focus once they come. */
+  private listBlocked(focusAt: number | null = null): void {
+    void this.link.roster().then((roster) => {
+      this.blocked = typeof roster === 'string' ? roster : roster.blocked;
+      this.focusAt = focusAt;
+    });
   }
 
   /** Signed in, registered, or refused: words, the page loaded again, or the account shown anew. */
@@ -90,6 +96,11 @@ export class AccountPanel {
   nodes(context: PlainContext): Child[] {
     const { ui } = context;
     const { link, account } = this;
+    if (!this.emptied) {
+      // The interface keeps a field's words across frames: each opening of Settings starts them empty.
+      for (const id of [NAME, PASSWORD]) ui.setFieldText(id, '');
+      this.emptied = true;
+    }
     const press = (id: string, said: string, run: () => void, role: 'button' | 'primary' = 'button') =>
       button(ui, id, said, run, { role, padding: PRESS_PADDING });
     const typed = () => [ui.fieldText(NAME), ui.fieldText(PASSWORD)] as const;
@@ -197,8 +208,7 @@ export class AccountPanel {
         this.unblocking = false;
         this.blockedSaid = why ?? `${name} is unblocked.`;
         announce(this.blockedSaid);
-        this.focusAt = index;
-        this.listBlocked();
+        this.listBlocked(index);
       });
     };
     // The list come again after an unblock, the focus stays in it, on the press now at the same place.

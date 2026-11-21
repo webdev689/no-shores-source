@@ -15,7 +15,7 @@ import { ROSTER_HEARD } from './gearScreen.ts';
 import type { PlainContext } from './menuPage.ts';
 import { answerNode, PRESS_PADDING } from './menuPages.ts';
 import { DETAILS_BACK, detailsNode } from './playerDetails.ts';
-import { type Panel, panelParts, rowId } from './rosterPanel.ts';
+import { FIELD_IDS, type Panel, panelParts, rowId } from './rosterPanel.ts';
 import {
   type Action,
   ROWS_A_PAGE,
@@ -202,6 +202,8 @@ export class RosterPage {
   private openPanel(panel: Panel): void {
     this.panel = panel;
     this.focusPanel = true;
+    // The interface keeps a field's words across frames: each panel opens with its fields empty.
+    for (const id of FIELD_IDS) this.ui?.setFieldText(id, '');
   }
 
   private closePanel(): void {
@@ -417,8 +419,7 @@ export class RosterPage {
             : 'Found a guild';
     const invites = column === 'guild' && !roster.guild ? roster.guildInvites.length : 0;
     if (ui.clicked(id)) {
-      if (this.panel?.at === id) this.closePanel();
-      else this.openPanel({ kind: column, at: id });
+      this.openPanel({ kind: column, at: id });
     }
     return {
       id,
@@ -459,7 +460,11 @@ export class RosterPage {
     const page = ui.boxOf(PAGE_ID);
     const seen = ui.boxOf('gear-body') ?? page;
     const tall = ui.boxOf(PANEL_ID)?.height ?? 0;
-    if (!near || !page || !seen) return { id: PANEL_ID, opacity: 0, float: { to: 'screen' }, children: [] };
+    // What opened it no longer shows (its row's page turned away): the panel closes, as it can stand beside nothing.
+    if (!near || !page || !seen) {
+      this.panel = null;
+      return null;
+    }
     const left = Math.min(near.x - page.x + near.width * 0.4, page.width - PANEL_PX);
     const fitsBelow = near.y + near.height + 2 + tall <= seen.y + seen.height;
     const top = fitsBelow ? near.y + near.height + 2 : Math.max(page.y, near.y - tall - 2);

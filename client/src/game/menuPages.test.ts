@@ -60,13 +60,13 @@ function drawn(page: (context: PlainContext) => Node) {
     holds.end();
     ui.draw({ width: 'grow', height: 'grow', direction: 'column', children: [last] });
   };
-  const at = (id: string) => {
+  const middle = (id: string) => {
     const box = ui.boxOf(id);
     assert.ok(box, `${id} is laid`);
     return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   };
   const click = (id: string) => {
-    const point = at(id);
+    const point = middle(id);
     frame([
       { kind: 'pointer', ...point },
       { kind: 'down', ...point, button: 0 },
@@ -79,7 +79,7 @@ function drawn(page: (context: PlainContext) => Node) {
     frame([{ kind: 'text', text }]);
   };
   const shows = () => wordsOf(last).join(' | ');
-  return { ui, frame, click, type, at, shows, tick: (ms: number) => (now += ms) };
+  return { ui, frame, click, type, middle, shows };
 }
 
 const settle = () => new Promise((done) => setTimeout(done, 0));
@@ -155,7 +155,7 @@ function fakePage() {
 test('a page to come says so, and the Ship lists her papers or says she is loading', () => {
   const later = drawn(() => laterPage('Journal', 'Quests and lore.'));
   later.frame();
-  assert.equal(later.shows(), 'Journal | LATER | Quests and lore.');
+  assert.equal(later.shows(), 'Journal | Later | Quests and lore.');
   const ship = drawn((context) =>
     shipPage(
       {
@@ -226,7 +226,7 @@ test('a guest keeps their character with a username; signing in or out leaving t
   settings.click('account-out');
   await settle();
   assert.ok(!asked.includes('logout'), 'a click does not sign out');
-  const point = settings.at('account-out');
+  const point = settings.middle('account-out');
   settings.frame([
     { kind: 'pointer', ...point },
     { kind: 'down', ...point, button: 0 },
@@ -279,7 +279,7 @@ test('offline, Social says the Roster needs an account', () => {
 });
 
 test('a row opens its panel beside it, focused on its first press; Escape closes it and gives the row the focus back', async () => {
-  const { link } = fakeLink({ id: 'a', username: 'Ana', discord: false, guest: false });
+  const { link, asked } = fakeLink({ id: 'a', username: 'Ana', discord: false, guest: false });
   let shown = 0;
   const roster = new RosterPage({ link, travel: () => null, now: () => shown, hidden: () => false });
   const social = drawn((context) => roster.node(context));
@@ -302,6 +302,40 @@ test('a row opens its panel beside it, focused on its first press; Escape closes
   shown += 15_001;
   social.frame();
   await settle();
+  assert.equal(asked.filter((each) => each === 'roster').length, 2);
+  // Not again while a panel is open.
+  social.click('roster-friend-Bo');
+  shown += 15_001;
+  social.frame();
+  assert.equal(asked.filter((each) => each === 'roster').length, 2);
+});
+
+test('a panel’s field opens empty again, and a row’s panel closes once its page is turned away', async () => {
+  const many = {
+    ...ROSTER,
+    friends: [...Array(20).keys()].map((index) => person(`Friend${String(index).padStart(2, '0')}`)),
+  };
+  const { link } = fakeLink({ id: 'a', username: 'Ana', discord: false, guest: false }, many);
+  const roster = new RosterPage({ link, travel: () => null, hidden: () => false });
+  const social = drawn((context) => roster.node(context));
+  await settle();
+  social.frame();
+  social.click('roster-top-friends');
+  social.frame();
+  social.frame([{ kind: 'text', text: 'Dee' }]);
+  assert.equal(social.ui.fieldText('roster-field-Username'), 'Dee');
+  roster.back();
+  social.click('roster-top-friends');
+  assert.equal(social.ui.fieldText('roster-field-Username'), '');
+  roster.back();
+  social.frame();
+  social.click('roster-friend-Friend00');
+  social.frame();
+  assert.ok(social.ui.boxOf('roster-panel'));
+  social.click('roster-page-friends-next');
+  social.frame();
+  assert.equal(social.ui.boxOf('roster-panel'), null);
+  assert.equal(roster.back(), false, 'nothing unseen is left for Escape to close');
 });
 
 test('a player’s details open from their row and close back to it', async () => {
