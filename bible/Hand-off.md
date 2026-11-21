@@ -235,19 +235,23 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#119, the perk pass, waits on the owner's yes to merge**, which deploys the page and the rooms and renders the
-  large weapon pictures ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]],
-  [[The Perk Pass as Claude Shapes It]]). Ten Atheric weapons, each with an intrinsic and an own node (Gullwing's
-  lightning leaping foe to foe, the owner's example); six weapon and eleven ship perks that give and take; the ship's
-  near-duplicate perks merged; the four Atheric modules as exotics in the naval fight; every forge weapon and armour
-  model worn, named pieces each their own look and rolled ones climbing the ladders with rarity and level, and the
-  large pictures for every make (145). Kept items keep their nodes as their catalogue changes. Audited, its ten
-  findings fixed with tests; `cargo xtask check` passes; Gullwing seen headless in the Test Ground, tested offline.
-  Open for the owner, each a call made in the design note: the Atheric armour pieces keep their one signature (the
-  owner asked for weapons and modules); a rolled Rare reaches daedric at level 20, so a Rare can look as fine as an
-  Atheric; a faction's shield and bow keep one make; a smith's ware may change make once bought; whether named
-  weapons keep an element of their own is still open, so a leap is Volt on any Gullwing. Not yet seen on a real GPU.
-
+- **#119, the perk pass, waits on the owner's yes to merge**, which deploys the page and the rooms
+  ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]], [[The Perk Pass as Claude Shapes It]]).
+  Ten Atheric weapons, each with an intrinsic and an own node (Gullwing's lightning leaping foe to foe, the owner's
+  example); six weapon and eleven ship perks that give and take; the ship's near-duplicate perks merged; the four
+  Atheric modules as exotics in the naval fight; every forge weapon and armour model worn on both bodies, named pieces
+  each their own look and rolled ones climbing the ladders with rarity and level. Audited twice, then a deep audit by
+  four area auditors and a design pass, every finding measured and fixed with a test or recorded as a limit: kept
+  pieces keep the perks they bought, never a trade-off pressed on them; chain blows strike once and only from the
+  living; Snare reaches the oars; an Atheric's two perks head its page, a trade-off's cost reads as a cost. `cargo xtask
+  check` passes; Gullwing seen headless in the Test Ground and the item pages pictured from a fixture, tested offline.
+  **Before or with the merge, the owner's yes is needed for one more step**: the `forge` workflow run on this branch,
+  which renders and publishes the 145 large weapon pictures (46 new: short bows, every shield kind, plain guns, the
+  orcish short sword) to R2, its manifest then committed into `content/forge/renders.json`; until it lands the weapon
+  rows show those looks as the figure's cut-outs. Open for the owner, each a call made in the design note: the Atheric
+  armour pieces keep their one signature; a rolled Rare reaches daedric at level 20; a faction's shield and bow keep
+  one make; whether named weapons keep an element of their own (a leap is Volt on any Gullwing). Not yet seen on a
+  real GPU.
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
   first and its findings fixed, which deploys the page and the rooms:** aiming faces straight ahead (#115,
   [[Aiming, the Figure Faces Straight Ahead]]); the crosshair's shapes, reload ring, hit marks and melee reach (#116,
@@ -372,6 +376,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **Found by #119's deep audit, older than it**: a pair's left blade and the orcish short sword are drawn on the figure
+  without their metal's grade (`layers.py` `set_graded` reads the set from the name's last word, `l` or `short`); a
+  purchase from Shape names only a ware's place, so a deploy that changes his week's draw mid-week can sell a page
+  another piece than it shows (the smiths' wares carry their day); a ball in the rigging takes canvas by its larger
+  harm and men flat, so canvas and crew perks reach it in part; a player who washes up and rejoins a fight comes back
+  as a new ship.
 - **The islands** ([[Islands]]): the door's trip into its dungeon, once the Dungeons session pushes its
   `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
   islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
