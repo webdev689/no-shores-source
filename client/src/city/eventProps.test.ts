@@ -68,7 +68,8 @@ test('the growth rises over its time, stands, and is gone once it has sunk', () 
 
 test('a store stands as one of three stacks by its id, and plundered once plundered', () => {
   const store = (id: number, state: number) =>
-    eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.store, { id, state })] }, [], aged(0), 0)[0]?.module;
+    eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.store, { id, state })] }, [], aged(0), 0)[0]
+      ?.module;
   assert.equal(store(3, STORE.whole), 'tithe-stores-a');
   assert.equal(store(4, STORE.whole), 'tithe-stores-b');
   assert.equal(store(5, STORE.whole), 'tithe-stores-c');

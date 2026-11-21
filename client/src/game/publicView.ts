@@ -140,7 +140,12 @@ export class PublicView {
     const chests = this.chests(drops, clock);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
     const age = this.clock.ager(clock);
-    const props = eventProps(event && { phase: event.phase, ticksLeft: event.ticksLeft, marks: marksHeld }, chests, age, clock);
+    const props = eventProps(
+      event && { phase: event.phase, ticksLeft: event.ticksLeft, marks: marksHeld },
+      chests,
+      age,
+      clock,
+    );
     this.clock.done();
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
     const chime = events.some((each) => each.kind === EVENT.heroicMissed)
@@ -243,7 +248,7 @@ export class PublicView {
       const step = (2 * Math.PI) / RING.arcs;
       const land = this.ringLand;
       if (!land || land.x !== x || land.y !== y || land.radius !== ring.radius || clock - land.at > RING.landS) {
-        const z = Array.from({ length: RING.arcs }, (_, arc) => {
+        const z = Array.from({ length: RING.arcs }, (_unused, arc) => {
           const middle = (arc + 0.5) * step;
           return floor(x + Math.sin(middle) * ring.radius, y - Math.cos(middle) * ring.radius);
         });

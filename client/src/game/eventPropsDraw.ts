@@ -403,17 +403,17 @@ export class EventPropsDraw implements Drawer {
     const rows = this.rows.subarray(0, drawn.length * PROP_FLOATS);
     rows.fill(0);
     drawn.forEach(([prop, made], row) => {
-      const at = row * PROP_FLOATS;
-      rows[at] = prop.at[0] - eye[0];
-      rows[at + 1] = prop.at[1] - eye[1];
-      rows[at + 2] = prop.at[2] - eye[2];
-      rows[at + 3] = prop.turn;
-      rows[at + 4] = prop.scale;
-      rows[at + 5] = prop.rise;
-      rows[at + 6] = prop.lid;
-      rows[at + 7] = prop.glow;
-      rows[at + 8] = OPENS.has(prop.module) ? 1 : 0;
-      rows[at + 9] = made.height;
+      const first = row * PROP_FLOATS;
+      rows[first] = prop.at[0] - eye[0];
+      rows[first + 1] = prop.at[1] - eye[1];
+      rows[first + 2] = prop.at[2] - eye[2];
+      rows[first + 3] = prop.turn;
+      rows[first + 4] = prop.scale;
+      rows[first + 5] = prop.rise;
+      rows[first + 6] = prop.lid;
+      rows[first + 7] = prop.glow;
+      rows[first + 8] = OPENS.has(prop.module) ? 1 : 0;
+      rows[first + 9] = made.height;
     });
     if (!this.table || this.table.size < rows.byteLength) {
       this.table?.destroy();

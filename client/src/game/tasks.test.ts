@@ -15,5 +15,8 @@ test('two quests read alike only when every word, count, key and tick is the sam
   assert.ok(!sameQuest(quest(3), quest(2)), 'a count changed');
   assert.ok(!sameQuest(quest(3), quest(3, true)), 'a step met');
   assert.ok(!sameQuest(quest(3), { ...quest(3), steps: [] }), 'a step gone');
-  assert.ok(!sameQuest(quest(3), { ...quest(3), steps: [{ text: 'Carry shards to the fissure', count: 3 }] }), 'a key gone');
+  assert.ok(
+    !sameQuest(quest(3), { ...quest(3), steps: [{ text: 'Carry shards to the fissure', count: 3 }] }),
+    'a key gone',
+  );
 });

@@ -44,7 +44,7 @@ export function sameQuest(one: Quest | null, other: Quest | null): boolean {
       step.count === that.count &&
       Boolean(step.done) === Boolean(that.done) &&
       keys.length === thoseKeys.length &&
-      keys.every((key, at) => key === thoseKeys[at])
+      keys.every((key, place) => key === thoseKeys[place])
     );
   });
 }

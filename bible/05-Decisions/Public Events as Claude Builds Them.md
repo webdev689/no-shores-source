@@ -73,6 +73,12 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The dev address | `&public=fissure` or `&public=raid` sets a room in the page's clock to that event's start, dev builds only | Every beat can be seen without waiting |
 | The dev play | `&speed=`, `&bots=`, `&heroic=0` on the dev address; bots and the player at level 6, Rare | A slow machine can play an event through and picture each beat |
 | The fissure's tearing and shutting | Tears open over the event's first 3 s, never narrower than 0.3 while it runs, shuts over the result's first 2.5 s as its scar rises; timed by the room's ticks | The opening is seen (not replayed for a page arriving late), and the Warden still comes out of an open crack |
+| A store's tarp | Oiled canvas, tan, with darker weathered stains | A grey tarp read as a lump at night |
+| The crystal's lamps | Four along the fissure, 8 m each; the growth's 10 m | The red stays on the ground by the crystal, not run off along a pale way |
+| The crystal under a cover | Reads red all over, its purple only in a real shadow | In rain it read dark magenta |
+| A carried shard | 0.95 m over the carrier's feet | Held at the hand, not beside the head |
+| A won event's words | "Your chest waits..." only to a player with a chest; else "The fissure is sealed" or "The Tithe gave up" | No chest promised to one who took no part |
+| The growth's figure | None: the growth foe is drawn as its crystal alone, under its own name | It is struck as a foe, but no Idol stands in it |
 | The bonus once sealed | Settled as the seal completes: a Warden who falls after half the countdown keeps it | The owner's words: "sealed with at least half of the 8 minutes left" |
 | A room left empty | Its running event held to the clock when its minute jumps: past its end, ended quietly (no result, no chests, its foes gone); else its countdown cut to what its start minute leaves | A room's Durable Object may stay in memory, unticked, and come back late |
 | A leaver's Vestige, ten and vault full | Into the vault over its limit | A leaver's chest is never lost; the ground would lose it, and the gear crate holds nothing else waiting for a player |
