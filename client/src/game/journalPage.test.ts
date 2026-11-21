@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
-import { bannerUrl } from '../plus/journalArt.ts';
+import { bannerFor, bannerUrl } from '../plus/journalArt.ts';
 import { poolMarkUrl } from './journalIcons.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { STEP_BACK } from './gearScreen.ts';
@@ -80,7 +80,10 @@ test('the quests held are cards six a page, story missions first, each at its st
     ['quest-b', 'quest-d', 'quest-f', 'quest-a', 'quest-c', 'quest-e'],
   );
   const first = cards()[0];
-  assert.equal(first?.all().find((node) => node.tagName === 'IMG')?.['src' as never], bannerUrl('story'));
+  assert.equal(
+    first?.all().find((node) => node.tagName === 'IMG')?.['src' as never],
+    bannerUrl(bannerFor('story', 'b')),
+  );
   assert.ok(first?.find('2') && first.find('Sample second step'), 'its step’s number, from one, and its name');
   assert.ok(
     cards()[1]
@@ -100,7 +103,7 @@ test('the quests held are cards six a page, story missions first, each at its st
     cards()[1]
       ?.all()
       .find((node) => node.tagName === 'IMG')?.['src' as never],
-    bannerUrl('side'),
+    bannerUrl(bannerFor('a-kind-to-come', 'g')),
   );
   assert.equal(keyed(root, 'quests-next')?.getAttribute('aria-disabled'), 'true');
 });

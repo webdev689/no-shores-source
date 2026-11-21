@@ -10,7 +10,7 @@
   place-items: center;
   padding: 0;
 }
-/* Four times its twelve pixels, so every pixel of the mark stands whole. */
+/* Three times a glyph's sixteen pixels, so every pixel of it stands whole. */
 .bounty-tile-mark {
   width: 48px;
   height: 48px;
@@ -159,7 +159,12 @@ img.bounty-tile-check {
   gap: 8px;
 }
 .gear-board-row .bounty-tile {
-  --bounty-tile: 72px;
+  --bounty-tile: 80px;
+}
+/* The board shows its glyphs at four times their pixels. */
+.gear-board-row .bounty-tile-mark {
+  width: 64px;
+  height: 64px;
 }
 /* Before the prologue the tiles, the time and its bar all rest. */
 .gear-board-shut .bounty-tile,

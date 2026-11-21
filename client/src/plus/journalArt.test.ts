@@ -1,10 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BANNER_KEYS, HOURGLASS_URL, bannerUrl } from './journalArt.ts';
+import { BANNER_KEYS, HOURGLASS_URL, bannerFor, bannerUrl } from './journalArt.ts';
 import { pixelsOf } from './pixelsForTests.ts';
 import { TONES } from './tones.ts';
-
-const PALETTE = new Set<string>(Object.values(TONES));
 
 test('the hourglass is DFO’s, nine by twelve: brass caps, glass sides and the sand running through', () => {
   const { width, height, pixels, svg } = pixelsOf(HOURGLASS_URL);
@@ -18,13 +16,34 @@ test('the hourglass is DFO’s, nine by twelve: brass caps, glass sides and the 
   assert.equal(pixels.get('4,8'), undefined, 'the sand has run through the neck and not yet piled');
 });
 
-test('a story mission’s banner and a side quest’s differ, and a key not drawn wears the side quest’s', () => {
-  assert.deepEqual(BANNER_KEYS, ['story', 'side']);
-  const [story, side] = BANNER_KEYS.map((key) => pixelsOf(bannerUrl(key)));
-  assert.deepEqual([story?.width, story?.height, side?.width, side?.height], [16, 24, 16, 24]);
-  assert.ok([...(story?.pixels.values() ?? [])].includes(TONES.blood), 'the story’s in blood and brass');
-  assert.ok(![...(side?.pixels.values() ?? [])].includes(TONES.blood), 'a side quest’s in stone');
+test('the banners are six story pennants and six side shields, each its own, and a key not drawn wears the side’s', () => {
+  const story = BANNER_KEYS.filter((key) => key.startsWith('story'));
+  const side = BANNER_KEYS.filter((key) => key.startsWith('side'));
+  assert.deepEqual([story.length, side.length, BANNER_KEYS.length], [6, 6, 12]);
+  assert.equal(new Set(BANNER_KEYS.map(bannerUrl)).size, 12, 'no two banners alike');
+  for (const key of BANNER_KEYS) {
+    const { width, height, pixels } = pixelsOf(bannerUrl(key));
+    assert.deepEqual([width, height], [16, 24], key);
+    assert.equal(pixels.get('0,0') === TONES.brassHi, key.startsWith('story'), `${key}: a pennant's brass hem`);
+    assert.equal(
+      [...pixels.values()].includes(TONES.blood),
+      key.startsWith('story'),
+      `${key}: only a story's in blood`,
+    );
+  }
+  // The shields' fields each a tone of their own: the colour at the middle of the left of each field.
+  assert.equal(new Set(side.map((key) => pixelsOf(bannerUrl(key)).pixels.get('1,5'))).size, 6);
   assert.equal(bannerUrl('a-kind-to-come'), bannerUrl('side'));
-  for (const key of BANNER_KEYS)
-    for (const tone of pixelsOf(bannerUrl(key)).pixels.values()) assert.ok(PALETTE.has(tone));
+});
+
+test('a quest naming no banner wears one of its kind’s by its id, the same each time, and quests differ', () => {
+  for (const id of ['the-wreck', 'a-debt-paid', 'q1'])
+    assert.equal(bannerFor('story', id), bannerFor('story', id), 'the same each time');
+  const stories = new Set(['a', 'b', 'c', 'd', 'e', 'f'].map((id) => bannerFor('story', id)));
+  assert.equal(stories.size, 6, 'six ids in a row wear the six pennants');
+  for (const id of ['a', 'b', 'c']) {
+    assert.ok(bannerFor('story', id).startsWith('story'));
+    assert.ok(bannerFor('side', id).startsWith('side'));
+    assert.ok(bannerFor('a-kind-to-come', id).startsWith('side'), 'a kind to come wears a side quest’s');
+  }
 });

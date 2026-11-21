@@ -1,12 +1,13 @@
 // A bounty as a tile and as a card, after Destiny's Bounty Tracker; the board's screen and the Journal's column both
-// show them. A tile has no words: its mark says where the bounty counts and its look its state. The card says the
-// rest: its name and kind, its words, its count, what it pays, and at the board its press.
+// show them. A tile has no words: its glyph says which bounty it is, its ground where it counts and its look its
+// state. The card says the rest: its name and kind, its words, its count, what it pays, and at the board its press.
 import './bountyTiles.css';
 import { make } from '../editor/dom.ts';
 import { ROLES } from '../plus/kit.ts';
 import type { BountyRow, Pay } from './bountyBoard.ts';
+import { bountyGlyphUrl } from './bountyGlyphs.ts';
 import { glyphImage } from './gearDom.ts';
-import { type IconName, POOL_GROUNDS, iconImage, poolMarkUrl } from './journalIcons.ts';
+import { type IconName, POOL_GROUNDS, iconImage } from './journalIcons.ts';
 
 /** Each pool's kind, as a card names it under the bounty's name, with its mark. */
 export const BOUNTY_KINDS: readonly string[] = ['Land bounty', 'Sea bounty', 'Dungeon bounty'];
@@ -21,7 +22,7 @@ function gauge(count: number, target: number): HTMLElement {
   return track;
 }
 
-/** A bounty's tile, sized by where it stands: its mark, and its state: open plain, taken with a gauge of its count,
+/** A bounty's tile, sized by where it stands: its own glyph on its kind's ground, and its state: open plain, taken with a gauge of its count,
  *  done with a gold edge, turned in dimmed with a tick. */
 export function bountyTile(row: BountyRow): HTMLButtonElement {
   const tile = make('button', '', `bounty-tile bounty-tile-${row.state} bounty-pool-${row.pool} ${ROLES.tile}`);
@@ -31,7 +32,7 @@ export function bountyTile(row: BountyRow): HTMLButtonElement {
   const said = { open: 'Not taken', held: row.progress, done: 'Done', paid: 'Turned in' }[row.state];
   tile.setAttribute('aria-label', `${row.name}: ${row.words} ${said}`);
   const mark = make('img', '', 'bounty-tile-mark');
-  [mark.src, mark.alt] = [poolMarkUrl(row.pool) ?? '', ''];
+  [mark.src, mark.alt] = [bountyGlyphUrl(row.name, row.pool), ''];
   tile.append(mark);
   if (row.state === 'held' || row.state === 'done') tile.append(gauge(row.count, row.target));
   if (row.state === 'paid') {

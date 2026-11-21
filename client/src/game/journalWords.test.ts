@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
-import { BANNER_KEYS } from '../plus/journalArt.ts';
+import { BANNER_KEYS, bannerFor } from '../plus/journalArt.ts';
 import { bountyWords } from './bountyBoard.ts';
 import {
   QUESTS_WRITTEN,
@@ -50,7 +50,7 @@ test('a moment reads in the player’s own clock: the time today, the weekday wi
   assert.equal(whenWords(new Date(2026, 9, 18, 18, 0).getTime(), today), 'Sun 18 Oct 18:00');
 });
 
-test('the quests held are cards, story missions first, each at its step numbered from one, and none the page lacks', () => {
+test('the quests held are cards, story missions first, each at its step from one under its banner, none the page lacks', () => {
   const written = [sample('side', 'side'), sample('story', 'story', 'side'), sample('to-come', 'a-kind-to-come')];
   const held = [
     { id: 'side', step: 1, done: false },
@@ -62,8 +62,8 @@ test('the quests held are cards, story missions first, each at its step numbered
     questCardsOf(held, written).map((card) => [card.id, card.banner, card.step, card.stepName, card.done]),
     [
       ['story', 'side', 1, 'Sample first step', true],
-      ['side', 'side', 2, 'Sample second step', false],
-      ['to-come', 'a-kind-to-come', 2, 'Sample second step', false],
+      ['side', bannerFor('side', 'side'), 2, 'Sample second step', false],
+      ['to-come', bannerFor('a-kind-to-come', 'to-come'), 2, 'Sample second step', false],
     ],
   );
   assert.deepEqual(questCardsOf([], written), []);

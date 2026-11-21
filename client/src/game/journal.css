@@ -491,7 +491,7 @@ img.journal-icon.gear-glyph {
     width: 80px;
     height: 120px;
   }
-  /* The bounties' tiles and their marks at their own larger size: six times the marks' twelve. */
+  /* The bounties' tiles and their glyphs at their own larger size: four times the glyphs' sixteen. */
   .journal-tiles {
     grid-template-columns: repeat(3, 88px);
   }
@@ -499,8 +499,8 @@ img.journal-icon.gear-glyph {
     --bounty-tile: 88px;
   }
   .journal-tiles .bounty-tile-mark {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
   }
   .journal-slot {
     width: 88px;

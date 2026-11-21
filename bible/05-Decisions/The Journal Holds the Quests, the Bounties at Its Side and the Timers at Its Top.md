@@ -30,6 +30,10 @@ Looking over the pictures of the built Journal, the owner wrote:
 >
 > Everything needs to be beautiful. Dont come back until this is perfection"
 
+Looking over the next pictures, the owner wrote:
+
+> "Its much better. But keep pushing those better and more.varied quest banners, better bounty glyphs, etc"
+
 ## What it settles
 
 - **The Journal is built in full now.**
@@ -47,11 +51,11 @@ Looking over the pictures of the built Journal, the owner wrote:
 |---|---|---|
 | The quest grid | Two columns of three cards a page, how many are held beside the title and the page between its drawn arrows at the right; one column of cards under 900 px, the bounties staying beside it down to 600 px | Destiny's grid, folded where two columns do not fit |
 | A card | Its banner, its name, a line of its tale, and its step's number in a brass badge and its name; a brass tick once every step is done | What Destiny's card shows, and no more; the face has no italic of its own, so the tale is set apart by its colour |
-| The banners | A story mission's swallowtail in blood and brass, a side quest's stone shield; a kind to come wears the side quest's | Two kinds told apart at a glance, in the kit's palette |
+| The banners | A story mission's swallowtail in blood and brass, a side quest's shield (a kind to come wears a side quest's), each of six charges, the shields each of six fields; a quest wears the banner it names, else one of its kind's chosen by its id | Two kinds told apart at a glance, and quests side by side apart: "more varied quest banners" |
 | The order | Story missions first, then side quests, then kinds to come | The story leads |
 | Steps | Each step asks its own feat and counts in turn, over the one count kept | Missions need steps that ask different things, and nothing new is saved |
 | The empty lines | "No quests yet. The story’s missions and side quests come later." and "No quests held. Quests you take up are kept here." | The page says plainly why it is empty |
-| The tiles | A square tile a bounty, marked by where it counts (two peaks, a wave, an arched door) on its kind's ground: stone for land, deep water for the sea (a tone the kit gains), blood for dungeons | Destiny's rows of colour, in the kit's tones |
+| The tiles | A square tile a bounty, bearing its bounty's own glyph (a bounty not drawn, the mark of where it counts) on its kind's ground: stone for land, deep water for the sea (a tone the kit gains), blood for dungeons | Destiny's rows of colour, in the kit's tones; each bounty its own glyph, as each of Destiny's wears its own: "better bounty glyphs" |
 | The tiles' states | Open, plain; taken, a gauge of its count along its foot; done, a gold edge; turned in, dimmed with a check | A state read from the tile, with no words on it |
 | The card | The bounty's name, its kind in small type under it, its words, a gauge with its count, its rewards, and at the board its press | Destiny's card on the tile under the pointer |
 | The names | Tithe Collector, A Cut Above, Honest Work, Big Game, Broadside, Bigger Fish, Sea Wolf, Into the Dark, Deeper Still and Deep Delver, each at most 16 letters | Short and catchy, at the owner's ask |

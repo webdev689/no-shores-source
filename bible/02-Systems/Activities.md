@@ -211,7 +211,8 @@ One engine counts both, since the owner's side quests and the board's bounties a
   (`gear::objectives::count_ship_down`).
 - **Quests** (side quests, and the story's missions as quests of kind story) use the same objectives, kept until
   done, and are written as data (`content/gear/quests.json`, read by `gear::quests`, none written yet): each its id,
-  its kind (story or side), its name, one line of its tale, an optional banner key, and its steps, each step a name,
+  its kind (story or side), its name, one line of its tale, an optional banner key (else the Journal gives it one of
+  its kind's by its id), and its steps, each step a name,
   its words, what it counts and how many. Its steps count in turn: a feat counts only toward the step its count
   stands at. A character keeps one count a held quest across its steps in `Character.story.quests`, so its step is
   read from it (`Quest::step_at`) and nothing else is kept, and each finished one in `story.finished`; it finishes

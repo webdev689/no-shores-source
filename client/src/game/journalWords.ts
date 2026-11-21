@@ -3,6 +3,7 @@
 // rules read.
 import written from '../../../content/gear/quests.json' with { type: 'json' };
 import type { GearQuest, GearState } from '../network/gearMessages.ts';
+import { bannerFor } from '../plus/journalArt.ts';
 import { type BountyRow, bountyRows } from './bountyBoard.ts';
 
 /** A quest as content/gear/quests.json writes it: as much of it as its card reads. */
@@ -24,7 +25,7 @@ export const QUESTS_WRITTEN: readonly WrittenQuest[] = quests;
 export interface QuestCard {
   readonly id: string;
   readonly kind: string;
-  /** The banner's key: its own, else its kind's. */
+  /** The banner's key: its own, else one of its kind's chosen by its id. */
   readonly banner: string;
   readonly name: string;
   readonly tale: string;
@@ -83,7 +84,16 @@ export function questCardsOf(held: readonly GearQuest[], writtenQuests = QUESTS_
       const place = Math.min(heldAt.step, quest.steps.length - 1);
       const { id, kind, name, tale } = quest;
       const stepName = quest.steps[place]?.name ?? '';
-      return { id, kind, banner: quest.banner ?? kind, name, tale, step: place + 1, stepName, done: heldAt.done };
+      return {
+        id,
+        kind,
+        banner: quest.banner ?? bannerFor(kind, id),
+        name,
+        tale,
+        step: place + 1,
+        stepName,
+        done: heldAt.done,
+      };
     });
 }
 
