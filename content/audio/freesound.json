@@ -1619,7 +1619,7 @@
     {
       "id": "amb.land.rain",
       "use": "Rain falling on open land all round, looped",
-      "query": "rain on grass",
+      "query": "rain ambience",
       "seconds": [
         20,
         600

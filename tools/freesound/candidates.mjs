@@ -89,10 +89,18 @@ async function offered(cue, id) {
 
 const picks = [];
 const report = [];
+/** The report and the picks as far as they go: written after each cue, so a run stopped by its time limit keeps every
+ *  candidate it found with its credit. */
+const save = () => {
+  mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
+  writeFileSync(join(out, 'picks.json'), `${JSON.stringify(picks, null, 2)}\n`);
+};
 for (const cue of wanted.cues) {
   // A cue the owner picked a sound for is searched no more: its pick is read for its credit and its preview kept.
   if (cue.picked) {
     picks.push(await pickOf(cue));
+    save();
     continue;
   }
   // One kept or made by the game, or whose sound comes from DFO's own, is searched no more; what the owner already
@@ -147,9 +155,9 @@ for (const cue of wanted.cues) {
   }
   console.log(`  ${results.length} results read, ${candidates.length} kept`);
   report.push({ id: cue.id, use: cue.use, query: cue.query, candidates });
+  save();
 }
-writeFileSync(join(out, 'report.json'), `${JSON.stringify(report, null, 2)}\n`);
-writeFileSync(join(out, 'picks.json'), `${JSON.stringify(picks, null, 2)}\n`);
+save();
 // A search that kept nothing at all, or a pick not read whole, fails the run, so a refusal or a changed page shows.
 const unread = picks.filter((pick) => !pick.licence || !pick.file).map((pick) => pick.id);
 if (unread.length > 0) console.log(`Picks not read whole: ${unread.join(', ')}. Read pages/ in the download.`);
