@@ -247,7 +247,21 @@ Where the work stands now, for the next session. Each session rewrites this note
   these, with fresh words), let the workflow publish, take its `sounds.json`, then delete the synthesiser behind
   sound effects and ambience (`beds.ts`, `calls.ts`, `songs.ts`, `noises.ts`, the cinema's voices, `uiSounds`' tones
   and the voice's buzz) and the fallbacks that call it. The gains and the hold need code to play their picks
-  (`uiSounds` `chime` and `charge`).
+  (`uiSounds` `chime` and `charge`). The owner kept the calm pieces, Landfall, the sea's storm, the Boarding's first
+  phase and the story's storm and deep, and asked for the green, wet and cold fights again for a whine: their pitched
+  swells and the cold's gusts are now noise, their high strings lower and the wet tune on a low clarinet, rendered
+  again on the sheet for the owner's ear (the dry fight's same swell went with them).
+- **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
+  first and its findings fixed, which deploys the page and the rooms:** aiming faces straight ahead (#115,
+  [[Aiming, the Figure Faces Straight Ahead]]); the crosshair's shapes, reload ring, hit marks and melee reach (#116,
+  [[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]); and the weapons forged large with
+  their element glyphs (#117, [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]), its 99 pictures
+  published by the forge workflow from its branch, with SciPy pinned among that workflow's packages, which the owner
+  approved. Tested offline with the full check; the large pictures loaded through the page's own code from R2
+  headless. Not yet seen: any of it on a real GPU, the weapon rows in a running game, or a fight with the new
+  crosshair. Left as they are: a greatsword shows its metal's sword until it has a model of its own; the forge
+  workflow does not run again when a weapon's model changes, only when `weaponart.py` or its packages do; at a steep
+  downward look the aiming camera can still show the figure's diagonal back view.
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through

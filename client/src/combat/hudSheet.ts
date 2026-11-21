@@ -11,6 +11,7 @@ import { BEVELS, FILLS, HALO, TONES } from '../plus/tones.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { OVERHEAD_SIZES } from './foePlate.ts';
 import { PLATE_SIZE } from './plateSight.ts';
+import { reticleCss } from './reticle.ts';
 import { statusCss } from './statusIcons.ts';
 import { weaponsCss } from './weapons.ts';
 import { wordsCss } from './wordsSheet.ts';
@@ -201,16 +202,7 @@ function cuesCss(): string {
 .fight-hud .mark { position: absolute; left: -6px; top: -6px; width: 12px; height: 12px; border: 2px solid #f4e3b0;
   border-radius: 50%; box-shadow: 0 0 6px #f4e3b0; }
 .fight-hud .over > * { position: absolute; left: 0; top: 0; }
-.fight-hud .crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; translate: -50% -50%;
-  border-radius: 50%; filter: drop-shadow(0 0 1px #000);
-  background: linear-gradient(#f2f2f2, #f2f2f2) center / 2px 2px no-repeat,
-    linear-gradient(#f2f2f2c0, #f2f2f2c0) center / 1px 22px no-repeat,
-    linear-gradient(#f2f2f2c0, #f2f2f2c0) center / 22px 1px no-repeat; }
-.fight-hud .crosshair .charge { position: absolute; inset: -5px; border-radius: 50%;
-  background: conic-gradient(#ffd95a var(--charge), #ffffff38 var(--charge));
-  mask: radial-gradient(circle, transparent 12px, #000 13px, #000 15px, transparent 16px); }
-.fight-hud .crosshair:not(.charging) .charge { display: none; }
-.fight-hud .crosshair.full { filter: drop-shadow(0 0 4px #ffd95a); }
+${reticleCss()}
 /* The shots left, beside the crosshair on the face's grid, outlined as the HUD's words are; few in brass, none in the
    gear screen's loss colour. */
 .fight-hud .ammo { position: absolute; left: calc(50% + 22px); top: calc(50% + 11px); font-size: 22px; line-height: 22px;
