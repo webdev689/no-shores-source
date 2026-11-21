@@ -278,12 +278,23 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#112, the interface drawn by the game, in draft** ([[The Interface Uses No HTML, Now or Later]]): the face read
-  into its grid's cells as the page starts, words laid where a browser sets them, one instanced draw a frame, the
-  kit's roles painted to the page's own pixels, the HUD's toasts drawn by the game, and death's grey drawn into the
-  scene under the interface, no longer a filter on the canvas. Asked in it: signing in
-  without a browser's password manager (passkeys, Chromium's credential store, or neither); a WebTransport relay
-  outside Cloudflare; the game's files at an address of their own. Merging needs the owner's yes.
+- **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, tested offline (the full check on
+  78c918b5) and live headless, not yet in a pull request**: no HTML anywhere in the interface
+  ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and every page of it, the
+  story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game, each page one canvas
+  and its script, and a repo check (`html`) refusing new HTML with no baselines; the game in a worker of its own
+  ([[Work Leaves the Main Thread Where It Can]], [[Game]], "Threads"); the network packed and sent as changes
+  ([[The Network Is Made Smaller and Readied for WebTransport]]). #112 holds the first part of it, in draft. Asked of
+  the owner: whether this work goes on #112's branch or a pull request of its own; signing in without a browser's
+  password manager (passkeys, Chromium's credential store, or neither); a WebTransport relay outside Cloudflare; the
+  game's files at an address of their own; whether the layer check's widening stands (combat, testground, editor,
+  speech, cinema and heldmap may import `ui`; the new `thread` layer imports `ui`); and whether shared memory or Rust's
+  WebAssembly threads are wanted, now that the page's thread is busy 0.0 ms a frame (measured; neither is needed for
+  it). Merging needs the owner's yes.
+- **The co-dev's `webgpu-shot` cannot picture the game now**: it reads the page's WebGPU canvas, and the game draws
+  from its worker. Its picture runs work for the Test Ground and the World Editor, which stay on the page; for the
+  game, a worker-aware measure is in the session's notes (it times the worker's frames through Playwright's worker
+  handle). The kit is kept as shipped, so its fix is the co-dev's (observation 0068 logs the port lesson).
 - **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
   without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
   something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
@@ -483,14 +494,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The interface's next stages, on #112's branch** (`claude/loving-darwin-sw4eae`), in order: a tree of the game's
-  own and its layout; hit-testing and focus by pointer, keys and pad; typing through `EditContext`; then the HUD piece by
-  piece (the tracker, the key strip, the sea bar, her ship's panel, the plates), the menus and screens, the Test
-  Ground and the World Editor (a cutscene's blur, still a filter on the canvas, moves with the cinema's screen); last,
-  a check that refuses new HTML. Headless, each role was matched against the page's kit at 2 device pixels a CSS
-  pixel, the window's 114,400 pixels all within a level; the drain matched Chromium's own filter at every pixel.
-- **Then the game worker** ([[Work Leaves the Main Thread Where It Can]]), its frame and long tasks measured first,
-  and **the network's measures** ([[The Network Is Made Smaller and Readied for WebTransport]]).
+- **After the four points**: the creation's typing driven live through the worker (only its pieces are tested); the
+  game's frame time on a real GPU, in and out of the worker; a sound heard by a person from the worker's cues; the
+  face's `=` drawn as a solid block and `~` read as `-`, as the World Editor's port reported (unchecked), mended in
+  `face.ts` if the owner chooses ([[Interface]]).
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
   `server/garrison.test.ts`): its 13 foes stand all 1500 ticks and its player falls about tick 900, run straight into
   the wall #63 gave its node, steered round it, or with the starting sword asked for; its swings seem never to land.
