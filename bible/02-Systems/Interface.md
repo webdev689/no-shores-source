@@ -152,6 +152,8 @@ code:
   - client/src/game/gearNodes.ts#ringNode
   - client/src/player/elementGlyphs.ts#elementSvg
   - client/src/face.ts#outlineOf
+  - client/src/face.ts#useMendedFace
+  - client/src/trueType.ts#trueType
 ---
 # Interface
 
@@ -473,9 +475,11 @@ it has no italic. Shadows under it are hard, a pixel's step.
 
 Six of its glyphs misread and eleven symbols are missing, so a second face, listed first, stands in for just those
 ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]): a 2, a 5, a B, a Z and square brackets, and the
-rarities' diamonds, the map's house, triangles, skull and anchor. Each is drawn in `face.ts` as rows of cells on Pixelify's grid at its
-weight, and the interface draws those cells where it would read the face's own (`ui/glyphs.ts`), so nothing generated
-is kept.
+rarities' diamonds, the map's house, triangles, skull and anchor; and the marks Pixelify draws in half cells, which a
+reading of its whole cells garbles (the at sign, equals, tilde, asterisk, caret, semicolon and the straight quotes).
+Each is drawn in `face.ts` as rows of cells on Pixelify's grid at its weight, and the interface draws those cells
+where it would read the face's own (`ui/glyphs.ts`). The held map's lettering, which a 2D canvas writes, has them as a
+font made where the face is read (`useMendedFace`, `trueType.ts`), first in its stack, so nothing generated is kept.
 
 ## The menu
 

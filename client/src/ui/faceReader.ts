@@ -7,6 +7,7 @@ import latinExt from '@fontsource-variable/pixelify-sans/files/pixelify-sans-lat
 import latin from '@fontsource-variable/pixelify-sans/files/pixelify-sans-latin-wght-normal.woff2?url';
 import sheet from '@fontsource-variable/pixelify-sans/index.css?raw';
 import { facesOf } from './fontFaces.ts';
+import { useMendedFace } from '../face.ts';
 import { type Glyph, glyphRead, MENDED_GLYPHS } from './glyphs.ts';
 
 /** The family the reader loads Pixelify under, apart from the page's own. */
@@ -38,6 +39,8 @@ export interface FaceCells {
 export async function readFace(): Promise<FaceCells> {
   const faces = facesOf(sheet);
   const fonts = (globalThis as { fonts?: FontFaceSet }).fonts ?? document.fonts;
+  // The held map's lettering, written by a 2D canvas where the face is read, takes the mended glyphs as a font.
+  useMendedFace(fonts);
   await Promise.all(
     faces.map(async ({ file, ranges }) => {
       const url = FILES[file];

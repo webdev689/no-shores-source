@@ -1,8 +1,14 @@
+import { trueType } from './trueType.ts';
+
 /**
  * The glyphs Overlook draws over Pixelify Sans: its 5 reads as an 8, its 2 and Z are one corner apart, and its B is an
  * 8 with a stem; and it has none of the symbols the map, the HUD and the rarities use. Each is drawn here on
- * Pixelify's own grid; the interface draws these cells in place of what it reads from the face (`ui/glyphs.ts`).
+ * Pixelify's own grid; the interface draws these cells in place of what it reads from the face (`ui/glyphs.ts`), and
+ * the held map's lettering, which a 2D canvas writes, has them as a font (`useMendedFace`).
  */
+
+/** The mended font's name in a 2D canvas's font stacks. */
+export const MENDED = 'Pixelify Mended';
 
 /** A glyph: its code point, its outline as closed contours on the grid, and how far the pen moves after it. */
 export interface Outline {
@@ -86,6 +92,16 @@ export const DRAWINGS: Readonly<Record<string, Drawing>> = {
   '∕': { rows: ['...#', '...#', '..##', '.##.', '.##.', '#...', '#...'], advance: 535 },
   ð: { rows: ['....#', '.####', '#..##', '....#', '.####', '#...#', '#...#', '.###.'], advance: 605 },
   '×': { rows: ['.#.#', '..#.', '.#.#'], base: 2, advance: 600 },
+  // Marks Pixelify draws in half cells, which a reading of its whole cells garbles: each drawn in whole cells at its
+  // own place and advance (the at sign at a capital's height, so its loop reads).
+  '@': { rows: ['.###.', '#...#', '#.###', '#.#.#', '#.###', '#....', '.####'], advance: 615 },
+  '=': { rows: ['#####', '.....', '#####'], base: 2, advance: 600 },
+  '~': { rows: ['###.#', '#.###'], base: 2, advance: 600 },
+  '*': { rows: ['.#.', '###', '#.#'], base: 4 },
+  '^': { rows: ['.#.', '#.#'], base: 5 },
+  ';': { rows: ['#.', '..', '#.', '.#'], advance: 276 },
+  '"': { rows: ['#.#.', '.#.#'], base: 5, advance: 472 },
+  "'": { rows: ['#.', '.#'], base: 5, advance: 276 },
 };
 
 /** A drawing as an outline: each row's runs of cells a rectangle, drawn clockwise. */
@@ -112,4 +128,34 @@ export function outlineOf(char: string): Outline {
   });
   // As far past its last column as Pixelify's own letters stand from the next.
   return { code: char.codePointAt(0) ?? 0, contours, advance: drawing.advance ?? 90 * width + 142 };
+}
+
+/** The drawn glyphs as a font. */
+export function mendedFont(): Uint8Array {
+  const outlines = Object.keys(DRAWINGS).map(outlineOf);
+  return trueType(
+    MENDED,
+    { ascent: 920, descent: 280, winAscent: 922, winDescent: 289, capHeight: 631, xHeight: 450, weight: 500 },
+    outlines,
+  );
+}
+
+/** The code points drawn, as a font's unicode range. */
+export const MENDED_RANGE = Object.keys(DRAWINGS)
+  .map((char) => `U+${(char.codePointAt(0) ?? 0).toString(16).toUpperCase().padStart(4, '0')}`)
+  .join(', ');
+
+/** Makes the drawn glyphs a font in `fonts` (the page's or a worker's), for words a 2D canvas writes in a stack that
+ *  names it first. Each keeps Pixelify's own line, so a line holding one stands as tall as any other. */
+export function useMendedFace(fonts: FontFaceSet): void {
+  if (typeof FontFace === 'undefined') return;
+  const face = new FontFace(MENDED, mendedFont().buffer as ArrayBuffer, {
+    unicodeRange: MENDED_RANGE,
+    ascentOverride: '92%',
+    descentOverride: '28%',
+    lineGapOverride: '0%',
+    display: 'swap',
+  });
+  fonts.add(face);
+  void face.load();
 }
