@@ -130,3 +130,29 @@ fn a_full_meter_is_a_charge_and_none_comes_past_three() {
         "a player stands full"
     );
 }
+
+#[test]
+fn a_drink_is_put_down_in_the_saddle_or_at_full_health_and_keeps_its_charge() {
+    let begun = drinking(wounded(50.0), 10).0;
+    assert!(matches!(begun.action, Action::Drink { .. }));
+    let saddled = Intent { controls: Controls { mounted: true, ..Controls::default() }, ..idle(0.0) };
+    let (put_down, happenings) = script(begun, &[saddled]);
+    assert!(matches!(put_down.action, Action::Idle) && happenings.is_empty(), "{:?}", put_down.action);
+    assert_eq!((put_down.health, put_down.charges), (50.0, CHARGES), "on horseback: no heal, the charge kept");
+    // A spell tops it up mid-drink: it ends with nothing to heal and keeps its charge.
+    let topped = Fighter { health: begun.health_max, ..begun };
+    let rest = usize::try_from(DRINK_TICKS).unwrap();
+    let (ended, happenings) = script(topped, &vec![idle(0.0); rest]);
+    assert!(matches!(ended.action, Action::Idle) && happenings.is_empty(), "{happenings:?}");
+    assert_eq!(ended.charges, CHARGES, "no charge spent for nothing");
+}
+
+#[test]
+fn a_drink_pressed_in_a_dodge_never_frees_it_early() {
+    let dodge = common::dodging(0.0, 0.0, 1.0);
+    let attack = usize::try_from(combat::tuning::DODGE_ATTACK).unwrap();
+    let mut intents = vec![dodge];
+    intents.extend((1..=attack + 1).map(|tick| if tick == attack { common::asking(0.0, HEAL) } else { idle(0.0) }));
+    let (rolling, _) = script(player_at(0.0, 0.0), &intents);
+    assert!(matches!(rolling.action, Action::Dodge { .. }), "at full health, refused: {:?}", rolling.action);
+}

@@ -29,8 +29,10 @@ export interface SeaHeard {
   readonly fight: { readonly captains: readonly FightCaptain[]; readonly vessel: FightVessel } | null;
 }
 
-/** A fight event's kind when a blow killed (the combat crate's numbering). */
+/** A fight event's kind when a blow killed, a player stood again and a drink healed (the room's numbering). */
 const KILLED = 8;
+const RESPAWNED = 9;
+const HEALED = 14;
 /** A foe alert, with a target. */
 const ALERT = 2;
 /** A hostile ship this near is closing on the player, metres: the edge of the ring the sea sends one out on. */
@@ -46,6 +48,8 @@ export function hearFoot(place: Place, fight: FootHeard): Hearing {
   const struck = new Set<number>();
   let kills = 0;
   for (const event of events) {
+    // A player standing again or drinking names only themselves: no fight.
+    if (event.kind === RESPAWNED || event.kind === HEALED) continue;
     if (event.striker === player) struck.add(event.defender);
     if (event.defender === player) struck.add(event.striker);
     if (event.kind === KILLED && event.striker === player) kills++;

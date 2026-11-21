@@ -250,7 +250,7 @@ fn act<B: Near + ?Sized>(
         }
         Action::Dodge { elapsed, toward } => {
             let elapsed = elapsed + 1;
-            let wants = input.attack.is_some() || input.guard || next.kept != Kept::default();
+            let wants = input.attack.is_some() || input.guard || Kept { heal: 0, ..next.kept } != Kept::default();
             let free = elapsed >= DODGE_TICKS || (elapsed >= DODGE_ATTACK && wants);
             if free && landed(&next.body, around) {
                 next.action = Action::Idle;
@@ -281,7 +281,7 @@ fn act<B: Near + ?Sized>(
         }
         Action::Telegraph(telegraph) => wind_up(next, telegraph, around),
         Action::Draw { elapsed } => draw(next, elapsed, intent, pulled),
-        Action::Drink { elapsed } => crate::drink::drink(next, elapsed),
+        Action::Drink { elapsed } => crate::drink::drink(next, elapsed, intent.controls),
         Action::Dead { .. } => None,
     }
 }

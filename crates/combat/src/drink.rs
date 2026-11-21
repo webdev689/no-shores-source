@@ -22,11 +22,17 @@ pub(crate) fn begin_drink(next: &mut Fighter) {
 }
 
 /// A drink a tick on. The charge is spent only as it ends, so one cut short keeps it; its health comes then, never past
-/// the most, and is said for the host to tell.
-pub(crate) fn drink(next: &mut Fighter, elapsed: u32) -> Option<Happening> {
+/// the most, and is said for the host to tell. Off the ground or in the saddle (a climb begun, a fall, a horse) it is put
+/// down, and so is one ending at full health (a spell topped it up): neither spends its charge.
+pub(crate) fn drink(next: &mut Fighter, elapsed: u32, controls: Controls) -> Option<Happening> {
     let elapsed = elapsed + 1;
-    if elapsed < DRINK_TICKS {
+    let footed = next.body.mode == Mode::Ground && !controls.mounted;
+    if footed && elapsed < DRINK_TICKS {
         next.action = Action::Drink { elapsed };
+        return None;
+    }
+    if !footed || next.health >= next.health_max {
+        next.action = Action::Idle;
         return None;
     }
     let health = (next.health + next.health_max * DRINK_HEALS).min(next.health_max);

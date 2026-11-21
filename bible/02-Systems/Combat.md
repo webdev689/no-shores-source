@@ -256,8 +256,10 @@ A foe never drinks.
   lasts a second (60 ticks), in which the player walks, never running, jumping or crouching (Haste still quickens
   the walk), facing the look, the weapon put away. As it ends it spends its charge and gives back 40% of the player's
   most health, never past the most, and the room tells the heal. A blow that lands cuts it short with its charge
-  kept, as it flinches the drinker; a stagger, a fall and a Charge's hold cut it too. A dodge does not leave a drink:
-  one pressed in its last 8 ticks hops as it ends.
+  kept, as it flinches the drinker; a stagger, a fall and a Charge's hold cut it too. Leaving the ground (a climb
+  begun, a fall) or taking the saddle puts it down, and one ending at full health (a spell topped the player up)
+  heals nothing: each keeps its charge. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it
+  ends, and a drink pressed in a dodge never frees it early.
 - **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
   their meter toward the next charge by the share of the foe's most health it took, times half the share its rank's
   kill gives; the blow that kills adds the kill's share whole: a third of a charge for a Minor or a Major, two

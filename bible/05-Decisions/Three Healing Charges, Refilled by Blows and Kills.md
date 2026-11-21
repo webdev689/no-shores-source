@@ -43,7 +43,8 @@ Then the owner chose from Claude's options:
 | Where a drink begins | Only at rest, standing on the ground, on foot, with a charge held and health short of its most; never from a guard, a swing or a draw | As a ranged weapon's aim begins, from rest; a drink at full health would waste a charge |
 | The press | Kept 8 ticks, as the attack's, the guard's and the dodge's are | A press made in a swing or a dodge's air is not lost |
 | What cuts it short | Any blow that lands: a flinch, a stagger, a fall, a Charge's hold | "Hit only interrupts"; a drinker raises no guard, so no blow is blocked or parried |
-| A dodge | Does not leave a drink; one pressed in its last 8 ticks hops as it ends | The owner's "hit only interrupts": nothing else does |
+| A dodge | Does not leave a drink; one pressed in its last 8 ticks hops as it ends; a drink pressed in a dodge never frees it early | The owner's "hit only interrupts": nothing else does |
+| Off the ground, in the saddle, or full at the end | The drink is put down, its charge kept, nothing healed | A climb, a fall or a horse is no place to drink, and a charge is never spent for nothing |
 | The meter's rate | A blow fills it by the share of the foe's most health it took, times half the share the foe's rank's kill gives | A rate by raw damage could not serve both aims: a Boss holds about 27 to 41 times a Minor's health (1,120 at level 0, against 27 to 42) |
 | What that gives | A Minor fought whole: a sixth from its blows and a third from its kill, half a charge. An Elite: a whole charge. A Boss: half a charge over its health and a whole one at its end; with its adds, Captain Thule's fight gives 1.5 charges before his fall and Corvane's 2.5 | The aims: about half a charge for a Minor, about two over a Boss fight |
 | Level and difficulty | As a share of the foe's own health, the rate is the same at every level and difficulty | Blows and health scale with level, Attack and Defense alike |
