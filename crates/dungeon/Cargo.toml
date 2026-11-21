@@ -8,6 +8,10 @@ description = "The patrol areas' dungeons, laid by DFO's Forge: rooms and corrid
 
 [dependencies]
 
+# Only to read the landmarks' table from content/dungeon/landmarks.json as the crate builds (build.rs).
+[build-dependencies]
+serde_json.workspace = true
+
 # Only to test the props' table against the forged models' measures.
 [dev-dependencies]
 serde_json.workspace = true

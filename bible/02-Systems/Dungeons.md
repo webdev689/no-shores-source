@@ -16,8 +16,8 @@ code:
   - crates/dungeon/src/furnish.rs#furnish
   - crates/dungeon/src/fixtures.rs#Fixture
   - crates/dungeon/src/landmarks.rs#place_landmarks
-  - crates/dungeon/src/landmark_table.rs#LANDMARKS
-  - tools/dungeon/landmarkTable.ts
+  - crates/dungeon/src/landmarks.rs#LANDMARKS
+  - crates/dungeon/build.rs
   - crates/dungeon/src/props.rs#nearest_middle
   - crates/dungeon/src/torches.rs#Torch
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
@@ -163,7 +163,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   Grove or a Dripping Gallery (the same, 0.5 m high); lanterns 2 m up on the mines' walls and posts; and a fire in
   each hearth. A fixture with a solid stands as a piece does. Every room has a light.
 - **Landmarks** (`place_landmarks`): set pieces a dungeon is remembered by, three a style, each with its solids and
-  glows (`content/dungeon/landmarks.json`, written into the crate by `tools/dungeon/landmarkTable.ts`). A dungeon of
+  glows (`content/dungeon/landmarks.json`, which the crate's `build.rs` reads as it builds). A dungeon of
   two or three blocks stands one, of four or five two, none twice, each in a room of its look's style but never the
   way in's or the end. Rooms are tried from the middle of the walk outward, each style's landmarks in an order drawn
   on the lane `landmark:<seed>`.

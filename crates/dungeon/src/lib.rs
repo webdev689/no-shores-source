@@ -10,7 +10,6 @@ mod block;
 mod dungeon;
 mod fixtures;
 mod furnish;
-mod landmark_table;
 mod landmarks;
 pub mod lane;
 pub mod models;
@@ -28,8 +27,7 @@ pub use dungeon::{
 pub use fixtures::{
     BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CRYSTALS_TOP_M, FUNGUS_TOP_M, Fixture, Kind, LANTERN_M,
 };
-pub use landmark_table::LANDMARKS;
-pub use landmarks::{Landmark, Placed, turned, turned_box};
+pub use landmarks::{LANDMARKS, Landmark, Placed, turned, turned_box};
 pub use models::{Piece, PropModel, prop_model};
 pub use props::{HUNG_M, POSTS_A_ROOM, Prop, posts_for};
 pub use purposes::{Bank, Facing, Lay, Light, Lit, Pattern, Purpose};
