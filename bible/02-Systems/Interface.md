@@ -106,11 +106,15 @@ code:
   - client/src/game/gearDom.ts#compareNode
   - client/src/player/iconFit.ts#fitIcon
   - client/src/game/gearGlyphs.ts#nodeGlyphSvg
-  - client/src/game/accountTab.ts#accountPanel
+  - client/src/game/accountTab.ts#AccountPanel
   - client/src/game/menuPages.ts#shipPage
-  - client/src/game/rosterTab.ts#rosterPage
+  - client/src/game/menuPages.ts#settingsPage
+  - client/src/game/menuPage.ts#PlainContext
+  - client/src/game/rosterTab.ts#RosterPage
+  - client/src/game/rosterPanel.ts#panelParts
   - client/src/game/rosterRows.ts#actionsFor
-  - client/src/game/playerDetails.ts#detailsPage
+  - client/src/game/playerDetails.ts#detailsNode
+  - client/src/ui/page.ts#PAGE
   - client/src/game/emblemArt.ts#emblemPixels
   - client/src/game/appearanceButton.ts#emblemCard
   - client/src/game/appearance/appearancePage.ts#appearancePage
@@ -175,15 +179,19 @@ moves to the game's own drawing
   drawn in the page's own face into a picture. It gives way to the fight's display as that says it shows, and to the
   dialogue box, still the page's, as the page shows it (`speakingIn`).
 - **The menu.** The menu's frame (its tabs, the account's mark, the banner, the footer and the world dimmed behind
-  it), the Character and Inventory pages, an item's page, the hover card, the holds and their bursts, what the player
+  it), the Character, Inventory, Ship, Social and Settings pages and the pages to come, an item's page, the hover card, the holds and their bursts, what the player
   gains and the company on the heads-up display are one layer of the game's drawing (`startGearWindow`).
 - **A page of the menu** is a function of what the menu gives it (`MenuContext`) answering its nodes each frame: the
   gear and the way to ask of it, the pictures, the room its body leaves, the menu's sizes on this screen, the holds,
   the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
   everything on the screen and kept above the footer), what X opens, and the Art's and Appearance screens' doors. It
   reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view, and
-  Escape's steps. A page still made of elements (Ship, Social, Settings, the pages to come, the Art's screen,
-  Appearance and the keepers' screens with the vault) takes `PageContext` and stands in an island laid over the drawn
+  Escape's steps. A page that needs no gear (Ship, Social, Settings and the pages to come) takes only the interface,
+  the room, the sizes and the holds (`PlainContext`); Social and Settings keep what the accounts answered while they
+  show, asked again each time they open, and the Roster takes Escape's step first while its panel or a player's
+  details are open. The page's own services a page asks for (a link opened in a new tab, the address left or loaded
+  again) are `ui/page.ts`. A page still made of elements (the Art's screen, Appearance and the keepers' screens with
+  the vault) takes `PageContext` and stands in an island laid over the drawn
   body each frame, with its own hover card, until it is drawn; while its controls have the focus the keys are its own.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
@@ -636,12 +644,20 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
-- Drawn by the game: the heads-up display, the toasts, the fight's display and the menu; the menu's Ship, Social,
-  Settings, Art, Appearance and keepers' pages stand in their island of elements. Tab does not cross from the drawn
+- Drawn by the game: the heads-up display, the toasts, the fight's display and the menu; the menu's Art, Appearance
+  and keepers' pages stand in their island of elements. Tab does not cross from the drawn
   menu into the island: the pointer reaches it, or a press of its own. A word's soft shade past its hard outline is
   not drawn, as a blur has no crisp form, nor a chosen mark's or a ship's mark's blur (a chosen mark's glow is a drawn
   gradient); the fight's glows (the soft lock's mark, the charged crosshair, a full Anima, a ready Tenet, the poise's
   break, the struck edge's red) stand in hard rings and bands instead.
+- The account's username and password are the game's own drawn fields, so a browser's password manager neither
+  offers nor keeps them; nothing stands in for it (no passkeys, no browser's store), and the player types them.
+- Settings' volumes are the kit's drawn sliders, a brass fill in a track, where the page showed the browser's own; a
+  credit's link opens its page in a new tab from a press, and the browser's own menu for a link (copy, open in a
+  window) is not offered.
+- A Roster row's words and a player's worn pieces keep to their line, cut short with '...' where they do not fit,
+  where the page wrapped a long status under itself. A column's arrow at its first or last page is drawn dimmed and
+  takes no press, as the page's did, and in a column of one page neither takes the focus.
 - A plate over a figure shrinks with its distance, but its words keep the face's 11 px, never smaller and never the
   12 px a page's plate wrote; so does its alert's mark, 15 px on a page. A blow's number pops at sizes between the
   face's steps for its first four frames, as no whole step is 1.4 times another. A ship's plate writes her name at
