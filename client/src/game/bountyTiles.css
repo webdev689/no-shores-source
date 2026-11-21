@@ -18,6 +18,9 @@
 }
 .bounty-tile .bounty-gauge {
   position: absolute;
+  box-sizing: border-box;
+  border-width: 1px;
+  border-style: solid;
   inset: auto 4px 4px;
   height: 4px;
 }
@@ -51,6 +54,8 @@ img.bounty-tile-check {
   outline: none;
 }
 .bounty-card {
+  border-width: 2px;
+  border-style: solid;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -93,7 +98,10 @@ img.bounty-tile-check {
 }
 .bounty-card-count .bounty-gauge {
   flex: 1 1 auto;
+  box-sizing: border-box;
   height: 6px;
+  border-width: 1px;
+  border-style: solid;
 }
 .bounty-card-pay {
   display: flex;
@@ -128,6 +136,8 @@ img.bounty-tile-check {
 }
 
 .gear-board {
+  border-width: 2px;
+  border-style: solid;
   display: grid;
   grid-template-columns: max-content 260px;
   justify-content: center;
@@ -184,7 +194,10 @@ img.bounty-tile-check {
   font-variant-numeric: tabular-nums;
 }
 .gear-board-bar {
+  box-sizing: border-box;
   height: 8px;
+  border-width: 1px;
+  border-style: solid;
 }
 .gear-board-bar .plus-meter {
   height: 100%;

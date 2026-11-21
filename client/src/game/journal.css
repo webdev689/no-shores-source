@@ -125,6 +125,8 @@
 /* A row's icon sunk below the panel's ground. */
 #hud .journal-timer-well {
   box-sizing: border-box;
+  border-width: 2px;
+  border-style: solid;
   width: 44px;
   height: 44px;
   display: grid;
@@ -354,6 +356,8 @@ img.journal-icon.gear-glyph {
   list-style: none;
 }
 .journal-card {
+  border-width: 2px;
+  border-style: solid;
   display: grid;
   grid-template-columns: 64px minmax(0, 1fr);
   gap: 12px;
@@ -417,6 +421,8 @@ img.journal-icon.gear-glyph {
 }
 .journal-bounties {
   box-sizing: border-box;
+  border-width: 2px;
+  border-style: solid;
   max-height: 100%;
   overflow-y: auto;
   padding: 12px;
@@ -429,8 +435,11 @@ img.journal-icon.gear-glyph {
   gap: 8px;
 }
 .journal-slot {
+  box-sizing: border-box;
   width: 64px;
   height: 64px;
+  border-width: 2px;
+  border-style: solid;
 }
 .journal-bounty-said {
   width: 0;
