@@ -19,3 +19,13 @@ Asked which glyph should bob over each keeper and what a player can use, the own
   can use").
 - Each keeper's mark is their own, as their screen and sign show it.
 - The marks are drawn in the style of DFO's marks over the people who do something ([[Pick - NPC Marks]]).
+
+## Claude's calls
+
+| Call | Chosen | Why |
+|---|---|---|
+| The Harbourmaster's sign | An anchor, drawn new | He had no sign of his own |
+| A faction keeper's mark | The faction's emblem in the diamond, edged in its Art's colour | Their screen shows the emblem |
+| A resource node's mark | Its resource's picture, 1.2 m over its ground, its beam standing clear over it | A node has no keeper; a beam through the mark covered it |
+| A keeper away from the counter | No mark over the empty post until they are back | A mark stands over its keeper |
+| The Test Ground's stall | A sealed Vestige's picture, over it as over a keeper | It has no keeper, and Vestiges are opened there; the keepers' signs are the game's, which the Test Ground does not import |
