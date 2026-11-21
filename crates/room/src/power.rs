@@ -194,7 +194,10 @@ impl Room {
             let great = brain.rank as u8 >= foes::Rank::Miniboss as u8;
             found.character.add_shapes(gear::shape::found(great, self.difficulty, &dice));
             found.gear_changed = true;
-            self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            // A defence tried again stands foes that drop nothing (`steps.rs`).
+            if !self.quests.spoilless.contains(&defender) {
+                self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            }
             self.tell_kill(player, brain.foe_type.name, brain.rank as u8, [at[0], at[1]]);
         }
     }

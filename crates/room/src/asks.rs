@@ -24,6 +24,8 @@ pub const OUT_OF_REACH: u8 = 100;
 pub const NOT_THE_TEST_GROUND: u8 = 101;
 /// The resource a node gives is already at its most, so the node is left standing.
 pub const STOCK_FULL: u8 = 102;
+/// A puzzle takes no use for a while after a wrong one (`steps.rs`).
+pub const NOT_YET: u8 = 103;
 
 /// What a player asks of their gear.
 #[derive(Clone, Debug, PartialEq)]

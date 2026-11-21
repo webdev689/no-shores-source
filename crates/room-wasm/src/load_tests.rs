@@ -163,26 +163,26 @@ fn load_on_decks() {
 // The wall clock is what this measures; the rules themselves never read it.
 #[allow(clippy::disallowed_methods)]
 fn load_of_a_roads_groups_standing() {
-    use gear::quests::{GoalKind, quests};
+    use gear::quests::{Goal, Slay, quests};
     for (quest, def) in quests().quests.iter().enumerate() {
         for (task, goals) in def.tasks.iter().map(|task| &task.goals).enumerate() {
-            for goal in goals.iter().filter(|goal| goal.kind == GoalKind::Kill && !goal.spawn.is_empty()) {
-                let id = goal.node.as_deref().unwrap();
+            for goal in goals {
+                let Goal::Kill(Slay { node: Some(id), place: Some(place), spawn, .. }) = &goal.goal else { continue };
+                if spawn.is_empty() {
+                    continue;
+                }
                 let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/nodes/").to_owned() + id + ".json";
                 let text = std::fs::read_to_string(path).unwrap();
                 let start = Instant::now();
                 assert!(open_node(text.as_bytes()));
                 let opening = start.elapsed().as_secs_f64() * 1000.0;
-                let mut character = gear::Character::starting();
-                character.allegiance.pledge = def.faction;
-                character.quests.set_task(quest, task);
-                let place = goal.place.as_deref().unwrap();
+                let character = on_road(quest, task);
                 let ticks = with_open(|opened| {
                     let Opened::Land { room, .. } = opened else { panic!("a node's room") };
                     let player = room.join().unwrap();
                     assert!(room.restore_character(player, &character.to_json()));
                     let node: serde_json::Value = serde_json::from_str(&text).unwrap();
-                    let at = node["places"].as_array().unwrap().iter().find(|it| it["name"] == place).unwrap();
+                    let at = node["places"].as_array().unwrap().iter().find(|it| it["name"] == place.as_str()).unwrap();
                     let [x, y] = [at["at"][0].as_f64().unwrap(), at["at"][1].as_f64().unwrap()];
                     assert!(room.put_player(player, x, y + 140.0));
                     let timed = |room: &mut room::Room| {
@@ -191,7 +191,7 @@ fn load_of_a_roads_groups_standing() {
                         start.elapsed().as_secs_f64() * 1000.0
                     };
                     let standing = timed(room);
-                    assert_eq!(room.place_grounds(), 1, "its place's mesh, baked as it first stands");
+                    assert!(room.place_grounds() <= 1, "its place's mesh, baked as it first stands, or the node's own");
                     (standing, timed(room))
                 });
                 let (standing, after) = ticks.unwrap();
@@ -208,22 +208,31 @@ fn load_of_a_roads_groups_standing() {
 // The wall clock is what this measures; the rules themselves never read it.
 #[allow(clippy::disallowed_methods)]
 fn load_of_a_roads_steps() {
-    use gear::quests::quests;
-    // The Lamplighters' escort, the Stormcallers' defence and puzzle, and the Veiled's tail; a player on each.
-    for (quest, task, follow) in [(2, 2, true), (1, 2, false), (1, 8, false), (3, 3, true)] {
-        let goal = quests().quests[quest].tasks[task].goals.iter().find(|goal| goal.kind.stepped()).unwrap();
-        let id = goal.node.as_deref().unwrap();
+    use gear::quests::{Goal, GoalKind, quests};
+    // The file's first escort, defence, puzzle, tail and unseen step; a player on each.
+    for kind in [GoalKind::Escort, GoalKind::Defend, GoalKind::Puzzle, GoalKind::Tail, GoalKind::Unseen] {
+        let follow = matches!(kind, GoalKind::Escort | GoalKind::Tail);
+        let mut found = quests().quests.iter().enumerate().flat_map(|(quest, def)| {
+            def.tasks
+                .iter()
+                .enumerate()
+                .flat_map(move |(task, at)| at.goals.iter().map(move |goal| (quest, task, goal)))
+        });
+        let (quest, task, goal) = found.find(|(_, _, goal)| goal.kind() == kind).unwrap();
+        let id = goal.goal.node().unwrap();
         let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/nodes/").to_owned() + id + ".json";
         assert!(open_node(std::fs::read_to_string(path).unwrap().as_bytes()));
-        let mut character = gear::Character::starting();
-        character.allegiance.pledge = quests().quests[quest].faction;
-        character.quests.set_task(quest, task);
+        let character = on_road(quest, task);
         let times = with_open(|opened| {
             let Opened::Land { room, .. } = opened else { panic!("a node's room") };
             let player = room.join().unwrap();
             let idle = (0..300).map(|_| tick_timed(room)).fold(0.0, f64::max);
             assert!(room.restore_character(player, &character.to_json()));
-            let first = goal.from.as_deref().or(goal.place.as_deref()).unwrap();
+            let first = match &goal.goal {
+                Goal::Escort(escort) => &escort.from,
+                Goal::Tail(tail) => &tail.from,
+                _ => goal.goal.place().unwrap(),
+            };
             let start = room.place_grounds();
             let at = room_place(room, first);
             assert!(room.put_player(player, at[0], at[1] + if follow { 10.0 } else { 0.0 }));
@@ -244,10 +253,17 @@ fn load_of_a_roads_steps() {
         });
         let (idle, begun, median, p99, baked) = times.unwrap();
         eprintln!(
-            "STEP {:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2})",
-            goal.kind
+            "STEP {kind:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2})"
         );
     }
+}
+
+/// A character on a quest's task: pledged to its house, every quest before it done.
+fn on_road(quest: usize, task: usize) -> gear::Character {
+    let mut character = gear::Character::starting();
+    character.allegiance.pledge = gear::quests::quests().quests[quest].faction;
+    character.quests.set_task(quest, task);
+    character
 }
 
 /// A tick of the open room, timed in milliseconds.

@@ -8,6 +8,7 @@ import { inputBytes, readFromRoom } from '../client/src/network/messages.ts';
 import { ASKS, type GearAsk } from '../client/src/network/gearMessages.ts';
 import { SnapshotKeeper } from '../client/src/network/snapshots.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
+import book from '../content/quests/quests.json' with { type: 'json' };
 
 const compiled = new WebAssembly.Module(
   await readFile(new URL('../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)).catch(() => {
@@ -69,13 +70,20 @@ const HALL = node('harbour-social', 'social', {
   ],
 });
 
+/** The Stormcallers' road as the file lays it: its first task's place reached, and the next task's kill goal with a
+ *  group to stand, by its place among that task's goals. */
+const STORM = book.quests.find((quest) => quest.id === 'stormcallers');
+const REACHED = STORM?.tasks[0]?.goals[0];
+const TAKEN = STORM?.tasks[1]?.goals ?? [];
+const KILL = TAKEN.findIndex((goal) => goal.kind === 'kill' && 'spawn' in goal);
+const KILLED = TAKEN[KILL];
 const BEACON = [120, -120, 30];
 const CAMP = [-120, -120, 48];
-/** The Saltgrass Downs, holding the Old Beacon and Tithe Camp as its file names them. */
-const DOWNS = node('saltgrass-downs', 'patrol', {
+/** The Saltgrass Downs, holding the road's first place and its camp as its file names them. */
+const DOWNS = node(REACHED && 'node' in REACHED ? String(REACHED.node) : '', 'patrol', {
   places: [
-    { name: 'The Old Beacon', at: BEACON.slice(0, 2), radius: BEACON[2] },
-    { name: 'Tithe Camp', at: CAMP.slice(0, 2), radius: CAMP[2] },
+    { name: REACHED && 'place' in REACHED ? REACHED.place : '', at: BEACON.slice(0, 2), radius: BEACON[2] },
+    { name: KILLED && 'place' in KILLED ? KILLED.place : '', at: CAMP.slice(0, 2), radius: CAMP[2] },
   ],
 });
 
@@ -185,7 +193,11 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
   const road = new Walker(downs, player).tick(2);
   assert.deepEqual([road.quests?.quest, road.quests?.task, road.quests?.at], [2, 0, BEACON], "the beacon's mark");
   const reached = road.standAt(BEACON[0] ?? 0, (BEACON[1] ?? 0) + 25);
-  assert.deepEqual([reached.task, reached.counts, reached.at], [1, [0, 0], CAMP], 'the camp next, its mark');
+  assert.deepEqual(
+    [reached.task, reached.counts, reached.at],
+    [1, TAKEN.map(() => 0), CAMP],
+    'the camp next, its mark',
+  );
   const near = (foe: { readonly x: number; readonly y: number }) =>
     Math.hypot(foe.x - (CAMP[0] ?? 0), foe.y - (CAMP[1] ?? 0)) < 6;
   road.standAt(CAMP[0] ?? 0, (CAMP[1] ?? 0) + 160);
@@ -194,7 +206,7 @@ test('the opening is walked by speaking with each keeper and pledging, and the r
   assert.equal(road.foes.filter(near).length, 5, 'within 150 m, its group stands');
   assert.ok(downs.putPlayer(player, CAMP[0] ?? 0, (CAMP[1] ?? 0) - 1.3));
   // The camp's first foe stands 2.5 m north of its middle, 1.2 m before the player: faced, swung at until one falls.
-  for (let tick = 0; tick < 3600 && (road.quests?.counts[0] ?? 0) === 0; tick += 30) road.tick(30, undefined, 0, 15);
-  assert.ok((road.quests?.counts[0] ?? 0) >= 1, `a kill counts: ${JSON.stringify(road.quests)}`);
+  for (let tick = 0; tick < 3600 && (road.quests?.counts[KILL] ?? 0) === 0; tick += 30) road.tick(30, undefined, 0, 15);
+  assert.ok((road.quests?.counts[KILL] ?? 0) >= 1, `a kill counts: ${JSON.stringify(road.quests)}`);
   assert.equal(road.quests?.task, 1);
 });

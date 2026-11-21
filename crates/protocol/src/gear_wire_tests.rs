@@ -85,6 +85,21 @@ fn quest_gear(character: &gear::Character) -> Vec<u8> {
 }
 
 #[test]
+fn the_gear_message_says_its_character_is_the_players_own_only_once_their_account_gave_it_back() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let claimed = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("a player of the room");
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear").claimed()
+    };
+    assert!(!claimed(&room), "the character they joined with");
+    assert!(!room.restore_character(player, "not a character"));
+    assert!(!claimed(&room), "nothing given back");
+    assert!(room.restore_character(player, &gear::Character::starting().to_json()));
+    assert!(claimed(&room), "their own, as their account keeps it");
+}
+
+#[test]
 fn the_gear_message_carries_the_quest_walked_its_counts_what_is_earned_and_where_its_place_stands() {
     let bytes = quest_gear(&gear::Character::starting());
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
@@ -414,6 +429,15 @@ fn the_ships_part_carries_its_power_stores_hands_and_each_officer_in_their_grid(
     assert_eq!(ship.trim().map(|trim| trim.len()), Some(character.ship_trim().to_floats().len()));
 }
 
+/// The file's first step of a kind: its quest, task and goal.
+fn first_step(kind: gear::quests::GoalKind) -> (usize, usize, &'static gear::quests::GoalDef) {
+    let defs = &gear::quests::quests().quests;
+    let mut found = defs.iter().enumerate().flat_map(|(quest, def)| {
+        def.tasks.iter().enumerate().flat_map(move |(task, at)| at.goals.iter().map(move |goal| (quest, task, goal)))
+    });
+    found.find(|(_, _, goal)| goal.kind() == kind).expect("a road takes one")
+}
+
 /// The gear message a player on a step is sent: their road at `task` of quest `quest`, in a room of `node` holding
 /// `places`, a tick on.
 fn step_gear(node: &str, places: &[(&str, [f64; 2], f64)], quest: usize, task: usize, at: [f64; 2]) -> Vec<u8> {
@@ -434,22 +458,25 @@ fn step_gear(node: &str, places: &[(&str, [f64; 2], f64)], quest: usize, task: u
 
 #[test]
 fn the_gear_message_carries_a_steps_figure_points_ward_clock_and_failures() {
-    let escort = step_gear(
-        "driftwood-moors",
-        &[("Drowned Men's Graves", [0.0, 100.0], 65.0), ("Moorend", [0.0, -100.0], 70.0)],
-        2,
-        2,
-        [0.0, 160.0],
-    );
+    use gear::quests::{Goal, GoalKind};
+    let (quest, task, goal) = first_step(GoalKind::Escort);
+    let Goal::Escort(walk) = &goal.goal else { unreachable!("an escort") };
+    let places = [(walk.from.as_str(), [0.0, 100.0], 65.0), (walk.to.as_str(), [0.0, -100.0], 70.0)];
+    let escort = step_gear(&walk.node, &places, quest, task, [0.0, 160.0]);
     let gear = flatbuffers::root::<messages::FromRoom>(&escort).expect("a message").gear().expect("the gear");
-    let tobin = gear::quests::speaker_place("tobin").expect("Tobin speaks") as f64 + 1.0;
+    let look = gear::quests::speaker_place(&walk.who).expect("it speaks") as f64 + 1.0;
     let figures: Vec<f64> = gear.quest_figures().map(|it| it.iter().collect()).unwrap_or_default();
-    assert_eq!(figures, [tobin, 0.0, 100.0, 0.0, figures.get(4).copied().unwrap_or(0.0), 0.0], "Tobin waiting");
-    assert_eq!((gear.quest_clock(), gear.quest_fails().map(|it| it.len())), (-1.0, Some(1)));
-    let puzzle = step_gear("driftwood-moors", &[("Grey Point Light", [0.0, 0.0], 30.0)], 1, 8, [0.0, 20.0]);
+    assert_eq!(figures, [look, 0.0, 100.0, 0.0, figures.get(4).copied().unwrap_or(0.0), 0.0], "its figure waiting");
+    let goals = gear::quests::quests().quests[quest].tasks[task].goals.len();
+    assert_eq!((gear.quest_clock(), gear.quest_fails().map(|it| it.len())), (-1.0, Some(goals)));
+    let (quest, task, goal) = first_step(GoalKind::Puzzle);
+    let Goal::Puzzle(lit) = &goal.goal else { unreachable!("a puzzle") };
+    let puzzle = step_gear(&lit.node, &[(lit.place.as_str(), [0.0, 0.0], 30.0)], quest, task, [0.0, 20.0]);
     let gear = flatbuffers::root::<messages::FromRoom>(&puzzle).expect("a message").gear().expect("the gear");
-    assert_eq!(gear.quest_points().map(|it| it.len()), Some(12), "four points, each x, y and lit");
-    let defence = step_gear("saltgrass-downs", &[("The High Downs", [0.0, 0.0], 60.0)], 1, 2, [0.0, 10.0]);
+    assert_eq!(gear.quest_points().map(|it| it.len()), Some(lit.points.len() * 3), "its points, each x, y and lit");
+    let (quest, task, goal) = first_step(GoalKind::Defend);
+    let Goal::Defend(held) = &goal.goal else { unreachable!("a defence") };
+    let defence = step_gear(&held.node, &[(held.place.as_str(), [0.0, 0.0], 60.0)], quest, task, [0.0, 10.0]);
     let gear = flatbuffers::root::<messages::FromRoom>(&defence).expect("a message").gear().expect("the gear");
-    assert_eq!(gear.quest_ward().map(|it| it.iter().collect::<Vec<_>>()), Some(vec![0.0, 0.0, 1.0]), "the glass whole");
+    assert_eq!(gear.quest_ward().map(|it| it.iter().collect::<Vec<_>>()), Some(vec![0.0, 0.0, 1.0]), "its ward whole");
 }

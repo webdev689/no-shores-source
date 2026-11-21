@@ -1,18 +1,15 @@
 //! What `content/quests/quests.json` says, built into the rules so the rooms and every browser read one file: each
-//! quest and task by its id, each goal's kind and the fields that kind reads, checked whole as it is read; and the
-//! cast's speakers in their file's order, by which a figure's look is numbered on the wire.
+//! quest and task by its id (a task's old ids beside it), the quests each comes after, each task's goals
+//! (`quest_goals.rs`) and reward, checked whole as it is read; and the cast's speakers in their file's order, by which
+//! a figure's look is numbered on the wire.
 
 use crate::arts::arts;
 use crate::factions::factions;
-use crate::quests::{Event, Kill};
+use crate::quest_goals::{Defend, Escort, Goal, GoalDef, Puzzle, Race, Slay, Tail};
 use serde::Deserialize;
 use serde::de::{Deserializer, IgnoredAny, MapAccess, Visitor};
 use std::sync::OnceLock;
 
-/// How far past a place's reach a foe's fall there still counts for a kill goal, metres.
-pub const KILL_PAST: f64 = 40.0;
-/// How near a kill goal's place a player on it stands its group there, metres.
-pub const SPAWN_NEAR: f64 = 150.0;
 /// The ranks a goal names, lowest first: a foe's rank by its number (the foes crate's, 1 to 5) is its place plus one.
 pub const RANKS: [&str; 5] = ["Minor", "Major", "Elite", "Miniboss", "Boss"];
 /// The keepers spoken with that are not a house's, by the number ask 64 sends; a house's is its faction's number.
@@ -25,100 +22,12 @@ pub const KEEPERS: [(u8, &str); 7] = [
     (15, "tack"),
     (16, "harbourmaster"),
 ];
+/// How far each way from its middle a place's navmesh square reaches, metres: the room's own (its test holds them
+/// equal), within which a puzzle's points stand.
+pub const PLACE_SQUARE: f64 = 35.0;
 const ISLANDS: [&str; 2] = ["cove", "isle"];
 const SIDES: [&str; 2] = ["tithe", "pirates"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
-
-/// What meets a goal.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deserialize)]
-#[serde(rename_all = "lowercase")]
-pub enum GoalKind {
-    Talk,
-    Pledge,
-    Reach,
-    Kill,
-    Gather,
-    Cast,
-    Sea,
-    Land,
-    Scavenge,
-    Enter,
-    Escort,
-    Tail,
-    Defend,
-    Puzzle,
-    Unseen,
-    Race,
-}
-
-impl GoalKind {
-    /// Whether the room runs the goal as a step of its own, a player at a time, rather than counting what they did.
-    #[must_use]
-    pub fn stepped(self) -> bool {
-        matches!(self, Self::Escort | Self::Tail | Self::Defend | Self::Puzzle | Self::Unseen | Self::Race)
-    }
-}
-
-/// One of a puzzle's points: its name, and where it stands from the place's middle: a bearing in degrees from north
-/// and metres out.
-#[derive(Clone, Debug, PartialEq, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct PointDef {
-    pub name: String,
-    pub bearing: f64,
-    pub at: f64,
-}
-
-/// One goal: its kind, the tracker's words, how many times it is met (1 when left out), and the fields its kind reads
-/// (`fields_of`).
-#[derive(Clone, Debug, PartialEq, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct GoalDef {
-    pub kind: GoalKind,
-    pub text: String,
-    #[serde(default = "one")]
-    pub count: u16,
-    pub to: Option<String>,
-    pub scene: Option<String>,
-    pub node: Option<String>,
-    pub place: Option<String>,
-    #[serde(default)]
-    pub types: Vec<String>,
-    pub rank: Option<String>,
-    pub island: Option<String>,
-    #[serde(default)]
-    pub spawn: Vec<(String, String)>,
-    pub spell: Option<String>,
-    pub side: Option<String>,
-    pub how: Option<String>,
-    pub from: Option<String>,
-    pub who: Option<String>,
-    pub foe: Option<String>,
-    pub near: Option<f64>,
-    pub far: Option<f64>,
-    #[serde(default)]
-    pub ambush: Vec<(String, String)>,
-    pub shout: Option<String>,
-    pub noticed: Option<String>,
-    pub ward: Option<String>,
-    #[serde(default)]
-    pub waves: Vec<Vec<(String, String)>>,
-    pub lost: Option<String>,
-    #[serde(default)]
-    pub points: Vec<PointDef>,
-    #[serde(default)]
-    pub order: Vec<usize>,
-    pub wrong: Option<String>,
-    pub seen: Option<String>,
-    #[serde(default)]
-    pub checkpoints: Vec<String>,
-    pub seconds: Option<f64>,
-    pub late: Option<String>,
-}
-
-fn one() -> u16 {
-    1
-}
 
 /// What a task gives as it is done: its house's Art, a Tenet (1 or 2, 0 none), and fragments to choose.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
@@ -129,11 +38,14 @@ pub struct RewardDef {
     pub fragments: u8,
 }
 
-/// One task: its id, the tracker's words, the scenes played as it begins and as it is done, its goals and its reward.
+/// One task: its id and the ids it had before (a save of one is read as this), the tracker's words, the scenes played
+/// as it begins and as it is done, its goals and its reward.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TaskDef {
     pub id: String,
+    #[serde(default)]
+    pub was: Vec<String>,
     pub task: String,
     pub start: Option<String>,
     pub end: Option<String>,
@@ -142,13 +54,16 @@ pub struct TaskDef {
     pub reward: RewardDef,
 }
 
-/// One quest: its id, name, faction (0 the opening), the scene played as it is first walked, and its tasks.
+/// One quest: its id, name, faction (0 the opening), the quests done before it is walked (by id), the scene played as
+/// it is first walked, and its tasks.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct QuestDef {
     pub id: String,
     pub name: String,
     pub faction: u8,
+    #[serde(default)]
+    pub after: Vec<String>,
     pub begin: String,
     pub tasks: Vec<TaskDef>,
 }
@@ -166,16 +81,18 @@ pub fn keeper_key(keeper: u8) -> Option<&'static str> {
     house.or_else(|| KEEPERS.iter().find(|(number, _)| *number == keeper).map(|(_, key)| *key))
 }
 
+/// Whether ids are each present and none another's.
+fn unique<'id>(ids: impl Iterator<Item = &'id String>) -> bool {
+    let ids: Vec<&String> = ids.collect();
+    ids.iter().enumerate().all(|(at, id)| !id.is_empty() && !ids[..at].contains(id))
+}
+
 impl QuestsDef {
     /// What in the file the rules cannot keep, each said in a line; none when all is well.
     #[must_use]
     pub fn problems(&self) -> Vec<String> {
         let mut problems = Vec::new();
-        let unique = |ids: &mut dyn Iterator<Item = &String>| {
-            let ids: Vec<&String> = ids.collect();
-            ids.iter().enumerate().all(|(at, id)| !id.is_empty() && !ids[..at].contains(id))
-        };
-        if !unique(&mut self.quests.iter().map(|quest| &quest.id)) {
+        if !unique(self.quests.iter().map(|quest| &quest.id)) {
             problems.push("a quest's id is empty or another's".to_owned());
         }
         for quest in &self.quests {
@@ -185,187 +102,202 @@ impl QuestsDef {
             if quest.tasks.is_empty() || quest.tasks.len() > usize::from(u8::MAX) {
                 problems.push(format!("{} has {} tasks", quest.id, quest.tasks.len()));
             }
-            if !unique(&mut quest.tasks.iter().map(|task| &task.id)) {
-                problems.push(format!("{}: a task's id is empty or another's", quest.id));
+            let ids = quest.tasks.iter().flat_map(|task| core::iter::once(&task.id).chain(&task.was));
+            if !unique(ids) {
+                problems.push(format!("{}: a task's id or old id is empty or another's", quest.id));
+            }
+            if let Some(after) = quest.after.iter().find(|after| !self.quests.iter().any(|it| it.id == **after)) {
+                problems.push(format!("{}: after names {after}, no quest", quest.id));
             }
             for task in &quest.tasks {
                 let reward = task.reward;
                 if (reward.art || reward.tenet > 0 || reward.fragments > 0) && quest.faction == 0 || reward.tenet > 2 {
                     problems.push(format!("{}: {} gives what its quest has not", quest.id, task.task));
                 }
-                if task.goals.is_empty() || task.goals.iter().filter(|goal| goal.kind.stepped()).count() > 1 {
+                if task.goals.is_empty() || task.goals.iter().filter(|goal| goal.kind().stepped()).count() > 1 {
                     problems.push(format!("{}: {} has no goal, or more than one step", quest.id, task.task));
                 }
-                problems.extend(task.goals.iter().filter_map(|goal| goal.problem()).map(|said| {
+                problems.extend(task.goals.iter().filter_map(GoalDef::problem).map(|said| {
                     let task = &task.task;
                     format!("{}: {task}: {said}", quest.id)
                 }));
             }
         }
+        problems.extend(self.cycles());
         for faction in core::iter::once(0).chain(factions().factions.iter().map(|faction| faction.id)) {
-            if self.quests.iter().filter(|quest| quest.faction == faction).count() != 1 {
-                problems.push(format!("faction {faction} has not one quest"));
+            if !self.quests.iter().any(|quest| quest.faction == faction) {
+                problems.push(format!("faction {faction} has no quest"));
+            }
+            problems.extend(self.house_problems(faction));
+        }
+        problems
+    }
+
+    /// Each quest that comes after itself, by way of those it comes after.
+    fn cycles(&self) -> Vec<String> {
+        let at = |id: &str| self.quests.iter().position(|quest| quest.id == id);
+        let quests = self.quests.iter().enumerate();
+        quests
+            .filter_map(|(start, quest)| {
+                let mut seen = vec![start];
+                let mut open: Vec<usize> = quest.after.iter().filter_map(|id| at(id)).collect();
+                while let Some(next) = open.pop() {
+                    if next == start {
+                        return Some(format!("{} comes after itself", quest.id));
+                    }
+                    if !seen.contains(&next) {
+                        seen.push(next);
+                        open.extend(self.quests[next].after.iter().filter_map(|id| at(id)));
+                    }
+                }
+                None
+            })
+            .collect()
+    }
+
+    /// A house's quests, their tasks in the file's order: its Art given before its first Tenet, that before its second,
+    /// each once; and every spell a task asks cast its Art's, earned before that task (the Anima with the Art, each
+    /// Tenet its own).
+    fn house_problems(&self, faction: u8) -> Vec<String> {
+        let tasks: Vec<&crate::quest_defs::TaskDef> =
+            self.quests.iter().filter(|quest| quest.faction == faction).flat_map(|quest| &quest.tasks).collect();
+        let given = |gives: &dyn Fn(&RewardDef) -> bool| tasks.iter().position(|task| gives(&task.reward));
+        let once = |gives: &dyn Fn(&RewardDef) -> bool| tasks.iter().filter(|task| gives(&task.reward)).count() <= 1;
+        let (art, one, two) = (given(&|it| it.art), given(&|it| it.tenet == 1), given(&|it| it.tenet == 2));
+        let mut problems = Vec::new();
+        let ordered = |earlier: Option<usize>, later: Option<usize>| {
+            later.is_none_or(|later| earlier.is_some_and(|it| it < later))
+        };
+        let gives_once = once(&|it| it.art) && once(&|it| it.tenet == 1) && once(&|it| it.tenet == 2);
+        if !gives_once || !ordered(art, one) || !ordered(one, two) {
+            problems.push(format!("faction {faction}: its Art, first Tenet and second come once each, in that order"));
+        }
+        let spells = factions().faction(faction).and_then(|house| arts().art(house.art));
+        for (at, task) in tasks.iter().enumerate() {
+            for goal in &task.goals {
+                let Goal::Cast(cast) = &goal.goal else { continue };
+                let ability = spells.and_then(|art| {
+                    [&art.anima, &art.tenets[0], &art.tenets[1]].iter().position(|it| it.name == cast.spell)
+                });
+                let earned = match ability {
+                    Some(0) => art,
+                    Some(1) => one,
+                    Some(_) => two,
+                    None => None,
+                };
+                if earned.is_none_or(|earned| earned >= at) {
+                    problems.push(format!("{}: spell {} is none its house has earned by then", task.task, cast.spell));
+                }
             }
         }
         problems
     }
 }
 
-/// The fields of a goal each kind needs, and those it may have.
-fn fields_of(kind: GoalKind) -> (&'static [&'static str], &'static [&'static str]) {
-    use GoalKind::{Cast, Defend, Enter, Escort, Gather, Kill, Land, Pledge, Puzzle, Race, Reach, Scavenge, Sea};
-    use GoalKind::{Tail, Talk, Unseen};
-    match kind {
-        Talk => (&["to"], &["scene"]),
-        Pledge | Gather | Scavenge => (&[], &[]),
-        Reach => (&["node", "place"], &[]),
-        Kill => (&[], &["node", "place", "types", "rank", "island", "spawn"]),
-        Cast => (&["spell"], &[]),
-        Sea => (&["side"], &["how"]),
-        Land => (&["island"], &[]),
-        Enter => (&["node"], &[]),
-        Escort => (&["node", "from", "to", "who", "near"], &["ambush", "shout"]),
-        Tail => (&["node", "from", "to", "far", "near"], &["who", "foe", "noticed"]),
-        Defend => (&["node", "place", "waves"], &["ward", "who", "lost"]),
-        Puzzle => (&["node", "place", "points", "order"], &["wrong"]),
-        Unseen => (&["node", "place"], &["seen"]),
-        Race => (&["node", "checkpoints", "seconds"], &["late"]),
-    }
+/// Whether a value is none, or one of those named.
+fn among(value: Option<&str>, names: &[&str]) -> bool {
+    value.is_none_or(|value| names.contains(&value))
+}
+
+/// Whether a speaker of the cast has this key.
+fn speaks(who: Option<&str>) -> bool {
+    who.is_none_or(|who| speaker_place(who).is_some())
 }
 
 impl GoalDef {
-    /// What is wrong with the goal: a field its kind needs left out, one it does not read, or a value none of its own.
-    fn problem(&self) -> Option<String> {
-        let has = [
-            ("to", self.to.is_some()),
-            ("scene", self.scene.is_some()),
-            ("node", self.node.is_some()),
-            ("place", self.place.is_some()),
-            ("types", !self.types.is_empty()),
-            ("rank", self.rank.is_some()),
-            ("island", self.island.is_some()),
-            ("spawn", !self.spawn.is_empty()),
-            ("spell", self.spell.is_some()),
-            ("side", self.side.is_some()),
-            ("how", self.how.is_some()),
-            ("from", self.from.is_some()),
-            ("who", self.who.is_some()),
-            ("foe", self.foe.is_some()),
-            ("near", self.near.is_some()),
-            ("far", self.far.is_some()),
-            ("ambush", !self.ambush.is_empty()),
-            ("shout", self.shout.is_some()),
-            ("noticed", self.noticed.is_some()),
-            ("ward", self.ward.is_some()),
-            ("waves", !self.waves.is_empty()),
-            ("lost", self.lost.is_some()),
-            ("points", !self.points.is_empty()),
-            ("order", !self.order.is_empty()),
-            ("wrong", self.wrong.is_some()),
-            ("seen", self.seen.is_some()),
-            ("checkpoints", !self.checkpoints.is_empty()),
-            ("seconds", self.seconds.is_some()),
-            ("late", self.late.is_some()),
-        ];
-        let (needs, may) = fields_of(self.kind);
+    /// What is wrong with the goal, naming the field: a value none of its own, a count other than 1 on a step.
+    #[must_use]
+    pub fn problem(&self) -> Option<String> {
         let text = &self.text;
-        if let Some((name, _)) =
-            has.iter().find(|(name, present)| needs.contains(name) != *present && !may.contains(name))
-        {
-            return Some(format!("{text} has {name} wrong for its kind"));
-        }
-        let (fine, stepped) = (self.counted_fine(), self.stepped_fine());
-        (!fine || !stepped).then(|| format!("{text} is not well formed"))
-    }
-
-    /// Whether the fields every counted kind reads hold values of their own.
-    fn counted_fine(&self) -> bool {
-        let is = |value: &Option<String>, among: &[&str]| value.as_deref().is_none_or(|value| among.contains(&value));
-        let spells = arts().arts.iter().flat_map(|art| [&art.anima, &art.tenets[0], &art.tenets[1]]);
-        let spell = self.spell.as_ref().is_none_or(|name| spells.clone().any(|spell| spell.name == *name));
-        let keeper = |to: &str| (1..=u8::MAX).any(|keeper| keeper_key(keeper) == Some(to));
-        let keeper = self.kind != GoalKind::Talk || self.to.as_deref().is_some_and(keeper);
-        let groups = self.waves.iter().flatten().chain(&self.spawn).chain(&self.ambush);
-        let ranks = groups.map(|(_, rank)| Some(rank.clone())).chain([self.rank.clone()]);
-        let placed = (self.place.is_none() && self.spawn.is_empty()) || self.node.is_some() && self.place.is_some();
-        self.count >= 1
-            && keeper
-            && spell
-            && placed
-            && is(&self.island, &ISLANDS)
-            && is(&self.side, &SIDES)
-            && is(&self.how, &HOWS)
-            && ranks.into_iter().all(|rank| is(&rank, &RANKS))
-    }
-
-    /// Whether a step's fields hold values of their own: a speaker of the cast, reaches above nothing, a tail's
-    /// nearest short of its farthest, a look or a ward named once, waves each with a foe, an order that uses every
-    /// point once, a clock that runs.
-    fn stepped_fine(&self) -> bool {
-        let speaker = self.who.as_deref().is_none_or(|who| speaker_place(who).is_some());
-        let near = self.near.is_none_or(|near| near > 0.0) && self.far.is_none_or(|far| far > 0.0);
-        let between = self.far.zip(self.near).is_none_or(|(far, near)| far < near);
-        let one_of = |one: bool, other: bool| one != other;
-        let look = self.kind != GoalKind::Tail || one_of(self.who.is_some(), self.foe.is_some());
-        let ward = self.kind != GoalKind::Defend || one_of(self.ward.is_some(), self.who.is_some());
-        let waves = self.waves.iter().all(|wave| !wave.is_empty());
-        let mut order = self.order.clone();
-        order.sort_unstable();
-        let ordered = order.iter().copied().eq(0..self.points.len()) || self.points.is_empty();
-        let points = self.points.iter().all(|point| point.at > 0.0 && point.bearing.is_finite());
-        let clock = self.seconds.is_none_or(|seconds| seconds > 0.0);
-        speaker && near && between && look && ward && waves && ordered && points && clock
-    }
-
-    /// The place a step's goal is met at: an escort's or a tail's end, a race's last checkpoint, any other's place.
-    #[must_use]
-    pub fn anchor(&self) -> Option<&str> {
-        match self.kind {
-            GoalKind::Escort | GoalKind::Tail => self.to.as_deref(),
-            GoalKind::Race => self.checkpoints.last().map(String::as_str),
-            _ => self.place.as_deref(),
-        }
-    }
-
-    /// Whether an event meets the goal.
-    #[must_use]
-    pub fn met_by(&self, event: &Event<'_>) -> bool {
-        let same = |field: &Option<String>, value: &str| field.as_deref() == Some(value);
-        match (self.kind, event) {
-            (GoalKind::Talk, Event::Talk(to)) => same(&self.to, to),
-            (GoalKind::Reach, Event::Reach { node, place }) => same(&self.node, node) && same(&self.place, place),
-            (GoalKind::Kill, Event::Kill(kill)) => self.killed(kill),
-            (GoalKind::Cast, Event::Cast(spell)) => same(&self.spell, spell),
-            (GoalKind::Sea, Event::Sea { side, how }) => {
-                same(&self.side, side) && self.how.as_ref().is_none_or(|it| it == how)
+        let ranks = self.goal.foes().all(|(_, rank)| RANKS.contains(&rank.as_str()));
+        let wrong = match &self.goal {
+            Goal::Talk(talk) => {
+                (!(1..=u8::MAX).any(|keeper| keeper_key(keeper) == Some(talk.to.as_str()))).then_some("to")
             }
-            (GoalKind::Land, Event::Land(island)) => same(&self.island, island),
-            (GoalKind::Enter, Event::Enter(node)) => same(&self.node, node),
-            (kind, Event::Stepped { kind: done, node, anchor }) => {
-                kind == *done && same(&self.node, node) && self.anchor() == Some(*anchor)
+            Goal::Pledge(_) | Goal::Reach(_) | Goal::Gather(_) | Goal::Scavenge(_) | Goal::Enter(_) => None,
+            Goal::Kill(slay) => slain(slay),
+            Goal::Cast(cast) => {
+                let spells = arts().arts.iter().flat_map(|art| [&art.anima, &art.tenets[0], &art.tenets[1]]);
+                (!spells.clone().any(|spell| spell.name == cast.spell)).then_some("spell")
             }
-            (GoalKind::Pledge, Event::Pledge)
-            | (GoalKind::Gather, Event::Gather)
-            | (GoalKind::Scavenge, Event::Scavenge) => true,
-            _ => false,
+            Goal::Sea(sea) => {
+                if !among(Some(&sea.side), &SIDES) {
+                    Some("side")
+                } else {
+                    (!among(sea.how.as_deref(), &HOWS)).then_some("how")
+                }
+            }
+            Goal::Land(land) => (!among(Some(&land.island), &ISLANDS)).then_some("island"),
+            Goal::Escort(escort) => escorted(escort),
+            Goal::Tail(tail) => tailed(tail),
+            Goal::Defend(defend) => defended(defend),
+            Goal::Puzzle(puzzle) => puzzled(puzzle),
+            Goal::Unseen(unseen) => (!(unseen.within > 0.0 && unseen.within <= PLACE_SQUARE)).then_some("within"),
+            Goal::Race(race) => raced(race),
+        };
+        let stepped = self.kind().stepped();
+        if let Some(field) = wrong.or((!ranks).then_some("rank")) {
+            Some(format!("{text}: {field} holds a value none of its own"))
+        } else if self.count == 0 || stepped && self.count != 1 {
+            Some(format!("{text}: count must be 1 on a step, and 1 or more on any goal"))
+        } else {
+            None
         }
     }
+}
 
-    /// Whether a foe's fall meets a kill goal: in its node, within its place's reach and `KILL_PAST` beyond, one of
-    /// its types, of its rank or higher, on its kind of island; each only where the goal names it.
-    fn killed(&self, kill: &Kill<'_>) -> bool {
-        let node = self.node.as_ref().is_none_or(|node| kill.node == Some(node.as_str()));
-        let place = self
-            .place
-            .as_ref()
-            .is_none_or(|name| kill.places.iter().any(|place| place.name == *name && place.holds(kill.at, KILL_PAST)));
-        let types = self.types.is_empty() || self.types.iter().any(|name| name == kill.foe);
-        let rank = self
-            .rank
-            .as_deref()
-            .is_none_or(|rank| RANKS.iter().position(|it| *it == rank) < Some(usize::from(kill.rank)));
-        let island = self.island.as_ref().is_none_or(|island| kill.island == Some(island.as_str()));
-        node && place && types && rank && island
+fn slain(slay: &Slay) -> Option<&'static str> {
+    if !among(slay.rank.as_deref(), &RANKS) {
+        Some("rank")
+    } else if !among(slay.island.as_deref(), &ISLANDS) {
+        Some("island")
+    } else if slay.place.is_some() && slay.node.is_none() {
+        Some("node")
+    } else {
+        (!slay.spawn.is_empty() && slay.place.is_none()).then_some("place")
+    }
+}
+
+fn escorted(escort: &Escort) -> Option<&'static str> {
+    if !speaks(Some(&escort.who)) { Some("who") } else { (escort.near <= 0.0).then_some("near") }
+}
+
+fn tailed(tail: &Tail) -> Option<&'static str> {
+    if tail.who.is_some() == tail.foe.is_some() || !speaks(tail.who.as_deref()) {
+        Some("who")
+    } else if tail.far <= 0.0 {
+        Some("far")
+    } else {
+        (tail.near <= tail.far).then_some("near")
+    }
+}
+
+fn defended(defend: &Defend) -> Option<&'static str> {
+    if defend.ward.is_some() == defend.who.is_some() || !speaks(defend.who.as_deref()) {
+        Some("ward")
+    } else {
+        (defend.waves.is_empty() || defend.waves.iter().any(Vec::is_empty)).then_some("waves")
+    }
+}
+
+fn puzzled(puzzle: &Puzzle) -> Option<&'static str> {
+    let within = |point: &crate::quest_goals::PointDef| {
+        let turn = point.bearing.to_radians();
+        point.at > 0.0 && point.at * libm::fabs(libm::sin(turn)).max(libm::fabs(libm::cos(turn))) <= PLACE_SQUARE
+    };
+    if puzzle.points.is_empty() || !puzzle.points.iter().all(within) {
+        return Some("points");
+    }
+    let mut order = puzzle.order.clone().unwrap_or_default();
+    order.sort_unstable();
+    (puzzle.order.is_some() && !order.iter().copied().eq(0..puzzle.points.len())).then_some("order")
+}
+
+fn raced(race: &Race) -> Option<&'static str> {
+    if race.checkpoints.len() < 2 {
+        Some("checkpoints")
+    } else {
+        (race.seconds <= 0.0 || !race.seconds.is_finite()).then_some("seconds")
     }
 }
 

@@ -289,8 +289,10 @@ impl Character {
             Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
         }
         .map(|done| {
-            // A level reached or a piece fully upgraded earns its emblem as it happens.
+            // A level reached or a piece fully upgraded earns its emblem as it happens; a fragment choice left with
+            // nothing to own is paid.
             self.earn_due();
+            self.settle_choices();
             done.unwrap_or(Done::Done)
         })
     }

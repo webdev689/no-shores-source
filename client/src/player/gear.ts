@@ -124,6 +124,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   100: 'Out of reach, or already gathered.',
   101: 'Only the Test Ground hands out gear.',
   102: 'You can carry no more of it.',
+  103: 'Wait a moment before you try that again.',
   110: 'There is no such Art.',
   111: 'An Art’s Core has three slots.',
   112: 'There is no such fragment.',

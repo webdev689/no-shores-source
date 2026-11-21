@@ -1,119 +1,66 @@
-//! The houses' roads in the rules: the file read whole against the scenes, nodes, places and spells it names; every
-//! goal's kind met by its event alone; the opening walked to a pledge; a road walked to its end with each reward given
-//! as its task is done; the Arts earned and the locks they open; fragment choices; and the log kept between sessions.
+//! The houses' roads in the rules: every goal's kind met by its event alone; the opening walked to a pledge; a road
+//! walked to its end with each reward given as its task is done; the Arts earned and the locks they open; fragment
+//! choices, and their price once none is left to own; and the log kept between sessions, by id and read leniently.
 
-use crate::arts::{ALL_EARNED, ArtAsk, ArtRefusal, EARNED_ART, EARNED_TENET_ONE, WornArts};
+use crate::arts::{ALL_EARNED, ArtAsk, ArtRefusal, EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, WornArts};
 use crate::asks::{Ask, Here, Refusal};
 use crate::character::Character;
 use crate::dice::Dice;
-use crate::quests::{Event, GoalDef, GoalKind, Kill, Place, quests};
+use crate::quests::{Event, Goal, GoalDef, GoalKind, Kill, Place, keeper_key, quests};
 
 const AT_COUNTER: Here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 0 };
 const AFIELD: Here = Here { social: false, day: 0, pledge: 0, rank: 0, week: 0 };
 const DICE: Dice = Dice { seed: 3, tick: 1, player: 1 };
 
-/// Reads a content file as JSON.
-fn content(text: &str) -> serde_json::Value {
-    serde_json::from_str(text).expect("the content file reads")
-}
-
-#[test]
-fn the_quests_file_reads_whole_and_names_only_scenes_nodes_places_and_spells_that_are() {
-    assert_eq!(quests().problems(), Vec::<String>::new());
-    let scenes = content(include_str!("../../../content/story/houses.json"));
-    let continent = content(include_str!("../../../content/world/land/continent-1.json"));
-    let briefs = content(include_str!("../../../content/world/briefs.json"));
-    let nodes: Vec<&str> =
-        continent["nodes"].as_array().unwrap().iter().filter_map(|node| node["id"].as_str()).collect();
-    let named = |node: &str, place: &str| {
-        let brief = &briefs[node];
-        ["areas", "runs"].iter().any(|list| {
-            brief[*list].as_array().is_some_and(|found| found.iter().any(|each| each["name"].as_str() == Some(place)))
-        })
-    };
-    for quest in &quests().quests {
-        let mut said = vec![Some(&quest.begin)];
-        for task in &quest.tasks {
-            said.extend([task.start.as_ref(), task.end.as_ref()]);
-            for goal in &task.goals {
-                let lines = [&goal.scene, &goal.shout, &goal.noticed, &goal.lost, &goal.wrong, &goal.seen, &goal.late];
-                said.extend(lines.map(Option::as_ref));
-                if let Some(node) = &goal.node {
-                    assert!(nodes.contains(&node.as_str()), "{node} is a node of continent-1");
-                    let ends = [&goal.place, &goal.from].into_iter().flatten().chain(&goal.checkpoints);
-                    let ends = ends.chain(goal.to.as_ref().filter(|_| goal.kind != GoalKind::Talk));
-                    for place in ends {
-                        assert!(named(node, place), "{place} is a place of {node}");
-                    }
-                }
-            }
-        }
-        for scene in said.into_iter().flatten() {
-            assert!(scenes["scenes"][scene].is_array(), "{scene} is a scene of houses.json");
-        }
-    }
-}
-
-/// A goal from JSON, for the problems a goal not well formed has.
+/// A goal from JSON.
 fn goal(text: &str) -> GoalDef {
-    serde_json::from_str(text).unwrap()
+    serde_json::from_str(text).expect("a goal")
 }
 
-#[test]
-fn a_goal_missing_a_field_its_kind_needs_or_naming_what_is_not_is_a_problem() {
-    let with = |text: &str| {
-        let mut file = quests().clone();
-        file.quests[1].tasks[0].goals[0] = goal(text);
-        file.problems()
-    };
-    assert!(with(r#"{ "kind": "reach", "node": "saltgrass-downs", "place": "Saltgrass", "text": "" }"#).is_empty());
-    for broken in [
-        r#"{ "kind": "reach", "node": "saltgrass-downs", "text": "" }"#,
-        r#"{ "kind": "talk", "to": "nobody", "text": "" }"#,
-        r#"{ "kind": "cast", "spell": "Fireball", "text": "" }"#,
-        r#"{ "kind": "kill", "place": "Tithe Camp", "text": "" }"#,
-        r#"{ "kind": "kill", "node": "saltgrass-downs", "rank": "Captain", "text": "" }"#,
-        r#"{ "kind": "sea", "side": "tithe", "how": "ram", "text": "" }"#,
-        r#"{ "kind": "land", "island": "isle", "spell": "Tempest", "text": "" }"#,
-        r#"{ "kind": "gather", "count": 0, "text": "" }"#,
-    ] {
-        assert_eq!(with(broken).len(), 1, "{broken}");
-    }
-    assert!(serde_json::from_str::<GoalDef>(r#"{ "kind": "reach", "plac": "Saltgrass", "text": "" }"#).is_err());
-    let mut file = quests().clone();
-    file.quests[0].tasks[0].reward.art = true;
-    assert_eq!(file.problems().len(), 1, "the opening gives no Art");
+/// The first quest a house walks (the opening's, house 0), by its place in the file.
+fn road_of(faction: u8) -> usize {
+    let found = quests().quests.iter().position(|quest| quest.faction == faction && quest.after.is_empty());
+    found.expect("every house has a quest")
 }
 
 /// An event that meets a goal, its places at the world's middle.
 fn meeting<'told>(goal: &'told GoalDef, places: &'told [Place]) -> Event<'told> {
-    let text = |field: &'told Option<String>| field.as_deref().unwrap_or_default();
-    match goal.kind {
-        GoalKind::Talk => Event::Talk(text(&goal.to)),
-        GoalKind::Pledge => Event::Pledge,
-        GoalKind::Reach => Event::Reach { node: text(&goal.node), place: text(&goal.place) },
-        GoalKind::Kill => Event::Kill(Kill {
-            node: goal.node.as_deref(),
+    let stepped = |kind| Event::Stepped {
+        kind,
+        node: goal.goal.node().unwrap_or_default(),
+        anchor: goal.goal.anchor().unwrap_or_default(),
+    };
+    match &goal.goal {
+        Goal::Talk(talk) => Event::Talk(&talk.to),
+        Goal::Pledge(_) => Event::Pledge,
+        Goal::Reach(reach) => Event::Reach { node: &reach.node, place: &reach.place },
+        Goal::Kill(slay) => Event::Kill(Kill {
+            node: slay.node.as_deref(),
             at: [0.0, 0.0],
             places,
-            foe: goal.types.first().map_or("Collector", String::as_str),
+            foe: slay.types.first().map_or("Collector", String::as_str),
             rank: 5,
-            island: goal.island.as_deref(),
+            island: slay.island.as_deref(),
         }),
-        GoalKind::Gather => Event::Gather,
-        GoalKind::Cast => Event::Cast(text(&goal.spell)),
-        GoalKind::Sea => Event::Sea { side: text(&goal.side), how: goal.how.as_deref().unwrap_or("sink") },
-        GoalKind::Land => Event::Land(text(&goal.island)),
-        GoalKind::Scavenge => Event::Scavenge,
-        GoalKind::Enter => Event::Enter(text(&goal.node)),
-        kind => Event::Stepped { kind, node: text(&goal.node), anchor: goal.anchor().unwrap_or_default() },
+        Goal::Gather(_) => Event::Gather,
+        Goal::Cast(cast) => Event::Cast(&cast.spell),
+        Goal::Sea(sea) => Event::Sea { side: &sea.side, how: sea.how.as_deref().unwrap_or("sink") },
+        Goal::Land(land) => Event::Land(&land.island),
+        Goal::Scavenge(_) => Event::Scavenge,
+        Goal::Enter(enter) => Event::Enter(&enter.node),
+        Goal::Escort(_) => stepped(GoalKind::Escort),
+        Goal::Tail(_) => stepped(GoalKind::Tail),
+        Goal::Defend(_) => stepped(GoalKind::Defend),
+        Goal::Puzzle(_) => stepped(GoalKind::Puzzle),
+        Goal::Unseen(_) => stepped(GoalKind::Unseen),
+        Goal::Race(_) => stepped(GoalKind::Race),
     }
 }
 
 /// Every place a quest's goals name, at the world's middle, as a node's file has it.
 fn every_place() -> Vec<Place> {
     let named = quests().quests.iter().flat_map(|quest| &quest.tasks).flat_map(|task| &task.goals);
-    let places = named.filter_map(|goal| goal.place.clone());
+    let places = named.filter_map(|goal| goal.goal.place().map(str::to_owned));
     places.map(|name| Place { name, at: [0.0, 0.0], radius: 10.0 }).collect()
 }
 
@@ -122,7 +69,7 @@ fn meet_task(character: &mut Character, places: &[Place]) {
     let now = character.quest_now().expect("a task to meet");
     for (at, goal) in quests().quests[now.0].tasks[now.1].goals.iter().enumerate() {
         while character.quest_now() == Some(now) && character.quest_counts()[at] < goal.count {
-            if goal.kind == GoalKind::Pledge {
+            if goal.kind() == GoalKind::Pledge {
                 character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).unwrap();
             } else {
                 assert!(character.tell(&meeting(goal, places)), "{} counts", goal.text);
@@ -133,22 +80,35 @@ fn meet_task(character: &mut Character, places: &[Place]) {
 
 #[test]
 fn each_kind_of_goal_is_met_by_its_own_event_alone() {
-    let places = every_place();
-    let goals: Vec<&GoalDef> =
-        quests().quests.iter().flat_map(|quest| &quest.tasks).flat_map(|task| &task.goals).collect();
-    for kind in [GoalKind::Talk, GoalKind::Reach, GoalKind::Kill, GoalKind::Cast, GoalKind::Sea, GoalKind::Land] {
-        let of_kind: Vec<&&GoalDef> = goals.iter().filter(|goal| goal.kind == kind).collect();
-        assert!(of_kind.len() >= 2, "{kind:?} has goals to tell apart");
-        for goal in &of_kind {
-            assert!(goal.met_by(&meeting(goal, &places)), "{} is met by its event", goal.text);
-            let others = of_kind.iter().filter(|other| !other.met_by(&meeting(goal, &places)));
-            assert!(others.count() > 0 || kind == GoalKind::Kill, "{}'s event meets not every {kind:?}", goal.text);
+    let places = [Place { name: "p".to_owned(), at: [0.0, 0.0], radius: 10.0 }];
+    let goals = [
+        r#"{ "kind": "talk", "to": "mage", "text": "t" }"#,
+        r#"{ "kind": "pledge", "text": "t" }"#,
+        r#"{ "kind": "reach", "node": "n", "place": "p", "text": "t" }"#,
+        r#"{ "kind": "kill", "node": "n", "text": "t" }"#,
+        r#"{ "kind": "gather", "text": "t" }"#,
+        r#"{ "kind": "cast", "spell": "Tempest", "text": "t" }"#,
+        r#"{ "kind": "sea", "side": "tithe", "text": "t" }"#,
+        r#"{ "kind": "land", "island": "isle", "text": "t" }"#,
+        r#"{ "kind": "scavenge", "text": "t" }"#,
+        r#"{ "kind": "enter", "node": "n", "text": "t" }"#,
+        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "p", "who": "tobin", "near": 15, "text": "t" }"#,
+        r#"{ "kind": "tail", "node": "n", "from": "a", "to": "p", "foe": "Runner", "far": 10, "near": 40, "text": "t" }"#,
+        r#"{ "kind": "defend", "node": "n", "place": "p", "ward": "w", "waves": [[["Runner", "Minor"]]], "text": "t" }"#,
+        r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "text": "t" }"#,
+        r#"{ "kind": "unseen", "node": "n", "place": "p", "text": "t" }"#,
+        r#"{ "kind": "race", "node": "n", "checkpoints": ["a", "p"], "seconds": 60, "text": "t" }"#,
+    ]
+    .map(goal);
+    for (at, one) in goals.iter().enumerate() {
+        for (other, against) in goals.iter().enumerate() {
+            assert_eq!(one.met_by(&meeting(against, &places)), at == other, "{:?} by {:?}", one.goal, against.goal);
         }
     }
-    for goal in &goals {
-        let unlike = goals.iter().filter(|other| other.kind != goal.kind);
-        assert!(unlike.into_iter().all(|other| !goal.met_by(&meeting(other, &places))), "{} alone", goal.text);
-    }
+    let race = &goals[15];
+    let stepped = |kind, node, anchor| Event::Stepped { kind, node, anchor };
+    assert!(race.met_by(&stepped(GoalKind::Race, "n", "p")), "a race at its last checkpoint");
+    assert!(!race.met_by(&stepped(GoalKind::Race, "n", "a")) && !race.met_by(&stepped(GoalKind::Race, "m", "p")));
 }
 
 /// A foe's fall at the world's middle, with no places.
@@ -158,21 +118,19 @@ fn kill<'told>(foe: &'told str, rank: u8, node: Option<&'told str>) -> Kill<'tol
 
 #[test]
 fn a_kill_counts_within_its_place_and_forty_metres_past_of_its_type_rank_node_and_island() {
-    let road = &quests().quests[2];
-    let tomb = &road.tasks[9].goals[2];
-    assert_eq!((tomb.text.as_str(), tomb.rank.as_deref()), ("The Reeve of the Tomb", Some("Miniboss")));
+    let tomb = goal(r#"{ "kind": "kill", "node": "pearl-tomb", "types": ["Reeve"], "rank": "Miniboss", "text": "t" }"#);
     assert!(tomb.met_by(&Event::Kill(kill("Reeve", 4, Some("pearl-tomb")))));
     assert!(tomb.met_by(&Event::Kill(kill("Reeve", 5, Some("pearl-tomb")))), "a higher rank");
     assert!(!tomb.met_by(&Event::Kill(kill("Reeve", 3, Some("pearl-tomb")))), "a lower rank");
     assert!(!tomb.met_by(&Event::Kill(kill("Collector", 4, Some("pearl-tomb")))), "another type");
     assert!(!tomb.met_by(&Event::Kill(kill("Reeve", 4, Some("krakens-grotto")))), "another node");
-    let graves = &road.tasks[1].goals[0];
-    let places = [Place { name: "Drowned Men's Graves".to_owned(), at: [100.0, 0.0], radius: 50.0 }];
-    let fell =
-        |east: f64| Kill { node: Some("driftwood-moors"), at: [east, 0.0], places: &places, ..kill("Brute", 1, None) };
+    let graves = goal(r#"{ "kind": "kill", "node": "moors", "place": "Graves", "text": "t" }"#);
+    let places = [Place { name: "Graves".to_owned(), at: [100.0, 0.0], radius: 50.0 }];
+    let fell = |east: f64| Kill { node: Some("moors"), at: [east, 0.0], places: &places, ..kill("Brute", 1, None) };
     assert!(graves.met_by(&Event::Kill(fell(10.0))), "50 m and 40 past it");
     assert!(!graves.met_by(&Event::Kill(fell(9.0))), "past them");
-    let isle = &quests().quests[3].tasks[6].goals[1];
+    let isle =
+        goal(r#"{ "kind": "kill", "types": ["Reeve", "Captain"], "rank": "Elite", "island": "isle", "text": "t" }"#);
     let on = |island| Kill { island, ..kill("Captain", 3, None) };
     assert!(isle.met_by(&Event::Kill(on(Some("isle")))));
     assert!(!isle.met_by(&Event::Kill(on(Some("cove")))) && !isle.met_by(&Event::Kill(on(None))));
@@ -180,66 +138,78 @@ fn a_kill_counts_within_its_place_and_forty_metres_past_of_its_type_rank_node_an
 
 #[test]
 fn a_sea_goal_takes_its_side_and_its_way_alone_where_it_names_one() {
-    let (storm, veil) = (&quests().quests[1].tasks[5].goals[0], &quests().quests[3].tasks[5].goals[0]);
+    let (any, board) = (
+        goal(r#"{ "kind": "sea", "side": "tithe", "text": "t" }"#),
+        goal(r#"{ "kind": "sea", "side": "tithe", "how": "board", "text": "t" }"#),
+    );
     for how in ["sink", "strike", "board"] {
-        assert!(storm.met_by(&Event::Sea { side: "tithe", how }), "any way");
-        assert!(!storm.met_by(&Event::Sea { side: "pirates", how }), "not the pirates");
-        assert_eq!(veil.met_by(&Event::Sea { side: "tithe", how }), how == "board");
+        assert!(any.met_by(&Event::Sea { side: "tithe", how }), "any way");
+        assert!(!any.met_by(&Event::Sea { side: "pirates", how }), "not the pirates");
+        assert_eq!(board.met_by(&Event::Sea { side: "tithe", how }), how == "board");
     }
 }
 
+/// The number ask 64 sends for a keeper's key.
+fn keeper(key: &str) -> u8 {
+    (1..=u8::MAX).find(|number| keeper_key(*number) == Some(key)).expect("a keeper")
+}
+
 #[test]
-fn the_opening_is_walked_by_speaking_with_each_keeper_and_ends_in_a_pledge_that_begins_the_road() {
+fn the_opening_is_walked_by_speaking_with_each_keeper_it_names_and_ends_in_a_pledge_that_begins_the_road() {
+    let opening = road_of(0);
     let mut character = Character::starting();
-    assert_eq!(character.quest_now(), Some((0, 0)), "a new player walks the opening");
-    assert_eq!(character.ask(Ask::Speak { keeper: 2 }, AFIELD, &DICE), Err(Refusal::NotHere));
+    assert_eq!(character.quest_now(), Some((opening, 0)), "a new player walks the opening");
+    let first = &quests().quests[opening].tasks[0];
+    let keepers: Vec<u8> = first
+        .goals
+        .iter()
+        .filter_map(|goal| if let Goal::Talk(talk) = &goal.goal { Some(keeper(&talk.to)) } else { None })
+        .collect();
+    assert!(!keepers.is_empty(), "the opening hears the keepers");
+    assert_eq!(character.ask(Ask::Speak { keeper: keepers[0] }, AFIELD, &DICE), Err(Refusal::NotHere));
     assert_eq!(character.ask(Ask::Speak { keeper: 9 }, AT_COUNTER, &DICE), Err(Refusal::NoSuchKeeper));
-    assert_eq!(character.ask(Ask::Speak { keeper: 10 }, AT_COUNTER, &DICE), Err(Refusal::NothingToSay), "the Mage");
-    assert!(character.ask(Ask::Speak { keeper: 2 }, AT_COUNTER, &DICE).is_ok());
-    assert_eq!(character.quest_counts(), [0, 1, 0]);
+    assert!(character.ask(Ask::Speak { keeper: keepers[0] }, AT_COUNTER, &DICE).is_ok());
     let before = character.clone();
-    assert_eq!(character.ask(Ask::Speak { keeper: 2 }, AT_COUNTER, &DICE), Err(Refusal::NothingToSay), "said");
+    assert_eq!(character.ask(Ask::Speak { keeper: keepers[0] }, AT_COUNTER, &DICE), Err(Refusal::NothingToSay));
     assert_eq!(character, before, "a refusal changes nothing");
-    for keeper in [1, 3] {
-        assert!(character.ask(Ask::Speak { keeper }, AT_COUNTER, &DICE).is_ok());
+    for keeper in &keepers[1..] {
+        assert!(character.ask(Ask::Speak { keeper: *keeper }, AT_COUNTER, &DICE).is_ok());
     }
-    assert_eq!((character.quest_now(), character.quest_counts()), (Some((0, 1)), vec![0]), "the next task at once");
-    assert!(character.ask(Ask::Pledge { faction: 3 }, AT_COUNTER, &DICE).is_ok());
-    assert_eq!(character.quests_done(), [true, false, false, false]);
-    assert_eq!((character.quest_now(), character.quest_counts()), (Some((3, 0)), vec![0]), "the Veiled's road");
+    let places = every_place();
+    while character.quest_now().is_some_and(|(quest, _)| quest == opening) {
+        meet_task(&mut character, &places);
+    }
+    assert!(character.quests_done()[opening], "the opening done");
+    assert_eq!(character.quest_now(), Some((road_of(1), 0)), "the pledged house's road begins");
 }
 
 #[test]
 fn a_pledge_before_the_keepers_are_heard_leaves_the_opening_and_walks_the_road() {
     let mut character = Character::starting();
     assert!(character.ask(Ask::Pledge { faction: 2 }, AT_COUNTER, &DICE).is_ok());
-    assert_eq!((character.quest_now(), character.quests_done()[0]), (Some((2, 0)), false));
+    assert_eq!((character.quest_now(), character.quests_done()[road_of(0)]), (Some((road_of(2), 0)), false));
 }
 
 #[test]
-fn a_road_walked_to_its_end_gives_its_art_worn_at_once_then_each_tenet_then_three_fragment_choices() {
+fn a_road_walked_to_its_end_gives_its_art_worn_at_once_then_each_tenet_and_its_fragment_choices() {
     let places = every_place();
     let mut character = Character::starting();
     assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
-    let mut given = Vec::new();
+    let (mut earned, mut choices, mut tasks) = (0, 0, 0);
     while let Some((quest, task)) = character.quest_now() {
-        assert_eq!(quest, 1);
-        let goal = &quests().quests[1].tasks[task].goals[0];
-        if goal.count > 1 {
-            character.tell(&meeting(goal, &places));
-            assert_eq!(character.quest_now(), Some((1, task)), "a goal short of its count holds the task");
-        }
+        assert_eq!(quests().quests[quest].faction, 1, "the house's own quests, one after another");
+        let reward = quests().quests[quest].tasks[task].reward;
         meet_task(&mut character, &places);
-        given.push((task, character.earned(1), character.arts.worn, character.fragment_choices(1)));
+        earned |= if reward.art { EARNED_ART } else { 0 };
+        earned |= [0, EARNED_TENET_ONE, EARNED_TENET_TWO][usize::from(reward.tenet)];
+        choices += reward.fragments;
+        tasks += 1;
+        assert_eq!((character.earned(1), character.fragment_choices(1)), (earned, choices), "task {tasks}");
+        assert_eq!(character.arts.worn, if earned & EARNED_ART == 0 { 0 } else { 1 }, "worn as it is given");
     }
-    let art = EARNED_ART;
-    let both = art | EARNED_TENET_ONE;
-    let expected = [(0, 0, 0, 0), (1, 0, 0, 0), (2, art, 1, 0), (3, both, 1, 0), (4, both, 1, 0), (5, both, 1, 0)];
-    assert_eq!(given[..6], expected, "the Art as the glass is held, the first Tenet at the mill");
-    assert_eq!(given[6], (6, both, 1, 1), "the isle's fragment");
-    assert_eq!(given[7..9], [(7, ALL_EARNED, 1, 1), (8, ALL_EARNED, 1, 1)], "the second Tenet; the rods give none");
-    assert_eq!(given[9..], [(9, ALL_EARNED, 1, 2), (10, ALL_EARNED, 1, 3)], "the instance's and the road's end");
-    assert_eq!(character.quests_done(), [false, true, false, false]);
+    assert_eq!(earned, ALL_EARNED, "the Art and both its Tenets");
+    let house = quests().quests.iter().enumerate().filter(|(_, quest)| quest.faction == 1);
+    assert!(house.into_iter().all(|(at, _)| character.quests_done()[at]), "every quest of the house done");
     assert!(!character.tell(&Event::Gather), "a road done takes nothing");
     assert_eq!((character.earned(2), character.earned(3)), (0, 0), "the other houses' Arts");
 }
@@ -252,11 +222,10 @@ fn a_switch_walks_the_new_road_from_where_it_was_left_and_every_road_keeps_its_p
     assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
     meet_task(&mut character, &places);
     assert!(character.ask(Ask::Pledge { faction: 2 }, AT_COUNTER, &DICE).is_ok());
-    assert_eq!(character.quest_now(), Some((2, 0)));
-    meet_task(&mut character, &places);
+    assert_eq!(character.quest_now(), Some((road_of(2), 0)));
     meet_task(&mut character, &places);
     assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
-    assert_eq!(character.quest_now(), Some((1, 1)), "the Stormcallers' road where it was left");
+    assert_eq!(character.quest_now(), Some((road_of(1), 1)), "the Stormcallers' road where it was left");
 }
 
 #[test]
@@ -281,7 +250,7 @@ fn a_character_kept_before_quests_reads_every_quest_unbegun_and_every_art_earned
     object["arts"].as_object_mut().unwrap().remove("earned");
     object["arts"]["worn"] = 3.into();
     let back = Character::from_json(&kept.to_string()).unwrap();
-    assert_eq!(back.quest_now(), Some((0, 0)));
+    assert_eq!(back.quest_now(), Some((road_of(0), 0)));
     assert_eq!(back.quests.roads.len(), quests().quests.len());
     assert_eq!((back.arts.worn, back.earned(1), back.earned(3)), (3, ALL_EARNED, ALL_EARNED));
     let mut unearned = serde_json::from_str::<serde_json::Value>(&Character::starting().to_json()).unwrap();
@@ -291,35 +260,40 @@ fn a_character_kept_before_quests_reads_every_quest_unbegun_and_every_art_earned
 
 #[test]
 fn the_quest_log_keeps_keys_it_does_not_know_and_is_made_whole_as_read() {
+    let storm = &quests().quests[road_of(1)];
+    let second = &storm.tasks[1];
     let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
     kept["quests"]["later"] = "kept".into();
-    kept["quests"]["roads"]["stormcallers"] = serde_json::json!({ "task": "gone", "counts": [9, 9], "seen": 1 });
-    kept["quests"]["roads"]["lamplighters"] = serde_json::json!({ "task": "free-old-stones", "counts": [9, 9] });
+    kept["quests"]["roads"][&storm.id] = serde_json::json!({ "task": "gone", "counts": [9, 9], "seen": 1 });
     kept["quests"]["roads"]["a-later-road"] = serde_json::json!({ "task": "its-first", "counts": [2] });
     let back = Character::from_json(&kept.to_string()).unwrap();
     let written: serde_json::Value = serde_json::from_str(&back.to_json()).unwrap();
     let roads = &written["quests"]["roads"];
-    assert_eq!(
-        (
-            written["quests"]["later"].as_str(),
-            roads["stormcallers"]["seen"].as_u64(),
-            roads["a-later-road"]["counts"][0].as_u64()
-        ),
-        (Some("kept"), Some(1), Some(2)),
-        "keys and roads this room does not know, kept"
-    );
-    let (storm, lamp) = (&back.quests.roads["stormcallers"], &back.quests.roads["lamplighters"]);
-    assert_eq!(
-        (storm.task.as_str(), storm.counts.as_slice()),
-        ("climb-old-beacon", &[0][..]),
-        "a task gone: the first"
-    );
-    assert_eq!(
-        (lamp.task.as_str(), lamp.counts.as_slice()),
-        ("free-old-stones", &[1, 4][..]),
-        "by id, within its counts"
-    );
-    assert_eq!(back.quests.choices, [0, 0, 0]);
+    let unknown = (roads[&storm.id]["seen"].as_u64(), roads["a-later-road"]["counts"][0].as_u64());
+    assert_eq!((written["quests"]["later"].as_str(), unknown), (Some("kept"), (Some(1), Some(2))), "kept as read");
+    let road = &back.quests.roads[&storm.id];
+    assert_eq!((road.task.as_str(), road.counts.len()), (storm.tasks[0].id.as_str(), storm.tasks[0].goals.len()));
+    let mut by_id = kept.clone();
+    by_id["quests"]["roads"][&storm.id] = serde_json::json!({ "task": second.id, "counts": vec![9; 8] });
+    let road = Character::from_json(&by_id.to_string()).unwrap().quests.roads[&storm.id].clone();
+    let capped: Vec<u16> = second.goals.iter().map(|goal| goal.count).collect();
+    assert_eq!((road.task, road.counts), (second.id.clone(), capped), "by id, each count within its goal's");
+}
+
+#[test]
+fn a_quest_log_of_a_shape_this_room_cannot_read_reads_unbegun_and_is_written_back_as_it_was() {
+    for unread in [
+        serde_json::json!({ "roads": [{ "task": 3 }] }),
+        serde_json::json!({ "roads": { "x": { "task": 3 } } }),
+        serde_json::json!(7),
+    ] {
+        let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
+        kept["quests"] = unread.clone();
+        let back = Character::from_json(&kept.to_string()).expect("the character reads all the same");
+        assert_eq!(back.quest_now(), Some((road_of(0), 0)), "{unread}: unbegun");
+        let written: serde_json::Value = serde_json::from_str(&back.to_json()).unwrap();
+        assert_eq!(written["quests"]["unread"], unread, "kept as it was");
+    }
 }
 
 #[test]
@@ -340,88 +314,40 @@ fn a_fragment_choice_owns_one_fragment_not_owned_anywhere_and_is_spent() {
 #[test]
 fn a_fragment_the_art_has_none_left_to_give_is_its_counters_price_in_aurem() {
     let places = every_place();
+    let price = crate::factions::factions().fragment_aurem;
+    assert_eq!(price, 7_500);
     let mut character = Character::starting();
     assert!(character.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
-    character.quests.set_task(1, 6);
     character.arts.owned = Some(vec![0b01_1111, 0, 0]);
-    character.quests = std::mem::take(&mut character.quests).kept();
-    meet_task(&mut character, &places);
-    assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, 0), "one left unowned: a choice");
-    for task in 7..10 {
-        assert_eq!(character.quest_now(), Some((1, task)));
+    let mut given = 0;
+    while let Some((quest, task)) = character.quest_now() {
+        given += quests().quests[quest].tasks[task].reward.fragments;
         meet_task(&mut character, &places);
     }
-    let price = crate::factions::factions().fragment_aurem;
-    assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, price), "none left beyond the choice");
-    assert_eq!(price, 7_500);
+    assert!(given >= 2, "the road gives two fragments or more");
+    let paid = u32::from(given - 1) * price;
+    assert_eq!((character.fragment_choices(1), character.materials.aurem), (1, paid), "one left to own: a choice");
+}
+
+#[test]
+fn a_choice_waiting_for_an_art_whose_fragments_are_all_owned_is_paid_as_any_ask_is_answered() {
+    let mut character = Character::starting();
+    character.quests.choices[0] = 2;
+    character.arts.owned = Some(vec![0b11_1111, 0, 0]);
+    assert!(character.ask(Ask::TakeOff { slot: crate::kinds::Slot::Head }, AFIELD, &DICE).is_ok());
+    assert_eq!((character.fragment_choices(1), character.materials.aurem), (0, 15_000), "both, at 7,500 each");
 }
 
 #[test]
 fn a_save_keeps_each_road_and_task_by_id_wherever_the_file_puts_them() {
+    let veiled = road_of(3);
+    let third = &quests().quests[veiled].tasks[2];
     let mut kept: serde_json::Value = serde_json::from_str(&Character::starting().to_json()).unwrap();
     kept["allegiance"]["pledge"] = 3.into();
-    kept["quests"]["roads"]["veiled"] = serde_json::json!({ "task": "reckoner-chest", "counts": [0] });
+    kept["quests"]["roads"][&quests().quests[veiled].id] = serde_json::json!({ "task": third.id, "counts": [0] });
     let back = Character::from_json(&kept.to_string()).unwrap();
-    let at = quests().quests[3].tasks.iter().position(|task| task.id == "reckoner-chest");
-    assert_eq!(back.quest_now(), Some((3, at.unwrap())));
+    assert_eq!(back.quest_now(), Some((veiled, 2)));
     let mut character = back.clone();
-    character.quests.set_task(3, 0);
-    assert_eq!(
-        (character.quest_now(), character.quests.roads["veiled"].task.as_str()),
-        (Some((3, 0)), "meet-wren-follow")
-    );
-}
-
-#[test]
-fn a_quest_or_task_without_an_id_of_its_own_is_a_problem() {
-    let mut file = quests().clone();
-    file.quests[1].tasks[3].id = file.quests[1].tasks[2].id.clone();
-    assert_eq!(file.problems().len(), 1, "two tasks of one id");
-    file.quests[1].tasks[3].id = String::new();
-    assert_eq!(file.problems().len(), 1, "an empty id");
-    let mut file = quests().clone();
-    file.quests[2].id = "stormcallers".to_owned();
-    assert!(!file.problems().is_empty(), "two quests of one id");
-}
-
-#[test]
-fn a_step_missing_what_its_kind_needs_or_holding_a_value_none_of_its_own_is_a_problem() {
-    let with = |text: &str| {
-        let mut file = quests().clone();
-        file.quests[1].tasks[0].goals[0] = goal(text);
-        file.problems()
-    };
-    let escort = r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "tobin", "near": 15, "text": "" }"#;
-    assert!(with(escort).is_empty());
-    for broken in [
-        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "who": "nobody", "near": 15, "text": "" }"#,
-        r#"{ "kind": "escort", "node": "n", "from": "a", "to": "b", "near": 15, "text": "" }"#,
-        r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "far": 40, "near": 10, "foe": "Collector", "text": "" }"#,
-        r#"{ "kind": "tail", "node": "n", "from": "a", "to": "b", "far": 10, "near": 40, "text": "" }"#,
-        r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[]], "ward": "w", "text": "" }"#,
-        r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Minor"]]], "text": "" }"#,
-        r#"{ "kind": "defend", "node": "n", "place": "p", "waves": [[["Runner", "Huge"]]], "ward": "w", "text": "" }"#,
-        r#"{ "kind": "puzzle", "node": "n", "place": "p", "points": [{ "name": "a", "bearing": 0, "at": 5 }], "order": [1], "text": "" }"#,
-        r#"{ "kind": "unseen", "node": "n", "text": "" }"#,
-        r#"{ "kind": "race", "node": "n", "checkpoints": ["a", "b"], "seconds": 0, "text": "" }"#,
-    ] {
-        assert_eq!(with(broken).len(), 1, "{broken}");
-    }
-    let mut file = quests().clone();
-    file.quests[1].tasks[0].goals.push(goal(escort));
-    file.quests[1].tasks[0].goals.push(goal(escort));
-    assert_eq!(file.problems().len(), 1, "two steps in one task");
-}
-
-#[test]
-fn a_step_is_met_by_its_own_kind_in_its_node_at_its_anchor_alone() {
-    let road = &quests().quests[2].tasks[2].goals[0];
-    assert_eq!((road.kind, road.anchor()), (GoalKind::Escort, Some("Moorend")));
-    let stepped = |kind, node, anchor| Event::Stepped { kind, node, anchor };
-    assert!(road.met_by(&stepped(GoalKind::Escort, "driftwood-moors", "Moorend")));
-    assert!(!road.met_by(&stepped(GoalKind::Tail, "driftwood-moors", "Moorend")), "another kind");
-    assert!(!road.met_by(&stepped(GoalKind::Escort, "gullwing-vale", "Moorend")), "another node");
-    assert!(!road.met_by(&stepped(GoalKind::Escort, "driftwood-moors", "Moorhold")), "another end");
-    let race = &quests().quests[1].tasks[4].goals[0];
-    assert_eq!((race.kind, race.anchor()), (GoalKind::Race, Some("The Water Meadows")), "a race's last checkpoint");
+    character.quests.set_task(veiled, 0);
+    assert_eq!(character.quest_now(), Some((veiled, 0)));
 }

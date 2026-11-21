@@ -193,7 +193,7 @@ pub struct Character {
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
     /// Their place in every quest, and the fragment choices their roads gave (`quests.rs`).
-    #[serde(default)]
+    #[serde(default, deserialize_with = "crate::quests::lenient")]
     pub quests: crate::quests::QuestLog,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.

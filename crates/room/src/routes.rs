@@ -26,8 +26,7 @@ impl Room {
 
     /// The mesh that holds a point.
     pub(crate) fn mesh_at(&self, point: [f64; 3]) -> &NavMesh {
-        let at = self.mesh_index([point[0], point[1]]).checked_sub(1);
-        at.and_then(|at| self.quests.grounds.get(at)).map_or(&self.nav, |(_, _, mesh)| mesh)
+        self.mesh_by(self.mesh_index([point[0], point[1]]))
     }
 
     /// The mesh a foe thinks on: the one that holds its post, or with none, where it stands.

@@ -152,9 +152,11 @@ pub struct Player {
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
     pub dress_next: Option<String>,
     pub dressed_at: Option<u64>,
-    /// Their gear, and whether it changed since it was last sent to them.
+    /// Their gear, whether it changed since it was last sent to them, and whether it is their own as their account
+    /// keeps it (given back, `restore_character`) rather than the one they joined with.
     pub character: Character,
     pub gear_changed: bool,
+    pub claimed: bool,
     /// Where they stood as their gear was last sent: at the Mage, in a social space, and at the counter that signs their
     /// officers on. All ride the gear
     /// message and change as they walk, so a change sends it again.
@@ -218,6 +220,7 @@ impl Player {
             dressed_at: None,
             character,
             gear_changed: true,
+            claimed: false,
             placed_sent: (false, false, false),
             gear_sent: None,
             asked_at: None,
@@ -404,7 +407,7 @@ impl Room {
         let Some(character) = gear::Character::from_json(text) else { return false };
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.character = character;
-        found.gear_changed = true;
+        (found.gear_changed, found.claimed) = (true, true);
         self.arrived(player);
         self.retrim(player);
         if let Some(found) = self.players.get_mut(&player) {

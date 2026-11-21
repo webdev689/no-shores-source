@@ -22,6 +22,7 @@ pub mod kinds;
 mod old_hands;
 pub mod power;
 mod quest_defs;
+mod quest_goals;
 pub mod quests;
 pub mod rarity;
 pub mod rewards;
@@ -62,6 +63,8 @@ mod keep_tests;
 mod old_hands_tests;
 #[cfg(test)]
 mod power_tests;
+#[cfg(test)]
+mod quest_defs_tests;
 #[cfg(test)]
 mod quests_tests;
 #[cfg(test)]

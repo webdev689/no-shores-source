@@ -290,9 +290,10 @@ impl Room {
     }
 
     /// The foes standing alive: a garrison stands again and a Boss calls only while these leave room under the limit,
-    /// so the fallen, lying their ten seconds, never hold them back. Companions are not foes.
+    /// so the fallen, lying their ten seconds, never hold them back. Companions and wards are not foes.
     pub(crate) fn living_foes(&self) -> usize {
-        self.foes.iter().filter(|(id, foe)| !foe.fighter.dead() && !self.is_companion(**id)).count()
+        let counted = |id: &FighterId| !self.is_companion(*id) && !self.quests.wards.contains(id);
+        self.foes.iter().filter(|(id, foe)| !foe.fighter.dead() && counted(id)).count()
     }
 
     /// The foes a caller's phase names, called to it while the room has room for them, each alert to where the

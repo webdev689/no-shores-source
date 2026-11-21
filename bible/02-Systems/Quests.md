@@ -50,7 +50,7 @@ shows what the rules say: the tracker, the lines, the marks, and the Art's locks
 file. A quest has an `id`, a `name`, a `faction` (0 for the opening, else the house's number in
 `content/gear/factions.json`), the scene played as it begins (`begin`) and its `tasks`. A task has the words the tracker
 shows (`task`), its scenes (`start`, played as it begins; `end`, played as it is done), its `goals`, all met before the
-next task begins, and its `reward`, given as it is done. A goal has its tracker words (`text`), a `count` (1 when left
+next task begins, and its `reward`, given as it is done. Any goal may name a `scene`, said as the room meets it. A quest may name the quests it comes `after` (by id); a house may have several. The quest walked is the first in the file of the pledged house's (the opening's, unpledged) not done whose `after` are all done. A task may list the ids it had (`was`); a save at one reads as that task, its counts at nothing. A goal has its tracker words (`text`), a `count` (1 when left
 out) and its kind:
 
 | Kind | Met by | Its fields |
@@ -65,12 +65,12 @@ out) and its kind:
 | `land` | Landing on a sea island | `island` (`cove` or `isle`) |
 | `scavenge` | A wreck searched on a sea island | |
 | `enter` | Arriving in a node | `node` |
-| `escort` | A figure met at a place walking to another while the player keeps up; it waits while they lag and while an ambush stands | `node`, `from`, `to` (places), `who` (a speaker of the cast), `near` (metres), `ambush` (`[type, rank]`s stood halfway), `shout` (its bark as they come) |
-| `tail` | Following a figure from place to place at a distance: never nearer than `far`, never past `near`; nearer, it notices and walks back to start again | `node`, `from`, `to`, `who` or `foe` (a roster type's look), `far`, `near`, `noticed` (its line) |
+| `escort` | A figure met at a place walking to another while the player keeps up; it waits while they lag and while an ambush stands | `node`, `from`, `to` (places), `who` (a speaker of the cast), `near` (metres), `ambush` (`[type, rank]`s stood halfway), `shout` (its bark as they come), `greet` (said as its figure first walks) |
+| `tail` | Following a figure from place to place at a distance: never nearer than `far`, never past `near`; nearer, it notices and walks back to start again | `node`, `from`, `to`, `who` or `foe` (a roster type's look), `far`, `near`, `noticed` (its line), `greet` (said as its figure first walks) |
 | `defend` | A ward standing at a place through its waves of foes, one after another; if it falls, the waves leave and it is tried again after a wait | `node`, `place`, `ward` (its name) or `who`, `waves` (lists of `[type, rank]`), `lost` (its line) |
-| `puzzle` | Points round a place used in the right order; a wrong one puts them all out | `node`, `place`, `points` (each a `name`, a `bearing` in degrees from north and `at` metres out), `order`, `wrong` (its line) |
-| `unseen` | Reaching a place with no foe turned alert on the player; seen, it waits until no foe has been on them for 10 s | `node`, `place`, `seen` (its line) |
-| `race` | Passing checkpoints in order before the clock runs out, from the first passed; late, it starts again from the first | `node`, `checkpoints` (places), `seconds`, `late` (its line) |
+| `puzzle` | Points round a place used in the right order, or in any order when it gives none (a point lit already does nothing); a wrong one puts them all out and stops uses for 2 s, then 4, then 8 (ask 66 answers 103 meanwhile) | `node`, `place`, `points` (each a `name`, a `bearing` in degrees from north and `at` metres out), `order` (any order when left out), `wrong` (its line) |
+| `unseen` | Standing within `within` m of a place's middle with no foe turned alert on the player; seen, it waits until no foe has been on them for 10 s. Its watch stands idle on a ring `within` m round the middle as the step begins, each facing outward; only a foe within 60 m of the middle counts as seeing | `node`, `place`, `seen` (its line), `spawn` (`[type, rank]`s), `within` (metres, 8 when left out, at most 35) |
+| `race` | Passing checkpoints in order before the clock runs out; the clock starts as the player leaves the first's reach; late, it starts again from the first. A race is run over the ground, not along the paths | `node`, `checkpoints` (places, two or more), `seconds`, `late` (its line) |
 
 A `kill` goal with a `spawn` stands its foes at its place: a list of `[type, rank]`, each the roster's name and a rank
 it comes in. A player on that goal coming within 150 m of the place stands the group there, at the node's island levels
@@ -87,6 +87,9 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 - **Kept in the character** (`gear`, `quests.rs`), **by id**: for each quest by its `id`, the task reached by its task's `id` (so a quest or task added anywhere in the file keeps every save's place), each of that
   task's goals' counts, and whether it is done; and for each Art, the fragment choices waiting. A character kept before
   quests reads every quest unbegun.
+- **Read leniently**: a quest log of a shape this room cannot read reads as unbegun and is written back as it was. A
+  fragment choice waiting for an Art none of whose fragments is left to own is paid at its price as soon as the room
+  answers any ask.
 - **The quest walked**: with no pledge, the opening, until it is done; pledged, the pledged house's road, until it is
   done; else none. A switch walks the new house's road from where it was left; every road keeps its place.
 - **Goals are judged by events** the rooms tell the character's quest log: a counter spoken at, a pledge, a place
@@ -104,6 +107,8 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 - **Asks**: 66 uses a puzzle's point (`column`: its place among the goal's points), answered within 3 m of it. 64 speaks with a keeper (`column`: a house's number, or 10 the Mage, 11 the vault, 12 the Armorsmith, 13
   the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), answered only within reach of that counter;
   65 chooses a fragment (`column`: the Art's number, `node`: the fragment's place in its Art's list).
+- **Whose word**: the gear message says whether its character is the player's own as their account keeps it
+  (`claimed`).
 - **The gear message** carries, at the end of its table: the quest walked (`quest`, its place in the file counted
   from 1, 0 for none), its task (`quest_task`), that task's goals' counts (`quest_counts`), each quest done
   (`quests_done`, 1 or 0 by place), each Art's earned bits (`arts_earned`: 1 the Art, 2 its first Tenet, 4 its
@@ -146,8 +151,7 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   layout's paths between its places (each path's points within 6 m join it to another), straight where none comes
   within a place's reach, on the ground's height, and is no fighter. An ambush stands 6 m round it, on a mesh baked
   there. A ward has 700 health (a player's is 100), stands where it is put and fights no one, and only its player is
-  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground a body stands on within 6 m of where it is
-  meant to stand. A failed defence, a tail noticed and an unseen step seen wait 10 s. A place's mesh is baked the first
+  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground within about 7 m of where it is meant to stand. A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it; wards count against no cap. A place's mesh is baked the first
   time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
 - **Figures, wards and points are the player's own**: they stand where the room's last word put them, unglided, and
   show only from the room the player is in, once it has spoken; other players do not see them.

@@ -510,6 +510,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         quest_points: Some(quests.points),
         quest_figures: Some(quests.figures),
         quest_ward: Some(quests.ward),
+        claimed: found.claimed,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -1,15 +1,18 @@
-//! The houses' roads and the opening that leads to them, as `content/quests/quests.json` has them (`quest_defs.rs`);
-//! each player's place in every quest, kept in their character by the quest's id and the task's; the quest they walk,
-//! the events the rooms tell it, each goal met by them, and the rewards its tasks give: the house's Art worn at once,
-//! its Tenets, and fragments to choose.
+//! The houses' roads and the opening that leads to them, as `content/quests/quests.json` has them (`quest_defs.rs`,
+//! `quest_goals.rs`); each player's place in every quest, kept in their character by the quest's id and the task's,
+//! read leniently; the quest they walk; the events the rooms tell it, each goal met by them; and the rewards its tasks
+//! give: the house's Art worn at once, its Tenets, and fragments to choose, paid in Aurem once none is left to own.
 
 use crate::arts::{EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, FRAGMENTS, arts};
 use crate::asks::{Done, Here, Refusal};
 use crate::character::{Character, UnknownKeys};
 use crate::factions::factions;
 pub use crate::quest_defs::{
-    GoalDef, GoalKind, KEEPERS, KILL_PAST, PointDef, QuestDef, QuestsDef, RANKS, RewardDef, SPAWN_NEAR, TaskDef,
-    keeper_key, quests, speaker_place,
+    KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, TaskDef, keeper_key, quests, speaker_place,
+};
+pub use crate::quest_goals::{
+    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, KILL_PAST, Landing, Plain, PointDef, Puzzle, Race,
+    Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -99,14 +102,39 @@ pub struct QuestLog {
     pub unknown: UnknownKeys,
 }
 
+/// A character's quest log as kept, read leniently: one of a shape this room cannot read is a log unbegun, keeping
+/// what was kept (`unread`), so the character is still read and that is written back as it was.
+///
+/// # Errors
+///
+/// None the deserializer gives: any value is read.
+pub fn lenient<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<QuestLog, D::Error> {
+    let kept = serde_json::Value::deserialize(deserializer)?;
+    Ok(QuestLog::deserialize(&kept).unwrap_or_else(|_| {
+        let mut unread = UnknownKeys::new();
+        unread.insert("unread".to_owned(), kept);
+        QuestLog { unknown: unread, ..QuestLog::default() }
+    }))
+}
+
 impl QuestLog {
-    /// As kept, made whole: a place in every quest (unbegun for one never walked), its task one of its quest's (the
-    /// first for a task the file no longer holds), a count for each of that task's goals within the goal's own, and a
-    /// choice count for every Art.
+    /// As kept, made whole: a place in every quest (unbegun for one never walked), its task one of its quest's (one
+    /// kept by an id the task had before read as it; the first for a task the file no longer holds), a count for each
+    /// of that task's goals within the goal's own, and a choice count for every Art.
     #[must_use]
-    pub fn kept(mut self) -> Self {
-        for quest in &quests().quests {
+    pub fn kept(self) -> Self {
+        self.kept_in(quests())
+    }
+
+    /// As kept, made whole by a file of quests (`kept`).
+    #[must_use]
+    pub fn kept_in(mut self, defs: &QuestsDef) -> Self {
+        for quest in &defs.quests {
             let road = self.roads.entry(quest.id.clone()).or_default();
+            // A task kept by an old id starts afresh: its goals need not be the old task's.
+            if let Some(now) = quest.tasks.iter().find(|task| task.was.contains(&road.task)) {
+                (road.task, road.counts) = (now.id.clone(), Vec::new());
+            }
             if !quest.tasks.iter().any(|task| task.id == road.task) {
                 road.task = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
                 road.counts.clear();
@@ -120,10 +148,21 @@ impl QuestLog {
         self
     }
 
-    /// Sets a quest's place at one of its tasks, by their places in the file, its counts at nothing.
+    /// Sets a quest's place at one of its tasks, by their places in the file, its counts at nothing, and every quest
+    /// before it done: those it comes after, and its house's before it in the file.
     pub fn set_task(&mut self, quest: usize, task: usize) {
-        let Some(def) = quests().quests.get(quest) else { return };
+        let defs = &quests().quests;
+        let Some(def) = defs.get(quest) else { return };
         let Some(at) = def.tasks.get(task) else { return };
+        let house = defs[..quest].iter().filter(|before| before.faction == def.faction);
+        let mut before: Vec<&String> = def.after.iter().chain(house.map(|before| &before.id)).collect();
+        while let Some(id) = before.pop() {
+            let road = self.roads.entry(id.clone()).or_default();
+            if !road.done {
+                road.done = true;
+                before.extend(defs.iter().filter(|it| it.id == *id).flat_map(|it| &it.after));
+            }
+        }
         let road = self.roads.entry(def.id.clone()).or_default();
         (road.task, road.counts, road.done) = (at.id.clone(), vec![0; at.goals.len()], false);
     }
@@ -140,13 +179,20 @@ impl QuestLog {
 }
 
 impl Character {
-    /// The quest the player walks, by its place in the file: pledged to no house the opening, pledged the house's
-    /// road; none once that one is done.
+    /// The quest the player walks, by its place in the file: the first of their house's (the opening's, pledged to
+    /// none) not done whose quests before it are all done; none once there is no such quest.
     #[must_use]
     pub fn quest_walked(&self) -> Option<usize> {
+        self.quest_walked_in(quests())
+    }
+
+    /// The quest the player walks among a file's (`quest_walked`).
+    #[must_use]
+    pub fn quest_walked_in(&self, defs: &QuestsDef) -> Option<usize> {
         let faction = self.allegiance.pledge;
-        let at = quests().quests.iter().position(|quest| quest.faction == faction)?;
-        (!self.quests.road(at).is_some_and(|road| road.done)).then_some(at)
+        let done = |id: &String| self.quests.roads.get(id).is_some_and(|road| road.done);
+        let quests = &defs.quests;
+        quests.iter().position(|quest| quest.faction == faction && !done(&quest.id) && quest.after.iter().all(done))
     }
 
     /// The quest walked and the task the player is on in it, by their places.
@@ -238,7 +284,7 @@ impl Character {
         if !here.social {
             return Err(Refusal::NotHere);
         }
-        if !self.goals_unmet().any(|(_, goal)| goal.kind == GoalKind::Talk && goal.to.as_deref() == Some(key)) {
+        if !self.goals_unmet().any(|(_, goal)| matches!(&goal.goal, Goal::Talk(talk) if talk.to == key)) {
             return Err(Refusal::NothingToSay);
         }
         self.tell(&Event::Talk(key));
@@ -256,6 +302,18 @@ impl Character {
         self.own_fragment(at, fragment);
         self.quests.choices[at] -= 1;
         Ok(None)
+    }
+
+    /// A fragment choice waiting for an Art with no fragment left to own is its price at the counter, paid and spent.
+    pub(crate) fn settle_choices(&mut self) {
+        for (at, art) in arts().arts.iter().enumerate() {
+            let places = 0..u8::try_from(FRAGMENTS).unwrap_or(u8::MAX);
+            let unowned = places.filter(|place| !self.owns_fragment(art.id, *place)).count();
+            while self.quests.choices.get(at).is_some_and(|choices| usize::from(*choices) > unowned) {
+                self.quests.choices[at] -= 1;
+                self.materials.add_aurem(factions().fragment_aurem);
+            }
+        }
     }
 
     /// Each quest done, in the file's order.
