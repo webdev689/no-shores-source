@@ -10,7 +10,7 @@ import type { Child } from '../ui/node.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { MarkPass } from './markPass.ts';
-import { editorRoot, PANEL_WIDTH, TYPED } from './panelKit.ts';
+import { editorRoot, PANEL_WIDTH, settleTyping } from './panelKit.ts';
 import type { Ink } from './strokes.ts';
 
 /** A frame as the mode open draws it. */
@@ -61,7 +61,10 @@ export class EditorFrame {
         this.ui = new Interface(new UiRenderer(gpu, face));
         this.request();
       })
-      .catch((error: unknown) => console.error('the face could not be read:', error));
+      .catch((error: unknown) => {
+        // Nothing can be drawn without the face: the page says why, as it does when the GPU will not start.
+        document.body.textContent = `The editor's face could not be read: ${String(error)}`;
+      });
     const asked = () => this.request();
     for (const kind of ['pointermove', 'pointerdown', 'pointerup', 'pointerleave', 'wheel'] as const)
       canvas.addEventListener(kind, asked);
@@ -83,12 +86,7 @@ export class EditorFrame {
   /** Hands what is being typed in a field of the panel to it now and takes the focus from it, as a page's field
    *  reports its value as a press elsewhere takes the focus. */
   settle(): void {
-    const ui = this.ui;
-    if (!ui?.typing) return;
-    const commit = ui.store.get(TYPED);
-    ui.store.delete(TYPED);
-    if (typeof commit === 'function') (commit as () => void)();
-    ui.focusOn(null);
+    if (this.ui) settleTyping(this.ui);
   }
 
   /** Draws a picture of the view's size aside with `draw`, then copies it into the canvas right of the panel, for a

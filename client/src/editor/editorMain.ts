@@ -97,6 +97,8 @@ async function start(): Promise<void> {
   let pointer = { x: 0, y: 0, inside: false };
   let stroke: { x: number; y: number } | null = null;
   let panning: { x: number; y: number } | null = null;
+  /** A ruler is being dragged out from a press on the view. */
+  let measuring = false;
   let problems: Issue[] = [];
   let counts = mask.counts();
   let countedAt = 0;
@@ -345,8 +347,10 @@ async function start(): Promise<void> {
     if (event.button !== 0) panning = spot;
     else if (tool === 'paint' || tool === 'erase') paintTo(world.x, world.y);
     else if (tool === 'fill') fillAt(world.x, world.y);
-    else if (tool === 'ruler') ruler = { fromX: world.x, fromY: world.y, toX: world.x, toY: world.y };
-    else {
+    else if (tool === 'ruler') {
+      ruler = { fromX: world.x, fromY: world.y, toX: world.x, toY: world.y };
+      measuring = true;
+    } else {
       const shape = shapes.find((candidate) => candidate.key === referenceKey);
       if (shape) pinned = [...pinned, { reference: shape, x: world.x, y: world.y }];
     }
@@ -363,7 +367,7 @@ async function start(): Promise<void> {
     } else if (stroke) {
       paintTo(world.x, world.y);
       if (event.timeStamp - countedAt > 250) [counts, countedAt] = [mask.counts(), event.timeStamp];
-    } else if (ruler && event.buttons === 1 && tool === 'ruler') ruler = { ...ruler, toX: world.x, toY: world.y };
+    } else if (ruler && measuring) ruler = { ...ruler, toX: world.x, toY: world.y };
     requestFrame();
   });
   canvas.addEventListener('pointerup', () => {
@@ -373,6 +377,7 @@ async function start(): Promise<void> {
     }
     stroke = null;
     panning = null;
+    measuring = false;
     requestFrame();
   });
   canvas.addEventListener('pointerleave', () => {

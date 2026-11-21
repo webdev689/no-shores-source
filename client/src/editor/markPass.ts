@@ -1,8 +1,10 @@
 // The editor's marks over its views (the overlays' lines, fills and dots, `strokes.ts`), drawn by the GPU over the
 // view and under the interface: each segment a capsule whose edge is smoothed across a pixel, cut square where a
 // line's end is, each fill a fan of triangles. Each ink is painted once where its pieces overlap, as a page paints a
-// path, so a translucent line is never darker at its joints: the stencil holds which ink last painted a pixel.
-import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+// path, so a translucent line is never darker at its joints: the stencil holds which ink last painted a pixel. Its
+// wholly covered pixels are painted before its smoothed edge, so one piece's soft edge never keeps the next piece
+// from a pixel it covers wholly.
+import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import { CUT, type Ink, inkVertices, VERTEX_FLOATS } from './strokes.ts';
 
 const SHADER = /* wgsl */ `
@@ -27,8 +29,8 @@ fn vertex_main(@location(0) at: vec2f, @location(1) ends: vec4f, @location(2) sh
   return out;
 }
 
-@fragment
-fn fragment_main(in: Out) -> @location(0) vec4f {
+/** How much of the pixel the piece covers, 0 to 1. */
+fn cover_of(in: Out) -> f32 {
   var cover = 1.0;
   let half = in.shape.x;
   let cut = u32(in.shape.y);
@@ -51,9 +53,28 @@ fn fragment_main(in: Out) -> @location(0) vec4f {
     if ((cut & ${CUT.start}u) != 0u) { cover *= clamp(along + 0.5, 0.0, 1.0); }
     if ((cut & ${CUT.end}u) != 0u) { cover *= clamp(span - along + 0.5, 0.0, 1.0); }
   }
-  if (cover <= 0.0) { discard; }
-  let alpha = in.colour.a * cover;
-  return vec4f(in.colour.rgb * alpha, alpha);
+  return cover;
+}
+
+fn painted(colour: vec4f, cover: f32) -> vec4f {
+  let alpha = colour.a * cover;
+  return vec4f(colour.rgb * alpha, alpha);
+}
+
+/** The pixels an ink covers wholly, painted first. */
+@fragment
+fn fragment_solid(in: Out) -> @location(0) vec4f {
+  let cover = cover_of(in);
+  if (cover < 0.999) { discard; }
+  return painted(in.colour, cover);
+}
+
+/** Its smoothed edge after, where no piece of it covered the pixel wholly. */
+@fragment
+fn fragment_edge(in: Out) -> @location(0) vec4f {
+  let cover = cover_of(in);
+  if (cover <= 0.0 || cover >= 0.999) { discard; }
+  return painted(in.colour, cover);
 }
 `;
 
@@ -62,7 +83,8 @@ const INKS_A_PASS = 255;
 
 export class MarkPass {
   private readonly gpu: Gpu;
-  private readonly pipeline: GPURenderPipeline;
+  /** The wholly covered pixels' pipeline, then the smoothed edge's. */
+  private readonly pipelines: readonly [GPURenderPipeline, GPURenderPipeline];
   private readonly view: GPUBuffer;
   private readonly binding: GPUBindGroup;
   private vertices: GPUBuffer | null = null;
@@ -78,37 +100,43 @@ export class MarkPass {
       format: size === 2 ? ('float32x2' as const) : ('float32x4' as const),
     });
     const once: GPUStencilFaceState = { compare: 'not-equal', passOp: 'replace' };
-    this.pipeline = device.createRenderPipeline({
-      layout: 'auto',
-      vertex: {
-        module,
-        entryPoint: 'vertex_main',
-        buffers: [
-          {
-            arrayStride: VERTEX_FLOATS * 4,
-            attributes: [attribute(0, 0, 2), attribute(1, 2, 4), attribute(2, 6, 2), attribute(3, 8, 4)],
-          },
-        ],
-      },
-      fragment: {
-        module,
-        entryPoint: 'fragment_main',
-        targets: [
-          {
-            format,
-            blend: {
-              color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
-              alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
-            },
-          },
-        ],
-      },
-      primitive: { topology: 'triangle-list' },
-      depthStencil: { format: 'stencil8', stencilFront: once, stencilBack: once },
+    const bindings = device.createBindGroupLayout({
+      entries: [{ binding: 0, visibility: SHADER_STAGE.vertex, buffer: { type: 'uniform' } }],
     });
+    const layout = device.createPipelineLayout({ bindGroupLayouts: [bindings] });
+    const pipeline = (entryPoint: string) =>
+      device.createRenderPipeline({
+        layout,
+        vertex: {
+          module,
+          entryPoint: 'vertex_main',
+          buffers: [
+            {
+              arrayStride: VERTEX_FLOATS * 4,
+              attributes: [attribute(0, 0, 2), attribute(1, 2, 4), attribute(2, 6, 2), attribute(3, 8, 4)],
+            },
+          ],
+        },
+        fragment: {
+          module,
+          entryPoint,
+          targets: [
+            {
+              format,
+              blend: {
+                color: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
+                alpha: { srcFactor: 'one', dstFactor: 'one-minus-src-alpha' },
+              },
+            },
+          ],
+        },
+        primitive: { topology: 'triangle-list' },
+        depthStencil: { format: 'stencil8', stencilFront: once, stencilBack: once },
+      });
+    this.pipelines = [pipeline('fragment_solid'), pipeline('fragment_edge')];
     this.view = device.createBuffer({ size: 16, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.binding = device.createBindGroup({
-      layout: this.pipeline.getBindGroupLayout(0),
+      layout: bindings,
       entries: [{ binding: 0, resource: { buffer: this.view } }],
     });
   }
@@ -145,12 +173,14 @@ export class MarkPass {
           stencilStoreOp: 'discard',
         },
       });
-      pass.setPipeline(this.pipeline);
       pass.setBindGroup(0, this.binding);
       pass.setVertexBuffer(0, this.vertices);
       items.slice(start, start + INKS_A_PASS).forEach(({ first, count }, index) => {
         pass.setStencilReference(index + 1);
-        pass.draw(count, 1, first);
+        for (const pipeline of this.pipelines) {
+          pass.setPipeline(pipeline);
+          pass.draw(count, 1, first);
+        }
       });
       pass.end();
     }

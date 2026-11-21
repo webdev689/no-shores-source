@@ -127,13 +127,21 @@ export function range(
   value: number,
   limits: { readonly low: number; readonly high: number; readonly step: number },
 ): { node: Node; value: number } {
-  const set = slider(ui, id, value, { ...limits, width: 129 });
-  const share = limits.high > limits.low ? (set.value - limits.low) / (limits.high - limits.low) : 0;
+  // The slider's own box is the span its thumb's middle moves along, so a press lands the thumb under the pointer;
+  // the track reaches past it by the thumb's half and a margin, 129 px in all.
   const thumb = 14;
+  const reach = thumb / 2 + 2;
+  const set = slider(ui, id, value, { ...limits, width: 129 - 2 * reach });
+  const share = limits.high > limits.low ? (set.value - limits.low) / (limits.high - limits.low) : 0;
   const draw: Drawing = (renderer, box, scale, clip, fade) => {
-    const track = { x: box.x + 2 * scale, y: box.y + 4 * scale, width: box.width - 4 * scale, height: 8 * scale };
+    const track = {
+      x: box.x - (thumb / 2) * scale,
+      y: box.y + 4 * scale,
+      width: box.width + thumb * scale,
+      height: 8 * scale,
+    };
     rounded(INK.control, INK.controlEdge, 4)(renderer, track, scale, clip, fade);
-    const middle = Math.round(track.x + (thumb / 2) * scale + (track.width - thumb * scale) * share);
+    const middle = Math.round(box.x + box.width * share);
     rounded(INK.controlLit, null, 4)(renderer, { ...track, width: middle - track.x }, scale, clip, fade);
     const disc = { x: middle - (thumb / 2) * scale, y: box.y + scale, width: thumb * scale, height: thumb * scale };
     rounded(INK.controlLit, null, thumb / 2)(renderer, disc, scale, clip, fade);
@@ -145,9 +153,8 @@ export function range(
     height: 16,
     children: [],
     draw,
-    ...focusRing(ui, id),
   };
-  return { node, value: set.value };
+  return { node: { padding: [0, reach], children: [node], ...focusRing(ui, id) }, value: set.value };
 }
 
 /** The chevron a browser's list draws at its end. */
@@ -214,7 +221,7 @@ export function chooser(
   return { chosen: made.chosen, node: { ...dressed(made.node, made.chosen, widest + 22), ...focusRing(ui, id) } };
 }
 
-/** A line of words to type, as a browser's own field looks, `size` characters wide. Its value is `value` until it is
+/** A line of words to type, as a browser's own field looks, `width` pixels wide (a 24 character field's). Its value is `value` until it is
  *  typed in; what is typed is handed to `commit` once Enter is pressed or the focus leaves it, so each edit is one
  *  undo step. */
 export function textField(
@@ -249,6 +256,18 @@ export function textField(
       },
     ],
   };
+}
+
+/** Hands what is being typed in a field to it now and takes the focus from it, as a page's field reports its value
+ *  as a press elsewhere takes the focus; the field does not hand it over again as it sees the focus gone. */
+export function settleTyping(ui: Interface): void {
+  const typing = ui.typing;
+  if (!typing) return;
+  const commit = ui.store.get(TYPED);
+  ui.store.delete(TYPED);
+  ui.store.set(`${typing.id}:focused`, false);
+  if (typeof commit === 'function') (commit as () => void)();
+  ui.focusOn(null);
 }
 
 /** A press of words with a dotted line under each of its lines, as a page writes a link it styles that way. */

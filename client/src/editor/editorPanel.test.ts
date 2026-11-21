@@ -10,7 +10,7 @@ import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { continentsPanel, type PanelHandlers, type PanelView } from './editorPanel.ts';
 import { landPanel, type LandPanelHandlers, type LandPanelView } from './landPanel.ts';
 import { references } from './measure.ts';
-import { editorRoot, PANEL_WIDTH, stacked, TYPED } from './panelKit.ts';
+import { editorRoot, PANEL_WIDTH, settleTyping, stacked, TYPED } from './panelKit.ts';
 
 const block = glyphDrawn({ rows: ['#'], advance: 600 });
 const face: Face = { glyph: () => block };
@@ -163,6 +163,20 @@ test('a name typed is handed over once, as Enter is pressed, and the field then 
   view = { ...land, nodeName: 'Saltgrass' };
   frame(ui, build);
   assert.equal(ui.fieldText('node-name'), 'Saltgrass');
+});
+
+test('a press on the view hands a name typed over at once, and only once, though the view still shows the old', () => {
+  const ui = new Interface(renderer());
+  const { handlers, asked } = heard<LandPanelHandlers>();
+  const build = () => editorRoot({ over: [], panel: landPanel(ui, land, handlers) });
+  const laid = frame(ui, build);
+  frame(ui, build, click(...middleOf(laid, 'node-name')));
+  frame(ui, build, [{ kind: 'text', text: 'Foo' }]);
+  settleTyping(ui);
+  assert.deepEqual(asked, ['nodeName Foo']);
+  frame(ui, build);
+  frame(ui, build);
+  assert.deepEqual(asked, ['nodeName Foo'], 'the old name still shown is not a second change');
 });
 
 test('the Land panel’s kind is chosen from its list, and its rows choose a landmass and a site', () => {
