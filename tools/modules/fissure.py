@@ -18,9 +18,9 @@ LENGTH_M = 12.0
 HALF_WIDE_M = 2.0
 DEEP_M = 2.8
 STATIONS = 48
-# The rows a wall is cut in, lip to floor, and each row's material: a band of chalk under the lip, then crystal alight
-# from just under it and brightening to the heart, so the walls seen across the mouth from eye height glow.
-WALL_ROWS = (('chalk', 0.0), ('crystal', 0.35), ('crystal', 0.5), ('crystal', 0.62), ('crystal', 0.75),
+# The rows a wall is cut in, lip to floor, and each row's material: crystal from the lip down, dim at the lip and
+# brightening to the heart, so the far wall seen across the mouth from eye height reads as a red slit from afar.
+WALL_ROWS = (('crystal', 0.2), ('crystal', 0.35), ('crystal', 0.5), ('crystal', 0.62), ('crystal', 0.75),
              ('crystal', 0.88), ('crystal', 1.0))
 # The torn slabs: how far apart along a lip, and the most they are tipped back from the chasm, radians. Those at the
 # lip lie low and few, so a player walking up sees into the crack; a row further back is tipped a little more.
