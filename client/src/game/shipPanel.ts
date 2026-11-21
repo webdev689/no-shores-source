@@ -1,5 +1,6 @@
 // What Manage shows of the player's Sloop: what the naval rules say she is, her measure, where her voyage stands, and
 // the parts of managing her still to come, marked Later.
+import { sloopBuildText } from '../network/localRoom.ts';
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
 export interface SloopBuild {
@@ -42,6 +43,22 @@ export interface ShipPanel {
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
 /** The build in the door's JSON, if it is one. */
+/** The room's module fetched from `base` and compiled once, and the Sloop's build as its naval rules hold it, read the
+ *  first time it is asked once the module has come; null until then, or when it does not read. */
+export function roomModuleFrom(base: string): {
+  readonly module: Promise<WebAssembly.Module>;
+  readonly sloop: () => SloopBuild | null;
+} {
+  const module = fetch(`${base}room.wasm`)
+    .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
+    .then((bytes) => WebAssembly.compile(bytes));
+  let [compiled, built]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
+  void module.then((made) => (compiled = made)).catch(() => undefined);
+  const sloop = () =>
+    (compiled && built === undefined ? (built = sloopBuildOf(sloopBuildText(compiled))) : built) ?? null;
+  return { module, sloop };
+}
+
 export function sloopBuildOf(text: string): SloopBuild | null {
   let value: unknown;
   try {

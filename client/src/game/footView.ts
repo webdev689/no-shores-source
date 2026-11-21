@@ -6,6 +6,7 @@ import { abilityPictures } from './artsCards.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
 import type { Stack } from '../ui/stack.ts';
+import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
 import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
@@ -43,20 +44,39 @@ export class FootView {
 
   /** The display is a layer of `stack` under the game's own; `beside` answers where the game's own pieces over the
    *  view stand (its hints, in the interface's pixels), which the fight's display keeps clear of. */
-  constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: () => readonly Laid[] = () => []) {
+  constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: (ui: Interface) => readonly Laid[] = () => []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
     this.swings = new SwingView(gpu);
+    // Where the game's own pieces stand, as the interface last laid them.
+    let laidBy: Interface | null = null;
     this.hud = new Hud(abilityPictures, forge, () =>
-      beside().map((box) => ({ left: box.x, top: box.y, right: box.x + box.width, bottom: box.y + box.height })),
+      (laidBy ? beside(laidBy) : []).map((box) => ({
+        left: box.x,
+        top: box.y,
+        right: box.x + box.width,
+        bottom: box.y + box.height,
+      })),
     );
-    stack.under((ui) => (this.showing ? this.hud.node(ui) : null));
+    stack.under((ui) => {
+      laidBy = ui;
+      return this.showing ? this.hud.node(ui) : null;
+    });
   }
 
   /** Whether the fight's display shows (on foot), and whether a Boss's bar stands under its compass, which the game's
    *  own pieces at the top give way to. */
   get shown(): { readonly fight: boolean; readonly bossed: boolean } {
     return { fight: this.showing, bossed: this.showing && this.hud.bossed };
+  }
+
+  /** Marks `root` while the display shows (`data-fight`, "bossed" under a Boss's bar), for the page's own pieces that
+   *  make way for it. */
+  mark(root: HTMLElement): void {
+    const { fight, bossed } = this.shown;
+    const shown = fight ? (bossed ? 'bossed' : '') : null;
+    if (shown === null) root.removeAttribute('data-fight');
+    else if (root.dataset['fight'] !== shown) root.dataset['fight'] = shown;
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */

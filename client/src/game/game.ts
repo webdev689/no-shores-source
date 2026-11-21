@@ -8,7 +8,7 @@ import { newPlayer } from '../player/player.ts';
 import { askedView } from '../player/playerCamera.ts';
 import { Walker } from '../player/walker.ts';
 import { startLandWorker } from '../terrain/landClient.ts';
-import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
+import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { FigureView } from './figureView.ts';
@@ -35,7 +35,7 @@ import { type Drawer, GameScene, type Overlay } from './scene.ts';
 import { Sea } from './sea.ts';
 import { seaPointer } from './seaPointer.ts';
 import type { SeaShip } from './seaShips.ts';
-import { shipPanelOnceBuilt, type SloopBuild, sloopBuildOf } from './shipPanel.ts';
+import { roomModuleFrom, shipPanelOnceBuilt } from './shipPanel.ts';
 import { showSeaHud } from './seaHud.ts';
 import { continentToOpen, offshore } from './seaLaw.ts';
 import { arrivalAt, type NodeInfo } from './worldData.ts';
@@ -46,7 +46,6 @@ import { StoryHost } from './prologue/host.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { installInterfaceSounds } from './uiSounds.ts';
 import { Stack } from '../ui/stack.ts';
-import type { Interface } from '../ui/ui.ts';
 import { DrawnInterface, speakingIn } from './drawnInterface.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
@@ -68,12 +67,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   /** The interface's layers, each part of it drawn over the whole view. */
   const stack = new Stack();
   const hud = new Hud();
-  /** The interface as it last drew, for what keeps clear of where it laid the HUD. */
-  let drawnBy: Interface | null = null;
-  stack.add((ui) => {
-    drawnBy = ui;
-    return hud.node(ui);
-  });
+  stack.add((ui) => hud.node(ui));
   // The HUD gives way to the fight's display and the dialogue box while they hold the screen.
   hud.onBesides(() => ({ ...footView.shown, speaking: speakingIn(hudRoot) }));
   // The first tap or key wakes the sound, so the story's intro begins heard.
@@ -87,15 +81,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
-  // The sea room's own module, for playing alone; fetched now, compiled once.
-  const roomModule = fetch(`${base}room.wasm`)
-    .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
-    .then((bytes) => WebAssembly.compile(bytes));
-  // The Sloop's build as the naval rules hold it, for Manage's panel: read once when first opened, however it reads.
-  let [compiled, sloopBuild]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
-  void roomModule.then((module) => (compiled = module)).catch(() => undefined);
-  const builtSloop = () =>
-    (compiled && sloopBuild === undefined ? (sloopBuild = sloopBuildOf(sloopBuildText(compiled))) : sloopBuild) ?? null;
+  // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
+  const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   // The interface the game draws itself, once its face is read; until then it draws none.
@@ -147,10 +134,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     usePrompt: hud.usePrompt,
   };
   // The fight's display keeps clear of the HUD's hints, where the interface last laid them.
-  const footView = new FootView(gpu, stack, forge, () => {
-    const box = drawnBy && hud.hintsBox(drawnBy);
-    return box ? [box] : [];
-  });
+  const footView = new FootView(gpu, stack, forge, (ui) => [hud.hintsBox(ui)].filter((box) => box !== null));
   const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
@@ -592,10 +576,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if (shown?.mode === 'foot' && foot) settled = footFrame(foot, controls, seconds, size);
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     ambience.frame(seconds);
-    // The page's own pieces at the top make way for the fight's display while it shows.
-    const fightShown = footView.shown.fight ? (footView.shown.bossed ? 'bossed' : '') : null;
-    if (fightShown === null) hudRoot.removeAttribute('data-fight');
-    else if (hudRoot.dataset['fight'] !== fightShown) hudRoot.dataset['fight'] = fightShown;
+    footView.mark(hudRoot);
     ui.present(stack);
     if (flow.mode === 'loading' && ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.
