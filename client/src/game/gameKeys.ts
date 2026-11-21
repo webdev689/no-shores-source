@@ -55,7 +55,7 @@ export function listenForControls(game: Controlled): void {
     const { flow, sea } = playing;
     const sailing = flow.mode === 'sea' && !flow.menu;
     const retry = game.retry();
-    if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : '')) return;
+    if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
     else if (acts('menu')) change({ kind: 'menu' });
@@ -66,7 +66,7 @@ export function listenForControls(game: Controlled): void {
     else if (acts('confirm') && sailing && sea?.chaseChosen()) return;
     else if (acts('ashore') || (acts('confirm') && sailing)) game.goAshore();
     else if (acts('voyage') && flow.mode === 'sea') game.stopOrResume();
-    else if (acts('map')) game.openMap();
+    else if (acts('map') || acts('landMap')) game.openMap();
     else if (acts('manage')) game.manage();
     else if (acts('leaveHelm')) game.leaveHelm();
     else if (acts('repair') && flow.mode === 'sea' && sea?.aboard.active) sea.sighted?.ask('repair');

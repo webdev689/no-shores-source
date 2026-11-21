@@ -91,6 +91,8 @@ export const CONTROLS = {
   slower: control(['['], ['Left'], HELM),
   faster: control([']'], ['Right'], HELM),
   map: control(['n'], ['Up'], HELM),
+  // The held map of the land on foot; the pad's D-pad up mounts there, so it has no pad button until one is bound.
+  landMap: control(['n'], [], FOOT),
   confirm: control(['enter'], ['A'], HELM),
   ashore: control(['l'], [], HELM),
   manage: control(['b'], ['Y'], HELM),

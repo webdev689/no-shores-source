@@ -114,6 +114,40 @@ export interface Edge {
 
 export const LOOPED: Edge = { wrap: true, clip: false, hold: true, restrike: true };
 
+/** The highest note a pitched track sounds, B5: from C6 up the bank's voices ring or whine. A track that reaches past
+ *  it plays an octave down, the whole of it where that keeps it at or over `WHOLE_FLOOR` (its line kept whole), else
+ *  only its notes over the ceiling. */
+export const CEILING_NOTE = 83;
+const WHOLE_FLOOR = 55;
+
+/** `notes` under the ceiling, a note that lands on one already struck on its channel's key merged into it. */
+function underCeiling<N extends { -readonly [K in keyof Note]: Note[K] }>(notes: readonly N[]): N[] {
+  const byChannel = new Map<number, N[]>();
+  for (const laid of notes) {
+    if (laid.channel === PERCUSSION_CHANNEL) continue;
+    const list = byChannel.get(laid.channel);
+    if (list) list.push(laid);
+    else byChannel.set(laid.channel, [laid]);
+  }
+  for (const list of byChannel.values()) {
+    const keys = list.map((laid) => laid.note);
+    let lower = 0;
+    while (Math.max(...keys) - lower > CEILING_NOTE && Math.min(...keys) - lower - 12 >= WHOLE_FLOOR) lower += 12;
+    for (const laid of list) {
+      laid.note -= lower;
+      while (laid.note > CEILING_NOTE) laid.note -= 12;
+    }
+  }
+  const kept = new Map<string, N>();
+  for (const laid of notes) {
+    const slot = `${laid.tick}:${laid.channel}:${laid.note}`;
+    const was = kept.get(slot);
+    if (!was) kept.set(slot, laid);
+    else [was.velocity, was.duration] = [Math.max(was.velocity, laid.velocity), Math.max(was.duration, laid.duration)];
+  }
+  return [...kept.values()];
+}
+
 export interface SongSpec<T extends string, D extends string> {
   readonly name: string;
   readonly bpm: number;
@@ -267,9 +301,10 @@ export function makeSong<T extends string, D extends string>(
       place(PERCUSSION_CHANNEL, kit.roles?.[drum] ?? kit.role, bar, beat, 0.25, kit.keys[drum], velocity);
     },
   });
+  const heard = underCeiling(notes);
   if (edge.restrike) {
     const byKey = new Map<number, (typeof notes)[number][]>();
-    for (const laid of notes)
+    for (const laid of heard)
       if (laid.channel !== PERCUSSION_CHANNEL) {
         const key = laid.channel * 128 + laid.note;
         const list = byKey.get(key);
@@ -284,7 +319,7 @@ export function makeSong<T extends string, D extends string>(
       });
     }
   }
-  notes.sort((one, other) => one.tick - other.tick);
+  heard.sort((one, other) => one.tick - other.tick);
   const tracks = named.map((track): Track => {
     const { program, volume, pan, role, voice = null } = spec.tracks[track];
     return { channel: channels.get(track) ?? 0, program, volume, pan, role, voice };
@@ -300,7 +335,7 @@ export function makeSong<T extends string, D extends string>(
     secondsPerTick: 60 / (bpm * TICKS_PER_BEAT),
     ticksPerBar: beatsPerBar * TICKS_PER_BEAT,
     durationTicks: length,
-    notes,
+    notes: heard,
     tracks,
     kit: { volume: kit.volume, drums },
     level,

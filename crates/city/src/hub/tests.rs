@@ -219,3 +219,37 @@ fn every_market_keeper_is_reached_from_a_way_point_near_their_stall() {
         assert!(away < 25.0, "the keeper at {:?} is reached from {away} m off", post.at);
     }
 }
+
+#[test]
+fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let names: Vec<&str> = social.areas.iter().map(|area| area.name.as_str()).collect();
+    for name in [
+        "Seaward Walk",
+        "Watch Court",
+        "West Court",
+        "Forge Yard",
+        "Beacon Walk",
+        "Hall of the Arts",
+        "Stair Yard",
+        "Quay",
+    ] {
+        assert!(names.contains(&name), "{name} is named: {names:?}");
+    }
+    let inside = |[x, y]: [f64; 2]| {
+        (0..social.ring.len()).fold(false, |inside, at| {
+            let ([x0, y0], [x1, y1]) = (social.ring[at], social.ring[(at + 1) % social.ring.len()]);
+            inside ^ ((y0 > y) != (y1 > y) && x < x0 + (y - y0) / (y1 - y0) * (x1 - x0))
+        })
+    };
+    for area in &social.areas {
+        assert!(inside(area.at), "{} at {:?} stands in the hub", area.name, area.at);
+    }
+    // Each where its name puts it: the West Court west of the Watch Court and the Forge Yard east of it; from the quay
+    // inland, the Seaward Walk, the Watch Court, the Beacon Walk and the Hall of the Arts.
+    let at = |name: &str| social.areas.iter().find(|area| area.name == name).expect("named").at;
+    assert!(at("West Court")[0] < at("Watch Court")[0] && at("Watch Court")[0] < at("Forge Yard")[0]);
+    let inland = ["Quay", "Seaward Walk", "Watch Court", "Beacon Walk", "Hall of the Arts"].map(|name| at(name)[1]);
+    assert!(inland.windows(2).all(|pair| pair[0] < pair[1]), "{inland:?}");
+}

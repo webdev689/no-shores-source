@@ -34,12 +34,12 @@
     {
       "id": "ui.tab",
       "use": "A tab of the menu turned",
-      "query": "ui whoosh",
+      "query": "page turn",
       "seconds": [
-        0.1,
+        0.05,
         0.6
       ],
-      "keep": true
+      "picked": 20247
     },
     {
       "id": "ui.open",
@@ -54,17 +54,17 @@
     {
       "id": "ui.close",
       "use": "The menu shuts",
-      "query": "ui close",
+      "query": "book close",
       "seconds": [
         0.1,
-        1.5
+        1.2
       ],
-      "keep": true
+      "picked": 699324
     },
     {
       "id": "ui.refused",
       "use": "The room refuses a press",
-      "query": "ui error",
+      "query": "error soft denied",
       "seconds": [
         0.1,
         1.0
@@ -74,7 +74,7 @@
     {
       "id": "hold.charge",
       "use": "A hold charging, 0.6 to 1.8 seconds",
-      "query": "charging",
+      "query": "charge up",
       "seconds": [
         0.6,
         3.0
@@ -104,17 +104,17 @@
     {
       "id": "gain.common",
       "use": "A Normal or Magic gain",
-      "query": "collect item",
+      "query": "coin pickup",
       "seconds": [
         0.1,
-        1.0
+        1.2
       ],
       "made": "synthesiser"
     },
     {
       "id": "gain.rare",
       "use": "A Rare gain",
-      "query": "achievement chime",
+      "query": "bright chime reward",
       "seconds": [
         0.3,
         2.5
@@ -124,10 +124,10 @@
     {
       "id": "gain.legendary",
       "use": "A Legendary or Atheric gain",
-      "query": "magic sparkle",
+      "query": "magical chime reveal",
       "seconds": [
         0.5,
-        3.0
+        3.5
       ],
       "made": "synthesiser"
     },
@@ -881,12 +881,12 @@
     {
       "id": "finish.cosmic",
       "use": "A foe slain by Cosmic implodes",
-      "query": "implosion",
+      "query": "magic impact",
       "seconds": [
         0.3,
-        2.0
+        2.5
       ],
-      "dfo": "fx-kill-voidrend"
+      "picked": 541478
     },
     {
       "id": "status.linked",
@@ -1028,102 +1028,116 @@
     {
       "id": "ship.cannon",
       "use": "A ship's long gun fires near",
-      "query": "cannon shot",
+      "query": "cannon fire",
       "seconds": [
         0.5,
         3.0
       ],
-      "dfo": true
+      "picked": 184651
     },
     {
       "id": "ship.cannon-far",
       "use": "A broadside heard far across the water",
-      "query": "distant cannon",
+      "query": "distant cannon fire",
       "seconds": [
         1.0,
-        4.0
+        6.0
       ],
-      "dfo": true
+      "picked": 565794
     },
     {
       "id": "ship.swivel",
       "use": "A swivel gun fires on a rail",
-      "query": "small cannon shot",
+      "query": "musket shot",
       "seconds": [
         0.3,
         1.5
       ],
-      "dfo": true
+      "picked": 347647
     },
     {
       "id": "ship.hit",
       "use": "A ball strikes a ship's timbers",
-      "query": "wood impact splinter",
+      "query": "wood crash splinter",
       "seconds": [
         0.3,
         2.0
       ],
-      "dfo": true
+      "picked": 390723
     },
     {
       "id": "ship.blast",
       "use": "A ship's magazine blows up",
-      "query": "explosion big",
+      "query": "big explosion",
       "seconds": [
         1.0,
-        4.0
+        6.0
       ],
-      "dfo": true
+      "picked": 753843
     },
     {
       "id": "ship.grapple",
       "use": "Grapnels bite a rail as boarders haul alongside",
       "query": "grappling hook",
       "seconds": [
-        0.5,
+        0.3,
         2.5
       ],
-      "dfo": true
+      "picked": 541975
     },
     {
       "id": "ship.runout",
       "use": "A battery runs out its guns, the tell before its broadside",
-      "query": "cannon carriage roll wood",
+      "query": "heavy roll",
       "seconds": [
         0.6,
-        2.5
+        3.0
       ],
-      "dfo": true
+      "picked": 796564
     },
     {
       "id": "ship.ready",
       "use": "A side of its guns is loaded and ready",
-      "query": "wood knock metal tap",
+      "query": "latch click",
       "seconds": [
-        0.2,
+        0.1,
         1.0
       ],
-      "dfo": true
+      "picked": 381854
     },
     {
       "id": "ship.sinking",
       "use": "A ship goes down, groaning as the sea rushes in",
-      "query": "ship sinking creak water",
+      "query": "ship creaking",
       "seconds": [
         2.0,
-        8.0
+        12.0
       ],
-      "dfo": true
+      "skip": [
+        90794,
+        101638,
+        181803,
+        256688,
+        443067,
+        679407
+      ],
+      "picked": 178658
     },
     {
       "id": "ship.whistle",
       "use": "A ball whistles past close by",
-      "query": "whoosh pass by",
+      "query": "fly by",
       "seconds": [
         0.3,
-        1.5
+        2.0
       ],
-      "dfo": true
+      "skip": [
+        337880,
+        430707,
+        800858,
+        805124
+      ],
+      "picked": 564729
     },
     {
       "id": "amb.sea.gull",
@@ -1552,6 +1566,778 @@
         60
       ],
       "mono": true
+    },
+    {
+      "id": "amb.social.hum",
+      "use": "A port city far below the plaza: its streets' murmur and work, no word clear, looped",
+      "query": "distant city",
+      "seconds": [
+        20,
+        600
+      ],
+      "skip": [
+        760377,
+        787823,
+        832577,
+        837047
+      ],
+      "picked": 450676
+    },
+    {
+      "id": "amb.land.breeze",
+      "use": "A light wind over open land, looped",
+      "query": "light wind",
+      "seconds": [
+        20,
+        600
+      ],
+      "skip": [
+        740051,
+        874807,
+        875984,
+        877039
+      ],
+      "picked": 517941
+    },
+    {
+      "id": "amb.land.grass",
+      "use": "Wind through long grass, looped",
+      "query": "wind through grass",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 768410
+    },
+    {
+      "id": "amb.land.leaves",
+      "use": "Wind in a wood's leaves, looped",
+      "query": "wind trees leaves",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 244942
+    },
+    {
+      "id": "amb.land.moan",
+      "use": "A moaning wind over high ground, looped",
+      "query": "howling wind mountain",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 156414
+    },
+    {
+      "id": "amb.land.whistle",
+      "use": "Wind whistling through rocks and crags, looped",
+      "query": "wind whistling",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 428318
+    },
+    {
+      "id": "amb.land.brook",
+      "use": "A small river or brook running near, looped",
+      "query": "small stream brook",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 608359
+    },
+    {
+      "id": "amb.land.crickets",
+      "use": "Crickets at dusk and night, looped",
+      "query": "crickets night",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 523439
+    },
+    {
+      "id": "amb.land.cicadas",
+      "use": "Cicadas in the heat, looped",
+      "query": "cicadas",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 268964
+    },
+    {
+      "id": "amb.land.rain",
+      "use": "Rain falling on open land all round, looped",
+      "query": "steady rain",
+      "seconds": [
+        20,
+        600
+      ],
+      "skip": [
+        321176,
+        329511,
+        360639,
+        744003
+      ],
+      "picked": 217236
+    },
+    {
+      "id": "amb.land.patter",
+      "use": "Rain pattering near on leaves and stone, looped",
+      "query": "rain drops leaves close",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 715698
+    },
+    {
+      "id": "amb.desert.sand",
+      "use": "A sandstorm: blown sand hissing over the ground, looped",
+      "query": "sandstorm",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 632771
+    },
+    {
+      "id": "amb.rainforest.drips",
+      "use": "A rainforest's canopy dripping, looped",
+      "query": "forest after rain",
+      "seconds": [
+        20,
+        600
+      ],
+      "skip": [
+        457447,
+        638554,
+        651512,
+        663656
+      ],
+      "picked": 277466
+    },
+    {
+      "id": "amb.wet.frogs",
+      "use": "A frog chorus, looped",
+      "query": "frog chorus",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 788360
+    },
+    {
+      "id": "amb.swamp.insects",
+      "use": "A marsh's insects droning, looped",
+      "query": "swamp insects",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 346536
+    },
+    {
+      "id": "amb.swamp.water",
+      "use": "Still marsh water lapping at reeds, looped",
+      "query": "pond water lapping",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 733287
+    },
+    {
+      "id": "amb.tundra.snow",
+      "use": "A gale driving snow over ice, looped",
+      "query": "blizzard wind",
+      "seconds": [
+        20,
+        600
+      ],
+      "picked": 835136
+    },
+    {
+      "id": "amb.social.bell",
+      "use": "A ship's bell rung in the harbour",
+      "query": "ship bell",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 77698
+    },
+    {
+      "id": "amb.social.anvil",
+      "use": "The Smith's hammer on the anvil",
+      "query": "anvil hammer",
+      "seconds": [
+        0.3,
+        6.0
+      ],
+      "picked": 103632
+    },
+    {
+      "id": "amb.social.halyard",
+      "use": "A halyard knocking on a mast in the wind",
+      "query": "rope creak",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 861827
+    },
+    {
+      "id": "amb.social.hammer",
+      "use": "Hammering on wood in the city below",
+      "query": "hammering wood",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 342542
+    },
+    {
+      "id": "amb.social.cart",
+      "use": "A cart's wooden wheels on the streets below",
+      "query": "carriage",
+      "seconds": [
+        2.0,
+        15.0
+      ],
+      "skip": [
+        232519,
+        387590,
+        387591,
+        434653
+      ],
+      "picked": 388391
+    },
+    {
+      "id": "amb.social.pigeon",
+      "use": "Pigeons cooing on the plaza's ledges",
+      "query": "pigeon cooing",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 844331
+    },
+    {
+      "id": "amb.fish.splash",
+      "use": "A fish jumping in the water",
+      "query": "fish splash",
+      "seconds": [
+        0.2,
+        3.0
+      ],
+      "skip": [
+        59104,
+        507092
+      ],
+      "picked": 445875
+    },
+    {
+      "id": "amb.bird.sparrow",
+      "use": "House sparrows chirping",
+      "query": "sparrow chirp",
+      "seconds": [
+        0.3,
+        8.0
+      ],
+      "picked": 628953
+    },
+    {
+      "id": "amb.bird.lark",
+      "use": "A skylark singing high over open ground",
+      "query": "skylark",
+      "seconds": [
+        1.0,
+        15.0
+      ],
+      "picked": 684853
+    },
+    {
+      "id": "amb.bird.warbler",
+      "use": "A warbler singing in the bushes",
+      "query": "warbler song",
+      "seconds": [
+        0.5,
+        10.0
+      ],
+      "picked": 633811
+    },
+    {
+      "id": "amb.bird.finch",
+      "use": "A finch singing",
+      "query": "chaffinch song",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 50494
+    },
+    {
+      "id": "amb.bird.thrush",
+      "use": "A thrush singing",
+      "query": "song thrush",
+      "seconds": [
+        1.0,
+        12.0
+      ],
+      "picked": 365664
+    },
+    {
+      "id": "amb.bird.wren",
+      "use": "A wren's loud song",
+      "query": "wren song",
+      "seconds": [
+        1.0,
+        10.0
+      ],
+      "picked": 683402
+    },
+    {
+      "id": "amb.bird.chiffchaff",
+      "use": "A chiffchaff's two notes",
+      "query": "chiffchaff",
+      "seconds": [
+        1.0,
+        10.0
+      ],
+      "picked": 868165
+    },
+    {
+      "id": "amb.bird.cuckoo",
+      "use": "A cuckoo calling",
+      "query": "cuckoo",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "skip": [
+        28113,
+        462929,
+        517779,
+        789948
+      ],
+      "picked": 337828
+    },
+    {
+      "id": "amb.bird.dove",
+      "use": "A dove cooing",
+      "query": "dove cooing",
+      "seconds": [
+        1.0,
+        10.0
+      ],
+      "picked": 688794
+    },
+    {
+      "id": "amb.bird.woodpecker",
+      "use": "A woodpecker drumming on a trunk",
+      "query": "woodpecker drumming",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 795970
+    },
+    {
+      "id": "amb.bird.curlew",
+      "use": "A curlew calling over the coast and the moors",
+      "query": "curlew",
+      "seconds": [
+        0.5,
+        10.0
+      ],
+      "picked": 72892
+    },
+    {
+      "id": "amb.bird.buzzard",
+      "use": "A buzzard mewing high overhead",
+      "query": "buzzard call",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 194678
+    },
+    {
+      "id": "amb.bird.nightjar",
+      "use": "A nightjar churring at night",
+      "query": "nightjar",
+      "seconds": [
+        1.0,
+        15.0
+      ],
+      "picked": 86343
+    },
+    {
+      "id": "amb.bird.weaver",
+      "use": "Weaver birds chattering in the grasslands",
+      "query": "birds chattering",
+      "seconds": [
+        1.0,
+        10.0
+      ],
+      "skip": [
+        613990
+      ],
+      "picked": 868751
+    },
+    {
+      "id": "amb.bird.fluter",
+      "use": "A tropical bird's fluting whistle",
+      "query": "exotic bird",
+      "seconds": [
+        0.5,
+        10.0
+      ],
+      "skip": [
+        56551,
+        874260
+      ],
+      "picked": 393508
+    },
+    {
+      "id": "amb.owl.tawny",
+      "use": "A tawny owl hooting at night",
+      "query": "tawny owl",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 558214
+    },
+    {
+      "id": "amb.owl.deep",
+      "use": "A large owl's deep hoot at night",
+      "query": "eagle owl",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 868096
+    },
+    {
+      "id": "amb.wolf.howl",
+      "use": "A wolf howling on the ridges",
+      "query": "wolf howl",
+      "seconds": [
+        1.0,
+        12.0
+      ],
+      "skip": [
+        203342,
+        267179,
+        389298,
+        427694,
+        432758,
+        472402,
+        712068,
+        784596
+      ],
+      "picked": 810171
+    },
+    {
+      "id": "amb.wolf.far",
+      "use": "Wolves howling far off",
+      "query": "wolf howl",
+      "seconds": [
+        2.0,
+        15.0
+      ],
+      "picked": 267179
+    },
+    {
+      "id": "amb.jackal",
+      "use": "Jackals yipping at night",
+      "query": "coyote",
+      "seconds": [
+        1.0,
+        12.0
+      ],
+      "picked": 68067
+    },
+    {
+      "id": "amb.marmot",
+      "use": "A marmot's alarm whistle",
+      "query": "marmot",
+      "seconds": [
+        0.2,
+        4.0
+      ],
+      "skip": [
+        236567
+      ],
+      "picked": 351664
+    },
+    {
+      "id": "amb.frog.croak",
+      "use": "A frog croaking",
+      "query": "frog croak",
+      "seconds": [
+        0.3,
+        4.0
+      ],
+      "picked": 377109
+    },
+    {
+      "id": "amb.frog.peeps",
+      "use": "Tree frogs peeping",
+      "query": "tree frog",
+      "seconds": [
+        0.5,
+        8.0
+      ],
+      "picked": 866772
+    },
+    {
+      "id": "amb.frog.bull",
+      "use": "A bullfrog's deep call",
+      "query": "bullfrog",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 571424
+    },
+    {
+      "id": "amb.insect.cricket",
+      "use": "A single cricket chirping",
+      "query": "cricket chirp",
+      "seconds": [
+        0.3,
+        6.0
+      ],
+      "picked": 753271
+    },
+    {
+      "id": "amb.insect.cicada",
+      "use": "One cicada's call rising and falling",
+      "query": "cicada",
+      "seconds": [
+        1.0,
+        10.0
+      ],
+      "picked": 57888
+    },
+    {
+      "id": "amb.insect.fly",
+      "use": "A fly buzzing past",
+      "query": "fly buzzing",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 443059
+    },
+    {
+      "id": "amb.insect.mosquito",
+      "use": "A mosquito whining past the ear",
+      "query": "mosquito",
+      "seconds": [
+        0.5,
+        5.0
+      ],
+      "skip": [
+        371721,
+        409354,
+        546328,
+        757764
+      ],
+      "picked": 74942
+    },
+    {
+      "id": "amb.wind.gust",
+      "use": "A gust of wind sweeping past",
+      "query": "wind gust",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 726317
+    },
+    {
+      "id": "amb.rock.whistle",
+      "use": "A gust whistling through the rocks",
+      "query": "howling wind",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "skip": [
+        218386,
+        470130,
+        832320,
+        875698
+      ],
+      "picked": 113176
+    },
+    {
+      "id": "amb.rock.fall",
+      "use": "Small stones falling down a slope",
+      "query": "rocks falling",
+      "seconds": [
+        0.5,
+        5.0
+      ],
+      "picked": 389618
+    },
+    {
+      "id": "amb.sand.gust",
+      "use": "A gust lifting sand",
+      "query": "sand wind",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 182868
+    },
+    {
+      "id": "amb.wood.creak",
+      "use": "A tree's branch creaking in the wind",
+      "query": "tree creaking",
+      "seconds": [
+        0.5,
+        6.0
+      ],
+      "picked": 94356
+    },
+    {
+      "id": "amb.wood.twig",
+      "use": "A twig snapping underfoot nearby",
+      "query": "twig snap",
+      "seconds": [
+        0.1,
+        2.0
+      ],
+      "picked": 811533
+    },
+    {
+      "id": "amb.wood.leafgust",
+      "use": "Leaves rustling as a gust passes",
+      "query": "leaves rustling",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "picked": 443065
+    },
+    {
+      "id": "amb.shore.backwash",
+      "use": "A wave's backwash dragging pebbles",
+      "query": "pebble beach",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 245681
+    },
+    {
+      "id": "amb.water.drip",
+      "use": "One drop falling from the canopy",
+      "query": "water drip",
+      "seconds": [
+        0.1,
+        2.0
+      ],
+      "picked": 51754
+    },
+    {
+      "id": "amb.swamp.bubbles",
+      "use": "Marsh gas bubbling up through mud",
+      "query": "bubbling",
+      "seconds": [
+        0.3,
+        4.0
+      ],
+      "skip": [
+        261597,
+        263953,
+        567457,
+        876750
+      ],
+      "picked": 411098
+    },
+    {
+      "id": "amb.ice.crack",
+      "use": "Ice cracking",
+      "query": "ice cracking",
+      "seconds": [
+        0.3,
+        5.0
+      ],
+      "picked": 819721
+    },
+    {
+      "id": "amb.ice.ping",
+      "use": "A frozen lake's ice singing",
+      "query": "frozen lake",
+      "seconds": [
+        0.5,
+        10.0
+      ],
+      "skip": [
+        29514,
+        764657
+      ],
+      "picked": 145187
+    },
+    {
+      "id": "speech.voice",
+      "use": "A speaker's voice: one syllable of talk heard through wind and timber, never words made out; a slice of the pick plays for each syllable",
+      "query": "gibberish talking",
+      "seconds": [
+        1.0,
+        10.0
+      ],
+      "keep": true
+    },
+    {
+      "id": "story.thud",
+      "use": "A body thrown down on a ship's deck",
+      "query": "body fall wood",
+      "seconds": [
+        0.2,
+        2.0
+      ],
+      "picked": 376819
+    },
+    {
+      "id": "story.ringing",
+      "use": "The ears ringing after the ram's blow, fading",
+      "query": "ear ringing",
+      "seconds": [
+        1.0,
+        8.0
+      ],
+      "picked": 758149
+    },
+    {
+      "id": "story.heartbeat",
+      "use": "One heartbeat, heard in the deep",
+      "query": "heartbeat single",
+      "seconds": [
+        0.4,
+        3.0
+      ],
+      "picked": 418866
+    },
+    {
+      "id": "story.flash",
+      "use": "The bright flash in the deep: a glassy swell rising",
+      "query": "magic shimmer",
+      "seconds": [
+        1.0,
+        6.0
+      ],
+      "picked": 547365
     }
   ]
 }

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Role, type Song, makeSong } from './score.ts';
-import { SongPlayer, barLineAfter, notesInWindow, songTail, unisonCents } from './songPlayer.ts';
+import { fmVoice, noteToHz } from './fmBank.ts';
+import { PARTIALS_HZ, SongPlayer, barLineAfter, depthOf, notesInWindow, songTail, unisonCents } from './songPlayer.ts';
 
 /** An audio context that builds nothing, keeping when each source was asked to start and to stop. */
 function fakeAudio() {
@@ -138,4 +139,18 @@ test('a song played once is finished once its last note has rung out; a fade to 
   now = 1.6;
   player.pump(now);
   assert.equal(player.song, null);
+});
+
+test('a high note dulls rather than rings: its partials stay under the ceiling, a low or middle note keeps its depth', () => {
+  const bells = fmVoice(14);
+  const reach = (hertz: number) => hertz * (bells.car + bells.mod) + depthOf(bells, hertz);
+  for (const name of [45, 57, 69])
+    assert.equal(depthOf(bells, noteToHz(name)), bells.index * noteToHz(name), `${name}`);
+  for (const name of [81, 88]) assert.ok(reach(noteToHz(name)) <= PARTIALS_HZ + 1, `${name} under the ceiling`);
+  for (const name of [96, 108])
+    assert.equal(
+      depthOf(bells, noteToHz(name)),
+      1,
+      `${name}: its carrier and modulator alone pass it, so it plays plain`,
+    );
 });
