@@ -24,7 +24,7 @@
     ],
     "wreck": [
       { "who": "tithe", "say": "For the Tithe!", "kind": "bark", "emote": "anger" },
-      { "who": "pirate", "say": "Cut them down!", "kind": "bark", "emote": "anger" }
+      { "who": "crew", "say": "Cut them down!", "kind": "bark", "emote": "anger" }
     ],
     "survivor": [{ "who": "tithe", "say": "Survivor! Get that one!", "kind": "bark", "emote": "alert" }],
     "warCry": [{ "who": "thule", "say": "The Tithe is owed!", "kind": "bark", "emote": "anger" }],

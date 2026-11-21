@@ -58,8 +58,11 @@ export function otherCards(
     const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
     const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
     feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
+    // One dead of a fall leans to face the eye, so it shows whole seen from the ledge above.
+    const theirs = fight.others.get(number)?.standing;
+    const facesEye = theirs?.kind === 'dead' && theirs.fell;
     const stand = cardStand(atFeet[0], atFeet[1], eyeX, eyeY, feel.nearest);
-    if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled });
+    if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled, facesEye });
   }
   otherGlides.keep(new Set(folk.otherPlayers.placed.keys()));
   const seconds = frameTicks * folk.tickSeconds;

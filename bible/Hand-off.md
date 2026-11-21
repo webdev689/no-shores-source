@@ -233,8 +233,46 @@ Where the work stands now, for the next session. Each session rewrites this note
   glyphs, the plates held still on board through a 64-bit matrix, and a last audit's fixes. Tested offline: the full
   check. Not yet seen on a real GPU, nor played through by hand.
 
+- **Overlook's hub**, on `main` (#113), merged with the owner's yes ("Merge and deploy"), which deploys the page and
+  the rooms, after a comprehensive audit whose findings were each measured and fixed
+  ([[Overlook Becomes a Hub of Courts and Ways, After the Tower]], every call in [[Overlook's Hub as Claude Shapes
+  It]], [[Cities]]): Overlook's social space as courts and ways after the Tower, every keeper in a stall of their own,
+  29 adornments, each court a scene, flagstone walks curved at every corner over lawn and earth, the land's own oak
+  and gorse in its beds, no rain indoors, procedural iron, gold, bone, cloth and water, ramps on every city's avenues,
+  the fall that kills in a social space, townsfolk on the plan's ways, and the harbour way to the pier with its two
+  moored ships. Tested offline with the full check; CI baked its modules byte for byte. Not yet seen on a real GPU.
+
 ## Waiting on the owner
 
+- **Overlook's hub's flora**: whether "any flora like bushes or trees" also covers the wall ivy and the cut flowers
+  sold at the flower stall and cart, which are the hub's own (the world grows no climber; cut flowers are goods).
+- **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
+  first and its findings fixed, which deploys the page and the rooms:** aiming faces straight ahead (#115,
+  [[Aiming, the Figure Faces Straight Ahead]]); the crosshair's shapes, reload ring, hit marks and melee reach (#116,
+  [[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]); and the weapons forged large with
+  their element glyphs (#117, [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]), its 99 pictures
+  published by the forge workflow from its branch, with SciPy pinned among that workflow's packages, which the owner
+  approved. Tested offline with the full check; the large pictures loaded through the page's own code from R2
+  headless. Not yet seen: any of it on a real GPU, the weapon rows in a running game, or a fight with the new
+  crosshair. Left as they are: a greatsword shows its metal's sword until it has a model of its own; the forge
+  workflow does not run again when a weapon's model changes, only when `weaponart.py` or its packages do; at a steep
+  downward look the aiming camera can still show the figure's diagonal back view.
+- **The third playthrough's notes**, on `main` (#121), merged with the owner's yes ("Merge and deploy"), which
+  deploys the page and the rooms: the prologue's fights heard three times as loud
+  ([[The Prologue's Fights Are Heard Louder]]); the story fight's aim and see-through puffs drawn, and a held aim kept
+  on its side
+  ([[A Held Aim Keeps the Camera on Its Side]]); in every sea fight ships sail 1.8 times the sea's pace and turn twice
+  as fast, Shift bursts the player's ship for 4 s with 12 s to recharge, shown as a ring on its plate, and no ship rows
+  sideways ([[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]); on the wreck no one climbs
+  ([[Climbing Is Off in the Prologue]]), the player fights with the story's sword and shield, its elites are a Major's
+  toughness ([[The Prologue's Elites Are as Hard to Bring Down as a Major]]) and its boarders one side
+  ([[The Wreck's Boarders Are One Side]]); and the storm's run and the wake's flight stand clear and go slower
+  ([[The Prologue's Camera Flights Stand Clear and Go Slower]]). Tested offline: the full check, the client's story
+  fight over the real land rules for 15 minutes of play, and the storm's run and the wake's flight pictured headless.
+  Not yet seen on a real GPU, nor played through by hand; the burst's ring not yet seen at all. Open: the gun deck's
+  wave is a Tithe-Mate in `content/prologue/wreck.json` but still Thule (type 12) in `tools/wreck/wreck_level.py`,
+  left so because a push there rebuilds and publishes the wreck; the fleet room has no burst; and this session's
+  toolkit could not be installed (its installer was refused by the session's permission check).
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
@@ -373,6 +411,12 @@ Where the work stands now, for the next session. Each session rewrites this note
   publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA).
+- **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a frame's cost on a real GPU with some 125 figures and
+  the courts' pieces; the audit's risks left open (a walker's step to the side of a post's line or round a sharp turn
+  is not walked against the real hub's boxes, kept posts' people are not booked against walkers, routines' maths may
+  round differently by engine, puddles form on lawn as on flat stone); pictures of the Harbour Stair and the road, the
+  fall, and the townsfolk at work. The activities session (#97) reads `Social.board` and sets it from
+  `hub::BOARD_LANDING_M` when it merges.
 - **The islands** ([[Islands]]): the door's trip into its dungeon, once the Dungeons session pushes its
   `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
   islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with

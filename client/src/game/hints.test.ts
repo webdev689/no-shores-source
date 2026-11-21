@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HINTS, footHints, seaHints } from './hints.ts';
+import { HINTS, footHints, keysShown, seaHints } from './hints.ts';
+import { standingOf } from './hudLaw.ts';
 
 const SAILING = { fighting: false, landing: false, atHelm: false, walking: false, managing: false };
 const words = (hints: readonly (readonly [string, string])[]) => hints.map(([key, said]) => `${key} ${said}`);
@@ -17,6 +18,10 @@ test('at sea the keys shown follow what the player is doing, a fight first', () 
 test("the sea shows the ship's two buttons, and its deck how to take the helm again", () => {
   assert.ok(words(HINTS.sea).includes('B Manage') && words(HINTS.sea).includes('H Leave the helm'));
   assert.ok(words(HINTS.deck).includes('E Take the helm at the wheel'));
+});
+
+test('a sea fight shows Shift for a burst of speed', () => {
+  assert.ok(words(HINTS.fight).includes('Shift Boost'));
 });
 
 test('sailing shows the zoom on the wheel, and landing a second click on a mark', () => {
@@ -45,4 +50,11 @@ test('no key hint puts a colon between its key and its action, nor "to" after th
     assert.ok(!key.includes(':') && !said.includes(':'), `${key} ${said}`);
     assert.ok(!(key === 'Wheel' && said.startsWith('to')), `${key} ${said}`);
   }
+});
+
+test('while a fall plays no key is listed; once death is told, Respawn; standing, the foot keys', () => {
+  const falling = standingOf('dead', 30, true, false);
+  assert.deepEqual(keysShown(falling, 0), []);
+  assert.deepEqual(keysShown(standingOf('dead', 30, true, true), 0), HINTS.dead);
+  assert.deepEqual(keysShown(standingOf('inside', 0), 0), footHints(0));
 });

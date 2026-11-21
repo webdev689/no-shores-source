@@ -211,7 +211,7 @@ pub fn seat(
             let middle = [(print[0] + print[2]) / 2.0, (print[1] + print[3]) / 2.0, base];
             seating.solids.push(Solid::upright(Shape::Block, middle, size, Material::Stone));
         }
-        seating.pads.push(Pad { bounds: print, level });
+        seating.pads.push(Pad::flat(print, level));
         seating.buildings.push(Seated {
             model: row[0] as u32,
             at: [origin[0], origin[1], level + row[3]],

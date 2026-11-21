@@ -11,11 +11,12 @@ fn looked() -> Input {
     Input {
         sequence: 41,
         orders: Orders {
-            helm: Helm { steer: -0.75, crab: true, climb: -1 },
+            helm: Helm { steer: -0.75, climb: -1 },
             aim: Some(Aim { bearing_deg: -97.5, range_m: 64.25, ray }),
             fire: true,
             brace: false,
             load: Some(Shot::Chain),
+            boost: false,
         },
         put_to_sea: Some([200_000.0, 300_000.0, 1.25]),
         call: Call::Captain(Commission::default(), Levels::default()),

@@ -17,6 +17,7 @@ code:
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
   - client/src/game/footGear.ts#groundRings
+  - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/footTrips.ts#tripAt
@@ -162,11 +163,12 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
-- **A social space's people** (`PlazaLife`): its keepers stand behind their counters and its townsfolk walk the
-  plaza, seeded by the plaza so they walk the same each visit, online or not; to a counter and back along the
-  landward lane, clear of the portico's steps, each in a step of its own, never a crowd in step, the walk's frames at
-  the pace they stroll. The floor under each is found again only once they have walked a step. The fight never takes
-  them for targets.
+- **A social space's people** (`PlazaLife`, `life/`): its keepers stand behind their counters and at their stalls
+  and work, and its townsfolk walk the plan's ways (the city crate's `life`) from post to post, looking out, browsing,
+  drinking, talking or carrying, keeping to the right; each keeps a routine laid on the world clock from the plan and a
+  seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the
+  ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
+  only once they have walked a step. The fight never takes them for targets.
 - **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
   player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
   patrol, so a route can be planned through them. Each drop lying for them stands as its own picture under its
@@ -315,6 +317,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
     is set again once under 5 km of it is left. Where a coast stops it short, or less than 200 m lies clear, the ship comes
     to rest facing the coast, and the voyage's line says "Land lies ahead."
   - S heaves the ship to, as Stop does.
+  - Shift gives no burst at sea: only a fight's helm has one ([[Naval Combat]], "How it works").
   - Straight on, the voyage's line says "Sailing straight on"; resumed, the ship sails on straight along its heading.
 - **The navigation panel** ([[The Sea Is Navigated From the Helm With the Held Map]]), a window of the [[Interface]]
   at the foot of the screen in three groups, Navigation, Pace and Ship, holds Map (N), which takes the
@@ -519,7 +522,8 @@ a fight's captains) are handed to the water at the size each is drawn; it keeps 
 way.
 Under way the player's ship stirs the water's ripples at its bow and quarters, as the World Editor's does, and the
 ripples follow it.
-In death the world drains to grey, and comes back in colour on respawn or on leaving.
+In death the world drains to grey once death is told (a fall plays out in colour first, the camera holding and turning
+after the body, no key listed until Respawn is offered), and comes back in colour on respawn or on leaving.
 
 ## Limits
 

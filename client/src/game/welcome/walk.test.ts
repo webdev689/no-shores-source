@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { StationInfo } from '../nodes.ts';
 import { inPlaza, plazaPoint } from '../townsfolk.ts';
-import { FRAME, SHAPE_SPOTS, STATIONS, solidAt } from './plazaForTests.ts';
+import { WayGraph } from '../life/ways.ts';
+import { FRAME, SHAPE_SPOTS, STATIONS, WAYS, solidAt } from './plazaForTests.ts';
 import {
   CAUGHT_UP_M,
   FOLLOW_M,
@@ -16,6 +17,7 @@ import {
 } from './walk.ts';
 
 type Point = readonly [number, number];
+const GRAPH = new WayGraph(WAYS);
 const station = (kind: string) => STATIONS.find((station) => station.kind === kind) as StationInfo;
 const phaseOf = (walk: WelcomeWalk): string => walk.phase;
 const near = (walk: WelcomeWalk, point: Point) => Math.hypot(walk.maren.x - point[0], walk.maren.y - point[1]);
@@ -30,7 +32,7 @@ const BODY_M = 0.3;
  *  keeps close behind her: the scenes heard, each with the stations named, and the seconds walked. Every step she
  *  stands clear of every solid and of Shape. */
 function walkedFrom(start: Point) {
-  const walk = WelcomeWalk.round(STATIONS, FRAME, start) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, start) as WelcomeWalk;
   const heard: { scene: string; named: string[]; across: number }[] = [];
   let [seconds, given, waited] = [0, 0, false];
   for (let tick = 0; tick < 40_000 && walk.phase !== 'done'; tick++) {
@@ -79,7 +81,7 @@ function playerPlaces(step: number): [number, number][] {
 /** She comes to a player standing still at `start`, by the lanes: clear of every solid, of Shape and of the player,
  *  until she greets them or stands on the lanes nearest them, waiting with the prompt. */
 function cameTo(start: Point, seen?: (point: Point) => boolean): WelcomeWalk {
-  const walk = WelcomeWalk.round(STATIONS, FRAME, start, [], seen) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, start, [], seen) as WelcomeWalk;
   const from = inPlaza(FRAME, start);
   const why = `to a player at (${from.toward}, ${from.across})`;
   for (let tick = 0; tick < 3000; tick++) {
@@ -119,7 +121,7 @@ test('between the last row and the benches, she greets the player from the row b
 
 test('she starts well away from the player, and out of their view where a crossing of the lanes is', () => {
   const crossing = place(34, 20);
-  const walk = WelcomeWalk.round(STATIONS, FRAME, crossing) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, crossing) as WelcomeWalk;
   assert.ok(near(walk, crossing) >= START_FAR_M, `starts ${near(walk, crossing).toFixed(2)} m from them`);
   for (const [toward, across] of playerPlaces(8)) {
     const player = place(toward, across);
@@ -130,7 +132,7 @@ test('she starts well away from the player, and out of their view where a crossi
         const off = Math.atan2(there.across - across, there.toward - toward) - look;
         return Math.abs(Math.atan2(Math.sin(off), Math.cos(off))) < Math.PI / 3;
       };
-      const started = WelcomeWalk.round(STATIONS, FRAME, player, [], seen) as WelcomeWalk;
+      const started = WelcomeWalk.round(STATIONS, FRAME, GRAPH, player, [], seen) as WelcomeWalk;
       const start: Point = [started.maren.x, started.maren.y];
       assert.ok(near(started, player) >= START_FAR_M, `from (${toward}, ${across}): ${near(started, player)} m`);
       assert.ok(!seen(start), `from (${toward}, ${across}) looking ${look}: she starts in their view`);
@@ -141,7 +143,7 @@ test('she starts well away from the player, and out of their view where a crossi
 
 test('she starts a way off from where the player arrives, and comes to them', () => {
   for (const spawn of SPAWNS) {
-    const walk = WelcomeWalk.round(STATIONS, FRAME, spawn) as WelcomeWalk;
+    const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, spawn) as WelcomeWalk;
     assert.ok(near(walk, spawn) < 30, `starts ${near(walk, spawn).toFixed(1)} m from them`);
     let asked = walk.step(0, spawn);
     let seconds = 0;
@@ -181,7 +183,7 @@ function followedFrom(spawn: Point): void {
 }
 
 test('the follow prompt shows past the follow reach and clears only once the player is nearer still', () => {
-  const walk = WelcomeWalk.round(STATIONS, FRAME, SPAWNS[1] as Point) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, SPAWNS[1] as Point) as WelcomeWalk;
   for (let tick = 0; tick < 9000 && !walk.step(0.1, SPAWNS[1] as Point).say; tick++);
   walk.said();
   assert.equal(walk.phase, 'leading');
@@ -195,7 +197,7 @@ test('the follow prompt shows past the follow reach and clears only once the pla
 
 test('a player left far behind for a minute ends the walk: she goes home, and the stops said are kept', () => {
   const start = SPAWNS[0] as Point;
-  const walk = WelcomeWalk.round(STATIONS, FRAME, start) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, start) as WelcomeWalk;
   for (let tick = 0; tick < 9000 && !walk.step(0.1, start).say; tick++);
   walk.said();
   const far = place(56, 120);
@@ -214,7 +216,7 @@ test('a player left far behind for a minute ends the walk: she goes home, and th
 test('taken up after the stops said, she greets no more and leads to a stop not yet said', () => {
   const start = SPAWNS[0] as Point;
   const said = [MET_SCENE, 'welcomeMage', 'welcomeSmiths'];
-  const walk = WelcomeWalk.round(STATIONS, FRAME, start, said) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, start, said) as WelcomeWalk;
   let asked = walk.step(0, start);
   for (let tick = 0; tick < 40_000 && !asked.say; tick++)
     asked = walk.step(0.1, walk.phase === 'coming' ? start : [walk.maren.x, walk.maren.y + 1.5]);
@@ -222,18 +224,18 @@ test('taken up after the stops said, she greets no more and leads to a stop not 
 });
 
 test('ended, she stops where she is; a plaza without her counter has no welcome', () => {
-  const walk = WelcomeWalk.round(STATIONS, FRAME, SPAWNS[0] as Point) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, SPAWNS[0] as Point) as WelcomeWalk;
   walk.step(2, SPAWNS[0] as Point);
   walk.end();
   assert.equal(walk.phase, 'done');
   assert.equal(walk.maren.walking, false);
   const without = STATIONS.filter((station) => station.kind !== 'lamplighters');
-  assert.equal(WelcomeWalk.round(without, FRAME, SPAWNS[0] as Point), null);
+  assert.equal(WelcomeWalk.round(without, FRAME, GRAPH, SPAWNS[0] as Point), null);
 });
 
 test('coming to a player who strolls along off the lanes, her Follow prompt shows once and stays', () => {
   const under = (across: number) => plazaPoint(FRAME, -50, across);
-  const walk = WelcomeWalk.round(STATIONS, FRAME, under(4)) as WelcomeWalk;
+  const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, under(4)) as WelcomeWalk;
   const shown: boolean[] = [];
   // The player stands under the portico, 12 m off the landward lane, until she waits on it, then strolls across.
   let across = 4;
@@ -244,4 +246,38 @@ test('coming to a player who strolls along off the lanes, her Follow prompt show
   const shows = shown.filter((lagging, tick) => lagging && !shown[tick - 1]).length;
   assert.equal(shows, 1, 'shown once she waits on the lanes, kept while she follows along them, cleared as they meet');
   assert.equal(walk.phase, 'speaking', 'she greets them');
+});
+
+test('she leads by the ways and stops at each stop’s counters’ way points, on the ways until she goes home', () => {
+  const offWays = (walk: WelcomeWalk) => {
+    const onWays = GRAPH.onWays([walk.maren.x, walk.maren.y])?.place ?? [Infinity, Infinity];
+    return near(walk, onWays);
+  };
+  for (const spawn of SPAWNS) {
+    const walk = WelcomeWalk.round(STATIONS, FRAME, GRAPH, spawn) as WelcomeWalk;
+    let stops = 0;
+    for (let tick = 0; tick < 40_000 && walk.phase !== 'returning' && walk.phase !== 'done'; tick++) {
+      const { say } = walk.step(0.1, [walk.maren.x, walk.maren.y + 1.5]);
+      assert.ok(offWays(walk) < 1e-6, `from ${spawn} she leaves the ways at ${walk.maren.x}, ${walk.maren.y}`);
+      if (!say) continue;
+      if (say !== MET_SCENE) {
+        const points = walk.named.map((named) => {
+          const index = GRAPH.nearestPoint(named.counter, (each) => GRAPH.names[each]?.startsWith('counter:') ?? false);
+          assert.equal(GRAPH.names[index], `counter:${named.kind}`, 'each counter has its own way point');
+          return GRAPH.points[index] as Point;
+        });
+        const middle: Point = [
+          points.reduce((sum, point) => sum + point[0], 0) / points.length,
+          points.reduce((sum, point) => sum + point[1], 0) / points.length,
+        ];
+        assert.ok(
+          near(walk, middle) < 1e-6,
+          `${say}: she stands ${near(walk, middle).toFixed(2)} m from its way points`,
+        );
+        stops += 1;
+      }
+      walk.said();
+    }
+    assert.equal(stops, STOPS.length);
+  }
 });
