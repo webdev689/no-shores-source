@@ -222,7 +222,7 @@ export function withOverrides(overrides: Overrides): Binds {
 }
 
 /** The first two controls in `binds` that act somewhere alike on one key or button, if any do. */
-export function clashOf(binds: Binds): { one: BindId; other: BindId; device: Device } | null {
+function clashOf(binds: Binds): { one: BindId; other: BindId; device: Device } | null {
   for (const [place, one] of BIND_IDS.entries())
     for (const other of BIND_IDS.slice(place + 1)) {
       if (!meet(one, other)) continue;
