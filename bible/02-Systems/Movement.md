@@ -81,6 +81,8 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   it jumps at or hangs from. A course of blocks laid over the open sea is held so by its rim (`Heights::rim`, cells of
   `RIM_CELL_M`): open under the blocks wherever one covers a cell's middle, a wall everywhere else, so no body leaves
   the blocks for the sea. The browser's doors make the same rim from the blocks (`movement_set_rim`, `fighter_rim`).
+  No body climbs over it (`Terrain::climbs`): it takes hold of no wall, hangs from no lip, and goes over only a lip
+  within a vault (1.2 m) of the floor under it, foes alike ([[Climbing Is Off in the Prologue]]).
   A body standing on it
   faces north (its bow). The browser hands it to its door as numbers (the grid's shape, then each height, NaN for
   none), the same numbers the sea room stands its walkers on.

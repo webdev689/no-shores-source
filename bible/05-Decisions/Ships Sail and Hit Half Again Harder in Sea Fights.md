@@ -22,4 +22,7 @@ owner chose "1.5x speed, 1.5x damage", the option that read: "Half again as fast
 - Half again the damage: every blow one ship strikes another, her balls and her ram alike, on her hull, her sails and
   her men. A fire her shot starts burns as before; whether it should burn half again too is asked of the owner.
 
+Its speed is replaced by [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]; its damage
+stands.
+
 [[Naval Combat]].

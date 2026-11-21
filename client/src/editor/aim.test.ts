@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { AIM_EYE, aimEye, lookBearing, lookRange, lookReach } from './aim.ts';
+import { AIM_EYE, aimEye, batterySide, lookBearing, lookRange, lookReach, yawInBattery } from './aim.ts';
 
 const near = (actual: number, wanted: number, within = 1e-9) => Math.abs(actual - wanted) <= within;
 
@@ -18,6 +18,28 @@ test('a look bears off its bow in degrees, starboard positive', () => {
   assert.ok(near(lookBearing(0, Math.PI / 2), -90));
   assert.ok(near(lookBearing(0.1, 2 * Math.PI - 0.1), (0.2 * 180) / Math.PI));
   assert.ok(near(lookBearing(Math.PI, 0), 180));
+});
+
+const degrees = (value: number) => (value * Math.PI) / 180;
+
+test('a look bears on a battery only off its bow and stern arcs, on the side it looks to', () => {
+  const heading = 1;
+  assert.equal(batterySide(heading + degrees(90), heading), 1);
+  assert.equal(batterySide(heading - degrees(100), heading), -1);
+  assert.equal(batterySide(heading + degrees(20), heading), null, 'over the bow');
+  assert.equal(batterySide(heading - degrees(160), heading), null, 'over the stern');
+});
+
+test('a look held on a battery stays in its arc, past either end or across onto the other side', () => {
+  const heading = 2;
+  const held = (bearing: number, side: 1 | -1) =>
+    lookBearing(yawInBattery(heading + degrees(bearing), heading, side), heading);
+  assert.ok(near(held(80, 1), 80), 'a look in the arc is left where it is');
+  assert.ok(near(held(10, 1), 36), 'toward the bow it stops inside the bow arc');
+  assert.ok(near(held(170, 1), 139), 'toward the stern it stops inside the stern arc');
+  assert.ok(near(held(-30, 1), 36), 'across the bow it comes back to the bow end');
+  assert.ok(near(held(-150, 1), 139), 'across the stern it comes back to the stern end');
+  assert.ok(near(held(-10, -1), -36) && near(held(100, -1), -139), 'port is starboard mirrored');
 });
 
 test('the aim eye stands out past its guns on the side looked at, up and aft', () => {

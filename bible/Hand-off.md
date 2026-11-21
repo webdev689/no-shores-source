@@ -263,6 +263,22 @@ Where the work stands now, for the next session. Each session rewrites this note
   crosshair. Left as they are: a greatsword shows its metal's sword until it has a model of its own; the forge
   workflow does not run again when a weapon's model changes, only when `weaponart.py` or its packages do; at a steep
   downward look the aiming camera can still show the figure's diagonal back view.
+- **The third playthrough's notes**, on `main` (#121), merged with the owner's yes ("Merge and deploy"), which
+  deploys the page and the rooms: the prologue's fights heard three times as loud
+  ([[The Prologue's Fights Are Heard Louder]]); the story fight's aim and see-through puffs drawn, and a held aim kept
+  on its side
+  ([[A Held Aim Keeps the Camera on Its Side]]); in every sea fight ships sail 1.8 times the sea's pace and turn twice
+  as fast, Shift bursts the player's ship for 4 s with 12 s to recharge, shown as a ring on its plate, and no ship rows
+  sideways ([[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]); on the wreck no one climbs
+  ([[Climbing Is Off in the Prologue]]), the player fights with the story's sword and shield, its elites are a Major's
+  toughness ([[The Prologue's Elites Are as Hard to Bring Down as a Major]]) and its boarders one side
+  ([[The Wreck's Boarders Are One Side]]); and the storm's run and the wake's flight stand clear and go slower
+  ([[The Prologue's Camera Flights Stand Clear and Go Slower]]). Tested offline: the full check, the client's story
+  fight over the real land rules for 15 minutes of play, and the storm's run and the wake's flight pictured headless.
+  Not yet seen on a real GPU, nor played through by hand; the burst's ring not yet seen at all. Open: the gun deck's
+  wave is a Tithe-Mate in `content/prologue/wreck.json` but still Thule (type 12) in `tools/wreck/wreck_level.py`,
+  left so because a push there rebuilds and publishes the wreck; the fleet room has no burst; and this session's
+  toolkit could not be installed (its installer was refused by the session's permission check).
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through

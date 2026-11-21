@@ -539,8 +539,11 @@ falling pieces).
   wear): Hull over Sails over Crew (hull red as health and at its height, sails bone, crew green as stamina, both at
   stamina's height), each as long as the vitals' health is laid for the view, stepping and doubling with the display,
   with no words inside; a reader hears each by its name and percentage. The hull's frame flashes blood at a quarter or
-  less as health's does. Under them an "On fire" chip while it burns and a "Braced" chip while it braces, the kit's
-  chips, as the buffs stand under the vitals. In a fight the place's name gives way to the plate.
+  less as health's does. Under them its boost ring, the word Boost beside a small ring lit clockwise from the top:
+  brass and glowing once its burst is ready, bright and draining while it bursts, dim and filling as it recharges
+  ([[Naval Combat]], "How it works"); a reader hears "Boost ready", "Boosting" or "Boost recharging". Beside it an "On
+  fire" chip while it burns and a "Braced" chip while it braces, the kit's chips, as the buffs stand under the vitals.
+  In a fight the place's name gives way to the plate.
 - **The battery rose** under the chips, as wide as its longest words ("Heated 88s" a side): bow over stern, port and starboard either side. Each side is a chip with its load
   ("Round", and the whole seconds it still loads, "Round 4s"), filling from its foot as it reloads, brass-edged once
   loaded, glowing gold round its edge where the look lays it, flashing twice over 0.7 s as it comes ready. The side a
