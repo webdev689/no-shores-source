@@ -54,10 +54,13 @@ impl Room {
     }
 
     /// Whether an Abyss run has just been wiped: someone is in it, every one of them is down, and it was never won.
+    /// Where the room keeps anyone's character, those it keeps are judged alone: a socket that never signed in holds
+    /// no run up.
     pub(crate) fn wiped(&self) -> bool {
+        let keeps = self.players.values().any(|found| found.owner.is_some());
         self.revives().is_some()
             && !self.players.is_empty()
-            && self.players.values().all(|found| found.fighter.dead())
+            && self.players.values().filter(|found| !keeps || found.owner.is_some()).all(|found| found.fighter.dead())
             && !self.run.as_ref().is_some_and(|run| run.won)
     }
 

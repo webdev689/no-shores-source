@@ -573,3 +573,13 @@ img.journal-icon.gear-glyph {
     transition: transform 240ms steps(4);
   }
 }
+
+/* Words for a reader alone, in place of a short mark's: they take no room. */
+.journal-unseen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

@@ -107,6 +107,20 @@ fn when_every_player_is_down_at_once_the_run_starts_over_and_its_five_revives_wi
 }
 
 #[test]
+fn a_socket_that_never_signed_in_holds_no_run_up_when_every_player_kept_is_down() {
+    let mut room = abyss_run();
+    let [ada, cal, stranger] = [room.join().expect("in"), room.join().expect("in"), room.join().expect("in")];
+    assert!(room.own(ada, "ada") && room.own(cal, "cal"));
+    room.run.as_mut().expect("a run").revives = Some(0);
+    fallen(&mut room, ada);
+    fallen(&mut room, cal);
+    room.tick();
+    assert!(!room.players[&stranger].fighter.dead(), "the stranger stands");
+    assert_eq!(wiped(&room.take_events()), [ada, cal, stranger], "yet the run is wiped, and each is told");
+    assert_eq!(room.revives(), Some(5));
+}
+
+#[test]
 fn a_run_started_over_stands_each_group_unbroken_with_its_leader_and_holding_its_post_again() {
     let mut room = abyss_run();
     let players = [room.join().expect("in"), room.join().expect("in")];
@@ -145,8 +159,8 @@ fn back(room: &mut Room, owner: &str) -> PlayerId {
 #[test]
 fn a_player_who_leaves_a_run_down_comes_back_down_and_one_wounded_comes_back_wounded() {
     let mut room = abyss_run();
-    let (ada, _ben) = (room.join().expect("in"), room.join().expect("in"));
-    assert!(room.own(ada, "ada"));
+    let (ada, ben) = (room.join().expect("in"), room.join().expect("in"));
+    assert!(room.own(ada, "ada") && room.own(ben, "ben"), "a company of two, kept");
     room.run.as_mut().expect("a run").revives = Some(0);
     fallen(&mut room, ada);
     room.leave(ada);
@@ -180,8 +194,8 @@ fn a_player_who_leaves_a_run_down_comes_back_down_and_one_wounded_comes_back_wou
 #[test]
 fn a_run_started_over_remembers_no_one_who_left() {
     let mut room = abyss_run();
-    let (ada, _ben) = (room.join().expect("in"), room.join().expect("in"));
-    assert!(room.own(ada, "ada"));
+    let (ada, ben) = (room.join().expect("in"), room.join().expect("in"));
+    assert!(room.own(ada, "ada") && room.own(ben, "ben"), "a company of two, kept");
     fallen(&mut room, ada);
     room.leave(ada);
     room.start_over();
@@ -213,8 +227,8 @@ fn a_run_once_won_is_never_wiped_though_its_end_post_stands_again_and_its_cache_
 #[test]
 fn one_account_is_one_player_in_a_run_and_a_second_socket_comes_in_as_the_first_left() {
     let mut room = abyss_run();
-    let (ada, _ben) = (room.join().expect("in"), room.join().expect("in"));
-    assert!(room.own(ada, "ada"));
+    let (ada, ben) = (room.join().expect("in"), room.join().expect("in"));
+    assert!(room.own(ada, "ada") && room.own(ben, "ben"), "a company of two, kept");
     room.run.as_mut().expect("a run").revives = Some(0);
     fallen(&mut room, ada);
     let again = room.join().expect("in");

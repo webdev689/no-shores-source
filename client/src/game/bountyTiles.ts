@@ -78,10 +78,16 @@ export function chooseTile(tiles: readonly HTMLElement[], place: number): void {
   for (const tile of tiles) tile.classList.toggle('bounty-tile-chosen', tile.dataset['key'] === `bounty-${place}`);
 }
 
-/** The arrows move the focus among tiles laid `perRow` a row; E presses the one focused. */
+/** Under the pointer a tile takes the focus too, so the tile E presses is always the one whose card shows. */
+export function focusUnderPointer(tile: HTMLElement): void {
+  tile.addEventListener('pointerenter', () => tile.focus({ preventScroll: true }));
+}
+
+/** The arrows move the focus among tiles laid `perRow` a row; E presses the one focused. A key held with Ctrl, Alt or
+ *  Meta is the browser's. */
 export function moveAmongTiles(tiles: readonly HTMLElement[], event: KeyboardEvent, perRow = 2): void {
   const focused = tiles.findIndex((tile) => tile === document.activeElement);
-  if (focused < 0) return;
+  if (focused < 0 || event.ctrlKey || event.altKey || event.metaKey) return;
   const step = { arrowleft: -1, arrowright: 1, arrowup: -perRow, arrowdown: perRow }[event.key.toLowerCase()];
   if (event.key.toLowerCase() === 'e' && !event.repeat) tiles[focused]?.click();
   else if (step !== undefined) tiles[Math.min(tiles.length - 1, Math.max(0, focused + step))]?.focus();

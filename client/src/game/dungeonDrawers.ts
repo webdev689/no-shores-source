@@ -25,6 +25,8 @@ export class DungeonDrawers {
   private readonly figureView: FigureView;
   private readonly biomeOf: (continent: string) => string | null;
   private shownEntrances: readonly Entrance[] | null = null;
+  /** The city's assets, whose props' table a dungeon waits for so no solid prop goes undrawn. */
+  private readonly assets: Promise<CityAssets | null>;
   /** The forged props' table, once read. */
   props: PropTable | null = null;
 
@@ -39,6 +41,7 @@ export class DungeonDrawers {
     this.view = new DungeonView(gpu);
     this.entranceView = new EntranceView(gpu);
     this.figureView = figureView;
+    this.assets = assets;
     void assets.then((loaded) => (this.props = loaded?.tables.props ?? null));
   }
 
@@ -60,17 +63,21 @@ export class DungeonDrawers {
   }
 
   /** Draws this dungeon of `patrol` from now on, its exit door wearing the door picture its entrance's model wears,
-   *  once the packs of the styles it wears have come. */
+   *  once the packs of the styles it wears and the props' table have come: the room stands its props as solids, so
+   *  none may be left undrawn. */
   async show(layout: DungeonLayout, patrol: NodeInfo, entrance: Entrance | undefined): Promise<void> {
-    const packs = await stylePacks(layout);
-    const look = entrance && this.props?.[ENTRANCE_MODELS[entrance.model] ?? -1]?.doorLook;
-    this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR, this.props ?? {}, packs);
+    const [packs, loaded] = await Promise.all([stylePacks(layout), this.assets]);
+    const props = loaded?.tables.props ?? this.props ?? {};
+    const look = entrance && props[ENTRANCE_MODELS[entrance.model] ?? -1]?.doorLook;
+    this.view.set(layout, this.climateOf(patrol), look ? [look[0], look[1]] : PLAIN_DOOR, props, packs);
   }
 
   /** Lets go of the dungeon last drawn and the scene's targets, once the player is somewhere that is no dungeon. */
   forget(): void {
     this.view.clear();
     this.scene.release();
+    this.entranceView.clear();
+    this.shownEntrances = null;
   }
 
   /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, and

@@ -151,6 +151,11 @@ test('the chosen tile’s card says its name, kind, words, count and pay, and E 
   ]);
   grid?.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowDown' }));
   assert.equal(document.activeElement, keyed(root, 'bounty-4'), 'the arrows move between tiles, two a row');
+  keyed(root, 'bounty-5')?.dispatchEvent(new FakeEvent('pointerenter'));
+  assert.equal(document.activeElement, keyed(root, 'bounty-5'), 'the tile pointed at takes the focus: E presses it');
+  grid?.dispatchEvent(Object.assign(new FakeEvent('keydown', { key: 'e' }), { ctrlKey: true }));
+  keyed(root, 'bounty-0')?.dispatchEvent(new FakeEvent('click', { detail: 2 }));
+  assert.equal(asked.length, 2, 'Ctrl and E are the browser’s, and a double click’s second click asks nothing more');
   done();
 });
 

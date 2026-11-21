@@ -23,10 +23,15 @@ ending the run:
 
 - **The area sets the base level**: each island and its waters keeps its band, 1 to 4 up to 26 to 30
   ([[Gear]]).
-- **The seas chosen set the tier**: Calm as the band, Rough two levels over it, Storm three, each paying more.
+- **The seas chosen set the tier**: Calm as the band, Rough and Storm over it, each paying more.
 - **Past level 20**, in islands 7 to 9 and their waters, Rough and Storm dungeons drop the Legendary materials.
 - **Storm has Nightfall's rules**: limited revives, and a wipe ends the run.
 - **Foes stand up to two levels over the highest player**, to 32, as Destiny 1's hardest raid did ([[Gear]]).
+
+## Claude's calls
+
+How far over the band each tier stands, Rough two levels and Storm three, and how much more each pays, are Claude's,
+open to the owner's change ([[Activities]], "The tiers").
 
 The tiers' names: [[The Tiers Are Normal, Elite and Abyss]].
 

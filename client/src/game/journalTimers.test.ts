@@ -58,11 +58,11 @@ test('Today and This week each carry their reset’s icon and its one countdown;
 test('what each row stands for is drawn, not written: the seas and how they stand, the modifiers, the pay', async () => {
   const { root } = await opened();
   const labels = labelled(root);
-  for (const words of ['Normal seas: Not taken', 'Elite seas: Taken', 'Abyss seas: Not taken'])
-    assert.ok(labels.includes(words), words);
   const burn =
     'At Elite and Abyss seas, Burn (Shadow): Shadow spells deal double damage. Wearing Shadow, you take double.';
-  assert.equal(labels.filter((label) => label === burn).length, 2, 'the day’s flame on the Elite and the Abyss seas');
+  // The day's flame read with the seas it burns on, as one picture is read once.
+  for (const words of ['Normal seas: Not taken', `Elite seas: Taken. ${burn}`, `Abyss seas: Not taken. ${burn}`])
+    assert.ok(labels.includes(words), words);
   for (const words of ['Pays once: a Vestige.', 'Pays once: a richer cache.', 'Pays once: a Legendary Vestige.'])
     assert.ok(labels.includes(words), words);
   assert.ok(labels.includes('5 revives for the company.') && labels.includes('A wipe starts the run over.'));
@@ -134,4 +134,19 @@ test('as the reset passes with the timers open the count stops at nothing, then 
     after.today.dungeons.every((row) => root.find(row.name)),
     'the new day’s dungeons',
   );
+});
+
+test('a row focused as the rows are written again keeps the focus; the island of the character’s level says so', async () => {
+  const { root, panel } = await opened();
+  const second = () => classed(root, 'journal-timer-row')[1];
+  const key = second()?.dataset['key'];
+  second()?.focus();
+  const record = { day: 20_778, cleared: [1, 2], week: 2_968, elite: true, abyss: false, boon: true };
+  const week = thisWeekOf(activitiesAt(await module, FRIDAY_NINE), gatesAt(await module, 12, true), record, named, 12);
+  panel.show(week, FRIDAY_AT + 2_000);
+  const focused = document.activeElement as unknown as FakeElement;
+  assert.equal(focused.dataset['key'], key, 'the same row, written again, holds the focus');
+  assert.equal(focused.tabIndex, 0, 'and is the one Tab comes back to');
+  const yours = classed(root, 'journal-isle-yours');
+  assert.ok(yours.length > 0 && yours.every((isle) => isle.dataset['say']?.endsWith('Your level is in its band.')));
 });

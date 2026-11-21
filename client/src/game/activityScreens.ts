@@ -2,6 +2,7 @@
 // the card E opens at a dungeon's entrance. It keeps the last word of the character any room sent, so the screens read
 // the same at sea as ashore, and builds their words from the rules (`activityWords.ts`), never judging a rule itself.
 import './activityScreens.css';
+import { roomNow } from '../sky/worldClock.ts';
 import { activitiesAt, gatesAt } from './activities.ts';
 import {
   type AtEntrance,
@@ -59,7 +60,7 @@ export interface ActivityScreens {
 const LOOK_MS = 250;
 /** What the card says of a run found for a base it no longer opens, the week having turned. */
 const WEEK_TURNED = 'The week turned. Try again.';
-const PAGE_CLOCK: ScreensClock = { now: () => Date.now(), every: (run) => void setInterval(run, LOOK_MS) };
+const PAGE_CLOCK: ScreensClock = { now: roomNow, every: (run) => void setInterval(run, LOOK_MS) };
 
 export function startActivityScreens(
   root: HTMLElement,

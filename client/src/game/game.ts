@@ -124,7 +124,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     module: roomModule,
     intoDungeon: (...into) => goInto(() => Foot.enterDungeon(footContext, ...into)),
     ontoPatrol: (...onto) => goInto(() => Foot.enter(footContext, ...onto)),
-    // Back to the ship until the sea's islands stand a player before their door.
+    // Back at the ship: the sea's islands stand no player at their door.
     ontoSea: () => goSea(),
     drawers: dungeons,
   });

@@ -195,8 +195,8 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`, with `--elite` or `--abyss` after it for
   its tier), shared at Normal and a run above it. It is laid by its seed and style and named "The <Style> of the
   Sea", the veil saying "Entering The Caverns of the Sea". Leaving it the veil says "Leaving" it and the player goes
-  back to the sea: to their ship for now, and once the islands stand a player there, 1.5 m before the island's
-  door along its bearing out, facing that way (`back`, the door's point and the bearing out, as a patrol's entrance
+  back to the sea, at their ship. An island standing a player at its door would stand them 1.5 m before it
+  along its bearing out, facing that way (`back`, the door's point and the bearing out, as a patrol's entrance
   stands a player out of it). A company member in one is not joined from the Roster: "They are across the sea.".
 - **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
   is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays

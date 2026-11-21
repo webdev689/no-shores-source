@@ -505,7 +505,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   the World Editor drawing the layouts' buildings and runs; the well house's posts. Tested offline, with a body
   walked through every run, and headless pictures of eight of the nine.
 - Private mission instances with invites ([[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]):
-  an instance's room is still a node's shared room until the server makes rooms per party.
+  a mission's instance is still a node's shared room, while a dungeon's private run is a room of its own
+  ([[Activities]], "Runs and companies").
 
 ## Next
 

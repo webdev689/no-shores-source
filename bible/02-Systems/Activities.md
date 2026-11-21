@@ -66,7 +66,7 @@ Company]]).
   the voyage's card included. The Roster says "Elite difficulty", so a voyage's tier is not read as a foe's rank.
 - **The seas chosen set the tier**, as the owner decided: a voyage set out at Abyss makes the patrols it reaches, and
   the dungeons in them, Abyss. Each tier adds 0, 2 or 3 levels over the area's band, never past 32, and pays 1, 1.5
-  or 2 times, as `gear::world::Difficulty` does now.
+  or 2 times (`gear::world::Difficulty`).
 - **The week's two dungeons have their own tier and level** (below), whatever the seas.
 
 ## What is on
@@ -145,7 +145,7 @@ They hold in every Abyss run, which the owner gave "Nightfall's rules: limited r
     shield and element, since the same roll is read at a higher bar ("Half of all foes carry shields.").
   - Trickle: an Art's recharge takes 1.5 times as long ("Arts take 50% longer to recharge.").
   - Juggler: no Ammo box and no crate drop ("No ammunition drops.").
-  - Exposure: a heal on a player gives half; foes heal as before ("Heals restore half as much.").
+  - Exposure: a heal on a player gives half; foes heal in full ("Heals restore half as much.").
 
 ## What it pays, once
 
@@ -273,22 +273,17 @@ One shared core in the rules, chosen over each system keeping its own resets (ea
 over a server-only activity service (it would break [[Clients Predict With the Shared Rules]]). The clock, the draws,
 the records and the gates live in `gear`, which the server and the browser both run; each system reads them.
 
-1. **The core:** the clock, the tiers in code, the records, the story kept with the account, the gates.
-2. **The dungeons:** the dungeon of the day, the Elite Dungeons, the week's two, the modifiers, Abyss's rules and the
-   rewards.
-3. **The screen.**
-4. **Companies of four**, private runs and Find a Company.
-5. **Quests and bounties**: the engine and the board.
+Its parts:
 
-It builds on the dungeons (#72, #88), the owner's plan (#82) and the factions (#92); the board's place waits on the
-plaza's rebuild.
+- **The core:** the clock, the tiers in code, the records, the story kept with the account, the gates.
+- **The dungeons:** the dungeon of the day, the Elite Dungeons, the week's two, the modifiers, Abyss's rules and the
+  rewards.
+- **The screens:** the Journal, its timers, the bounty board and the card at a dungeon's entrance.
+- **Companies of four**, private runs and Find a Company.
+- **Quests and bounties**: the engine and the board, which no keeper keeps.
 
-**Who builds what:** this session builds 1 to 5's rules and screens, places the board, which has no keeper, and keeps
-Shape and the vendors on the clock. The sea's session (#75) takes the tiers at sea and the sea's counts. The prologue's
-session records the prologue's end with the account.
-
-**Left to the builder:** the modifiers' and the rewards' exact numbers, how a modifier is shown, how a private run's
-room is named and closed, and each Elite Dungeon's Boss.
+The modifiers' and the rewards' numbers, how a modifier is shown, how a private run's room is named and closed, and
+each Elite Dungeon's Boss are among Claude's calls.
 
 ## Claude's calls
 

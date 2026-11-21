@@ -145,10 +145,10 @@ function standingMark(row: WeekRow, seas?: IconName, modifier?: KeyedModifier | 
       make('span', '', 'journal-on-seas'),
       `At Elite and Abyss seas, ${modifier.name}: ${modifier.words}`,
     );
-    flame.setAttribute('role', 'img');
-    flame.setAttribute('aria-label', flame.dataset['say'] ?? '');
     flame.append(modifierImage(modifier));
     chip.append(flame);
+    // Inside the chip's picture a reader hears the chip's name alone, so the modifier's words are part of it.
+    chip.setAttribute('aria-label', `${words}. ${flame.dataset['say'] ?? ''}`);
   }
   return [chip];
 }
@@ -169,7 +169,7 @@ function dayMarks(today: ThisWeek['today']): HTMLElement[] {
   for (const row of today.dungeons) {
     const isle = saying(
       make('li', '', `journal-isle${row.yours ? ' journal-isle-yours' : ''}`),
-      `${row.name}: ${row.about}`,
+      `${row.name}: ${row.about}${row.yours ? ' Your level is in its band.' : ''}`,
     );
     isle.append(make('span', row.name, 'journal-isle-name'));
     if (row.band) isle.append(make('span', `${row.band[0]}–${row.band[1]}`, 'journal-isle-band'));
@@ -277,7 +277,11 @@ export function timersPanel(close: () => void): TimersPanel {
   said.dataset['key'] = 'timers-said';
   said.setAttribute('aria-live', 'polite');
   node.append(head, list, said);
-  list.addEventListener('pointerleave', () => (said.textContent = ''));
+  // The pointer gone, the foot says what the focus rests on, or nothing.
+  list.addEventListener('pointerleave', () => {
+    const active = document.activeElement;
+    said.textContent = list.contains(active) && active instanceof HTMLElement ? (active.dataset['say'] ?? '') : '';
+  });
   let [word, counts, rows] = [null as string | null, [] as Count[], [] as HTMLElement[]];
   /** Says `sayer`'s words at the foot whenever it is pointed at or focused. */
   const heard = (sayer: HTMLElement) => {
@@ -307,6 +311,10 @@ export function timersPanel(close: () => void): TimersPanel {
     row.dataset['key'] = `timer-row-${id}`;
     row.tabIndex = rows.length === 0 ? 0 : -1;
     rows.push(row);
+    // A row focused by a click is the one Tab comes back to.
+    row.addEventListener('focus', () => {
+      for (const one of rows) one.tabIndex = one === row ? 0 : -1;
+    });
     const well = make('span', '', `journal-timer-well ${ROLES.well}`);
     well.append(iconImage(icon, '', ROW_ICON));
     const text = make('div', '', 'journal-timer-text');
@@ -316,16 +324,25 @@ export function timersPanel(close: () => void): TimersPanel {
     return row;
   };
   const build = (week: ThisWeek | null) => {
+    const active = document.activeElement;
+    const focused = list.contains(active) && active instanceof HTMLElement ? active.dataset['key'] : undefined;
     [counts, rows] = [[], []];
     if (!week) {
       list.replaceChildren(make('p', 'Loading…', 'gear-hint gear-empty'));
       return;
     }
     list.replaceChildren(...groupsOf(week).flatMap((group) => [headOf(group), ...group.rows.map(rowOf)]));
+    // A row focused as the rows are written again (the day turning, a level, a clear) keeps the focus.
+    const again = rows.find((row) => row.dataset['key'] === focused);
+    if (!again) return;
+    for (const row of rows) row.tabIndex = row === again ? 0 : -1;
+    again.focus();
   };
   // The arrows step between the rows, each a stop, so the keys hear every row's words; Tab rests on one of them.
   list.addEventListener('keydown', (event) => {
-    const step = { arrowdown: 1, arrowup: -1 }[(event as KeyboardEvent).key.toLowerCase()];
+    const keyed = event as KeyboardEvent;
+    if (keyed.ctrlKey || keyed.altKey || keyed.metaKey) return;
+    const step = { arrowdown: 1, arrowup: -1 }[keyed.key.toLowerCase()];
     const focused = rows.findIndex((row) => row === document.activeElement);
     const next = step === undefined ? undefined : rows[Math.max(0, Math.min(rows.length - 1, focused + step))];
     if (!next) return;

@@ -74,7 +74,9 @@ test('the quests held are cards six a page, story missions first, each at its st
   const { root } = journalOf({ week: () => null, kept: () => geared(held), written });
   const cards = () => classed(root, 'journal-card');
   assert.ok(root.find('1 / 2') && root.find('8'), 'the page among its arrows, and how many are held by the title');
-  assert.ok(root.all().some((node) => node.getAttribute('aria-label') === '8 held'));
+  assert.ok(root.find('8 held') && root.find('Page 1 of 2'), 'each read in words to a reader');
+  const seen = root.find('8');
+  assert.equal(seen?.getAttribute('aria-hidden'), 'true', 'the shown number hidden from a reader, who hears its words');
   assert.deepEqual(
     cards().map((card) => card.dataset['key']),
     ['quest-b', 'quest-d', 'quest-f', 'quest-a', 'quest-c', 'quest-e'],

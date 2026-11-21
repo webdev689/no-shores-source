@@ -5,9 +5,10 @@ import { make } from '../editor/dom.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { HOURGLASS_URL, bannerUrl } from '../plus/journalArt.ts';
 import { ROLES } from '../plus/kit.ts';
+import { roomNow } from '../sky/worldClock.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { type BountyRow, bountyWords, payOf } from './bountyBoard.ts';
-import { bountyCard, bountyTile, chooseTile, moveAmongTiles } from './bountyTiles.ts';
+import { bountyCard, bountyTile, chooseTile, focusUnderPointer, moveAmongTiles } from './bountyTiles.ts';
 import { iconImage } from './journalIcons.ts';
 import { pressOf } from './gearDom.ts';
 import { STEP_BACK } from './gearScreen.ts';
@@ -39,6 +40,14 @@ export interface Journal {
 
 /** A quest's card: its banner, its name, a line of its tale, and its step's number and name, marked Done once all
  *  are; a name or tale its card cuts short is kept whole in its title. */
+/** `shown` read as `words`: its own text hidden from a reader, and the words in its place hidden from sight. */
+function heard(shown: HTMLElement, words: string): HTMLElement {
+  const seen = make('span', shown.textContent ?? '');
+  seen.setAttribute('aria-hidden', 'true');
+  shown.replaceChildren(seen, make('span', words, 'journal-unseen'));
+  return shown;
+}
+
 function questCard(card: QuestCard): HTMLElement {
   const item = make('li', '', `journal-card ${ROLES.panel}`);
   item.dataset['key'] = `quest-${card.id}`;
@@ -56,7 +65,7 @@ function questCard(card: QuestCard): HTMLElement {
   return item;
 }
 
-export function startJournal(source: JournalSource | null, now: () => number = () => Date.now()): Journal {
+export function startJournal(source: JournalSource | null, now: () => number = roomNow): Journal {
   const node = make('div', '', 'journal');
   node.dataset['key'] = 'journal';
   const quests = make('section', '', 'journal-quests');
@@ -133,9 +142,7 @@ export function startJournal(source: JournalSource | null, now: () => number = (
       return;
     }
     // How many are held, beside the title as the bounties' count is; the pages to turn, together at the right.
-    const held = make('span', String(cards.length), `gear-chip ${ROLES.chip}`);
-    held.setAttribute('aria-label', `${cards.length} held`);
-    head.append(held);
+    head.append(heard(make('span', String(cards.length), `gear-chip ${ROLES.chip}`), `${cards.length} held`));
     const pager = make('div', '', 'journal-pager');
     const [back, next] = (
       [
@@ -152,8 +159,10 @@ export function startJournal(source: JournalSource | null, now: () => number = (
       if (count === 1) arrow.tabIndex = -1;
       return arrow;
     });
-    const pageWords = make('span', `${pageAt + 1} / ${count}`, 'journal-page-at');
-    pageWords.setAttribute('aria-label', `Page ${pageAt + 1} of ${count}`);
+    const pageWords = heard(
+      make('span', `${pageAt + 1} / ${count}`, 'journal-page-at'),
+      `Page ${pageAt + 1} of ${count}`,
+    );
     pager.append(...(back ? [back] : []), pageWords, ...(next ? [next] : []));
     head.append(pager);
     const list = make('ol', '', 'journal-cards');
@@ -183,6 +192,7 @@ export function startJournal(source: JournalSource | null, now: () => number = (
     for (const row of column.taken) {
       const tile = keep(bountyTile(row), `bounty-${row.place}`);
       for (const choosing of ['pointerenter', 'focus', 'click']) tile.addEventListener(choosing, () => show(row));
+      focusUnderPointer(tile);
       tiles.push(tile);
       grid.append(tile);
     }

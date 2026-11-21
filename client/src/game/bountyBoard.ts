@@ -5,7 +5,8 @@
 import { make } from '../editor/dom.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { ROLES } from '../plus/kit.ts';
-import { bountyCard, bountyTile, chooseTile, moveAmongTiles } from './bountyTiles.ts';
+import { roomNow } from '../sky/worldClock.ts';
+import { bountyCard, bountyTile, chooseTile, focusUnderPointer, moveAmongTiles } from './bountyTiles.ts';
 import type { PageContext } from './characterPage.ts';
 import { pressOf } from './gearDom.ts';
 import { iconImage } from './journalIcons.ts';
@@ -80,7 +81,7 @@ let chosenPlace = 0;
 
 /** The bounty board's screen: one line, the day's six in a row a kind, the bar counting to the next board, and the
  *  chosen tile's card with its press (E or a click), the arrows moving between tiles. */
-export function boardPage(context: PageContext, resetAt: () => number | null, now = () => Date.now()): HTMLElement {
+export function boardPage(context: PageContext, resetAt: () => number | null, now = roomNow): HTMLElement {
   const page = make('div', '', `gear-board ${ROLES.panel}`);
   const { gear } = context;
   const rows = bountyRows(gear);
@@ -88,7 +89,6 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
   page.append(make('p', 'Bounties for XP and Aurem, posted each day.', 'gear-hint gear-board-line'));
   const grid = make('div', '', 'gear-board-grid');
   const card = make('div', '', 'gear-board-card');
-  card.setAttribute('aria-live', 'polite');
   const pay = payOf(gear);
   const footOf = (row: BountyRow): HTMLElement => {
     if (!row.press) {
@@ -112,11 +112,13 @@ export function boardPage(context: PageContext, resetAt: () => number | null, no
     for (const row of rows.filter((one) => one.pool === pool)) {
       const tile = bountyTile(row);
       if (shut) tile.setAttribute('aria-disabled', 'true');
-      tile.addEventListener('click', () => {
+      tile.addEventListener('click', (event) => {
         show(row);
-        if (!shut && row.press) context.ask(row.press.ask);
+        // A double click's second click asks nothing more: the room has the first.
+        if (!shut && row.press && !((event as MouseEvent).detail > 1)) context.ask(row.press.ask);
       });
       for (const chosen of ['pointerenter', 'focus']) tile.addEventListener(chosen, () => show(row));
+      focusUnderPointer(tile);
       line.append(tile);
       tiles.push(tile);
     }
