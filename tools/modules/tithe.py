@@ -23,35 +23,35 @@ def stores_a(module):
     """Two crates side by side and a third on them, a small crate and three sacks against their end, a barrel at the
     other, the tarp over the crates pegged out at its corners."""
     tops = []
-    for x in (-0.42, 0.42):
+    for x in (-0.32, 0.52):
         crate(module, Frame((x, 0.15, 0.0), module.draw(-0.04, 0.04)), CRATE)
         tops.append((x - 0.42, -0.27, x + 0.42, 0.57, CRATE[2] + 0.05))
-    crate(module, Frame((0.05, 0.17, CRATE[2] + 0.05), 0.12), CRATE)
-    tops.append((-0.37, -0.25, 0.47, 0.59, CRATE[2] * 2 + 0.2))
+    crate(module, Frame((0.15, 0.17, CRATE[2] + 0.05), 0.12), CRATE)
+    tops.append((-0.27, -0.25, 0.57, 0.59, CRATE[2] * 2 + 0.2))
     crate(module, Frame((0.2, -0.55, 0.0), 0.12), SMALL)
-    for k, (x, y) in enumerate(((-0.96, 0.4), (-0.94, -0.1), (-0.56, -0.5))):
+    for k, (x, y) in enumerate(((-1.02, 0.38), (-1.04, -0.08), (-0.5, -0.62))):
         sack(module, Frame((x, y, 0.0), module.draw(0, math.tau), (module.draw(-0.12, 0.12), 0.0)),
              (0.27 + 0.02 * k, 0.6 + 0.05 * k))
-    barrel(module, Frame((0.9, 0.35, 0.0), module.draw(0, 1)))
-    tarp(module, (0.0, 0.16), (1.9, 1.2), tops)
-    standing(module, (2.4, 1.8), 1.6)
+    barrel(module, Frame((1.0, -0.6, 0.0), module.draw(0, 1)))
+    tarp(module, (0.1, 0.16), (1.9, 1.2), tops)
+    standing(module, (2.6, 1.85), 1.6)
 
 
 def stores_b(module):
     """Barrels: two on their sides chocked with wedges, a third laid in the cradle between them, two standing beside,
     a crate with a sack on it; the tarp thrown over the laid barrels only."""
     for y in (-0.32, 0.32):
-        barrel(module, Frame((-0.1, y, 0.3), 0.0, (0.0, math.pi / 2)))
+        barrel(module, Frame((-0.1, y + 0.1, 0.3), 0.0, (0.0, math.pi / 2)))
         for x in (0.05, 0.6):
-            board(module, Frame((x, y - 0.27 * (1 if y < 0 else -1), 0.0)), (0.0, 0.0, 0.05), (0.09, 0.1, 0.09),
+            board(module, Frame((x, y + 0.1 - 0.27 * (1 if y < 0 else -1), 0.0)), (0.0, 0.0, 0.05), (0.09, 0.1, 0.09),
                   rotation=(0.45 if y < 0 else -0.45, 0.0, 0.0))
-    barrel(module, Frame((-0.1, 0.0, 0.81), 0.0, (0.0, math.pi / 2)))
-    barrel(module, Frame((-0.72, 0.42, 0.0), 0.4))
-    barrel(module, Frame((-0.6, -0.18, 0.0), 1.3), radius=0.26, high=0.74)
-    crate(module, Frame((-0.1, -0.72, 0.0), -0.15), SMALL)
-    sack(module, Frame((-0.12, -0.72, SMALL[2] + 0.05), 0.7, (0.0, 1.35)), (0.24, 0.62))
-    tarp(module, (0.23, 0.0), (1.4, 1.6), [(-0.1, -0.62, 0.76, 0.62, 1.24)], sag=0.08)
-    standing(module, (2.2, 2.1), 1.4)
+    barrel(module, Frame((-0.1, 0.1, 0.81), 0.0, (0.0, math.pi / 2)))
+    barrel(module, Frame((-0.72, 0.52, 0.0), 0.4))
+    barrel(module, Frame((-0.6, -0.08, 0.0), 1.3), radius=0.26, high=0.74)
+    crate(module, Frame((-0.1, -0.8, 0.0), 0.0), SMALL)
+    sack(module, Frame((-0.12, -0.8, SMALL[2] + 0.05), 0.7, (0.0, 1.35)), (0.24, 0.62))
+    tarp(module, (0.33, 0.1), (1.2, 1.6), [(-0.1, -0.52, 0.76, 0.72, 1.24)], sag=0.08)
+    standing(module, (2.2, 2.2), 1.4)
 
 
 def stores_c(module):
@@ -73,16 +73,16 @@ def stores_c(module):
         sack(module, Frame((left + x, -0.25 + 0.5 * k, floor + 0.27),
                            (0.0 if k else math.pi) + module.draw(-0.15, 0.15), (math.pi / 2 - 0.06, 0.0)),
              (0.2, 0.6), flat=0.5)
-    crate(module, Frame((left + 1.13, -0.3, 0.0), 0.1), SMALL)
-    tarp(module, (left, 0.0), (1.7, 0.95), [(left - 0.5, -0.3, left + 0.5, 0.3, floor + 0.37)], sag=0.04)
-    standing(module, (2.5, 1.3), 1.0)
+    crate(module, Frame((left + 1.15, 0.15, 0.0), 0.1), SMALL)
+    tarp(module, (left, 0.0), (1.6, 0.95), [(left - 0.5, -0.3, left + 0.5, 0.3, floor + 0.37)], sag=0.04)
+    standing(module, (2.6, 1.3), 1.0)
 
 
 def stores_plundered(module):
     """A store after the Tithe: a crate broken open and its boards strewn, one tipped on its side with its lid gone,
     sacks slit and slumped with their grain spilt in heaps, a barrel stove in and rolled away, its staves and a hoop
     lying by it, the tarp dragged off to lie in a heap."""
-    crate(module, Frame((-0.4, 0.15, 0.0), 0.08), CRATE,
+    crate(module, Frame((-0.4, 0.05, 0.0), 0.08), CRATE,
           gone=(('front', 1), ('front', 2), ('front', 'brace'), ('lid', 0), ('lid', 1)), lean=0.6)
     crate(module, Frame((0.6, 0.25, 0.29), 0.5, (math.pi / 2, 0.0)), SMALL, lid=False, gone=(('east', 2),))
     for k in range(9):   # boards strewn
@@ -97,7 +97,7 @@ def stores_plundered(module):
         board(module, Frame((module.draw(0.0, 0.9), module.draw(-0.7, -0.6), 0.0), module.draw(0, math.pi)),
               (0.0, 0.0, 0.012), (0.7, 0.08, 0.022))
     ring(module, Frame((-0.45, -0.6, 0.015), module.draw(0, math.pi)), (0.0, 0.0, 0.0), 0.3, 0.015, axis='Z')
-    tarp(module, (-0.3, 0.6), (1.5, 0.7), [(-0.8, 0.45, 0.1, 0.75, 0.28)], sag=0.1, torn=0.6, rope=False)
+    tarp(module, (-0.3, 0.65), (1.5, 0.6), [(-0.8, 0.52, 0.1, 0.78, 0.28)], sag=0.1, torn=0.6, rope=False)
     standing(module, (2.5, 2.0), 0.8)
 
 
@@ -161,7 +161,7 @@ def banner(module):
     # Its guy ropes, from over the bar down behind it and to either side, clear of the cloth.
     for peg in ((-2.3, 0.0), (-0.8, 2.2), (-0.8, -2.2)):
         out = math.hypot(*peg)
-        guy(module, (0.0, 0.0, bar_at + 0.22), (*peg, 0.0), (peg[1] / out * 0.3, -peg[0] / out * 0.3), thick=0.02,
+        guy(module, (-0.08, 0.0, bar_at + 0.35), (*peg, 0.0), (peg[1] / out * 0.3, -peg[0] / out * 0.3), thick=0.02,
             stake=0.35)
     for k in range(7):   # stones packed round its foot
         turn = math.tau * k / 7 + module.draw(-0.2, 0.2)

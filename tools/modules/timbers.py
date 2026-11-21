@@ -259,8 +259,8 @@ def tarp(module, middle, size, tops, sag=0.05, torn=0.0, rope=True):
 
 
 def guy(module, top, peg, lean, thick=0.012, stake=0.2):
-    """A cord from `top` down to a stake driven in at `peg` on the ground, the stake leaning `lean` (radians about x
-    and y) away from what it holds."""
+    """A cord from `top` down to a stake driven in at `peg` on the ground, the stake's head leaning `lean` (radians
+    about x and y) in toward what it holds."""
     run = mathutils.Vector(peg) - mathutils.Vector(top)
     cord = board(module, Frame(), tuple((mathutils.Vector(top) + mathutils.Vector(peg)) / 2), (thick, thick, run.length),
                  'timber', bevel=0.0)

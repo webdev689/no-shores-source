@@ -109,7 +109,7 @@ are written with paving last, since the first group carries the parts and paving
     stack under a grey tarp pegged close at its corners; the plundered store (`tithe-stores-plundered`): a crate broken
     open, one tipped on its side, boards strewn, sacks slit with their grain spilt in heaps, a barrel stove in and
     rolled away with its staves and a hoop by it, the tarp dragged off. Each stack is compact and square-edged, its
-    part the box round it: store a 2.4 by 1.8 m, b 2.2 by 2.1, c 2.5 by 1.3, the plundered store 2.5 by 2.0.
+    part the box round it: store a 2.6 by 1.85 m, b 2.2 by 2.2, c 2.6 by 1.3, the plundered store 2.5 by 2.0.
   - The Tithe's banner (`tithe-banner`): a heavy grey cloth, unmarked, 3.4 m long, lashed along its sleeve to a
     crossbar on a 5.4 m pole, a weighted rod in its hem so it hangs straight and bellies only between; three guy ropes
     pegged out behind it and to either side, an iron spike and collar at its head, stones packed round its foot.

@@ -83,8 +83,8 @@ For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bp
 and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access the publishers use.
 
 For the modules (`tools/modules/`, [[Modules]]): on Python 3.13,
-`pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` (bpy 5.3.0 and numpy, each wheel
-by its hash). `python -I tools/modules/bake.py <folder>` bakes every module and writes `content/modules/modules.json`;
+`pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` (bpy 5.3.0 and what it needs, each
+wheel by its hash). `python -I tools/modules/bake.py <folder>` bakes every module and writes `content/modules/modules.json`;
 the bake takes in the Lattice's builders and the [[Sprite Forge]]'s bodies. The `modules` workflow bakes twice,
 checks the bytes match and the committed manifest is the bake's, and publishes to R2.
 
