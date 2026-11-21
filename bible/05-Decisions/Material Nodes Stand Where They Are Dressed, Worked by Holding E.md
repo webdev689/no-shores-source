@@ -28,15 +28,26 @@ The owner's answers to the questions that followed:
 Then, of Destiny's own: "This is how destiny handles currency, xp and rep pop ups. Above the item popup" (a picture of
 "+232" beside a currency's icon, a short line with no panel, standing above the items' rows).
 
+Asked after the change's audit:
+
+> On horseback, where nothing stopped a gather and the figure's work hid the horse: "#1" (not on horseback: Hold to
+> gather is not offered while mounted, and the room refuses it; the player dismounts first)
+>
+> Where each node's sprite stands, offered with its ring and beam: "No ring and beam like I said..."; asked again
+> with the sprite alone marking a node: "#1" (in front of the dressing: a few metres off it toward the path, the 3D
+> dressing staying as the place around it)
+
 ## What it settles
 
 - **A patrol's material nodes stand at its layout's dressed resource places** ([[Layouts]]): the ore outcrop, the
   salvage, the herbs' drying rack, the felled logs. The room gathers there, still a third of them at a time
   ([[Server]]).
-- **The ring and the beam stay**, and each node is also drawn as a sprite baked in the owner's Blender pipeline
-  ([[Sprite Forge]]), for its detail.
+- **No ring and no beam**: each node is drawn as a sprite baked in the owner's Blender pipeline ([[Sprite Forge]]),
+  for its detail, and the sprite alone marks it. It stands in front of its place's dressing, a few metres toward the
+  path, and the room gathers it there.
 - **Gathering is E held about two seconds** while the player's figure works the node, with a progress ring and a
-  sound; moving or being hit stops it. A node gathered looks spent until it returns ([[Game]]).
+  sound; moving or being hit stops it. A node gathered looks spent until it returns ([[Game]]). It is not done on
+  horseback.
 - **Every node gives its island's resource**, whatever its kind; the kind is how it looks and how it is worked
   ([[Gear]]).
 - **The pickup feed tells of everything gained**: XP, faction reputation, Art progress and what is gathered at sea
