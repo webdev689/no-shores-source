@@ -154,9 +154,11 @@ pub struct Room {
     pub(crate) resource_nodes: Vec<ResourceNode>,
     pub(crate) drops: Vec<Drop>,
     pub(crate) spells: spells::Spells,
-    /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
+    /// The difficulty its voyage set out at; whether it is a patrol, whose nodes take turns (`patrol.rs`); and the
+    /// nodes each account's character gathered here (in a patrol, this turn), kept past a player's leaving.
     pub(crate) difficulty: gear::Difficulty,
-    pub(crate) patrol: Option<patrol::Patrol>,
+    pub(crate) patrol: bool,
+    pub(crate) gathered: std::collections::BTreeMap<String, Vec<u8>>,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
@@ -215,7 +217,8 @@ impl Room {
             drops: Vec::new(),
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Normal,
-            patrol: None,
+            patrol: false,
+            gathered: std::collections::BTreeMap::new(),
             ashore: companions::Ashore::default(),
             isle: None,
             minute: 0,

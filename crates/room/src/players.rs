@@ -435,14 +435,12 @@ impl Room {
         }
     }
 
-    /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
-    /// spent for them again, however often they rejoin, as on a sea island are the wrecks it scavenged; and the Arts'
-    /// charge the room kept for it is theirs again.
+    /// Notes the account that keeps a player's character: the nodes that account gathered in this room (in a patrol,
+    /// this turn) are spent for them again, however often they rejoin; and the Arts' charge the room kept for it is
+    /// theirs again. A sea island's wrecks are kept on the character itself.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
-        let mut gathered =
-            self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
+        let gathered = self.gathered.get(owner).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
-        gathered.extend(self.isle.as_ref().map_or(&[][..], |isle| found.character.scavenged_on(isle.seed)));
         found.owner = Some(owner.to_owned());
         for node in gathered {
             if !found.spent.contains(&node) {

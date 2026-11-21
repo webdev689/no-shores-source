@@ -30,7 +30,7 @@ fn seed_of(low: u32, high: u32) -> u64 {
 }
 
 /// An island's plan as JSON: its kind and its dungeon's style, its radius and reach, where it is landed and anchored
-/// off, its spawns and the bearing a player landed faces, its door, landmark, guards' posts, camp and wrecks, its
+/// off, its spawns and the bearing a player landed faces, its door, landmark, guards' posts, camp, wrecks and resource nodes, its
 /// section's ring, every module set on it as [its number in the contract, x, y, z, turn, scale, lift], and the blocks
 /// its modules' solids stand as [west, north, east, south, top]. Empty for a climate the contract does not dress.
 #[must_use]
@@ -62,6 +62,7 @@ pub fn plan_json(seed: u64, climate: &str) -> String {
             "guards": sites.guards,
             "camp": sites.camp,
             "wrecks": wrecks,
+            "nodes": sites.nodes,
             "ring": plan.ring,
             "placements": placements,
             "blocks": blocks,
@@ -80,8 +81,8 @@ pub fn heights_bytes(seed: u64, climate: &str, at: [f64; 2]) -> Vec<u8> {
 }
 
 /// The sea's word an island's room opens on: its seed as a decimal (JSON's numbers cannot hold 64 bits), its climate,
-/// where its middle lies, whose guards stand on it (the foes' faction number, 0 for none), and its water's band of
-/// levels.
+/// where its middle lies, whose guards stand on it (the foes' faction number, 0 for none), its water's band of levels,
+/// and the resource its nodes give (its place in the gear's catalogue; none stand without it).
 #[derive(Deserialize)]
 struct IslandRequest {
     seed: String,
@@ -89,6 +90,8 @@ struct IslandRequest {
     at: [f64; 2],
     guards: u8,
     levels: Option<(u8, u8)>,
+    #[serde(default)]
+    resource: Option<u8>,
 }
 
 /// Opens an island's room from the sea's word on it; false for words that do not make an island.
@@ -97,7 +100,13 @@ pub fn open_island(text: &[u8]) -> bool {
     let Ok(request) = serde_json::from_slice::<IslandRequest>(text) else { return false };
     let Ok(seed) = request.seed.parse::<u64>() else { return false };
     let Some(room) = with_plan(seed, &request.climate, |plan| {
-        Room::island(plan, request.at, (request.guards != 0).then_some(request.guards), request.levels)
+        Room::island(
+            plan,
+            request.at,
+            (request.guards != 0).then_some(request.guards),
+            request.levels,
+            request.resource,
+        )
     }) else {
         return false;
     };
@@ -122,6 +131,7 @@ pub fn sea_island(id: u32) -> String {
                 "climate": island.climate,
                 "guards": island.guards.unwrap_or(0),
                 "levels": levels,
+                "resource": island.resource,
                 "kind": island.kind.name(),
                 "at": island.at,
                 "anchorage": island.anchorage,

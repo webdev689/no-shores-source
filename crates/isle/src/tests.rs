@@ -62,7 +62,7 @@ fn the_grounds_bits_are_the_ones_the_page_pins() {
 
 const GROUND_41_DESERT: &str = "5372bca559dd7c59";
 
-const GOLDEN: [u64; 3] = [13_206_015_137_118_056_141, 4_763_375_895_929_818_477, 4_816_516_164_977_178_038];
+const GOLDEN: [u64; 3] = [11_144_284_493_814_852_190, 2_909_213_143_875_111_928, 13_246_981_835_577_183_042];
 
 #[test]
 fn seeds_and_climates_make_different_islands() {
@@ -171,6 +171,28 @@ fn wrecks_lie_on_the_strand_each_with_its_hull() {
                         && (placement.at[1] - wreck.at[1]).abs() < 1e-9
                 });
                 assert!(hull, "{seed} {climate}: a wreck with no hull");
+            }
+        }
+    }
+}
+
+#[test]
+fn every_island_carries_two_to_four_resource_nodes_inland_apart_and_clear_of_its_places() {
+    let far = |one: [f64; 2], other: [f64; 2]| libm::hypot(one[0] - other[0], one[1] - other[1]);
+    for climate in CLIMATES {
+        for seed in 0..12 {
+            let plan = plan(seed, climate);
+            let nodes = &plan.sites.nodes;
+            assert!((2..=4).contains(&nodes.len()), "{seed} {climate}: {} nodes", nodes.len());
+            let kept: Vec<[f64; 2]> = plan.sites.spawns.iter().copied().chain([plan.sites.door.at]).collect();
+            for (number, &node) in nodes.iter().enumerate() {
+                assert!(plan.ground.height_at(node[0], node[1]) > 0.0, "{seed} {climate}: a node in the water");
+                assert!(kept.iter().all(|&place| far(place, node) > 15.0), "{seed} {climate}: a node on a place");
+                assert!(
+                    plan.sites.wrecks.iter().all(|wreck| far(wreck.at, node) > 15.0),
+                    "{seed} {climate}: by a wreck"
+                );
+                assert!(nodes[..number].iter().all(|&other| far(other, node) > 20.0), "{seed} {climate}: two together");
             }
         }
     }

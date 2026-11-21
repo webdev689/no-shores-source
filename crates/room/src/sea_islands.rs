@@ -43,8 +43,8 @@ const KEEP_OFF_M: f64 = 20.0;
 pub const LANDING_M: f64 = 40.0;
 
 /// An island at sea: its number, seed and kind, where its middle is, the continent whose water it lies in and that
-/// continent's climate, whose guards hold it, where a ship anchors off it, its coast as land, and the tick it was last
-/// held.
+/// continent's climate and resource (its place in the gear's catalogue), whose guards hold it, where a ship anchors
+/// off it, its coast as land, and the tick it was last held.
 #[derive(Debug)]
 pub struct SeaIsland {
     pub id: u32,
@@ -53,6 +53,7 @@ pub struct SeaIsland {
     pub at: [f64; 2],
     pub continent: usize,
     pub climate: String,
+    pub resource: Option<u8>,
     pub guards: Option<u8>,
     /// Its water's band of levels, its guards' and its dungeon's.
     pub levels: Option<(u8, u8)>,
@@ -71,7 +72,8 @@ pub struct Islands {
     draws: Draws,
     next_id: u32,
     found: BTreeMap<PlayerId, BTreeSet<u32>>,
-    climates: Vec<String>,
+    /// Each continent's climate and resource, in the layout's order.
+    climates: Vec<(String, Option<u8>)>,
     /// Each account landed on an island, by its number: its ship lay at rest at that island's anchorage when last at
     /// sea. Its island's room lets only those scavenge.
     landed: BTreeMap<String, u32>,
@@ -106,9 +108,9 @@ fn guards_of(holder: Holder, seed: u64) -> Option<u8> {
 }
 
 impl Islands {
-    /// No island yet, rolled from `seed`; `climates` each continent's, in the layout's order.
+    /// No island yet, rolled from `seed`; `climates` each continent's climate and resource, in the layout's order.
     #[must_use]
-    pub fn new(seed: u32, climates: Vec<String>) -> Self {
+    pub fn new(seed: u32, climates: Vec<(String, Option<u8>)>) -> Self {
         Islands {
             standing: Vec::new(),
             draws: Draws::of(u64::from(seed), 0x15_1a_4d),
@@ -123,7 +125,7 @@ impl Islands {
     /// dresses that continent's climate.
     fn island(&mut self, seed: u64, at: [f64; 2], water: (usize, Holder, Option<(u8, u8)>)) -> Option<SeaIsland> {
         let (continent, holder, levels) = water;
-        let climate = self.climates.get(continent)?.clone();
+        let (climate, resource) = self.climates.get(continent)?.clone();
         isle::catalog::catalog().climates.get(&climate)?;
         let shape = isle::shape_of(seed);
         let ring = shape.ring(48, isle::sites::SHALLOWS_M + KEEP_OFF_M);
@@ -140,6 +142,7 @@ impl Islands {
             at,
             continent,
             climate,
+            resource,
             guards,
             levels,
             anchorage: [at[0] + x, at[1] + y],

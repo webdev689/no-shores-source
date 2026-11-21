@@ -44,6 +44,8 @@ pub struct Sites {
     pub guards: Vec<[f64; 2]>,
     pub camp: Option<[f64; 2]>,
     pub wrecks: Vec<Wreck>,
+    /// Where its resource nodes stand, two to four: the resource of the island whose waters it lies in.
+    pub nodes: Vec<[f64; 2]>,
 }
 
 fn at(bearing: f64, off: f64) -> [f64; 2] {
@@ -131,6 +133,29 @@ fn wrecks(shape: &Shape, cliffs: f64, kind: Kind, draws: &mut Draws, kept: &[[f6
     found
 }
 
+/// The resource nodes: two to four inland, between a third and three fifths of the way from the middle to the coast,
+/// on gentle shores' bearings, apart from each other and from every place kept, and clear of a quarry's pit. Drawn on
+/// a stream of their own, so the island's other places stand where they did before it had any.
+fn nodes(shape: &Shape, cliffs: f64, seed: u64, kept: &[[f64; 2]]) -> Vec<[f64; 2]> {
+    let mut draws = Draws::of(seed, 11);
+    let wanted = 2 + draws.index(3);
+    let mut found: Vec<[f64; 2]> = Vec::new();
+    for _ in 0..120 {
+        if found.len() >= wanted {
+            break;
+        }
+        let bearing = draws.between(0.0, TAU);
+        let point = at(bearing, shape.edge(bearing) * draws.between(0.33, 0.6));
+        let pit = shape.quarry.is_some_and(|quarry| distance(point, quarry.at) < quarry.radius + 8.0);
+        let clear = kept.iter().all(|&other| distance(point, other) > 15.0)
+            && found.iter().all(|&other| distance(point, other) > 20.0);
+        if clear && !pit && shape.cliffness(bearing, cliffs) <= 0.5 {
+            found.push(point);
+        }
+    }
+    found
+}
+
 /// An isle's landmark at its hill's top on a pad, or at a quarry's rim; its guards' posts by it, by the door and at a
 /// camp above the beach.
 fn landmark(shape: &mut Shape, cliffs: f64, kind: Kind, draws: &mut Draws) -> Option<([f64; 2], f64)> {
@@ -204,11 +229,14 @@ impl Sites {
         kept.push(door.at);
         kept.extend(camp);
         let wrecks = wrecks(shape, cliffs, kind, &mut draws, &kept);
-        Sites { spawns, facing, anchorage, door, landmark, guards, camp, wrecks }
+        kept.extend(wrecks.iter().map(|wreck| wreck.at));
+        kept.extend(landmark.map(|(point, _)| point));
+        let nodes = nodes(shape, cliffs, seed, &kept);
+        Sites { spawns, facing, anchorage, door, landmark, guards, camp, wrecks, nodes }
     }
 
     /// The places the dressing keeps clear, and how far round each: the beach's spawns and the way from them to the
-    /// door, the door's front, the landmark's pad, the camp and each wreck.
+    /// door, the door's front, the landmark's pad, the camp, each wreck and each resource node.
     #[must_use]
     pub fn clear(&self, shape: &Shape) -> Vec<([f64; 2], f64)> {
         let mut clear: Vec<([f64; 2], f64)> = self.spawns.iter().map(|&spawn| (spawn, 7.0)).collect();
@@ -228,6 +256,7 @@ impl Sites {
         }
         clear.extend(self.camp.map(|camp| (camp, 9.0)));
         clear.extend(self.wrecks.iter().map(|wreck| (wreck.at, 8.0)));
+        clear.extend(self.nodes.iter().map(|&node| (node, 4.0)));
         clear
     }
 

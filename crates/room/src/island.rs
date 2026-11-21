@@ -91,9 +91,16 @@ fn posts_navmesh(blocks: &[movement::Block], floor: &Floor, posts: &[[f64; 2]]) 
 impl Room {
     /// A sea island's room from its plan, its middle at `at` in the world, where every body, block and post of it
     /// stands, as a node's do. An isle's guards are of `guards`' faction (the Grey Tithe's or the pirates') at its
-    /// water's `levels`; with none, or on a cove, none stand.
+    /// water's `levels`; with none, or on a cove, none stand. Its nodes are of `resource`, the island's whose water it
+    /// lies in, all standing, each gathered once by each account while the room is open; with none, none stand.
     #[must_use]
-    pub fn island(plan: &Plan, at: [f64; 2], guards: Option<u8>, levels: Option<(u8, u8)>) -> Self {
+    pub fn island(
+        plan: &Plan,
+        at: [f64; 2],
+        guards: Option<u8>,
+        levels: Option<(u8, u8)>,
+        resource: Option<u8>,
+    ) -> Self {
         let place = |points: &[[f64; 2]]| points.iter().map(|&point| isle::placed(point, at)).collect::<Vec<_>>();
         let section = Section { ring: place(&plan.ring), spawns: place(&plan.sites.spawns), falls_kill: false };
         let floor = Floor::Island(Box::new(plan.ground_at(at)));
@@ -119,6 +126,10 @@ impl Room {
         });
         if let Some(faction) = guarded {
             room.stand_guards(&posts, faction, levels);
+        }
+        if let Some(resource) = resource {
+            let nodes = place(&plan.sites.nodes).into_iter().map(|[x, y]| crate::ResourceNode { x, y, resource });
+            room.resource_nodes = nodes.collect();
         }
         room
     }
@@ -190,8 +201,7 @@ impl Room {
             &dice,
         );
         let Some(scavenger) = self.players.get_mut(&player) else { return crate::asks::OUT_OF_REACH };
-        // Spent for them, as a gathered node is: their page offers it no more, nor any room of this island again.
-        scavenger.spent.push(wreck);
+        // Spent for them on this island for good: their page offers it no more, nor any room of this island again.
         scavenger.character.scavenge(seed, wreck);
         let taken = scavenger.character.take_salvage(found);
         scavenger.gear_changed = true;

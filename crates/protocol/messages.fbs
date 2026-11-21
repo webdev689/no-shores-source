@@ -486,8 +486,7 @@ table GearDrop {
 
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
 // then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
-// the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent (on
-// a sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Mage's counter, or the
+// the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent; whether they stand where a Vestige opens (the Mage's counter, or the
 // stall); and the answer to their last ask (0 done, then the gear crate's refusals by number) with the item a Vestige last opened to (0 none) and how many asks have been
 // answered; and the resource nodes standing that they may still gather, four numbers each: its number, x, y and its
 // island's resource; and in a social space, the vendors' wares of the day, the Armorsmith's, the Weaponsmith's then
@@ -569,6 +568,8 @@ table Gear {
   // The day, counted from the epoch at UTC midnight, whose smiths' wares the message shows: a smith's ware is asked
   // by it, so none sent as the day turns buys the next day's.
   day: uint;
+  // On a sea island, the wrecks they have scavenged there, by their numbers among its wrecks.
+  scavenged: [ubyte];
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),
