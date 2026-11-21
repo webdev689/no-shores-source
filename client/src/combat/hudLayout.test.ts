@@ -4,7 +4,6 @@ import { tipOf } from '../plus/barFrame.ts';
 import { PLATES } from '../plus/barLayout.ts';
 import { COMPASS, UNDER_COMPASS } from '../plus/compass.ts';
 import { barLength, compassWidth, EDGE, hudLayout, VITAL_SIZES } from './hudLayout.ts';
-import { fightSheetCss } from './hudSheet.ts';
 
 type Box = readonly [left: number, top: number, right: number, bottom: number];
 
@@ -117,7 +116,6 @@ test('each bar is as long as what it holds: stamina as long as health, poise two
 });
 
 test('past 1440p the compass’s column, the boss bar and the target’s plate under it stand at twice their size', () => {
-  assert.match(fightSheetCss(), /\.fight-hud\.double \.compass-column \{ zoom: 2; \}/);
   assert.equal(compassWidth(2560, 2), COMPASS.width * 2);
   assert.equal(compassWidth(1100, 2), COMPASS.share * 1100, 'never past its share of the view');
 });

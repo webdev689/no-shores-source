@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { bitten, PIECE_FALL, PIECE_LEAST, pieceAt, stepLoss } from '../plus/barLoss.ts';
+import { BAR_TONES, tipOf } from '../plus/barFrame.ts';
+import { barFramePixels } from './barDraw.ts';
 import { Meter } from './meter.ts';
-import { findAll, onFakePage, withMotionReduced } from './page.test.ts';
+import { withMotionReduced } from './page.test.ts';
 
 test('a frame’s loss breaks off as a piece only past the least it must take: a blow, never a trickle', () => {
   const full = stepLoss(null, 1, 0);
@@ -35,53 +37,59 @@ test('a piece falls in hard steps to its turn and on to its end, fading after it
   assert.ok(lowest > 22 && lowest <= 28, `the right half falls farther: ${lowest}`);
 });
 
-test('back-to-back bites each break off a piece of their own, the two taken in turn, over the span each took', () =>
-  onFakePage((root) => {
-    const meter = new Meter(root, 'health', { pieceLeast: PIECE_LEAST.foe });
-    const pieces = findAll(root, 'piece');
-    assert.equal(pieces.length, 2);
-    assert.ok(
-      pieces.every((piece) => piece.hidden),
-      'nothing falls before a loss',
-    );
-    meter.set(1, 0);
-    meter.set(0.8, 1 / 60);
-    meter.set(0.6, 1 / 60);
-    assert.deepEqual(
-      pieces.map((piece) => [piece.hidden, piece.style['left'], piece.style['width']]),
-      [
-        [false, '80%', '20%'],
-        [false, '60%', '20%'],
-      ],
-    );
-    meter.set(0.5, 1 / 60);
-    assert.equal(pieces[0]?.style['left'], '50%', 'a third bite takes the first piece again');
-    for (let frame = 0; frame < 60; frame++) meter.set(0.5, 1 / 60);
-    assert.ok(
-      pieces.every((piece) => piece.hidden),
-      'fallen, they are put away',
-    );
-  }));
+/** The pieces a bar has falling: each the span it broke from, as whole percents. */
+const falling = (meter: Meter) =>
+  meter.pieces
+    .filter((piece) => pieceAt(piece.age, 'left') || pieceAt(piece.age, 'right'))
+    .map((piece) => [Math.round(piece.left * 100), Math.round(piece.width * 100)]);
+
+test('back-to-back bites each break off a piece of their own, the two taken in turn, over the span each took', () => {
+  const meter = new Meter({ pieceLeast: PIECE_LEAST.foe });
+  assert.equal(meter.pieces.length, 2);
+  assert.deepEqual(falling(meter), [], 'nothing falls before a loss');
+  meter.set(1, 0);
+  meter.set(0.8, 1 / 60);
+  meter.set(0.6, 1 / 60);
+  assert.deepEqual(falling(meter), [
+    [80, 20],
+    [60, 20],
+  ]);
+  meter.set(0.5, 1 / 60);
+  assert.equal(Math.round((meter.pieces[0]?.left ?? 0) * 100), 50, 'a third bite takes the first piece again');
+  for (let frame = 0; frame < 60; frame++) meter.set(0.5, 1 / 60);
+  assert.deepEqual(falling(meter), [], 'fallen, they are put away');
+});
 
 test('with reduced motion asked for, no piece falls; the strip still holds where the bar stood', () =>
-  onFakePage((root) =>
-    withMotionReduced(true, () => {
-      const meter = new Meter(root, 'health', { pieceLeast: PIECE_LEAST.foe });
-      meter.set(1, 0);
-      meter.set(0.5, 1 / 60);
-      assert.ok(findAll(root, 'piece').every((piece) => piece.hidden));
-      assert.equal(findAll(root, 'lost')[0]?.style['width'], '100%');
-    }),
-  ));
-
-test('a bar told where its figure last stood loses from there: the first loss after it breaks off a piece', () =>
-  onFakePage((root) => {
-    const meter = new Meter(root, 'health', { pieceLeast: PIECE_LEAST.foe });
-    meter.forget(0.9);
-    meter.set(0.6, 1 / 60);
-    assert.equal(findAll(root, 'lost')[0]?.style['width'], '90%', 'the strip holds where it stood');
-    assert.equal(findAll(root, 'piece')[0]?.style['left'], '60%');
-    meter.forget();
-    meter.set(0.4, 1 / 60);
-    assert.equal(findAll(root, 'lost')[0]?.style['width'], '40%', 'told nothing, its first frame has lost nothing');
+  withMotionReduced(true, () => {
+    const meter = new Meter({ pieceLeast: PIECE_LEAST.foe });
+    meter.set(1, 0);
+    meter.set(0.5, 1 / 60);
+    assert.deepEqual(falling(meter), []);
+    assert.deepEqual(meter.shown, { share: 0.5, at: 1 });
   }));
+
+test('a bar told where its figure last stood loses from there: the first loss after it breaks off a piece', () => {
+  const meter = new Meter({ pieceLeast: PIECE_LEAST.foe });
+  meter.forget(0.9);
+  meter.set(0.6, 1 / 60);
+  assert.equal(meter.shown.at, 0.9, 'the strip holds where it stood');
+  assert.deepEqual(falling(meter), [[60, 30]]);
+  meter.forget();
+  meter.set(0.4, 1 / 60);
+  assert.equal(meter.shown.at, 0.4, 'told nothing, its first frame has lost nothing');
+});
+
+test('a bar that drains of itself shows no lost strip', () => {
+  const meter = new Meter({ lossShown: false });
+  meter.set(1, 0);
+  meter.set(0.5, 1 / 60);
+  assert.deepEqual(meter.shown, { share: 0.5, at: 0.5 });
+});
+
+test('a vital’s frame is laid as a tile of its pixels, clear where it draws none', () => {
+  const pixels = barFramePixels(10, BAR_TONES.blood);
+  assert.equal(pixels.length, (tipOf(10) * 2 + 1) * 10 * 4);
+  assert.equal(pixels[3], 0, 'the corner clear');
+  assert.notDeepEqual(pixels, barFramePixels(10, BAR_TONES.stone), 'blood is its own picture');
+});

@@ -20,6 +20,9 @@ import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
+import { readFace } from '../ui/faceReader.ts';
+import { Interface } from '../ui/ui.ts';
+import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { roomAddress } from '../network/roomAddress.ts';
@@ -256,7 +259,12 @@ async function start(): Promise<void> {
   otherPlayers.takeDresses(link.dressed);
   const steps = fighting.steps(movement);
   const playerFight = new PlayerFight(fighting, combatRules, player);
-  const hud = new Hud(element<HTMLElement>('#hud'), abilityPictures, forge);
+  const hud = new Hud(abilityPictures, forge);
+  // The fight's display is drawn by the game over the ground, in the interface it draws itself; it hears nothing.
+  let ui: Interface | null = null;
+  readFace()
+    .then((face) => (ui = new Interface(new UiRenderer(gpu, face))))
+    .catch((error: unknown) => console.error('the face could not be read:', error));
   const effects = new FightEffects();
   const dropsShown = new DropsShown();
   // The foes' figures, apart from the panel's figures; they and other players are drawn gliding between the room's
@@ -485,6 +493,17 @@ async function start(): Promise<void> {
       },
       seconds,
     );
+    if (ui) {
+      ui.frame(
+        { width: canvas.width, height: canvas.height, scale: uiScale(devicePixelRatio) },
+        [],
+        seconds,
+        false,
+        false,
+      );
+      ui.draw(hud.node(ui));
+      ui.renderer.present(canvas.width, canvas.height);
+    }
     const composing = forge.pending > 0 ? ` Composing ${forge.pending} frame${forge.pending === 1 ? '' : 's'}…` : '';
     const failure = forge.failure ? ` A strip did not load: ${forge.failure}` : '';
     const line = controls.locked ? 'Playing: Escape frees the mouse.' : status;

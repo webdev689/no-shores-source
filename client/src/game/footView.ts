@@ -1,9 +1,11 @@
 import { FEEL } from '../combat/attackFeel.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { Hud } from '../combat/hud.ts';
+import type { Box } from '../combat/hitWords.ts';
 import { abilityPictures } from './artsCards.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
+import type { Stack } from '../ui/stack.ts';
 import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { fromEyeMatrix, shifted, shiftedExactly } from './camera.ts';
@@ -33,20 +35,25 @@ export class FootView {
   private readonly gpu: Gpu;
   private readonly marks: MarkDraw;
   private readonly swings: SwingView;
-  private readonly root: HTMLElement;
   private readonly hud: Hud;
+  /** Whether the fight's display shows: on foot only. */
+  private showing = false;
   private blood: { readonly foot: FootShown; readonly drawn: FightBlood; readonly origin: Point } | null = null;
 
-  /** `beside`: the game's own pieces over the view (its hints), which the fight's display keeps clear of. */
-  constructor(gpu: Gpu, hudRoot: HTMLElement, forge: Cards, beside: readonly HTMLElement[] = []) {
+  /** The display is a layer of `stack` under the game's own; `beside` answers where the game's own pieces over the
+   *  view stand (its hints, CSS pixels), which the fight's display keeps clear of. */
+  constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: () => readonly Box[] = () => []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
     this.swings = new SwingView(gpu);
-    this.root = document.createElement('div');
-    this.root.className = 'fight';
-    this.root.hidden = true;
-    hudRoot.prepend(this.root);
-    this.hud = new Hud(this.root, abilityPictures, forge, beside);
+    this.hud = new Hud(abilityPictures, forge, beside);
+    stack.under((ui) => (this.showing ? this.hud.node(ui) : null));
+  }
+
+  /** Whether the fight's display shows (on foot), and whether a Boss's bar stands under its compass, which the game's
+   *  own pieces at the top give way to. */
+  get shown(): { readonly fight: boolean; readonly bossed: boolean } {
+    return { fight: this.showing, bossed: this.showing && this.hud.bossed };
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */
@@ -80,7 +87,7 @@ export class FootView {
       groundAt: (x: number, y: number) => number | null;
     },
   ): { under: Drawer; over: Drawer } {
-    this.root.hidden = false;
+    this.showing = true;
     const { shot, fight } = shown;
     const fromEye = fromEyeMatrix(shot, size.width / Math.max(1, size.height));
     const [eyeX, eyeY, eyeZ] = shot.eye;
@@ -134,7 +141,7 @@ export class FootView {
 
   /** Hides the fight's display off foot, and lets go of the last node's blood. */
   hide(): void {
-    this.root.hidden = true;
+    this.showing = false;
     this.blood?.drawn.destroy();
     this.blood = null;
   }

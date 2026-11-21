@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { STATUSES, type FighterView, type Statuses } from '../rules/fighters.ts';
 import { FoePlate, type MarkedFoe } from './foePlate.ts';
-import { findAll, onFakePage } from './page.test.ts';
-import { foeDebuffs, ownBuffs, StatusClock, StatusRow, statusCss, statusSvg, statusWords } from './statusIcons.ts';
+import { allOf } from './nodes.test.ts';
+import { foeDebuffs, ownBuffs, StatusClock, StatusRow, statusPixels, statusWords } from './statusIcons.ts';
 import { Vitals } from './vitals.ts';
 
 const none: Statuses = { crit: 0, expose: 0, charge: 0, haste: 0, linked: 0, veiled: 0, chargeImmune: 0 };
@@ -56,20 +56,22 @@ test('each icon tells a screen reader what it is and the whole seconds it has le
 });
 
 test('each status is a 12 by 12 glyph in its element’s colours', () => {
+  const colours = (name: (typeof STATUSES)[number]) => {
+    const pixels = statusPixels(name);
+    const seen = new Set<string>();
+    for (let place = 0; place < pixels.length; place += 4)
+      if (pixels[place + 3])
+        seen.add(`#${[0, 1, 2].map((step) => (pixels[place + step] ?? 0).toString(16).padStart(2, '0')).join('')}`);
+    return seen;
+  };
   for (const name of STATUSES) {
-    const svg = statusSvg(name);
-    assert.match(svg, /viewBox="0 0 12 12"/, name);
-    const places = [...svg.matchAll(/x="(\d+)" y="(\d+)"/g)].map((found) => [Number(found[1]), Number(found[2])]);
-    assert.ok(places.length > 20, `${name} draws`);
-    assert.ok(
-      places.every(([x = 0, y = 0]) => x < 12 && y < 12),
-      `${name} within its square`,
-    );
+    assert.equal(statusPixels(name).length, 12 * 12 * 4, name);
+    const drawn = statusPixels(name).filter((_unused, index) => index % 4 === 3 && _unused > 0).length;
+    assert.ok(drawn > 20, `${name} draws`);
   }
-  assert.match(statusSvg('expose'), /#9c55ff/, 'Expose in Cosmic');
-  assert.match(statusSvg('charge'), /#46beff/, 'Charge in Volt');
-  assert.match(statusSvg('crit'), /#ffd36a/, 'Crit in Blaze, its light gold');
-  assert.match(statusCss(), /data-status='veiled'/);
+  assert.ok(colours('expose').has('#9c55ff'), 'Expose in Cosmic');
+  assert.ok(colours('charge').has('#46beff'), 'Charge in Volt');
+  assert.ok(colours('crit').has('#ffd36a'), 'Crit in Blaze, its light gold');
 });
 
 test('a status’s line shrinks from the most it held since it began, and starts whole again when refreshed', () => {
@@ -82,56 +84,51 @@ test('a status’s line shrinks from the most it held since it began, and starts
   assert.equal(clock.share('1:expose:false', 100), 1, 'forgotten, it starts again');
 });
 
-test('a row shows each status as an icon with its words and its line, hiding those that ended', () =>
-  onFakePage((root) => {
-    const row = new StatusRow(root, 'Debuffs');
-    row.show(4, foeDebuffs({ expose: 360, charge: 24, chargeImmune: 0 }));
-    const icons = () => findAll(root, 'status').filter((icon) => !icon.hidden);
-    assert.deepEqual(
-      icons().map((icon) => icon.dataset['status']),
-      ['expose', 'charge'],
-    );
-    row.show(4, foeDebuffs({ expose: 180, charge: 0, chargeImmune: 180 }));
-    const [expose, charge] = icons();
-    assert.equal(findAll(expose as unknown as HTMLElement, 'time')[0]?.style['width'], '50%');
-    assert.equal(charge?.classList.contains('faded'), true, 'immune: a faded Charge');
-    assert.equal((charge as unknown as HTMLElement).ariaLabel, 'Immune to Charge, 3 s left');
-    row.show(4, []);
-    assert.equal(icons().length, 0);
-  }));
+/** The icons a row's node shows, by what each tells a screen reader. */
+const iconsOf = (row: StatusRow) =>
+  allOf(row.node(24)).flatMap((node) =>
+    node.label && node.label !== 'Debuffs' && node.label !== 'Your buffs' ? [node] : [],
+  );
 
-test('a foe’s plate shows its debuffs beside its bar', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'overhead');
-    const foe: MarkedFoe = {
-      id: 3,
-      name: 'Runner',
-      view: { ...view, side: 'foes' },
-      rank: 2,
-      faction: 'The Grey Tithe',
-      phase: 1,
-      alert: 2,
-      statuses: { expose: 100, charge: 0, chargeImmune: 0 },
-    };
-    plate.show(foe, 1 / 60);
-    const shown = findAll(root, 'status').filter((icon) => !icon.hidden);
-    assert.deepEqual(
-      shown.map((icon) => icon.dataset['status']),
-      ['expose'],
-    );
-  }));
+test('a row shows each status as an icon with its words and its line, hiding those that ended', () => {
+  const row = new StatusRow('Debuffs');
+  row.show(4, foeDebuffs({ expose: 360, charge: 24, chargeImmune: 0 }));
+  assert.deepEqual(
+    iconsOf(row).map((icon) => icon.label),
+    ['Exposed, 6 s left', 'Charged, 1 s left'],
+  );
+  row.show(4, foeDebuffs({ expose: 180, charge: 0, chargeImmune: 180 }));
+  const [expose, charge] = iconsOf(row);
+  assert.equal(expose?.children?.[1] && (expose.children[1] as { width: string }).width, '50%', 'its line half gone');
+  assert.equal(charge?.opacity, 0.4, 'immune: a faded Charge');
+  assert.equal(charge?.label, 'Immune to Charge, 3 s left');
+  row.show(4, []);
+  assert.equal(row.node(24), null);
+});
 
-test('the vitals show the player’s buffs over their health, and never rest while a buff holds', () =>
-  onFakePage((root) => {
-    const vitals = new Vitals(root);
-    const hasted = { ...view, statuses: { ...none, haste: 360 } };
-    for (let frame = 0; frame < 12; frame++) vitals.update(hasted, 0.5, false, false);
-    assert.equal(vitals.root.classList.contains('rest'), false, 'awake while Hasted');
-    const shown = findAll(root, 'status').filter((icon) => !icon.hidden);
-    assert.deepEqual(
-      shown.map((icon) => icon.dataset['status']),
-      ['haste'],
-    );
-    for (let frame = 0; frame < 12; frame++) vitals.update({ ...view, statuses: none }, 0.5, false, false);
-    assert.equal(vitals.root.classList.contains('rest'), true, 'at rest once it ends');
-  }));
+test('a foe’s plate shows its debuffs beside its bar', () => {
+  const plate = new FoePlate();
+  const foe: MarkedFoe = {
+    id: 3,
+    name: 'Runner',
+    view: { ...view, side: 'foes' },
+    rank: 2,
+    faction: 'The Grey Tithe',
+    phase: 1,
+    alert: 2,
+    statuses: { expose: 100, charge: 0, chargeImmune: 0 },
+  };
+  plate.show(foe, 1 / 60);
+  const labels = allOf(plate.node({ kind: 'overhead', width: 0 })).flatMap((node) => node.label ?? []);
+  assert.deepEqual(labels, ['Debuffs', 'Exposed, 2 s left']);
+});
+
+test('the vitals show the player’s buffs under their bars, and never rest while a buff holds', () => {
+  const vitals = new Vitals();
+  const hasted = { ...view, statuses: { ...none, haste: 360 } };
+  for (let frame = 0; frame < 12; frame++) vitals.update(hasted, 0.5, false, false);
+  assert.equal(vitals.resting, false, 'awake while Hasted');
+  assert.ok(allOf(vitals.node()).some((node) => node.label?.startsWith('Hasted')));
+  for (let frame = 0; frame < 12; frame++) vitals.update({ ...view, statuses: none }, 0.5, false, false);
+  assert.equal(vitals.resting, true, 'at rest once it ends');
+});

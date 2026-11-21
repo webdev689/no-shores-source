@@ -2,7 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { FoePlate, type MarkedFoe, plateTier, poiseTrackOf, THIRDS, wardOf } from './foePlate.ts';
-import { findAll, onFakePage } from './page.test.ts';
+import { ELEMENTS } from '../player/gear.ts';
+import { FILLS } from '../plus/tones.ts';
+import { pieceAt } from '../plus/barLoss.ts';
+import { faded } from './barDraw.ts';
+import { coloursDrawn, wordsIn, written } from './nodes.test.ts';
 
 const view: FighterView = {
   x: 0,
@@ -72,107 +76,106 @@ test('the poise track: nothing to say at rest, filling toward a break, iron red,
   );
 });
 
-test('the track flashes as its foe breaks into a stagger, never as the plate turns onto one already staggered', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'target', { poise: true, remembers: 'whole' });
-    const [track] = findAll(root, 'poise-track');
-    const staggered = { action: { kind: 'staggered', left: 30, cause: 'poise' } } as const;
-    plate.show(rat(1, { poise: 20, action: windUp(false) }), 0);
-    assert.equal(track?.className, 'poise-track poise-filling');
-    plate.show(rat(1, staggered), 1 / 60);
-    assert.equal(track?.className, 'poise-track poise-staggered poise-flash', 'this foe broke');
-    plate.show(rat(2, staggered), 1 / 60);
-    assert.equal(track?.className, 'poise-track poise-staggered', 'turned onto one already staggered');
-    plate.show(rat(2), 1 / 60);
-    assert.equal(track?.className, 'poise-track poise-empty', 'nothing to say: not drawn');
-  }));
+/** How many pieces a plate's health has falling. */
+const falling = (plate: FoePlate) => plate.health.pieces.filter((piece) => pieceAt(piece.age, 'left')).length;
+/** The plate laid as it stands over a figure, and the colours it draws. */
+const overhead = (plate: FoePlate) => plate.node({ kind: 'overhead', width: 0 });
+const drawn = (plate: FoePlate, kind: 'overhead' | 'target' = 'overhead') => {
+  const made = plate.node({ kind, width: 340 });
+  return made ? coloursDrawn(made) : new Set<string>();
+};
 
-test('the plate remembers each foe’s health: one turned back to loses from where its bar stood, a new one as whole', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'target', { remembers: 'whole' });
-    const lost = () => findAll(root, 'lost')[0]?.style['width'];
-    const pieces = () => findAll(root, 'piece').filter((piece) => !piece.hidden).length;
-    plate.show(rat(1, { health: 70 }), 0);
-    assert.equal(lost(), '100%', 'first shown after its first blow: taken as whole, so the blow reads');
-    assert.equal(pieces(), 1, 'and breaks off a piece');
-    for (let frame = 0; frame < 120; frame++) plate.show(rat(1, { health: 70 }), 1 / 60);
-    plate.show(rat(2, { health: 85 }), 1 / 60);
-    for (let frame = 0; frame < 120; frame++) plate.show(rat(2, { health: 85 }), 1 / 60);
-    plate.show(rat(1, { health: 40 }), 1 / 60);
-    assert.equal(lost(), '70%', 'the first again: its loss starts where its own bar stood, not the other’s');
-    plate.keep(new Set([2]));
-    for (let frame = 0; frame < 120; frame++) plate.show(rat(2, { health: 85 }), 1 / 60);
-    plate.show(rat(1, { health: 40 }), 1 / 60);
-    assert.equal(lost(), '100%', 'gone and come again, a foe is forgotten: its number may be another’s');
-  }));
+test('the track flashes as its foe breaks into a stagger, never as the plate turns onto one already staggered', () => {
+  const plate = new FoePlate({ poise: true, remembers: 'whole' });
+  const staggered = { action: { kind: 'staggered', left: 30, cause: 'poise' } } as const;
+  plate.show(rat(1, { poise: 20, action: windUp(false) }), 0);
+  assert.deepEqual(plate.poiseShown, { state: 'filling', breaking: false });
+  plate.show(rat(1, staggered), 1 / 60);
+  assert.deepEqual(plate.poiseShown, { state: 'staggered', breaking: true }, 'this foe broke');
+  plate.show(rat(2, staggered), 1 / 60);
+  assert.deepEqual(plate.poiseShown, { state: 'staggered', breaking: false }, 'turned onto one already staggered');
+  plate.show(rat(2), 1 / 60);
+  assert.deepEqual(plate.poiseShown, { state: 'empty', breaking: false }, 'nothing to say: not drawn');
+});
 
-test('a plate over a figure neither remembers nor breaks off pieces: it reads its foe as it first finds it', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'overhead');
-    plate.show(rat(1, { health: 70 }), 0);
-    assert.equal(findAll(root, 'lost')[0]?.style['width'], '70%');
-    assert.equal(findAll(root, 'piece').length, 0);
-  }));
+test('the plate remembers each foe’s health: one turned back to loses from where its bar stood, a new one as whole', () => {
+  const plate = new FoePlate({ remembers: 'whole' });
+  const lost = () => Math.round(plate.health.shown.at * 100);
+  plate.show(rat(1, { health: 70 }), 0);
+  assert.equal(lost(), 100, 'first shown after its first blow: taken as whole, so the blow reads');
+  assert.equal(falling(plate), 1, 'and breaks off a piece');
+  for (let frame = 0; frame < 120; frame++) plate.show(rat(1, { health: 70 }), 1 / 60);
+  plate.show(rat(2, { health: 85 }), 1 / 60);
+  for (let frame = 0; frame < 120; frame++) plate.show(rat(2, { health: 85 }), 1 / 60);
+  plate.show(rat(1, { health: 40 }), 1 / 60);
+  assert.equal(lost(), 70, 'the first again: its loss starts where its own bar stood, not the other’s');
+  plate.keep(new Set([2]));
+  for (let frame = 0; frame < 120; frame++) plate.show(rat(2, { health: 85 }), 1 / 60);
+  plate.show(rat(1, { health: 40 }), 1 / 60);
+  assert.equal(lost(), 100, 'gone and come again, a foe is forgotten: its number may be another’s');
+});
 
-test('the boss bar, which comes before any blow, takes a Boss it first shows as found, never as a phantom loss', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'boss', { remembers: 'found' });
-    plate.show(rat(9, { health: 54 }), 0);
-    assert.equal(findAll(root, 'lost')[0]?.style['width'], '54%');
-    assert.equal(findAll(root, 'piece').filter((piece) => !piece.hidden).length, 0);
-    plate.show(rat(9, { health: 40 }), 1 / 60);
-    assert.equal(findAll(root, 'piece').filter((piece) => !piece.hidden).length, 1, 'a blow seen still breaks off');
-  }));
+test('a plate over a figure neither remembers nor breaks off pieces: it reads its foe as it first finds it', () => {
+  const plate = new FoePlate();
+  plate.show(rat(1, { health: 70 }), 0);
+  assert.equal(plate.health.shown.at, 0.7);
+  assert.equal(plate.health.pieces.length, 0);
+});
 
-test('a shield’s ward stands over its foe’s health from the bar’s left end, its share of the whole health, in its element; gone once broken', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'target', { poise: true, remembers: 'whole' });
-    const ward = () => findAll(root, 'ward')[0];
-    const shielded = (left: number) => ({ ...rat(1), shield: { element: 2, left, most: 50 } });
-    plate.show(shielded(50), 1 / 60);
-    assert.deepEqual([ward()?.hidden, ward()?.style['width'], ward()?.dataset['element']], [false, '50%', '2']);
-    assert.deepEqual(wardOf(shielded(20)), { share: 0.2, element: 2 }, 'as it wears');
-    // A blow the shield holds whole fills no poise in the room, and the track under the ward says nothing.
-    assert.equal(poiseTrackOf(shielded(20).view).state, 'empty');
-    plate.show(shielded(0), 1 / 60);
-    assert.equal(ward()?.hidden, true, 'broken');
-    plate.show(rat(2), 1 / 60);
-    assert.equal(ward()?.hidden, true, 'a foe with none');
-  }));
+test('the boss bar, which comes before any blow, takes a Boss it first shows as found, never as a phantom loss', () => {
+  const plate = new FoePlate({ remembers: 'found' });
+  plate.show(rat(9, { health: 54 }), 0);
+  assert.equal(plate.health.shown.at, 0.54);
+  assert.equal(falling(plate), 0);
+  plate.show(rat(9, { health: 40 }), 1 / 60);
+  assert.equal(falling(plate), 1, 'a blow seen still breaks off');
+});
 
-test('the plate’s square shows its foe’s level, not its faction’s emblem; a foe of no level leaves it empty', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'overhead');
-    const square = () => findAll(root, 'level')[0];
-    plate.show(rat(1), 0);
-    assert.equal(square()?.textContent, '7');
-    assert.equal(findAll(root, 'emblem').length, 0, 'the emblem is kept for later, off the plate');
-    plate.show({ ...rat(2), level: 12 }, 1 / 60);
-    assert.equal(square()?.textContent, '12', 'turned onto another foe');
-    plate.show({ ...rat(3), level: 0 }, 1 / 60);
-    assert.equal(square()?.textContent, '');
-  }));
+test('a shield’s ward stands over its foe’s health from the bar’s left end, its share of the whole health, in its element; gone once broken', () => {
+  const plate = new FoePlate({ poise: true, remembers: 'whole' });
+  const shielded = (left: number) => ({ ...rat(1), shield: { element: 2, left, most: 50 } });
+  const ward = written(faded(ELEMENTS[2]?.colour ?? '', 0.9));
+  plate.show(shielded(50), 1 / 60);
+  assert.ok(drawn(plate, 'target').has(ward), 'drawn in Volt');
+  assert.deepEqual(wardOf(shielded(50)), { share: 0.5, element: 2 });
+  assert.deepEqual(wardOf(shielded(20)), { share: 0.2, element: 2 }, 'as it wears');
+  // A blow the shield holds whole fills no poise in the room, and the track under the ward says nothing.
+  assert.equal(poiseTrackOf(shielded(20).view).state, 'empty');
+  plate.show(shielded(0), 1 / 60);
+  assert.equal(drawn(plate, 'target').has(ward), false, 'broken');
+  plate.show(rat(2), 1 / 60);
+  assert.equal(drawn(plate, 'target').has(ward), false, 'a foe with none');
+});
 
-test('an ally on the players’ side shows a green health bar; a foe its rank’s band', () =>
-  onFakePage((root) => {
-    const plate = new FoePlate(root, 'overhead');
-    plate.show({ ...rat(1), rank: 1 }, 0);
-    assert.equal(plate.root.dataset['band'], 'red');
-    plate.show({ ...rat(2, { side: 'players' }), rank: 1 }, 1 / 60);
-    assert.equal(plate.root.dataset['band'], 'green');
-  }));
+test('the plate’s square shows its foe’s level, not its faction’s emblem; a foe of no level leaves it empty', () => {
+  const plate = new FoePlate();
+  plate.show(rat(1), 0);
+  assert.equal(wordsIn(overhead(plate))[0], '7');
+  plate.show({ ...rat(2), level: 12 }, 1 / 60);
+  assert.equal(wordsIn(overhead(plate))[0], '12', 'turned onto another foe');
+  plate.show({ ...rat(3), level: 0 }, 1 / 60);
+  assert.equal(wordsIn(overhead(plate))[0], 'Runner', 'its square empty');
+});
 
-test('a plate’s tier goes with its foe’s rank, and every bar holds its thirds’ marks, which only an Elite’s and up over a figure show', () =>
-  onFakePage((root) => {
-    assert.deepEqual([1, 2, 3, 4, 5].map(plateTier), ['minor', 'major', 'elite', 'elite', 'elite']);
-    const plate = new FoePlate(root, 'overhead');
-    plate.show({ ...rat(1), rank: 1 }, 0);
-    assert.equal(plate.root.dataset['tier'], 'minor');
-    plate.show({ ...rat(2), rank: 3 }, 1 / 60);
-    assert.equal(plate.root.dataset['tier'], 'elite', 'turned onto an Elite');
-    assert.deepEqual(
-      findAll(root, 'third-mark').map((mark) => mark.style['left']),
-      THIRDS.map((share) => `${share * 100}%`),
-    );
-    assert.deepEqual(THIRDS, [1 / 3, 2 / 3]);
-  }));
+test('an ally on the players’ side shows a green health bar; a foe its rank’s band', () => {
+  const plate = new FoePlate();
+  plate.show({ ...rat(1), rank: 1 }, 0);
+  assert.ok(drawn(plate).has(written(FILLS.red)));
+  plate.show({ ...rat(2, { side: 'players' }), rank: 1 }, 1 / 60);
+  assert.ok(drawn(plate).has(written(FILLS.green)));
+  assert.equal(drawn(plate).has(written(FILLS.red)), false);
+});
+
+test('a plate’s tier goes with its foe’s rank, and only an Elite’s and up over a figure is marked in thirds', () => {
+  assert.deepEqual([1, 2, 3, 4, 5].map(plateTier), ['minor', 'major', 'elite', 'elite', 'elite']);
+  const third = written(faded('#e2dccd', 0.6));
+  const plate = new FoePlate();
+  plate.show({ ...rat(1), rank: 1 }, 0);
+  assert.equal(overhead(plate)?.width, 140, 'a Minor’s width');
+  assert.equal(drawn(plate).has(third), false);
+  plate.show({ ...rat(2), rank: 3 }, 1 / 60);
+  assert.equal(overhead(plate)?.width, 176, 'turned onto an Elite');
+  assert.ok(drawn(plate).has(third));
+  assert.equal(drawn(plate, 'target').has(third), false, 'never on the target’s plate');
+  assert.deepEqual(THIRDS, [1 / 3, 2 / 3]);
+});
