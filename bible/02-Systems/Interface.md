@@ -227,7 +227,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is `CanvasEvents`; the interface hears plain events, and with the game in its worker
   ([[Game]], "Threads") hears them as the page sends them (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
 - **The pad's cursor** (`padCursor.ts`, [[Pick - Pad Cursor and Gauntlet]]). Wherever the interface takes the pad (a
-  window, the sheet, the creation, a field being typed in), the left stick thrown from rest past its 0.2 lean brings
+  window, the sheet, the creation, a field being typed in, the Test Ground's panels while a control there has focus), the left stick thrown from rest past its 0.2 lean brings
   out a cursor, the gauntlet drawn over everything: at the focus's middle, else where the mouse last was, else the
   view's. A stick already leant as a window opens moves nothing until it has come back. It moves as DFO's does: 900
   CSS pixels a second at a full lean, the lean past the rest curved to the power 1.7; it eases in over 0.1 s and stops

@@ -94,14 +94,15 @@ export class Interface {
 
   /** Starts a frame `width` by `height` device pixels at `scale` device pixels an interface pixel, `seconds` after the
    *  last, hearing `events`, whose positions are the page's CSS pixels at the screen's `ratio` of device pixels to
-   *  them (the scale unless said). While the pointer is not `free` (locked to look round) it presses nothing, and
-   *  without `keys` (no menu up, so the keys are the game's) only a field being typed in hears keys and the pad. */
+   *  them (the scale unless said). While the pointer is not `free` (locked to look round) it presses nothing; without
+   *  `keys` (no menu up, the keys the game's), or without `pad`, only a field being typed in hears them. */
   frame(
     view: { readonly width: number; readonly height: number; readonly scale: number; readonly ratio?: number },
     events: readonly UiEvent[],
     seconds: number,
     free = true,
     keys = true,
+    pad = keys,
   ): void {
     this.clock += seconds;
     this.free = free;
@@ -119,12 +120,12 @@ export class Interface {
     const before = this.hover;
     this.reach = false;
     for (const event of events) {
-      const takesPad = keys || this.typing !== null;
-      if (event.kind === 'stick') this.padCursor.hear(event, takesPad, () => this.padHome());
-      else if ((event.kind === 'key' || event.kind === 'pad') && !takesPad) continue;
+      const typing = this.typing !== null;
+      if (event.kind === 'stick') this.padCursor.hear(event, pad || typing, () => this.padHome());
+      else if (!typing && ((event.kind === 'key' && !keys) || (event.kind === 'pad' && !pad))) continue;
       else this.hear('x' in event ? { ...event, x: event.x * this.inward, y: event.y * this.inward } : event, free);
     }
-    this.padFrame(seconds, keys || this.typing !== null);
+    this.padFrame(seconds, pad || this.typing !== null);
     this.screenKeysHeard();
     const over = free && this.pointer ? targetAt(this.laid, this.pointer.x, this.pointer.y) : null;
     this.hover = over?.node.id ?? null;

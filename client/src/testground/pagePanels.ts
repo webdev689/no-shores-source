@@ -32,7 +32,8 @@ export class PagePanels {
     face.then((read) => (this.ui = new Interface(new UiRenderer(gpu, read)))).catch(() => undefined);
   }
 
-  /** Whether the keys are the panels': words are typed in a field, or the pointer is free and a control has focus. */
+  /** Whether the keys and the pad are the panels': words are typed in a field, or the pointer is free and a control
+   *  has focus. Else the pad walks the player, and the keys the panels do not take are the game's. */
   get takesKeys(): boolean {
     return Boolean(this.ui?.typing || (!this.locked() && this.ui?.focusedId));
   }
@@ -58,7 +59,7 @@ export class PagePanels {
     const free = !this.locked();
     const ratio = devicePixelRatio;
     const view = { width: canvas.width, height: canvas.height, scale: uiScale(ratio), ratio };
-    this.ui?.frame(view, this.events.take(), this.seconds, free, free);
+    this.ui?.frame(view, this.events.take(), this.seconds, free, free, this.takesKeys);
     return Boolean(this.ui?.tookWheel);
   }
 
