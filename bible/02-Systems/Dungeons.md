@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: built
 code:
   - crates/dungeon/src/lib.rs#of_patrol
   - crates/dungeon/src/lib.rs#style_of
@@ -140,7 +140,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   to 1.6 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
   way stands a pillar 0.7 m square at every second inner corner whose four cells are its own.
 - **Purposes** (`name_rooms`). Every room has a purpose from its block's style's bank
-  ([[Dungeons as Claude Builds Them]], "The varied dungeons"): the way in's room and the end room their style's own,
+  ([[The Dungeons Are Perfect and Insanely Varied]]; [[Dungeons as Claude Builds Them]], "The varied dungeons"): the
+  way in's room and the end room their style's own,
   and every other room, along the walk from the way in, one drawn among those its shape suits that its look's other
   rooms have taken least, so none is taken twice while one is left. A mines' gallery is a rectangle and its stope a
   cave. Each purpose has a short key (`role`: `ossuary`, `war-room`) and a name, "the Ossuary"; a name taken again

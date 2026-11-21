@@ -103,21 +103,20 @@ export function runFull(room: string, accounts: number): string | null {
   return privateRun(room) && accounts > RUN_MOST ? 'This run is full.' : null;
 }
 
-/** The tiers' old names in a node's room, by their names now. */
-const OLD_TIERS = new Map([
+/** The other names a tier answers to in a node's room (`rough` for Elite, `storm` for Abyss), each by its own. */
+const TIER_ALIASES = new Map([
   ['rough', 'elite'],
   ['storm', 'abyss'],
 ]);
 
-/** A room's one name: a node's tier suffix spelled the old way (`--rough`, `--storm`) as it is spelled now, any other
+/** A room's one name: a node's tier suffix in its other spelling (`--rough`, `--storm`) as the tier's own, any other
  *  name as it is. */
 export function canonicalRoom(name: string): string {
   if (!name.startsWith('node-')) return name;
   const [node = '', tier = '', ...rest] = name.split('--');
-  const now = OLD_TIERS.get(tier);
-  // A page loaded before the rename still builds the old names: it joins the room it meant, and the welcome's new
-  // protocol hash makes it load again.
-  return now === undefined ? name : [node, now, ...rest].join('--');
+  const own = TIER_ALIASES.get(tier);
+  // A page built for the other names joins the room it means, and the welcome's protocol hash makes it load again.
+  return own === undefined ? name : [node, own, ...rest].join('--');
 }
 
 /** A sea island's room by the name after `isle-`: `<its number>-<its seed, 16 hex digits>`, and `--elite` or

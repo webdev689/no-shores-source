@@ -98,3 +98,17 @@ export function strikersOf(
     })),
   ];
 }
+
+/** Where each figure stands, by its fighter's number: the player's as the room last saw them, a foe's or another
+ *  player's as drawn; null for one not there. */
+export function figureWhere(
+  fight: Fighting,
+  ...drawn: readonly ReadonlyMap<number, { readonly x: number; readonly y: number; readonly z: number }>[]
+): (id: number) => readonly [number, number, number] | null {
+  const own = fight.own;
+  return (id) => {
+    if (id === fight.player && own) return [own.x, own.y, own.z];
+    const figure = drawn.map((placed) => placed.get(id)).find((found) => found !== undefined);
+    return figure ? [figure.x, figure.y, figure.z] : null;
+  };
+}

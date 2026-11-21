@@ -36,7 +36,8 @@ DFO's Dungeons 2.0: the Forge, which lays every dungeon in blocks of DFO's own, 
 - **Its population**, as far as Overlook uses it: the way in's exit door against rock, markers on a room's quiet
   floor, a torch on each room's wall and every fourth corridor cell, no foe in the way-in room.
 - **Its scenery's law**: a room's dressing on its quiet cells, laid by the room's purpose with the forged props in
-  place of Daggerfall's scenery sprites, and its lights by kind, each in its own colour.
+  place of Daggerfall's scenery sprites, and its lights by kind, each in its own colour; each style's own faint light
+  (its mood); and each room named for its purpose as it is first entered (its landmarks).
 - **The heart**: the end room is held by its guardian, and a cache beside it opens when it falls; its stone that
   carried the player back to the way in becomes the return portal out of the dungeon.
 

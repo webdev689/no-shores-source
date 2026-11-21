@@ -33,7 +33,7 @@ import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { STORY_BEHIND_ON_FOOT, type Use, groundRings, tellsPrologue, useAt } from './footGear.ts';
+import { STORY_BEHIND_ON_FOOT, type Use, groundRings, tellsPrologue } from './footGear.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Hint } from './gearDom.ts';
@@ -50,13 +50,13 @@ import {
   openAlone,
   roomNameAt,
   standInDungeon,
-  tripAt,
+  useOnFoot,
 } from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
-import { otherCards, strikersOf } from './footFigures.ts';
+import { figureWhere, otherCards, strikersOf } from './footFigures.ts';
 import { type AtEntrance, type FootContext, type Heard, type Held, type Opened, stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
@@ -433,12 +433,9 @@ export class Foot {
     // draw rings it); while it shows, the kick moves the view but never turns it, so it stays where shots land.
     const sights = shown.aiming || (shown.rangedDrawn && firstPerson);
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
+    const orbit = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
     const { x: fallX, y: fallY, z: fallZ } = walker.player.body;
-    const shot = this.falling.shot(
-      shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M),
-      [fallX, fallY, fallZ],
-      seconds,
-    );
+    const shot = this.falling.shot(orbit, [fallX, fallY, fallZ], seconds);
     const [eyeX, eyeY] = shot.eye;
     // Through the player's own eyes no other figure stands so near that it fills the view.
     const nearest = firstPerson ? CARD_NEAREST_M : 0;
@@ -530,18 +527,10 @@ export class Foot {
       module: this.module,
     };
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
-    this.using = able
-      ? (placeUse ??
-        useAt(x, y, countersOf(this.node), gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
-        tripAt(x, y, here, this.context.trips))
-      : null;
+    this.using = able ? useOnFoot(x, y, placeUse, countersOf(this.node), gear, here, this.context.trips) : null;
     this.prompt?.show(this.using?.words ?? null);
     const ownView = fight.own;
-    const where = (id: number): readonly [number, number, number] | null => {
-      if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
-      const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
-      return figure ? [figure.x, figure.y, figure.z] : null;
-    };
+    const where = figureWhere(fight, foes.placed, this.otherPlayers.placed);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;
