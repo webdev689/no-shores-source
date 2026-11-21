@@ -27,6 +27,12 @@ code:
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
   - client/src/game/hud.ts#Hud
+  - client/src/game/hudPieces.ts#seaBarNode
+  - client/src/game/hudMarks.ts#markNodes
+  - client/src/game/hudParts.ts#keycap
+  - client/src/game/compassNode.ts#compassNode
+  - client/src/game/shipPlates.ts#shipPlateNodes
+  - client/src/game/usePrompt.ts#UsePrompt
   - client/src/game/tasks.ts#TaskTracker
   - client/src/game/seaPanel.ts#FightPanel
   - client/src/game/seaPanel.ts#readoutOf
@@ -111,8 +117,8 @@ code:
 
 The game's screens wear Enhanced Plus, DFO's own interface, brought over and adapted ([[Pick - Enhanced Plus UI]],
 [[The Ship Is Managed and Walked From the Sea's Panel]]): carved stone and brass, so every surface reads as one stone.
-The game draws its toasts itself; its other panels, plates and words are still HTML laid over the canvas, and by the
-owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each moves to the game's own drawing
+The game draws its heads-up display itself; its other panels, plates and words are still HTML laid over the canvas,
+and by the owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each moves to the game's own drawing
 ("Drawn by the game", below).
 
 ## Drawn by the game
@@ -145,6 +151,14 @@ owner's word none is to be ([[The Interface Uses No HTML, Now or Later]]): each 
   a worker. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
 - **Controls.** A press with words, a toggle, a slider (dragged, or stepped by its arrows) and a choice from a list
   that opens under it are built once, for every screen (`controls.ts`).
+- **The heads-up display** is a layer of its own (`Hud`): the place's name, the edge's warning and its darkening,
+  death's words and Respawn, the key strip on its keycaps, the task tracker, her ship's panel in a sea fight, the
+  toasts, the status line, the compass, the marks with their rings, glyphs and arrows, the ships' plates, the sea bar
+  and its offers, Manage's panel, the menu, the prompt for E and the veil. Each stands where the page's sheet stood
+  it, gives way as it did, and eases, slides and flashes as it did. Words laid over the world, and the darkened edge,
+  let a click through to the world; the marks, presses and panels take it. The glyphs Pixelify lacks (a mark's) are
+  drawn in the page's own face into a picture. While the fight's display and the dialogue box are still the page's,
+  the display reads whether they show each frame (`besidesIn`).
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -594,11 +608,16 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
-- Drawn by the game, only the toasts so far. A word's soft shade past its hard outline is not drawn, as a blur has no
-  crisp form.
+- Drawn by the game, only the heads-up display so far. A word's soft shade past its hard outline is not drawn, as a
+  blur has no crisp form, nor a chosen mark's or a ship's mark's blur: a chosen mark's glow is a drawn gradient.
+- A ship's plate writes her name at the face's 11 and 22 px, where the page wrote 12 and 18, outlined a pixel round
+  where the page stroked it 1.5.
+- The fight's display keeps its arrows clear of the key strip only as it reads the strip's box (`Hud.hintsBox`); until
+  it does, they may stand over the strip.
 - A cutscene's blur is still a filter on the canvas, which would blur what the game draws over it too. It moves into
   the scene's own drawing with the cinema's screen.
-- A screen reader hears a toast only in Chromium (`ariaNotify`), and nothing else the game draws.
+- A screen reader hears what the game draws only in Chromium (`ariaNotify`): a toast, a new task, a broadside run out
+  at her, the prompt for E, and each press's label as focus reaches it.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
