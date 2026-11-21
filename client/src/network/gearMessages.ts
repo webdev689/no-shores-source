@@ -35,12 +35,6 @@ export const ASKS = {
   dismiss: 60,
   train: 61,
   chooseOfficer: 62,
-  /** The prologue played, which the room keeps with the character. */
-  finishPrologue: 17,
-  /** A bounty of the day's board taken, or one done turned in: its place on the board in `node` and the day of the
-   *  board shown in `item` (the gear's `day`): at the bounty board. */
-  takeBounty: 18,
-  turnInBounty: 19,
   gather: 20,
   grantVestige: 30,
   grantNamed: 31,
@@ -64,6 +58,12 @@ export const ASKS = {
   grantOfficers: 43,
   /** A sea island's wreck scavenged, by its place in the island's list in `node`. */
   scavenge: 63,
+  /** The prologue played, which the room keeps with the character. */
+  finishPrologue: 64,
+  /** A bounty of the day's board taken, or one done turned in: its place on the board in `node` and the day of the
+   *  board shown in `item` (the gear's `day`): at the bounty board. */
+  takeBounty: 65,
+  turnInBounty: 66,
   /** An Art, its number in `column`, set at `level` (1 to 5) owning all its fragments: the Test Ground's grant. */
   grantArtLevel: 42,
   /** A faction's asks, its number in `column`: pledging, one of its wares (its place among them in `node`),

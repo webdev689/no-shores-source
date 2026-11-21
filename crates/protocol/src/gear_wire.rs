@@ -35,11 +35,6 @@ pub const STATION: u8 = 59;
 pub const DISMISS: u8 = 60;
 pub const TRAIN: u8 = 61;
 pub const CHOOSE_OFFICER: u8 = 62;
-pub const FINISH_PROLOGUE: u8 = 17;
-/// A bounty taken or turned in: its place on the board in `node`, the day of the board shown in `item`, as the gear's
-/// `day` sends it.
-pub const TAKE_BOUNTY: u8 = 18;
-pub const TURN_IN_BOUNTY: u8 = 19;
 pub const GATHER: u8 = 20;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
@@ -64,6 +59,12 @@ pub const SET_CORE: u8 = 41;
 pub const GRANT_OFFICERS: u8 = 43;
 /// A sea island's wreck scavenged, by its place in the island's list in `node`.
 pub const SCAVENGE: u8 = 63;
+/// The prologue played, which the room keeps with the character.
+pub const FINISH_PROLOGUE: u8 = 64;
+/// A bounty taken or turned in: its place on the board in `node`, the day of the board shown in `item`, as the gear's
+/// `day` sends it.
+pub const TAKE_BOUNTY: u8 = 65;
+pub const TURN_IN_BOUNTY: u8 = 66;
 /// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.

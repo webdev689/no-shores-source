@@ -227,7 +227,7 @@ test("the ship's part of the gear message reads back: its power, materials, hand
   assert.equal(gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array()))).ship, null, 'none sent');
 });
 
-test("the ship's and crew's asks carry the numbers the protocol reads them by", async () => {
+test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
   const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual(
@@ -240,7 +240,15 @@ test("the ship's and crew's asks carry the numbers the protocol reads them by", 
       ASKS.chooseOfficer,
       ASKS.grantOfficers,
       ASKS.scavenge,
+      ASKS.finishPrologue,
+      ASKS.takeBounty,
+      ASKS.turnInBounty,
     ],
-    ['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'].map(number),
+    [
+      ...['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'],
+      ...['FINISH_PROLOGUE', 'TAKE_BOUNTY', 'TURN_IN_BOUNTY'],
+    ].map(number),
   );
+  const numbers = Object.values(ASKS);
+  assert.equal(new Set(numbers).size, numbers.length, 'no two asks share a number');
 });
