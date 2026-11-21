@@ -10,6 +10,7 @@ import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
 import type { Ambience } from './audio/ambience/ambience.ts';
 import type { HelmMap } from './helmMap.ts';
+import { musiciansOf } from './audio/music/band.ts';
 import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
 import type { Discovered } from './discovered.ts';
@@ -21,7 +22,7 @@ import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { gearScreenOpen } from './gearWindow.ts';
 import type { Hud } from './hud.ts';
-import { ISLANDS, placeWords, type Standing } from './hudLaw.ts';
+import { greyed, ISLANDS, placeWords, type Standing } from './hudLaw.ts';
 import type { LandDrawers } from './landDrawers.ts';
 import type { Landmass } from './landmass.ts';
 import { arrivalFacing } from './nodes.ts';
@@ -37,6 +38,8 @@ import type { AfterStory } from './welcome/afterStory.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
+import { mooredShips } from './moorings.ts';
+import { HULLS } from '../water/hullMask.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -131,8 +134,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   const showStanding = (shown: Standing) => {
     hud.reach(shown);
-    // Death's grey on the canvas is the one mark of it: leaving a place takes it off.
-    const [dead, wasDead] = [shown.kind === 'dead', canvas.classList.contains('dead')];
+    // Death's grey on the canvas is the one mark of it, once death is told (a fall plays out in colour first):
+    // leaving a place takes it off.
+    const [dead, wasDead] = [greyed(shown), canvas.classList.contains('dead')];
     if (dead && !wasDead) document.exitPointerLock();
     if (dead !== wasDead) canvas.classList.toggle('dead', dead);
   };
@@ -142,7 +146,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
-    parts.music.onFoot(parts.world, here.node, shown.fight, seconds);
+    const listener = [walker.player.body.x, walker.player.body.y] as const;
+    parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
     const { body } = walker.player;
     if (!here.dungeon) {
@@ -155,7 +160,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     parts.isleFrame();
     const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: here.groundAt });
-    const fleet = traffic.onFoot(shown.shot.eye, parts.waterHere(), seconds, clock);
+    const water = parts.waterHere();
+    const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
     const met = playing.after.frame(
       shown.shot,
@@ -168,9 +174,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       paused,
     );
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
-    const more = { after: hands, hulls: fleet.hulls, carried };
+    const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
+    const moored = mooredShips(moorings, clock, water);
+    const more = { after: hands, hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS), carried };
+    const ships = [...moored.ships, ...fleet.ships];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands);
-    else scene.draw(shown.shot, size, clock, seconds, standing(fleet.ships, [...shown.figures, ...met], fight), more);
+    else scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node, here.roomName));
     // As E's other use, a gate takes no one while a menu is up, the player is down or in a dungeon.

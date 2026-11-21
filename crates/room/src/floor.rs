@@ -75,6 +75,10 @@ impl Terrain for Floor {
             Floor::Dungeon(ground) => ground.floor_at(x, y),
         }
     }
+
+    fn climbs(&self) -> bool {
+        !matches!(self, Floor::Sea(rim) if !rim.climbs())
+    }
 }
 
 /// A body standing at (x, y) on the floor and the blocks: its feet on the ground there, or on a block's top within

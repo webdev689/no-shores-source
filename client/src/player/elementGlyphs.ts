@@ -1,7 +1,7 @@
 // The elements' glyphs, drawn pixel by pixel as the gear's are: Blaze a flame, Volt a bolt, Cosmic a four-pointed
 // star. Each in its own colours: an outline, the body and its light.
 
-import { ELEMENTS } from '../player/gear.ts';
+import { ELEMENTS } from './gear.ts';
 
 /** Each element's glyph as rows of letters (a the outline, b the body, c its light, a dot none), 12 × 12, by the gear
  *  crate's numbers. */

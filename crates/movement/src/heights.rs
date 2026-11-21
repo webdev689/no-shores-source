@@ -27,6 +27,8 @@ pub struct Heights {
     rows: usize,
     heights: Vec<Option<f64>>,
     wall: f64,
+    /// Whether a body climbs over its blocks (`Terrain::climbs`): not over a course laid over the sea.
+    climbs: bool,
 }
 
 impl Heights {
@@ -47,7 +49,7 @@ impl Heights {
         }
         let highest = heights.iter().flatten().copied().fold(f64::NEG_INFINITY, f64::max);
         let wall = if highest.is_finite() { highest + WALL_RISE_M } else { WALL_RISE_M };
-        Some(Self { west, north, cell, columns, rows, heights, wall })
+        Some(Self { west, north, cell, columns, rows, heights, wall, climbs: true })
     }
 
     /// The grid from its numbers: its shape (`SHAPE_FLOATS`), then each cell's height, NaN for none.
@@ -97,9 +99,10 @@ impl Heights {
 
     /// The ground round a course of blocks laid over the open sea, as a ship's deck is held: open, at 0 m under the
     /// blocks that stand bodies on their tops, in every cell of `cell` metres whose middle a block covers, and a wall in
-    /// every other. So a body walks, falls, vaults and climbs anywhere over the blocks, and is held at their edge: the
-    /// sea is never reached. The grid starts at the blocks' west and north edges, so blocks laid in squares of `cell`
-    /// from there are held to the square.
+    /// every other. So a body walks, falls and vaults anywhere over the blocks, never climbs (the prologue's wreck, the
+    /// one course laid over the sea, is played without climbing), and is held at their edge: the sea is never reached.
+    /// The grid starts at the blocks' west and north edges, so blocks laid in squares of `cell` from there are held to
+    /// the square.
     #[must_use]
     pub fn rim(blocks: &[Block], cell: f64) -> Self {
         let west = blocks.iter().map(|block| block.min_x).fold(f64::INFINITY, f64::min);
@@ -128,7 +131,8 @@ impl Heights {
             }
         }
         let (west, north) = if columns * rows > 0 { (west, north) } else { (0.0, 0.0) };
-        Self::new(west, north, cell, columns, rows, heights).unwrap_or_else(|| unreachable!("a grid made to its shape"))
+        let made = Self::new(west, north, cell, columns, rows, heights);
+        Self { climbs: false, ..made.unwrap_or_else(|| unreachable!("a grid made to its shape")) }
     }
 }
 
@@ -156,6 +160,10 @@ impl Terrain for Heights {
             .filter_map(|&(height, weight)| height.map(|height| (height * weight, weight)))
             .fold((0.0, 0.0), |(sum, total), (part, weight)| (sum + part, total + weight));
         if weight > 0.0 { sum / weight } else { self.wall }
+    }
+
+    fn climbs(&self) -> bool {
+        self.climbs
     }
 
     /// Whether a cell that holds no height lies on the move, each cell it passes through taken in turn; through a

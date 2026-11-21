@@ -301,6 +301,16 @@ export class StoryFight {
     this.combat.draw(pass, camera, time);
   }
 
+  /** The see-through puffs and the lay's aim, over the finished picture after the water (SeaCombat.overWater). */
+  overWater(encoder: GPUCommandEncoder, target: GPUTextureView, fromEye: Float32Array, depth: GPUTexture): void {
+    this.combat.overWater(encoder, target, fromEye, depth);
+  }
+
+  /** The puffs' light on the hulls round them (SeaCombat.lightInto). */
+  lightInto(pass: GPURenderPassEncoder): void {
+    this.combat.lightInto(pass);
+  }
+
   /** Ends the fight on the land worker: the captains and their balls are gone. */
   end(): Promise<void> {
     return this.land.fightEnd();

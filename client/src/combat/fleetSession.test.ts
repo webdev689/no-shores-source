@@ -18,7 +18,6 @@ const compiled = new WebAssembly.Module(
 const TICK = 1 / 60;
 const NOTHING: SessionInput = {
   steer: 0,
-  crab: false,
   climbs: [],
   look: null,
   fire: false,

@@ -43,6 +43,11 @@ pub enum Material {
     Timber,
     Plaster,
     Paving,
+    /// A walk's dressed flagstones, laid over a court's paving so the way reads apart from the ground.
+    Path,
+    /// A garden's lawn, and a working yard's trodden earth, laid over the paving where no way runs.
+    Lawn,
+    Earth,
     Gold,
     Iron,
     Bone,
@@ -51,6 +56,22 @@ pub enum Material {
     Rubble,
     /// Glows at night: a beacon's fire, a lantern.
     Glow,
+    /// Still water: a fountain's basin and its streams, a trough, a tub.
+    Water,
+    /// Cloth, in plain dyed colours: awnings, banners, curtains, hangings and bolts. Undyed linen and canvas.
+    Linen,
+    Crimson,
+    Verdant,
+    Black,
+    /// Straw and hay: bales, a cart's load, a stable's bedding.
+    Straw,
+    /// A faction's own cloth, dyed as its capes are (content/gear/cosmetics.json names each dye).
+    #[serde(rename = "stormcaller_blue")]
+    StormcallerBlue,
+    #[serde(rename = "lamplighter_gold")]
+    LamplighterGold,
+    #[serde(rename = "veiled_dusk")]
+    VeiledDusk,
 }
 
 /// One solid: its shape, the middle of its base in world metres (z up), its size (width, depth, height), its turn
@@ -151,5 +172,15 @@ mod tests {
         assert_eq!(block.bounds(), [-5.0, -1.0, 5.0, 1.0, 5.0, 8.0]);
         let quarter = block.turned(std::f64::consts::FRAC_PI_2).bounds();
         assert!((quarter[0] + 1.0).abs() < 1e-9 && (quarter[1] + 5.0).abs() < 1e-9, "{quarter:?}");
+    }
+
+    #[test]
+    fn cloth_reads_by_the_names_the_page_and_the_dyes_give_it() {
+        let read = |name: &str| serde_json::from_str::<Material>(&format!("\"{name}\"")).ok();
+        assert_eq!(read("linen"), Some(Material::Linen));
+        assert_eq!(read("black"), Some(Material::Black));
+        assert_eq!(read("stormcaller_blue"), Some(Material::StormcallerBlue));
+        assert_eq!(read("lamplighter_gold"), Some(Material::LamplighterGold));
+        assert_eq!(read("veiled_dusk"), Some(Material::VeiledDusk));
     }
 }

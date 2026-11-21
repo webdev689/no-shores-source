@@ -140,3 +140,26 @@ test('a stretched module keeps its normals square to its stretched surface', () 
   assert.deepEqual(stretchedNormal([0, 0, 1], 0.75), [0, 0, 1]);
   assert.deepEqual(stretchedNormal([1, 0, 0], 0.75), [1, 0, 0]);
 });
+
+test("a ground's top takes its pattern from the world, so its pieces join as one surface however they turn", () => {
+  const ground = { layer: 3, width: 64, height: 64, grounded: true };
+  const scale = SOLID_TEXELS_PER_METRE / 64;
+  for (const turn of [0, 0.7, 2.1]) {
+    const solid: Solid = {
+      shape: 'block',
+      at: [1004, 2003, 0],
+      size: [3, 5, 0.06],
+      turn,
+      lean: 0,
+      roll: 0,
+      material: 'path',
+    };
+    const mesh = emptyMesh();
+    meshSolid(solid, [1000, 2000], ground, mesh);
+    for (let k = 0; k < mesh.positions.length / 3; k++) {
+      if ((mesh.normals[k * 3 + 2] ?? 0) < 0.95) continue;
+      assert.ok(Math.abs((mesh.uvs[k * 2] ?? 0) - (mesh.positions[k * 3] ?? 0) * scale) < 1e-9);
+      assert.ok(Math.abs((mesh.uvs[k * 2 + 1] ?? 0) - (mesh.positions[k * 3 + 1] ?? 0) * scale) < 1e-9);
+    }
+  }
+});

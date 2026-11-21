@@ -13,7 +13,7 @@ export interface SailSource {
   sail(id: string, ship: ShipFloats, helm: Helm, time: number, ticks: number): Promise<Sailed | null>;
 }
 
-const STILL: Helm = { steer: 0, crab: false, climb: 0 };
+const STILL: Helm = { steer: 0, climb: 0 };
 export { SAILS_RUNG } from './afloat.ts';
 
 /** The Sloop under the owner's hand in the World Editor: its numbers as the rules last answered them, the ticks the

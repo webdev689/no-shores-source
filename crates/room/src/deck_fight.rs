@@ -38,7 +38,7 @@ impl Room {
     pub fn deck(deck: &Deck, faction: u8, rank: Rank, level: u8) -> Room {
         let [[west, north], [east, south]] = deck.bounds;
         let ring = vec![[west, north], [east, north], [east, south], [west, south]];
-        let section = Section { ring, spawns: vec![rail_spot(deck, 1.0), rail_spot(deck, -1.0)] };
+        let section = Section { ring, spawns: vec![rail_spot(deck, 1.0), rail_spot(deck, -1.0)], falls_kill: false };
         let mut room = Room::node(Floor::Deck(Box::new(deck.heights.clone())), Vec::new(), section);
         let crew = ::foes::crews::deck_crew(faction, rank);
         room.foes_most = crew.len();

@@ -15,6 +15,7 @@ const VESSEL: FightVessel = {
   state: 'afloat',
   fires: 0,
   guns: { left: [2.34, 0], progress: [0, 0], load: 'grape', braced: true },
+  boost: [0, 1],
 };
 const captain = (state: FightCaptain['state'], runOut: FightCaptain['run_out'] = []): FightCaptain => ({
   ...VESSEL,

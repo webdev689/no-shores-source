@@ -69,21 +69,25 @@ export function groundPlates(
   const width = byPlace.size ? side * TILES : 1;
   const tiles = new Uint8Array(width * width * 2);
   const levelled = [...byPlace.values()];
-  const tops = new Float32Array(levelled.length * 18);
+  const tops: number[] = [];
+  const ramps = rampRects(plan);
   const paved = (column: number, row: number): boolean => {
     if (column < 0 || row < 0 || column >= side || row >= side) return false;
     const use = byPlace.get(cellIndex(side, column, row))?.use;
     return use === 'avenue' || use === 'landmark';
   };
-  levelled.forEach((cell, k) => {
+  levelled.forEach((cell) => {
     const [west, north] = [
       cell.column * CELL_M + plan.grid.west - plan.centre[0],
       cell.row * CELL_M + plan.grid.north - plan.centre[1],
     ];
-    const [east, south] = [west + CELL_M, north + CELL_M];
-    // wound to face up as the city's other faces are
-    tops.set([west, north, cell.level, east, south, cell.level, west, south, cell.level], k * 18);
-    tops.set([west, north, cell.level, east, north, cell.level, east, south, cell.level], k * 18 + 9);
+    // wound to face up as the city's other faces are, round every ramp laid over the cell
+    for (const [left, top, right, bottom] of uncut([west, north, west + CELL_M, north + CELL_M], ramps))
+      tops.push(
+        ...[left, top, right, bottom, left, bottom, left, top, right, top, right, bottom]
+          .map((value, k) => (k % 2 === 0 ? [value] : [value, cell.level]))
+          .flat(),
+      );
     const block = cell.block === undefined ? undefined : blocks.get(cell.block);
     const laid = block ? groundTiles(block) : null;
     const sides = {
@@ -106,7 +110,42 @@ export function groundPlates(
         tiles[slot + 1] = tile ? tile.turns : PAVED_TILE;
       }
   });
-  return { tops, tiles, width };
+  return { tops: new Float32Array(tops), tiles, width };
+}
+
+type Rect = readonly [number, number, number, number];
+
+/** The ramps' rectangles (west, north, east, south) from the city's middle, as the plates are laid. */
+function rampRects(plan: CityPlan): Rect[] {
+  const [x, y] = plan.centre;
+  return (plan.ramps ?? []).map(({ bounds: [west, north, east, south] }) => [west - x, north - y, east - x, south - y]);
+}
+
+/** What of a rectangle (west, north, east, south) no cut covers, as rectangles: it split along every cut's edges
+ *  inside it, the pieces under a cut left out. */
+export function uncut(rect: Rect, cuts: readonly Rect[]): Rect[] {
+  const within = cuts.filter((cut) => cut[2] > rect[0] && cut[0] < rect[2] && cut[3] > rect[1] && cut[1] < rect[3]);
+  if (!within.length) return [rect];
+  const lines = (low: number, high: number, sides: number[]): number[] =>
+    [...new Set([low, high, ...sides.map((side) => Math.min(high, Math.max(low, side)))])].sort((a, b) => a - b);
+  const across = lines(
+    rect[0],
+    rect[2],
+    within.flatMap((cut) => [cut[0], cut[2]]),
+  );
+  const down = lines(
+    rect[1],
+    rect[3],
+    within.flatMap((cut) => [cut[1], cut[3]]),
+  );
+  const kept: Rect[] = [];
+  for (let i = 0; i + 1 < across.length; i++)
+    for (let j = 0; j + 1 < down.length; j++) {
+      const [x, y] = [(across[i] + across[i + 1]) / 2, (down[j] + down[j + 1]) / 2];
+      if (!within.some((cut) => x > cut[0] && x < cut[2] && y > cut[1] && y < cut[3]))
+        kept.push([across[i], down[j], across[i + 1], down[j + 1]]);
+    }
+  return kept;
 }
 
 /** The skirts down each plate's sides that no plate as high stands beside, wound out of the plate. */
@@ -125,6 +164,7 @@ export function plateSkirts(
     { step: [0, 1], from: [1, 1], to: [0, 1], out: [0, 1, 0] },
     { step: [-1, 0], from: [0, 1], to: [0, 0], out: [-1, 0, 0] },
   ] as const;
+  const ramps = rampRects(plan);
   for (const cell of levelled.values()) {
     const [west, north] = [
       cell.column * CELL_M + plan.grid.west - plan.centre[0],
@@ -136,31 +176,49 @@ export function plateSkirts(
         column >= 0 && row >= 0 && column < side && row < side ? levelled.get(cellIndex(side, column, row)) : undefined;
       if (beside && beside.level >= cell.level) continue;
       const bottom = Math.max(cell.level - SKIRT_M, beside ? beside.level : -Infinity);
-      const [a, b] = [
+      const along = (point: number[]): number => (point[0] - west + point[1] - north) * scaleU;
+      for (const [a, b] of skirtSpans(
         [west + from[0] * CELL_M, north + from[1] * CELL_M],
         [west + to[0] * CELL_M, north + to[1] * CELL_M],
-      ];
-      const along = (point: number[]): number => (point[0] - west + point[1] - north) * scaleU;
-      addPolygon(
-        into(cell),
-        [
-          [a[0], a[1], bottom],
-          [b[0], b[1], bottom],
-          [b[0], b[1], cell.level],
-          [a[0], a[1], cell.level],
-        ],
-        [out],
-        [
-          [along(a), -bottom * scaleV],
-          [along(b), -bottom * scaleV],
-          [along(b), -cell.level * scaleV],
-          [along(a), -cell.level * scaleV],
-        ],
-        layer,
-        out,
-      );
+        ramps,
+      ))
+        addPolygon(
+          into(cell),
+          [
+            [a[0], a[1], bottom],
+            [b[0], b[1], bottom],
+            [b[0], b[1], cell.level],
+            [a[0], a[1], cell.level],
+          ],
+          [out],
+          [
+            [along(a), -bottom * scaleV],
+            [along(b), -bottom * scaleV],
+            [along(b), -cell.level * scaleV],
+            [along(a), -cell.level * scaleV],
+          ],
+          layer,
+          out,
+        );
     }
   }
+}
+
+/** The pieces of a plate's side from `a` to `b` (square to the world) that no ramp crosses, in the same order. */
+function skirtSpans(a: [number, number], b: [number, number], ramps: readonly Rect[]): [number, number][][] {
+  const axis = a[1] === b[1] ? 0 : 1;
+  const line = a[1 - axis];
+  const [low, high] = [Math.min(a[axis], b[axis]), Math.max(a[axis], b[axis])];
+  const crossing = ramps.filter((ramp) => ramp[1 - axis] < line && ramp[3 - axis] > line);
+  const cuts = crossing.map((ramp): Rect => (axis === 0 ? [ramp[0], -1, ramp[2], 1] : [-1, ramp[1], 1, ramp[3]]));
+  const pieces = uncut(axis === 0 ? [low, -1, high, 1] : [-1, low, 1, high], cuts).map((piece) =>
+    axis === 0 ? [piece[0], piece[2]] : [piece[1], piece[3]],
+  );
+  const forward = b[axis] > a[axis];
+  const point = (where: number): [number, number] => (axis === 0 ? [where, line] : [line, where]);
+  return pieces
+    .sort((one, two) => (forward ? one[0] - two[0] : two[0] - one[0]))
+    .map(([from, to]) => (forward ? [point(from), point(to)] : [point(to), point(from)]));
 }
 
 /** Buckets of the clear ground, this many metres a side. */

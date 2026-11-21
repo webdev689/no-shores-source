@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
-import { fightDisplay } from './fightDisplay.ts';
+import { boostRing, fightDisplay } from './fightDisplay.ts';
 import { FightFeel } from './fightFeel.ts';
 
 const vessel: FightVessel = {
@@ -16,6 +16,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 1,
   guns: { left: [2.5, 0], progress: [0.4, 1], load: 'chain', braced: true },
+  boost: [0, 1],
 };
 const captain = (name: string, east: number, more: Partial<FightCaptain> = {}): FightCaptain => ({
   ...vessel,
@@ -109,4 +110,15 @@ test("the broadside warning names the nearest captain running out its guns, as D
   };
   const model = fightDisplay(running, new FightFeel(1), 0, { boardable: false, boardKey: 'E' });
   assert.equal(model.warn, 'Broadside from the Pirate Brig - C: brace', 'a struck ship runs out no guns at the player');
+});
+
+test('the boost ring is whole once ready, drains while the ship bursts and fills as it recharges', () => {
+  assert.deepEqual(boostRing([0, 1]), { state: 'ready', share: 1 });
+  assert.deepEqual(boostRing([0.75, 0]), { state: 'burst', share: 0.75 });
+  assert.deepEqual(boostRing([0, 0.25]), { state: 'charging', share: 0.25 });
+  const model = fightDisplay({ ...VIEW, player: { ...vessel, boost: [0.5, 0] } }, new FightFeel(1), 0, {
+    boardable: false,
+    boardKey: 'E',
+  });
+  assert.deepEqual(model.ship?.boost, { state: 'burst', share: 0.5 }, "the player's own burst, from the rules' view");
 });

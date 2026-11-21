@@ -154,7 +154,7 @@ pub fn open_node(text: &[u8]) -> bool {
         return false;
     }
     let blocks = node.boxes.iter().map(Block::from_floats);
-    let section = Section { ring: node.ring, spawns: node.spawns };
+    let section = Section { ring: node.ring, spawns: node.spawns, falls_kill: node.kind == NodeKind::Social };
     // Its garrison stands at its island's levels; a city's social space serves a player's gear at its counters; a
     // patrol keeps its island's resource nodes.
     let levels = gear::world::island_levels(&node.continent);
@@ -234,11 +234,12 @@ pub fn take_foe_asks() {
     });
 }
 
-/// Takes away every player's Art in the open room, as the prologue's wreck does; see `Room::forbid_arts`.
-pub fn forbid_arts() {
+/// Plays the prologue's wreck in the open room: no Art, the story's sword and shield, and every boarder on one side
+/// and held to a Major; see `Room::story_wreck`.
+pub fn story_wreck() {
     with_open(|opened| {
         if let Opened::Land { room, .. } = opened {
-            room.forbid_arts();
+            room.story_wreck();
         }
     });
 }
@@ -548,10 +549,10 @@ pub extern "C" fn room_take_foe_asks() {
     take_foe_asks();
 }
 
-/// Takes away every player's Art in the open room; see `forbid_arts`.
+/// Plays the prologue's wreck in the open room; see `story_wreck`.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_forbid_arts() {
-    forbid_arts();
+pub extern "C" fn room_story_wreck() {
+    story_wreck();
 }
 
 /// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers their
