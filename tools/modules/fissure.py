@@ -15,16 +15,18 @@ import latticekit
 
 # The crack: its length along x, its widest half-width and its deepest, metres; the stations it is laid out on.
 LENGTH_M = 12.0
-HALF_WIDE_M = 1.45
+HALF_WIDE_M = 2.0
 DEEP_M = 2.8
 STATIONS = 48
-# The rows a wall is cut in, lip to floor, and each row's material: chalk under the lip, then crystal brightening
-# toward the heart.
-WALL_ROWS = (('chalk', 0.0), ('chalk', 0.0), ('crystal', 0.06), ('crystal', 0.16), ('crystal', 0.32),
-             ('crystal', 0.55), ('crystal', 0.8))
-# The torn slabs: how far apart along a lip, and the most they are tipped back from the chasm, radians.
+# The rows a wall is cut in, lip to floor, and each row's material: a band of chalk under the lip, then crystal alight
+# from just under it and brightening to the heart, so the walls seen across the mouth from eye height glow.
+WALL_ROWS = (('chalk', 0.0), ('crystal', 0.35), ('crystal', 0.5), ('crystal', 0.62), ('crystal', 0.75),
+             ('crystal', 0.88), ('crystal', 1.0))
+# The torn slabs: how far apart along a lip, and the most they are tipped back from the chasm, radians. Those at the
+# lip lie low and few, so a player walking up sees into the crack; a row further back is tipped a little more.
 SLAB_EVERY_M = 1.25
-SLAB_TIP = 0.65
+SLAB_TIP = 0.24
+SLAB_TIP_BACK = 0.36
 # The soil under the turf, and the turf itself, metres down from a slab's top.
 TURF_M = 0.07
 SOIL_M = 0.2
@@ -230,8 +232,8 @@ def fissure(module):
     pick = latticekit.picker(module.random.randrange(1 << 30))
     stations = crack()
     chasm(module, stations)
-    slabs(module, stations, SLAB_TIP)
-    slabs(module, stations, SLAB_TIP * 0.35, sunk=0.12, keep=0.6, beyond=1.3, smaller=0.7)
+    slabs(module, stations, SLAB_TIP, keep=0.5)
+    slabs(module, stations, SLAB_TIP_BACK, sunk=0.12, keep=0.55, beyond=1.8, smaller=0.75)
     rubble(module, m, pick, stations, 46, 2.6)
     veins(module, stations, 14)
     draw = module.random
@@ -240,7 +242,7 @@ def fissure(module):
             continue
         for sign, half in ((1, north), (-1, south)):
             # Teeth on the lip, leaning in over the crack.
-            if draw.random() < 0.55:
+            if draw.random() < 0.3:
                 latticekit.shard(module, m, (x + draw.uniform(-0.12, 0.12), middle + sign * half * 0.94, -0.15),
                                  (draw.uniform(-0.3, 0.3), -sign * draw.uniform(0.3, 1.0), 0.8),
                                  draw.uniform(0.2, 1.0) * (0.4 + half), draw.uniform(0.04, 0.1), draw.uniform(0, 3))
@@ -273,55 +275,34 @@ def fissure(module):
 
 
 def sealed(module):
-    """The scar the crack leaves as the seal closes it: where the crack was, a ridge of crystal set hard and dull,
-    faceted, a last glow along its crest; the slabs settled back nearly flat, chalk heaped along the seam and the
-    teeth broken off and lying in the grass."""
+    """The scar the crack leaves as the seal closes it: where the crack was, grey-white chalk broken and heaped along
+    the line, dull stubs of dark crystal standing out of it, their glow dying; the slabs settled back nearly flat and
+    the teeth broken off and lying in the grass."""
     m = latticekit.kinds()
     pick = latticekit.picker(module.random.randrange(1 << 30))
     stations = crack()
     draw = random.Random(module.random.random())
-    # The seam: a low ridge of crystal set hard along the line, faceted and dark, its crest still faintly alight.
-    points, faces, kinds = [], [], []
-    for x, middle, north, south, _ in stations:
-        crest = draw.uniform(0.06, 0.16) * min(1.0, (north + south))
-        wide_n, wide_s = north * 0.4, south * 0.4
-        points += [(x, middle + wide_n, -0.04), (x, middle + wide_n * 0.4, crest * 0.6),
-                   (x, middle + draw.uniform(-0.06, 0.06), crest), (x, middle - wide_s * 0.4, crest * 0.6),
-                   (x, middle - wide_s, -0.04)]
-    for k in range(STATIONS):
-        for j in range(4):
-            faces.append((k * 5 + j, (k + 1) * 5 + j, (k + 1) * 5 + j + 1, k * 5 + j + 1))
-            kinds.append(0 if j in (0, 3) else 1)
-    for end in (0, STATIONS):
-        faces.append(tuple(end * 5 + j for j in range(5)))
-        kinds.append(0)
-    item = kit.solid_of(module, 'seal', points, kit.oriented(points, faces, lambda middle: (0.0, 0.0, 1.0) if abs(
-        middle[0]) < LENGTH_M / 2 - 0.01 else (middle[0], 0.0, 0.0)))
-    for polygon, kind in zip(item.data.polygons, kinds):
-        polygon.material_index = kind
-    kit.faced(module, item, [('crystal', 0.02), ('crystal', 0.18)])
-    # Scabs of crystal grown over the seam, broken into flat faces, dark and a few still lit, overlapping.
-    for k in range(2, STATIONS - 1):
+    for k in range(1, STATIONS):
         x, middle, north, south, _ = stations[k]
-        for _ in range(2):
-            wide = draw.uniform(0.18, 0.42) * min(1.0, 0.4 + north + south)
-            items = [latticekit.props.rock(f'scab{len(module.objects)}', (x + draw.uniform(-0.15, 0.15), middle
-                                                                         + draw.uniform(-0.25, 0.25), 0.02),
-                                           (wide, wide * draw.uniform(0.5, 0.9), wide * draw.uniform(0.25, 0.45)),
-                                           m['deep' if draw.random() < 0.75 else 'crystal'], pick, 12)]
-            latticekit.taken(module, items, 0.5)
+        wide = min(north, south)
+        for _ in range(3):   # the chalk heaped along the seam
+            size = draw.uniform(0.12, 0.3) * (0.5 + wide / HALF_WIDE_M)
+            latticekit.boulder(module, m, pick, (x + draw.uniform(-0.15, 0.15), middle + draw.uniform(-0.6, 0.6) * wide,
+                                                 size * 0.3), (size, size * draw.uniform(0.6, 1.0), size * 0.6), 14)
+        if draw.random() < 0.45:   # a stub of the crystal it was sealed with, broken off short
+            latticekit.shard(module, m, (x, middle + draw.uniform(-0.3, 0.3) * wide, -0.05),
+                             (draw.uniform(-0.4, 0.4), draw.uniform(-0.4, 0.4), 1.0), draw.uniform(0.12, 0.38),
+                             draw.uniform(0.05, 0.11), draw.uniform(0, 3), widest=0.8, dim=0.05)
     module.part((-LENGTH_M / 2, -0.4, 0.0), (LENGTH_M / 2, 0.4, 0.2))
     slabs(module, stations, 0.14, sunk=0.03, keep=0.7)
-    rubble(module, m, pick, stations, 60, 1.8)
-    for _ in range(26):   # the teeth broken off, lying in the grass
+    rubble(module, m, pick, stations, 50, 1.8)
+    for _ in range(20):   # the teeth broken off, lying in the grass
         x, middle, north, south, _ = stations[draw.randrange(1, STATIONS)]
         sign = draw.choice((1, -1))
         out = (north if sign > 0 else south) + draw.uniform(0.1, 1.6)
         turn = draw.uniform(0, math.tau)
         latticekit.shard(module, m, (x, middle + sign * out, 0.04), (math.cos(turn), math.sin(turn), 0.12),
-                         draw.uniform(0.2, 0.7), draw.uniform(0.04, 0.08), draw.uniform(0, 3), dim=0.35)
-    for x in (-LENGTH_M / 2 - 0.4, LENGTH_M / 2 + 0.4):
-        latticekit.crust(module, m, pick, (x, 0.0, 0.0), 0.9, dim=0.4)
+                         draw.uniform(0.2, 0.7), draw.uniform(0.04, 0.08), draw.uniform(0, 3), dim=0.08)
 
 
 def growth(module):

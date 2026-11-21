@@ -55,24 +55,26 @@ def stores_b(module):
 
 
 def stores_c(module):
-    """A pallet of boards on bearers with sacks piled two deep on it, a crate at its foot, all under the tarp roped
-    down over the pile."""
+    """A pallet of boards on bearers with full sacks laid flat on it two deep, their tied necks out at both sides, a
+    crate at its foot, the tarp roped down over the middle of the pile."""
     for y in (-0.5, 0.0, 0.5):
         board(module, Frame(), (0.0, y, 0.05), (1.5, 0.09, 0.1))
     for x in range(7):
         board(module, Frame(), (-0.66 + x * 0.22, 0.0, 0.115), (0.17, 1.2, 0.03))
     floor = 0.13
-    # Sacks laid across the pallet in two rows, their necks outward, and three more laid along the top between them.
+    # Sacks laid flat across the pallet in two rows, feet together in the middle and necks outward, and three more
+    # laid over them; a laid sack runs from its foot toward -y, turned half round for the row running +y.
     for k in range(4):
         x = -0.48 + k * 0.32
-        for y, turn in ((0.6, 0.0), (-0.6, math.pi)):
-            sack(module, Frame((x, y, floor + 0.2), turn + module.draw(-0.12, 0.12), (math.pi / 2 - 0.08, 0.0)),
-                 (0.2, 0.62))
+        for y, turn in ((0.02, math.pi), (-0.02, 0.0)):
+            sack(module, Frame((x, y, floor + 0.1), turn + module.draw(-0.1, 0.1), (math.pi / 2 - 0.04, 0.0)),
+                 (0.2, 0.64), flat=0.5)
     for k in range(3):
-        sack(module, Frame((-0.32 + k * 0.32, 0.45, floor + 0.58), module.draw(-0.15, 0.15),
-                           (math.pi / 2 - 0.1, 0.0)), (0.2, 0.6))
+        sack(module, Frame((-0.32 + k * 0.32, -0.25 + 0.5 * (k % 2), floor + 0.28),
+                           (0.0 if k % 2 else math.pi) + module.draw(-0.15, 0.15), (math.pi / 2 - 0.06, 0.0)),
+             (0.2, 0.6), flat=0.5)
     crate(module, Frame((1.15, -0.3, 0.0), 0.5), SMALL)
-    tarp(module, (0.0, 0.0), (1.9, 1.7), [(-0.75, -0.62, 0.75, 0.62, floor + 0.78)], sag=0.04)
+    tarp(module, (0.0, 0.0), (1.9, 0.9), [(-0.75, -0.35, 0.75, 0.35, floor + 0.44)], sag=0.04)
     standing(module, (2.4, 1.8), 1.0)
 
 

@@ -193,7 +193,7 @@ export function eventProps(
         const breathing = 1 + MOTION.breathe * Math.sin(seconds * 2.1 + mark.id);
         if (open > 0.01)
           props.push(prop('lattice-fissure', mark.at, turn, { rise: open, glow: (0.5 + 0.5 * open) * breathing }));
-        if (over) props.push(prop('lattice-fissure-sealed', mark.at, turn, { rise: ease(1 - open), glow: 0.6 }));
+        if (over) props.push(prop('lattice-fissure-sealed', mark.at, turn, { rise: ease(1 - open), glow: open }));
         break;
       }
       case MARK.growth: {

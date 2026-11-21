@@ -127,9 +127,10 @@ def globe(around, rings):
     return made
 
 
-def sack(module, frame, size=(0.32, 0.62), slumped=0.0, slit=False):
+def sack(module, frame, size=(0.32, 0.62), slumped=0.0, slit=False, flat=1.0):
     """A sack of grey canvas, `size` its radius and height: full and round at the foot, creased, gathered at its neck
-    and tied with cord; `slumped` lets it sag as a slit sack empties."""
+    and tied with cord; `slumped` lets it sag as a slit sack empties, and `flat` presses it across its own y (a full
+    sack laid down settles flat and spreads, as a sack does and a roll does not)."""
     radius, high = size
     made = globe(14, 10)
     noise = mathutils.noise
@@ -146,7 +147,8 @@ def sack(module, frame, size=(0.32, 0.62), slumped=0.0, slit=False):
             width *= 1.0 - 0.15 * (up / neck_at) ** 3
         crease = 1.0 + 0.07 * noise.noise(p * 3.0 + seed) + 0.03 * noise.noise(p * 7.0 + seed)
         z = high * (1 - slumped * 0.55) * max(0.0, up - 0.04) / 0.96
-        vertex.co = mathutils.Vector((p.x * width * crease, p.y * width * crease * 0.85, z))
+        spread = 1.0 + (1.0 - flat) * 0.6 * (1 - up)
+        vertex.co = mathutils.Vector((p.x * width * crease * spread, p.y * width * crease * 0.85 * flat, z))
     if slit:   # the slit: its side opened and fallen in
         for vertex in made.verts:
             if vertex.co.y < -radius * 0.5 and 0.1 < vertex.co.z < high * 0.5:
