@@ -549,7 +549,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   choosing a landing, their clicks, Set sail and Escape; with the land's held map raised, the drag, the wheel and its
   key or Escape to close it (the pad's B); in a fight, the helm, the sails, the burst, the aim and the
   brace, and while aiming, letting go to fire (the pad's RT), holding fire, the shot and the drag. Eight entries at
-  most: past eight, those just before All controls give way, the last first, so the menu's goes, then the map's, then
+  most, counted as shown on the keys or the pad: past eight, those just before All controls give way, the last first, so the menu's goes, then the map's, then
   the Arts' ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the strip stands at twice its size
   and wraps 960 px short of the view's width, so it never runs over the weapons; a view under 720 px wide gives it
   240 px, room for its widest entry.

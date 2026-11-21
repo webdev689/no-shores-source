@@ -6,6 +6,7 @@ import type { Laid, Node } from '../ui/node.ts';
 import { QuadList } from '../ui/quads.ts';
 import { type Face, widthOf } from '../ui/text.ts';
 import { Interface, type UiEvent } from '../ui/ui.ts';
+import { BINDS } from '../player/input.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { type OnFoot, type StripHint, footHints, withMapKey } from './hints.ts';
 import { Hud } from './hud.ts';
@@ -214,6 +215,14 @@ test('the key strip as shown holds eight entries at most, the key to every contr
   const said = words(frame(ui, hud));
   assert.ok(said.includes('Hold to aim daggers'), 'the Arts kept');
   assert.ok(!said.includes('Menu'), 'the menu’s key gave way');
+  BINDS.device = 'pad';
+  try {
+    const onPad = frame(ui, hud).filter((each) => each.parent?.node.id === 'hud:hints');
+    assert.equal(onPad.length, 8, 'the pad has no way to the click or the map, so the menu’s fits');
+    assert.ok(words(frame(ui, hud)).includes('Menu'));
+  } finally {
+    BINDS.device = 'keys';
+  }
 });
 
 test('the sheet of every control is offered only while the key strip shows', () => {
