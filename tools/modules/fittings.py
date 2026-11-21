@@ -176,19 +176,19 @@ def barrel(module, at, radius=0.32, high=0.9, lying=False, turn=0.0):
 def crate(module, at, size, turn=0.0, material='timber'):
     """A slatted crate on `at`: its box and a frame of battens round each face's edges."""
     kit.block(module, at, size, material, turn=turn, bevel=0.015, wear=0.0, part=False)
-    sx, sy, sz = size
+    wide, deep, high = size
     cos, sin = math.cos(turn), math.sin(turn)
 
     def placed(x, y, z):
         return (at[0] + x * cos - y * sin, at[1] + x * sin + y * cos, at[2] + z)
 
     for side in (-1, 1):
-        shapes.slab(module, placed(0.0, side * (sy / 2 + 0.01), sz / 2), (sx * 0.98, 0.03, 0.08), 'timber',
+        shapes.slab(module, placed(0.0, side * (deep / 2 + 0.01), high / 2), (wide * 0.98, 0.03, 0.08), 'timber',
                     turn=(0.0, 0.0, turn))
-        brace = (math.hypot(sx, sz) * 0.9, 0.03, 0.07)
-        shapes.slab(module, placed(0.0, side * (sy / 2 + 0.01), sz / 2), brace, 'timber',
-                    turn=(0.0, math.atan2(sz, sx), turn))
-        shapes.slab(module, placed(side * (sx / 2 + 0.01), 0.0, sz / 2), (0.03, sy * 0.98, 0.08), 'timber',
+        brace = (math.hypot(wide, high) * 0.9, 0.03, 0.07)
+        shapes.slab(module, placed(0.0, side * (deep / 2 + 0.01), high / 2), brace, 'timber',
+                    turn=(0.0, math.atan2(high, wide), turn))
+        shapes.slab(module, placed(side * (wide / 2 + 0.01), 0.0, high / 2), (0.03, deep * 0.98, 0.08), 'timber',
                     turn=(0.0, 0.0, turn))
 
 
@@ -202,19 +202,19 @@ def sack(module, at, size=0.5, material='linen', turn=0.0):
 
 def chest(module, at, size=(0.9, 0.55, 0.55), turn=0.0, banded='iron'):
     """A chest on `at` with a curved lid, iron bands over it and a gilt lock at its front."""
-    sx, sy, sz = size
-    kit.block(module, at, (sx, sy, sz * 0.7), 'timber', turn=turn, bevel=0.02, wear=0.0, part=False)
+    wide, deep, high = size
+    kit.block(module, at, (wide, deep, high * 0.7), 'timber', turn=turn, bevel=0.02, wear=0.0, part=False)
     cos, sin = math.cos(turn), math.sin(turn)
-    lid = (at[0], at[1], at[2] + sz * 0.7)
-    shapes.lathe(module, (lid[0] - cos * sx / 2, lid[1] - sin * sx / 2, lid[2]),
-                 [(sy / 2, 0.0), (sy / 2, sx)], 'timber', sides=12, turn=(0.0, math.pi / 2, turn), smooth=True)
+    lid = (at[0], at[1], at[2] + high * 0.7)
+    shapes.lathe(module, (lid[0] - cos * wide / 2, lid[1] - sin * wide / 2, lid[2]),
+                 [(deep / 2, 0.0), (deep / 2, wide)], 'timber', sides=12, turn=(0.0, math.pi / 2, turn), smooth=True)
     for share in (-0.38, 0.0, 0.38):
-        spot = (at[0] + cos * sx * share, at[1] + sin * sx * share, lid[2])
-        shapes.lathe(module, (spot[0] - cos * 0.03, spot[1] - sin * 0.03, spot[2]), [(sy / 2 + 0.012, 0.0),
-                     (sy / 2 + 0.012, 0.06)], banded, sides=12, turn=(0.0, math.pi / 2, turn), smooth=False)
-        shapes.slab(module, (spot[0], spot[1], at[2] + sz * 0.35), (0.06, sy + 0.02, sz * 0.7), banded,
+        spot = (at[0] + cos * wide * share, at[1] + sin * wide * share, lid[2])
+        shapes.lathe(module, (spot[0] - cos * 0.03, spot[1] - sin * 0.03, spot[2]), [(deep / 2 + 0.012, 0.0),
+                     (deep / 2 + 0.012, 0.06)], banded, sides=12, turn=(0.0, math.pi / 2, turn), smooth=False)
+        shapes.slab(module, (spot[0], spot[1], at[2] + high * 0.35), (0.06, deep + 0.02, high * 0.7), banded,
                     turn=(0.0, 0.0, turn))
-    shapes.slab(module, (at[0] + sin * (sy / 2 + 0.02), at[1] - cos * (sy / 2 + 0.02), at[2] + sz * 0.62),
+    shapes.slab(module, (at[0] + sin * (deep / 2 + 0.02), at[1] - cos * (deep / 2 + 0.02), at[2] + high * 0.62),
                 (0.1, 0.03, 0.12), 'gold', turn=(0.0, 0.0, turn))
 
 
@@ -380,8 +380,8 @@ def sign(module, at, board='black', size=0.8):
                 sides=3)
     middle = (x, y - 0.3 - size / 2, z - size / 2 + 0.3)
     for hook in (-1, 1):
-        hy = middle[1] + hook * size * 0.35
-        shapes.rod(module, (x, hy, z + 0.6), (x, hy, middle[2] + size / 2), 0.01, 'iron', sides=4)
+        hook_y = middle[1] + hook * size * 0.35
+        shapes.rod(module, (x, hook_y, z + 0.6), (x, hook_y, middle[2] + size / 2), 0.01, 'iron', sides=4)
     shapes.slab(module, middle, (0.05, size, size), board, bevel=0.01)
     shapes.slab(module, (x, middle[1], middle[2] + size / 2), (0.08, size + 0.06, 0.05), 'gold')
     return middle

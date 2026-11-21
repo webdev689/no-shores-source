@@ -60,6 +60,7 @@ const GOLD = ${COLOUR_LAYERS.gold}u;
 const IRON = ${COLOUR_LAYERS.iron}u;
 const BONE = ${COLOUR_LAYERS.bone}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
+const WATER = ${COLOUR_LAYERS.water}u;
 // A plain colour's texels to its uv: the size of the picture it would be (cityBuild lays a plain one as 64 square).
 const PLAIN_TEXELS = 64.0;
 const PAVED = ${PAVED_TILE}u;
@@ -117,7 +118,8 @@ fn weave_of(texel: vec2f, threads: vec2f, fade: f32) -> f32 {
 // A plain colour's albedo, or the sampled picture's. A plain colour is painted on the texels a picture would have
 // (PLAIN_TEXELS to its uv), so its grain reads as painted, as the pictures' does: wrought iron's hammer marks, pits and
 // rust; gilding burnished and worn through to the bronze; bone's grain and yellowing; cloth its dye under a fine weave
-// of uneven threads, the dye taken unevenly. A picture is lighter or darker in patches some metres wide, so its
+// of uneven threads, the dye taken unevenly; still water stirring. A picture is lighter or darker in patches some
+// metres wide, so its
 // repeats do not line up across a wall.
 fn colour_of(layer: u32, sampled: vec3f, uv: vec2f, place: vec3f, normal: vec3f) -> vec3f {
   let texel = floor(uv * PLAIN_TEXELS);
@@ -143,6 +145,11 @@ fn colour_of(layer: u32, sampled: vec3f, uv: vec2f, place: vec3f, normal: vec3f)
       let grain = sin(texel.y * 0.9 + sky_noise(texel / 9.0) * 9.0) * 0.5 + 0.5;
       let aged = sky_noise(texel / 12.0);
       return mix(vec3f(0.88, 0.86, 0.78), vec3f(0.8, 0.72, 0.55), aged * 0.6) * (0.94 + 0.08 * grain + 0.06 * mark);
+    }
+    case WATER: {
+      // still water, deep green-blue, its face stirring slowly in light and shade
+      let stir = sky_noise(place.xy * 1.6 + vec2f(view.eye.w * 0.25, view.eye.w * 0.17));
+      return vec3f(0.12, 0.27, 0.31) * (0.85 + 0.3 * stir);
     }
 ${CLOTH_CASES}
     default: { return sampled * (0.93 + 0.14 * sky_noise(place.xy / 7.0)); }

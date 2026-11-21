@@ -26,6 +26,11 @@ DAIS_FRONT_Y = -0.4
 COUNTER_Y = -3.6
 
 
+def in_niche(x, y):
+    """Whether a point stands well clear of the apse's wall, inside its niche, at any height under the springing."""
+    return (x / NICHE[0]) ** 2 + ((y - FACE_Y) / NICHE[1]) ** 2 < 0.9
+
+
 def _niche_cutters(module):
     """The niche's shape to carve: an upright elliptic shaft to the springing and a half-ellipsoid dome over it."""
     bpy.ops.mesh.primitive_cylinder_add(vertices=40, radius=1.0, depth=SPRING_M + 1.0,
@@ -166,7 +171,7 @@ def lamp_tiers(module, middle):
     x, y = middle
     top = SPRING_M + DOME_M - 0.4
     above = None
-    for radius, z, lamps in ((3.4, 6.6, 8), (2.4, 5.6, 6), (1.4, 4.6, 4)):
+    for radius, z, lamps in ((2.2, 6.6, 8), (1.6, 5.6, 6), (1.0, 4.6, 4)):
         shapes.ring(module, (x, y, z), radius, 0.07, 'gold', segments=24)
         # The top ring hangs from the crown, each ring under it from the ring above.
         for chain in range(4):
@@ -177,8 +182,9 @@ def lamp_tiers(module, middle):
             shapes.rod(module, low, high, 0.012, 'iron', sides=3)
         for lamp in range(lamps):
             angle = math.tau * (lamp + 0.5) / lamps
-            fittings.lantern(module, (x + math.cos(angle) * radius, y + math.sin(angle) * radius, z - 0.75),
-                             size=0.26, hung_from=z)
+            at = (x + math.cos(angle) * radius, y + math.sin(angle) * radius)
+            assert in_niche(at[0] + math.cos(angle) * 0.13, at[1] + math.sin(angle) * 0.13), f'a lamp in the wall at {at}'
+            fittings.lantern(module, (*at, z - 0.75), size=0.26, hung_from=z)
         above = (radius, z)
     shapes.lathe(module, (x, y, top - 0.3), [(0.0, 0.0), (0.25, 0.15), (0.12, 0.3), (0.0, 0.4)], 'gold', sides=10)
 
@@ -214,10 +220,11 @@ def veil_frame(module, x, y, width, turn, cloth):
     with shapes.frame(module, (x, y, 0.0), quarter=0):
         cos, sin = math.cos(turn), math.sin(turn)
         ends = [(-cos * width / 2, -sin * width / 2), (cos * width / 2, sin * width / 2)]
-        for ex, ey in ends:
-            shapes.rod(module, (ex, ey, DAIS_M), (ex, ey, DAIS_M + 3.2), 0.035, 'iron', sides=6)
-            shapes.lathe(module, (ex, ey, DAIS_M), [(0.16, 0.0), (0.04, 0.08), (0.0, 0.08)], 'iron', sides=6)
-            shapes.ball(module, (ex, ey, DAIS_M + 3.27), 0.07, 'iron', detail=0)
+        assert all(in_niche(x + end_x, y + end_y) for end_x, end_y in ends), f'a veil frame in the wall at {(x, y)}'
+        for end_x, end_y in ends:
+            shapes.rod(module, (end_x, end_y, DAIS_M), (end_x, end_y, DAIS_M + 3.2), 0.035, 'iron', sides=6)
+            shapes.lathe(module, (end_x, end_y, DAIS_M), [(0.16, 0.0), (0.04, 0.08), (0.0, 0.08)], 'iron', sides=6)
+            shapes.ball(module, (end_x, end_y, DAIS_M + 3.27), 0.07, 'iron', detail=0)
         shapes.rod(module, (*ends[0], DAIS_M + 3.1), (*ends[1], DAIS_M + 3.1), 0.025, 'iron', sides=5)
         shapes.drape(module, (ends[0][0] * 0.95, ends[0][1] * 0.95, DAIS_M + 3.08),
                      (ends[1][0] * 0.95, ends[1][1] * 0.95, DAIS_M + 3.08), 2.9, cloth, folds=3, depth=0.07,
@@ -252,7 +259,7 @@ def chapel_veiled(module):
     apse(module, wall='stone', cloth='veiled_dusk', trim='trim', hanging='black')
     veiled_statue(module, (0.0, 2.2, DAIS_M))
     for x, y, width, turn, cloth in ((-3.6, 1.0, 2.2, 0.5, 'veiled_dusk'), (3.6, 1.0, 2.2, -0.5, 'veiled_dusk'),
-                                     (-2.0, 3.6, 2.0, 0.9, 'black'), (2.0, 3.6, 2.0, -0.9, 'black')):
+                                     (-2.0, 2.9, 2.0, 0.9, 'black'), (2.0, 2.9, 2.0, -0.9, 'black')):
         veil_frame(module, x, y, width, turn, cloth)
     # Low candles at the statue's feet, in a crescent and in clusters on the steps' ends.
     for candle in range(9):

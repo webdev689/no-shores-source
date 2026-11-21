@@ -194,3 +194,22 @@ fn a_body_walks_through_the_range_gate() {
     assert!(end.y < north.at[1] - 1.0, "it walked through the passage: {end:?}");
     assert!(bodies.iter().all(|body| body.z.abs() < 0.01), "on the passage's floor all the way");
 }
+
+#[test]
+fn the_manifest_writes_its_sockets_to_the_millimetre_and_no_zero_with_a_sign() {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content/modules/modules.json");
+    let text = std::fs::read_to_string(path).expect("the manifest is in the repository");
+    assert!(!text.contains("-0.0,") && !text.contains("-0.0]"), "a zero written with its sign");
+    for module in city::modules::all() {
+        for socket in &module.sockets {
+            for value in socket.at.iter().chain(&socket.facing) {
+                assert!(
+                    (value * 1000.0 - (value * 1000.0).round()).abs() < 1e-6,
+                    "{}'s {} at {value}",
+                    module.name,
+                    socket.name
+                );
+            }
+        }
+    }
+}

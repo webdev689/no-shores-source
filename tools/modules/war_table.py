@@ -47,9 +47,9 @@ def map_sheet(module, middle, size, turn, material='linen'):
         shapes.slab(module, (x + dx * cos - dy * sin, y + dx * sin + dy * cos, TOP_M + 0.011), (along, 0.012, 0.002),
                     'crimson', turn=(0.0, 0.0, bend))
     # Each short edge curls up into a roll where the sheet was kept rolled.
-    for cx in (-1, 1):
-        ends = [(x + cx * size[0] / 2 * cos - cy * size[1] / 2 * sin, y + cx * size[0] / 2 * sin + cy * size[1] / 2 *
-                 cos, TOP_M + 0.02) for cy in (-1, 1)]
+    for side_x in (-1, 1):
+        ends = [(x + side_x * size[0] / 2 * cos - side_y * size[1] / 2 * sin,
+                 y + side_x * size[0] / 2 * sin + side_y * size[1] / 2 * cos, TOP_M + 0.02) for side_y in (-1, 1)]
         shapes.rod(module, ends[0], ends[1], 0.02, material, sides=6)
 
 

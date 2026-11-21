@@ -82,7 +82,7 @@ def court_tree(module):
     shapes.lathe(module, (0.0, 0.0, 0.0), [(2.3, 0.0), (2.3, 0.5), (2.4, 0.55), (2.4, 0.62), (2.05, 0.62),
                                            (2.05, 0.45)], 'stone', sides=20, smooth=False)
     module.part((-2.3, -2.3, 0.0), (2.3, 2.3, 0.62))
-    shapes.lathe(module, (0.0, 0.0, 0.0), [(2.06, 0.0), (2.06, 0.5)], 'verdant', sides=20)
+    shapes.lathe(module, (0.0, 0.0, 0.0), [(2.06, 0.0), (2.06, 0.5)], 'lawn', sides=20)
     module.socket('front', (0.0, -2.3, 0.0), (0, -1))
 
 
@@ -94,7 +94,7 @@ def lawn_bed(module):
                        (-long / 2, 0.0, (0.3, deep, 0.45)), (long / 2, 0.0, (0.3, deep, 0.45))):
         kit.block(module, (x, y, 0.0), size, 'trim', bevel=0.03, wear=0.02, part=False)
     module.part((-long / 2 - 0.15, -deep / 2 - 0.15, 0.0), (long / 2 + 0.15, deep / 2 + 0.15, 0.45))
-    shapes.slab(module, (0.0, 0.0, 0.38), (long - 0.3, deep - 0.3, 0.08), 'verdant')
+    shapes.slab(module, (0.0, 0.0, 0.38), (long - 0.3, deep - 0.3, 0.08), 'lawn')
     module.socket('front', (0.0, -deep / 2 - 0.15, 0.0), (0, -1))
 
 

@@ -118,13 +118,13 @@ def fountain(module):
                  (1.05, 0.6), (1.05, 0.7), (0.9, 0.7), (0.9, 0.2), (0.0, 0.2))), 'stone', sides=8, turn=flat,
                  smooth=False)
     shapes.lathe(module, (0.0, 0.0, 0.46), octagon(corner * 0.91, ((1.0, 0.0), (1.0, 0.04), (0.0, 0.04))),
-                 'stormcaller_blue', sides=8, turn=flat, smooth=False)
+                 'water', sides=8, turn=flat, smooth=False)
     octagon_parts(module, apothem, 0.0, 0.7)
     # The column, the upper bowl brimming over, the finial.
     shapes.lathe(module, (0.0, 0.0, 0.2), [(0.55, 0.0), (0.55, 0.2), (0.45, 0.3), (0.32, 0.5), (0.26, 1.0),
                  (0.3, 1.2), (0.42, 1.3), (1.15, 1.55), (1.2, 1.65), (1.1, 1.7), (0.0, 1.7)], 'trim', sides=16)
     module.part((-0.45, -0.45, 0.0), (0.45, 0.45, 1.9))
-    shapes.lathe(module, (0.0, 0.0, 1.83), [(1.08, 0.0), (1.08, 0.03), (0.0, 0.03)], 'stormcaller_blue', sides=16,
+    shapes.lathe(module, (0.0, 0.0, 1.83), [(1.08, 0.0), (1.08, 0.03), (0.0, 0.03)], 'water', sides=16,
                  smooth=False)
     shapes.lathe(module, (0.0, 0.0, 1.86), [(0.22, 0.0), (0.18, 0.4), (0.24, 0.6), (0.12, 0.9), (0.2, 1.1),
                  (0.08, 1.4), (0.14, 1.55), (0.0, 1.9)], 'trim', sides=12)
@@ -133,7 +133,7 @@ def fountain(module):
         angle = math.tau * stream / 16 + math.pi / 16
         top = (math.cos(angle) * 1.2, math.sin(angle) * 1.2, 1.8)
         foot = (math.cos(angle) * 1.38, math.sin(angle) * 1.38, 0.5)
-        shapes.rod(module, top, foot, 0.018, 'stormcaller_blue', sides=4, end_radius=0.03)
+        shapes.rod(module, top, foot, 0.018, 'water', sides=4, end_radius=0.03)
     for spout in range(4):
         angle = math.tau * spout / 4
         out = (math.cos(angle), math.sin(angle))
@@ -145,7 +145,7 @@ def fountain(module):
             reach = 0.5 + share * 1.6
             points.append((out[0] * reach, out[1] * reach, 1.05 + 0.5 * share - 1.05 * share * share))
         for start, end in zip(points, points[1:]):
-            shapes.rod(module, start, end, 0.035, 'stormcaller_blue', sides=4)
+            shapes.rod(module, start, end, 0.035, 'water', sides=4)
         shapes.lathe(module, (points[-1][0], points[-1][1], 0.5), [(0.18, 0.0), (0.05, 0.08), (0.0, 0.09)], 'linen',
                      sides=6, smooth=False)
     module.socket('front', (0.0, -apothem, 0.0), (0, -1))

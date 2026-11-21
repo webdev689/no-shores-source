@@ -34,6 +34,7 @@ export type SolidMaterial =
   | 'iron'
   | 'bone'
   | 'glow'
+  | 'water'
   | 'rubble'
   | 'chalk'
   | ClothMaterial;

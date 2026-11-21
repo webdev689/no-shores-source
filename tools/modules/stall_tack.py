@@ -163,7 +163,7 @@ def tack_room(module, west, east):
 def trough(module, x, y):
     """A stone water trough before the stalls, dark water in it, a bucket by it."""
     kit.block(module, (x, y, 0.0), (2.6, 0.8, 0.75), 'stone', bevel=0.05, wear=0.03)
-    kit.block(module, (x, y, 0.6), (2.4, 0.6, 0.1), 'stormcaller_blue', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, (x, y, 0.6), (2.4, 0.6, 0.1), 'water', bevel=0.0, wear=0.0, part=False)
     shapes.lathe(module, (x + 1.65, y + 0.1, 0.0), [(0.16, 0.0), (0.2, 0.36), (0.0, 0.36)], 'timber', sides=8)
 
 

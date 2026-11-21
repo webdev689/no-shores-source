@@ -16,7 +16,8 @@ import mathutils
 # colour, in the order its groups are written: paving last, as the first group carries the parts and paving is never
 # run into. Cloth is the plain dyes: undyed linen, crimson, verdant, black, straw and the three factions' own.
 CLOTHS = ('linen', 'crimson', 'verdant', 'black', 'straw', 'stormcaller_blue', 'lamplighter_gold', 'veiled_dusk')
-MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'plaster', 'roof', 'gold', 'bone', 'glow', *CLOTHS, 'paving')
+MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'plaster', 'roof', 'gold', 'bone', 'glow', *CLOTHS, 'paving',
+             'lawn', 'water')
 
 
 class Module:

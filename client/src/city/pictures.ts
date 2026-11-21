@@ -8,7 +8,8 @@ import type { CityClimate, ClothMaterial, SolidMaterial } from './plan.ts';
 
 /** Layers the array holds for pictures; the four above them are the plain colours. WebGPU's default limit is 256. */
 export const PICTURE_LAYERS = 252;
-/** The solids' plain colours, drawn by code rather than a picture: gold, iron, bone, the glow of a fire, and cloth.
+/** The solids' plain colours, drawn by code rather than a picture: gold, iron, bone, the glow of a fire, cloth and
+ *  still water.
  *  A plain colour never samples its own layer, so cloth's numbers lie past the array and cost it none. */
 export const COLOUR_LAYERS = {
   gold: 252,
@@ -23,6 +24,7 @@ export const COLOUR_LAYERS = {
   lamplighter_gold: 261,
   veiled_dusk: 262,
   straw: 263,
+  water: 264,
 } as const;
 
 /** A dye's cloth colour: the middle of its four-step ramp (its second and third steps' mean), as a cape wears it. */

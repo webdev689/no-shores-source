@@ -70,7 +70,7 @@ def market_stall_fish(module):
                    (-1.6 + module.draw(-0.2, 0.2), 0.7 + module.draw(-0.2, 0.2), 0.86), 0.02, 'black', sides=4)
     shapes.lathe(module, (-0.85, 0.8, 0.0), [(0.32, 0.0), (0.4, 0.4), (0.36, 0.4), (0.3, 0.05), (0.0, 0.05)], 'timber',
                  sides=12)
-    shapes.lathe(module, (-0.85, 0.8, 0.3), [(0.35, 0.0), (0.0, 0.0)], 'stormcaller_blue', sides=12, smooth=False)
+    shapes.lathe(module, (-0.85, 0.8, 0.3), [(0.35, 0.0), (0.0, 0.0)], 'water', sides=12, smooth=False)
     module.part((-1.95, 0.35, 0.0), (-0.45, 1.2, 0.85))
     shapes.drape(module, (-2.2, 1.32, 2.42), (-0.4, 1.32, 2.42), 1.1, 'black', folds=4, depth=0.1, hem=0.3)
     for hung in range(5):

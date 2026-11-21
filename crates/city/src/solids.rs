@@ -56,6 +56,8 @@ pub enum Material {
     Rubble,
     /// Glows at night: a beacon's fire, a lantern.
     Glow,
+    /// Still water: a fountain's basin and its streams, a trough, a tub.
+    Water,
     /// Cloth, in plain dyed colours: awnings, banners, curtains, hangings and bolts. Undyed linen and canvas.
     Linen,
     Crimson,

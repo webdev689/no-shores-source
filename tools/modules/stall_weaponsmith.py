@@ -83,7 +83,7 @@ def anvil(module, at, turn=0.0):
 def trough(module, x, y):
     """The quench trough: a stone box of dark water, a bucket by it."""
     kit.block(module, (x, y, 0.0), (1.4, 0.7, 0.7), 'stone', bevel=0.04, wear=0.03)
-    kit.block(module, (x, y, 0.55), (1.2, 0.5, 0.1), 'stormcaller_blue', bevel=0.0, wear=0.0, part=False)
+    kit.block(module, (x, y, 0.55), (1.2, 0.5, 0.1), 'water', bevel=0.0, wear=0.0, part=False)
     shapes.lathe(module, (x + 1.0, y, 0.0), [(0.16, 0.0), (0.2, 0.36), (0.0, 0.36)], 'timber', sides=10)
     shapes.ring(module, (x + 1.0, y, 0.3), 0.19, 0.02, 'iron', segments=12, sides=3)
 
