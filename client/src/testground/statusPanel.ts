@@ -1,9 +1,10 @@
 // The Test Ground's statuses, to see and tune them: each one given to the player or to every foe, for its own time or
 // for as many seconds as asked. The room gives them through the same door a spell or a perk will.
-import { button, make } from '../editor/dom.ts';
 import { ASKS, type GearAsk } from '../network/gearMessages.ts';
 import { STATUSES } from '../rules/fighters.ts';
-import { labelled } from './dressPanel.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
+import { field, heading, presses, hint, labelled, numberIn, press } from './panelKit.ts';
 
 /** The words on each status's button. */
 const NAMES = {
@@ -23,18 +24,23 @@ export function statusAsk(status: number, onFoes: boolean, seconds: number): Gea
   return { kind: ASKS.grantStatus, slot: status, node: onFoes ? 1 : 0, count: Math.round(held * 60) };
 }
 
-/** Adds the statuses' panel to `root`: how long, then a button for each status on the player and on every foe. */
-export function startStatusPanel(root: HTMLElement, ask: (asked: GearAsk) => void): void {
-  const seconds = make('input');
-  Object.assign(seconds, { type: 'number', min: '0', max: String(LONGEST_SECONDS), step: '0.5', value: '0' });
-  const row = (onFoes: boolean) =>
-    STATUSES.map((name, number) => button(NAMES[name], () => ask(statusAsk(number, onFoes, Number(seconds.value)))));
-  root.append(
-    make('h2', 'Statuses'),
-    labelled('Seconds, 0 for its own', seconds),
-    make('p', 'On you', 'hint'),
-    ...row(false),
-    make('p', 'On every foe', 'hint'),
-    ...row(true),
-  );
+/** The statuses' panel: how long, then a press for each status on the player and on every foe. */
+export function statusNodes(ui: Interface, ask: (asked: GearAsk) => void): Node[] {
+  const seconds = numberIn(ui, 'tg:status:seconds', 0, 0, LONGEST_SECONDS, 0);
+  const row = (onFoes: boolean): Node =>
+    presses(
+      STATUSES.map((name, number) =>
+        press(ui, `tg:status:${onFoes ? 'foes' : 'you'}:${name}`, NAMES[name], () =>
+          ask(statusAsk(number, onFoes, seconds)),
+        ),
+      ),
+    );
+  return [
+    heading('Statuses'),
+    labelled('Seconds, 0 for its own', field('tg:status:seconds', 'Seconds, 0 for its own', { width: 60 })),
+    hint('On you'),
+    row(false),
+    hint('On every foe'),
+    row(true),
+  ];
 }

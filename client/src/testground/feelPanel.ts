@@ -1,8 +1,9 @@
 // The Test Ground's attack feel: each effect laid over the fight's blows switched on or off and set stronger or weaker,
 // kept in this browser, with its numbers shown to copy into the game's own.
 import { FEEL, type Feel } from '../combat/attackFeel.ts';
-import { button, make } from '../editor/dom.ts';
-import { choice, labelled } from './dressPanel.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
+import { LOOK, heading, labelled, line, pick, press, slide, tick } from './panelKit.ts';
 
 const KEPT_KEY = 'overlook.testground.feel';
 
@@ -83,70 +84,69 @@ function keep(feel: Feel): void {
 /** A slider's number as shown beside it. */
 const times = (value: number) => `×${value.toFixed(2)}`;
 
-/** Adds the attack feel's panel to `root`: each effect a card, its switch over its sliders (each with its number, dimmed
- *  while the effect is off), then the numbers to copy and a button back to the feel as made. `onChange` hears the
- *  feel at once and after each change. */
-export function startFeelPanel(root: HTMLElement, onChange: (feel: Feel) => void): void {
-  let feel = kept();
-  const line = make('code', feelLine(feel));
-  const changed = () => {
-    keep(feel);
-    line.textContent = feelLine(feel);
-    onChange(feel);
-  };
-  const shows: (() => void)[] = [];
-  const cards = EFFECTS.map(([name, label, own]) => {
-    const box = make('input');
-    Object.assign(box, { type: 'checkbox', checked: feel[name] });
-    const head = labelled(label, box);
-    head.classList.add('feel-head');
-    const sliders = own.map(([key, text, least, most]) => {
-      const slider = make('input');
-      Object.assign(slider, { type: 'range', min: String(least), max: String(most), step: '0.05' });
-      const number = make('span', '', 'value');
-      slider.addEventListener('input', () => {
-        feel = { ...feel, [key]: Number(slider.value) };
-        number.textContent = times(feel[key]);
-        changed();
+/** The attack feel's panel: its effects, kept in this browser. */
+export class FeelPanel {
+  private feel = kept();
+  private readonly onChange: (feel: Feel) => void;
+
+  /** `onChange` hears the feel at once and after each change. */
+  constructor(onChange: (feel: Feel) => void) {
+    this.onChange = onChange;
+    onChange(this.feel);
+  }
+
+  /** Each effect a card, its switch over its sliders (each with its number, dimmed while the effect is off), then the
+   *  numbers to copy and a press back to the feel as made. */
+  node(ui: Interface): Node[] {
+    const before = this.feel;
+    const cards = EFFECTS.map(([name, label, own]): Node => {
+      const lit = this.feel[name];
+      const ticked = tick(ui, `tg:feel:${name}`, '', lit);
+      if (ticked.ticked !== lit) this.feel = { ...this.feel, [name]: ticked.ticked };
+      const rows = own.map(([key, text, low, high]): Node => {
+        const made = slide(ui, `tg:feel:${key}`, this.feel[key], { low, high, step: 0.05 });
+        if (lit && made.value !== this.feel[key]) this.feel = { ...this.feel, [key]: made.value };
+        return {
+          gap: 6,
+          width: 'grow',
+          alignY: 'center',
+          opacity: lit ? 1 : 0.4,
+          children: [
+            { minWidth: 82, padding: [0, 0, 0, 10], text: { words: text, colour: LOOK.soft, wrap: false } },
+            { ...made.node, disabled: !lit, label: `${text}: ${times(this.feel[key])}` },
+            { minWidth: 40, text: { words: times(this.feel[key]), colour: LOOK.dim, align: 'end' } },
+          ],
+        };
       });
-      const row = labelled(text, slider);
-      row.append(number);
-      return { key, slider, number, row };
+      // The glow's card chooses what it shows.
+      const options = GLOW_CHOICES.map((words, look) => [String(look), words] as const);
+      const shows =
+        name === 'glow' &&
+        labelled(
+          'Shows',
+          pick(
+            ui,
+            'tg:feel:glowLook',
+            options,
+            String(this.feel.glowLook),
+            (look) => (this.feel = { ...this.feel, glowLook: Number(look) }),
+            !lit,
+          ),
+        );
+      return {
+        direction: 'column',
+        width: 'grow',
+        gap: 4,
+        padding: [6, 8],
+        outline: { width: 1, colour: LOOK.line },
+        children: [labelled(label, { ...ticked.node, label: `${label}: ${lit ? 'on' : 'off'}` }), ...rows, shows],
+      };
     });
-    const card = make('div', '', 'feel');
-    card.append(head, ...sliders.map((each) => each.row));
-    // The glow's card chooses what it shows.
-    const options = GLOW_CHOICES.map((text, look) => [String(look), text] as const);
-    const pick = (look: string) => {
-      feel = { ...feel, glowLook: Number(look) };
-      changed();
-    };
-    const shown = name === 'glow' ? choice(options, String(feel.glowLook), pick) : null;
-    if (shown) card.append(labelled('Shows', shown));
-    // The card as the feel has it: its switch, its sliders and numbers, and dimmed while it is off.
-    const show = () => {
-      box.checked = feel[name];
-      card.classList.toggle('off', !feel[name]);
-      for (const { key, slider, number } of sliders) {
-        Object.assign(slider, { value: String(feel[key]), disabled: !feel[name] });
-        number.textContent = times(feel[key]);
-      }
-      if (shown) Object.assign(shown, { value: String(feel.glowLook), disabled: !feel[name] });
-    };
-    box.addEventListener('change', () => {
-      feel = { ...feel, [name]: box.checked };
-      show();
-      changed();
-    });
-    shows.push(show);
-    show();
-    return card;
-  });
-  const reset = button('Back to as made', () => {
-    feel = FEEL;
-    for (const show of shows) show();
-    changed();
-  });
-  root.append(make('h2', 'Attack feel'), ...cards, line, reset);
-  onChange(feel);
+    const reset = press(ui, 'tg:feel:reset', 'Back to as made', () => (this.feel = FEEL));
+    if (this.feel !== before) {
+      keep(this.feel);
+      this.onChange(this.feel);
+    }
+    return [heading('Attack feel'), ...cards, line(feelLine(this.feel)), { children: [reset] }];
+  }
 }

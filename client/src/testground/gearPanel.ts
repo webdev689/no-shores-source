@@ -1,4 +1,3 @@
-import { button, make } from '../editor/dom.ts';
 import { AMMO_FULL, ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import {
   CARRIED,
@@ -20,7 +19,9 @@ import {
   resourceName,
   wearAsks,
 } from '../player/gear.ts';
-import { choice, labelled } from './dressPanel.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
+import { LOOK, field, presses, heading, hint, labelled, line, numberIn, pick, press, title } from './panelKit.ts';
 
 /** What the gear panel shows: the player's gear as the room last sent it, whether they stand at the stall, and the
  *  course's resource nodes within their reach and not yet spent. */
@@ -33,25 +34,67 @@ export interface GearView {
 /** How long a Fruit of Dagon is held before it is eaten, in milliseconds. */
 const HOLD_MS = 800;
 
-/** An item's name in its rarity's colour. */
-function named(item: GearItem): HTMLElement {
-  const name = make('span', itemName(item));
-  name.style.color = RARITIES[item.rarity]?.colour ?? '';
-  name.title = itemWords(item);
-  return name;
+/** Words shown under `id` while the pointer is over it or the keys' focus is on it, as a page's `title` shows. */
+function tip(ui: Interface, id: string, words: string): Node | false {
+  return (
+    (ui.hovered(id) || (ui.keyFocused && ui.focused(id))) && {
+      float: { at: [0, 1], y: 2, z: 20 },
+      fill: '#000000',
+      outline: { width: 1, colour: LOOK.pressLine },
+      padding: [3, 5],
+      maxWidth: 260,
+      children: [{ text: { words } }],
+    }
+  );
+}
+
+/** An item's name in its rarity's colour, its words shown over it. */
+function named(ui: Interface, id: string, item: GearItem): Node {
+  const words = itemWords(item);
+  return {
+    id,
+    focusable: true,
+    label: `${itemName(item)}: ${words}`,
+    children: [
+      { text: { words: itemName(item), colour: RARITIES[item.rarity]?.colour ?? LOOK.words } },
+      tip(ui, id, words),
+    ],
+  };
+}
+
+/** A small triangle, pointing right; turned down for what is open. */
+const ARROW = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 6 6"><path d="M1 0 6 3 1 6Z" fill="#e8e8e8"/></svg>`;
+
+/** The press that opens an item's nodes, its words followed by an arrow, right while shut and down while open (the
+ *  face draws no ▸ or ▾). */
+function opener(made: Node, open: boolean): Node {
+  return {
+    ...made,
+    label: `Nodes: ${open ? 'open' : 'shut'}`,
+    gap: 4,
+    alignY: 'center',
+    children: [
+      ...(made.children ?? []),
+      { width: 6, height: 6, picture: { key: 'tg:arrow', source: { svg: ARROW }, turn: open ? 90 : 0 } },
+    ],
+  };
 }
 
 /** A column's node: bought, chosen, unlocked or locked, and what it costs. */
-function nodeButton(item: GearItem, column: number, node: number, ask: (ask: GearAsk) => void): HTMLElement {
+function nodeButton(ui: Interface, item: GearItem, column: number, node: number, ask: (ask: GearAsk) => void): Node {
   const shown = nodeShown(item, column, node);
-  if (!shown) return make('span');
-  const pressed = button(shown.label, () => {
-    if (shown.ask) ask(shown.ask);
+  if (!shown) return {};
+  const id = `tg:gear:${item.id}:node:${column}:${node}`;
+  const made = press(ui, id, shown.label, () => shown.ask && ask(shown.ask), {
+    active: shown.chosen,
+    disabled: !shown.unlocked || (shown.bought && shown.ask === null && shown.chosen),
   });
-  if (shown.chosen) pressed.classList.add('active');
-  pressed.disabled = !shown.unlocked || (shown.bought && shown.ask === null && shown.chosen);
-  pressed.title = `${shown.words} ${shown.cost}`;
-  return pressed;
+  return {
+    children: [
+      { ...made, label: `${shown.label}: ${shown.words} ${shown.cost}` },
+      tip(ui, id, `${shown.words} ${shown.cost}`),
+    ],
+  };
 }
 
 /** What the player holds besides their gear, as the inventory shows it: Aurem, the one currency, then each stack they
@@ -77,136 +120,173 @@ export function ammoLine(gear: Pick<GearState, 'ammo' | 'ammoMost' | 'ammoShare'
   return `${ammo} · ${gear.crates ?? 0} Ammo crates`;
 }
 
-/** A button that asks only once held down for a moment. */
-function holdButton(label: string, held: () => void): HTMLElement {
-  const pressed = button(label, () => undefined);
-  let timer = 0;
-  const cancel = () => window.clearTimeout(timer);
-  pressed.addEventListener('pointerdown', () => {
-    cancel();
-    timer = window.setTimeout(held, HOLD_MS);
-  });
-  for (const event of ['pointerup', 'pointerleave', 'pointercancel']) pressed.addEventListener(event, cancel);
-  return pressed;
-}
-
 /** The Test Ground's gear panel: the player's level, Prestige and materials, what they wear and carry with each item's
  *  nodes, their Vestiges and vault, the stall and resource nodes within reach, and gear handed out to try the loop. */
-export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): (view: GearView) => void {
-  let shown = '';
-  let open: number | null = null;
-  const grant = { slot: 0, kind: 2, rarity: 0, level: 1, named: NAMED[0]?.id ?? '' };
-  const answer = make('p', '', 'status');
-  const body = make('div');
-  root.append(make('h1', 'Gear'), answer, body);
+export class GearPanel {
+  private readonly ask: (ask: GearAsk) => void;
+  /** The item whose nodes are open. */
+  open: number | null = null;
+  private readonly grant = { slot: 0, kind: 2, rarity: 0, named: NAMED[0]?.id ?? '' };
+  /** The Fruit of Dagon's press held: which, how long, and whether this hold has fed it. */
+  private holding = { id: '', seconds: 0, fed: false };
+  private answered = '';
 
-  const itemRow = (item: GearItem, gear: GearState, view: GearView): HTMLElement => {
-    const row = make('div', '', 'row');
-    const actions: HTMLElement[] = [];
-    if (item.at >= WORN) actions.push(button('Take off', () => ask({ kind: ASKS.takeOff, slot: item.at - WORN })));
+  constructor(ask: (ask: GearAsk) => void) {
+    this.ask = ask;
+  }
+
+  /** A press that asks only once held down on it for a moment: let go or left, it starts again. */
+  private hold(ui: Interface, id: string, words: string, seconds: number, held: () => void): Node {
+    if (ui.pressing(id) && ui.hovered(id)) {
+      if (this.holding.id !== id) this.holding = { id, seconds: 0, fed: false };
+      this.holding.seconds += seconds;
+      if (!this.holding.fed && this.holding.seconds * 1000 >= HOLD_MS) {
+        this.holding.fed = true;
+        held();
+      }
+    } else if (this.holding.id === id) this.holding = { id: '', seconds: 0, fed: false };
+    return press(ui, id, words, () => undefined);
+  }
+
+  private itemRow(ui: Interface, item: GearItem, gear: GearState, view: GearView, seconds: number): Node {
+    const { ask } = this;
+    const id = `tg:gear:${item.id}`;
+    const actions: Node[] = [];
+    if (item.at >= WORN)
+      actions.push(press(ui, `${id}:off`, 'Take off', () => ask({ kind: ASKS.takeOff, slot: item.at - WORN })));
     if (item.at === CARRIED) {
-      for (const wear of wearAsks(item)) actions.push(button(wear.label, () => ask(wear.ask)));
-      actions.push(button('Dismantle', () => ask({ kind: ASKS.dismantle, item: item.id })));
-      if (view.atStall || gear.atMage) actions.push(button('Vault', () => ask({ kind: ASKS.store, item: item.id })));
+      wearAsks(item).forEach((wear, place) =>
+        actions.push(press(ui, `${id}:wear${place}`, wear.label, () => ask(wear.ask))),
+      );
+      actions.push(press(ui, `${id}:dismantle`, 'Dismantle', () => ask({ kind: ASKS.dismantle, item: item.id })));
+      if (view.atStall || gear.atMage)
+        actions.push(press(ui, `${id}:vault`, 'Vault', () => ask({ kind: ASKS.store, item: item.id })));
     }
-    if (item.at === VAULTED) actions.push(button('Take out', () => ask({ kind: ASKS.withdraw, item: item.id })));
+    if (item.at === VAULTED)
+      actions.push(press(ui, `${id}:out`, 'Take out', () => ask({ kind: ASKS.withdraw, item: item.id })));
     if (item.columns.length > 0)
       actions.push(
-        button(open === item.id ? 'Nodes ▾' : 'Nodes ▸', () => {
-          open = open === item.id ? null : item.id;
-          shown = '';
-        }),
+        opener(
+          press(ui, `${id}:nodes`, 'Nodes', () => {
+            this.open = this.open === item.id ? null : item.id;
+          }),
+          this.open === item.id,
+        ),
       );
-    row.append(...actions);
-    const card = make('div', '', 'kit-item');
-    card.append(named(item), make('div', itemNumbers(item), 'hint'), row);
-    if (open !== item.id) return card;
-    const grid = make('div', '', 'gear');
-    item.columns.forEach((column, index) => {
-      const nodes = Math.max(1, column.traits.length);
-      const heading = `${COLUMNS[column.kind] ?? ''} · ${column.xp.toLocaleString()} XP`;
-      grid.append(
-        make('div', heading, 'hint'),
-        ...Array.from({ length: nodes }, (unused, node) => nodeButton(item, index, node, ask)),
-      );
-    });
-    grid.append(holdButton('Hold to feed a Fruit of Dagon', () => ask({ kind: ASKS.feed, item: item.id })));
-    card.append(grid);
-    return card;
-  };
+    const grid: Node | false = this.open === item.id && {
+      id: `${id}:grid`,
+      direction: 'column',
+      width: 'grow',
+      maxHeight: 320,
+      scroll: true,
+      padding: [2, 6],
+      gap: 2,
+      outline: { width: 1, colour: LOOK.line },
+      children: [
+        ...item.columns.flatMap((column, index) => [
+          line(`${COLUMNS[column.kind] ?? ''} · ${column.xp.toLocaleString()} XP`, LOOK.dim),
+          presses(
+            Array.from({ length: Math.max(1, column.traits.length) }, (unused, node) =>
+              nodeButton(ui, item, index, node, ask),
+            ),
+          ),
+        ]),
+        {
+          children: [
+            this.hold(ui, `${id}:feed`, 'Hold to feed a Fruit of Dagon', seconds, () =>
+              ask({ kind: ASKS.feed, item: item.id }),
+            ),
+          ],
+        },
+      ],
+    };
+    return {
+      direction: 'column',
+      width: 'grow',
+      gap: 2,
+      padding: [6, 0, 2, 0],
+      children: [
+        itemName(item) !== '' && named(ui, `${id}:name`, item),
+        line(itemNumbers(item), LOOK.dim),
+        { gap: 8, wrap: true, width: 'grow', padding: [2, 0, 4, 0], children: actions },
+        grid,
+        { width: 'grow', height: 1, fill: LOOK.rule, minHeight: 1 },
+      ],
+    };
+  }
 
-  const grants = (): HTMLElement[] => {
-    const level = make('input');
-    Object.assign(level, { type: 'number', min: '1', max: '20', value: String(grant.level) });
-    level.addEventListener('change', () => {
-      grant.level = Math.min(20, Math.max(1, Number(level.value) || 1));
-    });
+  /** Gear handed out, to try the loop without playing it through. */
+  private grants(ui: Interface): Node[] {
+    const { ask, grant } = this;
+    const level = Math.round(numberIn(ui, 'tg:grant:level', 1, 1, 20, 1));
     const slots = SLOTS.slice(0, 6).map((slot, index) => [String(index), slot] as const);
     const kinds = KINDS.map((kind, index) => [String(index), kindName(index)] as const).filter(
       ([number, name]) => name && number !== String(KINDS.indexOf('cloak')),
     );
     const lesser = RARITIES.slice(0, 3).map((rarity, index) => [String(index), rarity.name] as const);
     return [
-      make('h2', 'Hand out'),
-      labelled('Level', level),
+      heading('Hand out'),
+      labelled('Level', field('tg:grant:level', 'Level', { width: 60 })),
       labelled(
         'Slot',
-        choice(slots, String(grant.slot), (value) => (grant.slot = Number(value))),
+        pick(ui, 'tg:grant:slot', slots, String(grant.slot), (value) => (grant.slot = Number(value))),
       ),
-      ...RARITIES.map((rarity, index) =>
-        button(`${rarity.name} Vestige`, () =>
-          ask({ kind: ASKS.grantVestige, rarity: index, slot: grant.slot, level: grant.level }),
+      presses(
+        RARITIES.map((rarity, index) =>
+          press(ui, `tg:grant:vestige${index}`, `${rarity.name} Vestige`, () =>
+            ask({ kind: ASKS.grantVestige, rarity: index, slot: grant.slot, level }),
+          ),
         ),
       ),
       labelled(
         'Kind',
-        choice(kinds, String(grant.kind), (value) => (grant.kind = Number(value))),
+        pick(ui, 'tg:grant:kind', kinds, String(grant.kind), (value) => (grant.kind = Number(value))),
       ),
       labelled(
         'Rarity',
-        choice(lesser, String(grant.rarity), (value) => (grant.rarity = Number(value))),
+        pick(ui, 'tg:grant:rarity', lesser, String(grant.rarity), (value) => (grant.rarity = Number(value))),
       ),
-      button('Hand out that item', () =>
-        ask({ kind: ASKS.grantItem, itemKind: grant.kind, rarity: grant.rarity, level: grant.level }),
-      ),
+      presses([
+        press(ui, 'tg:grant:item', 'Hand out that item', () =>
+          ask({ kind: ASKS.grantItem, itemKind: grant.kind, rarity: grant.rarity, level }),
+        ),
+      ]),
       labelled(
         'Named',
-        choice(
+        pick(
+          ui,
+          'tg:grant:named',
           NAMED.map((each) => [each.id, `${each.name} (${each.rarity})`] as const),
           grant.named,
           (value) => (grant.named = value),
         ),
       ),
-      button('Hand out the named item', () => ask({ kind: ASKS.grantNamed, named: grant.named })),
-      button('50 of every material', () => ask({ kind: ASKS.grantMaterials, count: 50 })),
-      button('10,000 XP', () => ask({ kind: ASKS.grantXp, count: 10_000 })),
-      button('XP to level 20', () => ask({ kind: ASKS.grantXp, count: 190_000 })),
-      button('Full ammo', () => ask({ kind: ASKS.grantAmmo, count: AMMO_FULL })),
-      button('No ammo', () => ask({ kind: ASKS.grantAmmo, count: 0 })),
-      button('5 Ammo crates', () => ask({ kind: ASKS.grantCrates, count: 5 })),
-      button('Use an Ammo crate', () => ask({ kind: ASKS.useCrate })),
+      presses([
+        press(ui, 'tg:grant:namedItem', 'Hand out the named item', () =>
+          ask({ kind: ASKS.grantNamed, named: grant.named }),
+        ),
+        press(ui, 'tg:grant:materials', '50 of every material', () => ask({ kind: ASKS.grantMaterials, count: 50 })),
+        press(ui, 'tg:grant:xp', '10,000 XP', () => ask({ kind: ASKS.grantXp, count: 10_000 })),
+        press(ui, 'tg:grant:xp20', 'XP to level 20', () => ask({ kind: ASKS.grantXp, count: 190_000 })),
+        press(ui, 'tg:grant:ammo', 'Full ammo', () => ask({ kind: ASKS.grantAmmo, count: AMMO_FULL })),
+        press(ui, 'tg:grant:noAmmo', 'No ammo', () => ask({ kind: ASKS.grantAmmo, count: 0 })),
+        press(ui, 'tg:grant:crates', '5 Ammo crates', () => ask({ kind: ASKS.grantCrates, count: 5 })),
+        press(ui, 'tg:grant:useCrate', 'Use an Ammo crate', () => ask({ kind: ASKS.useCrate })),
+      ]),
     ];
-  };
+  }
 
-  return (view: GearView) => {
+  /** The panel as `view` has it, `seconds` after the last frame. */
+  node(ui: Interface, view: GearView, seconds: number): Node[] {
     const { gear } = view;
-    const key = JSON.stringify([
-      gear?.answered,
-      gear?.items.length,
-      gear?.drops.length,
-      gear?.ammo,
-      gear?.ammoShare,
-      gear?.crates,
-      view.atStall,
-      view.nodesInReach,
-    ]);
-    if (key === shown && gear) return;
-    shown = key;
-    if (!gear) {
-      body.replaceChildren(make('p', 'Waiting for the room…', 'hint'));
-      return;
+    const { ask } = this;
+    if (!gear) return [title('Gear'), hint('Waiting for the room…')];
+    const answer = answerText(gear.answer);
+    // The room's answer is said as it changes, a refusal with why.
+    if (answer !== this.answered) {
+      this.answered = answer;
+      if (answer) ui.speak(answer);
     }
-    answer.textContent = answerText(gear.answer);
     const opened = gear.items.find((item) => item.id === gear.identified);
     const level = `Level ${gear.level} · Prestige ${gear.prestige} · Defense ${gear.defense} · XP ${gear.xp.toLocaleString()}`;
     const wornItems = SLOTS.map((unused, slot) => gear.items.find((item) => item.at === WORN + slot)).filter(
@@ -214,46 +294,53 @@ export function startGearPanel(root: HTMLElement, ask: (ask: GearAsk) => void): 
     );
     const carried = gear.items.filter((item) => item.at === CARRIED).sort((one, two) => one.bucket - two.bucket);
     const vaulted = gear.items.filter((item) => item.at === VAULTED);
-    const vestiges = gear.vestiges.map((vestige) => {
-      const row = make('div', '', 'row');
-      const name = make(
-        'span',
-        `${RARITIES[vestige.rarity]?.name ?? ''} Vestige: ${SLOTS[vestige.slot] ?? ''}, level ${vestige.level}`,
-      );
-      name.style.color = RARITIES[vestige.rarity]?.colour ?? '';
-      row.append(name);
-      if (vestige.vaulted) row.append(button('Take out', () => ask({ kind: ASKS.withdrawVestige, item: vestige.id })));
-      else {
-        row.append(button('Identify', () => ask({ kind: ASKS.identify, item: vestige.id })));
-        if (view.atStall || gear.atMage)
-          row.append(button('Vault', () => ask({ kind: ASKS.storeVestige, item: vestige.id })));
-      }
-      return row;
+    const row = (item: GearItem) => this.itemRow(ui, item, gear, view, seconds);
+    const vestiges = gear.vestiges.map((vestige): Node => {
+      const id = `tg:vestige:${vestige.id}`;
+      const words = `${RARITIES[vestige.rarity]?.name ?? ''} Vestige: ${SLOTS[vestige.slot] ?? ''}, level ${vestige.level}`;
+      const presses = vestige.vaulted
+        ? [press(ui, `${id}:out`, 'Take out', () => ask({ kind: ASKS.withdrawVestige, item: vestige.id }))]
+        : [
+            press(ui, `${id}:identify`, 'Identify', () => ask({ kind: ASKS.identify, item: vestige.id })),
+            (view.atStall || gear.atMage) &&
+              press(ui, `${id}:vault`, 'Vault', () => ask({ kind: ASKS.storeVestige, item: vestige.id })),
+          ];
+      return {
+        gap: 6,
+        width: 'grow',
+        alignY: 'center',
+        children: [
+          { width: 'grow', text: { words, colour: RARITIES[vestige.rarity]?.colour ?? LOOK.words } },
+          ...presses,
+        ],
+      };
     });
-    const nodes = view.nodesInReach.map(({ node, resource }) =>
-      button(`Gather ${resourceName(resource)}`, () => ask({ kind: ASKS.gather, node })),
-    );
-    body.replaceChildren(
-      make('p', level),
-      make('p', heldLine(gear), 'hint'),
-      make('p', ammoLine(gear), 'hint'),
-      ...(opened && opened.at === CARRIED ? [make('p', `The Vestige opened: ${itemName(opened)}.`)] : []),
-      make(
-        'p',
+    const nodes = view.nodesInReach.map(({ node, resource }) => ({
+      children: [
+        press(ui, `tg:gather:${node}`, `Gather ${resourceName(resource)}`, () => ask({ kind: ASKS.gather, node })),
+      ],
+    }));
+    return [
+      title('Gear'),
+      answer && hint(answer),
+      hint(level, LOOK.words),
+      hint(heldLine(gear)),
+      hint(ammoLine(gear)),
+      opened && opened.at === CARRIED && hint(`The Vestige opened: ${itemName(opened)}.`, LOOK.words),
+      hint(
         view.atStall || gear.atMage
           ? 'At the stall: Vestiges open, and the vault is here.'
           : 'The stall is south-east of the start.',
-        'hint',
       ),
       ...nodes,
-      make('h2', 'Worn'),
-      ...wornItems.map((item) => itemRow(item, gear, view)),
-      make('h2', `Carried`),
-      ...carried.map((item) => itemRow(item, gear, view)),
-      make('h2', `Vestiges${gear.drops.length > 0 ? ` (${gear.drops.length} lying for you)` : ''}`),
+      heading('Worn'),
+      ...wornItems.map(row),
+      heading('Carried'),
+      ...carried.map(row),
+      heading(`Vestiges${gear.drops.length > 0 ? ` (${gear.drops.length} lying for you)` : ''}`),
       ...vestiges,
-      ...(vaulted.length > 0 ? [make('h2', 'In the vault'), ...vaulted.map((item) => itemRow(item, gear, view))] : []),
-      ...grants(),
-    );
-  };
+      ...(vaulted.length > 0 ? [heading('In the vault'), ...vaulted.map(row)] : []),
+      ...this.grants(ui),
+    ].filter((child): child is Node => Boolean(child));
+  }
 }

@@ -1,8 +1,11 @@
-import { button, make } from '../editor/dom.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
-import { type OwnHands, choice, dressControls, labelled } from './dressPanel.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
+import { type OwnHands, dressNodes } from './dressPanel.ts';
+import { field, heading, presses, hint, labelled, numberIn, pick, press, title, slide, tick } from './panelKit.ts';
 import type { Placed } from '../player/figures.ts';
+import type { Measured } from '../network/linkMeasure.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import { type FoeType, factionsOf, rankChoices } from '../rules/roster.ts';
 import { ELEMENTS } from '../player/gear.ts';
@@ -57,66 +60,6 @@ const CONTROLS = [
   'The wheel moves between first and third person; Mouse4 switches straight.',
 ];
 
-/** The foes the panel stands: a faction, one of its types (with where it is met) and one of the ranks that type comes
- *  in, each list following the one before, its level and its shield; then spawn one, or send every foe away. */
-function foeControls(roster: readonly FoeType[], fight: PanelHandlers['fight']): HTMLElement {
-  const section = make('div');
-  const asked = { level: 0, shield: 0 };
-  const shield = make('select');
-  ['No shield', ...ELEMENTS.flatMap((each) => (each ? [`${each.name} shield`] : []))].forEach((name, element) =>
-    shield.append(Object.assign(make('option', name), { value: String(element) })),
-  );
-  shield.addEventListener('change', () => (asked.shield = Number(shield.value) || 0));
-  const level = make('input');
-  Object.assign(level, { type: 'number', min: '0', max: '30', value: '0' });
-  level.addEventListener('change', () => {
-    asked.level = Math.min(30, Math.max(0, Math.round(Number(level.value) || 0)));
-  });
-  const factions = factionsOf(roster);
-  let [faction] = factions[0] ?? [0];
-  let type = roster.find((each) => each.faction === faction);
-  let rank = type?.ranks[0] ?? 0;
-  const show = () => {
-    const types = roster.filter((each) => each.faction === faction);
-    const typeOptions = types.map((each) => [String(each.type), `${each.name} (${each.domain})`] as const);
-    section.replaceChildren(
-      labelled(
-        'Faction',
-        choice(
-          factions.map(([number, name]) => [String(number), name] as const),
-          String(faction),
-          (value) => {
-            faction = Number(value);
-            type = roster.find((each) => each.faction === faction);
-            rank = type?.ranks[0] ?? 0;
-            show();
-          },
-        ),
-      ),
-      labelled(
-        'Type',
-        choice(typeOptions, String(type?.type ?? ''), (value) => {
-          type = types.find((each) => each.type === Number(value));
-          rank = type?.ranks[0] ?? 0;
-          show();
-        }),
-      ),
-      labelled(
-        'Rank',
-        choice(type ? rankChoices(type) : [], String(rank), (value) => {
-          rank = Number(value);
-        }),
-      ),
-      labelled('Level (0: none)', level),
-      labelled('Shield', shield),
-      button('Spawn', () => type && fight({ type: type.type, rank, shield: asked.shield }, asked.level)),
-      button('Clear', () => fight('clear', 0)),
-    );
-  };
-  show();
-  return section;
-}
-
 /** The player's own hands, when the chosen figure is theirs: what their gear wears and the light carried, and the asks
  *  that change them. */
 function own(state: PanelState, chosen: Placed, { wear, carry }: PanelHandlers): OwnHands | null {
@@ -125,101 +68,158 @@ function own(state: PanelState, chosen: Placed, { wear, carry }: PanelHandlers):
 
 /** The Test Ground's panel: the foes to stand from the rules' `roster`, the figures, and the chosen one's move, facing
  *  and dress. */
-export function startPanel(
-  root: HTMLElement,
-  roster: readonly FoeType[],
-  handlers: PanelHandlers,
-): (state: PanelState) => void {
-  const garmentFilter = { text: '' };
-  let shown = '';
-  const status = make('p', '', 'status');
-  const body = make('div');
-  const foes = foeControls(roster, handlers.fight);
-  root.append(make('h1', 'Test Ground'), ...CONTROLS.map((line) => make('p', line, 'hint')), body, status);
+export class Panel {
+  private readonly roster: readonly FoeType[];
+  private readonly handlers: PanelHandlers;
+  private faction: number;
+  private type: FoeType | undefined;
+  private rank: number;
+  /** The shield's element, by the gear crate's numbers: 0 for none. */
+  private shield = 0;
 
-  const moving = (state: PanelState, placed: Placed): HTMLElement[] => {
+  constructor(roster: readonly FoeType[], handlers: PanelHandlers) {
+    this.roster = roster;
+    this.handlers = handlers;
+    [this.faction] = factionsOf(roster)[0] ?? [0];
+    this.type = roster.find((each) => each.faction === this.faction);
+    this.rank = this.type?.ranks[0] ?? 0;
+  }
+
+  /** The foes the panel stands: a faction, one of its types (with where it is met) and one of the ranks that type
+   *  comes in, each list following the one before, its level and its shield; then spawn one, or send every foe away. */
+  private foes(ui: Interface): Node[] {
+    const types = this.roster.filter((each) => each.faction === this.faction);
+    const level = Math.round(numberIn(ui, 'tg:foe:level', 0, 0, 30, 0));
+    const shields = ['No shield', ...ELEMENTS.flatMap((each) => (each ? [`${each.name} shield`] : []))];
+    return [
+      labelled(
+        'Faction',
+        pick(
+          ui,
+          'tg:foe:faction',
+          factionsOf(this.roster).map(([number, name]) => [String(number), name] as const),
+          String(this.faction),
+          (value) => {
+            this.faction = Number(value);
+            this.type = this.roster.find((each) => each.faction === this.faction);
+            this.rank = this.type?.ranks[0] ?? 0;
+          },
+        ),
+      ),
+      labelled(
+        'Type',
+        pick(
+          ui,
+          'tg:foe:type',
+          types.map((each) => [String(each.type), `${each.name} (${each.domain})`] as const),
+          String(this.type?.type ?? ''),
+          (value) => {
+            this.type = types.find((each) => each.type === Number(value));
+            this.rank = this.type?.ranks[0] ?? 0;
+          },
+        ),
+      ),
+      labelled(
+        'Rank',
+        pick(ui, 'tg:foe:rank', this.type ? rankChoices(this.type) : [], String(this.rank), (value) => {
+          this.rank = Number(value);
+        }),
+      ),
+      labelled('Level (0: none)', field('tg:foe:level', 'Level (0: none)', { width: 60 })),
+      labelled(
+        'Shield',
+        pick(
+          ui,
+          'tg:foe:shield',
+          shields.map((name, element) => [String(element), name] as const),
+          String(this.shield),
+          (value) => (this.shield = Number(value) || 0),
+        ),
+      ),
+      presses([
+        press(ui, 'tg:foe:spawn', 'Spawn', () => {
+          if (this.type) this.handlers.fight({ type: this.type.type, rank: this.rank, shield: this.shield }, level);
+        }),
+        press(ui, 'tg:foe:clear', 'Clear', () => this.handlers.fight('clear', 0)),
+      ]),
+    ];
+  }
+
+  /** The chosen figure's move: the player's plays once; another's is set, with its facing and whether it turns. */
+  private moving(ui: Interface, state: PanelState, placed: Placed): Node[] {
+    const { handlers } = this;
     const drawn = state.looks.bodies[placed.dress.body];
     const anims = Object.keys(drawn?.anims ?? {})
       .sort()
       .map((key) => [key, `${key} (${drawn?.anims[key]?.frames ?? 0})`] as const);
-    const facing = make('input');
-    Object.assign(facing, {
-      type: 'range',
-      min: '0',
-      max: '359',
-      value: String(Math.round((placed.facing * 180) / Math.PI)),
-    });
-    facing.addEventListener('input', () => {
-      placed.facing = (Number(facing.value) * Math.PI) / 180;
-    });
-    const spin = make('input');
-    Object.assign(spin, { type: 'checkbox', checked: placed.spin });
-    spin.addEventListener('change', () => {
-      placed.spin = spin.checked;
-    });
     if (placed.id === state.playerId)
       return [
         labelled(
           'Play once',
-          choice([['', 'a move…'], ...anims], '', (value) => value && handlers.act(value)),
+          pick(ui, 'tg:fig:act', [['', 'a move…'], ...anims], '', (value) => value && handlers.act(value)),
         ),
       ];
+    const degrees = Math.round((placed.facing * 180) / Math.PI);
+    const facing = slide(ui, 'tg:fig:facing', degrees, { low: 0, high: 359, step: 1 });
+    if (facing.value !== degrees) placed.facing = (facing.value * Math.PI) / 180;
+    const spin = tick(ui, 'tg:fig:spin', '', placed.spin);
+    placed.spin = spin.ticked;
     return [
       labelled(
         'Move',
-        choice(anims, placed.anim, (value) => {
+        pick(ui, 'tg:fig:move', anims, placed.anim, (value) => {
           placed.anim = value;
           handlers.change();
         }),
       ),
-      labelled('Facing', facing),
-      labelled('Turn round', spin),
+      labelled('Facing', { ...facing.node, label: `Facing: ${facing.value} degrees` }),
+      labelled('Turn round', { ...spin.node, label: `Turn round: ${spin.ticked ? 'on' : 'off'}` }),
     ];
-  };
+  }
 
-  return (state: PanelState) => {
-    status.textContent = state.status;
-    // Rebuilt only when the figures, the chosen one or the forge's looks (once they load) change, so typing in a
-    // field keeps its focus; another player's move changes every tick, so it is left out.
+  /** The panel as `state` has it. */
+  node(ui: Interface, state: PanelState): Node[] {
+    const { handlers } = this;
     const moveShown = (placed: Placed) => placed.id !== state.playerId && !state.remote.has(placed);
-    const figures = state.figures.map((each) => [each.id, moveShown(each) ? each.anim : '', each.dress]);
-    const key = JSON.stringify([figures, state.chosen?.id, Object.keys(state.looks.bodies).length, state.worn]);
-    if (key === shown) return;
-    shown = key;
-    const speed = make('input');
-    Object.assign(speed, { type: 'number', min: '1', max: '30', value: String(state.fps) });
-    speed.addEventListener('change', () => handlers.fps(Number(speed.value) || state.fps));
-    const list = make('div', '', 'figures');
-    for (const placed of state.figures) {
+    const typed = ui.fieldText('tg:fig:fps', String(state.fps)).trim();
+    const fps = Number(typed);
+    if (typed !== '' && Number.isFinite(fps) && fps !== state.fps) handlers.fps(fps);
+    const figures = state.figures.map((placed) => {
       const who = placed.id === state.playerId ? 'You' : `${placed.id}`;
-      const label = `${who}: ${placed.dress.race}, ${placed.dress.body}${moveShown(placed) ? `, ${placed.anim}` : ''}`;
-      const pick = button(label, () => handlers.choose(placed.id));
-      if (placed === state.chosen) pick.classList.add('active');
-      list.append(pick);
-    }
+      const words = `${who}: ${placed.dress.race}, ${placed.dress.body}${moveShown(placed) ? `, ${placed.anim}` : ''}`;
+      return press(ui, `tg:fig:${placed.id}`, words, () => handlers.choose(placed.id), {
+        active: placed === state.chosen,
+        width: 'grow',
+      });
+    });
     const chosen = state.chosen;
-    body.replaceChildren(
-      make('h2', 'Foes'),
-      foes,
-      make('h2', 'Figures'),
-      list,
-      button('Add a figure ahead', handlers.add),
-      button('Remove the chosen', handlers.remove),
-      labelled('Figures’ frames a second', speed),
+    return [
+      title('Test Ground'),
+      ...CONTROLS.map((words) => hint(words)),
+      heading('Foes'),
+      ...this.foes(ui),
+      heading('Figures'),
+      { direction: 'column', gap: 4, width: 'grow', children: figures },
+      presses([
+        press(ui, 'tg:fig:add', 'Add a figure ahead', handlers.add),
+        press(ui, 'tg:fig:remove', 'Remove the chosen', handlers.remove),
+      ]),
+      labelled('Figures’ frames a second', field('tg:fig:fps', 'Figures’ frames a second', { width: 60 })),
       ...(chosen
         ? [
-            make('h2', 'Chosen figure'),
-            ...moving(state, chosen),
-            ...dressControls(
-              state.looks,
-              state.hair,
-              chosen,
-              garmentFilter,
-              handlers.change,
-              own(state, chosen, handlers),
-            ),
+            heading('Chosen figure'),
+            ...this.moving(ui, state, chosen),
+            ...dressNodes(ui, state.looks, state.hair, chosen, handlers.change, own(state, chosen, handlers)),
           ]
         : []),
-    );
-  };
+      hint(state.status),
+    ];
+  }
+}
+
+/** The room's readout, joined with `?room=`: its name, the player's number in it, and the link's lag (how much it
+ *  strays) and loss as the page measures them. */
+export function roomLine(room: string, player: number, measured: Measured): string {
+  const lag = `lag ${Math.round(measured.lagMs)} ms (±${Math.round(measured.strayMs)})`;
+  return `Room ${room}, player ${player}: ${lag}, ${Math.round(measured.lost * 100)}% lost.`;
 }
