@@ -97,7 +97,7 @@ test('a join whose rules fail closes its socket, and the next join asks for the 
   assert.equal(sessions.length, 1, 'and the second join sails');
   assert.equal(FakeSocket.made[1]?.closed, false);
   berth.leave();
-  assert.equal(FakeSocket.made[1]?.closed, true, 'brought in, she leaves');
+  assert.equal(FakeSocket.made[1]?.closed, true, 'brought in, it leaves');
 });
 
 test('a join let go before the room answers is dropped, its socket closed', async () => {
@@ -111,7 +111,7 @@ test('a join let go before the room answers is dropped, its socket closed', asyn
   );
   berth.leave();
   await settled();
-  assert.equal(answered.length, 0, 'neither joined nor failed: she moved on');
+  assert.equal(answered.length, 0, 'neither joined nor failed: it moved on');
   assert.equal(FakeSocket.made[0]?.closed, true);
   berth.join(
     START,

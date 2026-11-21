@@ -11,7 +11,7 @@ export const RUNG_WORDS: Readonly<Record<number, string>> = {
 const CLIMB_KEYS = ['w', 'arrowup'];
 const COME_DOWN_KEYS = ['s', 'arrowdown'];
 
-/** The helm for a step: A and D (or the side arrows) held steer, Shift held rows her sideways, and one press of W or
+/** The helm for a step: A and D (or the side arrows) held steer, Shift held rows it sideways, and one press of W or
  *  S (or the up and down arrows) climbs or comes down a rung. */
 export function helmOf(held: ReadonlySet<string>, press: string | undefined): Helm {
   const steer = Number(held.has('d') || held.has('arrowright')) - Number(held.has('a') || held.has('arrowleft'));
@@ -19,7 +19,7 @@ export function helmOf(held: ReadonlySet<string>, press: string | undefined): He
   return { steer, crab: held.has('shift'), climb };
 }
 
-/** Whether a key moves her up or down the ladder: a press of one is kept until a step takes it. */
+/** Whether a key moves it up or down the ladder: a press of one is kept until a step takes it. */
 export function isRungKey(key: string): boolean {
   return CLIMB_KEYS.includes(key) || COME_DOWN_KEYS.includes(key);
 }

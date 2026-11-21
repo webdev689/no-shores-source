@@ -11,12 +11,11 @@ const MESSAGE_S = 3.5;
 const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 
 /**
- * The owner's Sloop in a fleet room, as the World Editor shows her: her session there (her orders and her predicted
- * ship), her wake as she moves, and what the panel says of her, the nearest captain and what happened.
+ * The owner's Sloop in a fleet room, as the World Editor shows it: its session there (its orders and its predicted
+ * ship), its wake as it moves, and what the panel says of it, the nearest captain and what happened.
  */
 export class FleetSloop extends Afloat {
   readonly session: FleetSession;
-  private events: FightEvent[] = [];
   private messages: { readonly text: string; readonly until: number }[] = [];
 
   constructor(session: FleetSession) {
@@ -39,26 +38,26 @@ export class FleetSloop extends Afloat {
     return this.session.balls(now);
   }
 
-  /** Her fires aboard by the room's word, on her deck as predicted (x, y, heave); none once she sinks. */
+  /** Its fires aboard by the room's word, on its deck as predicted (x, y, heave); none once it sinks. */
   fires(): readonly [number, number, number, number] {
     const own = this.session.own();
     const [x = 0, y = 0] = this.ship;
     return [x, y, this.pose.heave, own && own.state !== 'sinking' ? own.fires : 0];
   }
 
-  /** Her look's lay, as the room would lay it now. */
+  /** Its look's lay, as the room would lay it now. */
   lay(look: FleetLook, now: number): FleetLay | null {
     return this.session.lay(look, now);
   }
 
-  /** Her orders owed for `seconds` sent, her ship taken as predicted (her wake stirred by her run), and what happened
+  /** Its orders owed for `seconds` sent, its ship taken as predicted (its wake stirred by its run), and what happened
    *  made words for the panel. */
   advance(seconds: number, input: FleetInput, now: number): void {
     this.session.advance(seconds, input, now);
     this.moveTo(new Float64Array(this.session.shipFloats()) as ShipFloats, this.session.shipPose());
     for (const event of this.session.takeEvents()) {
-      this.events.push(event);
-      const words = event.kind === 'gone' ? goneWords(event.ship, event.sunk) : wordsFor(event, 'captain’s Sloop');
+      const words =
+        event.kind === 'gone' ? goneWords(event.ship, event.sunk) : wordsFor(event, () => 'captain’s Sloop');
       if (words) this.say(words, now);
     }
   }
@@ -67,14 +66,12 @@ export class FleetSloop extends Afloat {
     this.messages = [...this.messages.filter((message) => message.text !== text), { text, until: now + MESSAGE_S }];
   }
 
-  /** The events since last taken, for the effects. */
+  /** The fight's events since last taken, for its feel. */
   takeEvents(): FightEvent[] {
-    const taken = this.events;
-    this.events = [];
-    return taken;
+    return this.session.takeFeel();
   }
 
-  /** The panel's lines at `now`: her hurts and guns, the nearest captain's, her lay, the broadside warning, the fleet,
+  /** The panel's lines at `now`: its hurts and guns, the nearest captain's, its lay, the broadside warning, the fleet,
    *  and the messages. */
   lines(now: number, lay: FleetLay | null): string[] {
     const own = this.session.own();
@@ -98,7 +95,7 @@ export class FleetSloop extends Afloat {
     );
     if (nearest) {
       const { hurts } = nearest;
-      const named = `${shipName(nearest.faction)} (${RANKS[nearest.rank - 1] ?? 'Major'})`;
+      const named = `${shipName(nearest.faction, nearest.hull)} (${RANKS[nearest.rank - 1] ?? 'Major'})`;
       lines.push(
         `${named}, ${Math.round(apart(nearest))} m off, ${nearest.state === 'afloat' ? nearest.mode : nearest.state}:` +
           ` hull ${whole(hurts.hull, hurts.maxHull)}, sails ${whole(hurts.sail, hurts.maxSail)}, ${Math.round(hurts.crew)} men.`,
@@ -109,7 +106,7 @@ export class FleetSloop extends Afloat {
     const broadside = captains.some(
       (vessel) => vessel.target === id && vessel.runOut !== 0 && vessel.state === 'afloat',
     );
-    if (broadside) lines.push('BROADSIDE! Brace (C).');
+    if (broadside) lines.push('Broadside: C to brace.');
     const players = this.others().length - captains.length;
     lines.push(
       `In the fleet: ${players} other ${players === 1 ? 'ship' : 'ships'}, ${captains.length} ${captains.length === 1 ? 'captain' : 'captains'}. F calls a captain, X sends them off.`,

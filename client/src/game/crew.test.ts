@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { cellHeight, SLOOP_DECK } from '../ships/deck.ts';
 import { clearLeg, Crew, STAND_INS } from './crew.ts';
 
-test('the stand-in hands walk her deck from spot to spot, always on it and clear of her wheel', () => {
+test('the stand-in hands walk its deck from spot to spot, always on it and clear of its wheel', () => {
   const crew = new Crew(SLOOP_DECK, 7);
   assert.equal(crew.hands.length, STAND_INS);
   const [helmX, helmY] = SLOOP_DECK.helm;
@@ -12,7 +12,7 @@ test('the stand-in hands walk her deck from spot to spot, always on it and clear
   for (let tick = 0; tick < 60 * 40; tick++) {
     crew.step(1 / 60);
     for (const hand of crew.hands) {
-      assert.notEqual(cellHeight(SLOOP_DECK, hand.x, hand.y), null, `on her deck at ${hand.x}, ${hand.y}`);
+      assert.notEqual(cellHeight(SLOOP_DECK, hand.x, hand.y), null, `on its deck at ${hand.x}, ${hand.y}`);
       walked ||= hand.walking;
     }
   }
@@ -38,5 +38,5 @@ test('the same seed walks the same crew, however the seconds are cut', () => {
 
 test("a leg is clear only where every point of it is deck, without a step past the planks' own", () => {
   assert.ok(clearLeg(SLOOP_DECK, SLOOP_DECK.helm, [SLOOP_DECK.helm[0] - 0.3, SLOOP_DECK.helm[1]]));
-  assert.ok(!clearLeg(SLOOP_DECK, SLOOP_DECK.helm, [5, SLOOP_DECK.helm[1]]), 'over her side');
+  assert.ok(!clearLeg(SLOOP_DECK, SLOOP_DECK.helm, [5, SLOOP_DECK.helm[1]]), 'over its side');
 });

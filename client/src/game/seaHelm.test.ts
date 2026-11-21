@@ -17,7 +17,7 @@ const near = (found: readonly number[] | null, wanted: readonly number[], why = 
     `${why} ${found}`,
   );
 
-test('straight on reaches the whole way over open water, along her heading', () => {
+test('straight on reaches the whole way over open water, along its heading', () => {
   near(clearAhead(ISLAND, place(0, 0), 0), place(0, -AHEAD.reachM));
   near(clearAhead(ISLAND, place(0, 0), Math.PI), place(0, AHEAD.reachM));
   near(clearAhead(ISLAND, place(0, 0), EAST, 25_000), place(25_000, 0));
@@ -39,12 +39,12 @@ test('straight on stops short of the first coast the way meets, and not at all t
   );
 });
 
-test('a coast behind her or beside her way does not stop her', () => {
+test('a coast behind it or beside its way does not stop it', () => {
   near(clearAhead(ISLAND, place(45_000, 0), EAST), place(45_000 + AHEAD.reachM, 0));
   near(clearAhead(ISLAND, place(35_000, 10_000), Math.PI), place(35_000, 10_000 + AHEAD.reachM));
 });
 
-test("the world's frame stops her as a coast does, since the sea room takes no point past it", () => {
+test("the world's frame stops it as a coast does, since the sea room takes no point past it", () => {
   near(clearAhead([], [100_000, 10_000], 0), [100_000, AHEAD.shortM]);
   assert.equal(clearAhead([], [100_000, 300], 0), null, 'its edge 300 m ahead');
   near(clearAhead([], [100_000, 300], Math.PI), [100_000, 300 + AHEAD.reachM]);

@@ -6,6 +6,7 @@ import { FirstPersonView } from '../firstperson/firstPersonView.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';
 import type { CoastField } from './coastField.ts';
 import type { Rect } from './heldMapLaw.ts';
+import { HATCHES, WASH_STRENGTH, type WatersWash } from './watersWash.ts';
 
 /** The most points of a route the map inks: every pixel of the parchment measures itself against each. */
 export const ROUTE_POINTS = 128;
@@ -21,6 +22,8 @@ struct Ink {
   field: vec4f,
   // The islands discovered, a bit each by their place among the outlines.
   known: vec4u,
+  // The parchment's rectangle, screen pixels: the pass covers it, the map's ink only within the map.
+  sheet: vec4f,
 };
 @group(0) @binding(0) var<uniform> ink: Ink;
 @group(0) @binding(1) var distances: texture_2d<f32>;
@@ -29,15 +32,31 @@ struct Ink {
 @group(0) @binding(4) var soft: sampler;
 // Each of the route's points: where it lies, metres, and how far along the route.
 @group(0) @binding(5) var<storage, read> route: array<vec4f>;
+// The waters' wash over the charted sea, its holders' colours blended and its alpha how much is charted sea; and how
+// much of it is contested and how much the Grey Tithe's, each hatched (watersWash.ts).
+@group(0) @binding(6) var wash: texture_2d<f32>;
+@group(0) @binding(7) var hatch: texture_2d<f32>;
+// The parchment's words, marks and key, painted at its own pixels, premultiplied (mapLetters.ts).
+@group(1) @binding(0) var lettering: texture_2d<f32>;
 
 // Iron-gall ink, and the red-brown the route is drawn in.
 const INK_RGB = vec3f(58.0, 40.0, 22.0) / 255.0;
 const ROUTE_RGB = vec3f(120.0, 28.0, 20.0) / 255.0;
 const NO_ISLAND = 255u;
+// How strong the waters' wash is; the contested's diagonal hatching and the Grey Tithe's level hatching, each its
+// strength, colour and lines' spacing, device pixels (watersWash.ts).
+const WASH_ALPHA = ${WASH_STRENGTH.toFixed(3)};
+${Object.entries({ CONTESTED: HATCHES.contested, TITHE: HATCHES['grey-tithe'] })
+  .map(
+    ([name, hatch]) => `const ${name}_ALPHA = ${hatch.strength.toFixed(3)};
+const ${name}_RGB = vec3f(${hatch.colour.map((channel) => channel.toFixed(1)).join(', ')}) / 255.0;
+const ${name}_PX = ${hatch.spacingPx.toFixed(1)};`,
+  )
+  .join('\n')}
 
 @vertex fn ink_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
   let corners = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
-  let pixel = ink.rect.xy + corners[index] * ink.rect.zw;
+  let pixel = ink.sheet.xy + corners[index] * ink.sheet.zw;
   return vec4f(pixel.x / ink.screen.x * 2.0 - 1.0, 1.0 - pixel.y / ink.screen.y * 2.0, 0.0, 1.0);
 }
 
@@ -85,12 +104,13 @@ fn route_at(world: vec2f) -> f32 {
   let island = textureLoad(islands, cell, 0).r;
   let seen = island != NO_ISLAND && ((ink.known.x >> min(island, 31u)) & 1u) == 1u;
   let fog = textureSampleLevel(charted, soft, world / size, 0.0).r;
-  let inside = all(world >= vec2f(0.0)) && all(world <= size);
+  let onMap = all(at.xy >= ink.rect.xy) && all(at.xy <= ink.rect.xy + ink.rect.zw);
+  let inside = onMap && all(world >= vec2f(0.0)) && all(world <= size);
   let metres = distance_at(world);
   let pixels = metres * ink.view.z;
   // The charted sea, a faint wash; the parchment itself is the land and the unknown.
   var alpha = select(0.0, 0.08 * fog, metres > 0.0 && inside);
-  if (seen) {
+  if (seen && onMap) {
     // The coast drawn twice, as a pen does: a soft wash on the sea's side, then the line.
     alpha = max(alpha, 0.92 * (1.0 - smoothstep(0.55, 1.35, abs(pixels))));
     if (pixels > 0.0) {
@@ -101,9 +121,29 @@ fn route_at(world: vec2f) -> f32 {
       alpha = max(alpha, 0.28 * fade * (1.0 - smoothstep(0.3, 1.0, ring)) * step(4.0, pixels));
     }
   }
-  let course = route_at(world);
+  // The waters under the ink: their wash, and over the contested fine diagonal lines in a dark amber.
+  let sea = select(0.0, 1.0, metres > 0.0 && inside);
+  let tint = textureSampleLevel(wash, soft, world / size, 0.0);
+  let shares = textureSampleLevel(hatch, soft, world / size, 0.0).rg;
+  let line = (1.0 - smoothstep(0.5, 1.1, abs(fract((at.x + at.y) / CONTESTED_PX) - 0.5) * CONTESTED_PX));
+  let level = (1.0 - smoothstep(0.5, 1.1, abs(fract(at.y / TITHE_PX) - 0.5) * TITHE_PX));
+  let diagonal = CONTESTED_ALPHA * shares.r * tint.a * sea * line;
+  let flat = TITHE_ALPHA * shares.g * tint.a * sea * level;
+  let hatched = diagonal + flat * (1.0 - diagonal);
+  let hatchedRgb = CONTESTED_RGB * diagonal + TITHE_RGB * flat * (1.0 - diagonal);
+  let tinted = WASH_ALPHA * tint.a * sea;
+  let under = hatched + tinted * (1.0 - hatched);
+  let underRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);
+  let course = select(0.0, route_at(world), onMap);
+  let over = max(alpha, 0.9 * course);
   let colour = mix(INK_RGB, ROUTE_RGB, step(alpha, course));
-  return vec4f(colour, max(alpha, 0.9 * course));
+  let shown = over + under * (1.0 - over);
+  // The words over the ink, as the pen wrote them last.
+  let last = vec2i(textureDimensions(lettering)) - 1;
+  let letter = textureLoad(lettering, clamp(vec2i(at.xy - ink.sheet.xy), vec2i(0), last), 0);
+  let below = colour * over + underRgb * (1.0 - over);
+  let total = letter.a + shown * (1.0 - letter.a);
+  return vec4f((letter.rgb + below * (1.0 - letter.a)) / max(total, 1e-4), total);
 }
 `;
 
@@ -121,9 +161,14 @@ export interface HeldMapFrame {
   readonly knownIslands: number;
   /** The route's points: where each lies, metres, and how far along the route, four floats a point. */
   readonly route: Float32Array;
+  /** The parchment where it is in its rise, and its picture of words, marks and key, as large. */
+  readonly parchment: Rect;
+  readonly lettering: HTMLCanvasElement;
+  /** Whether the picture changed since it was last sent to the device. */
+  readonly letteringChanged: boolean;
 }
 
-const INK_BYTES = 80;
+const INK_BYTES = 96;
 
 export class HeldMapView {
   private readonly gpu: Gpu;
@@ -136,7 +181,12 @@ export class HeldMapView {
   private readonly routeBuffer: GPUBuffer;
   private readonly charted: GPUTexture;
   private readonly chartedBytes: Uint8Array;
+  private readonly wash: GPUTexture;
+  private readonly hatch: GPUTexture;
   private readonly inkGroup: GPUBindGroup;
+  private readonly letteringLayout: GPUBindGroupLayout;
+  /** The parchment's picture on the device, made again when its size changes. */
+  private letters: { texture: GPUTexture; group: GPUBindGroup } | null = null;
   private readonly field: CoastField;
   private pictures: { sheet: GPUTexture; hands: GPUTexture; frames: number } | null = null;
 
@@ -159,10 +209,15 @@ export class HeldMapView {
         { binding: 3, visibility: SHADER_STAGE.fragment, texture: {} },
         { binding: 4, visibility: SHADER_STAGE.fragment, sampler: {} },
         { binding: 5, visibility: SHADER_STAGE.fragment, buffer: { type: 'read-only-storage' } },
+        { binding: 6, visibility: SHADER_STAGE.fragment, texture: {} },
+        { binding: 7, visibility: SHADER_STAGE.fragment, texture: {} },
       ],
     });
+    this.letteringLayout = device.createBindGroupLayout({
+      entries: [{ binding: 0, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } }],
+    });
     this.inking = device.createRenderPipeline({
-      layout: device.createPipelineLayout({ bindGroupLayouts: [inkLayout] }),
+      layout: device.createPipelineLayout({ bindGroupLayouts: [inkLayout, this.letteringLayout] }),
       vertex: { module: inkModule, entryPoint: 'ink_vertex' },
       fragment: { module: inkModule, entryPoint: 'ink_fragment', targets: [{ format: gpu.format, blend }] },
     });
@@ -186,6 +241,8 @@ export class HeldMapView {
     device.queue.writeTexture({ texture: islands }, field.island, { bytesPerRow: columns }, [columns, rows]);
     this.charted = texture('r8unorm');
     this.chartedBytes = new Uint8Array(columns * rows);
+    this.wash = texture('rgba8unorm');
+    this.hatch = texture('rg8unorm');
     this.inkGroup = device.createBindGroup({
       layout: inkLayout,
       entries: [
@@ -195,6 +252,8 @@ export class HeldMapView {
         { binding: 3, resource: this.charted.createView() },
         { binding: 4, resource: device.createSampler({ magFilter: 'linear', minFilter: 'linear' }) },
         { binding: 5, resource: { buffer: this.routeBuffer } },
+        { binding: 6, resource: this.wash.createView() },
+        { binding: 7, resource: this.hatch.createView() },
       ],
     });
   }
@@ -235,6 +294,43 @@ export class HeldMapView {
     ]);
   }
 
+  /** Lays the waters' wash on the map, on the coast field's own cells (`washOf`). */
+  setWash(wash: WatersWash): void {
+    const { columns, rows } = this.field;
+    if (wash.hatch.length !== columns * rows * 2) throw new Error('the waters’ wash is not on the coast field’s cells');
+    const queue = this.gpu.device.queue;
+    queue.writeTexture({ texture: this.wash }, wash.colour, { bytesPerRow: columns * 4 }, [columns, rows]);
+    queue.writeTexture({ texture: this.hatch }, wash.hatch, { bytesPerRow: columns * 2 }, [columns, rows]);
+  }
+
+  /** The parchment's picture copied to the device, its texture made again only when its size changes. */
+  private lettersOf(picture: HTMLCanvasElement, changed: boolean): { texture: GPUTexture; group: GPUBindGroup } {
+    const { device } = this.gpu;
+    const size: [number, number] = [Math.max(1, picture.width), Math.max(1, picture.height)];
+    let letters = this.letters;
+    const made = !letters || letters.texture.width !== size[0] || letters.texture.height !== size[1];
+    if (!letters || letters.texture.width !== size[0] || letters.texture.height !== size[1]) {
+      letters?.texture.destroy();
+      const texture = device.createTexture({
+        size,
+        format: 'rgba8unorm',
+        usage: TEXTURE_USAGE.textureBinding | TEXTURE_USAGE.copyDestination | TEXTURE_USAGE.renderAttachment,
+      });
+      const group = device.createBindGroup({
+        layout: this.letteringLayout,
+        entries: [{ binding: 0, resource: texture.createView() }],
+      });
+      letters = this.letters = { texture, group };
+    }
+    if ((made || changed) && picture.width > 0 && picture.height > 0)
+      device.queue.copyExternalImageToTexture(
+        { source: picture },
+        { texture: letters.texture, premultipliedAlpha: true },
+        size,
+      );
+    return letters;
+  }
+
   /** Draws the held map over what `target` holds. */
   draw(encoder: GPUCommandEncoder, target: GPUTextureView, frame: HeldMapFrame): void {
     const pictures = this.pictures;
@@ -265,6 +361,9 @@ export class HeldMapView {
       ...[this.field.columns, this.field.rows, this.field.cellM, 0],
     ]);
     new Uint32Array(uniforms, 64, 4).set([frame.knownIslands >>> 0, 0, 0, 0]);
+    const { parchment } = frame;
+    new Float32Array(uniforms, 80, 4).set([parchment.x, parchment.y, parchment.width, parchment.height]);
+    const letters = this.lettersOf(frame.lettering, frame.letteringChanged);
     device.queue.writeBuffer(this.inkUniforms, 0, uniforms);
     this.sheetDrawer.draw(encoder, target, screen.width, screen.height, [sheetQuad]);
     const pass = encoder.beginRenderPass({
@@ -272,6 +371,7 @@ export class HeldMapView {
     });
     pass.setPipeline(this.inking);
     pass.setBindGroup(0, this.inkGroup);
+    pass.setBindGroup(1, letters.group);
     pass.draw(6);
     pass.end();
     this.handsDrawer.draw(encoder, target, screen.width, screen.height, [handsQuad]);

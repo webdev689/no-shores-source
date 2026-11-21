@@ -22,7 +22,7 @@ test('a heading reads as whole degrees and the nearest of the eight points', () 
   assert.equal(compassOf(-Math.PI / 4), '315° NW');
 });
 
-test('Manage shows her vessel and her voyage, with cargo and crew marked Later', () => {
+test('Manage shows its vessel and its voyage, and nothing marked Later', () => {
   const build = sloopBuildOf(BUILD);
   assert.ok(build);
   const panel = shipPanelOf(
@@ -32,13 +32,8 @@ test('Manage shows her vessel and her voyage, with cargo and crew marked Later',
   );
   assert.equal(panel.title, 'Your Sloop');
   assert.deepEqual(
-    panel.parts.map((part) => [part.heading, part.later]),
-    [
-      ['Vessel', false],
-      ['Voyage', false],
-      ['Cargo', true],
-      ['Crew', true],
-    ],
+    panel.parts.map((part) => part.heading),
+    ['Vessel', 'Voyage'],
   );
   const vessel = new Map(panel.parts[0]?.rows);
   assert.deepEqual(
@@ -48,6 +43,17 @@ test('Manage shows her vessel and her voyage, with cargo and crew marked Later',
   assert.deepEqual(panel.parts[1]?.rows, [
     ['Heading', '0° N'],
     ['Pace', '×60'],
-    ['Under way', 'At anchor'],
+    ['Now', 'At anchor'],
   ]);
+});
+
+test('Manage lists its men only once its build carries a crew', () => {
+  const measure = { lengthM: 6, beamM: 2, draughtM: 0.6 };
+  const rowsOf = (crew: number) => {
+    const build = sloopBuildOf(BUILD.replace('"crew":0', `"crew":${crew}`));
+    assert.ok(build);
+    return new Map(shipPanelOf(build, measure, null).parts[0]?.rows);
+  };
+  assert.equal(rowsOf(0).has('Men'), false, 'no crew yet: no Men row over the Crew marked Later');
+  assert.equal(rowsOf(12).get('Men'), '12 / 12');
 });

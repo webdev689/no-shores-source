@@ -1,11 +1,13 @@
 // A ship's sails as DFO set them (its galleonRig.js poses, its Come Sail Away's updateSails and autoTrim), on the
-// corners her own model gives each sail: a canvas of grid points filled from the side the wind blows to, flapping in
-// its eye, a gaff swung to leeward, a square sail hung from its yard and bellied forward, and furled or set as her
-// sails come down or go up.
+// corners its own model gives each sail: a canvas of grid points filled from the side the wind blows to, flapping in
+// its eye, a gaff swung to leeward, a square sail hung from its yard, braced round and bellied forward, and furled
+// or set as its sails come down or go up.
+
+import { ShipHarm } from './shipHarm.ts';
 
 type Point = readonly [number, number, number];
 
-/** A sail's corners as her export measured them, in her frame (x to her bow, y to starboard, z up), metres. */
+/** A sail's corners as its export measured them, in its frame (x to its bow, y to starboard, z up), metres. */
 export type SailCorners =
   | { readonly kind: 'gaff'; readonly tack: Point; readonly clew: Point; readonly throat: Point; readonly peak: Point }
   | { readonly kind: 'stay'; readonly tack: Point; readonly clew: Point; readonly head: Point }
@@ -20,6 +22,8 @@ export type SailCorners =
 /** A canvas's grid: points along its foot, and rows from its foot to its head. */
 export const SAIL_COLUMNS = 8;
 export const SAIL_ROWS = 7;
+/** A canvas's cells: one between each four of its grid's points, numbered row by row from its foot. */
+export const SAIL_CELLS = (SAIL_COLUMNS - 1) * (SAIL_ROWS - 1);
 /** How far DFO's Large Boat's gaff and staysail belly set full, metres, and a hanging gaff's and staysail's. */
 const GAFF_BELLY_M = 1.1;
 const GAFF_HANGING_M = 0.12;
@@ -41,11 +45,13 @@ const LUFF_DEG = 150;
 /** A sail is set or furled over this many seconds. */
 const SET_S = 2;
 
-/** What the sails answer to: the degrees from her bow to where the wind blows (to starboard positive), and whether
- *  her sails are set. The sea's one steady wind is always enough to fill them. */
+/** What the sails answer to: the degrees from its bow to where the wind blows (to starboard positive), and whether
+ *  its sails are set. The sea's one steady wind is always enough to fill them. */
 export interface SailWind {
   readonly offDeg: number;
   readonly set: boolean;
+  /** Its way through the water (m/s), which leaves its wreckage astern of it. */
+  readonly way?: number;
 }
 
 /** The degrees from a heading to where the wind blows, both radians clockwise from north: to starboard positive. */
@@ -135,13 +141,22 @@ export function sailWind(kind: SailCorners['kind'], offDeg: number): number {
   return side * (off <= 90 ? 1 - 0.75 * (off / 90) : 0.25 * (1 - (off - 90) / 90));
 }
 
-/** Where a gaff's boom is trimmed, degrees to starboard of her centreline aft (autoTrim): square off before the wind,
+/** Where a gaff's boom is trimmed, degrees to starboard of its centreline aft (autoTrim): square off before the wind,
  *  45 with it abeam, home by 150 off it. */
 export function gaffTrim(offDeg: number): number {
   const off = Math.abs(offDeg);
   const side = offDeg > 0 ? 1 : -1;
   if (off === 0) return 0;
   return side * (off <= 90 ? 90 - 45 * (off / 90) : 45 * (1 - clamp01((off - 90) / 60)));
+}
+
+/** Where a square sail's yard is braced, degrees round its mast its leeward arm going aft: square before the wind, 45
+ *  with it abeam, and held braced there closer to it, as far round as a gaff swings abeam. */
+export function squareBrace(offDeg: number): number {
+  const off = Math.abs(offDeg);
+  const side = offDeg > 0 ? 1 : -1;
+  if (off === 0) return 0;
+  return side * 45 * Math.min(1, off / 90);
 }
 
 interface Rigged {
@@ -158,10 +173,16 @@ interface Rigged {
 /** A ship's sails: stepped by the wind, and their canvas where it stands now. */
 export class SailRig {
   readonly sails: readonly Rigged[];
-  /** 1 with her sails set, 0 furled, between while they are set or furled. */
+  /** 1 with its sails set, 0 furled, between while they are set or furled. */
   private setShare = 0;
+  /** The wind's way off its bow and the clock at its last step, which its flag streams by. */
+  offDeg = 0;
+  time = 0;
+  /** What a fight has done to its rig and hull, as drawn (`ShipHarm`). */
+  harm: ShipHarm;
 
   constructor(corners: readonly SailCorners[]) {
+    this.harm = new ShipHarm(corners);
     this.sails = corners.map((sail) => {
       const poseOf = (pose: number | 'stowed' | null) =>
         sail.kind === 'gaff'
@@ -177,30 +198,40 @@ export class SailRig {
 
   /** One step of `seconds` at `time` (seconds, for a luff's flapping). */
   step(seconds: number, wind: SailWind, time: number): void {
+    [this.offDeg, this.time] = [wind.offDeg, time];
+    this.harm.step(seconds, wind.way ?? 0, time);
     this.setShare = toward(this.setShare, wind.set ? 1 : 0, seconds / SET_S);
     this.sails.forEach((sail, index) => {
-      const gaff = sail.corners.kind === 'gaff';
+      const { kind } = sail.corners;
+      const gaff = kind === 'gaff';
       if (gaff) {
         const target = wind.set ? gaffTrim(wind.offDeg) : 0;
         const now = sail.trimDeg;
         // DFO's rule for the faster swing, as its trim compares the boom's angle with its mark.
         const fast = wind.set && ((now < 0 && now < -target) || (now > 0 && now > -target));
         sail.trimDeg = toward(now, target, (fast ? TRIM_FAST_DEG_S : TRIM_DEG_S) * seconds);
-      }
-      // The boom swung to starboard turns the sail's forward to port.
-      const off = wrap(wind.offDeg + (gaff ? sail.trimDeg : 0));
-      const pull = sailWind(sail.corners.kind, off);
+      } else if (kind === 'square')
+        sail.trimDeg = toward(sail.trimDeg, wind.set ? squareBrace(wind.offDeg) : 0, TRIM_DEG_S * seconds);
+      // The boom swung to starboard turns the sail's forward to port; a yard braced round turns its face with it.
+      const off = wrap(wind.offDeg + (gaff ? sail.trimDeg : kind === 'square' ? -sail.trimDeg : 0));
+      const pull = sailWind(kind, off);
       const target =
         Math.abs(off) > LUFF_DEG ? Math.sin((time + index) * 2) * 0.25 : gaff ? (pull >= 0 ? 1 : -1) : pull;
       sail.wind = toward(sail.wind, target, WIND_PER_S * seconds);
     });
   }
 
-  /** Each sail's canvas now, its grid's points in her frame: set and furled mixed as they are being set, the poses
-   *  mixed by its wind, a gaff swung about its luff. */
-  canvas(): Float32Array[] {
-    return this.sails.map((sail) => {
-      const { poses } = sail;
+  /** Its rig made whole again, the fight's harm gone with the fight. */
+  mend(): void {
+    this.harm = new ShipHarm(this.sails.map((sail) => sail.corners));
+  }
+
+  /** Each sail's canvas now, its grid's points in its frame: set and furled mixed as they are being set, the poses
+   *  mixed by its wind, a gaff swung about its luff and a square sail braced round its mast, about its yard's `pivots`
+   *  as its model measures them (under its head's middle without one). */
+  canvas(pivots: readonly (Point | null)[] = []): Float32Array[] {
+    return this.sails.map((sail, index) => {
+      const { poses, corners } = sail;
       const wind = Math.min(1, Math.max(-1, sail.wind));
       let upper = 1;
       while (upper < poses.length - 1 && (poses[upper]?.[0] ?? 1) < wind) upper++;
@@ -212,14 +243,47 @@ export class SailRig {
         const set = (low[1][index] ?? 0) * (1 - share) + (high[1][index] ?? 0) * share;
         points[index] = (sail.stowed[index] ?? 0) * (1 - this.setShare) + set * this.setShare;
       }
-      if (sail.corners.kind === 'gaff' && sail.trimDeg !== 0)
-        swing(points, sail.corners.tack, sail.corners.throat, sail.trimDeg);
+      if (sail.trimDeg === 0) return points;
+      if (corners.kind === 'gaff') swing(points, corners.tack, corners.throat, sail.trimDeg);
+      else if (corners.kind === 'square') {
+        // A leeward arm braced aft is the turn the other way.
+        const mast = pivots[index] ?? lerp(corners.head_port, corners.head_starboard, 0.5);
+        swing(points, mast, [mast[0], mast[1], mast[2] + 1], -sail.trimDeg);
+      }
       return points;
     });
   }
+
+  /** The cell of its standing canvas nearest a point of its frame, and how far its middle is from it (metres); null
+   *  for a rig with no canvas standing. */
+  cellNear(point: Point): { readonly sail: number; readonly cell: number; readonly distanceM: number } | null {
+    let best: { sail: number; cell: number; distanceM: number } | null = null;
+    this.canvas().forEach((points, sail) => {
+      if (this.harm.sailLost(sail, Infinity) || this.harm.isFallen(this.harm.layout.sailMast[sail] ?? -1)) return;
+      for (let row = 0; row < SAIL_ROWS - 1; row++)
+        for (let column = 0; column < SAIL_COLUMNS - 1; column++) {
+          const corner = (row * SAIL_COLUMNS + column) * 3;
+          const middle = [0, 1, 2].map(
+            (axis) =>
+              ((points[corner + axis] ?? 0) +
+                (points[corner + 3 + axis] ?? 0) +
+                (points[corner + SAIL_COLUMNS * 3 + axis] ?? 0) +
+                (points[corner + SAIL_COLUMNS * 3 + 3 + axis] ?? 0)) /
+              4,
+          );
+          const distanceM = Math.hypot(
+            (middle[0] ?? 0) - point[0],
+            (middle[1] ?? 0) - point[1],
+            (middle[2] ?? 0) - point[2],
+          );
+          if (!best || distanceM < best.distanceM) best = { sail, cell: row * (SAIL_COLUMNS - 1) + column, distanceM };
+        }
+    });
+    return best;
+  }
 }
 
-/** Turns points about the line from `foot` to `head` (her luff), `degrees` taking what lies aft of it to starboard. */
+/** Turns points about the line from `foot` to `head` (its luff), `degrees` taking what lies aft of it to starboard. */
 function swing(points: Float32Array, foot: Point, head: Point, degrees: number): void {
   const axis = [head[0] - foot[0], head[1] - foot[1], head[2] - foot[2]];
   const length = Math.hypot(axis[0] ?? 0, axis[1] ?? 0, axis[2] ?? 0);

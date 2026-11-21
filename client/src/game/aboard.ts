@@ -1,7 +1,7 @@
-// The view brought down aboard the player's Sloop at her true size: Manage, a view over her deck where the player
-// stands at her wheel and her stand-in crew go about; and the walk, the player off the helm roaming her deck while her
-// helmsman keeps her course. Each pans down from the sea's view and back up to it. Everything aboard is in her own
-// frame, laid into the world as she lies.
+// The view brought down aboard the player's Sloop at its true size: Manage, a view over its deck where the player
+// stands at its wheel and its stand-in crew go about; and the walk, the player off the helm roaming its deck while its
+// helmsman keeps its course. Each pans down from the sea's view and back up to it. Everything aboard is in its own
+// frame, laid into the world as it lies.
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { type Dress, plainDress } from '../player/dressing.ts';
@@ -18,17 +18,17 @@ import { type DeckRoom, DeckWalk } from './deckWalk.ts';
 
 /** Seconds the view takes to come down aboard, or go back up. */
 const PAN_S = 1.4;
-/** Manage's view over her deck: how far from her middle, metres, how far down it looks, and where from, radians off
- *  her heading (her starboard quarter, looking forward); and how near and far the wheel takes it. */
+/** Manage's view over its deck: how far from its middle, metres, how far down it looks, and where from, radians off
+ *  its heading (its starboard quarter, looking forward); and how near and far the wheel takes it. */
 const MANAGE = { distanceM: 39, pitch: 0.5, turn: -0.6, nearestM: 18, farthestM: 78 } as const;
-/** Her middle, which Manage looks at: on her centre line a little aft, a metre over her deck. */
+/** Its middle, which Manage looks at: on its centre line a little aft, a metre over its deck. */
 const MIDDLE = [0, 1.2, 3] as const;
-/** How near the spot behind her wheel the player stands to take the helm, metres: the sea room's own reach
+/** How near the spot behind its wheel the player stands to take the helm, metres: the sea room's own reach
  *  (crates/room/src/deck.rs `WHEEL_REACH_M`), which judges it. */
 export const WHEEL_REACH_M = 0.8;
 /** How long the room has to say the player is off the helm before the leave is taken back, seconds. */
 const LEAVING_S = 2;
-/** The walk's lens and how far the third-person camera keeps over her deck, as on foot. */
+/** The walk's lens and how far the third-person camera keeps over its deck, as on foot. */
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 const CAMERA_CLEARANCE_M = 0.3;
 /** A stand-in's moves loop at this many frames a second. */
@@ -57,7 +57,7 @@ interface View {
   readonly going: 'down' | 'up';
 }
 
-/** The view aboard the player's Sloop, and her stand-in crew. */
+/** The view aboard the player's Sloop, and its stand-in crew. */
 export class Aboard {
   private readonly context: AboardContext;
   private readonly deck: Deck;
@@ -93,17 +93,17 @@ export class Aboard {
     return this.view?.kind === 'manage' && this.view.going === 'down';
   }
 
-  /** Whether the player is walking her deck, or coming down to it. */
+  /** Whether the player is walking its deck, or coming down to it. */
   get walking(): boolean {
     return this.view?.kind === 'deck' && this.view.going === 'down';
   }
 
-  /** Walking her deck and managing her, as the keys listed ask. */
+  /** Walking its deck and managing it, as the keys listed ask. */
   get where(): { readonly walking: boolean; readonly managing: boolean } {
     return { walking: this.walking, managing: this.managing };
   }
 
-  /** Whether the player stands at her wheel, near enough to take the helm. */
+  /** Whether the player stands at its wheel, near enough to take the helm. */
   get atWheel(): boolean {
     if (!this.walking || !this.view || this.view.at < 1) return false;
     const { body } = this.context.walker.player;
@@ -116,7 +116,7 @@ export class Aboard {
     return this.walking && (this.view?.at ?? 0) >= 1 && this.context.walker.inFirstPerson;
   }
 
-  /** Where the player's feet are on her deck as she `lying` lies, world metres, while they walk it; else none. */
+  /** Where the player's feet are on its deck as it `lying` lies, world metres, while they walk it; else none. */
   feetOn(lying: Lying): readonly [number, number, number] | null {
     if (this.view?.kind !== 'deck') return null;
     const { body } = this.context.walker.player;
@@ -130,7 +130,7 @@ export class Aboard {
       this.view = { ...this.view, going: this.view.going === 'down' ? 'up' : 'down' };
   }
 
-  /** The player leaves the helm and stands behind her wheel; answers whether they did. */
+  /** The player leaves the helm and stands behind its wheel; answers whether they did. */
   leaveHelm(room: HelmRoom): boolean {
     if (this.view) return false;
     room.leaveHelm();
@@ -140,7 +140,7 @@ export class Aboard {
     return true;
   }
 
-  /** Asks the room for the helm again, at her wheel: once it says the player holds it, the view goes back up. */
+  /** Asks the room for the helm again, at its wheel: once it says the player holds it, the view goes back up. */
   takeHelm(room: HelmRoom): void {
     if (this.atWheel) room.takeHelm();
   }
@@ -150,12 +150,12 @@ export class Aboard {
     [this.view, this.walk] = [null, null];
   }
 
-  /** A drag across Manage's view turns it round her. */
+  /** A drag across Manage's view turns it round the ship. */
   drag(movedX: number): void {
     if (this.managing) this.turn -= movedX * 0.006;
   }
 
-  /** The wheel's notches, positive in, bring Manage's view nearer her. */
+  /** The wheel's notches, positive in, bring Manage's view nearer it. */
   zoom(notches: number): void {
     if (!this.managing) return;
     this.distance = Math.min(MANAGE.farthestM, Math.max(MANAGE.nearestM, this.distance * 0.9 ** notches));
@@ -196,7 +196,7 @@ export class Aboard {
     if (walker.player.mounted) walker.player = { ...walker.player, mounted: false };
   }
 
-  /** The shot aboard all the way down as she `lying` lies, which the view eases down to by `share`; none while the
+  /** The shot aboard all the way down as it `lying` lies, which the view eases down to by `share`; none while the
    *  view is not aboard. */
   target(lying: Lying): Shot | null {
     if (!this.view) return null;
@@ -231,9 +231,9 @@ export class Aboard {
     return { ...local, eye: deckToWorld(lying, ...local.eye), yaw: local.yaw + lying.heading };
   }
 
-  /** Every figure aboard for an eye at `eye` (world metres), as she `lying` lies, at her size as drawn, from any view:
-   *  the player walking her deck, with her helmsman at the wheel while she sails on under him; else the player at her
-   *  wheel unless the eye is theirs there (`eyeAtHelm`); and her hands. */
+  /** Every figure aboard for an eye at `eye` (world metres), as it `lying` lies, at its size as drawn, from any view:
+   *  the player walking its deck, with its helmsman at the wheel while it sails on under him; else the player at its
+   *  wheel unless the eye is theirs there (`eyeAtHelm`); and its hands. */
   figures(
     lying: Lying,
     eye: readonly [number, number, number],

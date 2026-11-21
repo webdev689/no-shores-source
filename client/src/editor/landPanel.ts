@@ -2,6 +2,7 @@ import { RANKS, SHIP_FACTIONS } from '../ships/shipBars.ts';
 import { button, make } from './dom.ts';
 import { LAYOUT_LEGEND } from './layoutDrawing.ts';
 import { chooseCaptain, chosenCaptain } from './fleetLink.ts';
+import { LEVEL_MOST } from '../rules/fleetRules.ts';
 import { buildSitePanel, type SitePanelHandlers, type SitePanelView } from './sitePanel.ts';
 
 /** How far along a landmass's land is. */
@@ -188,23 +189,28 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
   );
   const sailHint = make(
     'p',
-    'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows her sideways, B to stop.',
+    'Sailing: W and S climb and come down from oars to sails, A and D steer, Shift rows it sideways, B to stop.',
     'hint',
   );
   const fightHint = make(
     'p',
-    'F calls a pirate, or sends her off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
+    'F calls a pirate, or sends it off. Hold the right mouse to aim where the balls should fall, and let go to fire.' +
       ' A left click holds fire, the wheel changes shot, and C braces. In a fleet (?room= in the address), F calls' +
       ' a captain and X sends them all off.',
     'hint',
   );
-  // The captain F calls in a fleet: her faction and rank.
+  // The captain F calls in a fleet: its faction, rank and level, and the level the ship is fitted at.
   const calling = make('label', 'In a fleet, F calls ', 'brush');
   const pick = (options: readonly (readonly [number, string])[], value: number) => {
     const select = make('select');
     for (const [key, text] of options) select.append(new Option(text, String(key), false, key === value));
     select.addEventListener('change', () =>
-      chooseCaptain({ faction: Number(faction.value), rank: Number(rank.value) }),
+      chooseCaptain({
+        faction: Number(faction.value),
+        rank: Number(rank.value),
+        level: Number(level.value),
+        shipLevel: Number(shipLevel.value),
+      }),
     );
     return select;
   };
@@ -216,7 +222,13 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
     RANKS.map((name, index) => [index + 1, name] as const),
     chosenCaptain().rank,
   );
-  calling.append(faction, ' ', rank);
+  const levels = (none: string) => [
+    [0, none] as const,
+    ...Array.from({ length: LEVEL_MOST }, (unused, index) => [index + 1, `level ${index + 1}`] as const),
+  ];
+  const level = pick(levels('of no level'), chosenCaptain().level);
+  const shipLevel = pick(levels('unfitted'), chosenCaptain().shipLevel);
+  calling.append(faction, ' ', rank, ' ', level, ', the ship ', shipLevel);
   root.append(views, legend, walkHint, sailHint, fightHint, calling);
 
   const exaggerationLabel = make('label', '', 'brush');
@@ -309,7 +321,7 @@ export function buildLandPanel(root: HTMLElement, handlers: LandPanelHandlers) {
       if (view.fight.join('\n') !== shownFight) {
         shownFight = view.fight.join('\n');
         fight.replaceChildren(
-          ...view.fight.map((line) => make('p', line, line.startsWith('BROADSIDE') ? 'warning' : 'told')),
+          ...view.fight.map((line) => make('p', line, line.startsWith('Broadside') ? 'warning' : 'told')),
         );
       }
       status.textContent = view.status;

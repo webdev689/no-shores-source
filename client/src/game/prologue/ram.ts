@@ -1,6 +1,6 @@
 // The owner's seventh beat: the lookout cuts into the calm, crying out that a larger ship comes out of the storm
-// straight for her side; the camera pulls sharply out to show her coming, the crew brace, and she strikes. Black.
-// The larger ship is Captain Brannoc Thule's Frigate, drawn at her own size under sail, the wrecks of the fight still
+// straight for its side; the camera pulls sharply out to show it coming, the crew brace, and it strikes. Black.
+// The larger ship is Captain Brannoc Thule's Frigate, drawn at its own size under sail, the wrecks of the fight still
 // lying round them.
 import ships from '../../../../content/ships/ships.json' with { type: 'json' };
 import { Cues } from '../../cinema/cues.ts';
@@ -23,31 +23,31 @@ import type { Story } from './story.ts';
 export const IMPACT_S = 10;
 /** When the crew brace: every word of the beat has been said by then. */
 export const BRACED_S = 6.4;
-/** Her stem first touches the Brig's side when their middles are this far apart: the Brig's hull at its broadest
- *  out from her middle, and the Frigate's reach forward of hers to the head of her stem (each hull's box as the
+/** Its stem first touches the Brig's side when their middles are this far apart: the Brig's hull at its broadest
+ *  out from its middle, and the Frigate's reach forward of its own to the head of its stem (each hull's box as the
  *  ships manifest measures it). */
 export const MEET_M = ships.ships.brig.boxes.hull[1][1] + ships.ships.frigate.boxes.hull[1][0];
-/** Her way, m/s: about 12 knots, what a Frigate makes under the storm's last gusts as the air falls still round the
- *  Brig; so she comes from this far off to strike on time. */
+/** Its way, m/s: about 12 knots, what a Frigate makes under the storm's last gusts as the air falls still round the
+ *  Brig; so it comes from this far off to strike on time. */
 export const RAMMER_WAY_M_S = 6;
 const RAMMER_FROM_M = MEET_M + RAMMER_WAY_M_S * IMPACT_S;
-/** Lighter than a captain's ship in the fight, so in the storm's dark she reads as a ship, hull, masts and sails, and
+/** Lighter than a captain's ship in the fight, so in the storm's dark it reads as a ship, hull, masts and sails, and
  *  not as a black mass; still darker than the Brig. */
 export const RAMMER_SHADE = 0.8;
-/** The flashes behind her as she comes, so her masts and sails stand against them: when, and how far past her. */
+/** The flashes behind it as it comes, so its masts and sails stand against them: when, and how far past it. */
 const FLASHES_S = [2.3, 4.8] as const;
 const FLASH_PAST_M = 120;
 
-/** How far the larger ship's middle is from the Brig's at `time`: coming at a steady pace, her stem on her side at
- *  the impact. */
+/** How far the larger ship's middle is from the Brig's at `time`: coming at a steady pace, its stem on the Brig's side
+ *  at the impact. */
 export function rammerAway(time: number): number {
   const share = Math.min(1, Math.max(0, time / IMPACT_S));
   return RAMMER_FROM_M + (MEET_M - RAMMER_FROM_M) * share;
 }
 
-/** The camera's way, in the Brig's frame, the larger ship coming from `side` (radians off her bow): on deck where the
- *  calm left it as the lookout cries; turned with him toward her; sharply out and up to show her coming; back down by
- *  the helm as she strikes. */
+/** The camera's way, in the Brig's frame, the larger ship coming from `side` (radians off its bow): on deck where the
+ *  calm left it as the lookout cries; turned with him toward it; sharply out and up to show it coming; back down by
+ *  the helm as it strikes. */
 export function ramKeys(side: number): RailKey[] {
   const [across, ahead] = [Math.sin(side), Math.cos(side)];
   return [
@@ -66,7 +66,7 @@ export class Ram implements Beat {
   readonly skippable = true;
   private readonly story: Story;
   private readonly cues: Cues;
-  /** Where the larger ship comes from: her bearing from the Brig's middle. */
+  /** Where the larger ship comes from: its bearing from the Brig's middle. */
   private readonly from: number;
   /** The fight's wrecks as the calm left them, settling on. */
   private readonly wrecks: readonly Wreck[];
@@ -116,7 +116,7 @@ export class Ram implements Beat {
     ]);
   }
 
-  /** A strike past her as seen from the Brig, at `time`. */
+  /** A strike past it as seen from the Brig, at `time`. */
   private strikeBehindHer(time: number): void {
     const { brig, lightning } = this.story;
     const past = rammerAway(time) + FLASH_PAST_M;
@@ -129,7 +129,7 @@ export class Ram implements Beat {
     this.meeting = { x: brig.x, y: brig.y };
   }
 
-  /** The Frigate at `time`, under sail, her stem on the Brig's side at the impact. */
+  /** The Frigate at `time`, under sail, its stem on the Brig's side at the impact. */
   private rammer(time: number): Sailed {
     const { brig } = this.story;
     const away = rammerAway(time);

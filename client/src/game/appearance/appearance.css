@@ -19,6 +19,8 @@
   image-rendering: pixelated;
 }
 .appearance-stand {
+  border-width: 2px;
+  border-style: solid;
   position: relative;
   display: grid;
   place-items: center;

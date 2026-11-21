@@ -24,7 +24,7 @@ is kept; where Overlook must choose, the choice is Claude's, with its reason. Th
 | Privacy | Public, Friends Only, Invite Only, Closed; Friends Only first | Destiny 1's four, and its first setting |
 | A leader who leaves | The lead passes to the longest there | A company is not lost with its leader |
 | Away | A member not playing ten minutes leaves; the player looking at the Roster never does | Destiny's fireteam left with a player who quit |
-| Joining | Joins their company, and goes to them on foot on this landmass at their seas; the ship stays where she lies | Destiny's join brings a player into the other's game; a landmass across the sea is not open |
+| Joining | Joins their company, and goes to them on foot on this landmass at their seas; the ship stays where it lies | Destiny's join brings a player into the other's game; a landmass across the sea is not open |
 | Guild ranks | Founder, Admin, Member; a hundred at most | Destiny 2's clans, less Beginner, which has nothing to do here yet |
 | Guild name and tag | Name 3 to 24 letters and digits, with single spaces, dashes or apostrophes between; tag 2 to 4 letters or digits; each unique | Destiny's tag is up to 4 |
 | Founding | Any player with a username, in no guild, from the Roster; the Guild tab stays Later | The roster's guild list needs a guild; the tab's own page waits on the owner |

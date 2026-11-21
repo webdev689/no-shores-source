@@ -1,11 +1,13 @@
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
-import { loadShip, shipSails } from '../ships/shipMesh.ts';
+import { SLOOP_HULL } from '../ships/hulls.ts';
 import { MarkView } from '../ships/markView.ts';
-import { ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
-import { ShipView } from '../ships/shipView.ts';
+import { PLAYER_LOOK } from '../ships/dress.ts';
+import { FightOverlay } from '../ships/fightOverlay.ts';
+import { type DrawnShip, openHull, ShipModels } from '../ships/shipModels.ts';
+import type { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
 import { type Body, bodyStep, EYE_M, type Footing } from '../water/swimming.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
@@ -87,18 +89,18 @@ export interface SceneFrame {
   readonly exaggeration: number;
   readonly brush: TerrainOptions['brush'];
   readonly walking: boolean;
-  /** The Sloop is asked for: she is put to sea at the camera's target and sailed. */
+  /** The Sloop is asked for: it is put to sea at the camera's target and sailed. */
   readonly sailing: boolean;
   readonly held: ReadonlySet<string>;
   /** Keys pressed (not repeats) since the last frame; the scene takes them. */
   readonly pressed: string[];
-  /** The right mouse is held: the look lays her guns. */
+  /** The right mouse is held: the look lays its guns. */
   readonly aiming: boolean;
   /** Releases of the guns, and steps of the load (the wheel while aiming), since the last frame. */
   readonly fires: number;
   readonly loadSteps: number;
   readonly source: GroundSource | null;
-  /** Online: the Sloop's session in a fleet room, which sails her; the water then rolls by the room's clock. */
+  /** Online: the Sloop's session in a fleet room, which sails it; the water then rolls by the room's clock. */
   readonly fleet: FleetSloop | null;
   readonly editsVersion: number;
   /** A stroke is being drawn: the land changes under it, so the close-up waits for it to end. */
@@ -145,35 +147,33 @@ export class LandScene {
   private shownClose: CloseUp | null = null;
   private readonly depthCopy: GPURenderPipeline;
   private lastFrame = performance.now();
-  /** The Sloop and her model; and whether she may still sail (the rules have not refused her). */
+  /** The Sloop and its model; and whether it may still sail (the rules have not refused it). */
   private readonly harbour: Harbour<ShipView>;
-  /** Her sails' rig and a captain's, once her model has come; and when they were last stepped. */
-  private rigs: [SailRig, SailRig] | null = null;
+  /** Every hull's model; its sails' rig, once its model has come; and when the rigs were last stepped. */
+  private readonly models: ShipModels;
+  private rig: SailRig | null = null;
   private sailedAt = 0;
   private mayStillSail = true;
-  /** A captain's fight round the Sloop; or, online, the fleet she sails in. */
+  /** A captain's fight round the Sloop; or, online, the fleet it sails in. */
   private readonly marks: MarkView;
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
   private readonly layoutCity: LayoutCity;
-  /** The picture's overlay, which the editor clears each frame: each captain's bar is drawn on it. */
-  private readonly overlay: SVGSVGElement;
-  private readonly shipPlates = new ShipPlates();
-  /** The sky's law, for the wind her sails feel: the rules sail her in the weather's, at the wall's world time. */
+  /** Each captain's plate over the picture, and the fight's readout beside it. */
+  private readonly fightOverlay: FightOverlay;
+  /** The sky's law, for the wind its sails feel: the rules sail it in the weather's, at the wall's world time. */
   private law: SkyLaw | null = null;
 
   constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
     this.gpu = gpu;
     this.redraw = redraw;
     this.fail = fail;
-    this.overlay = overlay;
+    this.fightOverlay = new FightOverlay(overlay);
     this.water = new WaterView(gpu);
-    this.harbour = new Harbour(
-      () => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'))),
-      fail,
-    );
+    this.models = new ShipModels(openHull(gpu), fail);
+    this.harbour = new Harbour(() => this.models.load(SLOOP_HULL), fail);
     this.marks = new MarkView(gpu);
-    this.naval = new Naval(this.marks);
+    this.naval = new Naval(this.marks, (hull) => this.models.shown(hull));
     this.layoutCity = new LayoutCity(gpu, import.meta.env.BASE_URL);
     fetch(`${import.meta.env.BASE_URL}land.wasm`)
       .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`land.wasm: ${answer.status}`))))
@@ -199,7 +199,7 @@ export class LandScene {
     this.fleet = null;
   }
 
-  /** The Sloop afloat: her fleet session's, online, or the editor's own. */
+  /** The Sloop afloat: its fleet session's, online, or the editor's own. */
   private get sailing(): Afloat | null {
     return this.fleet?.play ?? this.harbour.sailing;
   }
@@ -253,7 +253,8 @@ export class LandScene {
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
     const online = frame.sailing ? frame.fleet : null;
-    if (online !== (this.fleet?.play ?? null)) this.fleet = online ? new FleetScene(online, this.marks) : null;
+    if (online !== (this.fleet?.play ?? null))
+      this.fleet = online ? new FleetScene(online, this.marks, (hull) => this.models.shown(hull)) : null;
     const fleet = this.fleet;
     // Online, the ships ride the room's swell, so the water rolls by its clock.
     const time = fleet ? fleet.play.roomTime(now / 1000) : now / 1000;
@@ -285,12 +286,11 @@ export class LandScene {
       this.shownClose = near;
     }
     const own = this.harbour.sailing;
-    const seen =
-      frame.aiming && fleet
-        ? fleet.aimCamera(orbit, view, shown)
-        : frame.aiming && own && this.naval.fighting
-          ? this.naval.aimCamera(orbit, own, view, shown)
-          : this.clearOfBed(orbit);
+    const seen = fleet
+      ? fleet.aimCamera(this.clearOfBed(orbit), view, shown, frame.aiming, seconds)
+      : own && this.naval.fighting
+        ? this.naval.aimCamera(this.clearOfBed(orbit), own, view, shown, frame.aiming, seconds)
+        : this.clearOfBed(orbit);
     const camera = cameraOf(seen);
     const fromEye = viewProjection(seen, frame.size.width / frame.size.height, true);
     const eyeWorld = [camera.eye[0] + view.leftM, camera.eye[1] + view.topM] as const;
@@ -332,29 +332,34 @@ export class LandScene {
     terrain.drawInto(pass);
     this.layoutCity.drawInto(pass, fromEye, camera.eye, view, shown, time);
     const ship = this.ship;
-    // Her rig and a captain's, once her model has come.
-    if (ship && !this.rigs) this.rigs = [new SailRig(ship.sails), new SailRig(ship.sails)];
-    const her = this.sailing?.floats();
-    const wind = her && this.law?.seaWind(her[0] ?? 0, her[1] ?? 0, worldSeconds(Date.now()));
-    const sails = this.rigs && {
-      rig: this.rigs[1],
-      bearing: wind ? windBearing(wind) : (view.swell?.bearing ?? 0),
+    // Its rig, once its model has come.
+    if (ship && !this.rig) {
+      this.rig = new SailRig(ship.sails);
+      this.naval.ownRig = this.rig;
+    }
+    // The sails feel the weather's wind where the Sloop is, at the wall's world time; the swell's until the law comes.
+    const here = this.sailing?.floats();
+    const weather = here && this.law?.seaWind(here[0] ?? 0, here[1] ?? 0, worldSeconds(Date.now()));
+    const wind = {
+      bearing: weather ? windBearing(weather) : (view.swell?.bearing ?? 0),
       seconds: Math.min(MOST_SAIL_STEP_S, Math.max(0, time - this.sailedAt)),
     };
     this.sailedAt = time;
-    if (this.sailing && ship && sails && this.rigs) {
+    const ships: DrawnShip[] = [];
+    if (this.sailing && this.rig) {
       const place = this.sailing.place(view, shown);
-      const wind = { offDeg: windOff(place.heading, sails.bearing), set: this.sailing.sailsSet };
-      this.rigs[0].step(sails.seconds, wind, time);
-      ship.drawInto(pass, place, { fromEye, eye: camera.eye }, 0, 1, this.rigs[0]);
+      const set = this.sailing.sailsSet;
+      this.rig.step(wind.seconds, { offDeg: windOff(place.heading, wind.bearing), set }, time);
+      ships.push({ hull: SLOOP_HULL, place, rig: this.rig, look: PLAYER_LOOK });
     }
-    if (fleet) fleet.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, now / 1000);
-    else this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, time, sails);
+    ships.push(...(fleet ? fleet.ships(view, shown, wind, time) : this.naval.ships(view, shown, wind, time)));
+    const shipCamera = { fromEye, eye: camera.eye };
+    this.models.draw(pass, ships, shipCamera);
+    if (fleet) fleet.draw(pass, view, shown, shipCamera, now / 1000);
+    else this.naval.draw(pass, view, shown, shipCamera, time);
     const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
-    if (bars.length > 0) {
-      const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
-      this.shipPlates.draw(this.overlay, bars, screenProjector(seen, size), size.width, now / 1000);
-    }
+    const display = fleet ? null : this.naval.display(time, { boardable: false, boardKey: 'E' });
+    this.fightOverlay.show(bars, (size) => screenProjector(seen, size), now / 1000, display);
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -372,6 +377,7 @@ export class LandScene {
     copy.draw(3);
     copy.end();
     const eyeWater = this.waterAt(id, view, camera.eye[0], camera.eye[1], time);
+    const target = this.gpu.context.getCurrentTexture().createView();
     this.water.encode(encoder, {
       camera: { ...camera, fromEye, tanHalfView: Math.tan(FIELD_OF_VIEW / 2) },
       size: [frame.size.width, frame.size.height],
@@ -388,16 +394,19 @@ export class LandScene {
       focus: [orbit.targetX, orbit.targetY],
       hulls: this.hulls(view),
       drawn,
-      target: this.gpu.context.getCurrentTexture().createView(),
+      target,
     });
+    // The fight's see-through puffs, then the lay's aim, after the water, so its sky and surface never cover them.
+    this.marks.drawOver(encoder, target, drawn.depth);
+    (fleet ?? this.naval).drawAimOver(encoder, target, drawn.depth, view, shown, shipCamera, fleet ? now / 1000 : time);
     this.gpu.device.queue.submit([encoder.finish()]);
     const feet =
       near && !frame.walking && !this.sailing ? ([orbit.targetX, orbit.targetY, ground * shown] as const) : null;
     return { orbit, feet, sailing: frame.sailing && this.mayStillSail };
   }
 
-  /** The Sloop: put to sea at the camera's target, then stepped by the rules with the keys' helm, her wake stirring
-   *  the water. Answers the camera's orbit, on her once she sails. */
+  /** The Sloop: put to sea at the camera's target, then stepped by the rules with the keys' helm, its wake stirring
+   *  the water. Answers the camera's orbit, on it once it sails. */
   private sail(frame: SceneFrame, seconds: number, time: number): Orbit {
     const { source, id, view, orbit } = frame;
     const [x, y] = [orbit.targetX + view.leftM, orbit.targetY + view.topM];
@@ -415,7 +424,7 @@ export class LandScene {
       const look = frame.aiming ? this.naval.look(orbit, sailing, view) : null;
       const input = {
         held: frame.held,
-        // A rung press waits with her helm until the fight that takes it is on.
+        // A rung press waits with its helm until the fight that takes it is on.
         press: this.naval.fighting ? sailing.takePress() : undefined,
         look,
         fire: frame.fires > 0,
@@ -428,14 +437,14 @@ export class LandScene {
     for (const stir of waterline ? sailing.wake(view, waterline) : []) {
       this.water.stir(stir.x, stir.y, stir.radiusM, stir.strength);
     }
-    // Aiming may look over the horizon; the camera round her stays above it.
+    // Aiming may look over the horizon; the camera round the Sloop stays above it.
     const round = sailing.orbit(orbit, view);
     return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
   }
 
-  /** The Sloop in a fleet room: her orders from the keys (F calls a captain of the faction and rank the panel chose,
-   *  X sends them all off), her look while aiming, the fleet's effects on the water, and her wake. Answers the
-   *  camera's orbit, on her. */
+  /** The Sloop in a fleet room: its orders from the keys (F calls a captain of the faction and rank the panel chose,
+   *  X sends them all off), its look while aiming, the fleet's effects on the water, and its wake. Answers the
+   *  camera's orbit, on it. */
   private sailOnline(fleet: FleetScene, frame: SceneFrame, seconds: number, now: number): Orbit {
     const { view, orbit } = frame;
     this.harbour.fetchModel();
@@ -460,11 +469,11 @@ export class LandScene {
     return frame.aiming ? round : { ...round, pitch: Math.max(round.pitch, PITCH_LIMITS.lowest) };
   }
 
-  /** The ships' footprints on the water: hers, and a captain's while she floats, or every ship of her fleet. */
+  /** The ships' footprints on the water: the Sloop's, and a captain's while it floats, or every ship of its fleet. */
   private hulls(view: LandView): HullMask[] {
     const waterline = this.ship?.waterline;
     if (!waterline || !this.sailing) return [];
-    const others = this.fleet ? this.fleet.hulls(view, waterline) : [this.naval.hull(view, waterline)];
+    const others = this.fleet ? this.fleet.hulls(view) : [this.naval.hull(view)];
     return [this.sailing.hull(view, waterline), ...others.filter((hull) => hull !== null)];
   }
 

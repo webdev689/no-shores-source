@@ -18,11 +18,11 @@ import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
 export const LENS = { fov: 0.85, near: 0.3, far: 30_000 } as const;
-/** The deck shot the crew talk in: from over the helm, looking forward down her deck. */
+/** The deck shot the crew talk in: from over the helm, looking forward down its deck. */
 export const DECK_VIEW = { eye: [-15.5, -1.6, 7.4], look: [4, 0.4, 3.2] } as const;
-/** The still air on her deck, the storm still heard round her. */
+/** The still air on its deck, the storm still heard round it. */
 export const CALM_SOUND: Partial<AmbienceLevels> = { wind: 0.3, rain: 0.7, waves: 0.7, creak: 0.7 };
-/** How long the camera takes down to her deck, when the crew begin to talk, and how long the mate's last line runs
+/** How long the camera takes down to its deck, when the crew begin to talk, and how long the mate's last line runs
  *  before the lookout cuts in. */
 const DOWN_S = 3;
 const TALK_S = 3.2;
@@ -34,14 +34,14 @@ const OUT_LENS = 0.55;
 const BEHIND_M = 3;
 const ASIDE_M = 1.1;
 const OVER_HEAD_M = 0.35;
-/** Once the lookout has begun, the camera pushes in on the wreck until the picture is this many metres high at her,
+/** Once the lookout has begun, the camera pushes in on the wreck until the picture is this many metres high at it,
  *  so a ship beaten far off reads as clearly as one near; never narrower than the least lens. */
 const PUSH_AFTER_S = 1.8;
 const PUSH_S = 2;
 const FRAMED_M = 45;
 const LEAST_LENS = 0.04;
 
-/** A camera kept with the Brig's deck (her frame), steadied so the picture does not heel with her. */
+/** A camera kept with the Brig's deck (its frame), steadied so the picture does not heel with it. */
 export function onBrig(own: ShipPlace, keys: readonly RailKey[], time: number): Shot {
   const steady: ShipPlace = { ...own, pitch: own.pitch * 0.3, roll: own.roll * 0.3 };
   const carried = keys.map((key) => ({ ...key, eye: onDeck(steady, ...key.eye), look: onDeck(steady, ...key.look) }));
@@ -167,7 +167,7 @@ export class Calm implements Beat {
     return wrecksOn(this.laid, this.since);
   }
 
-  /** Over the lookout's shoulder to the nearest wreck, his head on the view as he begins, then pushed in on her by
+  /** Over the lookout's shoulder to the nearest wreck, his head on the view as he begins, then pushed in on it by
    *  `pushed` of the way, so a ship beaten far off reads as clearly as one near. */
   private outToWrecks(own: ShipPlace, wrecks: readonly { readonly place: ShipPlace }[], pushed: number): Shot | null {
     const head = this.story.brig.head(own, 'lookout');

@@ -6,10 +6,12 @@ import { type Placement, toWorld } from './blocks.ts';
 /** Numbers an instance takes: its middle and turn, its half sizes, height and rise, then four whole numbers. */
 export const MASS_FLOATS = 12;
 
-/** Whether a roof is hipped (its ends slope), and the tier the instance belongs to. */
+/** Whether a roof is hipped (its ends slope), the tier the instance belongs to, and whether it is a ruin's. */
 export const MASS_HIP = 1;
 export const MASS_TIER_MASSES = 2;
 export const MASS_TIER_HULLS = 4;
+/** A ruin's broken mass, its walls scorched toward the break. */
+export const MASS_RUIN = 8;
 
 /** A mass shorter than this, or smaller in plan, is a step or a ledge the far view leaves out. */
 const LEAST_HEIGHT_M = 1.5;

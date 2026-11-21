@@ -85,8 +85,8 @@ pub fn dock(kit: &mut Kit, area: &Area, seaward: [f64; 2]) {
     kit.prop(cart, ahead(middle, toward, -9.0, 0.8), yaw_toward(toward) + 90.0);
 }
 
-/// A wreck: a ship driven up the strand and broken, her hull sunk in the sand, her ribs and a snapped mast lying
-/// about her, a fire where the wreckers picked her over.
+/// A wreck: a ship driven up the strand and broken, its hull sunk in the sand, its ribs and a snapped mast lying
+/// about it, a fire where the wreckers picked it over.
 pub fn wreck(kit: &mut Kit, area: &Area, seaward: [f64; 2]) {
     let middle = area.at;
     let toward = if seaward == [0.0, 0.0] { [0.0, -1.0] } else { seaward };

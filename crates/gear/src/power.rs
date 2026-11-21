@@ -45,6 +45,20 @@ pub fn level(xp: u64, prestige: u32) -> u8 {
     XP_LEVEL_MOST + PRESTIGE_FOR.iter().filter(|needed| prestige >= **needed).count() as u8
 }
 
+/// How far XP and Prestige are to the next level they reach, 0 to 1, and what it still takes: XP below level 20,
+/// Prestige past it; at the highest, full and nothing.
+#[must_use]
+pub fn to_next(xp: u64, prestige: u32) -> (f64, u32) {
+    let reached = level(xp, prestige);
+    if reached < XP_LEVEL_MOST {
+        let (from, to) = (xp_for_level(reached), xp_for_level(reached + 1));
+        let share = xp.saturating_sub(from) as f64 / (to - from) as f64;
+        return (share.min(1.0), u32::try_from(to.saturating_sub(xp)).unwrap_or(u32::MAX));
+    }
+    let Some(needed) = PRESTIGE_FOR.get(usize::from(reached - XP_LEVEL_MOST)) else { return (1.0, 0) };
+    (f64::from(prestige) / f64::from(*needed), needed.saturating_sub(prestige))
+}
+
 /// What a foe's health is times at its level.
 #[must_use]
 pub fn foe_health_times(foe_level: u8) -> f64 {
