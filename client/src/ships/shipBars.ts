@@ -316,15 +316,23 @@ export class ShipPlates {
     width: number,
     now: number,
   ): void {
+    drawShipBars(svg, this.place(bars, project, width, now));
+  }
+
+  /** Lays `bars` at `now` (seconds), each where `project` puts the point over her, the picture `width` CSS pixels
+   *  wide, each reading her hull's losses since the last time. */
+  place(
+    bars: readonly ShipBar[],
+    project: Parameters<typeof placeShipBars>[1],
+    width: number,
+    now: number,
+  ): PlacedBar[] {
     const seconds = this.drawnAt === null ? Infinity : now - this.drawnAt;
     this.drawnAt = now;
     const still = motionReduced();
     const placed = placeShipBars(bars, project, width, this.layout, still ? Infinity : seconds);
     this.hulls.keep(new Set(bars.map((bar) => bar.key)));
     const shownSeconds = Number.isFinite(seconds) ? seconds : 0;
-    drawShipBars(
-      svg,
-      placed.map((bar) => this.hulls.read(bar, shownSeconds, still)),
-    );
+    return placed.map((bar) => this.hulls.read(bar, shownSeconds, still));
   }
 }
