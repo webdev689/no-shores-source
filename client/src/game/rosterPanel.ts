@@ -49,7 +49,7 @@ export const FIELD_IDS = ['Username', 'Invite', 'Motto', 'Guild name', 'Tag'].ma
 export const rowId = (row: Row): string => `roster-${row.key}`;
 
 /** A press of the panel, full width with its words at its left; held, its fill shows how long is left. */
-export function panelPress(
+function panelPress(
   { ui, holds }: PlainContext,
   index: number,
   said: string,
@@ -240,7 +240,7 @@ function actionPress(
 }
 
 /** A text field of the panel's, `most` characters long. */
-export function fieldNode(id: string, label: string, most: number, width?: number): Node {
+function fieldNode(id: string, label: string, most: number, width?: number): Node {
   return {
     id,
     role: 'well',

@@ -52,7 +52,7 @@ export function headingNode(said: string, beside: Child = null): Node {
 }
 
 /** The menu's chip saying a part is still to come. */
-export const laterChip = (): Node => ({
+const laterChip = (): Node => ({
   role: 'chip',
   padding: [1, 8],
   children: [words('LATER', 1, INK.word, { tracking: 3 })],
@@ -73,7 +73,7 @@ export const answerNode = (said: string): Node | null =>
   said ? { width: 'grow', text: { words: said, colour: INK.answer } } : null;
 
 /** A page's panel, set back from the window's edges and kept to `most` pixels wide, in the middle of the room. */
-export function pagePanel(id: string, most: number, children: readonly Child[]): Node {
+function pagePanel(id: string, most: number, children: readonly Child[]): Node {
   return {
     width: 'grow',
     alignX: 'center',
