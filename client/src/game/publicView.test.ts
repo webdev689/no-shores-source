@@ -326,3 +326,21 @@ test("the Fissure's stage splits the ground again, and the Warden's climbs out w
     ['story.deep', 'story.crash'],
   );
 });
+
+test('a room lost a while, and back: no chest thumps in again, no banner is driven in again', () => {
+  const shook: number[] = [];
+  const view = new PublicView('saltgrass-downs', (trauma) => shook.push(trauma));
+  const banner = { kind: MARK.banner, id: 3, at: [2, 0, 0] as const, health: 1, state: 1 };
+  const lying = [chest(5, [1, 0, 0], 1)];
+  view.frame(null, [], lying, bodies(), 0, [], () => 0);
+  const come = view.frame(raid([banner], 2), [], lying, bodies(), 0.1, [], () => 0);
+  assert.deepEqual(come.sounds, [], 'there as the event first came: no thump');
+  view.frame(null, [], lying, bodies(), 0.2, [], () => 0);
+  const back = view.frame(raid([banner], 2), [], lying, bodies(), 0.3, [], () => 0);
+  assert.deepEqual(back.sounds, []);
+  assert.equal(back.props.find((prop) => prop.module === 'tithe-banner')?.rise, 1, 'standing, not driven in again');
+  const crack = { kind: MARK.fissure, id: 1, at: [0, 0, 0] as const, health: 1, state: 1 };
+  view.frame(fissure([crack]), [], [], bodies(), 0.4, [], () => 0);
+  view.frame(fissure([crack]), [happened(EVENT.shardSet, 2)], [], bodies(), 30, [], () => 0);
+  assert.deepEqual(shook, [], 'back from a hidden tab, no tremor');
+});

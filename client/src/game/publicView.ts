@@ -170,9 +170,9 @@ export class PublicView {
     const moments = this.moments.frame(event, stale ? [] : events, bodies.feet, bodies.where, chests, clock);
     const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null) ?? moments.beat;
     const sounds = stale ? [] : [...this.sounds(event, events, bodies, clock), ...moments.sounds];
-    if (moments.chime !== null) rarityChime(moments.chime);
-    if (moments.tick) play('tab');
-    if (moments.tremor > 0) this.tremor(moments.tremor);
+    if (!stale && moments.chime !== null) rarityChime(moments.chime);
+    if (!stale && moments.tick) play('tab');
+    if (!stale && moments.tremor > 0) this.tremor(moments.tremor);
     this.lay(event, marks, floor, clock, bodies.shot.eye);
     this.moments.lay(event, moments, chests, bodies.player, bodies.feet, marks, clock, bodies.shot.eye);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
@@ -185,7 +185,8 @@ export class PublicView {
       moments.props,
     );
     props.push(...moments.flights);
-    this.clock.done(event !== null);
+    // A frame with no event (the room lost a while) forgets nothing: on its return no beat is played again.
+    if (event) this.clock.done(true);
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
     const chime = stale
       ? null

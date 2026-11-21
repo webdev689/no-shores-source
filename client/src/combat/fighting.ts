@@ -438,6 +438,11 @@ export class Fighting {
     return !this.link.rejoining && this.link.lost === null;
   }
 
+  /** The zone's public event as the room last sent it, held or not: what it says of its foes still stands. */
+  get publicHeld(): PublicEvent | null {
+    return this.publicWord;
+  }
+
   /** The zone's public event as the room last sent it, while the room holds. */
   get public(): PublicEvent | null {
     return this.holds ? this.publicWord : null;

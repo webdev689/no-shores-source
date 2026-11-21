@@ -65,6 +65,20 @@ export interface Moments {
   readonly chestsLeft: ReadonlyMap<number, number>;
 }
 
+/** A frame's moments with no event to play them. */
+const QUIET: Moments = {
+  beat: null,
+  sounds: [],
+  chime: null,
+  tick: false,
+  tremor: 0,
+  call: null,
+  props: { flare: 0, open: null, topple: 0 },
+  flights: [],
+  struck: new Set(),
+  chestsLeft: new Map(),
+};
+
 const fade = ([strength, reach]: readonly [number, number], from: Point, heard: Point) =>
   strength * Math.max(0, 1 - Math.hypot(heard[0] - from[0], heard[1] - from[1]) / reach);
 const ease = (share: number) => {
@@ -97,6 +111,9 @@ export class PublicMoments {
     chests: readonly ChestLike[],
     clock: number,
   ): Moments {
+    // A frame with no event (before the room's first word, or while it is lost) keeps all as it was: on its return
+    // no chest thumps in again and none of its time is counted afresh.
+    if (!event) return QUIET;
     const before = this.before;
     const seconds = this.clock === null ? 0 : clock - this.clock;
     const first = this.clock === null;
