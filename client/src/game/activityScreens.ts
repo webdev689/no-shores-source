@@ -70,10 +70,12 @@ export function startActivityScreens(
   trips: { enter(number: number, name: string, run?: string): void },
   link: Pick<AccountLink, 'token' | 'finderAt'> | null,
   clock: ScreensClock = PAGE_CLOCK,
+  atSea: () => GearState | null = () => null,
 ): ActivityScreens {
   let compiled: WebAssembly.Module | null = null;
   void module.then((read) => (compiled = read)).catch(() => undefined);
-  /** The last word of the character a room sent: kept through a voyage, where no room keeps gear. */
+  /** The last word of the character a room sent: on foot the room's, at sea the sea's as it counts the ships sunk, kept
+   *  between them. */
   let kept: GearState | null = null;
   let built: { readonly minute: number; readonly gear: GearState | null; readonly board: ThisWeek } | null = null;
   const placeName = (id: string) => nodes.find((node) => node.id === id)?.name ?? id;
@@ -154,7 +156,7 @@ export function startActivityScreens(
   };
   const look = () => {
     const here = foot();
-    kept = here?.gear?.gear ?? kept;
+    kept = here?.gear?.gear ?? atSea() ?? kept;
     if (!opened || !compiled) return;
     if (!here || here.fallen || here.dungeon || here.node !== opened.entrance.node) return close();
     if (opened.minute !== Math.floor(clock.now() / 60_000) || opened.gear !== kept) showCard(compiled, opened.entrance);
@@ -200,7 +202,11 @@ export function startActivities(
   root: HTMLElement,
   nodes: readonly NodeInfo[],
   link: AccountLink | null,
-  game: Omit<TripGame, 'foot' | 'companyPlaces'> & { readonly foot: () => (TripFoot & ScreensFoot) | null },
+  game: Omit<TripGame, 'foot' | 'companyPlaces'> & {
+    readonly foot: () => (TripFoot & ScreensFoot) | null;
+    /** The sea's last word of the character while the player is at sea, none on foot. */
+    readonly atSea?: () => GearState | null;
+  },
 ): {
   readonly trips: ReturnType<typeof dungeonTrips>;
   readonly screens: ActivityScreens;
@@ -208,7 +214,7 @@ export function startActivities(
   heed(here: { readonly shut: string | null; readonly held: { wiped: boolean } }, shut: (why: string) => void): boolean;
 } {
   const trips = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
-  const screens = startActivityScreens(root, game.module, nodes, game.foot, trips, link);
+  const screens = startActivityScreens(root, game.module, nodes, game.foot, trips, link, PAGE_CLOCK, game.atSea);
   // The keepers' countdowns turn on the same clock, so they read the same rules.
   countBy(game.module);
   return {

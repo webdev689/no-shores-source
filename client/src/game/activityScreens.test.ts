@@ -54,6 +54,35 @@ test('This Week reads the last word a room sent of the character, kept at sea, a
   assert.equal(screens.week()?.today.endsAt, (FRIDAY_NINE + 1_440) * 60_000, 'the same reset, a minute on');
 });
 
+test('at sea the Journal reads the sea’s word of the character as it counts, and on foot the room’s again', async () => {
+  let look = () => undefined as void;
+  let here: ScreensFoot | null = standing(gearAt(12, nothing));
+  let sea: GearState | null = null;
+  const clock = { now: () => FRIDAY_NINE * 60_000, every: (run: () => void) => (look = run) };
+  const screens = startActivityScreens(
+    fakePage().root as never,
+    module,
+    [vale],
+    () => here,
+    nowhere,
+    null,
+    clock,
+    () => (here ? null : sea),
+  );
+  await module;
+  look();
+  here = null;
+  look();
+  assert.equal(screens.kept()?.level, 12, 'nothing heard at sea yet: the last word kept');
+  sea = gearAt(13, { ...nothing, cleared: [1] });
+  look();
+  assert.equal(screens.kept()?.level, 13, "the sea's word, as it counts");
+  assert.equal(screens.week()?.today.tiers[1]?.state, 'Taken');
+  here = standing(gearAt(14, nothing));
+  look();
+  assert.equal(screens.kept()?.level, 14, "ashore, the room's word");
+});
+
 test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goes in, Escape closes it', async () => {
   const { root, window } = fakePage();
   const entered: unknown[][] = [];

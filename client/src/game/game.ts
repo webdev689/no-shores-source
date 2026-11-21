@@ -7,6 +7,7 @@ import { newPlayer } from '../player/player.ts';
 import { askedView } from '../player/playerCamera.ts';
 import { Walker } from '../player/walker.ts';
 import { LocalRoom } from '../network/localRoom.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { HULL_NAMES } from '../ships/hulls.ts';
@@ -75,9 +76,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     const [isle, land] = [islesView.groundAt(x, y), scene.groundAt(x, y)];
     return isle === null ? land : land === null ? isle : Math.max(isle, land);
   };
+  /** The sea's last word of the character, sent as it counts the ships sunk toward their bounties and quests. */
+  let seaGear: GearState | null = null;
   // The activities: the ways into the dungeons and out, each going in as `goInto` goes, and their screens.
   const { trips, screens, onFoot, heed } = startActivities(hudRoot, world.nodes, link, {
     foot: () => playing.foot,
+    atSea: () => (playing.flow.mode === 'foot' ? null : seaGear),
     travel: (happening, work) => travel(happening, work),
     module: roomModule,
     intoDungeon: (...into) => goInto(() => Foot.enterDungeon(footContext, ...into)),
@@ -261,13 +265,15 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
    *  room in the page. */
   let seaSeas: Difficulty = 'normal';
+  const hearSea = (gear: GearState) => (seaGear = gear);
   let switching = Promise.resolve();
   const enterSea = async (seas: Difficulty) => {
     seaSeas = seas;
+    seaGear = null;
     const level = (['normal', 'elite', 'abyss'] as const).indexOf(seas);
     await playing.sea?.enterRoom(
       rooms
-        ? async (snapshot) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, undefined, await session())
+        ? async (snapshot) => RoomConnection.open(rooms(seaRoomName(seas)), snapshot, hearSea, await session())
         : async (snapshot) =>
             LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
     );
