@@ -85,13 +85,18 @@ impl Fights {
 }
 
 /// What a captain who went down pays each player who fought it, whose character the sea holds: its rank's foe's XP
-/// at its level to their ship and to their officers aboard. Answers who was paid.
-pub fn pay_sinking(sank: &Sank, characters: &mut BTreeMap<PlayerId, Character>) -> Vec<PlayerId> {
-    let foe = crate::flotsam::foe_of(sank.pirate.commission.rank);
+/// at its level, raised by the sea's tier, to their ship and to their officers aboard. Answers who was paid.
+pub fn pay_sinking(
+    sank: &Sank,
+    difficulty: gear::Difficulty,
+    characters: &mut BTreeMap<PlayerId, Character>,
+) -> Vec<PlayerId> {
+    let rank = sank.pirate.commission.rank;
+    let foe = crate::flotsam::foe_of(rank);
     let mut paid = Vec::new();
     for player in &sank.players {
         let Some(character) = characters.get_mut(player) else { continue };
-        let xp = character.reward_sinking(foe, sank.pirate.level, gear::Difficulty::Normal);
+        let xp = character.reward_sinking(foe, rank.number(), sank.pirate.level, difficulty);
         character.earn_officer_xp(xp, true);
         paid.push(*player);
     }

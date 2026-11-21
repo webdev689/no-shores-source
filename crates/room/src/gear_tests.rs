@@ -16,8 +16,17 @@ fn room() -> Room {
 }
 
 fn stand(room: &mut Room, role: ::foes::Role, level: u8, y: f64) -> FighterId {
-    let id = room.next_id();
     let (foe_type, rank) = foes::pirate_in(role).expect("a role the pirates fill");
+    stand_type(room, foe_type, rank, level, y)
+}
+
+/// Captain Brannoc Thule, a Boss, whose kill always leaves a Vestige.
+fn stand_boss(room: &mut Room, level: u8, y: f64) -> FighterId {
+    stand_type(room, ::foes::foe_type(12).expect("Thule"), ::foes::Rank::Boss, level, y)
+}
+
+fn stand_type(room: &mut Room, foe_type: &'static ::foes::FoeType, rank: ::foes::Rank, level: u8, y: f64) -> FighterId {
+    let id = room.next_id();
     let (mut fighter, brain) = ::foes::spawn(foe_type, rank, 0.0, y, core::f64::consts::PI);
     fighter.health *= gear::power::foe_health_times(level);
     fighter.health_max = fighter.health;
@@ -127,21 +136,21 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let events = chop(&mut room, player, 1);
     assert!(events.iter().any(|event| event.kind == EventKind::Killed && event.defender == brute));
     let paid = &room.player(player).expect("in").character;
-    assert_eq!((paid.xp, paid.materials.aurem), (90, 7), "a brute's worth at level 0: 180 and 15, halved");
+    assert_eq!((paid.xp, paid.materials.aurem), (55, 4), "a Major brute's worth at level 0: 110 and 9, halved");
     assert_eq!(room.player(onlooker).expect("in").character.xp, 0, "striking nothing earns nothing");
     let sword = paid.worn(Slot::Melee).expect("the sword");
-    assert_eq!(sword.xp, 90, "the weapon that struck earns it");
+    assert_eq!(sword.xp, 55, "the weapon that struck earns it");
 
-    // The brute's own drop is a roll of the room's dice, so the captain's is told from it and counted from what the
+    // The brute's own drop is a roll of the room's dice, so the Boss's is told from it and counted from what the
     // player holds.
     let held = room.player(player).expect("in").character.vestiges_held(false);
     let earlier: Vec<u32> = room.drops_for(player).map(|drop| drop.id).collect();
-    let captain = stand(&mut room, ::foes::Role::Captain, 0, -8.0);
+    let captain = stand_boss(&mut room, 0, -8.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     let lying: Vec<Drop> = room.drops_for(player).cloned().collect();
     let vestige = lying.iter().find(|drop| matches!(drop.what, Dropped::Vestige(_)) && !earlier.contains(&drop.id));
-    let Drop { id, at, .. } = *vestige.expect("a captain always leaves a Vestige");
+    let Drop { id, at, .. } = *vestige.expect("a Boss always leaves a Vestige");
     assert_eq!(room.drops_for(onlooker).count(), 0);
     room.tick();
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held, "it lies 6 m away");
@@ -157,9 +166,10 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
 fn a_vestige_left_lying_is_gone_after_two_minutes() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let captain = stand(&mut room, ::foes::Role::Captain, 0, -30.0);
+    let captain = stand_boss(&mut room, 0, -30.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
+    assert_eq!(room.drops_for(player).filter(|drop| matches!(drop.what, Dropped::Vestige(_))).count(), 1);
     for _ in 0..DROP_TICKS {
         room.tick();
     }

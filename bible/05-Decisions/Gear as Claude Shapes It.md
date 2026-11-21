@@ -169,6 +169,10 @@ these are Claude's numbers for them.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges open at the Mage's counter.
 
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a Vestige's chance,
+its colour and what it opens to go by the foe's rank in Destiny 1's order, and a kill's XP and Aurem by its rank too
+([[Gear]], "Vestiges").
+
 ### Materials and keeping things
 
 | Choice | Chosen | Why |

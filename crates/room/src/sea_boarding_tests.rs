@@ -217,3 +217,14 @@ fn an_officer_who_joins_at_sea_while_its_player_fights_a_deck_never_shares_an_id
     assert_eq!(kept.crew.officers.len(), 1, "and the officer");
     assert!(kept.crew.officers.keys().all(|id| !kept.items.contains_key(id)), "under ids of their own");
 }
+
+#[test]
+fn a_boarded_deck_takes_the_seas_tier_so_its_crews_kills_pay_as_a_harder_voyages() {
+    for difficulty in gear::Difficulty::ALL {
+        let (mut sea, player) = met(20.0, Rank::Major);
+        sea.set_difficulty(difficulty);
+        strike(&mut sea, player);
+        sea.board(player).unwrap();
+        assert_eq!(sea.decks()[0].room.difficulty, difficulty);
+    }
+}

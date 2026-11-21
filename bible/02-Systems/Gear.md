@@ -96,6 +96,10 @@ number is one of [[Gear as Claude Shapes It]].
   Legendary's or Atheric's handling, finish and perks 2 fragments and 5 of its island's resource, a weapon's upgrades
   before its last three 5 fragments and 10 of the resource, and its last three upgrades (every upgrade of an armour
   piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]).
+- **A kill's pay.** XP and Aurem are the foe's kind's as a Major at level 5 (Skirmisher 80 and 7, Archer 85 and 7,
+  Swordsman 95 and 8, Brute 110 and 9, Captain 120 and 10), times its rank's health against a Major's (Minor 0.6,
+  Elite 2.2, Miniboss 4, Boss 7; `rewards::RANK_PAY`), times (5 + its level) ÷ 10, times the voyage's tier. The kinds
+  span less than one rank's step, so a higher rank always pays more, whatever the kinds.
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
   each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
@@ -107,19 +111,22 @@ number is one of [[Gear as Claude Shapes It]].
   times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
   below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
   arms 0.2625, legs 0.2375.
-- **Vestiges.** A kill may leave a Vestige for each player who struck the foe, seen by them alone: by the foe's
-  chance (a boss's is sure), its colour weighted by the foe (Legendary from level 18, Atheric from 20), for one slot,
-  its item at the foe's level. A player carries ten. Identified in a social space, it opens to a colour at, below or
-  now and then above its own, never above what its level could drop (Legendary from 18, Atheric from 20), and to a
-  named item of its slot (a Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled,
-  never a trait twice.
+- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]). A
+  kill may leave a Vestige for each player who struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100,
+  Major 4, Elite 10, Miniboss 35, a Boss always; `vestige::chance`), its colour weighted by its rank, for one slot, its
+  item at the foe's level. At every rank each colour is rarer than the one below it, and each better colour likelier
+  the higher the rank (`vestige::colours`); a colour too good for the foe's level (Legendary below 18, Atheric below
+  20) is struck out, the rest keeping their order. A player carries ten. Identified in a social space, it opens to its
+  own colour three times in four, one colour below one time in five and one above one time in twenty (a Normal opens
+  Normal 95 in 100, an Atheric Atheric 80), never above what its level could drop, and to a named item of its slot (a
+  Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled, never a trait twice.
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
   a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. A slot read past nine from a kept character
   carries what it holds, and takes no more until it is down to nine. Dismantling returns Aurem, fragments and, from a
-  Legendary or Atheric, Essence with a third of what was spent on it.
+  Legendary (2, or 3 one time in two) or an Atheric (3), Essence, with a third of what was spent on it.
 - **Chance** comes from a hash of the room's seed, its tick, a count of the rolls the room has made, the player and
   what the roll is for. A deployed room's seed is its host's own, random and never sent, so no player can foresee a
   roll; a room in the game's worker keeps one fixed seed, so it gives the same loot for the same play. A kept character is
@@ -136,8 +143,10 @@ number is one of [[Gear as Claude Shapes It]].
 - **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout its
   came from (a shot the Ranged one's, as it was when the shot was loosed; a swing Melee's, or Ranged's while it is
   drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. On top, at every
-  level, a player's blow on a foe strikes twice (`PLAYER_HARM`) and a foe's on a player half (`FOE_HARM`), from
-  [[The Whole Game Gets a Balance Pass]]. A foe of level 0 fights by combat's own numbers and those two alone.
+  level, a player's blow on a foe strikes half again (`PLAYER_HARM`) and a foe's on a player three quarters
+  (`FOE_HARM`), from [[The Whole Game Gets a Balance Pass]] and
+  [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]. A foe of level 0 fights by combat's own
+  numbers and those two alone.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
   for two minutes ("Drops", below).
@@ -267,12 +276,15 @@ shape.
 [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]], in [[Arts and Loadouts as Claude Shapes Them]]'s shape, after
 DFO's spoils ([[Pick - Loot Drops]]).
 
-- **What drops.** For each player who earned a kill: their Vestige, if one dropped; an Ammo box by the foe's rank
-  (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
-  Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
-- **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
-  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, what
-  they have no room for lost with it (`room::flotsam`).
+- **What drops.** For each player who earned a kill: their Vestige, if one dropped (by its rank, "Vestiges" above);
+  an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
+  and from a Miniboss or a Boss an Ammo crate, straight into their crates while they carry fewer than five, else
+  lying with the rest (`room::drops`).
+- **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: a
+  ship drops as one foe of its rank and level does, its Vestige, Ammo box and crate in the first piece laid for each
+  player, and a boarded hold as one foe a rank higher; every piece holds the ship's salvage ([[Ship Power]]). Each is
+  kept for its player, gathered by their ship within 25 m, what they have no room for lost with it
+  (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
@@ -393,8 +405,9 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
 - **Each island** has a band of foe levels (`gear::world`), rising with the voyage away from Overlook as Destiny 1's
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
 - **The difficulty** a voyage sets out at raises them: Normal as they are, Elite two levels higher, Abyss three,
-  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
-  The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
+  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige,
+  on land, on a boarded deck (whose room takes the sea's tier) and at sea, where a ship's sinking pays its XP and its
+  drop the same way. The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
 - **A garrison's foes** ([[Garrisons Take the Gear Loop's Levels and Shields]], [[Enemies]]) each stand at a level
   drawn evenly from their island's band, from the node's id, raised by the room's difficulty; a Boss's called foes at its
   level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might

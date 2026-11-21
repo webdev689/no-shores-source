@@ -257,14 +257,13 @@ Pass]]) with Claude's numbers:
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone
   as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
   of their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
-  floating are theirs again (`Sea::own`). Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
-  its rank at its level (its water's, raised by the sea's tier): its Vestige by the rewards' foe its rank names
-  (a Minor the Skirmisher's chance,
-  a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one; at Elite or Abyss times
-  the tier's reward, as a harder voyage's kill on land, `vestige_chance`), an Ammo box by its rank,
-  and from a Miniboss or a Boss an Ammo crate; what the player has no room for is lost with the piece. For an Elite or
-  higher one piece of each player's is a chest, rolled as a foe one rank higher. A piece looks like a crate or a barrel
-  (half each by its draw) or a chest.
+  floating are theirs again (`Sea::own`). A ship drops as one foe of its rank at its level does (its water's, raised by
+  the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece laid for each player holds its
+  Vestige by its rank's chance (at Elite or Abyss times the tier's reward, as a harder voyage's kill on land,
+  `vestige_chance`), an Ammo box by its rank, and from a Miniboss or a Boss an Ammo crate. Every piece holds the
+  ship's salvage ([[Ship Power]], "Found"); what the player has no room for is lost with the piece. For an Elite or
+  higher one piece of each player's is a chest, its salvage rolled as a ship one rank higher. A piece looks like a
+  crate or a barrel (half each by its draw) or a chest.
 - **Striking, and boarding.** A captain who strikes lies hove to with their colours down. For 90 s any player in the
   fight may board the captain's ship: their ship within 30 m of it, both under 2 m/s, and its deck holding a crew (the pirates have
   no deck Boss, so their Boss is not boarded). With no one aboard by then it is scuttled
@@ -285,8 +284,10 @@ Pass]]) with Claude's numbers:
   an Elite; a Miniboss six, the Tithe-Mate (the pirates' Captain) the Miniboss; a Boss Captain Brannoc Thule and six.
   The plain hands are the faction's skirmisher, swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the
   pirates' Skirmisher, Swordsman and Archer), standing two abreast along its deck from 2 m forward of amidships, 1.6 m
-  apart, facing aft, at its level. Clearing its deck opens its hold: what floats, twice over, every chest a rank higher
-  still, for each boarder, on top of the lot every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
+  apart, facing aft, at its level. Its deck room takes the sea's tier, so its crew's kills pay as a harder voyage's.
+  Clearing its deck opens its hold: what floats, twice over, every chest's salvage a rank higher still and its drop
+  one foe's a rank higher than the ship's, for each boarder, on top of the lot every player who fought it takes when
+  it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
   minute after it fell every boarder still aboard is sent back; it is scuttled when the last one has left it. A
   boarder's own ship takes no orders or course while they stand on the struck ship's deck. Its deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.

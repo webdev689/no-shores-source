@@ -12,12 +12,12 @@ use combat::judge::{Blow, BlowKind};
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot};
 
-/// What a player's blow on a foe strikes times, at every level: twice, so a new player fells a Minor in one or two
-/// blows and a Major Brute in five, well before the Brute fells them.
-pub const PLAYER_HARM: f64 = 2.0;
-/// What a foe's blow on a player strikes times, at every level: half, so a Major Brute takes six or seven blows to
-/// fell a player who never guards, and a fight leaves time to learn the keys.
-pub const FOE_HARM: f64 = 0.5;
+/// What a player's blow on a foe strikes times, at every level: half again, so a new player fells any Major one on
+/// one with health to spare, while an Elite still asks for guarding and dodging.
+pub const PLAYER_HARM: f64 = 1.5;
+/// What a foe's blow on a player strikes times, at every level: three quarters, so a fight leaves time to learn the
+/// keys without letting a player stand in a Major's blows.
+pub const FOE_HARM: f64 = 0.75;
 
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
 /// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it, whether it
@@ -200,7 +200,8 @@ impl Room {
             }
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
-            let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
+            let reward =
+                found.character.reward_kill(worth, brain.rank as u8, level, Some(hand), self.difficulty, &dice);
             if !deck {
                 found.character.earn_officer_xp(reward.xp, false);
             }

@@ -1,5 +1,6 @@
 //! What a fight and the land give a player: a kill's XP and Aurem and the chance of a Vestige, for each player who
-//! struck the foe; and a resource node's yield. Each foe is worth its kind's own, more at a higher level.
+//! struck the foe; and a resource node's yield. Each foe is worth its kind's own times its rank's, more at a higher
+//! level.
 
 use crate::character::{Character, Stuff, Vestige};
 use crate::dice::Dice;
@@ -17,31 +18,36 @@ pub enum Foe {
     Captain,
 }
 
-/// What a foe of its kind is worth at level 5: XP, Aurem, its chance of a Vestige, and whether it is a boss, whose
-/// Vestige is sure and better.
+/// What a foe of its kind and rank is worth at level 5: XP, Aurem and its chance of a Vestige.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Worth {
     pub xp: u32,
     pub aurem: u32,
     pub vestige: f64,
-    pub boss: bool,
 }
 
 /// What a resource node gives, and one more with Forager worn.
 pub const NODE_YIELD: u16 = 3;
 /// How long a player must have struck a foe before its death to share its kill, in the room's ticks of 1/60 s.
 pub const SHARE_TICKS: u64 = 600;
+/// A kill's pay by the foe's rank, Minor to Boss: its rank's health against a Major's (`foes::ranks`), so a kill pays
+/// as it took to bring down. A kind's own pay spans less than one rank's step, so a higher rank always pays more.
+pub const RANK_PAY: [f64; 5] = [0.6, 1.0, 2.2, 4.0, 7.0];
 
+/// What a foe of its kind and rank (1 Minor to 5 Boss) is worth at level 5: its kind's XP and Aurem as a Major, times
+/// its rank's pay, and its rank's chance of a Vestige.
 #[must_use]
-pub fn worth(foe: Foe) -> Worth {
-    let foe_worth = |xp, aurem, vestige| Worth { xp, aurem, vestige, boss: false };
-    match foe {
-        Foe::Skirmisher => foe_worth(60, 5, 0.05),
-        Foe::Archer => foe_worth(70, 6, 0.05),
-        Foe::Swordsman => foe_worth(90, 8, 0.07),
-        Foe::Brute => foe_worth(180, 15, 0.15),
-        Foe::Captain => Worth { boss: true, ..foe_worth(2_000, 120, 1.0) },
-    }
+pub fn worth(foe: Foe, rank: u8) -> Worth {
+    let (xp, aurem) = match foe {
+        Foe::Skirmisher => (80.0, 7.0),
+        Foe::Archer => (85.0, 7.0),
+        Foe::Swordsman => (95.0, 8.0),
+        Foe::Brute => (110.0, 9.0),
+        Foe::Captain => (120.0, 10.0),
+    };
+    let pay = RANK_PAY[usize::from(rank.clamp(1, 5) - 1)];
+    let rounded = |amount: f64| libm::round(amount * pay) as u32;
+    Worth { xp: rounded(xp), aurem: rounded(aurem), vestige: vestige::chance(rank) }
 }
 
 /// A worth at the foe's level: times (5 + its level) ÷ 10.
@@ -59,19 +65,20 @@ pub struct Reward {
 }
 
 impl Character {
-    /// Rewards a kill this player had a hand in: the XP, to them and to the weapon whose blow last landed (`weapon`)
-    /// and their armour, to their worn Art, and as reputation to the faction pledged while its cape is worn; the
-    /// Aurem; and maybe a Vestige, numbered here and returned to be laid on the ground. A harder voyage pays more of
-    /// each.
+    /// Rewards a kill of a foe of this kind and rank (1 Minor to 5 Boss) this player had a hand in: the XP, to them
+    /// and to the weapon whose blow last landed (`weapon`) and their armour, to their worn Art, and as reputation to
+    /// the faction pledged while its cape is worn; the Aurem; and maybe a Vestige, numbered here and returned to be
+    /// laid on the ground. A harder voyage pays more of each.
     pub fn reward_kill(
         &mut self,
         foe: Foe,
+        rank: u8,
         foe_level: u8,
         weapon: Option<Slot>,
         difficulty: Difficulty,
         dice: &Dice,
     ) -> Reward {
-        let worth = worth(foe);
+        let worth = worth(foe, rank);
         let times = |amount: u32| {
             let raised = libm::round(f64::from(at_level(amount, foe_level)) * difficulty.reward());
             u32::try_from(raised as u64).unwrap_or(u32::MAX)
@@ -86,7 +93,7 @@ impl Character {
         }
         self.materials.add_aurem(aurem);
         let chance = (worth.vestige * difficulty.reward()).min(1.0);
-        let vestige = vestige::dropped(chance, worth.boss, foe_level, dice)
+        let vestige = vestige::dropped(chance, rank, foe_level, dice)
             .map(|(rarity, slot, level)| Vestige::new(self.take_id(), rarity, slot, level));
         Reward { xp, aurem, vestige }
     }

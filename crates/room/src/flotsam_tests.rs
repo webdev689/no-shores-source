@@ -37,6 +37,39 @@ fn a_chest_is_rolled_a_rank_up_and_its_hold_lays_twice_over_with_each_chest_anot
 }
 
 #[test]
+fn a_ship_drops_as_one_foe_of_its_rank_for_each_player_and_its_hold_as_one_a_rank_higher() {
+    for rank in Rank::ALL {
+        let mut flotsam = Flotsam::new(1);
+        flotsam.lay(&sank(rank, vec![1, 2]), 0, (1, 0));
+        flotsam.lay(&sank(rank, vec![1, 2]), 0, (2, 1));
+        for player in [1, 2] {
+            let drops: Vec<Option<Rank>> =
+                flotsam.for_player(player).filter_map(|piece| piece.drop.map(Some)).collect();
+            let hold = Rank::numbered(rank.number() + 1).unwrap_or(Rank::Boss);
+            assert_eq!(drops, vec![Some(rank), Some(hold)], "{rank:?}: one drop as it sank, one from its hold");
+        }
+    }
+    // Over many sinkings a Miniboss leaves a Vestige about as often as a Miniboss on land: 35 in 100.
+    let mut characters = BTreeMap::new();
+    let mut vestiges = 0;
+    for seed in 0..400 {
+        characters.insert(1, Character::starting());
+        let mut flotsam = Flotsam::new(seed);
+        let sunk = Sank {
+            pirate: crate::pirates::Pirate { seed, ..sank(Rank::Miniboss, vec![1]).pirate },
+            ..sank(Rank::Miniboss, vec![1])
+        };
+        flotsam.lay(&sunk, 0, (1, 0));
+        let spots: Vec<(PlayerId, [f64; 2])> = flotsam.for_player(1).map(|piece| (1, piece.at)).collect();
+        for (clock, spot) in spots.into_iter().enumerate() {
+            let gathered = flotsam.tick(clock as u64 + 1, &[spot], &mut characters);
+            vestiges += gathered.iter().filter(|(_, _, held)| held.vestige.is_some()).count();
+        }
+    }
+    assert!((100..180).contains(&vestiges), "about 140 Vestiges from 400 Miniboss ships: {vestiges}");
+}
+
+#[test]
 fn pieces_drift_downwind_and_are_gone_after_three_minutes() {
     let mut flotsam = Flotsam::new(1);
     flotsam.lay(&sank(Rank::Minor, vec![1]), 0, (1, 0));
@@ -61,7 +94,7 @@ fn a_players_ship_gathers_their_own_pieces_within_twenty_five_metres_and_no_one_
     assert!(!gathered.is_empty() && gathered.iter().all(|(_, by, _)| *by == 1));
     assert_eq!(flotsam.for_player(2).count(), 6, "the other player's pieces stay theirs");
     let crates = gathered.iter().filter(|(_, _, held)| held.ammo_crate).count();
-    assert!(crates >= 1, "a Miniboss's piece holds an Ammo crate, kept while there is room");
+    assert!(crates <= 1, "a Miniboss's ship holds one kill's Ammo crate at most: {crates}");
     let far = flotsam.tick(2, &[(1, [5_000.0, 2_000.0])], &mut characters);
     assert!(far.is_empty());
 }
@@ -71,7 +104,7 @@ fn a_harder_seas_pieces_hold_a_vestige_as_often_as_a_harder_voyage_pays_one_on_l
     use gear::Difficulty;
     for rank in Rank::ALL {
         let plain = vestige_chance(rank, Difficulty::Normal);
-        assert_eq!(plain, gear::rewards::worth(foe_of(rank)).vestige, "{rank:?} at Normal: its foe's own chance");
+        assert_eq!(plain, gear::vestige::chance(rank.number()), "{rank:?} at Normal: a foe of its rank's own chance");
         for difficulty in [Difficulty::Elite, Difficulty::Abyss] {
             let raised = (plain * difficulty.reward()).min(1.0);
             assert_eq!(vestige_chance(rank, difficulty), raised, "{rank:?} {difficulty:?}");

@@ -114,7 +114,7 @@ fn a_module_dismantled_gives_back_its_own_material_and_no_fruit_feeds_one() {
     assert_eq!(character.ask(Ask::Feed { item: hull }, Here::default(), &dice(0)), Err(Refusal::DoesNotFit));
     character.ask(Ask::Dismantle { item: hull }, Here::default(), &dice(0)).expect("dismantled");
     assert_eq!(character.materials.ship.timber, 10);
-    assert_eq!(character.materials.ship.heartwood, 2);
+    assert_eq!(character.materials.ship.heartwood, 3, "an Atheric's Essence, as Heartwood");
     assert_eq!(character.materials.armor_fragments, 0);
 }
 
@@ -159,9 +159,9 @@ fn the_shipwright_sells_modules_at_its_level_and_a_sinking_pays_its_experience()
     let social = Here { social: true, day: 3, pledge: 0, rank: 0, week: 0 };
     character.ask(Ask::Vend { vendor: Vendor::Shipwright, ware: 0, day: 3 }, social, &dice(0)).expect("sold");
     let before = character.ship_xp;
-    let earned = character.reward_sinking(Foe::Brute, 10, Difficulty::Normal);
-    assert_eq!(earned, 270);
-    assert_eq!(character.ship_xp - before, 270);
+    let earned = character.reward_sinking(Foe::Brute, 2, 10, Difficulty::Normal);
+    assert_eq!(earned, 165, "a Major brute's 110 at level 10");
+    assert_eq!(character.ship_xp - before, 165);
     assert_eq!(character.xp, 0, "the player earns nothing from its sinking a ship");
 }
 

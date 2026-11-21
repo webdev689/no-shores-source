@@ -12,37 +12,69 @@ use crate::rarity::Rarity;
 /// The foe level from which a Legendary may drop, and an Atheric.
 pub const LEGENDARY_FROM: u8 = 18;
 pub const ATHERIC_FROM: u8 = 20;
-/// A Vestige's colour from most foes, in 100: Normal, Magic, Rare, Legendary, Atheric.
-const FROM_FOES: [u32; 5] = [55, 33, 10, 2, 0];
-/// A Vestige's colour from a boss.
-const FROM_BOSSES: [u32; 5] = [0, 20, 55, 22, 3];
-/// What a Vestige of each colour opens to, in 100: it can open below its own colour, and rarely above it.
+/// A kill's chance of a Vestige for each player who struck it, by the foe's rank, Minor to Boss: a Boss always leaves
+/// one, as Destiny 1's bosses did, and every rank more often than the one below.
+const CHANCE: [f64; 5] = [0.02, 0.04, 0.10, 0.35, 1.0];
+/// A Vestige's colour by the foe's rank, Minor to Boss, in 1,000, Normal to Atheric: at every rank each colour is
+/// rarer than the one below it, and each better colour likelier the higher the rank, as Destiny 1's majors and ultras
+/// dropped the better engrams.
+const COLOURS: [[u32; 5]; 5] = [
+    [720, 230, 45, 5, 0],
+    [640, 280, 70, 10, 0],
+    [520, 320, 130, 28, 2],
+    [400, 330, 200, 60, 10],
+    [300, 280, 250, 135, 35],
+];
+/// What a Vestige of each colour opens to, in 100: its own colour most often, below it now and then, and above it
+/// rarely.
 const OPENS: [[u32; 5]; 5] =
-    [[85, 15, 0, 0, 0], [20, 70, 10, 0, 0], [0, 25, 65, 10, 0], [0, 0, 60, 35, 5], [0, 0, 0, 20, 80]];
+    [[95, 5, 0, 0, 0], [20, 75, 5, 0, 0], [0, 20, 75, 5, 0], [0, 0, 20, 75, 5], [0, 0, 0, 20, 80]];
 
-/// Colour weights as `level` allows them: too low for the best colours, what would have been one is the best its level
-/// allows.
-pub(crate) fn gated(mut weights: [u32; 5], level: u8) -> [u32; 5] {
-    if level < ATHERIC_FROM {
-        weights[3] += weights[4];
-        weights[4] = 0;
+/// The place of a rank (the foes' numbers, 1 Minor to 5 Boss) in the tables; a number past them reads as the nearest.
+fn rank_index(rank: u8) -> usize {
+    usize::from(rank.clamp(1, 5) - 1)
+}
+
+/// A kill's chance of a Vestige from a foe of this rank (1 Minor to 5 Boss), on a Normal voyage.
+#[must_use]
+pub fn chance(rank: u8) -> f64 {
+    CHANCE[rank_index(rank)]
+}
+
+/// The colour weights for what a foe of this rank (1 Minor to 5 Boss) drops, the order of the colours kept whole.
+#[must_use]
+pub fn colours(rank: u8) -> [u32; 5] {
+    COLOURS[rank_index(rank)]
+}
+
+/// Colour weights as `level` allows them: the colours too good for its level are struck out, so the rest keep their
+/// order; were nothing left, the best its level allows.
+pub(crate) fn gated(weights: [u32; 5], level: u8) -> [u32; 5] {
+    let best = if level >= ATHERIC_FROM {
+        4
+    } else if level >= LEGENDARY_FROM {
+        3
+    } else {
+        2
+    };
+    let mut allowed = weights;
+    let over: u32 = allowed[best + 1..].iter().sum();
+    allowed[best + 1..].fill(0);
+    if allowed.iter().sum::<u32>() == 0 {
+        allowed[best] = over.max(1);
     }
-    if level < LEGENDARY_FROM {
-        weights[2] += weights[3];
-        weights[3] = 0;
-    }
-    weights
+    allowed
 }
 
 /// What a kill leaves for one player: a Vestige of this colour, for this slot, its item of this level. `chance` is the
-/// foe's chance of leaving one; a boss always does, and leaves the better colours.
+/// kill's chance of leaving one (its rank's, raised by a harder voyage); `rank` (1 Minor to 5 Boss) weights its
+/// colour.
 #[must_use]
-pub fn dropped(chance: f64, boss: bool, foe_level: u8, dice: &Dice) -> Option<(Rarity, Slot, u8)> {
-    if !boss && dice.roll(Purpose::Drops, 0) >= chance {
+pub fn dropped(chance: f64, rank: u8, foe_level: u8, dice: &Dice) -> Option<(Rarity, Slot, u8)> {
+    if dice.roll(Purpose::Drops, 0) >= chance {
         return None;
     }
-    let weights = gated(if boss { FROM_BOSSES } else { FROM_FOES }, foe_level);
-    let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &weights)];
+    let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &gated(colours(rank), foe_level))];
     let slot = Slot::VESTIGE[dice.pick(Purpose::Slot, 0, Slot::VESTIGE.len())];
     Some((colour, slot, foe_level.clamp(1, NAMED_LEVEL)))
 }

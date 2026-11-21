@@ -22,9 +22,16 @@ pub enum Source {
     Breach,
 }
 
-/// A module's colour, in 100, Normal to Atheric: from ordinary salvage, and from a chest or a Breach.
-const PLAIN: [u32; 5] = [55, 33, 10, 2, 0];
-const RICH: [u32; 5] = [0, 20, 55, 22, 3];
+/// The rank whose drops a source's module is coloured as (1 Minor to 5 Boss): a piece its ship's, a chest the rank it
+/// is rolled at; a cove's wreckage a Major's, an isle's, which an Elite guards, an Elite's; a Breach's hold a Boss's.
+fn rank_of(source: Source) -> u8 {
+    match source {
+        Source::Flotsam { rank, .. } => rank,
+        Source::Wreckage { isle: false } => 2,
+        Source::Wreckage { isle: true } => 3,
+        Source::Breach => 5,
+    }
+}
 
 /// What a source holds: how many common materials (each this many, from the first to the last), its chance of one
 /// Heartwood, and its chance of a module.
@@ -76,10 +83,9 @@ pub fn salvage(source: Source, level: u8, dice: &Dice) -> Salvage {
     Salvage { materials, module }
 }
 
-/// A module of the source's colours at this level, for any of the four slots.
+/// A module of the source's colours at this level, for any of the four slots: a Vestige's from a foe of its rank.
 fn module(source: Source, level: u8, dice: &Dice) -> Option<Item> {
-    let rich = matches!(source, Source::Breach | Source::Flotsam { chest: true, .. });
-    let weights = vestige::gated(if rich { RICH } else { PLAIN }, level);
+    let weights = vestige::gated(vestige::colours(rank_of(source)), level);
     let rarity = Rarity::ALL[dice.weighted(Purpose::ShipModule, 1, &weights)];
     let slot = Slot::SHIP[dice.pick(Purpose::ShipModule, 2, Slot::SHIP.len())];
     vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), dice)

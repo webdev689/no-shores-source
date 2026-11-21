@@ -169,15 +169,15 @@ fn the_cape_is_sold_only_to_the_pledged_and_kept_once() {
 fn reputation_comes_from_kills_only_pledged_with_its_cape_worn() {
     let mut bare = rich();
     assert!(bare.ask(Ask::Pledge { faction: 1 }, AT_COUNTER, &DICE).is_ok());
-    let reward = bare.reward_kill(Foe::Brute, 5, None, Difficulty::Normal, &DICE);
+    let reward = bare.reward_kill(Foe::Brute, 2, 5, None, Difficulty::Normal, &DICE);
     assert_eq!(bare.reputation(1), 0, "no cape, no reputation");
     let mut caped = caped(1);
-    let rewarded = caped.reward_kill(Foe::Brute, 5, None, Difficulty::Normal, &DICE);
+    let rewarded = caped.reward_kill(Foe::Brute, 2, 5, None, Difficulty::Normal, &DICE);
     assert_eq!(caped.reputation(1), u64::from(rewarded.xp));
     assert_eq!(reward.xp, rewarded.xp);
     // Pledged to another, the cape earns nothing.
     assert!(caped.ask(Ask::Pledge { faction: 3 }, AT_COUNTER, &DICE).is_ok());
-    caped.reward_kill(Foe::Brute, 5, None, Difficulty::Normal, &DICE);
+    caped.reward_kill(Foe::Brute, 2, 5, None, Difficulty::Normal, &DICE);
     assert_eq!((caped.reputation(1), caped.reputation(3)), (u64::from(rewarded.xp), 0));
 }
 

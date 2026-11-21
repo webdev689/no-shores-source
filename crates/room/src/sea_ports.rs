@@ -19,7 +19,8 @@ pub const LEFT_AS_SUNK: f64 = 1.0 / 3.0;
 
 impl Sea {
     /// Sets the sea's tier, as a host sets it once the sea has opened: an Elite or Abyss sea sends its ships at the
-    /// levels the tier raises foes to on land, and their pieces hold a Vestige as often as a harder voyage pays one.
+    /// levels the tier raises foes to on land, and a sunk ship's drop, its sinking's XP and its deck's kills pay as a
+    /// harder voyage's kill does.
     pub fn set_difficulty(&mut self, difficulty: gear::Difficulty) {
         self.pirates.difficulty = difficulty;
         self.harbour.flotsam.difficulty = difficulty;
@@ -43,7 +44,8 @@ impl Sea {
             // A boarded ship sunk under its boarders sends them back to their own ships.
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
-            self.harbour.changed.extend(crate::ship_power::pay_sinking(ship, &mut self.harbour.characters));
+            let paid = crate::ship_power::pay_sinking(ship, self.pirates.difficulty, &mut self.harbour.characters);
+            self.harbour.changed.extend(paid);
         }
     }
 

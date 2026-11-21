@@ -4,8 +4,8 @@ use crate::dice::Dice;
 use crate::item::NAMED_LEVEL;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
-use crate::rewards::Foe;
-use crate::vestige::{dropped, make, opens_to};
+use crate::rewards::{Foe, worth};
+use crate::vestige::{chance, colours, dropped, make, opens_to};
 use crate::world::Difficulty;
 
 fn dice(seed: u64) -> Dice {
@@ -76,30 +76,60 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
 }
 
 #[test]
-fn bosses_always_leave_a_vestige_and_the_best_colours_wait_on_the_foes_level() {
-    let colours = |boss: bool, level: u8| {
+fn every_rank_drops_more_often_and_better_than_the_one_below_and_each_colour_rarer_than_the_last() {
+    for rank in 1..5 {
+        assert!(chance(rank) < chance(rank + 1), "rank {rank} drops less often than rank {}", rank + 1);
+        let (lower, higher) = (colours(rank), colours(rank + 1));
+        for better in 2..5 {
+            let share = |weights: [u32; 5]| f64::from(weights[better]) / f64::from(weights.iter().sum::<u32>());
+            assert!(share(higher) >= share(lower), "rank {} drops colour {better} no less often", rank + 1);
+        }
+    }
+    assert!((chance(5) - 1.0).abs() < f64::EPSILON, "a Boss always leaves one");
+    for rank in 1..=5 {
+        let weights = colours(rank);
+        assert!(weights.windows(2).all(|pair| pair[1] < pair[0] || pair[1] == 0), "rank {rank}: {weights:?}");
+    }
+}
+
+#[test]
+fn a_boss_always_leaves_a_vestige_and_the_best_colours_wait_on_the_foes_level() {
+    let colours = |rank: u8, level: u8| {
         let mut seen = [0_u32; 5];
         for seed in 0..4_000 {
-            if let Some((rarity, _, item_level)) = dropped(0.05, boss, level, &dice(seed)) {
+            if let Some((rarity, _, item_level)) = dropped(chance(rank), rank, level, &dice(seed)) {
                 seen[rarity as usize] += 1;
                 assert_eq!(item_level, level.min(NAMED_LEVEL));
             }
         }
         seen
     };
-    let low_boss = colours(true, 10);
+    let low_boss = colours(5, 10);
     assert_eq!(low_boss.iter().sum::<u32>(), 4_000, "a boss always leaves one");
-    assert_eq!((low_boss[0], low_boss[3], low_boss[4]), (0, 0, 0), "no Normal from a boss; nothing past Rare at 10");
-    let high_boss = colours(true, 25);
-    assert!(high_boss[4] > 60 && high_boss[4] < 200, "about 3 in 100 Atheric: {high_boss:?}");
-    let foes = colours(false, 30);
-    let dropped_count: u32 = foes.iter().sum();
-    assert!((150..250).contains(&dropped_count), "about 5 in 100 from a skirmisher: {dropped_count}");
-    assert_eq!(foes[4], 0, "most foes never leave an Atheric");
+    assert_eq!((low_boss[3], low_boss[4]), (0, 0), "nothing past Rare at 10");
+    assert!(low_boss[0] > low_boss[1] && low_boss[1] > low_boss[2], "the level's gate keeps the order: {low_boss:?}");
+    let high_boss = colours(5, 25);
+    assert!(high_boss[4] > 80 && high_boss[4] < 200, "about 35 in 1,000 Atheric: {high_boss:?}");
+    let minors = colours(1, 30);
+    let dropped_count: u32 = minors.iter().sum();
+    assert!((50..120).contains(&dropped_count), "about 2 in 100 from a Minor: {dropped_count}");
+    assert_eq!(minors[4], 0, "a Minor never leaves an Atheric");
 }
 
 #[test]
-fn a_vestige_opens_at_below_or_now_and_then_above_its_colour() {
+fn what_a_vestige_opens_to_keeps_each_colour_rarer_than_the_last_from_every_rank() {
+    for rank in 1..=5 {
+        let mut seen = [0_u32; 5];
+        for seed in 0..20_000 {
+            let (colour, _, level) = dropped(1.0, rank, NAMED_LEVEL, &dice(seed)).expect("a sure drop");
+            seen[opens_to(colour, level, &dice(seed + 100_000)) as usize] += 1;
+        }
+        assert!(seen.windows(2).all(|pair| pair[1] < pair[0] || pair[1] == 0), "rank {rank}: {seen:?}");
+    }
+}
+
+#[test]
+fn a_vestige_opens_to_its_own_colour_most_often_now_and_then_below_and_rarely_above() {
     let opened = |colour: Rarity| {
         let mut seen = [0_u32; 5];
         for seed in 0..10_000 {
@@ -108,11 +138,13 @@ fn a_vestige_opens_at_below_or_now_and_then_above_its_colour() {
         seen
     };
     let legendary = opened(Rarity::Legendary);
-    assert!((5_700..6_300).contains(&legendary[2]), "six in ten open Rare: {legendary:?}");
-    assert!((3_200..3_800).contains(&legendary[3]), "about a third open Legendary, as at Destiny 1's launch");
-    assert!(legendary[4] > 300 && legendary[0] + legendary[1] == 0);
+    assert!((7_200..7_800).contains(&legendary[3]), "three in four open Legendary: {legendary:?}");
+    assert!((1_700..2_300).contains(&legendary[2]), "one in five open Rare: {legendary:?}");
+    assert!(legendary[4] > 300 && legendary[4] < 700 && legendary[0] + legendary[1] == 0);
     let atheric = opened(Rarity::Atheric);
     assert!(atheric[3] > 1_500 && atheric[3] < 2_500, "even an Atheric can open below its colour: {atheric:?}");
+    let normal = opened(Rarity::Normal);
+    assert!(normal[0] > 9_000 && normal[1] > 0, "a Normal opens Normal, now and then Magic: {normal:?}");
 }
 
 #[test]
@@ -158,15 +190,28 @@ fn what_a_vestige_makes_belongs_to_its_slot_and_never_offers_a_trait_twice() {
 }
 
 #[test]
-fn a_kill_pays_every_player_who_struck_by_the_foes_kind_and_level() {
+fn a_kill_pays_every_player_who_struck_by_the_foes_kind_rank_and_level() {
     let mut character = Character::starting();
-    let reward = character.reward_kill(Foe::Swordsman, 5, Some(Slot::Melee), Difficulty::Normal, &dice(1));
-    assert_eq!((reward.xp, reward.aurem), (90, 8), "a swordsman's worth at level 5");
-    let captain = character.reward_kill(Foe::Captain, 15, None, Difficulty::Normal, &dice(1));
-    assert_eq!((captain.xp, captain.aurem), (4_000, 240));
-    assert!(captain.vestige.is_some(), "a captain always leaves a Vestige");
-    assert_eq!(character.xp, 4_090);
-    assert_eq!(character.materials.aurem, 248);
+    let reward = character.reward_kill(Foe::Swordsman, 2, 5, Some(Slot::Melee), Difficulty::Normal, &dice(1));
+    assert_eq!((reward.xp, reward.aurem), (95, 8), "a Major swordsman's worth at level 5");
+    let boss = character.reward_kill(Foe::Captain, 5, 15, None, Difficulty::Normal, &dice(1));
+    assert_eq!((boss.xp, boss.aurem), (1_680, 140), "a Boss captain's at level 15: seven times a Major's, twice");
+    assert!(boss.vestige.is_some(), "a Boss always leaves a Vestige");
+    assert_eq!(character.xp, 1_775);
+    assert_eq!(character.materials.aurem, 148);
+}
+
+#[test]
+fn a_higher_rank_always_pays_more_than_the_rank_below_whatever_their_kinds() {
+    let kinds = [Foe::Skirmisher, Foe::Archer, Foe::Swordsman, Foe::Brute, Foe::Captain];
+    for rank in 1..5 {
+        let most_below = kinds.map(|kind| worth(kind, rank));
+        let least_above = kinds.map(|kind| worth(kind, rank + 1));
+        for (below, above) in most_below.iter().flat_map(|below| least_above.iter().map(move |above| (below, above))) {
+            assert!(above.xp > below.xp && above.aurem > below.aurem, "rank {}: {above:?} over {below:?}", rank + 1);
+            assert!(above.vestige > below.vestige);
+        }
+    }
 }
 
 #[test]
@@ -199,13 +244,16 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
     assert!(Difficulty::ALL.iter().all(|difficulty| difficulty.raise(FOE_LEVEL_MOST) == FOE_LEVEL_MOST));
     let mut normal = Character::starting();
     let mut abyss = Character::starting();
-    let paid = normal.reward_kill(Foe::Swordsman, 5, None, Difficulty::Normal, &dice(1));
-    let harder = abyss.reward_kill(Foe::Swordsman, 5, None, Difficulty::Abyss, &dice(1));
+    let paid = normal.reward_kill(Foe::Swordsman, 2, 5, None, Difficulty::Normal, &dice(1));
+    let harder = abyss.reward_kill(Foe::Swordsman, 2, 5, None, Difficulty::Abyss, &dice(1));
     assert_eq!((harder.xp, harder.aurem), (paid.xp * 2, paid.aurem * 2));
     let drops = |difficulty: Difficulty| {
         (0..2_000)
             .filter(|seed| {
-                Character::starting().reward_kill(Foe::Skirmisher, 10, None, difficulty, &dice(*seed)).vestige.is_some()
+                Character::starting()
+                    .reward_kill(Foe::Skirmisher, 3, 10, None, difficulty, &dice(*seed))
+                    .vestige
+                    .is_some()
             })
             .count()
     };

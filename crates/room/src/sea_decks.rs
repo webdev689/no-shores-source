@@ -65,7 +65,9 @@ impl Sea {
             None => {
                 let deck = self.decks.hulls.get(hull).unwrap_or(&self.deck);
                 let (faction, rank) = (pirate.commission.faction, foe_rank(pirate.commission.rank));
-                let room = Room::deck(deck, faction, rank, pirate.level.max(1));
+                let mut room = Room::deck(deck, faction, rank, pirate.level.max(1));
+                // Its crew stand at the level the sea's tier raised its ship to; their kills pay by that tier too.
+                room.difficulty = self.pirates.difficulty;
                 self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won_at: None });
                 self.decks.boarded.len() - 1
             }
