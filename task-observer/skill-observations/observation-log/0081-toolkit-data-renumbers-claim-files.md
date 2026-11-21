@@ -22,3 +22,9 @@ commands_verified: "toolkit-data.sh save failed: git mv .id-claims/0072 to .id-c
   `[[ $(basename "$file") =~ ^[0-9]{4}-.+\.md$ ]] || continue` in place of the bare four-digit test.
 - Proposed: that line in tools/claude-toolkit/toolkit-data.sh, in its own pull request, with a test of a save whose
   added claim file shares a number with the branch; and the stray `archive/.id-claims/0069-` removed.
+
+- Seen again 2026-11-21 (session on the intro's freeze and the memory leaks): after a restore, `archive/.id-claims/`
+  held `0099-`, and `new-observation.sh` read it as the top claim: line 160 failed on `10#0099-` ("operand
+  expected") and wrote `0099-` into `.id-floor`. The observation file (0098) was still made. Repaired by hand: the
+  stray `0099-` removed and the floor set to 98. So the malformed names now break the write path too, not only the
+  save: the helper should also skip any claim name that is not four digits alone.
