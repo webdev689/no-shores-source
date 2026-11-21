@@ -25,6 +25,7 @@ const raid = (marks: PublicEvent['marks'], phase = 1): PublicEvent => ({
 });
 const bodies = (more: Partial<PublicBodies> = {}): PublicBodies => ({
   player: 1,
+  eye: [0, 4, 3],
   feet: [0, 0, 0],
   yaw: 0,
   firstPerson: null,
@@ -121,4 +122,17 @@ test('E opens the chest in reach, once; it stands open a while after the room ha
   assert.ok((lids(lying, 5.3)[0]?.lid ?? 0) > 0, 'its lid swings up');
   assert.equal(lids([], 8).length, 1, 'taken off the ground, it still stands open');
   assert.equal(lids([], 12).length, 0, 'and then it is gone');
+});
+
+test('a chest the room refuses closes again, and E asks again', () => {
+  const view = new PublicView('saltgrass-downs');
+  const asked: GearAsk[] = [];
+  const lying = [chest(5, [1, 0, 0], 1)];
+  view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 0)?.run();
+  const lid = (clock: number) =>
+    view.frame(null, [], lying, bodies(), clock, [], () => 0).props.find((prop) => prop.module === 'event-chest-lid');
+  assert.ok((lid(0.5)?.lid ?? 0) > 0, 'swinging while the room is asked');
+  assert.equal(lid(2)?.lid, 0, 'still lying once the wait is over: refused, closed');
+  view.use(lying, [0, 0, 0], (ask) => asked.push(ask), 2)?.run();
+  assert.equal(asked.length, 2);
 });

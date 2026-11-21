@@ -2,6 +2,7 @@
 // compass (its name, place, countdown, objective and bar, the heroic task and its window, the bonus, the result), the
 // tracker's steps, the compass's marks and the ring at the ground's edge. The words are the page's; the numbers are
 // the room's (crates/room/src/public).
+import { STORE } from '../city/eventProps.ts';
 import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
 import type { PlaceMark } from '../plus/compass.ts';
 import type { Quest, Step } from './tasks.ts';
@@ -155,7 +156,7 @@ export function questOf(event: PublicEvent | null, zone: string): Quest | null {
   else if (fissure) steps.push({ text: 'Kill the Warden of the Fissure' });
   else {
     steps.push({ text: objectiveOf(event).replace('Hold the stores: wave', 'Break wave') });
-    const standing = event.marks.filter((mark) => mark.kind === MARK.store && mark.state === 1).length;
+    const standing = event.marks.filter((mark) => mark.kind === MARK.store && mark.state === STORE.whole).length;
     steps.push({ text: 'Keep a store standing', count: standing });
   }
   const task = (HEROIC_TASK[event.kind] ?? '').toLowerCase();

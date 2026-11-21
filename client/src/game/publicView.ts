@@ -3,7 +3,7 @@
 // ring at the ground's edge and the light pillars over the shards on the ground go with the fight's marks; the props
 // (the fissure, the growth, the stores, the banners, the shards, the chests) go to the event props' drawer, each
 // carried shard at its carrier's off hand; the beats' sounds go to the world's sounds, their stings to the music.
-import { type ChestLike, eventProps, type EventProp, StateClock } from '../city/eventProps.ts';
+import { type ChestLike, eventProps, type EventProp, MOTION, StateClock } from '../city/eventProps.ts';
 import { EVENT } from '../combat/cues.ts';
 import { markLine } from '../combat/drops.ts';
 import { sealWave } from '../combat/latticeLooks.ts';
@@ -19,9 +19,17 @@ type Point = readonly [number, number, number];
 
 /** The ring at the ground's edge: its width, metres, the arcs it is laid in (each on the ground under its middle),
  *  and its colour and how far it breathes. */
-const RING = { widthM: 0.35, arcs: 72, colour: [0.92, 0.7, 0.3] as const, alpha: 0.42, breathe: 0.12 } as const;
-/** A shard's light pillar: how tall, its colour (the Lattice's red), how strong, and its foot over the shard. */
-const PILLAR = { heightM: 7, colour: [1, 0.28, 0.36] as const, strength: 0.9, liftM: 0.5 } as const;
+const RING = {
+  widthM: 0.35,
+  arcs: 72,
+  colour: [0.92, 0.7, 0.3] as const,
+  alpha: 0.42,
+  breathe: 0.12,
+  breatheRadS: 2.2,
+} as const;
+/** A shard's light pillar: how tall, its colour (the Lattice's red), how strong, the least of it as the shard fades,
+ *  and its foot over the shard. */
+const PILLAR = { heightM: 7, colour: [1, 0.28, 0.36] as const, strength: 0.9, least: 0.35, liftM: 0.5 } as const;
 /** Where a carried shard is held, metres, from the carrier's feet (third person: out to the off hand, forward, the
  *  drawer adding its own height), or from the eye in first person (forward, left, down, low in the view's left). */
 const HAND = { left: 0.32, forward: 0.16 } as const;
@@ -31,6 +39,8 @@ const CHEST_REACH_M = 2.5;
 const CHEST_HEIGHT_M = 2;
 /** How long an opened chest stands, its lid up, after the room has taken it off the ground, seconds. */
 const CHEST_KEPT_S = 6;
+/** How long an asked chest waits on the room before E may ask again: the room refuses one a step out of reach. */
+const CHEST_RETRY_S = 1.5;
 
 /** The beats a public event's events make, by their kind. */
 const BEATS: Readonly<Record<number, BannerBeat>> = {
@@ -55,6 +65,7 @@ const STINGS: Partial<Record<BannerBeat, 'cadence' | 'victory' | 'defeat'>> = {
  *  and any fighter by number. */
 export interface PublicBodies {
   readonly player: number;
+  readonly eye: Point;
   readonly feet: Point;
   readonly yaw: number;
   readonly firstPerson: { readonly eye: Point; readonly yaw: number; readonly pitch: number } | null;
@@ -110,7 +121,7 @@ export class PublicView {
   ): PublicFrame {
     const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null);
     const sounds = this.sounds(event, events, bodies, clock);
-    this.lay(event, marks, floor, clock, bodies.feet);
+    this.lay(event, marks, floor, clock, bodies.eye);
     const chests = this.chests(drops, clock);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
     const age = this.clock.ager(clock);
@@ -157,7 +168,8 @@ export class PublicView {
     return {
       words: chest.tier >= 3 ? 'Open the heroic chest' : 'Open the chest',
       run: () => {
-        if (this.opened.has(chest.id)) return;
+        const asked = this.opened.get(chest.id);
+        if (asked && clock - asked.at < CHEST_RETRY_S) return;
         this.opened.set(chest.id, { at: clock, chest: { id: chest.id, at: chest.at, tier: chest.tier, opened: 0 } });
         ask({ kind: ASKS.openChest, item: chest.id });
       },
@@ -169,6 +181,8 @@ export class PublicView {
   private chests(drops: readonly GearDrop[], clock: number): ChestLike[] {
     const lying = drops.filter((drop) => drop.kind === DROPPED.chest);
     const shown: ChestLike[] = lying.map((drop) => {
+      // One the room still leaves lying a while after it was asked was refused: its lid closes again.
+      if (clock - (this.opened.get(drop.id)?.at ?? clock) > CHEST_RETRY_S) this.opened.delete(drop.id);
       const opened = this.opened.get(drop.id);
       return { id: drop.id, at: drop.at, tier: drop.tier, opened: opened ? clock - opened.at : null };
     });
@@ -183,7 +197,7 @@ export class PublicView {
    *  person, the player's own low in the view's left. Every other mark as the room placed it. */
   private held(mark: PublicMark, bodies: PublicBodies): PublicMark {
     if (mark.kind !== MARK.carried) return mark;
-    const lift = 1.15;
+    const lift = MOTION.handM;
     if (mark.id === bodies.player) {
       const first = bodies.firstPerson;
       if (first) {
@@ -203,12 +217,12 @@ export class PublicView {
     marks: number[],
     floor: (x: number, y: number) => number,
     clock: number,
-    feet: Point,
+    eye: Point,
   ): void {
     const ring = ringOf(event);
     if (ring) {
       const [x, y] = ring.at;
-      const alpha = RING.alpha * (1 + RING.breathe * Math.sin(clock * 2.2));
+      const alpha = RING.alpha * (1 + RING.breathe * Math.sin(clock * RING.breatheRadS));
       const step = (2 * Math.PI) / RING.arcs;
       for (let arc = 0; arc < RING.arcs; arc += 1) {
         const middle = (arc + 0.5) * step;
@@ -226,8 +240,8 @@ export class PublicView {
     for (const mark of event?.marks ?? []) {
       if (mark.kind !== MARK.shard) continue;
       const root: Point = [mark.at[0], mark.at[1], mark.at[2] + PILLAR.liftM];
-      const strength = PILLAR.strength * Math.min(1, 0.35 + mark.health);
-      markLine(marks, root, PILLAR.heightM, PILLAR.colour, strength, clock, feet);
+      const strength = PILLAR.strength * Math.min(1, PILLAR.least + mark.health);
+      markLine(marks, root, PILLAR.heightM, PILLAR.colour, strength, clock, eye);
     }
   }
 

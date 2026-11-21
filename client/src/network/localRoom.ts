@@ -91,7 +91,7 @@ export class LocalRoom implements RoomLink {
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
    *  joined at its first spawn; the player's gear goes to `gear`. With `foeAsks` the player may ask it for foes, to try
-   *  a fight on the node's land; with `minuteShift` its clock stands that many minutes ahead (`minuteShift`). */
+   *  a fight on the node's land; with `minuteShift` its clock stands that many minutes ahead. */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,

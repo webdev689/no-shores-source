@@ -170,6 +170,9 @@ export class Foot {
   private joined = 1;
   /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
   private readonly gearHeld: { gear: GearState | null };
+  /** Alone, the room in the page's word on the player's gear, read only for their public events' chests: the page
+   *  dresses and serves nothing else from a character that is not kept. */
+  private readonly alone: { gear: GearState | null };
   private dressedIn: GearState | null = null;
   private dressedLoadout = 0;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
@@ -185,7 +188,12 @@ export class Foot {
     node: NodeInfo,
     boxes: readonly Block[],
     parts: { link: RoomLink; fight: Fighting; combat: CombatRules; roster: readonly FoeType[] },
-    people: { otherPlayers: OtherPlayers; gear: { gear: GearState | null }; folk: Placed[] },
+    people: {
+      otherPlayers: OtherPlayers;
+      gear: { gear: GearState | null };
+      alone: { gear: GearState | null };
+      folk: Placed[];
+    },
   ) {
     this.context = context;
     this.node = node;
@@ -194,7 +202,12 @@ export class Foot {
     this.fight = parts.fight;
     this.player = new PlayerFight(parts.fight, parts.combat, context.walker);
     this.steps = parts.fight.steps(context.movement);
-    [this.otherPlayers, this.gearHeld, this.folk] = [people.otherPlayers, people.gear, people.folk];
+    [this.otherPlayers, this.gearHeld, this.alone, this.folk] = [
+      people.otherPlayers,
+      people.gear,
+      people.alone,
+      people.folk,
+    ];
     this.foes = new FoeFigures(parts.roster);
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     const hud = document.querySelector<HTMLElement>('#hud');
@@ -252,6 +265,7 @@ export class Foot {
     };
     const asked = rooms ? [] : context.foesAsked;
     const gear: { gear: GearState | null } = { gear: null };
+    const alone: { gear: GearState | null } = { gear: null };
     const session = await context.session();
     const connection = rooms
       ? await RoomConnection.open(rooms(nodeRoom(node, seas)), received, (sent) => (gear.gear = sent), session)
@@ -275,7 +289,7 @@ export class Foot {
       connection ??
       LocalRoom.openNode(module, nodeText(node, rect, ground, boxes, await context.land.grounds(node.id)), received, {
         foeAsks: asked.length > 0,
-        gear: (sent) => (gear.gear = sent),
+        gear: (sent) => (alone.gear = sent),
         minuteShift: shift,
       });
     fight = new Fighting(combat, link);
@@ -283,7 +297,7 @@ export class Foot {
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
     // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
     players.takeDresses(link.dressed);
-    return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, folk: [] });
+    return new Foot(context, node, boxes, { link, fight, ...rules }, { otherPlayers: players, gear, alone, folk: [] });
   }
 
   /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
@@ -406,8 +420,9 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const floor = (x: number, y: number) => movement.standing(x, y).z;
-    // The room's word on the player's drops, alone as online: a public event's chest is drawn as a prop of its own.
+    // A public event's chest is drawn as a prop of its own, online or alone; the other drops only online.
     const drops = this.gearHeld.gear?.drops ?? [];
+    const chests = (this.gearHeld.gear ?? this.alone.gear)?.drops.filter((drop) => drop.kind === DROPPED.chest) ?? [];
     const dropped = this.dropMarks(
       clock,
       shot.eye,
@@ -424,9 +439,10 @@ export class Foot {
     const shownPublic = this.publicView.frame(
       fight.public,
       publicEvents,
-      drops,
+      chests,
       {
         player: fight.player,
+        eye: shot.eye,
         feet,
         yaw: walker.player.facing,
         firstPerson: firstPerson ? { eye: shot.eye, yaw: shot.yaw, pitch: shot.pitch } : null,
@@ -497,7 +513,7 @@ export class Foot {
     const able = !paused && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
-    const chest = this.publicView.use(drops, feet, (asked) => fight.askGear(asked), clock);
+    const chest = this.publicView.use(chests, feet, (asked) => fight.askGear(asked), clock);
     this.using = able ? (chest ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
     this.prompt?.show(this.using?.words ?? null);
     const drawing = walker.shownDress.outfit.right?.startsWith('bow') && ownView?.action.kind === 'draw';

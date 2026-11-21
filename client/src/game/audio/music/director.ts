@@ -198,6 +198,9 @@ export class MusicDirector {
 
   /** One frame, `seconds` after the last. */
   frame(hearing: Hearing, seconds: number): void {
+    // A moment asked while the music is cut is let go, never played late.
+    const wanted = this.asked;
+    this.asked = null;
     const verdict = hear(this.memory, hearing, seconds, this.songClock);
     this.memory = verdict.memory;
     const bus = this.output();
@@ -206,8 +209,6 @@ export class MusicDirector {
     const now = this.clockOf(bus.audio);
     const { scores } = this;
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
-    const wanted = this.asked;
-    this.asked = null;
     // The game's moment is played in the place's own fight score, unless the law has one of its own this frame.
     const moment: Sting | null =
       verdict.sting ??
