@@ -62,7 +62,7 @@ fn a_catalogue_that_breaks_a_rule_says_which() {
         "no names for a Normal Sword",
         "guild_blade: its faction is none the factions' file holds",
         "no Legendary Greatsword",
-        "bare_atheric: an Atheric weapon has an intrinsic",
+        "bare_atheric: an Atheric weapon or module has an intrinsic",
     ] {
         assert!(problems.iter().any(|problem| problem == expected), "{expected} in {problems:#?}");
     }

@@ -50,6 +50,26 @@ by the element it carries. It sets off no perk of its own, so nothing chains fro
 so every page draws it: a leap as a bolt from the foe before to the foe struck, a burst as a ring from the foe it
 came from, a bite as a flash on its striker.
 
+### Calls in the rules
+
+| Choice | Chosen | Why |
+|---|---|---|
+| An aimed shot | A shot loosed from the draw, read by its harm as it is loosed | A bow, crossbow or gun's aimed shot is the one the draw strengthens |
+| A burst | Strikes the foes round its centre, not the centre itself, which the blow or kill already took | One foe is never struck twice by one blow |
+| A leap a foe dodges | Leaps on from it | A dodge passes a spell's blow whole; the lightning still reaches the next |
+| A bite | Carries the weapon's own element; a leap and a burst their perk's | A bite is the guard's own answer, a leap or burst the perk's |
+| Thousand Cuts and Exposing Strikes | Count the same row of swings | One row of swings on one foe |
+| Swell run out | Begins again at one kill | Its time is its life |
+| The Ninth | Counts a sweep that strikes several foes once | A swing is one count |
+| Call and Answer | Counts shots that land | A miss answers nothing |
+| The new Atherics' resources | Saltfang Brineglass, Widow's Walk Heartwood Resin, Brass Chorus Goldgrass Seed, Deepwatch Mistbloom, The Ninth Wave Cairn Iron | Each from an island its words fit |
+| Who sinks a ship (Feeding) | The shooter of the ball that takes its last hull; a ram never sinks one, and a struck captain scuttled is no one's | The ball that does it is the shooter's |
+| Hard to Kill | Leaves exactly a tenth of its hull, raised to it if lower, once a fight | A last stand, not a heal |
+| From the Deep | Doubles a ball's hull harm in the waterline band, on top of the band's own | The band already holes harder; the Atheric makes it worse |
+| Snare | Slows ships of another flag within 30 m of its centre; the strongest Snare counts, never two | Balls strike only another flag; a Snare is a ship's reach |
+| Squall and Web | Squall counts every ball that strikes it; Web only a ball in the rigging, each new one starting its 6 s again | What each Atheric is made of |
+| A Legendary's sails and rigging | Six perks each, Backed Sails, Boarding Ladders and Preventer Stays among them, so no module offers a perk twice | The merged pools had too few for a Legendary's six nodes |
+
 ### The Atheric ship modules
 
 | Atheric | Module | Intrinsic | Its own |
@@ -79,6 +99,9 @@ Destiny 1's rolls traded one strength for another; these are offered among their
 | Crowd of Sail | Perk | Sails | In a fight it sails 10% faster | Its canvas tears 15% more |
 | Reefed Sails | Perk | Sails | Its canvas tears 20% less | In a fight it sails 5% slower |
 | Taut Rigging | Perk | Rigging | In a fight it turns 15% faster | Its canvas tears 10% more |
+| Backed Sails | Perk | Sails | In a fight it turns 12% faster | It sails 4% slower |
+| Boarding Ladders | Perk | Rigging | Three more hands board with it | Balls cut down 10% more of your men |
+| Preventer Stays | Perk | Rigging | Its canvas tears 15% less | In a fight it turns 8% slower |
 
 ### The ship's perks, merged
 
@@ -92,8 +115,8 @@ first perk of its column's pool it does not offer already.
 | Guns | Finish (what is loaded) | Double Shotted (hole a hull 10% more), Chain Locker (tear canvas 20% more), Grape Locker (cut down men 20% more) |
 | Guns | Perk | Raking Fire (20% more on a ship below a third of its hull), Firing Drill (reload 5% faster and scatter 5% less), Run Out, Overcharged |
 | Hull | Perk | Oak Ribs (hull takes 10% less), Copper Sheathing (a ball below the waterline harms it 20% less), Iron Ram, Last Timbers, Carpenter's Stores, Stripped Ballast |
-| Sails | Perk | Storm Canvas (canvas tears 12% less), Flying Jib (sails 6% faster), Lookout Yard, Crowd of Sail, Reefed Sails |
-| Rigging | Perk | Quick Braces (turns 10% faster), Grapnels, Boarding Nets (balls cut down 12% fewer of your men), Taut Rigging |
+| Sails | Perk | Storm Canvas (canvas tears 12% less), Flying Jib (sails 6% faster), Lookout Yard, Crowd of Sail, Reefed Sails, Backed Sails |
+| Rigging | Perk | Quick Braces (turns 10% faster), Grapnels, Boarding Nets (balls cut down 12% fewer of your men), Taut Rigging, Boarding Ladders, Preventer Stays |
 
 Gone into another: Topgallants, Running Blocks and Fair Winds into Flying Jib; Seasoned Timbers into Oak Ribs;
 Gunlayer's Eye and Bored True into Steady Lay; Powder Monkeys into Quick Tackle; Grapeshot Drill, Swivel Crews and

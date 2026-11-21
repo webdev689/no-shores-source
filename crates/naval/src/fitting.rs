@@ -38,6 +38,19 @@ pub struct Trim {
     pub gunner: f64,
     pub bosun: f64,
     pub carpenter: f64,
+    /// An Atheric module's own work (`fight_exotics.rs`): its balls' harm to a hull below the waterline; the share of
+    /// its hull mended a second; the share of it a ball that would sink it leaves, once a fight; whether a ship it sinks
+    /// reloads its guns; whether torn canvas costs it no way; the way each ball striking it gives it; the share of
+    /// turn its balls in a ship's rigging take; the share of way it takes from a ship near it. 1 for `holing`, else 0 or
+    /// false, changes nothing.
+    pub holing: f64,
+    pub mend: f64,
+    pub last_stand: f64,
+    pub feeding: bool,
+    pub own_wind: bool,
+    pub squall: f64,
+    pub web: f64,
+    pub snare: f64,
 }
 
 impl Default for Trim {
@@ -62,6 +75,14 @@ impl Default for Trim {
             gunner: 0.0,
             bosun: 0.0,
             carpenter: 0.0,
+            holing: 1.0,
+            mend: 0.0,
+            last_stand: 0.0,
+            feeding: false,
+            own_wind: false,
+            squall: 0.0,
+            web: 0.0,
+            snare: 0.0,
         }
     }
 }
@@ -78,14 +99,17 @@ pub const GUNNER_ARC_COS: f64 = 0.7;
 pub const CORNERED_AT: f64 = 1.0 / 3.0;
 pub const RALLY_AT: f64 = 0.5;
 
-/// A player's ship's fitting for a fight: its harm on each ship by number, each one's harm on it, its trim, and the
-/// hull its Carpenter still has to patch.
+/// A player's ship's fitting for a fight: its harm on each ship by number, each one's harm on it, its trim, the hull
+/// its Carpenter still has to patch, when each ball struck it that still fills its Squall, and whether its last stand
+/// is spent.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct Fitting {
     pub dealt: BTreeMap<ShipId, f64>,
     pub taken: BTreeMap<ShipId, f64>,
     pub trim: Trim,
     pub patching: f64,
+    pub squalls: Vec<f64>,
+    pub stood: bool,
 }
 
 impl Fitting {
@@ -102,13 +126,15 @@ impl Fitting {
         self.patching += hurt.hull * CARPENTER_PATCHES * self.trim.carpenter * self.trim.patch;
     }
 
-    /// Its share of its way with its canvas as it stands: its Bosun keeps part of what torn canvas costs it, and its
-    /// trim's way is on top.
+    /// Its share of its way with its canvas as it stands: its Bosun keeps part of what torn canvas costs it (all of
+    /// it with its Own Wind), and its trim's way and its Squall are on top.
     #[must_use]
     pub fn way_share(&self, share: f64) -> f64 {
+        let share = if self.trim.own_wind { 1.0 } else { share };
         // Written so that with no Bosun it is `share` to the bit, as a browser predicting the ship takes it.
         let kept = share + (1.0 - share) * BOSUN_KEEPS * self.trim.bosun;
-        kept * self.trim.way
+        let squall = (self.squalls.len() as f64 * self.trim.squall).min(crate::fight::exotics::SQUALL_MOST);
+        kept * self.trim.way * (1.0 + squall)
     }
 }
 
@@ -118,10 +144,14 @@ impl Fight {
         self.fittings.remove(&id);
     }
 
-    /// Fits a player's ship for the fight; one fitted already keeps what its Carpenter has still to patch.
+    /// Fits a player's ship for the fight; one fitted already keeps what its Carpenter has still to patch, its
+    /// Squall and its last stand.
     pub fn fit(&mut self, id: ShipId, fitting: Fitting) {
-        let patching = self.fittings.get(&id).map_or(0.0, |kept| kept.patching);
-        self.fittings.insert(id, Fitting { patching, ..fitting });
+        let fitting = match self.fittings.remove(&id) {
+            Some(kept) => Fitting { patching: kept.patching, squalls: kept.squalls, stood: kept.stood, ..fitting },
+            None => fitting,
+        };
+        self.fittings.insert(id, fitting);
     }
 
     #[must_use]
@@ -141,7 +171,8 @@ impl Fight {
         if let Some(fitted) = self.fittings.get(&shooter) {
             let (trim, power) = (fitted.trim, fitted.dealt_to(target));
             let finish = if share(target).0 < CORNERED_AT { trim.finisher } else { 1.0 };
-            gun.hull *= power * trim.harm_hull * finish;
+            let holing = if zone == Zone::Holed { trim.holing } else { 1.0 };
+            gun.hull *= power * trim.harm_hull * finish * holing;
             gun.sail *= power * trim.harm_sail * finish;
             gun.crew *= power * trim.harm_crew * finish;
         }
