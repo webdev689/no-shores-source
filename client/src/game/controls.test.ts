@@ -3,7 +3,17 @@ import { test } from 'node:test';
 import { BIND_IDS, DEFAULTS, type Device, rebind } from '../player/binds.ts';
 import type { NavalEvent } from '../network/seaFight.ts';
 import { BINDS } from '../player/input.ts';
-import { CONTROL_GROUPS, type Row, boundCap, boundWord, cellsOf, controlWords, doesFor, withKey } from './controls.ts';
+import {
+  CONTROL_GROUPS,
+  type Row,
+  askedKey,
+  boundCap,
+  boundWord,
+  cellsOf,
+  controlWords,
+  doesFor,
+  withKey,
+} from './controls.ts';
 import { linesOf } from './seaWord.ts';
 
 const ROWS = CONTROL_GROUPS.flatMap((group) => group.controls);
@@ -93,4 +103,11 @@ test('the sheet says how Dusk Daggers aim: on the First Tenet’s key, held', ()
   const daggers = ROWS.find((row) => row.binds.includes('tenetOne'));
   assert.match(daggers?.does ?? '', /hold/i);
   assert.match(daggers?.does ?? '', /dagger/i);
+});
+
+test('a line asks for a control by its key before its mouse button, or by its pad button', () => {
+  assert.deepEqual([askedKey('guard'), askedKey('swing'), askedKey('dodge')], ['F', 'Right button', 'V']);
+  BINDS.device = 'pad';
+  assert.deepEqual([askedKey('guard'), askedKey('guard', true)], ['LT', 'pad:LT']);
+  BINDS.device = 'keys';
 });

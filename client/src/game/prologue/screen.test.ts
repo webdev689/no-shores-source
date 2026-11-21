@@ -29,6 +29,10 @@ test('played by touch, the skip is a hold on the view; with keys, a hold on Spac
     clock.now = 1;
     assert.ok(wordsOf(laid()).includes(words), words);
   }
+  const { screen, laid, clock } = made(false);
+  screen.showSkip(0, 'A');
+  clock.now = 1;
+  assert.ok(wordsOf(laid()).includes('HOLD A TO SKIP'), 'the key held for it, as the prologue names it');
   Object.assign(globalThis, { matchMedia: undefined });
 });
 

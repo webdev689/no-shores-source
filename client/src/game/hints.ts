@@ -132,21 +132,25 @@ function sticksJoined(names: readonly string[]): string[] {
   return joined;
 }
 
+/** The keys an entry's `names` show for `device` under `binds`: each control by its first key (`every` key with
+ *  it), a gesture by its name or the pad's way to do it. */
+export function keysOf(names: string, device: Device, binds: Binds, every = false): string[] {
+  const shown = names.split(' / ').flatMap((token) => {
+    const [forKeys = '', forPad = forKeys] = token.split('|');
+    const which = device === 'keys' ? forKeys : forPad;
+    if (!(which in CONTROLS)) return device === 'keys' ? [which] : (ON_THE_PAD[which] ?? []);
+    const bound = binds[which as keyof typeof CONTROLS][device];
+    return bound.slice(0, every ? undefined : 1).map(device === 'keys' ? keyName : padName);
+  });
+  return sticksJoined([...new Set(shown)]);
+}
+
 /** The strip's entries shown for `device` under `binds`: each control by its first key (the sheet has the rest), a
  *  gesture by its name or the pad's way to do it; an entry with nothing to show is left out. */
 export function hintsFor(hints: readonly StripHint[], device: Device, binds: Binds): Hint[] {
   return hints.flatMap(([names, words, padWords]): Hint[] => {
-    const tokens = names.split(' / ');
-    const shown = tokens.flatMap((token) => {
-      const [forKeys = '', forPad = forKeys] = token.split('|');
-      const which = device === 'keys' ? forKeys : forPad;
-      if (!(which in CONTROLS)) return device === 'keys' ? [which] : (ON_THE_PAD[which] ?? []);
-      const bound = binds[which as keyof typeof CONTROLS][device];
-      return bound.slice(0, 1).map(device === 'keys' ? keyName : padName);
-    });
-    const unique = sticksJoined([...new Set(shown)]);
-    if (unique.length === 0) return [];
-    return [[unique.join(' / '), device === 'pad' ? (padWords ?? words) : words]];
+    const keys = keysOf(names, device, binds);
+    return keys.length === 0 ? [] : [[keys.join(' / '), device === 'pad' ? (padWords ?? words) : words]];
   });
 }
 

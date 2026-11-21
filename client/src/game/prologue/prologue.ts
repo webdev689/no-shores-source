@@ -4,6 +4,7 @@
 import { HoldToSkip } from '../../cinema/cues.ts';
 import type { InputFrame } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
+import { boundWord } from '../controls.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { hushed } from './music.ts';
 import { asWreck, Battle, type Wreck } from './battle.ts';
@@ -257,7 +258,7 @@ export class Prologue {
       const holding = controls.held('jump') || this.touching;
       const skipped = this.skipping.step(seconds, holding);
       // The hint shows, faint, whenever there is something to skip, so the skip can be found before it is held.
-      stage.parts.screen.showSkip(holding ? this.skipping.share : 0);
+      stage.parts.screen.showSkip(holding ? this.skipping.share : 0, boundWord('jump'));
       if (skipped) {
         // A skipped cutscene's world is left as its end leaves it, but none of its words are said.
         beat.skip();

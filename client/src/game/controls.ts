@@ -190,6 +190,15 @@ export function withKey(words: string, id: BindId): string {
   return key ? `${words}  ${key}` : words;
 }
 
+/** A control's key as a line asks for it, as a keycap draws it with `cap`: on the keys its first that is no mouse
+ *  button (a key works whether the pointer is free or held), else its first; on the pad its first button. */
+export function askedKey(id: BindId, cap = false, device: Device = BINDS.device, binds: Binds = BINDS.now): string {
+  const bound = binds[id][device];
+  const first = device === 'keys' ? (bound.find((key) => !key.startsWith('mouse')) ?? bound[0]) : bound[0];
+  if (first === undefined) return '';
+  return device === 'keys' ? keyName(first) : cap ? padName(first) : first;
+}
+
 /** A control's first key or button as a keycap draws it (`pad:` before a pad's); none where it has none. */
 export function boundCap(id: BindId, device: Device = BINDS.device, binds: Binds = BINDS.now): string {
   const [first] = binds[id][device];
