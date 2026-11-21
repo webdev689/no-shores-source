@@ -323,7 +323,8 @@ the courts and before the portico, the rug crimson from first and third person.
 
 Then, under the owner's [[The Hub Feels Lively, Its Ground Populated]] and
 [[The Hub's Pieces Tell a Story, and Its Paths Are Paved Apart]] (a first scatter of some 900 pieces was "way too
-crowded"): the platform's ways laid as flagstone walks (material `path`), and each court set as a scene by
+crowded"): the platform's ways laid as flagstone walks (material `path`), the gardens' open ground as lawn and the
+Forge Yard's as trodden earth (`lawn`, `earth`), and each court set as a scene by
 `hub/dress.rs` (eleven pieces new in `tools/modules/dress.py`), each new stall's keeper at work, a walker's place at
 each piece, up to 48 walkers. A test pins every scene standing (`every_court_is_set_as_a_scene_and_its_ways_are_walks`);
 a test build prints any piece a scene asks for that is left out, and why.

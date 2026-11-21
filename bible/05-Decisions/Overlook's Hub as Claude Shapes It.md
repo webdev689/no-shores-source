@@ -84,6 +84,7 @@ Under the owner's [[The Hub Feels Lively, Its Ground Populated]], then
 | Call | Choice |
 |---|---|
 | The walks | Every way on the platform laid as a walk of dressed flagstones (its own material, `path`), 3.2 m wide and 6 cm proud of the courts' cobbles, a round at each joint; the portico's podium and the Hall keep their own floors |
+| The grounds | The gardens' open ground (the Watch Court, the West Court) laid as lawn between the walks and round the scenes, the Forge Yard's as trodden earth; the market and the Stair Yard keep their cobbles, the processional band and the obelisk's round their stone |
 | How | Each court a scene, every piece placed for a reason and faced to its way or to what it looks at; one a scene asks for where it would block a way, a post, an arrival or a counter is left out (`hub/dress.rs`) |
 | The Watch Court | Where the arrivals land: an avenue of trees along the seaward walk between its ways in, a garden bed in each quarter round the obelisk and a bench by it, potted trees down the walk to the Beacon, a flower seller by the passage to the Forge Yard |
 | The West Court | A garden for the music: a tree on each quarter of the fountain, benches looking at it, the band's listeners at tables and under parasols beside the bandstand with the drinks' barrels behind it, beds along the parapet |
