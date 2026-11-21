@@ -12,39 +12,61 @@ status: in force
 > player completes the action. I really want this introduction to really teach the player how to play the game and be
 > as detailed as possible without being overbearing"
 
-Asked how detailed the eyes should be, the owner chose "Shaped lids + light (Recommended)": curved, soft-edged lids
-closing unevenly, a lash fringe, warm red light through them when shut, and the blur clearing in pulses with the
-heartbeat. Asked what the health pot is: "There is a new heslth mechanic ingame", the healing charges
-([[Three Healing Charges, Refilled by Blows and Kills]]). Asked how the freeze teaches: "Freeze two blows
-(Recommended)", the first wind-up frozen with "Press F to parry" until F lands a parry, the next with "Press V to
-dodge", then the fight runs as any with a short reminder. Asked what of the camera's flight down the wreck stays: "Drop
-the flyover".
+Asked how the eyes should look, the owner chose the option that read: "Shaped lids + light (Recommended): Curved,
+soft-edged lids that close unevenly, a fringe of lashes, warm red light through them when shut, and the blur clearing
+in pulses with the heartbeat."
+
+Asked how the tutorial's health pot should work, the owner wrote: "There is a new heslth mechanic ingame", the
+healing charges ([[Three Healing Charges, Refilled by Blows and Kills]]).
+
+Asked how the first one on one should run, the owner chose the option that read: "Freeze two blows (Recommended): Its
+first wind-up freezes with 'Press F to parry' until you press F, which lands a parry; its next freezes with 'Press V
+to dodge'. After that the fight runs normally, with a short reminder line."
+
+Asked where the flight over the wreck should sit in the new opening, the owner chose the option that read: "Drop the
+flyover: Go straight from waking into the gear and lessons; the wreck is seen as you play it."
 
 ## What it settles
 
-- Waking on the wreck, the eyes open under shaped lids with lashes, the fires' light red through them when shut, the
-  blur clearing in pulses with the heartbeat.
-- The flight down the wreck is gone: the wake eases out of the eyes to over the player's shoulder, and play begins.
-- The player wakes without their sword and shield, is told to find them, and equips them from the menu.
-- Then the basic controls are taught: moving, the fight, and drinking a healing charge.
-- The first foe met one on one teaches the parry and then the dodge, the fight frozen on each blow until the player
-  answers it; then a short reminder, and the fight runs as any.
+- Waking, the eyes are curved, soft-edged lids that close unevenly, with a fringe of lashes, warm red light through
+  them when shut, and the blur clearing in pulses with the heartbeat.
+- The flight over the wreck is dropped: from waking the player goes straight into the gear and the lessons.
+- The player is prompted to find their dropped sword and shield and equip them, teaching them the inventory.
+- Then the basic movement and combat are taught, and the healing charges.
+- The first enemy met one on one teaches the parry and the dodge: its first wind-up freezes with "Press F to parry"
+  until F lands a parry, its next with "Press V to dodge"; after that the fight runs normally, with a short reminder
+  line.
 
 ## Claude's calls
 
 | Call | Chosen | Why |
 |---|---|---|
-| Where the arms lie | 3 m along the path ahead of where the player wakes, drawn as any dropped piece of gear (a Normal Vestige and its line) | Seen as the eyes open; and it teaches what a drop looks like |
-| How they are taken | Walked over, as a drop is | The game's own way to take a drop; no new key |
-| Where they are equipped | The Character page (I): open it, equip them, close it (Esc) | The gear is on the Character page alone; Inventory (O) opens too |
-| The basic controls | Two tasks: "Find your feet" (move, look round, run, jump), then "Ready yourself" (swing, guard, drink a healing charge) | Short tasks, each step ticked as it is done, and steps done early stay done, so nothing is asked twice |
-| The drink | The player wakes at 55% of their health at most, the ram's harm | A healing charge can only be drunk short of full health |
-| The foe met one on one | A Grey Tithe Hookman of the lowest rank, at the far end of the quiet deck, sent at the player at once | An axe fought as a swordsman fights, with plain blows to read; the quiet deck has no other foe |
-| When the freeze comes | 8 ticks before a blow lands for the parry (inside the guard's 12-tick window), 10 for the dodge | Tested offline against the room: a press there parries, and dodges |
+| The lids' shape | Each edge curves away from the eye's middle, so the opening is an almond, widest a little off the middle and closing from the corners; shut, each lid stands past its own edge, so no crack is left | An eye's opening as it is seen; the first shape left the view open at the sides shut |
+| The light through them | Warm red, more toward the eye than at the brow, from the fires, swelling a little with each beat | Light comes through the thin of the lid |
+| The lashes | An uneven fringe, some longer, some fainter, a few gaps, gone as the lids meet | A regular row read as a ruler |
+| The blur's pulses | A step just after each beat, held between beats, a beat behind the heart; clear a second after the eyes open | Clearing with the heart, not smoothly |
+| Out of the eyes | The camera eases out of the eyes to over the player's shoulder in 2.5 s, their hands empty | Play begins from the shot the run's own camera takes, without a cut |
+| Where the arms lie | 3 m along the path ahead of where the player wakes, below the step down from it | Just ahead as play begins |
+| How they look | A steel kite shield and a sword in the drops' pixel style, with the Normal line of light over them | Read as the player's own arms, and as a drop is found |
+| How they are taken | Walked over, as a drop is; dismantled, they lie on the deck again | The game's own way to take a drop, and the teaching never sticks |
+| "The inventory" | The Character page (I): open it, equip them from the Melee slot, close it (Esc); opening the menu at all counts for the first step | The gear is worn from the Character page alone; Inventory (O) holds no gear |
+| The basic controls | "Find your feet" (move, look round, run, jump), then "Ready yourself" (swing, guard, drink a healing charge) | Short tasks, each step ticked as it is done, and steps done early stay done, so nothing is asked twice |
+| The drink | The player wakes at 55% of their health at most, the ram's harm | A healing charge is drunk only short of full health |
+| The first enemy | A Grey Tithe Hookman of the lowest rank at the far end of the quiet deck, sent at the player at once | An axe fought as a swordsman fights, with plain blows to read; the quiet deck has no other foe |
+| When the freeze comes | At most 8 ticks before a blow lands for the parry (inside the guard's window), 10 for the dodge, and only when a press then would answer it: the player alive, on their feet, at rest or guarding, for the dodge with stamina, for the parry facing the blow | Tested offline against the room: a press there parries, and dodges; a press that could not answer would leave the player struck after obeying |
 | Blows not frozen | An iron blow or a shot for the parry, a feint for either | None can be parried, and a feint never lands |
+| What a freeze holds | The room, the bodies, the figures, the storm, the sea, the fires and the words stand still, the music plays on, and the world drains a little toward grey under the prompt | "freezing the frame", and the stop reads as time held |
+| The answer | F or the left button for the parry, V or the side button for the dodge, with the pointer the game's | The game's own keys for each |
+| The reminder | "F parries a blow as it lands; V dodges it", 6 s, once both are made, whichever came last | Short, and gone |
 | A boarder down before both lessons | Another comes | Both are always taught |
 | The waves | Wait until the boarder is brought down | So the first foe is met alone |
-| The reminder | "F parries a blow as it lands; V dodges it", 6 s | Short, and gone |
 | The staged pair's cry | Kept, cried the first time a Tithe foe and one of the Brig's crew are on the view together | Its lines went with the flight |
+| The menu in the story | It opens on the wreck alone, while the player plays it, and shuts as that ends | Equipping is taught there; elsewhere the story's keys stay its own |
+
+Replaces in part [[The Game Opens With a Story Mission at Sea]] (beat 8's camera through the wreckage),
+[[The Prologue's Camera Flights Stand Clear and Go Slower]] (the wake's flight),
+[[Quests Get a Task Tracker, and the Placeholder Panel Goes]] (the wreck's "Learn the controls"),
+[[The Wreck's Boarders Are One Side]] (the wake's flight) and [[The Prologue as Claude Shapes It]] (the wreck's
+cries).
 
 Links: [[Prologue]], [[Cinema]].

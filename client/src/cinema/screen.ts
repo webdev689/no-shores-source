@@ -11,7 +11,7 @@ import type { Layer, Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { ease } from '../ui/ease.ts';
 import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
-import { lidOf, lidShut } from './eyelids.ts';
+import { lidDrop, lidOf, lidShut } from './eyelids.ts';
 
 /** The title as the screen shows it. */
 export const TITLE = 'Overlook';
@@ -147,7 +147,7 @@ export class Screen {
           to: 'screen',
           anchor: [0.5, top ? 0 : 1],
           at: [0.5, top ? 0 : 1],
-          y: Math.round((top ? shut - 1 : 1 - shut) * 1.04 * lidTall),
+          y: Math.round(lidDrop(top, shut, lidTall)),
         },
       };
     };

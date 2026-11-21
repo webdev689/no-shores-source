@@ -49,12 +49,12 @@ export function throbAt(heart: number): number {
 }
 
 /** How far the view is blurred `since` seconds into the wake, the heart `heart` seconds into its beating, CSS pixels:
- *  it clears by the time the eyes are open, most of each step just after a beat, and never ahead of `since`, which
- *  holds while the wreck the eyes open on is still coming. */
+ *  it clears a step just after each beat and holds between them, a beat behind the heart, clear soon after the eyes
+ *  are open, and never ahead of `since`, which holds while the wreck the eyes open on is still coming. */
 export function blurAt(since: number, heart: number): number {
   const beats = heart / HEART_BEAT_S;
-  const stepped = (Math.floor(beats) + smooth((beats % 1) / STEP_SHARE)) * HEART_BEAT_S;
-  const cleared = Math.min(1, Math.max(0, Math.min(stepped, since) / (OPEN_S + 1)));
+  const stepped = Math.max(0, Math.floor(beats) - 1 + smooth((beats % 1) / STEP_SHARE)) * HEART_BEAT_S;
+  const cleared = Math.min(1, Math.max(0, Math.min(stepped, since) / OPEN_S));
   return BLUR_PX * (1 - cleared) ** 2 * (1 + THROB_BLUR * throbAt(heart));
 }
 

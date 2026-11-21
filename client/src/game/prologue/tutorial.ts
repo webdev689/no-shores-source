@@ -1,4 +1,4 @@
-// The prologue's teaching on the wreck, as the owner asked. The player wakes without their sword and shield, finds them
+// The prologue's teaching on the wreck. The player wakes without their sword and shield, finds them
 // on the deck and equips them from the Character page; finds their feet (move, look round, run, jump), then readies
 // themselves (swing, guard, drink a healing charge); then meets a Tithe boarder one on one, whose first blow the fight
 // freezes on until they parry and whose next until they dodge. Each step is ticked once it is done, read from what
@@ -15,6 +15,9 @@ const MOVED_M = 2;
 const LOOKED_RAD = 1;
 /** How long a task stays up once all of it is met, seconds, so its last step is seen ticked. */
 const MET_HOLD_S = 1.5;
+/** Once both the parry and the dodge are made, a short reminder of both, for this long, seconds. */
+export const REMINDER = 'F parries a blow as it lands; V dodges it';
+const REMIND_S = 6;
 
 /** Where the player's sword and shield are: on the deck, in their pack, or worn. */
 export type Arms = 'lying' | 'carried' | 'worn';
@@ -83,6 +86,7 @@ export class Tutorial {
   private readonly learned = new Set<Learned>();
   private metFor = 0;
   private reached = 0;
+  private remindFor = 0;
 
   /** The stage the teaching stands at. */
   get stage(): Stage {
@@ -93,6 +97,11 @@ export class Tutorial {
   get lesson(): 'parry' | 'dodge' | null {
     if (this.stage !== 'duel') return null;
     return !this.learned.has('parry') ? 'parry' : !this.learned.has('dodge') ? 'dodge' : null;
+  }
+
+  /** The reminder to show now, for a while once both lessons are learned, whichever came last; else none. */
+  get reminder(): string | null {
+    return this.remindFor > 0 ? REMINDER : null;
   }
 
   /** Whether a boarder should stand now: as the duel begins, and again should one fall before both lessons are
@@ -108,7 +117,9 @@ export class Tutorial {
 
   /** The tasks as they stand after `done`. */
   frame(done: Done): Quest {
+    const lesson = this.lesson;
     this.learn(done);
+    this.remindFor = lesson !== null && this.lesson === null ? REMIND_S : Math.max(0, this.remindFor - done.seconds);
     if (done.boss) return { name: QUEST, task: 'Face Captain Brannoc Thule', steps: [] };
     const stage = this.stage;
     if (stage === 'fight') {
@@ -133,13 +144,13 @@ export class Tutorial {
     this.lastYaw = dead ? null : done.yaw;
     const now: Record<Learned, boolean> = {
       take: done.arms !== 'lying',
-      open: done.menu && this.stage === 'equip',
+      open: done.menu && done.arms !== 'lying',
       equip: done.arms === 'worn',
       close: done.arms === 'worn' && !done.menu,
       move: !!this.from && Math.hypot(done.x - this.from[0], done.y - this.from[1]) >= MOVED_M,
       look: this.turned >= LOOKED_RAD,
       run: done.speed > RUNNING && done.action !== 'dodge',
-      jump: done.rising,
+      jump: done.rising && done.action !== 'dodge',
       swing: done.action === 'attack',
       guard: GUARDS.has(done.action ?? ''),
       drink: done.healed,
@@ -151,8 +162,8 @@ export class Tutorial {
   }
 }
 
-/** How many ticks before a blow lands the fight freezes on it to teach a parry (inside the guard's 12-tick window,
- *  crates/combat/src/tuning.rs PARRY_WINDOW) and a dodge (inside its safe span). */
+/** How many ticks at most before a blow lands the fight freezes on it to teach a parry (inside the window a press of
+ *  the guard opens, crates/combat/src/tuning.rs PARRY_WINDOW) and a dodge (inside its safe span). */
 export const PARRY_AT = 8;
 export const DODGE_AT = 10;
 /** With fewer ticks than this left a press could not reach the room in time, and the blow passes unfrozen. */
@@ -168,27 +179,67 @@ export function ticksToLand(view: FighterView, player: number): number | null {
   return null;
 }
 
+/** What the player pressed this frame, as the frozen fight hears it: whether the pointer is the game's, and whether
+ *  the guard or the dodge was pressed. */
+export interface Answer {
+  readonly locked: boolean;
+  readonly guard: boolean;
+  readonly dodge: boolean;
+}
+
+/** What the fight freezes for: the player's number and their fighter as last seen, the lesson, and whether a press
+ *  of the guard could open a parry now. */
+export interface Teaching {
+  readonly player: number;
+  readonly own: FighterView | null;
+  readonly lesson: 'parry' | 'dodge' | null;
+  readonly parryOpen: boolean;
+}
+
+/** How far to either side of where the player faces a blow can come from and still be parried: a blade's guard
+ *  (crates/combat/src/tuning.rs GUARD_ARC), the narrower of a blade's and a shield's. */
+const FACING_RAD = (60 * Math.PI) / 180;
+/** What the player may be doing as the fight freezes, for a press then to answer it at once. */
+const ANSWERABLE = new Set(['idle', 'guard']);
+
+/** Whether a press now would meet `foe`'s blow for `lesson`: the player standing on their feet, alive, doing nothing
+ *  a press must wait out; for a dodge with stamina for it, and for a parry facing the blow. */
+export function answerable(teaching: Teaching, foe: FighterView): boolean {
+  const { own, lesson } = teaching;
+  if (!own || !ANSWERABLE.has(own.action.kind) || own.mode !== 'ground' || own.health <= 0) return false;
+  if (lesson === 'dodge') return own.stamina > 0;
+  const toward = Math.atan2(foe.x - own.x, -(foe.y - own.y));
+  return Math.abs(Math.atan2(Math.sin(toward - own.facing), Math.cos(toward - own.facing))) <= FACING_RAD;
+}
+
 /** The fight frozen on a blow until the player answers it: each blow at most once, so the answer plays on. */
 export class Freeze {
   private answered = false;
 
-  /** Whether the fight stands frozen on `view`'s blow for `lesson`: a blow a parry can meet (no iron blow nor shot,
-   *  and only while `parryOpen`, a press of the guard able to open a window) or any for a dodge, near enough to land. */
-  holds(view: FighterView | null, player: number, lesson: 'parry' | 'dodge' | null, parryOpen: boolean): boolean {
+  /** Whether the fight stands frozen this frame on `view`'s blow (`holds`) until `answer`, read only then, gives the
+   *  lesson's press with the pointer the game's: then the blow plays on, the press the fight's own. */
+  frame(view: FighterView | null, teaching: Teaching, answer: () => Answer): boolean {
+    if (!this.holds(view, teaching)) return false;
+    const { locked, guard, dodge } = answer();
+    if (!locked || !(teaching.lesson === 'parry' ? guard : dodge)) return true;
+    this.answered = true;
+    return false;
+  }
+
+  /** Whether the fight stands frozen on `view`'s blow for the lesson: near enough to land, the player able to answer
+   *  it (`answerable`), and for a parry a blow one can meet (no iron blow nor shot) while a press of the guard can
+   *  open a window. A blow that cannot be answered passes, and the lesson waits for the next. */
+  holds(view: FighterView | null, teaching: Teaching): boolean {
+    const { player, lesson, parryOpen } = teaching;
     const left = view ? ticksToLand(view, player) : null;
     if (left === null || left <= 0 || !view) {
       this.answered = false;
       return false;
     }
-    if (this.answered || !lesson || left < LEAST_TICKS) return false;
+    if (this.answered || !lesson || left < LEAST_TICKS || !answerable(teaching, view)) return false;
     const { action } = view;
     if (lesson === 'dodge') return left <= DODGE_AT;
     const unparried = action.kind === 'telegraph' && (action.iron || action.shape === 'aimed');
     return parryOpen && !unparried && left <= PARRY_AT;
-  }
-
-  /** The player answered: the blow plays on, never frozen again. */
-  answer(): void {
-    this.answered = true;
   }
 }

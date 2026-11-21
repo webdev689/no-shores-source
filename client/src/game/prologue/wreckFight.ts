@@ -37,18 +37,12 @@ const BACK_S = 5.6;
 const BARK_GAP_S = 9;
 /** How long the screen takes to fade out on the fight's end, seconds. */
 const END_S = 0.6;
-/** What the frozen fight asks of the player, and how long the reminder of both stays once they have done each. */
+/** What the frozen fight asks of the player. */
 const ANSWER = { parry: 'Press F to parry', dodge: 'Press V to dodge' } as const;
-const REMINDER = 'F parries a blow as it lands; V dodges it';
-const REMIND_S = 6;
 /** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
  *  this long, so the stop reads as time held. */
 const FROZEN_DRAIN = 0.55;
 const DRAIN_S = 0.2;
-
-/** Whether the player answered the frozen fight's `lesson` this frame. */
-const answered = (controls: InputFrame, lesson: keyof typeof ANSWER) =>
-  controls.pressed(lesson === 'parry' ? 'guard' : 'dodge');
 
 export class WreckFight implements Beat {
   readonly name = 'wreck';
@@ -69,7 +63,6 @@ export class WreckFight implements Beat {
   private readonly freeze = new Freeze();
   /** The prompt the frozen fight shows, and how long the reminder after both lessons has left, seconds. */
   private prompting: string | null = null;
-  private remindFor = 0;
   /** How far the world is drained toward grey now, easing toward `FROZEN_DRAIN` while frozen and back after. */
   private drained = 0;
   /** The run's own clock, held while the fight is frozen; and whether the player is dressed with their arms. */
@@ -105,6 +98,11 @@ export class WreckFight implements Beat {
   /** Whether the player plays: the pointer is theirs to lock. */
   get playing(): boolean {
     return !!this.run && !this.coming && this.ending === null;
+  }
+
+  /** Whether the fight stands frozen on a blow, its world held still with it. */
+  get still(): boolean {
+    return this.prompting !== null;
   }
 
   /** The player's gear in the wreck's room, for the menu, while they play. */
@@ -295,9 +293,14 @@ export class WreckFight implements Beat {
     heads: ReadonlyMap<string, readonly [number, number, number]>,
     view: { readonly width: number; readonly height: number },
   ): void {
-    const seen = (side: string) =>
-      [...heads].find(([name, point]) => name.startsWith(side) && headOnView(onScreen(shot, view, point), view))?.[0];
-    const [tithe, crew] = [seen('tithe-'), seen('crew-')];
+    if (this.spotted && this.cried) return;
+    let [tithe, crew]: (string | undefined)[] = [undefined, undefined];
+    for (const [name, point] of heads) {
+      const side = name.startsWith('tithe-') ? 'tithe' : name.startsWith('crew-') ? 'crew' : null;
+      if (!side || (side === 'tithe' ? tithe : crew) || !headOnView(onScreen(shot, view, point), view)) continue;
+      if (side === 'tithe') tithe = name;
+      else crew = name;
+    }
     if (!this.spotted && tithe) {
       this.spotted = true;
       void this.story.stage.play('survivor', true, { tithe });
@@ -313,11 +316,13 @@ export class WreckFight implements Beat {
   private frozen(run: WreckRun, controls: InputFrame): boolean {
     const lesson = this.tutorial.lesson;
     const held = !!this.coming || this.ending !== null;
-    let frozen = !held && this.freeze.holds(run.boarderView, run.fight.player, lesson, run.fight.parryOpen);
-    if (frozen && lesson && controls.locked && answered(controls, lesson)) {
-      this.freeze.answer();
-      frozen = false;
-    }
+    const { player, parryOpen, own } = run.fight;
+    const answer = () => ({
+      locked: controls.locked,
+      guard: controls.pressed('guard'),
+      dodge: controls.pressed('dodge'),
+    });
+    const frozen = !held && this.freeze.frame(run.boarderView, { player, own, lesson, parryOpen }, answer);
     const prompt = frozen && lesson ? ANSWER[lesson] : null;
     if (prompt !== this.prompting) {
       this.prompting = prompt;
@@ -334,13 +339,10 @@ export class WreckFight implements Beat {
     story.walker.you.dress = armed ? story.dress : unarmed(story.dress);
   }
 
-  /** The teaching this frame: what the player did read, the boarder stood when one is wanted, the waves held until
-   *  the duel is won, and the reminder once both lessons are learned. */
+  /** The teaching this frame: what the player did read, the boarder stood when one is wanted, and the waves held
+   *  until the duel is won. */
   private teach(run: WreckRun, fight: FootFight, seconds: number): Quest {
-    const lesson = this.tutorial.lesson;
     const quest = this.tutorial.frame(this.didNow(run, fight, seconds));
-    if (lesson === 'dodge' && this.tutorial.lesson === null) this.remindFor = REMIND_S;
-    this.remindFor = Math.max(0, this.remindFor - seconds);
     if (this.tutorial.wantsBoarder(run.boarder)) run.standBoarder();
     run.holdWaves(this.tutorial.holding);
     return quest;
@@ -381,8 +383,8 @@ export class WreckFight implements Beat {
   /** A death before the boss fight says what happens, for as long as the player lies dead: the room raises them at
    *  the last checkpoint. Felled in the boss fight, the fight ends, though the run learns it a frame later. */
   private fallen(dead: boolean): void {
-    const said =
-      dead && !this.fought ? ['You will rise at the last checkpoint.'] : this.remindFor > 0 ? [REMINDER] : [];
+    const reminder = this.tutorial.reminder;
+    const said = dead && !this.fought ? ['You will rise at the last checkpoint.'] : reminder ? [reminder] : [];
     this.story.stage.parts.hud.toast(...said);
   }
 

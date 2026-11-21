@@ -39,7 +39,7 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | The beaten ships in the calm | Where the fight left them, each from the pose the fight left it in; the camera looks out over the Lookout to the nearest while he asks whether to board what is left, and the First Mate says to leave them | The crew talk of what is shown, as they do |
 | The way through the wreck | A heap of debris across the way on from each zone, cleared when that zone's wave falls; no one climbs on the wreck ([[Climbing Is Off in the Prologue]]) | "fighting through the linear wreckage, killing foes" |
 | A death in the wreck | "Fallen", and the player rises at the last checkpoint by themselves | The room raises them there; there is nothing to press |
-| The wreck's cries | Two lines in the wake's flight from a pair on screen; "Survivor! Get that one!" from the first Tithe hand seen in the fight | Every line heard once, from a speaker on screen |
+| The wreck's cries (in part replaced: the flight is dropped, [[The Wreck Opens by Teaching the Player]]) | Two lines in the wake's flight from a pair on screen; "Survivor! Get that one!" from the first Tithe hand seen in the fight | Every line heard once, from a speaker on screen |
 | Thule struck | "Your debt grows." | The Tithe is a debt Thule collects; a stock line is not his |
 | Into overboard | The fight fades out, then the throw overboard fades in | "The screen fades out and back in" |
 | The deep's fire | The wreck's hulls and their fires drawn above the surface, seen from below | "fire above shown through the water" |

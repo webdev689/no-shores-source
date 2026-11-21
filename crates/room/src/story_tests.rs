@@ -96,7 +96,7 @@ fn an_elite_boarder_keeps_its_rank_but_is_brought_down_as_a_major_and_thule_is_n
 }
 
 #[test]
-fn on_the_wreck_a_boarder_sent_at_a_player_comes_for_them_though_it_never_saw_them() {
+fn on_the_wreck_a_boarder_is_sent_at_a_player_though_it_never_saw_them_but_never_one_of_the_crew() {
     let mut room = wreck();
     let player = room.join().expect("a room with space");
     // Behind the player, facing away from them: it neither sees nor hears them.

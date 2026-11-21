@@ -53,9 +53,9 @@ export interface StoryFrame {
   readonly land?: boolean;
   /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over it, under
    *  way or not), or ashore on Saltmere's coast. None: the story's own sounds alone. */
+  readonly heard?: WorldHeard;
   /** How far the picture drains toward grey under the interface, 0 to 1: a frozen fight's. */
   readonly drain?: number;
-  readonly heard?: WorldHeard;
 }
 
 export type WorldHeard =

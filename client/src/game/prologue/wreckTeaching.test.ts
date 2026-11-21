@@ -11,7 +11,7 @@ import type { MovementRules } from '../../rules/movementRules.ts';
 import { Freeze } from './tutorial.ts';
 import { courseOf, inArea, readWreck, topAt } from './wreckLayout.ts';
 import { IN_THE_SEA_M } from './wreckProgress.ts';
-import { armsAt, armsOf, ARMS_ALONG_M, BOARDER, boarderAt, LyingArms } from './wreckTeaching.ts';
+import { armsAt, armsOf, ARMS_ALONG_M, BOARDER, boarderAt, LyingArms, SWORD_AND_SHIELD } from './wreckTeaching.ts';
 
 const layout = readWreck();
 const course = courseOf(layout);
@@ -26,7 +26,7 @@ test("the player's sword and shield lie on the quiet deck a few steps ahead of w
   assert.ok(away > 2 && away <= ARMS_ALONG_M, `${away.toFixed(2)} m from where they wake`);
   const { facing } = layout.wake;
   const ahead = (x - wakeX) * Math.sin(facing) - (y - wakeY) * Math.cos(facing);
-  assert.ok(ahead / away > Math.cos(Math.PI / 4), 'ahead of them as they stand, so seen as their eyes open');
+  assert.ok(ahead / away > Math.cos(Math.PI / 4), 'ahead of them as they stand, as play begins');
   const arms = new LyingArms(layout);
   assert.ok(arms.reached([x + 1, y, z]) && !arms.reached([x + 2, y, z]), 'taken up by walking over them');
   const marks: number[] = [];
@@ -102,7 +102,7 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
   tick();
   assert.ok(room.storyTakeArms());
   for (let nth = 0; nth < 30; nth++) tick();
-  const arms = (gear as GearState | null)?.items.find((item) => item.kind === 12);
+  const arms = (gear as GearState | null)?.items.find((item) => item.kind === SWORD_AND_SHIELD);
   assert.ok(arms, 'taken up');
   fighting.askGear({ kind: ASKS.wear, item: arms.id, slot: slotOf(arms.kind) });
   for (let nth = 0; nth < 30; nth++) tick();
@@ -116,14 +116,19 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
   assert.ok(room.storyHunt(id), 'sent at the player, as the run sends it');
   const freeze = new Freeze();
   const lessons: ('parry' | 'dodge')[] = ['parry', 'dodge'];
+  // Each freeze the player answered, by its lesson: one each, the first answer meeting it.
+  const answers: string[] = [];
   const told: string[] = [];
   let guarding = 0;
   for (let nth = 0; nth < 60 * 90 && lessons.length > 0; nth++) {
     const foe = fighting.foes.get(id)?.view ?? null;
     const lesson = lessons[0] ?? null;
     // Frozen, the room stands still until the press; the player answers at once, and holds the guard a moment.
-    const answered = freeze.holds(foe, fighting.player, lesson, fighting.parryOpen);
-    if (answered) freeze.answer();
+    const teaching = { player: fighting.player, own: fighting.own, lesson, parryOpen: fighting.parryOpen };
+    const frozen = freeze.holds(foe, teaching);
+    const answer = { locked: true, guard: lesson === 'parry', dodge: lesson === 'dodge' };
+    const answered = frozen && !freeze.frame(foe, teaching, () => answer);
+    if (answered && lesson) answers.push(lesson);
     if (answered && lesson === 'parry') guarding = 14;
     const own = fighting.own;
     const yaw = own && foe ? Math.atan2(foe.x - own.x, own.y - foe.y) : 0;
@@ -140,4 +145,5 @@ test("frozen on the boarder's blow, a guard pressed parries it; frozen on the ne
     }
   }
   assert.deepEqual(lessons, [], `the events on the player: ${told.join(', ')}`);
+  assert.deepEqual(answers, ['parry', 'dodge'], 'each met at its first freeze');
 });

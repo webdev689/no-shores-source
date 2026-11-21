@@ -247,10 +247,12 @@ export class Prologue {
     size: { width: number; height: number },
     viewport: { width: number; height: number },
   ): void {
-    this.clock += seconds;
-    const { stage } = this.story;
-    stage.step(seconds);
     const beat = this.beat;
+    // A beat holding its world still holds the story's time, though its own frame still hears what is pressed.
+    const passing = beat.still ? 0 : seconds;
+    this.clock += passing;
+    const { stage } = this.story;
+    stage.step(passing);
     if (beat.skippable && beat.skip) {
       const holding = controls.held('jump') || this.touching;
       const skipped = this.skipping.step(seconds, holding);
@@ -271,7 +273,7 @@ export class Prologue {
     stage.parts.music.frame(beat.music?.() ?? hushed(), seconds);
     if (shown) {
       this.carried.shot = shown.shot;
-      stage.draw(shown, size, this.clock, seconds);
+      stage.draw(shown, size, this.clock, passing);
     }
     if (beat.done) this.next();
   }

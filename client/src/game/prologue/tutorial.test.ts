@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Action, FighterView } from '../../rules/fighters.ts';
 import { justMet } from '../tasks.ts';
-import { type Done, DODGE_AT, Freeze, PARRY_AT, ticksToLand, Tutorial } from './tutorial.ts';
+import { type Done, DODGE_AT, Freeze, PARRY_AT, REMINDER, ticksToLand, Tutorial } from './tutorial.ts';
 
 const STILL: Done = {
   seconds: 0.1,
@@ -141,10 +141,19 @@ test('the duel: a boarder stands, the parry taught first, then the dodge, then t
   assert.ok(tutorial.wantsBoarder('none') && !tutorial.wantsBoarder('standing'));
   assert.ok(tutorial.holding, 'the waves wait');
   assert.equal(tutorial.frame({ ...worn, boarder: 'standing' }).task, 'Face the Tithe boarder');
-  tutorial.frame({ ...worn, boarder: 'standing', dodged: true });
-  assert.equal(tutorial.lesson, 'parry', 'a dodge before the parry is taught still counts for the dodge');
+  const dodged = tutorial.frame({ ...worn, boarder: 'standing', dodged: true });
+  assert.equal(tutorial.lesson, 'parry', 'the parry is still asked first');
+  assert.deepEqual(
+    dodged.steps.filter((step) => step.done).map((step) => step.text),
+    ['Dodge a blow'],
+    'a dodge before the parry counts for the dodge',
+  );
+  assert.equal(tutorial.reminder, null);
   tutorial.frame({ ...worn, boarder: 'standing', parried: true });
   assert.equal(tutorial.lesson, null);
+  assert.equal(tutorial.reminder, REMINDER, 'both made, whichever came last: the reminder');
+  tutorial.frame({ ...worn, boarder: 'standing', seconds: 6 });
+  assert.equal(tutorial.reminder, null, 'for a few seconds');
   assert.deepEqual(ticked(tutorial, { ...worn, boarder: 'fallen' }), [
     'Parry a blow',
     'Dodge a blow',
@@ -195,7 +204,11 @@ test('a walk and a turn are counted again from where a fallen player rises', () 
 });
 
 /** A foe winding up `action` at `target`. */
-const foe = (action: Action, target: number | null = 1): FighterView => ({ target, action }) as unknown as FighterView;
+const foe = (action: Action, target: number | null = 1): FighterView =>
+  ({ target, action, x: 0, y: -2 }) as unknown as FighterView;
+/** The player standing at rest 2 m south of the foe, facing it, as `more` changes them. */
+const READY = { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0 };
+const own = (more: Record<string, unknown> = {}) => ({ ...READY, ...more }) as unknown as FighterView;
 const swing = (left: number): Action => ({
   kind: 'attack',
   stroke: 1,
@@ -226,28 +239,77 @@ test('a blow lands in so many ticks: a swing or a telegraphed blow at the player
   assert.equal(ticksToLand(foe({ kind: 'idle' }), 1), null);
 });
 
-test('the fight freezes on a blow the player can parry, inside the guard window, until the guard is pressed', () => {
-  const freeze = new Freeze();
-  assert.ok(!freeze.holds(foe(swing(PARRY_AT + 1)), 1, 'parry', true), 'too far off');
-  assert.ok(freeze.holds(foe(swing(PARRY_AT)), 1, 'parry', true));
-  assert.ok(!freeze.holds(foe(swing(PARRY_AT)), 1, 'parry', false), 'a window just left unused: no parry now');
-  assert.ok(!freeze.holds(foe(telegraph(5, { iron: true })), 1, 'parry', true), 'an iron blow is no parry');
-  assert.ok(!freeze.holds(foe(telegraph(5, { shape: 'aimed' })), 1, 'parry', true), 'nor a shot');
-  assert.ok(!freeze.holds(foe(swing(1)), 1, 'parry', true), 'too late for a press to reach the room');
-  assert.ok(!freeze.holds(foe(swing(5)), 1, null, true), 'nothing left to teach');
+const NONE = { locked: true, guard: false, dodge: false };
+const teaching = (lesson: 'parry' | 'dodge' | null, parryOpen = true, player = own()) => ({
+  player: 1,
+  own: player,
+  lesson,
+  parryOpen,
 });
 
-test('answered, the blow plays on unfrozen; the next blow freezes again', () => {
+test('the fight freezes on a blow the player can parry, inside the guard window', () => {
   const freeze = new Freeze();
-  assert.ok(freeze.holds(foe(swing(6)), 1, 'parry', true));
-  freeze.answer();
-  assert.ok(!freeze.holds(foe(swing(4)), 1, 'parry', true), 'the same blow');
-  assert.ok(!freeze.holds(foe({ kind: 'idle' }), 1, 'parry', true));
-  assert.ok(freeze.holds(foe(swing(6)), 1, 'parry', true), 'the next');
+  assert.ok(!freeze.frame(foe(swing(PARRY_AT + 1)), teaching('parry'), () => NONE), 'too far off');
+  assert.ok(freeze.frame(foe(swing(PARRY_AT)), teaching('parry'), () => NONE));
+  assert.ok(
+    !freeze.frame(foe(swing(PARRY_AT)), teaching('parry', false), () => NONE),
+    'a window just left unused: no parry now',
+  );
+  assert.ok(
+    !freeze.frame(foe(telegraph(5, { iron: true })), teaching('parry'), () => NONE),
+    'an iron blow is no parry',
+  );
+  assert.ok(!freeze.frame(foe(telegraph(5, { shape: 'aimed' })), teaching('parry'), () => NONE), 'nor a shot');
+  assert.ok(!freeze.frame(foe(swing(1)), teaching('parry'), () => NONE), 'too late for a press to reach the room');
+  assert.ok(!freeze.frame(foe(swing(5)), teaching(null), () => NONE), 'nothing left to teach');
 });
 
-test('for the dodge the fight freezes a little sooner, on any blow, an iron one too', () => {
+test("frozen until the lesson's own press, the pointer the game's; then the blow plays on, and the next freezes", () => {
   const freeze = new Freeze();
-  assert.ok(!freeze.holds(foe(telegraph(DODGE_AT + 1)), 1, 'dodge', true));
-  assert.ok(freeze.holds(foe(telegraph(DODGE_AT, { iron: true })), 1, 'dodge', false));
+  const blow = foe(swing(6));
+  assert.ok(
+    freeze.frame(blow, teaching('parry'), () => ({ ...NONE, dodge: true })),
+    'a dodge does not answer a parry',
+  );
+  assert.ok(
+    freeze.frame(blow, teaching('parry'), () => ({ locked: false, guard: true, dodge: false })),
+    'nor a press off the game',
+  );
+  assert.ok(!freeze.frame(blow, teaching('parry'), () => ({ ...NONE, guard: true })), 'the guard answers it');
+  assert.ok(!freeze.frame(foe(swing(4)), teaching('parry'), () => NONE), 'the same blow plays on');
+  assert.ok(!freeze.frame(foe({ kind: 'idle' }), teaching('parry'), () => NONE));
+  assert.ok(
+    freeze.frame(foe(swing(6)), teaching('parry'), () => NONE),
+    'the next',
+  );
+});
+
+test('for the dodge the fight freezes a little sooner, on any blow, an iron one too, until the dodge', () => {
+  const freeze = new Freeze();
+  assert.ok(!freeze.frame(foe(telegraph(DODGE_AT + 1)), teaching('dodge'), () => NONE));
+  const iron = foe(telegraph(DODGE_AT, { iron: true }));
+  assert.ok(
+    freeze.frame(iron, teaching('dodge', false), () => ({ ...NONE, guard: true })),
+    'a guard does not answer a dodge',
+  );
+  assert.ok(!freeze.frame(iron, teaching('dodge', false), () => ({ ...NONE, dodge: true })));
+});
+
+test('a blow the player could not answer at once passes unfrozen, and the lesson waits for the next', () => {
+  const blow = foe(swing(6));
+  const frozenFor = (lesson: 'parry' | 'dodge', player: FighterView) =>
+    new Freeze().frame(blow, teaching(lesson, true, player), () => NONE);
+  assert.ok(frozenFor('parry', own()) && frozenFor('dodge', own()), 'at rest, facing it');
+  assert.ok(frozenFor('parry', own({ action: { kind: 'guard' } })), 'guarding already');
+  for (const lesson of ['parry', 'dodge'] as const) {
+    assert.ok(!frozenFor(lesson, own({ action: { kind: 'attack' } })), `${lesson}: in a swing of their own`);
+    assert.ok(!frozenFor(lesson, own({ action: { kind: 'drink' } })), `${lesson}: drinking`);
+    assert.ok(!frozenFor(lesson, own({ action: { kind: 'flinch' } })), `${lesson}: flinching`);
+    assert.ok(!frozenFor(lesson, own({ mode: 'air' })), `${lesson}: in the air`);
+    assert.ok(!frozenFor(lesson, own({ health: 0, action: { kind: 'dead' } })), `${lesson}: fallen`);
+  }
+  assert.ok(!frozenFor('dodge', own({ stamina: 0 })), 'a dodge with no stamina left');
+  assert.ok(frozenFor('dodge', own({ facing: Math.PI })), 'a dodge whichever way they face');
+  assert.ok(!frozenFor('parry', own({ facing: Math.PI })), 'a parry with their back to it');
+  assert.ok(frozenFor('parry', own({ facing: 0.9 })), 'a parry with the blow off to one side');
 });

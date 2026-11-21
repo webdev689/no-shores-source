@@ -49,9 +49,12 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   menu's: fades to black or white over any time, a white flash, the letterbox's bars, eyelids that close from above
   and below for waking, the title (the game's name over a brass rule, sized to fit a phone's width) and a prompt that
   breathes under it. Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`), except the eyelids, which
-  the story sets frame by frame, with the light through them (`lidOf`, [[The Wreck Opens by Teaching the Player]]): each lid's edge curves toward
-  the eye and fades softly into it, the upper lid leading and the lower lagging so they meet off the middle, lashes
-  along each edge; shut, a warm red light comes through them, as far as the story says. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
+  the story sets frame by frame, with the light through them (`lidOf`, [[The Wreck Opens by Teaching the Player]]): each lid's edge curves away
+  from the eye's middle, so the opening between them is an almond, widest a little off the middle and closing from
+  its corners, its edge fading softly into the eye; the upper lid leads and the lower lags, and shut each stands past
+  its own edge's depth (`lidDrop`), so no crack is left; an uneven fringe of lashes along each edge shows as the lids
+  come down and goes as they meet; shut, a warm red light comes through them, as far as the story says, more toward
+  the eye than at the brow. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
   the interface, as death's grey is, so the words over it stay sharp: a Gaussian whose deviation is the blur's CSS
   pixels, set each frame, so it follows each frame and clears at once.
   While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or pulls it to reload

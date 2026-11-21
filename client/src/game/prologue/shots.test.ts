@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import { railShot } from '../../cinema/rail.ts';
 import { homeRail, type IslandFrame, shipsOff, titleEye } from './introShots.ts';
 import { thrownAt } from './overboard.ts';
-import { lidsAt } from './waking.ts';
 
 const FRAME: IslandFrame = {
   town: [1000, 1000, 40],
@@ -27,13 +26,6 @@ test('ships off an island sail out from it, and the anchored one stays', () => {
   assert.equal(early.length, 3);
   assert.ok(Math.hypot((later[0]?.x ?? 0) - (early[0]?.x ?? 0), (later[0]?.y ?? 0) - (early[0]?.y ?? 0)) > 40);
   assert.deepEqual([later[2]?.x, later[2]?.y], [early[2]?.x, early[2]?.y]);
-});
-
-test('the eyes blink open over the first seconds and stay open', () => {
-  assert.equal(lidsAt(0), 1);
-  assert.ok(lidsAt(1.1) < 0.5);
-  assert.ok(lidsAt(1.9) > 0.9, 'shut again');
-  assert.equal(lidsAt(10), 0);
 });
 
 test('the body thrown goes up and over the rail and into the sea', () => {

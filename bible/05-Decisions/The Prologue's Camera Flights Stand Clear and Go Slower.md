@@ -21,8 +21,8 @@ status: in force
 | Call | Chosen | Why |
 |---|---|---|
 | The storm's run | 16 m and more out from the Brig's port side, bow to quarter, then in over its quarter's rail under the spanker's boom | Its yards reach 6.5 m out each side and the spanker swings some 8 m out over its quarter; the helm's shot stands under the boom |
-| The flight's pace | About 10 m/s down the wreck, never more than 20, the whole beat 36 s instead of 25 | Half the old pace, which peaked past 30 m/s; the flight can still be held to skip |
-| Its height and the masts | 7 m over the decks, leaning straight away from each mast still standing out to 3.5 m | Further from what stands on the decks, and no jump from one side of a mast to the other |
+| The flight's pace (replaced: the flight is dropped) | About 10 m/s down the wreck, never more than 20, the whole beat 36 s instead of 25 | Half the old pace, which peaked past 30 m/s; the flight can still be held to skip |
+| Its height and the masts (replaced: the flight is dropped) | 7 m over the decks, leaning straight away from each mast still standing out to 3.5 m | Further from what stands on the decks, and no jump from one side of a mast to the other |
 | Where it ends | The run's own shot over the shoulder, of the player stood on the deck | The player had been stood on the sea under the deck until the room's first word, so the shot stood inside the hull |
 
 Links: [[Prologue]].

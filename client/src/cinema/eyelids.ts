@@ -1,8 +1,8 @@
-// The eyelids a waking eye sees from inside: two lids whose edges curve toward the eye and fade softly into it, the
-// upper leading and the lower lagging, their lowest and highest points a little off the middle so they never meet as a
-// mirror; a fringe of lashes along each edge, showing as the lids come down; and, shut, the warm red of light coming
-// through them, as a lit place is seen with the eyes closed. Drawn by the interface's quads, a device pixel row at a
-// time over each lid's curve.
+// The eyelids a waking eye sees from inside: two lids whose edges curve away from the eye's middle, so the opening
+// between them is an almond, widest a little off the middle and closing from its corners; the upper lid leading and
+// the lower lagging; a soft edge into the eye; a fringe of lashes along each edge, showing as the lids come down; and,
+// shut, the warm red of light coming through them, more toward the eye, as a lit place is seen with the eyes closed.
+// Drawn by the interface's quads, a device pixel row at a time over each lid's edge.
 import type { Drawing } from '../ui/node.ts';
 import { type Box, type Colour, colourOf, type QuadList } from '../ui/quads.ts';
 
@@ -10,17 +10,20 @@ const LID = colourOf('#050403');
 /** Light seen through a shut lid. */
 const LID_LIT = colourOf('#3e1009');
 const LASH = colourOf('#010101');
-/** How deep each lid's curve toward the eye is, a share of its height, and how much of it fades softly into the eye. */
+/** How much further toward the eye a lid's corners reach than its middle, a share of its height, and how much of its
+ *  edge fades softly into the eye. */
 const CURVE = 0.22;
 const SOFT = 0.045;
 /** The soft edge's steps across, each fainter. */
 const FEATHER_STEPS = 4;
-/** Where across the view each lid's edge reaches the eye furthest: the upper's lowest point, the lower's highest. */
+/** Where across the view each lid's edge stands furthest from the eye: the opening's widest. */
 const REACH_AT = { top: 0.46, bottom: 0.53 } as const;
 /** Each lid's lashes: how many along its edge, and how long, a share of the lid's height. */
 const LASHES = { top: { count: 72, long: [0.025, 0.07] }, bottom: { count: 46, long: [0.012, 0.034] } } as const;
 /** The share of lashes left out, so the fringe is uneven. */
 const GAPS = 0.12;
+/** The light through a lid, in bands across its body from the far edge of the view to its edge. */
+const LIGHT_BANDS = 16;
 
 /** How far each lid has come down at `shut` (0 open to 1 shut): the upper leads and the lower lags, meeting shut. */
 export function lidShut(shut: number): { readonly top: number; readonly bottom: number } {
@@ -48,8 +51,22 @@ const scatter = (index: number): number => {
   return value - Math.floor(value);
 };
 
-/** A lid as it is laid in its box: where its edge reaches furthest, how far its curve runs to each side of that, and
- *  its flat and curve's depth. */
+/** How far a lid `tall` CSS pixels stands down from its place (the upper's; the lower's is up, the same) at `shut`, its
+ *  own (`lidShut`): wholly off the view open, and shut past its own edge's depth, so its middle and its corners meet
+ *  the other lid's with no crack between. */
+export function lidDrop(top: boolean, shut: number, tall: number): number {
+  const down = (shut - 1) * 1.04 * tall + shut * shut * (CURVE + SOFT) * tall;
+  return top ? down : -down;
+}
+
+/** How far toward the eye a lid's edge reaches `along` it (0 its middle, 1 a corner), a share of its curve: none at
+ *  its middle, all of it at its corners. */
+const reachAt = (along: number): number => 1 - Math.sqrt(Math.max(0, 1 - along * along));
+/** How far along a lid's edge it reaches `reach` of its curve toward the eye: `reachAt` turned about. */
+const alongAt = (reach: number): number => (reach <= 0 ? 0 : reach >= 1 ? 1 : Math.sqrt(1 - (1 - reach) ** 2));
+
+/** A lid as it is laid in its box: the edge's middle, how far its edge runs to each side of that, and its body's and
+ *  curve's depth. */
 interface Laid {
   readonly box: Box;
   readonly middle: number;
@@ -59,49 +76,56 @@ interface Laid {
   readonly deep: number;
 }
 
-/** The light through a lid, in bands across its flat from the far edge of the view to its curve. */
-const LIGHT_BANDS = 16;
-
 /**
  * A lid at `shut` (its own, `lidShut`'s), `top` for the upper, with `light` (0 none to 1 a lit place) coming through
- * it as it shuts: its body lit more toward the eye, its edge's curve reaching each side of the view, darkening toward
- * the eye and fading into it, its lashes along the edge.
+ * it as it shuts: its body lit more toward the eye, its edge curving away from the eye's middle out to each side of the
+ * view, darkening toward the eye and fading into it, its lashes along the edge.
  */
 export function lidOf(top: boolean, shut: number, light: number): Drawing {
   return (renderer, box, scale, clip, fade) => {
     const lit = light * smooth(0.45, 1, shut);
     const deep = Math.round(box.height * CURVE);
     const flat = box.height - deep;
+    const soft = Math.max(2, Math.round(box.height * SOFT));
     const middle = box.x + box.width * (top ? REACH_AT.top : REACH_AT.bottom);
     const laid: Laid = { box, middle, left: middle - box.x, right: box.x + box.width - middle, flat, deep };
-    const soft = Math.max(2, Math.round(box.height * SOFT));
     const { quads } = renderer;
+    // Rows by their depth toward the eye from the body's edge: the body above `-soft`, the edge's rows below it.
+    const rowAt = (depth: number, rows: number): Box => ({
+      x: box.x,
+      y: top ? box.y + flat + depth : box.y + deep - depth - rows,
+      width: box.width,
+      height: rows,
+    });
     // Light comes through the thin of the lid toward the eye more than through the brow and the cheek.
     const bodyAt = (near: number) => toward(LID, LID_LIT, lit * (0.4 + 0.6 * near), fade);
+    const solid = flat - soft;
+    // The body runs on past its box, as far again, so a lid pushed past its place leaves none of the view behind it.
+    quads.add({ ...box, y: top ? box.y - box.height : box.y + box.height }, bodyAt(0), clip);
     for (let band = 0; band < LIGHT_BANDS; band++) {
-      const [from, to] = [Math.round((band * flat) / LIGHT_BANDS), Math.round(((band + 1) * flat) / LIGHT_BANDS)];
-      const near = (band + 0.5) / LIGHT_BANDS;
-      const y = top ? box.y + from : box.y + box.height - to;
-      quads.add({ x: box.x, y, width: box.width, height: to - from }, bodyAt(near), clip);
+      const [from, to] = [Math.round((band * solid) / LIGHT_BANDS), Math.round(((band + 1) * solid) / LIGHT_BANDS)];
+      quads.add(rowAt(from - flat, to - from), bodyAt((band + 0.5) / LIGHT_BANDS), clip);
     }
     const body = bodyAt(1);
-    for (let row = 0; row < deep; row++) {
-      // How far down the curve this row lies, from its widest by the flat to its tip, its last rows soft.
-      const down = (row + 0.5) / deep;
-      const across = Math.sqrt(Math.max(0, 1 - down * down));
-      const [left, right] = [laid.left * across, laid.right * across];
-      const tone = toward(body, LID, down ** 1.5, fade * Math.min(1, (deep - row) / soft));
-      const y = top ? box.y + flat + row : box.y + deep - 1 - row;
-      const feather = Math.min(left, right, soft);
-      quads.add({ x: middle - left + feather, y, width: left + right - 2 * feather, height: 1 }, tone, clip);
-      const wide = feather / FEATHER_STEPS;
+    const side = (from: number, to: number, y: number, colour: Colour) => {
+      quads.add({ x: middle - to * laid.left, y, width: (to - from) * laid.left, height: 1 }, colour, clip);
+      quads.add({ x: middle + from * laid.right, y, width: (to - from) * laid.right, height: 1 }, colour, clip);
+    };
+    for (let depth = -soft; depth < deep; depth++) {
+      // Where along the edge this row is covered: wholly past where the edge reaches a soft width beyond it, fading
+      // in from where the edge reaches it, so the edge is as soft along its corners as across its middle.
+      const into = depth + 0.5;
+      const tone = toward(body, LID, Math.max(0, into / deep) ** 1.5, fade);
+      const { y } = rowAt(depth, 1);
+      side(alongAt((into + soft) / deep), 1, y, tone);
       for (let step = 0; step < FEATHER_STEPS; step++) {
-        const faded = toward(tone, tone, 0, tone[3] * (1 - (step + 0.5) / FEATHER_STEPS));
-        quads.add({ x: middle - left + feather - (step + 1) * wide, y, width: wide, height: 1 }, faded, clip);
-        quads.add({ x: middle + right - feather + step * wide, y, width: wide, height: 1 }, faded, clip);
+        const [near, far] = [into + (step * soft) / FEATHER_STEPS, into + ((step + 1) * soft) / FEATHER_STEPS];
+        const shown = toward(tone, tone, 0, fade * ((step + 0.5) / FEATHER_STEPS));
+        side(alongAt(near / deep), alongAt(far / deep), y, shown);
       }
     }
-    lashes(quads, top, laid, { scale, clip }, fade * smooth(0.1, 0.55, shut));
+    // The lashes show as the lid comes down, and go as the lids meet.
+    lashes(quads, top, laid, { scale, clip }, fade * smooth(0.1, 0.55, shut) * (1 - smooth(0.96, 1, shut)));
   };
 }
 
@@ -122,11 +146,9 @@ function lashes(
   const seed = top ? 0 : 97;
   for (let index = 0; index < count; index++) {
     if (scatter(index + seed + 7) < GAPS) continue;
-    const across = Math.max(
-      -1,
-      Math.min(1, ((index + 0.5 + (scatter(index + seed + 11) - 0.5) * 0.8) / count) * 2 - 1),
-    );
-    const edge = deep * Math.sqrt(Math.max(0, 1 - (across * reach) ** 2));
+    const jitter = (scatter(index + seed + 11) - 0.5) * 0.8;
+    const across = Math.max(-1, Math.min(1, ((index + 0.5 + jitter) / count) * 2 - 1));
+    const edge = deep * reachAt(Math.abs(across) * reach);
     const length = box.height * (long[0] + (long[1] - long[0]) * scatter(index + seed) ** 0.7);
     const turn = (across * 0.55 + (scatter(index + seed + 31) - 0.5) * 0.4) * (top ? 1 : -1);
     const y = top ? box.y + flat + edge - length * 0.15 : box.y + deep - edge - length * 0.85;

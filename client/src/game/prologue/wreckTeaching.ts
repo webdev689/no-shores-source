@@ -18,7 +18,8 @@ const BOARDER_ALONG_M = [13, 4.5] as const;
 /** The boarder: a Grey Tithe Hookman, an axe fought as a swordsman fights, at the lowest rank. */
 export const BOARDER = { type: 8, rank: 1 } as const;
 
-const SWORD_AND_SHIELD = KINDS.indexOf('sword_and_shield');
+/** The gear crate's number for a Sword & Shield. */
+export const SWORD_AND_SHIELD = KINDS.indexOf('sword_and_shield');
 
 /** The sword and shield as they lie, in the drops' pixel style: a steel kite shield with a brass boss, and a steel
  *  sword, its grip in leather and its guard and pommel in brass. */

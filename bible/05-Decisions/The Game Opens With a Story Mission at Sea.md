@@ -74,6 +74,7 @@ status: in force
   ship ramming it, waking in first person in the wreck of both, fighting through it to a boss with a nameplate of
   its own, a fight that cannot be won, thrown overboard, sinking past the fallen crew to a flash and a strange voice,
   and waking on Saltmere's shore, where a bystander takes the player to the social space and play is theirs.
+  The camera's run through the wreckage on waking is replaced by [[The Wreck Opens by Teaching the Player]].
 - Characters show their feelings with a mark over their heads, as an emote, and speak through fight-life's voice
   blurb system, in voice and in text ([[Speech]]).
 - Dialogue follows a rule of its own, for this mission and every one after it ([[Dialogue]]). It is never
