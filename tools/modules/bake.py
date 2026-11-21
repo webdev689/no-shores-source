@@ -46,6 +46,7 @@ def baked(name):
     """One module built and exported: its manifest entry and its mesh files' bytes by key."""
     kit.reset()
     module = kit.Module(name, catalogue.SEEDS[name])
+    module.steady = name in catalogue.EVENTS
     catalogue.BUILDERS[name](module)
     made = kit.exported(module)
     files = {}

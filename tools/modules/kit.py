@@ -30,6 +30,9 @@ class Module:
         self.objects = []
         # An object's materials by its faces' material index, with each one's glow: [(material, glow), ...].
         self.slots = {}
+        # Whether a coordinate that rounds to nothing is written as a plain zero (`_rounded`). The older modules keep the
+        # bytes they were published with, which CI's bake already makes.
+        self.steady = False
         # Where the module opens the land under its foot (a chasm's mouth): its two lips, each a line of points along
         # it at the ground, the land between them not drawn.
         self.mouth = None
@@ -319,6 +322,13 @@ def battlements(module, start, end, z, thick, material='stone', every=2.0, wide=
         block(module, at, (wide, thick, high), material, turn=turn, bevel=0.03, wear=0.03, part=False)
 
 
+def _rounded(value, steady):
+    """A coordinate to a tenth of a millimetre. Steady, one that rounds to nothing is a plain zero: a residue of float
+    sines and cosines differs in its last bits from one machine to another, and its sign would survive the rounding
+    as a negative zero's bytes in the mesh file."""
+    return round(value, 4) + 0.0 if steady else round(value, 4)
+
+
 def exported(module):
     """The module's surfaces by material, each a list of vertices (position, normal, glow) and triangles, its parts and its
     sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
@@ -340,7 +350,8 @@ def exported(module):
             for loop in triangle.loops:
                 point = mesh.vertices[mesh.loops[loop].vertex_index].co
                 normal = normals[loop]
-                game = (round(point.x, 4), round(-point.y, 4), round(point.z, 4))
+                steady = module.steady
+                game = (_rounded(point.x, steady), _rounded(-point.y, steady), _rounded(point.z, steady))
                 facing = (round(normal.x, 3), round(-normal.y, 3), round(normal.z, 3))
                 key = (game, facing, round(glow, 3))
                 if key not in group['index']:
