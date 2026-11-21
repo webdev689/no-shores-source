@@ -121,12 +121,14 @@ export class Keeper {
     const characters = this.characters;
     if (!characters || this.held.has(player) || this.room.character(player) === null) return false;
     const holder = `${this.name}:${crypto.randomUUID()}`;
-    if (this.company) {
-      // A run judges its character before it claims it, so one it turns away is never taken from the room that has it
-      // (a second tab plays on); the claim is judged again, as the character may have moved on meanwhile.
+    if (this.company || this.arrives) {
+      // A run, and a room that judges where a character comes from, judge it before they claim it, so one turned away
+      // is never taken from the room that plays it (a second tab plays on, its unsaved progress kept); the claim is
+      // judged again, as the character may have moved on meanwhile.
       const looked = await this.tried(() => characters.look(token), here);
-      const shut = looked ? await this.judged(player, looked, here) : looked === null ? SIGN_IN_FOR_RUN : undefined;
-      if (shut !== '') {
+      const shut = looked ? await this.judged(player, looked, here) : looked === null ? this.unsigned : undefined;
+      // Outside a run, accounts that do not answer leave the player to play unkept, as a claim unanswered does.
+      if (shut !== '' && (shut !== undefined || this.company)) {
         const trouble = shut === undefined;
         if (here()) this.lost(player, shut ?? ACCOUNTS_TROUBLE, trouble);
         return false;

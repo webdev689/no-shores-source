@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { NO_WAY_HERE } from './arrival.ts';
 import { Keeper, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
 import { roomOf, world } from './keepingForTests.ts';
 
@@ -316,4 +317,40 @@ test('a new account’s character is the one the room holds, given back to the r
     true,
   );
   assert.deepEqual(given, ['{"starting":true}'], 'no kept character yet: the room’s own, given back');
+});
+
+test('a room that turns an arrival away judges before it claims, so the room playing the character keeps it', async () => {
+  const { clock, kept, token } = await world();
+  const plaza = roomOf();
+  plaza.held.set(1, '{"level":1}');
+  const lost: number[] = [];
+  const first = new Keeper(kept, plaza, 'node-overlook-social', (player) => void lost.push(player));
+  assert.equal(
+    await first.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  const far = roomOf();
+  far.held.set(2, '{"starting":true}');
+  const sent: [number, string | undefined][] = [];
+  const judging = new Keeper(kept, far, 'node-gullwing-vale', (player, why) => sent.push([player, why]));
+  judging.judgingArrivals(() => false);
+  assert.equal(
+    await judging.signIn(
+      2,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    false,
+  );
+  assert.deepEqual(sent, [[2, NO_WAY_HERE]], 'turned away, saying why');
+  plaza.held.set(1, '{"level":2}');
+  first.changed(1);
+  await first.due(clock.now + 3_600_000);
+  assert.deepEqual(lost, [], 'the plaza still holds the character: its next save is its own');
 });

@@ -288,7 +288,7 @@ will take it, by the room's own tick.
   way: only when the sea of its tier holds an island whose door leads there, named from that island's seed, water and
   style (`room_sea_dungeon`, `dungeon_room`), so no page opens one for a seed or a style it names. It holds that
   island while players are in it, lets go of an account the sea has not landed there (one the sea did not answer
-  for may join again), and plays no one's inputs before the sea's answer.
+  for, or not within 20 seconds, may join again), and plays each input before the sea's answer as standing still.
 
 ## A fleet
 
@@ -470,15 +470,16 @@ so every decision is Rust and the shell only carries bytes and time.
   that they left, for the Roster. A second text message, or any other, closes the socket.
 - **Where a character comes from** ([[The Server Is the Authority Over Everything]]): each claim says which room held
   the character before ([[Accounts]], "Moving between rooms"), and a node's room, its dungeons' and its runs' judge by
-  it alone how it arrives (`arrival.ts`), never by the page. Overlook's social space, where every session begins and
+  it alone how it arrives (`arrival.ts`), never by the page, on a look before the claim, so a character turned away
+  stays with the room that plays it. Overlook's social space, where every session begins and
   where a new character first stands, takes anyone. Any other node's room takes a character that rejoins it; that
   lands from the sea at the room's seas (a social space's from any), the ship the sea kept in it (`ship_at`) lying
   within the landfall's 30 km of the node's island's coast, and 2 km more, since the ship heaves to a moment after
   the page offers it; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
-  takes one from its node's room at its seas, and an Elite Dungeon's run at Normal from its node at any. A character
-  that came by none of these ways may still join one of its company who plays in the room, as the Roster's "Go to
-  them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
+  takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
+  from its node at any seas. A character that came by none of these ways may still join one of its company who plays
+  in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose

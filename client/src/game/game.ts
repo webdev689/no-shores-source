@@ -492,7 +492,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const goThrough = () => {
     const way = playing.through;
     // A gate shut on a locked node takes no one: its offer only says so.
-    if (way?.happening && playing.flow.mode === 'foot') travel(way.happening, () => goFoot(way.node, way.facing));
+    // Through a gate at the seas of the room the player stands in, as the rooms judge where they come from.
+    if (way?.happening && playing.flow.mode === 'foot')
+      travel(way.happening, () => goFoot(way.node, way.facing, playing.foot?.seas));
   };
   hud.onPassage(goThrough);
   const gearHere = () => (playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : null);

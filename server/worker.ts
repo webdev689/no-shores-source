@@ -39,6 +39,9 @@ const RUN_LINGER_MS = 60_000;
 /** How often the sea says again who is there: half of how long the accounts keep its word. */
 const PRESENT_EVERY_MS = 30_000;
 
+/** How long a sea island's dungeon holds a player for the sea's word that they landed: a token's wait, a claim's own
+ *  waits, and the sea's answer. */
+const LAND_WAIT_MS = 20_000;
 /** How often an island's room tells the sea that players stand ashore on it, so it does not fade under them. */
 const ASHORE_EVERY_MS = 60_000;
 
@@ -168,6 +171,12 @@ export class RoomHost extends DurableObject<Env> {
     // they are landed on its island: their inputs are taken in their order and stand still until then.
     if (privateRun(this.name) || this.name.startsWith('sea-dungeon-'))
       this.guarded(() => this.room.hold(player, true), false);
+    // A sea island's dungeon whose sea never says the player landed sends them off to join again, rather than hold them.
+    if (this.name.startsWith('sea-dungeon-'))
+      setTimeout(() => {
+        if (this.players.get(server) === held && !this.ashore.has(player))
+          this.dismiss(server, AGAIN, 'the sea did not answer');
+      }, LAND_WAIT_MS);
     void this.keeper?.tokenDue(
       player,
       () => held.signed,
