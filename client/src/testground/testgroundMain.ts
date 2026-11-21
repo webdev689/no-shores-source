@@ -471,8 +471,9 @@ async function start(): Promise<void> {
         foes: foes.marked(fighting),
         where,
         matrix: viewProjection(camera, aspect),
-        width: canvas.clientWidth,
-        height: canvas.clientHeight,
+        // In the drawn interface's own pixels, where it lays the display out.
+        width: canvas.width / uiScale(devicePixelRatio),
+        height: canvas.height / uiScale(devicePixelRatio),
         events,
         blocks: STOOD,
         // The course's flat ground hides nothing.

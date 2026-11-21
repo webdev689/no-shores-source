@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { STATUSES, type FighterView, type Statuses } from '../rules/fighters.ts';
 import { FoePlate, type MarkedFoe } from './foePlate.ts';
 import { allOf } from './nodes.test.ts';
-import { foeDebuffs, ownBuffs, StatusClock, StatusRow, statusPixels, statusWords } from './statusIcons.ts';
+import { foeDebuffs, ownBuffs, StatusClock, StatusRow, statusNode, statusPixels, statusWords } from './statusIcons.ts';
 import { Vitals } from './vitals.ts';
 
 const none: Statuses = { crit: 0, expose: 0, charge: 0, haste: 0, linked: 0, veiled: 0, chargeImmune: 0 };
@@ -131,4 +131,10 @@ test('the vitals show the player’s buffs under their bars, and never rest whil
   assert.ok(allOf(vitals.node()).some((node) => node.label?.startsWith('Hasted')));
   for (let frame = 0; frame < 12; frame++) vitals.update({ ...view, statuses: none }, 0.5, false, false);
   assert.equal(vitals.resting, true, 'at rest once it ends');
+});
+
+test('past 1440p an icon’s line stands at twice its size with the rest of the display', () => {
+  const line = (zoom: number) =>
+    statusNode({ name: 'haste', left: 60, faded: false }, 1, 24 * zoom, zoom).children?.[1];
+  assert.deepEqual([line(1) && line(1)?.height, line(2) && line(2)?.height], [2, 4]);
 });

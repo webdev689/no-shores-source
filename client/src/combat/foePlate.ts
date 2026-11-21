@@ -345,7 +345,7 @@ export class FoePlate {
         if (ward) {
           const element = ELEMENTS[ward.element];
           const [dark = '#000', , lit = '#fff'] = element?.palette ?? [];
-          bands({ ...trough, fade: 0.9 }, span(trough, 0, ward.share), {
+          bands({ ...trough, fade: 0.9 * (trough.fade ?? 1) }, span(trough, 0, ward.share), {
             top: lit,
             topDeep: 1,
             body: element?.colour ?? '#fff',
@@ -373,7 +373,7 @@ export class FoePlate {
         poise && { padding: [kind === 'boss' ? 3 * zoom : 0, 0, 0, 0], width: 'grow', children: [poise] },
       ],
     };
-    const debuffs = this.debuffs.node(24 * zoom);
+    const debuffs = this.debuffs.node(24 * zoom, 3 * zoom, zoom);
     return {
       direction: 'row',
       gap: 5 * zoom,

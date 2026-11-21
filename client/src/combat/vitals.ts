@@ -173,7 +173,7 @@ export class Vitals {
   /** The vitals at `zoom` times their size, standing at the view's top left. */
   node(zoom = 1): Node {
     const sizes = this.wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
-    const buffs = this.buffs.node((this.wide ? 36 : 24) * zoom, 6 * zoom);
+    const buffs = this.buffs.node((this.wide ? 36 : 24) * zoom, 6 * zoom, zoom);
     return {
       id: 'fight-vitals',
       label: 'Your vitals',

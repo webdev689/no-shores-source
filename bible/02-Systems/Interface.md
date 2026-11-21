@@ -609,6 +609,8 @@ button's corner and screen, and the Tailor's wares.
   face's steps for its first four frames, as no whole step is 1.4 times another.
 - The small words in capitals (a boss's faction and phase, the poise's word, the compass's lesser points, the weapons'
   counts) keep the face's own spacing, not the wider spacing a page gave them.
+- The Anima's edge frame is drawn with the fight's display, under the game's own windows and the page's HUD; on a
+  page it stood over everything.
 - The fight's display tells a screen reader nothing: its labels (each vital, status, ability and weapon) wait on the
   interface speaking what is not focused.
 - A cutscene's blur is still a filter on the canvas, which would blur what the game draws over it too. It moves into

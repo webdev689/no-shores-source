@@ -154,6 +154,8 @@ export class AbilityBar {
    *  times the full Anima's glow. */
   private readonly used = [0, 0, 0];
   private clock = 0;
+  /** Each picture's SVG with its colours turned, by its key, made once. */
+  private readonly turned = new Map<string, string>();
 
   constructor(pictures: (art: number) => ArtPictures | null) {
     this.pictures = pictures;
@@ -209,9 +211,12 @@ export class AbilityBar {
     /** A picture of the bar's, keyed by the Art and its look, its colours turned as `look` asks. */
     const picture = (name: string, svg: string, saturate = 1, brightness = 1, tint?: string): Picture => {
       const [turnedSaturate, turnedBrightness] = unable ? [0, 0.6 * brightness] : [saturate, brightness];
+      const key = `art ${shown.art} ${name} ${turnedSaturate} ${turnedBrightness}`;
+      let turned = this.turned.get(key);
+      if (turned === undefined) this.turned.set(key, (turned = filteredSvg(svg, turnedSaturate, turnedBrightness)));
       return {
-        key: `art ${shown.art} ${name} ${turnedSaturate} ${turnedBrightness}`,
-        source: { svg: filteredSvg(svg, turnedSaturate, turnedBrightness) },
+        key,
+        source: { svg: turned },
         ...(tint ? { tint } : {}),
       };
     };

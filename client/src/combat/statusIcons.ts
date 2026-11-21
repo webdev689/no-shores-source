@@ -198,21 +198,22 @@ export class StatusRow {
     this.clock.keep((key) => present.has(Number(key.split(':')[0])));
   }
 
-  /** The row, each icon `size` CSS pixels square and `gap` apart; nothing while it holds none. */
-  node(size: number, gap = 3): Child {
+  /** The row, each icon `size` CSS pixels square and `gap` apart, its lines `zoom` times their size; nothing while it
+   *  holds none. */
+  node(size: number, gap = 3, zoom = 1): Child {
     if (this.shown.length === 0) return null;
     return {
       label: this.label,
       gap,
       alignY: 'end',
-      children: this.shown.map(({ status, share }) => statusNode(status, share, size)),
+      children: this.shown.map(({ status, share }) => statusNode(status, share, size, zoom)),
     };
   }
 }
 
 /** One icon: its glyph with a hard shadow a pixel down and right, over the line of its time left in its element's
  *  colour; a Charge's immunity faded. */
-export function statusNode(status: ShownStatus, share: number, size: number): Node {
+export function statusNode(status: ShownStatus, share: number, size: number, zoom = 1): Node {
   const colour = ELEMENTS[LOOKS[status.name].element]?.colour ?? '#ffffff';
   const glyph = (tint?: string): Picture => ({
     key: `status ${status.name}`,
@@ -222,7 +223,7 @@ export function statusNode(status: ShownStatus, share: number, size: number): No
   });
   return {
     direction: 'column',
-    gap: 2,
+    gap: 2 * zoom,
     width: size,
     label: statusWords(status),
     ...(status.faded ? { opacity: 0.4 } : {}),
@@ -237,9 +238,9 @@ export function statusNode(status: ShownStatus, share: number, size: number): No
       },
       {
         width: `${Math.round(share * 1000) / 10}%`,
-        height: 2,
+        height: 2 * zoom,
         draw: (ui, box, scale, clip, fade) => {
-          const pen = { ui, box, scale, clip, fade };
+          const pen = { ui, box, scale: scale * zoom, clip, fade };
           ring(pen, box, TONES.outline);
           paintBox(pen, box, colour);
         },

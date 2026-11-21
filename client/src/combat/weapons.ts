@@ -102,8 +102,16 @@ export class WeaponRows {
   private reload = 0;
   private arms: ArmsShown | null = null;
   private rows: { readonly hand: WeaponShown | null; readonly next: WeaponShown | null } = { hand: null, next: null };
-  /** A number for each of the forge's pictures, by which the interface keeps it. */
+  /** A number for each of the forge's pictures, by which the interface keeps it.
+   *  shortcut: the atlas keeps every picture it was given, one for each piece worn and each dress drawn; key by item
+   *  and dress, or let the atlas forget, once a session's wardrobe fills it. */
   private readonly keys = new WeakMap<Picture, number>();
+  /** How each picture lies in its box, kept while the box and the screen's ratio stay the same, so its pixels are
+   *  read once and not each frame. */
+  private readonly fits = new WeakMap<
+    Picture,
+    { readonly asked: string; readonly fit: ReturnType<typeof weaponFit> }
+  >();
 
   constructor(pictures: ItemPictures | null) {
     this.pictures = pictures;
@@ -201,7 +209,7 @@ export class WeaponRows {
       : null;
     const ratio = Math.max(1, Math.round(globalThis.devicePixelRatio || 1)) * zoom;
     const [boxWidth, boxHeight] = (wide ? PICTURE_BOXES.wide : PICTURE_BOXES.base)[inHand ? 'hand' : 'next'];
-    const fit = drawnPicture && weaponFit(drawnPicture, boxWidth, boxHeight, ratio);
+    const fit = drawnPicture && this.fitOf(drawnPicture, boxWidth, boxHeight, ratio);
     // With no picture (still drawing, or none to be had) the row says the weapon's name instead.
     const bare = !fit;
     const swap = this.swapping > 0 && !still ? Math.floor(((SWAP_SECONDS - this.swapping) / SWAP_SECONDS) * 4) / 4 : 1;
@@ -284,7 +292,7 @@ export class WeaponRows {
         height: 2 * zoom,
         fill: TONES.word,
         float: { at: [0, 1], anchor: [0, 1], x: 6 * zoom, z: 1 },
-        draw: (ui, box, scale, clip, fade) => ring({ ui, box, scale, clip, fade }, box, TONES.outline),
+        draw: (ui, box, scale, clip, fade) => ring({ ui, box, scale: scale * zoom, clip, fade }, box, TONES.outline),
       };
     // The row's height, for a swap's slide: its picture's or its words', and its padding.
     const height = Math.max(fit ? fit.height * zoom : 0, ranged ? counted * 11 : lineHeight(small * zoom)) + 6 * zoom;
@@ -305,6 +313,15 @@ export class WeaponRows {
         ]),
       children: [lead, bare ? null : pictureNode, reload],
     };
+  }
+
+  private fitOf(picture: Picture, width: number, height: number, ratio: number): ReturnType<typeof weaponFit> {
+    const asked = `${width}x${height}@${ratio}`;
+    const kept = this.fits.get(picture);
+    if (kept?.asked === asked) return kept.fit;
+    const fit = weaponFit(picture, width, height, ratio);
+    this.fits.set(picture, { asked, fit });
+    return fit;
   }
 
   private keyOf(picture: Picture): number {

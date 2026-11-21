@@ -6,6 +6,7 @@ import { abilityPictures } from './artsCards.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
 import type { Stack } from '../ui/stack.ts';
+import { uiScale } from '../ui/uiRenderer.ts';
 import type { Cards } from '../player/cards.ts';
 import { SAMPLES } from '../water/waterView.ts';
 import { fromEyeMatrix, shifted, shiftedExactly } from './camera.ts';
@@ -46,7 +47,14 @@ export class FootView {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
     this.swings = new SwingView(gpu);
-    this.hud = new Hud(abilityPictures, forge, beside);
+    // The page's pieces stand in its CSS pixels; the drawn interface lays out in pixels of its own whole scale.
+    const toDrawn = () => devicePixelRatio / uiScale(devicePixelRatio);
+    this.hud = new Hud(abilityPictures, forge, () =>
+      beside().map((box) => {
+        const step = toDrawn();
+        return { left: box.left * step, top: box.top * step, right: box.right * step, bottom: box.bottom * step };
+      }),
+    );
     stack.under((ui) => (this.showing ? this.hud.node(ui) : null));
   }
 
@@ -69,7 +77,7 @@ export class FootView {
 
   /**
    * One frame of the fight on foot: its blood run on by `seconds`, its marks taken, and its display shown over a canvas
-   * `viewport` CSS pixels big, drawn `size` device pixels. Answers the drawers that lie under the figures (the blood)
+   * `viewport` CSS pixels big (the display lays out in the drawn interface's own), drawn `size` device pixels. Answers the drawers that lie under the figures (the blood)
    * and over them (the marks; the arcs and the see-through marks over the water; and the light of marks and arcs while
    * the attack feel's light is on and there are any).
    */
@@ -79,7 +87,6 @@ export class FootView {
     seconds: number,
     {
       size,
-      viewport,
       groundAt,
     }: {
       size: { readonly width: number; readonly height: number };
@@ -108,8 +115,9 @@ export class FootView {
       {
         ...fight,
         matrix,
-        width: viewport.width,
-        height: viewport.height,
+        // In the drawn interface's own pixels, where it lays the display out.
+        width: size.width / uiScale(devicePixelRatio),
+        height: size.height / uiScale(devicePixelRatio),
         lost: null,
         rejoining: foot.rejoining,
         groundAt,

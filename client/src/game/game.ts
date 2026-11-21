@@ -577,8 +577,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
     else if ((shown?.mode === 'sea' || shown?.mode === 'landing') && sea) seaFrame(sea, controls, seconds, size);
     ambience.frame(seconds);
     // The page's own pieces at the top make way for the fight's display while it shows.
-    hudRoot.dataset['fight'] = footView.shown.bossed ? 'bossed' : '';
-    hudRoot.toggleAttribute('data-fight', footView.shown.fight);
+    const fightShown = footView.shown.fight ? (footView.shown.bossed ? 'bossed' : '') : null;
+    if (fightShown === null) hudRoot.removeAttribute('data-fight');
+    else if (hudRoot.dataset['fight'] !== fightShown) hudRoot.dataset['fight'] = fightShown;
     ui.present(stack);
     if (flow.mode === 'loading' && ready) {
       // Wall time, not the world's: a slow machine waits no longer for the ground than a quick one.

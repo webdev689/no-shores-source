@@ -118,9 +118,9 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
 (imports `rules`, the water's sun and samples, and `plus`), `editor` (imports `rules`, `water`, `terrain`, `ships`, `city`
 and `layout`),
-`combat` (imports `rules`, `network`, `plus`, `player` and the editor's camera), `player` (imports `rules`, `network`,
-`forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`
-and the editor's panel helpers), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
+`combat` (imports `rules`, `network`, `plus`, `player`, the editor's camera and `ui`, whose nodes its display builds), `player` (imports `rules`, `network`,
+`forge`, `firstperson` and the editor's camera), `testground` (imports what `player` does, `player` itself, `combat`,
+the editor's panel helpers and `ui`, which draws the fight's display there), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and
 `water`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture drawer and the editor's page
 helpers),
 `plus` (imports nothing), `ui` and `speech` (each imports `plus`), `cinema` (imports `water` and `combat`) and `game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;

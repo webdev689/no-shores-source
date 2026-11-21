@@ -179,3 +179,12 @@ test('a plate’s tier goes with its foe’s rank, and only an Elite’s and up 
   assert.equal(drawn(plate, 'target').has(third), false, 'never on the target’s plate');
   assert.deepEqual(THIRDS, [1 / 3, 2 / 3]);
 });
+
+test('a shield’s ward fades with its plate, as a plate leaving the cone does', () => {
+  const plate = new FoePlate();
+  plate.show({ ...rat(1), shield: { element: 2, left: 50, most: 50 } }, 0);
+  const made = plate.node({ kind: 'overhead', width: 0 });
+  assert.ok(made);
+  const colours = coloursDrawn({ width: 'grow', height: 'grow', children: [{ ...made, opacity: 0.5 }] });
+  assert.ok(colours.has(written(faded(ELEMENTS[2]?.colour ?? '', 0.45))), 'at 0.9 of the plate’s half');
+});
