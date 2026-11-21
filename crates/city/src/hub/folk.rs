@@ -336,9 +336,14 @@ pub(crate) fn life(frame: &Frame, laid: &Laid) -> (Ways, Vec<Post>) {
             });
         }
     }
-    for (module, from) in
-        [("market-stall-fish", "fish"), ("market-stall-fruit", "fruit"), ("market-stall-pots", "pots")]
-    {
+    for (module, from) in [
+        ("market-stall-fish", "fish"),
+        ("market-stall-fruit", "fruit"),
+        ("market-stall-pots", "pots"),
+        ("market-stall-cloth", "fish"),
+        ("market-stall-bread", "fruit"),
+        ("market-stall-flowers", "fish"),
+    ] {
         for (at, facing) in laid.sockets_of(module, "keeper") {
             posts.push(Post {
                 task: Task::Gesture,

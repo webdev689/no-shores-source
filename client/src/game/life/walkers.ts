@@ -12,7 +12,7 @@ export const LOOP_S = 600;
 /** How many walk a social space: at least the fewest, one for every few posts they visit, and at most the most. */
 const FEWEST_WALKERS = 14;
 const POSTS_A_WALKER = 3;
-const MOST_WALKERS = 24;
+const MOST_WALKERS = 48;
 /** How long a post stands empty at least between one walker's stay and the next's, seconds: the one leaving is well
  *  on their way before the next comes. */
 const BETWEEN_S = 4;

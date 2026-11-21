@@ -9,6 +9,7 @@
 
 mod adorn;
 mod courts;
+mod dress;
 mod folk;
 mod hall;
 mod harbour;
@@ -116,12 +117,18 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
     walks::beacon_walk(ground, frame, &mut laid);
     hall::hall(frame, &mut laid);
     adorn::adorn(frame, &mut laid);
-    let spawns = SPAWNS_ACROSS_M.iter().map(|&across| frame.at(SPAWN_TOWARD_M, across)).collect();
-    let (ways, posts) = folk::life(frame, &laid);
+    let spawns: Vec<[f64; 2]> = SPAWNS_ACROSS_M.iter().map(|&across| frame.at(SPAWN_TOWARD_M, across)).collect();
+    let ring = ring::ring(frame);
+    // The courts are filled clear of the ways and posts as they stand, then the posts are laid again, with the
+    // market stalls' keepers and a walker's place at each piece laid.
+    let (first_ways, first_posts) = folk::life(frame, &laid);
+    let dressed = dress::dress(frame, &mut laid, &first_ways, &first_posts, &spawns, &ring);
+    let (ways, mut posts) = folk::life(frame, &laid);
+    posts.extend(dress::walkers_places(&dressed, &laid, &ways, frame.level));
     Social {
         bounds,
         level: frame.level,
-        ring: ring::ring(frame),
+        ring,
         spawns,
         solids: laid.solids,
         stations: laid.stations,

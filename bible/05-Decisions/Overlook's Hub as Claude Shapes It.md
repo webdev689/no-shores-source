@@ -76,6 +76,20 @@ Under the owner's [[The Hub's Fidelity Goes Beyond the Limits, by Procedural Tex
 | Pictures | Lighter or darker in patches some metres wide, so a picture's repeats do not line up across a wall |
 | The Hall's floor | Paved wall to wall, as its own floor: the land under the Beacon is not it |
 
+## Every court populated
+
+Under the owner's [[The Hub Feels Lively, Its Ground Populated]]:
+
+| Call | Choice |
+|---|---|
+| How | Each court's own pieces laid over its open ground on a seeded scatter, 9 to 11 m apart, each faced to the way nearest it and kept clear of every way (its 1.3 m and 0.4 m more), post, arrival, counter, what already stands and the ring's edge (`hub/dress.rs`) |
+| The Watch Court | Shade and green round the obelisk: court trees in raised ring beds, lawn beds, benches, planters, potted trees, a flower cart, a parasol table |
+| The West Court | A garden with tables: trees, lawn beds, parasol tables, tables with benches, benches, potted trees |
+| The Forge Yard | The smiths' stores: woodpiles under lean-tos, stacked barrels, crates, hay bales, carts, sacks, a table for the workers |
+| The Beacon Walk | A market either side of the portico: stalls of cloth, bread, flowers, fruit, fish and pots, parasol tables, carts and goods |
+| The Stair Yard | The stable's stores: hay bales, a hay cart, barrels, crates, sacks |
+| Who is there | Each new stall's keeper at its counter; a walker's place at each piece (a browser at a stall, drinkers at a table, a porter at a pile, an idler at a bench, a bed or a tree), reached straight from the nearest way point that sees it; up to 48 walkers, from 24 |
+
 ## The townsfolk
 
 | Call | Choice |

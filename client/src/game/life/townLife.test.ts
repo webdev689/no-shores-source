@@ -23,7 +23,8 @@ test('one person at each kept post, one walking the round, and the walkers by', 
   assert.equal(LIFE.routines.length, kept.length + 1 + walkersFor(visited.length));
   assert.equal(walkersFor(visited.length), 14, 'at least fourteen walk');
   assert.equal(walkersFor(60), 20, 'one for every three posts they visit');
-  assert.equal(walkersFor(300), 24, 'and at most twenty-four');
+  assert.equal(walkersFor(120), 40, 'a crowd where there is much to see');
+  assert.equal(walkersFor(300), 48, 'and at most forty-eight');
   assert.equal(walkersFor(0), 0, 'and none with nowhere to go');
 });
 

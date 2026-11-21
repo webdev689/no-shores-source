@@ -183,6 +183,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Overlook Becomes a Hub of Courts and Ways, After the Tower]]
 - [[Overlook's Hub as Claude Shapes It]]
 - [[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]
+- [[The Hub Feels Lively, Its Ground Populated]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

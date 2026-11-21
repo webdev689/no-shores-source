@@ -8,6 +8,10 @@ use serde::Serialize;
 #[cfg(test)]
 pub(crate) mod check;
 
+/// How far a way keeps from every box either side of its line, metres: room for a body (0.6 m) and the 0.7 m a walker
+/// keeps right of the way's middle.
+pub(crate) const CLEAR_M: f64 = 1.3;
+
 /// A point of the ways: where it stands, and what it is: "counter:mage", "view:seaward-2", or "" for a plain turn.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct WayPoint {

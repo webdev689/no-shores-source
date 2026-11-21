@@ -17,7 +17,7 @@ const ARCH_OPENING_WIDTH: f64 = 0.8;
 /// Natural rock and a module are their parts' boxes (a module's surfaces after its first carry none), so a body walks
 /// under a cave roof, through a rock arch and into a stall; an arch is its jambs and the head over its crown, so a
 /// body walks through it.
-fn into_boxes(solid: &Solid) -> Vec<Box2> {
+pub(crate) fn into_boxes(solid: &Solid) -> Vec<Box2> {
     if solid.material == Material::Paving || solid.size[2] < LEAST_HEIGHT_M {
         return Vec::new();
     }

@@ -4,14 +4,11 @@
 //! joined to the rest; every post walked to from its way point, but a kept one, whose keeper stands at it all day;
 //! no point or post inside a box.
 
-use super::{Keep, Post, Ways};
+use super::{CLEAR_M, Keep, Post, Ways};
 use crate::collision::Box2;
 use movement::blocks::{ground_at, room_at};
 use movement::{Block, Blocks, Body, Controls, Mode, TICK_SECONDS, TUNING, Terrain, standing, step_body};
 
-/// How far a way keeps from every box either side of its line, metres: room for a body (0.6 m) and the 0.7 m a walker
-/// keeps right of the way's middle.
-pub(crate) const CLEAR_M: f64 = 1.3;
 /// How far a walked body may stray from its line before it counts as pushed off it, metres.
 const STRAY_M: f64 = 0.05;
 

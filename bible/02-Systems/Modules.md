@@ -16,6 +16,7 @@ code:
   - tools/modules/stairs.py#builder
   - tools/modules/bridge.py#builder
   - tools/modules/adorn.py#ADORNMENTS
+  - tools/modules/dress.py#DRESSING
   - crates/layout/src/pieces_land.rs#stone_bridge
   - client/src/city/modules.ts#loadModules
 ---
@@ -78,6 +79,9 @@ are written with paving last, since the first group carries the parts and paving
   weapons hung by `wall` at their fixing; a sign for each stall, its device through the board; a planter, a potted
   tree, two statues, a well, a long rug, a cart, sacks and amphorae stood by `front`; and bunting hung from `end-1`.
   Each stands on its own foot, its lowest point, so a hung one's `wall` stands as high over its foot as it hangs.
+  What fills its courts (`tools/modules/dress.py`): market stalls of cloth, bread and flowers, a court tree in its
+  raised ring bed, a lawn bed, a table with benches (`seat-1` to `seat-4`), a parasol table, a woodpile, a stack of
+  barrels, a flower cart and a stack of hay bales, each stood by `front`.
 
 ## Baking and publishing
 

@@ -2,6 +2,7 @@
 import adorn
 import bridge
 import cavern
+import dress
 import chapels
 import citadel
 import court_pieces
@@ -59,6 +60,8 @@ HUB = (
 )
 # The hub's adornments, after its pieces.
 HUB += adorn.ADORNMENTS
+# What fills the courts, after the adornments.
+HUB += dress.DRESSING
 for number, (name, builder) in enumerate(HUB):
     BUILDERS[name] = builder
     SEEDS[name] = 100 + number

@@ -35,7 +35,7 @@ pub const OBELISK_M: f64 = 18.0;
 const INLAY_M: f64 = 0.02;
 
 impl Frame {
-    fn across(&self) -> [f64; 2] {
+    pub(crate) fn across(&self) -> [f64; 2] {
         [-self.seaward[1], self.seaward[0]]
     }
 
