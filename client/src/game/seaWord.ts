@@ -14,6 +14,8 @@ import type { PortCity } from './worldData.ts';
 
 /** How long each of these lines stands as a notice, seconds. */
 const LINE_S = 6;
+/** The flotsam pieces whose kinds are kept, the latest seen: far more than a sea's room holds at once. */
+export const KINDS_KEPT = 512;
 
 /** What E asks of the sea in a fight, and asks it: from a won deck, to go back aboard the player's own ship; off
  *  any deck, to board a captain who struck alongside, as the sea says they may; else nothing. */
@@ -128,6 +130,11 @@ export class SeaWord {
     for (const piece of room.flotsam) this.kinds.set(piece.id, piece.kind);
     const { naval, told } = room.takeTold();
     for (const event of naval) if (event.kind === 'Flotsam') this.kinds.set(event.id, event.kind_of);
+    // A piece's kind is kept past its gathering, for the word on it that comes after; only the latest are kept.
+    for (const oldest of this.kinds.keys()) {
+      if (this.kinds.size <= KINDS_KEPT) break;
+      this.kinds.delete(oldest);
+    }
     for (const numbers of told) {
       if (numbers[0] !== TOLD.WASHED_UP) continue;
       const isle = numbers[4] ?? 0;

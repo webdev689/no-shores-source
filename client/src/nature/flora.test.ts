@@ -1,7 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BIOMES, castOf } from './cast.ts';
-import { decodeMesh, FLORA, type Flora, formsOf, MESH_VERTEX_BYTES, readFlora } from './flora.ts';
+import {
+  decodeMesh,
+  FLORA,
+  type Flora,
+  floraFiles,
+  formsOf,
+  MESH_VERTEX_BYTES,
+  readFlora,
+  warmFlora,
+} from './flora.ts';
 import { coverage, nearShare } from './handover.ts';
 import { framesFor } from './impostor.ts';
 
@@ -125,3 +134,24 @@ function popcount(bits: number): number {
   for (let sample = 0; sample < 4; sample++) count += (bits >> sample) & 1;
   return count;
 }
+
+test("a biome's flora is warmed file by file, every mesh and picture once, a failure leaving the rest", async () => {
+  const [biome] = Object.keys(FLORA.biomes);
+  assert.ok(biome);
+  const files = floraFiles(biome);
+  const forms = FLORA.biomes[biome]?.kinds ?? {};
+  assert.ok(
+    Object.values(forms)
+      .flat()
+      .every((form) => files.includes(FLORA.base + form.mesh)),
+    'every mesh',
+  );
+  assert.equal(new Set(files).size, files.length, 'each once');
+  const read: string[] = [];
+  await warmFlora(
+    biome,
+    (url) => (read.push(url), read.length === 1 ? Promise.reject(new Error('gone')) : Promise.resolve()),
+  );
+  assert.deepEqual(read, files);
+  assert.deepEqual(floraFiles('nowhere'), []);
+});

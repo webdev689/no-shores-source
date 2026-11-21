@@ -1,5 +1,6 @@
 import type { Gpu } from '../gpu.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import { warmFlora } from '../nature/flora.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Placed } from '../player/figures.ts';
 import { Input, keyNameOf } from '../player/input.ts';
@@ -167,6 +168,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       playing.drawers = drawersOn(opened);
       scene.setLand(opened.view, terrainFor(opened), boot.biomeOf(opened.id));
       playing.sea?.setLandmass(opened);
+    },
+    // Its flora fetched ahead, so its land opens without waiting on the network.
+    (id) => {
+      const biome = boot.biomeOf(id);
+      if (biome) void warmFlora(biome);
     },
   );
 

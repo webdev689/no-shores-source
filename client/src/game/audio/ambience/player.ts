@@ -374,6 +374,11 @@ export class ScapePlayer {
 
   /** The social space's people's steps, each where they walk, within earshot. */
   private steps(heard: Heard): void {
+    // The people heard no more are let go: a place's people are new each visit.
+    if (this.walked.size > heard.folk.length) {
+      const present = new Set(heard.folk.map((person) => person.id));
+      for (const id of this.walked.keys()) if (!present.has(id)) this.walked.delete(id);
+    }
     for (const person of heard.folk) {
       const kept = this.walked.get(person.id);
       if (!kept || person.anim !== 'walk') {

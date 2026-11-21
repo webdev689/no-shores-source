@@ -834,7 +834,8 @@ decodes each and keeps it; the worker holds only its shape and how it measures, 
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
 played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
 fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
-changes, so one let go comes back from the disk.
+changes, so one let go comes back from the disk. The storage holds every file the game reads from R2, within 1 GB, the
+files kept longest ago let go first.
 
 ## The sea fight's readout
 
