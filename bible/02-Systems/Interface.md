@@ -16,6 +16,8 @@ code:
   - client/src/ui/ui.ts#Interface
   - client/src/ui/canvasEvents.ts#CanvasEvents
   - client/src/ui/controls.ts#slider
+  - client/src/testground/panelKit.ts#panels
+  - client/src/testground/viewTexture.ts#ViewTexture
   - client/src/ui/pictures.ts#Pictures
   - client/src/ui/field.ts#typed
   - client/src/ui/paint.ts#paint
@@ -188,6 +190,11 @@ moves to the game's own drawing
   the figures, the horse and the keepers drawn from the forge's pixels, kept whole. A page still made of elements
   (Ship, Social, Settings, the pages to come) stands in an island laid over the drawn body each frame until it is
   drawn; while its controls have the focus the keys are its own.
+- **The Test Ground's panels** are drawn too: the page is one canvas, its two panels laid either side of the view as
+  its grid laid them, each a scrolled column of the Test Ground's own dark surfaces, flat presses and dim hints, with
+  the shared toggle, slider and choice (`panels`, `Panel`, `GearPanel`). The view between them is drawn into a
+  texture of its own, the fight's display over it in an interface the view's size, and copied into its place
+  (`ViewTexture`); a click there is the world's, and the wheel over a panel scrolls it.
 - **Checked headless.** `node tools/uiShot.mjs <shots.json>` draws any module's tree through the real renderer and
   writes a PNG; `ui/gallery.ts` holds every kind of node.
 
@@ -666,7 +673,10 @@ button's corner and screen, and the Tailor's wares.
 - One look, DFO's Slate. Its other themes (Stone, Iron, Ember, Forest, Night) wait on a settings screen to choose
   them in.
 - The [[World Editor]] and the [[Test Ground]] keep their own panels' layout, in the game's face: they are tools, not
-  the game's screens.
+  the game's screens. The Test Ground's drop-downs, ticks and sliders wear the kit's look, not a browser's; its number
+  fields take words, not the browser's step arrows; its words in the face, not the page's monospace for the numbers
+  to copy; a name or a node's words show over it, as a page's `title` did, while the pointer or the keys' focus is on
+  it.
 - The vitals always rest when whole: DFO's switch for it waits on a settings screen.
 - A plate keeps its size on any screen; DFO's names also grew with the screen's height.
 - Bars at the top of the screen (the boss bar, the soft lock's, a Boss ship's) stand where they are set; only bars
