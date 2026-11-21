@@ -54,24 +54,36 @@ fn no_week_sells_one_piece_twice() {
     }
 }
 
+/// The named piece Shape shows at a place in the tests' week, as a page names it.
+fn shown(ware: u8) -> u32 {
+    crate::shape::shown(5_000, ware)
+}
+
 #[test]
 fn a_piece_is_bought_with_shapes_at_his_place() {
     let mut character = Character::starting();
     character.xp = crate::power::xp_for_level(20);
     let here = Here { social: true, day: 0, pledge: 0, rank: 0, week: 5_000 };
-    assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE), Err(Refusal::Short));
+    assert_eq!(character.ask(Ask::BuyFromShape { ware: 4, shown: shown(4) }, here, &DICE), Err(Refusal::Short));
     character.add_shapes(500);
     assert_eq!(character.materials.shapes, 200, "held to the most");
     let afield = Here { social: false, ..here };
-    assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, afield, &DICE), Err(Refusal::NotHere));
+    assert_eq!(character.ask(Ask::BuyFromShape { ware: 4, shown: shown(4) }, afield, &DICE), Err(Refusal::NotHere));
     character.xp = crate::power::xp_for_level(19);
-    assert_eq!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE), Err(Refusal::TooLow), "made at level 20");
+    assert_eq!(
+        character.ask(Ask::BuyFromShape { ware: 4, shown: shown(4) }, here, &DICE),
+        Err(Refusal::TooLow),
+        "made at level 20"
+    );
     character.xp = crate::power::xp_for_level(20);
-    assert!(character.ask(Ask::BuyFromShape { ware: 4 }, here, &DICE).is_ok());
+    let another = shown(3);
+    let stale = character.ask(Ask::BuyFromShape { ware: 4, shown: another }, here, &DICE);
+    assert_eq!(stale, Err(Refusal::NotSold), "a page shown another piece at that place buys nothing");
+    assert!(character.ask(Ask::BuyFromShape { ware: 4, shown: shown(4) }, here, &DICE).is_ok());
     assert_eq!(character.materials.shapes, 200 - price(Rarity::Atheric));
     let bought = character.items.values().map(|(item, _)| item).find(|item| item.rarity == Rarity::Atheric);
     assert_eq!(bought.map(|item| item.named.clone()), Some(wares(5_000)[4].named.clone()));
-    assert_eq!(character.ask(Ask::BuyFromShape { ware: 9 }, here, &DICE), Err(Refusal::NoSuchItem));
+    assert_eq!(character.ask(Ask::BuyFromShape { ware: 9, shown: shown(9) }, here, &DICE), Err(Refusal::NoSuchItem));
 }
 
 #[test]

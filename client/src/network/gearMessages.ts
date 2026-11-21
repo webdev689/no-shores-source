@@ -279,7 +279,7 @@ export interface GearOfficer {
 
 /** The ship's part of the gear message: its experience, level, Prestige, Attack and Defense and how far to its next;
  *  Timber, Canvas, Iron and Heartwood in `stocks`; its hands of its complement; its officers, the officers of the
- *  day at a pledged faction's counter, and its trim at sea. */
+ *  day at a pledged faction's counter, and its trim at sea (the gear crate's `ShipTrim::to_floats`, in its order). */
 export interface GearShip {
   readonly xp: bigint;
   readonly level: number;

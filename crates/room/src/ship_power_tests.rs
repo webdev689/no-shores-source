@@ -107,6 +107,29 @@ fn its_fitting_reads_its_power_and_trim_and_an_officer_at_their_post_shapes_it()
 }
 
 #[test]
+fn an_atheric_modules_intrinsic_fits_it_and_its_own_once_bought_and_chosen() {
+    let mut character = sailor(LEVEL);
+    let id = character.take_id();
+    let entry = gear::catalogue::catalogue().named("krakens_roar").expect("Kraken's Roar");
+    let mut guns = gear::vestige::named_item(id, entry, gear::Slot::Guns);
+    guns.xp = guns.xp_most();
+    for (_, at) in character.items.values_mut() {
+        if *at == At::Worn(gear::Slot::Guns) {
+            *at = At::Carried;
+        }
+    }
+    character.items.insert(id, (guns.clone(), At::Worn(gear::Slot::Guns)));
+    let hostiles = [(CAPTAIN, hostile().0)].into();
+    let fitted = fitting(&character, &hostiles).trim;
+    assert!((fitted.holing - 2.0).abs() < 1e-12 && !fitted.feeding, "From the Deep alone");
+    let signature = 2;
+    guns.bought |= guns.node_bit(signature, 0).expect("its own node");
+    guns.chosen[signature] = 0;
+    character.items.insert(id, (guns, At::Worn(gear::Slot::Guns)));
+    assert!(fitting(&character, &hostiles).trim.feeding, "and Feeding");
+}
+
+#[test]
 fn a_sinking_pays_its_and_its_officers_aboard_and_a_won_deck_now_and_then_gives_an_officer() {
     let (pirate, _) = hostile();
     let mut characters: BTreeMap<PlayerId, Character> = [(3, Character::starting()), (4, Character::starting())].into();

@@ -20,13 +20,17 @@ class Played implements Beat {
   failing: Error | null = null;
   skipped = false;
   left = false;
+  still = false;
+  /** The seconds each frame handed the beat. */
+  readonly heard: number[] = [];
 
   constructor(name: BeatName, skippable = false) {
     this.name = name;
     this.skippable = skippable;
   }
 
-  frame(): StoryFrame {
+  frame(tick: { readonly seconds: number }): StoryFrame {
+    this.heard.push(tick.seconds);
     if (this.failing) throw this.failing;
     return { shot: SHOT };
   }
@@ -63,9 +67,9 @@ function directed(made: Map<BeatName, Played>, from: BeatName) {
   const asked: string[] = [];
   const heard: Hearing[] = [];
   const stage = {
-    step: () => asked.push('step'),
+    step: (seconds: number) => asked.push(`step ${seconds}`),
     hush: () => asked.push('hush'),
-    draw: () => asked.push('draw'),
+    draw: (shown: unknown, size: unknown, clock: number, seconds: number) => asked.push(`draw ${seconds}`),
     parts: {
       screen: { showSkip: (share: number | null) => asked.push(`skip ${share}`), clear: () => asked.push('clear') },
       music: { frame: (hearing: Hearing) => heard.push(hearing) },
@@ -103,14 +107,28 @@ test('a beat that fails is left behind: what was said is hushed, the view cleare
   assert.ok(asked.includes('hush') && asked.includes('clear'));
   assert.equal(director.now.name, 'calm');
   director.frame(controls(false), 0.1, SIZE, SIZE);
-  assert.ok(asked.includes('draw'), 'the next beat is drawn');
+  assert.ok(asked.includes('draw 0.1'), 'the next beat is drawn');
 });
 
 test('every frame steps the stage, drawn or not, so the sea and the storm keep sounding', () => {
   const made = new Map<BeatName, Played>();
   const { director, asked } = directed(made, 'calm');
   for (let frame = 0; frame < 3; frame++) director.frame(controls(false), 0.1, SIZE, SIZE);
-  assert.equal(asked.filter((what) => what === 'step').length, 3);
+  assert.equal(asked.filter((what) => what === 'step 0.1').length, 3);
+});
+
+test("a beat holding its world still holds the story's time, though its own frame still hears the seconds", () => {
+  const made = new Map<BeatName, Played>();
+  const { director, asked } = directed(made, 'wreck');
+  const wreck = made.get('wreck');
+  assert.ok(wreck);
+  wreck.still = true;
+  director.frame(controls(false), 0.1, SIZE, SIZE);
+  assert.deepEqual(
+    asked.filter((what) => what.startsWith('step') || what.startsWith('draw')),
+    ['step 0', 'draw 0'],
+  );
+  assert.deepEqual(wreck.heard, [0.1]);
 });
 
 test('a cutscene held through a second of Space is skipped, and nothing more of it is said', () => {

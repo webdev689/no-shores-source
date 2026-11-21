@@ -88,7 +88,7 @@ fn a_lone_dagger_becomes_double_daggers_and_named_shields_their_sword_and_shield
         (Kind::SwordAndShield, Rarity::Atheric, Some("the_reefwall"))
     );
     assert_eq!((reef.bought, reef.xp), (0, 90_000.min(reef.xp_most())), "its XP kept, its nodes to buy again");
-    assert!(reef.layout.iter().flatten().any(|id| id == "coral_guard"));
+    assert!(reef.layout.iter().flatten().any(|id| id == "riptide"), "its own node, as the catalogue has it");
     assert_eq!(character.at(7), Some(At::Carried));
     assert_eq!(kind_at(&character, 8), (Kind::SwordAndShield, At::Vault), "Seawall stays in the vault");
     let materials = &character.materials;

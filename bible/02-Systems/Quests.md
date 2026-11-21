@@ -125,7 +125,7 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   mid-road says nothing it has said before.
 - **Speaking with a keeper**: within reach of a counter that a `talk` goal of the task names, the offer reads "Speak
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
-- **Marks**: `quest_at` stands a mark at its place, and the held map marks the nodes the task's goals name.
+- **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.
 - **What is shown and said**: the page shows, says and marks nothing from a word not on the player's own character
   (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an
   escort's or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they

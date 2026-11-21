@@ -12,7 +12,7 @@ use gear::{Character, Slot};
 
 /// A shot within this of its target is point blank; past this, a long shot (metres).
 const POINT_BLANK_M: f64 = 5.0;
-const LONG_SHOT_M: f64 = 20.0;
+pub(crate) const LONG_SHOT_M: f64 = 20.0;
 /// Attuned's blows deal this much; Keen Eye's Crit lasts this long (seconds).
 const ATTUNED_TIMES: f64 = 1.1;
 const KEEN_EYE_S: f64 = 4.0;
@@ -33,15 +33,15 @@ pub struct PerkCounts {
 }
 
 impl PerkCounts {
-    /// Counts a swing's blow on a foe at a tick, answering whether it is the third of a row, which then begins again.
-    /// Landed, it carries on the foe's row if the player's last swing before this one landed on the foe too, so a
-    /// sweep that strikes it beside others keeps it; else it begins one. Parried or dodged, it ends the foe's row. A
-    /// swing that lands on no one leaves the other foes' rows as they were.
-    fn in_row(&mut self, foe: FighterId, landed: bool, tick: u64) -> bool {
+    /// Counts a swing's blow on a foe at a tick, answering its place in the foe's row (0 for none). Landed, it carries
+    /// on the foe's row if the player's last swing before this one landed on the foe too, so a sweep that strikes it
+    /// beside others keeps it; else it begins one. Parried or dodged, it ends the foe's row. A swing that lands on no
+    /// one leaves the other foes' rows as they were.
+    fn in_row(&mut self, foe: FighterId, landed: bool, tick: u64) -> u32 {
         let held = self.rows.iter().find(|row| row.0 == foe).copied();
         self.rows.retain(|row| row.0 != foe);
         if !landed {
-            return false;
+            return 0;
         }
         if self.swung[1] != tick {
             self.swung = [self.swung[1], tick];
@@ -49,11 +49,14 @@ impl PerkCounts {
         let before = self.swung[0];
         self.rows.retain(|row| row.2 >= before);
         let count = held.filter(|row| row.2 == before).map_or(1, |row| row.1 + 1);
-        if count >= ROW_EXPOSES {
-            return true;
-        }
         self.rows.push((foe, count, tick));
-        false
+        count
+    }
+
+    /// The place in a foe's row a swing landing on it at a tick would take, as `in_row` would count it.
+    pub(crate) fn row_after(&self, foe: FighterId, tick: u64) -> u32 {
+        let before = if self.swung[1] == tick { self.swung[0] } else { self.swung[1] };
+        self.rows.iter().find(|row| row.0 == foe && row.2 == before).map_or(1, |row| row.1 + 1)
     }
 
     /// Marks a foe a shot landed on, answering whether it is the first to: a foe is marked once. A foe dead or gone
@@ -109,14 +112,40 @@ pub fn trim_of(character: &Character, drawn: Slot) -> Trim {
             // Poise holding 15% more: each blow fills it as much less.
             "unshaken" => trim.poise_taken /= 1.15,
             "hardy" => trim.telegraph_taken *= 0.9,
+            // The perks that give and take: each trims two numbers, one each way.
+            "heavy_head" => {
+                trim.damage *= 1.12;
+                trim.swing_stamina *= 1.2;
+            }
+            "feather_edge" => {
+                trim.swing_stamina *= 0.75;
+                trim.poise_given *= 0.85;
+            }
+            "overdrawn" => {
+                trim.aimed *= 1.2;
+                trim.reload *= 1.2;
+            }
+            "hair_trigger" => {
+                trim.reload *= 0.75;
+                trim.aimed *= 0.9;
+            }
+            "reckless" => {
+                trim.damage *= 1.1;
+                trim.drawn_poise_taken *= 1.2;
+            }
+            "guarded" => {
+                trim.drawn_poise_taken *= 0.8;
+                trim.damage *= 0.95;
+            }
             "undertow" => trim.on_low *= 1.3,
             "last_light" => {
                 trim.kill_reload = true;
                 trim.kill_stamina += 25.0;
             }
             "tolling" => trim.stagger_given *= 1.5,
-            "updraft" => trim.draw *= 0.5,
-            "coral_guard" => trim.block_stamina += 10.0,
+            // Coral Guard's bite back and Riptide's Expose are the room's (`atheric.rs`); their numbers here are trims.
+            "coral_guard" => trim.block_stamina += 15.0,
+            "riptide" => trim.riposte *= 1.5,
             "deep_breath" => trim.regen_low *= 1.5,
             "barnacle" => trim.behind_taken *= 2.0 / 3.0,
             "ebb" => trim.parry_stamina += 30.0,
@@ -139,8 +168,8 @@ impl Room {
 
     /// The perks a player's blow on a foe takes on as it is struck: Honed on every blow, Executioner on a staggered
     /// foe (a riposte, the stagger's own answer, aside, as combat counts it), Undertow on one below half its health,
-    /// Exploit marking a swing on an Exposed foe a crit, and Attuned on a blow in the worn Art's element (`perk_on`:
-    /// of the loadout the blow came from, never a spell's).
+    /// Exploit marking a swing on an Exposed foe a crit, Attuned on a blow in the worn Art's element, and what an
+    /// Atheric's own adds (`struck_harder`) (`perk_on`: of the loadout the blow came from, never a spell's).
     pub(crate) fn sharpened(&self, blow: Blow, defender: FighterId, trim: &Trim) -> Blow {
         let Some(foe) = self.fighter(defender) else { return blow };
         let Some(player) = self.players.get(&blow.striker).filter(|_| self.foes.contains_key(&defender)) else {
@@ -154,7 +183,9 @@ impl Room {
             && blow.element != 0
             && player.character.worn_art().is_some_and(|art| art.element == blow.element);
         let attuned = if in_element && self.perk_on(&blow, "attuned") { ATTUNED_TIMES } else { 1.0 };
-        Blow { damage: blow.damage * trim.damage * staggered * low * attuned, crit: blow.crit || exploits, ..blow }
+        let atheric = self.struck_harder(&blow, defender);
+        let damage = blow.damage * trim.damage * staggered * low * attuned * atheric;
+        Blow { damage, crit: blow.crit || exploits, ..blow }
     }
 
     /// A player's shot by the ground it covered to its mark and the trim it was loosed with: Point Blank within 5 m,
@@ -190,8 +221,10 @@ impl Room {
         if !killed {
             return;
         }
+        // A shot's kill gives what the loadout it was loosed from gives, whatever is drawn as it lands.
+        let loosed = self.shot_loosed.map(|loosed| loosed.trim);
         if let Some(found) = self.players.get_mut(&striker) {
-            let trim = found.fighter.trim;
+            let trim = loosed.unwrap_or(found.fighter.trim);
             back(&mut found.fighter, trim.kill_stamina);
             if trim.kill_reload && matches!(found.fighter.action, Action::Reload { .. }) {
                 found.fighter.action = Action::Idle;
@@ -208,8 +241,8 @@ impl Room {
             return;
         }
         let clock = self.clock;
-        let [rows, clap, marked, shocking, keen] =
-            ["exposing_strikes", "thunderclap", "marked_shot", "shocking_rounds", "keen_eye"]
+        let [rows, clap, marked, shocking, keen, cuts] =
+            ["exposing_strikes", "thunderclap", "marked_shot", "shocking_rounds", "keen_eye", "thousand_cuts"]
                 .map(|id| self.perk_on(blow, id));
         let foes = &self.foes;
         let living = |foe: FighterId| foes.get(&foe).is_some_and(|found| !found.fighter.dead());
@@ -218,7 +251,9 @@ impl Room {
         let mut given = Vec::new();
         match blow.kind {
             BlowKind::Swing(_) => {
-                if rows && found.counts.in_row(defender, landed, clock) {
+                // Thousand Cuts counts the same rows, its blows struck harder by their place in them.
+                let row = if rows || cuts { found.counts.in_row(defender, landed, clock) } else { 0 };
+                if rows && row > 0 && row % ROW_EXPOSES == 0 {
                     given.push(Status::Expose);
                 }
                 if clap && matches!(verdict, Verdict::GuardBroken { .. }) {

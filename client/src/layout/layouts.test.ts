@@ -19,6 +19,7 @@ function square(id: string, x: number, y: number): NodeLayout {
     spawns: [],
     areas: [],
     paths: [],
+    sites: [],
     buildings: [],
     props: [],
     tiles: [],

@@ -185,6 +185,8 @@ pub struct Player {
     pub casting: crate::arts::Casting,
     /// What their perks count from blow to blow, kept while they are in the room.
     pub(crate) counts: crate::perks::PerkCounts,
+    /// What their Atheric's perks count, beside them.
+    pub(crate) atheric: crate::atheric::AthericCounts,
     /// The foes their own blows landed on in the last ten seconds, with the tick of each one's last: each shares its
     /// kill's healing charge with them (`recharge.rs`).
     pub(crate) struck: std::collections::BTreeMap<FighterId, u64>,
@@ -235,6 +237,7 @@ impl Player {
             trims: [combat::Trim::PLAIN; 2],
             casting: crate::arts::Casting::default(),
             counts: crate::perks::PerkCounts::default(),
+            atheric: crate::atheric::AthericCounts::default(),
             struck: std::collections::BTreeMap::new(),
         }
     }

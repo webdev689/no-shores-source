@@ -41,6 +41,15 @@ export interface LayoutArea {
   readonly leads_to?: string;
 }
 
+/** A site a layout marks (the layout crate's `Site`): what it is for, where, how much ground it takes, and what it
+ *  holds or leads to. */
+export interface LaidSite {
+  readonly kind: 'landing' | 'gate' | 'event' | 'beacon' | 'resource' | 'foes' | 'objective' | 'door';
+  readonly at: Point;
+  readonly radius: number;
+  readonly holds?: string;
+}
+
 /** A run breaking off a patrol area, as the layout crate writes it: its kind, its mouth, its line and its beats. */
 export interface LaidRun {
   readonly name: string;
@@ -62,6 +71,7 @@ export interface NodeLayout {
   readonly spawns: readonly Point[];
   readonly areas: readonly LayoutArea[];
   readonly paths: readonly LaidPath[];
+  readonly sites: readonly LaidSite[];
   readonly buildings: readonly Seated[];
   readonly props: readonly Seated[];
   readonly tiles: readonly LaidTile[];

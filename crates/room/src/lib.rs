@@ -6,6 +6,7 @@
 
 mod arts;
 pub mod asks;
+mod atheric;
 pub mod battle;
 pub mod boarding_hands;
 pub mod chart;
@@ -121,6 +122,10 @@ pub struct Room {
     pub(crate) groups: BTreeMap<u32, Group>,
     pub(crate) next_group: u32,
     pub(crate) events: Vec<judging::Event>,
+    /// The fighter an Atheric's leap or burst being judged came from, which its events tell (`atheric.rs`).
+    pub(crate) chain_from: Option<FighterId>,
+    /// What the shot being judged was loosed with, whose perks it takes (`perk_on`); none outside a shot's judging.
+    pub(crate) shot_loosed: Option<power::Loosed>,
     /// The verdicts (striker, defender) and telegraphed blows ended (foe, found no one, dodged perfectly) since the
     /// foes' brains were last told: one a player's leaving ends between ticks is told at the next.
     pub(crate) verdicts: Vec<(FighterId, FighterId, Verdict)>,
@@ -131,6 +136,8 @@ pub struct Room {
     pub(crate) swings: Vec<(FighterId, combat::fighter::Attack)>,
     /// Shots loosed this tick, by whom.
     pub(crate) loosed: Vec<FighterId>,
+    /// The foes a swing settling now strikes: a burst it sets off passes them by, so one blow strikes a foe once.
+    pub(crate) sweep: Vec<FighterId>,
     /// The balls that stopped since the last snapshot, each as its last segment and the point it left its gun.
     pub(crate) lines: Vec<Line>,
     /// What the foes share, how hot their fight runs, the routes they walk, the most it holds, and a node's garrison;
@@ -198,11 +205,14 @@ impl Room {
             groups: BTreeMap::new(),
             next_group: 1,
             events: Vec::new(),
+            chain_from: None,
+            shot_loosed: None,
             verdicts: Vec::new(),
             ended_telegraphs: Vec::new(),
             spawns: Vec::new(),
             swings: Vec::new(),
             loosed: Vec::new(),
+            sweep: Vec::new(),
             lines: Vec::new(),
             board: ::foes::Board::default(),
             director: ::foes::Director::default(),
@@ -260,7 +270,7 @@ impl Room {
         let fighter = player(self.stand(spawn), BARE_HANDS);
         let mut joined = Player::new(fighter, self.clock, self.is_test_ground());
         if self.story {
-            story::arm_for_story(&mut joined.character);
+            story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
         self.arrived(id);
@@ -426,7 +436,8 @@ impl Room {
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
-                for defender in struck(id, fighter, &attack, view, &self.blocks) {
+                self.sweep = struck(id, fighter, &attack, view, &self.blocks);
+                for defender in self.sweep.clone() {
                     let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
                     if self.players.contains_key(&defender) {
@@ -437,6 +448,7 @@ impl Room {
                         self.judge_now(&blow, how, defender, &then, Some(loadout));
                     }
                 }
+                self.sweep.clear();
             }
             Some(Happening::Loosed(shot)) => {
                 let shot = Shot { owner: id, ..shot };
@@ -447,7 +459,8 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    let loosed = self.held(id, gear::Slot::Ranged);
+                    let loosed =
+                        self.held(id, gear::Slot::Ranged).map(|held| power::Loosed { aimed: aimed(&shot), ..held });
                     self.shots.push((shot, loosed));
                 }
             }
@@ -560,3 +573,10 @@ mod ring_tests;
 mod room_tests;
 #[cfg(test)]
 mod spread_tests;
+
+/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage to the bit
+/// (`combat::step`'s quick shot, power 1), and one loosed from the draw at its draw's power and the aimed trim, which
+/// may be more or, with Hair Trigger, less.
+pub(crate) fn aimed(shot: &Shot) -> bool {
+    shot.damage != combat::shots::shot_numbers(shot.ranged).1
+}

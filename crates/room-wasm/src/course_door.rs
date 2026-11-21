@@ -86,6 +86,19 @@ pub extern "C" fn room_put_player(player: u32, x: f64, y: f64) -> u32 {
     u32::from(put_player(player, x, y))
 }
 
+/// The story's sword and shield taken from the deck into a player's pack (`Room::story_take_arms`); 1 if given, 0 if
+/// not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_story_take_arms(player: u32) -> u32 {
+    u32::from(on_land(|room| room.story_take_arms(player)).unwrap_or(false))
+}
+
+/// The story sends a foe at a player (`Room::story_hunt`); 1 if sent, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_story_hunt(foe: u32, player: u32) -> u32 {
+    u32::from(on_land(|room| room.story_hunt(foe, player)).unwrap_or(false))
+}
+
 /// Stands a block (`stand_block`) from its west, north, east and south edges, its top and its underside; 1 if stood,
 /// 0 if not.
 #[unsafe(no_mangle)]

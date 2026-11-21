@@ -2,6 +2,7 @@
 // traits and, against the piece it would replace, what changes), a slot's flyout of the nine it carries, the
 // inventory page's currencies and its shelves of cells, and the vault's. The page draws these in the Enhanced Plus kit.
 
+import items from '../../../content/gear/items.json' with { type: 'json' };
 import { ASKS, type GearItem, type GearState, NONE } from '../network/gearMessages.ts';
 import {
   CARRIED,
@@ -56,6 +57,40 @@ export interface Trait {
   readonly name: string;
   readonly words: string;
   readonly kind: number;
+  /** What a perk that gives and takes gives, and costs, apart; empty for any other. */
+  readonly gives?: string;
+  readonly takes?: string;
+  /** A word on where it stands: an Atheric's intrinsic always on, its own node not yet chosen. */
+  readonly note?: string;
+  /** Whether it acts now; an Atheric's own node not yet chosen does not. */
+  readonly off?: boolean;
+}
+
+/** The column kind an Atheric's own node has, whose glyph its intrinsic shows too. */
+export const ATHERIC_OWN = 4;
+
+/** An Atheric's intrinsic, always on while it is worn and never a node, as its page and card show it; null for any
+ *  other. */
+export function intrinsicOf(item: Pick<GearItem, 'named'>): Trait | null {
+  const entry: { readonly id: string; readonly intrinsic?: string } | undefined = items.items.find(
+    (found) => found.id === item.named,
+  );
+  return entry?.intrinsic ? { ...traitOf(entry.intrinsic), kind: ATHERIC_OWN, note: 'Intrinsic: always on' } : null;
+}
+
+/** An Atheric's own node's perk as its page shows it beside its intrinsic: on once bought and chosen, else marked as
+ *  waiting in its column; null for an item with no such column. */
+export function ownOf(item: Pick<GearItem, 'columns' | 'chosen'>): Trait | null {
+  const index = item.columns.findIndex((column) => column.kind === ATHERIC_OWN);
+  const id = item.columns[index]?.traits[0];
+  if (!id) return null;
+  const chosen = item.chosen[index] === 0;
+  return {
+    ...traitOf(id),
+    kind: ATHERIC_OWN,
+    note: chosen ? 'Its own node' : 'Its own node: not yet chosen',
+    off: !chosen,
+  };
 }
 
 /** The traits an item gives now: each column's chosen one, once bought. */
@@ -96,7 +131,8 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
     big,
     rows,
     element: item.element,
-    traits: traitsShown(item),
+    // An Atheric's intrinsic heads its perks, as the piece is chiefly that.
+    traits: [...[intrinsicOf(item)].filter((trait) => trait !== null), ...traitsShown(item)],
     words: itemWords(item),
     compare: worn && worn.id !== item.id ? { replaces: gearName(worn), rows: changes } : null,
   };

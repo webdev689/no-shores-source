@@ -20,6 +20,7 @@ import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
 import { gearScreenOpen } from './gearWindow.ts';
+import { HINTS, withMapKey } from './hints.ts';
 import { gearTakesKeys } from './gearScreen.ts';
 import type { Drain } from './drain.ts';
 import type { DrawnInterface } from './drawnInterface.ts';
@@ -122,6 +123,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const { ui, stack, drain } = parts;
   let [last, clock] = [performance.now(), 0];
   let wasWalking = false;
+  /** Whether the view was in the player's eyes before the land's held map took it there; null while it has not. */
+  let eyesBeforeMap: boolean | null = null;
 
   /** The drawers that stand on the open landmass this frame (`standingDrawers`). */
   const standing = (ships: readonly SeaShip[], figures: readonly CardAt[], fight?: { under: Drawer; over: Drawer }) =>
@@ -148,20 +151,39 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
-    const { flow } = playing;
+    const { flow, helmMap } = playing;
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
-    const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
+    const looking = helmMap.looking;
+    if (looking !== (eyesBeforeMap !== null)) {
+      const firstPerson = eyesBeforeMap ?? true;
+      eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
+      walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
+    }
+    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: controls.locked, aspect });
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
     const { body } = walker.player;
     scene.keepClose([body.x, body.y], parts.closeSource, () => undefined);
     scene.keepMiddle([body.x, body.y], parts.closeSource);
-    const hands = walker.inFirstPerson
-      ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
-      : undefined;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
+    const mapDraw = helmMap.footFrame(seconds, {
+      free: !paused && !here.fallen,
+      viewport,
+      dpr: canvas.width / Math.max(1, canvas.clientWidth),
+      hands: walker.you.dress.outfit.armour.gauntlets ?? null,
+      eyes: walker.inFirstPerson,
+      at: [body.x, body.y],
+      heading: walker.player.yaw,
+    });
+    // The held map, or the player's own hands in first person, over the finished picture.
+    const hands =
+      mapDraw ??
+      (walker.inFirstPerson
+        ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
+        : undefined);
     parts.isleFrame();
     const { quests } = playing;
     quests.hear(here.gear?.gear);
@@ -171,6 +193,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
     const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: parts.groundAt });
+    // The fight's crosshair, plates and compass give way to the map while it is up.
+    if (looking) footView.hideDisplay();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
     // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
@@ -199,10 +223,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     // As E's other use, a gate takes no one while a menu is up or the player is down.
-    playing.through = paused || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
+    playing.through =
+      paused || looking || here.fallen ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    hud.hints(shown.hints);
-    hud.marks(quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
+    hud.hints(looking ? HINTS.landMap : withMapKey(shown.hints));
+    // The quest's mark gives way to the map too, which rings its place instead.
+    hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     hud.tasks.show(quests.tracked);
     hud.toast(...quests.toasts);
     hideSeaHud(hud);

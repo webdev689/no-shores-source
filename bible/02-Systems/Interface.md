@@ -598,8 +598,12 @@ never while a press is held. Each press is an ask the room answers.
   keys moved: a page built anew under a resting pointer, or a focus a click left, opens none over what the player
   looks at.
 - **An item's page** lies over the menu, as Destiny 1's weapon page does: its name on its rarity's band, its kind,
-  level, pips and element; its words, in a column 380 to 660 px wide (880 at the larger words); its main number large over a meter of it; what it changes over the piece worn;
-  the perks its chosen nodes give; and its node grid. Each node is a tile of the kit's stone with its kind's glyph:
+  level, pips and element; an Atheric's two perks first, under "Atheric", for a weapon and a module alike: its
+  intrinsic, marked always on, and its own node's perk, marked and dimmed until it is chosen, never listed again among
+  the perks; its words, in a column 380 to 660 px wide (880 at the larger words); its main number large over a meter
+  of it; what it changes over the piece worn; the perks its chosen nodes give, a perk that gives and takes with its
+  cost on a line of its own in the colour of a loss; and its node grid. An item's card names an Atheric's intrinsic
+  first among its perks. Each node is a tile of the kit's stone with its kind's glyph:
   sunk while locked, a ring inside it lit as far as the item has grown toward it; glowing when it can be bought; its
   glyph brass once bought; set in brass when chosen. A node is bought by holding it and one bought is chosen by a
   click. To the right, the item drawn large on a lit floor. Its presses go to the footer: wear it, take it off, put
@@ -633,12 +637,12 @@ never while a press is held. Each press is an ask the room answers.
 - **Sounds.** Every control makes a sound: a tick as the pointer or the keys reach it, a press, a step back, a tab
   turned, the menu opened and shut, a hold's charge rising, a dismantle, a feed, a gain's chime by its rarity, a
   refusal. Each is the owner's pick on the sound sheet ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the
-  tick, press, step back, opening, dismantle and feed are recordings from Freesound, listed with their credits in
-  `content/audio/sounds.json`, kept on R2 and levelled to one peak and one loudness; the gains are the synthesiser's Brass bells, one
-  bell for a Normal or Magic gain, a rising run for a Rare, a longer run over a held chord for a Legendary or
-  Atheric; a hold builds up as the synthesiser's Shimmer, high thin air swelling over the hold and glinting faster
-  toward its end; the tab, the close and the refusal are the synthesiser's own, which also stands in while a recording
-  loads. One listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
+  tick, press, step back, tab, opening, close, dismantle and feed are recordings from Freesound, listed with their
+  credits in `content/audio/sounds.json`, kept on R2, levelled to one peak and one loudness, and silent until each has
+  come; the gains are the synthesiser's Brass bells, one bell for a Normal or Magic gain, a rising run for a Rare, a
+  longer run over a held chord for a Legendary or Atheric; a hold builds up as the synthesiser's Shimmer, high thin air
+  swelling over the hold and glinting faster toward its end; the refusal is the synthesiser's low double buzz. One
+  listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
   browsers ask.
 - **Ship.** Two parts on the inventory's shelf tabs ([[Ship Power]], [[Crew]]). Manage: the ship's papers as Manage
   shows them at sea (its hull, canvas, guns, loads and measure, its voyage while it is at sea), its materials and its

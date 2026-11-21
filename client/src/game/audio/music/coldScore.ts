@@ -1,7 +1,7 @@
 // Cold: the fight on the tundra. B Aeolian, its C natural (the flat second) borrowed for the bleakest bar, in 5/4,
 // three and two, at 120: a march through deep snow. A horn calls the tune over the low strings' ostinato and the
 // taiko, a fiddle above it with a counter-line, the harmony spaced wide: a low bass, open fifths high, little between.
-// The danger near is the wind and a slow heart: the high strings shivering in open fifths, a reverse cymbal's gusts,
+// The danger near is the wind and a slow heart: the strings shivering in open fifths, gusts of noise as wind,
 // the strings' wood ticking and the taiko on the bar's two strong beats. The peak doubles the horn with the brass
 // and sets the choir high. The plan: a vamp, the tune, the fiddle's tune over the horns, a break, the tune's first
 // half again. The cadence closes on the low B, the victory rises G, A into B major, the defeat falls through C.
@@ -31,13 +31,6 @@ const TRACKS = {
     pan: 30,
     role: 'tension',
     voice: { attack: 0.002, decay: 0.08, sustain: 0.01, release: 0.05, index: 3.2, idxDecay: 0.03 },
-  },
-  gust: {
-    program: 119,
-    volume: 100,
-    pan: 64,
-    role: 'tension',
-    voice: { mod: 2.71, index: 5, idxDecay: 5, attack: 2.4, decay: 0.3, sustain: 0.6, release: 1.2, gain: 0.4 },
   },
   ostinato: {
     program: 42,
@@ -75,13 +68,6 @@ const TRACKS = {
     role: 'peak',
     voice: { mod: 1, index: 1.1, idxDecay: 2, attack: 0.45, release: 0.9, unison: 2, cents: 12, spread: 0.5 },
   },
-  swell: {
-    program: 119,
-    volume: 120,
-    pan: 64,
-    role: 'peak',
-    voice: { mod: 3.73, index: 6, idxDecay: 4, attack: 1.6, decay: 0.02, sustain: 1, release: 0.05, gain: 0.45 },
-  },
 } as const;
 type Track = keyof typeof TRACKS;
 
@@ -90,7 +76,7 @@ type Track = keyof typeof TRACKS;
 const KIT = {
   volume: 86,
   role: 'combat',
-  roles: { heart: 'tension' },
+  roles: { heart: 'tension', gust: 'tension', riser: 'peak' },
   keys: {
     kick: 36,
     taiko: 87,
@@ -102,6 +88,8 @@ const KIT = {
     crash: 49,
     china: 52,
     heart: 35,
+    gust: 54,
+    riser: 55,
   },
   drums: {
     kick: { hz: 50, decay: 0.34, gain: 1.05, click: 0.4 },
@@ -114,6 +102,10 @@ const KIT = {
     crash: { decay: 2.2, q: 0.45, gain: 0.7 },
     china: { decay: 1.4, q: 0.55, gain: 0.6 },
     heart: { hz: 50, decay: 0.75, gain: 1.1, drop: 0.7, click: 0.15 },
+    // A swell of noise rising into the bar line, a reverse cymbal: noise, so it never whines as a pitched sweep does.
+    riser: { hz: 2600, q: 0.6, attack: 1.6, decay: 0.12, gain: 0.6 },
+    // A gust: noise swelling and dying round 700 Hz, wind, never the pitched sweep that whined.
+    gust: { hz: 700, q: 0.7, attack: 2.4, decay: 1.6, gain: 0.5 },
   },
 } as const;
 type Drum = keyof typeof KIT.keys;
@@ -238,13 +230,14 @@ function underneath(w: Write): void {
     w.note('bass', bar, beat, beats, tones.bass, 90);
     for (const n of tones.air) w.note('air', bar, beat, beats, n, 52);
     for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 66);
-    for (const n of tones.shiver) w.note('shiver', bar, beat, beats, n, 64);
+    // Two octaves under their voicing: held high, these strings were a whine.
+    for (const n of tones.shiver) w.note('shiver', bar, beat, beats, n - 24, 64);
   }
   PLAN.forEach(({ section, inBar, pass }, bar) => {
     const held = bars[bar] ?? [];
     const drive = section === 'vamp' || (section === 'break' && inBar < 2) ? 1 : pass > 0 ? 3 : 2;
     for (const { chord: name, beat } of held) w.note('timpani', bar, beat, 0.9, CHORDS[name].timp, beat ? 88 : 102);
-    if (inBar % 4 === 2) w.note('gust', bar, 1, 6, 'F#5', 70);
+    if (inBar % 4 === 2) w.hit('gust', bar, 1, 70);
     for (const beat of TICKS)
       w.note('tick', bar, beat, 0.2, CHORDS[chordAt(held, beat)].air[0] ?? 0, beat % 1 ? 76 : 100);
     w.hit('heart', bar, 0, 94);
@@ -269,8 +262,7 @@ function underneath(w: Write): void {
         46,
         96,
       );
-    if ((PLAN[bar + 1]?.inBar ?? 0) === 0)
-      for (const n of keys('B5 F#6')) w.note('swell', bar + 1, -(1.6 * BPM) / 60, (1.6 * BPM) / 60, n, 84);
+    if ((PLAN[bar + 1]?.inBar ?? 0) === 0) w.hit('riser', bar + 1, -(1.6 * BPM) / 60, 84);
   });
 }
 
@@ -339,7 +331,7 @@ const defeat = (): Song =>
   makeSong({ ...SONG, name: 'cold-defeat', bars: 5, level: LEVEL, edge: ONCE }, (w) => {
     stingBed(w, harmony('Bm | C | Em | Bm | Bm'), 0.7);
     lay(w, 'horn', 0, tune('B3:1 F#4:2 E4:1 D4:1 | E4:3 C4:2 | B3:5'), 82, { legato: 0.98 });
-    w.note('gust', 1, 0, 8, 'F#5', 66);
+    w.hit('gust', 1, 0, 66);
     for (const [bar, velocity] of [
       [0, 92],
       [1, 78],

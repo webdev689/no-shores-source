@@ -29,6 +29,7 @@ status: in force
   the player does it. It gives way to "Fight your way through the wreck" once a foe comes at the player, or a moment
   after all four are ticked; foes fighting the crew further on leave it up. That task counts the "Foes standing" while
   any do. The boss fight's is "Face Captain Brannoc Thule".
+  The wreck's "Learn the controls" is replaced by the teaching of [[The Wreck Opens by Teaching the Player]].
 - The key strip drops walking on foot, which the lessons teach, and keeps the click that takes the mouse to look.
 - The story's old objective panel goes with the tracker; its one word that was no task, "You will rise at the last
   checkpoint." on falling in the wreck, is a toast. Elder Maren Hale's welcome after the story still shows its

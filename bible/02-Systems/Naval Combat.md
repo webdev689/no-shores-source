@@ -156,7 +156,11 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
-  Bosun keeping way its torn canvas costs it, and its Carpenter patching part of each ball's hull harm back.
+  Bosun keeping way its torn canvas costs it, and its Carpenter patching part of each ball's hull harm back; and its
+  Atheric module's own work (`fight_exotics.rs`): a ball below the waterline holing twice as hard, a sinking reloading
+  its guns, its hull mending, a last stand once a fight, way kept with torn canvas, way from each ball striking it, a
+  ship struck in the rigging turning slower, and the ships near it sailing slower. A ship slowed is seen sailing
+  slower, and a mend is seen in its hull, as a Carpenter's patching is.
 - **The wind** a fight on the land worker sails in (the World Editor's and the story's) is the world's where each
   ship is, read each minute of world time; a fight a story plays is told its own instead, the weather drawn round it
   ([[Prologue]]), so a storm drawn is a storm sailed.
@@ -459,8 +463,9 @@ captain's number comes with them in the view, so one leaving the fight never mov
   `ship.hit` (16, 1000); a magazine `ship.blast` (26, 1800); a boarding's grapnels `ship.grapple` (6, 240); a captain
   running out `ship.runout` (24, 900); a side of the player's come ready `ship.ready` (10, 80); a ship going down
   `ship.sinking` (18, 420); a ball going by the player's ship `ship.whistle` (8, 90); a ball in the water `shot.splash` (12, 600).
-  The `ship.` cues are on the sound sheet with DFO's own synthesised sounds as their candidates
-  ([[DFO's Own Sounds Join the Sound Sheet]]); each stays silent until the owner picks one.
+  Each `ship.` cue plays the owner's Freesound pick
+  ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]), the sinking the sea's break-up; each is
+  silent until its recording has come.
 - **The eye's jars** (`shake.ts`): each swells over 0.3 s and dies away over 0.5 s, moving the eye up to 0.15 m and
   turning it up to a degree a unit of jar, the jars at once added together.
 - **The readout** (drawn by `combat/seaReadout.ts` from `plus/seaFight.ts`'s words, fed by `ships/fightDisplay.ts`,

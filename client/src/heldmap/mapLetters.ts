@@ -21,7 +21,7 @@ export const fontOf = (kind: string) => `500 ${kind === 'port' ? PORT_PX : WORD_
  *  the place chosen and the ring round a place the quest names, and the parchment's own colour, which rings every word
  *  and fills each water's ring so it reads over the coasts' lines and the washes. */
 export const LIGHT_INK = '#5c4631';
-const ROUTE = '#781c14';
+export const ROUTE = '#781c14';
 export const PARCHMENT = '#eedebe';
 const RING_FILL = 'rgba(238, 222, 190, 0.9)';
 /** The halo of parchment round every word, units wide. */
@@ -113,12 +113,12 @@ export function paintLettering(
   for (const mark of isles) local(mark.x, mark.y, () => paintIsle(painter, mark.isle));
   for (const letter of lettering.letters) local(letter.x, letter.y, () => paintLetter(painter, letter));
   const { ship } = lettering;
-  if (ship) local(ship.x, ship.y, () => paintShip(painter, ship.heading));
+  if (ship) local(ship.x, ship.y, () => paintArrow(painter, ship.heading));
   if (lettering.key) paintKey(painter, lettering.key, lettering.scale);
 }
 
 /** A word with its parchment halo, from `x` along `align`, its middle at `y`. */
-function word(painter: Painter, text: string, x: number, y: number, colour: string): void {
+export function word(painter: Painter, text: string, x: number, y: number, colour: string): void {
   painter.lineWidth = HALO;
   painter.strokeStyle = PARCHMENT;
   painter.strokeText(text, x, y);
@@ -191,8 +191,9 @@ function paintRing(painter: Painter, half: number, taller: number, colour: strin
   painter.stroke();
 }
 
-/** The ship's red-brown arrow along its heading (radians clockwise from north), ringed in the parchment. */
-function paintShip(painter: Painter, heading: number): void {
+/** The ship's red-brown arrow, or the player's on land, along its heading (radians clockwise from north), ringed in
+ *  the parchment. */
+export function paintArrow(painter: Painter, heading: number): void {
   const point = (along: number, across: number): [number, number] => [
     Math.sin(heading) * along + Math.cos(heading) * across,
     -Math.cos(heading) * along + Math.sin(heading) * across,

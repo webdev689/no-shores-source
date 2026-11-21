@@ -135,9 +135,11 @@ pub enum Ask {
     BuyCosmetic {
         cosmetic: u16,
     },
-    /// Buys one of Shape's pieces of the week, by its place among them: at his place, while he is here.
+    /// Buys one of Shape's pieces of the week, by its place among them and the named piece shown there (`shown`, its
+    /// place in the catalogue's items): at his place, while he is here, and only while that piece stands there.
     BuyFromShape {
         ware: u8,
+        shown: u32,
     },
     /// Speaks with a keeper, a house's by its faction's number or one of `quests::KEEPERS`: at their counter.
     Speak {
@@ -284,7 +286,7 @@ impl Character {
             Ask::BuyFragment { art, fragment } => self.buy_fragment(art, fragment, here),
             Ask::WearCosmetic { cosmetic } => self.wear_cosmetic(cosmetic),
             Ask::BuyCosmetic { cosmetic } => self.buy_cosmetic(cosmetic, here),
-            Ask::BuyFromShape { ware } => self.buy_from_shape(ware, here),
+            Ask::BuyFromShape { ware, shown } => self.buy_from_shape(ware, shown, here),
             Ask::Speak { keeper } => self.speak(keeper, here),
             Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
         }

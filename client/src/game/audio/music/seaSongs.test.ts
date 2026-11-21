@@ -26,12 +26,14 @@ const sailing: Hearing = {
   sky: fair,
 };
 const ashore: Hearing = { ...sailing, place: { kind: 'island', climate: 'swamp', node: 'patrol' }, sea: null };
-/** Every song a hundred seconds long; every rest the middle of its range. */
-const songs: SongClock = { lengthOf: () => 100, random: () => 0.5 };
+/** Every song a hundred seconds long; every rest the middle of its range; the sea's songs alone written. */
+const songs: SongClock = { lengthOf: () => 100, pieces: () => 0, random: () => 0.5 };
 const MIDDLE_REST_S = (REST_S[0] + REST_S[1]) / 2;
 
+/** Already at sea: no arrival's wait. */
+const AT_SEA: Memory = { ...QUIET, where: 'sea' };
 /** The law run a second a frame for `seconds`: what played each second, its last memory. */
-function sail(seconds: number, hearing: (second: number) => Hearing, memory: Memory = QUIET) {
+function sail(seconds: number, hearing: (second: number) => Hearing, memory: Memory = AT_SEA) {
   const heard: string[] = [];
   for (let second = 0; second < seconds; second++) {
     const verdict = hear(memory, hearing(second), 1, songs);
@@ -68,7 +70,7 @@ test('a sea song plays once through, then minutes of silence before another may 
   ]);
   assert.deepEqual(REST_S, [4 * 60, 8 * 60]);
   const lowest = { ...songs, random: () => 0 };
-  let memory = QUIET;
+  let memory = AT_SEA;
   const heardLowest: string[] = [];
   for (let second = 0; second < 600; second++) {
     const verdict = hear(memory, sailing, 1, lowest);
