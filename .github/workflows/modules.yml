@@ -25,7 +25,8 @@ jobs:
   # exact wheels tools/modules/requirements.txt names by their hashes.
   bake:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Two whole bakes, about 21 minutes each on a runner.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
