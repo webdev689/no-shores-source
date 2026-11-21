@@ -372,6 +372,9 @@ impl Room {
         self.foes_most.saturating_sub(EVENT_ROOM) + event.min(EVENT_ROOM)
     }
 
+    /// A player's account told: the part they took under their number until then is their account's. Told while a
+    /// won event's result shows, they are laid the chest their account earned if neither it nor their number was laid
+    /// one: a player back under a new number as it was won had none.
     pub(crate) fn own_part(&mut self, player: PlayerId) {
         let who = self.who(player);
         let Some(mut public) = self.public.take() else { return };

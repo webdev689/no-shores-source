@@ -33,8 +33,8 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 8 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "83109f7a";
-pub const RAID_HASH: &str = "4bdce632";
+pub const FISSURE_HASH: &str = "53611472";
+pub const RAID_HASH: &str = "9e5636da";
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -232,4 +232,33 @@ fn two_scripted_players_hold_a_heroic_raid_to_the_same_fingerprint_natively_as_i
     let (hash, event) = play(RAID_MINUTE);
     assert_eq!(event, (2, 2, 2), "the raid held, heroic");
     assert_eq!(hash, RAID_HASH);
+}
+
+/// Whether a snapshot carries the zone's events.
+fn carries_events(bytes: &[u8]) -> bool {
+    messages::root_as_from_room(bytes).unwrap().snapshot().unwrap().public_event().is_some()
+}
+
+/// A player shows the last tick's snapshot and the room ticks on: the snapshot then cut for them.
+fn after_showing(player: PlayerId, tick: u32) -> Vec<u8> {
+    let sent = room::Input { sequence: tick, seen: u64::from(tick), ..room::Input::default() };
+    assert_eq!(input(player, &protocol::input_bytes(&sent)), TAKEN);
+    room_tick();
+    snapshot(player)
+}
+
+#[test]
+fn a_snapshot_carries_the_events_only_when_they_stand_otherwise_than_its_base_counted_on() {
+    for minute in [FISSURE_MINUTE + 10, FISSURE_MINUTE] {
+        assert!(open_node(EVENTS_NODE.as_bytes()));
+        assert!(set_minute(minute));
+        let player = room_join();
+        room_tick();
+        assert!(carries_events(&snapshot(player)), "{minute}: built on none, whole");
+        // Waiting, or the Fissure's first wave pouring out: nothing changes but the countdowns.
+        for tick in 1..30 {
+            assert!(!carries_events(&after_showing(player, tick)), "{minute}: tick {tick} counted on");
+        }
+        assert!(carries_events(&snapshot(NO_VIEWER)), "{minute}: a page come now is sent them whole");
+    }
 }

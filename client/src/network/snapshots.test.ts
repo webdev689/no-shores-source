@@ -133,3 +133,36 @@ test('a foe sent as what changed keeps the name it stands under, which crosses e
   const still = kept.whole(snapshot(12n, { base: 11n }));
   assert.equal(still?.foes[0]?.name, 'The Warden of the Fissure', 'and one not sent stands as it stood');
 });
+
+test("a snapshot that leaves out the zone's events has them as its base had them, counted on", () => {
+  const kept = new SnapshotKeeper();
+  const raid = {
+    kind: 2,
+    phase: 1,
+    ground: [100, 0, 10],
+    radius: 30,
+    ticksLeft: 600,
+    nextKind: 1,
+    nextGround: [0, -100, 10],
+    nextTicks: 7200,
+    stage: 1,
+    stages: 3,
+    progress: 1000,
+    needed: 1000,
+    heroic: 1,
+    heroicTicks: 5,
+    bonus: true,
+    marks: [{ kind: 3, id: 1, at: [92, -4, 10], health: 1, state: 1 }],
+    nextWaveTicks: 0,
+  } as const;
+  kept.whole(snapshot(10n, { public: raid }));
+  const whole = kept.whole(snapshot(20n, { base: 10n, public: null }));
+  assert.deepEqual(
+    whole?.public,
+    { ...raid, ticksLeft: 590, heroicTicks: 0 },
+    'its countdowns run down, the rest held',
+  );
+  const sent = { ...raid, phase: 2 };
+  assert.deepEqual(kept.whole(snapshot(21n, { base: 20n, public: sent }))?.public, sent, 'sent: as sent');
+  assert.equal(kept.whole(snapshot(22n, { public: null }))?.public, null, 'built on none: none');
+});

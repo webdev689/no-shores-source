@@ -67,6 +67,22 @@ fn ticks(count: u64) -> u32 {
     u32::try_from(count).unwrap_or(u32::MAX)
 }
 
+impl PublicSeen {
+    /// The events as a page counts them on `elapsed` ticks from these, told nothing new: its countdown, its heroic
+    /// window's and its next wave's run down to 0; the rest, the next event's ticks among it (to the minute), held. A
+    /// snapshot leaves the events out while they stand so (client/src/network/snapshots.ts counts them on alike).
+    #[must_use]
+    pub fn counted_on(&self, elapsed: u64) -> Self {
+        let down = |count: u32| count.saturating_sub(ticks(elapsed));
+        Self {
+            ticks_left: down(self.ticks_left),
+            heroic_ticks: down(self.heroic_ticks),
+            next_wave_ticks: down(self.next_wave_ticks),
+            ..self.clone()
+        }
+    }
+}
+
 impl Room {
     /// The zone's events as a snapshot shows them; none for a room whose zone holds none.
     #[must_use]
