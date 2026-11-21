@@ -1,5 +1,5 @@
 ---
-id: 100
+id: 101
 title: "A gameplay choice the owner did not make was filed as Claude's call instead of asked"
 status: open
 type: open-source
