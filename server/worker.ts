@@ -67,11 +67,11 @@ function entranceOf(request: Request): number | null {
 
 /**
  * One room on Cloudflare: a Durable Object for each room's name (`roomNames.ts`), keeping the room in WebAssembly:
- * `sea` the sea (with `--elite` or `--abyss` at a harder tier); `node-...` a node's room, a patrol's shared dungeon,
- * or a run (`--run-<instance>`, kept to one company); `sea-dungeon-...` a sea island's dungeon and `isle-...` an
- * island a sea rolled, each opened on that sea's word; `fleet-<name>` a fleet's place; any other the Test Ground's course. Each binary
- * message on a player's WebSocket is an input. While anyone is in, it ticks the room with the clock and sends each
- * player each tick's snapshot. Its sockets live and die with it: the room is kept only in memory, so a socket must
+ * `sea` the sea (with `--elite` or `--abyss` at a harder tier); `node-...` a node's room, a patrol's shared dungeon, or
+ * a run (`--run-<instance>`, kept to one company); `sea-dungeon-...` a sea island's dungeon and `isle-...` an island a
+ * sea rolled, each opened on that sea's word; `fleet-<name>` a fleet's place; any other the Test Ground's course. Each
+ * binary message on a player's WebSocket is an input. While anyone is in, it ticks the room with the clock and sends
+ * each player each tick's snapshot. Its sockets live and die with it: the room is kept only in memory, so a socket must
  * never outlast it. A browser's one text message is its session's token, by which the character is kept (`keeping.ts`).
  */
 export class RoomHost extends DurableObject<Env> {
@@ -432,8 +432,8 @@ export class RoomHost extends DurableObject<Env> {
       }
       if (this.island && now - this.island.told >= ASHORE_EVERY_MS) {
         this.island.told = now;
-        // An island the sea no longer holds (it faded, or the sea restarted) is not held again, whatever has its number:
-        // the sea holds it by its seed too. Kept here, it lands no one who joins after.
+        // An island the sea no longer holds (it faded, or the sea restarted) is not held again, whatever has its
+        // number: the sea holds it by its seed too. Kept here, it lands no one who joins after.
         void this.env.ROOMS.getByName(this.island.sea)
           .holdAshore(this.island.id, this.island.seed)
           .catch(() => false);

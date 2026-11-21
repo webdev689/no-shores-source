@@ -587,4 +587,6 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   and back within one tick unwarned.
 - A ship that leaves the sea room leaves the sea. One unkept (a page with no session, or accounts that do not answer)
   comes back only by a port city's roadstead.
-- The sea judges a course against the continents' outlines only; isles are not placed yet.
+- The sea judges a course against the continents' coasts and the coasts of the islands the player is told of (within
+  20 km of where the course starts, or found), as the page bends its voyages round those alone: a long course may pass
+  through an island farther off. Its anchorage still lands no one who does not lie at it.
