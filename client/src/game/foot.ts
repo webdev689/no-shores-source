@@ -16,11 +16,9 @@ import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
-import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
-import { heldElements } from '../player/gear.ts';
-import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
+import { dressInGear } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
@@ -55,7 +53,7 @@ import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import { UsePrompt } from './usePrompt.ts';
-import { otherCards } from './footFigures.ts';
+import { otherCards, strikersOf } from './footFigures.ts';
 import {
   type AtEntrance,
   type FootContext,
@@ -66,7 +64,7 @@ import {
   stand,
   standOn,
 } from './footPlace.ts';
-import { hearing, nextOtherId, rulesOf } from './footRoom.ts';
+import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -336,22 +334,15 @@ export class Foot {
     return foot;
   }
 
-  /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
-   *  changes, its weapons glowing in their element. */
+  /** Dresses the player's figure in their gear as their room last sent it (`dressInGear`), once it or the loadout
+   *  drawn changes. */
   private dressInGear(): void {
     const gear = this.held.gear;
     const { walker, forge } = this.context;
     const { loadout } = walker.player;
     if (!gear || (gear === this.dressedIn && loadout === this.dressedLoadout)) return;
     [this.dressedIn, this.dressedLoadout] = [gear, loadout];
-    const wardrobe = forge.wardrobe(walker.you.dress.body);
-    if (wardrobe) {
-      const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
-      walker.you.dress = { ...walker.you.dress, outfit };
-      walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
-    }
-    walker.glow = heldElements(gear, loadout);
-    walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
+    dressInGear(walker, forge, gear);
   }
 
   /** Tells the room the story is behind the player, once for each word on the gear that says it is not kept. */
@@ -395,12 +386,9 @@ export class Foot {
     return this.link.shut ?? null;
   }
 
-  /** A line on the room the player plays in: their number in it or word that it was lost; nothing alone. */
+  /** A line on the room the player plays in (`roomNote`). */
   get roomNote(): string {
-    if (!(this.link instanceof RoomConnection)) return '';
-    if (this.link.rejoining) return 'Reconnecting…';
-    if (this.link.open) return `In the room as player ${this.link.player}`;
-    return `The room was lost: ${this.link.lost ?? 'playing on alone'}`;
+    return roomNote(this.link);
   }
 
   /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, the fight's buttons only
@@ -517,20 +505,8 @@ export class Foot {
       crates: this.held.gear?.crates ?? null,
     });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
-    const handsOf = (dress: Dress | null | undefined) => ({
-      right: dress?.outfit.right ?? null,
-      left: dress?.outfit.left ?? null,
-    });
-    const strikers = [
-      { id: fight.player, player: true, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
-      ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
-      ...[...otherViews].map(([number, view]) => ({
-        id: number,
-        player: true,
-        view,
-        ...handsOf(this.otherPlayers.placed.get(number)?.dress),
-      })),
-    ];
+    const yours = { dress: walker.shownDress, looks: walker.glowing };
+    const strikers = strikersOf(fight, yours, foes, otherViews, this.otherPlayers.placed);
     // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
     showAnimaEdge(effects.anima);

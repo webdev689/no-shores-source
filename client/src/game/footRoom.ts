@@ -3,7 +3,7 @@
 // space's people drawn, each keeping a step of its own.
 import type { FootContext } from './foot.ts';
 import type { Fighting } from '../combat/fighting.ts';
-import type { Snapshot } from '../network/roomConnection.ts';
+import { type RoomLink, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import { cardStand, type Placed, viewOf } from '../player/figures.ts';
 import { OtherPlayers } from '../player/others.ts';
@@ -84,4 +84,12 @@ export function folkCards(
     if (card) cards.push({ card, ...cardStand(one.x, one.y, eyeX, eyeY), z: one.z, flip });
   }
   return cards;
+}
+
+/** A line on the room the player plays in: their number in it or word that it was lost; nothing alone. */
+export function roomNote(link: RoomLink): string {
+  if (!(link instanceof RoomConnection)) return '';
+  if (link.rejoining) return 'Reconnecting…';
+  if (link.open) return `In the room as player ${link.player}`;
+  return `The room was lost: ${link.lost ?? 'playing on alone'}`;
 }

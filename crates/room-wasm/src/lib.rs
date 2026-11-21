@@ -571,29 +571,6 @@ pub extern "C" fn room_forbid_arts() {
     forbid_arts();
 }
 
-/// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers their
-/// ship's and its pose's numbers.
-///
-/// # Safety
-/// `address` must point at `length` readable bytes, as `reserve` gives.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn fleet_predict(address: *const u8, length: usize) -> u64 {
-    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
-    hand_over(fleet_door::predict(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
-}
-
-/// A fleet player's lay for the look written at `address`, as `fleet_door::lay` reads it; answers its numbers.
-///
-/// # Safety
-/// `address` must point at `length` readable bytes, as `reserve` gives.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
-    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
-    hand_over(fleet_door::lay(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
-}
-
 #[cfg(test)]
 #[path = "climb_door_tests.rs"]
 mod climb_door_tests;

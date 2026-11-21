@@ -148,3 +148,26 @@ fn lay_numbers(numbers: &[f64]) -> Option<Vec<f64>> {
     }
     Some(out)
 }
+
+/// A fleet player's ship stepped by the helms written at `address`, as `predict` reads them; answers their
+/// ship's and its pose's numbers.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fleet_predict(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let numbers = crate::floats_of(unsafe { std::slice::from_raw_parts(address, length) });
+    crate::hand_over(predict(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
+}
+
+/// A fleet player's lay for the look written at `address`, as `lay` reads it; answers its numbers.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let numbers = crate::floats_of(unsafe { std::slice::from_raw_parts(address, length) });
+    crate::hand_over(lay(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
+}

@@ -1,11 +1,14 @@
 // The figures on foot that are neither the player's nor the foes': other players, gliding to where the room last saw
-// them, and a social space's people (`folkCards`).
-import type { DrawnFigure } from '../combat/attackFeel.ts';
+// them, and a social space's people (`folkCards`); and everyone striking blows there, for their arcs.
+import type { DrawnFigure, Striker } from '../combat/attackFeel.ts';
 import type { FightEffects } from '../combat/fightEffects.ts';
 import type { Fighting } from '../combat/fighting.ts';
+import type { FoeFigures } from '../combat/foeFigures.ts';
 import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
+import type { GlowLook } from '../elementGlow.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
 import type { Glides } from '../player/glide.ts';
 import type { OtherPlayers } from '../player/others.ts';
@@ -64,4 +67,31 @@ export function otherCards(
   otherGlides.keep(new Set(folk.otherPlayers.placed.keys()));
   const seconds = frameTicks * folk.tickSeconds;
   return [...cards, ...folkCards(folk.folk, folk.folkLoops, forge, [eyeX, eyeY], clock, seconds)];
+}
+
+/** The hands a figure's dress holds. */
+const handsOf = (dress: Dress | null | undefined) => ({
+  right: dress?.outfit.right ?? null,
+  left: dress?.outfit.left ?? null,
+});
+
+/** Everyone who may strike a blow on foot, for the attack feel's arcs: the player in their dress with their weapons'
+ *  looks, each foe in its dress, and each other player seen. */
+export function strikersOf(
+  fight: Fighting,
+  own: { readonly dress: Dress; readonly looks: readonly [GlowLook, GlowLook] },
+  foes: FoeFigures,
+  otherViews: ReadonlyMap<number, FighterView>,
+  others: ReadonlyMap<number, Placed>,
+): Striker[] {
+  return [
+    { id: fight.player, player: true, view: fight.own, ...handsOf(own.dress), looks: own.looks },
+    ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
+    ...[...otherViews].map(([number, view]) => ({
+      id: number,
+      player: true,
+      view,
+      ...handsOf(others.get(number)?.dress),
+    })),
+  ];
 }

@@ -8,8 +8,10 @@ import items from '../../../content/gear/items.json' with { type: 'json' };
 import { wornCosmetic } from '../forge/cosmetics.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
+import type { Cards } from './cards.ts';
 import type { Wardrobe } from './dressing.ts';
-import { MELEE, RANGED_SLOT, gearHands, worn } from './gear.ts';
+import { MELEE, RANGED_SLOT, gearHands, heldElements, worn } from './gear.ts';
+import type { Walker } from './walker.ts';
 
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
 const RARE = 2;
@@ -150,3 +152,17 @@ export function spareOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit
 
 /** The loadout a swap from `loadout` takes up. */
 export const otherLoadout = (loadout: number): number => (loadout === MELEE ? RANGED_SLOT : MELEE);
+
+/** Dresses the walker's figure in `gear` as worn, its hands the loadout drawn and its spare the other, and its weapons
+ *  glowing in their element. */
+export function dressInGear(walker: Walker, forge: Cards, gear: GearState): void {
+  const { loadout } = walker.player;
+  const wardrobe = forge.wardrobe(walker.you.dress.body);
+  if (wardrobe) {
+    const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
+    walker.you.dress = { ...walker.you.dress, outfit };
+    walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
+  }
+  walker.glow = heldElements(gear, loadout);
+  walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
+}
