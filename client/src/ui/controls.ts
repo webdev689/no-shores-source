@@ -66,8 +66,9 @@ export function slider(
   range: { readonly low: number; readonly high: number; readonly step: number; readonly width?: number },
 ): { node: Node; value: number } {
   const { low, high, step } = range;
-  // Held to the step's own decimals, so 0.05's steps read 0.4, not 0.39999999999999997.
-  const decimals = (`${step}`.split('.')[1] ?? '').length;
+  // Held to the decimals of the step and the low end, so 0.05's steps read 0.4, not 0.39999999999999997.
+  const places = (value: number) => (`${value}`.split('.')[1] ?? '').length;
+  const decimals = Math.min(20, Math.max(places(step), places(low)));
   const kept = (raw: number) =>
     Math.min(high, Math.max(low, Number((low + Math.round((raw - low) / step) * step).toFixed(decimals))));
   let now = value;
