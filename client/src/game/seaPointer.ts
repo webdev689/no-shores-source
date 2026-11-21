@@ -3,8 +3,8 @@ import { wheelNotches } from '../overworld/overworldInput.ts';
 import type { Sea } from './sea.ts';
 import { fightControls } from './seaCombat.ts';
 
-/** What the sea's pointer reaches: whether the player is at sea with no menu up, the sea, the held map, and whether the
- *  pointer is over the interface the game draws, whose press it is then. */
+/** What the sea's pointer reaches: whether the player is at sea with no menu up, the sea, the held map (raised at the
+ *  helm or on land), and whether the pointer is over the interface the game draws, whose press it is then. */
 export interface SeaPointing {
   readonly atSea: () => boolean;
   readonly overInterface: () => boolean;
@@ -26,14 +26,14 @@ export function seaPointer(
   /** While the map is up, the pointer and the wheel are the map's. */
   const mapUp = () => map()?.shown ?? false;
   canvas.addEventListener('pointerdown', (event) => {
-    if (!atSea()) return;
+    if (!atSea() && !mapUp()) return;
     // A locked pointer is held already.
     if (!input.locked) canvas.setPointerCapture(event.pointerId);
     if (mapUp()) map()?.pointerDown(event.offsetX, event.offsetY);
     else sea()?.pointerDown(event.offsetX, event.offsetY);
   });
   canvas.addEventListener('pointermove', (event) => {
-    if (!atSea()) return;
+    if (!atSea() && !mapUp()) return;
     if (mapUp()) map()?.pointerMove(event.offsetX, event.offsetY);
     else sea()?.pointerMove(event.offsetX, event.offsetY);
   });
@@ -43,7 +43,7 @@ export function seaPointer(
     map()?.pointerCancel();
   };
   canvas.addEventListener('pointerup', (event) => {
-    if (atSea() && mapUp()) map()?.pointerUp(event.offsetX, event.offsetY);
+    if (mapUp()) map()?.pointerUp(event.offsetX, event.offsetY);
     else if (atSea()) sea()?.pointerUp(event.offsetX, event.offsetY);
     forgetPresses();
   });
@@ -51,7 +51,7 @@ export function seaPointer(
   // On a struck ship's deck the keys and the pointer are the fight's on foot.
   fightControls(canvas, () => (overInterface() || sea()?.boarding.onDeck ? null : (sea()?.fight ?? null)));
   canvas.addEventListener('wheel', (event) => {
-    if (!atSea()) return;
+    if (!atSea() && !mapUp()) return;
     if (mapUp()) map()?.wheel(event.offsetX, event.offsetY, event.deltaY, event.deltaMode);
     else sea()?.zoom(wheelNotches(event.deltaY, event.deltaMode, canvas.clientHeight));
   });
