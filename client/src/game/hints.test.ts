@@ -19,6 +19,10 @@ test("the sea shows the ship's two buttons, and its deck how to take the helm ag
   assert.ok(words(HINTS.deck).includes('E Take the helm at the wheel'));
 });
 
+test('a sea fight shows Shift for a burst of speed', () => {
+  assert.ok(words(HINTS.fight).includes('Shift Boost'));
+});
+
 test('sailing shows the zoom on the wheel, and landing a second click on a mark', () => {
   assert.ok(words(HINTS.sea).includes('Wheel Zoom'));
   assert.ok(words(HINTS.landing).includes('Click Choose a mark, again to land'));

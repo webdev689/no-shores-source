@@ -48,7 +48,7 @@ fn level_of(level: u8) -> Result<u8, String> {
 /// bytes come from a player's machine, so the verifier passes them first; the room checks the numbers.
 pub fn read_orders(bytes: &[u8]) -> Result<Input, String> {
     let orders = flatbuffers::root::<messages::Orders>(bytes).map_err(|error| error.to_string())?;
-    let helm = Helm { steer: orders.steer(), crab: orders.crab(), climb: orders.climb() };
+    let helm = Helm { steer: orders.steer(), climb: orders.climb() };
     let look: Vec<f64> = orders.aim().map(|aim| aim.iter().collect()).unwrap_or_default();
     let aim = match look[..] {
         [] => None,
@@ -74,7 +74,8 @@ pub fn read_orders(bytes: &[u8]) -> Result<Input, String> {
         other => return Err(format!("no call is numbered {other}")),
     };
     let load = load_of(orders.load())?;
-    let fire_orders = Orders { helm, aim, fire: orders.fire(), brace: orders.brace(), load };
+    // A fleet room gives no burst: its browser predicts its own ship by its helm alone.
+    let fire_orders = Orders { helm, aim, fire: orders.fire(), brace: orders.brace(), load, boost: false };
     Ok(Input { sequence: orders.sequence(), orders: fire_orders, put_to_sea, call })
 }
 
@@ -98,7 +99,6 @@ pub fn orders_bytes(input: &Input) -> Vec<u8> {
     let args = messages::OrdersArgs {
         sequence: input.sequence,
         steer: helm.steer,
-        crab: helm.crab,
         climb: helm.climb,
         aim,
         fire: input.orders.fire,

@@ -15,7 +15,8 @@ import { Overboard } from './overboard.ts';
 import { headOnView } from './stage.ts';
 import type { Story } from './story.ts';
 import { stagedFights, Wake } from './wake.ts';
-import { courseOf, readWreck, topAt } from './wreckLayout.ts';
+import { CREW_TYPES } from './wreckCrew.ts';
+import { courseOf, readWreck, titheCrew, topAt } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { WreckFight } from './wreckFight.ts';
 import type { WreckScenery } from './wreckScenery.ts';
@@ -135,22 +136,31 @@ test("the wake's flight draws the wreck and the player, and ends on the shot pla
     flying.actors?.some((actor) => actor.id === YOU_ID),
     'the player stands where they woke',
   );
-  const handed = beat.frame(tick(10.5));
-  assert.ok(beat.done);
+  const handed = beat.frame(tick(21.5));
+  assert.ok(beat.done, 'control comes 36 s in');
   rest.eye.forEach((value, axis) => assert.ok(Math.abs((handed.shot.eye[axis] ?? 0) - value) < 1e-6));
   assert.ok(Math.abs(handed.shot.yaw - rest.yaw) < 1e-6 && Math.abs(handed.shot.pitch - rest.pitch) < 1e-6);
 });
 
-test("the wake's flight down the wreck keeps its eye clear of the masts still standing", () => {
+test("the wake's flight down the wreck keeps its eye clear of the masts still standing, at an easy pace", () => {
   const { story } = recorded();
   const beat = new Wake(story, layout, scenery, new Promise<WreckRun>(() => undefined));
   const { masts } = layout;
   assert.equal(masts.length, 3, "the Brig's fore, and the Frigate's fore and main");
   beat.frame(tick(15));
-  for (let since = 15; since < 23; since += 0.05) {
+  for (let since = 15; since < 34; since += 0.05) {
     const [x, y] = beat.frame(tick(0.05)).shot.eye;
     for (const [mastX = 0, mastY = 0] of masts)
       assert.ok(Math.hypot(x - mastX, y - mastY) > 1, `the eye at ${x.toFixed(1)}, ${y.toFixed(1)} is in a mast`);
+  }
+  // Down the wreck and back, never faster than a brisk flight: 20 m a second at the most.
+  const again = new Wake(story, layout, scenery, new Promise<WreckRun>(() => undefined));
+  let was = again.frame(tick(13)).shot.eye;
+  for (let since = 13; since < 36; since += 0.05) {
+    const eye = again.frame(tick(0.05)).shot.eye;
+    const speed = Math.hypot(...eye.map((value, axis) => value - (was[axis] ?? 0))) / 0.05;
+    assert.ok(speed < 20, `${speed.toFixed(1)} m/s at ${since.toFixed(2)} s`);
+    was = eye;
   }
 });
 
@@ -293,9 +303,14 @@ test("Thule's cry with his head off the view is not counted: he cries once it is
 });
 
 test("the wake's staged fighters stand clear of what stands on the deck, its heaps among them", () => {
-  const roster = Array.from({ length: 20 }, (unused, type) => ({ type }) as unknown as FoeType);
+  const roster = Array.from({ length: 21 }, (unused, type) => ({ type }) as unknown as FoeType);
   const pairs = stagedFights(layout, roster);
   assert.ok(pairs.length >= 4, `${pairs.length} pairs`);
+  for (const { first, second } of pairs)
+    assert.ok(
+      titheCrew(first) && CREW_TYPES.includes(second),
+      `a Tithe boarder against the Brig's crew: ${first}, ${second}`,
+    );
   const standing = [...courseOf(layout), ...layout.zones.flatMap((zone) => (zone.gate ? [zone.gate] : []))];
   for (const { at, facing } of pairs)
     for (const side of [-1, 1]) {

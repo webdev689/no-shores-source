@@ -17,11 +17,12 @@ impl Waters for Open {
 
 const WIND: [f64; 2] = [1.5, 0.0];
 const IDLE: Orders = Orders {
-    helm: sailing::ship::Helm { steer: 0.0, crab: false, climb: 0 },
+    helm: sailing::ship::Helm { steer: 0.0, climb: 0 },
     aim: None,
     fire: false,
     brace: false,
     load: None,
+    boost: false,
 };
 
 fn at(x: f64, y: f64) -> Ship {

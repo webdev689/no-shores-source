@@ -104,7 +104,7 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
     setWorldStart: (seconds) => exports.room_world_start(seconds),
     predict: (ship, hurts, time, epoch, helms) => {
       const request = [...Array.from(ship), hurts.wrecked ? 1 : 0, hurts.sail, hurts.maxSail, time, epoch];
-      for (const helm of helms) request.push(helm.steer, helm.crab ? 1 : 0, helm.climb);
+      for (const helm of helms) request.push(helm.steer, helm.climb);
       const out = ask(exports.fleet_predict, request);
       if (out.length !== SHIP_FLOATS + POSE_FLOATS) return null;
       const [heave = 0, pitch = 0, roll = 0, aground = 0] = out.subarray(SHIP_FLOATS);

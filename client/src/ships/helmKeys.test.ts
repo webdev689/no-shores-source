@@ -11,12 +11,11 @@ test('a press climbs or comes down one rung; a key held without a press climbs n
   assert.equal(helmOf(new Set(), 'a').climb, 0);
 });
 
-test('A and D steer, together they cancel, and Shift pulls it sideways', () => {
+test('A and D steer, together they cancel, and Shift held asks nothing of the helm', () => {
   assert.equal(helmOf(new Set(['a']), undefined).steer, -1);
   assert.equal(helmOf(new Set(['arrowright']), undefined).steer, 1);
   assert.equal(helmOf(new Set(['a', 'd']), undefined).steer, 0);
-  assert.equal(helmOf(new Set(['shift', 'd']), undefined).crab, true);
-  assert.equal(helmOf(new Set(['d']), undefined).crab, false);
+  assert.deepEqual(helmOf(new Set(['shift', 'd']), undefined), helmOf(new Set(['d']), undefined));
 });
 
 test('every rung has its words', () => {
