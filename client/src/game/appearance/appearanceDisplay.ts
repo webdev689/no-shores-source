@@ -110,7 +110,7 @@ export const pixelsOf = (picture: Picture): Node['picture'] => ({
 
 /** The whole multiple a picture is drawn at to stand within `box`, at least one: its height, and its width each way
  *  from its feet (`root`), or with `centred` its width, fit. */
-export function scaleIn(picture: Picture, box: readonly [number, number], centred = false): number {
+function scaleIn(picture: Picture, box: readonly [number, number], centred = false): number {
   const [west, , wide, tall] = boundsOf(picture);
   const rootX = picture.root?.[0] ?? picture.width / 2;
   const across = centred ? wide : 2 * Math.max(rootX - west, west + wide - rootX);

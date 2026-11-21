@@ -241,7 +241,7 @@ function artLine(art: NonNullable<Row['art']>, look: KeeperLook): Node {
 }
 
 /** A heading as the menu engraves one: its words over a rule across. */
-export function headingNode(said: string, size: number): Node {
+function headingNode(said: string, size: number): Node {
   return {
     width: 'grow',
     direction: 'column',
