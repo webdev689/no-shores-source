@@ -102,13 +102,21 @@ into Quick Braces; Sealed Magazine into Boarding Nets.
 
 ### Every model worn
 
+Every weapon and armour model the forge draws is worn by some piece a player can hold; a test lists the forge's layers
+and fails on any no piece wears, but a class's own (the archer's dark helm, the class sword and axe) and the laced
+boots, a garment.
+
 | Choice | Chosen | Why |
 |---|---|---|
-| A rolled weapon's metal | Normal iron; Magic steel; Rare silver, elven or dwarven, one by its name | The forge's metals in order of their worth, each tier's spread over its names |
-| A rolled shield's kind | By its name: a Sword & Shield kite or round, a Dagger & Shield buckler or round, a Mace & Shield round or kite; a Normal one plain | Every kind the forge draws is carried |
-| A rolled bow | Long or short, by its name | So is each bow |
-| A rolled pistolet | Plain; a Legendary or Atheric gilded unless it names its own | The gilded piece marks the finer gun |
-| A rolled Rare armour piece | One of chain, iron, steel, silver, elven, the knights' and the thieves' sets, by the item's own number | Seven sets over three names: its own number spreads them, and keeps it |
+| The metals' ladder | Iron, steel, silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric | The forge's metals in order of their worth |
+| A rolled weapon's metal | Climbs the ladder with its rarity and its level, and spreads by its name: Normal iron to level 10, steel past it; Magic steel to elven at level 1, elven to orcish at 20; Rare elven to orcish at level 1, adamantium to daedric at 20 | Only Normal, Magic and Rare pieces are rolled, so the rolled ones must reach every metal for every model to be worn. Climbing with level makes gear look finer as a player rises, as Destiny's did; the named pieces keep the looks no roll gives |
+| A weapon's make | A rolled shield's kind, a bow's length, by the item's own number: a Sword & Shield kite, round or tower, a Dagger & Shield buckler, round or kite, a Mace & Shield round, kite or tower; a bow long or short | Apart from the metal, so every kind meets every metal |
+| A Normal shield | Plain or iron to level 10, by its number; its weapon's metal past it | The plain and iron shields are carried too |
+| A gun | Plain when rolled; a Legendary or Atheric gilded unless it names its own | The gilded piece marks the finer gun |
+| A crossbow | The nearest metal the forge draws it in | The forge draws it to mithril |
+| The sets' ladder | Leather, the thieves', chain, iron, steel, the knights', silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric | The forge's sets in order of their worth, the guilds' lighter ones among them |
+| A rolled armour piece | Normal clothes; Magic, by its number, leather or the thieves' set on the head and arms, and clothes, leather or the thieves' set on the torso and legs; Rare climbing the ladder with its level and spread by its name: chain, iron or steel at level 1, adamantium, ebony or daedric at 20 | As the weapons; light armour stands beside clothes from Magic up |
+| A torso | Its set's cuirass, with its pauldrons where the forge draws them | The chain set has no pauldrons |
 | A named piece | Its own metal or set, and make, written on it in `content/gear/items.json` | The owner: "Own look each" |
 | Named weapons | Seawall dwarven with a tower shield, Tidegate elven with a buckler, Brinewhisper silver, Harbourwarden mithril, Crosscurrent orcish short swords, Beaconstaff silver, Anchorhead dwarven, The Bollards adamantium, Keeper's Watch mithril with a round shield, Wreckbreaker dwarven, Longshore adamantium, Mooring Chain iron, Breakwater dwarven, Stormpetrel a long elven bow, Harpooner dwarven, Quarterdeck gilded, Signal Pair plain, Broadside gilded; the Atherics as above | Each its own look among its kind; the rarest metals for the Atherics |
 | Named armour | Tithebreaker dwarven; Saltwind mithril; Crown of the Drowned daedric; Wreckhide orcish; Tidecaller's Grips ebony; Driftwalkers adamantium | The same |
