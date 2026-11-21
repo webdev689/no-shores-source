@@ -36,7 +36,11 @@ test("each node stands its kind's picture where the room stands it, gathered whe
   const [ore, herbs] = shown;
   assert.deepEqual([ore?.x, ore?.y, ore?.z], [10, 20, 1]);
   assert.equal(ore?.card.root[1], 96, 'its feet on its bottom row');
-  assert.equal(((ore?.scale ?? 0) * (ore?.card.width ?? 0)) / PX_PER_M, NODE_WIDTH_M, 'as wide as its dressing');
+  assert.equal(
+    ((ore?.scale ?? 0) * (ore?.card.width ?? 0)) / PX_PER_M,
+    NODE_WIDTH_M.ore,
+    'about knee high, at one scale',
+  );
   assert.equal(herbs?.x, 30, 'gathered this turn');
   const whole = nodeCardsAt(places.slice(1, 2), { nodes: [{ index: 0, x: 0, y: 0, resource: 0 }], spent: [] }, () => 0);
   assert.ok(whole[0] && whole[0].card !== herbs?.card, 'a node gathered shows its picture gathered');

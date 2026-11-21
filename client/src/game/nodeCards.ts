@@ -11,8 +11,9 @@ import { PX_PER_M } from '../player/figures.ts';
 /** The kinds of node, by what their places hold. */
 export const NODE_KINDS = ['ore', 'herbs', 'timber', 'salvage'] as const;
 type NodeKind = (typeof NODE_KINDS)[number];
-/** How wide a node's picture stands, metres: about as wide as the dressing it stands among. */
-export const NODE_WIDTH_M = 3.2;
+/** How wide each kind's picture stands, metres: every kind at one scale, 1.2 m to each unit of the span its picture
+ *  holds (tools/forge/tools/sprite-forge/specs/pictures/nodes.json), so a heap stands about knee high beside a body. */
+export const NODE_WIDTH_M: Readonly<Record<NodeKind, number>> = { ore: 1.2, herbs: 1.4, timber: 1.6, salvage: 1.5 };
 
 /** Where the forge publishes a kind's picture, standing or gathered. */
 export const nodePicturePath = (kind: NodeKind, spent: boolean) => `forge/nodes/${kind}${spent ? '-spent' : ''}.png`;
@@ -52,6 +53,6 @@ export function nodeCardsAt(
     const card = kind && shown && cards.get(nodePicturePath(kind, !standing.has(index)));
     if (!card) return [];
     const [x, y] = place.at;
-    return [{ card, x, y, z: floor(x, y), flip: false, scale: (NODE_WIDTH_M * PX_PER_M) / card.width }];
+    return [{ card, x, y, z: floor(x, y), flip: false, scale: (NODE_WIDTH_M[kind] * PX_PER_M) / card.width }];
   });
 }

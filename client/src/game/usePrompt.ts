@@ -2,33 +2,51 @@
 // above the player's bars; gone when nothing is within reach. The game draws it as a layer of its own.
 import { TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
-import type { Node } from '../ui/node.ts';
-import { edged } from '../combat/barDraw.ts';
+import type { Drawing, Node } from '../ui/node.ts';
+import type { Box } from '../ui/quads.ts';
+import { edged, paintBox } from '../combat/barDraw.ts';
 
 /** The keycap's brass bevel, its foot deeper. */
 const BRASS_KEY = ['#f3cf86', '#8a5f17', '#8a5f17', '#f3cf86'];
 const BRASS_KEY_DEPTHS = [1, 1, 3, 1];
 
-/** How wide the ring a deed held fills round the keycap is, CSS pixels, and in how many steps it fills. */
-const RING_PX = 52;
-const RING_STEPS = 48;
+/** The ring round the keycap while a deed is held: how far outside the keycap it runs and how thick it is, CSS pixels;
+ *  laid inside the prompt's padding, so its panel never hides it. */
+const RING_OUT = 3;
+const RING_LINE = 2;
 
-/** The ring round the keycap, `steps` of `RING_STEPS` of it filled clockwise from the top over its faint whole. */
-const ringDrawing =
-  (steps: number) =>
-  (context: OffscreenCanvasRenderingContext2D, width: number, height: number): void => {
-    const [middleX, middleY, unit] = [width / 2, height / 2, width / RING_PX];
-    const radius = Math.min(middleX, middleY) - 2 * unit;
-    context.lineWidth = 3 * unit;
-    for (const [colour, sweep] of [
-      ['rgba(239,232,214,0.22)', 1],
-      [TONES.brassHi, steps / RING_STEPS],
-    ] as const) {
-      context.strokeStyle = colour;
-      context.beginPath();
-      context.arc(middleX, middleY, radius, -Math.PI / 2, -Math.PI / 2 + sweep * 2 * Math.PI);
-      context.stroke();
-    }
+/** The keycap's edge traced clockwise from its top's middle, `share` of the way round, as boxes `line` thick. */
+export function traced(box: Box, line: number, share: number): Box[] {
+  const { x, y, width, height } = box;
+  const runs: [number, (from: number, to: number) => Box][] = [
+    [width / 2, (from, to) => ({ x: x + width / 2 + from, y, width: to - from, height: line })],
+    [height, (from, to) => ({ x: x + width - line, y: y + from, width: line, height: to - from })],
+    [width, (from, to) => ({ x: x + width - to, y: y + height - line, width: to - from, height: line })],
+    [height, (from, to) => ({ x, y: y + height - to, width: line, height: to - from })],
+    [width / 2, (from, to) => ({ x: x + from, y, width: to - from, height: line })],
+  ];
+  let left = Math.max(0, Math.min(1, share)) * 2 * (width + height);
+  const boxes: Box[] = [];
+  for (const [length, part] of runs) {
+    if (left <= 0) break;
+    boxes.push(part(0, Math.min(length, left)));
+    left -= length;
+  }
+  return boxes;
+}
+
+/** The keycap's bevel, and while a deed is held (`held`, 0 to 1) a ring round it traced as far as it is held over its
+ *  faint whole. */
+const keycap =
+  (held: number | null): Drawing =>
+  (ui, box, scale, clip, shown) => {
+    edged(BRASS_KEY, BRASS_KEY_DEPTHS)(ui, box, scale, clip, shown);
+    if (held === null) return;
+    const pen = { ui, box, scale, clip, fade: shown };
+    const [out, line] = [RING_OUT * scale, RING_LINE * scale];
+    const ring = { x: box.x - out, y: box.y - out, width: box.width + 2 * out, height: box.height + 2 * out };
+    for (const part of traced(ring, line, 1)) paintBox(pen, part, 'rgba(239,232,214,0.22)');
+    for (const part of traced(ring, line, held)) paintBox(pen, part, TONES.brassHi);
   };
 
 export class UsePrompt {
@@ -42,16 +60,6 @@ export class UsePrompt {
     if (deed === this.said) return;
     this.said = deed;
     if (deed !== null) announce(deed);
-  }
-
-  /** The ring a deed held fills round the keycap, `steps` of it filled. */
-  private ring(steps: number): Node {
-    return {
-      width: RING_PX,
-      height: RING_PX,
-      picture: { key: `use ring ${steps}`, source: { draw: ringDrawing(steps) } },
-      float: { at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
-    };
   }
 
   /** The prompt in a view `width` by `height` CSS pixels, standing taller where the fight's display takes its larger
@@ -72,11 +80,8 @@ export class UsePrompt {
           padding: [2, 7, 4, 7],
           fill: 'rgba(192,138,62,0.15)',
           alignX: 'center',
-          draw: edged(BRASS_KEY, BRASS_KEY_DEPTHS),
-          children: [
-            { text: { words: 'E', colour: TONES.brassHi, wrap: false } },
-            this.held !== null && this.ring(Math.round(this.held * RING_STEPS)),
-          ],
+          draw: keycap(this.held),
+          children: [{ text: { words: 'E', colour: TONES.brassHi, wrap: false } }],
         },
         { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
       ],
