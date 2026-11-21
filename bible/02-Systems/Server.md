@@ -463,7 +463,8 @@ so every decision is Rust and the shell only carries bytes and time.
   there that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
   session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
   never sign in cannot hold a room's places; every page of the game sends one, a guest's included. While the accounts do
-  not answer a claim, the player plays on unkept. The Test Ground's rooms and a fleet's keep nothing and take anyone. A
+  not answer a claim, or the look before it, the player plays on unkept, and a look unanswered claims nothing. The Test
+  Ground's rooms and a fleet's keep nothing and take anyone. A
   character the room's gate shuts ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's
   reason. A save keeps the keys a room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in
   its day's activity and its story, and in each item and Vestige, so a room that knows fewer fields carries the newer
