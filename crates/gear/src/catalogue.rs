@@ -17,12 +17,14 @@ pub enum TraitColumn {
     Finish,
     Perk,
     Signature,
+    /// An Atheric's intrinsic: always on while it is worn, never a node.
+    Intrinsic,
 }
 
 /// A trait a node may hold: its id, name and words, the column it is offered in, and what it fits: `melee`,
 /// `ranged`, `weapon` (either loadout), `armour`, `shield` (a loadout with a shield, for a shield's block perks), `ship`
 /// (any of a ship's modules) or one module's own (`guns`, `hull`, `sails`, `rigging`), or for a signature the one
-/// named item that carries it.
+/// named item that carries it, and an intrinsic the one Atheric that has it.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct TraitDef {
     pub id: String,
@@ -33,7 +35,9 @@ pub struct TraitDef {
 }
 
 /// A named item: a Legendary, an Atheric or a cloak. Its layout is the traits each of its trait columns offers, in
-/// order; its resource is the island's its nodes ask for. A Breach's armour climbs further in Prestige.
+/// order; its resource is the island's its nodes ask for. A Breach's armour climbs further in Prestige. An Atheric
+/// weapon or module has an intrinsic, a trait always on while it is worn, beside its own node. Its look (`look`,
+/// `make`) is the browser's alone.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 pub struct NamedDef {
     pub id: String,
@@ -49,6 +53,8 @@ pub struct NamedDef {
     /// The faction that sells it, by the faction's key: its cape, armour and weapons, which nothing else gives.
     #[serde(default)]
     pub faction: Option<String>,
+    #[serde(default)]
+    pub intrinsic: Option<String>,
 }
 
 /// An island's resource, gathered in its patrol areas.
@@ -205,6 +211,12 @@ impl Catalogue {
                 problems.push(format!("signature {} must be carried by {} alone", signature.id, signature.fits));
             }
         }
+        for intrinsic in self.traits.iter().filter(|found| found.column == TraitColumn::Intrinsic) {
+            let carried = self.items.iter().filter(|item| item.intrinsic.as_deref() == Some(intrinsic.id.as_str()));
+            if carried.map(|item| item.id.as_str()).ne([intrinsic.fits.as_str()]) {
+                problems.push(format!("intrinsic {} must be carried by {} alone", intrinsic.id, intrinsic.fits));
+            }
+        }
         for kind in Kind::ALL.into_iter().filter(|kind| *kind != Kind::Cloak) {
             self.kind_problems(kind, &mut problems);
         }
@@ -250,6 +262,15 @@ impl Catalogue {
             problems.push(format!("{id}: a module asks for ship materials, not a resource"));
         } else if !item.kind.module() && resource != Some(true) {
             problems.push(format!("{id}: its resource is none the catalogue holds"));
+        }
+        let atheric = item.rarity == Rarity::Atheric && (item.kind.weapon() || item.kind.module());
+        match item.intrinsic.as_deref().map(|found| self.trait_def(found)) {
+            Some(_) if !atheric => problems.push(format!("{id}: only an Atheric weapon or module has an intrinsic")),
+            Some(None) => problems.push(format!("{id}: no trait {}", item.intrinsic.as_deref().unwrap_or(""))),
+            Some(Some(found)) if found.column != TraitColumn::Intrinsic || !fits(found, item.kind, Some(id)) => {
+                problems.push(format!("{id}: {} is no intrinsic of its own", found.id));
+            }
+            _ => {}
         }
         let wanted: Vec<Column> =
             columns(item.rarity, item.kind.weapon_grid()).iter().copied().filter(|column| column.traits()).collect();
@@ -307,7 +328,7 @@ fn column_kind(column: Column) -> Option<TraitColumn> {
     }
 }
 
-/// Whether a trait fits an item of this kind; a signature fits only the named item it belongs to.
+/// Whether a trait fits an item of this kind; a signature or an intrinsic fits only the named item it belongs to.
 fn fits(found: &TraitDef, kind: Kind, named: Option<&str>) -> bool {
     match found.fits.as_str() {
         "melee" => kind.weapon() && !kind.ranged(),

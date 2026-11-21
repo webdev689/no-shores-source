@@ -165,16 +165,19 @@ impl Item {
         self.layout.get(place).map_or(&[], Vec::as_slice)
     }
 
-    /// The traits it gives while worn: the one chosen in each trait column, if bought and if it fits the item as a
-    /// roll would offer it (a kept piece's node whose trait does not fit it is given back as it is read).
+    /// The traits it gives while worn: an Atheric's intrinsic, and the one chosen in each trait column, if bought and
+    /// if it fits the item as a roll would offer it (a kept piece's node whose trait does not fit it is given back as
+    /// it is read).
     pub fn active_traits(&self) -> impl Iterator<Item = &str> {
         let content = crate::catalogue::catalogue();
-        self.chosen.iter().enumerate().filter_map(move |(column, &node)| {
+        let intrinsic = self.named.as_deref().and_then(|named| content.named(named)?.intrinsic.as_deref());
+        let chosen = self.chosen.iter().enumerate().filter_map(move |(column, &node)| {
             (node != NONE_CHOSEN && self.has(column, node))
                 .then(|| self.traits_of(column).get(usize::from(node)).map(String::as_str))
                 .flatten()
                 .filter(|id| content.trait_fits(id, self.kind, self.named.as_deref()))
-        })
+        });
+        intrinsic.into_iter().chain(chosen)
     }
 
     /// What a column's node costs.

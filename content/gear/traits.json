@@ -10,7 +10,7 @@
     {"id": "marked_shot", "name": "Marked Shot", "column": "handling", "fits": "ranged", "words": "Your first shot to land on a foe Exposes it."},
     {"id": "balanced", "name": "Balanced", "column": "finish", "fits": "weapon", "words": "While it is drawn, a dodge costs 10% less stamina."},
     {"id": "steady", "name": "Steady", "column": "finish", "fits": "weapon", "words": "While it is drawn, blows fill your poise 10% less."},
-    {"id": "honed", "name": "Honed", "column": "finish", "fits": "weapon", "words": "Your ship's blows and shots strike 5% harder."},
+    {"id": "honed", "name": "Honed", "column": "finish", "fits": "weapon", "words": "Its blows and shots strike 5% harder."},
     {"id": "attuned", "name": "Attuned", "column": "finish", "fits": "weapon", "words": "While its element matches your Art's, its blows and shots strike 10% harder."},
     {"id": "spellfeed", "name": "Spellfeed", "column": "finish", "fits": "weapon", "words": "A kill with it takes 3% off your Tenets' cooldowns."},
     {"id": "bloodletter", "name": "Bloodletter", "column": "perk", "fits": "weapon", "words": "A kill with it gives back 20 stamina."},

@@ -9,7 +9,7 @@
 use crate::catalogue::catalogue;
 use crate::character::{At, Character, Stuff};
 use crate::dice::Dice;
-use crate::grid::Cost;
+use crate::grid::{Column, Cost};
 use crate::item::{Item, NONE_CHOSEN};
 use crate::kinds::Kind;
 use crate::vestige::named_item;
@@ -131,21 +131,48 @@ impl Shields {
     }
 }
 
-/// An item read with bought nodes whose traits no longer fit it, as armour kept with a shield's Bulwark from before
-/// the loadouts: each such node given back once, for what it cost, and a choice of it cleared.
+/// An item read against the catalogue as it is now. A named item follows its entry: a trait column whose traits
+/// changed gives back what its bought nodes cost, once, and its choice is cleared. Any node bought whose trait no
+/// longer fits the item (armour kept with a shield's Bulwark from before the loadouts, or a perk merged into another)
+/// is given back the same way. A rolled item offering a trait the catalogue no longer holds offers in its place the
+/// first of its column's pool it does not offer already.
 pub(crate) fn unfit(character: &mut Character, mut item: Item) -> Item {
     let content = catalogue();
+    let entry = item.named.as_deref().and_then(|named| content.named(named));
     let fits = |id: &String| content.trait_fits(id, item.kind, item.named.as_deref());
+    let changed = |column: usize| {
+        let place = item.columns()[..column].iter().filter(|kind| kind.traits()).count();
+        let traits = item.columns()[column].traits();
+        traits && entry.is_some_and(|entry| entry.layout.get(place).map(Vec::as_slice) != Some(item.traits_of(column)))
+    };
     let misfits: Vec<(usize, u8)> = (item.columns().iter().enumerate())
         .flat_map(|(column, kind)| (0..kind.nodes()).map(move |node| (column, node)))
         .filter(|&(column, node)| item.has(column, node))
-        .filter(|&(column, node)| item.traits_of(column).get(usize::from(node)).is_some_and(|id| !fits(id)))
+        .filter(|&(column, node)| {
+            changed(column) || item.traits_of(column).get(usize::from(node)).is_some_and(|id| !fits(id))
+        })
         .collect();
     give_back(character, &item, |column, node| misfits.contains(&(column, node)));
     for (column, node) in misfits {
         item.bought &= !item.node_bit(column, node).unwrap_or(0);
         if item.chosen.get(column) == Some(&node) {
             item.chosen[column] = NONE_CHOSEN;
+        }
+    }
+    if let Some(entry) = entry {
+        item.layout.clone_from(&entry.layout);
+        return item;
+    }
+    let trait_columns: Vec<Column> = item.columns().iter().copied().filter(|kind| kind.traits()).collect();
+    for (place, column) in trait_columns.into_iter().enumerate() {
+        for node in 0..item.layout.get(place).map_or(0, Vec::len) {
+            if content.trait_def(&item.layout[place][node]).is_some() {
+                continue;
+            }
+            let offered = |id: &str| item.layout.iter().flatten().any(|each| each == id);
+            if let Some(found) = content.pool(column, item.kind).into_iter().find(|found| !offered(&found.id)) {
+                item.layout[place][node].clone_from(&found.id);
+            }
         }
     }
     item

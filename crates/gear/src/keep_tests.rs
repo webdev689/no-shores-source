@@ -41,6 +41,53 @@ fn a_bought_node_whose_trait_no_longer_fits_its_piece_is_given_back_once_as_it_i
 }
 
 #[test]
+fn a_kept_named_item_follows_its_catalogue_entry_giving_back_a_changed_column_once() {
+    let mut character = Character::starting();
+    let id = character.take_id();
+    let entry = crate::catalogue::catalogue().named("harpooner").expect("Harpooner");
+    let mut bow = crate::vestige::named_item(id, entry, Slot::Ranged);
+    bow.xp = bow.xp_most();
+    // Kept from before its perks changed: its first perk column offered other traits, bought and chosen.
+    bow.layout[1] = vec!["light_stock".to_owned(), "quick_hands".to_owned()];
+    let (handling, perks) = (0, 2);
+    for (column, node) in [(handling, 0), (perks, 0), (perks, 1)] {
+        bow.bought |= bow.node_bit(column, node).expect("a node");
+    }
+    bow.chosen[perks] = 1;
+    let cost = bow.cost_of(perks);
+    character.items.insert(id, (bow, At::Carried));
+    let had = character.materials.clone();
+    let read = Character::from_json(&character.to_json()).expect("a character");
+    let bow = read.item(id).expect("kept");
+    assert_eq!(bow.layout, entry.layout, "its traits are its entry's");
+    assert!(bow.has(handling, 0) && !bow.has(perks, 0) && !bow.has(perks, 1), "the changed column alone given back");
+    assert_eq!(bow.chosen[perks], crate::item::NONE_CHOSEN);
+    assert_eq!(read.materials.aurem, had.aurem + 2 * cost.aurem);
+    let again = Character::from_json(&read.to_json()).expect("a character");
+    assert_eq!(again.materials, read.materials, "given back once");
+}
+
+#[test]
+fn a_kept_rolled_item_offering_a_trait_now_gone_offers_another_of_its_pool() {
+    let mut character = Character::starting();
+    let id = character.take_id();
+    let mut helm = Item::new(id, Kind::Head, Rarity::Rare, 10, Slot::Head);
+    let pair = |first: &str, second: &str| vec![first.to_owned(), second.to_owned()];
+    helm.layout = vec![pair("long_gone", "hardy"), pair("unshaken", "scholar")];
+    helm.xp = helm.xp_most();
+    helm.bought |= helm.node_bit(0, 0).expect("a node");
+    helm.chosen[0] = 0;
+    character.items.insert(id, (helm, At::Carried));
+    let had = character.materials.aurem;
+    let read = Character::from_json(&character.to_json()).expect("a character");
+    let helm = read.item(id).expect("kept");
+    let first = helm.layout[0][0].as_str();
+    assert!(crate::catalogue::catalogue().trait_fits(first, Kind::Head, None), "{first} fits a helm");
+    assert!(!["hardy", "unshaken", "scholar"].contains(&first), "and is offered once");
+    assert!(!helm.has(0, 0) && read.materials.aurem > had, "the node bought on it given back");
+}
+
+#[test]
 fn a_kept_character_gains_new_resources_and_never_reuses_a_number() {
     let mut character = Character::starting();
     character.materials.resources.truncate(2);
