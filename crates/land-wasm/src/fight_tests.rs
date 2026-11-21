@@ -23,18 +23,19 @@ fn begun(seed: u32) -> Value {
 }
 
 /// A step's request from a leg: the helm's steer and climb, the look's bearing and range (none for a range of 0), the
-/// fire and the brace (1 or 0), the load (0 none, 2 grape, 9 one there is not) and the ticks.
-fn step_request(leg: [f64; 8], time: f64) -> String {
-    let [steer, climb, bearing, range, fire, brace, load, ticks] = leg;
+/// fire and the brace (1 or 0), the load (0 none, 2 grape, 9 one there is not), a tap for a burst (1 or 0) and the
+/// ticks.
+fn step_request(leg: [f64; 9], time: f64) -> String {
+    let [steer, climb, bearing, range, fire, brace, load, boost, ticks] = leg;
     let aim = if range > 0.0 { format!(r#"{{ "bearing": {bearing}, "range": {range} }}"#) } else { "null".into() };
     let load = match load as u8 {
         2 => r#""grape""#,
         9 => r#""canister""#,
         _ => "null",
     };
-    let (fire, brace) = (fire == 1.0, brace == 1.0);
+    let (fire, brace, boost) = (fire == 1.0, brace == 1.0, boost == 1.0);
     format!(
-        r#"{{ "time": {time}, "ticks": {ticks}, "world": 0, "helm": {{ "steer": {steer}, "crab": false, "climb": {climb} }}, "aim": {aim}, "fire": {fire}, "brace": {brace}, "load": {load} }}"#
+        r#"{{ "time": {time}, "ticks": {ticks}, "world": 0, "helm": {{ "steer": {steer}, "climb": {climb} }}, "aim": {aim}, "fire": {fire}, "brace": {brace}, "load": {load}, "boost": {boost} }}"#
     )
 }
 
@@ -75,14 +76,16 @@ fn under_way_each_guns_arc_starts_where_its_ball_leaves_a_ripple_later_and_ends_
         r#"{ "ship": [180000, 360000, 0, 5, 0, 0, 5, 2], "seed": 7, "time": 1000 }"#.as_bytes(),
     ));
     assert!(begun.get("error").is_none(), "{begun}");
-    let looked = answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
+    let looked =
+        answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
     arcs_end_on_their_stops(&looked["lay"]);
 }
 
 #[test]
 fn a_step_answers_the_lay_its_look_holds_and_the_refusals_of_its_fire() {
     begun(7);
-    let looked = answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 1.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
+    let looked =
+        answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 1.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
     assert_eq!(looked["lay"]["side"], "starboard");
     assert_eq!(looked["lay"]["launches"].as_array().map(Vec::len), Some(3));
     let ends = looked["lay"]["ends"].as_array().cloned().unwrap_or_default();
@@ -90,11 +93,13 @@ fn a_step_answers_the_lay_its_look_holds_and_the_refusals_of_its_fire() {
     assert!(ends.iter().all(|end| end["time"].as_f64().is_some_and(|time| time > 0.0) && end["water"] == true));
     arcs_end_on_their_stops(&looked["lay"]);
     assert!(looked["lay"]["radius"].as_f64().is_some_and(|radius| radius >= 1.6));
-    let again = answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 1.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
+    let again =
+        answer(&fight_step_json(step_request([0.0, 0.0, 90.0, 80.0, 1.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
     let refused: Vec<&Value> =
         again["events"].as_array().into_iter().flatten().filter(|event| event["kind"] == "refused").collect();
     assert_eq!(refused.first().map(|event| &event["why"]), Some(&json!("reloading")));
-    let ahead = answer(&fight_step_json(step_request([0.0, 0.0, 0.0, 80.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
+    let ahead =
+        answer(&fight_step_json(step_request([0.0, 0.0, 0.0, 80.0, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0).as_bytes()));
     assert_eq!(ahead["lay"], Value::Null, "no guns bear dead ahead");
 }
 
@@ -102,11 +107,11 @@ fn a_step_answers_the_lay_its_look_holds_and_the_refusals_of_its_fire() {
 fn bad_orders_and_a_step_with_no_fight_are_refused() {
     begun(7);
     let refused = |text: String| answer(&fight_step_json(text.as_bytes())).get("error").is_some();
-    assert!(refused(step_request([0.0, 0.0, 90.0, 1e9, 0.0, 0.0, 0.0, 1.0], 1000.0)), "a look past 100 km");
-    assert!(refused(step_request([0.0, 0.0, 270.0, 80.0, 0.0, 0.0, 0.0, 1.0], 1000.0)), "a bearing past 180");
-    assert!(refused(step_request([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0, 1.0], 1000.0)), "no such load");
-    assert!(refused(step_request([2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0)), "a rudder past its throw");
-    assert!(refused(step_request([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 61.0], 1000.0)), "more than a second");
+    assert!(refused(step_request([0.0, 0.0, 90.0, 1e9, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0)), "a look past 100 km");
+    assert!(refused(step_request([0.0, 0.0, 270.0, 80.0, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0)), "a bearing past 180");
+    assert!(refused(step_request([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9.0, 0.0, 1.0], 1000.0)), "no such load");
+    assert!(refused(step_request([2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0)), "a rudder past its throw");
+    assert!(refused(step_request([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 61.0], 1000.0)), "more than a second");
     assert!(refused(r#"{ "time": NaN }"#.to_string()), "not JSON");
     assert!(
         answer(&fight_begin_json(br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 9], "seed": 1, "time": 0 }"#))
@@ -115,28 +120,28 @@ fn bad_orders_and_a_step_with_no_fight_are_refused() {
         "rung 9"
     );
     end_fight();
-    assert!(refused(step_request([0.0; 8], 1000.0)), "no fight is on");
+    assert!(refused(step_request([0.0; 9], 1000.0)), "no fight is on");
 }
 
 /// A fight the browser's test fights too (client/src/rules/fightRules.test.ts): each leg's steer, climb, look's
-/// bearing and range (a range of 0 for none), fire, brace, load (0 none, 2 grape) and ticks.
-pub const FIGHT_LEGS: [[f64; 8]; 9] = [
-    [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0],
-    [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0],
-    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0],
-    [0.0, 0.0, 90.0, 120.0, 1.0, 0.0, 0.0, 60.0],
-    [0.0, 0.0, -90.0, 60.0, 1.0, 0.0, 0.0, 60.0],
-    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 60.0],
-    [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 60.0],
-    [0.0, 0.0, 90.0, 40.0, 1.0, 0.0, 0.0, 60.0],
-    [0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0],
+/// bearing and range (a range of 0 for none), fire, brace, load (0 none, 2 grape), burst and ticks.
+pub const FIGHT_LEGS: [[f64; 9]; 9] = [
+    [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0],
+    [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0],
+    [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 60.0],
+    [0.0, 0.0, 90.0, 120.0, 1.0, 0.0, 0.0, 0.0, 60.0],
+    [0.0, 0.0, -90.0, 60.0, 1.0, 0.0, 0.0, 0.0, 60.0],
+    [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 0.0, 60.0],
+    [-1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 60.0],
+    [0.0, 0.0, 90.0, 40.0, 1.0, 0.0, 0.0, 0.0, 60.0],
+    [0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 60.0],
 ];
 
 #[test]
 fn a_fight_steps_to_its_pinned_fingerprint() {
     let mut last = begun(7);
     let mut time = 1000.0;
-    let (mut kinds, mut prints) = (Vec::new(), Vec::new());
+    let (mut kinds, mut prints, mut bursts) = (Vec::new(), Vec::new(), Vec::new());
     for leg in FIGHT_LEGS {
         last = answer(&fight_step_json(step_request(leg, time).as_bytes()));
         assert!(last.get("error").is_none(), "{last}");
@@ -144,15 +149,17 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
             last["events"].as_array().into_iter().flatten().map(|event| format!("{}{}", event["kind"], event["ship"])),
         );
         prints.push(last["fingerprint"].as_str().unwrap_or("").to_string());
-        time += leg[7] / 60.0;
+        bursts.push(last["player"]["boost"][0].as_f64().unwrap_or(f64::NAN));
+        time += leg[8] / 60.0;
     }
     let fired = kinds.iter().filter(|kind| kind.as_str() == r#""muzzle"0"#).count();
     assert_eq!(fired, 6, "two broadsides of three, the third refused braced or loading: {kinds:?}");
     assert_eq!(last["player"]["guns"]["load"], "grape");
+    assert!((bursts[2] - 0.75).abs() < 0.01 && bursts[6] == 0.0, "the third leg's burst runs four legs: {bursts:?}");
     // Each leg's: the balls aloft at a leg's end are in it, and the captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "c260ed1b87a55f96 3e3cf79d73048acd d77ebd53e675a37a 5d80724e7b68e606 0b9380a89816d944 1e892a0e43435ea8 e4a860157548a71e a2b9868bfa198cc6 5c2f8c2cb43c1f94"
+        "33466b1fcb123f56 a2477d834bd15c4d 462969a46590ee82 a8b27f217c7b8b9e cf2aa3dc71daea1b 315937c8e8ee0110 9548a648aa7da4b2 d3299f6fff5ec30d 21e0e6f74fd73908"
     );
 }
 
@@ -170,7 +177,7 @@ fn a_begin_whose_ship_holds_anything_but_numbers_is_refused() {
 fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
     begun(7);
     let with_ray = |ray: &str| {
-        let request = step_request([0.0, 0.0, 90.0, 80.0, 0.0, 0.0, 0.0, 1.0], 1000.0)
+        let request = step_request([0.0, 0.0, 90.0, 80.0, 0.0, 0.0, 0.0, 0.0, 1.0], 1000.0)
             .replace(r#""range": 80 }"#, &format!(r#""range": 80, "ray": {ray} }}"#));
         answer(&fight_step_json(request.as_bytes()))
     };
@@ -193,7 +200,7 @@ fn fought_with(rank: u8) -> Vec<String> {
         let last = answer(&fight_step_json(step_request(leg, time).as_bytes()));
         assert!(last.get("error").is_none(), "{last}");
         prints.push(last["fingerprint"].as_str().unwrap_or("").to_string());
-        time += leg[7] / 60.0;
+        time += leg[8] / 60.0;
     }
     prints
 }
@@ -201,7 +208,7 @@ fn fought_with(rank: u8) -> Vec<String> {
 /// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
 /// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
 pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
-    [(2, 0, "5c2f8c2cb43c1f94"), (3, 1, "f93b527b95c4c488"), (4, 2, "8c047ef2efba39b2"), (5, 3, "dd52327febd0d01d")];
+    [(2, 0, "21e0e6f74fd73908"), (3, 1, "75099807e3caae06"), (4, 2, "09981a8ca0b1c495"), (5, 3, "2ade8a8521093843")];
 
 #[test]
 fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
@@ -403,7 +410,7 @@ fn sailed(wind: &str, world: f64) -> f64 {
     let mut last = begun;
     for _ in 0..10 {
         let request = format!(
-            r#"{{ "time": {time}, "ticks": 60, "world": {world}, "wind": {wind}, "helm": {{ "steer": 0, "crab": false, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null }}"#
+            r#"{{ "time": {time}, "ticks": 60, "world": {world}, "wind": {wind}, "helm": {{ "steer": 0, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null, "boost": false }}"#
         );
         last = answer(&fight_step_json(request.as_bytes()));
         assert!(last.get("error").is_none(), "{last}");
@@ -430,7 +437,7 @@ fn a_told_wind_past_a_hurricane_or_not_two_numbers_is_refused() {
         opened();
         let _ = begun(7);
         let request = format!(
-            r#"{{ "time": 1000, "ticks": 1, "world": 0, "wind": {wind}, "helm": {{ "steer": 0, "crab": false, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null }}"#
+            r#"{{ "time": 1000, "ticks": 1, "world": 0, "wind": {wind}, "helm": {{ "steer": 0, "climb": 0 }}, "aim": null, "fire": false, "brace": false, "load": null, "boost": false }}"#
         );
         let refused = answer(&fight_step_json(request.as_bytes()));
         assert!(refused["error"].as_str().is_some_and(|error| error.contains("told wind")), "{wind}: {refused}");

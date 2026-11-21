@@ -25,12 +25,11 @@ pub struct Ship {
     pub rung: i8,
 }
 
-/// What the helm asks for a tick: the rudder (-1 to port, 1 to starboard), whether the oars pull it sideways
-/// (Shift), and a rung up or down the ladder (a W or S press, for one tick).
+/// What the helm asks for a tick: the rudder (-1 to port, 1 to starboard), and a rung up or down the ladder (a W or
+/// S press, for one tick).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Helm {
     pub steer: f64,
-    pub crab: bool,
     pub climb: i8,
 }
 
@@ -107,27 +106,20 @@ fn under_sail(helm: &Helm, hull: &Hull, way: f64, forward: [f64; 2], wind: [f64;
 }
 
 fn under_oars(helm: &Helm, hull: &Hull, rung: i8, way: f64, sail_way: f64) -> Asked {
-    let steering = helm.steer != 0.0;
-    let aside = if helm.crab { 0.5 * helm.steer } else { 0.0 };
-    // Backing water, the helm answers the other way; pulling the ship sideways, it does not swing it.
-    let swing = if helm.crab {
-        0.0
-    } else if rung < 0 {
-        -helm.steer
-    } else {
-        helm.steer
-    };
-    let target = [f64::from(rung) * HANDLING.move_speed_oar, aside * HANDLING.move_speed_oar];
+    // Backing water, the helm answers the other way.
+    let swing = if rung < 0 { -helm.steer } else { helm.steer };
+    let target = f64::from(rung) * HANDLING.move_speed_oar;
     let coast = coast_accel(way, sail_way, hull);
-    let accel = if rung == 0 && !(helm.crab && steering) {
+    let accel = if rung == 0 {
         coast
-    } else if way > length(target[0], target[1]) {
+    } else if way > target.abs() {
         HANDLING.move_accel_oar.max(coast)
     } else {
         HANDLING.move_accel_oar
     };
+    let steering = helm.steer != 0.0;
     let turn_accel = if steering { HANDLING.turn_accel_oar } else { HANDLING.turn_accel_sail * TURN_ACCEL_SAIL };
-    Asked { turn: swing * HANDLING.turn_speed_oar, way: target, accel, turn_accel }
+    Asked { turn: swing * HANDLING.turn_speed_oar, way: [target, 0.0], accel, turn_accel }
 }
 
 /// One step of `seconds`: `wind` is where the wind blows to and how hard (m/s, east and south).

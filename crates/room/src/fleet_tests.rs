@@ -14,8 +14,8 @@ fn put(sequence: u32, at: [f64; 3]) -> Input {
     Input { put_to_sea: Some(at), ..orders(sequence, STANDING.helm) }
 }
 
-const ROWING: Helm = Helm { steer: 0.3, crab: false, climb: 0 };
-const CLIMB: Helm = Helm { steer: 0.0, crab: false, climb: 1 };
+const ROWING: Helm = Helm { steer: 0.3, climb: 0 };
+const CLIMB: Helm = Helm { steer: 0.0, climb: 1 };
 
 fn ship_of(fleet: &Fleet, player: PlayerId) -> Option<Ship> {
     fleet.fight().vessel(player).map(|vessel| vessel.ship)

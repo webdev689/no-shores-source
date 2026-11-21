@@ -11,7 +11,6 @@ export type FleetCall = 'none' | 'captain' | 'send off';
  *  with the faction and rank of a captain called (a Major of the pirates when none is named). */
 export interface FleetOrders {
   readonly steer: number;
-  readonly crab: boolean;
   readonly climb: number;
   readonly look: FleetLook | null;
   readonly fire: boolean;
@@ -79,7 +78,6 @@ export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<A
     builder,
     wholeIn(sequence, 0, 0xffff_ffff, "the orders' number"),
     heldIn(orders.steer, -1, 1, 'the rudder'),
-    orders.crab,
     Math.round(heldIn(orders.climb, -1, 1, 'the rung')),
     aim,
     orders.fire,

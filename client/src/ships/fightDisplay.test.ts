@@ -16,6 +16,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 1,
   guns: { left: [2.5, 0], progress: [0.4, 1], load: 'chain', braced: true },
+  boost: [0, 1],
 };
 const captain = (name: string, east: number, more: Partial<FightCaptain> = {}): FightCaptain => ({
   ...vessel,

@@ -558,11 +558,7 @@ impl Captain {
                     if (way - asked).abs() <= best.1 { (rung, (way - asked).abs()) } else { best }
                 })
                 .0;
-        Helm {
-            steer: if most > 0.0 { command / most } else { 0.0 },
-            crab: false,
-            climb: (rung - vessel.ship.rung).signum(),
-        }
+        Helm { steer: if most > 0.0 { command / most } else { 0.0 }, climb: (rung - vessel.ship.rung).signum() }
     }
 
     /// Its guns after its step: against its enemy (`enemy`, the ship it has as its target, as it sees it now)

@@ -307,14 +307,14 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), 'da99313543b1d3fc');
+  assert.equal(hash.toString(16).padStart(16, '0'), '931bb63be1946e30');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
   const room = startRoomDoor(compiled);
   assert.equal(room.openFleet(), true);
   const [first, second] = [room.join(), room.join()];
-  const still: Helm = { steer: 0, crab: false, climb: 0 };
+  const still: Helm = { steer: 0, climb: 0 };
   const helmAt = (sequence: number): Helm =>
     sequence <= 3 ? { ...still, climb: 1 } : { ...still, steer: sequence % 40 < 15 ? 0.7 : -0.3 };
   const orders = (sequence: number, more: Partial<FleetOrders> = {}): Uint8Array<ArrayBuffer> =>

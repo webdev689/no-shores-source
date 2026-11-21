@@ -21,6 +21,7 @@ const vessel: FightVessel = {
   state: 'afloat',
   fires: 0,
   guns: { left: [0, 0], progress: [1, 1], load: 'round', braced: false },
+  boost: [0, 1],
 };
 const captain: FightCaptain = {
   ...vessel,
@@ -192,6 +193,22 @@ function ordered(view: FightView = FIRST) {
 }
 const away = (shot: Shot, from: readonly number[]) =>
   Math.hypot(...shot.eye.map((value, axis) => value - (from[axis] ?? 0)));
+
+test('a tap of Shift asks the room for one burst of speed, however long it is held', async () => {
+  const { fight, orders, frames } = ordered();
+  assert.equal(fight.key('shift', true), true, 'the fight takes Shift');
+  fight.key('shift', true);
+  await frames(4);
+  assert.deepEqual(
+    orders.map((sent) => sent.boost),
+    [true, false, false, false],
+    'held down and repeating, still one burst',
+  );
+  fight.key('shift', false);
+  fight.key('shift', true);
+  await frames(1);
+  assert.equal(orders.at(-1)?.boost, true, 'let go and tapped again, another');
+});
 
 test('pressing aim eases the eye out to its battery, not a cut from the orbit in one frame', async () => {
   const { fight, frames } = ordered();

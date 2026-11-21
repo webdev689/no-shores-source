@@ -20,8 +20,8 @@ impl Waters for Open {
 }
 
 const WIND: [f64; 2] = [1.5, 0.0];
-const STILL: Helm = Helm { steer: 0.0, crab: false, climb: 0 };
-const IDLE: Orders = Orders { helm: STILL, aim: None, fire: false, brace: false, load: None };
+const STILL: Helm = Helm { steer: 0.0, climb: 0 };
+const IDLE: Orders = Orders { helm: STILL, aim: None, fire: false, brace: false, load: None, boost: false };
 
 fn sloop_at(x: f64, y: f64) -> Ship {
     Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
@@ -487,7 +487,7 @@ fn in_a_fight_a_ship_swings_twice_as_fast_and_answers_its_helm_twice_as_soon() {
     assert_eq!(swing(true, 600), FIGHT_TURN * swing(false, 600), "on its oars, at its most");
     assert_eq!(swing(false, 600), sailing::helm::HANDLING.turn_speed_oar);
     assert!((swing(true, 15) - FIGHT_TURN * swing(false, 15)).abs() < 1e-9, "a quarter second after the wheel");
-    let sail_and_swing = Helm { steer: 1.0, climb: 2, ..STILL };
+    let sail_and_swing = Helm { steer: 1.0, climb: 2 };
     let turn = sailed(sail_and_swing, true, 1200).turn;
     assert!(turn > 2.0 * sailed(sail_and_swing, false, 1200).turn, "under sail, more than twice: {turn}");
     assert!(turn > 25.0 && turn <= 2.0 * sailing::helm::STEER_PEAK, "near twice its steerage's peak: {turn}");
