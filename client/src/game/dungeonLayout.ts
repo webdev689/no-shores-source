@@ -94,14 +94,22 @@ export const SIDE_STEPS: readonly (readonly [number, number])[] = [
 const ROCK_TOP_M = 12;
 
 /** Each room module's door, kept, and the dungeons it has laid: the prompt names a dungeon before the trip lays it,
- *  and a patrol has three, so each is laid once. */
+ *  and a patrol has three, so each is laid once by each module, whose rules may lay it otherwise. */
 const doors = new WeakMap<WebAssembly.Module, ReturnType<typeof startRoomDoor>>();
-const laid = new Map<string, DungeonLayout>();
+const laidBy = new WeakMap<WebAssembly.Module, Map<string, DungeonLayout>>();
+
+/** The dungeons a room module has laid, by their ask. */
+function laidOf(module: WebAssembly.Module): Map<string, DungeonLayout> {
+  const laid = laidBy.get(module) ?? new Map<string, DungeonLayout>();
+  laidBy.set(module, laid);
+  return laid;
+}
 
 /** A dungeon laid by `seed` and the style keyed `style` where no patrol lays it (a sea island's), named for its place
  *  `name`, by the room module's own rules; a style that is none throws. */
 export function askDungeonOf(module: WebAssembly.Module, seed: number, style: StyleKey, name: string): DungeonLayout {
   const key = `${seed}\n${style}\n${name}`;
+  const laid = laidOf(module);
   const known = laid.get(key);
   if (known) return known;
   const door = doors.get(module) ?? startRoomDoor(module);
@@ -116,6 +124,7 @@ export function askDungeonOf(module: WebAssembly.Module, seed: number, style: St
  *  does not answer throws. */
 export function askDungeon(module: WebAssembly.Module, patrol: string, name: string, number: number): DungeonLayout {
   const key = `${patrol}\n${name}\n${number}`;
+  const laid = laidOf(module);
   const known = laid.get(key);
   if (known) return known;
   const door = doors.get(module) ?? startRoomDoor(module);
