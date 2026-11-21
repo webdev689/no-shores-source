@@ -71,7 +71,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const hud = new Hud();
   stack.add((ui) => hud.node(ui));
   // The HUD gives way to the fight's display and the dialogue box while they hold the screen.
-  hud.onBesides(() => ({ ...footView.shown, speaking: speaking() }));
   // The first tap or key wakes the sound, so the story's intro begins heard.
   installInterfaceSounds(hudRoot);
   const asked = new URLSearchParams(location.search).get('at');
@@ -87,8 +86,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
   const land = startLandWorker();
   const scene = new GameScene(gpu);
-  // The interface the game draws itself, once its face is read; until then it draws none.
-  const ui = new DrawnInterface(gpu, canvas);
+  // The interface the game draws itself, once its face is read, alone until the game's frames begin.
+  const ui = new DrawnInterface(gpu, canvas, stack);
   const figureView = new FigureView(gpu);
   const { world, landTexts, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const after = afterStoryOn(stack, forge, (x, y) => scene.groundAt(x, y));
@@ -137,6 +136,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   };
   // The fight's display keeps clear of the HUD's hints, where the interface last laid them.
   const footView = new FootView(gpu, stack, forge, (ui) => [hud.hintsBox(ui)].filter((box) => box !== null));
+  hud.onBesides(() => ({ ...footView.shown, speaking: speaking() }));
   const music = new MusicDirector();
   const closeSource = (left: number, top: number, step: number, samples: number) =>
     land.ground(left, top, step, samples, samples);
