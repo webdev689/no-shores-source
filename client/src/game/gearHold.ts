@@ -269,7 +269,7 @@ export class Holds {
           {
             width: 'grow',
             height: 'grow',
-            float: { to: 'parent' },
+            float: { to: 'parent', clipped: true },
             fill: rgba('255,246,220', 0.9 * Math.max(0, 1 - age / 180)),
           },
           ...shards,
@@ -286,7 +286,7 @@ export function washNode(share: number, rgb: string): Node | null {
     width: 'grow',
     height: `${Math.round(share * 100)}%`,
     fill: rgba(rgb, 0.5),
-    float: { to: 'parent', anchor: [0, 1], at: [0, 1] },
+    float: { to: 'parent', clipped: true, anchor: [0, 1], at: [0, 1] },
   };
 }
 
@@ -311,7 +311,7 @@ export function fillNode(share: number, warn = false): Node | null {
   return {
     width: `${Math.round(share * 100)}%`,
     height: 'grow',
-    float: { to: 'parent' },
+    float: { to: 'parent', clipped: true },
     direction: 'column',
     fill: wash,
     children: [{ height: 'grow' }, { width: 'grow', height: 3, fill: line }],

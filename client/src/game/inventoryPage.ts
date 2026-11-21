@@ -61,14 +61,14 @@ function cellCard(context: MenuContext, cell: Cell): Node {
 }
 
 /** An empty place, vacant: a Vestige's a dark Vestige, a shelf's bare. */
-function vacantNode(vestige = false): Node {
+export function vacantNode(vestige = false): Node {
   return tileNode(CELL_TILE, null, 'rest', vestige ? [{ ...glyphNode('vestige'), opacity: 0.35 }] : [], {
     faded: vestige ? 1 : 0.55,
   });
 }
 
 /** A cell's tile: its picture in a well of its rarity, its count and pips, its card, and its presses. */
-function cellNode(context: MenuContext, cell: Cell): Node {
+export function cellNode(context: MenuContext, cell: Cell): Node {
   const { ui, holds: held, sizes } = context;
   if (cell.glyph === 'empty') return vacantNode();
   const id = `cell-${cell.key}`;
@@ -109,6 +109,7 @@ function cellNode(context: MenuContext, cell: Cell): Node {
   const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
   const corner = (anchor: readonly [number, number], x: number): Node['float'] => ({
     to: 'parent',
+    clipped: true,
     anchor,
     at: anchor,
     x,
@@ -220,7 +221,7 @@ export function inventoryPage(context: MenuContext, shelf: string, choose: (shel
             width: 'grow',
             height: 2,
             fill: INK.brassLit,
-            float: { to: 'parent', anchor: [0, 1], at: [0, 1] },
+            float: { to: 'parent', clipped: true, anchor: [0, 1], at: [0, 1] },
           },
         ],
       };

@@ -323,7 +323,7 @@ function glow(rgb: string, lit: boolean): Node['picture'] {
 const GILDED_CORNER: Node = {
   width: 'grow',
   height: 'grow',
-  float: { to: 'parent' },
+  float: { to: 'parent', clipped: true },
   picture: {
     key: 'gilded corner',
     source: {
@@ -348,6 +348,14 @@ const GILDED_CORNER: Node = {
 /** How a tile stands: at rest, lit under the pointer or the keys' focus, open (its flyout shown), or vacant. */
 export type TileState = 'rest' | 'lit' | 'open';
 
+/** A tile's colours where a rarity's are not used: its lit and shaded edges, its colour lit, and its glow's channels. */
+export interface TileTone {
+  readonly lit: string;
+  readonly shade: string;
+  readonly colour: string;
+  readonly rgb: string;
+}
+
 /** A tile of `size` pixels a side: the well, the bevel in its rarity (or gilded, or brass while open), its glow, and
  *  `content` in its middle; `marks` stand over it (an item's element, gauge or count). */
 export function tileNode(
@@ -355,11 +363,17 @@ export function tileNode(
   rarity: number | null,
   state: TileState,
   content: readonly Child[],
-  more: Partial<Node> & { readonly gilded?: boolean; readonly marks?: readonly Child[]; readonly faded?: number } = {},
+  more: Partial<Node> & {
+    readonly gilded?: boolean;
+    readonly marks?: readonly Child[];
+    readonly faded?: number;
+    /** Toned in these colours in place of the rarity's, as the Arts tone a tile in their element. */
+    readonly toned?: TileTone;
+  } = {},
 ): Node {
-  const { gilded = false, marks = [], faded = 1, ...node } = more;
-  const found = rarity === null ? undefined : RARITIES[rarity];
-  const rgb = rarityRgb(rarity);
+  const { gilded = false, marks = [], faded = 1, toned, ...node } = more;
+  const found = toned ?? (rarity === null ? undefined : RARITIES[rarity]);
+  const rgb = toned?.rgb ?? rarityRgb(rarity);
   const lit = state === 'lit';
   const bevel: [string, string, string, string] =
     state === 'open'
@@ -373,7 +387,9 @@ export function tileNode(
               found?.colour ?? INK.brassLit,
               found?.colour ?? INK.brassLit,
             ]
-          : rarityEdges(rarity);
+          : toned
+            ? [toned.lit, toned.shade, toned.shade, toned.lit]
+            : rarityEdges(rarity);
   return {
     width: size,
     height: size,
@@ -389,7 +405,7 @@ export function tileNode(
       {
         width: 'grow',
         height: 'grow',
-        float: { to: 'parent' },
+        float: { to: 'parent', clipped: true },
         outline: { width: 1, colour: rgba(rgb, lit ? 0.45 : 0.3) },
       },
       ...content,
@@ -406,13 +422,15 @@ export function itemMarks(item: GearItem): { readonly marks: Child[]; readonly g
   const element = elementNode(item.element, 16);
   const share = upgraded(item);
   const gilded = fullyUpgraded(item);
-  const marks: Child[] = [element && { ...element, float: { to: 'parent', anchor: [1, 0], at: [1, 0], x: -3, y: 3 } }];
+  const marks: Child[] = [
+    element && { ...element, float: { to: 'parent', clipped: true, anchor: [1, 0], at: [1, 0], x: -3, y: 3 } },
+  ];
   if (share !== null && !gilded)
     marks.push({
       width: 'grow',
       height: 3,
       fill: 'rgba(5,6,8,0.85)',
-      float: { to: 'parent', anchor: [0, 1], at: [0, 1] },
+      float: { to: 'parent', clipped: true, anchor: [0, 1], at: [0, 1] },
       children: [{ width: `${Math.round(share * 100)}%`, height: 'grow', fill: INK.gain }],
     });
   return { marks, gilded };
@@ -443,7 +461,7 @@ export function focusRing(width: number, height: number): Node {
   return {
     width: width + 8,
     height: height + 8,
-    float: { to: 'parent', x: -4, y: -4 },
+    float: { to: 'parent', clipped: true, x: -4, y: -4 },
     outline: { width: 2, colour: '#f2efe6' },
   };
 }
