@@ -122,8 +122,10 @@ fn time_in_harbour_is_not_banked_to_catch_up_on_at_sea() {
     };
     let (waited_run, honest_run) = (run(waited, to_wait), run(honest, to_honest));
     assert!(honest_run > 10.0, "under sail it runs: {honest_run} m");
-    // A view's lag and the slack are 30 ticks to catch up on, 5% of 600.
-    assert!(waited_run < honest_run * 1.06, "it ran {waited_run} m to the honest {honest_run} m");
+    // A view's lag and the slack are 30 ticks to catch up on: half a second's run at most, at its way by then.
+    let way = ship_of(&fleet, honest).map_or(0.0, |ship| ship.ahead);
+    let banked = waited_run - honest_run;
+    assert!(banked < 0.5 * way * 1.1, "it ran {waited_run} m to the honest {honest_run} m, making {way} m/s");
 }
 
 #[test]

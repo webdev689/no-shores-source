@@ -447,25 +447,48 @@ fn a_captain_raised_to_a_strength_fights_with_that_many_times_its_hull_men_and_g
     assert!(crate::captain::wary_takes(commission, 6.0, 1.0), "six times as strong, the Minor outguns the Sloop");
 }
 
+/// A sound Sloop from rest heading north (rowing ahead, or climbing for sail) stepped `ticks` by `helm`, in a fight or
+/// at sea, the wind on its beam.
+fn sailed(helm: Helm, fighting: bool, ticks: u32) -> Ship {
+    sailed_from(Ship { rung: if helm.climb > 0 { 0 } else { 1 }, ..sloop_at(0.0, 0.0) }, helm, fighting, ticks)
+}
+
+fn sailed_from(ship: Ship, helm: Helm, fighting: bool, ticks: u32) -> Ship {
+    let sound = Hurts::of(&Damage::new(&LARGE_BOAT, true));
+    let mut ship = ship;
+    for tick in 0..ticks {
+        let time = f64::from(tick) * TICK_SECONDS;
+        let order = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };
+        ship = if fighting {
+            sail_hurt(&ship, &sailing::hull::SLOOP, order, sound, &Open, WIND, time).0
+        } else {
+            sailing::ship::step_ship(&ship, &order, &sailing::hull::SLOOP, WIND, &Open, time, TICK_SECONDS)
+        };
+    }
+    ship
+}
+
 #[test]
-fn in_a_fight_a_sound_ship_sails_and_rows_half_again_as_fast_as_at_sea() {
-    let sound = Hurts { wrecked: false, sail: 1.0, way_share: 1.0, turn: 1.0 };
-    let run = |helm: Helm, fighting: bool| {
-        let mut ship = Ship { rung: if helm.climb > 0 { 0 } else { 1 }, ..sloop_at(0.0, 0.0) };
-        for tick in 0..1200_u32 {
-            let time = f64::from(tick) * TICK_SECONDS;
-            let order = if tick == 0 { helm } else { Helm { climb: 0, ..helm } };
-            ship = if fighting {
-                sail_hurt(&ship, &sailing::hull::SLOOP, order, sound, &Open, WIND, time).0
-            } else {
-                sailing::ship::step_ship(&ship, &order, &sailing::hull::SLOOP, WIND, &Open, time, TICK_SECONDS)
-            };
-        }
-        ship.ahead
-    };
+fn in_a_fight_a_sound_ship_sails_and_rows_at_the_fights_pace() {
     let under_sail = Helm { climb: 2, ..STILL };
-    let ratio = run(under_sail, true) / run(under_sail, false);
+    let ratio = sailed(under_sail, true, 1200).ahead / sailed(under_sail, false, 1200).ahead;
     assert!((ratio - FIGHT_PACE).abs() < 0.02, "under sail, {ratio}");
-    let ratio = run(STILL, true) / run(STILL, false);
+    let quartering = Ship { heading: std::f64::consts::FRAC_PI_4, ..sloop_at(0.0, 0.0) };
+    let way = sailed_from(quartering, under_sail, true, 1200).ahead;
+    assert!((way - 4.8).abs() < 0.05, "about 4.8 m/s with the rated wind on its quarter: {way}");
+    let ratio = sailed(STILL, true, 1200).ahead / sailed(STILL, false, 1200).ahead;
     assert!((ratio - FIGHT_PACE).abs() < 0.02, "under oars, {ratio}");
+}
+
+#[test]
+fn in_a_fight_a_ship_swings_twice_as_fast_and_answers_its_helm_twice_as_soon() {
+    let hard_over = Helm { steer: 1.0, ..STILL };
+    let swing = |fighting: bool, ticks: u32| sailed(hard_over, fighting, ticks).turn;
+    assert_eq!(swing(true, 600), FIGHT_TURN * swing(false, 600), "on its oars, at its most");
+    assert_eq!(swing(false, 600), sailing::helm::HANDLING.turn_speed_oar);
+    assert!((swing(true, 15) - FIGHT_TURN * swing(false, 15)).abs() < 1e-9, "a quarter second after the wheel");
+    let sail_and_swing = Helm { steer: 1.0, climb: 2, ..STILL };
+    let turn = sailed(sail_and_swing, true, 1200).turn;
+    assert!(turn > 2.0 * sailed(sail_and_swing, false, 1200).turn, "under sail, more than twice: {turn}");
+    assert!(turn > 25.0 && turn <= 2.0 * sailing::helm::STEER_PEAK, "near twice its steerage's peak: {turn}");
 }

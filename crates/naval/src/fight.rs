@@ -37,8 +37,10 @@ pub const STRUCK_GRACE_S: f64 = 2.0;
 /// A captain who struck lies hove to this long (seconds) for a player to board it; with no one aboard by then it is
 /// scuttled.
 pub const STRUCK_HOLD_S: f64 = 90.0;
-/// How much faster every ship sails and rows in a sea fight than at sea: half again, at the owner's word.
-pub const FIGHT_PACE: f64 = 1.5;
+/// How much faster every ship sails and rows in a sea fight than at sea (half again, and a fifth on that), and how much
+/// faster it swings and answers its helm, at the owner's word.
+pub const FIGHT_PACE: f64 = 1.8;
+pub const FIGHT_TURN: f64 = 2.0;
 
 /// A ship in the fight: its hull, its helm's numbers, how it lies, its hurts and its guns, and who sails it.
 #[derive(Debug, Clone, PartialEq)]
@@ -169,9 +171,9 @@ impl Hurts {
     }
 }
 
-/// A player's ship of `hull` stepped a tick by its helm, as its hurts let it: no sail sets on a wreck or with its
-/// rigging shot away, and its sails' and oars' pull is held back. Answers the ship and, when its helm climbed for sail
-/// it could not set, whether that was for its being a wreck.
+/// A player's ship of `hull` stepped a tick by its helm, as its hurts let it, at a fight's pace and swing: no sail sets
+/// on a wreck or with its rigging shot away, and its sails' and oars' pull is held back. Answers the ship and, when its
+/// helm climbed for sail it could not set, whether that was for its being a wreck.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,
@@ -193,7 +195,7 @@ pub fn sail_hurt(
     let pull = Pull {
         sail: if hurts.wrecked { 0.0 } else { hurts.way_share * FIGHT_PACE },
         oars: if hurts.wrecked { WRECKED_OARS } else { 1.0 } * FIGHT_PACE,
-        turn: hurts.turn,
+        turn: hurts.turn * FIGHT_TURN,
     };
     (step_pulled(ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull), refused)
 }

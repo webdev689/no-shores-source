@@ -141,8 +141,11 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   or its rig where that sail is gone; a sail torn away; a mast fallen; colours struck; a ship going down; a piece of what
   floats laid, and gathered; and players gone aboard a ship.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
-- **The pace** of every ship in a fight is half again its pace at sea, under sail and under oars alike (`FIGHT_PACE`,
-  [[Ships Sail and Hit Half Again Harder in Sea Fights]]).
+- **The pace** of every ship in a fight, a player's or a captain's, is 1.8 times its pace at sea, under sail and under
+  oars alike (`FIGHT_PACE`: half again, [[Ships Sail and Hit Half Again Harder in Sea Fights]], and a fifth on that),
+  and it swings twice as fast and answers its helm twice as soon (`FIGHT_TURN`): the Sloop makes about 4.8 m/s with
+  the usual breeze on its quarter, swings at up to about 28 degrees a second under sail and 40 on its oars, and from
+  slow its rudder takes hold twice as fast. A captain reckons its own swing at a fight's (`swing_rate`).
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its

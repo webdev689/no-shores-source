@@ -65,7 +65,8 @@ sail the other hulls ([[Hulls]]) by the same laws.
   sail running dead before it) by the point of sail (0.9 running dead
   before the wind, 1 on the quarter, 0.55 in the wind's eye), in the sea's wind, a fifth again. Under sail its rudder
   swings it at its steerage, read at its way over its rig's gain: 3 degrees a second at no way, about 12 at its best
-  way in the usual breeze. On its oars it swings at 20.
+  way in the usual breeze. On its oars it swings at 20. In a sea fight every ship sails and rows 1.8 times as fast,
+  swings twice as fast and answers its helm twice as soon ([[Naval Combat]]).
 - **The ladder.** W climbs a rung, S comes down one: oars astern, oars at rest, oars ahead, sails set. A and D steer;
   backing water, the helm answers the other way. Shift with A or D pulls it sideways on its oars.
 - **A step.** Its swing and its way move toward what its rung asks, at the mod's rates under DFO's responsive helm.
