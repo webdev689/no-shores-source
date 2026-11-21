@@ -59,7 +59,8 @@ caster's element. They are published as `@art/arts/birds/<bird>-<view>-<beat>.pn
 
 It draws the weapons large for the weapon rows and gear screens (`weaponart.py`,
 [[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): each look a loadout's hand takes, in every metal
-the forge makes it in, 99 in all, its model alone at four times the man's pixels a metre (about 250), level with its
+the forge makes it in, each bow long and short, each shield buckler, round, kite and tower, plain or in a metal,
+the orcish short sword and each gun plain and gilded, 145 in all, its model alone at four times the man's pixels a metre (about 250), level with its
 business end to the right. Each is made, lit, graded (a bow's grip on the armour's leather, as the weapon run's) and
 laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin
 (`dagger_iron_l`) is its right hand's picture.
