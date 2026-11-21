@@ -98,8 +98,7 @@ export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
- *  of its blows, in world metres; and what its display shows), the keys listed, and whether a ranged weapon is drawn
- *  (which turns the pad's triggers round). */
+ *  of its blows, in world metres; and what its display shows), and the keys listed. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
@@ -108,7 +107,6 @@ export interface FootFrame {
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly StripHint[];
-  readonly ranged: boolean;
 }
 
 /**
@@ -507,7 +505,7 @@ export class Foot {
     };
     const edge = this.standing;
     const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, ranged: shown.rangedDrawn };
+    return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 
   /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where

@@ -407,7 +407,6 @@ export class WreckRun {
       swings,
       fight: fought,
       hints,
-      ranged: shown.rangedDrawn,
     };
   }
 
