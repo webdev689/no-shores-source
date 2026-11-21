@@ -235,6 +235,19 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#119, the perk pass, waits on the owner's yes to merge**, which deploys the page and the rooms and renders the
+  large weapon pictures ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]],
+  [[The Perk Pass as Claude Shapes It]]). Ten Atheric weapons, each with an intrinsic and an own node (Gullwing's
+  lightning leaping foe to foe, the owner's example); six weapon and eleven ship perks that give and take; the ship's
+  near-duplicate perks merged; the four Atheric modules as exotics in the naval fight; every forge weapon and armour
+  model worn, named pieces each their own look and rolled ones climbing the ladders with rarity and level, and the
+  large pictures for every make (145). Kept items keep their nodes as their catalogue changes. Audited, its ten
+  findings fixed with tests; `cargo xtask check` passes; Gullwing seen headless in the Test Ground, tested offline.
+  Open for the owner, each a call made in the design note: the Atheric armour pieces keep their one signature (the
+  owner asked for weapons and modules); a rolled Rare reaches daedric at level 20, so a Rare can look as fine as an
+  Atheric; a faction's shield and bow keep one make; a smith's ware may change make once bought; whether named
+  weapons keep an element of their own is still open, so a leap is Volt on any Gullwing. Not yet seen on a real GPU.
+
 - **This session's three changes are on `main`, merged with the owner's yes ("Approved and audit"), each audited
   first and its findings fixed, which deploys the page and the rooms:** aiming faces straight ahead (#115,
   [[Aiming, the Figure Faces Straight Ahead]]); the crosshair's shapes, reload ring, hit marks and melee reach (#116,
