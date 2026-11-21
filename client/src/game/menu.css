@@ -1,97 +1,9 @@
-/* The menu's own pages still made of elements (client/src/game/menuPages.ts and stationPages.ts); the Roster has its
-   own sheet (roster.css). The gear screen's sheet gives the words, wells and headings they share. */
+/* The menu's station pages still made of elements (client/src/game/stationPages.ts). The gear screen's sheet gives
+   the words, wells and headings they share. */
 
-/* A page of the menu: a panel set back from the window's edges. */
-.gear-later,
-.gear-ship,
-.gear-settings {
-  max-width: 640px;
-  margin: 24px auto;
-  padding: 18px 22px;
-}
-/* Where the menu is wide, Settings takes the room its credits need to keep each to a line. */
-@media (min-width: 1500px) and (max-width: 2399.98px), (min-width: 2400px) and (max-height: 1299.98px) {
-  .gear-settings {
-    max-width: 880px;
-  }
-}
-.gear-later-name,
-.gear-ship-name {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0 0 10px;
-  font-size: var(--type-l);
-  font-weight: 500;
-}
-.gear-ship-part + .gear-ship-part {
-  margin-top: 14px;
-}
-.gear-ship-part .gear-heading {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.gear-ship-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 3px 0;
-}
-.gear-ship-row b {
-  font-weight: 500;
-}
 
-/* The players blocked, under the account: a name and its press on each line. */
-.gear-blocked {
-  margin-top: 18px;
-}
-.gear-blocked-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 0;
-}
-
-/* The volumes, under the account: each one's name, a slider in brass and the level it stands at, the sliders in line. */
-.gear-sound {
-  margin-top: 18px;
-}
-.gear-sound-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.gear-sound-row > span {
-  min-width: 9em;
-}
-.gear-sound-row + .gear-sound-row {
-  margin-top: 6px;
-}
-#hud .gear-volume {
-  flex: 1;
-  max-width: 260px;
-  accent-color: var(--brass-lit);
-  pointer-events: auto;
-}
-.gear-sound-row b {
-  min-width: 4ch;
-  text-align: right;
-  font-weight: 500;
-}
-
-/* The recorded sounds' credits, small under the volume, each link in brass. */
-.gear-sound-credits {
-  margin-top: 12px;
-}
-.gear-credits {
-  margin: 4px 0 0;
-  padding-left: 18px;
-  color: var(--faint);
-}
-.gear-credits li {
-  margin: 2px 0;
-}
-#hud .gear-credits a {
-  color: var(--brass-lit);
-  pointer-events: auto;
 }

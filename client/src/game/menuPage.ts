@@ -2,7 +2,7 @@
 // nodes each frame (`ui/`): it reads what was done to it through `ui`, asks the room through `ask`, shows the one
 // hover card through `card` (the menu floats it beside what it describes, over everything, on the screen), says what
 // X opens through `details`, holds through `holds`, and leaves the footer's hints and presses to the menu, which
-// chooses them by the view.
+// chooses them by the view; a page that needs no gear takes only its part of it (`PlainContext`).
 
 import type { GearAsk, GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from '../player/cards.ts';
@@ -42,3 +42,7 @@ export interface MenuContext {
   readonly forge: Cards | null;
   readonly dress: Dress | null;
 }
+
+/** What a drawn page that needs no gear (Ship, Social, Settings, a page to come) draws from: the part of `MenuContext`
+ *  the menu gives with or without gear. */
+export type PlainContext = Pick<MenuContext, 'ui' | 'room' | 'sizes' | 'holds'>;

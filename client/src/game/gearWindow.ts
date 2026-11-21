@@ -1,6 +1,5 @@
 import './gearScreen.css';
 import './menu.css';
-import './roster.css';
 import type { Account, AccountLink } from '../network/accounts.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, answerText, itemName } from '../player/gear.ts';
@@ -14,6 +13,7 @@ import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { uiScale } from '../ui/uiRenderer.ts';
 import { accountMark } from './accountMark.ts';
+import { AccountPanel } from './accountTab.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
@@ -24,29 +24,26 @@ import { characterPage } from './characterPage.ts';
 import { CompanyHud } from './companyHud.ts';
 import { emblemOf } from './emblemArt.ts';
 import { DISMANTLE_KEY, Holds } from './gearHold.ts';
-import { Island } from './gearIsland.ts';
 import { type Hint, INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import {
   ACCOUNT_CHANGED,
   type GearHere,
   OPEN_AT,
   type Opening,
-  STEP_BACK,
   TABS,
   type Tab,
   type View,
   setGearScreenOpen,
-  setIslandFocused,
 } from './gearScreen.ts';
 import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNode } from './gearShell.ts';
 import { inventoryPage } from './inventoryPage.ts';
 import { ITEM_NAME, itemPage } from './itemPage.ts';
 import { KEEPERS } from './keepers.ts';
-import type { MenuContext } from './menuPage.ts';
+import type { MenuContext, PlainContext } from './menuPage.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import { hush } from './npc/npcSpeech.ts';
 import { isKeeperView, npcChoosing, npcHints, npcOpened, npcPage, npcStepBack } from './npc/npcScreen.ts';
-import { rosterPage } from './rosterTab.ts';
+import { RosterPage, socialPage } from './rosterTab.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { play } from './uiSounds.ts';
 
@@ -104,9 +101,6 @@ export function startGearWindow(
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
 ): Layer {
-  // The pages still made of elements stand in an island over the body.
-  const island = new Island(root);
-  setIslandFocused(() => island.focused);
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
   const picturesOf = (forge: Cards) => (pictures ??= new ItemPictures(forge));
@@ -133,9 +127,9 @@ export function startGearWindow(
   let focusNext: string | null = null;
   /** The tile to give the focus back to once an item's page closes. */
   let returnTo: string | null = null;
-  /** A page of elements, kept while what it shows stays the same; and whether it is held down. */
-  let built: { key: string; page: HTMLElement } | null = null;
-  let pressing = false;
+  /** The Roster and the account, asked of the accounts as Social or Settings opens and kept while it shows. */
+  let roster: RosterPage | null = null;
+  let accountPanel: AccountPanel | null = null;
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
   /** The player's name and account, once the accounts give them; and the gear the banner last showed. */
   let named: string | null = null;
@@ -152,12 +146,10 @@ export function startGearWindow(
    *  HUD is drawn, under the menu's layer. */
   const beneath = (asleep: boolean) => {
     root.classList.toggle('gear-open', asleep);
-    for (const part of root.children) if (part instanceof HTMLElement && part !== island.node) part.inert = asleep;
+    for (const part of root.children) if (part instanceof HTMLElement) part.inert = asleep;
   };
   const shut = () => {
     holds.letGo();
-    if (document.activeElement instanceof HTMLElement && island.node.contains(document.activeElement))
-      document.activeElement.blur();
     view = null;
     // Its keeper falls silent with it.
     hush();
@@ -165,8 +157,7 @@ export function startGearWindow(
     setGearScreenOpen(false);
     beneath(false);
     // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
-    built = null;
-    island.show(null, null, null);
+    [roster, accountPanel] = [null, null];
     ui?.focusOn(null);
   };
   /** Escape's one step back: the item's page, then the flyout, then the Art's screen, then the menu. With no gear
@@ -191,7 +182,7 @@ export function startGearWindow(
     // A hold under way on the page left behind does not act on it unseen, nor does its card stay.
     holds.letGo();
     const opening = view === null;
-    [view, slot, inspecting, built] = [wanted, null, null, null];
+    [view, slot, inspecting, roster, accountPanel] = [wanted, null, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
     if (opening) heard = here()?.gear?.answered ?? null;
@@ -207,10 +198,8 @@ export function startGearWindow(
    *  either way the hold under way is let go, so a step back never buys what was being held. */
   const stepOnce = () => {
     holds.letGo();
-    const step = new Event(STEP_BACK, { cancelable: true });
-    const page = inspecting === null ? island.page : null;
-    if (page?.dispatchEvent(step) !== false) back();
-    else play('back');
+    if (inspecting === null && view === 'social' && roster?.back()) return play('back');
+    back();
   };
   const nameAgain = () =>
     void link?.session().then((found) => {
@@ -220,29 +209,13 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
 
-  /** A page of elements, built again only when what it shows changes, and never while it is held down. */
-  const islandPage = (key: string, build: () => HTMLElement): HTMLElement => {
-    const holding = pressing || island.node.querySelector('.gear-holding') !== null;
-    if (built && (built.key === key || holding)) return built.page;
-    // The focused control is found again in the page built anew, by what it is.
-    const held = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const focused = held && island.node.contains(held) ? held.dataset['key'] : undefined;
-    built = { key, page: build() };
-    const again = focused ? built.page.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`) : null;
-    if (again) requestAnimationFrame(() => again.focus());
-    return built.page;
-  };
-
   /** A page that needs no gear: a page to come, the Ship, Social or Settings. */
-  const plainPage = (shown: View): HTMLElement => {
-    const panel = shown === 'ship' ? ship() : null;
-    return islandPage(JSON.stringify([shown, panel]), () => {
-      const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
-      if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
-      if (shown === 'ship') return shipPage(panel);
-      if (shown === 'social') return rosterPage(link, travel);
-      return settingsPage(link);
-    });
+  const plainPage = (shown: View, plain: PlainContext): Node => {
+    const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
+    if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
+    if (shown === 'ship') return shipPage(ship(), plain.sizes);
+    if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
+    return settingsPage(plain, link ? (accountPanel ??= new AccountPanel(link)) : null);
   };
 
   /** The figure, drawn once a dress, for the Character page and the account's mark. */
@@ -300,12 +273,11 @@ export function startGearWindow(
     const picture = (item: GearItem) => (pictures && dress ? pictures.pictureOf(item, dress, redraw) : null);
     // Without gear, a station or the gear's pages say why; the plain pages need none.
     let page: Node | null = null;
-    let element: HTMLElement | null = null;
     let item: ReturnType<typeof itemPage> | null = null;
     let aside: readonly Hint[] | null = null;
     let answer = '';
     let colour: string = INK.answer;
-    if (!ofGear(shown)) element = plainPage(shown);
+    if (!ofGear(shown)) page = plainPage(shown, { ui: frame, room, sizes, holds });
     else if (!now || !gear) {
       // A room lost after the gear showed says so; with none yet, where gear is kept.
       const lost = bannerGear !== null ? 'The room was lost. Your gear shows again once you are back in one.' : null;
@@ -404,8 +376,6 @@ export function startGearWindow(
             ? pressNode('press-step', 'Back', 'button', 'Esc', sizes.label)
             : pressNode('press-close', 'Close', 'button', 'Esc', sizes.label),
         ];
-    // The island stands over the body unless an item's page lies over it.
-    island.show(item ? null : element, body, element && !item ? canvasOf(root) : null);
     const head: Child[] = [
       topNode(
         station
@@ -422,8 +392,10 @@ export function startGearWindow(
       id: 'gear-body',
       width: 'grow',
       height: 'grow',
-      // The Art's screen and a keeper's are laid to the body's height, a keeper's rows scrolling in it; the rest scroll.
-      scroll: element === null && item === null && !(bleed && !appearance) && !isKeeperView(shown),
+      // A column, as only a column's children scroll up and down in it. The Art's screen and a keeper's are laid to
+      // the body's height, a keeper's rows scrolling in it; the rest scroll.
+      direction: 'column',
+      scroll: item === null && !(bleed && !appearance) && !isKeeperView(shown),
       padding: bleed ? 0 : [10, 20, 14, 20],
       children: [page, item?.page],
     };
@@ -455,37 +427,31 @@ export function startGearWindow(
       feed.node(sizes, box, view !== null),
       ...holds.burstNodes(),
     ];
-    if (view === null) island.show(null, null, null);
     holds.end();
     return { id: LAYER, width: 'grow', height: 'grow', children };
   };
 
-  // A press of elements is never lost to a new build under it: none is made while one is held down.
-  island.node.addEventListener('pointerdown', () => (pressing = true));
-  for (const event of ['pointerup', 'pointercancel', 'blur']) addEventListener(event, () => (pressing = false));
   addEventListener(OPEN_AT, (event) => {
     if (resting()) return;
     const { view: wanted, shelf: onShelf } = (event as CustomEvent<Opening>).detail;
     if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
   });
-  // A key on the island's own controls goes to them and no further, so typing in its fields reaches no game key.
-  island.node.addEventListener('keydown', (event) => {
-    if (view !== null) event.stopPropagation();
-  });
   addEventListener(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
-      const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
+      const typing =
+        event.target instanceof HTMLInputElement ||
+        event.target instanceof HTMLTextAreaElement ||
+        Boolean(view !== null && ui?.typing);
       const opens = !typing && !resting() && (key === 'i' || key === 'o');
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.
-      const inIsland = event.target instanceof Node && island.node.contains(event.target);
-      if (view !== null && !inIsland) event.stopPropagation();
+      if (view !== null) event.stopPropagation();
       if (key === 'escape') {
         event.preventDefault();
         stepOnce();
-      } else if (key === 'x' && !typing && !island.focused) {
+      } else if (key === 'x' && !typing) {
         // X shows the focused piece's details, as a right press does.
         const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
         if (!shown) return;
@@ -495,10 +461,10 @@ export function startGearWindow(
       } else if (opens && !event.repeat) {
         event.preventDefault();
         open(key === 'i' ? 'character' : 'inventory');
-      } else if (key === 'tab' && !island.focused) {
+      } else if (key === 'tab') {
         // Tab walks the drawn menu, which has heard it, and never the page's elements behind it.
         event.preventDefault();
-      } else if (!typing && !island.focused) {
+      } else if (!typing) {
         const chord = event.ctrlKey || event.metaKey || event.altKey;
         if (holds.key(event.key, true, event.repeat, chord)) event.preventDefault();
       }
@@ -510,11 +476,6 @@ export function startGearWindow(
   addEventListener('blur', () => holds.blur());
   document.addEventListener('visibilitychange', () => holds.blur());
   return layer;
-}
-
-/** The canvas the interface is drawn on, beside `root`, for laying the island over its body. */
-function canvasOf(root: HTMLElement): HTMLElement | null {
-  return root.parentElement?.querySelector('canvas') ?? null;
 }
 
 /** The hover card beside what it describes, kept on the screen and above the footer, whose keys stay readable. */

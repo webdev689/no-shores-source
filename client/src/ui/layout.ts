@@ -398,7 +398,8 @@ function place(
   } else {
     const main =
       item.kids.reduce((sum, kid) => sum + (column ? kid.h : kid.w), 0) + gap * Math.max(0, item.kids.length - 1);
-    content = main;
+    // What a node holds is as tall as its column, or as its row's tallest; it scrolls up and down either way.
+    content = column ? main : Math.max(0, ...item.kids.map((kid) => kid.h));
     let along = startOf(column ? node.alignY : node.alignX, (column ? inner.height : inner.width) - main);
     for (const kid of item.kids) {
       if (column) {
@@ -407,7 +408,7 @@ function place(
         along += kid.h + gap;
       } else {
         kid.x = inner.x + along;
-        kid.y = inner.y + startOf(node.alignY, inner.height - kid.h);
+        kid.y = inner.y + startOf(node.alignY, inner.height - kid.h) - scrolled;
         along += kid.w + gap;
       }
     }

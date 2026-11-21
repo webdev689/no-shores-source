@@ -213,3 +213,24 @@ test('without a room keeping gear the menu says where gear shows, and the invent
   assert.ok(ui.boxOf('gear-screen'));
   assert.equal(ui.boxOf('shelf-materials'), null);
 });
+
+test('Settings is drawn in the menu’s body, which the wheel scrolls to its volumes', () => {
+  const { ui, frame, click, open } = menu();
+  open('settings');
+  const before = ui.boxOf('volume-ambience');
+  assert.ok(before, 'the volumes are laid');
+  frame([
+    { kind: 'pointer', x: 640, y: 400 },
+    // Far enough that the volumes stand a little under the body's top.
+    { kind: 'wheel', x: 640, y: 400, dy: before.y - (ui.boxOf('gear-body')?.y ?? 0) - 60 },
+  ]);
+  frame();
+  const after = ui.boxOf('volume-ambience');
+  assert.ok(after && after.y < before.y, 'the body scrolled');
+  click('volume-music');
+  assert.equal(ui.focusedId, 'volume-music');
+  frame([{ kind: 'key', key: 'ArrowLeft' }]);
+  frame();
+  assert.equal(ui.focusedId, 'volume-music', 'the slider keeps its arrows');
+  assert.ok(Math.abs((ui.boxOf('volume-ambience')?.y ?? 0) - after.y) < 4, 'and the body stays where it was scrolled');
+});

@@ -124,19 +124,6 @@ export function burstAt(target: HTMLElement, burst: Exclude<Burst, null>): void 
   window.setTimeout(() => shown.remove(), 900);
 }
 
-/** A press that acts only once held down for a moment, by the pointer or by Enter or Space, its fill showing how long
- *  is left and `charges` charging with it; let go early, nothing happens. */
-export function heldPress(
-  text: string,
-  held: () => void,
-  role: Role = 'button',
-  { charges, ...hold }: Omit<Hold, 'charges'> & { readonly charges?: () => HTMLElement | null } = {},
-): HTMLButtonElement {
-  const node = pressOf(text, () => undefined, role);
-  holdToAct(node, held, { ...hold, charges });
-  return node;
-}
-
 /** Makes `node` act only once held down for a moment, by the pointer or by Enter or Space, `charges` charging with
  *  it; let go early, nothing happens. */
 export function holdToAct(

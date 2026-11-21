@@ -186,3 +186,20 @@ test('balanced words break into as many lines as they need, each as even as can 
   assert.deepEqual(lines(false), ['aa bb cc dd', 'ee']);
   assert.deepEqual(lines(true), ['aa bb cc', 'dd ee']);
 });
+
+test('a scrolled row moves its children up by its scroll and says how tall the tallest is', () => {
+  const laid = lay(
+    {
+      id: 'row',
+      height: 50,
+      scroll: true,
+      children: [
+        { id: 'short', width: 10, height: 30 },
+        { id: 'tall', width: 10, height: 120 },
+      ],
+    },
+    () => 40,
+  );
+  assert.equal(boxOf(laid, 'tall')?.y, -40);
+  assert.equal(laid.find((each) => each.node.id === 'row')?.content, 120);
+});
