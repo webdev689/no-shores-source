@@ -15,7 +15,7 @@ decision, made in the same change as its entry here.
 | Path | What it holds |
 |---|---|
 | `client/` | The game in the browser, TypeScript ([[TypeScript and Rust]]). `index.html` and `src/` |
-| `client/index.html` | The [[Game]]'s page: its canvas, its heads-up display and their look |
+| `client/index.html` | The [[Game]]'s page: its one canvas, filling it, and the script that starts the game; everything shown is drawn on the canvas ([[Interface]]) |
 | `client/src/main.ts`, `gameWorker.ts` | The entry points: the page hands its canvas to the game's worker and keeps the page's side ([[Game]], "Threads"); the worker puts the page's stand-ins in place, starts the GPU and starts the game layer |
 | `client/src/canvasSize.ts` | A canvas's drawing buffer in device pixels, from its size on the page and the screen's pixel ratio, for every page's canvas |
 | `client/src/editorPage.ts` | The [[World Editor]]'s entry point: offers the editor a fleet room, through the combat layer, when its address carries `?room=`, and the game's drawing of the captains' plates, then starts it |
@@ -24,7 +24,7 @@ decision, made in the same change as its entry here.
 | `client/src/game/audio/ambience/ambience.ts`, `player.ts`, `graph.ts` | The [[Ambience]] the game calls each frame on foot and at sea, one place sounding, and its nodes: rooms, beds' emitters and calls' chains |
 | `client/src/game/audio/ambience/scapes.ts`, `law.ts`, `places.ts` | The eleven ambiences as data, and the pure laws: place to ambience, the time of day, breathing and gusts, call gaps, crossfades, and where each call stands |
 | `client/src/game/audio/ambience/dsp.ts`, `beds.ts`, `calls.ts`, `songs.ts`, `noises.ts`, `sounds.ts` | The ambience's synthesiser: its kit, its seamless beds, its beasts' and birds' calls and the world's noises, and the jobs that name them |
-| `client/src/game/audio/ambience/ambienceWorker.ts`, `bank.ts` | The worker that makes the ambience's beds and calls off the page's thread, and the page's side that asks it and keeps their buffers |
+| `client/src/game/audio/ambience/ambienceWorker.ts`, `bank.ts` | The worker that makes the ambience's beds and calls off the game's own thread, and the side in the game's worker that asks it and keeps their buffers |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's controls, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, the crosshair, and the [[Arts]]' pictures |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
 | `client/src/face.ts`, `trueType.ts` | The glyphs Pixelify Sans misreads or lacks, drawn in code on its grid for the interface to draw, and made into a font for the held map's lettering ([[Interface]], "The face") |
@@ -38,13 +38,13 @@ decision, made in the same change as its entry here.
 | `client/src/firstperson/` | The first-person layer: the weapons, held things and hands in view, swung, fired, dyed and drawn over the scene ([[First Person]]) |
 | `client/src/sky/` | The sky layer, which imports nothing: the world's clock set right by the rooms, the [[Sky]] and [[Weather]] read from the sky crate through its own WebAssembly, and what the scene draws by them |
 | `client/src/water/` | The water layer: the [[Water]]'s surface, breakers, ripples and underwater view, drawn over any land a layer hands it, and a walker's wading, swimming and diving; the sea by weather round the view (`seaWeather.ts`), and every ship's wake, bow wave and spray (`wakes.ts`) |
-| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display as nodes of the interface the game draws, the ground's marks for telegraphed blows and shots, the shots' tracers, the drops lying for the player ([[Gear]], "Drops"), and [[Blood]]; the [[Arts]]' casting keys, ability bar and every spell's view; and a Sloop's session in a fleet room ([[Naval Combat]]), her orders sent and her ship predicted |
+| `client/src/combat/` | The browser's side of [[Combat]]: the fight's controller in a room (the player's fighter predicted, foes and shots kept), the fight's display as nodes of the interface the game draws, the ground's marks for telegraphed blows and shots, the shots' tracers, the drops lying for the player ([[Gear]], "Drops"), and [[Blood]]; the [[Arts]]' casting keys, ability bar and every spell's view; and a Sloop's session in a fleet room ([[Naval Combat]]), its orders sent and its ship predicted |
 | `client/src/nature/` | The nature layer: each biome's trees, plants and rocks, made in code, scattered over the ground round the eye and drawn on WebGPU ([[Nature]]). Imports `rules` and `water` |
 | `client/src/ships/` | The ships layer: each hull's mesh read from R2 by its wire number and drawn at its pose on the water in its side's colours, flying its flag, under its gaff, stay and square sails ([[Sailing]], [[Hulls]]), its line at its waterline read from its mesh for the water (`hullLines.ts`, [[Water]]), and a fight's look: its balls drawn as small spheres and its flotsam as crates, chests and barrels (`markView.ts`), its see-through puffs blended after the water and their light (`puffView.ts`), each event made puffs, harm, sounds and jars of the eye (`fightFeel.ts` with DFO's moments' laws in `fightMoments.ts`, `effects.ts` with its puffs' laws in `puffLaw.ts`, `flotsam.ts`, `fightSounds.ts`, `shake.ts`), the fight's readout from its view (`fightDisplay.ts`), and where the captains' plates stand (`shipBars.ts`), drawn by the game's interface, and the harm kept on each ship and drawn on it: holes in its hull and canvas, sails torn away, masts fallen, colours struck and its going down (`shipHarm.ts`, `harmDrawn.ts`) ([[Naval Combat]], "How it looks") |
-| `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room or a room in the page, and the prediction it corrects |
+| `client/src/network/` | The network layer: the browser's side of the [[Server]]: its messages, made from the same schema, the connection to a room, or to a room run in the game's worker when playing alone, and the prediction it corrects |
 | `client/src/rules/` | The rules layer: the Rust rules, the [[Land]] (with its door's sailing and naval fights), [[Movement]] and [[Combat]]'s player tick, loaded as WebAssembly, for any page that needs them, and a fighter's numbers read |
-| `client/src/game/isleLaw.ts`, `client/src/game/isles.ts`, `client/src/game/isleVisit.ts`, `client/src/network/islePlans.ts` | The sea's [[Islands]] on the page: each the sea room tells of built through the room module, every voyage bent round them, the offer to go ashore, the way in to an anchorage, and the player ashore on an island's room, E scavenging its wrecks and trying its door |
-| `client/src/game/seaWord.ts`, `client/src/network/seaHarbour.ts` | The sea's word to the player as the page tells it: the joins, the board offer and E's asks in a fight, what floats gathered, washing up and Manage's repair, from the sea snapshot's own part and its told codes (`TOLD`) ([[Game]], "At sea") |
+| `client/src/game/isleLaw.ts`, `client/src/game/isles.ts`, `client/src/game/isleVisit.ts`, `client/src/network/islePlans.ts` | The sea's [[Islands]] in the game: each the sea room tells of built through the room module, every voyage bent round them, the offer to go ashore, the way in to an anchorage, and the player ashore on an island's room, E scavenging its wrecks and trying its door |
+| `client/src/game/seaWord.ts`, `client/src/network/seaHarbour.ts` | The sea's word to the player as the game tells it: the joins, the board offer and E's asks in a fight, what floats gathered, washing up and Manage's repair, from the sea snapshot's own part and its told codes (`TOLD`) ([[Game]], "At sea") |
 | `client/src/game/deckBoarding.ts`, `client/src/game/deckFight.ts`, `client/src/ships/spars.ts` | The fight on a boarded ship's deck: `Foot` on its grid of heights, its deck room reached through the sea's link, every figure, mark and the display laid on its ship as the fight lies it, its minute and its hold's take; its masts and spars as boxes the deck camera keeps a clear line past ([[Naval Combat]], "The fight on a struck deck, on the page") |
 | `client/src/game/seaHostiles.ts` | The hostile ships the sea's view marks, the voyage's line on each first sighted and on other waters entered, and the water named for the status line ([[Game]], "At sea") |
 | `client/src/rules/watersRules.ts` | The waters' and the friendly traffic's doors for a page, on the room module ([[World Map]]) |
@@ -57,7 +57,7 @@ decision, made in the same change as its entry here.
 | `client/src/game/helmMap.ts` | The held map at the helm: made when first asked for, raised once the view stands at the helm, its keys, and what it draws over the picture ([[Held Map]]) |
 | `client/src/ruinedName.ts` | A ruined city's name as the city crate names it, for the held map and arriving ([[Cities]], "Ruins") |
 | `client/src/rules/feelEvents.ts` | What a sea room tells of its fights beside the World Editor's events, and the one mapping that hands each to the fight's feel ([[Naval Combat]]) |
-| `server/seaPorts.ts` | The ports the sea room is opened with, each continent's city read from its land file as the page reads it ([[Server]]) |
+| `server/seaPorts.ts` | The ports the sea room is opened with, each continent's city read from its land file as the game reads it ([[Server]]) |
 | `client/src/editor/aimCamera.ts`, `client/src/ships/aimView.ts`, `client/src/game/seaSight.ts` | The sea fight's aim as DFO's: the eye eased out to the ship's battery and short of a ship alongside, the lay drawn as screen-wide dashed ribbons, rings, posts and strike marks in three tones, and the crosshair and aim line ([[Naval Combat]], "The aim, as DFO's") |
 | `client/src/overworld/` | The overworld layer: the [[Overworld]]'s camera, pick, sea routes, voyages, marks and bird's-eye view of an island's side, pure, with no page or drawing |
 | `client/src/textures/` | The textures layer: the [[Procedural Textures]], every picture the forged world wears and the ground's sets, painted in code |
@@ -67,8 +67,8 @@ decision, made in the same change as its entry here.
 | `client/src/thread/` | The thread layer, which imports `ui`: the page and the game's worker joined ([[Game]], "Threads"): the page's stand-ins in the worker, the page's side that hears the player and carries out what the game asks, and the game's sound made on the page's audio |
 | `client/src/city/` | The city layer: a city's plan drawn on WebGPU with the forged models and the procedural textures, whole near the eye, as masses and hulls further out, its solids and ground plates at every distance; a ruin's buildings broken (`ruins.ts`) ([[Cities]]) |
 | `client/src/layout/` | The layouts in the browser: drawn with the city layer near the eye, the nodes' laid sections, and the ways through gates ([[Layouts]]) |
-| `client/src/speech/` | The speech layer, which imports `plus`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
-| `client/src/cinema/` | The cinema layer, which imports `water` and `combat`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
+| `client/src/speech/` | The speech layer, which imports `plus` and `ui`: the voice made in the browser for every line, the dialogue box, barks over heads and emotes ([[Speech]]) |
+| `client/src/cinema/` | The cinema layer, which imports `water`, `combat`, `plus` and `ui`: the camera on rails, the screen's fades and bars, the weather pass, birds, fire and smoke, and the storm's sounds ([[Cinema]]) |
 | `client/src/game/prologue/` | The [[Prologue]]: the tap to start, the intro and title, character creation and the story mission's beats, run by its director |
 | `client/src/game/npc/` | The keepers' screen every counter of a social space opens, and Shape's: the keeper drawn in their dress with their words and band, the rows of wares each keeper sells, a faction's rows (`factionRows.ts`), the stock's clock ([[Interface]], [[Factions]]) |
 | `client/src/game/gearHints.ts` | What the menu's footer says each view's presses and keys do ([[Interface]]) |
@@ -135,13 +135,14 @@ decision, made in the same change as its entry here.
 
 Every folder directly under `client/src` is a layer, declared in `LAYERS` with what it may import, when its first
 file arrives. Files directly in `client/src` may import any layer. They are also groundwork any layer may import,
-such as `gpu.ts`, except the entry points `main.ts` and `editorPage.ts`. Client code never imports
+such as `gpu.ts`, except the entry points `main.ts`, `gameWorker.ts` and `editorPage.ts`, which nothing imports but
+another entry point, as the page names the game's worker. Client code never imports
 Node's modules (tests may) and never uses WebGL. As the code arrives, the layers follow one direction:
 
 - **The engine** (GPU, drawing, sound, input, assets) knows nothing of the game.
 - **The interface** draws on the engine and reads game state; it does not change it.
 - **The network** speaks to the server and knows nothing of drawing.
-- **The entry point** wires them together. It wires; it does not implement ([[Small Files]]).
+- **The entry points** wire them together. They wire; they do not implement ([[Small Files]]).
 
 Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
 (each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
@@ -151,7 +152,7 @@ Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each im
 `player` (imports `rules`, `network`, `forge`, `firstperson` and the editor's camera), `testground` (imports what
 `player` does, `player` itself, `combat`, the editor's panel helpers and `ui`, which draws the fight's display there),
 `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap` (imports
-`forge`, `overworld`, `plus`, the first person's picture drawer, the editor's page helpers and `ui`),
+`forge`, `overworld`, `plus`, the first person's picture drawer and `ui`),
 `plus` (imports nothing), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`,
 `textures`, `models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus` and
 `ui`) and `game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;

@@ -287,12 +287,12 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   it; no standing heap walked, or climbed as high as a jump reaches (1.05 m), round; a wave and three crew in every
   zone but the first and the arena; and at least 2,000 m2 of ground walked.
 - **Nothing falls off.** The room over the sea holds a rim round the wreck's ground, a grid of 0.3 m cells, open
-  where a block covers a cell and a wall everywhere else, as a ship's deck holds her crew ([[Movement]]): a body
+  where a block covers a cell and a wall everywhere else, as a ship's deck holds its crew ([[Movement]]): a body
   walks, jumps, vaults and climbs anywhere over the decks and the rafts and is held at their edge, its rails and
   open breaks alike, while what falls or flies over the sea meets it at 0 m. A body hanging on a wall shimmies along
   it no further than the rim. The page's own steps, its walk and its fight's prediction alike, stand on the same rim,
   made by the rules from the blocks (`setRim`), to the bit. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
-  back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, her gun deck and
+  back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, its gun deck and
   the Sloop's side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
   itself. The HUD shows no death panel and no Respawn; a toast says "You will rise at the last checkpoint."
@@ -313,7 +313,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   with his head on the view, so a cry unheard spends no gap; he tells the player to kneel again only once they have
   struck him since. The throw overboard is framed so Thule and his crier stand on the view on any screen, a tall one
   from further back.
-- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the page's own on the
+- **Played** by `WreckRun` as `Foot` plays a node: the walker and the fight in a room of the game's own, in its worker, on the
   layout's blocks over open sea (`LocalRoom.openOverSea`: its foes' navmesh is the wreck's ground alone, so every wave
   fights and Thule strikes), the fight's marks drawn by the view on foot. It tells the story whether the arena is
   entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the

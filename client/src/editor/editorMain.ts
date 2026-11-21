@@ -13,8 +13,9 @@ import { draftLayout, type Issue, type LayoutContent, slotIdsFor } from './layou
 import { MapView } from './mapView.ts';
 import { areaStanding, rangeFraction, references } from './measure.ts';
 import { overlayMarks, type PinnedReference, type Ruler } from './overlay.ts';
-import { PANEL_WIDTH, press, row } from './panelKit.ts';
+import { PANEL_WIDTH, panelCss, press, row } from './panelKit.ts';
 import { labelNode } from './viewMarks.ts';
+import { stopWhenLost } from './gpuLost.ts';
 
 const LAYOUT_URL = `${import.meta.env.BASE_URL}world/layout.json`;
 /** Where this browser keeps the painting between visits, until it is saved. */
@@ -68,6 +69,7 @@ async function loadLayoutText(): Promise<{ text: string; saved: boolean }> {
 async function start(): Promise<void> {
   const canvas = element<HTMLCanvasElement>('#editor');
   const gpu = await startGpu(canvas);
+  stopWhenLost(gpu.device, stopped);
   // The land's 3D view is drawn aside and copied into the canvas right of the panel.
   gpu.context.configure({
     device: gpu.device,
@@ -78,8 +80,9 @@ async function start(): Promise<void> {
   const editor = new EditorFrame(canvas, gpu);
   const requestFrame = () => editor.request();
   /** The view right of the panel, CSS pixels, and a pointer's place on it. */
-  const viewWidth = () => Math.max(1, canvas.clientWidth - PANEL_WIDTH);
-  const onView = (event: MouseEvent) => ({ x: event.offsetX - PANEL_WIDTH, y: event.offsetY });
+  const panelEdge = () => panelCss(devicePixelRatio || 1);
+  const viewWidth = () => Math.max(1, canvas.clientWidth - panelEdge());
+  const onView = (event: MouseEvent) => ({ x: event.offsetX - panelEdge(), y: event.offsetY });
   const rules: WorldRules = await startWorldRules(
     await (await fetch(`${import.meta.env.BASE_URL}world.wasm`)).arrayBuffer(),
   );
@@ -284,12 +287,12 @@ async function start(): Promise<void> {
 
   /** The coasts' map and its overlay, drawn into the view right of the panel, and the Continents panel. */
   const drawContinents = (frame: EditorFrameView): EditorDrawn => {
-    const { ui, size, scale, flat } = frame;
+    const { ui, size, scale, flat, inward } = frame;
     const world = screenToWorld(camera, flat.width, flat.height, pointer.x, pointer.y);
     const showBrush = pointer.inside && (tool === 'paint' || tool === 'erase');
     // The map is drawn over the whole canvas, its middle moved right by half the panel, so the view's middle is the
     // camera's.
-    const shifted = { ...camera, centreX: camera.centreX - (PANEL_WIDTH / 2) * camera.metresPerPixel };
+    const shifted = { ...camera, centreX: camera.centreX - (panelEdge() / 2) * camera.metresPerPixel };
     view.draw(
       {
         camera: { ...shifted, metresPerPixel: camera.metresPerPixel / scale },
@@ -337,7 +340,7 @@ async function start(): Promise<void> {
     );
     return {
       inks: overlay.inks,
-      over: overlay.labels.map((label) => labelNode(label, PANEL_WIDTH)),
+      over: overlay.labels.map((label) => labelNode(label, PANEL_WIDTH, inward)),
       panel: [modesRow(ui, mode, (next) => void setMode(next)), ...panel],
       cursor: 'crosshair',
     };

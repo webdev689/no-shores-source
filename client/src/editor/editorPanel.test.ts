@@ -261,7 +261,10 @@ test('a readout whose pieces float against the screen stands over the view right
   } satisfies Node;
   const laid = layout(
     editorRoot({
-      over: [inView(readout, PANEL_WIDTH, 980, 700), { id: 'plate', width: 10, height: 10, float: { to: 'screen' } }],
+      over: [
+        inView(readout, PANEL_WIDTH, 980, 700, 1),
+        { id: 'plate', width: 10, height: 10, float: { to: 'screen' } },
+      ],
       panel: [],
     }),
     { x: 0, y: 0, width: 1280, height: 700 },

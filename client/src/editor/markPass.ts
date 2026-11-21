@@ -1,7 +1,7 @@
 // The editor's marks over its views (the overlays' lines, fills and dots, `strokes.ts`), drawn by the GPU over the
 // view and under the interface: each segment a capsule whose edge is smoothed across a pixel, cut square where a
-// line's end is, each fill a fan of triangles. Each ink is painted once where its pieces overlap, as a page paints a
-// path, so a translucent line is never darker at its joints: the stencil holds which ink last painted a pixel. Its
+// line's end is, each fill a fan of triangles. Each ink is painted once where its pieces overlap, as one path, so a
+// translucent line is never darker at its joints: the stencil holds which ink last painted a pixel. Its
 // wholly covered pixels are painted before its smoothed edge, so one piece's soft edge never keeps the next piece
 // from a pixel it covers wholly.
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE, TEXTURE_USAGE } from '../gpu.ts';

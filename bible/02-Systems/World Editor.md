@@ -189,13 +189,15 @@ readout").
 ## How it works
 
 - **One canvas.** The page holds one canvas and its script, nothing more
-  ([[The Interface Uses No HTML, Now or Later]]). Each frame draws the mode open into the room right of the 300 px
-  panel: the coasts' map, or the land's 2D map or 3D view (the 3D view drawn aside at that room's size and copied
+  ([[The Interface Uses No HTML, Now or Later]]). Each frame draws the mode open into the room right of the
+  panel, 300 of the interface's pixels wide, which the view's place on the page follows at any screen's ratio
+  (`panelCss`): the coasts' map, or the land's 2D map or 3D view (the 3D view drawn aside at that room's size and copied
   in). Over it the marks (rulers, reference shapes, the scale bar, the city, the nodes, the layouts, a place being
   drawn, the 3D scale cues) are drawn by the GPU as lines, fills and dots, each line smoothed across a pixel and each
   shape painted once where its pieces overlap (`MarkPass`). Last the interface the game draws (`ui/`) lays the names
   over the view, the captains' plates in a fight, and the panel at the left, which scrolls under the wheel. A frame
-  is drawn when something asks for one: an input, a change, the water moving in 3D.
+  is drawn when something asks for one: an input, a change, the water moving in 3D. A lost GPU device stops the
+  editor, the page saying so and asking for a reload (`stopWhenLost`).
 - **The panel** keeps the editor's own look, a tool's and not one of the game's screens: dark slate presses with a
   hairline edge and rounded corners, lit blue when chosen; the slider, the lists to choose from and the name fields
   in a browser's dark grey. Tab and the arrows move the focus through it, and Enter or Space presses; a field takes

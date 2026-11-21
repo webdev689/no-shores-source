@@ -4,7 +4,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { chooser, heading, press, row, said, stacked, textField, words } from './panelKit.ts';
 
-/** The seed's field, as wide as a page's field of 22 characters. */
+/** The seed's field, narrower than the panel's others, as a seed is at most 20 digits. */
 const SEED_WIDTH = 153;
 
 /** Everything the Islands panel shows. */
@@ -29,7 +29,7 @@ export interface IslePanelHandlers {
   look(afar: boolean): void;
 }
 
-/** A control after its words, on a line of its own, as a page's label lays them. */
+/** A control after its words, on a line of its own. */
 const labelled = (label: string, control: Node): Node => ({
   gap: 4,
   alignY: 'center',

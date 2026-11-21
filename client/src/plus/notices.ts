@@ -42,7 +42,7 @@ export class NoticeStack {
   }
 
   /** Shows `lines` at `clock`, the newest last: a line still given keeps its row, a new one slides in (and is `told`,
-   *  as a page's log is read out), one gone leaves. */
+   *  for a screen reader to say), one gone leaves. */
   show(lines: readonly string[], clock: number, told: (text: string) => void = () => undefined): void {
     const kept = [...new Set(lines.slice(-NOTICES_MOST))];
     const staying = this.shown.filter((row) => kept.includes(row.text));

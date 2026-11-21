@@ -115,7 +115,7 @@ number is one of [[Gear as Claude Shapes It]].
   Legendary or Atheric, Essence with a third of what was spent on it.
 - **Chance** comes from a hash of the room's seed, its tick, a count of the rolls the room has made, the player and
   what the roll is for. A deployed room's seed is its host's own, random and never sent, so no player can foresee a
-  roll; a room in the page keeps one fixed seed, so it gives the same loot for the same play. A kept character is
+  roll; a room in the game's worker keeps one fixed seed, so it gives the same loot for the same play. A kept character is
   made whole as it is read: its stocks within their caps, each item's choices, nodes, level and XP within its own,
   one worn where it does not fit carried, so no keeping can make a room refuse or fail on it.
 

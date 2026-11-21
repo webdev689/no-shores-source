@@ -393,7 +393,8 @@ The figure is dressed as DFO's game dresses it ([[DFO's Sprite Forge Comes Over 
 
 ## How it draws
 
-The page reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
+A lost GPU device stops the Test Ground, the page saying so and asking for a reload (`stopWhenLost`). The page
+reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
 its pack by its byte range; a body shorter than its range is fetched once more past the cache, never decoded. One that
 fails to arrive is asked for again 5 s later, not every frame. Decoded strips are kept while there is room: 128 MB in
 the worker that composes the figures, 96 MB on the page, the least lately asked for let go and fetched again if asked.

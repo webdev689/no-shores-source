@@ -20,6 +20,7 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { Hud } from '../combat/hud.ts';
 import { readFace } from '../ui/faceReader.ts';
 import { stopped } from '../ui/page.ts';
+import { stopWhenLost } from '../editor/gpuLost.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { abilityPictures } from '../player/artGlyphs.ts';
@@ -92,6 +93,7 @@ function bloodCamera(orbit: Orbit, aspect: number) {
 async function start(): Promise<void> {
   const canvas = element<HTMLCanvasElement>('#ground');
   const gpu = await startGpu(canvas);
+  stopWhenLost(gpu.device, stopped);
   // The view between the panels is drawn into a texture of its own, its display over it, then copied into its place on
   // the canvas, under the panels drawn either side of it.
   gpu.context.configure({

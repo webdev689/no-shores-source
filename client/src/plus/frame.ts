@@ -77,21 +77,3 @@ export function framePixels(): (string | null)[] {
   }
   return pixels;
 }
-
-/** The frame as an SVG, `FRAME_SIDE` pixels square. */
-export function frameSvg(): string {
-  const rects = framePixels().flatMap((colour, index) =>
-    colour
-      ? [
-          `<rect x='${index % FRAME_SIDE}' y='${Math.floor(index / FRAME_SIDE)}' width='1' height='1' fill='${colour}'/>`,
-        ]
-      : [],
-  );
-  return `<svg xmlns='http://www.w3.org/2000/svg' width='${FRAME_SIDE}' height='${FRAME_SIDE}' shape-rendering='crispEdges'>${rects.join('')}</svg>`;
-}
-
-/** The frame as a `border-image`: the picture, its slice, its width and how far it reaches out. */
-export function frameImage(): string {
-  const url = `url("data:image/svg+xml,${encodeURIComponent(frameSvg())}")`;
-  return `${url} ${BAND} / ${BAND}px / ${OUTSET}px stretch`;
-}

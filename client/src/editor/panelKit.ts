@@ -1,5 +1,5 @@
-// The World Editor's panel as the interface draws it, in the editor's own look: a tool, not one of the game's screens
-// ([[Interface]], Limits). Presses are dark slate with a hairline edge and rounded corners, lit blue when chosen;
+// The World Editor's panel as the interface draws it, in the editor's own look, as it is a tool and not one of the
+// game's screens. Presses are dark slate with a hairline edge and rounded corners, lit blue when chosen;
 // headings small capitals in grey; the slider, the lists to choose from and the fields in the dark grey of a
 // browser's own. Each builder reads what was done to it this frame through the interface and answers its node.
 import { choice, slider } from '../ui/controls.ts';
@@ -7,7 +7,7 @@ import type { Child, Drawing, Node } from '../ui/node.ts';
 import { type Box, colourOf } from '../ui/quads.ts';
 import { wrapped } from '../ui/text.ts';
 import type { Interface } from '../ui/ui.ts';
-import type { UiRenderer } from '../ui/uiRenderer.ts';
+import { type UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 
 /** The panel's colours. */
 export const INK = {
@@ -31,8 +31,15 @@ export const INK = {
 /** Where the interface keeps what the field being typed in would hand over were the focus taken now. */
 export const TYPED = 'editor:typed';
 
-/** The panel's width, its edge included, CSS pixels. */
+/** The panel's width, its edge included, in the interface's pixels. */
 export const PANEL_WIDTH = 300;
+
+/** The interface's pixels a CSS pixel at the screen's `ratio`: the interface lays itself at a whole number of device
+ *  pixels to its own, so at a fractional ratio its pixel is not a CSS pixel. */
+export const inwardAt = (ratio: number): number => ratio / uiScale(ratio);
+
+/** The panel's drawn width in CSS pixels at the screen's `ratio`: where the view right of it starts. */
+export const panelCss = (ratio: number): number => PANEL_WIDTH / inwardAt(ratio);
 
 /** A box of `colour` with its corners rounded `radius` device pixels, row by row of device pixels. */
 function roundedFill(ui: UiRenderer, box: Box, radius: number, colour: string, fade: number, clip: Box): void {
@@ -58,7 +65,7 @@ export function readable(colour: string): string {
   return `rgba(${red}, ${green}, ${blue}, ${Number.parseInt(hex[2], 16) / 255})`;
 }
 
-/** A rounded box of `fill` inside an `edge` a CSS pixel wide, as a sheet's `border-radius` draws it. */
+/** A rounded box of `fill` inside an `edge` a CSS pixel wide, its corners `radius` CSS pixels round. */
 export function rounded(fill: string | null, edge: string | null, radius: number): Drawing {
   return (ui, box, scale, clip, fade) => {
     if (edge) roundedFill(ui, box, radius * scale, edge, fade, clip);
@@ -104,7 +111,7 @@ export function press(
 /** Presses and words that run on to the next line where they reach the panel's edge, 6 px apart. */
 export const row = (children: readonly Child[], gap = 6): Node => ({ width: 'grow', wrap: true, gap, children });
 
-/** Room `height` pixels tall: the space a sheet's margins leave between two blocks. */
+/** Room `height` pixels tall, parting two blocks. */
 export const space = (height: number): Node => ({ height });
 
 /** A paragraph of words that wrap to the panel's width. */
@@ -258,8 +265,8 @@ export function textField(
   };
 }
 
-/** Hands what is being typed in a field to it now and takes the focus from it, as a page's field reports its value
- *  as a press elsewhere takes the focus; the field does not hand it over again as it sees the focus gone. */
+/** Hands what is being typed in a field to it now and takes the focus from it, as a press elsewhere takes the focus;
+ *  the field does not hand it over again as it sees the focus gone. */
 export function settleTyping(ui: Interface): void {
   const typing = ui.typing;
   if (!typing) return;
@@ -270,7 +277,7 @@ export function settleTyping(ui: Interface): void {
   ui.focusOn(null);
 }
 
-/** A press of words with a dotted line under each of its lines, as a page writes a link it styles that way. */
+/** A press of words with a dotted line under each of its lines, read as a link. */
 export function link(ui: Interface, id: string, text: string, run: () => void): Node {
   if (ui.clicked(id)) run();
   const underline: Drawing = (renderer, box, scale, clip, fade) => {
@@ -294,7 +301,7 @@ export function link(ui: Interface, id: string, text: string, run: () => void): 
   };
 }
 
-/** A list's item with its bullet, as a page's list marks it. */
+/** A list's item with its bullet. */
 export const bulleted = (item: Node): Node => ({
   width: 'grow',
   children: [
@@ -303,8 +310,8 @@ export const bulleted = (item: Node): Node => ({
   ],
 });
 
-/** A control in a line with its words before and after it, as a page's label lays an input: the words on the line
- *  the control stands on, those after it running on to a line of their own where they reach the panel's edge. */
+/** A control in a line with its words before and after it: the words on the line the control stands on, those after
+ *  it running on to a line of their own where they reach the panel's edge. */
 export const inline = (label: string, control: Node, after: string): Node => ({
   width: 'grow',
   minHeight: 21,
@@ -319,15 +326,15 @@ export const inline = (label: string, control: Node, after: string): Node => ({
 /** `node` with room after it, as the space after a word parts it from the next. */
 export const spaced = (node: Node, room = 2): Node => ({ padding: [0, room, 0, 0], children: [node] });
 
-/** A block of the panel with the room a sheet's margins leave above and below it; with no node, an empty paragraph,
- *  whose margins still part its neighbours. */
+/** A block of the panel with the room it keeps above and below it; with no node, an empty paragraph, whose room still
+ *  parts its neighbours. */
 export interface Block {
   readonly node: Child;
   readonly top?: number;
   readonly bottom?: number;
 }
 
-/** Blocks one under another, the room between two the larger of their margins, as a page collapses them. */
+/** Blocks one under another, the room between two the larger of the rooms they keep, never the two added. */
 export function stacked(blocks: readonly Block[]): Child[] {
   const laid: Child[] = [];
   let pending = 0;
@@ -351,7 +358,7 @@ export const said = (text: string, colour: string = INK.dim): Block => ({
   bottom: 11,
 });
 
-/** A list's row of the panel, lit with an edge round it when chosen, as the page's lists light theirs. */
+/** A list's row of the panel, lit with an edge round it when chosen. */
 export function listRow(
   ui: Interface,
   id: string,

@@ -240,7 +240,7 @@ export async function startIsleEditor(editor: EditorFrame): Promise<IsleEditor> 
   let dragging: { x: number; y: number; button: number } | null = null;
   canvas.addEventListener('pointerdown', (event) => {
     if (!active || editor.takes(event.offsetX, event.offsetY)) return;
-    // A field being typed in reports its value now, as a page's field does when the focus leaves it.
+    // A field being typed in reports its value now, as it would once the focus left it.
     editor.settle();
     canvas.setPointerCapture(event.pointerId);
     dragging = { x: event.offsetX, y: event.offsetY, button: event.button };

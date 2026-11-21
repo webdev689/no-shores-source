@@ -137,4 +137,4 @@ The sea room holds its islands (`sea_islands.rs`):
 - The breakers and foam of the [[Water]] follow the land's coasts, not an island's.
 - What a player has found is kept by the sea room while they are in it; a player who leaves the sea and joins it
   again finds its islands again as they sail near.
-- Playing alone, the sea in the page is a new one each time it opens, so its islands are too.
+- Playing alone, the sea in the game's worker is a new one each time it opens, so its islands are too.

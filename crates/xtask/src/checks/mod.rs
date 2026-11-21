@@ -72,7 +72,7 @@ pub fn run_all(repo: &Repo) -> Vec<Problem> {
     problems.extend(comments::check(&code));
     problems.extend(layers::check(&code));
     problems.extend(html::check_scripts(&code));
-    let (pages, skipped) = repo.sources(|path| path.starts_with("client/") && path.ends_with(".html"));
+    let (pages, skipped) = repo.sources(html::is_page);
     problems.extend(unreadable(&skipped));
     problems.extend(html::check_pages(&pages, &repo.files));
     let sized: Vec<(String, u64)> =

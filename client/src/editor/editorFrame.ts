@@ -11,7 +11,7 @@ import type { Child } from '../ui/node.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
 import { MarkPass } from './markPass.ts';
-import { editorRoot, PANEL_WIDTH, settleTyping } from './panelKit.ts';
+import { editorRoot, inwardAt, PANEL_WIDTH, panelCss, settleTyping } from './panelKit.ts';
 import type { Ink } from './strokes.ts';
 
 /** A frame as the mode open draws it. */
@@ -23,6 +23,8 @@ export interface EditorFrameView {
   /** The view right of the panel in CSS pixels, and in device pixels from the canvas's left edge. */
   readonly flat: { readonly width: number; readonly height: number };
   readonly left: number;
+  /** The interface's pixels a CSS pixel. */
+  readonly inward: number;
   /** What the canvas shows this frame. */
   readonly texture: GPUTexture;
 }
@@ -76,7 +78,7 @@ export class EditorFrame {
   /** Whether the interface takes the pointer at `x`, `y` (CSS pixels of the canvas), as it was last laid: a press there
    *  is the panel's, not the view's. */
   takes(x: number, y: number): boolean {
-    return x < PANEL_WIDTH || Boolean(this.ui?.takes(x, y));
+    return x < panelCss(devicePixelRatio || 1) || Boolean(this.ui?.takes(x, y));
   }
 
   /** Whether words are being typed into a field of the panel, so the keys are not the view's. */
@@ -143,11 +145,12 @@ export class EditorFrame {
       ui,
       size,
       scale,
-      flat: { width: Math.max(1, canvas.clientWidth - PANEL_WIDTH), height: Math.max(1, canvas.clientHeight) },
-      left: Math.round(PANEL_WIDTH * scale),
+      flat: { width: Math.max(1, canvas.clientWidth - panelCss(ratio)), height: Math.max(1, canvas.clientHeight) },
+      left: PANEL_WIDTH * uiScale(ratio),
+      inward: inwardAt(ratio),
       texture,
     });
-    this.marks.draw(texture.createView(), drawn.inks, { ...size, scale, left: PANEL_WIDTH });
+    this.marks.draw(texture.createView(), drawn.inks, { ...size, scale, left: panelCss(ratio) });
     ui.draw(editorRoot(drawn));
     ui.renderer.present(size.width, size.height);
     const pointer = this.events.pointer;

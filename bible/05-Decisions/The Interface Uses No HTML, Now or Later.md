@@ -12,7 +12,8 @@ status: in force
 > measured, Protobuf skipped) and asked four questions: "Lets do it. Take some autonomy and complete everything to
 > 100%. I want you to research throughly and do this right."
 
-It replaces [[HTML Is Avoided Where It Can Be]].
+For the game's interface it goes further than [[HTML Is Avoided Where It Can Be]], which still holds for the pages
+Claude makes to test or measure and those Claude shares with the owner.
 
 ## What it settles
 

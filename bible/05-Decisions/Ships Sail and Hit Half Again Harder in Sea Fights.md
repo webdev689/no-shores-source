@@ -19,7 +19,7 @@ owner chose "1.5x speed, 1.5x damage", the option that read: "Half again as fast
 ## Claude's calls
 
 - Half again as fast: every ship's sails and oars pull half again as hard in a fight as at sea.
-- Half again the damage: every blow one ship strikes another, her balls and her ram alike, on her hull, her sails and
-  her men. A fire her shot starts burns as before; whether it should burn half again too is asked of the owner.
+- Half again the damage: every blow one ship strikes another, its balls and its ram alike, on its hull, its sails and
+  its men. A fire its shot starts burns as before; whether it should burn half again too is asked of the owner.
 
 [[Naval Combat]].

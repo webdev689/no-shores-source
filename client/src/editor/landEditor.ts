@@ -14,7 +14,7 @@ import type { CellRect } from './landMask.ts';
 import { LandScene } from './landScene.ts';
 import { fitOrbit, type Orbit, panOrbit, pickTerrain, rayAt, rotateOrbit, zoomOrbit } from './orbit.ts';
 import { draftInks, snapPoint, type Spot } from './placeDrawing.ts';
-import { PANEL_WIDTH } from './panelKit.ts';
+import { PANEL_WIDTH, panelCss } from './panelKit.ts';
 import { PlaceTools } from './placeTools.ts';
 import { ReliefTiles, tilesWanted } from './reliefTiles.ts';
 import { fitWindow, heightAt, readoutAt, ReliefView } from './reliefView.ts';
@@ -49,8 +49,9 @@ export function startLandEditor(
   const { gpu, canvas } = editor;
   const requestFrame = () => editor.request();
   /** The view right of the panel, CSS pixels. */
-  const viewWidth = () => Math.max(1, canvas.clientWidth - PANEL_WIDTH);
-  const onView = (event: MouseEvent) => ({ x: event.offsetX - PANEL_WIDTH, y: event.offsetY });
+  const panelEdge = () => panelCss(devicePixelRatio || 1);
+  const viewWidth = () => Math.max(1, canvas.clientWidth - panelEdge());
+  const onView = (event: MouseEvent) => ({ x: event.offsetX - panelEdge(), y: event.offsetY });
   const relief = new ReliefView(gpu);
   const worker = startLandWorker();
   // Read once: every landmass is settled with them, as the game settles it.
@@ -314,7 +315,7 @@ export function startLandEditor(
   /** The land's frame: the 2D map or the 3D view into the view right of the panel, the places, layouts and cues over
    *  it, and the Land panel. */
   const drawNow = (shot: EditorFrameView): EditorDrawn => {
-    const { ui, flat, scale } = shot;
+    const { ui, flat, scale, inward } = shot;
     const world = pointer.inside ? worldAt(pointer.x, pointer.y) : null;
     const view = shown();
     const brushShown = world && BRUSHES.includes(tool) ? { ...world, radiusM: radiusKm * 1000 } : null;
@@ -375,9 +376,9 @@ export function startLandEditor(
       const marks = siteInks(siteMarks(places, project, layouts, cues ? [cues.box] : []));
       inks.push(...marks.inks);
       labels.push(...marks.labels);
-      over.push(...platesOf(drawn.plates).map((plate) => onScreen(plate, PANEL_WIDTH)));
+      over.push(...platesOf(drawn.plates).map((plate) => onScreen(plate, PANEL_WIDTH, inward)));
       const fight = readoutOffered()?.node();
-      if (fight) over.push(inView(fight, PANEL_WIDTH, flat.width, flat.height));
+      if (fight) over.push(inView(fight, PANEL_WIDTH, flat.width, flat.height, inward));
       // The water moves, so the 3D view draws every frame.
       again = true;
     } else {
@@ -390,7 +391,7 @@ export function startLandEditor(
       }
       // The map is drawn over the whole canvas, its middle moved right by half the panel, so the view's middle is
       // the camera's.
-      const centreX = camera.centreX - (PANEL_WIDTH / 2) * camera.metresPerPixel;
+      const centreX = camera.centreX - (panelEdge() / 2) * camera.metresPerPixel;
       relief.draw(
         {
           camera: { ...camera, centreX, metresPerPixel: camera.metresPerPixel / scale },
@@ -457,7 +458,7 @@ export function startLandEditor(
     );
     return {
       inks,
-      over: [...labels.map((label) => labelNode(label, PANEL_WIDTH)), ...over],
+      over: [...labels.map((label) => labelNode(label, PANEL_WIDTH, inward)), ...over],
       panel,
       again,
     };

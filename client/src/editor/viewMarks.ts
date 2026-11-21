@@ -14,14 +14,15 @@ export interface Label {
   readonly halo?: string | null;
 }
 
-/** `label` as a node over the screen, the view `left` CSS pixels in from the screen's edge; the pointer passes it. */
-export function labelNode(label: Label, left: number): Node {
+/** `label` as a node over the screen, the view `left` of the interface's pixels in from the screen's edge, `inward` of
+ *  them a CSS pixel; the pointer passes it. */
+export function labelNode(label: Label, left: number, inward: number): Node {
   return {
     float: {
       to: 'screen',
       anchor: [label.anchor === 'start' ? 0 : 0.5, 0],
-      x: left + label.x,
-      y: label.y + 1 - baselineOf(1),
+      x: left + label.x * inward,
+      y: label.y * inward + 1 - baselineOf(1),
     },
     through: true,
     text: {
@@ -38,13 +39,13 @@ export function labelNode(label: Label, left: number): Node {
   };
 }
 
-/** `node`, whose pieces float against the screen, laid over the view instead, as a page lays them in the view's own
- *  box: `width` by `height` CSS pixels, `left` CSS pixels in from the screen's edge; the pointer passes it. Its pieces
- *  stand over what else floats over the view (names, plates), as the page's last layer did. */
-export const inView = (node: Node, left: number, width: number, height: number): Node => ({
+/** `node`, whose pieces float against the screen, laid over the view instead, in the view's own box: `width` by
+ *  `height` CSS pixels, `left` of the interface's pixels in from the screen's edge, `inward` of them a CSS pixel; the
+ *  pointer passes it. Its pieces stand over what else floats over the view (names, plates). */
+export const inView = (node: Node, left: number, width: number, height: number, inward: number): Node => ({
   float: { to: 'screen', x: left },
-  width,
-  height,
+  width: width * inward,
+  height: height * inward,
   through: true,
   children: [
     {
@@ -56,8 +57,14 @@ export const inView = (node: Node, left: number, width: number, height: number):
   ],
 });
 
-/** `node`, set against the view's corner, set against the screen's: the view `left` CSS pixels in from its edge. */
-export const onScreen = (node: Node, left: number): Node => ({
+/** `node`, set against the view's corner in CSS pixels, set against the screen's: the view `left` of the interface's
+ *  pixels in from its edge, `inward` of them a CSS pixel. */
+export const onScreen = (node: Node, left: number, inward: number): Node => ({
   ...node,
-  float: { ...node.float, to: 'screen', x: (node.float?.x ?? 0) + left },
+  float: {
+    ...node.float,
+    to: 'screen',
+    x: left + (node.float?.x ?? 0) * inward,
+    y: (node.float?.y ?? 0) * inward,
+  },
 });

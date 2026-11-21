@@ -7,12 +7,14 @@ status: in force
 
 > "1. Using protobuf 2. Webtransport"
 
-> "Lets do it. Take some autonomy and complete everything to 100%. I want you to research throughly and do this
-> right."
+> Told the plan (the interface drawn by the game first, then work moved off the main thread, WebTransport once
+> measured, Protobuf skipped) and asked four questions: "Lets do it. Take some autonomy and complete everything to
+> 100%. I want you to research throughly and do this right."
 
 ## What it settles
 
-- Both are taken up.
+- WebTransport is taken up: the rooms are readied for it, and it comes once the measures call for it.
+- Protocol Buffers are not taken up: the plan the owner agreed to skipped them, and the messages stay FlatBuffers.
 - The choices are Claude's, made on research, each recorded below as Claude's call for the owner to change.
 
 ## Claude's calls

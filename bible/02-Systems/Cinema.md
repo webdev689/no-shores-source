@@ -47,8 +47,8 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
 - **The screen** (`Screen`), drawn by the game as a layer of its interface over every other, the HUD's and the
   menu's: fades to black or white over any time, a white flash, the letterbox's bars, eyelids that close from above
   and below for waking, the title (the game's name over a brass rule, sized to fit a phone's width) and a prompt that
-  breathes under it. Each layer eases over its own time as the page's transitions did, except the eyelids, which the
-  story sets frame by frame. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
+  breathes under it. Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`), except the eyelids, which
+  the story sets frame by frame. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
   the interface, as death's grey is, so the words over it stay sharp: a Gaussian whose deviation is the blur's CSS
   pixels, set each frame, so it follows each frame and clears at once.
   While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or pulls it to reload
@@ -171,5 +171,4 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
   six fires' height burns thinner and is lit only at those points.
 - Fire does not spread, die down or burn anything: a fire burns as it was lit until it is put out.
 - Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.
-- The blur takes the picture's own edge past it, where the page's filter faded the edge toward what lay under the
-  canvas. The title's and the prompt's soft dark glow is not drawn, only their hard shadow under them.
+- Past the picture's edge the blur takes the edge's own pixels, so a blurred view keeps its brightness to the edge. The title's and the prompt's soft dark glow is not drawn, only their hard shadow under them.

@@ -14,7 +14,7 @@ import { SAMPLE_HAIR, SAMPLE_LOOKS, SAMPLE_ROSTER, sampleFigures } from './panel
 import { Driven } from './panelsForTests.ts';
 import { statusAsk, statusNodes } from './statusPanel.ts';
 
-test('the panels stand either side of the view as the page laid them: 22% and 24% of it, within their bounds', () => {
+test('the panels stand either side of the view: 22% and 24% of it, within their bounds', () => {
   assert.deepEqual(sides(1280), { left: 282, right: 307 });
   assert.deepEqual(sides(800), { left: 220, right: 240 });
   assert.deepEqual(sides(2560), { left: 320, right: 360 });
