@@ -1,5 +1,5 @@
 ---
-id: 75
+id: 93
 title: "Re-wrapping bible prose splits [[wiki links]] across lines; synth fallbacks hid an injectable play"
 status: open
 type: internal
