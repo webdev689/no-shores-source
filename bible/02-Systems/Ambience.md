@@ -32,7 +32,8 @@ synthesiser, grown to eleven places ([[Music and Ambience Come From DFO's Synthe
 
 - **Where the player is.** Each frame the game tells the ambience where the camera is: on foot in a node, or at sea
   aboard the ship. `placeOf` names the place; each place is one ambience. On foot the listener stands at the eye; at
-  sea it stands on its deck and everything placed rides with it.
+  sea it stands on its deck and everything placed rides with it. In a dungeon ([[Dungeons]]) none of the open air is
+  heard, not its wind, birds, rain or thunder: the island's ambience fades out as behind a veil.
 - **The story.** While the [[Prologue]] plays, its beats at sea and on the wreck are heard as the open sea round the
   Brig or the wreck, and its shore at dawn as Saltmere's coast, under the sky the story tells ([[Sky]]): its rain,
   its wind and the thunder of its strikes. The story's own beds keep only the fire, the deep and its moments.
