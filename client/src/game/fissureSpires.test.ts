@@ -40,6 +40,7 @@ test("at a spire the page's movement and the room's fight both stop a body runni
   const fissure = {
     kind: PUBLIC_KIND.fissure,
     phase: 1,
+    ground: [500, 300, 0],
     marks: [{ kind: MARK.fissure, id: 0, at: [500, 300, 0], health: 1, state: 0 }],
   } as unknown as PublicEvent;
   const course = new SpireCourse([], [movement, combat]);
@@ -73,4 +74,27 @@ test("at a spire the page's movement and the room's fight both stop a body runni
   for (let tick = 0; tick < 90; tick++)
     free = movement.step(free, { forward: 1, sideways: 0, yaw, run: true, jump: false, crouch: false, mounted: false });
   assert.ok(free.x > spire.maxX, 'once it is over, the spires are gone');
+});
+
+test("the spires stand at the event's ground as the room keeps it, to the bit, and go once the room is lost", () => {
+  const set: (readonly unknown[])[] = [];
+  const course = new SpireCourse([], [{ setCourse: (blocks) => void set.push(blocks) }]);
+  // The room's ground in f64; the mark carries it in f32.
+  const ground = [500.123456789, 300.987654321, 0] as const;
+  const fissure = {
+    kind: PUBLIC_KIND.fissure,
+    phase: 1,
+    ground,
+    marks: [
+      { kind: MARK.fissure, id: 0, at: [Math.fround(ground[0]), Math.fround(ground[1]), 0], health: 1, state: 0 },
+    ],
+  } as unknown as PublicEvent;
+  course.frame(fissure, () => 0);
+  assert.deepEqual(
+    set.at(-1),
+    spireBlocks(ground[0], ground[1], () => 0),
+  );
+  course.frame(null, () => 0);
+  assert.deepEqual(set.at(-1), [], 'a room lost leaves no spire standing');
+  assert.equal(set.length, 2);
 });

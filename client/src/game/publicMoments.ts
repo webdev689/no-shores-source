@@ -102,7 +102,8 @@ export class PublicMoments {
   private readonly chestsSeen = new Map<number, number>();
 
   /** The moments at `clock` of `event` (its `events` since the last frame, none for a frame back from a hidden tab),
-   *  heard by a player at `feet`; `where` finds a fighter as drawn, `chests` are the player's lying. */
+   *  heard by a player at `feet`; `where` finds a fighter as drawn, `chests` are the player's lying, each counted down
+   *  on the wall's seconds (`wall`), as the room counts it. */
   frame(
     event: PublicEvent | null,
     events: readonly FightEvent[],
@@ -110,6 +111,7 @@ export class PublicMoments {
     where: (id: number) => Point | null,
     chests: readonly ChestLike[],
     clock: number,
+    wall: number,
   ): Moments {
     // A frame with no event (before the room's first word, or while it is lost) keeps all as it was: on its return
     // no chest thumps in again and none of its time is counted afresh.
@@ -150,7 +152,7 @@ export class PublicMoments {
         tremor = Math.max(tremor, fade(TREMORS.sealed, fissure, feet));
         this.shockAt = { at: fissure, clock };
       } else if (each.kind === EVENT.publicWon && event?.kind === PUBLIC_KIND.raid) {
-        sounds.push({ cue: 'amb.social.crowd', at: event.ground });
+        sounds.push({ cue: 'story.flash', at: event.ground });
       } else if (each.kind === EVENT.publicFailed && event?.kind === PUBLIC_KIND.raid) {
         sounds.push({ cue: 'story.crash', at: event.ground });
       }
@@ -184,10 +186,10 @@ export class PublicMoments {
     const chestsLeft = new Map<number, number>();
     for (const chest of chests) {
       if (!this.chestsSeen.has(chest.id)) {
-        this.chestsSeen.set(chest.id, clock);
+        this.chestsSeen.set(chest.id, wall);
         if (!first) sounds.push({ cue: 'drop.land', at: chest.at });
       }
-      chestsLeft.set(chest.id, CHEST_LIES_S - (clock - (this.chestsSeen.get(chest.id) ?? clock)));
+      chestsLeft.set(chest.id, CHEST_LIES_S - (wall - (this.chestsSeen.get(chest.id) ?? wall)));
     }
     for (const id of this.chestsSeen.keys()) if (!chests.some((chest) => chest.id === id)) this.chestsSeen.delete(id);
     const flareNow = this.flares.reduce(

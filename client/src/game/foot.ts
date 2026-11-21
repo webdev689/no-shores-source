@@ -422,7 +422,10 @@ export class Foot {
     const feet = [body.x, body.y, body.z] as const;
     const others = this.otherPlayers.placed;
     const seen = { player: fight.player, shot, firstPerson, feet, yaw: walker.player.facing, where, others };
-    const shownPublic = this.publicView.frame(fight.public, publicEvents, chests, seen, clock, dropped.marks, floor);
+    const shownPublic = this.publicView.frame(fight.public, publicEvents, chests, seen, clock, dropped.marks, floor, {
+      quiet: paused,
+      held: fight.publicHeld,
+    });
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,
       blocks: this.boxes,
@@ -513,7 +516,7 @@ export class Foot {
   /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
    *  each came to rest this frame; a Rare or finer chimes as it comes to rest. */
   private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]) {
-    const drops = (this.gearHeld.gear?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
+    const drops = (this.gear?.gear?.drops ?? []).filter((drop) => drop.kind !== DROPPED.chest);
     const shown = this.drops.frame(drops, clock, eye, out);
     const rarest = Math.max(-1, ...shown.rested);
     if (rarest >= 2) chime(rarest);

@@ -15,6 +15,8 @@ export interface Step {
   readonly keys?: readonly string[];
   readonly count?: number;
   readonly done?: boolean;
+  /** A clock ticking beside the words, drawn but never said aloud, so a screen reader hears no second go by. */
+  readonly clock?: string;
 }
 
 /** A quest as the tracker shows it: its name, the task now, and that task's steps. */
@@ -46,6 +48,7 @@ export function sameQuest(one: Quest | null, other: Quest | null): boolean {
       that !== undefined &&
       step.text === that.text &&
       step.count === that.count &&
+      step.clock === that.clock &&
       Boolean(step.done) === Boolean(that.done) &&
       keys.length === thoseKeys.length &&
       keys.every((key, place) => key === thoseKeys[place])
@@ -155,7 +158,10 @@ function stepNode(step: Step, size: number, flash: number): Node {
       step.done
         ? { width: box, height: box, fill: TONES.brass, draw: edged(BRASS_EDGE) }
         : { width: box, height: box, role: 'well', bevel: 1 },
-      { padding: [0, 2, 0, 0], children: [{ text: { words: step.text, size, colour } }] },
+      {
+        padding: [0, 2, 0, 0],
+        children: [{ text: { words: step.clock ? `${step.text} (${step.clock})` : step.text, size, colour } }],
+      },
       ...(step.keys ?? []).map((key) => keycap(key, size)),
       step.count !== undefined && { width: 'grow' },
       step.count !== undefined && { text: { words: String(step.count), size: 2, colour: TONES.brassHi, wrap: false } },
