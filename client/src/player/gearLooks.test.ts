@@ -67,6 +67,30 @@ const wardrobe: Wardrobe = {
   left: ['shield_iron'],
   hairStyles: ['crop'],
 };
+/** A wardrobe that draws every set of the ladder for every piece, but chain's pauldrons, as the forge does. */
+const finest = [
+  'leather',
+  'thieves',
+  'chain',
+  'iron',
+  'steel',
+  'knights',
+  'silver',
+  'elven',
+  'dwarven',
+  'orcish',
+].concat(['mithril', 'adamantium', 'ebony', 'daedric']);
+const every: Wardrobe = {
+  ...wardrobe,
+  sets: {
+    helm: finest,
+    pauldrons: finest.filter((set) => set !== 'chain'),
+    cuirass: finest,
+    gauntlets: finest,
+    greaves: finest,
+    boots: finest,
+  },
+};
 const plain: Outfit = {
   armour: { cuirass: 'iron' },
   garments: ['shirt_long_v'],
@@ -99,12 +123,12 @@ test("the spare outfit holds the other loadout's weapon, or is none with no weap
   assert.equal(spareOutfit(kit, wardrobe, plain, MELEE), null, 'the sword drawn: no Ranged worn');
 });
 
-test('a Rare or finer piece is an armour set, the rarer the finer; Magic is tunic, leather and boots', () => {
+test('a Rare or finer piece is an armour set; a Magic one light armour or clothes by its number', () => {
   const dressed = gearOutfit(
     state([
       item({ id: 1, kind: 14, rarity: 2, at: 5, name: 1 }),
-      item({ id: 2, kind: 16, rarity: 3, at: 7, named: 'tidebreaker_greaves' }),
-      item({ id: 3, kind: 13, rarity: 1, at: 4 }),
+      item({ id: 2, kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves', level: 20 }),
+      item({ id: 2, kind: 13, rarity: 1, at: 4 }),
       item({ id: 4, kind: 15, rarity: 1, at: 6 }),
       item({ id: 5, kind: 17, rarity: 3, at: 8 }),
     ]),
@@ -121,26 +145,27 @@ test('a Rare or finer piece is an armour set, the rarer the finer; Magic is tuni
   });
   assert.deepEqual(dressed.garments, ['formal_cloak']);
   assert.equal(dressed.dyes['formal_cloak'], 'Red');
-  const magic = gearOutfit(state([item({ kind: 14, rarity: 1, at: 5, name: 1 })]), wardrobe, plain);
-  assert.deepEqual(magic.garments, ['shirt_long_v', 'vest']);
+  const magic = gearOutfit(state([item({ id: 3, kind: 14, rarity: 1, at: 5, name: 1 })]), wardrobe, plain);
+  assert.deepEqual(magic.garments, ['shirt_long_v', 'vest'], 'a Magic torso numbered for clothes');
   assert.equal(magic.dyes['vest'], 'Aquamarine', 'each item keeps its own look by its name');
+  const light = gearOutfit(state([item({ id: 4, kind: 14, rarity: 1, at: 5 })]), wardrobe, plain);
+  assert.deepEqual([light.armour.cuirass, light.garments], ['leather', []], 'one numbered for leather');
 });
 
-test('a rolled Rare piece wears a set by its own number, or by its name before it has one; a named piece its own', () => {
-  const torso = (fields: Partial<GearItem>) =>
-    gearOutfit(state([item({ kind: 14, rarity: 2, at: 5, ...fields })]), wardrobe, plain).armour.cuirass;
-  // The wardrobe draws chain, iron, steel and knights of the Rare sets, in the rarity's order.
+test('a rolled Rare piece climbs the sets with its level and spreads by its name', () => {
+  const worn = (fields: Partial<GearItem>) =>
+    gearOutfit(state([item({ kind: 14, rarity: 2, at: 5, ...fields })]), every, plain).armour;
   assert.deepEqual(
-    [0, 1, 2, 3, 4].map((id) => torso({ id, name: 2 })),
-    ['steel', 'iron', 'steel', 'knights', 'chain'],
-    "by its number; a smith's ware, numbered 0, by its name",
+    [0, 1, 2].map((name) => worn({ name, level: 1 }).cuirass),
+    ['chain', 'iron', 'steel'],
   );
-  assert.equal(torso({ id: 7, name: 0 }), torso({ id: 7, name: 1 }), 'the same piece always the same set');
-  const named = gearOutfit(
-    state([item({ kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves' })]),
-    { ...wardrobe, sets: { ...wardrobe.sets, greaves: [...sets, 'dwarven'], boots: [...sets, 'dwarven'] } },
-    plain,
+  assert.deepEqual(
+    [0, 1, 2].map((name) => worn({ name, level: 20 }).cuirass),
+    ['adamantium', 'ebony', 'daedric'],
   );
+  assert.deepEqual(worn({ name: 0 }), { cuirass: 'chain' }, 'chain has no pauldrons: its cuirass alone');
+  assert.deepEqual(worn({ id: 7 }), worn({ id: 8 }), 'its number does not move it');
+  const named = gearOutfit(state([item({ kind: 16, rarity: 3, at: 7, named: 'tithebreaker_greaves' })]), every, plain);
   assert.deepEqual([named.armour.greaves, named.armour.boots], ['dwarven', 'dwarven'], 'its own look, dwarven');
 });
 
@@ -190,7 +215,7 @@ test("a faction's armour is its faction's own set, each of its layers named for 
   assert.deepEqual([dressed.armour.cuirass, dressed.armour.pauldrons], ['mages', 'mages']);
   assert.deepEqual([dressed.dyes['cuirass_mages'], dressed.dyes['pauldrons_mages']], ['lamplighters', 'lamplighters']);
   assert.equal(dressed.dyes['under_mages'], 'lamplighters', 'the padding under the cuirass too');
-  assert.equal(dressed.armour.helm, 'knights', "a piece of no faction keeps its rarity's set");
+  assert.equal(dressed.armour.helm, 'knights', 'a piece of no faction keeps its own set, or the nearest drawn');
   assert.equal(Object.values(dressed.dyes).filter((dye) => dye === 'lamplighters').length, 3, 'the helm takes none');
 });
 

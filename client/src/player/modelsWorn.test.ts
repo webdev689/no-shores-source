@@ -19,8 +19,9 @@ const wardrobe = wardrobeOf('male', layers);
 
 const plain: Outfit = { armour: {}, garments: [], dyes: {}, right: null, left: null, drawn: true, hair: null };
 const RARITIES = ['normal', 'magic', 'rare'] as const;
-/** A spread of item numbers, enough to turn every choice a number makes (up to seven sets). */
-const NUMBERS = Array.from({ length: 14 }, (unused, place) => place + 1);
+/** A spread of item numbers, enough to turn every choice a number makes (up to three), and every level. */
+const NUMBERS = Array.from({ length: 6 }, (unused, place) => place + 1);
+const LEVELS = Array.from({ length: 20 }, (unused, place) => place + 1);
 
 /** The forge's weapon and armour layers: the weapons a hand holds, and each armour piece in any set. */
 const WEAPON_OR_ARMOUR =
@@ -31,32 +32,31 @@ const LEFT_OUT: readonly { readonly layers: RegExp; readonly why: string }[] = [
   { layers: /^(sword|sword_l|axe|bow|staff|helm|cuirass|pauldrons|boots)$/, why: "a class's own, no item's" },
   { layers: /^helm_dark$/, why: "the archer class's helm, of no set" },
   { layers: /^boots_laced$/, why: 'a garment, not armour' },
-  {
-    layers: /_(mithril|adamantium|ebony|orcish|daedric)(_l)?$/,
-    why: 'the finest metals are worn by named pieces alone, each its own: a kind no named piece wears in one is unworn',
-  },
-  { layers: /^(cuirass|pauldrons|greaves|boots)_leather$/, why: 'a Magic torso or legs piece is clothes, not leather' },
-  { layers: /^cuirass_chain$/, why: 'the forge draws no chain pauldrons, so no torso is chain' },
-  { layers: /^shield_[a-z]+_iron$/, why: 'a Normal shield is plain, a Magic one steel' },
-  { layers: /^bow_short_iron$/, why: 'a Normal bow has one name, which is long' },
-  { layers: /^bow_short_(silver|dwarven)$/, why: "the Rare bows' three names make silver and dwarven long" },
-  { layers: /^shield_tower_(plain|steel|silver|elven)$/, why: 'a rolled shield is never a tower; Seawall alone is' },
-  { layers: /^pistolet_gilded_l$/, why: 'no double pistolet is gilded' },
 ];
+/** A gilded double pistolet's left gun is worn only by a named gilded double pistolet: until the catalogue holds one,
+ *  none wears it. */
+const GILDED_PAIR = items.items.some(
+  (each) =>
+    each.kind === 'double_pistolet' &&
+    ('look' in each ? each.look === 'gilded' : each.rarity === 'legendary' || each.rarity === 'atheric'),
+);
 
 /** Every weapon and armour item the game can hold: each named piece, and each rolled kind at each rarity a Vestige or
- *  a smith rolls it at, under each of its names and a spread of numbers. */
+ *  a smith rolls it at, under each of its names, a spread of numbers and every level. */
 function held() {
   const named = items.items.map((each) => ({
     kind: KINDS.indexOf(each.kind as never),
     named: each.id,
     id: 1,
     name: 0,
+    level: 20,
   }));
   const rolls = Object.entries(rolled.names).flatMap(([kind, names]) =>
     RARITIES.flatMap((rarity, number) =>
       (names as Record<string, readonly string[]>)[rarity]!.flatMap((unused, name) =>
-        NUMBERS.map((id) => ({ kind: KINDS.indexOf(kind as never), rarity: number, name, id })),
+        NUMBERS.flatMap((id) =>
+          LEVELS.map((level) => ({ kind: KINDS.indexOf(kind as never), rarity: number, name, id, level })),
+        ),
       ),
     ),
   );
@@ -84,7 +84,9 @@ function layersOf(fields: Partial<GearItem> & { readonly kind: number }): string
 test('every weapon and armour layer the forge draws is worn by some item the game can hold', () => {
   const worn = new Set(held().flatMap(layersOf));
   const forge = Object.keys(layers).filter((layer) => WEAPON_OR_ARMOUR.test(layer));
-  const unworn = forge.filter((layer) => !worn.has(layer) && !LEFT_OUT.some((left) => left.layers.test(layer)));
+  const unworn = forge
+    .filter((layer) => !worn.has(layer) && !LEFT_OUT.some((left) => left.layers.test(layer)))
+    .filter((layer) => GILDED_PAIR || layer !== 'pistolet_gilded_l');
   assert.deepEqual(unworn.sort(), [], 'layers no item wears');
 });
 

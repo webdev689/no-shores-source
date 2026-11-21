@@ -93,13 +93,13 @@ test('an item is named as the catalogue names it', () => {
 
 test('the hands hold the drawn loadout in its look, or the nearest metal the forge draws', () => {
   const hands = (right: string | null, left: string | null, grip: 'hilt' | null = null) => ({ right, left, grip });
-  const shielded = item({ id: 1, kind: 12, rarity: 1, at: 2 });
+  const shielded = item({ id: 3, kind: 12, rarity: 1, at: 2 });
   const brace = item({ id: 2, kind: 23, at: 3 });
   const worn = state([shielded, brace]);
   assert.deepEqual(gearHands(worn, WARDROBE), hands('sword_steel', 'shield_kite_steel'), 'Melee, drawn by default');
   assert.deepEqual(gearHands(worn, WARDROBE, 1), hands('pistolet', 'pistolet_l'), 'Ranged, a plain pistolet each');
-  const atheric = item({ id: 3, kind: 2, rarity: 4, at: 2 });
-  assert.deepEqual(gearHands(state([atheric]), WARDROBE), hands('sword_ebony', null), 'daedric undrawn: ebony');
+  const finest = item({ id: 3, kind: 2, rarity: 2, level: 20, at: 2 });
+  assert.deepEqual(gearHands(state([finest]), WARDROBE), hands('sword_ebony', null), 'adamantium undrawn: ebony');
   const gilded = item({ id: 4, kind: 23, rarity: 3, at: 3 });
   assert.deepEqual(gearHands(state([gilded]), WARDROBE, 1), hands('pistolet_gilded', 'pistolet_gilded_l'), 'gilded');
   const pair = item({ id: 5, kind: 1, at: 2 });
@@ -146,7 +146,7 @@ test('the drawn loadout glows in its element: both hands for a pair, the right a
   assert.deepEqual(heldElements(null, 0), [0, 0]);
 });
 
-test("a weapon's look: a named piece's as written, a rolled one's by its rarity and name", () => {
+test("a weapon's look: a named piece's as written; a rolled one climbs with its level, its make by its number", () => {
   const look = (fields: Partial<GearItem>) => weaponLook(item({ kind: 2, ...fields }));
   assert.deepEqual(look({ named: 'seawall', kind: 12, rarity: 3 }), {
     metal: 'dwarven',
@@ -160,27 +160,23 @@ test("a weapon's look: a named piece's as written, a rolled one's by its rarity 
     { metal: 'elven', shield: 'elven', make: 'long' },
     'its faction',
   );
+  const metals = (rarity: number, level: number) =>
+    [0, 1, 2].map((name) => look({ rarity, level, name }).metal).join(' ');
   assert.deepEqual(
-    [0, 1, 2].map((rarity) => look({ rarity }).metal),
-    ['iron', 'steel', 'silver'],
+    [metals(0, 1), metals(0, 10), metals(0, 11)],
+    ['iron iron iron', 'iron iron iron', 'steel steel steel'],
   );
+  assert.deepEqual([metals(1, 1), metals(1, 20)], ['steel silver elven', 'elven dwarven orcish']);
+  assert.deepEqual([metals(2, 1), metals(2, 20)], ['elven dwarven orcish', 'adamantium ebony daedric']);
+  const makes = (kind: number) => [1, 2, 3].map((id) => look({ kind, rarity: 1, id }).make).join(' ');
   assert.deepEqual(
-    [0, 1, 2, 3].map((name) => look({ rarity: 2, name }).metal),
-    ['silver', 'elven', 'dwarven', 'silver'],
+    [makes(12), makes(18), makes(21), makes(8)],
+    ['round tower kite', 'round kite buckler', 'kite tower round', 'short long short'],
   );
-  assert.deepEqual(look({ kind: 12 }), { metal: 'iron', shield: 'plain', make: 'kite' }, 'a Normal shield plain');
-  assert.deepEqual(
-    [0, 1].map((name) => look({ kind: 18, rarity: 1, name }).make),
-    ['buckler', 'round'],
-  );
-  assert.deepEqual(
-    [0, 1].map((name) => look({ kind: 21, rarity: 1, name }).make),
-    ['round', 'kite'],
-  );
-  assert.deepEqual(
-    [0, 1].map((name) => look({ kind: 8, rarity: 1, name }).make),
-    ['long', 'short'],
-  );
+  assert.equal(look({ kind: 12, id: 3, name: 1 }).make, 'kite', 'by its number, not its name');
+  assert.equal(look({ kind: 12, id: 0, name: 1 }).make, 'round', "a smith's ware, numbered 0, by its name");
+  const shields = [1, 2].map((id) => look({ kind: 12, id }).shield);
+  assert.deepEqual([...shields, look({ kind: 12, level: 11 }).shield], ['iron', 'plain', 'steel'], 'a Normal shield');
   assert.deepEqual(
     [2, 3].map((rarity) => look({ kind: 11, rarity }).metal),
     ['plain', 'gilded'],

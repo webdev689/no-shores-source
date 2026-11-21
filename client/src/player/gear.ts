@@ -264,24 +264,23 @@ export function heldElements(state: GearState | null, loadout: number): readonly
   return [look, KINDS[item?.kind ?? 0]?.startsWith('double_') ? look : 0];
 }
 
-/** The metals a rolled weapon is drawn in by rarity, one by its name: Normal iron, Magic steel, Rare silver, elven or
- *  dwarven. A Legendary or Atheric is named and wears its own look; one without takes its rarity's here. */
-const METALS: readonly (readonly string[])[] = [
-  ['iron'],
-  ['steel'],
-  ['silver', 'elven', 'dwarven'],
-  ['mithril'],
-  ['daedric'],
-];
-/** The forge's metals by their worth: a metal the forge does not draw for a kind falls to the nearest one it does. */
+/** The forge's metals by their worth: a rolled weapon climbs it (`rung`), and a metal the forge does not draw for a
+ *  kind falls to the nearest one it does. */
 const WORTH = ['iron', 'steel', 'silver', 'elven', 'dwarven', 'orcish', 'mithril', 'adamantium', 'ebony', 'daedric'];
-/** A rolled shield's kinds by the weapon it is carried with, one by its name. */
+/** A rolled weapon's place on the metals: where its rarity starts, how far it climbs over levels 1 to 20, and how many
+ *  rungs its names spread it over (Normal iron to level 10 and steel past it, Magic steel to orcish, Rare elven to
+ *  daedric). A Legendary or Atheric is named, so one without a look of its own climbs as Rare does. */
+const METALS = [
+  { start: 0, climb: 1, spread: 1 },
+  { start: 1, climb: 2, spread: 3 },
+  { start: 3, climb: 4, spread: 3 },
+] as const;
+/** A rolled shield's kinds by the weapon it is carried with, one by its number. */
 const SHIELDS: Readonly<Record<string, readonly string[]>> = {
-  sword_and_shield: ['kite', 'round'],
-  dagger_and_shield: ['buckler', 'round'],
-  mace_and_shield: ['round', 'kite'],
+  sword_and_shield: ['kite', 'round', 'tower'],
+  dagger_and_shield: ['buckler', 'round', 'kite'],
+  mace_and_shield: ['round', 'kite', 'tower'],
 };
-const BOWS = ['long', 'short'];
 /** Each named item's look and make as `content/gear/items.json` writes them, by its id. */
 const WRITTEN: ReadonlyMap<string, { readonly look?: string; readonly make?: string }> = new Map(
   items.items.map((each) => [
@@ -289,37 +288,54 @@ const WRITTEN: ReadonlyMap<string, { readonly look?: string; readonly make?: str
     { ...('look' in each ? { look: each.look } : {}), ...('make' in each ? { make: each.make } : {}) },
   ]),
 );
+/** A rolled item's rung on a ladder of looks: `start`, climbing `climb` rungs over levels 1 to 20 (rounded, so a
+ *  climb of one is reached past level 10), and spread over `spread` rungs by its name. */
+export const rung = (item: GearItem, start: number, climb: number, spread: number): number =>
+  start + Math.round(((Math.min(Math.max(item.level, 1), 20) - 1) * climb) / 19) + (item.name % spread);
+
+/** The item's own number for a choice its name does not make: its name while it has none (a smith's ware), and a
+ *  named piece's name, so a faction's piece always shows one make. */
+export const numberOf = (item: GearItem): number => (item.named ? item.name : item.id || item.name);
+
+/** The ladder sorted nearest first from rung `from`, the lesser first at one distance. */
+export const nearest = (ladder: readonly string[], from: number): readonly string[] =>
+  [...ladder].sort((a, b) => Math.abs(ladder.indexOf(a) - from) - Math.abs(ladder.indexOf(b) - from));
+
 /** A named item's look and make as written on it, if it is named and has them. */
 export const writtenLook = (item: GearItem): { readonly look?: string; readonly make?: string } | undefined =>
   WRITTEN.get(item.named ?? '');
 
-/** A weapon's look: its metal (a gun's `gilded` or `plain`), its shield's metal, and its make where the forge draws more
- *  than one (a shield's kind, a bow's, a short sword). A faction's metal (`own`) comes first, then a named item's own
- *  look, then a rolled one's by its rarity and its name. */
+/** A weapon's look: its metal (a gun's `gilded` or `plain`), its shield's metal, and its make where the forge draws
+ *  more than one (a shield's kind, a bow's, a short sword). A faction's metal (`own`) comes first, then a named item's
+ *  own look, then a rolled one's: its metal by its rarity, level and name (`rung`), its make by its number. */
 export function weaponLook(
   item: GearItem,
   own?: string,
 ): { readonly metal: string; readonly shield: string; readonly make: string | null } {
   const kind = KINDS[item.kind] ?? '';
   const written = writtenLook(item);
-  const spread = (choices: readonly string[]) => choices[item.name % choices.length] ?? '';
+  const number = numberOf(item);
+  const chosen = (choices: readonly string[]) => choices[number % choices.length] ?? null;
   const gun = kind === 'pistolet' || kind === 'double_pistolet' || kind === 'thunderlock';
-  const rolled = gun ? (item.rarity >= 3 ? 'gilded' : 'plain') : spread(METALS[item.rarity] ?? []);
+  const ladder = METALS[Math.min(item.rarity, 2)] ?? METALS[0];
+  const rolled = gun
+    ? item.rarity >= 3
+      ? 'gilded'
+      : 'plain'
+    : (WORTH[rung(item, ladder.start, ladder.climb, ladder.spread)] ?? 'iron');
   const metal = own ?? written?.look ?? rolled;
   const shields = SHIELDS[kind];
-  const make = written?.make ?? (shields ? spread(shields) : kind === 'bow' ? spread(BOWS) : null);
-  return { metal, shield: item.rarity === 0 ? 'plain' : metal, make };
+  const make = written?.make ?? (shields ? chosen(shields) : kind === 'bow' ? chosen(['long', 'short']) : null);
+  // A Normal shield is plain or iron to level 10, its weapon's metal past it.
+  const shield = item.rarity === 0 && item.level <= 10 ? (chosen(['plain', 'iron']) ?? 'plain') : metal;
+  return { metal, shield, make };
 }
 
 /** The forge layer a weapon or shield of this kind is drawn with, among those a hand of the wardrobe takes: in its make
  *  and metal, else the nearest metal the forge draws it in, else the first of its kind. */
 function layerFor(choices: readonly string[], kind: string, make: string | null, metal: string, left: boolean) {
   const worth = WORTH.indexOf(metal);
-  // The metal itself, then the nearest by worth, the lesser first at one distance.
-  const metals =
-    worth < 0
-      ? [metal]
-      : [...WORTH].sort((a, b) => Math.abs(WORTH.indexOf(a) - worth) - Math.abs(WORTH.indexOf(b) - worth));
+  const metals = worth < 0 ? [metal] : nearest(WORTH, worth);
   const end = left ? '_l' : '';
   for (const each of metals) {
     // The forge names a short sword after its metal (`sword_orcish_short`), a bow's or a shield's make before it.
