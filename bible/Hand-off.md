@@ -426,9 +426,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
 - **#97 once #88 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
   merge; then play the Journal and the board in a deployed room (tested live): take a bounty, count it, turn it in,
-  and drop the timers with T; and picture the board on the hub's landing. Known, small: the Journal shows a sea
-  bounty's count only once the player is ashore (it reads the foot's gear), and before any gear has come a tier's
-  seas show open, the server still refusing them.
+  and drop the timers with T; sink a ship for a sea bounty and watch its count in the Journal at sea; and picture
+  the board on the hub's landing. Known, small: before any gear has come a tier's seas show open, the server still
+  refusing them.
 - **#122 once #97 is in and the owner says yes**: the owner creates `R2_TOKEN` first, or the asset workflows publish
   nothing; then retarget, merge main in, check and merge, and play an arrival of each kind in the deployed rooms
   (tested live): a landing, a gate, a dungeon and back out at its entrance, a company join, and one refused.
