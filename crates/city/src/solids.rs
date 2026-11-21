@@ -43,6 +43,8 @@ pub enum Material {
     Timber,
     Plaster,
     Paving,
+    /// A walk's dressed flagstones, laid over a court's paving so the way reads apart from the ground.
+    Path,
     Gold,
     Iron,
     Bone,

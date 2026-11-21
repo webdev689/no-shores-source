@@ -156,7 +156,7 @@ pub fn boxes_of(layout: &Layout, book: &Book) -> Vec<Box3> {
         boxes.push([west, north, east, south, prop.at[2] + measure.max[1], prop.at[2] + measure.min[1]]);
     }
     for solid in &layout.seating.solids {
-        if solid.material == Material::Paving || solid.size[2] < STEPPED_OVER_M {
+        if matches!(solid.material, Material::Paving | Material::Path) || solid.size[2] < STEPPED_OVER_M {
             continue;
         }
         let [west, north, east, south, bottom, top] = solid.bounds();

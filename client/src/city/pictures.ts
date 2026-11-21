@@ -70,6 +70,7 @@ const MATERIALS: Readonly<Record<Climate, Readonly<Record<Pictured, Choice>>>> =
     timber: [364, 1, 'wall'],
     plaster: [312, 1, 'wall'],
     paving: [324, 2, 'slope', [1.85, 1.75, 1.55]],
+    path: [324, 3, 'floor', [2.0, 1.92, 1.72]],
   },
   desert: {
     stone: [9, 1, 'wall', [1.12, 1.12, 1.1]],
@@ -78,6 +79,7 @@ const MATERIALS: Readonly<Record<Climate, Readonly<Record<Pictured, Choice>>>> =
     timber: [67, 0, 'prop'],
     plaster: [38, 1, 'wall'],
     paving: [17, 1, 'wall', [1.25, 1.2, 1.15]],
+    path: [324, 3, 'floor', [2.1, 1.95, 1.65]],
   },
   mountain: {
     stone: [109, 1, 'wall', [1.4, 1.4, 1.36]],
@@ -86,6 +88,7 @@ const MATERIALS: Readonly<Record<Climate, Readonly<Record<Pictured, Choice>>>> =
     timber: [67, 0, 'prop'],
     plaster: [126, 1, 'wall'],
     paving: [323, 2, 'floor', [1.5, 1.5, 1.45]],
+    path: [324, 3, 'floor', [1.8, 1.8, 1.75]],
   },
   swamp: {
     stone: [458, 1, 'wall', [1.35, 1.38, 1.3]],
@@ -94,6 +97,7 @@ const MATERIALS: Readonly<Record<Climate, Readonly<Record<Pictured, Choice>>>> =
     timber: [426, 1, 'wall'],
     plaster: [442, 1, 'wall'],
     paving: [324, 2, 'slope', [1.4, 1.42, 1.35]],
+    path: [324, 3, 'floor', [1.6, 1.62, 1.5]],
   },
 };
 

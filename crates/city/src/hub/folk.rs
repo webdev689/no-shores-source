@@ -272,6 +272,15 @@ fn bearing_of(direction: [f64; 2]) -> f64 {
     libm::atan2(direction[0], -direction[1])
 }
 
+/// The ways' links laid as walks over the platform's own floor, each end as metres seaward of the plaza's middle and
+/// across it: every link but those up onto the portico's podium and into the Hall, which have floors of their own.
+pub(crate) fn platform_links() -> Vec<[[f64; 2]; 2]> {
+    let on_platform = |point: &&(&str, &str, f64, f64)| !(point.3 < -98.0 && point.2.abs() < 60.0);
+    let place =
+        |id: &str| POINTS.iter().find(|point| point.0 == id).filter(on_platform).map(|point| [point.3, point.2]);
+    LINKS.iter().filter_map(|&(one, two)| Some([place(one)?, place(two)?])).collect()
+}
+
 /// The ways and posts: the authored network, the posts above, each stall's customer before its counter and each
 /// market stall's keeper, the views over the parapet, and the smiths and the band at their modules' sockets.
 #[must_use]

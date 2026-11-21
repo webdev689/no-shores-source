@@ -1,114 +1,141 @@
-//! What fills the hub's courts, after the owner's "It should feel lively, there shouldnt be so much bare ground.
-//! Populate everything": each court's own pieces laid over its open ground on a seeded scatter, each turned to face
-//! the way nearest it and kept clear of every way, post, arrival and counter, of what already stands and of the
-//! ring's edge; then a place for the walkers at each bench, table, tree, stall and pile, reached straight from the
-//! nearest way point that sees it.
+//! What fills the hub's courts, each piece where it would be and why, after the owner's "It should feel lively, there
+//! shouldnt be so much bare ground. Populate everything", then "Its way too crowded. Like it needs to make sense with
+//! object placement. It needs to tell a story, and the pathway needs to be a different texture from the ground". The
+//! ways are laid as flagstone walks over the courts' cobbles; each court is a scene of its own (a landing under an
+//! avenue of trees, a garden round its fountain with the band's drinkers, the smiths' yard, a market lane, the stable's
+//! stores), each piece kept clear of every way, post, arrival and counter, of what already stands and of the ring's
+//! edge, or left out; then a place for the walkers at each bench, table, tree, stall and pile, reached straight from
+//! the nearest way point that sees it.
 
 use super::Laid;
 use super::placing::{Stood, stand_at};
 use crate::collision::{Box2, into_boxes};
 use crate::courtyard::Frame;
+use crate::landmarks::turn_toward;
 use crate::life::{CLEAR_M, Keep, Post, Task, Ways};
 use crate::modules::{all, number_of};
-use crate::solids::Material;
+use crate::solids::{Material, Shape, Solid};
 
-/// A court's open ground (metres seaward of the plaza's middle from and to, and across it from and to), how far apart
-/// its pieces are scattered, metres, and what stands there, each with how often; then the small pieces scattered at
-/// half that between them.
-struct Court {
-    toward: [f64; 2],
-    across: [f64; 2],
-    apart: f64,
-    pieces: &'static [(&'static str, u32)],
-    fill: &'static [(&'static str, u32)],
+/// How a piece is turned: its front to the way nearest it, or toward a place (metres seaward, across).
+#[derive(Clone, Copy)]
+enum Faces {
+    Way,
+    Toward(f64, f64),
 }
 
-/// The small pieces that fill between a garden court's larger ones, and between a working court's.
-const GARDEN_FILL: &[(&str, u32)] = &[("bench", 3), ("planter", 3), ("potted-tree", 3), ("lamp-post", 1)];
-const WORK_FILL: &[(&str, u32)] = &[("sacks-grain", 3), ("crates-barrels", 3), ("amphorae", 1), ("lamp-post", 1)];
-const MARKET_FILL: &[(&str, u32)] =
-    &[("flower-cart", 1), ("sacks-grain", 2), ("amphorae", 2), ("crates-barrels", 2), ("potted-tree", 1)];
+/// A piece of a scene: its module, where it stands (metres seaward of the plaza's middle, and across it), and how it
+/// is turned.
+#[derive(Clone, Copy)]
+struct Placing {
+    name: &'static str,
+    toward: f64,
+    across: f64,
+    faces: Faces,
+}
 
-const COURTS: [Court; 5] = [
-    // The Watch Court: shade, green and seats round the obelisk.
-    Court {
-        toward: [-50.0, 46.0],
-        across: [-50.0, 50.0],
-        apart: 11.0,
-        pieces: &[
-            ("court-tree", 3),
-            ("lawn-bed", 3),
-            ("bench", 2),
-            ("planter", 2),
-            ("potted-tree", 2),
-            ("flower-cart", 1),
-            ("parasol-table", 1),
-        ],
-        fill: GARDEN_FILL,
-    },
-    // The West Court: a garden and its tables, round the fountain and the band.
-    Court {
-        toward: [-52.0, 46.0],
-        across: [-150.0, -66.0],
-        apart: 10.0,
-        pieces: &[
-            ("court-tree", 3),
-            ("lawn-bed", 3),
-            ("parasol-table", 3),
-            ("table-benches", 2),
-            ("bench", 2),
-            ("potted-tree", 2),
-            ("flower-cart", 1),
-        ],
-        fill: GARDEN_FILL,
-    },
-    // The Forge Yard: the smiths' stores and their work.
-    Court {
-        toward: [-52.0, 46.0],
-        across: [66.0, 150.0],
-        apart: 9.0,
-        pieces: &[
-            ("woodpile", 3),
-            ("barrel-stack", 3),
-            ("crates-barrels", 3),
-            ("bale-stack", 2),
-            ("hay-cart", 2),
-            ("cart", 2),
-            ("sacks-grain", 2),
-            ("table-benches", 1),
-        ],
-        fill: WORK_FILL,
-    },
-    // The Beacon Walk's market, either side of the portico.
-    Court {
-        toward: [-104.0, -56.0],
-        across: [-150.0, 150.0],
-        apart: 9.0,
-        pieces: &[
-            ("market-stall-cloth", 3),
-            ("market-stall-bread", 3),
-            ("market-stall-flowers", 3),
-            ("market-stall-fruit", 2),
-            ("market-stall-fish", 1),
-            ("market-stall-pots", 1),
-            ("parasol-table", 2),
-            ("flower-cart", 1),
-            ("cart", 1),
-            ("amphorae", 1),
-            ("sacks-grain", 1),
-            ("crates-barrels", 1),
-        ],
-        fill: MARKET_FILL,
-    },
-    // The Stair Yard round the base's east side, by the stable.
-    Court {
-        toward: [-150.0, -106.0],
-        across: [96.0, 150.0],
-        apart: 9.0,
-        pieces: &[("bale-stack", 3), ("hay-cart", 2), ("barrel-stack", 2), ("crates-barrels", 2), ("sacks-grain", 1)],
-        fill: WORK_FILL,
-    },
+const fn at(name: &'static str, toward: f64, across: f64, faces: Faces) -> Placing {
+    Placing { name, toward, across, faces }
+}
+
+/// `count` of a piece evenly from one place to another, each facing the way nearest it.
+fn line(name: &'static str, from: [f64; 2], to: [f64; 2], count: u32) -> impl Iterator<Item = Placing> {
+    (0..count).map(move |nth| {
+        let share = if count > 1 { f64::from(nth) / f64::from(count - 1) } else { 0.5 };
+        at(name, from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share, Faces::Way)
+    })
+}
+
+/// `count` of a piece round a place, `radius` out, from `first` degrees, each facing it.
+fn ring(name: &'static str, middle: [f64; 2], radius: f64, count: u32, first: f64) -> impl Iterator<Item = Placing> {
+    (0..count).map(move |nth| {
+        let angle = (first + 360.0 * f64::from(nth) / f64::from(count)).to_radians();
+        let [toward, across] = [middle[0] + radius * libm::cos(angle), middle[1] + radius * libm::sin(angle)];
+        at(name, toward, across, Faces::Toward(middle[0], middle[1]))
+    })
+}
+
+/// The market's stalls in turn along a row.
+const STALLS: [&str; 6] = [
+    "market-stall-cloth",
+    "market-stall-bread",
+    "market-stall-flowers",
+    "market-stall-fruit",
+    "market-stall-fish",
+    "market-stall-pots",
 ];
+
+/// The hub's scenes, court by court.
+fn scenes() -> Vec<Placing> {
+    let mut scene = Vec::new();
+    // The Watch Court, where the arrivals land: an avenue of trees along the seaward walk between its ways in, a
+    // garden bed in each quarter round the obelisk with a bench by it looking at the obelisk, potted trees lining the
+    // walk down to the Beacon, and a flower seller by the passage to the Forge Yard.
+    for across in [-44.0, -12.0, 12.0, 44.0] {
+        scene.push(at("court-tree", 45.0, across, Faces::Way));
+    }
+    for (toward, across) in [(21.0, -21.0), (21.0, 21.0), (-8.0, -19.0), (-8.0, 19.0)] {
+        scene.push(at("lawn-bed", toward, across, Faces::Toward(8.0, 0.0)));
+    }
+    for across in [-21.0, 21.0] {
+        scene.push(at("bench", 13.0, across, Faces::Toward(8.0, 0.0)));
+    }
+    for side in [-1.0, 1.0] {
+        scene.extend(line("potted-tree", [-36.0, side * 7.0], [-48.0, side * 7.0], 2));
+    }
+    scene.push(at("flower-cart", 26.0, 42.0, Faces::Way));
+    // The West Court, a garden for the music: a tree on each quarter of the fountain, benches looking at it from
+    // outside its ring of ways, the band's listeners at tables on the bandstand's flanks with the drinks' barrels
+    // behind it, and beds along the parapet.
+    for (toward, across) in [(14.0, -84.0), (14.0, -112.0), (-6.0, -76.0), (-6.0, -120.0)] {
+        scene.push(at("court-tree", toward, across, Faces::Toward(-6.0, -98.0)));
+    }
+    scene.extend(ring("bench", [-6.0, -98.0], 13.0, 4, 45.0));
+    for (name, toward, across) in [
+        ("table-benches", -42.0, -84.0),
+        ("table-benches", -40.0, -108.0),
+        ("parasol-table", -34.0, -86.0),
+        ("parasol-table", -34.0, -110.0),
+    ] {
+        scene.push(at(name, toward, across, Faces::Toward(-40.0, -98.0)));
+    }
+    scene.push(at("barrel-stack", -50.0, -98.0, Faces::Toward(-40.0, -98.0)));
+    for toward in [6.0, -18.0] {
+        scene.push(at("lawn-bed", toward, -124.0, Faces::Way));
+    }
+    scene.push(at("flower-cart", 34.0, -86.0, Faces::Way));
+    // The Forge Yard, at work: fuel stacked by the forge, stores by the armoury, hay by the cart, a table where the
+    // smiths eat by their anvils, and the charcoal's cart come in.
+    for (name, toward, across) in [
+        ("woodpile", 40.0, 121.0),
+        ("woodpile", 12.0, 121.0),
+        ("barrel-stack", -28.0, 121.0),
+        ("crates-barrels", -36.0, 126.0),
+        ("sacks-grain", -20.0, 98.0),
+        ("bale-stack", -44.0, 100.0),
+        ("table-benches", -4.0, 102.0),
+        ("cart", 32.0, 84.0),
+    ] {
+        scene.push(at(name, toward, across, Faces::Way));
+    }
+    // The Beacon Walk, a market lane: a row of stalls either side facing it, their deliveries stood behind them.
+    let mut stall = STALLS.iter().cycle();
+    for across in [-128.0, -108.0, -86.0, -40.0, 40.0, 92.0, 108.0, 128.0] {
+        scene.push(at(stall.next().copied().unwrap_or("market-stall-fruit"), -70.0, across, Faces::Way));
+    }
+    for across in [-104.0, -82.0, -34.0, 34.0, 82.0, 104.0] {
+        scene.push(at(stall.next().copied().unwrap_or("market-stall-fruit"), -91.0, across, Faces::Way));
+    }
+    for (name, across) in [("cart", -98.0), ("sacks-grain", -118.0), ("amphorae", 98.0), ("crates-barrels", 118.0)] {
+        scene.push(at(name, -62.0, across, Faces::Way));
+    }
+    // The Stair Yard, the stable's stores.
+    for (name, toward, across) in
+        [("bale-stack", -118.0, 104.0), ("barrel-stack", -142.0, 130.0), ("hay-cart", -108.0, 124.0)]
+    {
+        scene.push(at(name, toward, across, Faces::Way));
+    }
+    scene
+}
 
 /// How far a piece keeps from a way's line beyond the way's own clearance, from a way point, a post, an arrival, a
 /// counter, what already stands, another piece and the ring's edge, metres.
@@ -137,18 +164,6 @@ pub(crate) struct Dressed {
 
 /// A rectangle square to the world: west, north, east, south.
 type Rect = [f64; 4];
-
-fn hash(mut value: u64) -> f64 {
-    value = value.wrapping_add(0x9e37_79b9_7f4a_7c15);
-    value = (value ^ (value >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-    value = (value ^ (value >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-    value ^= value >> 31;
-    (value >> 11) as f64 / (1u64 << 53) as f64
-}
-
-fn seeded(court: usize, row: usize, column: usize, salt: u64) -> f64 {
-    hash(((court as u64) << 40) ^ ((row as u64) << 20) ^ (column as u64) ^ (salt << 56))
-}
 
 fn point_to_segment(point: [f64; 2], [from, to]: [[f64; 2]; 2]) -> f64 {
     let along = [to[0] - from[0], to[1] - from[1]];
@@ -265,7 +280,7 @@ pub(crate) fn dress(
     let standing: Vec<Rect> = laid
         .solids
         .iter()
-        .filter(|solid| solid.material != Material::Paving)
+        .filter(|solid| !matches!(solid.material, Material::Paving | Material::Path))
         .map(crate::solids::Solid::bounds)
         .filter(|&[_, _, _, _, bottom, top]| bottom < frame.level + OVERHEAD_M && top > frame.level + 0.05)
         .map(|[west, north, east, south, _, _]| [west, north, east, south])
@@ -273,73 +288,94 @@ pub(crate) fn dress(
     let counters: Vec<[f64; 2]> = laid.stations.iter().map(|station| station.counter).collect();
     let mut placed: Vec<Rect> = Vec::new();
     let mut dressed = Vec::new();
-    let passes = COURTS.iter().enumerate().flat_map(|(number, court)| {
-        [(number, court.pieces, court.apart), (number + COURTS.len(), court.fill, court.apart / 2.0)]
-            .map(|(seed, pieces, apart)| (seed, court, pieces, apart))
-    });
-    // Every court's larger pieces first, then the small ones between them.
-    let mut passes: Vec<_> = passes.collect();
-    passes.sort_by_key(|&(seed, ..)| seed);
-    for (number, court, pieces, apart) in passes {
-        let total: u32 = pieces.iter().map(|&(_, often)| often).sum();
-        let rows = ((court.toward[1] - court.toward[0]) / apart).floor() as usize;
-        let columns = ((court.across[1] - court.across[0]) / apart).floor() as usize;
-        for row in 0..rows {
-            for column in 0..columns {
-                let jitter = |salt| (seeded(number, row, column, salt) - 0.5) * apart * 0.7;
-                let toward = court.toward[0] + (row as f64 + 0.5) * apart + jitter(1);
-                let across = court.across[0] + (column as f64 + 0.5) * apart + jitter(2);
-                let mut pick = (seeded(number, row, column, 3) * f64::from(total)) as u32;
-                let Some(&(name, _)) = pieces.iter().find(|&&(_, often)| {
-                    let found = pick < often;
-                    pick = pick.saturating_sub(often);
-                    found
-                }) else {
-                    continue;
-                };
-                let Some(module) = number_of(name).and_then(|at| all().get(at as usize)) else { continue };
-                let at = frame.at(toward, across);
-                let nearest = lines
-                    .iter()
-                    .map(|&line| {
-                        let along = [line[1][0] - line[0][0], line[1][1] - line[0][1]];
-                        let length = (along[0] * along[0] + along[1] * along[1]).max(1e-9);
-                        let share = (((at[0] - line[0][0]) * along[0] + (at[1] - line[0][1]) * along[1]) / length)
-                            .clamp(0.0, 1.0);
-                        [line[0][0] + along[0] * share, line[0][1] + along[1] * share]
-                    })
-                    .min_by(|one, two| {
-                        libm::hypot(one[0] - at[0], one[1] - at[1])
-                            .total_cmp(&libm::hypot(two[0] - at[0], two[1] - at[1]))
-                    });
-                let Some(nearest) = nearest else { continue };
-                let facing = faced(frame, [nearest[0] - at[0], nearest[1] - at[1]]);
-                let rect = footprint(module.size, at, facing);
-                let clear = corners(rect).iter().all(|&corner| {
-                    inside(ring, corner)
-                        && (0..ring.len()).all(|edge| {
-                            point_to_segment(corner, [ring[edge], ring[(edge + 1) % ring.len()]]) >= FROM_EDGE_M
-                        })
-                }) && lines.iter().all(|&line| segment_to_rect(line, rect) >= CLEAR_M + PAST_WAY_M)
-                    && ways.points.iter().all(|point| point_to_rect(point.at, rect) >= FROM_POINT_M)
-                    && posts.iter().all(|post| point_to_rect(post.at, rect) >= FROM_POST_M)
-                    && post_lines.iter().all(|&line| segment_to_rect(line, rect) >= OFF_POST_LINE_M)
-                    && arrivals.iter().all(|&arrival| point_to_rect(arrival, rect) >= FROM_ARRIVAL_M)
-                    && laid.spots.iter().all(|&spot| point_to_rect(spot, rect) >= FROM_ARRIVAL_M)
-                    && counters.iter().all(|&counter| point_to_rect(counter, rect) >= FROM_COUNTER_M)
-                    && standing.iter().all(|&other| rect_gap(rect, other) >= FROM_STANDING_M)
-                    && placed.iter().all(|&other| rect_gap(rect, other) >= BETWEEN_M);
-                if !clear {
-                    continue;
-                }
-                let Some(stood) = stand_at(name, "front", at, frame.level, facing) else { continue };
-                placed.push(rect);
-                laid.piece(Some(stood.clone()));
-                dressed.push(Dressed { name, stood });
+    for placing in scenes() {
+        let Some(module) = number_of(placing.name).and_then(|number| all().get(number as usize)) else { continue };
+        let at = frame.at(placing.toward, placing.across);
+        let toward_of = match placing.faces {
+            Faces::Toward(toward, across) => Some(frame.at(toward, across)),
+            Faces::Way => lines
+                .iter()
+                .map(|&line| {
+                    let along = [line[1][0] - line[0][0], line[1][1] - line[0][1]];
+                    let length = (along[0] * along[0] + along[1] * along[1]).max(1e-9);
+                    let share =
+                        (((at[0] - line[0][0]) * along[0] + (at[1] - line[0][1]) * along[1]) / length).clamp(0.0, 1.0);
+                    [line[0][0] + along[0] * share, line[0][1] + along[1] * share]
+                })
+                .min_by(|one, two| {
+                    libm::hypot(one[0] - at[0], one[1] - at[1]).total_cmp(&libm::hypot(two[0] - at[0], two[1] - at[1]))
+                }),
+        };
+        let Some(toward_of) = toward_of else { continue };
+        let facing = faced(frame, [toward_of[0] - at[0], toward_of[1] - at[1]]);
+        let rect = footprint(module.size, at, facing);
+        let in_ring = corners(rect).iter().all(|&corner| {
+            inside(ring, corner)
+                && (0..ring.len())
+                    .all(|edge| point_to_segment(corner, [ring[edge], ring[(edge + 1) % ring.len()]]) >= FROM_EDGE_M)
+        });
+        let blocked = [
+            (!in_ring, "the ring's edge"),
+            (lines.iter().any(|&line| segment_to_rect(line, rect) < CLEAR_M + PAST_WAY_M), "a way"),
+            (ways.points.iter().any(|point| point_to_rect(point.at, rect) < FROM_POINT_M), "a way point"),
+            (posts.iter().any(|post| point_to_rect(post.at, rect) < FROM_POST_M), "a post"),
+            (post_lines.iter().any(|&line| segment_to_rect(line, rect) < OFF_POST_LINE_M), "a walk to a post"),
+            (
+                arrivals.iter().chain(&laid.spots).any(|&arrival| point_to_rect(arrival, rect) < FROM_ARRIVAL_M),
+                "an arrival",
+            ),
+            (counters.iter().any(|&counter| point_to_rect(counter, rect) < FROM_COUNTER_M), "a counter"),
+            (standing.iter().any(|&other| rect_gap(rect, other) < FROM_STANDING_M), "what stands"),
+            (placed.iter().any(|&other| rect_gap(rect, other) < BETWEEN_M), "another piece"),
+        ]
+        .into_iter()
+        .find_map(|(blocks, what)| blocks.then_some(what));
+        if let Some(_what) = blocked {
+            #[cfg(test)]
+            eprintln!("left out: {} at {}, {} by {_what}", placing.name, placing.toward, placing.across);
+            continue;
+        }
+        let Some(stood) = stand_at(placing.name, "front", at, frame.level, facing) else { continue };
+        placed.push(rect);
+        laid.piece(Some(stood.clone()));
+        dressed.push(Dressed { name: placing.name, stood });
+    }
+    dressed
+}
+
+/// How wide a walk is laid and how high its flags stand over the cobbles, metres.
+const WALK_WIDE_M: f64 = 3.2;
+const WALK_HIGH_M: f64 = 0.06;
+
+/// Lays the platform's ways as walks of dressed flagstones over its cobbles: a strip along each link, a round at each
+/// end so the strips meet.
+pub(crate) fn walks(frame: &Frame, laid: &mut Laid) {
+    let mut ends: Vec<[f64; 2]> = Vec::new();
+    for [from, to] in super::folk::platform_links() {
+        let [one, two] = [frame.at(from[0], from[1]), frame.at(to[0], to[1])];
+        let along = [two[0] - one[0], two[1] - one[1]];
+        let long = libm::hypot(along[0], along[1]);
+        if long < 1e-6 {
+            continue;
+        }
+        let middle = [(one[0] + two[0]) / 2.0, (one[1] + two[1]) / 2.0, frame.level];
+        let strip = Solid::upright(Shape::Block, middle, [WALK_WIDE_M, long, WALK_HIGH_M], Material::Path);
+        laid.solids.push(strip.turned(turn_toward(along)));
+        for end in [one, two] {
+            if !ends.iter().any(|&known| libm::hypot(known[0] - end[0], known[1] - end[1]) < 0.01) {
+                ends.push(end);
             }
         }
     }
-    dressed
+    for [x, y] in ends {
+        let round = Shape::Column { sides: 16, top: 1.0 };
+        laid.solids.push(Solid::upright(
+            round,
+            [x, y, frame.level],
+            [WALK_WIDE_M, WALK_WIDE_M, WALK_HIGH_M],
+            Material::Path,
+        ));
+    }
 }
 
 /// What a walker does at a piece and where, by its sockets: a browser before a market stall's counter, a drinker at a

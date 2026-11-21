@@ -92,38 +92,34 @@ fn the_hubs_ways_are_walked_clear_from_the_seaward_walk_to_the_pier() {
     assert!(faults.is_empty(), "{} faults:\n{}", faults.len(), faults.join("\n"));
 }
 
-/// The courts filled, after the owner's "Populate everything": every piece made to fill them stands several times
-/// over, and the walkers have a couple of hundred places to go to.
+/// The courts set as scenes, after the owner's "Populate everything" and "It needs to tell a story, and the pathway
+/// needs to be a different texture from the ground": the ways laid as flagstone walks, and each court's own pieces
+/// standing, each with a place for the walkers.
 #[test]
-fn every_court_is_filled_and_its_pieces_have_walkers_places() {
+fn every_court_is_set_as_a_scene_and_its_ways_are_walks() {
     let (_, plan) = planned();
     let social = &plan.social;
-    let stood = |name: &str| {
+    let stood = |names: &[&str]| {
         social
             .solids
             .iter()
             .filter(|solid| {
                 let crate::solids::Shape::Module { module, group: 0 } = solid.shape else { return false };
-                crate::modules::all().get(module as usize).is_some_and(|found| found.name == name)
+                crate::modules::all().get(module as usize).is_some_and(|found| names.contains(&found.name.as_str()))
             })
             .count()
     };
-    let filling = [
-        "market-stall-cloth",
-        "market-stall-bread",
-        "market-stall-flowers",
-        "court-tree",
-        "lawn-bed",
-        "table-benches",
-        "parasol-table",
-        "woodpile",
-        "barrel-stack",
-        "flower-cart",
-        "bale-stack",
-    ];
-    for name in filling {
-        assert!(stood(name) >= 4, "{name} stands {} times", stood(name));
+    let walks = social.solids.iter().filter(|solid| solid.material == crate::solids::Material::Path).count();
+    assert!(walks >= 100, "{walks} lengths of walk");
+    for (names, least) in [
+        (&["market-stall-cloth", "market-stall-bread", "market-stall-flowers"][..], 6),
+        (&["court-tree"][..], 8),
+        (&["lawn-bed"][..], 6),
+        (&["table-benches", "parasol-table"][..], 5),
+        (&["woodpile", "barrel-stack", "bale-stack"][..], 6),
+    ] {
+        assert!(stood(names) >= least, "{names:?} stand {} times", stood(names));
     }
     let visited = social.posts.iter().filter(|post| post.keep == crate::life::Keep::Visited).count();
-    assert!(visited >= 200, "{visited} places for the walkers");
+    assert!(visited >= 60, "{visited} places for the walkers");
 }

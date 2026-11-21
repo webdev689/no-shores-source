@@ -18,7 +18,7 @@ const ARCH_OPENING_WIDTH: f64 = 0.8;
 /// under a cave roof, through a rock arch and into a stall; an arch is its jambs and the head over its crown, so a
 /// body walks through it.
 pub(crate) fn into_boxes(solid: &Solid) -> Vec<Box2> {
-    if solid.material == Material::Paving || solid.size[2] < LEAST_HEIGHT_M {
+    if matches!(solid.material, Material::Paving | Material::Path) || solid.size[2] < LEAST_HEIGHT_M {
         return Vec::new();
     }
     if crate::rock::is_rock(solid.shape) {
