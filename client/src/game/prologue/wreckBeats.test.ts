@@ -170,7 +170,8 @@ test('the wake cut short leaves the eyes open, though the director frames it onc
   beat.frame(tick(2));
   beat.skip();
   beat.frame(tick(0.016));
-  assert.equal(calls.filter((call) => call.startsWith('stage.parts.screen.lids')).at(-1), 'stage.parts.screen.lids(0)');
+  const lids = calls.filter((call) => call.startsWith('stage.parts.screen.lids')).at(-1);
+  assert.match(lids ?? '', /^stage\.parts\.screen\.lids\(0[,)]/, `${lids}`);
 });
 
 /** A run of the wreck that plays nothing: the player alive or dead as `own` says (their health as it holds), in the

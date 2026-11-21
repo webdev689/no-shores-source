@@ -18,10 +18,10 @@ import { CREW_TYPES } from './wreckCrew.ts';
 import { titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
+import { blurAt, lidsAt, lightAt, OPEN_S } from './waking.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 /** When the eyes are open for good, when the player stands, when the camera leaves the eyes, and when control comes. */
-const OPEN_S = 6.5;
 const STAND_S = 10.5;
 const LEAVE_S = 13;
 const CONTROL_S = 36;
@@ -37,30 +37,6 @@ const PATH_STEP_M = 4;
 const BACK_LEG_S = 2;
 /** How far the flight's eye keeps from a mast still standing, metres. */
 const MAST_CLEAR_M = 3.5;
-/** The lids' shut share over the first seconds, a slow blinking awake: [seconds, shut]. */
-const BLINKS: readonly (readonly [number, number])[] = [
-  [0, 1],
-  [1.1, 0.45],
-  [1.9, 1],
-  [3.1, 0.25],
-  [3.7, 0.85],
-  [5.2, 0.05],
-  [OPEN_S, 0],
-];
-
-/** The lids' shut share at `time`, eased between the blinks. */
-export function lidsAt(time: number): number {
-  for (let index = 1; index < BLINKS.length; index++) {
-    const [after, shut] = BLINKS[index] ?? [0, 0];
-    const [before, was] = BLINKS[index - 1] ?? [0, 0];
-    if (time <= after) {
-      const share = Math.min(1, Math.max(0, (time - before) / (after - before)));
-      return was + (shut - was) * share * share * (3 - 2 * share);
-    }
-  }
-  return 0;
-}
-
 /** The fights the camera passes: in each zone, each Grey Tithe boarder against one of the Brig's crew, the two
  *  standing where it and the pirate beside it are posted. The boarders are one side, as they fight. */
 export function stagedFights(layout: WreckLayout, roster: readonly FoeType[]): Pairing[] {
@@ -116,6 +92,8 @@ export class Wake implements Beat {
   /** Whether a staged pair has cried out to each other. */
   private cried = false;
   private since = 0;
+  /** How long the heart has beaten, seconds: on with the wake, never held while the wreck comes. */
+  private heart = 0;
   done = false;
 
   constructor(story: Story, layout: WreckLayout, scenery: WreckScenery, run: Promise<WreckRun>) {
@@ -127,8 +105,8 @@ export class Wake implements Beat {
     setAblaze(story, layout);
     ambience.heartbeat(true);
     screen.bars(false);
-    screen.lids(1);
-    screen.blur(9);
+    screen.lids(1, lightAt(0));
+    screen.blur(blurAt(0, 0));
     screen.fade(0, 1.4);
     this.pairs = stagedFights(layout, stage.parts.roster);
     this.heads = pairHeads(this.pairs);
@@ -259,11 +237,12 @@ export class Wake implements Beat {
     const { stage } = this.story;
     // The eyes stay shut until the wreck they open on has come.
     if (!(this.scenery.coming && this.since >= OPEN_S - 1)) this.since += tick.seconds;
+    this.heart += tick.seconds;
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
     const { screen } = stage.parts;
-    screen.lids(lidsAt(this.since));
-    screen.blur(Math.max(0, 9 * (1 - this.since / (OPEN_S + 1))));
+    screen.lids(lidsAt(this.since), lightAt(this.heart));
+    screen.blur(blurAt(this.since, this.heart));
     if (this.since >= CONTROL_S) this.done = true;
     const shot = this.shotAt(this.since);
     const flying = this.since >= LEAVE_S;

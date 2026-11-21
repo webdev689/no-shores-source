@@ -102,8 +102,8 @@ const HAND_OVER_S = 1.5;
 const EASE_S = 0.04;
 /** The one-shots' level against the beds: the crash is the loudest thing in the mission. */
 const SHOTS_GAIN = 0.55;
-/** A heartbeat at a frightened 75 a minute. */
-const BEAT_S = 60 / 75;
+/** A heartbeat at a frightened 75 a minute: a beat this many seconds apart. */
+export const HEART_BEAT_S = 60 / 75;
 const SEED = 0x5a17;
 
 interface Glide {
@@ -295,7 +295,7 @@ export class Ambience {
       // Beats are laid a little ahead of the clock, so an uneven frame never makes the heart stumble.
       while (this.nextBeatAt < now + 0.15) {
         heartbeatVoice(engine.kit, engine.shots, this.nextBeatAt);
-        this.nextBeatAt += BEAT_S;
+        this.nextBeatAt += HEART_BEAT_S;
       }
     }
   }

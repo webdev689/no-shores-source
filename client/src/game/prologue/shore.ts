@@ -18,7 +18,7 @@ import { sung } from './music.ts';
 import { MORNING } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
-import { lidsAt } from './wake.ts';
+import { lidsAt } from './waking.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 export const STRANGER_ID = ACTOR_IDS + 80;

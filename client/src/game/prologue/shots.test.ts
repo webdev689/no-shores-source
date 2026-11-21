@@ -4,7 +4,7 @@ import { railShot } from '../../cinema/rail.ts';
 import { fightMove } from './fighters.ts';
 import { homeRail, type IslandFrame, shipsOff, titleEye } from './introShots.ts';
 import { thrownAt } from './overboard.ts';
-import { lidsAt } from './wake.ts';
+import { lidsAt } from './waking.ts';
 
 const FRAME: IslandFrame = {
   town: [1000, 1000, 40],
