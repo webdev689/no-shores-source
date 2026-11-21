@@ -111,8 +111,8 @@ impl Room {
 
     /// Pays a player the room keeps as the cache opens: the day's clear in the day the run was opened for, or at Normal
     /// in the shared room of today's dungeon of the day, and the week's in the week the run was opened for. Its Vestige
-    /// is kept with the record that pays it, in the carried ten or else the mail, so it is never lost once paid.
-    /// Nothing once taken.
+    /// is kept with the record that pays it, in the carried ten, else the vault, else the mail, so it is never lost
+    /// once paid. Nothing once taken.
     pub(crate) fn pay_clear(&mut self, player: PlayerId, level: u8) {
         let Some(pays) = self.run.as_ref().map(|run| run.pays.clone()) else { return };
         let (day, now, tier) = (self.day(), week_of(self.minute), self.difficulty);
