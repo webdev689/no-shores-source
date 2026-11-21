@@ -28,3 +28,8 @@ bunting), equal triangle counts. Cause taken to be signed zeros: a coordinate on
 by the next push's `modules` run. The proposed rule stands: a byte-checked bake is compared against CI's before relying
 on it, not only against a second local run.
 Confirmed: CI's `modules` run on c7ecdb5d made the committed manifest byte for byte and published (run 44842613934).
+
+Later again (21 November): a change to a shared helper's material (the weaponsmith's quench trough, called by the
+anvil yard too) was rebaked only for the modules listed by hand; CI's bake of the anvil yard then differed from the
+committed manifest. Proposed rule: after changing a helper in tools/modules, grep its callers across every module
+script and rebake each, or rebake the whole catalogue.
