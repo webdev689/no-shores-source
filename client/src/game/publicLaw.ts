@@ -150,7 +150,10 @@ export function bannerOf(
     place,
     clock: clockOf(event.ticksLeft),
     urgent: event.ticksLeft <= LAST_MINUTE_TICKS,
-    objective: objectiveOf(event),
+    objective:
+      event.kind === PUBLIC_KIND.raid && event.nextWaveTicks > 0
+        ? `${objectiveOf(event)} · Next wave ${clockOf(event.nextWaveTicks)}`
+        : objectiveOf(event),
     // The Warden's stage has no shards left to set: the bar is full.
     bar: { share: Math.min(1, Math.max(0, share)), label },
     heroic,

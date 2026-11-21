@@ -4,7 +4,7 @@
 // chests, and drawn by EventPropsDraw; their crystal also lights the night round them.
 import type { LampPlace } from '../sky/lamps.ts';
 import { CRYSTAL_LAMP } from './crystal.ts';
-import { moduleNumber, moduleSocket } from './modules.ts';
+import { moduleNumber, moduleParts, moduleSocket } from './modules.ts';
 
 type Point = readonly [number, number, number];
 
@@ -113,8 +113,9 @@ const LAMPS = {
   chestReachM: 5,
 } as const;
 const CHEST_LIGHT = [0.6, 0.42, 0.2] as const;
-/** A raid's banner's lamp: warm, at its head, this far. */
-const BANNER_LAMP = { light: [0.5, 0.34, 0.16] as const, high: 2.6, reachM: 6 } as const;
+/** A raid's banner's lamp: warm, this far under its pole's top (the module's part), lighting this far. */
+const BANNER_LAMP = { light: [0.5, 0.34, 0.16] as const, underTopM: 0.3, reachM: 6 } as const;
+const BANNER_TOP_M = moduleParts(moduleNumber('tithe-banner'))[0]?.[5] ?? 5.4;
 
 /** What the page's own moments do to the props: a flare of the fissure's glow (0 none), the fissure's width as the
  *  page eases it (null: as the room sends it), and how far a raid won has toppled its banners (0 to 1). */
@@ -212,7 +213,8 @@ export function eventProps(
   const props: EventProp[] = [];
   const over = event !== null && (event.phase === PHASE.won || event.phase === PHASE.failed);
   for (const mark of event?.marks ?? []) {
-    const turn = turnOf(mark.id);
+    // The room stands the fissure and the stores square to the grid; the rest take a turn of their own.
+    const turn = mark.kind === MARK.fissure || mark.kind === MARK.store ? 0 : turnOf(mark.id);
     const since = age(mark.kind, mark.id, mark.state);
     switch (mark.kind) {
       case MARK.fissure: {
@@ -312,7 +314,7 @@ export function propLamps(props: readonly EventProp[]): LampPlace[] {
       lamps.push({ at: place([0, 0, 0.3]), reachM: LAMPS.shardReachM * each.scale, light: red(strength * 0.7), seed });
     else if (each.module === 'tithe-banner')
       lamps.push({
-        at: place([0, 0, BANNER_LAMP.high]),
+        at: place([0, 0, BANNER_TOP_M - BANNER_LAMP.underTopM]),
         reachM: BANNER_LAMP.reachM * each.rise,
         light: BANNER_LAMP.light,
         seed,

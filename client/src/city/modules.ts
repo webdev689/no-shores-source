@@ -22,6 +22,8 @@ type Listed = {
     readonly groups: readonly { readonly mesh: string; readonly material: string }[];
     /** Where it opens the land under its foot: its two lips, each a line of points (x, y) along it at the ground. */
     readonly mouth?: readonly (readonly (readonly [number, number])[])[];
+    /** Its solid parts, each a box in its own frame: west, north, bottom, east, south, top. */
+    readonly parts?: readonly (readonly number[])[];
   }[];
 };
 
@@ -49,6 +51,12 @@ export function moduleShape(module: number): { size: readonly number[]; material
 /** A socket of a module (a chest's hinge) in its own frame, or the middle of its foot where it has none so named. */
 export function moduleSocket(module: number, name: string): Point {
   return listed.modules[module]?.sockets.find((socket) => socket.name === name)?.at ?? [0, 0, 0];
+}
+
+/** A module's solid parts, each a box in its own frame (x east, y south, z up): west, north, bottom, east, south,
+ *  top. */
+export function moduleParts(module: number): readonly (readonly number[])[] {
+  return listed.modules[module]?.parts ?? [];
 }
 
 /** The two lips of a module's mouth, where it opens the land, or none. */

@@ -163,3 +163,16 @@ test('a beat flares the fissure, its width eases as the page says, and a raid wo
   const banners = plain.filter((prop) => prop.module === 'tithe-banner');
   assert.equal(propLamps(banners).length, 1, 'a warm lamp at the banner');
 });
+
+test('the fissure, its scar and the stores stand square to the grid, as the room stands them', () => {
+  const marks = [mark(MARK.fissure, { id: 4 }), mark(MARK.store, { id: 9 })];
+  const running = eventProps({ phase: PHASE.running, ticksLeft: 0, marks }, [], aged(99), 0);
+  const sealed = eventProps({ phase: PHASE.won, ticksLeft: 0, marks }, [], aged(99), 0);
+  for (const prop of [...running, ...sealed]) assert.equal(prop.turn, 0, prop.module);
+});
+
+test("a banner's warm lamp hangs at its head, under the pole's top", () => {
+  const [banner] = eventProps({ phase: PHASE.running, ticksLeft: 0, marks: [mark(MARK.banner)] }, [], aged(99), 0);
+  const [lamp] = propLamps(banner ? [banner] : []);
+  assert.ok(lamp && lamp.at[2] - (banner?.at[2] ?? 0) > 4.5, `at ${lamp?.at[2]}`);
+});

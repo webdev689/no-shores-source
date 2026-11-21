@@ -44,8 +44,11 @@ const LIPS_MOST = 256;
 /** A vertex: its position (3 floats), its normal and glow (4 signed bytes) and its material (4 bytes, the first). */
 const STRIDE = 20;
 /** A prop's row in the table: where it stands from the eye and its turn; its scale, rise, lid and glow; whether it
- *  opens, its module's height, and where its lips start in the lips' list and how many stations they have. */
-const PROP_FLOATS = 12;
+ *  opens, its module's height, and where its lips start in the lips' list and how many stations they have; whether
+ *  its canvas is grey. */
+const PROP_FLOATS = 16;
+/** The props whose canvas is the Tithe's unmarked grey, as its sails are; every other canvas is oiled tan. */
+const GREY_CANVAS: ReadonlySet<PropModule> = new Set(['tithe-banner']);
 
 const VERTEX_LAYOUT: GPUVertexBufferLayout = {
   arrayStride: STRIDE,
@@ -59,7 +62,7 @@ const VERTEX_LAYOUT: GPUVertexBufferLayout = {
 const PLACE_WGSL = /* wgsl */ `
 struct View { from_eye: mat4x4f }
 @group(0) @binding(0) var<uniform> view: View;
-struct Prop { place: vec4f, shape: vec4f, about: vec4f }
+struct Prop { place: vec4f, shape: vec4f, about: vec4f, look: vec4f }
 @group(2) @binding(0) var<storage, read> props: array<Prop>;
 
 struct Vertex {
@@ -178,7 +181,7 @@ fn noise3(at: vec3f) -> f32 {
 // Each material's colour at a point of the module's own frame, worked so a surface reads as what it is: chalk white
 // with grey flint in it, turf mottled green and dry, soil dark, timber weathered grey-brown along its grain, canvas
 // oiled tan with darker stains and dirtier toward the ground, iron dark with rust, gold, a heap of grain straw-pale.
-fn material_colour(material: u32, local: vec3f) -> vec3f {
+fn material_colour(material: u32, local: vec3f, grey: bool) -> vec3f {
   let fine = noise3(local * 9.0);
   let broad = noise3(local * 1.3);
   switch material {
@@ -198,8 +201,13 @@ fn material_colour(material: u32, local: vec3f) -> vec3f {
       return mix(vec3f(0.3, 0.25, 0.2), vec3f(0.46, 0.4, 0.33), grain * 0.7 + broad * 0.3);
     }
     case ${id('canvas')}: {
-      // Oiled canvas, tan, weathered darker in broad stains, and dirtier toward the ground.
-      let cloth = mix(vec3f(0.5, 0.4, 0.26), vec3f(0.62, 0.52, 0.35), fine);
+      // Oiled canvas, tan (or the Tithe's grey), weathered darker in broad stains, and dirtier toward the ground.
+      // The Tithe's banner is its unmarked grey, as its sails are.
+      let cloth = select(
+        mix(vec3f(0.5, 0.4, 0.26), vec3f(0.62, 0.52, 0.35), fine),
+        mix(vec3f(0.42, 0.42, 0.41), vec3f(0.54, 0.54, 0.52), fine),
+        grey,
+      );
       let stained = smoothstep(0.55, 0.75, noise3(local * 1.7 + vec3f(3.1, 0.0, 1.3))) * 0.45;
       let dirt = 1.0 - smoothstep(0.0, 0.5, local.z);
       return mix(mix(cloth, cloth * vec3f(0.6, 0.56, 0.5), stained), vec3f(0.27, 0.22, 0.16), dirt * 0.5);
@@ -222,7 +230,7 @@ fn shade(in: Out) -> vec4f {
   }
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let light = sky_ambient(facing) * (ambient / AMBIENT) + sky_direct(facing, sun) * ((1.0 - ambient) / 0.65);
-  var colour = material_colour(in.material, in.local) * (light + sky_lamps(in.from_eye, facing));
+  var colour = material_colour(in.material, in.local, props[in.prop].look.x > 0.5) * (light + sky_lamps(in.from_eye, facing));
   // Metal catches the sun.
   if in.material == ${id('iron')} || in.material == ${id('gold')} {
     let glint = pow(max(dot(reflect(normalize(in.from_eye), facing), sky_state.key.xyz), 0.0), 24.0) * sun;
@@ -487,6 +495,7 @@ export class EventPropsDraw implements Drawer {
       rows[first + 9] = made.height;
       rows[first + 10] = made.lips?.first ?? 0;
       rows[first + 11] = made.lips?.count ?? 0;
+      rows[first + 12] = GREY_CANVAS.has(prop.module) ? 1 : 0;
     });
     if (!this.table || this.table.size < rows.byteLength) {
       this.table?.destroy();

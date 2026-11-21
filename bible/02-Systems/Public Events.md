@@ -160,7 +160,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - **The banner** (`combat/publicBanner.ts`), HTML through the kit as every part of the HUD is, stands in the compass's
   column under the compass and over the boss bar and the target's plate, so neither stands on it. Running: "Public
   event" (or "Heroic public event") over the name and place, the countdown at the right, the objective and its bar
-  (shards set of needed; the stores' health, with the wave in the objective), the heroic task with its window's
+  (shards set of needed; the stores' health, with the wave in the objective and the next one's countdown while it
+  comes), the heroic task with its window's
   countdown while it is open ("Break the growth", "Kill the tithe-taker"; for its first 5 s the call "A crystal growth
   rises: break it!" or "The tithe-taker has come to count: kill him before he goes") or "Heroic" once met, and the
   bonus ("seal it before 4:00", "lose no store"), struck through once lost. In the last minute the clock is red and
@@ -191,8 +192,10 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - **Props**: the marks go through `eventProps()` to the props' drawer every frame, each carried shard moved to its
   carrier's off hand as drawn (the player's own low in the left of a first-person view); the player's chests come
   from their drops (drawn as props, not as drop pictures), and E within 2.5 m opens the one in reach (its lid swings
-  and it stands open 6 s from the asking). The crystal's lamps go with them, and a warm one at each raid banner's
-  head. The fissure's chasm is seen through its mouth: each point of it under the ground is drawn at the depth where
+  and it stands open 6 s from the asking). The fissure, its scar and the stores stand square to the grid, as the
+  room stands them; the Tithe's banner is drawn in its grey canvas. The page's own movement and fight stand the
+  fissure's four spires (`game/fissureSpires.ts`) at its mark while it runs, as the room does. The crystal's lamps go
+  with them, and a warm one at each raid banner's head. The fissure's chasm is seen through its mouth: each point of it under the ground is drawn at the depth where
   the eye's line crosses the land at the foot, a little nearer, so the land there gives way and nearer land or houses
   keep theirs. Its crack flares at each beat, its width eases to the room's, and a shard set arcs into it over 0.4 s.
   The Fissure won bursts the Lattice's death wave at four times a man's size where it seals (`sealWave`), in its

@@ -182,3 +182,11 @@ test('a chest waiting is a step of its own, with the time it still lies', () => 
     steps: [{ text: 'Open your chest (1:48)' }],
   });
 });
+
+test("the raid's next wave counts down in its objective while one is coming", () => {
+  assert.equal(
+    bannerOf(raid({ nextWaveTicks: 22 * 60 }), 'driftwood-moors')?.objective,
+    'Hold the stores: wave 2 of 3 · Next wave 0:22',
+  );
+  assert.equal(bannerOf(raid({ nextWaveTicks: 0 }), 'driftwood-moors')?.objective, 'Hold the stores: wave 2 of 3');
+});

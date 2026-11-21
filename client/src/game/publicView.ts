@@ -21,6 +21,8 @@ import {
 } from '../network/publicMessages.ts';
 import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, elsewhereOf, questOf, ringOf } from './publicLaw.ts';
 import { type Moments, PublicMoments } from './publicMoments.ts';
+import { SpireCourse } from './fissureSpires.ts';
+import type { Block } from '../rules/movementRules.ts';
 import type { Shot } from './camera.ts';
 import type { Quest } from './tasks.ts';
 import { chime as rarityChime, play } from './uiSounds.ts';
@@ -141,12 +143,20 @@ export class PublicView {
   private readonly moments = new PublicMoments();
   private nextWord: { readonly ticks: number; readonly at: number } | null = null;
   private lastKind: number = PUBLIC_KIND.none;
-  /** Shakes the player's view (0 to 1), as the ground trembles. */
-  private readonly tremor: (trauma: number) => void;
+  /** What shakes the player's view (0 to 1) as the ground trembles; the course the fissure's spires stand in. */
+  private readonly feel: { tremor(trauma: number): void };
+  private readonly course: SpireCourse | null;
 
-  constructor(zone: string, tremor: (trauma: number) => void = () => undefined) {
+  /** The events of `zone`, shaking `feel`'s view; the fissure's spires stood among the place's `boxes` in each of
+   *  `courses` (the page's movement and fight), where given. */
+  constructor(
+    zone: string,
+    feel: { tremor(trauma: number): void } = { tremor: () => undefined },
+    course: { boxes: readonly Block[]; courses: ConstructorParameters<typeof SpireCourse>[1] } | null = null,
+  ) {
     this.zone = zone;
-    this.tremor = tremor;
+    this.feel = feel;
+    this.course = course && new SpireCourse(course.boxes, course.courses);
   }
 
   /** One frame at `clock` (the page's seconds): the room's `event` and its `events` since the last, the player's
@@ -161,6 +171,7 @@ export class PublicView {
     floor: (x: number, y: number) => number,
   ): PublicFrame {
     const event = this.counted(word, clock);
+    this.course?.frame(word, floor);
     if (event && event.kind !== PUBLIC_KIND.none) this.lastKind = event.kind;
     // Back from a hidden tab, the last beat shows; what was heard meanwhile is long over.
     const stale = this.last !== null && clock - this.last > STALE_S;
@@ -172,7 +183,7 @@ export class PublicView {
     const sounds = stale ? [] : [...this.sounds(event, events, bodies, clock), ...moments.sounds];
     if (!stale && moments.chime !== null) rarityChime(moments.chime);
     if (!stale && moments.tick) play('tab');
-    if (!stale && moments.tremor > 0) this.tremor(moments.tremor);
+    if (!stale && moments.tremor > 0) this.feel.tremor(moments.tremor);
     this.lay(event, marks, floor, clock, bodies.shot.eye);
     this.moments.lay(event, moments, chests, bodies.player, bodies.feet, marks, clock, bodies.shot.eye);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));

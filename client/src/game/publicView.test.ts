@@ -271,7 +271,7 @@ test('the next event a minute off: counted to the second, a beat, and a beacon o
 
 test('a shard set arcs into the crack, the ground trembles, and the player carrying one is told where', () => {
   const shook: number[] = [];
-  const view = new PublicView('saltgrass-downs', (trauma) => shook.push(trauma));
+  const view = new PublicView('saltgrass-downs', { tremor: (trauma) => void shook.push(trauma) });
   const crack = { kind: MARK.fissure, id: 1, at: [0, 0, 0] as const, health: 0.8, state: 1 };
   const carried = { kind: MARK.carried, id: 1, at: [3, 0, 0] as const, health: 1, state: 1 };
   const carrying = view.frame(fissure([crack, carried]), [], [], bodies(), 0, [], () => 0);
@@ -330,7 +330,7 @@ test("the Fissure's stage splits the ground again, and the Warden's climbs out w
 
 test('a room lost a while, and back: no chest thumps in again, no banner is driven in again', () => {
   const shook: number[] = [];
-  const view = new PublicView('saltgrass-downs', (trauma) => shook.push(trauma));
+  const view = new PublicView('saltgrass-downs', { tremor: (trauma) => void shook.push(trauma) });
   const banner = { kind: MARK.banner, id: 3, at: [2, 0, 0] as const, health: 1, state: 1 };
   const lying = [chest(5, [1, 0, 0], 1)];
   view.frame(null, [], lying, bodies(), 0, [], () => 0);
