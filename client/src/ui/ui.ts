@@ -133,6 +133,11 @@ export class Interface {
     if (this.hover && this.hover !== before) this.reach = true;
   }
 
+  /** The view this frame, CSS pixels: what a component lays itself against where the room it has is the view's. */
+  get size(): { readonly width: number; readonly height: number } {
+    return this.view;
+  }
+
   /** Whether anything was pressed this frame, for its sound. */
   get pressed(): boolean {
     return this.clicks.size > 0;

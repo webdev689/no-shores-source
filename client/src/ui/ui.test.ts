@@ -192,3 +192,9 @@ test('a node’s age counts from when it was first laid, and starts again once i
   ui.frame(VIEW, [], 0.5);
   assert.equal(ui.age('toast'), 0);
 });
+
+test('the view’s size is answered in CSS pixels, as the frame was given it at its scale', () => {
+  const ui = new Interface(renderer());
+  ui.frame({ width: 800, height: 600, scale: 2 }, [], 1 / 60);
+  assert.deepEqual(ui.size, { width: 400, height: 300 });
+});
