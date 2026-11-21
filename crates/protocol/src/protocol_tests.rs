@@ -545,3 +545,29 @@ fn a_fighter_built_on_another_sends_only_the_numbers_that_changed() {
     let (all, every) = crate::land::changed_since(&now, &base[..3]);
     assert_eq!((all.len(), every), (9, vec![0xff, 0x01]), "a base of another length changes every number");
 }
+
+/// An input whose earlier inputs are one table written once and pointed at again and again: small on the wire, yet a
+/// reader that followed every pointer would read it thousands of times.
+fn aliased_input(times: usize) -> Vec<u8> {
+    let mut builder = flatbuffers::FlatBufferBuilder::new();
+    let mut heavy = input(1, Controls::default());
+    heavy.shown.anim = "a".repeat(2_500);
+    let once = input_offset(&mut builder, &heavy, None);
+    let again = builder.create_vector(&vec![once; times]);
+    let top = input_offset(&mut builder, &input(2, Controls::default()), Some(again));
+    builder.finish(top, None);
+    builder.finished_data().to_vec()
+}
+
+#[test]
+fn an_input_pointing_at_one_earlier_input_again_and_again_is_refused_before_it_is_read_through() {
+    let bytes = aliased_input(900);
+    assert!(bytes.len() < 8_192, "it fits a message: {} bytes", bytes.len());
+    for read in [read_inputs(&bytes).map(|_| ()), read_input(&bytes).map(|_| ())] {
+        let refused = read.expect_err("refused");
+        assert!(!refused.contains("earlier inputs, more than"), "the verifier stops it first: {refused}");
+    }
+    // As many as an input may carry, written once each, still read.
+    let earlier: Vec<Input> = (1..=8).map(|sequence| input(sequence, Controls::default())).collect();
+    assert_eq!(read_inputs(&inputs_bytes(&input(9, Controls::default()), &earlier)).expect("read").len(), 9);
+}

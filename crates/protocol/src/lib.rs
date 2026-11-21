@@ -53,17 +53,35 @@ const NO_FIGHT: [f64; COMBAT_NUMBERS] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, f64::NAN,
 /// The most earlier inputs one input carries that the room reads: more than a short loss is a link to rejoin.
 const EARLIER_MOST: usize = 8;
 
+/// How far the verifier reads a browser's message before it refuses it. A message is at most 8 KB, but a table may be
+/// pointed at again and again, so the verifier's own walk is held to what a true message needs: a few tables deep,
+/// each input and its ask, and twice a message's bytes in all.
+const FROM_A_BROWSER: flatbuffers::VerifierOptions = flatbuffers::VerifierOptions {
+    max_depth: 8,
+    max_tables: 8 * (EARLIER_MOST + 1),
+    max_apparent_size: 16 * 1024,
+    ignore_missing_null_terminator: false,
+};
+
+/// A message from a browser read as `T`, once the verifier, held to `FROM_A_BROWSER`, has passed it.
+pub(crate) fn from_a_browser<'bytes, T>(bytes: &'bytes [u8]) -> Result<T::Inner, String>
+where
+    T: 'bytes + flatbuffers::Follow<'bytes> + flatbuffers::Verifiable,
+{
+    flatbuffers::root_with_opts::<T>(&FROM_A_BROWSER, bytes).map_err(|error| error.to_string())
+}
+
 /// The input an input's bytes hold: its number, its intent, what the player's figure shows, their dress when it
 /// changed, what their hands hold, the tick their screen showed, a foe asked for (a type and a rank) or every foe sent
 /// away, and whether they ask to respawn; or why they do not read. The bytes come from a player's machine, so the
 /// verifier passes them first. An input with no fight's numbers asks for nothing in the fight.
 pub fn read_input(bytes: &[u8]) -> Result<Input, String> {
-    input_of(&flatbuffers::root::<messages::Input>(bytes).map_err(|error| error.to_string())?)
+    input_of(&from_a_browser::<messages::Input>(bytes)?)
 }
 
 /// The inputs an input's bytes hold, oldest first: those it carries from before it, then itself.
 pub fn read_inputs(bytes: &[u8]) -> Result<Vec<Input>, String> {
-    let input = flatbuffers::root::<messages::Input>(bytes).map_err(|error| error.to_string())?;
+    let input = from_a_browser::<messages::Input>(bytes)?;
     let earlier = input.earlier().map(|earlier| earlier.iter().collect::<Vec<_>>()).unwrap_or_default();
     if earlier.len() > EARLIER_MOST {
         return Err(format!("{} earlier inputs, more than {EARLIER_MOST}", earlier.len()));
@@ -174,7 +192,7 @@ fn input_offset<'built>(
 /// The course a course's bytes hold: its points, x then y, and its pace; or why they do not read. The bytes come from
 /// a player's machine, so the verifier passes them first.
 pub fn read_course(bytes: &[u8]) -> Result<(Vec<[f64; 2]>, u16), String> {
-    let course = flatbuffers::root::<messages::Course>(bytes).map_err(|error| error.to_string())?;
+    let course = from_a_browser::<messages::Course>(bytes)?;
     let numbers: Vec<f64> = course.points().map(|points| points.iter().collect()).unwrap_or_default();
     if !numbers.len().is_multiple_of(2) {
         return Err(format!("a course's points are pairs, not {} numbers", numbers.len()));
@@ -207,7 +225,7 @@ pub enum SeaInput {
 /// one, orders when it carries them, else a course. The bytes come from a player's machine, so the verifier passes
 /// them first.
 pub fn read_sea_input(bytes: &[u8]) -> Result<SeaInput, String> {
-    let course = flatbuffers::root::<messages::Course>(bytes).map_err(|error| error.to_string())?;
+    let course = from_a_browser::<messages::Course>(bytes)?;
     match course.ask() {
         0 => {}
         1 => return Ok(SeaInput::Repair),

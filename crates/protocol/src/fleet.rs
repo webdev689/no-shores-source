@@ -47,7 +47,7 @@ fn level_of(level: u8) -> Result<u8, String> {
 /// numbers, three numbers or none to put to sea, a call the messages number, of a faction and rank they number. The
 /// bytes come from a player's machine, so the verifier passes them first; the room checks the numbers.
 pub fn read_orders(bytes: &[u8]) -> Result<Input, String> {
-    let orders = flatbuffers::root::<messages::Orders>(bytes).map_err(|error| error.to_string())?;
+    let orders = crate::from_a_browser::<messages::Orders>(bytes)?;
     let helm = Helm { steer: orders.steer(), crab: orders.crab(), climb: orders.climb() };
     let look: Vec<f64> = orders.aim().map(|aim| aim.iter().collect()).unwrap_or_default();
     let aim = match look[..] {
