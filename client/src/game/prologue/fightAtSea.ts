@@ -288,6 +288,11 @@ export class StoryFight {
     this.combat.aim(held);
   }
 
+  /** Whether the guns are being aimed, for the keys shown. */
+  get aiming(): boolean {
+    return this.combat.aimingNow;
+  }
+
   holdFire(): void {
     this.combat.holdFire();
   }

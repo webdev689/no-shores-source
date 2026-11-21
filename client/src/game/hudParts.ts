@@ -3,6 +3,7 @@
 // and a value that eases to each new one it is set to, as a CSS transition does.
 import { edged } from '../combat/barDraw.ts';
 import type { Hint } from './gearNodes.ts';
+import { iconNode, isMouse } from './keyIcons.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Drawing, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
@@ -51,8 +52,11 @@ export const said = (words: string, more: Omit<Text, 'words'> = {}): Node => ({
   text: { words, colour: TONES.ink, edge: 'shadow', edgeColour: '#000', ...more },
 });
 
-/** A key on its keycap, its words at `size`: square and bevelled as the kit's stone is, its foot deeper. */
+/** A key on its keycap, its words at `size`: square and bevelled as the kit's stone is, its foot deeper; an arrow key
+ *  drawn on its cap, and the mouse's button drawn as the mouse, with no cap. */
 export function keycap(key: string, size = 1): Node {
+  const icon = iconNode(key, size);
+  if (icon && isMouse(key)) return icon;
   return {
     minWidth: 30,
     padding: [2, 6, 4, 6],
@@ -60,7 +64,7 @@ export function keycap(key: string, size = 1): Node {
     alignX: 'center',
     alignY: 'center',
     draw: edged(['#6d6252', '#231e18', '#231e18', '#6d6252'], [1, 1, 2, 1]),
-    children: [{ text: { words: key, size, colour: '#efe8d6', wrap: false } }],
+    children: [icon ?? { text: { words: key, size, colour: '#efe8d6', wrap: false } }],
   };
 }
 
@@ -83,9 +87,13 @@ export function hudPress(
   id: string,
   words: string,
   run: () => void,
-  more: { readonly role?: 'button' | 'primary'; readonly disabled?: boolean } & Partial<Node> = {},
+  more: {
+    readonly role?: 'button' | 'primary';
+    readonly disabled?: boolean;
+    readonly size?: number;
+  } & Partial<Node> = {},
 ): Node {
-  const { role = 'button', disabled = false, ...rest } = more;
+  const { role = 'button', disabled = false, size = 1, ...rest } = more;
   if (ui.clicked(id) && !disabled) {
     ui.focusOn(null);
     run();
@@ -100,7 +108,7 @@ export function hudPress(
     alignY: 'center',
     ...rest,
     // The page ran a press's spaces together; its label keeps them as written.
-    children: [{ text: { words: words.replace(/ +/g, ' '), edge: 'shadow', edgeColour: '#000', wrap: false } }],
+    children: [{ text: { words: words.replace(/ +/g, ' '), size, edge: 'shadow', edgeColour: '#000', wrap: false } }],
   };
 }
 

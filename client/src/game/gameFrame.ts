@@ -266,6 +266,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       charting: charting.busy,
       friendly: fleet.marks,
       notices,
+      free: !input.locked,
     });
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');

@@ -1,120 +1,164 @@
-// The keys the heads-up display's key strip shows for each mode of the game: each a key (keys that do the same
-// parted by " / ", each on its own keycap) and what it does.
+// The key strip at the bottom right: only the keys that matter at this moment, each a key (keys that do the same
+// parted by " / ", each on its own keycap or drawn as the mouse's button) and what it does, and last the key to the
+// sheet of every control (`controls.ts`).
 
-import arts from '../../../content/arts/arts.json' with { type: 'json' };
+import type { PlayerFightFrame } from '../combat/playerFight.ts';
+import type { Fighting } from '../combat/fighting.ts';
+import type { Walker } from '../player/walker.ts';
 import type { Hint } from './gearNodes.ts';
 import type { Standing } from './hudLaw.ts';
 
-/** What the Arts' keys add for an Art whose first Tenet is aimed while its key is held, by the Tenet's key. */
-const AIMED: Readonly<Record<string, Hint>> = { duskDaggers: ['Hold Q', 'Aim Dusk Daggers'] };
+/** The strip's last entry wherever it shows: the key to every control. */
+export const ALL_CONTROLS: Hint = ['K', 'All controls'];
+/** The click that takes the mouse to look round, shown while the mouse is free. */
+const LOOK: Hint = ['Left button', 'Look round'];
+const MENU: Hint = ['M', 'Menu'];
 
-/** The keys each mode shows. On foot the strip keeps to what the fight and the body do beyond walking, which the
- *  player learns first and needs no reminder of; the click that takes the mouse to look round stays, as nothing else
- *  says it once the pointer is let go. */
+/** The keys each moment shows, the strip's last entry with them. */
 export const HINTS = {
-  foot: [
-    ['Click', 'Look round'],
-    ['Right button', 'Swing or aim'],
-    ['Left button / F', 'Guard or fire'],
-    ['V', 'Dodge'],
-    ['Shift', 'Run'],
-    ['Space', 'Jump'],
-    ['C', 'Crouch'],
-    ['Z', 'Weapon'],
-    ['1 / 2', 'Loadout'],
-    ['3', 'Heal'],
-    ['R', 'Anima'],
-    ['Q / G', 'Tenets'],
-    ['Wheel', 'Third person'],
-    ['M', 'Menu'],
-  ],
-  dead: [['Enter', 'Respawn at the nearest spawn']],
-  sea: [
-    ['Click', 'Sail there'],
-    ['W', 'Sail on'],
-    ['A / D', 'Steer'],
-    ['S', 'Heave to'],
-    ['Drag', 'Look'],
-    ['Wheel', 'Zoom'],
-    ['N', 'Map'],
-    ['[ / ]', 'Pace'],
-    ['Space', 'Stop or resume'],
-    ['B', 'Manage'],
-    ['H', 'Leave the helm'],
-    ['M', 'Menu'],
-  ],
-  manage: [
-    ['Drag', 'Turn round the ship'],
-    ['Wheel', 'Zoom'],
-    ['B', 'Back to the sea'],
-    ['M', 'Menu'],
-  ],
-  deck: [
-    ['Click', 'Look round'],
-    ['W / A / S / D', 'Move'],
-    ['Shift', 'Run'],
-    ['Space', 'Jump'],
-    ['E', 'Take the helm at the wheel'],
-    ['M', 'Menu'],
-  ],
+  dead: [['Enter', 'Respawn'], ALL_CONTROLS],
+  sea: [['Left button', 'Sail there'], ['A / D', 'Steer'], ['W', 'Sail on'], ['S', 'Heave to'], MENU, ALL_CONTROLS],
+  manage: [['Drag', 'Turn round the ship'], ['Wheel', 'Zoom'], ['B', 'Back to the sea'], ALL_CONTROLS],
+  deck: [['Shift', 'Run'], ['Space', 'Jump'], ['E', 'Take the helm'], ALL_CONTROLS],
   fight: [
     ['A / D', 'Steer'],
     ['W / S', 'Sails'],
-    ['Shift', 'Boost'],
-    ['Drag', 'Look'],
-    ['Hold right button', 'Aim, let go to fire'],
-    ['Click', 'Hold fire'],
+    ['Shift', 'Burst of speed'],
+    ['Right button', 'Hold to aim'],
     ['C', 'Brace'],
-    ['Wheel', 'Shot'],
+    ALL_CONTROLS,
+  ],
+  aim: [
+    ['Drag', 'Aim'],
+    ['Right button', 'Let go to fire'],
+    ['Left button', 'Hold fire'],
+    ['Wheel', 'Change shot'],
+    ALL_CONTROLS,
   ],
   map: [
-    ['Drag', 'Pan'],
+    ['Drag', 'Move the map'],
     ['Wheel', 'Zoom'],
-    ['Click', 'A port or the sea'],
+    ['Left button', 'Choose a port or the sea'],
     ['Enter', 'Set sail'],
     ['Esc', 'Put the map away'],
+    ALL_CONTROLS,
   ],
-  landing: [
-    ['Click', 'Choose a mark, again to land'],
-    ['Enter', 'Land'],
-    ['Esc', 'Back to sea'],
-  ],
+  landing: [['Left button', 'Choose a mark, again to land'], ['Enter', 'Land'], ['Esc', 'Back to sea'], ALL_CONTROLS],
 } as const satisfies Record<string, readonly Hint[]>;
 
-/** The Arts' own keys on foot, shown only while an Art is worn. */
-const ART_KEYS = new Set(['R', 'Q / G']);
+/** The keys of each stance on foot, before the Arts', the menu's and the strip's last. */
+const STANCES = {
+  away: [
+    ['Z', 'Draw weapon'],
+    ['Shift', 'Run'],
+    ['Space', 'Jump'],
+    ['C', 'Crouch'],
+  ],
+  melee: [
+    ['Right button', 'Swing'],
+    ['Left button / F', 'Guard or parry'],
+    ['V', 'Dodge'],
+    ['3', 'Heal'],
+    ['2', 'Ranged'],
+  ],
+  ranged: [
+    ['Right button', 'Aim'],
+    ['Left button / F', 'Fire'],
+    ['V', 'Dodge'],
+    ['3', 'Heal'],
+    ['1', 'Melee'],
+  ],
+  aiming: [
+    ['Left button / F', 'Fire'],
+    ['Right button', 'Let go to stop aiming'],
+    ['V', 'Dodge'],
+  ],
+  daggers: [['Q', 'Let go to cast']],
+  mounted: [
+    [',', 'Get down'],
+    ['Shift', 'Gallop'],
+  ],
+} as const satisfies Record<string, readonly Hint[]>;
+type Stance = keyof typeof STANCES;
 
-/** The keys shown on foot with the Art worn (its id, 0 for none, as in the prologue): the Arts' keys only while one is
- *  worn, and an aimed Tenet named only while its Art is. */
-export function footHints(worn: number): readonly Hint[] {
-  const art = arts.arts.find((each) => each.id === worn);
-  if (!art) return HINTS.foot.filter(([key]) => !ART_KEYS.has(key));
-  const aimed = AIMED[art.tenets[0]?.key ?? ''];
-  return aimed ? [...HINTS.foot, aimed] : HINTS.foot;
+/** What the player is doing on foot, for the keys shown: the Art worn (its id, 0 for none, as in the prologue),
+ *  whether a weapon is drawn and is one that shoots, whether it aims, whether Dusk Daggers are being aimed, whether
+ *  the player rides, and whether the mouse is free for a click to take it. */
+export interface OnFoot {
+  readonly worn: number;
+  readonly drawn: boolean;
+  readonly ranged: boolean;
+  readonly aiming: boolean;
+  readonly daggers: boolean;
+  readonly mounted: boolean;
+  readonly free: boolean;
+}
+
+/** What the player is doing on foot, read from the walker, the fight's frame and the fight; `free` while the mouse
+ *  is not the view's. */
+export function onFoot(
+  walker: Pick<Walker, 'you' | 'player'>,
+  shown: Pick<PlayerFightFrame, 'rangedDrawn' | 'aiming'>,
+  fight: Pick<Fighting, 'arts' | 'aimRing'>,
+  free: boolean,
+): OnFoot {
+  return {
+    worn: fight.arts?.art ?? 0,
+    drawn: walker.you.dress.outfit.drawn,
+    ranged: shown.rangedDrawn,
+    aiming: shown.aiming,
+    daggers: fight.aimRing !== null,
+    mounted: walker.player.mounted,
+    free,
+  };
+}
+
+function stanceOf(foot: OnFoot): Stance {
+  if (foot.mounted) return 'mounted';
+  if (foot.daggers) return 'daggers';
+  if (foot.aiming) return 'aiming';
+  if (!foot.drawn) return 'away';
+  return foot.ranged ? 'ranged' : 'melee';
+}
+
+/** The keys shown on foot: the click to look while the mouse is free, the stance's own, the Arts' while one is worn
+ *  and nothing else holds the keys, the menu's at rest or riding, and the strip's last. */
+export function footHints(foot: OnFoot): readonly Hint[] {
+  const stance = stanceOf(foot);
+  const casts = foot.worn !== 0 && (stance === 'away' || stance === 'melee' || stance === 'ranged');
+  return [
+    ...(foot.free ? [LOOK] : []),
+    ...STANCES[stance],
+    ...(casts ? [['R / Q / G', 'Cast your Art'] as const] : []),
+    ...(stance === 'away' || stance === 'mounted' ? [MENU] : []),
+    ALL_CONTROLS,
+  ];
 }
 
 /** The keys shown on foot as the player stands with the section: none while a fall plays out (no key does anything
- *  until Respawn is offered), Respawn's once death is told, and otherwise the foot's with the Art worn. */
-export function keysShown(standing: Standing, worn: number): readonly Hint[] {
-  if (standing.kind !== 'dead') return footHints(worn);
+ *  until Respawn is offered), Respawn's once death is told, and otherwise what the player is doing asks. */
+export function keysShown(standing: Standing, foot: OnFoot): readonly Hint[] {
+  if (standing.kind !== 'dead') return footHints(foot);
   return standing.told ? HINTS.dead : [];
 }
 
-/** What the player is doing at sea, for the keys shown: fighting, choosing a landing, at the helm with the map,
- *  walking its deck, managing it, or sailing. */
+/** What the player is doing at sea, for the keys shown: fighting and aiming the guns, choosing a landing, at the helm
+ *  with the map, walking its deck (the mouse free for a click to take it or not), managing it, or sailing. */
 export interface AtSea {
   readonly fighting: boolean;
+  readonly aiming: boolean;
   readonly landing: boolean;
   readonly atHelm: boolean;
   readonly walking: boolean;
   readonly managing: boolean;
+  readonly free: boolean;
 }
 
 /** The keys shown at sea for what the player is doing. */
 export function seaHints(state: AtSea): readonly Hint[] {
-  if (state.fighting) return HINTS.fight;
+  if (state.fighting) return state.aiming ? HINTS.aim : HINTS.fight;
   if (state.landing) return HINTS.landing;
   if (state.atHelm) return HINTS.map;
-  if (state.walking) return HINTS.deck;
+  if (state.walking) return state.free ? [LOOK, ...HINTS.deck] : HINTS.deck;
   return state.managing ? HINTS.manage : HINTS.sea;
 }

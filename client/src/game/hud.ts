@@ -2,6 +2,7 @@ import { hudLayout } from '../combat/hudLayout.ts';
 import { SeaFightReadout } from '../combat/seaReadout.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { compassNode } from './compassNode.ts';
+import { ControlsSheet } from './controlsSheet.ts';
 import type { ShipMark } from '../plus/compass.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { NoticeStack } from '../plus/notices.ts';
@@ -78,13 +79,15 @@ const VIGNETTE: Picture = {
 
 /** The game's heads-up display, drawn by the game as a layer of its interface (`node`): the place's name, the edge's
  *  warning and death, the key strip, the quests, the toasts, the status line, the notices, the compass, the marks and
- *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, a menu, and the veil
- *  while a place loads. The game tells it what to show each frame through its methods and hears its presses through
- *  the `on` callbacks. */
+ *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, a menu, the veil
+ *  while a place loads, and the sheet of every control. The game tells it what to show each frame through its
+ *  methods and hears its presses through the `on` callbacks. */
 export class Hud {
   readonly tasks = new TaskTracker();
   /** What E does where the player stands, low in the middle of the view. */
   readonly usePrompt = new UsePrompt();
+  /** Every control, opened with K over everything else. */
+  readonly controls = new ControlsSheet();
   /** The sea fight's readout: the ship's plate and rose, the card and the tally; and what it shows now. */
   private readonly fight = new SeaFightReadout();
   private fightModel: SeaFightModel | null = null;
@@ -144,6 +147,11 @@ export class Hud {
   /** The keys the player can press now, each on its keycap beside what it does; none hides the strip. */
   hints(hints: readonly Hint[]): void {
     this.hintsShown = hints;
+  }
+
+  /** Whether the key strip offers keys now, the sheet of every control's among them. */
+  get keysOffered(): boolean {
+    return this.hintsShown.length > 0;
   }
 
   /** Shows the sea fight's readout, or hides it for none. */
@@ -380,6 +388,7 @@ export class Hud {
       this.seaSight.node(),
       // The page raised each mark over the rest of the display, so they stand over it here too.
       ...markNodes(ui, this.marksShown, (id) => this.markChosen(id)),
+      this.controls.node(ui, view),
     ];
     return { width: 'grow', height: 'grow', children };
   }

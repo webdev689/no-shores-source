@@ -127,7 +127,8 @@ export function hintsNode(view: HudView, hints: readonly Hint[], seaBar: boolean
     wrap: true,
     alignX: 'end',
     alignY: 'center',
-    maxWidth: Math.max(0, view.width - 480 * zoom),
+    // A narrow view, a phone's, still gives the strip room for its widest entry.
+    maxWidth: Math.max(view.width - 480 * zoom, Math.min(view.width - 56 * zoom, 240 * zoom)),
     float: { to: 'screen', at: [1, 1], anchor: [1, 1], x: -28 * zoom, y: -foot * zoom },
     children: hintRow(hints, size),
   };
