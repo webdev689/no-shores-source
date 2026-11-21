@@ -275,9 +275,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   show the system cursor), the binds' D1 migration and route live, the marks on a real GPU.
 - **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
   and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
-  with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges, with the owner's
-  yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134, the Postmaster's
-  letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a door.
+  with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges,
+  with the owner's yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134,
+  the Postmaster's letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a
+  door.
 - **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
   external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
   So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
