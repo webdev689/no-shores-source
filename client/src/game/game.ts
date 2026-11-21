@@ -11,6 +11,8 @@ import { startLandWorker } from '../terrain/landClient.ts';
 import { LocalRoom, sloopBuildText } from '../network/localRoom.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
+import { EventPropsDraw } from './eventPropsDraw.ts';
+import { type ChestLike, type EventProp, eventProps as eventPropsOf } from '../city/eventProps.ts'; // DEV-ONLY PROPS HOOK
 import { FigureView } from './figureView.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { arriving, type Flow, type Happening, next } from './flow.ts';
@@ -84,6 +86,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   const land = startLandWorker();
   const scene = new GameScene(gpu);
   const figureView = new FigureView(gpu);
+  /** The public events' props, drawn from the list the event's view sets each frame. */
+  const eventProps = new EventPropsDraw(gpu);
   const { world, landTexts, movement, forge, firstPerson, store, sloop } = await loadParts(gpu, base, figureView);
   const after = afterStoryOn(hudRoot, forge, (x, y) => scene.groundAt(x, y));
   const { continents } = world;
@@ -235,6 +239,27 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
   }
 
   installQaViews(window, location.search, !rooms, { node: () => foot?.node ?? null, arrive: goFoot, walker });
+  // DEV-ONLY PROPS HOOK: remove before commit.
+  (window as unknown as { __props?: (list: EventProp[], chests?: ChestLike[]) => number[] }).__props = (
+    list,
+    chests = [],
+  ) => {
+    const { body, yaw } = walker.player;
+    const [sin, cos] = [Math.sin(yaw), Math.cos(yaw)];
+    const placed = (at: readonly number[]): [number, number, number] => [
+      body.x + (at[0] ?? 0) * cos + (at[1] ?? 0) * sin,
+      body.y + (at[0] ?? 0) * sin - (at[1] ?? 0) * cos,
+      body.z + (at[2] ?? 0),
+    ];
+    const chestProps = eventPropsOf(
+      null,
+      chests.map((chest) => ({ ...chest, at: placed(chest.at) })),
+      () => 0,
+      0,
+    );
+    eventProps.set([...list.map((each) => ({ ...each, turn: each.turn + yaw, at: placed(each.at) })), ...chestProps]);
+    return [body.x, body.y, body.z, yaw];
+  };
   const landAt = (id: string) => {
     discovered.nodes([id]);
     const landing = sea?.view.landingOf(id);
@@ -392,6 +417,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HT
       figureView,
       figures,
       fight,
+      eventProps,
     );
 
   /** The way through the gate the player stands in, if any, and going through it to the node it leads to. */

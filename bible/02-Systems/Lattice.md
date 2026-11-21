@@ -85,8 +85,9 @@ Run from `tools/forge/` with Blender's module, as the forge runs ([[Sprite Forge
   pictures are not on R2.
 - The Lattice's armour is on hold, drawn standing still on the man's and the woman's bodies only; its every move,
   first person and its weapons and shields are not yet drawn, and the game still names Daedric.
-- The props are pictures only: not painted with the game's pictures, not exported as meshes the game loads, and not
-  placed in the world.
+- The props are pictures only, not placed in the world, except what the public events draw ([[Modules]]): the
+  Fissure, its scar, the growth and the shard are meshes built from the props' own shards, clusters, crusts and
+  boulders.
 - The body's skin is coloured by the game as it composes a frame; the ashen skin each foe needs is not chosen yet.
 - The game is to play the wave at a foe's death, tinted and scaled, fading the foe's figure; it does not yet.
 - Left for the game to draw, since a picture's light cannot change from frame to frame: the Idol's beam and its

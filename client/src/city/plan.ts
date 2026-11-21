@@ -21,7 +21,21 @@ export type SolidShape =
   | RockShape;
 
 export type SolidMaterial =
-  'stone' | 'trim' | 'roof' | 'timber' | 'plaster' | 'paving' | 'gold' | 'iron' | 'bone' | 'glow' | 'rubble' | 'chalk';
+  | 'stone'
+  | 'trim'
+  | 'roof'
+  | 'timber'
+  | 'plaster'
+  | 'paving'
+  | 'gold'
+  | 'iron'
+  | 'bone'
+  | 'glow'
+  | 'rubble'
+  | 'chalk'
+  | 'turf'
+  | 'canvas'
+  | 'crystal';
 
 /** One solid: the middle of its base in world metres (z up), its width, depth and height, its turn clockwise from
  *  north (its own x east and y south at 0), its lean toward its own +y and its roll about its own y, radians. */

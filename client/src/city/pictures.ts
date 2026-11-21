@@ -4,15 +4,17 @@
 import { climateArchive, pictureSize, type Climate, type PictureUse, type Season } from '../textures/picture.ts';
 import type { CityClimate, SolidMaterial } from './plan.ts';
 
-/** Layers the array holds for pictures; the four above them are the plain colours. WebGPU's default limit is 256. */
-export const PICTURE_LAYERS = 252;
-/** The solids' plain colours, drawn by code rather than a picture: gold, iron, bone, and the glow of a fire. */
-export const COLOUR_LAYERS = { gold: 252, iron: 253, bone: 254, glow: 255 } as const;
+/** Layers the array holds for pictures; the five above them are the plain colours. WebGPU's default limit is 256. */
+export const PICTURE_LAYERS = 251;
+/** The solids' plain colours, drawn by code rather than a picture: the Lattice's crystal, gold, iron, bone, and the
+ *  glow of a fire. */
+export const COLOUR_LAYERS = { crystal: 251, gold: 252, iron: 253, bone: 254, glow: 255 } as const;
 /** Every picture is resampled to this square, so one array holds them all. */
 export const LAYER_SIZE = 128;
 
-/** The materials with a picture of their climate's own; rubble wears RUBBLE in every climate, and chalk's CHALK. */
-type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS | 'rubble' | 'chalk'>;
+/** The materials with a picture of their climate's own; rubble wears RUBBLE in every climate, and chalk's CHALK; turf
+ *  wears the ground's grass and canvas the plaster's picture. */
+type Pictured = Exclude<SolidMaterial, keyof typeof COLOUR_LAYERS | 'rubble' | 'chalk' | 'turf' | 'canvas'>;
 type Tint = readonly [number, number, number];
 type Choice = readonly [archive: number, record: number, use: PictureUse, tint?: Tint];
 
@@ -79,6 +81,9 @@ const RUBBLE: Readonly<Record<Climate, Choice>> = {
 
 /** The rubble of a chalk zone's cliffs: the temperate stone tile brought to chalk's white (groundColour.ts CHALK). */
 const CHALK: Choice = [302, 3, 'floor', [2.7, 2.65, 2.55]];
+
+/** The ground record of grass, which a slab of turf wears. */
+const GRASS = 2;
 
 const CLIMATE_OF_BASE: readonly [number, Climate][] = [
   [400, 'swamp'],
@@ -226,6 +231,8 @@ export function pictureBook(
   for (const [material, key] of materialKeys) materials[material] = layerAt(key);
   materials.rubble = layerAt(rubbleKey);
   materials.chalk = layerAt(chalkKey);
+  materials.canvas = materials.plaster;
+  materials.turf = layerAt(groundKeys.get(GRASS) ?? groundKeys.get(2));
   return {
     pictures,
     layerOf: (archive, record) => layerAt(turnOf(archive, record)),

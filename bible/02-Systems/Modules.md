@@ -17,6 +17,13 @@ code:
   - tools/modules/bridge.py#builder
   - crates/layout/src/pieces_land.rs#stone_bridge
   - client/src/city/modules.ts#loadModules
+  - tools/modules/latticekit.py#taken
+  - tools/modules/fissure.py#fissure
+  - tools/modules/tithe.py#stores_a
+  - tools/modules/chest.py#lid
+  - client/src/city/crystal.ts#CRYSTAL_WGSL
+  - client/src/city/eventProps.ts#eventProps
+  - client/src/game/eventPropsDraw.ts#EventPropsDraw
 ---
 # Modules
 
@@ -38,6 +45,18 @@ middle of its foot:
   noise, cut flat where a body stands on it, then decimated to a triangle budget. Every natural form is made this
   way: a cave's shelf, a column of dripstone, a boulder.
 - **Arches**: a round bar cut out of a wall.
+- **Carpentry and cloth** (`timbers.py`): weathered boards and posts, iron plates, crates battened and braced, barrels
+  of bellied staves bound with hoops, sacks of creased canvas tied at the neck, and cloth: a tarp laid over a stack's
+  tops, falling off their edges and pegged out by cords, or a banner hung from a bar.
+- **The Lattice's own props** (`latticekit.py`): its shards, clusters, crusts and boulders built by its own code
+  (`tools/lattice/props.py`, `growth.py`), each of its Blender materials read as one of the kit's, its crystal glowing
+  as its strain's light says: bright toward a shard's point, dark at its root, alight at its heart.
+
+Each surface wears one of the game's materials: stone, trim, rubble, chalk, turf, timber, canvas, iron, gold, crystal
+and paving. An object may wear one a face (a torn slab's turf top over its soil and its chalk). Crystal, the
+Lattice's, is drawn by code, not a picture: red where the sun reaches it, graded to purple in its shadows, a glint off
+each flat facet the sun catches, and its core glowing as much as each vertex says, more seen straight on and more at
+night.
 
 `exported` turns a module into the game's frame (x east, y south, z up: Blender's y turned round): its surfaces
 grouped by material, its parts, its sockets, its pads and its size, the box round its surfaces. The surface groups
@@ -70,6 +89,29 @@ are written with paving last, since the first group carries the parts and paving
   cutwaters and the abutments, each as wide as the stone drawn round it, so the water and a swimmer pass under the
   arches and meet the stone where it is seen.
 
+- **The public events' props**, drawn by the page where an event stands, never placed by a layout:
+  - The Fissure (`lattice-fissure`, 12 m long): a crack nearly 3 m deep and 3 across at its widest, its walls white
+    chalk under the turf, then the Lattice's crystal brightening down to its alight heart; slabs of turf over a band of
+    dark soil over chalk torn up and tipped back along both lips, turf and roots hanging off their edges, a smaller row
+    behind; chalk broken out across the turf; crystal teeth leaning in over it, clusters grown out of its walls, four
+    spires standing up out of its heart, veins of light crept out through the grass and crusts of crystal at its ends.
+    Its mouth, the outline of the crack at the ground, is in the manifest (`mouth`), so the page opens the land there.
+  - Its scar (`lattice-fissure-sealed`): the crack grown shut, a low dark ridge of crystal along the line, faintly lit
+    at its crest, crusted over with scabs of crystal; the slabs settled back nearly flat, chalk heaped along it and the
+    teeth broken off and lying in the grass.
+  - The growth (`lattice-growth`, 5 m): a spire of crystal out of a heave of chalk, five lesser spires leaning out from
+    its root, shards crowding its foot, the turf it broke through tipped up round it and crusted.
+  - The shard (`lattice-shard`, half a metre): a hand's length of crystal, two lesser points off its root, alight.
+  - The Grey Tithe's three stores (`tithe-stores-a`, `-b`, `-c`): crates of weathered boards bound with iron at their
+    corners, barrels, sacks of grey canvas and a pallet, each stack under a grey tarp pegged out at its corners; the
+    plundered store (`tithe-stores-plundered`): a crate broken open, one tipped on its side, boards strewn, sacks slit
+    with their grain spilt in heaps, a barrel stove in and rolled away, the tarp dragged off.
+  - The Tithe's banner (`tithe-banner`): a grey cloth, unmarked, on a 4 m pole, its foot cut into two tails and lifting
+    in the wind, an iron spike at its head, stones packed round its foot.
+  - The chests (`event-chest`, iron-bound; `event-chest-heroic`, gilded and set with crystal at its corners) and their
+    lids (`event-chest-lid`, `event-chest-heroic-lid`, the heroic one crowned with crystal): each lid a module of its
+    own, its hinge at its origin, and the chest's `hinge` socket where that hinge sits on it.
+
 ## Baking and publishing
 
 bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as for the [[Flora]].
@@ -80,8 +122,8 @@ bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as f
 | `python -I tools/modules/publish.py <folder>` | Uploads the meshes the manifest names to R2, unless R2 already serves them, and checks each answers |
 | `python -I tools/modules/render.py <module> <picture.png> [--parts]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked |
 
-A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats) and normal (3 signed
-bytes), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake makes the same
+A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes)
+and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake makes the same
 bytes from the same scripts. The `modules` workflow bakes on every change to the module tools, fails if the bake
 does not make the committed manifest, and publishes with the repository's Cloudflare token.
 
@@ -108,6 +150,14 @@ does not make the committed manifest, and publishes with the repository's Cloudf
   (timber where none is), its deck where the timber's would be, turned along the way, and moving with the land as
   a bridge does. A turned part's boxes are cut in slices no longer than the part is thick, so a parapet's keep off
   the way they line.
+- **The public events' props** are drawn by the page's event-props drawer (`EventPropsDraw`, among the scene's drawers
+  after the layouts and before the nature) from a list it is handed each frame (`eventProps`: from the room's event
+  marks and the player's chests): each prop at its place, turn and scale, risen out of the ground as far as it has
+  come (the growth rising and sinking, a banner driven in; what is under the ground is not drawn), the fissure opening
+  from a line as it widens and deepens, a lid swung about its hinge, its crystal glowing as strongly as it is asked.
+  Each material is its own colour worked by code over the module's own frame; the crystal is lit as above, its
+  brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A module that
+  opens first sets the scene's depth far over its mouth, so its chasm under the ground is seen.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
   (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
@@ -120,6 +170,11 @@ floor onto the high one; over every stone bridge both ways, on its deck at its m
 stand on the ground at every edge, and no cliff stair stands taller than it was baked.
 
 ## Limits
+
+- The city draws a module's crystal half alight everywhere: its glow by vertex reaches only the event props' drawer,
+  and only that drawer gives crystal's light into the light layer.
+- The fissure's mouth opens the depth of whatever is drawn before it there, a layout's piece standing in front of it
+  as well as the land; the events stand on clear ground. Grass drawn after it can stand over the chasm.
 
 - A module's surfaces carry no ambient occlusion of their own, and their pictures are laid flat by axis, not
   unwrapped.
