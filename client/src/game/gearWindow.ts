@@ -173,7 +173,10 @@ export function startGearWindow(
    *  shown (the room lost), none of those stands on the page, so the menu closes at once. */
   const back = () => {
     holds.letGo();
-    if (!here()?.gear) [inspecting, slot, artSlot, arts, appearance] = [null, null, null, false, false];
+    if (!here()?.gear) {
+      [inspecting, slot, artSlot, arts, appearance] = [null, null, null, false, false];
+      npcStepBack();
+    }
     if (inspecting !== null) [inspecting, focusNext] = [null, returnTo];
     else if (slot !== null) slot = null;
     else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
@@ -365,6 +368,7 @@ export function startGearWindow(
             if (asked.kind === 'setCore') artPending = asked.slot;
             now.ask(gearAskOf(asked));
           },
+          focus: (id) => (focusNext = id),
         });
         aside = ARTS_HINTS;
       } else if (shown === 'character' && appearance) {

@@ -56,7 +56,11 @@ function pictureOf(
       return null;
     }),
   };
-  void entry.asked.then((picture) => (entry.come = picture));
+  void entry.asked.then((picture) => {
+    entry.come = picture;
+    // Named by what it draws, so a picture asked for again after it was let go lies where it lay in the atlas.
+    if (picture) named.set(picture, `forge ${numberOf(key)}`);
+  });
   kept.set(key, entry);
   if (kept.size > KEPT_MOST) kept.delete(kept.keys().next().value ?? '');
   return undefined;
@@ -77,6 +81,20 @@ export function horseOf(forge: Cards, dress: Dress, view = HORSE_VIEW): Picture 
 /** Each picture's name for the atlas, by the picture it is. */
 const named = new WeakMap<Picture, string>();
 let pictures = 0;
+/** Each drawing's number, by what it draws. */
+const numbers = new Map<string, number>();
+const numberOf = (key: string): number => {
+  let number = numbers.get(key);
+  if (number === undefined) numbers.set(key, (number = pictures++));
+  return number;
+};
+/** Where each picture's drawn pixels lie, found once. */
+const bounds = new WeakMap<Picture, readonly [number, number, number, number]>();
+function boundsOf(picture: Picture): readonly [number, number, number, number] {
+  let found = bounds.get(picture);
+  if (!found) bounds.set(picture, (found = drawnBounds(picture.width, picture.height, picture.pixels) ?? [0, 0, 0, 0]));
+  return found;
+}
 export const pictureName = (picture: Picture): string => {
   let name = named.get(picture);
   if (!name) named.set(picture, (name = `forge ${pictures++}`));
@@ -93,10 +111,10 @@ export const pixelsOf = (picture: Picture): Node['picture'] => ({
 /** The whole multiple a picture is drawn at to stand within `box`, at least one: its height, and its width each way
  *  from its feet (`root`), or with `centred` its width, fit. */
 export function scaleIn(picture: Picture, box: readonly [number, number], centred = false): number {
-  const [west, , wide, tall] = drawnBounds(picture.width, picture.height, picture.pixels) ?? [0, 0, 1, 1];
+  const [west, , wide, tall] = boundsOf(picture);
   const rootX = picture.root?.[0] ?? picture.width / 2;
   const across = centred ? wide : 2 * Math.max(rootX - west, west + wide - rootX);
-  return Math.max(1, Math.min(Math.floor(box[1] / tall), Math.floor(box[0] / across)));
+  return Math.max(1, Math.min(Math.floor(box[1] / Math.max(1, tall)), Math.floor(box[0] / Math.max(1, across))));
 }
 
 /** A picture in a box `box` pixels at `scale` texels a pixel, standing on the box's foot: centred on its feet
@@ -104,7 +122,7 @@ export function scaleIn(picture: Picture, box: readonly [number, number], centre
 function stood(picture: Picture | null, scale: number, box: readonly [number, number], centred = false): Node {
   const holder: Node = { width: box[0], height: box[1], clip: true };
   if (!picture) return holder;
-  const [west, north, wide, tall] = drawnBounds(picture.width, picture.height, picture.pixels) ?? [0, 0, 0, 0];
+  const [west, north, wide, tall] = boundsOf(picture);
   const middle = centred ? west + wide / 2 : (picture.root?.[0] ?? picture.width / 2);
   const [left, top] = [Math.round(box[0] / 2 - middle * scale), box[1] - (north + tall) * scale];
   return {

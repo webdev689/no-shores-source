@@ -20,25 +20,23 @@ function forgeFailing(failures: number) {
 
 const settle = () => new Promise((done) => setTimeout(done));
 
-test('a keeper figure whose drawing failed is asked for again, and once drawn is grown by whole pixels', async () => {
+test('a keeper figure whose drawing failed is asked for again a while on, and once drawn is grown by whole pixels', async () => {
   const { forge, asked } = forgeFailing(2);
-  const build = (millis = 0) => keeperFigure('tailor', forge, 200, 2, millis, false);
-  assert.equal(build(), null, 'nothing while it is drawn');
+  const build = (millis: number, still = false) => keeperFigure('tailor', forge, 200, 2, millis, still);
+  assert.equal(build(0), null, 'nothing while it is drawn');
   await settle();
-  assert.equal(build(), null, 'a failure is not kept');
+  assert.equal(build(500), null, 'a failure is not kept');
+  assert.equal(asked.count, 2, 'nor asked again at once');
+  assert.equal(build(2000), null, 'asked again a while on');
   await settle();
   assert.equal(asked.count, 4, 'the failed drawing was asked for again');
-  const shown = build();
+  const shown = build(2400);
   assert.ok(shown?.picture, 'drawn');
   assert.deepEqual(shown.picture.pixel, { width: 1, height: 2 }, 'trimmed to what it draws, texels kept whole');
   // 200 CSS pixels at 2 device pixels each fit 200 whole steps of the figure's two texels.
   assert.equal(shown.height, 200);
   assert.equal(shown.width, 100);
-  assert.notEqual(build(600)?.picture?.key, shown.picture.key, 'it breathes to its second frame');
-  assert.equal(
-    keeperFigure('tailor', forge, 200, 2, 600, true)?.picture?.key,
-    shown.picture.key,
-    'still with less motion',
-  );
+  assert.notEqual(build(3000)?.picture?.key, shown.picture.key, 'it breathes to its second frame');
+  assert.equal(build(3000, true)?.picture?.key, 'keeper tailor 0', 'still with less motion');
   assert.equal(asked.count, 4, 'drawn once, then kept');
 });

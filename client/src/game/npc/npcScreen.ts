@@ -50,6 +50,8 @@ let choosing = false;
 /** The press to focus on the next frame: the first fragment as the choice opens, the Rise as it closes, the Art once
  *  its rise is bought. */
 let focusNext: 'first-rise' | string | null = null;
+/** How many frames the focus has waited for its press. */
+let focusWaited = 0;
 /** The asks that wait on the room's answers: how many it had answered at the first, and how many were made. */
 let pending: Asked | null = null;
 /** The wares' presses, row by row, as last drawn, so the focus on one gone goes to the one beside it. */
@@ -65,7 +67,7 @@ export function npcOpened(view: View): void {
 /** Escape's step on the screen: out of the Art's choice of fragments, the focus back on its Rise; false with none. */
 export function npcStepBack(): boolean {
   if (!choosing) return false;
-  [choosing, focusNext] = [false, 'npc-rise'];
+  [choosing, focusNext, focusWaited] = [false, 'npc-rise', 0];
   return true;
 }
 
@@ -285,7 +287,7 @@ export function npcPage(context: MenuContext, kind: KeeperKind): Node {
   if (answer !== undefined) {
     pending = null;
     // A rise bought from the choice of fragments takes its whole row away: the focus goes to the Art it raised.
-    if (answer === 'Thanks' && choosing) [choosing, focusNext] = [false, 'npc-art'];
+    if (answer === 'Thanks' && choosing) [choosing, focusNext, focusWaited] = [false, 'npc-art', 0];
     if (answer) keeperSays(kind, answer);
   }
   const keeper = KEEPERS[kind];
@@ -299,7 +301,7 @@ export function npcPage(context: MenuContext, kind: KeeperKind): Node {
   };
   const open = () => {
     choosing = !choosing;
-    focusNext = choosing ? 'first-rise' : 'npc-rise';
+    [focusNext, focusWaited] = [choosing ? 'first-rise' : 'npc-rise', 0];
   };
   // The vault keeper thanks the player for each thing put in or taken out, as a keeper does for a ware.
   const rows = kind === 'vault' ? [] : rowsOf(kind, gear, choosing);
@@ -317,8 +319,9 @@ export function npcPage(context: MenuContext, kind: KeeperKind): Node {
   pressesShown = presses;
   if (focusNext) {
     const wanted = focusNext === 'first-rise' ? presses.flat().find((key) => key.startsWith('npc-rise-')) : focusNext;
-    // Asked for as a press opens the choice, it is found once the choice is drawn, a frame on.
+    // Asked for as a press opens the choice, it is found once the choice is drawn, a frame on; never later.
     if (wanted && presses.flat().includes(wanted)) [focusNext] = [null, ui.focusOn(wanted)];
+    else if (++focusWaited > 1) focusNext = null;
   }
   const stageWidth = Math.floor((room.width * 2) / 5);
   const sideWidth = room.width - stageWidth;

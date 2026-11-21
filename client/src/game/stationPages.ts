@@ -9,7 +9,7 @@ import { cellNode, vacantNode } from './inventoryPage.ts';
 import type { MenuContext } from './menuPage.ts';
 
 /** One shelf: its name and how full it is over a rule, then its cells and its empty places, as many to a row as the
- *  side gives them (Vestiges five a row, as the inventory's stand). */
+ *  side gives them, its Vestiges among them. */
 function shelfNode(context: MenuContext, shelf: VaultShelf, size: number): Node {
   const cells = [
     ...shelf.cells.map((cell) => cellNode(context, cell)),
@@ -49,10 +49,7 @@ export function vaultPage(context: MenuContext, size: number): Node {
     direction: 'column',
     gap: 12,
     padding: [14, 16],
-    children: [
-      { padding: [0, 0, 0, 0], children: [words(title, 2, INK.brassLit)] },
-      ...shelves.map((shelf) => shelfNode(context, shelf, size)),
-    ],
+    children: [words(title, 2, INK.brassLit), ...shelves.map((shelf) => shelfNode(context, shelf, size))],
   });
   return { width: 'grow', gap: 18, children: [side('In the vault', vault.kept), side('Carried', vault.carried)] };
 }

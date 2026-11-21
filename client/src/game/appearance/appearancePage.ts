@@ -35,12 +35,22 @@ const TILE_SHORT = 52;
 const DISPLAY_WIDTH = 360;
 const DISPLAY_AROUND = 24;
 
+/** Each dye's and coat's picture, written once: the screen is drawn every frame. */
+const swatches = new Map<string, string>();
+
 /** A tile's picture: an emblem's sign, a dye over a cuirass, a coat's swatch, or the horse in a barding. */
 function markOf(context: MenuContext, tile: AppearanceTile): Node {
   const emblem = EMBLEMS[tile.number];
   if (tile.kind === 'emblem' && emblem) return emblemNode(emblem, 'sign', 24, TILE_PX, TILE_PX);
-  if (tile.kind === 'dye') return svgNode(`dye ${tile.id}`, dyeSvg(cosmeticRamp(tile.id, GAME_PALETTE)), TILE_PX);
-  if (tile.kind === 'coat') return svgNode(`coat ${tile.id}`, coatSvg(cosmeticRamp(tile.id, GAME_PALETTE)), TILE_PX);
+  if (tile.kind === 'dye' || tile.kind === 'coat') {
+    const key = `${tile.kind} ${tile.id}`;
+    let svg = swatches.get(key);
+    if (svg === undefined) {
+      const ramp = cosmeticRamp(tile.id, GAME_PALETTE);
+      swatches.set(key, (svg = tile.kind === 'dye' ? dyeSvg(ramp) : coatSvg(ramp)));
+    }
+    return svgNode(key, svg, TILE_PX);
+  }
   const picture = bardingPicture(context.forge, context.dress, tile.id);
   return { width: TILE_PX, height: TILE_PX, ...(picture && { picture }) };
 }

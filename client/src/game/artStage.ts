@@ -28,25 +28,26 @@ class Stage {
   private version = 0;
   private tones = new Uint8Array(0);
   private canvas: OffscreenCanvas | null = null;
+  private pixels: ImageData | null = null;
 
   /** The scene of `art` at `cols` by `rows` cells, its middle at `focus`, at `step`: worked out again only for a new
    *  Art or size, painted again only for a new step. Null where nothing can be painted (no canvas off the page). */
   picture(art: Art, cols: number, rows: number, focus: number, step: number): Picture | null {
     if (typeof OffscreenCanvas === 'undefined' || cols < 1 || rows < 1) return null;
-    const sized = JSON.stringify([art.key, cols, rows, Math.round(focus)]);
+    const sized = `${art.key} ${cols} ${rows} ${Math.round(focus)}`;
     if (sized !== this.sized) {
       this.sized = sized;
       this.scene = sceneOf(art.key, cols, rows, focus);
       this.element = art.element as GlowElement;
       this.tones = new Uint8Array(cols * rows);
       this.canvas = new OffscreenCanvas(cols, rows);
+      this.pixels = new ImageData(cols, rows);
       this.shown = -1;
     }
-    const { scene, canvas } = this;
-    if (!scene || !canvas) return null;
+    const { scene, canvas, pixels } = this;
+    if (!scene || !canvas || !pixels) return null;
     if (step !== this.shown) {
       this.shown = step;
-      const pixels = new ImageData(cols, rows);
       paintScene(sceneFrame(scene, step, this.tones), this.element, pixels.data);
       canvas.getContext('2d')?.putImageData(pixels, 0, 0);
       this.version++;

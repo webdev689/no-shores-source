@@ -88,7 +88,7 @@ export function lookOf(
   const colour = ELEMENTS[art.element]?.colour ?? INK.brass;
   const tone = { ...elementTone(art.element), colour };
   const middling = view.width >= 1500 && view.height >= 900 && view.height < 1000;
-  // The emblem's cell as the sheet's media chose it: a step less where short, more where wide.
+  // The emblem's cell: a step less where short, more where wide.
   const cell = view.height <= 800 ? 6 : wide ? (middling ? 10 : 11) : short ? 7 : 8;
   const top = wide ? (middling ? 44 : 88) : short ? 33 : 66;
   const rgb = tone.rgb;
@@ -140,7 +140,7 @@ export function pipsNode(level: number, element: number, pip: number, gap: numbe
   const found = ELEMENTS[element];
   const [lit, fill] = [found?.palette[2] ?? INK.brassLit, found?.colour ?? INK.brass];
   const rgb = elementTone(element).rgb;
-  // Each pip a square turned on its corner, as the sheet turned it: its corners reach past its box.
+  // Each pip a square turned on its corner, its corners reaching past its box.
   const reach = pip * 0.707;
   const step = pip + gap;
   const [width, height] = [Math.ceil(4 * step + pip + 2 * reach - pip + 2), Math.ceil(2 * reach + 2)];
@@ -248,7 +248,7 @@ function spellTile(context: MenuContext, art: Art, spell: Spell, look: ArtLook):
   );
 }
 
-/** A row's heading over its tiles, at least as wide as the sheet's groups stood. */
+/** A row's heading over its tiles, at least 220 pixels wide (330 where wide). */
 function group(said: string, look: ArtLook, tiles: readonly Child[], id: string, rise: number): Node {
   return {
     id,
@@ -276,7 +276,7 @@ function coreRow(context: MenuContext, art: Art, look: ArtLook, state: ArtsState
       // Into the flyout, at the fragment set here, else the first that may be.
       if (open !== slot) {
         const first = chosen ?? coreChoices(art, core, slot, owned).find((each) => each.ask)?.index ?? 0;
-        ui.focusOn(`fragment-${first}`);
+        state.focus(`fragment-${first}`);
       }
     }
     context.card(
@@ -396,7 +396,7 @@ function flyoutNode(
         ui.store.set(REFUSAL, '');
         if (ask) state.ask(ask);
         state.choose(null);
-        ui.focusOn(`core-${open}`);
+        state.focus(`core-${open}`);
       }
     }
     // Its numbers with the Core as choosing it would leave it.

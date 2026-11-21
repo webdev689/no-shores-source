@@ -85,5 +85,5 @@ test('the display previews the tile under the pointer, else the one the keys hol
   const only = (wanted: unknown) => (tile: unknown) => tile === wanted;
   assert.equal(previewedTile(tiles, only(second), only(first)), second, 'the pointer before the keys');
   assert.equal(previewedTile(tiles, only(null), only(first)), first, 'the pointer gone, the tile the keys focused');
-  assert.equal(previewedTile(tiles, only(null), only(null)), null, 'a tile a click focused holds no preview');
+  assert.equal(previewedTile(tiles, only(null), only(null)), null, 'with neither, the player as they are');
 });

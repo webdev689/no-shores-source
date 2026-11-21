@@ -21,6 +21,9 @@ interface Frames {
 }
 const drawn = new Map<KeeperKind, Frames>();
 const asked = new Set<KeeperKind>();
+/** When each keeper's drawing last failed, so a forge that keeps failing is asked again only now and then. */
+const failedAt = new Map<KeeperKind, number>();
+const RETRY_MS = 2000;
 
 /** `picture`'s pixels inside `bounds`, a row at a time. */
 function trimmed(picture: Picture, [west, north, width, height]: readonly [number, number, number, number]) {
@@ -32,18 +35,18 @@ function trimmed(picture: Picture, [west, north, width, height]: readonly [numbe
   return out;
 }
 
-/** The keeper's frames, drawn once; null while they are drawn. A failed drawing is not kept: the next frame asks
- *  again. */
-export function framesOf(kind: KeeperKind, forge: Cards): Frames | null {
+/** The keeper's frames, drawn once; null while they are drawn. A failed drawing is not kept: it is asked for again
+ *  `RETRY_MS` after it failed. */
+export function framesOf(kind: KeeperKind, forge: Cards, now = performance.now()): Frames | null {
   const kept = drawn.get(kind);
-  if (kept || asked.has(kind)) return kept ?? null;
+  if (kept || asked.has(kind) || now - (failedAt.get(kind) ?? -RETRY_MS) < RETRY_MS) return kept ?? null;
   asked.add(kind);
   const { dress } = KEEPERS[kind];
   void Promise.all(FRAMES.map((frame) => forge.picture(dress, 'idle', FACING, frame).catch(() => null))).then(
     (pictures) => {
       asked.delete(kind);
       const [first] = pictures;
-      if (!first) return;
+      if (!first) return void failedAt.set(kind, now);
       const bounds = drawnBounds(first.width, first.height, first.pixels) ?? [0, 0, first.width, first.height];
       const pixels = pictures.filter((each): each is Picture => each !== null).map((each) => trimmed(each, bounds));
       drawn.set(kind, { width: bounds[2], height: bounds[3], pixels });
@@ -62,7 +65,7 @@ export function keeperFigure(
   millis: number,
   still: boolean,
 ): Node | null {
-  const frames = forge ? framesOf(kind, forge) : null;
+  const frames = forge ? framesOf(kind, forge, millis) : null;
   if (!frames || frames.pixels.length === 0) return null;
   const scale = Math.max(1, Math.floor((height * ratio) / frames.height));
   const shown = still ? 0 : Math.floor(millis / FRAME_MS) % frames.pixels.length;

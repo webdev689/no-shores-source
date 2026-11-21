@@ -225,7 +225,7 @@ export function meter(share: number, said: string, colour: string, look: KeeperL
 function artLine(art: NonNullable<Row['art']>, look: KeeperLook): Node {
   const pips = Array.from({ length: 5 }, (_unused, place) => {
     const lit = place < art.level;
-    // A square turned on its corner and drawn three quarters its size, as the sheet turned and shrank it.
+    // A square turned on its corner, three quarters its size.
     return `<polygon points="${7.5 + place * 15},1.5 ${13.5 + place * 15},7.5 ${7.5 + place * 15},13.5 ${1.5 + place * 15},7.5" fill="${lit ? look.glow : INK.well}" stroke="${lit ? look.glow : INK.stoneHi}"/>`;
   });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 75 15">${pips.join('')}</svg>`;

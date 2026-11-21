@@ -95,12 +95,18 @@ test("the Art's screen opens from its diamond at its Anima, sets a fragment owne
   assert.ok(art);
   assert.equal(ui.focusedId, `spell-${art.anima.key}`, 'the screen is read from its Anima');
   click('core-1');
+  frame();
   assert.ok(ui.boxOf('arts-flyout'), "the slot's flyout opens");
   const standing = levelOf(gear.standing, art.id);
   const choices = coreChoices(art, [null, null, null], 1, (fragment) => owns(standing, fragment));
   const refused = choices.find((each) => !each.owned);
   const chosen = choices.find((each) => each.ask);
   assert.ok(refused && chosen);
+  assert.equal(
+    ui.focusedId,
+    `fragment-${chosen.index}`,
+    'the focus goes into the flyout, at the first that may be set',
+  );
   click(`fragment-${refused.index}`);
   assert.equal(asked.length, 0, 'a fragment not owned is refused before any ask');
   assert.ok(ui.boxOf('arts-flyout'), 'and the flyout stays');

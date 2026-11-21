@@ -32,10 +32,12 @@ export interface ArtsState {
   readonly choose: (slot: number | null) => void;
   readonly pending: number | null;
   readonly ask: (ask: ArtsAsk) => void;
+  /** Gives the focus to `id` once it is drawn. */
+  readonly focus: (id: string) => void;
 }
 
-/** A diamond's ring round an Art's diamond `size` pixels a side, in `colour` over a dark line, as the sheet outlined
- *  the worn Art's and the focused one's. */
+/** A diamond's ring round an Art's diamond `size` pixels a side, in `colour` over a dark line: the worn Art's, and
+ *  the focused one's. */
 function diamondRing(size: number, colour: string): Node {
   const whole = size + 8;
   const middle = whole / 2;
@@ -176,7 +178,7 @@ function picksNode(context: MenuContext, art: Art, look: ArtLook, ask: ArtsState
             picture: {
               key: `art ${each.id}`,
               source: { svg: emblemSvg(each) },
-              // The others stand a little subdued, as the sheet dimmed them.
+              // The others stand a little subdued.
               ...(!lit && { tint: 'rgb(204,204,204)' }),
             },
             children: [
@@ -293,7 +295,7 @@ export function artsPage(context: MenuContext, state: ArtsState): Node {
     height: room.height,
     clip: true,
     fill: INK.ground,
-    label: `${art.name}`,
+    label: art.name,
     picture: look.ground,
     children: [
       {
