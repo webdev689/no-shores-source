@@ -2,8 +2,11 @@
 // bars, each side's guns, the shot loaded, the brace, and the warning of a broadside run out at her), and the fight's
 // task, which counts the ships still afloat and their men. Each captain's hull stands on her plate over her, and DFO's
 // messages are the HUD's toasts.
-import { make } from '../editor/dom.ts';
-import { ROLES } from '../plus/kit.ts';
+import { TONES } from '../plus/tones.ts';
+import { announce } from '../ui/announce.ts';
+import { easeOut } from '../ui/ease.ts';
+import type { Node } from '../ui/node.ts';
+import { drawings, edges, header, keycap, ruleOver, strip, Tween } from './hudParts.ts';
 import type { FightView } from '../rules/fightRules.ts';
 import type { Quest } from './tasks.ts';
 
@@ -68,82 +71,156 @@ export function seaFightQuest(name: string, left: number, men: number): Quest {
   };
 }
 
-/** One bar of the panel: its label, its trough and fill, and its numbers. */
-interface Bar {
-  readonly fill: HTMLElement;
-  readonly value: HTMLElement;
-}
+/** How long a bar's fill takes to reach a new share, seconds, easing out as CSS's `ease-out` does. */
+const FILL_S = 0.25;
+const BAR_KINDS = [
+  ['hull', 'Hull', '#b53a2e'],
+  ['sails', 'Sails', '#c2b79a'],
+  ['crew', 'Crew', '#2f9152'],
+] as const;
+/** The broadside warning's edge: stone gone to blood. */
+const BLOOD = { top: [2, '#e0584a'], right: [2, '#5a130f'], bottom: [2, '#3d0d0a'], left: [2, '#b83a2e'] } as const;
 
 export class FightPanel {
-  private readonly root = make('section', '', `fight-ship ${ROLES.window}`);
-  private readonly name = make('div', '', `fight-ship-name ${ROLES.header}`);
-  private readonly warning = make('div', 'Broadside! Brace', `fight-ship-warning ${ROLES.chip}`);
-  private readonly bars: Record<'hull' | 'sails' | 'crew', Bar>;
-  private readonly guns = [make('span', '', 'fight-ship-gun'), make('span', '', 'fight-ship-gun')] as const;
-  private readonly shot = make('span', '', `fight-ship-shot ${ROLES.chip}`);
-  private readonly braced = make('span', 'Braced', `fight-ship-braced ${ROLES.chip}`);
-  private written = '';
-
-  constructor(parent: HTMLElement) {
-    this.root.setAttribute('aria-label', 'Your ship');
-    this.warning.append(make('kbd', 'C', 'gear-key'));
-    this.warning.setAttribute('role', 'alert');
-    const bar = (label: string, key: string): [HTMLElement, Bar] => {
-      const row = make('div', '', `fight-ship-row ${key}`);
-      const track = make('span', '', `fight-ship-track ${ROLES.track}`);
-      const fill = make('i', '', `fight-ship-fill ${ROLES.meter}`);
-      const value = make('span', '', 'fight-ship-value');
-      track.append(fill);
-      row.append(make('span', label, 'fight-ship-label'), track, value);
-      return [row, { fill, value }];
-    };
-    const [hull, sails, crew] = [bar('Hull', 'hull'), bar('Sails', 'sails'), bar('Crew', 'crew')];
-    this.bars = { hull: hull[1], sails: sails[1], crew: crew[1] };
-    const guns = make('div', '', `fight-ship-guns ${ROLES.rule}`);
-    guns.append(
-      make('span', 'Port', 'fight-ship-label'),
-      this.guns[0],
-      make('span', 'Starboard', 'fight-ship-label'),
-      this.guns[1],
-    );
-    const load = make('div', '', 'fight-ship-load');
-    load.append(this.shot, this.braced);
-    this.root.append(this.name, this.warning, hull[0], sails[0], crew[0], guns, load);
-    this.root.hidden = true;
-    parent.append(this.root);
-  }
+  private ship: ShipReadout | null = null;
+  private readonly fills = BAR_KINDS.map(() => new Tween(0, FILL_S, easeOut));
 
   /** Whether the panel shows. */
   get shown(): boolean {
-    return !this.root.hidden;
+    return this.ship !== null;
   }
 
-  /** Shows her ship as `ship` reads, or hides the panel for none; it writes the page only when what it says changes. */
-  show(ship: ShipReadout | null): void {
-    const written = JSON.stringify(ship);
-    if (written === this.written) return;
-    this.written = written;
-    this.root.hidden = ship === null;
-    if (!ship) return;
-    this.name.textContent = ship.name;
-    this.warning.hidden = !ship.broadside;
-    for (const key of ['hull', 'sails', 'crew'] as const) {
-      const [have, most] = ship[key];
-      this.bars[key].fill.style.width = `${(100 * Math.max(0, Math.min(1, have / Math.max(1, most)))).toFixed(1)}%`;
-      this.bars[key].value.textContent = `${have}/${most}`;
-    }
-    ship.guns.forEach((words, index) => {
-      const gun = this.guns[index];
-      if (!gun) return;
-      gun.textContent = words;
-      // A side still reloading reads dim; one ready or laid stands bright.
-      gun.classList.toggle('loading', words.endsWith(' s'));
+  /** Shows her ship as `ship` reads, or hides the panel for none; a broadside newly run out at her is told aloud. */
+  show(ship: ShipReadout | null, now = performance.now() / 1000): void {
+    if (ship?.broadside && !this.ship?.broadside) announce('Broadside! Brace');
+    if (ship && !this.ship)
+      BAR_KINDS.forEach(([key], index) => this.fills[index]?.set(shareOf(ship[key]), Number.NEGATIVE_INFINITY));
+    if (ship) BAR_KINDS.forEach(([key], index) => this.fills[index]?.set(shareOf(ship[key]), now));
+    this.ship = ship;
+  }
+
+  /** The panel in a view `width` by `height` CSS pixels at `now` (seconds): at the bottom left, over the dialogue box
+   *  where the view is narrow, its words a step larger where the view is 1500 by 900 or more; still when `still`. */
+  node(view: { readonly width: number; readonly height: number }, now: number, still: boolean): Node | null {
+    const ship = this.ship;
+    if (!ship) return null;
+    const big = view.width >= 1500 && view.height >= 900;
+    const size = big ? 2 : 1;
+    const [label, value] = big ? [80, 96] : [44, 56];
+    const dim = (words: string): Node => ({
+      text: { words: words.toUpperCase(), size, colour: '#9a9079', wrap: false, tracking: 3 },
     });
-    this.shot.textContent = ship.shot;
-    this.braced.hidden = !ship.braced;
-  }
-
-  remove(): void {
-    this.root.remove();
+    const bar = ([key, words, colour]: (typeof BAR_KINDS)[number], index: number): Node => {
+      const share = this.fills[index]?.value(now, still) ?? 0;
+      return {
+        width: 'grow',
+        gap: 6,
+        alignY: 'center',
+        padding: [6, 11, 0, 11],
+        children: [
+          { width: label, children: [dim(words)] },
+          {
+            width: 'grow',
+            height: big ? 12 : 8,
+            role: 'track',
+            bevel: 1,
+            padding: 1,
+            children: [
+              {
+                width: `${Math.round(1000 * share) / 10}%`,
+                height: 'grow',
+                fill: colour,
+                draw: drawings(
+                  strip(0, 1, 'rgba(255,255,255,0.34)'),
+                  strip(-2, 2, 'rgba(0,0,0,0.36)'),
+                  edges({ right: [2, 'rgba(255,255,255,0.42)'] }),
+                ),
+              },
+            ],
+          },
+          {
+            width: value,
+            children: [
+              {
+                width: 'grow',
+                text: { words: `${ship[key][0]}/${ship[key][1]}`, size, colour: '#fbf8f0', align: 'end', wrap: false },
+              },
+            ],
+          },
+        ],
+      };
+    };
+    const gun = (words: string): Node => ({
+      // A side still reloading reads dim; one ready or laid stands bright.
+      text: { words, size, colour: words.endsWith(' s') ? '#e2dccd' : TONES.brassHi, wrap: false },
+    });
+    const chip = (words: string): Node => ({
+      role: 'chip',
+      bevel: 1,
+      padding: [2, 7],
+      children: [{ text: { words, size, colour: TONES.word, wrap: false } }],
+    });
+    return {
+      role: 'window',
+      direction: 'column',
+      through: true,
+      width: big ? 372 : 248,
+      padding: 2,
+      float: { to: 'screen', at: [0, 1], anchor: [0, 1], x: 28, y: view.width <= 890 ? -262 : -22 },
+      children: [
+        {
+          width: 'grow',
+          padding: [4, 11, 3, 11],
+          ...header(),
+          children: [{ text: { words: ship.name, size: 2, colour: TONES.brassHi } }],
+        },
+        ship.broadside && {
+          width: 'grow',
+          padding: [8, 11, 0, 11],
+          children: [
+            {
+              width: 'grow',
+              role: 'chip',
+              padding: [5, 10],
+              gap: 6,
+              alignY: 'center',
+              draw: edges(BLOOD),
+              children: [
+                { width: 'grow', text: { words: 'BROADSIDE! BRACE', size: 2, colour: '#ff8a76' } },
+                keycap('C', size),
+              ],
+            },
+          ],
+        },
+        ...BAR_KINDS.map(bar),
+        {
+          width: 'grow',
+          padding: [0, 11],
+          children: [
+            {
+              width: 'grow',
+              gap: 6,
+              alignY: 'center',
+              padding: [14, 0, 0, 0],
+              draw: (ui, box, scale, clip) => ruleOver()(ui, { ...box, y: box.y + 8 * scale }, scale, clip),
+              children: [
+                dim('Port'),
+                { width: 'grow', children: [gun(ship.guns[0])] },
+                dim('Starboard'),
+                { width: 'grow', children: [gun(ship.guns[1])] },
+              ],
+            },
+          ],
+        },
+        {
+          gap: 6,
+          padding: [6, 11, 11, 11],
+          children: [chip(ship.shot), ship.braced && chip('Braced')],
+        },
+      ],
+    };
   }
 }
+
+/** A bar's share filled, 0 to 1. */
+const shareOf = ([have, most]: readonly [number, number]) => Math.max(0, Math.min(1, have / Math.max(1, most)));

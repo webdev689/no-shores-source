@@ -1,5 +1,4 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { mock, test } from 'node:test';
 import type { Line } from '../../speech/cast.ts';
 import { CLEAR } from '../../cinema/weather.ts';
@@ -133,12 +132,6 @@ test('leaving gives the game back its clear weather and its own sky, quiet, an H
   mock.timers.tick(1);
   mock.timers.reset();
   assert.ok(done.includes('open view'));
-});
-
-test("the veil's time is the page's own veil transition", () => {
-  const page = readFileSync(new URL('../../../index.html', import.meta.url), 'utf8');
-  const veil = /\n\s*\.veil \{[^}]*transition: opacity ([\d.]+)s/.exec(page);
-  assert.equal(Number(veil?.[1]), HUD_VEIL_S);
 });
 
 test("a bark's gap is counted in the story's time, so a slow frame never lets the next line come early", async () => {

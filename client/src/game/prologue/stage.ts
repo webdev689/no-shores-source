@@ -20,7 +20,7 @@ import type { HullMask } from '../../water/hullMask.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { FigureView } from '../figureView.ts';
 import type { FootView } from '../footView.ts';
-import type { Hud } from '../hud.ts';
+import { type Hud, VEIL_S } from '../hud.ts';
 import type { LandDrawers } from '../landDrawers.ts';
 import type { Landmass } from '../landmass.ts';
 import type { Ambience as WorldAmbience } from '../audio/ambience/ambience.ts';
@@ -92,9 +92,8 @@ export interface StageParts {
   readonly landmass: () => Landmass;
 }
 
-/** How long the game's veil over a loading place takes to rise or to fall, seconds: `.veil`'s transition in
- *  client/index.html. */
-export const HUD_VEIL_S = 0.7;
+/** How long the game's veil over a loading place takes to rise or to fall, seconds: the HUD's own. */
+export const HUD_VEIL_S = VEIL_S;
 /** How long the story's screen takes to clear its black: `Screen.clear`'s fade. */
 const SCREEN_CLEAR_S = 0.6;
 

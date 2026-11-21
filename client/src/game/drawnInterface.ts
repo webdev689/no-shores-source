@@ -7,7 +7,15 @@ import { readFace } from '../ui/faceReader.ts';
 import type { Stack } from '../ui/stack.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
+import type { Besides } from './hud.ts';
 import { drawnPress, drawnReach } from './uiSounds.ts';
+
+/** What of the page's own pieces under `root` holds the screen now, which the drawn display gives way to: the fight's
+ *  display and its boss's bar, and the dialogue box. */
+export function besidesIn(root: ParentNode): Besides {
+  const shown = (what: string) => root.querySelector(`:scope > ${what}:not([hidden])`) !== null;
+  return { fight: shown('.fight'), bossed: shown('.fight.bossed'), speaking: shown('.speech-box') };
+}
 
 export class DrawnInterface {
   private ui: Interface | null = null;
