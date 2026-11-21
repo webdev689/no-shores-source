@@ -9,6 +9,11 @@ on:
   push:
     paths: [content/audio/freesound.json, tools/freesound/**, .github/workflows/freesound.yml]
   workflow_dispatch:
+    inputs:
+      only:
+        description: 'Search only the cues whose names begin with these, comma-separated (empty: every cue)'
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -28,6 +33,8 @@ jobs:
       - name: Test the page reader
         run: node --test tools/freesound/pages.test.mjs
       - name: Find the candidates
+        env:
+          ONLY: ${{ github.event.inputs.only }}
         run: node tools/freesound/candidates.mjs freesound-candidates
       # A long pick is cut with ffmpeg, which decodes a stranger's audio: in steps that hold no key.
       - name: Install ffmpeg

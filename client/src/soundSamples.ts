@@ -122,6 +122,8 @@ export function loadSamples(audio: AudioContext): void {
  *  it. */
 export interface SamplePlay {
   readonly when?: number;
+  /** A part of the sound alone, `seconds` long, from `at` (0 to 1) of the way through the rest of it. */
+  readonly slice?: { readonly at: number; readonly seconds: number };
   readonly like?: (
     { readonly sound: AudioBuffer; readonly measured?: never } | { readonly measured: Loudness; readonly sound?: never }
   ) & { readonly windowS: number; readonly most?: number };
@@ -151,7 +153,9 @@ export function playSample(
   gain.gain.value =
     like && theirs ? matchedLevel(measureOfBuffer(sound.buffer, like.windowS), theirs, like.most) : sound.level;
   source.connect(gain).connect(out);
-  source.start(play.when ?? 0);
+  const { slice } = play;
+  if (slice) source.start(play.when ?? 0, slice.at * Math.max(0, sound.buffer.duration - slice.seconds), slice.seconds);
+  else source.start(play.when ?? 0);
   return source;
 }
 

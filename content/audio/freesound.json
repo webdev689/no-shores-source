@@ -2128,6 +2128,51 @@
         0.5,
         10.0
       ]
+    },
+    {
+      "id": "speech.voice",
+      "use": "A speaker's voice: one syllable of talk heard through wind and timber, never words made out; a slice of the pick plays for each syllable",
+      "query": "gibberish talking",
+      "seconds": [
+        1.0,
+        10.0
+      ]
+    },
+    {
+      "id": "story.thud",
+      "use": "A body thrown down on a ship's deck",
+      "query": "body fall wood",
+      "seconds": [
+        0.2,
+        2.0
+      ]
+    },
+    {
+      "id": "story.ringing",
+      "use": "The ears ringing after the ram's blow, fading",
+      "query": "ear ringing",
+      "seconds": [
+        1.0,
+        8.0
+      ]
+    },
+    {
+      "id": "story.heartbeat",
+      "use": "One heartbeat, heard in the deep",
+      "query": "heartbeat single",
+      "seconds": [
+        0.4,
+        3.0
+      ]
+    },
+    {
+      "id": "story.flash",
+      "use": "The bright flash in the deep: a glassy swell rising",
+      "query": "glass swell shimmer",
+      "seconds": [
+        1.0,
+        6.0
+      ]
     }
   ]
 }

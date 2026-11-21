@@ -19,6 +19,12 @@ const PAUSE_MS = 600;
 const headers = { 'user-agent': 'Mozilla/5.0 (compatible; overlook-tools; sound test sheet)' };
 
 const out = process.argv[2] ?? 'freesound-candidates';
+/** Only the cues whose names begin with one of these (comma-separated, as the workflow is asked by hand), to search
+ *  a few again without the whole list; every cue where it is empty. The picks are read whole either way. */
+const only = (process.env.ONLY ?? '')
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean);
 const wanted = JSON.parse(readFileSync(new URL('../../content/audio/freesound.json', import.meta.url), 'utf8'));
 const pause = () => new Promise((done) => setTimeout(done, PAUSE_MS));
 
@@ -106,6 +112,7 @@ for (const cue of wanted.cues) {
   // One kept or made by the game, or whose sound comes from DFO's own, is searched no more; what the owner already
   // heard is passed over.
   if (cue.keep || cue.made || cue.dfo) continue;
+  if (only.length > 0 && !only.some((name) => cue.id.startsWith(name))) continue;
   const heard = new Set((cue.skip ?? []).map(String));
   const [least, most] = cue.seconds;
   const search = (filter) =>

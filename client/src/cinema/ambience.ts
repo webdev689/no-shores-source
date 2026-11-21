@@ -90,6 +90,10 @@ export const RECORDED_SHOTS = {
   crash: { cue: 'story.crash', synth: { peak: 1.438, loud: 0.5012 } },
   splash: { cue: 'story.splash', synth: { peak: 0.734, loud: 0.1208 } },
   whoosh: { cue: 'story.whoosh', synth: { peak: 0.532, loud: 0.1191 } },
+  thud: { cue: 'story.thud', synth: { peak: 0.8225, loud: 0.1716 } },
+  ringing: { cue: 'story.ringing', synth: { peak: 0.109, loud: 0.0504 } },
+  heartbeat: { cue: 'story.heartbeat', synth: { peak: 0.6011, loud: 0.1296 } },
+  flash: { cue: 'story.flash', synth: { peak: 0.2789, loud: 0.0916 } },
 } as const;
 const SHOT_WINDOW_S = 0.4;
 
@@ -236,11 +240,11 @@ export class Ambience {
   }
 
   thud(): void {
-    this.shot(thudVoice);
+    this.shot(thudVoice, RECORDED_SHOTS.thud);
   }
 
   ringing(seconds: number): void {
-    this.shot((kit, out, when) => ringingVoice(kit, out, when, finiteSeconds(seconds)));
+    this.shot((kit, out, when) => ringingVoice(kit, out, when, finiteSeconds(seconds)), RECORDED_SHOTS.ringing);
   }
 
   heartbeat(beating: boolean): void {
@@ -248,7 +252,7 @@ export class Ambience {
   }
 
   flash(): void {
-    this.shot(flashVoice);
+    this.shot(flashVoice, RECORDED_SHOTS.flash);
   }
 
   whoosh(): void {
@@ -294,7 +298,7 @@ export class Ambience {
       this.nextBeatAt = Math.max(this.nextBeatAt, now);
       // Beats are laid a little ahead of the clock, so an uneven frame never makes the heart stumble.
       while (this.nextBeatAt < now + 0.15) {
-        heartbeatVoice(engine.kit, engine.shots, this.nextBeatAt);
+        this.shot(heartbeatVoice, RECORDED_SHOTS.heartbeat, 1, this.nextBeatAt);
         this.nextBeatAt += BEAT_S;
       }
     }
@@ -342,16 +346,18 @@ export class Ambience {
     disconnectAfter(engine.kit, end, nodes);
   }
 
-  /** A one-shot: its recording where it has come, as loud as the synthesiser's at `level`, else the synthesiser's. */
+  /** A one-shot, now or at `scheduled` on the audio clock: its recording where it has come, as loud as the
+   *  synthesiser's at `level`, else the synthesiser's. */
   private shot(
     voice: (kit: Kit, out: AudioNode, when: number) => void,
     recorded?: { readonly cue: string; readonly synth: Loudness },
     level = 1,
+    scheduled?: number,
   ): void {
     const engine = this.live();
     if (!engine) return;
     const { audio } = engine.kit;
-    const when = audio.currentTime;
+    const when = scheduled ?? audio.currentTime;
     if (recorded) {
       const sized = audio.createGain();
       sized.gain.value = level;
