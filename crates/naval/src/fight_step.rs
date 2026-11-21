@@ -116,8 +116,10 @@ impl Fight {
                 continue;
             };
             player.guns.braced = order.brace;
+            // A side drawn for a new load reloads as its volleys do: by its hands left and its fittings' trim.
+            let pace = RELOAD_SINGLEHANDED * self.fittings.get(id).map_or(1.0, |fitted| fitted.trim.reload);
             if let Some(shot) = order.load
-                && player.guns.set_load(shot, 1.0, false)
+                && player.guns.set_load(shot, player.damage.crew_share(), true, pace)
             {
                 events.push(Event::Load { ship: *id, shot });
             }

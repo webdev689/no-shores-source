@@ -40,13 +40,22 @@ fn a_new_load_draws_a_loaded_battery_and_scales_one_reloading() {
     let mut guns = Guns::new();
     guns.fired(Side::Port, 1.0, false);
     guns.step(2.8);
-    assert!(guns.set_load(Shot::Heated, 1.0, false));
+    assert!(guns.set_load(Shot::Heated, 1.0, false, 1.0));
     // Port was halfway through 5.6 s: heated reloads 1.6 times as long, its progress kept.
     assert!(near(guns.left(Side::Port), 2.8 * 1.6) && near(guns.progress(Side::Port), 0.5));
     // Starboard stood loaded: drawn and loaded again in half the new load's reload.
     assert!(near(guns.left(Side::Starboard), 0.5 * 4.0 * 1.6 * 1.4));
-    assert!(!guns.set_load(Shot::Heated, 1.0, false), "the same load changes nothing");
+    assert!(!guns.set_load(Shot::Heated, 1.0, false, 1.0), "the same load changes nothing");
     assert_eq!(guns.load, Shot::Heated);
+}
+
+#[test]
+fn a_loaded_battery_drawn_for_a_new_load_takes_half_the_reload_its_hands_left_and_its_pace_give() {
+    let mut guns = Guns::new();
+    let heated = reload_seconds(&loaded(&SWIVEL, Shot::Heated), 0.0, true);
+    assert!(guns.set_load(Shot::Heated, 0.0, true, 1.4 * 0.9));
+    assert!(near(guns.left(Side::Starboard), 0.5 * heated * 1.4 * 0.9), "no hands left, a trimmed reload");
+    assert!(near(heated, 4.0 * 1.6 * 1.8), "with none of its crew left a gun takes 1.8 times as long");
 }
 
 fn sailing_north(ahead: f64) -> Ship {
