@@ -56,3 +56,41 @@ test('the tap to start waits for both the tap and the world, then fades and goes
     Object.assign(globalThis, { addEventListener: undefined, removeEventListener: undefined });
   }
 });
+
+test('while the tap to start stands, the key that taps it is its own', async () => {
+  const heard = page();
+  const { creationOpen, accountStep } = await import('./creation.ts');
+  const stack = new Stack();
+  void tapToStart(stack, new Promise(() => undefined));
+  const left = new AbortController();
+  void accountStep(stack, null, left.signal).catch(() => undefined);
+  assert.equal(creationOpen(), false, 'the window under it takes no keys');
+  for (const listener of [...heard]) listener();
+  assert.equal(creationOpen(), true, 'tapped, the window takes them');
+  left.abort();
+  Object.assign(globalThis, { addEventListener: undefined, removeEventListener: undefined });
+});
+
+test('a window under the tap to start takes the focus only once it is tapped, so the tapping key presses nothing', async () => {
+  const heard = page();
+  const { accountStep } = await import('./creation.ts');
+  const { fakeInterface } = await import('../../ui/uiForTests.ts');
+  const stack = new Stack();
+  const { ui, step } = fakeInterface();
+  void tapToStart(stack, new Promise(() => undefined));
+  const left = new AbortController();
+  let ended = false;
+  void accountStep(stack, null, left.signal).then(
+    () => (ended = true),
+    () => undefined,
+  );
+  step(() => stack.node(ui));
+  assert.equal(ui.focusedId, null);
+  for (const listener of [...heard]) listener();
+  step(() => stack.node(ui), [{ kind: 'key', key: ' ' }]);
+  await Promise.resolve();
+  assert.equal(ended, false, 'the tapping key went on past nothing');
+  assert.equal(ui.focusedId, 'creation-go-on', 'the way on has the focus after');
+  left.abort();
+  Object.assign(globalThis, { addEventListener: undefined, removeEventListener: undefined });
+});

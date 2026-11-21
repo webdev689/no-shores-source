@@ -68,7 +68,10 @@ export class DrawnInterface {
   private alone(stack: Stack, before: number): void {
     requestAnimationFrame((now) => {
       if (this.framing) return;
-      this.ui?.frame(this.view, this.events.take(), Math.min(0.1, (now - before) / 1000));
+      // Heard by nothing while the world loads (the tap to start hears the page itself), so no key pressed then
+      // presses what takes the focus once the game's frames begin.
+      this.events.take();
+      this.ui?.frame(this.view, [], Math.min(0.1, (now - before) / 1000));
       this.present(stack);
       this.alone(stack, now);
     });

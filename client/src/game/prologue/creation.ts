@@ -22,6 +22,7 @@ import {
   goingOn,
   markHelm,
 } from './accountAsk.ts';
+import { tapStanding } from './tap.ts';
 import { HAIR_COLOURS, type Look, hairStylesOf, withBody, withHair, withRace, withTone } from './look.ts';
 
 export type { AccountOutcome };
@@ -68,8 +69,9 @@ const TONE_GROUND: Picture = {
 /** The windows of the helm up now, whose keys (Tab, Enter, typing) are the interface's while any is. */
 let windowsUp = 0;
 
-/** Whether a window of the helm's is up, so the keys are the interface's. */
-export const creationOpen = (): boolean => windowsUp > 0;
+/** Whether a window of the helm's is up, so the keys are the interface's; not while the tap to start stands over it,
+ *  so the key that taps it presses nothing under it. */
+export const creationOpen = (): boolean => windowsUp > 0 && !tapStanding();
 
 /** How the windows' words are set in a view: the names' size on a wide screen, as the menu's are there. */
 const wideIn = (ui: Interface) => ui.size.width >= 1500 && ui.size.height >= 900;
@@ -294,8 +296,11 @@ export function accountStep(stack: Stack, link: AccountLink | null, signal?: Abo
     };
     const layer = (ui: Interface): Child => {
       drawnOn = ui;
-      if (focusNext) ui.focusOn(focusNext);
-      focusNext = null;
+      // Not while the tap to start stands over the window: the key that taps it would press what has the focus.
+      if (focusNext && !tapStanding()) {
+        ui.focusOn(focusNext);
+        focusNext = null;
+      }
       const size = wideIn(ui) ? 2 : 1;
       if (link === null)
         return windowNode(ui, 'Your account', [
@@ -444,8 +449,10 @@ export function lookStep(
     };
     const layer = (ui: Interface): Child => {
       // The chosen body takes the focus first, as the page's first chosen press took it.
-      if (focusFirst) ui.focusOn(`creation-Body:${look.body}`);
-      focusFirst = false;
+      if (focusFirst && !tapStanding()) {
+        ui.focusOn(`creation-Body:${look.body}`);
+        focusFirst = false;
+      }
       const size = wideIn(ui) ? 2 : 1;
       const hair = look.hair;
       const parts: Child[] = [

@@ -13,6 +13,10 @@ import type { Interface } from '../../ui/ui.ts';
 const TAP_Z = SCREEN_Z + 10;
 const FADE_S = 1.2;
 
+/** Whether a tap to start stands, untapped: the key that taps it is its own, not a window's under it. */
+let untapped = false;
+export const tapStanding = (): boolean => untapped;
+
 /** The tap to start this frame: `name` and `press` over black, `loading` under them, faded by `shown`. */
 export function tapNode(
   ui: Interface,
@@ -55,11 +59,13 @@ export function tapToStart(stack: Stack, ready: Promise<unknown>, clock: () => n
   const words = { press: playedByTouch() ? 'Tap to start' : 'Click or press any key to start', loading: '' };
   const removeLayer = stack.add((ui) => tapNode(ui, words, shown.value(clock()), clock()));
   announce(`${TITLE}. ${words.press}`);
+  untapped = true;
   return new Promise((resolve) => {
     let tapped = false;
     const tap = () => {
       if (tapped) return;
       tapped = true;
+      untapped = false;
       removeEventListener('keydown', tap);
       removeEventListener('pointerdown', tap);
       words.loading = 'Loading';
