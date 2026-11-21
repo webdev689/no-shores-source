@@ -188,6 +188,13 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   the same. The box of the field being typed in goes back to the page in CSS pixels, for the browser's typing to place
   its composition by. At a whole ratio the two are the same. The World Editor's view starts at the panel's drawn edge
   at any ratio: the panel is 300 of the interface's pixels, `panelCss(ratio)` CSS pixels.
+- **The pointer's look.** In the game and the Test Ground the pointer is the gauntlet, DFO's own grey hand
+  (`gauntlet.ts`, [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]): 31 by 32 pixels in five
+  colours, the point it presses at its fingertip in the top left. The canvas wears it as its cursor, a picture at 1x
+  and at 2x for a denser screen, never past 32 CSS pixels a side; while a mouse button is down over the canvas it
+  shows its press frame at once, the finger drawn in, but not for a touch nor while the pointer is locked. A field
+  keeps the text caret, and while the pad's cursor is out the mouse's pointer is hidden. The World Editor keeps the
+  system's pointers.
 - **Announced.** A toast's words, each press's label as focus reaches it (by the keys or the pad, or given by a
   screen), and a slider's value as the keys step it go to a screen reader through `document.ariaNotify` where the
   browser has it.
@@ -219,6 +226,25 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
   field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is `CanvasEvents`; the interface hears plain events, and with the game in its worker
   ([[Game]], "Threads") hears them as the page sends them (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
+- **The pad's cursor** (`padCursor.ts`, [[Pick - Pad Cursor and Gauntlet]]). Wherever the interface takes the pad (a
+  window, the sheet, the creation, a field being typed in), the left stick thrown from rest past its 0.2 lean brings
+  out a cursor, the gauntlet drawn over everything: at the focus's middle, else where the mouse last was, else the
+  view's. A stick already leant as a window opens moves nothing until it has come back. It moves as DFO's does: 900
+  CSS pixels a second at a full lean, the lean past the rest curved to the power 1.7; it eases in over 0.1 s and stops
+  dead as the stick is let go; a full lean (0.95 of the throw) held past 0.45 s climbs to 1.6 times over 0.3 s. Over a
+  press it goes at 0.4 of its speed, unless boosted. With the stick under half its throw, or at rest, it is drawn
+  toward the middle of the press it is over, or the nearest whose edge is within 28 CSS pixels, closing 10 times a
+  second's share of the gap, the lighter the stick the more; a step under 0.05 pixels is none. Every press the pad
+  can reach pulls it, so it settles on presses in every window.
+- **Pressing with the pad's cursor.** While it is out it is the pointer: what it is over is lit as under the mouse,
+  and A goes down at it and comes up as A is let go, so a hold or a drag works, the gauntlet's finger drawn in
+  meanwhile. Y is the right button there (inspecting an item), and X a press with Shift there (on a press the press,
+  on a field its selection grown to the cursor); each brings the cursor out at the focus if it is away. The right
+  stick leant past 0.25 scrolls the list under it at 900 CSS pixels a second, a whole pixel at a time, or under the
+  focus while it is away. The cross steps the focus from the press under the cursor and carries the cursor onto the
+  one it reaches, following it as its list scrolls it into sight; on the keys the game draws, A types the key under
+  the cursor. A move or press of the mouse, or a key, puts the cursor away; a move the page makes within 0.3 s of the
+  pointer locking or letting go, or one that goes nowhere, does not.
 - **Modal.** A node marked `modal` (the menu, and each window that stands over the game while it is up) holds the
   keys and the pad while it is laid: focus walks only among what acts inside the topmost one, focus left outside it
   is let go, and Enter, Space and A press nothing outside it. Its scrim still takes the pointer.
@@ -573,8 +599,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   right stick turns the view; a tap presses and lets go in one frame. A button with a hold bound where the player is
   (on foot, B's crouch) waits to be told a tap from a hold, and one of two bound together waits 0.12 s for the
   other, so one press never does both. In a window (the menu, the game's menu, the sheet, the story's creation) the
-  pad's buttons are the window's: the cross or the left stick moves the focus, A presses, B steps back, LB and RB
-  turn the menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press that
+  pad's buttons are the window's: the cross steps the focus, the left stick moves the pad's cursor, A presses (at
+  the cursor while it is out), B steps back, Y and X press at the cursor, the right stick scrolls, LB and RB turn the
+  menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press that
   changed it acts on nothing more, and what it held is let go at once, as is a stick let go under the window, so
   nothing stays held once it closes. The story's tap to start takes any of the pad's buttons, and A takes the stranger's hand.
 

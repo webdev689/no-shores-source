@@ -42,6 +42,9 @@ Of the controls' words the owner had said before: "The text is too over explanat
   player is an account from the first visit, so every player's binds are kept.
 - The words on the strip, the sheet and its prompts stay a few each.
 
+Replaced in part by [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]: in a window the cross
+steps the focus and the left stick moves the pad's cursor.
+
 ## Claude's calls
 
 | Call | Chosen | Why |
