@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { contextOf } from './gameKeys.ts';
+import { type Controlled, contextOf, listenForControls } from './gameKeys.ts';
+import { FakeEvent, fakePage } from './pageForTests.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
 const dead = { standing: { kind: 'dead' } };
@@ -26,4 +27,32 @@ test('the controls act where the player is: a window, dead, on foot, at the helm
   const boarded = (foot: object) => afloat({ fight: {}, boarding: { onDeck: true, foot } });
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(alive))), 'foot', "on a struck ship's deck");
   assert.equal(contextOf(game({ mode: 'sea' }, boarded(dead))), 'dead');
+});
+
+test('the repair key repairs at the helm and walking its own deck, never in a fight', () => {
+  const { window } = fakePage();
+  const asked: string[] = [];
+  const sea = {
+    ...afloat({ aboard: { active: true, walking: false } }),
+    sighted: { ask: (what: string) => asked.push(what) },
+  } as { aboard: { active: boolean; walking: boolean }; fight: object | null };
+  const playing = { flow: { mode: 'sea' }, sea, foot: null, helmMap: { key: () => false }, through: null };
+  const nothing = () => undefined;
+  listenForControls({
+    playing,
+    input: { onPad: nothing },
+    ui: { typing: false },
+    hud: {},
+    story: null,
+    retry: () => null,
+    change: nothing,
+  } as unknown as Controlled);
+  const repair = () => window.dispatchEvent(new FakeEvent('keydown', { key: 'r', code: 'KeyR' }));
+  repair();
+  sea.aboard.walking = true;
+  repair();
+  sea.aboard.walking = false;
+  sea.fight = {};
+  repair();
+  assert.deepEqual(asked, ['repair', 'repair']);
 });

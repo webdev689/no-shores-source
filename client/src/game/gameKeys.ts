@@ -69,7 +69,14 @@ export function listenForControls(game: Controlled): void {
     else if (acts('map') || acts('landMap')) game.openMap();
     else if (acts('manage')) game.manage();
     else if (acts('leaveHelm')) game.leaveHelm();
-    else if (acts('repair') && flow.mode === 'sea' && sea?.aboard.active) sea.sighted?.ask('repair');
+    // The repair is the helm's, and its key repairs walking the ship's own deck too, where the Arts are not cast.
+    else if (
+      pressed('repair') &&
+      flow.mode === 'sea' &&
+      sea?.aboard.active &&
+      (here === 'helm' || (here === 'foot' && sea.aboard.walking))
+    )
+      sea.sighted?.ask('repair');
     else if (acts('use') && flow.mode === 'sea' && sea?.fight && fightAsk(sea) === 'board') input.lock();
     else if (acts('use') && sea?.aboard.walking) game.takeHelm();
     else if (acts('use') && flow.mode === 'foot' && !flow.menu && playing.through) game.goThrough();
