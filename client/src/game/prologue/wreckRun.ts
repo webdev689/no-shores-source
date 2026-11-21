@@ -28,7 +28,7 @@ import { footHints } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
 import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
 import { WreckCrew } from './wreckCrew.ts';
-import { courseOf, titheCrew, type WreckLayout } from './wreckLayout.ts';
+import { courseOf, titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
 
@@ -131,7 +131,11 @@ export class WreckRun {
     for (const rules of [movement, combat]) rules.setRim(course);
     const [x, y] = layout.wake.at;
     const { facing } = layout.wake;
-    walker.player = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
+    // On the deck under the wake, as the room stands them: the rim's own ground is the sea below it, so the shot the
+    // wake's flight ends on would stand inside the hull.
+    const woke = newPlayer(movement, x, y);
+    const body = { ...woke.body, z: topAt(course, x, y) };
+    walker.player = { ...woke, body, previous: body, view: walker.player.view, yaw: facing, facing };
     const level = { value: 1 };
     let fight: Fighting | null = null;
     const room = LocalRoom.openOverSea(

@@ -24,9 +24,19 @@ const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 const OPEN_S = 6.5;
 const STAND_S = 10.5;
 const LEAVE_S = 13;
-const CONTROL_S = 25;
+const CONTROL_S = 36;
+/** The flight down the wreck: when it sets off, after the shot over the shoulder, and how long it takes, about 10 m a
+ *  second along the path; how high over the deck it flies and how far ahead along the path it looks, metres. */
+const DOWN_S = LEAVE_S + 3;
+const DOWN_FOR_S = 13;
+const OVER_DECK_M = 7;
+const LOOK_AHEAD_M = 12;
+/** The flight's points along the path stand this far apart, metres. */
+const PATH_STEP_M = 4;
+/** Each leg of the way back to the player, seconds. */
+const BACK_LEG_S = 2;
 /** How far the flight's eye keeps from a mast still standing, metres. */
-const MAST_CLEAR_M = 2.5;
+const MAST_CLEAR_M = 3.5;
 /** The lids' shut share over the first seconds, a slow blinking awake: [seconds, shut]. */
 const BLINKS: readonly (readonly [number, number])[] = [
   [0, 1],
@@ -170,49 +180,63 @@ export class Wake implements Beat {
       }, 0),
     );
     const length = Math.max(1e-6, walked.at(-1) ?? 0);
-    const along = path.map(([x, y], index): RailKey => {
-      const next = path[Math.min(path.length - 1, index + 1)] ?? [x, y];
-      const deck = topAt(this.layout.course, x, y);
+    // The point `metres` along the path, its last past its end, so the look turns as the path does, not at each point.
+    const onPath = (metres: number): readonly [number, number] => {
+      const index = walked.findIndex((reached) => reached >= metres);
+      if (index <= 0) return path[index === 0 ? 0 : path.length - 1] ?? [0, 0];
+      const [from, to] = [path[index - 1] ?? [0, 0], path[index] ?? [0, 0]];
+      const share =
+        (metres - (walked[index - 1] ?? 0)) / Math.max(1e-6, (walked[index] ?? 0) - (walked[index - 1] ?? 0));
+      return [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
+    };
+    // Flown through points an even step apart along the path, so the flight keeps one pace down the wreck.
+    const steps = Math.max(1, Math.ceil(length / PATH_STEP_M));
+    const along = Array.from({ length: steps + 1 }, (unused, step): RailKey => {
+      const metres = (length * step) / steps;
+      const [x, y] = onPath(metres);
       const [east, south] = this.clearOfMasts(x, y);
+      const [lookX, lookY] = onPath(metres + LOOK_AHEAD_M);
       return {
-        at: LEAVE_S + 2 + ((walked[index] ?? 0) / length) * 6,
-        eye: [x + east, y + south, deck + 5.5],
-        look: [next[0] + (next[0] - x) * 2, next[1] + (next[1] - y) * 2, deck + 1.5],
+        at: DOWN_S + (metres / length) * DOWN_FOR_S,
+        eye: [x + east, y + south, topAt(this.layout.course, x, y) + OVER_DECK_M],
+        look: [lookX, lookY, topAt(this.layout.course, lookX, lookY) + 1.5],
       };
     });
     const back = rest ? restingKey(rest) : { eye: behind, look: ahead(stand), fov: 0.9 };
     // Back to the player out past the Frigate's side and the Brig's broken stern, clear of the masts still standing.
     const [first, second] = this.layout.flightBack.map((eye): Omit<RailKey, 'at'> => ({ eye, look: stand }));
     return [
+      // Held a moment in the eyes, so the camera eases out of them.
       { at: LEAVE_S, eye: stand, look: ahead(stand), fov: LENS.fov },
-      { at: LEAVE_S + 1.4, eye: behind, look: ahead(stand), fov: 0.9 },
+      { at: LEAVE_S + 0.3, eye: stand, look: ahead(stand), fov: LENS.fov },
+      { at: LEAVE_S + 2, eye: behind, look: ahead(stand), fov: 0.9 },
       ...along,
       ...(first && second
         ? [
-            { at: CONTROL_S - 3.2, ...first },
-            { at: CONTROL_S - 2.4, ...second },
+            { at: CONTROL_S - 1.5 - BACK_LEG_S * 2, ...first },
+            { at: CONTROL_S - 1.5 - BACK_LEG_S, ...second },
           ]
         : []),
-      { at: CONTROL_S - 1.6, ...back },
+      { at: CONTROL_S - 1.5, ...back },
       { at: CONTROL_S, ...back },
     ];
   }
 
-  /** Which way to stand off from a point of the path as the flight passes over it: behind it and to one side, the
-   *  side whose eye stands furthest from every mast still standing, as a metre and a half each way. */
+  /** How far to stand off from a point of the path as the flight passes over it: straight away from each mast still
+   *  standing nearer than `MAST_CLEAR_M`, out to that distance, so passing a mast the eye leans away from it and back,
+   *  on the side the path passes it. */
   private clearOfMasts(x: number, y: number): readonly [number, number] {
-    const sides = [
-      [1.5, -1.5],
-      [-1.5, -1.5],
-      [1.5, 1.5],
-      [-1.5, 1.5],
-    ] as const;
-    const nearest = ([east, south]: readonly [number, number]) =>
-      Math.min(...this.layout.masts.map(([mastX, mastY]) => Math.hypot(x + east - mastX, y + south - mastY)));
-    return (
-      sides.find((side) => nearest(side) >= MAST_CLEAR_M) ??
-      sides.reduce((best, side) => (nearest(side) > nearest(best) ? side : best))
-    );
+    let [east, south] = [0, 0];
+    for (const [mastX, mastY] of this.layout.masts) {
+      const [away, aside] = [x - mastX, y - mastY];
+      const apart = Math.hypot(away, aside);
+      if (apart >= MAST_CLEAR_M) continue;
+      // A point on the mast itself stands off to the east.
+      const [outX, outY] = apart > 1e-6 ? [away / apart, aside / apart] : [1, 0];
+      east += outX * (MAST_CLEAR_M - apart);
+      south += outY * (MAST_CLEAR_M - apart);
+    }
+    return [east, south];
   }
 
   skip(): void {
@@ -289,7 +313,7 @@ export class Wake implements Beat {
 
   private shotAt(since: number): Shot {
     const facing = this.layout.wake.facing;
-    if (since >= LEAVE_S) return { ...LENS, ...railShot(this.flight, since, LENS.fov, 'both') };
+    if (since >= LEAVE_S) return { ...LENS, ...railShot(this.flight, since, LENS.fov, 'none') };
     // Lying: looking up into the storm, the head lolling; sitting up; standing and looking round.
     const rise = Math.min(1, Math.max(0, (since - OPEN_S) / (STAND_S - OPEN_S)));
     const eased = rise * rise * (3 - 2 * rise);
