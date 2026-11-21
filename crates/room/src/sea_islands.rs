@@ -107,6 +107,13 @@ fn guards_of(holder: Holder, seed: u64) -> Option<u8> {
     }
 }
 
+/// A continent's climate, and its resource's place in the gear's catalogue, which its water's islands carry.
+pub(crate) fn climate_and_resource(continent: &world::layout::Continent) -> (String, Option<u8>) {
+    let resources = &gear::catalogue::catalogue().resources;
+    let resource = resources.iter().position(|found| found.continent == continent.id);
+    (continent.climate.clone().unwrap_or_default(), resource.and_then(|place| u8::try_from(place).ok()))
+}
+
 impl Islands {
     /// No island yet, rolled from `seed`; `climates` each continent's climate and resource, in the layout's order.
     #[must_use]

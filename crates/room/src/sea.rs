@@ -168,13 +168,6 @@ pub(crate) fn whole(&[x, y]: &[f64; 2]) -> Option<Point> {
     (within(x, FRAME_WIDTH_M) && within(y, FRAME_HEIGHT_M)).then(|| Point::new(x.round() as i64, y.round() as i64))
 }
 
-/// A continent's climate, and its resource's place in the gear's catalogue, which its water's islands carry.
-fn climate_and_resource(continent: &world::layout::Continent) -> (String, Option<u8>) {
-    let resources = &gear::catalogue::catalogue().resources;
-    let resource = resources.iter().position(|found| found.continent == continent.id);
-    (continent.climate.clone().unwrap_or_default(), resource.and_then(|place| u8::try_from(place).ok()))
-}
-
 impl Sea {
     /// An empty sea round the layout's continents, every ship with `deck`, its pirates' chances drawn from `seed`, the
     /// Grey Tithe patrolling the lanes between those of `ports` that are port cities.
@@ -199,7 +192,7 @@ impl Sea {
                 ..Default::default()
             },
             decks: decks::Decks::default(),
-            islands: islands::Islands::new(seed, layout.continents.iter().map(climate_and_resource).collect()),
+            islands: islands::Islands::new(seed, layout.continents.iter().map(islands::climate_and_resource).collect()),
             minute: 0,
         }
     }
