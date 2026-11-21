@@ -192,3 +192,17 @@ test('a node’s age counts from when it was first laid, and starts again once i
   ui.frame(VIEW, [], 0.5);
   assert.equal(ui.age('toast'), 0);
 });
+
+test('a node that lets the pointer through takes no hit, nor do its children, so a click there is the world’s', () => {
+  const ui = new Interface(renderer());
+  const root: Node = {
+    through: true,
+    children: [{ fill: '#fff', width: 50, height: 50, children: [{ text: { words: 'Hi' } }] }],
+  };
+  step(ui, root, [{ kind: 'pointer', x: 10, y: 10 }]);
+  ui.frame(VIEW, [], 1 / 60);
+  assert.equal(ui.takesPointer, false);
+  step(ui, { children: [{ fill: '#fff', width: 50, height: 50 }] });
+  ui.frame(VIEW, [], 1 / 60);
+  assert.equal(ui.takesPointer, true);
+});

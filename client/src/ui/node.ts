@@ -126,6 +126,9 @@ export interface Node {
   readonly keys?: readonly string[];
   /** Takes the pointer even with nothing to press, so a click on it does not fall through to the world. */
   readonly solid?: boolean;
+  /** Lets the pointer through to what lies under it, its children too, as CSS's `pointer-events: none`: a display
+   *  over the world that a click must pass. */
+  readonly through?: boolean;
   readonly draw?: Drawing;
 }
 
