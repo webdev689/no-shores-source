@@ -16,7 +16,7 @@ use core::f64::consts::TAU;
 use std::collections::BTreeMap;
 
 /// The next wave comes this long after the last is broken; a wave stands this far round the approach.
-pub const WAVE_GAP: u64 = 10 * 60;
+pub const WAVE_GAP: u64 = 30 * 60;
 const COME_IN: f64 = 3.0;
 /// A Collector plunders a store standing within this of its middle; alone, it plunders a whole store in this long.
 pub const STORE_REACH: f64 = 2.5;
@@ -32,6 +32,17 @@ const WALK_MOST: f64 = 3.5;
 pub const MARROW_NAME: &str = "Reeve Ancel Marrow, the Tithe's Hand";
 /// One more Runner comes in each wave for each player on the ground beyond the first, to this many.
 const MORE_MOST: usize = 3;
+/// A party this small on the ground meets each wave a rank lower where a type comes lower: a Major Runner, Collector
+/// or Crossbowman as a Minor, a Marksman (an Elite alone) as a Major Crossbowman.
+const SMALL_PARTY: usize = 2;
+
+fn eased(member: (u8, Rank)) -> (u8, Rank) {
+    match member {
+        (RUNNER | COLLECTOR | CROSSBOWMAN, Major) => (member.0, Minor),
+        (MARKSMAN, Elite) => (CROSSBOWMAN, Major),
+        _ => member,
+    }
+}
 
 /// The waves: each foe's type and rank. Heroic's third wave holds HEROIC_MORE besides; its fourth is Marrow's.
 const FIRST: &[(u8, Rank)] =
@@ -221,7 +232,11 @@ impl Room {
         let here = self.players.values().filter(|player| {
             !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], middle) <= radius
         });
-        members.extend(core::iter::repeat_n((RUNNER, Major), here.count().saturating_sub(1).min(MORE_MOST)));
+        let here = here.count();
+        members.extend(core::iter::repeat_n((RUNNER, Major), here.saturating_sub(1).min(MORE_MOST)));
+        if here <= SMALL_PARTY {
+            members = members.into_iter().map(eased).collect();
+        }
         raid.wave_foes.clear();
         self.raid_members(public, running, raid, members);
         if raid.wave_foes.is_empty() {

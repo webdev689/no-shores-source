@@ -21,18 +21,20 @@ pub const SHARD_REACH: f64 = 1.5;
 const SHARD_HEIGHT: f64 = 2.0;
 pub const LIP_REACH: f64 = 6.0;
 /// Shards needed: this many, this many more for each player at the event beyond the first, at most this many.
-pub const SHARDS_FIRST: u16 = 8;
-pub const SHARDS_PER_PLAYER: u16 = 3;
-pub const SHARDS_MOST: u16 = 30;
+pub const SHARDS_FIRST: u16 = 16;
+pub const SHARDS_PER_PLAYER: u16 = 6;
+pub const SHARDS_MOST: u16 = 40;
 /// The growth rises at this share of the seal, stands this long, and takes this long to rise and to sink.
 pub const HEROIC_AT_PERCENT: u32 = 40;
 pub const GROWTH_TICKS: u64 = 45 * 60;
 pub const GROWTH_EASE: u64 = 2 * 60;
-/// A wave comes when the event's living foes fall to WAVE_LOW, or WAVE_EVERY after the last, while fewer than
-/// LIVING_MOST stand; it holds WAVE_SIZE foes and one more for each player on the ground beyond the first, to
+/// A wave comes when the event's living foes fall to WAVE_LOW (but never sooner than WAVE_SOONEST after the last, so
+/// the shards come at a pace a group must keep up with), or WAVE_EVERY after the last, while fewer than LIVING_MOST
+/// stand; it holds WAVE_SIZE foes and one more for each player on the ground beyond the first, to
 /// WAVE_MOST. Its foes pour out this far round the middle.
 const WAVE_LOW: usize = 2;
-const WAVE_EVERY: u64 = 30 * 60;
+const WAVE_EVERY: u64 = 40 * 60;
+pub(crate) const WAVE_SOONEST: u64 = 30 * 60;
 const LIVING_MOST: usize = 10;
 const WAVE_SIZE: usize = 3;
 const WAVE_MOST: usize = 6;
@@ -130,7 +132,8 @@ impl Room {
                 .filter(fighting)
                 .filter(|id| self.foes.get(id).is_some_and(|foe| !foe.fighter.dead()));
             let living = living.count();
-            let due = living <= WAVE_LOW || self.clock >= fissure.last_wave + WAVE_EVERY;
+            let due = (living <= WAVE_LOW && self.clock >= fissure.last_wave + WAVE_SOONEST)
+                || self.clock >= fissure.last_wave + WAVE_EVERY;
             if due && living < LIVING_MOST {
                 self.fissure_wave(public, running, &mut fissure);
             }

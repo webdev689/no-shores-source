@@ -65,11 +65,12 @@ own nor strikes, and each walks the navmesh at its own pace.
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
 each player seen at it beyond the first (six at most), drawn from Husks, Flickers, an Idol and a Ravager. Another
-comes when two or fewer of its foes stand, or 30 seconds after the last, while fewer than ten stand. Each of its
+comes when two or fewer of its foes stand, but never sooner than 30 seconds after the last, or 40 seconds after the
+last, while fewer than ten stand: the shards come at a pace a group must keep up with. Each of its
 foes felled drops a crystal shard where it fell, an Elite or greater two. A player walks within 1.5 m of a shard to
 take it, carries one at a time and sets it within 6 m of the middle. A shard lies 30 seconds; a carrier who falls or
-leaves drops theirs where they last stood. It needs 8 shards and 3 more for each player seen at it at once beyond the
-first, 30 at most. Sealed, it closes: every foe of it still standing shatters, sharing no kill, and it is won.
+leaves drops theirs where they last stood. It needs 16 shards and 6 more for each player seen at it at once
+beyond the first, 40 at most. Sealed, it closes: every foe of it still standing shatters, sharing no kill, and it is won.
 - **Heroic.** At 40% of the seal a crystal growth (an Idol's Elite health, named "Crystal Growth") rises at its spot
   for 45 seconds, 2 rising and 2 sinking, then sinks back. Broken in time, the event turns heroic: half of the shards
   still needed are added, every wave after holds an Elite (a Bulwark or a Ravager by turns), and the seal complete
@@ -79,8 +80,10 @@ first, 30 at most. Sealed, it closes: every foe of it still standing shatters, s
 **The raid.** Its banners are planted and its first wave comes in round its approach: two Collectors, two Runners and a
 Crossbowman, the Runners and the Crossbowman Minors. The second brings two Collectors, an Enforcer, a Crossbowman and a
 Runner; the third two Collectors, an Enforcer, and a Marksman and a Reeve, both Elite; every other foe is a Major. One
-Runner more comes in each for each player on the ground beyond the first (three at most). A wave is broken when its foes have all fallen; the next comes 10 seconds
-later, or 10 seconds after that while the room has no room for it. Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's
+Runner more comes in each for each player on the ground beyond the first (three at most). A party of two or fewer on the ground meets each wave a rank
+lower where a type comes lower: the Runners, Collectors and Crossbowmen as Minors, the Marksman as a Major Crossbowman.
+A wave is broken when its foes have all fallen; the next comes 30 seconds later, or 30 seconds after that while the
+room has no room for it. Each Collector is sent to the standing store nearest it, to defend its ground there, 1.9 m from the store's
 middle on the side the raiders come from; one standing within 2.5 m of its store plunders it, alone in 20 seconds.
 A store plundered sends its Collectors to the next and loses the bonus. Every store plundered, the raid fails; the
 last wave broken with a store standing, the Tithe give up and march out, and it is won.

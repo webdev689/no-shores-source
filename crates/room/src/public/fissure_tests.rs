@@ -2,7 +2,9 @@
 //! closes it and shatters its foes; a shard fades, a carrier who falls drops theirs; its countdown run out, it fails
 //! and its foes sink back; its growth broken in time turns it heroic and brings out the Warden.
 
-use super::fissure::{GROWTH_TICKS, SHARD_TICKS, SHARDS_FIRST, SHARDS_PER_PLAYER, WARDEN_NAME};
+use super::fissure::{
+    GROWTH_TICKS, HEROIC_AT_PERCENT, SHARD_TICKS, SHARDS_FIRST, SHARDS_PER_PLAYER, WARDEN_NAME, WAVE_SOONEST,
+};
 use super::fixture::{FISSURE_AT, FISSURE_MINUTE, place, room_at, running, running_mut, standing, strike, ticks, told};
 use super::{COUNTDOWN_TICKS, Heroic, Phase, Play};
 use crate::{Dropped, EventKind, PlayerId, Room};
@@ -10,6 +12,11 @@ use combat::fighter::FighterId;
 
 fn fissure(room: &Room) -> &super::fissure::Fissure {
     let Play::Fissure(fissure) = &running(room).play else { panic!("a Fissure") };
+    fissure
+}
+
+fn fissure_mut(room: &mut Room) -> &mut super::fissure::Fissure {
+    let Play::Fissure(fissure) = &mut running_mut(room).play else { panic!("a Fissure") };
     fissure
 }
 
@@ -23,6 +30,13 @@ fn lesser(room: &Room) -> Vec<FighterId> {
 fn seal_one(room: &mut Room, player: PlayerId) {
     // Off the lip, where the foes pour out, so the shard is not taken as it falls.
     place(room, player, [FISSURE_AT[0] + 20.0, FISSURE_AT[1]]);
+    // A wave comes WAVE_SOONEST after the last at the soonest: wait for one if none stands.
+    for _ in 0..60 * 60 {
+        if !lesser(room).is_empty() {
+            break;
+        }
+        room.tick();
+    }
     let foe = lesser(room)[0];
     strike(room, player, foe, 1.0e6);
     room.tick();
@@ -136,7 +150,8 @@ fn the_growth_broken_in_time_turns_it_heroic_and_the_warden_must_fall_to_win_the
     while running(&room).heroic == Heroic::NotYet {
         seal_one(&mut room, player);
     }
-    assert_eq!(fissure(&room).set * 100, 4 * 100, "at 40 % of eight, the fourth shard");
+    let set = fissure(&room).set;
+    assert_eq!(u32::from(set), (u32::from(SHARDS_FIRST) * HEROIC_AT_PERCENT).div_ceil(100), "at 40 % of the needed");
     let growth = fissure(&room).growth.expect("the growth rose");
     assert_eq!(running(&room).heroic_ticks, GROWTH_TICKS);
     let before = room.foes[&growth].fighter.body;
@@ -146,7 +161,7 @@ fn the_growth_broken_in_time_turns_it_heroic_and_the_warden_must_fall_to_win_the
     room.tick();
     assert_eq!(running(&room).heroic, Heroic::Met);
     assert_eq!(told(&mut room, EventKind::HeroicMet)[0].striker, player);
-    assert_eq!(fissure(&room).needed(), SHARDS_FIRST + (SHARDS_FIRST - 4) / 2, "half of what was still needed");
+    assert_eq!(fissure(&room).needed(), SHARDS_FIRST + (SHARDS_FIRST - set) / 2, "half of what was still needed");
     while fissure(&room).warden.is_none() {
         seal_one(&mut room, player);
     }
@@ -181,19 +196,20 @@ fn the_growth_left_standing_sinks_back_and_the_heroic_task_is_missed_and_late_se
 #[test]
 fn the_growth_never_holds_back_a_wave_two_lesser_foes_left_beside_it_bring_the_next() {
     let (mut room, players) = room_at(FISSURE_MINUTE, 1);
-    let player = players[0];
     room.tick();
-    while running(&room).heroic == Heroic::NotYet {
-        seal_one(&mut room, player);
-    }
+    assert_eq!(lesser(&room).len(), 3, "the first wave");
+    // One shard short of the growth: setting one fells a foe, so two lesser foes stand as it rises.
+    let short = (u32::from(fissure(&room).needed()) * HEROIC_AT_PERCENT).div_ceil(100) - 1;
+    fissure_mut(&mut room).set = u16::try_from(short).unwrap();
+    seal_one(&mut room, players[0]);
     assert!(fissure(&room).growth.is_some(), "the growth stands");
-    room.tick();
-    let standing_lesser = lesser(&room);
-    assert!(standing_lesser.len() > 2, "a wave stands to thin: {}", standing_lesser.len());
+    assert_eq!(lesser(&room).len(), 2);
+    // The last wave now, and the room as long after it as a wave may follow at the soonest (the growth stands longer).
     let waves = fissure(&room).waves;
-    for foe in &standing_lesser[2..] {
-        strike(&mut room, player, *foe, 1.0e6);
-    }
+    fissure_mut(&mut room).last_wave = room.clock;
+    room.clock += WAVE_SOONEST;
     room.tick();
+    assert!(fissure(&room).growth.is_some(), "the growth still stands");
+    // Counted with the growth, three would stand, and the wave would wait for WAVE_EVERY.
     assert_eq!(fissure(&room).waves, waves + 1, "two lesser foes and the growth standing: the next wave comes");
 }

@@ -33,10 +33,10 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The grounds' sizes | The Fissure 25 m round; the raid 10 m past its farthest store, 20 m at least | Each ground's mesh is baked at open; a larger one cost too much |
 | The navmesh for events | A rectangle round each ground (and the approach), 4 m further, joined to the garrison's | Its cost measured: the open grows by 150 to 250 ms |
 | The room's foes | 32 at most in a room that holds events, any other node's still 24 | A garrison and an event's foes at once |
-| The Fissure's waves | 3 foes and 1 per extra player (6 at most), when 2 or fewer stand or every 30 s, under 10 standing | Enough foes for the shards needed, never a flood |
-| Shards | 1 from a foe, 2 from an Elite or greater; taken within 1.5 m, set within 6 m; the needed never falls when players leave | Leaving never makes it easier |
+| The Fissure's waves | 3 foes and 1 per extra player (6 at most), when 2 or fewer stand but 30 s after the last at the soonest, or every 40 s, under 10 standing | The shards' pace sets the event's: scripted players at Saltmere's levels seal it in 2.5 to 3 minutes, heroic in 3 to 4.5 |
+| Shards | 16 needed, 6 more for each player beyond the first, 40 at most; 1 from a foe, 2 from an Elite or greater; taken within 1.5 m, set within 6 m; the needed never falls when players leave | Leaving never makes it easier |
 | The growth | An Idol's Elite at its spot, never moving or striking, 45 s with 2 s to rise and sink | Struck like a foe, as the spec asks |
-| The raid's waves | Five foes each, Collectors in every wave, Elites in the third, one Runner per extra player (3 at most) | The stores need guarding all the while |
+| The raid's waves | Five foes each, Collectors in every wave, Elites in the third, one Runner per extra player (3 at most), a rank lower for a party of two or fewer; the next 30 s after one is broken | The stores need guarding all the while; at level 4, scripted players hold it in 2 to 3 minutes, heroic in 3.5 to 5.5 |
 | Plundering | A Collector within 2.5 m of its store plunders it in 20 s alone | A store held is a store kept |
 | The tithe-taker | Never strikes; his round paced to take 50 s; gone wherever he stands when his time is up; the raid waits for him | He counts and leaves, as the owner put it |
 | Withdrawing | Foes walk to the crack or the approach at 4 m/s and are gone within 8 s | Seen to leave, not vanish |
@@ -47,3 +47,4 @@ Claude's choices for the public events ([[Public Events Run on a Clock, After De
 | The Lattice's arms | The forge's weapons of the same reach (Husk a sword, Flicker two daggers, Idol a bow, Ravager a warhammer, Bulwark a mace and shield, Heart a flail) | Combat needs a weapon class; the Lattice's own parts are dressed over them |
 | The wire's field | `public_event` on the snapshot, read into `public` on the page | `public` is a TypeScript keyword: flatc names its reader `public_` |
 | The scripted players | Level 6, Rare gear at 6, guarding between swings and varying their strokes | Two level-1 players never broke a heroic raid's third wave |
+| The events' level | The top of the island's band (Saltmere: 4) | As Destiny 1's events stand at their area's level: two levels under, a pair runs out of time |
