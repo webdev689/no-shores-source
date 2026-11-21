@@ -3,7 +3,7 @@ import type { GroundPatch, LandView } from '../rules/landRules.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import { loadShip, shipSails } from '../ships/shipMesh.ts';
 import { MarkView } from '../ships/markView.ts';
-import { ShipPlates } from '../ships/shipBars.ts';
+import { type PlacedBar, ShipPlates } from '../ships/shipBars.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { ShipView } from '../ships/shipView.ts';
 import { type ShoreField, waterUnder } from '../water/shore.ts';
@@ -84,6 +84,10 @@ export interface SceneFrame {
   readonly view: LandView;
   readonly orbit: Orbit;
   readonly size: { readonly width: number; readonly height: number };
+  /** The same view in CSS pixels, which the ships' plates are laid in. */
+  readonly flat: { readonly width: number; readonly height: number };
+  /** What the picture is drawn into, `size` big. */
+  readonly target: GPUTextureView;
   readonly exaggeration: number;
   readonly brush: TerrainOptions['brush'];
   readonly walking: boolean;
@@ -156,17 +160,15 @@ export class LandScene {
   private readonly naval: Naval;
   private fleet: FleetScene | null = null;
   private readonly layoutCity: LayoutCity;
-  /** The picture's overlay, which the editor clears each frame: each captain's bar is drawn on it. */
-  private readonly overlay: SVGSVGElement;
+  /** Each captain's plate over her, laid from frame to frame. */
   private readonly shipPlates = new ShipPlates();
   /** The sky's law, for the wind her sails feel: the rules sail her in the weather's, at the wall's world time. */
   private law: SkyLaw | null = null;
 
-  constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void, overlay: SVGSVGElement) {
+  constructor(gpu: Gpu, redraw: () => void, fail: (error: unknown) => void) {
     this.gpu = gpu;
     this.redraw = redraw;
     this.fail = fail;
-    this.overlay = overlay;
     this.water = new WaterView(gpu);
     this.harbour = new Harbour(
       () => loadShip('sloop').then((mesh) => new ShipView(gpu, mesh, shipSails('sloop'))),
@@ -247,8 +249,13 @@ export class LandScene {
   }
 
   /** Steps the walker, keeps the close-up, and draws the land, then the water. Answers the camera as drawn and, for
-   *  the scale cues, the ground at its target when the close-up shows. */
-  draw(frame: SceneFrame): { orbit: Orbit; feet: readonly [number, number, number] | null; sailing: boolean } {
+   *  the scale cues, the ground at its target when the close-up shows, and the ships' plates. */
+  draw(frame: SceneFrame): {
+    orbit: Orbit;
+    feet: readonly [number, number, number] | null;
+    sailing: boolean;
+    plates: PlacedBar[];
+  } {
     const now = performance.now();
     const seconds = Math.min(0.1, (now - this.lastFrame) / 1000);
     this.lastFrame = now;
@@ -351,10 +358,10 @@ export class LandScene {
     if (fleet) fleet.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, now / 1000);
     else this.naval.draw(pass, view, shown, { fromEye, eye: camera.eye }, ship, time, sails);
     const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
-    if (bars.length > 0) {
-      const size = { width: this.overlay.clientWidth, height: this.overlay.clientHeight };
-      this.shipPlates.draw(this.overlay, bars, screenProjector(seen, size), size.width, now / 1000);
-    }
+    const plates =
+      bars.length > 0
+        ? this.shipPlates.place(bars, screenProjector(seen, frame.flat), frame.flat.width, now / 1000)
+        : [];
     pass.end();
     const copy = encoder.beginRenderPass({
       colorAttachments: [
@@ -388,12 +395,12 @@ export class LandScene {
       focus: [orbit.targetX, orbit.targetY],
       hulls: this.hulls(view),
       drawn,
-      target: this.gpu.context.getCurrentTexture().createView(),
+      target: frame.target,
     });
     this.gpu.device.queue.submit([encoder.finish()]);
     const feet =
       near && !frame.walking && !this.sailing ? ([orbit.targetX, orbit.targetY, ground * shown] as const) : null;
-    return { orbit, feet, sailing: frame.sailing && this.mayStillSail };
+    return { orbit, feet, sailing: frame.sailing && this.mayStillSail, plates };
   }
 
   /** The Sloop: put to sea at the camera's target, then stepped by the rules with the keys' helm, her wake stirring

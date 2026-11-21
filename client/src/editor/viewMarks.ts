@@ -1,0 +1,45 @@
+// The words the editor lays over its views (the names of places, a ruler's length, a reference's name), laid by the
+// interface in the face: each a node set against the screen with its baseline where the view put it.
+import type { Node } from '../ui/node.ts';
+import { baselineOf } from '../ui/text.ts';
+
+/** A name over a view: its baseline's point, CSS pixels of the view, centred there or starting there, ringed by a dark
+ *  halo unless `halo` is null. */
+export interface Label {
+  readonly x: number;
+  readonly y: number;
+  readonly text: string;
+  readonly colour: string;
+  readonly anchor?: 'start' | 'middle';
+  readonly halo?: string | null;
+}
+
+/** `label` as a node over the screen, the view `left` CSS pixels in from the screen's edge; the pointer passes it. */
+export function labelNode(label: Label, left: number): Node {
+  return {
+    float: {
+      to: 'screen',
+      anchor: [label.anchor === 'start' ? 0 : 0.5, 0],
+      x: left + label.x,
+      y: label.y + 1 - baselineOf(1),
+    },
+    through: true,
+    text: {
+      words: label.text,
+      colour: label.colour,
+      wrap: false,
+      ...(label.halo === null
+        ? {}
+        : {
+            edge: 'halo',
+            edgeColour: label.halo ?? 'rgba(0, 0, 0, 0.667)',
+          }),
+    },
+  };
+}
+
+/** `node`, set against the view's corner, set against the screen's: the view `left` CSS pixels in from its edge. */
+export const onScreen = (node: Node, left: number): Node => ({
+  ...node,
+  float: { ...node.float, to: 'screen', x: (node.float?.x ?? 0) + left },
+});
