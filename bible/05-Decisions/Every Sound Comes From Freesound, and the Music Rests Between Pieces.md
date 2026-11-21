@@ -31,4 +31,8 @@ Freesound footsteps should be offered beside DFO's recorded steps: "Keep".
   with minutes of silence between pieces. This replaces "Roaming an island is ambience only" and Saltmere's theme
   playing whenever nothing threatens.
 
+On the sound sheet the owner kept the fourteen calm pieces, Landfall, the storm at sea, the Boarding's first phase and
+the story's storm and deep, and asked for the green, wet and cold fights again: of the green fight, "Theres still a
+high pitch whine in the beginning"; of the wet, "High pitch whine".
+
 [[Music]], [[Ambience]].
