@@ -138,7 +138,8 @@ impl Room {
     pub(crate) fn play_raid(&mut self, public: &Public, running: &mut Running) {
         let Play::Raid(mut raid) = core::mem::replace(&mut running.play, Play::Aside) else { return };
         for (killer, foe, _) in self.killed_now(running) {
-            if raid.taker.as_ref().is_some_and(|taker| taker.foe == foe) && running.heroic == Heroic::Offered {
+            let offered = running.heroic == Heroic::Offered && self.by_players(killer);
+            if raid.taker.as_ref().is_some_and(|taker| taker.foe == foe) && offered {
                 raid.taker = None;
                 self.inert.remove(&foe);
                 (running.heroic, running.heroic_ticks) = (Heroic::Met, 0);

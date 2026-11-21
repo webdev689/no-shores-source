@@ -197,7 +197,7 @@ pub fn plan(
     }
     dressing::dress(&mut kit, &areas, &paths, &moduled);
     let mut sites = sites::mark(&field, &areas, &paths, &seating, seed);
-    sites.extend(grounds::mark(&field, &areas, &paths, &seating));
+    sites.extend(grounds::mark(&node.id, &field, &areas, &paths, &seating));
     let mut kit = pieces::Kit { ground, book, seed: seed ^ 0x51E5, draws: 0, into: &mut seating };
     marks::build(&mut kit, &sites);
     let anchor = areas.first().map_or_else(|| middle_of(node), |area| area.at);

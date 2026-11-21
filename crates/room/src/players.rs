@@ -297,6 +297,11 @@ impl Player {
         }
         changed
     }
+
+    /// Whether the player stands alive: neither fallen in a fight nor killed by the section (a fall, the sea).
+    pub(crate) fn living(&self) -> bool {
+        !self.fighter.dead() && !matches!(self.standing, Standing::Dead { .. })
+    }
 }
 
 impl Room {

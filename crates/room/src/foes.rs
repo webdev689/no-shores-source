@@ -156,8 +156,9 @@ impl ::foes::Routes for MeshRoutes<'_> {
         self.mesh.path_length(from, to)
     }
 
-    fn walkable(&self, point: [f64; 3]) -> bool {
-        let near = self.mesh.nearest_point(point);
+    fn walkable(&self, from: [f64; 3], point: [f64; 3]) -> bool {
+        // Placed on the part of the mesh `from` stands on: a joined mesh walks no way between its parts.
+        let near = self.mesh.nearest_point_from(from, point);
         near.is_some_and(|near| combat::sight::apart([near[0], near[1]], [point[0], point[1]]) <= ON_MESH)
     }
 }

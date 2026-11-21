@@ -1,9 +1,9 @@
-//! Where a zone's public events are fought, marked with its other sites: each hamlet's three stores (stacked crates,
-//! sacks and barrels under a tarp, on clear ground beside its houses near its plaza, off the ways), the point its
-//! raiders come in from (toward the zone's camp, or from the shore where it has none) and the two banners they plant
-//! at its edge; and in each wilds, where its fissure opens (beside the battlefield's obelisk, clear of its ruins) and
-//! the spot its crystal growth rises at. A store and a fissure stand square to the grid, a fissure's long side east and
-//! west, and a body runs into a store on the page and in the room alike.
+//! Where a zone's public events are fought, marked with its other sites in the zones that hold them: one hamlet's three
+//! stores (stacked crates, sacks and barrels under a tarp, on clear ground beside its houses near its plaza, off the
+//! ways), the point its raiders come in from (toward the zone's camp, or from the shore where it has none) and the two
+//! banners they plant at its edge; and in one wilds, where its fissure opens (beside the battlefield's obelisk, clear
+//! of its ruins) and the spot its crystal growth rises at. A store and a fissure stand square to the grid, a fissure's
+//! long side east and west, and a body runs into a store on the page and in the room alike.
 
 use crate::areas::Area;
 use crate::brief::AreaKind;
@@ -18,7 +18,7 @@ use std::f64::consts::TAU;
 /// the plundered stack it turns into too (2.5 x 2.049 x 0.90 m): its half-width east and west, its half-depth north and
 /// south, and its height, metres. A hamlet's store `nth` (its mark's number less one) is drawn as the stack after its
 /// own, as the page picks it (client/src/city/eventProps.ts).
-pub const STORE_STACKS: [([f64; 2], f64); 3] = [([1.302, 1.0245], 1.73), ([1.25, 1.112], 1.27), ([1.3, 1.0245], 0.9)];
+pub const STORE_STACKS: [([f64; 2], f64); 3] = [([1.302, 1.0245], 1.73), ([1.25, 1.112], 1.4), ([1.3, 1.0245], 1.0)];
 /// The room a store is laid out in: wide and deep enough for any of the stacks.
 pub const STORE_HALF: [f64; 2] = [1.302, 1.112];
 /// How far below the ground its box reaches, so a slope never leaves a gap under it.
@@ -111,10 +111,15 @@ fn out_along(field: &Field, around: (&[Print], &[Path]), from: [f64; 2], toward:
     steps.map(along).find(|&at| open(field, around, at, [0.5, 0.5], 0.5)).unwrap_or_else(|| along(out))
 }
 
-/// The sites a zone's public events stand on: for each hamlet its stores, its raiders' approach and its banners;
-/// for each wilds its growth's spot.
+/// The sites a zone's public events stand on, in a zone that holds them (EVENT_ZONES) and nowhere else: its first
+/// hamlet that has room for three stores, with them, its raiders' approach and its banners; and its first wilds, with
+/// its fissure and its growth's spot. These are the grounds `grounds_of` reads, so every store marked (and boxed) is
+/// one the page draws.
 #[must_use]
-pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating) -> Vec<Site> {
+pub fn mark(zone: &str, field: &Field, areas: &[Area], paths: &[Path], seating: &Seating) -> Vec<Site> {
+    if !EVENT_ZONES.contains(&zone) {
+        return Vec::new();
+    }
     let prints = standing(seating);
     let around = (prints.as_slice(), paths);
     let site = |kind: SiteKind, at: [f64; 2], radius: f64, holds: &str| Site {
@@ -124,8 +129,10 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating) ->
         holds: Some(holds.to_owned()),
     };
     let mut sites = Vec::new();
-    for area in areas.iter().filter(|area| area.kind == AreaKind::Hamlet) {
-        for at in stores(field, around, area, seating) {
+    let hamlets = areas.iter().filter(|area| area.kind == AreaKind::Hamlet);
+    let raided = hamlets.map(|area| (area, stores(field, around, area, seating))).find(|(_, at)| at.len() == 3);
+    if let Some((area, stores)) = raided {
+        for at in stores {
             sites.push(site(SiteKind::Store, at, STORE_HALF[0], &area.name));
         }
         let camp = areas
@@ -142,16 +149,14 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating) ->
             sites.push(site(SiteKind::Banner, at, 1.0, &area.name));
         }
     }
-    for area in areas.iter().filter(|area| area.kind == AreaKind::Wilds) {
-        let Some(fissure) =
-            nearest_clear(area.at, &FISSURE_M, |at| open(field, around, at, FISSURE_HALF, FISSURE_CLEAR))
-        else {
-            continue;
-        };
+    let wilds = areas.iter().find(|area| area.kind == AreaKind::Wilds);
+    let opened = wilds.and_then(|area| {
+        let fissure = nearest_clear(area.at, &FISSURE_M, |at| open(field, around, at, FISSURE_HALF, FISSURE_CLEAR))?;
+        Some((area, fissure, nearest_clear(fissure, &GROWTH_M, |at| open(field, around, at, [2.5, 2.5], 1.0))?))
+    });
+    if let Some((area, fissure, growth)) = opened {
         sites.push(site(SiteKind::Fissure, fissure, FISSURE_HALF[0], &area.name));
-        if let Some(at) = nearest_clear(fissure, &GROWTH_M, |at| open(field, around, at, [2.5, 2.5], 1.0)) {
-            sites.push(site(SiteKind::Growth, at, 2.5, &area.name));
-        }
+        sites.push(site(SiteKind::Growth, growth, 2.5, &area.name));
     }
     sites
 }

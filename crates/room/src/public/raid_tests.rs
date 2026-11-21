@@ -2,7 +2,10 @@
 //! at; the last wave broken with a store standing wins it, every store plundered fails it, as does its countdown; the
 //! tithe-taker walks his round and leaves unless he is killed, which brings a fourth wave led by Marrow.
 
-use super::fixture::{RAID_MINUTE, place, room_at, running, running_mut, standing, strike, ticks, told};
+use super::fixture::{
+    RAID_MINUTE, killed_by_a_foe, place, recovers_from_a_stagger, room_at, running, running_mut, standing, strike,
+    ticks, told,
+};
 use super::raid::{MARROW_NAME, PLUNDER_TICKS, WAVE_GAP};
 use super::seen::{BANNER, PLUNDERED, STORE};
 use super::{Heroic, Phase, Play};
@@ -346,4 +349,45 @@ fn the_garrison_keeps_a_nodes_own_places_beside_the_events_living_foes() {
     let event = standing(&room).len();
     assert!(event > 0);
     assert_eq!(room.others_most(), crate::NODE_FOES_MOST + event, "the event's own never count against the garrison");
+}
+
+#[test]
+fn the_tithe_taker_staggered_comes_out_of_it_though_the_room_moves_him_himself() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker came with the second wave");
+    recovers_from_a_stagger(&mut room, found);
+}
+
+#[test]
+fn the_tithe_taker_killed_by_no_player_leaves_the_heroic_task_to_them() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker came with the second wave");
+    let foe = standing(&room).into_iter().find(|id| *id != found).expect("a raider standing");
+    killed_by_a_foe(&mut room, found, foe);
+    room.tick();
+    assert_ne!(running(&room).heroic, Heroic::Met, "a foe met no task of the players'");
+}
+
+#[test]
+fn failed_with_the_tithe_taker_on_his_round_he_leaves_no_mark_behind() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    assert!(taker(&room).is_some(), "the tithe-taker came with the second wave");
+    running_mut(&mut room).ticks_left = 1;
+    room.tick();
+    assert_eq!(running(&room).phase, Phase::Failed);
+    assert!(taker(&room).is_none(), "his round is over");
+    for _ in 0..super::RESULT_TICKS - 1 {
+        let marks = room.public_seen().unwrap().marks;
+        assert!(marks.iter().all(|mark| mark.kind != super::seen::TITHE_TAKER), "no mark of him at the approach");
+        room.tick();
+    }
 }

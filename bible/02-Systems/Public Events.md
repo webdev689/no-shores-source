@@ -42,16 +42,17 @@ more than the countdown its start minute leaves, and one past its end is ended q
 its foes gone (unjumped, two minutes past its end). An event has 8 minutes; won or failed, its result shows for 12
 seconds, and the next is shown from then.
 
-**The grounds.** The layout marks them with its other sites ([[Layouts]]): three stores in each hamlet, on clear
-ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of every building, set piece and prop and 2 m
+**The grounds.** The layout marks them with its other sites ([[Layouts]]), in the three zones alone: three stores in the
+first hamlet with room for them, on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear
+of every building, set piece and prop and 2 m
 off every way; the point its raiders come in from, 36 m out toward the zone's nearest camp (the Vale has none: from the
-shore); their two banners, 28 m out, 6 m either side; and in each wilds where its fissure opens, 12 m (or 9, or 15)
+shore); their two banners, 28 m out, 6 m either side; and in its first wilds where its fissure opens, 12 m (or 9, or 15)
 from its middle beside the obelisk its battlefield stands there, on ground 15.4 m east and west and 9.8 m north and
 south (the fissure's own mesh, square to the grid, its long side east and west) clear of the obelisk, the ruins and
 everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands square to the
 grid as one of three stacks (the page draws store `n` as the stack after its own), and its box, which a body runs
 into on the page and in the room alike, covers that stack and the plundered one it turns into: 2.604 by 2.049 by 1.73
-m high, 2.5 by 2.224 by 1.27 m, or 2.6 by 2.049 by 0.9 m; each is laid out in 2.604 by 2.224 m, room for any of
+m high, 2.5 by 2.224 by 1.4 m, or 2.6 by 2.049 by 1.0 m; each is laid out in 2.604 by 2.224 m, room for any of
 them. The bake writes a zone's grounds into its node file, for
 Saltmere's three zones only: the Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the
 middle of its stores, reaching 10 m past the farthest (20 m at least), with its stores, approach and banners.
@@ -61,7 +62,7 @@ rectangle round each ground (the Fissure's circle and its growth's spot; the rai
 waves form) 16 m further, as far as a player shoots into the fight from, and joins them to the garrison's as parts of
 one mesh, with no way between them. Baking both grounds as Saltmere's real node files open, natively in a release
 build, measured once at commit 2b4cb9f1: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood
-Moors. In WebAssembly it is not measured.
+Moors. In Node's WebAssembly the room opens in 0.7 to 1.0 s, as "Limits" gives.
 
 **Its foes**, its growth and its tithe-taker among them, stand at the event's level (the top of the island's band,
 raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the
@@ -136,7 +137,8 @@ from a heroic one, the bonus's tier rolling twice and keeping the better. A Vest
 the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a leaver's goes
 to the vault however full, since the ground they leave would lose it.
 
-**The wire.** Each snapshot of a zone's room carries `public_event` ([[Server]]): the event running or showing its
+**The wire.** A snapshot of a zone's room carries `public_event` ([[Server]]), but one built on a base leaves it
+out while it stands as the base's counted on, the page counting its countdowns on alike ("Limits"): the event running or showing its
 result (kind 1 the Fissure, 2 the raid, 0 none) and its phase (0 waiting, 1 running, 2 won, 3 failed), its ground and
 radius, its countdown in ticks; the next's kind, ground and ticks until it starts; its stage of how many; its progress
 toward what it needs (shards set of shards needed, or the stores' health left per mille); its heroic task (0 not yet,
@@ -251,8 +253,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   glow at night and the seal's wave in its picture's own texels.
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
 - The stores, banners, fissures and growth spots are chosen before the layout stands its beacons and resource marks,
-  so they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them, and each
-  fissure clear of its battlefield's obelisk and ruins.
+  climbs, cliff stairs, retaining walls, footbridges, talus and graves, so they could meet;
+  `crates/room/tests/grounds_planned.rs` holds Saltmere's three finished layouts' grounds clear of every box but the
+  stores' own, and each fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
 - The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
   than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
@@ -260,8 +263,14 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - A chest's two minutes in the tracker run from when the page first saw it: a page come later counts the whole two.
 - A store's box covers both its whole and its plundered stack, so a body meets it as the larger of the two.
 - The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.
-- The marks that never move (the stores, the banners, the approach) go in every snapshot: a land room's snapshot is
-  one for every player, so sending them only when they change would need the welcome to carry them and the page to
-  keep them; packed, they are 24 bytes each.
+- A snapshot built on a base leaves the events out while they stand as the base's counted on, but whenever anything
+  of them changes (a shard's life, the tithe-taker's step, a store's health) they come whole, every mark among them,
+  24 bytes each. Over the door test's two players a raid's snapshots average 602 bytes and a Fissure's 610; waiting,
+  the events cost a snapshot nothing.
+- Opening a zone's room bakes both its grounds' navmesh. Measured once in Node's WebAssembly, a release build of commit
+  2f6ce090 opening the bake's own node files, fresh each time, three times each on a machine shared with other work:
+  Saltgrass Downs 0.75 to 0.95 s, Gullwing Vale 0.71 to 0.82 s, Driftwood Moors 0.85 to 1.0 s (their garrisons alone
+  0.14 to 0.21 s); the module's memory after it 48.8, 47.8 and 46.2 MB (27.3 to 27.7 MB without the grounds), and a
+  WebAssembly memory never shrinks. Under the isolate's 128 MB, so the grounds are still baked as the room opens.
 - The page stands the fissure's spires on its movement's floor, which counts a box a step high; the room stands them
   on the bare ground. They agree because a fissure's ground is chosen clear of everything standing.

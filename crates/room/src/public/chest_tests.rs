@@ -81,3 +81,12 @@ fn a_leavers_chest_vestige_with_their_ten_and_their_vault_full_is_kept_in_the_va
     assert_eq!(character.vestiges_held(true), gear::character::VAULT_MOST + 1, "kept in the vault, over its limit");
     assert_eq!(room.drops_for(player).count(), 0, "nothing laid on the ground for leave() to sweep away");
 }
+
+#[test]
+fn a_player_the_section_killed_opens_no_chest() {
+    let (mut room, player, chest) = chested();
+    let at = chest_at(&room, player).unwrap();
+    place(&mut room, player, [at[0] + 1.0, at[1]]);
+    room.players.get_mut(&player).unwrap().standing = crate::Standing::Dead { ticks: 0, fell: true };
+    assert_eq!(room.open_chest(player, chest), OUT_OF_REACH, "dead, though their body stands");
+}
