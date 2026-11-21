@@ -85,7 +85,7 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   // Through a gate, from a node whose gate leads here, at the same seas.
   if (was && !inside(was) && was.seas === to.seas && reach?.gatedFrom.includes(was.id)) return true;
   // Ashore from the sea at the node's seas (a social space's from any), the ship off its island's coast.
-  const seas = from === null ? null : seaRoom(from);
+  const seas = from ? seaRoom(from) : null;
   if (seas === null || !reach || !ship || (!reach.social && seas !== to.seas)) return false;
   return coastDistance(ship, reach.coast) <= SIDE.coastReachM + LANDFALL_SLACK_M;
 }
