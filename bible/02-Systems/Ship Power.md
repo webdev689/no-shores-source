@@ -17,6 +17,7 @@ code:
   - crates/gear/src/vendor.rs#for_ship
   - crates/naval/src/fitting.rs#Fitting
   - crates/naval/src/fitting.rs#gunners_lay
+  - crates/naval/src/fight_exotics.rs#hampered
   - crates/room/src/ship_power.rs#fitting
   - crates/room/src/ship_power.rs#pay_sinking
   - crates/room/src/flotsam.rs#Held
@@ -75,6 +76,35 @@ are in [[Crew]].
   way and turning in a fight, what its hull, canvas and men take (its hull below a third, below its waterline, its men
   below half), its ram, its Carpenter's patches and its sight. The words of each perk are in
   `content/gear/traits.json`; a test holds every module's and officer's perk to a factor the sea reads.
+- **Its modules' perks** ([[The Perk Pass as Claude Shapes It]]): each thing a module's perk does is done by one perk.
+  Guns offer in handling Quick Tackle (reload 10% faster), Steady Lay (scatter 15% less), Heavy Charge and Hot Guns; in
+  their finish, what is loaded, Double Shotted (hole a hull 10% more), Chain Locker (tear canvas 20% more) and Grape
+  Locker (cut down men 20% more); in their perks Raking Fire (20% more on a ship below a third of its hull), Firing
+  Drill (reload 5% faster and scatter 5% less), Run Out and Overcharged. A hull offers Oak Ribs (it takes 10% less),
+  Copper Sheathing (a ball below its waterline harms it 20% less), Iron Ram, Last Timbers, Carpenter's Stores and
+  Stripped Ballast; sails Storm Canvas (tears 12% less), Flying Jib (sails 6% faster), Lookout Yard, Crowd of Sail and
+  Reefed Sails; rigging Quick Braces (turns 10% faster), Grapnels, Boarding Nets (balls cut down 12% fewer of its men)
+  and Taut Rigging. The officers' perks are their own ([[Crew]]).
+- **Perks that give and take**: Heavy Charge (balls hole a hull 15% more, guns reload 8% slower), Hot Guns (reload
+  18% faster, scatter 12% more), Run Out (reload 12% faster, balls cut down 10% more of its men), Overcharged (hole a
+  hull 20% more, scatter 15% more), Stripped Ballast (sails 8% faster in a fight, its hull takes 8% more), Crowd of
+  Sail (sails 10% faster, its canvas tears 15% more), Reefed Sails (its canvas tears 20% less, it sails 5% slower) and
+  Taut Rigging (turns 15% faster, its canvas tears 10% more).
+- **A module short of perks.** A Legendary's sails and rigging have more nodes than their pool has perks, so a named
+  module may offer a perk again in another column; the ship takes each perk once however often it is chosen
+  (`Character::ship_traits`). A rolled module never offers one twice.
+- **Its Atheric** ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]]) carries an intrinsic,
+  always on while it is fitted, and its own node (`naval::fight::exotics`):
+
+  | Atheric | Intrinsic | Its own |
+  |---|---|---|
+  | Kraken's Roar (guns) | **From the Deep**: its balls in a ship's waterline band hole it twice as hard | **Feeding**: a ship it sinks reloads both its sides at once |
+  | Leviathan's Rib (hull) | **Living Bone**: afloat in a fight its hull mends 1% of its whole a second, with a Carpenter or none | **Hard to Kill**: once a fight, a ball that would sink it leaves it a tenth of its hull |
+  | Stormcaller's Sheet (sails) | **Own Wind**: torn canvas costs it no way | **Squall**: each ball that strikes it gives it 3% more way for 6 s, to 15% |
+  | The Spider's Web (rigging) | **Web**: four more hands board with it, and a ship its balls strike in the rigging turns 30% slower for 6 s | **Snare**: a ship of another flag within 30 m of it sails 15% slower |
+
+  A ship sinks to the ball that takes the last of its hull: that ball's shooter sank it. Only a player's ship is
+  fitted, so a captain's carries none of these. The trim's numbers cross in the gear message beside the rest.
 - **Its hands.** The player's Sloop carries ten men ([[Crew]]): balls cut them down as a captain's are, a thinned crew
   reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
@@ -99,5 +129,6 @@ browser predicting its ship fits it alike.
 
 ## Limits
 
-- Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. A Lookout's sight
+- Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. The fleet room fits a
+  plain ship, so no Atheric acts there and a browser's prediction of its ship needs none of them. A Lookout's sight
   lengthens each ship's sight in that player's own sea snapshot.

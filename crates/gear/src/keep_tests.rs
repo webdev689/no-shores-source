@@ -88,6 +88,27 @@ fn a_kept_rolled_item_offering_a_trait_now_gone_offers_another_of_its_pool() {
 }
 
 #[test]
+fn a_kept_rolled_module_offering_a_merged_perk_gives_it_back_and_offers_its_columns_first_one_it_lacks() {
+    let mut character = Character::starting();
+    let id = character.take_id();
+    let mut sails = Item::new(id, Kind::Sails, Rarity::Rare, 10, Slot::Sails);
+    let pair = |first: &str, second: &str| vec![first.to_owned(), second.to_owned()];
+    sails.layout = vec![pair("topgallants", "storm_canvas"), pair("flying_jib", "lookout_yard")];
+    sails.xp = sails.xp_most();
+    sails.bought |= sails.node_bit(0, 0).expect("a node");
+    sails.chosen[0] = 0;
+    character.items.insert(id, (sails, At::Carried));
+    let had = character.materials.aurem;
+    let read = Character::from_json(&character.to_json()).expect("a character");
+    let sails = read.item(id).expect("kept");
+    // Storm Canvas, Flying Jib and Lookout Yard it offers already: the pool's next is Crowd of Sail.
+    assert_eq!(sails.layout[0], pair("crowd_of_sail", "storm_canvas"));
+    assert!(!sails.has(0, 0) && sails.chosen[0] == crate::item::NONE_CHOSEN && read.materials.aurem > had);
+    let again = Character::from_json(&read.to_json()).expect("a character");
+    assert_eq!(again.materials, read.materials, "given back once");
+}
+
+#[test]
 fn a_kept_character_gains_new_resources_and_never_reuses_a_number() {
     let mut character = Character::starting();
     character.materials.resources.truncate(2);

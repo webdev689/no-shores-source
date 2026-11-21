@@ -272,6 +272,9 @@ impl Catalogue {
             }
             _ => {}
         }
+        if item.rarity == Rarity::Atheric && item.kind.module() && item.intrinsic.is_none() {
+            problems.push(format!("{id}: an Atheric module has an intrinsic"));
+        }
         let wanted: Vec<Column> =
             columns(item.rarity, item.kind.weapon_grid()).iter().copied().filter(|column| column.traits()).collect();
         if wanted.len() != item.layout.len() {
@@ -282,6 +285,11 @@ impl Catalogue {
         for (column, offered) in wanted.into_iter().zip(&item.layout) {
             if offered.len() != usize::from(column.nodes()) {
                 problems.push(format!("{id}: a {column:?} column offers {} traits", offered.len()));
+            }
+            if item.kind.module() {
+                // A ship takes each perk once however many of its columns choose it (`ship_traits`), so a module's
+                // pool smaller than its nodes may offer one again, in another column.
+                seen.clear();
             }
             for trait_id in offered {
                 if !seen.insert(trait_id.as_str()) {

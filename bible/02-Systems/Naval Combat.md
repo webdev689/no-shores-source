@@ -146,7 +146,11 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
-  Bosun keeping way its torn canvas costs it, and its Carpenter patching part of each ball's hull harm back.
+  Bosun keeping way its torn canvas costs it, and its Carpenter patching part of each ball's hull harm back; and its
+  Atheric module's own work (`fight_exotics.rs`): a ball below the waterline holing twice as hard, a sinking reloading
+  its guns, its hull mending, a last stand once a fight, way kept with torn canvas, way from each ball striking it, a
+  ship struck in the rigging turning slower, and the ships near it sailing slower. A ship slowed is seen sailing
+  slower, and a mend is seen in its hull, as a Carpenter's patching is.
 - **The wind** a fight on the land worker sails in (the World Editor's and the story's) is the world's where each
   ship is, read each minute of world time; a fight a story plays is told its own instead, the weather drawn round it
   ([[Prologue]]), so a storm drawn is a storm sailed.

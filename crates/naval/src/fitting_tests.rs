@@ -28,7 +28,7 @@ fn abeam(east: f64) -> Fight {
 }
 
 fn fitted(trim: Trim, dealt: f64, taken: f64) -> Fitting {
-    Fitting { dealt: [(CAPTAIN, dealt)].into(), taken: [(CAPTAIN, taken)].into(), trim, patching: 0.0 }
+    Fitting { dealt: [(CAPTAIN, dealt)].into(), taken: [(CAPTAIN, taken)].into(), trim, ..Fitting::default() }
 }
 
 #[test]

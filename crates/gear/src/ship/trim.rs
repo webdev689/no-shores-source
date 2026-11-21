@@ -8,7 +8,11 @@ use crate::crew::{Duty, Post};
 /// Its trim: factors on its guns' reload and scatter, on what its balls do to a ship's hull, canvas and men (and to
 /// one below a third of its hull), on its way and its turning, on what balls do to its own hull, canvas and men (and to
 /// its hull below a third of it, and below its waterline), on its ram's harm, on its Carpenter's patches and on how
-/// far it sights; how many more hands board with it; and each post's work, 0 when none holds it.
+/// far it sights; an Atheric module's own work (`holing` on what its balls do below a ship's waterline, a share of its
+/// hull `mend`ed a second in a fight, the share `last_stand` leaves it once a fight, `feeding` and `own_wind`, the way
+/// each ball striking it gives it, `squall`, the turn its balls in a ship's rigging take off it, `web`, and the way it
+/// takes off a ship near it, `snare`; each 0, or 1 for `holing`, changing nothing); how many more hands board with
+/// it; and each post's work, 0 when none holds it.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct ShipTrim {
     pub reload: f64,
@@ -28,6 +32,14 @@ pub struct ShipTrim {
     pub ram: f64,
     pub patch: f64,
     pub sight: f64,
+    pub holing: f64,
+    pub mend: f64,
+    pub last_stand: f64,
+    pub feeding: bool,
+    pub own_wind: bool,
+    pub squall: f64,
+    pub web: f64,
+    pub snare: f64,
     pub boarders: u8,
     /// How well each post is held, by the posts' order, 0 for none (`Officer::strength`).
     pub posts: [f64; 5],
@@ -53,6 +65,14 @@ impl Default for ShipTrim {
             ram: 1.0,
             patch: 1.0,
             sight: 1.0,
+            holing: 1.0,
+            mend: 0.0,
+            last_stand: 0.0,
+            feeding: false,
+            own_wind: false,
+            squall: 0.0,
+            web: 0.0,
+            snare: 0.0,
             boarders: 0,
             posts: [0.0; 5],
         }
@@ -75,51 +95,77 @@ impl ShipTrim {
         let less = |factor: &mut f64, share: f64| *factor *= 1.0 - share;
         let more = |factor: &mut f64, share: f64| *factor *= 1.0 + share;
         match id {
-            "quick_tackle" => less(&mut self.reload, 0.08),
+            "quick_tackle" => less(&mut self.reload, 0.1),
             "steady_lay" => less(&mut self.scatter, 0.15),
             "heavy_charge" => {
-                more(&mut self.harm_hull, 0.12);
-                more(&mut self.reload, 0.05);
+                more(&mut self.harm_hull, 0.15);
+                more(&mut self.reload, 0.08);
             }
-            "swivel_crews" | "grapeshot_drill" => more(&mut self.harm_crew, 0.15),
-            "bored_true" => less(&mut self.scatter, 0.08),
+            "hot_guns" => {
+                less(&mut self.reload, 0.18);
+                more(&mut self.scatter, 0.12);
+            }
+            "double_shotted" => more(&mut self.harm_hull, 0.1),
             "chain_locker" => more(&mut self.harm_sail, 0.2),
             "grape_locker" => more(&mut self.harm_crew, 0.2),
             "raking_fire" => more(&mut self.finisher, 0.2),
-            "gunlayers_eye" | "layer" => less(&mut self.scatter, 0.1),
-            "double_shotted" => more(&mut self.harm_hull, 0.08),
-            "powder_monkeys" | "gun_captain" => less(&mut self.reload, 0.06),
-            "oak_ribs" => less(&mut self.hull_taken, 0.08),
-            "copper_sheathing" | "topgallants" | "sail_trimmer" => more(&mut self.way, 0.04),
-            "sealed_magazine" | "iron_discipline" => less(&mut self.crew_taken, 0.1),
+            "firing_drill" => {
+                less(&mut self.reload, 0.05);
+                less(&mut self.scatter, 0.05);
+            }
+            "run_out" => {
+                less(&mut self.reload, 0.12);
+                more(&mut self.crew_taken, 0.1);
+            }
+            "overcharged" => {
+                more(&mut self.harm_hull, 0.2);
+                more(&mut self.scatter, 0.15);
+            }
+            "oak_ribs" => less(&mut self.hull_taken, 0.1),
+            "copper_sheathing" => less(&mut self.holed_taken, 0.2),
             "iron_ram" => more(&mut self.ram, 0.25),
             "last_timbers" => less(&mut self.cornered, 0.15),
             "carpenters_stores" | "quick_patch" => more(&mut self.patch, 0.25),
+            "stripped_ballast" => {
+                more(&mut self.way, 0.08);
+                more(&mut self.hull_taken, 0.08);
+            }
             "storm_canvas" => less(&mut self.sail_taken, 0.12),
-            "flying_jib" => more(&mut self.way, 0.05),
-            "trim_crew" | "helm_hand" => more(&mut self.turn, 0.08),
-            "patched_sails" => more(&mut self.patch, 0.15),
+            "flying_jib" => more(&mut self.way, 0.06),
             "lookout_yard" => more(&mut self.sight, 0.2),
-            "doubled_shrouds" | "sailmaker" => less(&mut self.sail_taken, 0.1),
+            "crowd_of_sail" => {
+                more(&mut self.way, 0.1);
+                more(&mut self.sail_taken, 0.15);
+            }
+            "reefed_sails" => {
+                less(&mut self.sail_taken, 0.2);
+                less(&mut self.way, 0.05);
+            }
             "quick_braces" => more(&mut self.turn, 0.1),
-            "boarding_nets" => less(&mut self.crew_taken, 0.12),
             "grapnels" | "boarding_master" => self.boarders += 2,
-            "running_blocks" | "fair_winds" => more(&mut self.way, 0.03),
-            "fighting_tops" => more(&mut self.harm_crew, 0.1),
-            "seasoned_timbers" => less(&mut self.hull_taken, 0.05),
-            "kraken_roar" => {
-                more(&mut self.harm_hull, 0.12);
-                less(&mut self.reload, 0.1);
+            "boarding_nets" => less(&mut self.crew_taken, 0.12),
+            "taut_rigging" => {
+                more(&mut self.turn, 0.15);
+                more(&mut self.sail_taken, 0.1);
             }
-            "leviathan_rib" => less(&mut self.hull_taken, 0.2),
-            "stormcaller" => {
-                more(&mut self.way, 0.12);
-                less(&mut self.sail_taken, 0.1);
-            }
-            "spiders_web" => {
+            "from_the_deep" => self.holing = 2.0,
+            "feeding" => self.feeding = true,
+            "living_bone" => self.mend = 0.01,
+            "hard_to_kill" => self.last_stand = 0.1,
+            "own_wind" => self.own_wind = true,
+            "squall" => self.squall = 0.03,
+            "web" => {
                 self.boarders += 4;
-                more(&mut self.turn, 0.1);
+                self.web = 0.3;
             }
+            "snare" => self.snare = 0.15,
+            // The officers' perks, each its own.
+            "layer" => less(&mut self.scatter, 0.1),
+            "gun_captain" => less(&mut self.reload, 0.06),
+            "sail_trimmer" => more(&mut self.way, 0.04),
+            "iron_discipline" => less(&mut self.crew_taken, 0.1),
+            "helm_hand" => more(&mut self.turn, 0.08),
+            "sailmaker" => less(&mut self.sail_taken, 0.1),
             "rally" => less(&mut self.rally, 0.15),
             "powder_master" => more(&mut self.harm_hull, 0.06),
             "pumps" => less(&mut self.hull_taken, 0.06),
@@ -132,7 +178,7 @@ impl ShipTrim {
         true
     }
 
-    /// Every number, in the struct's order, as the gear message carries them.
+    /// Every number, in the struct's order (a flag 1 or 0), as the gear message carries them.
     #[must_use]
     pub fn to_floats(&self) -> Vec<f64> {
         let factors = [
@@ -153,6 +199,14 @@ impl ShipTrim {
             self.ram,
             self.patch,
             self.sight,
+            self.holing,
+            self.mend,
+            self.last_stand,
+            f64::from(u8::from(self.feeding)),
+            f64::from(u8::from(self.own_wind)),
+            self.squall,
+            self.web,
+            self.snare,
             f64::from(self.boarders),
         ];
         factors.into_iter().chain(self.posts).collect()

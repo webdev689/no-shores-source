@@ -85,6 +85,11 @@ impl Guns {
         self.lengths[side.index()] *= share;
     }
 
+    /// Both sides loaded at once.
+    pub fn reload_at_once(&mut self) {
+        self.clocks = [0.0; 2];
+    }
+
     /// Loads `shot`: a side standing loaded is drawn and loaded again in a share of the new load's reload; one loading
     /// takes the new load in, its clock scaled to the new reload. False when it is the load already.
     pub fn set_load(&mut self, shot: Shot, crew_share: f64, crewed: bool) -> bool {
