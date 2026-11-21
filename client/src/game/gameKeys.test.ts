@@ -33,9 +33,11 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
   const { window } = fakePage();
   const asked: string[] = [];
   const sea = {
-    ...afloat({ aboard: { active: true, walking: false } }),
+    ...afloat(),
+    aboard: { active: true, walking: false },
+    fight: null as object | null,
     sighted: { ask: (what: string) => asked.push(what) },
-  } as { aboard: { active: boolean; walking: boolean }; fight: object | null };
+  };
   const playing = { flow: { mode: 'sea' }, sea, foot: null, helmMap: { key: () => false }, through: null };
   const nothing = () => undefined;
   listenForControls({

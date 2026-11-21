@@ -237,7 +237,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The fight's keys and pointer are heard as they come (`fightControls`); its pad, each frame, and while paused only
     // what the pad lets go, so nothing it held stays held.
     const pad = input.padAlone;
-    if (!here.boarding.onDeck) here.fight?.padFrame(paused ? { ...IDLE, released: (id) => pad.released(id) } : pad, seconds);
+    if (!here.boarding.onDeck)
+      here.fight?.padFrame(paused ? { ...IDLE, released: (id) => pad.released(id) } : pad, seconds);
     const shown = here.frame({
       seconds,
       time: clock,
