@@ -1,37 +1,42 @@
 // The Appearance screen's shared parts: an emblem's card, and the key the Appearance button on the Character page
 // (characterPage.ts) is found by, which takes the focus back once the screen closes.
-import { make } from '../editor/dom.ts';
+import type { Node } from '../ui/node.ts';
 import { rarityNumber } from './appearance/appearanceModel.ts';
-import { type Emblem, emblemImage } from './emblemArt.ts';
-import { cardNode, hintLine } from './gearDom.ts';
-
-/** A card with nothing on it yet. */
-const emptyCard = {
-  name: '',
-  rarity: 0,
-  kind: 'Emblem, Dye, Coat, Barding',
-  big: null,
-  rows: [],
-  element: 0,
-  traits: [],
-  words: '',
-  compare: null,
-};
+import type { Emblem } from './emblemArt.ts';
+import { cardNode } from './gearCard.ts';
+import { INK, type Sizes, emblemNode, hintsNode } from './gearNodes.ts';
 
 /** The key of the Appearance button, which takes the focus back once the screen closes. */
 export const APPEARANCE_KEY = 'appearance';
 
-/** An emblem's card: its name and rarity, its nameplate, and how it is had. */
-export function emblemCard(emblem: Emblem, kept: boolean, worn: boolean): HTMLElement {
+/** An emblem's card: its name and rarity, its nameplate, its words, and whether it is worn or a click wears it. */
+export function emblemCard(emblem: Emblem, kept: boolean, worn: boolean, sizes: Sizes): Node {
+  const foot: Node | null = worn
+    ? { width: 'grow', padding: [7, 12, 8, 12], text: { words: 'Worn.', size: sizes.label, colour: INK.faint } }
+    : kept
+      ? { width: 'grow', padding: [7, 12, 8, 12], children: [hintsNode([['Click', 'Wear']], 1, 12)] }
+      : null;
   const card = cardNode(
-    { ...emptyCard, name: emblem.name, rarity: rarityNumber(emblem.rarity), kind: 'Emblem' },
+    {
+      name: emblem.name,
+      rarity: rarityNumber(emblem.rarity),
+      kind: 'Emblem',
+      big: null,
+      rows: [],
+      element: 0,
+      traits: [],
+      words: '',
+      compare: null,
+    },
     null,
     [],
+    sizes,
+    {
+      after: [
+        emblemNode(emblem, 'plate', 120, 240, 48),
+        { width: 'grow', padding: [4, 0], text: { words: emblem.words, size: sizes.label, colour: INK.faint } },
+      ],
+    },
   );
-  const plate = make('img', '', 'gear-emblem-plate');
-  Object.assign(plate, { src: emblemImage(emblem, 'plate'), width: 240, height: 48, alt: '' });
-  card.querySelector('.gear-card-body')?.append(plate, make('p', emblem.words, 'gear-card-words'));
-  if (worn) card.append(make('p', 'Worn.', 'gear-card-hint'));
-  else if (kept) card.append(hintLine([['Click', 'Wear']], 'gear-card-hint'));
-  return card;
+  return foot ? { ...card, children: [...(card.children ?? []), foot] } : card;
 }

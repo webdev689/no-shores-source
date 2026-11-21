@@ -1,11 +1,10 @@
 // A keeper drawn large on their screen, from the forge in their own dress (keepers.ts), idle and facing the viewer:
-// grown by whole pixels only, so every pixel of the forge's stays square, and breathing between the idle's two frames
-// unless the player asked for less motion. Each keeper's frames are drawn once and kept.
-import { make } from '../../editor/dom.ts';
+// grown by whole device pixels only, so every pixel of the forge's stays square, and breathing between the idle's two
+// frames unless the player asked for less motion. Each keeper's frames are drawn once and kept.
 import type { Cards } from '../../player/cards.ts';
 import type { Picture } from '../../player/picture.ts';
 import { drawnBounds } from '../../player/iconFit.ts';
-import { motionReduced } from '../../plus/kit.ts';
+import type { Node } from '../../ui/node.ts';
 import { KEEPERS, type KeeperKind } from '../keepers.ts';
 
 /** The idle's frames, and how long each is held. */
@@ -14,14 +13,28 @@ const FRAME_MS = 600;
 /** The forge's view of a figure facing the viewer. */
 const FACING = 0;
 
-const drawn = new Map<KeeperKind, (Picture | null)[]>();
+/** Each keeper's frames, trimmed to the first one's drawn box so the figure never shifts as it breathes. */
+interface Frames {
+  readonly width: number;
+  readonly height: number;
+  readonly pixels: readonly Uint8Array[];
+}
+const drawn = new Map<KeeperKind, Frames>();
 const asked = new Set<KeeperKind>();
-/** Each keeper's frames grown for the last size asked, so a page built again reuses them. */
-const grown = new Map<KeeperKind, { readonly scale: number; readonly canvases: HTMLCanvasElement[] }>();
 
-/** The keeper's frames, drawn once; `ready` runs as they come. A failed drawing is not kept: the next build asks
- *  again, and `ready` is not run for it, so a forge that keeps failing never loops the page. */
-function framesOf(kind: KeeperKind, forge: Cards, ready: () => void): (Picture | null)[] | null {
+/** `picture`'s pixels inside `bounds`, a row at a time. */
+function trimmed(picture: Picture, [west, north, width, height]: readonly [number, number, number, number]) {
+  const out = new Uint8Array(width * height * 4);
+  for (let row = 0; row < height; row++) {
+    const from = ((north + row) * picture.width + west) * 4;
+    out.set(picture.pixels.subarray(from, from + width * 4), row * width * 4);
+  }
+  return out;
+}
+
+/** The keeper's frames, drawn once; null while they are drawn. A failed drawing is not kept: the next frame asks
+ *  again. */
+export function framesOf(kind: KeeperKind, forge: Cards): Frames | null {
   const kept = drawn.get(kind);
   if (kept || asked.has(kind)) return kept ?? null;
   asked.add(kind);
@@ -29,71 +42,39 @@ function framesOf(kind: KeeperKind, forge: Cards, ready: () => void): (Picture |
   void Promise.all(FRAMES.map((frame) => forge.picture(dress, 'idle', FACING, frame).catch(() => null))).then(
     (pictures) => {
       asked.delete(kind);
-      if (!pictures[0]) return;
-      drawn.set(kind, pictures);
-      ready();
+      const [first] = pictures;
+      if (!first) return;
+      const bounds = drawnBounds(first.width, first.height, first.pixels) ?? [0, 0, first.width, first.height];
+      const pixels = pictures.filter((each): each is Picture => each !== null).map((each) => trimmed(each, bounds));
+      drawn.set(kind, { width: bounds[2], height: bounds[3], pixels });
     },
   );
   return null;
 }
 
-/** One frame on a canvas, its clear margin trimmed, grown by the largest whole number that fits `height`. */
-function frameCanvas(picture: Picture, bounds: readonly [number, number, number, number], scale: number) {
-  const [west, north, width, height] = bounds;
-  const own = document.createElement('canvas');
-  [own.width, own.height] = [width, height];
-  own
-    .getContext('2d')
-    ?.putImageData(
-      new ImageData(new Uint8ClampedArray(picture.pixels), picture.width),
-      -west,
-      -north,
-      west,
-      north,
-      width,
-      height,
-    );
-  const canvas = make('canvas', '', 'npc-figure-frame');
-  [canvas.width, canvas.height] = [width * scale, height * scale];
-  const drawing = canvas.getContext('2d');
-  if (drawing) {
-    drawing.imageSmoothingEnabled = false;
-    drawing.drawImage(own, 0, 0, canvas.width, canvas.height);
-  }
-  return canvas;
-}
-
-/** The keeper's figure for a box `height` CSS pixels tall, or a word while it is drawn. */
-export function keeperFigure(kind: KeeperKind, forge: Cards | null, height: number, ready: () => void): HTMLElement {
-  const stand = make('div', '', 'npc-figure');
-  stand.setAttribute('aria-hidden', 'true');
-  const frames = forge ? framesOf(kind, forge, ready) : null;
-  const first = frames?.[0];
-  if (!frames || !first) return stand;
-  // The frames share one box, so the figure never shifts as it breathes.
-  const bounds = drawnBounds(first.width, first.height, first.pixels) ?? [0, 0, first.width, first.height];
-  const ratio = devicePixelRatio || 1;
-  const scale = Math.max(1, Math.floor((height * ratio) / bounds[3]));
-  const known = grown.get(kind);
-  const canvases =
-    known?.scale === scale
-      ? known.canvases
-      : frames.filter((each): each is Picture => each !== null).map((each) => frameCanvas(each, bounds, scale));
-  grown.set(kind, { scale, canvases });
-  for (const canvas of canvases) {
-    canvas.style.width = `${canvas.width / ratio}px`;
-    canvas.style.height = `${canvas.height / ratio}px`;
-  }
-  const [shown] = canvases;
-  if (!shown) return stand;
-  stand.append(shown);
-  if (canvases.length > 1 && !motionReduced()) {
-    let shownAt = 0;
-    const timer = window.setInterval(() => {
-      if (!stand.isConnected) return window.clearInterval(timer);
-      shownAt = (shownAt + 1) % canvases.length;
-      stand.replaceChildren(canvases[shownAt] ?? shown);
-    }, FRAME_MS);
-  }
-  return stand;
+/** The keeper's figure for a box `height` CSS pixels tall at `ratio` device pixels a CSS pixel, at `millis` on the
+ *  clock; null while it is drawn. */
+export function keeperFigure(
+  kind: KeeperKind,
+  forge: Cards | null,
+  height: number,
+  ratio: number,
+  millis: number,
+  still: boolean,
+): Node | null {
+  const frames = forge ? framesOf(kind, forge) : null;
+  if (!frames || frames.pixels.length === 0) return null;
+  const scale = Math.max(1, Math.floor((height * ratio) / frames.height));
+  const shown = still ? 0 : Math.floor(millis / FRAME_MS) % frames.pixels.length;
+  const pixels = frames.pixels[shown] ?? frames.pixels[0];
+  if (!pixels) return null;
+  return {
+    width: (frames.width * scale) / ratio,
+    height: (frames.height * scale) / ratio,
+    picture: {
+      key: `keeper ${kind} ${shown}`,
+      source: { pixels: () => pixels },
+      pixel: { width: frames.width, height: frames.height },
+    },
+  };
 }

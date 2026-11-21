@@ -17,12 +17,12 @@ import { accountMark } from './accountMark.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
 import { APPEARANCE_HINTS, appearancePage } from './appearance/appearancePage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
-import { coresOf, gearAskOf } from './artsCards.ts';
-import { ARTS_HINTS, ART_DIAMOND_KEY, type ArtsEntrance, artsPage } from './artsPage.ts';
+import { artOf, gearAskOf } from './artsCards.ts';
+import { ARTS_HINTS, ART_DIAMOND_KEY, artsPage } from './artsPage.ts';
+import { spellKey } from './artsRows.ts';
 import { characterPage } from './characterPage.ts';
 import { CompanyHud } from './companyHud.ts';
 import { emblemOf } from './emblemArt.ts';
-import { HoverCard } from './gearDom.ts';
 import { DISMANTLE_KEY, Holds } from './gearHold.ts';
 import { Island } from './gearIsland.ts';
 import { type Hint, INK, pressNode, sizesOf, words } from './gearNodes.ts';
@@ -42,12 +42,13 @@ import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNo
 import { inventoryPage } from './inventoryPage.ts';
 import { ITEM_NAME, itemPage } from './itemPage.ts';
 import { KEEPERS } from './keepers.ts';
-import type { MenuContext, PageContext } from './menuPage.ts';
+import type { MenuContext } from './menuPage.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
-import { isKeeperView, npcChoosing, npcHints, npcOpened, npcPage } from './npc/npcScreen.ts';
+import { hush } from './npc/npcSpeech.ts';
+import { isKeeperView, npcChoosing, npcHints, npcOpened, npcPage, npcStepBack } from './npc/npcScreen.ts';
 import { rosterPage } from './rosterTab.ts';
 import type { ShipPanel } from './shipPanel.ts';
-import { chime, play } from './uiSounds.ts';
+import { play } from './uiSounds.ts';
 
 export { gearScreenOpen } from './gearScreen.ts';
 
@@ -103,9 +104,8 @@ export function startGearWindow(
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
 ): Layer {
-  // The pages still made of elements stand in an island over the body, with their hover card.
+  // The pages still made of elements stand in an island over the body.
   const island = new Island(root);
-  const tip = new HoverCard(root);
   setIslandFocused(() => island.focused);
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
@@ -120,9 +120,7 @@ export function startGearWindow(
   let artSlot: number | null = null;
   /** Whether the Character page shows the Appearance screen. */
   let appearance = false;
-  /** The Art and Core the Art's screen was last built with (null while it is not shown), and the Core slot whose ask
-   *  waits on the room's word. */
-  let artsBuilt: { readonly art: number; readonly core: readonly (number | null)[] } | null = null;
+  /** The Core slot whose ask waits on the room's word. */
   let artPending: number | null = null;
   let shelf = FIRST_SHELF;
   let inspecting: number | null = null;
@@ -138,7 +136,6 @@ export function startGearWindow(
   /** A page of elements, kept while what it shows stays the same; and whether it is held down. */
   let built: { key: string; page: HTMLElement } | null = null;
   let pressing = false;
-  let drawn = 0;
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
   /** The player's name and account, once the accounts give them; and the gear the banner last showed. */
   let named: string | null = null;
@@ -147,25 +144,26 @@ export function startGearWindow(
   /** The interface last drawn with, and the presses X opens the details of, by their ids. */
   let ui: Interface | null = null;
   let details = new Map<string, GearItem>();
-  const redraw = () => drawn++;
+  /** Asked when a picture comes; the layer is drawn each frame, so it has nothing more to do. */
+  const redraw = () => undefined;
 
   /** The HUD's other parts, out of reach of the keys and a screen reader while the menu is open, and out of sight:
    *  shortcut: they are elements over the canvas the menu is drawn on, so they would stand over it; they go once the
    *  HUD is drawn, under the menu's layer. */
   const beneath = (asleep: boolean) => {
     root.classList.toggle('gear-open', asleep);
-    for (const part of root.children)
-      if (part instanceof HTMLElement && ![island.node, tip.node].includes(part)) part.inert = asleep;
+    for (const part of root.children) if (part instanceof HTMLElement && part !== island.node) part.inert = asleep;
   };
   const shut = () => {
     holds.letGo();
     if (document.activeElement instanceof HTMLElement && island.node.contains(document.activeElement))
       document.activeElement.blur();
     view = null;
+    // Its keeper falls silent with it.
+    hush();
     play('close');
     setGearScreenOpen(false);
     beneath(false);
-    tip.hide();
     // The pages go with the menu, so nothing on them, a list asked for again among them, runs while it is shut.
     built = null;
     island.show(null, null, null);
@@ -178,7 +176,8 @@ export function startGearWindow(
     if (!here()?.gear) [inspecting, slot, artSlot, arts, appearance] = [null, null, null, false, false];
     if (inspecting !== null) [inspecting, focusNext] = [null, returnTo];
     else if (slot !== null) slot = null;
-    else if (artSlot !== null) artSlot = null;
+    else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
+    else if (npcStepBack()) return play('back');
     else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
     else if (appearance) [appearance, focusNext] = [false, APPEARANCE_KEY];
     else return shut();
@@ -188,7 +187,6 @@ export function startGearWindow(
     if (view === wanted && onShelf === undefined) return shut();
     // A hold under way on the page left behind does not act on it unseen, nor does its card stay.
     holds.letGo();
-    tip.hide();
     const opening = view === null;
     [view, slot, inspecting, built] = [wanted, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
@@ -226,7 +224,6 @@ export function startGearWindow(
     // The focused control is found again in the page built anew, by what it is.
     const held = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focused = held && island.node.contains(held) ? held.dataset['key'] : undefined;
-    tip.hide();
     built = { key, page: build() };
     const again = focused ? built.page.querySelector<HTMLElement>(`[data-key="${CSS.escape(focused)}"]`) : null;
     if (again) requestAnimationFrame(() => again.focus());
@@ -287,7 +284,13 @@ export function startGearWindow(
     if (frame.clicked('press-step')) stepOnce();
     if (view !== shown) return [];
     const body = frame.boxOf('gear-body');
-    const room = { width: Math.max(0, (body?.width ?? 0) - 40), height: Math.max(0, (body?.height ?? 0) - 24) };
+    // The Art's and the Appearance screens stand to the body's edges; every other page inside its padding.
+    const bleed = shown === 'character' && (appearance || (arts && Boolean(now?.gear?.arts))) && inspecting === null;
+    const [aroundX, aroundY] = bleed ? [0, 0] : [40, 24];
+    const room = {
+      width: Math.max(0, (body?.width ?? 0) - aroundX),
+      height: Math.max(0, (body?.height ?? 0) - aroundY),
+    };
     let card: { beside: string; content: () => Node } | null = null;
     details = new Map();
     const dress = now?.dress ?? null;
@@ -334,78 +337,43 @@ export function startGearWindow(
           inspecting = inspected.id;
           // The page is read from its name; once it closes, the focus goes back to the tile it was asked from.
           [returnTo, focusNext] = [frame.focusedId ?? `item-${inspected.id}`, ITEM_NAME];
-          tip.hide();
         },
         details: (id, detailed) => details.set(id, detailed),
         atVault: shown === 'vault',
-        ...(gear.arts && { arts: () => ((arts = true), (artSlot = slot = null)) }),
-        appearance: () => ((appearance = true), (slot = null)),
-      };
-      const pageContext: PageContext = {
-        gear,
-        ask: (asked) => now.ask(asked),
-        tip,
-        picture,
-        figure: figure.picture,
-        room: room.height,
-        inspect: context.inspect,
-        atVault: shown === 'vault',
-        appearance: context.appearance,
         forge: now.forge ?? null,
         dress,
+        ...(gear.arts && {
+          arts: () => {
+            [arts, artSlot, slot] = [true, null, null];
+            // The screen is read from its Anima.
+            const worn = artOf(gear.arts?.art ?? 0);
+            focusNext = worn ? spellKey(worn.anima) : null;
+          },
+        }),
+        appearance: () => ((appearance = true), (slot = null)),
       };
-      const worn = shown === 'character' && arts ? gear.arts : undefined;
-      if (worn) {
-        const cores = coresOf(worn);
-        const core = cores[worn.art] ?? [];
-        // The screen comes in once as it opens and again as another Art is worn; a slot the room has just set flares.
-        const entrance: ArtsEntrance = !artsBuilt ? 'open' : artsBuilt.art !== worn.art ? 'wear' : null;
-        const before = artsBuilt?.art === worn.art ? artsBuilt.core : null;
-        const justSet = before
-          ? core.findIndex((chosen, place) => chosen !== null && chosen !== (before[place] ?? null))
-          : -1;
-        const key = JSON.stringify(['arts', gear.answered, worn, artSlot, artPending, drawn]);
-        element = islandPage(key, () => {
-          if (justSet >= 0) chime(0);
-          artsBuilt = { art: worn.art, core };
-          return artsPage(
-            {
-              worn: worn.art,
-              cores,
-              standing: gear.standing,
-              ask: (asked) => {
-                if (asked.kind === 'setCore') artPending = asked.slot;
-                now.ask(gearAskOf(asked));
-              },
-              tip,
-              close: () => ((arts = false), (focusNext = ART_DIAMOND_KEY)),
-              entrance,
-              justSet: justSet >= 0 ? justSet : null,
-              pending: artPending,
-            },
-            artSlot,
-            (chosen) => (artSlot = chosen),
-          );
-        });
-        aside = ARTS_HINTS;
-      } else artsBuilt = null;
-      if (!worn && shown === 'character' && appearance) {
-        const close = () => ((appearance = false), (focusNext = APPEARANCE_KEY));
-        element = islandPage(JSON.stringify(['looks', gear.answered, drawn, dress]), () =>
-          appearancePage({ ...pageContext, forge: now.forge ?? null, dress, close }),
-        );
-        aside = APPEARANCE_HINTS;
-      }
       // Under an item's page the menu's own page is not laid, so neither the pointer nor the keys reach it.
       const inspected = gear.items.find((each) => each.id === inspecting);
       if (!inspected) inspecting = null;
-      if (inspected || worn || appearance || !ofGear(shown)) page = null;
-      else if (shown === 'character') page = characterPage(context, slot, (chosen) => (slot = chosen));
+      if (inspected) page = null;
+      else if (shown === 'character' && arts && gear.arts) {
+        page = artsPage(context, {
+          open: artSlot,
+          choose: (chosen) => (artSlot = chosen),
+          pending: artPending,
+          ask: (asked) => {
+            if (asked.kind === 'setCore') artPending = asked.slot;
+            now.ask(gearAskOf(asked));
+          },
+        });
+        aside = ARTS_HINTS;
+      } else if (shown === 'character' && appearance) {
+        page = appearancePage(context);
+        aside = APPEARANCE_HINTS;
+      } else if (shown === 'character') page = characterPage(context, slot, (chosen) => (slot = chosen));
       else if (shown === 'inventory') page = inventoryPage(context, shelf, (chosen) => (shelf = chosen));
       else if (isKeeperView(shown)) {
-        element = islandPage(JSON.stringify([shown, gear.answered, gear.items.length, drawn, room.height]), () =>
-          npcPage(pageContext, shown, now.forge, redraw),
-        );
+        page = npcPage(context, shown);
         if (npcChoosing()) aside = npcHints(shown);
       }
       item = inspected ? itemPage(context, inspected, back) : null;
@@ -450,8 +418,9 @@ export function startGearWindow(
       id: 'gear-body',
       width: 'grow',
       height: 'grow',
-      scroll: element === null && item === null,
-      padding: [10, 20, 14, 20],
+      // The Art's screen and a keeper's are laid to the body's height, a keeper's rows scrolling in it; the rest scroll.
+      scroll: element === null && item === null && !(bleed && !appearance) && !isKeeperView(shown),
+      padding: bleed ? 0 : [10, 20, 14, 20],
       children: [page, item?.page],
     };
     const screen = screenNode(
@@ -507,19 +476,12 @@ export function startGearWindow(
       const opens = !typing && !resting() && (key === 'i' || key === 'o');
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.
-      const inIsland =
-        event.target instanceof Node && (island.node.contains(event.target) || tip.node.contains(event.target));
+      const inIsland = event.target instanceof Node && island.node.contains(event.target);
       if (view !== null && !inIsland) event.stopPropagation();
       if (key === 'escape') {
         event.preventDefault();
         stepOnce();
-      } else if (key === 'x' && !typing && island.focused) {
-        // On a page of elements, X sends the focused piece a right press, which opens its details.
-        const focused = document.activeElement;
-        if (!(focused instanceof HTMLElement) || focused.dataset['details'] === undefined) return;
-        event.preventDefault();
-        focused.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
-      } else if (key === 'x' && !typing) {
+      } else if (key === 'x' && !typing && !island.focused) {
         // X shows the focused piece's details, as a right press does.
         const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
         if (!shown) return;

@@ -1,6 +1,5 @@
-// shortcut: the menu's pages still made of elements (Ship, Social, Settings, the pages to come, the Art's screen,
-// Appearance and the keepers' screens) stand in one element laid over the drawn body's box each frame; it goes once
-// those pages are drawn and take `MenuContext` (menuPage.ts).
+// shortcut: the menu's pages still made of elements (Ship, Social, Settings and the pages to come) stand in one element
+// laid over the drawn body's box each frame; it goes once those pages are drawn and take `MenuContext` (menuPage.ts).
 
 import type { Box } from '../ui/quads.ts';
 

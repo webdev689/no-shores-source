@@ -2,8 +2,7 @@
 // nodes each frame (`ui/`): it reads what was done to it through `ui`, asks the room through `ask`, shows the one
 // hover card through `card` (the menu floats it beside what it describes, over everything, on the screen), says what
 // X opens through `details`, holds through `holds`, and leaves the footer's hints and presses to the menu, which
-// chooses them by the view. A page still made of elements (`PageContext`) stands in a temporary island the menu lays
-// over its body (gearIsland.ts) until it too is drawn.
+// chooses them by the view.
 
 import type { GearAsk, GearItem, GearState } from '../network/gearMessages.ts';
 import type { Cards } from '../player/cards.ts';
@@ -11,7 +10,6 @@ import type { Dress } from '../player/dressing.ts';
 import type { Picture } from '../player/picture.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import type { HoverCard } from './gearDom.ts';
 import type { Holds } from './gearHold.ts';
 import type { Sizes } from './gearNodes.ts';
 
@@ -40,22 +38,7 @@ export interface MenuContext {
   readonly arts?: () => void;
   /** Opens the Appearance screen, where the menu has one. */
   readonly appearance?: () => void;
-}
-
-/** What a page of elements draws from, in its island (shortcut: goes once the Arts, Appearance and keepers' screens
- *  are drawn and take `MenuContext`). */
-export interface PageContext {
-  readonly gear: GearState;
-  readonly ask: (ask: GearAsk) => void;
-  readonly tip: HoverCard;
-  readonly picture: (item: GearItem) => Picture | null;
-  readonly figure: Picture | null;
-  /** The height of the menu's body, in pixels. */
-  readonly room: number;
-  readonly inspect: (item: GearItem) => void;
-  readonly atVault: boolean;
-  readonly appearance?: () => void;
-  /** The forge and the player's dress, for a keeper's tile that draws the player's horse (the Tack's bardings). */
-  readonly forge?: Cards | null;
-  readonly dress?: Dress | null;
+  /** The forge and the player's dress, for what draws the player or their horse; null while there is none. */
+  readonly forge: Cards | null;
+  readonly dress: Dress | null;
 }
