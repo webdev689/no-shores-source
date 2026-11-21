@@ -179,6 +179,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Lattice Has Props of Its Own, Made in Blender]]
 - [[The Lattice Comes Into the Game Meaningfully, Talked Through First]]
 - [[Public Events Run on a Clock, After Destiny 1]]
+- [[Public Events Are Built in Full, on Claude's Autonomy]]
 - [[Fewer Plates Show, Sized by Rank, After Destiny]]
 - [[Three Factions Keep the Arts, After Destiny 1]]
 - [[Each Faction Sells Gear of Its Own, in Its Own Colour]]
