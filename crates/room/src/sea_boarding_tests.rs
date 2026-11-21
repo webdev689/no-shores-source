@@ -108,7 +108,7 @@ fn a_boarders_deck_inputs_stand_no_foe_replay_nothing_reach_no_other_player_and_
 fn two_boarders_one_beaten_both_take_its_hold_when_its_crew_falls_and_both_step_off_after_it() {
     let (mut sea, one) = met(20.0, Rank::Minor);
     let two = sea.join();
-    sea.course(two, &[[50_010.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(two, &[[50_010.0, 50_000.0]], 10).unwrap();
     sea.tick();
     assert!(sea.fights.fighting(two), "joined");
     strike(&mut sea, one);

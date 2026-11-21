@@ -335,7 +335,8 @@ impl Sea {
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
     /// the text is not a character, or the sea's gate shuts to it (`shut`). Their ship lies where the room last kept
     /// it, wherever the page first put it to sea: a fight they met from the page's spawn is over for them. With nowhere
-    /// kept, the course held for them sails.
+    /// kept (a new character), a ship not yet at sea lies at the starting port's roadstead (`Harbours::starting`), never
+    /// where the page asked; in a sea with no port cities the course held for them sails.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
@@ -345,6 +346,8 @@ impl Sea {
         }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
+        let not_at_sea = self.berths.get(&player).is_some_and(|berth| berth.sailing.is_none());
+        let at = at.or(self.harbour.harbours.starting().filter(|_| not_at_sea));
         if at.is_some() && self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);

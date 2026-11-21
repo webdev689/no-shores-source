@@ -188,8 +188,10 @@ voyage's harder difficulty, each a room of its own whose ships come at the level
 (`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
 or 1, the world's own time, which the page sails it at while its view is close on it ([[Game]], "At sea").
-A ship not yet at sea puts to sea at the course's first point; one at sea starts the course from where it is, to the
-nearest metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
+A ship not yet at sea puts to sea at the course's first point, and only within 3 km of a port city's roadstead, where
+the page first lays it off the city it leaves (`Harbours::puts_to_sea`; a sea opened with no port cities puts it to sea
+anywhere); one at sea starts the course from where it is, to the nearest metre, so the legs it sails are the legs
+judged. A course with no points brings a ship to rest, turned to its
 facing when it holds one: the helm turned while it lies still. A player sets one course, facings among them, each half
 second, and one sooner is dropped: judging a course against the coasts takes up to a few
 milliseconds, which no player may ask for every tick. The browser keeps its latest course and sends it once the sea
@@ -234,7 +236,9 @@ will take it, by the room's own tick.
   accounts answered for them waits, then sails from where the room last kept it once their character is given back
   (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
-  back where it was kept). A new account's character is the one the room holds, given back to it. The account the
+  back where it was kept). A character given back with no place kept in it (a new one) lies at Overlook's roadstead,
+  wherever the page asked, unless its ship already put to sea by a port city. A new account's character is the one
+  the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more. Whatever
   changes a character at sea (a piece gathered, a fight's hurts, a repair done or stopped, washing up, the character
@@ -576,6 +580,6 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   the same after an hour open (tested offline).
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.
-- Where a ship first puts to sea, with no place kept in its character (a new one, or a page unkept), is the player's
-  word, any point of open sea; the sea room does not yet know which port they left from. A ship that leaves the sea room leaves the sea.
+- A ship that leaves the sea room leaves the sea. One unkept (a page with no session, or accounts that do not answer)
+  comes back only by a port city's roadstead.
 - The sea judges a course against the continents' outlines only; isles are not placed yet.
