@@ -190,8 +190,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw), boxes, landmarks (each its
   module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
   kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number
-  past the patrol's three. The room door's `dungeon` asks it. Three dungeons' answers are pinned by their hash,
-  natively and through WebAssembly, so a dungeon is the same bytes on every machine.
+  past the patrol's three. The room door's `dungeon` asks it. Five dungeons' answers are pinned by their hash,
+  natively and through WebAssembly, so a dungeon is the same bytes on every machine: four patrols', one of five
+  blocks whose last is a style deeper, and one laid by a seed and a style.
 
 ## In the rooms
 

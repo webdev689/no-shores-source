@@ -208,13 +208,16 @@ mod tests {
     }
 
     /// The asks the browser's agreement test makes too (client/src/rules/dungeonRules.test.ts), and the FNV-1a hash of
-    /// their answers' text, one after another: a dungeon laid anywhere is these bytes.
-    const AGREED_ASKS: [&[u8]; 3] = [
+    /// their answers' text, one after another: a dungeon laid anywhere is these bytes. The fourth lays five blocks, its
+    /// last a style deeper, and the fifth is laid by a seed and a style where no patrol lays it.
+    const AGREED_ASKS: [&[u8]; 5] = [
         br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#,
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
+        br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
+        br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0xadf4_ea5d_8e28_95f3;
+    const AGREED_HASH: u64 = 0x77bb_f751_6bd7_1735;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
