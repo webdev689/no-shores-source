@@ -258,9 +258,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[The Wreck's Boarders Are One Side]]); and the storm's run and the wake's flight stand clear and go slower
   ([[The Prologue's Camera Flights Stand Clear and Go Slower]]). Tested offline: the full check, the client's story
   fight over the real land rules for 15 minutes of play, and the storm's run and the wake's flight pictured headless.
-  Not yet seen on a real GPU, nor played through by hand; the burst's ring not yet seen at all. Open: the gun deck's
-  wave is a Tithe-Mate in `content/prologue/wreck.json` but still Thule (type 12) in `tools/wreck/wreck_level.py`,
-  left so because a push there rebuilds and publishes the wreck; the fleet room has no burst; and this session's
+  Not yet seen on a real GPU, nor played through by hand; the burst's ring not yet seen at all. The gun deck's
+  Tithe-Mate is in the wreck's own level too (`tools/wreck/wreck_level.py`), rebuilt by the wreck workflow with the
+  owner's yes ("Do it"): only its Blender source is new. Open: the fleet room has no burst; and this session's
   toolkit could not be installed (its installer was refused by the session's permission check).
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
