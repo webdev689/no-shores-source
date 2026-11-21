@@ -274,8 +274,9 @@ mod tests {
                 let [west, north, east, south, bottom, _] = solid.bounds();
                 let on_ground = bottom <= ground.height_at(solid.at[0], solid.at[1]) + 0.02;
                 let on_another = solids.iter().enumerate().any(|(other, under)| {
-                    let [w, n, e, s, low, top] = under.bounds();
-                    other != nth && low < bottom && top >= bottom && w < east && e > west && n < south && s > north
+                    let [its_west, its_north, its_east, its_south, low, top] = under.bounds();
+                    let over = its_west < east && its_east > west && its_north < south && its_south > north;
+                    other != nth && low < bottom && top >= bottom && over
                 });
                 assert!(on_ground || on_another, "{resource}: part {nth} afloat: {solid:?}");
             }
