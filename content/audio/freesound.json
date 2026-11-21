@@ -2047,7 +2047,7 @@
     {
       "id": "amb.hyena",
       "use": "A hyena whooping at night",
-      "query": "hyena",
+      "query": "hyena laugh",
       "seconds": [
         1.0,
         10.0
@@ -2062,7 +2062,7 @@
     {
       "id": "amb.marmot",
       "use": "A marmot's alarm whistle",
-      "query": "marmot",
+      "query": "animal whistle",
       "seconds": [
         0.2,
         4.0

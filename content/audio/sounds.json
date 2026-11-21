@@ -2,6 +2,166 @@
   "about": "The owner's picks, kept on R2 by their hash: Freesound's, each with its credit, written by tools/freesound/publish.py, and DFO's own, by tools/freesound/own.py. The game plays each in place of its synthesised cue, or for its world cue.",
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
   "sounds": {
+    "amb.bird.buzzard": {
+      "key": "sounds/0e70ae715317ddf943cf04b0de5cf2b0a9a3c46c8206680aa8c7ff0ebd3edfd9.mp3",
+      "freesound": 194678,
+      "name": "a buzzard call",
+      "author": "Jaturo",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Jaturo/sounds/194678/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.chiffchaff": {
+      "key": "sounds/b4117c87f2ea40be6622d8484e3892eb50c8991208b0191ebd75181c0f74f943.mp3",
+      "freesound": 868165,
+      "name": "Songbirds - Common Chiffchaff, Other Birds in Background",
+      "author": "TheKingOfGeeks360",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/TheKingOfGeeks360/sounds/868165/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.curlew": {
+      "key": "sounds/e78eb5fca3f53558b54a5154cb8f06069af20d5534bbe16003f5466dcf8070fc.mp3",
+      "freesound": 72892,
+      "name": "Curlew .wav",
+      "author": "Benboncan",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Benboncan/sounds/72892/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.dove": {
+      "key": "sounds/682f266a9f094aeb98fe13940993276e152d5fd2bd5b5980394f58083c50ec25.mp3",
+      "freesound": 688794,
+      "name": "Eurasian Collared Dove call.wav",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/688794/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.finch": {
+      "key": "sounds/79fd9382f716aba6386180165f09cbf4a367b216e33b431c8a23775dab707983.mp3",
+      "freesound": 50494,
+      "name": "MADAR01.wav",
+      "author": "csengeri",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/csengeri/sounds/50494/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.lark": {
+      "key": "sounds/e2ae008b599d2cd2f92c19c7d0e45708646561e36b9918bbcffdf131f621107f.mp3",
+      "freesound": 684853,
+      "name": "pasture city - 11.41AM Bossche Broek 230421_0581",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/684853/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.nightjar": {
+      "key": "sounds/3f49025df958ee40507a326de29a70d6ee60f2564ba9386e50f10d3e5ea68672.mp3",
+      "freesound": 86343,
+      "name": "Nightjar short.aif",
+      "author": "surrey_film",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/surrey_film/sounds/86343/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.sparrow": {
+      "key": "sounds/ed57447a61c4356af9b0c2cbf32a5be4f6a56d42643c02dad5247b75e6ad1add.mp3",
+      "freesound": 628953,
+      "name": "Sparrows03.wav",
+      "author": "Kimskell",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Kimskell/sounds/628953/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.thrush": {
+      "key": "sounds/de6493d5b55877d201a794825d7825de5660720fce48b6a578ff4ab52f08c7e0.mp3",
+      "freesound": 365664,
+      "name": "Bird, Thrush Nightingale 03.wav",
+      "author": "LilMati",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/LilMati/sounds/365664/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.warbler": {
+      "key": "sounds/a797a2abd29bba5ac5a77b219dbcf71728215846336d431e225e1cc17132e7ca.mp3",
+      "freesound": 633811,
+      "name": "Cetti&#x27;s Warbler CLEAN  655PM  200417_0337.wav",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/633811/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.woodpecker": {
+      "key": "sounds/27ced4dbae6a4e5f4d8a7fba8a7f0a6b1ce2c406ce07f219742db73c7c741ad4.mp3",
+      "freesound": 795970,
+      "name": "Great Spotted Woodpecker 002 park forest Haanwijk 1141 AM 250306_1056",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/795970/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.bird.wren": {
+      "key": "sounds/77b08de20efd8b73f8b0e77d002975814cdee236f4dc585847f0faabe5d64930.mp3",
+      "freesound": 683402,
+      "name": "wren2.wav",
+      "author": "Joker313",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Joker313/sounds/683402/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.desert.sand": {
+      "key": "sounds/e72510345ff0686999d3c6dd5dab8d5952c4713055ee23d9d34561c832daf0c7.mp3",
+      "freesound": 632771,
+      "name": "Sandstorm Looping",
+      "author": "gbayles",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/gbayles/sounds/632771/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.frog.bull": {
+      "key": "sounds/86a99c8ca16f1742c6df674d8ae5b6d39c2b7d6be3fc182d503c21eed38f26cf.mp3",
+      "freesound": 571424,
+      "name": "yart.mp3",
+      "author": "FartMuffin",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/FartMuffin/sounds/571424/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.frog.croak": {
+      "key": "sounds/a42f7fd93fd7db3c6d7d47725677e4ea39257a6f7a9d6840c691a4e84294911f.mp3",
+      "freesound": 377109,
+      "name": "frog croak.wav",
+      "author": "benjibeastr",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/benjibeastr/sounds/377109/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.frog.peeps": {
+      "key": "sounds/198ea0fa6aeb3b6933c338229691e4928890b41135b933f5bf68f352ee3c5894.mp3",
+      "freesound": 866772,
+      "name": "Frogs - Cope&#x27;s Gray Tree Frog, Single",
+      "author": "TheKingOfGeeks360",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/TheKingOfGeeks360/sounds/866772/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.highland.raven": {
       "key": "sounds/c197589f5ec06dc4b123a16385cf9ee89bde7475cfb9fa7ada69c6a1b35f41cf.mp3",
       "freesound": 824995,
@@ -10,6 +170,156 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/SoundsLikeYukon/sounds/824995/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.ice.crack": {
+      "key": "sounds/823dad964b8058fe20e215df9b986a6838b6229d258359ffaad3cb2327c017b7.mp3",
+      "freesound": 819721,
+      "name": "Deep_Ice_Cracking3",
+      "author": "Akkaittou",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Akkaittou/sounds/819721/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.insect.cicada": {
+      "key": "sounds/fc49ce4a508ab9c422565e396b319ef61656896e7f97521edd86a84f45afc66a.mp3",
+      "freesound": 57888,
+      "name": "PlaseCicada2.wav",
+      "author": "dkustic",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/dkustic/sounds/57888/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.insect.cricket": {
+      "key": "sounds/b94bdb175c4ae473c0331046702ea864785a26383aa9db4f7524d50a9e58292e.mp3",
+      "freesound": 753271,
+      "name": "Single Cricket Chirping, Close Perspective 01",
+      "author": "HECKFRICKER",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/HECKFRICKER/sounds/753271/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.insect.fly": {
+      "key": "sounds/3246954a2e9131d8b471af4a383603f2aba81e28d3288a06203bdac97a040da7.mp3",
+      "freesound": 443059,
+      "name": "Fly_Buzzing_Edited.wav",
+      "author": "AmberdeMeillon",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/AmberdeMeillon/sounds/443059/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.jackal": {
+      "key": "sounds/cb64698c2158c2e579fb9d9584d2601c4d52aee2c203d6b786ecf8f4c3b3a0e4.mp3",
+      "freesound": 68067,
+      "name": "coyote1.wav",
+      "author": "rogerforeman",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/rogerforeman/sounds/68067/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.brook": {
+      "key": "sounds/f4941f11f3f802e96b162935c53851b1f0b89c764241fa3cf6fa861e604263cc.mp3",
+      "freesound": 608359,
+      "name": "small stream sound track.wav",
+      "author": "gavpro",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/gavpro/sounds/608359/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.cicadas": {
+      "key": "sounds/04b75b17d7893d0b5e9bd508f25fb6cfb6fd37baf5109a2d11c4bd2077e62e51.mp3",
+      "freesound": 268964,
+      "name": "cicadas 8_28_13 10_08 AM.wav",
+      "author": "harryScary",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/harryScary/sounds/268964/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.crickets": {
+      "key": "sounds/3c5ac247c552cad5bb330d365c610136225c22942b660f0da92da2551a5ce465.mp3",
+      "freesound": 523439,
+      "name": "Night time crickets call",
+      "author": "Clearwavsound",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/Clearwavsound/sounds/523439/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.grass": {
+      "key": "sounds/332fad6ef1a7fbee22e003094dbaac799ff49113d26038e2195f57d3027b964b.mp3",
+      "freesound": 768410,
+      "name": "wind blows through marram grass 1235 PM 240726_0842",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/768410/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.leaves": {
+      "key": "sounds/aa990d70e9a28ae853afe64032c369784844943283069c21a0fc7d3aa274d8f3.mp3",
+      "freesound": 244942,
+      "name": "Wind Through Trees 3b",
+      "author": "spoonbender",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/spoonbender/sounds/244942/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.moan": {
+      "key": "sounds/dd473fb7cc0474adc3adcccb0edd40b41b8929d59c044f0dab024faa0e0b23ce.mp3",
+      "freesound": 156414,
+      "name": "Wind blowing into some cactus spine, on the top of the mountain, in the desert of Atacama (Chile).",
+      "author": "felix.blume",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/felix.blume/sounds/156414/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.patter": {
+      "key": "sounds/7db05fad573d8a8adf5671505d0f46f009394d2c58663502b63549b3d8204245.mp3",
+      "freesound": 715698,
+      "name": "131011 Rain, light close drops on leaves, short",
+      "author": "TRP",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/TRP/sounds/715698/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.land.whistle": {
+      "key": "sounds/e8f5089795176d65760f1191c09cebb8a10b40b66da8df2b056b9cf6406fba9b.mp3",
+      "freesound": 428318,
+      "name": "room-tone wind 7bft beach-hut 170518_1168.FLAC",
+      "author": "klankbeeld",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/klankbeeld/sounds/428318/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.owl.deep": {
+      "key": "sounds/8403fe4f425919e9d39b8c0f3d50189d0864da25fb5b80394539754a5cdad20a.mp3",
+      "freesound": 868096,
+      "name": "Birds of Prey: Indian Eagle Owl Woo-hoo-hooo-hoo",
+      "author": "MichiJung",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/MichiJung/sounds/868096/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.owl.tawny": {
+      "key": "sounds/f3468d3dd48fdb11fa4f787b9ff3e7d190fb8068ab9f44ef2d52fe096fd4a77d.mp3",
+      "freesound": 558214,
+      "name": "Tawny owl call",
+      "author": "Cinetony",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Cinetony/sounds/558214/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.rain.gutters": {
@@ -30,6 +340,26 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/loganzsound/sounds/875522/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.rock.fall": {
+      "key": "sounds/199521191be552261d6e604c8d34e40cfeac4b3d7f3075906dd27182c73adb4a.mp3",
+      "freesound": 389618,
+      "name": "Rock Tumble 2.wav",
+      "author": "_stubb",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/_stubb/sounds/389618/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.sand.gust": {
+      "key": "sounds/b2ed3d56160d44ba15800e310bb05e920c70c64787cda45ecbd1d71fa50225b2.mp3",
+      "freesound": 182868,
+      "name": "Sandy Breeze (foley)",
+      "author": "FableVision_Studios",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/FableVision_Studios/sounds/182868/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.savanna.lion": {
@@ -182,6 +512,16 @@
       "page": "https://freesound.org/people/bruno.auzet/sounds/706471/",
       "changes": "Cut to 60 s from 73 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
     },
+    "amb.shore.backwash": {
+      "key": "sounds/83a9cc93271aecedebbbfa5e1773f4a9e8a4fb6df47e3afbd678a6adce0edb41.mp3",
+      "freesound": 245681,
+      "name": "Pebbles On The Beach 02.aif",
+      "author": "TicAshfield",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/TicAshfield/sounds/245681/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.shore.lap": {
       "key": "sounds/5367a9a54b45323161c72d757ffc73ec6752d2288a5da8aacabd935dee67b9b2.mp3",
       "freesound": 634194,
@@ -202,6 +542,26 @@
       "page": "https://freesound.org/people/klangfabrik/sounds/486594/",
       "changes": "Cut to 60 s from 59 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
     },
+    "amb.social.anvil": {
+      "key": "sounds/e3a359040c04b7d203d8a56e3874e4704fb212840ce4ce522bb0e8138dcd2460.mp3",
+      "freesound": 103632,
+      "name": "Large Anvil & Steel Hammer 4.wav",
+      "author": "Benboncan",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Benboncan/sounds/103632/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.social.bell": {
+      "key": "sounds/6d2aae436494788bdbd7bb671571547fe20f7bbd06aec1cafdacf9e094ae09a5.mp3",
+      "freesound": 77698,
+      "name": "Three Bells,Ship Time.wav",
+      "author": "Benboncan",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Benboncan/sounds/77698/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.social.crowd": {
       "key": "sounds/30bce71c3eddb9d0c3a0bade377327c43cda2d45885c2bb268d78850de4dff3d.mp3",
       "freesound": 260727,
@@ -212,6 +572,36 @@
       "page": "https://freesound.org/people/VlatkoBlazek/sounds/260727/",
       "changes": "Cut to 60 s from 200 s in, made mono, its ends faded. Its pitch varies a little each time it plays."
     },
+    "amb.social.halyard": {
+      "key": "sounds/13389e771f78d73cd2ec199504d4a79ffae71a75f94770ebe34757130ce406de.mp3",
+      "freesound": 861827,
+      "name": "Creaking Metal Wire of Wooden Gate",
+      "author": "qubodup",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/qubodup/sounds/861827/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.social.hammer": {
+      "key": "sounds/0b1501152ca2554e98920345e14d857199c9d38b47968a14ecd23d1b9fbf8554.mp3",
+      "freesound": 342542,
+      "name": "Outside Hammer",
+      "author": "sgrowe",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/sgrowe/sounds/342542/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.social.pigeon": {
+      "key": "sounds/defd42408bc560635b5c4a4bc50ae8baa6b518602006edfd08c26305d9d961be.mp3",
+      "freesound": 844331,
+      "name": "Pigeons & Doves - Bleeding Heart Dove",
+      "author": "TheKingOfGeeks360",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/TheKingOfGeeks360/sounds/844331/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
     "amb.swamp.heron": {
       "key": "sounds/3826152500f23d682e1724850b61ef045ffdc9b0be0b88f6a604aa3d956082e2.mp3",
       "freesound": 65264,
@@ -220,6 +610,26 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/dobroide/sounds/65264/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.swamp.insects": {
+      "key": "sounds/bef505b34b8f40a23d21bca00060e3e93e6a302d80fc4d087e14e82da14f52c6.mp3",
+      "freesound": 346536,
+      "name": "frogs.wav",
+      "author": "tambascot",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/tambascot/sounds/346536/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.swamp.water": {
+      "key": "sounds/8d1738f0d8bfd80405989ec62e35bf9c5f7fa8703131f978f75e3f3b040b410d.mp3",
+      "freesound": 733287,
+      "name": "Lakeside Ambience 05",
+      "author": "Soundrack",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Soundrack/sounds/733287/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.thunder.crack": {
@@ -240,6 +650,86 @@
       "licence": "CC0",
       "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
       "page": "https://freesound.org/people/Fission9/sounds/581125/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.tundra.snow": {
+      "key": "sounds/54202fd0c09066e07b8382ca1242dd3812774a47727c087885cdf34dfaa0d19f.mp3",
+      "freesound": 835136,
+      "name": "WINDDsgn_The Wind In The Winter Forest.Weaker.Less Howling 1_EM",
+      "author": "newlocknew",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/newlocknew/sounds/835136/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.water.drip": {
+      "key": "sounds/e2686ebcb8eaba169f9e1fa8b1499979a3c116e6fc270c7c1904c41702983a0b.mp3",
+      "freesound": 51754,
+      "name": "Water Drip 01.wav",
+      "author": "erkanozan",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/erkanozan/sounds/51754/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.wet.frogs": {
+      "key": "sounds/04f01b36f3e837b98a6a614b318075ff053be1109644835b913fc3be38131edc.mp3",
+      "freesound": 788360,
+      "name": "Frogs 2 min",
+      "author": "Audio_Hoarder_Garage",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Audio_Hoarder_Garage/sounds/788360/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.wind.gust": {
+      "key": "sounds/79c40cd0c2a509b7e1b3ff48447e05ab7d6e9d7377894f4310e7f53bb0afe748.mp3",
+      "freesound": 726317,
+      "name": "wind 6",
+      "author": "ZIP.Creates",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/ZIP.Creates/sounds/726317/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.wolf.far": {
+      "key": "sounds/34f7a6b465f11e1f9e217c3ac308433b57a563dbab69e803d9a901a9b5f923eb.mp3",
+      "freesound": 267179,
+      "name": "Scary Ghost Wolf Howling.wav",
+      "author": "BrainClaim",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/BrainClaim/sounds/267179/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.wood.creak": {
+      "key": "sounds/9f20b50d27170a87e3be46659ac58f378085eac699cf1f0f68f93317a014e4f1.mp3",
+      "freesound": 94356,
+      "name": "Kvist 1.wav",
+      "author": "Ryding",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Ryding/sounds/94356/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.wood.leafgust": {
+      "key": "sounds/cbbb1627905bce82eebc78a457c2e937da1ce105c4d5d631f9ff9d380c1f8456.mp3",
+      "freesound": 443065,
+      "name": "Leaves_Rustling_Edited.wav",
+      "author": "AmberdeMeillon",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/AmberdeMeillon/sounds/443065/",
+      "changes": "Its pitch varies a little each time it plays."
+    },
+    "amb.wood.twig": {
+      "key": "sounds/9cd104de6dde8334485437dfc9cc8f23de128bbc0a4d0a0c34bffe4ba106d798.mp3",
+      "freesound": 811533,
+      "name": "WOODBrk-Samsung Galaxy Smartphone, CU_Twig, Snap_Nicholas Judy_TDC",
+      "author": "designerschoice",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/designerschoice/sounds/811533/",
       "changes": "Its pitch varies a little each time it plays."
     },
     "amb.woodland.crow": {
@@ -453,12 +943,13 @@
       "changes": "Unchanged."
     },
     "finish.cosmic": {
-      "keys": [
-        "sounds/94540c01e4003564a2ad6d81f28ac30498e881c3b74e2d5f210e808990483a5a.wav"
-      ],
-      "name": "Voidrend",
-      "licence": "Ours",
-      "from": "DFO's synthesiser: its kill effect Voidrend, drawn again at 44.1 kHz",
+      "key": "sounds/7b06f8d58cf108f8f513aa5deddeda4e9a177c2cf5944f86f98fcbb0de37a08a.mp3",
+      "freesound": 541478,
+      "name": "Magic Fire Spell Impact & Punch",
+      "author": "EminYILDIRIM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/541478/",
       "changes": "Unchanged."
     },
     "finish.volt": {
@@ -689,6 +1180,86 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
       "page": "https://freesound.org/people/CTCollab/sounds/223630/",
+      "changes": "Unchanged."
+    },
+    "ship.blast": {
+      "key": "sounds/3d0adc9c17dbfad756b9a11d9fce4a851452070478e5d91270311048ca293a36.mp3",
+      "freesound": 753843,
+      "name": "Explosion Outdoors (Medium)",
+      "author": "EvanBoyerman",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EvanBoyerman/sounds/753843/",
+      "changes": "Unchanged."
+    },
+    "ship.cannon": {
+      "key": "sounds/d3c8704614f37e011d40dab51511913e51b3155eb29d2099d56616244e88d26f.mp3",
+      "freesound": 184651,
+      "name": "Cannon5.wav",
+      "author": "Isaac200000",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Isaac200000/sounds/184651/",
+      "changes": "Unchanged."
+    },
+    "ship.cannon-far": {
+      "key": "sounds/e17face8dd614bff929e416e25ed0c202f0e3cd1b2eee79f6f4eb25279783717.mp3",
+      "freesound": 565794,
+      "name": "Distant Cannon Fire (simulated)",
+      "author": "stomachache",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/stomachache/sounds/565794/",
+      "changes": "Unchanged."
+    },
+    "ship.grapple": {
+      "key": "sounds/6b30d0ea4cfb9d8e136c09005c720bf68e1252a57325fda361c43e148d2a48c5.mp3",
+      "freesound": 541975,
+      "name": "grappling hook",
+      "author": "16bitstudios",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/16bitstudios/sounds/541975/",
+      "changes": "Unchanged."
+    },
+    "ship.hit": {
+      "key": "sounds/b8479a278853add9affdb35588a1a1bd00497e6f2405f7186577f3907bcd551e.mp3",
+      "freesound": 390723,
+      "name": "Breaking Glass 25.mp3",
+      "author": "FunWithSound",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/FunWithSound/sounds/390723/",
+      "changes": "Unchanged."
+    },
+    "ship.ready": {
+      "key": "sounds/850ed0b992eee417ee56a938d70fa99a77a9121a669786eea3c63f5746674028.mp3",
+      "freesound": 381854,
+      "name": "suitcase_click_open_sqeeeek.wav",
+      "author": "sqeeeek",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/sqeeeek/sounds/381854/",
+      "changes": "Unchanged."
+    },
+    "ship.runout": {
+      "key": "sounds/e51be131a79de8e582b4c1ef307ac9fa1f2091fb9d3df64bffece430d3917f6a.mp3",
+      "freesound": 796564,
+      "name": "tom buzz roll attack 1",
+      "author": "Logicogonist",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Logicogonist/sounds/796564/",
+      "changes": "Unchanged."
+    },
+    "ship.swivel": {
+      "key": "sounds/1454effdf8aaef9b59029c2d1588c585353f3ea0cb774eb545efbb45044cff05.mp3",
+      "freesound": 347647,
+      "name": "musket.wav",
+      "author": "fennelliott",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/fennelliott/sounds/347647/",
       "changes": "Unchanged."
     },
     "shot.splash": {
@@ -937,6 +1508,36 @@
       "page": "https://freesound.org/people/peridactyloptrix/sounds/213345/",
       "changes": "Unchanged."
     },
+    "story.flash": {
+      "key": "sounds/35aabfedc95e11c9a30c6ae48861203044fd41b7b2b988b2eae0042c3be6ef93.mp3",
+      "freesound": 547365,
+      "name": "Magic Aura Shimmer",
+      "author": "EminYILDIRIM",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/EminYILDIRIM/sounds/547365/",
+      "changes": "Unchanged."
+    },
+    "story.heartbeat": {
+      "key": "sounds/99fd3572644c9a9a27857eb3a01d1b8e4b17344f440687a74237cae9173bfa15.mp3",
+      "freesound": 418866,
+      "name": "Heartbeat loop",
+      "author": ".name",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/.name/sounds/418866/",
+      "changes": "Unchanged."
+    },
+    "story.ringing": {
+      "key": "sounds/044ef4c6713f8846a0073cbc4d1dda40269d62b7a274c1b17a5b402abbfc356c.mp3",
+      "freesound": 758149,
+      "name": "Ear Ringing | Pain [High frequency warning]",
+      "author": "GammaGool",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/GammaGool/sounds/758149/",
+      "changes": "Unchanged."
+    },
     "story.splash": {
       "key": "sounds/e22f3614c46f2e10eaee3ccc9719f90ad6158b5beab7fe6b65f12d6e4b52b763.mp3",
       "freesound": 61015,
@@ -945,6 +1546,16 @@
       "licence": "CC-BY",
       "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
       "page": "https://freesound.org/people/Kayyy/sounds/61015/",
+      "changes": "Unchanged."
+    },
+    "story.thud": {
+      "key": "sounds/0f5d39d9c59d0a0a5ed71d434f22ee29efeefd1a0a0559910035fbd77af96be8.mp3",
+      "freesound": 376819,
+      "name": "1 Impact Wet",
+      "author": "original_sound",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/3.0/",
+      "page": "https://freesound.org/people/original_sound/sounds/376819/",
       "changes": "Unchanged."
     },
     "story.waves": {
@@ -1017,6 +1628,16 @@
       "page": "https://freesound.org/people/heyheytheree/sounds/872703/",
       "changes": "Its pitch varies a little each time it plays."
     },
+    "ui.close": {
+      "key": "sounds/d40719b851d019fa539969b3862febf1f377589d0136aace3be739dc1598261c.mp3",
+      "freesound": 699324,
+      "name": "Book_Page_Close_09",
+      "author": "Valenspire",
+      "licence": "CC0",
+      "licenceUrl": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "page": "https://freesound.org/people/Valenspire/sounds/699324/",
+      "changes": "Unchanged."
+    },
     "ui.hover": {
       "key": "sounds/418da7df6a2ce2c9a87c429b305078a23e36cbb50249db5867cca9822c6a7fa2.mp3",
       "freesound": 871921,
@@ -1046,6 +1667,16 @@
       "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
       "page": "https://freesound.org/people/complex_waveform/sounds/213148/",
       "changes": "Its pitch varies a little each time it plays."
+    },
+    "ui.tab": {
+      "key": "sounds/7c6b87f05c13c6c79393d85ac91395cc00298cf63cc713cc442df523cd867d21.mp3",
+      "freesound": 20247,
+      "name": "Page_Turn_13.wav",
+      "author": "Koops",
+      "licence": "CC-BY",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "page": "https://freesound.org/people/Koops/sounds/20247/",
+      "changes": "Unchanged."
     },
     "weapon.draw": {
       "key": "sounds/20f01c96d6fa7967f0f52c6d21df55f6453b43444b7a96acdb85b5f8a5e10e81.mp3",
