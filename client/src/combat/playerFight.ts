@@ -1,5 +1,5 @@
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
-import type { InputFrame } from '../player/input.ts';
+import { BINDS, type InputFrame } from '../player/input.ts';
 import { SHOOTERS, type Walker } from '../player/walker.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
@@ -129,6 +129,8 @@ export class PlayerFight {
     // The melee reticle stands only while the hands are the player's: not over a menu, a cutscene or a freed pointer.
     const reticle = drawnReticle === 'melee' && !hands ? null : drawnReticle;
     const rangedDrawn = reticle !== null && reticle !== 'melee';
+    // A ranged weapon drawn turns the pad's triggers round, on whichever page the player fights.
+    BINDS.ranged = rangedDrawn;
     return { shooter, ranged, rangedDrawn, reticle, aiming, pressed, pulled: ranged && controls.pressed('guard') };
   }
 

@@ -153,10 +153,21 @@ export class LocalRoom implements RoomLink {
     this.door.clearFoes();
   }
 
-  /** Plays the prologue's wreck (`RoomDoor.storyWreck`): no Art, the story's sword and shield, and every boarder on
-   *  one side, held to a Major. */
+  /** Plays the prologue's wreck (`RoomDoor.storyWreck`): no Art, the player waking hurt with no weapon, and every
+   *  boarder on one side, held to a Major. */
   storyWreck(): void {
     this.door.storyWreck();
+  }
+
+  /** The story's sword and shield taken from the deck into the player's pack (`RoomDoor.storyTakeArms`): whether
+   *  they were given. */
+  storyTakeArms(): boolean {
+    return this.door.storyTakeArms(this.player);
+  }
+
+  /** On the wreck, sends the foe `foe` at the player (`RoomDoor.storyHunt`): whether it was. */
+  storyHunt(foe: number): boolean {
+    return this.door.storyHunt(foe, this.player);
   }
 
   /** Sets where the next respawn stands the player: a checkpoint. */

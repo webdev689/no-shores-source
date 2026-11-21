@@ -25,7 +25,8 @@ you possibly can. Go beyond the limits and make this something truly special. Co
 
 - The music is DFO's own: its FM voice bank, its song player and its written scores, in the one system DFO built
   ([[Naval, Living World, Professions and Synth Come Over Leaner]]). Nothing of Daggerfall's songs comes.
-- Roaming an island is ambience only. Music comes as danger nears and leads into combat.
+- Roaming an island is ambience only. Music comes as danger nears and leads into combat. Replaced: calm pieces come
+  now and then, with silences between, and the ambience is Freesound's ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
 - The sea, and each of the nine islands, has an ambience of its own. The social space has a theme and an ambience.
 - It keeps Daggerfall's feel, with a modern twist of Overlook's own.
 - It is synthesised while the game runs. Freesound fills in ambience the synthesiser cannot make convincing, picked

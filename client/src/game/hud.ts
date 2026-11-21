@@ -2,6 +2,7 @@ import { hudLayout } from '../combat/hudLayout.ts';
 import { SeaFightReadout } from '../combat/seaReadout.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { compassNode } from './compassNode.ts';
+import { ControlsSheet } from './controlsSheet.ts';
 import type { ShipMark } from '../plus/compass.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { NoticeStack } from '../plus/notices.ts';
@@ -13,7 +14,10 @@ import { ease, easeInOut } from '../ui/ease.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import type { Interface } from '../ui/ui.ts';
+import { BINDS } from '../player/input.ts';
+import { boundWord } from './controls.ts';
 import type { Hint } from './gearNodes.ts';
+import { type StripHint, hintsFor } from './hints.ts';
 import { countdownText, deathWords, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
 import { Tween } from './hudParts.ts';
@@ -56,6 +60,11 @@ export interface Besides {
 const SHADE_S = 0.4;
 export const VEIL_S = 0.7;
 const BREATH_S = 2.4;
+/** The most entries the key strip holds, the key to every control last among them. */
+const HINTS_MOST = 8;
+/** `hints` cut to the most the strip holds, those just before the last giving way. */
+const atMost = (hints: readonly Hint[]): readonly Hint[] =>
+  hints.length > HINTS_MOST ? [...hints.slice(0, HINTS_MOST - 1), ...hints.slice(-1)] : hints;
 
 /** The screen's edge darkened toward black, as a radial gradient over the whole view clear to 35% of the way out: drawn
  *  small and stretched, its steps too fine to see. */
@@ -78,13 +87,15 @@ const VIGNETTE: Picture = {
 
 /** The game's heads-up display, drawn by the game as a layer of its interface (`node`): the place's name, the edge's
  *  warning and death, the key strip, the quests, the toasts, the status line, the notices, the compass, the marks and
- *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, a menu, and the veil
- *  while a place loads. The game tells it what to show each frame through its methods and hears its presses through
- *  the `on` callbacks. */
+ *  the ships' plates at sea, the sea fight's readout, the sea bar and its offers, Manage's panel, a menu, the veil
+ *  while a place loads, and the sheet of every control. The game tells it what to show each frame through its
+ *  methods and hears its presses through the `on` callbacks. */
 export class Hud {
   readonly tasks = new TaskTracker();
   /** What E does where the player stands, low in the middle of the view. */
   readonly usePrompt = new UsePrompt();
+  /** Every control, opened with K over everything else. */
+  readonly controls = new ControlsSheet();
   /** The sea fight's readout: the ship's plate and rose, the card and the tally; and what it shows now. */
   private readonly fight = new SeaFightReadout();
   private fightModel: SeaFightModel | null = null;
@@ -96,7 +107,7 @@ export class Hud {
   private kind = '';
   private standing: Standing = { kind: 'inside' };
   private readonly shade = new Tween(0, SHADE_S, ease);
-  private hintsShown: readonly Hint[] = [];
+  private hintsShown: readonly StripHint[] = [];
   /** The toasts said now, which the game draws. */
   private toasts: Toast[] = [];
   private status = '';
@@ -141,9 +152,17 @@ export class Hud {
     this.respawnWanted = respawn;
   }
 
-  /** The keys the player can press now, each on its keycap beside what it does; none hides the strip. */
-  hints(hints: readonly Hint[]): void {
+  /** The keys the player can press now, each on its keycap beside what it does, the most needed first; none hides
+   *  the strip. Past eight shown on the device played, those nearest the last give way to it, the key to every
+   *  control. */
+  hints(hints: readonly StripHint[]): void {
     this.hintsShown = hints;
+  }
+
+  /** Whether the key strip shows keys now, the sheet of every control's among them: it gives way while someone
+   *  speaks. */
+  get keysOffered(): boolean {
+    return this.hintsShown.length > 0 && !this.besides().speaking;
   }
 
   /** Shows the sea fight's readout, or hides it for none. */
@@ -343,7 +362,7 @@ export class Hud {
         },
       placeNode(view, this.title, this.kind),
       standing.kind === 'warned' && warningNode(view, countdownText(standing.secondsLeft)),
-      hintsNode(view, this.hintsShown, sea !== null, Boolean(sea?.landfall)),
+      hintsNode(view, atMost(hintsFor(this.hintsShown, BINDS.device, BINDS.now)), sea !== null, Boolean(sea?.landfall)),
       this.tasks.node(view, clock, still),
       {
         width: 'grow',
@@ -364,8 +383,10 @@ export class Hud {
           leave: () => this.leaveWanted(),
         }),
       sea?.landfall &&
-        offerNode(ui, 'sea:landfall', `${landfallWords(sea.landfall)}  Enter`, () => this.landfallWanted()),
-      this.wheel && offerNode(ui, 'hud:wheel', 'Take the helm  E', () => this.wheelWanted()),
+        offerNode(ui, 'sea:landfall', `${landfallWords(sea.landfall)}  ${boundWord('confirm')}`, () =>
+          this.landfallWanted(),
+        ),
+      this.wheel && offerNode(ui, 'hud:wheel', `Take the helm  ${boundWord('use')}`, () => this.wheelWanted()),
       this.passage !== null && offerNode(ui, 'hud:passage', this.passage, () => this.passageWanted()),
       this.panel && shipPanelNode(ui, this.panel, () => this.manageWanted()),
       // Under the menu, death's words and the veil, which cover them.
@@ -380,6 +401,7 @@ export class Hud {
       this.seaSight.node(),
       // The page raised each mark over the rest of the display, so they stand over it here too.
       ...markNodes(ui, this.marksShown, (id) => this.markChosen(id)),
+      this.controls.node(ui, view),
     ];
     return { width: 'grow', height: 'grow', children };
   }

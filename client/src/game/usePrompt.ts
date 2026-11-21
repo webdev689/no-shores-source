@@ -1,6 +1,8 @@
-// What E does where the player stands, shown as Destiny shows it: a keycap and the deed, low in the middle of the view,
-// above the player's bars; gone when nothing is within reach. The game draws it as a layer of its own.
+// What Use (E, or as bound) does where the player stands, shown as Destiny shows it: a keycap and the deed, low in the middle of the
+// view, above the player's bars; gone when nothing is within reach. The game draws it as a layer of its own.
 import { TONES } from '../plus/tones.ts';
+import { boundCap } from './controls.ts';
+import { keycap } from './hudParts.ts';
 import { announce } from '../ui/announce.ts';
 import type { Drawing, Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
@@ -38,7 +40,7 @@ export function traced(box: Box, line: number, share: number): Box[] {
 
 /** The keycap's bevel, and while a deed is held (`held`, 0 to 1) a ring round it traced as far as it is held over its
  *  faint whole. */
-const keycap =
+const heldCap =
   (held: number | null): Drawing =>
   (ui, box, scale, clip, shown) => {
     edged(BRASS_KEY, BRASS_KEY_DEPTHS)(ui, box, scale, clip, shown);
@@ -81,11 +83,18 @@ export class UsePrompt {
           padding: [2, 7, 4, 7],
           fill: 'rgba(192,138,62,0.15)',
           alignX: 'center',
-          draw: keycap(this.held),
-          children: [{ text: { words: 'E', colour: TONES.brassHi, wrap: false } }],
+          draw: heldCap(this.held),
+          children: [promptKey()],
         },
         { text: { words: this.said, colour: '#efe8d6', edge: 'shadow', edgeColour: '#000', wrap: false } },
       ],
     };
   }
+}
+
+/** Use's key in brass, or the pad's button drawn, as the player last played. */
+function promptKey(): Node {
+  const cap = boundCap('use');
+  if (cap.startsWith('pad:')) return keycap(cap);
+  return { text: { words: cap, colour: TONES.brassHi, wrap: false } };
 }

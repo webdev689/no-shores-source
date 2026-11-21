@@ -115,6 +115,8 @@ Each Atheric has its own, which no other item offers:
 | Tidecaller's Grips | Arms | Ebb: a parry gives back 30 stamina |
 | Driftwalkers | Legs | Slipstream: a counter after a perfect dodge strikes half again as hard as a counter does, Opportunist's included (1.875 times with both) |
 
+Replaced in part by [[The Perk Pass as Claude Shapes It]]: each Atheric weapon has an intrinsic and an own node of its own, Undertow, Last Light, Tolling and Coral Guard becoming intrinsics (Coral Guard 15 stamina and a fifth of the blow back), Updraft gone, and five Atheric weapons more ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]]).
+
 Destiny 1's perks were for guns and space magic; these are Overlook's own, for its blades, shots and shields. Its
 armour stats (Intellect, Discipline, Strength) shortened ability cooldowns Overlook does not have, so armour has none
 yet.
@@ -191,6 +193,8 @@ Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges ope
 | The cloak | Its slot holds one; until there are factions, cloaks belong to none | Claude's: no faction exists yet |
 | Clothing | Every garment is armour of its piece, the everyday ones Normal and Magic, the heavier sets Rare and above; no toggle | The owner: clothing is armour, with a wardrobe later ([[Clothing Is Armour, With a Wardrobe Later]]) |
 | How it looks | Normal and Magic are clothes (Magic adds a tunic or vest, tall boots, a leather helm and gloves); Rare is chain, steel or iron; Legendary silver, elven, dwarven or the knights'; Atheric daedric, ebony, adamantium or mithril; a cloak is casual, formal from Rare | Rarer gear should read as rarer at a glance, as Destiny's does, with the forge's own sets in order of their worth |
+
+Replaced in part by [[The Perk Pass as Claude Shapes It]]: a named piece wears its own look, and a rolled one climbs the metals' and sets' ladders with its rarity and level, so every model the forge draws is worn.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction's cape is a cloak that belongs to it ([[Factions]]).
 

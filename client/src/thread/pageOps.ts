@@ -68,6 +68,13 @@ export const EVENT_FIELDS = [
   'detail',
 ] as const;
 
+/** A pad as the page's Gamepad API read it this frame, for the game's worker, which has no Gamepad API of its own. */
+export interface PadRead {
+  readonly mapping: string;
+  readonly buttons: readonly { readonly pressed: boolean; readonly value: number }[];
+  readonly axes: readonly number[];
+}
+
 /** The hooks the game puts out for a tool taking pictures of it (`game/qaViews.ts`), reached from the page. */
 export const QA_HOOKS = ['__qaView', '__qaWhere'] as const;
 
@@ -101,6 +108,8 @@ export type ToGame =
   | { readonly kind: 'audio'; readonly reply: AudioReply }
   | { readonly kind: 'svg'; readonly id: number; readonly picture: ImageBitmap | null }
   | { readonly kind: 'tick' }
+  /** The pads as the page read them this frame, sent each frame while one is connected and once as the last goes. */
+  | { readonly kind: 'pads'; readonly pads: readonly PadRead[] }
   /** The browser's answer: the sign-in it keeps, or null with none or once one offered is taken. */
   | { readonly kind: 'signIn'; readonly id: number; readonly kept: KeptSignIn | null }
   /** A tool driving the page asks one of the game's hooks for pictures (`QA_HOOKS`). */

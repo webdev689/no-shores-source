@@ -32,8 +32,12 @@ const metals = ['iron', 'elven', 'silver', 'ebony'];
 const wardrobe: Wardrobe = {
   sets: { helm: sets, pauldrons: sets, cuirass: sets, gauntlets: sets, greaves: sets, boots: sets },
   garments: ['shirt_long_round', 'breeches', 'shoes', 'casual_cloak', 'formal_cloak'],
-  right: ['sword', 'dagger', 'staff', 'bow_long'].flatMap((weapon) => metals.map((metal) => `${weapon}_${metal}`)),
-  left: ['shield_kite', 'shield_round', 'dagger'].flatMap((shield) => metals.map((metal) => `${shield}_${metal}`)),
+  right: ['sword', 'dagger', 'staff', 'bow_long', 'bow_short']
+    .flatMap((weapon) => metals.map((metal) => `${weapon}_${metal}`))
+    .concat(['pistolet', 'thunderlock']),
+  left: ['shield_buckler', 'shield_kite', 'shield_round', 'shield_tower', 'dagger'].flatMap((shield) =>
+    metals.map((metal) => `${shield}_${metal}`),
+  ),
   hairStyles: ['crop'],
 };
 const plain: Outfit = {

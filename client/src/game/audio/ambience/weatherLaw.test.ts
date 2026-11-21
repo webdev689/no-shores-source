@@ -9,7 +9,6 @@ import {
   THUNDER_MOST,
   THUNDER_REACH_M,
   phasesOfSun,
-  rainCorner,
   rainLevel,
   shelterOf,
   snowSoftening,
@@ -80,7 +79,6 @@ test('the hour brings in the night: every night voice and bed sounds by night an
     ['woodland', 'owl.deep'],
     ['highland', 'wolf.howl.low'],
     ['desert', 'jackal.yips'],
-    ['savanna', 'hyena.whoops'],
     ['savanna', 'nightjar'],
     ['rainforest', 'frog.peeps'],
     ['desert', 'cricket'],
@@ -134,11 +132,10 @@ test('the wind is near silent in a calm, as made at its usual speed, and loud in
         assert.equal(voice.drive, 'wind', `${scape.title}: ${voice.sounds.join()}`);
 });
 
-test('rain, snow and sand: how hard each comes, the rain brighter the harder, snow softening the land', () => {
+test('rain, snow and sand: how hard each comes, snow softening the land', () => {
   const rain = weatherOf(reading({ falling: 0.8, snowShare: 0.25 }));
   assert.ok(Math.abs(rain.rain - 0.6) < 1e-9 && Math.abs(rain.snow - 0.2) < 1e-9 && rain.fall === 0.8);
   assert.ok(rainLevel(0.1) > 0.2 && rainLevel(1) === 1 && rainLevel(0) === 0);
-  assert.ok(rainCorner(1) > rainCorner(0.2) * 3);
   assert.equal(snowSoftening(FAIR), 1);
   assert.ok(snowSoftening(weatherOf(reading({ falling: 1, snowShare: 1 }))) < 0.6);
   for (const [key, scape] of Object.entries(SCAPES)) {

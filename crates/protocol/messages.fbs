@@ -232,7 +232,9 @@ table Foe {
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
 // and who was struck, how much it did, the stroke a swing came by (combat's 1 to 6, 0 for none), whether the blow was
-// a crit, and the element it carried (the gear's 1 to 3, 0 for none).
+// a crit, the element it carried (the gear's 1 to 3, 0 for none), and the fighter an Atheric's chain blow came from: the
+// foe its leap leapt from or its burst burst from, the player its bite came from, on every event of that blow (0 for
+// none).
 table Event {
   tick: ulong;
   kind: ubyte;
@@ -243,6 +245,7 @@ table Event {
   stroke: ubyte;
   crit: bool;
   element: ubyte;
+  from: uint;
 }
 
 // A shot in flight, or a gun's ball in the tick it stopped: who shot it, what shot it (combat's number), where it is

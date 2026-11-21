@@ -32,13 +32,82 @@ fn the_crews_names_read_whole_and_every_post_has_perks_enough_for_a_veteran() {
 #[test]
 fn every_modules_trait_does_what_the_sea_reads() {
     let content = catalogue();
-    let mut trim = crate::ship::trim::ShipTrim::default();
+    let module = |found: &crate::catalogue::TraitDef| {
+        ["ship", "guns", "hull", "sails", "rigging"].contains(&found.fits.as_str())
+            || content.named(&found.fits).is_some_and(|item| item.kind.module())
+    };
+    let perks: Vec<&str> = content.traits.iter().filter(|found| module(found)).map(|found| found.id.as_str()).collect();
+    assert_eq!(perks.len(), 37, "{perks:?}");
+    for id in perks {
+        let mut trim = crate::ship::trim::ShipTrim::default();
+        assert!(trim.take(id), "{id} is a module's perk the sea does not know");
+        assert_ne!(trim, crate::ship::trim::ShipTrim::default(), "{id} changes nothing at sea");
+    }
     for item in content.items.iter().filter(|item| item.kind.module()) {
-        for id in item.layout.iter().flatten() {
-            assert!(trim.take(id), "{} offers {id}, which the sea does not know", item.id);
-        }
+        let offered = item.layout.iter().flatten().chain(&item.intrinsic);
+        assert!(offered.clone().all(|id| content.trait_def(id).is_some_and(module)), "{}", item.id);
+    }
+    let retired = ["topgallants", "running_blocks", "fair_winds", "seasoned_timbers", "gunlayers_eye", "bored_true"];
+    let retired = retired.into_iter().chain(["powder_monkeys", "grapeshot_drill", "swivel_crews", "fighting_tops"]);
+    let retired = retired.chain(["patched_sails", "doubled_shrouds", "trim_crew", "sealed_magazine"]);
+    for id in retired.chain(["kraken_roar", "leviathan_rib", "stormcaller", "spiders_web"]) {
+        assert!(content.trait_def(id).is_none() && !crate::ship::trim::ShipTrim::default().take(id), "{id} is gone");
     }
     assert!(content.problems().is_empty(), "{:?}", content.problems());
+}
+
+#[test]
+fn each_merged_and_trading_perk_moves_the_sea_by_its_words() {
+    let trim = |ids: &[&str]| {
+        let mut trim = crate::ship::trim::ShipTrim::default();
+        ids.iter().for_each(|id| assert!(trim.take(id)));
+        trim
+    };
+    let near = |found: f64, wanted: f64| (found - wanted).abs() < 1e-12;
+    let heavy = trim(&["heavy_charge"]);
+    assert!(near(heavy.harm_hull, 1.15) && near(heavy.reload, 1.08));
+    let hot = trim(&["hot_guns"]);
+    assert!(near(hot.reload, 0.82) && near(hot.scatter, 1.12));
+    let run_out = trim(&["run_out"]);
+    assert!(near(run_out.reload, 0.88) && near(run_out.crew_taken, 1.1));
+    let overcharged = trim(&["overcharged"]);
+    assert!(near(overcharged.harm_hull, 1.2) && near(overcharged.scatter, 1.15));
+    let ballast = trim(&["stripped_ballast"]);
+    assert!(near(ballast.way, 1.08) && near(ballast.hull_taken, 1.08));
+    let crowd = trim(&["crowd_of_sail"]);
+    assert!(near(crowd.way, 1.1) && near(crowd.sail_taken, 1.15));
+    let reefed = trim(&["reefed_sails"]);
+    assert!(near(reefed.sail_taken, 0.8) && near(reefed.way, 0.95));
+    let taut = trim(&["taut_rigging"]);
+    assert!(near(taut.turn, 1.15) && near(taut.sail_taken, 1.1));
+    let drill = trim(&["firing_drill"]);
+    assert!(near(drill.reload, 0.95) && near(drill.scatter, 0.95));
+    assert!(near(trim(&["copper_sheathing"]).holed_taken, 0.8) && near(trim(&["copper_sheathing"]).way, 1.0));
+    assert!(near(trim(&["double_shotted"]).harm_hull, 1.1) && near(trim(&["flying_jib"]).way, 1.06));
+    assert!(near(trim(&["quick_tackle"]).reload, 0.9) && near(trim(&["oak_ribs"]).hull_taken, 0.9));
+    let atherics = trim(&["from_the_deep", "feeding", "living_bone", "hard_to_kill", "own_wind", "squall", "web"]);
+    assert!(near(atherics.holing, 2.0) && atherics.feeding && near(atherics.mend, 0.01));
+    assert!(near(atherics.last_stand, 0.1) && atherics.own_wind && near(atherics.squall, 0.03));
+    assert!(near(atherics.web, 0.3) && atherics.boarders == 4 && near(trim(&["snare"]).snare, 0.15));
+    // The officers' perks keep their own.
+    assert!(near(trim(&["gun_captain"]).reload, 0.94) && near(trim(&["sail_trimmer"]).way, 1.04));
+}
+
+#[test]
+fn an_atheric_module_has_an_intrinsic_and_no_module_offers_a_perk_twice() {
+    let traits = r#"{"traits": [
+        {"id": "a", "name": "A", "column": "perk", "fits": "rigging", "words": "w"},
+        {"id": "b", "name": "B", "column": "perk", "fits": "rigging", "words": "w"},
+        {"id": "own", "name": "Own", "column": "signature", "fits": "web", "words": "w"}]}"#;
+    let items = r#"{"items": [{"id": "web", "name": "Web", "kind": "rigging", "rarity": "atheric", "words": "w",
+        "layout": [["a", "b"], ["own"], ["b", "a"]]}]}"#;
+    let parsed = crate::catalogue::Catalogue::parse(traits, items, r#"{"resources": []}"#, r#"{"names": {}}"#);
+    let problems = parsed.expect("well formed").problems();
+    assert!(
+        problems.iter().any(|problem| problem == "web: an Atheric weapon or module has an intrinsic"),
+        "{problems:#?}"
+    );
+    assert!(problems.iter().any(|problem| problem == "web: b is offered twice"), "{problems:#?}");
 }
 
 #[test]

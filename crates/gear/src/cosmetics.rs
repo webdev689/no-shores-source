@@ -163,8 +163,9 @@ pub fn layers_of(slot: crate::kinds::Slot, kind: crate::kinds::Kind) -> &'static
         (_, Kind::Staff) => &["staff_"],
         (_, Kind::Bow) => &["bow_"],
         (_, Kind::Crossbow) => &["crossbow_"],
-        (_, Kind::Pistolet | Kind::DoublePistolet) => &["pistolet_"],
-        (_, Kind::Thunderlock) => &["thunderlock_"],
+        // A plain gun's layer is the bare word (`pistolet`), a finer one's the word and its finish.
+        (_, Kind::Pistolet | Kind::DoublePistolet) => &["pistolet"],
+        (_, Kind::Thunderlock) => &["thunderlock"],
         (_, Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak) => &[],
         // A ship's modules are never worn on a figure.
         (_, Kind::Guns | Kind::Hull | Kind::Sails | Kind::Rigging) => &[],

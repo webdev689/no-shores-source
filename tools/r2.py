@@ -1,6 +1,7 @@
 """R2, where Overlook's generated files live: objects named by the SHA-256 of their bytes, so a published object never
 changes and is cached for good. Uploads use CLOUDFLARE_API_TOKEN when it is set; in a cloud session the network adds
-the token itself. The publishers import this; it does nothing run alone.
+the token itself only where its environment holds it as a network secret, which the Default one does not. The
+publishers import this; it does nothing run alone.
 """
 import hashlib
 import http.client

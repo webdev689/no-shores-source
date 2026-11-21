@@ -57,9 +57,11 @@ HANGING = (90.0, 0.0, 0.0)
 # the layers the figure lays its metal's ramp on (layers.py `build_layers`, `dye='metal'`), and the classes made grey
 DYED = ('staff', 'bow', 'shield')
 METAL_CLASSES = ('metal', 'mail', 'armourmail', 'bowmetal')
-# each long bow is the one a bow loadout draws (client gear.ts `layerFor`), the buckler a shield loadout's
-BOW_KIND = 'long'
-SHIELD_KIND = 'buckler'
+
+
+def make_of(layer):
+    """A bow's length or a shield's kind: its layer's second word (`bow_short_iron`, `shield_tower_plain`)."""
+    return layer.split('_')[1]
 
 
 def looks():
@@ -70,13 +72,18 @@ def looks():
         low = metal.lower()
         for kind in ('sword', 'dagger', 'mace', 'flail', 'warhammer', 'axe', 'staff'):
             out[f'{kind}_{low}'] = (kind, metal)
-        out[f'bow_{BOW_KIND}_{low}'] = ('bow', metal)
-        out[f'shield_{SHIELD_KIND}_{low}'] = ('shield', metal)
-    out[f'shield_{SHIELD_KIND}_plain'] = ('shield', None)
+        for make in gear.BOW_KINDS:
+            out[f'bow_{make}_{low}'] = ('bow', metal)
+        for make in shields3p.KINDS:
+            out[f'shield_{make}_{low}'] = ('shield', metal)
+    for make in shields3p.KINDS:
+        out[f'shield_{make}_plain'] = ('shield', None)
+    for metal in layers.SHORT_METALS:
+        out[f'sword_{metal.lower()}_short'] = ('sword', metal)
     for metal in gear.CROSSBOW_METALS:
         out[f'crossbow_{metal}'] = ('crossbow', metal)
-    for gun in guns3p.KINDS:
-        out[f'{gun}_gilded'] = ('gun', None)
+    for gun in guns3p.HELD:
+        out[gun] = ('gun', None)
     return out
 
 
@@ -90,7 +97,7 @@ def build(layer, kind, metal, palette):
     `Bare.arm_held`): a sword and an axe sized as the class weapon, a bow bent and strung braced, a crossbow at the
     length a fist holds it."""
     if kind == 'sword':
-        obs = gear.build_sword(palette, metal)
+        obs = gear.build_sword(palette, metal, short=layer.endswith('_short'))
     elif kind == 'axe':
         obs = gear.build_axe(palette, metal)
     elif kind == 'dagger':
@@ -100,13 +107,13 @@ def build(layer, kind, metal, palette):
     elif kind == 'staff':
         obs = gear.build_staff(palette, metal)
     elif kind == 'bow':
-        obs = gear.build_metal_bow(palette, metal, BOW_KIND)
+        obs = gear.build_metal_bow(palette, metal, make_of(layer))
     elif kind == 'crossbow':
         obs = gear.build_crossbow(metal)
     elif kind == 'gun':
         obs = guns3p.build(layer)
     else:
-        obs = shields3p.build(SHIELD_KIND, metal, palette, armour.palette(metal or 'Iron', palette))
+        obs = shields3p.build(make_of(layer), metal, palette, armour.palette(metal or 'Iron', palette))
     for ob in obs:
         if kind == 'crossbow':
             ob.matrix_world = Matrix.Scale(gear.CROSSBOW_LEN / gear.CROSSBOW_MODEL_LEN, 4) @ ob.matrix_world
@@ -114,7 +121,7 @@ def build(layer, kind, metal, palette):
         ob.data.vertices.foreach_set('co', shape.transform(ob.name, coords(ob.data)).ravel())
         ob.data.update()
     if kind == 'bow':   # its string from tip to tip, as the figure's braced bow is strung (forge.py `place`)
-        tip, foot = gear.bow_tips(0.0, BOW_KIND)
+        tip, foot = gear.bow_tips(0.0, make_of(layer))
         obs.append(gear.string_mesh(palette, tip, (tip + foot) / 2, foot))
     return obs
 
@@ -164,7 +171,9 @@ def material_ids(obs, classify):
 def graded(work, ids, names, layer, dyed):
     """The work render graded as the figure's layer is (layers.py `render`, `set_graded`): its set's own grades over
     the body's, and a dyed layer's metal laid grey on the steel band for the page's ramp."""
-    own = armour.SET_GRADE.get({name.lower(): name for name in armour.SETS}.get(layer.rsplit('_', 1)[-1]), {})
+    # Its set is the last word of its name but a short sword's own (`sword_orcish_short`).
+    own = armour.SET_GRADE.get({name.lower(): name for name in armour.SETS}.get(
+        layer.removesuffix('_short').rsplit('_', 1)[-1]), {})
     kept = dict(forge.GRADE)
     forge.GRADE.update(own)
     try:
@@ -217,8 +226,11 @@ def check():
     drawn = looks()
     every = [f'{kind}_{metal.lower()}' for kind in ('sword', 'dagger', 'mace', 'flail', 'warhammer', 'axe', 'staff')
              for metal in bows.METALS]
-    every += [f'crossbow_{metal}' for metal in gear.CROSSBOW_METALS] + ['pistolet_gilded', 'thunderlock_gilded']
-    assert set(every) <= set(drawn) and {f'bow_long_{m.lower()}' for m in bows.METALS} <= set(drawn)
+    every += [f'crossbow_{metal}' for metal in gear.CROSSBOW_METALS] + list(guns3p.HELD)
+    every += [f'bow_{make}_{m.lower()}' for make in gear.BOW_KINDS for m in bows.METALS]
+    every += [f'shield_{make}_{(m or "plain").lower()}' for make in shields3p.KINDS for m in shields3p.METALS]
+    every += [f'sword_{m.lower()}_short' for m in layers.SHORT_METALS]
+    assert set(every) <= set(drawn), sorted(set(every) - set(drawn))
     assert set(daggers3p.METALS) == set(blunts3p.METALS) == set(bows.METALS), 'a dagger and a mace in every metal'
     print(f'weaponart: the layout and {len(drawn)} looks check')
 

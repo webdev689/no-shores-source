@@ -4,6 +4,7 @@ import { RARITIES, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
+import { BINDS, keyNameOf } from '../player/input.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
@@ -66,8 +67,8 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || v
  * when its counter is used; and an item's page laid over either when one is inspected. While it is open the world
  * behind it is dimmed, the pointer is free and the keys and the pad are its; Escape or the pad's B steps back: the
  * item's page, then a slot's flyout, then the menu. Gear shows as the player's room last sent it, each press an ask
- * the room answers; where no room keeps gear it says so. While `resting` (the story plays) it never opens, so its keys
- * stay the story's. Answers the layer that draws it, with the company and what the player gains, shown in play too.
+ * the room answers; where no room keeps gear it says so. While `resting` (the story plays where it keeps no gear, all but
+ * the wreck) it never opens, so its keys stay the story's. Answers the layer that draws it, with the company and what the player gains, shown in play too.
  */
 export function startGearWindow(
   fighting: () => boolean,
@@ -219,7 +220,11 @@ export function startGearWindow(
     // The room's word has come, so no ask of the Art's screen waits any more.
     if (gear && gear !== bannerGear) artPending = null;
     bannerGear = gear ?? bannerGear;
-    // Tabs, their arrows, and the presses of the frame.
+    // Tabs, their arrows, the pad's bumpers, and the presses of the frame.
+    if (frame.turned !== 0 && isTab(shown)) {
+      const next = TABS[(TABS.indexOf(shown) + frame.turned + TABS.length) % TABS.length];
+      if (next) open(next);
+    }
     for (const tab of TABS) {
       const id = tabId(tab);
       if (frame.clicked(id) && view !== tab) open(tab);
@@ -420,6 +425,9 @@ export function startGearWindow(
   /** The layer: the company, the menu while it is open, what the player gains, and where holds acted. */
   const layer: Layer = (frame) => {
     ui = frame;
+    // Where the menu may no longer open (the story's wreck over, its gear let go), an open one shuts, so it never
+    // keeps the keys from what plays after it.
+    if (view !== null && resting()) shut();
     // Escape, or the pad's B, steps back once, letting go of a hold under way before it could act.
     if (view !== null && frame.escaped) stepOnce();
     holds.frame(frame);
@@ -442,22 +450,23 @@ export function startGearWindow(
 
   addEventListener(OPEN_AT, (event) => {
     if (resting()) return;
-    const { view: wanted, shelf: onShelf } = (event as CustomEvent<Opening>).detail;
-    if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
+    const { view: wanted, shelf: onShelf, toggle } = (event as CustomEvent<Opening>).detail;
+    if (view !== wanted || onShelf !== undefined || toggle) open(wanted, onShelf);
   });
   addEventListener(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
+      const bound = (id: 'character' | 'inventory' | 'details') => BINDS.now[id].keys.includes(keyNameOf(event));
       // A drawn field typed in anywhere keeps its letters.
       const typing = Boolean(ui?.typing);
-      const opens = !typing && !resting() && (key === 'i' || key === 'o');
+      const opens = !typing && !resting() && (bound('character') || bound('inventory'));
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.
       if (view !== null) event.stopPropagation();
       // Escape steps back as the drawn menu hears it (`escaped`), as the pad's B does.
       if (key === 'escape') event.preventDefault();
-      else if (key === 'x' && !typing) {
+      else if (bound('details') && !typing) {
         // X shows the focused piece's details, as a right press does.
         const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
         if (!shown) return;
@@ -466,7 +475,7 @@ export function startGearWindow(
         [returnTo, focusNext] = [ui?.focusedId ?? null, ITEM_NAME];
       } else if (opens && !event.repeat) {
         event.preventDefault();
-        open(key === 'i' ? 'character' : 'inventory');
+        open(bound('character') ? 'character' : 'inventory');
       } else if (key === 'tab') {
         // Tab walks the drawn menu, which has heard it, and never the page's elements behind it.
         event.preventDefault();

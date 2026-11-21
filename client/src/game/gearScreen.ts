@@ -34,6 +34,8 @@ export type View = Tab | Station;
 export interface Opening {
   readonly view: View;
   readonly shelf?: string;
+  /** Shuts the menu where it already stands at the view, as its key does. */
+  readonly toggle?: boolean;
 }
 /** The page event that opens the menu at a view, as a station's counter does. */
 export const OPEN_AT = 'overlook:gear';
