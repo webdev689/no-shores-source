@@ -1,6 +1,7 @@
 // Every kind of node the interface draws, in one tree, for checking the renderer headless (`tools/uiShot.mjs`) and as
 // a worked example for building screens: a window with a header, presses in each state, words in a span's colour and
 // at each size, a field, a scrolled list, pictures from SVG, pixels and 2D drawing, a turned arrow and a float.
+import { keysFor, screenKeysNode } from './screenKeys.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from './node.ts';
 import type { Interface } from './ui.ts';
@@ -135,5 +136,24 @@ export function gallery(ui: Interface): Node {
         children: [{ text: { words: 'A float on the screen' } }],
       },
     ],
+  };
+}
+
+/** The keys the game draws, open on a field over the gallery, Shift on and the pad's cross on G. */
+export function screenKeysShot(ui: Interface): Node {
+  const field: Node = { id: 'typed', field: { placeholder: 'Username' }, width: 240, height: 22, role: 'well' };
+  const keys = { ...keysFor('typed'), shift: true, row: 2, column: 4 };
+  return { children: [gallery(ui), screenKeysNode(keys, { x: 0, y: 0, ...ui.size }, null, true), field] };
+}
+
+/** The face's punctuation at each size, for checking what it reads of each. */
+export function punctuationShot(): Node {
+  const words = '@ = ~ # & ! ? _ - + * / \\ | < > ( ) [ ] { } % $ ^ ; : , . \' " `';
+  return {
+    direction: 'column',
+    padding: 10,
+    gap: 6,
+    fill: '#1c1f26',
+    children: [1, 2, 3].map((size) => ({ text: { words, size, colour: '#fbf8f0', wrap: false } })),
   };
 }

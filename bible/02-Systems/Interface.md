@@ -23,6 +23,7 @@ code:
   - client/src/ui/ui.ts#Interface
   - client/src/ui/canvasEvents.ts#CanvasEvents
   - client/src/ui/canvasEvents.ts#eventsOn
+  - client/src/ui/screenKeys.ts#screenKeysNode
   - client/src/ui/controls.ts#slider
   - client/src/testground/panelKit.ts#panels
   - client/src/testground/viewTexture.ts#ViewTexture
@@ -186,8 +187,12 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
   way, or by the pad's cross, A pressing and B going back; the wheel scrolling the list under it, and focus by keys
   scrolling its list to it. A field takes words through the browser's `EditContext` where it has one (Chromium), so
-  composition and on-screen keyboards work on the canvas, and through keys and paste elsewhere; copy and cut take
-  its selection. The page's side is `CanvasEvents`; the interface hears plain events, and with the game in its worker
+  composition works on the canvas, and through keys and paste elsewhere; copy and cut take its selection. A field
+  reached by a touch or the pad opens the keys the game draws (`screenKeys.ts`): ten across, the digits over the
+  letters, Shift for one capital, Back, Space and Done (Enter), at the view's foot or its head where the field stands
+  low; the pad's cross walks them, A types the one it stands on and B puts them away, the field keeping the focus.
+  While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
+  field, sends them away. The page's side is `CanvasEvents`; the interface hears plain events, and with the game in its worker
   ([[Game]], "Threads") hears them as the page sends them (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
 - **Controls.** A press with words, a toggle, a slider (dragged, or stepped by its arrows) and a choice from a list
   that opens under it are built once, for every screen (`controls.ts`).

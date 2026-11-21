@@ -98,7 +98,10 @@ export class CanvasEvents implements PageEvents {
     canvas.addEventListener(
       'pointerdown',
       (event) => {
-        if (!locked()) this.events.push({ kind: 'down', ...(this.pointer = placed(event)), button: event.button });
+        if (!locked()) {
+          const touch = event.pointerType === 'touch' || event.pointerType === 'pen';
+          this.events.push({ kind: 'down', ...(this.pointer = placed(event)), button: event.button, touch });
+        }
       },
       first,
     );
@@ -117,11 +120,12 @@ export class CanvasEvents implements PageEvents {
       (event) => {
         const typingHere = this.typing !== null;
         const ctrl = event.ctrlKey || event.metaKey;
-        // Keys the browser's typing does itself; and, without it, a character typed is words.
-        const typed =
-          typingHere && this.context !== null && (event.key.length === 1 || /^(Backspace|Delete)$/.test(event.key));
+        // Keys the browser's typing does itself; and, without it (or while the drawn keys hold the field), a
+        // character typed is words.
+        const browsers = typingHere && this.context !== null && !this.typing?.onScreen;
+        const typed = browsers && (event.key.length === 1 || /^(Backspace|Delete)$/.test(event.key));
         this.events.push({ kind: 'key', key: event.key, shift: event.shiftKey, ctrl, typed });
-        if (typingHere && !this.context && event.key.length === 1 && !ctrl)
+        if (typingHere && !browsers && event.key.length === 1 && !ctrl)
           this.events.push({ kind: 'text', text: event.key });
         if (typingHere && (event.key === 'Tab' || event.key === 'Backspace' || event.key === ' '))
           event.preventDefault();
@@ -184,7 +188,8 @@ export class CanvasEvents implements PageEvents {
       this.canvas.style.cursor = cursor;
     const context = this.context;
     if (!context) return;
-    if (!typing) {
+    // The drawn keys type for a touch or the pad: the browser's own typing, and its keyboard, stay away.
+    if (!typing || typing.onScreen) {
       if (this.canvas.editContext) this.canvas.editContext = null;
       return;
     }

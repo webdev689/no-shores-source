@@ -9,6 +9,16 @@ import { layout } from './layout.ts';
 import type { Laid, Node } from './node.ts';
 import type { State } from './paint.ts';
 import type { Box } from './quads.ts';
+import {
+  keyAt,
+  keyLabel,
+  keysFor,
+  movedOn,
+  pressed,
+  SCREEN_KEY,
+  type ScreenKeys,
+  screenKeysNode,
+} from './screenKeys.ts';
 import type { UiRenderer } from './uiRenderer.ts';
 
 /** One happening the interface hears: the pointer moved, left, pressed or let go a button, or turned the wheel (CSS
@@ -17,7 +27,14 @@ import type { UiRenderer } from './uiRenderer.ts';
 export type UiEvent =
   | { readonly kind: 'pointer'; readonly x: number; readonly y: number }
   | { readonly kind: 'leave' }
-  | { readonly kind: 'down' | 'up'; readonly x: number; readonly y: number; readonly button: number }
+  | {
+      readonly kind: 'down' | 'up';
+      readonly x: number;
+      readonly y: number;
+      readonly button: number;
+      /** Pressed by a finger or a pen, not a mouse. */
+      readonly touch?: boolean;
+    }
   | { readonly kind: 'wheel'; readonly x: number; readonly y: number; readonly dy: number }
   | {
       readonly kind: 'key';
@@ -43,6 +60,8 @@ export interface Typing {
   readonly state: FieldState;
   readonly secret: boolean;
   readonly box: Box;
+  /** Typed on the keys the game draws, not the page's own typing. */
+  readonly onScreen?: boolean;
 }
 
 const ARROWS: Record<string, readonly [number, number]> = {
@@ -85,6 +104,11 @@ export class Interface {
   private dropped: { readonly id: string; readonly x: number; readonly y: number } | null = null;
   private focus: string | null = null;
   private focusByKeys = false;
+  /** How the player last reached the interface, which says whether the keys the game draws are wanted. */
+  private way: 'keys' | 'pointer' | 'touch' | 'pad' = 'keys';
+  /** The keys the game draws, while open, and the field a touch or the pad reached this frame, which opens them. */
+  private screen: ScreenKeys | null = null;
+  private opening: string | null = null;
   private keyMoved = false;
   private readonly clicks = new Set<string>();
   private readonly rightClicks = new Set<string>();
@@ -135,6 +159,7 @@ export class Interface {
       if ((event.kind === 'key' || event.kind === 'pad') && !keys && !typingNow) continue;
       this.hear(event, free);
     }
+    this.screenKeysHeard();
     const over = free && this.pointer ? this.targetAt(this.pointer.x, this.pointer.y) : null;
     this.hover = over?.node.id ?? null;
     if (this.hover && this.hover !== before) this.reach = true;
@@ -246,7 +271,8 @@ export class Interface {
   get typing(): Typing | null {
     const laid = this.focus ? this.laid.find((each) => each.node.id === this.focus && each.node.field) : null;
     if (!laid || !this.focus) return null;
-    return { id: this.focus, state: this.fieldOf(this.focus), secret: Boolean(laid.node.field?.secret), box: laid.box };
+    const secret = Boolean(laid.node.field?.secret);
+    return { id: this.focus, state: this.fieldOf(this.focus), secret, box: laid.box, onScreen: this.screen !== null };
   }
 
   /** Where the pointer is, CSS pixels, while it is free on the view; null once it has left or looks round. */
@@ -280,7 +306,11 @@ export class Interface {
   draw(root: Node): void {
     const view = { x: 0, y: 0, ...this.view };
     const scrollOf = (id: string) => this.scrolls.get(id) ?? 0;
-    const laid = layout(root, view, { face: this.renderer.face, scrollOf });
+    const keys = this.screen;
+    const shown: Node = keys
+      ? { children: [root, screenKeysNode(keys, view, this.boxOf(keys.field), this.way === 'pad')] }
+      : root;
+    const laid = layout(shown, view, { face: this.renderer.face, scrollOf });
     drawLaid(this.renderer, laid, this.scale, {
       clock: this.clock,
       field: (id) => (this.fields.has(id) ? this.fieldOf(id) : null),
@@ -336,6 +366,7 @@ export class Interface {
         return;
       case 'down':
         this.pointer = { x: event.x, y: event.y };
+        this.way = event.touch ? 'touch' : 'pointer';
         if (free && event.button === 0) this.pressAt(event.x, event.y);
         else if (free && event.button === 2) {
           const id = this.targetAt(event.x, event.y)?.node.id;
@@ -353,6 +384,7 @@ export class Interface {
         this.scrollAt(event.x, event.y, event.dy);
         return;
       case 'key':
+        this.way = 'keys';
         this.key(event.key.toLowerCase(), Boolean(event.shift), Boolean(event.ctrl), Boolean(event.typed));
         return;
       case 'text':
@@ -366,7 +398,9 @@ export class Interface {
         }));
         return;
       case 'pad':
-        if (event.button === 'accept') this.key('enter', false, false, false);
+        this.way = 'pad';
+        if (this.screen) this.padOnKeys(event.button);
+        else if (event.button === 'accept') this.key('enter', false, false, false);
         else if (event.button === 'back') this.key('escape', false, false, false);
         else this.key(`arrow${event.button}`, false, false, false);
         return;
@@ -377,6 +411,9 @@ export class Interface {
     const target = this.targetAt(x, y);
     const id = target?.node.id ?? null;
     this.held = target?.node.press ? id : null;
+    // A key the game draws types into the field it opened for, which keeps the focus.
+    if (id?.startsWith(SCREEN_KEY)) return;
+    if (id && target?.node.field && this.way === 'touch') this.opening = id;
     this.focusByKeys = false;
     this.focus = id;
     if (id && target?.node.field) this.fields.set(id, this.caretAt(target, x));
@@ -460,6 +497,38 @@ export class Interface {
     return true;
   }
 
+  /** The keys the game draws: sent away once a keyboard is used or the field loses the focus, opened where a touch
+   *  or the pad reached a field, and each of their presses typed. */
+  private screenKeysHeard(): void {
+    if (this.screen && (this.way === 'keys' || this.focus !== this.screen.field)) this.screen = null;
+    if (this.opening !== null && this.focus === this.opening) this.screen = keysFor(this.opening);
+    this.opening = null;
+    for (const id of this.clicks) if (id.startsWith(SCREEN_KEY)) this.pressScreenKey(id.slice(SCREEN_KEY.length));
+  }
+
+  private pressScreenKey(key: string): void {
+    const keys = this.screen;
+    if (!keys) return;
+    const most = this.laid.find((each) => each.node.id === keys.field)?.node.field?.most ?? Number.POSITIVE_INFINITY;
+    const done = pressed(keys, key, this.fieldOf(keys.field), most);
+    this.fields.set(keys.field, done.state);
+    if (done.submit) this.submits.add(keys.field);
+    this.screen = done.keys;
+  }
+
+  /** The pad on the keys the game draws: its cross walks them, A presses the one it stands on, B puts them away. */
+  private padOnKeys(button: 'up' | 'down' | 'left' | 'right' | 'accept' | 'back'): void {
+    const keys = this.screen;
+    if (!keys) return;
+    if (button === 'back') this.screen = null;
+    else if (button === 'accept') this.pressScreenKey(keyAt(keys));
+    else {
+      const [across, down] = ARROWS[`arrow${button}`] ?? [0, 0];
+      this.screen = movedOn(keys, across, down);
+      this.speak(keyLabel(keyAt(this.screen), this.screen.shift));
+    }
+  }
+
   /** The words selected in the field typed in, for a copy. */
   get selection(): string {
     const typing = this.typing;
@@ -502,6 +571,7 @@ export class Interface {
   private moveFocus(laid: Laid | null): void {
     if (!laid?.node.id) return;
     this.focus = laid.node.id;
+    if (laid.node.field && this.way === 'pad') this.opening = laid.node.id;
     this.focusByKeys = true;
     this.keyMoved = true;
     this.reach = true;
