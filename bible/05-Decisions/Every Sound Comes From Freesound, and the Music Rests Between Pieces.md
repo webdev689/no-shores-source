@@ -39,6 +39,9 @@ the story's storm and deep, and asked for the green, wet and cold fights again: 
 high pitch whine in the beginning"; of the wet, "High pitch whine". Made again, they kept all three.
 
 Every other sound the sheet offered the owner picked a recording for, the pick named in `content/audio/freesound.json`;
-for eighteen they chose None of these, and those are searched again with other words.
+for eighteen they chose None of these. Searched again with other words, and for the sinking, the wolf, the hyena and
+the marmot offered real recordings by name ("Come on..", "Do better"), they picked the rest but three. Of the hyena,
+"Why is it so hard to get distint sounds"; asked, they chose to drop it: the savanna's night has no hyena. A ship
+going down plays the sea's break-up, Breaking wood ("Use 'Breaking wood'"). The ice's creak stays the ice's crack.
 
 [[Music]], [[Ambience]].

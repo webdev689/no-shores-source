@@ -65,7 +65,6 @@ export const RECORDINGS: Readonly<Partial<Record<BedKey | SoundKey, string>>> = 
   'song.weaver': 'amb.bird.weaver',
   'song.fluter': 'amb.bird.fluter',
   cicada: 'amb.insect.cicada',
-  'hyena.whoops': 'amb.hyena',
   drip: 'amb.water.drip',
   mosquito: 'amb.insect.mosquito',
   'frog.peeps': 'amb.frog.peeps',

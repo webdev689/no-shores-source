@@ -80,7 +80,6 @@ test('the hour brings in the night: every night voice and bed sounds by night an
     ['woodland', 'owl.deep'],
     ['highland', 'wolf.howl.low'],
     ['desert', 'jackal.yips'],
-    ['savanna', 'hyena.whoops'],
     ['savanna', 'nightjar'],
     ['rainforest', 'frog.peeps'],
     ['desert', 'cricket'],

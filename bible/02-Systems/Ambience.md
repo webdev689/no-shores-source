@@ -116,7 +116,7 @@ beasts, insects, timbers and a city's work over it, placed round the listener. I
 | Highland | Moaning wind, whistling gusts, grass | Gusts and whistles on the ridges, stone falls, ravens, buzzard, curlew, lark | Wolves on the ridges, an owl |
 | Woodland | Leaves, wind, crickets at dusk | Warbler, thrush, finch, wren, chiffchaff, woodpecker, cuckoo, dove, crow, boughs, twigs | Tawny owls, deep owl, a far wolf |
 | Desert | Blown sand, dry wind, rock whistles | Sand gusts, rock whistles, stone falls, hawk, raven, flies | Jackals, crickets, an owl |
-| Savanna | Grass, wind, cicadas, crickets | Weavers, doves, fluting birds, hawk, cicadas, flies | Hyenas, jackals, nightjar, owl, a lion once picked |
+| Savanna | Grass, wind, cicadas, crickets | Weavers, doves, fluting birds, hawk, cicadas, flies | Jackals, nightjar, owl, a lion once picked |
 | Rainforest | Canopy drips, cicadas, crickets, frogs, leaves | Fluting birds, warblers, drips, cicadas, mosquitoes, woodpecker, parrots once picked | Tree frogs, frogs, owl |
 | Steppe | Wide wind, grass, crickets at dusk | Larks, marmots, buzzard, gusts, raven | Wolves, crickets |
 | Swamp | Marsh drone, frog chorus, still water | Gas bubbles, frogs, bullfrogs, mosquitoes, flies, a fish, reed warbler, raven, a heron once picked | The full frog chorus, peepers, owl |

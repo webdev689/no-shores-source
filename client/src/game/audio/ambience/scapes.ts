@@ -414,7 +414,6 @@ export const SCAPES: Readonly<Record<AmbienceKey, Scape>> = {
       voice('buzzard', 'sky', byDay(0.4)),
       voice('cicada', 'canopy', byDay(1.2), { gain: [0.2, 0.45] }),
       voice('fly', 'ear', byDay(0.4), { drift: 0.8, gain: [0.15, 0.3] }),
-      voice('hyena.whoops', 'around', byNight(0.5), { distance: [150, 450], near: 40, gain: [0.6, 0.9] }),
       voice('jackal.yips', 'ridge', byNight(0.2)),
       voice('nightjar', 'ground', { dusk: 0.8, night: 0.5 }, { distance: [30, 120], gain: [0.3, 0.5] }),
       voice('owl.deep', 'canopy', byNight(0.3), { distance: [40, 120] }),
