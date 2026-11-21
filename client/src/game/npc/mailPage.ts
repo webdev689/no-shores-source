@@ -27,21 +27,23 @@ export const MAIL_MOST = 50;
 /** A tile's picture box, in pixels. */
 const TILE_PX = 48;
 const TAKE_HINTS: readonly Hint[] = [['Click / E', 'Take']];
-/** Each source's words, by its number (the gear crate's `mail::Source`): where what a letter holds came from. */
-const FROM_WORDS: readonly string[] = [
-  'You left this lying where it fell. It was picked up before it was lost.',
-  'You left before you picked this up, so it was sent on.',
-  'Your reward for a first clear. Your ten Vestiges and the vault were full, so it came here.',
-  'Found in flotsam you gathered. You carried ten Vestiges, so it came here.',
-  'Salvage you took. Its slot carried nine, so it came here.',
-];
-/** What a letter that came to a full mailbox adds. */
+/** Each source's words, by its name in the gear crate's `mail::Source` and in its numbers' order: where what a letter
+ *  holds came from. */
+export const FROM_WORDS = {
+  LeftLying: 'You left this lying where it fell. It was picked up before it was lost.',
+  LeftBehind: 'You left before you picked this up, so it was sent on.',
+  Clear: 'Your reward for a first clear. Your ten Vestiges and the vault were full, so it came here.',
+  Flotsam: 'Found in flotsam you gathered. You carried ten Vestiges, so it came here.',
+  Salvage: 'Salvage you took. Its slot carried nine, so it came here.',
+} as const;
+const WORDS_BY_SOURCE: readonly string[] = Object.values(FROM_WORDS);
+/** What a letter that tells of a letter a full mailbox let go adds. */
 const CROWDED = 'Your mailbox was full, so the oldest letter holding the least was let go.';
 
 /** A letter's words: where what it holds came from (a source a later room adds, in general words), and whether a
- *  letter went to make room for it. */
+ *  full mailbox let a letter go as it came or after it. */
 export function letterWords(letter: GearLetter): string {
-  const words = FROM_WORDS[letter.from] ?? 'This was sent on to you.';
+  const words = WORDS_BY_SOURCE[letter.from] ?? 'This was sent on to you.';
   return letter.crowded ? `${words} ${CROWDED}` : words;
 }
 
