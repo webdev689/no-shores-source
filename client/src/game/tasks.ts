@@ -30,13 +30,33 @@ export function justMet(before: Quest | null, after: Quest | null): number[] {
   });
 }
 
+/** Whether two quests read alike, word for word: compared field by field, so a frame that changes nothing makes nothing. */
+export function sameQuest(one: Quest | null, other: Quest | null): boolean {
+  if (one === null || other === null) return one === other;
+  if (one.name !== other.name || one.task !== other.task || one.steps.length !== other.steps.length) return false;
+  return one.steps.every((step, index) => {
+    const that = other.steps[index];
+    const keys = step.keys ?? [];
+    const thoseKeys = that?.keys ?? [];
+    return (
+      that !== undefined &&
+      step.text === that.text &&
+      step.count === that.count &&
+      Boolean(step.done) === Boolean(that.done) &&
+      keys.length === thoseKeys.length &&
+      keys.every((key, at) => key === thoseKeys[at])
+    );
+  });
+}
+
 export class TaskTracker {
   private readonly root = make('section', '', `tasks ${ROLES.window}`);
   private readonly quest = make('div', '', `tasks-quest ${ROLES.header}`);
   private readonly task = make('div', '', 'tasks-task');
   private readonly steps = make('ul', '', 'tasks-steps');
   private shown: Quest | null = null;
-  private written = '';
+  /** Whether anything was shown yet: the first call writes the page even for no quest. */
+  private begun = false;
 
   constructor(parent: HTMLElement) {
     this.root.setAttribute('role', 'status');
@@ -49,9 +69,8 @@ export class TaskTracker {
   /** Shows `quest`, or hides the tracker for none. Called every frame, it writes the page only when the quest's words
    *  change; a new task slides in, and a step just met flashes as its box is ticked. */
   show(quest: Quest | null): void {
-    const written = JSON.stringify(quest);
-    if (written === this.written) return;
-    this.written = written;
+    if (this.begun && sameQuest(quest, this.shown)) return;
+    this.begun = true;
     const met = justMet(this.shown, quest);
     const fresh = quest !== null && (this.shown?.task !== quest.task || this.shown.name !== quest.name);
     this.shown = quest;

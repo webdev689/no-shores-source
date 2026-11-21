@@ -70,6 +70,13 @@ test('a foe the room names (a Warden, Marrow, the growth) is marked by its own n
   assert.deepEqual([marked?.name, marked?.faction], ['Reeve Ancel Marrow, the Tithe’s Hand', 'The Grey Tithe']);
 });
 
+test('the Fissure’s growth, a foe the room strikes, stands as its crystal alone: no figure is drawn for it', () => {
+  const fight = Object.assign(fightWith(3, -4, 10), {
+    public: { marks: [{ kind: 2, id: 7, at: [3, -4, 0], health: 1, state: 2 }] },
+  }) as unknown as Fighting;
+  assert.deepEqual(new FoeFigures(roster).cards(fight, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes()), []);
+});
+
 test('a foe the room no longer holds is let go', () => {
   const figures = new FoeFigures(roster);
   figures.cards(fightWith(3, -4, 10), forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());

@@ -278,6 +278,8 @@ export class EventPropsDraw implements Drawer {
   private tableGroup: GPUBindGroup | null = null;
   private readonly made = new Map<PropModule, Made>();
   private props: readonly EventProp[] = [];
+  /** The table's rows as written, kept between frames so a frame allocates none. */
+  private rows = new Float32Array(16 * PROP_FLOATS);
   private ready = false;
   /** The frame the table was last written for, and the props it holds, each with its row. */
   private written: {
@@ -396,17 +398,22 @@ export class EventPropsDraw implements Drawer {
       if (made) drawn.push([prop, made, drawn.length]);
     }
     if (drawn.length === 0) return drawn;
-    this.gpu.device.queue.writeBuffer(this.view, 0, fromEye.slice(0, 16));
-    const rows = new Float32Array(drawn.length * PROP_FLOATS);
+    this.gpu.device.queue.writeBuffer(this.view, 0, fromEye, 0, 16);
+    if (this.rows.length < drawn.length * PROP_FLOATS) this.rows = new Float32Array(drawn.length * 2 * PROP_FLOATS);
+    const rows = this.rows.subarray(0, drawn.length * PROP_FLOATS);
+    rows.fill(0);
     drawn.forEach(([prop, made], row) => {
-      rows.set(
-        [
-          ...[prop.at[0] - eye[0], prop.at[1] - eye[1], prop.at[2] - eye[2], prop.turn],
-          ...[prop.scale, prop.rise, prop.lid, prop.glow],
-          ...[OPENS.has(prop.module) ? 1 : 0, made.height, 0, 0],
-        ],
-        row * PROP_FLOATS,
-      );
+      const at = row * PROP_FLOATS;
+      rows[at] = prop.at[0] - eye[0];
+      rows[at + 1] = prop.at[1] - eye[1];
+      rows[at + 2] = prop.at[2] - eye[2];
+      rows[at + 3] = prop.turn;
+      rows[at + 4] = prop.scale;
+      rows[at + 5] = prop.rise;
+      rows[at + 6] = prop.lid;
+      rows[at + 7] = prop.glow;
+      rows[at + 8] = OPENS.has(prop.module) ? 1 : 0;
+      rows[at + 9] = made.height;
     });
     if (!this.table || this.table.size < rows.byteLength) {
       this.table?.destroy();

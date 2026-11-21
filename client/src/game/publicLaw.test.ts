@@ -62,13 +62,17 @@ test('the raid running: its wave, the stores standing as its bar, the tithe-take
 });
 
 test('the result: won with its chest tier, or failed and why; the next event once it is over', () => {
-  const won = bannerOf(fissure({ phase: PUBLIC_PHASE.won, heroic: HEROIC.met, ticksLeft: 600 }), 'gullwing-vale');
+  const won = bannerOf(fissure({ phase: PUBLIC_PHASE.won, heroic: HEROIC.met, ticksLeft: 600 }), 'gullwing-vale', true);
   assert.equal(won?.tone, 'won');
   assert.equal(won?.kicker, 'Event complete');
   assert.equal(won?.objective, 'Your chest waits at the ground: heroic, with the bonus');
   assert.equal(won?.clock, '');
-  const plain = bannerOf(raid({ phase: PUBLIC_PHASE.won, bonus: false, heroic: HEROIC.missed }), 'gullwing-vale');
+  const plain = bannerOf(raid({ phase: PUBLIC_PHASE.won, bonus: false, heroic: HEROIC.missed }), 'gullwing-vale', true);
   assert.equal(plain?.objective, 'Your chest waits at the ground');
+  const unchested = bannerOf(raid({ phase: PUBLIC_PHASE.won, bonus: false }), 'gullwing-vale');
+  assert.equal(unchested?.objective, 'The Tithe gave up', 'no chest promised to one who took no part');
+  const sealed = bannerOf(fissure({ phase: PUBLIC_PHASE.won }), 'gullwing-vale');
+  assert.equal(sealed?.objective, 'The fissure is sealed');
   const fell = bannerOf(raid({ phase: PUBLIC_PHASE.failed, progress: 0 }), 'gullwing-vale');
   assert.equal(fell?.tone, 'failed');
   assert.equal(fell?.objective, 'Every store fell');

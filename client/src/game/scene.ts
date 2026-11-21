@@ -297,7 +297,9 @@ export class GameScene {
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
-      [...CITY_LAMPS.current, ...EVENT_LAMPS.current, ...this.lamps],
+      this.lamps.length > 0 || EVENT_LAMPS.current.length > 0
+        ? [...CITY_LAMPS.current, ...EVENT_LAMPS.current, ...this.lamps]
+        : CITY_LAMPS.current,
       light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,

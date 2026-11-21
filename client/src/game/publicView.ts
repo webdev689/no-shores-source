@@ -20,7 +20,7 @@ import { chime as rarityChime, play } from './uiSounds.ts';
 type Point = readonly [number, number, number];
 
 /** The ring at the ground's edge: its width, metres, the arcs it is laid in (each on the ground under its middle),
- *  and its colour and how far it breathes. */
+ *  its colour and how far it breathes, and how often (seconds) the land under it is read again. */
 const RING = {
   widthM: 0.35,
   arcs: 72,
@@ -28,6 +28,7 @@ const RING = {
   alpha: 0.42,
   breathe: 0.12,
   breatheRadS: 2.2,
+  landS: 5,
 } as const;
 /** A shard's light pillar: how tall, its colour (the Lattice's red), how strong, the least of it as the shard fades,
  *  and its foot over the shard. */
@@ -106,6 +107,15 @@ function along(from: Point, yaw: number, forward: number, left: number, up = 0):
 export class PublicView {
   private readonly zone: string;
   private readonly clock = new StateClock();
+  /** The land's height under each arc of the ring, for the ground it was read at and when: read again only for a new
+   *  ground, or after RING.landS, in case the land under it had not come in yet. */
+  private ringLand: {
+    readonly x: number;
+    readonly y: number;
+    readonly radius: number;
+    readonly at: number;
+    readonly z: number[];
+  } | null = null;
   /** The chests the player asked to open, when, and as they last lay. */
   private readonly opened = new Map<number, { readonly at: number; readonly chest: ChestLike }>();
 
@@ -147,7 +157,7 @@ export class PublicView {
       ? event.marks.filter((mark) => mark.kind === MARK.store).map((mark) => ({ at: mark.at, share: mark.health }))
       : [];
     const shown: PublicShown | null = event && {
-      banner: bannerOf(event, this.zone),
+      banner: bannerOf(event, this.zone, chests.length > 0),
       beat,
       places: compassOf(event),
       stores,
@@ -231,9 +241,17 @@ export class PublicView {
       const [x, y] = ring.at;
       const alpha = RING.alpha * (1 + RING.breathe * Math.sin(clock * RING.breatheRadS));
       const step = (2 * Math.PI) / RING.arcs;
+      const land = this.ringLand;
+      if (!land || land.x !== x || land.y !== y || land.radius !== ring.radius || clock - land.at > RING.landS) {
+        const z = Array.from({ length: RING.arcs }, (_, arc) => {
+          const middle = (arc + 0.5) * step;
+          return floor(x + Math.sin(middle) * ring.radius, y - Math.cos(middle) * ring.radius);
+        });
+        this.ringLand = { x, y, radius: ring.radius, at: clock, z };
+      }
+      const under = this.ringLand?.z ?? [];
       for (let arc = 0; arc < RING.arcs; arc += 1) {
-        const middle = (arc + 0.5) * step;
-        const z = floor(x + Math.sin(middle) * ring.radius, y - Math.cos(middle) * ring.radius);
+        const z = under[arc] ?? 0;
         markRing(
           marks,
           [x, y, z],

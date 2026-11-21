@@ -103,6 +103,22 @@ test('the ring at the ground’s edge is laid on the land while the event runs, 
   assert.equal(quiet.length, 0);
 });
 
+test('the land under the ring is read once for its ground, and again only after a while', () => {
+  const view = new PublicView('saltgrass-downs');
+  let reads = 0;
+  const floor = () => {
+    reads += 1;
+    return 0;
+  };
+  view.frame(raid([]), [], [], bodies(), 0, [], floor);
+  const once = reads;
+  assert.ok(once > 0);
+  view.frame(raid([]), [], [], bodies(), 1, [], floor);
+  assert.equal(reads, once, 'a second frame reads no land');
+  view.frame(raid([]), [], [], bodies(), 10, [], floor);
+  assert.equal(reads, 2 * once, 'read again after a while');
+});
+
 test('E opens the chest in reach, once; it stands open a while after the room has taken it', () => {
   const view = new PublicView('saltgrass-downs');
   const asked: GearAsk[] = [];

@@ -57,8 +57,10 @@ function objectiveOf(event: PublicEvent): string {
     : `Hold the stores: wave ${event.stage} of ${event.stages}`;
 }
 
-/** The chest a won event leaves, as the room tiers it (crates/room/src/public/chest.rs): heroic, and the bonus. */
-function chestWords(event: PublicEvent): string {
+/** What a won event says: to a player it left a chest, that chest as the room tiers it (crates/room/src/public/chest.rs:
+ *  heroic, and the bonus); to one who took no part, only that it was won. */
+function chestWords(event: PublicEvent, hasChest: boolean): string {
+  if (!hasChest) return event.kind === PUBLIC_KIND.raid ? 'The Tithe gave up' : 'The fissure is sealed';
   const heroic = event.heroic === HEROIC.met;
   const parts = [heroic ? 'heroic' : '', event.bonus ? (heroic ? 'with the bonus' : 'the bonus met') : ''];
   const said = parts.filter(Boolean).join(', ');
@@ -72,9 +74,9 @@ function failedWords(event: PublicEvent): string {
   return 'Time ran out: the Lattice sank back into the earth';
 }
 
-/** The banner for the zone's event `event` in `zone`: the one running or showing its result, else the next one's
- *  line; null where none is known. */
-export function bannerOf(event: PublicEvent | null, zone: string): Banner | null {
+/** The banner for the zone's event `event` in `zone`: the one running or showing its result (its chest's words only
+ *  where the player `hasChest`), else the next one's line; null where none is known. */
+export function bannerOf(event: PublicEvent | null, zone: string, hasChest = false): Banner | null {
   if (!event) return null;
   if (event.kind === PUBLIC_KIND.none || event.phase === PUBLIC_PHASE.waiting) {
     if (event.nextKind === PUBLIC_KIND.none) return null;
@@ -102,7 +104,7 @@ export function bannerOf(event: PublicEvent | null, zone: string): Banner | null
       title,
       place,
       clock: '',
-      objective: won ? chestWords(event) : failedWords(event),
+      objective: won ? chestWords(event, hasChest) : failedWords(event),
       bar: null,
       heroic: won && heroicMet ? { text: 'Heroic', clock: '', met: true } : null,
       bonus: won ? { text: BONUS[event.kind] ?? '', state: event.bonus ? 'met' : 'lost' } : null,

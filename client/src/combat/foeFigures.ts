@@ -27,6 +27,7 @@ import {
 } from './lattice.ts';
 import { type LatticeShown, WAVE, latticeWaves, layLatticeLooks, waveFade } from './latticeLooks.ts';
 import { overheadMarks } from './overheads.ts';
+import { MARK } from '../network/publicMessages.ts';
 
 type Point = readonly [number, number, number];
 
@@ -137,7 +138,10 @@ export class FoeFigures {
     feel: FoeFeel | null = null,
   ): CardAt[] {
     const cards: CardAt[] = [];
+    // The Fissure's growth is a foe the room strikes like one, but only its crystal stands there: no figure.
+    const growths = (fight.public?.marks ?? []).filter((mark) => mark.kind === MARK.growth).map((mark) => mark.id);
     for (const kept of fight.foes.values()) {
+      if (growths.includes(kept.id)) continue;
       const typeDress = this.dressOf(kept);
       if (!typeDress) continue;
       // A Lattice foe is drawn from its own pictures once they are published, else as a plain figure its size.
