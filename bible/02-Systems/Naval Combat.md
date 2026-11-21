@@ -143,11 +143,12 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   floats laid, and gathered; and players gone aboard a ship.
 - **Chance** is one seeded stream (DFO's mulberry32), drawn in a fixed order, so a fight is the same on every machine.
 - **The pace** of every ship in a fight, a player's or a captain's, is 1.8 times its pace at sea, under sail and under
-  oars alike (`FIGHT_PACE`: half again, [[Ships Sail and Hit Half Again Harder in Sea Fights]], and a fifth on that),
+  oars alike (`FIGHT_PACE`: half again, [[Ships Sail and Hit Half Again Harder in Sea Fights]], and a fifth on that,
+  [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]),
   and it swings twice as fast and answers its helm twice as soon (`FIGHT_TURN`): the Sloop makes about 4.8 m/s with
   the usual breeze on its quarter, swings at up to about 28 degrees a second under sail and 40 on its oars, and from
   slow its rudder takes hold twice as fast. A captain reckons its own swing at a fight's (`swing_rate`).
-- **The burst** (`boost.rs`): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
+- **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
   burst is over it recharges for 12 s, so it may burst again 16 s after the tap. A tap while it bursts or recharges
   does nothing, and a wreck cannot burst (its burst is kept). Captains never burst. The fight's view carries each
   ship's burst, the share still to run and the share of its recharge done, which the Sloop's plate shows as a ring

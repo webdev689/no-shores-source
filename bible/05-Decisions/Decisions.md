@@ -202,6 +202,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Climbing Is Off in the Prologue]]
 - [[The Prologue's Elites Are as Hard to Bring Down as a Major]]
 - [[The Wreck's Boarders Are One Side]]
+- [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
