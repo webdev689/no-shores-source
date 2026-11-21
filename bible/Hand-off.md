@@ -311,18 +311,26 @@ market, the portico, the Hall from its door and from the war table, and a sealed
 ivy, planters, the well, the rug, the war table and the townsfolk all stand where placed. The views are taken with
 `webgpu-shot.cjs`, a `views` list (the hub's middle is east 2809214, south 1201297; seaward is north, bearing 0),
 `?at=overlook-social&spawn=2809214,1201241,180`, an `init` shifting `Date.now` to the hour wanted (a day is one real
-hour from `EPOCH_UNIX_MS`), and `routes` to a local bake's meshes until CI publishes them.
+hour from `EPOCH_UNIX_MS`; `Date.now` pinned to 1795217100000 ms brings rain over the hub), and `routes` to a local
+bake's meshes until CI publishes them.
+
+Since then, under the owner's [[The Hub's Fidelity Goes Beyond the Limits, by Procedural Textures]]: no rain, wet,
+puddle or snow under anything a body meets overhead ([[Weather]], "Shelter"); the city's iron, gold, bone and cloth
+painted texel by texel and each flame flickering ([[Cities]]); the Hall paved wall to wall round its rug, which lies on
+the levelled land so it shows; and a module bake that CI makes byte for byte (signed zeros dropped), its meshes
+published to R2 by CI. Seen in the built page under rain pinned by the clock: no rain or puddles in the Hall, rain on
+the courts and before the portico, the rug crimson from first and third person.
 
 Left to do, in order:
-1. **In the Hall from first person**, its floor and rug are not drawn and the land's grass shows through; from 6 m up
-   they are. Find which of the city's tiers (`client/src/city/tiers.ts`) drops the Hall's floor with the eye inside.
-2. **Rain falls inside the Hall and the portico**, and puddles lie on their floors: the weather's known limit
-   ([[Weather]], "Rain falls through roofs"), most seen here. Shelter under a roof is the fix.
-3. The Forge Yard reads bare at ground level, a wide court with an anvil yard, a cart and crates: more of the
-   court's own work (a smithy's lean-to, a quench, racks, carts of ore) would fill it.
-4. Pictures not yet taken: the Harbour Stair, the road and the pier, a stall's sign close up, the fall, the
-   townsfolk at work. CI's `modules` run publishes the meshes; until then a picture routes them from a local bake.
-5. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Reach, Movement, Navmesh, Ambience, Interface,
+1. The Forge Yard reads bare at ground level, a wide court with an anvil yard, a cart and crates: more of the court's
+   own work (a smithy's lean-to, a quench, racks, carts of ore) would fill it.
+2. More fidelity by procedural textures: the pictured materials (stone, timber, plaster, roof, paving) are still one
+   picture a material for the whole hub, and grime at a wall's foot or under a sill would need the ground's height
+   in the shader. A thin piece laid over a face tens of metres wide can still lose to it: the city's 5 cm pull toward
+   the eye bends across such a face (`clip_of`).
+3. Pictures not yet taken: the Harbour Stair, the road and the pier, a stall's sign close up, the fall, the townsfolk
+   at work, a patrol area's walk-in building in rain.
+4. Bible notes for the hub, ramps, the fall and the townsfolk (Cities, Reach, Movement, Navmesh, Ambience, Interface,
    Code Map), independent audits, then the draft pull request's description for the owner.
 - Coordination: the activities session (#97) reads `Social.board` from its branch and checks its board against the
   ways; whichever merges second sets `Social.board` from `hub::BOARD_LANDING_M`. It keeps `gear::clock`'s moves.
