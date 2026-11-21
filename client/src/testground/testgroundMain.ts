@@ -4,7 +4,7 @@ import { FirstPerson } from '../firstperson/firstPerson.ts';
 import { GpuUnavailable, startGpu } from '../gpu.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { HairColours } from '../forge/skins.ts';
-import { FIGHT_TICKS } from '../player/fightMoves.ts';
+import { crosshairOf } from '../combat/reticle.ts';
 import { type FighterView, fighterView } from '../rules/fighters.ts';
 import { rosterOf } from '../rules/roster.ts';
 import type { Vector } from '../combat/swingArcs.ts';
@@ -456,7 +456,6 @@ async function start(): Promise<void> {
       const figure = foes.placed.get(id) ?? others.get(id);
       return figure ? [figure.x, figure.y, figure.z] : null;
     };
-    const bow = player.shownDress.outfit.right?.startsWith('bow') && own?.action.kind === 'draw';
     hud.update(
       {
         own,
@@ -480,7 +479,7 @@ async function start(): Promise<void> {
         ammo: sights && shown.rangedDrawn ? (own?.ammo ?? null) : null,
         ammoMost: gear?.ammoMost ?? null,
         ammoFull: !!own && dropsShown.ammoFull(gear?.drops ?? [], [own.x, own.y, own.z], (gear?.ammoShare ?? 1) >= 1),
-        crosshair: sights ? { charge: bow ? Math.min(1, own.action.elapsed / FIGHT_TICKS.drawFull) : null } : null,
+        crosshair: crosshairOf(shown.reticle, sights, own, fighting.reach),
         arms: { gear, loadout: player.player.loadout, drawn: you.dress.outfit.drawn, dress: you.dress },
       },
       seconds,

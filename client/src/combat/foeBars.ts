@@ -86,6 +86,8 @@ export class FoeBars {
   private readonly cones = new Map<number, number>();
   /** The foe the cone showed last frame. */
   private aimed: number | null = null;
+  /** The foe whose body the crosshair rests on, the nearest of several, as last drawn; null for none. */
+  under: number | null = null;
   /** The columns the plates over figures stand in this frame, each as wide as its plate from its foot up, which the
    *  blows' words keep clear of. */
   columns: readonly Box[] = [];
@@ -156,6 +158,7 @@ export class FoeBars {
     // A Boss nearest the crosshair takes the cone too, though its bar stands under the compass, not over its head.
     const offs = new Map(seen.map(({ foe, off }) => [foe.id, off]));
     this.aimed = aimedFoe(offs, this.aimed, new Map(seen.map(({ foe, spot }) => [foe.id, spot.depth])));
+    this.under = this.aimed !== null && (offs.get(this.aimed) ?? Infinity) <= 0 ? this.aimed : null;
     const shown: {
       foe: MarkedFoe;
       x: number;
