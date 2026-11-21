@@ -1,9 +1,9 @@
 {
   "base": "https://pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev/",
-  "index": "index/b0bc088d5165f24cbdde2df9bbb20463ed0dbfdfda7e996724b87bb4ec772dbd.json",
+  "index": "index/9746ea55cc579673684c3038ca4f890d36d729c4d60324908bd711722b274d35.json",
   "tables": {
-    "looks": "tables/40e533f48498f065c9464f90b7bbdfb3b4597319d35f8456c03cc755d7f324e8.json",
-    "skins": "tables/54434a7828e43ff28697da8da79b2ea9bbb75c180b1316e24269074c6e7596b5.json",
+    "looks": "tables/21f36b3ffb82eda9a027deb3e9cb1e33c09b9508bc07753d53435c55c276f95f.json",
+    "skins": "tables/536b8c79c7ec714df318bbb7934e17213b211d93c75adc06d3db00912820c2bd.json",
     "hair": "tables/cf7d5c8c092def912cf1b7a10389cbb9319b5ba5f5426fa31f74b9aadc6a19f0.json",
     "points-male": "tables/06a1b8a287f9bafd75fabce6604e6ba09c7282b63d8011f70dac401c0543237e.json",
     "points-female": "tables/bc8bfc1591dfb518bcbd8ac96e6d3c1faad23e85178c8e0b0d18aca11118e094.json",
