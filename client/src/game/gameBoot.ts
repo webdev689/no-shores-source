@@ -14,6 +14,7 @@ import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
 import { keptDiscovered } from './discovered.ts';
 import { FigureView } from './figureView.ts';
+import { gearScreenOpen } from './gearScreen.ts';
 import { arriving, type Flow } from './flow.ts';
 import { StoryHost } from './prologue/host.ts';
 import { wakeOnGesture } from './uiSounds.ts';
@@ -22,6 +23,7 @@ import { Hud } from './hud.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { accountOf, roomsFrom } from './rooms.ts';
+import { keepBinds } from './bindsKept.ts';
 import { GameScene } from './scene.ts';
 import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
@@ -40,6 +42,8 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   const stack = new Stack();
   const hud = new Hud();
   stack.add((ui) => hud.node(ui));
+  // K opens every control wherever the key strip offers it, except over the menu's gear screen, which has the keys.
+  hud.controls.listen(() => hud.keysOffered && !gearScreenOpen());
   // The first tap or key wakes the sound, so the story's intro begins heard.
   wakeOnGesture();
   const asked = new URLSearchParams(location.search).get('at');
@@ -47,10 +51,11 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
   // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
   hud.veil(flow.mode === 'loading' ? flow.words : null);
-  const story = flow.mode === 'story' ? new StoryHost(stack, canvas) : null;
+  const story = flow.mode === 'story' ? new StoryHost(stack, canvas, () => hud.controls.open) : null;
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
+  if (link) void keepBinds(link);
   // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
   const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
   const land = startLandWorker();

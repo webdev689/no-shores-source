@@ -41,8 +41,7 @@ import { FallWatch } from './fallWatch.ts';
 import { type Speak, type Use, groundRings, useAt } from './footGear.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
-import type { Hint } from './gearNodes.ts';
-import { keysShown } from './hints.ts';
+import { type StripHint, keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
@@ -109,7 +108,7 @@ export interface FootFrame {
   readonly marks: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
-  readonly hints: readonly Hint[];
+  readonly hints: readonly StripHint[];
 }
 
 /**
@@ -508,7 +507,7 @@ export class Foot {
       },
     };
     const edge = this.standing;
-    const hints = keysShown(edge, fight.arts?.art ?? 0);
+    const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
     return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
   }
 

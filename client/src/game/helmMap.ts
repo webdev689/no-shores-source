@@ -6,6 +6,7 @@ import type { LandSheet } from '../heldmap/landSheet.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
+import { boundWord } from './controls.ts';
 import type { Discovered } from './discovered.ts';
 import type { Sea } from './sea.ts';
 import type { Stack } from '../ui/stack.ts';
@@ -63,6 +64,7 @@ export class HelmMap {
       (to) => this.sea()?.planTo(to) ?? { ok: false, why: 'No ship.' },
       stack,
     );
+    made.sailKey = () => boundWord('confirm');
     made.onLowered((sail) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();

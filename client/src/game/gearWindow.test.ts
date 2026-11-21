@@ -124,6 +124,26 @@ test('the tabs open their pages; the arrows on a tab move to the next and open i
   assert.equal(ui.boxOf('shelf-materials'), null, 'the Journal is shown');
 });
 
+test("the pad's bumpers turn the menu's tabs, round from the last to the first, and a toggling ask shuts it", () => {
+  const { ui, frame, open, window } = menu();
+  open('character');
+  frame([{ kind: 'pad', button: 'next' }]);
+  frame();
+  assert.ok(ui.boxOf('shelf-materials'), 'RB: the Inventory');
+  frame([{ kind: 'pad', button: 'previous' }]);
+  frame([{ kind: 'pad', button: 'previous' }]);
+  frame();
+  frame();
+  assert.ok(
+    ui.boxOf('gear-screen') && !ui.boxOf('slot-0') && !ui.boxOf('shelf-materials'),
+    'LB twice: round to the last tab',
+  );
+  open('character');
+  window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view: 'character', toggle: true } }));
+  frame();
+  assert.equal(ui.boxOf('gear-screen'), null, 'Start again shuts it, as I does');
+});
+
 test('a slot opens its flyout of nine, a carried piece is worn by a click, and Escape steps back before closing', () => {
   const { ui, click, open, key, frame, asked } = menu();
   open('character');

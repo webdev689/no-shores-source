@@ -65,6 +65,7 @@ function mapUp() {
     difficulty: 'normal',
     picked: 'normal',
     lowered: () => undefined,
+    sailKey: () => 'Enter',
   });
   const stack = new Stack();
   stack.add((ui) => map.node(ui));

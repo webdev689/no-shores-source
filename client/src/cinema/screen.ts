@@ -44,13 +44,14 @@ export class Screen {
   private blurred = 0;
   private prompt = '';
   private skipShare = 0;
-  private readonly skipWords: string;
+  private readonly touched: boolean;
+  private skipKey = 'Space';
   private readonly removeLayer: () => void;
 
   constructor(stack: Stack, canvas: HTMLCanvasElement, clock: () => number = pageClock) {
     this.canvas = canvas;
     this.clock = clock;
-    this.skipWords = playedByTouch() ? 'Hold to skip' : 'Hold Space to skip';
+    this.touched = playedByTouch();
     touchesHeld(canvas, true);
     const layer: Layer = (ui) => this.node(ui);
     this.removeLayer = stack.add(layer);
@@ -101,10 +102,11 @@ export class Screen {
     this.prompted.set(text === null ? 0 : 1, 0.8, this.clock());
   }
 
-  /** The skip's hint, faint while a cutscene can be skipped and bright while the hold fills its `share`; null hides it
-   *  where there is nothing to skip. */
-  showSkip(share: number | null): void {
+  /** The skip's hint, faint while a cutscene can be skipped and bright while the hold fills its `share`, naming the
+   *  `key` held for it; null hides it where there is nothing to skip. */
+  showSkip(share: number | null, key = this.skipKey): void {
     this.skipShare = share ?? 0;
+    this.skipKey = key;
     this.skipShown.set(share === null ? 0 : share > 0 ? 0.9 : 0.45, 0.4, this.clock(), 0);
   }
 
@@ -236,7 +238,13 @@ export class Screen {
       float: { to: 'screen', anchor: [1, 1], at: [1, 1], x: -33, y: -33 },
       children: [
         dropped(
-          { words: this.skipWords.toUpperCase(), size: 1, colour: '#efe6cf', tracking: 2, wrap: false },
+          {
+            words: (this.touched ? 'Hold to skip' : `Hold ${this.skipKey} to skip`).toUpperCase(),
+            size: 1,
+            colour: '#efe6cf',
+            tracking: 2,
+            wrap: false,
+          },
           '#000',
           1,
         ),

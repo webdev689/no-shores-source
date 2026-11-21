@@ -31,6 +31,8 @@ export interface SeaHudState {
   readonly friendly: readonly ShipMark[];
   /** What the sea's word says now, DFO's toasts: a ship sighted, who joins, colours struck, what floats gathered. */
   readonly notices: readonly string[];
+  /** Whether the mouse is free, for a click on the deck to take it. */
+  readonly free: boolean;
 }
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
@@ -95,7 +97,16 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
   hud.hints(
-    deck ? deck.hints : seaHints({ fighting: fight !== null, landing: state.landing, atHelm, ...aboard.where }),
+    deck
+      ? deck.hints
+      : seaHints({
+          fighting: fight !== null,
+          aiming: fight?.aimingNow ?? false,
+          landing: state.landing,
+          atHelm,
+          ...aboard.where,
+          free: state.free,
+        }),
   );
   hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
   // shortcut: at sea the tracker shows only a fight's task, so a quest's would be hidden; share it once quests sail.

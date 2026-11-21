@@ -131,6 +131,8 @@ export class HeldMap {
   private ink: Rect = { x: 0, y: 0, width: 1, height: 1 };
   private press: { x: number; y: number; view: View; panning: boolean } | null = null;
   private choice: Choice | null = null;
+  /** The key that sets sail, as bound now, which its press names. */
+  sailKey: () => string = () => 'Enter';
   /** The difficulty the voyage set out at: what the card showed when the player set sail. */
   difficulty: Difficulty = 'normal';
   /** The difficulty chosen on the card, kept only once the player sets sail with it. */
@@ -543,7 +545,11 @@ export class HeldMap {
             }),
           ),
         },
-        ok && button(ui, 'held-sail', 'Set sail  Enter', () => this.setSail(), { role: 'primary', padding: [7, 14] }),
+        ok &&
+          button(ui, 'held-sail', ['Set sail', this.sailKey()].filter(Boolean).join('  '), () => this.setSail(), {
+            role: 'primary',
+            padding: [7, 14],
+          }),
       ],
     };
   }

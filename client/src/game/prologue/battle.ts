@@ -237,7 +237,7 @@ export class Battle implements Beat {
     const heads = own ? brig.heads(own) : undefined;
     if (heads) this.sayCries(shown.shot, heads, tick.viewport);
     const { hud } = stage.parts;
-    hud.hints(HINTS.fight);
+    hud.hints(fight.aiming ? HINTS.aim : HINTS.fight);
     hud.seaFight(shown.over ? null : shown.display);
     hud.tasks.show(seaFightQuest(QUEST, shown.readout.left, shown.readout.men));
     hud.toast(...shown.readout.said);
