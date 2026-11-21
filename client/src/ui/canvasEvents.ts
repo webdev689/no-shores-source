@@ -5,9 +5,9 @@
 // from the same words, caret and place.
 import type { Typing, UiEvent } from './uiEvent.ts';
 
-type PadButton = 'up' | 'down' | 'left' | 'right' | 'accept' | 'back';
+type PadButton = 'up' | 'down' | 'left' | 'right' | 'accept' | 'back' | 'previous' | 'next';
 
-/** The standard pad's buttons: the cross and A, B. */
+/** The standard pad's buttons: the cross, A, B and the bumpers. */
 const PAD: readonly (readonly [number, PadButton])[] = [
   [12, 'up'],
   [13, 'down'],
@@ -15,7 +15,13 @@ const PAD: readonly (readonly [number, PadButton])[] = [
   [15, 'right'],
   [0, 'accept'],
   [1, 'back'],
+  [4, 'previous'],
+  [5, 'next'],
 ];
+/** The left stick leant this far is the cross pressed that way. */
+const STICK_LEAN = 0.5;
+/** Presses that act once however long they are held. */
+const ONCE: ReadonlySet<PadButton> = new Set(['accept', 'back', 'previous', 'next']);
 /** A held pad button acts again after this long, then this often, seconds. */
 const PAD_DELAY = 0.4;
 const PAD_REPEAT = 0.12;
@@ -221,9 +227,17 @@ export class CanvasEvents implements PageEvents {
   }
 
   private readPad(seconds: number): void {
-    const pad = typeof navigator.getGamepads === 'function' ? navigator.getGamepads().find((each) => each) : null;
+    const pads = typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : [];
+    const pad = pads.find((each) => each?.mapping === 'standard') ?? pads.find((each) => each);
+    const [across = 0, along = 0] = pad?.axes ?? [];
+    const leant: Partial<Record<PadButton, boolean>> = {
+      up: along <= -STICK_LEAN,
+      down: along >= STICK_LEAN,
+      left: across <= -STICK_LEAN,
+      right: across >= STICK_LEAN,
+    };
     for (const [index, button] of PAD) {
-      const down = Boolean(pad?.buttons[index]?.pressed);
+      const down = Boolean(pad?.buttons[index]?.pressed) || Boolean(leant[button]);
       const held = this.padHeld.get(button);
       if (!down) {
         this.padHeld.delete(button);
@@ -232,7 +246,7 @@ export class CanvasEvents implements PageEvents {
       if (held === undefined) {
         this.events.push({ kind: 'pad', button });
         this.padHeld.set(button, -PAD_DELAY);
-      } else if (held + seconds >= PAD_REPEAT && button !== 'accept' && button !== 'back') {
+      } else if (held + seconds >= PAD_REPEAT && !ONCE.has(button)) {
         this.events.push({ kind: 'pad', button });
         this.padHeld.set(button, 0);
       } else this.padHeld.set(button, held + seconds);

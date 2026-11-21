@@ -1,29 +1,36 @@
-// The sheet of every control, which K opens and K or Escape closes: a window of the Enhanced Plus kit over everything
-// the game draws but the screen's keyboard, its controls in their groups (`controls.ts`), each its keys drawn as the
-// key strip draws them and a sentence on what it does. While it is open the game hears no key, and its scrim takes the
-// pointer; the keys move among its controls, and a screen reader hears each as it takes focus.
+// The sheet of every control, which K (or the pad's View) opens and closes: a window of the Enhanced Plus kit over
+// everything the game draws but the screen's keyboard, its controls in their groups (`controls.ts`), each row its keys
+// and the pad's buttons drawn as the key strip draws them and a few words on what it does. Each key or button chosen
+// (a click, Enter or the pad's A) waits for its new one (`rebinding.ts`); Reset to defaults binds them all as they
+// came. While it is open the game hears no key, its scrim takes the pointer, and the keys and the pad move among its
+// keys, a screen reader hearing each as it takes focus.
 import { edged } from '../combat/barDraw.ts';
+import type { Device, Slot } from '../player/binds.ts';
+import { BINDS, keyNameOf } from '../player/input.ts';
 import { TONES } from '../plus/tones.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
-import { CONTROL_GROUPS, type Control, type ControlGroup } from './controls.ts';
-import { header, hudPress, keycap, ruleUnder, said } from './hudParts.ts';
+import { CONTROL_GROUPS, type Cell, type ControlGroup, type Row, boundWord, cellsOf, doesFor } from './controls.ts';
+import { footer, header, hudPress, keycap, ruleUnder, said } from './hudParts.ts';
 import { DIM } from './hudPieces.ts';
+import { Rebinding } from './rebinding.ts';
 
-/** The key that opens and closes it. */
-const KEY = 'k';
 /** Its depth over the other layers: over the menu's hover card and holds, under the screen's keyboard. */
 const DEPTH = 80;
 /** The room kept round it on the screen, and between its columns, CSS pixels at the face's first step. */
 const MARGIN = 16;
 const GAP = 24;
-/** A column's width and its keys' width at the face's first step: a column grows with the words, its keys half as
- *  much again at the second, as keycaps keep their padding. */
+/** A column's width, and its keys' and its pad's shares of it: a column grows with the words. */
 const COLUMN = 400;
-const KEYS = 132;
+const KEYS_SHARE = 0.36;
+const PAD_SHARE = 0.18;
 
-/** A control's keys as a screen reader hears them, "or" between keys that do the same. */
-export const spokenKeys = (keys: string): string => keys.split(' / ').join(' or ');
+/** A control's keys as a screen reader hears them, "or" between keys that do the same, a pad's by its name. */
+export const spokenKeys = (keys: string): string =>
+  keys
+    .split(' / ')
+    .map((key) => key.replace(/^pad:/, '').replace('+', ' and '))
+    .join(' or ');
 
 /** The groups in `count` columns, in their order, each column holding near an even share of the rows. */
 export function columnsOf(groups: readonly ControlGroup[], count: number): ControlGroup[][] {
@@ -45,54 +52,100 @@ export function columnsOf(groups: readonly ControlGroup[], count: number): Contr
   return columns;
 }
 
+/** The id of a slot's key or button on the sheet. */
+export const slotId = (slot: Slot): string => `controls:${slot.id}:${slot.device}:${slot.place}`;
+const sameSlot = (one: Slot | null, other: Slot | null) =>
+  one !== null && other !== null && slotId(one) === slotId(other);
+
 export class ControlsSheet {
   private shown = false;
-  /** Whether the first control takes the focus as the sheet is next drawn. */
+  /** Whether the first key takes the focus as the sheet is next drawn. */
   private opening = false;
   private ui: Interface | null = null;
+  readonly rebinding = new Rebinding();
+  private padDown: ReadonlySet<string> = new Set();
 
   get open(): boolean {
     return this.shown;
+  }
+
+  /** Whether the drawn interface hears the keys and the pad: while it is open, but not while a key waits to be bound,
+   *  nor the frame the key that bound it (or Escape, cancelling) comes to it. */
+  get takesKeys(): boolean {
+    return this.shown && this.rebinding.slot === null && !this.rebinding.settling;
   }
 
   /** Opens the sheet, or closes it. */
   toggle(): void {
     this.shown = !this.shown;
     this.opening = this.shown;
+    this.rebinding.cancel();
   }
 
-  /** Hears the keys ahead of the game: K opens the sheet while `may` lets it and no words are being typed, and while
-   *  it is open K or Escape closes it and no key reaches the game. Keys let go still do, so none stays held. */
+  /** Each frame, `seconds` on: the pad's buttons `padDown` down now, for a key waiting to be bound. */
+  frame(seconds: number, padDown: ReadonlySet<string>): void {
+    this.padDown = padDown;
+    this.rebinding.frame(seconds, padDown);
+  }
+
+  /** Hears the keys ahead of the game: its key opens the sheet while `may` lets it and no words are being typed, and
+   *  while it is open its key or Escape closes it, a key waiting to be bound takes the next, and no key reaches the
+   *  game. Keys let go still do, so none stays held. */
   listen(may: () => boolean): void {
     addEventListener(
       'keydown',
       (event) => {
-        const key = event.key.toLowerCase();
+        const named = keyNameOf(event);
+        const ours = BINDS.now.controls.keys.includes(named);
         if (this.ui?.typing) return;
-        if (!this.shown && (key !== KEY || event.repeat || !may())) return;
+        if (!this.shown && (!ours || event.repeat || !may())) return;
         event.stopImmediatePropagation();
-        if (event.repeat || (key !== KEY && key !== 'escape')) return;
+        BINDS.device = 'keys';
+        if (event.repeat) return;
         event.preventDefault();
+        if (this.rebinding.slot) return this.rebinding.key(named);
+        if (!ours && named !== 'escape') return;
         this.toggle();
         if (this.shown) document.exitPointerLock();
       },
       { capture: true },
     );
+    addEventListener(
+      'mousedown',
+      (event) => {
+        if (!this.shown || !this.rebinding.slot) return;
+        event.stopImmediatePropagation();
+        this.rebinding.mouse(event.button);
+      },
+      { capture: true },
+    );
+    addEventListener('mouseup', () => this.rebinding.mouseUp(), { capture: true });
   }
 
   /** The sheet in a view `width` by `height` CSS pixels, its words at the larger step where `big`; none while closed. */
   node(ui: Interface, view: { readonly width: number; readonly height: number; readonly big: boolean }): Node | null {
     this.ui = ui;
     if (!this.shown) return null;
+    // The pad's B steps out as Escape does.
+    if (ui.escaped && !this.rebinding.slot) {
+      this.toggle();
+      return null;
+    }
     const size = view.big ? 2 : 1;
     const room = view.width - 2 * MARGIN - 2 * 2 - 2 * 22 * size;
     const count = Math.max(1, Math.floor((room + GAP * size) / ((COLUMN + GAP) * size)));
     const column = Math.min(COLUMN * size, room);
+    const device = BINDS.device;
+    const heard = !this.rebinding.swallowed();
     if (this.opening) {
       this.opening = false;
       ui.speak('All controls');
-      ui.focusOn(rowId(CONTROL_GROUPS[0]?.name ?? '', 0));
+      ui.focusOn(firstCell(device));
     }
+    const sheet: SheetNow = { ui, size, width: column, device, waiting: this.rebinding.slot };
+    if (heard && !sheet.waiting)
+      for (const slot of everySlot()) if (ui.clicked(slotId(slot))) this.rebinding.start(slot, this.padDown);
+    const close = `Close  ${boundWord('controls')}`;
     return {
       width: 'grow',
       height: 'grow',
@@ -118,10 +171,7 @@ export class ControlsSheet {
               ...header(),
               children: [
                 { width: 'grow', children: [said('ALL CONTROLS', { size, colour: DIM, tracking: 3 })] },
-                hudPress(ui, 'controls:close', 'Close  K', () => this.toggle(), {
-                  size,
-                  padding: [6 * size, 12 * size],
-                }),
+                hudPress(ui, 'controls:close', close, () => this.toggle(), { size, padding: [6 * size, 12 * size] }),
               ],
             },
             {
@@ -133,20 +183,66 @@ export class ControlsSheet {
                 direction: 'column',
                 width: column,
                 gap: 18 * size,
-                children: groups.map((group) => groupNode(ui, group, size, column)),
+                children: groups.map((group) => groupNode(sheet, group)),
               })),
+            },
+            {
+              width: 'grow',
+              padding: [8 * size, 22 * size, 10 * size, 22 * size],
+              alignY: 'center',
+              gap: 16 * size,
+              ...footer(),
+              children: [
+                { width: 'grow', children: [said(this.footWords(), { size, colour: DIM })] },
+                hudPress(ui, 'controls:reset', 'Reset to defaults', () => this.rebinding.reset(), {
+                  size,
+                  padding: [6 * size, 12 * size],
+                }),
+              ],
             },
           ],
         },
       ],
     };
   }
+
+  /** The footer's few words: what a waiting key wants, or what the last binding came to. */
+  private footWords(): string {
+    const waiting = this.rebinding.slot;
+    if (waiting) return waiting.device === 'keys' ? 'Press a key or button · Esc cancels' : 'Press a button';
+    return this.rebinding.said;
+  }
 }
 
-const rowId = (group: string, index: number) => `controls:${group}:${index}`;
+/** What the sheet's rows are drawn with this frame. */
+interface SheetNow {
+  readonly ui: Interface;
+  readonly size: number;
+  readonly width: number;
+  readonly device: Device;
+  readonly waiting: Slot | null;
+}
 
-/** A group: its name in faint capitals over a rule, then its controls. */
-function groupNode(ui: Interface, group: ControlGroup, size: number, width: number): Node {
+/** The first key or button of `device` the sheet's focus is given as it opens. */
+function firstCell(device: Device): string | null {
+  const first = everySlot().find((slot) => slot.device === device);
+  return first ? slotId(first) : null;
+}
+
+/** Every slot the sheet shows, for the keys and the pad. */
+function everySlot(): Slot[] {
+  return CONTROL_GROUPS.flatMap((group) =>
+    group.controls.flatMap((control) =>
+      (['keys', 'pad'] as const).flatMap((device) =>
+        cellsOf(control, device, BINDS.now).flatMap((cell) => (cell.slot ? [cell.slot] : [])),
+      ),
+    ),
+  );
+}
+
+/** A group: its name in faint capitals over a rule, then its rows. */
+function groupNode(sheet: SheetNow, group: ControlGroup): Node {
+  const { size } = sheet;
   return {
     width: 'grow',
     direction: 'column',
@@ -158,32 +254,51 @@ function groupNode(ui: Interface, group: ControlGroup, size: number, width: numb
         draw: ruleUnder(),
         children: [said(group.name.toUpperCase(), { size, colour: DIM, tracking: 3 })],
       },
-      ...group.controls.map((control, index) => rowNode(ui, rowId(group.name, index), control, size, width)),
+      ...group.controls.map((control) => rowNode(sheet, control)),
     ],
   };
 }
 
-/** One control: its keys on their keycaps, or drawn as the mouse, beside its sentence; lit in brass while focused. */
-function rowNode(ui: Interface, id: string, control: Control, size: number, width: number): Node {
-  const focused = ui.focused(id);
+/** One row: its keys, then the pad's buttons, each that can be bound a press lit in brass while focused, beside its
+ *  words; the device not in use faint. */
+function rowNode(sheet: SheetNow, control: Row): Node {
+  const { size, width, device } = sheet;
+  const column = (shownFor: Device, share: number, least: number): Node => ({
+    width: Math.max(Math.round(width * share), least * size),
+    gap: 4 * size,
+    wrap: true,
+    alignY: 'center',
+    opacity: shownFor === device ? 1 : 0.5,
+    children: cellsOf(control, shownFor, BINDS.now).map((cell) => cellNode(sheet, control, cell)),
+  });
+  return {
+    width: 'grow',
+    gap: 8 * size,
+    alignY: 'center',
+    padding: [3 * size, 4 * size],
+    children: [
+      column('keys', KEYS_SHARE, 0),
+      // Room for two of the pad's buttons together, whatever the column.
+      column('pad', PAD_SHARE, 68),
+      { width: 'grow', text: { words: doesFor(control, device), size, colour: TONES.wordDim } },
+    ],
+  };
+}
+
+/** One key or button: its keycap, and where it can be bound a press of its own, lit in brass while focused and
+ *  waiting while it waits. */
+function cellNode(sheet: SheetNow, control: Row, cell: Cell): Node {
+  const { ui, size } = sheet;
+  if (!cell.slot) return keycap(cell.name, size);
+  const id = slotId(cell.slot);
+  const waiting = sameSlot(sheet.waiting, cell.slot);
+  const lit = waiting || ui.focused(id);
   return {
     id,
-    focusable: true,
-    label: `${spokenKeys(control.keys)}: ${control.does}`,
-    width: 'grow',
-    gap: 10 * size,
-    alignY: 'center',
-    padding: [4 * size, 6 * size],
-    ...(focused && { fill: 'rgba(192,138,62,0.16)', draw: edged(['', '', '', TONES.brass], [0, 0, 0, 2]) }),
-    children: [
-      {
-        width: Math.min(Math.round((KEYS * (size + 1)) / 2), Math.round(width * 0.36)),
-        gap: 4 * size,
-        wrap: true,
-        alignY: 'center',
-        children: control.keys.split(' / ').map((key) => keycap(key, size)),
-      },
-      { width: 'grow', text: { words: control.does, size, colour: TONES.wordDim } },
-    ],
+    press: true,
+    label: `${doesFor(control, cell.slot.device)}: ${spokenKeys(cell.name)}`,
+    padding: 1,
+    ...(lit && { fill: 'rgba(192,138,62,0.22)', draw: edged(Array<string>(4).fill(TONES.brass), [1, 1, 1, 1]) }),
+    children: [keycap(waiting ? '…' : cell.name, size)],
   };
 }

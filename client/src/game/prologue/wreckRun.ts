@@ -398,8 +398,17 @@ export class WreckRun {
     // The story has no menu, so its keys leave the menu's out.
     const hints = dead
       ? []
-      : footHints(onFoot(walker, shown, fight, !controls.locked && !still)).filter(([key]) => key !== 'M');
-    return { shot, figures, standing: { kind: 'inside' }, marks, swings, fight: fought, hints };
+      : footHints(onFoot(walker, shown, fight, !controls.locked && !still)).filter(([key]) => key !== 'menu');
+    return {
+      shot,
+      figures,
+      standing: { kind: 'inside' },
+      marks,
+      swings,
+      fight: fought,
+      hints,
+      ranged: shown.rangedDrawn,
+    };
   }
 
   /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, the wreck's rim taken from the page's

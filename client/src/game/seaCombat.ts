@@ -20,6 +20,9 @@ import { type ShelteredSwell, swellHeight } from '../water/swell.ts';
 import type { Pose, ShipFloats } from '../rules/landRules.ts';
 import { factionSide } from '../ships/dress.ts';
 import { BOOST_KEY } from '../ships/helmKeys.ts';
+import type { BindId } from '../player/binds.ts';
+import { BINDS, type InputFrame, axis } from '../player/input.ts';
+import { boundWord } from './controls.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import type { MarkView } from '../ships/markView.ts';
@@ -33,7 +36,6 @@ import type { FightHeard } from './audio/ambience/seaFight.ts';
 import type { Shot } from './camera.ts';
 import { type FightReadout, readoutOf } from './seaPanel.ts';
 import type { SeaRoom } from './seaRoom.ts';
-import { gearScreenOpen } from './gearScreen.ts';
 import { worldOutput } from './uiSounds.ts';
 
 /** Seconds the view takes to come down to the fight, or go back up. */
@@ -43,6 +45,32 @@ const PAN_S = 1.5;
 const ORBIT = { distance: 75, pitch: 0.3, lookOverM: 6 } as const;
 /** How fast a drag turns the camera, radians a pixel, and how far up and down it may look. */
 const DRAG_TURN = 0.005;
+/** The right stick leant whole turns the view as a drag of this many pixels a second. */
+const PAD_LOOK_PX = 500;
+/** The fight's controls; and the controls whose keys it passes on, for the menus, the sheet and the sea's asks. */
+export const FIGHT_CONTROLS = [
+  'fightLeft',
+  'fightRight',
+  'sailsUp',
+  'sailsDown',
+  'burst',
+  'brace',
+  'aim',
+  'fire',
+  'holdFire',
+  'shotBack',
+  'shotNext',
+] as const satisfies readonly BindId[];
+const PASSED: readonly BindId[] = ['menu', 'character', 'inventory', 'controls', 'use'];
+/** The controls held as the naval rules hear them held: the helm's keys, the rungs', the brace's and the burst's. */
+const HELD_AS: Partial<Record<BindId, string>> = {
+  fightLeft: 'a',
+  fightRight: 'd',
+  sailsUp: 'w',
+  sailsDown: 's',
+  brace: 'c',
+  burst: BOOST_KEY,
+};
 const PITCH = [0.05, 1.2] as const;
 /** The quiet the wheel keeps before it steps the load again, seconds, as DFO's keeps: a trackpad's stream of
  *  small turns steps it once. */
@@ -172,20 +200,41 @@ export class SeaCombat {
     return { x, y, heading };
   }
 
-  /** A key down or up; answers whether the fight takes it: the helm's (A, D), a rung (W, S), a burst (Shift), the
-   *  brace (C), and every other key but the menu's, so the sea's own (the map, a voyage, the pace) wait for the fight's
-   *  end. */
+  /** A key down or up; answers whether the fight takes it: its own controls (`FIGHT_CONTROLS`), and every other key
+   *  but the menus', the sheet's and Use's, so the sea's own (the map, a voyage, the pace) wait for the fight's end. */
   key(key: string, down: boolean): boolean {
-    // The menu's key, and E for the sea's own asks (to board a captain who struck, to leave its won deck).
-    if (key === 'm' || key === 'e') return false;
-    if (!['a', 'd', 'w', 's', 'c', BOOST_KEY, 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'].includes(key))
-      return true;
-    if (down) {
-      if (!this.held.has(key) && ['w', 's', 'arrowup', 'arrowdown'].includes(key)) this.presses.push(key);
-      if (!this.held.has(key) && key === BOOST_KEY) this.boost = true;
-      this.held.add(key);
-    } else this.held.delete(key);
-    return true;
+    const binds = BINDS.now;
+    const own = FIGHT_CONTROLS.find((id) => binds[id].keys.includes(key));
+    if (own) this.act(own, down);
+    return own !== undefined || !PASSED.some((id) => binds[id].keys.includes(key));
+  }
+
+  /** One of the fight's controls pressed or let go: the helm's and the brace held as the naval rules hear them, a
+   *  rung or a burst on its press; the aim held and fired as it is let go, a fire while aiming, holding fire, and a
+   *  step of the shot. */
+  act(id: BindId, down: boolean): void {
+    const naval = HELD_AS[id];
+    if (naval !== undefined) {
+      if (down && !this.held.has(naval) && (naval === 'w' || naval === 's')) this.presses.push(naval);
+      if (down && !this.held.has(naval) && naval === BOOST_KEY) this.boost = true;
+      if (down) this.held.add(naval);
+      else this.held.delete(naval);
+    } else if (id === 'aim') this.aim(down);
+    else if (id === 'fire' && down && this.aiming) this.aim(false);
+    else if (id === 'holdFire' && down && this.aiming) this.holdFire();
+    else if (down && (id === 'shotBack' || id === 'shotNext')) this.loadSteps += id === 'shotNext' ? 1 : -1;
+  }
+
+  /** The pad's part of a frame, `seconds` long: its controls pressed and let go; the aim held on its trigger, fired
+   *  by the other, and held fire as it is let go unfired; and the right stick turning the view as a drag does. */
+  padFrame(pad: InputFrame, seconds: number): void {
+    for (const id of FIGHT_CONTROLS) {
+      if (id === 'aim' && pad.released(id)) this.holdFire();
+      else if (pad.pressed(id) || pad.released(id)) this.act(id, pad.pressed(id));
+    }
+    const look = PAD_LOOK_PX * seconds;
+    const [right, down] = [axis(pad, 'turnLeft', 'turnRight'), axis(pad, 'lookUp', 'lookDown')];
+    if (right !== 0 || down !== 0) this.drag(right * look, down * look);
   }
 
   /** Lets go of every key the fight holds, as the player goes on foot on a deck and their keys are the foot's. */
@@ -469,7 +518,7 @@ export class SeaCombat {
   /** The fight's readout at `now`: its plate and rose, the card on the nearest captain, E to board one struck
    *  alongside, and its last volley's tally; none once the fight is over. */
   display(now: number): SeaFightModel | null {
-    return this.naval.display(now, { boardable: this.room.mayBoard, boardKey: 'E' });
+    return this.naval.display(now, { boardable: this.room.mayBoard, boardKey: boundWord('use') });
   }
 
   /** The fight's messages standing at `now`, DFO's toasts. */
@@ -481,89 +530,5 @@ export class SeaCombat {
    *  are still afloat. */
   readout(now: number): FightReadout {
     return readoutOf(this.last, this.naval.messages(now));
-  }
-}
-
-/** Hands the keys and the pointer to the fight while one is on, ahead of the sea's own controls: the helm's keys, a
- *  drag to look, the right button to aim and fire, a left click to hold fire, the wheel for the load. */
-export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat | null): void {
-  const taken = (event: Event) => {
-    event.preventDefault();
-    event.stopImmediatePropagation();
-  };
-  // A key let go still reaches the sea's own controls, so none is held there once the fight is over.
-  const key = (down: boolean) => (event: KeyboardEvent) => {
-    // Under the gear screen the fight takes no key pressed, they are the screen's; a key let go is still the fight's,
-    // so nothing it held stays held.
-    if (down && gearScreenOpen()) return;
-    if (!fight()?.key(event.key.toLowerCase(), down)) return;
-    if (down) taken(event);
-    else event.preventDefault();
-  };
-  addEventListener('keydown', key(true), { capture: true });
-  addEventListener('keyup', key(false), { capture: true });
-  let held = false;
-  canvas.addEventListener(
-    'pointerdown',
-    (event) => {
-      const combat = fight();
-      if (!combat) return;
-      taken(event);
-      holdPointer(canvas, event.pointerId);
-      if (event.button === 2) combat.aim(true);
-      else if (combat.aimingNow) combat.holdFire();
-      held = true;
-    },
-    { capture: true },
-  );
-  canvas.addEventListener(
-    'pointermove',
-    (event) => {
-      const combat = fight();
-      if (!combat) return;
-      taken(event);
-      if (held) combat.drag(event.movementX, event.movementY);
-    },
-    { capture: true },
-  );
-  canvas.addEventListener(
-    'pointerup',
-    (event) => {
-      const combat = fight();
-      held = false;
-      if (!combat) return;
-      taken(event);
-      if (event.button === 2) combat.aim(false);
-    },
-    { capture: true },
-  );
-  // A pointer let go without its button coming up on the canvas lets the aim go unfired.
-  canvas.addEventListener('lostpointercapture', () => {
-    held = false;
-    const combat = fight();
-    if (combat?.aimingNow) combat.holdFire();
-  });
-  canvas.addEventListener(
-    'wheel',
-    (event) => {
-      const combat = fight();
-      if (!combat) return;
-      taken(event);
-      combat.wheel(event.deltaY, event.timeStamp / 1000);
-    },
-    { capture: true, passive: false },
-  );
-  canvas.addEventListener('contextmenu', (event) => {
-    if (fight()) event.preventDefault();
-  });
-}
-
-/** Holds the pointer to the canvas, so its button let go off the canvas still comes up there. A locked pointer is
- *  held already, and the browser refuses to capture it. */
-export function holdPointer(canvas: HTMLCanvasElement, pointerId: number): void {
-  try {
-    canvas.setPointerCapture(pointerId);
-  } catch {
-    // A locked pointer, or one the browser no longer has: nothing to hold.
   }
 }

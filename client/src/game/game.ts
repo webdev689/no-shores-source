@@ -37,10 +37,11 @@ import { type Playing, startFrames } from './gameFrame.ts';
 import { type Landmass, openLandmass } from './landmass.ts';
 import { arrivalFacing, bearingTo } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
+import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { nodeOfRoom, seaRoomName } from './rooms.ts';
 import { Sea } from './sea.ts';
-import { SeaWord, deckKey, fightAsk } from './seaWord.ts';
+import { SeaWord } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
 import { shipPanelOnceBuilt } from './shipPanel.ts';
 import { landfallWords, offshore } from './seaLaw.ts';
@@ -502,34 +503,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     'keyup',
     (event) => void (playing.flow.mode === 'story' && story?.key(event.key.toLowerCase(), false)),
   );
-  addEventListener('keydown', (event) => {
-    const key = event.key.toLowerCase();
-    if (event.repeat || ui.typing) return;
-    if (playing.flow.mode === 'story') return void story?.key(key, true);
-    if (playing.helmMap.key(key)) return;
-    if (deckKey(key, playing.flow.mode === 'sea' && !playing.flow.menu ? playing.sea : null, respawn)) return;
-    if (key === 'enter' && retry) retry();
-    else if (key === 'm') change({ kind: 'menu' });
-    else if (key === 'escape' && playing.flow.mode === 'landing') {
-      playing.sea?.view.backToSea();
-      change({ kind: 'back' });
-    } else if (key === 'escape') change({ kind: 'back' });
-    else if (key === 'enter' && playing.flow.mode === 'sea' && !playing.flow.menu && playing.sea?.chaseChosen()) return;
-    else if (key === 'l' || (key === 'enter' && playing.flow.mode === 'sea' && !playing.flow.menu)) goAshore();
-    else if (key === ' ' && playing.flow.mode === 'sea') stopOrResume();
-    else if (key === 'n') openMap();
-    else if (key === 'b') manage();
-    else if (key === 'h') leaveHelm();
-    else if (key === 'r' && playing.flow.mode === 'sea' && playing.sea?.aboard.active)
-      playing.sea.sighted?.ask('repair');
-    else if (key === 'e' && playing.flow.mode === 'sea' && playing.sea?.fight && fightAsk(playing.sea) === 'board')
-      input.lock();
-    else if (key === 'e' && playing.sea?.aboard.walking) takeHelm();
-    else if (key === 'e' && playing.flow.mode === 'foot' && !playing.flow.menu && playing.through) goThrough();
-    else if (key === 'e' && playing.flow.mode === 'foot') playing.foot?.use();
-    else if (key === 'enter' && playing.flow.mode === 'landing' && playing.flow.chosen) landAt(playing.flow.chosen);
-    else if (key === 'enter' && playing.flow.mode === 'foot') respawn();
-    else if ((key === '[' || key === ']') && playing.flow.mode === 'sea') playing.sea?.stepPace(key === ']' ? 1 : -1);
+  listenForControls({
+    ...{ playing, input, ui, hud, story, retry: () => retry, change, respawn, goAshore, stopOrResume, openMap },
+    ...{ manage, leaveHelm, takeHelm, goThrough, landAt },
   });
   canvas.addEventListener('click', () => {
     // A click on what the game draws of its interface is the interface's, not a look round; while the menu is open

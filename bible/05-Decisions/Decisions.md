@@ -218,6 +218,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue's Camera Flights Stand Clear and Go Slower]]
 - [[Three Healing Charges, Refilled by Blows and Kills]]
 - [[The Key Strip Follows the Moment, and K Opens Every Control]]
+- [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

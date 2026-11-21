@@ -100,3 +100,39 @@ test("a hidden field's words are never handed to the browser's typing; its keys 
   );
   done();
 });
+
+test('the pad walks a window: its cross or left stick move the focus and repeat, A presses, B backs out, the bumpers turn once', () => {
+  const page = globalThis as unknown as Record<string, unknown>;
+  Object.assign(page, { addEventListener: () => undefined, document: { pointerLockElement: null } });
+  const held = { buttons: new Set<number>(), axes: [0, 0, 0, 0] };
+  const pad = () => ({
+    mapping: 'standard',
+    buttons: Array.from({ length: 17 }, (unused, place) => ({ pressed: held.buttons.has(place), value: 0 })),
+    axes: held.axes,
+  });
+  Object.defineProperty(navigator, 'getGamepads', { value: () => [pad()], configurable: true });
+  const now = performance.now;
+  let clock = 0;
+  performance.now = () => clock;
+  const events = new CanvasEvents({ tabIndex: 0, addEventListener: () => undefined } as unknown as HTMLCanvasElement);
+  const take = (seconds = 1 / 60) => {
+    clock += seconds * 1000;
+    return events.take().map((event) => (event.kind === 'pad' ? event.button : event.kind));
+  };
+  held.buttons = new Set([13]);
+  assert.deepEqual(take(), ['down']);
+  assert.deepEqual(take(0.3), [], 'a moment before it repeats');
+  assert.deepEqual(take(0.3), ['down'], 'then it repeats');
+  held.buttons = new Set();
+  held.axes = [0, -0.9, 0, 0];
+  assert.deepEqual(take(), ['up'], 'the left stick leant up');
+  held.axes = [0, 0, 0, 0];
+  held.buttons = new Set([0, 4]);
+  assert.deepEqual(take(), ['accept', 'previous']);
+  assert.deepEqual(take(1), [], 'neither repeats however long it is held');
+  held.buttons = new Set([1, 5]);
+  assert.deepEqual(take(), ['back', 'next']);
+  performance.now = now;
+  delete page['addEventListener'];
+  delete page['document'];
+});

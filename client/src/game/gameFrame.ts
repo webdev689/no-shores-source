@@ -4,7 +4,7 @@
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
-import type { Action, Input, InputFrame } from '../player/input.ts';
+import { type Input, type InputFrame, axis } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
@@ -149,6 +149,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
     const shown = here.frame(controls, seconds, clock, { paused, hands: controls.locked, aspect });
+    input.ranged = shown.ranged;
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk);
@@ -199,20 +200,23 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
 
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const { flow, helmMap } = playing;
-    const held = (action: Action) => (controls.held(action) ? 1 : 0);
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
-    // The helm's keys, as in a fight, while the sea's own view is up: the map's and the deck's keys are their own.
-    if (!paused && !helmMap.shown)
-      here.helm(held('right') - held('left'), controls.pressed('forward'), controls.pressed('back'), seconds);
+    // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
+    if (!paused && !helmMap.shown) {
+      const steer = axis(controls, 'steerLeft', 'steerRight');
+      here.helm(steer, controls.pressed('sailOn'), controls.pressed('heaveTo'), seconds);
+    }
+    // The fight's keys and pointer are heard as they come (`fightControls`); its pad, each frame.
+    if (!paused && !here.boarding.onDeck) here.fight?.padFrame(input.padAlone, seconds);
     const shown = here.frame({
       seconds,
       time: clock,
       viewport,
-      turn: held('turnRight') - held('turnLeft'),
-      tilt: held('lookDown') - held('lookUp'),
+      turn: axis(controls, 'turnLeft', 'turnRight'),
+      tilt: axis(controls, 'lookUp', 'lookDown'),
       swell,
       controls,
       paused,
@@ -286,6 +290,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     seconds: number,
     size: { width: number; height: number },
   ) => {
+    host.padFrame(input.padAlone, seconds);
     const left = host.frame(controls, seconds, size);
     if (!left) return;
     playing.after.storyEnded(left.epilogue);
@@ -303,8 +308,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const tookWheel = ui.hear(seconds, !input.locked, menuUp || gearTakesKeys() || creationOpen());
+    const windowUp = menuUp || gearTakesKeys() || creationOpen();
+    // The sheet takes the keys and the pad but while it waits for one to bind.
+    const tookWheel = ui.hear(seconds, !input.locked, windowUp || hud.controls.takesKeys);
+    const top = hud.controls.open ? 'sheet' : gearTakesKeys() ? 'gear' : creationOpen() ? 'creation' : menuUp && 'menu';
+    input.window(top || null);
     const heard = input.frame();
+    hud.controls.frame(seconds, input.padButtons);
     // The wheel turned over the interface scrolls it, not the camera.
     const controls = tookWheel ? { ...heard, wheel: 0 } : heard;
     const size = { width: canvas.width, height: canvas.height };

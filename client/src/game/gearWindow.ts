@@ -4,6 +4,7 @@ import { RARITIES, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
+import { BINDS, keyNameOf } from '../player/input.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
@@ -217,7 +218,11 @@ export function startGearWindow(
     // The room's word has come, so no ask of the Art's screen waits any more.
     if (gear && gear !== bannerGear) artPending = null;
     bannerGear = gear ?? bannerGear;
-    // Tabs, their arrows, and the presses of the frame.
+    // Tabs, their arrows, the pad's bumpers, and the presses of the frame.
+    if (frame.turned !== 0 && isTab(shown)) {
+      const next = TABS[(TABS.indexOf(shown) + frame.turned + TABS.length) % TABS.length];
+      if (next) open(next);
+    }
     for (const tab of TABS) {
       const id = tabId(tab);
       if (frame.clicked(id) && view !== tab) open(tab);
@@ -440,22 +445,23 @@ export function startGearWindow(
 
   addEventListener(OPEN_AT, (event) => {
     if (resting()) return;
-    const { view: wanted, shelf: onShelf } = (event as CustomEvent<Opening>).detail;
-    if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
+    const { view: wanted, shelf: onShelf, toggle } = (event as CustomEvent<Opening>).detail;
+    if (view !== wanted || onShelf !== undefined || toggle) open(wanted, onShelf);
   });
   addEventListener(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
+      const bound = (id: 'character' | 'inventory' | 'details') => BINDS.now[id].keys.includes(keyNameOf(event));
       // A drawn field typed in anywhere keeps its letters.
       const typing = Boolean(ui?.typing);
-      const opens = !typing && !resting() && (key === 'i' || key === 'o');
+      const opens = !typing && !resting() && (bound('character') || bound('inventory'));
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.
       if (view !== null) event.stopPropagation();
       // Escape steps back as the drawn menu hears it (`escaped`), as the pad's B does.
       if (key === 'escape') event.preventDefault();
-      else if (key === 'x' && !typing) {
+      else if (bound('details') && !typing) {
         // X shows the focused piece's details, as a right press does.
         const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
         if (!shown) return;
@@ -464,7 +470,7 @@ export function startGearWindow(
         [returnTo, focusNext] = [ui?.focusedId ?? null, ITEM_NAME];
       } else if (opens && !event.repeat) {
         event.preventDefault();
-        open(key === 'i' ? 'character' : 'inventory');
+        open(bound('character') ? 'character' : 'inventory');
       } else if (key === 'tab') {
         // Tab walks the drawn menu, which has heard it, and never the page's elements behind it.
         event.preventDefault();

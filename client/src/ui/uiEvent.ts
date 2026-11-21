@@ -5,7 +5,8 @@ import type { Box } from './quads.ts';
 
 /** One happening the interface hears: the pointer moved, left, pressed or let go a button (with Shift held, to grow a
  *  field's selection), or turned the wheel (the page's CSS pixels on the canvas); a key; words typed or pasted; the
- *  browser's typing replacing words (`EditContext`, its key already done when `typed`); or a pad's button. */
+ *  browser's typing replacing words (`EditContext`, its key already done when `typed`); or a pad's button (its
+ *  bumpers turn a window's tabs). */
 export type UiEvent =
   | { readonly kind: 'pointer'; readonly x: number; readonly y: number }
   | { readonly kind: 'leave' }
@@ -35,7 +36,10 @@ export type UiEvent =
       readonly caret: number;
       readonly anchor: number;
     }
-  | { readonly kind: 'pad'; readonly button: 'up' | 'down' | 'left' | 'right' | 'accept' | 'back' };
+  | {
+      readonly kind: 'pad';
+      readonly button: 'up' | 'down' | 'left' | 'right' | 'accept' | 'back' | 'previous' | 'next';
+    };
 
 /** The field being typed in, for the page's typing: its words, caret and selection, and its box in the page's CSS
  *  pixels. */

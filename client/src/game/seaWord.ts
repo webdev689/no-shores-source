@@ -26,13 +26,18 @@ export function fightAsk(sea: {
   return ask;
 }
 
-/** A key pressed on a struck ship's deck: E asks the sea (to leave the won deck), Enter respawns, and the menu's keys are the
- *  game's; every other is the fight's on foot, so the sea's own (a voyage, the pace, the map) wait. Answers whether
- *  it was taken here. */
-export function deckKey(key: string, sea: Parameters<typeof fightAsk>[0] | null, respawn: () => void): boolean {
-  if (!sea?.boarding.onDeck || key === 'm' || key === 'escape') return false;
-  if (key === 'e') fightAsk(sea);
-  else if (key === 'enter') respawn();
+/** A control pressed on a struck ship's deck (`pressed` says which; `escape` for Escape): Use asks the sea (to leave the
+ *  won deck), Respawn respawns, and the menu and Escape are the game's; every other is the fight's on foot, so the
+ *  sea's own (a voyage, the pace, the map) wait. Answers whether it was taken here. */
+export function deckKey(
+  pressed: (id: 'use' | 'respawn' | 'menu') => boolean,
+  escape: boolean,
+  sea: Parameters<typeof fightAsk>[0] | null,
+  respawn: () => void,
+): boolean {
+  if (!sea?.boarding.onDeck || pressed('menu') || escape) return false;
+  if (pressed('use')) fightAsk(sea);
+  else if (pressed('respawn')) respawn();
   return true;
 }
 

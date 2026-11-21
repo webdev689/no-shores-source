@@ -41,8 +41,7 @@ import { FallWatch } from './fallWatch.ts';
 import { type Use, groundRings, useAt } from './footGear.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
-import type { Hint } from './gearNodes.ts';
-import { keysShown, onFoot } from './hints.ts';
+import { type StripHint, keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
@@ -99,7 +98,8 @@ export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
- *  of its blows, in world metres; and what its display shows), and the keys listed. */
+ *  of its blows, in world metres; and what its display shows), the keys listed, and whether a ranged weapon is drawn
+ *  (which turns the pad's triggers round). */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
@@ -107,7 +107,8 @@ export interface FootFrame {
   readonly marks: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
-  readonly hints: readonly Hint[];
+  readonly hints: readonly StripHint[];
+  readonly ranged: boolean;
 }
 
 /**
@@ -505,7 +506,7 @@ export class Foot {
     };
     const edge = this.standing;
     const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
+    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, ranged: shown.rangedDrawn };
   }
 
   /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where

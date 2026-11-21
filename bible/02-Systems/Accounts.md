@@ -22,6 +22,9 @@ code:
   - server/accounts/people.ts#PERSON
   - server/keeping.ts#Keeper
   - client/src/network/accounts.ts#AccountLink
+  - server/accounts/binds.ts#bindsAsk
+  - server/accounts/migrations/20261121180000_binds.sql
+  - client/src/game/bindsKept.ts#keepBinds
   - crates/gear/src/character.rs#from_json
 ---
 # Accounts
@@ -142,6 +145,23 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
   and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
+
+## Binds
+
+The controls a player binds are kept with their account, so they follow them to any browser
+([[Every Control Can Be Rebound, and the Pad Plays as Destiny's]], [[Interface]], "Binding a control"). The `binds`
+table holds one row an account: what differs from the game's defaults, as JSON, and when it was saved.
+
+- **`GET /v1/binds`** answers the signed-in player's binds, or null where none are kept; a guest is an account, so a
+  guest's are kept too.
+- **`PUT /v1/binds`** keeps what is sent as `binds`, in place of what was kept, once it passes the game's own table of
+  controls (`readOverrides`, which the Worker imports from the page's code): known controls only, each with only its
+  keys and its pad buttons, each a list of at most three different names the game knows (a key, a mouse button, a pad
+  button, a button held or two together; a stick's ways only where the control is on them). A body past 8 KB, or
+  anything else, is refused and nothing changes. 120 reads and saves an hour an account.
+- **The page** reads them once the account is known and binds them, and reads again when another account signs in
+  (that account's, or the defaults where it kept none); each change is sent a moment and a half after the last
+  (`keepBinds`). Where the accounts do not answer, the game plays on with what it has, the defaults at first.
 
 ## Running it here
 

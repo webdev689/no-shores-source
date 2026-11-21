@@ -47,6 +47,11 @@ code:
   - client/src/game/hints.ts#keysShown
   - client/src/game/controls.ts#CONTROL_GROUPS
   - client/src/game/controlsSheet.ts#ControlsSheet
+  - client/src/game/rebinding.ts#Rebinding
+  - client/src/game/padIcons.ts#padIconNode
+  - client/src/game/gameKeys.ts#listenForControls
+  - client/src/player/binds.ts#rebind
+  - client/src/player/pad.ts#PadReader
   - client/src/game/compassNode.ts#compassNode
   - client/src/game/shipPlates.ts#shipPlateNodes
   - client/src/game/usePrompt.ts#UsePrompt
@@ -496,36 +501,69 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   notices; in the prologue's fight they are toasts.
 - **Toasts** are chips at 22 px, the newest three, each standing as long as what it tells holds (a DFO message its
   3.5 s), rising in over 0.2 s; one already shown keeps its place.
-- **The key strip** shows only the keys of what the player is doing now (`hints.ts`), in plain verbs, each beside
-  its words, 8 px apart, wrapping right to left, and always last K, All controls. A key stands on its keycap; an
-  arrow key is drawn on its cap; a mouse button is drawn as a small pixel mouse with that button lit in brass, the
-  wheel, a side button or a drag (the mouse with a two-headed arrow) likewise, each texel a pixel larger than the
-  words' step and edged dark to read over the world (`keyIcons.ts`). On foot: with the weapon put away, Z to draw it,
-  Shift, Space, C and the menu; a melee weapon drawn, the swing, the guard or parry, the dodge, the drink and the
-  Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink and the Melee loadout; aiming, the fire and
-  letting go; Dusk Daggers aimed, only letting go of Q; riding, getting down, the gallop and the menu; the Arts'
-  R, Q and G while one is worn and the hands are free to cast; the click that takes the mouse to look round first
-  while the mouse is free; dead, Enter to respawn once death is told, and nothing while the fall plays out. The
-  prompt for E says what E does, so the strip leaves it out. At sea: sailing, the click to sail there, the helm's
-  keys and the menu (the sea bar names its own keys); in Manage, the drag, the wheel and B back; on the deck, Shift,
-  Space and E to take the helm; at the map and choosing a landing, their clicks, Enter and Escape; in a fight, the
-  helm, the sails, the burst, the aim and the brace, and while aiming, letting go to fire, holding fire, the shot and
-  the drag. Eight entries at most ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the
-  strip stands at twice its size and wraps 960 px short of the view's width, so it never runs over the weapons; a
-  view under 720 px wide gives it 240 px, room for its widest entry.
-- **The sheet of every control** (`ControlsSheet`) opens with K wherever the key strip shows, except over the menu's
-  gear screen, and K, Escape or its Close press shuts it. It is a window of the kit over a dimmed view, over every
-  layer the game draws but the screen's keyboard: ALL CONTROLS on its header band, then its groups, Move, Fight,
-  Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name in faint capitals over a rule and its
-  controls under it: the keys drawn as the strip draws them beside a few words on what they do. A control on one of
-  the player's bindings shows that binding's own keys, so the sheet always says what the game hears. The groups
-  stand in as many 400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each
-  column near an even share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls
-  inside a window kept 16 px from the view's edges. Opening it lets the mouse go and moves the focus to its first
-  control; Tab and the arrows move among the controls, the focused one lit in brass, and a screen reader hears "All
-  controls", then each control's keys and sentence as it takes focus. While it is open no key reaches the game (a
-  key let go still does, so none stays held) and its scrim takes the pointer, so nothing behind it is clicked; the
-  world goes on, as under the menu.
+- **The key strip** shows only the controls of what the player is doing now (`hints.ts`), in plain verbs, each its
+  first key or button as bound now (the sheet has the rest) beside its words, 8 px apart, wrapping right to left, and
+  always last All controls. A key stands on its keycap; an arrow key is drawn on its cap; a mouse button is drawn as a
+  small pixel mouse with that button lit in brass, the wheel, a side button or a drag (the mouse with a two-headed
+  arrow) likewise, each texel a pixel larger than the words' step and edged dark to read over the world
+  (`keyIcons.ts`). While the pad was the last thing played, the strip shows the pad's buttons drawn instead
+  (`padIcons.ts`), a stick's ways as the stick with those ways lit, and the pad's own words where they differ (a ranged
+  weapon's RT fires, LT aims); a mouse's gesture the pad has no way for is left out, a drag is the right stick, Escape
+  is B. On foot: with the weapon put away, draw, run, jump, crouch and the menu; a melee weapon drawn, the swing, the
+  guard or parry, the dodge, the drink and the Ranged loadout; a ranged one, the aim, the fire, the dodge, the drink
+  and the Melee loadout; aiming, the fire and letting go; Dusk Daggers aimed, only letting go of the first Tenet;
+  riding, getting down, the gallop and the menu; the Arts' three while one is worn and the hands are free to cast; the
+  click that takes the mouse to look round first while the mouse is free; dead, Respawn once death is told, and nothing
+  while the fall plays out. The prompt for Use says what it does, with Use's key or button, so the strip leaves it
+  out. At sea: sailing, the click to sail there, the helm's controls and the menu (the sea bar names its own keys); in
+  Manage, the drag, the wheel and Manage's key back; on the deck, run, jump and Use to take the helm; at the map and
+  choosing a landing, their clicks, Set sail and Escape; in a fight, the helm, the sails, the burst, the aim and the
+  brace, and while aiming, letting go to fire (the pad's RT), holding fire, the shot and the drag. Eight entries at
+  most ([[The Key Strip Follows the Moment, and K Opens Every Control]]). Past 1440p the strip stands at twice its size
+  and wraps 960 px short of the view's width, so it never runs over the weapons; a view under 720 px wide gives it
+  240 px, room for its widest entry.
+- **The sheet of every control** (`ControlsSheet`) opens with its key (K, or the pad's View) wherever the key strip
+  shows, except over the menu's gear screen, and its key, Escape, the pad's B or its Close press shuts it. It is a
+  window of the kit over a dimmed view, over every layer the game draws but the screen's keyboard: ALL CONTROLS on its
+  header band, then its groups, Move, Fight, Arts, Camera, Menus, Sea and Sea fight (`CONTROL_GROUPS`), each its name
+  in faint capitals over a rule and its rows under it: the keys, then the pad's buttons, drawn as the strip draws them,
+  beside a few words on what the row does; a footer band holds a line of a few words and Reset to defaults. Every key
+  and button shown is as bound now, so the sheet always says what the game hears; the side the player used last stands
+  bright and the other faint, and the words are that side's ("Swing; fire" on the pad). The groups stand in as many
+  400 px columns as the view holds (two at 1280 by 720, one on a phone), in their order, each column near an even
+  share of the rows; the words take their larger step at 1500 by 900 and up. The list scrolls inside a window kept
+  16 px from the view's edges. Opening it lets the mouse go and moves the focus to the first key; Tab, the arrows and
+  the pad move among the keys, the focused one lit in brass, and a screen reader hears "All controls", then each key
+  with its row's words as it takes focus. While it is open no key reaches the game (a key let go still does, so none
+  stays held) and its scrim takes the pointer, so nothing behind it is clicked; the world goes on, as under the menu.
+- **Binding a control** (`rebinding.ts`): a key chosen in the sheet (a click, Enter or the pad's A) is lit and waits;
+  on a key's side the next key or mouse button binds it, on the pad's the next button, held past 0.3 s for its hold,
+  or with another for the two together. Escape cancels, as does six seconds with nothing pressed. A key another control
+  acts with in the same place (on foot, dead, in a window, at the helm or in a sea fight; `binds.ts`) is swapped
+  between the two, and the footer says "Swapped with" that control; where the other would be left with nothing, the
+  binding is refused and the footer says that control "needs it". Reset to defaults binds every control as it came. A
+  mouse's gesture (the click to look or to sail there, a drag, the wheel), Tab, Escape, the arrows on the menu's tabs,
+  the pad's sticks and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are written, not
+  bound. What the player binds is kept with their account ([[Accounts]], "Binds").
+- **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the
+  standard mapping: a stick at rest inside a 0.2 lean is still, and leant past it moves as far as it leans (the walk,
+  the helm, the look); a trigger is pressed past 0.3; a stick's way counts as pressed past half its lean. Its layout is
+  Destiny's as the owner chose it ([[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]): on foot the left
+  stick moves and its click runs until the stick comes to rest, the right stick turns and looks, RT swings and LT
+  guards or parries (a ranged weapon drawn, RT fires and LT aims), A jumps, B tapped dodges and held crouches, X uses,
+  Y draws or sheathes, LB and RB cast the Tenets and both together the Anima, the cross's left and right draw the
+  loadouts, its down drinks and its up mounts, the right stick's click changes the view, Start opens the menu at
+  Character, View the sheet and View held the game's menu; dead, A respawns. At the helm the left stick steers, sails on
+  and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed, its up
+  opens the map and its down repairs, Y manages the ship, B leaves the helm, and at the map or a landing B steps back.
+  In a sea fight the left stick steers and sets the sails, its click bursts, LT aims, RT fires, LT let go unfired holds
+  fire, the cross's left and right change the shot, B braces, X boards, and the right stick turns the view. A button
+  with a hold bound waits to be told a tap from a hold, and one of two bound together waits 0.12 s for the other, so
+  one press never does both. In a window (the menu, the game's menu, the sheet, the story's creation) the pad's
+  buttons are the window's: the cross or the left stick moves the focus, A presses, B steps back, LB and RB turn the
+  menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press that changed it
+  acts on nothing more. The story's tap to start takes any of the pad's buttons, and A takes the stranger's hand.
+
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
   the sea stands on its footer. It is built again only when what it
   shows changes.
@@ -916,7 +954,8 @@ button's corner and screen, and the Tailor's wares.
   the focused one's outlines are drawn diamonds round their emblems. A fragment not owned and a ware not had stand
   dimmed and tinted grey, not wholly grey. Within the Core's open flyout the arrows reach the screen's other tiles
   too, as they move to the nearest that way anywhere on a drawn page; Escape still closes the flyout first.
-- No gamepad or touch layer yet, and so none of DFO's narrow-screen places for the compass.
+- No touch layer yet, and so none of DFO's narrow-screen places for the compass. The pad has no way to the menu's
+  Details or a hold to dismantle, nor to a press the pointer alone reaches (the sea's marks, the map's places).
 - At sea the sea bar stays at the screen's foot. DFO stands its helm bar under the compass and the target's card
   under that bar, measured each frame; here a Boss ship's plate is drawn at a set place under the compass, where the
   bar would stand, and at 960 px the bar is as wide as the screen between the place's name and its right edge.

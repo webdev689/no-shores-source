@@ -1,7 +1,7 @@
 import type { Orbit } from '../editor/orbit.ts';
 import type { Block, Body, MovementRules } from '../rules/movementRules.ts';
 import { MELEE, RANGED_SLOT } from './gear.ts';
-import type { InputFrame } from './input.ts';
+import { type InputFrame, axis } from './input.ts';
 import { RUNNING } from './others.ts';
 import {
   AIM,
@@ -74,11 +74,11 @@ export function newPlayer(movement: MovementRules, x: number, y: number): Player
 }
 
 /**
- * One frame of the player with DFO's controls: the mouse (with the pointer locked) and the arrow and look keys turn
- * the view; W A S D move, Shift runs, Space jumps, C crouches; Z readies or puts away the weapon, and a right click
- * readies it too; 1 draws the Melee loadout and 2 the Ranged; R casts the Art's Anima, Q and G its Tenets; comma
- * mounts or dismounts; the wheel and Mouse4 move between first and third person. A cast plays once the fight takes
- * one (`Walker.beginCast`). The body moves in whole ticks of the movement rules; the view turns every frame.
+ * One frame of the player with their controls: the mouse (with the pointer locked) and the turn and look controls
+ * turn the view; the move controls move, as far as a stick leans; run, jump, crouch; ready readies or puts away the
+ * weapon, as a swing readies it; the loadouts draw theirs; mount mounts or dismounts; the wheel and perspective move
+ * between first and third person. A cast plays once the fight takes one (`Walker.beginCast`). The body moves in
+ * whole ticks of the movement rules; the view turns every frame.
  * `swinging` says a swing is under way, which turns the figure to the view; `toward` is the bearing to the soft lock's
  * target, which a figure on foot faces however it walks; `aiming` says a ranged weapon is held up to aim, which eases
  * the camera into aiming's view.
@@ -92,8 +92,8 @@ export function updatePlayer(
   toward: number | null = null,
   aiming = false,
 ): Player {
-  const turn = (input.held('turnRight') ? 1 : 0) - (input.held('turnLeft') ? 1 : 0);
-  const look = (input.held('lookDown') ? 1 : 0) - (input.held('lookUp') ? 1 : 0);
+  const turn = axis(input, 'turnLeft', 'turnRight');
+  const look = axis(input, 'lookUp', 'lookDown');
   const yaw = player.yaw + input.lookX * MOUSE_TURN + turn * KEY_TURN * seconds;
   const pitch = Math.max(
     -PITCH_LIMIT,
@@ -114,8 +114,9 @@ export function updatePlayer(
   let act = player.act ? { ...player.act, elapsed: player.act.elapsed + seconds } : null;
   if (act && act.elapsed >= act.seconds) act = null;
 
-  const forward = (input.held('forward') ? 1 : 0) - (input.held('back') ? 1 : 0);
-  const sideways = (input.held('right') ? 1 : 0) - (input.held('left') ? 1 : 0);
+  // A stick leant part of the way walks part of the pace.
+  const forward = axis(input, 'back', 'forward');
+  const sideways = axis(input, 'left', 'right');
   let queued = {
     jump: player.queued.jump || input.pressed('jump'),
     crouch: player.queued.crouch || input.pressed('crouch'),

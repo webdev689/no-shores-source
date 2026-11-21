@@ -83,6 +83,8 @@ export class Interface {
   readonly store = new Map<string, unknown>();
   private readonly submits = new Set<string>();
   private escape = false;
+  /** The pad's bumpers this frame: -1 the left, 1 the right, turning a window's tabs. */
+  private turn = 0;
   private reach = false;
   private wheel = false;
   private readonly scrolls = new Map<string, number>();
@@ -127,6 +129,7 @@ export class Interface {
     this.downs.length = 0;
     this.submits.clear();
     [this.escape, this.wheel, this.keyMoved] = [false, false, false];
+    this.turn = 0;
     const before = this.hover;
     this.reach = false;
     for (const event of events) {
@@ -223,6 +226,11 @@ export class Interface {
   /** Whether Escape or the pad's B was pressed this frame, with no field to take it. */
   get escaped(): boolean {
     return this.escape;
+  }
+
+  /** Whether the pad's bumpers turned a window's tabs this frame: -1 back, 1 on, 0 neither. */
+  get turned(): number {
+    return this.turn;
   }
 
   /** Seconds `id` has been laid without a break; 0 for one new this frame. */
@@ -408,7 +416,8 @@ export class Interface {
         return;
       case 'pad':
         this.way = 'pad';
-        if (this.screen) this.padOnKeys(event.button);
+        if (event.button === 'previous' || event.button === 'next') this.turn = event.button === 'next' ? 1 : -1;
+        else if (this.screen) this.padOnKeys(event.button);
         // A on a field opens the keys again, once B has put them away.
         else if (event.button === 'accept' && this.current?.node.field) this.opening = this.focus;
         else if (event.button === 'accept') this.key('enter', false, false, false);

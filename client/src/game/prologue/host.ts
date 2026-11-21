@@ -65,6 +65,16 @@ export class StoryHost {
     this.story?.prologue.key(key, down);
   }
 
+  /** The pad's part of a frame, for the story's sea fight while one is on. */
+  padFrame(pad: InputFrame, seconds: number): void {
+    this.story?.prologue.fight?.padFrame(pad, seconds);
+  }
+
+  /** A tap or click, as the pad's A is one: the title's beginning, or the stranger's hand taken. */
+  press(): void {
+    this.story?.prologue.press();
+  }
+
   /** Whether a click should lock the pointer for the story's play on foot. */
   get wantsPointer(): boolean {
     return this.story?.prologue.wantsPointer ?? false;
