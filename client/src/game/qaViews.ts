@@ -34,8 +34,8 @@ export interface QaHost {
 }
 
 /** Puts `__qaView(view)`, `__qaLook(view)` and `__qaWhere()` on `target` for the picture driver, when the page plays
- *  alone (`offline`) and asks for a spawn. A view arrives again in the same node with its point as the spawn, as `&spawn=` does, then
- *  sets the camera; it answers whether it did. */
+ *  alone (`offline`) and asks for a spawn. A view arrives again in the same node with its point as the spawn, as
+ *  `&spawn=` does, then sets the camera; it answers whether it did. */
 export function installQaViews(target: object, search: string, offline: boolean, host: QaHost): void {
   if (!offline || !new URLSearchParams(search).has('spawn')) return;
   const hook = target as { __qaView?: (view: QaView) => Promise<boolean>; __qaWhere?: () => object };
