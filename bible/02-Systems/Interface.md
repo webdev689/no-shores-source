@@ -90,7 +90,7 @@ code:
   - content/story/keepers.json
   - client/src/game/gearDom.ts#itemMarks
   - client/src/game/gearDom.ts#nodeRing
-  - client/src/game/elementGlyphs.ts#elementSvg
+  - client/src/player/elementGlyphs.ts#elementSvg
   - client/src/face.css
   - client/src/face.ts#useMendedFace
   - client/src/trueType.ts#trueType

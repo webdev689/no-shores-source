@@ -5,7 +5,7 @@
 // flashes the weapon and one put away dims. The pictures are the forge's, as the gear screens draw them.
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Dress } from '../player/dressing.ts';
-import { elementSvg } from '../game/elementGlyphs.ts';
+import { elementSvg } from '../player/elementGlyphs.ts';
 import { ELEMENTS, itemName, KINDS, kindName, MELEE, RANGED_SLOT, RARITIES, worn } from '../player/gear.ts';
 import type { ItemPictures } from '../player/itemPictures.ts';
 import type { Picture } from '../player/picture.ts';

@@ -279,9 +279,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 ## Waiting on the owner
 
 - **Three pull requests for the owner's yes, each tested offline with the full check, none seen on a real GPU:**
-  #115, aiming faces straight ahead ([[Aiming, the Figure Faces Straight Ahead]]; the scripted fight's and both
+  #115, aiming faces straight ahead (its decision on its branch; the scripted fight's and both
   garrison runs' fingerprints move by one bearing's last bit); #116, the crosshair's shapes, reload ring, hit marks
-  and melee reach ([[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]); and the weapons
+  and melee reach (its decision on its branch); and the weapons
   forged large with their element glyphs ([[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]), whose
   99 pictures the forge workflow already published to R2 from its branch, with SciPy added to that workflow's pinned
   packages for the figure's dye greys (the owner's to approve, as it runs where the Cloudflare token does). The

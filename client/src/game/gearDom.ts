@@ -9,7 +9,7 @@ import type { Picture } from '../player/picture.ts';
 import { ROLES, type Role } from '../plus/kit.ts';
 import type { Card, Glyph, Trait } from './gearCards.ts';
 import { glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
-import { elementSvg } from './elementGlyphs.ts';
+import { elementSvg } from '../player/elementGlyphs.ts';
 import { diagonalFit, drawnBounds, fitIcon, shrunkCanvas } from '../player/iconFit.ts';
 import { charge, play } from './uiSounds.ts';
 
