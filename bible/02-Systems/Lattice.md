@@ -1,6 +1,6 @@
 ---
 type: system
-status: planned
+status: live
 code:
   - tools/lattice/render.py#foe_layers
   - tools/lattice/growth.py#grow
@@ -111,6 +111,8 @@ workflow renders every move of every foe and the wave this way, a job a move, an
 - **The death wave.** A Lattice foe killed bursts at once in its wave, tinted in its crystal (red graded purple, or
   the purple) and scaled to its size, as its figure fades; `sealWave` bursts the same wave four times a man's size
   for the Fissure to call where it is sealed.
+- **At night** a Lattice figure's crystal, its bright and strongly hued texels, glows of itself: never lit below 0.8
+  (`game/figureView.ts`).
 - **Before the pictures are published** a Lattice foe is drawn as a plain man in grey and brown at its size, and dies
   in its fade alone.
 
@@ -125,6 +127,8 @@ workflow renders every move of every foe and the wave this way, a job a move, an
   Fissure, its scar, the growth and the shard are meshes built from the props' own shards, clusters, crusts and
   boulders.
 - The Tithe-Taker holds no ledger: the forge has no ledger to give him.
+- The figures' glow at night and the seal's wave are drawn, but no picture of them in the game has been looked at
+  ([[Public Events]], "Limits").
 - The Idol's beam and the Ravager's shards are drawn along the foe's facing when it aims at no fighter the page
   knows; the Heart's moves are drawn but it is in no event.
 - The wardrobe asks DFO's game code what may be worn under each garment, and that code is not in this repository:

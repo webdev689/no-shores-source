@@ -105,12 +105,12 @@ are written with paving last, since the first group carries the parts and paving
     its root, shards crowding its foot, the turf it broke through tipped up round it and crusted.
   - The shard (`lattice-shard`, half a metre): a hand's length of crystal, two lesser points off its root, alight.
   - The Grey Tithe's three stores (`tithe-stores-a`, `-b`, `-c`): crates of weathered boards bound with iron at their
-    corners, barrels, sacks of grey canvas (on store c's pallet laid flat, their tied necks out) and a pallet, each
-    stack under a grey tarp pegged close at its corners; the plundered store (`tithe-stores-plundered`): a crate broken
+    corners, barrels, sacks of canvas (on store c's pallet laid flat, their tied necks out) and a pallet, each
+    stack under a tarp pegged close at its corners; the plundered store (`tithe-stores-plundered`): a crate broken
     open, one tipped on its side, boards strewn, sacks slit with their grain spilt in heaps, a barrel stove in and
     rolled away with its staves and a hoop by it, the tarp dragged off. Each stack is compact and square-edged, its
     part the box round it: store a 2.6 by 1.85 m, b 2.2 by 2.2, c 2.6 by 1.3, the plundered store 2.5 by 2.0.
-  - The Tithe's banner (`tithe-banner`): a heavy grey cloth, unmarked, 3.4 m long, lashed along its sleeve to a
+  - The Tithe's banner (`tithe-banner`): a heavy cloth, unmarked, 3.4 m long, lashed along its sleeve to a
     crossbar on a 5.4 m pole, a weighted rod in its hem so it hangs straight and bellies only between; three guy ropes
     pegged out behind it and to either side, an iron spike and collar at its head, stones packed round its foot.
   - The chests (`event-chest`, iron-bound; `event-chest-heroic`, gilded and set with crystal at its corners) and their
@@ -168,7 +168,8 @@ publishes the first bake's meshes with the repository's Cloudflare token.
   marks and the player's chests): each prop at its place, turn and scale, risen out of the ground as far as it has
   come (the growth rising and sinking, a banner driven in; what is under the ground is not drawn), the fissure opening
   from a line as it widens and deepens, a lid swung about its hinge, its crystal glowing as strongly as it is asked.
-  Each material is its own colour worked by code over the module's own frame; the crystal is lit as above, its
+  Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the Tithe's banner
+  its unmarked grey, as its sails are); the crystal is lit as above, its
   brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A module that
   opens first sets the scene's depth far over its mouth, so its chasm under the ground is seen.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city

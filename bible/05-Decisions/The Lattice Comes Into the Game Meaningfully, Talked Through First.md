@@ -27,5 +27,5 @@ status: in force
   world events and the nine story missions is talked through with the owner before it is built
   ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[Open Questions]]).
 - **Where its foes appear first and their skin's colour** are left to Claude, once it is built
-  ([[The Lattice as Claude Shapes It]]).
+  ([[Public Events as Claude Builds Them]]).
 - **#77 stays open**, not merged.
