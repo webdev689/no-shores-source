@@ -278,6 +278,15 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **Three pull requests for the owner's yes, each tested offline with the full check, none seen on a real GPU:**
+  #115, aiming faces straight ahead ([[Aiming, the Figure Faces Straight Ahead]]; the scripted fight's and both
+  garrison runs' fingerprints move by one bearing's last bit); #116, the crosshair's shapes, reload ring, hit marks
+  and melee reach ([[The Crosshair Shows Each Weapon, Its Reload, Its Hits and Melee's Reach]]); and the weapons
+  forged large with their element glyphs ([[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]), whose
+  99 pictures the forge workflow already published to R2 from its branch, with SciPy added to that workflow's pinned
+  packages for the figure's dye greys (the owner's to approve, as it runs where the Cloudflare token does). The
+  large pictures were loaded through the page's own code from R2 headless; the weapon rows were pictured only from
+  their styles. A greatsword still shows its metal's sword until it has a model of its own.
 - **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
   without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
   something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
