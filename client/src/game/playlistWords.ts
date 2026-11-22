@@ -51,11 +51,13 @@ export interface PlaylistScreenState {
   readonly title: string;
   readonly port: string;
   readonly entries: readonly PlaylistEntry[];
+  /** What every run pays beside its rewards, said once under the entries. */
+  readonly note: string;
 }
 
 const DRAWN_RULE = 'One of the 18 Elite Dungeons, drawn as each run starts.';
 const DAILY = "Daily, the first clear: a Boss's worth of XP and Aurem, and a Vestige.";
-const PLAIN = 'Every clear pays its kills and its cache.';
+const PLAIN = 'Every clear pays its kills and its cache, as any run does.';
 
 /** The band a level stands in, as the rules give the bands; none below the first. */
 const bandOf = (playlist: PlaylistOn, level: number | null) =>
@@ -95,7 +97,7 @@ export function playlistScreenOf(
       kind: seas,
       name: given.name,
       about,
-      rules: seas === 'abyss' ? [DRAWN_RULE, revivesWords(drawn), PLAIN] : [DRAWN_RULE, PLAIN],
+      rules: seas === 'abyss' ? [DRAWN_RULE, revivesWords(drawn)] : [DRAWN_RULE],
       modifiers: shown(drawn, given.modifiers),
       rewards: [
         {
@@ -139,6 +141,7 @@ export function playlistScreenOf(
     title: 'Playlist',
     port,
     entries: [...drawn.playlists.map(playlist), week('elite'), week('abyss')],
+    note: PLAIN,
   };
 }
 

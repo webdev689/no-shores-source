@@ -33,7 +33,8 @@ const TILE_LEAST = 110;
 const WINDOW_MOST = 1500;
 const HEAD_AND_FOOT = 200;
 
-/** A reward's line: its words, then how this character stands with it, as marks filling for a week's clears. */
+/** A reward's line: its words, then how this character stands with it, as marks filling for a week's clears, and the
+ *  time to its reset. */
 function rewardNode(reward: PlaylistReward, size: number): Node {
   const marks: Child[] = (reward.clears ?? []).map((filled) => ({
     width: 10 * (size + 1),
@@ -41,7 +42,17 @@ function rewardNode(reward: PlaylistReward, size: number): Node {
     fill: filled ? INK.brassLit : INK.well,
     outline: { width: 1, colour: INK.brass },
   }));
-  const standing = reward.taken === null ? null : reward.taken ? 'Taken' : 'Not taken';
+  const cleared = reward.clears?.filter(Boolean).length ?? 0;
+  const standing =
+    reward.taken === null
+      ? null
+      : reward.clears !== null
+        ? reward.taken
+          ? 'Paid'
+          : `${cleared} of ${reward.clears.length}`
+        : reward.taken
+          ? 'Taken'
+          : 'Not taken';
   return {
     width: 'grow',
     direction: 'column',
@@ -56,19 +67,21 @@ function rewardNode(reward: PlaylistReward, size: number): Node {
         children: [
           reward.taken === true && iconNode('taken', 12 * (size + 1)),
           ...marks,
-          standing !== null && words(standing, size, reward.taken ? INK.gain : INK.faint),
-          words(reward.resets, size, INK.faint),
+          standing !== null && words(standing, size, reward.taken ? INK.gain : INK.word),
         ],
       },
+      { width: 'grow', text: { words: reward.resets, size, colour: INK.faint } },
     ],
   };
 }
 
-/** One entry's tile: its name, level, rules, modifiers with their words, rewards, and why it is shut. */
+/** One entry's tile: its name, level, rules, modifiers with their words, rewards, and why it is shut; its details a
+ *  step smaller than its name and level, so four stand on one screen. */
 function tileOf(entry: PlaylistEntry, place: number, chosen: boolean, size: number, wide: number): Node {
-  const line = (said: string, colour: string = INK.word): Node => ({
+  const small = Math.max(1, size - 1);
+  const line = (said: string, colour: string = INK.word, sized = small): Node => ({
     width: 'grow',
-    text: { words: said, size, colour },
+    text: { words: said, size: sized, colour },
   });
   return {
     id: `${TILE}${place}`,
@@ -82,23 +95,23 @@ function tileOf(entry: PlaylistEntry, place: number, chosen: boolean, size: numb
     outline: { width: chosen ? 2 : 1, colour: chosen ? INK.brassLit : INK.brass },
     opacity: entry.shut === null ? 1 : 0.75,
     children: [
-      words(entry.name.toUpperCase(), size, INK.brassLit, { tracking: 2 }),
-      line(entry.about, INK.brassLit),
+      { width: 'grow', text: { words: entry.name.toUpperCase(), size, colour: INK.brassLit, tracking: 2 } },
+      line(entry.about, INK.brassLit, size),
       ...entry.rules.map((rule) => line(rule, INK.faint)),
       ...entry.modifiers.map((modifier): Node => ({
         width: 'grow',
         gap: 8,
         alignY: 'center',
         children: [
-          modifierNode(modifier, 12 * (size + 1)),
+          modifierNode(modifier, 12 * (small + 1)),
           {
             width: 'grow',
             direction: 'column',
-            children: [words(modifier.name, size, INK.word), line(modifier.words, INK.faint)],
+            children: [words(modifier.name, small, INK.word), line(modifier.words, INK.faint)],
           },
         ],
       })),
-      ...entry.rewards.map((reward) => rewardNode(reward, size)),
+      ...entry.rewards.map((reward) => rewardNode(reward, small)),
       entry.shut !== null && line(entry.shut, INK.loss),
     ],
   };
@@ -198,11 +211,14 @@ export class PlaylistView {
     const finding = search.finding !== null;
     // As many tiles across as fit, four at most, the rest on lines below, scrolled where they stand taller than the screen.
     const wide = Math.min(view.width - 32, WINDOW_MOST);
+    const inside = wide - 48;
     const across = Math.max(
       1,
-      Math.min(screen.entries.length, Math.floor((wide - 28) / (TILE_LEAST * (size + 1) + 12))),
+      Math.min(screen.entries.length, Math.floor((inside + 12) / (TILE_LEAST * (size + 1) + 12))),
     );
-    const tileWide = Math.floor((wide - 40 - 12 * (across - 1)) / across);
+    // Three across would leave one alone below: two rows of two read as one board.
+    const rows = across === 3 && screen.entries.length === 4 ? 2 : across;
+    const tileWide = Math.floor((inside - 12 * (rows - 1)) / rows);
     const said = (words: string, colour: string): Node => ({ width: 'grow', text: { words, size, colour } });
     return {
       width: 'grow',
@@ -249,10 +265,17 @@ export class PlaylistView {
               alignX: 'center',
               children: screen.entries.map((one, place) => tileOf(one, place, place === this.chosen, size, tileWide)),
             },
+            {
+              width: 'grow',
+              padding: [0, 20, 8, 20],
+              children: [
+                { width: 'grow', text: { words: screen.note, size: Math.max(1, size - 1), colour: INK.faint } },
+              ],
+            },
             finding && { width: 'grow', padding: [0, 20], children: [said(search.finding ?? '', INK.gain)] },
             finding && {
               width: 'grow',
-              padding: [0, 20],
+              padding: [0, 20, 8, 20],
               children: [said('A run starts with four, or with fewer after a minute.', INK.faint)],
             },
             !finding &&
