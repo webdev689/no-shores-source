@@ -93,6 +93,11 @@ impl Flotsam {
         Flotsam { pieces: Vec::new(), next_id: 1, seed: u64::from(seed), difficulty: gear::Difficulty::Normal }
     }
 
+    /// Rolls the contents from the host's own loot seed, which the sea's seed, shown in its islands', never shows.
+    pub fn reseed(&mut self, loot: u64) {
+        self.seed = loot;
+    }
+
     /// Lays what floats where a ship sank, `times` over (twice from its hold), each chest's salvage rolled `chest_up`
     /// ranks higher besides, and the first piece holding a kill's drop `chest_up` ranks higher than the ship's (a
     /// hold's one higher); answers each piece laid.

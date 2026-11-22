@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { NO_WAY_HERE } from './arrival.ts';
-import { Keeper, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
+import { Keeper, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
 import { roomOf, world } from './keepingForTests.ts';
 
 test('a signed-in player plays their kept character, saved after a change and kept while they play', async () => {
@@ -317,6 +317,48 @@ test('a new account’s character is the one the room holds, given back to the r
     true,
   );
   assert.deepEqual(given, ['{"starting":true}'], 'no kept character yet: the room’s own, given back');
+});
+
+test("a leaver's chest is opened and what lies for them mailed before their last save reads it; the room lets them go last", () => {
+  // The room's character for player 1: its XP, which opening the chest lying for them raises.
+  let gained = 10;
+  let joined = true;
+  const steps: string[] = [];
+  const room = {
+    parting: (player: number) => {
+      steps.push(`parting ${player}`);
+      gained += 500;
+    },
+    mailLying: (player: number) => steps.push(`mail ${player}`),
+    leave: (player: number) => {
+      steps.push(`leave ${player}`);
+      joined = false;
+    },
+  };
+  const kept: (string | null)[] = [];
+  const keeper = {
+    leave: (player: number) => {
+      // As Keeper.leave does: the character read at once, before any wait.
+      kept.push(joined ? `{"player":${player},"xp":${gained}}` : null);
+      return Promise.resolve();
+    },
+  };
+  partFrom(room, keeper, 1, (call) => call());
+  assert.deepEqual(kept, ['{"player":1,"xp":510}'], "the kept character holds the chest's XP");
+  assert.deepEqual(steps, ['parting 1', 'mail 1', 'leave 1']);
+  // A fault in the room is caught by the guard, and the rest still runs.
+  const faulty = { ...room, parting: () => assert.fail('the room faulted') };
+  const caught: unknown[] = [];
+  partFrom(faulty, keeper, 1, (call) => {
+    try {
+      call();
+    } catch (error) {
+      caught.push(error);
+    }
+  });
+  assert.equal(caught.length, 1);
+  assert.deepEqual(steps.slice(-1), ['leave 1'], 'the room still lets them go');
+  assert.equal(kept.length, 2, 'and their character is still kept');
 });
 
 test('a room that turns an arrival away judges before it claims, so the room playing the character keeps it', async () => {

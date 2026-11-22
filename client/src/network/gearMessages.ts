@@ -38,6 +38,8 @@ export const ASKS = {
   train: 61,
   chooseOfficer: 62,
   gather: 20,
+  /** One's chest from a public event opened, by its number among one's drops in `item`. */
+  openChest: 21,
   /** A gather let go of before it is done: E released. */
   stopGather: 67,
   grantVestige: 30,
@@ -94,6 +96,9 @@ export const ASKS = {
   /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
   takeLetter: 71,
   takeAllLetters: 72,
+  /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
+   *  seconds) before the page leaves for the sea. */
+  toShip: 73,
 } as const;
 
 /** Shape's place while he is away. */
@@ -164,10 +169,11 @@ export interface GearVestige {
 export const AMMO_FULL = 720;
 
 /** What lies on the ground, by the gear message's numbers. */
-export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2 } as const;
+export const DROPPED = { vestige: 0, ammoBox: 1, crate: 2, chest: 3 } as const;
 
 /** A drop lying for the player: their number for it, a Vestige's rarity and slot, where it rests, what it is, where it
- *  was thrown from, and the room's ticks it has still to fly. */
+ *  was thrown from, the room's ticks it has still to fly, and a chest's tier (1 won, 2 won with the bonus, 3 heroic,
+ *  4 heroic with the bonus; 0 for anything else). */
 export interface GearDrop {
   readonly id: number;
   readonly rarity: number;
@@ -176,6 +182,7 @@ export interface GearDrop {
   readonly kind: number;
   readonly from: readonly [number, number, number];
   readonly flying: number;
+  readonly tier: number;
 }
 
 /** A resource node standing that the player may still gather: its number in the room, where, and its resource. */
@@ -433,6 +440,7 @@ export function gearOf(gear: Gear): GearState {
       kind: drop.kind(),
       from: [fromX, fromY, fromZ] as const,
       flying: drop.flying(),
+      tier: drop.tier(),
     };
   });
   return {

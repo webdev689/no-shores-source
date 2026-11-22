@@ -225,7 +225,7 @@ fn an_islands_nodes_all_stand_and_each_is_gathered_once_by_each_account_while_it
 }
 
 #[test]
-fn where_landings_are_checked_a_node_is_gathered_by_the_landed_alone_and_stands_again_on_their_next_landing() {
+fn where_landings_are_checked_a_node_is_gathered_by_the_landed_alone_and_stands_again_once_the_day_turns() {
     let plan = plan(Kind::Cove);
     const BRINEGLASS: u8 = 0;
     let mut room = Room::island(&plan, AT, None, None, Some(BRINEGLASS));
@@ -245,12 +245,28 @@ fn where_landings_are_checked_a_node_is_gathered_by_the_landed_alone_and_stands_
         room.tick();
     }
     assert!(room.player(player).expect("in").spent.contains(&0), "gathered");
-    // Rejoined in the same landing, it stays spent; the sea's next landing makes it stand again.
+    // Rejoined with its character, landed again, or in another room of the island, it stays spent for them until the
+    // day turns.
+    let kept = room.kept_character(player).expect("kept");
     room.leave(player);
     let back = room.join().expect("a room with space");
+    assert!(room.restore_character(back, &kept));
     room.own(back, "anchored");
     room.land("anchored", 7);
     assert!(!room.nodes_for(back).any(|(index, _)| index == 0), "the same visit");
     room.land("anchored", 8);
-    assert!(room.nodes_for(back).any(|(index, _)| index == 0), "a new landing, a new visit");
+    assert!(!room.nodes_for(back).any(|(index, _)| index == 0), "a new landing the same day");
+    let kept = room.kept_character(back).expect("kept");
+    let again = |minute: u64| {
+        let mut other = Room::island(&plan, AT, None, None, Some(BRINEGLASS));
+        assert!(other.check_landings());
+        other.set_minute(minute);
+        let player = other.join().expect("a room with space");
+        assert!(other.restore_character(player, &kept));
+        other.own(player, "anchored");
+        other.land("anchored", 9);
+        other.nodes_for(player).any(|(index, _)| index == 0)
+    };
+    assert!(!again(room.minute), "another room of the island, the same day");
+    assert!(again(room.minute + 1_440), "the next day");
 }

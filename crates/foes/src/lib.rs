@@ -57,8 +57,9 @@ pub trait Routes {
         Some(combat::sight::apart([from[0], from[1]], [to[0], to[1]]))
     }
 
-    /// Whether a body standing at a point stands on the ground the routes cover: always, unless the routes know better.
-    fn walkable(&self, _point: [f64; 3]) -> bool {
+    /// Whether a body standing at a point stands on the ground the routes cover that a body at `from` walks on: always,
+    /// unless the routes know better.
+    fn walkable(&self, _from: [f64; 3], _point: [f64; 3]) -> bool {
         true
     }
 

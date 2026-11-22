@@ -207,6 +207,7 @@ impl Sea {
     }
 
     pub fn leave(&mut self, player: PlayerId) {
+        self.remember_left(player);
         self.stop_repair(player);
         self.leave_decks(player);
         self.harbour.forget(player);
@@ -300,8 +301,7 @@ impl Sea {
         }
         let start = match at_sea {
             Some(ship) => whole(&ports::in_frame([ship.x, ship.y])).ok_or(CourseRefused::BadCourse)?,
-            None if self.harbour.harbours.puts_to_sea(whole_points[0]) => whole_points[0],
-            None => return Err(CourseRefused::BadCourse),
+            None => self.puts_in(player, whole_points[0]).ok_or(CourseRefused::BadCourse)?,
         };
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
         let path: Vec<Point> = legs.collect();
@@ -310,7 +310,7 @@ impl Sea {
         }
         self.stop_repair(player);
         let course: VecDeque<[f64; 2]> = whole_points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
-        let heading = at_sea.map_or(0.0, |ship| ship.heading);
+        let heading = at_sea.map_or_else(|| self.put_in(player, start, whole_points[0]), |ship| ship.heading);
         let ship = Ship { x: start.x as f64, y: start.y as f64, heading, pace, rate: 0 };
         if let Some(berth) = self.berths.get_mut(&player) {
             berth.sailing = Some(Sailing { ship, course });
@@ -582,6 +582,8 @@ pub mod decks;
 pub mod islands;
 #[path = "sea_ports.rs"]
 mod ports;
+#[path = "sea_puts_in.rs"]
+mod puts_in;
 
 #[cfg(test)]
 #[path = "fight_measure_tests.rs"]

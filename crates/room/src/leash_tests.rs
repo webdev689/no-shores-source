@@ -255,6 +255,7 @@ fn a_garrison_foe_shot_from_off_its_navmesh_as_it_walks_home_fills_no_healing_me
 
 #[test]
 fn a_boss_or_a_miniboss_that_leashes_goes_back_to_its_first_phase_its_called_foes_fall_and_its_next_fight_is_fresh() {
+    // Its next fight's calls drop nothing, so a leash cannot be pulled again and again for them.
     for (kind, calls) in [(NodeKind::Boss, 4), (NodeKind::Dungeon, 0)] {
         let mut room = node(kind, "glade");
         let (leader, place, _) = group(&room)[0];
@@ -264,6 +265,10 @@ fn a_boss_or_a_miniboss_that_leashes_goes_back_to_its_first_phase_its_called_foe
         let last = room.foes[&leader].brain.phase();
         let called = called_by(&room, leader);
         assert!(last > 1 && called.len() == calls, "{kind:?}: in phase {last}, {} called", called.len());
+        assert!(
+            called.iter().all(|id| !room.quests.spoilless.contains(id)),
+            "{kind:?}: a first fight's calls drop loot"
+        );
         provoke(&mut room, player);
         room.take_events();
         let to = point_at(&room, place, LEASH + 1.0, true);
@@ -282,7 +287,9 @@ fn a_boss_or_a_miniboss_that_leashes_goes_back_to_its_first_phase_its_called_foe
         assert_eq!(room.foes[&leader].fighter.might, fresh.might(), "it strikes as in its first phase");
         into_its_last_phase(&mut room, leader);
         assert_eq!(room.foes[&leader].brain.phase(), last, "{kind:?}: every phase comes again");
-        assert_eq!(called_by(&room, leader).len(), calls, "{kind:?}: and every call");
+        let again = called_by(&room, leader);
+        assert_eq!(again.len(), calls, "{kind:?}: and every call");
+        assert!(again.iter().all(|id| room.quests.spoilless.contains(id)), "{kind:?}: dropping nothing");
     }
 }
 

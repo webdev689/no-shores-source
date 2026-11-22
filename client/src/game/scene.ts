@@ -7,7 +7,7 @@ import { motionReduced } from '../plus/kit.ts';
 import { ShadowMap } from '../shadow.ts';
 import { BoltView } from '../sky/bolts.ts';
 import { FallView } from '../sky/fall.ts';
-import { CITY_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
+import { CITY_LAMPS, EVENT_LAMPS, type LampPlace, carriedLight, lampsRound } from '../sky/lamps.ts';
 import { SKY_NOW, SkyDriver } from '../sky/skyDriver.ts';
 import { startSkyLaw } from '../sky/skyLaw.ts';
 import { type SkyLook, skyUniformFor } from '../sky/skyUniform.ts';
@@ -99,6 +99,8 @@ export class GameScene {
   readonly sky: SkyDriver;
   /** Lamps a story lays besides the city's while it shows them: the wreck's fires. */
   lamps: readonly LampPlace[] = [];
+  /** The city's, the events' and the scene's own lamps together, written afresh each frame into one list. */
+  private readonly joined: LampPlace[] = [];
   private readonly fall: FallView;
   private readonly bolts: BoltView;
   private terrain: { view: LandView; drawn: TerrainView; tiles: CityPainter } | null = null;
@@ -293,7 +295,7 @@ export class GameScene {
     const light = carriedLight(more.carried?.left);
     const lamps = lampsRound(
       shot.eye,
-      this.lamps.length > 0 ? [...CITY_LAMPS.current, ...this.lamps] : CITY_LAMPS.current,
+      this.lamps.length > 0 || EVENT_LAMPS.current.length > 0 ? this.lampsJoined() : CITY_LAMPS.current,
       light && more.carried ? { light, feet: more.carried.feet } : null,
       SKY_NOW.current.look.daylight,
       time,
@@ -379,6 +381,16 @@ export class GameScene {
     this.blur.encode(encoder, canvas, more.blur ?? 0);
     this.drain.encode(encoder, canvas, more.drain ?? 0, more.dark ?? 0);
     this.gpu.device.queue.submit([encoder.finish()]);
+  }
+
+  /** The city's, the events' and the scene's own lamps, in that order, in the list kept for them. */
+  private lampsJoined(): readonly LampPlace[] {
+    const joined = this.joined;
+    joined.length = 0;
+    for (const lamp of CITY_LAMPS.current) joined.push(lamp);
+    for (const lamp of EVENT_LAMPS.current) joined.push(lamp);
+    for (const lamp of this.lamps) joined.push(lamp);
+    return joined;
   }
 
   /** The swell as drawn: the rules' own, its waves raised by the weather's gain. */

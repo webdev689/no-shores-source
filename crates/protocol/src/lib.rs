@@ -43,6 +43,7 @@ mod quest_wire;
 mod sea_snapshot;
 pub mod ship_wire;
 pub use sea_snapshot::{IsleSeen, SeaHarbour, sea_snapshot_bytes};
+mod public_wire;
 mod standing_wire;
 
 pub use land::{Snapshot, snapshot_bytes};
@@ -428,3 +429,6 @@ pub fn body_of(numbers: &[f64]) -> Option<Body> {
 #[cfg(test)]
 #[path = "protocol_tests.rs"]
 mod protocol_tests;
+#[cfg(test)]
+#[path = "public_wire_tests.rs"]
+mod public_wire_tests;

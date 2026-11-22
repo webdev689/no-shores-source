@@ -514,16 +514,18 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
   a Normal head or arms piece shows nothing.
 - **Magic** pieces are light armour or clothes by the item's own number (its name while it has none, a smith's ware
-  before it is bought): the head and arms leather or the thieves' set, the torso and legs clothes (a shirt with a
-  tunic or vest over it, breeches, trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the
-  thieves' set.
+  before it is bought): the head and arms leather or the thieves' set, the torso and legs clothes (a shirt with a tunic
+  or vest over it, breeches, trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the thieves'
+  set.
 - **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece climbs the sets' ladder (leather, the
-  thieves', chain, iron, steel, the knights', silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric)
-  from chain, nine rungs over levels 1 to 20 and up to two more by its name: chain, iron or steel at level 1,
-  adamantium, ebony or daedric at 20. A named piece wears the set written on it in `content/gear/items.json`
-  (`look`). A faction's armour is its guild's set instead, in the faction's own colour over any dye ([[Factions]],
-  "Its own colour"). A torso wears its set's cuirass, with its pauldrons where the forge draws them (chain has none);
-  the legs wear its greaves and boots. A set the forge does not draw for a body falls to the nearest on the ladder.
+  thieves', chain, iron, steel, the knights', silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric) from
+  chain, nine rungs over levels 1 to 20 and up to two more by its name: chain, iron or steel at level 1, adamantium,
+  ebony or daedric at 20. A named piece wears the set written on it in `content/gear/items.json` (`look`). Daedric's
+  armour and weapons are to give way to the Lattice's own, on hold for now
+  ([[The Lattice's Armour and Weapons Take Daedric's Place]]). A faction's armour is its guild's set instead, in the
+  faction's own colour over any dye ([[Factions]], "Its own colour"). A torso wears its set's cuirass, with its
+  pauldrons where the forge draws them (chain has none); the legs wear its greaves and boots. A set the forge does not
+  draw for a body falls to the nearest on the ladder.
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
   cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is.
 - **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled weapon climbs the metals' ladder (iron,
@@ -584,8 +586,9 @@ Officers ashore fight beside their player, as DFO's crew companions did
   of 45 Defense a level and 15% more again, their health their type's. Weathered gives 15% more health, Brawler
   10% more harm, Steady Nerve 20% more poise.
 - **Never killed.** No player harms them. A blow that would leave one at 1 health or less holds them at 1: they leave
-  the fight and rest eight minutes of room time, then come ashore again while still on duty ashore. One stationed
-  aboard or at their post, or whose player leaves, goes.
+  the fight and rest eight minutes, kept with the officer so a return to this room or another keeps it
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), then come ashore again while still on duty ashore. One
+  stationed aboard or at their post, or whose player leaves, goes.
 - **Kills.** A kill a companion had a hand in their leader shares as though they had struck it. On land, every kill a
   player shares pays its XP to each of their officers ashore too.
 - **Heat.** What a companion deals, kills and takes moves the fight's heat as a player's would ([[Foes]], "The

@@ -158,6 +158,32 @@ fn a_piece_holds_the_same_whoever_it_is_owned_by_now_so_a_rejoin_rolls_nothing_a
     assert_eq!(held(1), held(7));
 }
 
+/// What a Miniboss ship's pieces hold, opened in turn by one player, rolled on `flotsam`'s seed.
+fn opened(mut flotsam: Flotsam) -> Vec<(Option<(gear::Rarity, gear::Slot)>, gear::ship::materials::ShipStock)> {
+    flotsam.lay(&sank(Rank::Miniboss, vec![1]), 0, (2, 1));
+    let mut characters = BTreeMap::from([(1, Character::starting())]);
+    let spots: Vec<(PlayerId, [f64; 2])> = flotsam.pieces.iter().map(|piece| (1, piece.at)).collect();
+    let mut held = Vec::new();
+    for (clock, spot) in spots.into_iter().enumerate() {
+        for (_, _, opened) in flotsam.tick(clock as u64 + 1, &[spot], &mut characters) {
+            held.push((opened.vestige.map(|vestige| (vestige.rarity, vestige.slot)), opened.salvage.materials));
+        }
+    }
+    held
+}
+
+#[test]
+fn what_floats_rolls_on_the_hosts_own_loot_seed_which_the_seas_seed_cannot_show() {
+    let reseeded = |loot: u64| {
+        let mut flotsam = Flotsam::new(9);
+        flotsam.reseed(loot);
+        opened(flotsam)
+    };
+    assert_eq!(reseeded(0xfeed_beef_1234), reseeded(0xfeed_beef_1234), "the same seed, the same contents");
+    assert_ne!(reseeded(0xfeed_beef_1234), opened(Flotsam::new(9)), "not what the sea's own seed shows");
+    assert_ne!(reseeded(0xfeed_beef_1234), reseeded(0x0bad_cafe_5678));
+}
+
 #[test]
 fn a_vestige_in_flotsam_gathered_with_the_carried_ten_full_goes_to_the_mail() {
     let mut flotsam = Flotsam::new(1);

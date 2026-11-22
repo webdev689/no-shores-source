@@ -171,3 +171,15 @@ test('the vault keeps weapons, armour and Vestiges, twenty of each, a click from
     [0, 0, 10],
   );
 });
+
+test("a vault over its limit (a leaver's chest Vestige kept past it) shows every Vestige and how far over it is", () => {
+  const vestiges = Array.from({ length: 23 }, (_unused, id) => ({
+    id: id + 1,
+    rarity: 2,
+    slot: 3,
+    level: 6,
+    vaulted: true,
+  }));
+  const [, , shelf] = vaultOf(state({ atMage: true, vestiges })).kept;
+  assert.deepEqual([shelf?.held, shelf?.most, shelf?.cells.length], [23, 20, 23]);
+});

@@ -98,6 +98,8 @@ status: in force
   project-final takes from them is the owner's work ([[Own Work]]). Daggerfall's data and Destiny's own names in it
   are not.
 
+The world's lore: [[The World Is Ageless, With Quiet Nods to DFO and Daggerfall]].
+
 ## Still open
 
 - Ship building and progression, and the rest the owner has yet to discuss.

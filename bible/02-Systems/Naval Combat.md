@@ -238,11 +238,11 @@ the Frigate. Their rank scales them, a Major at the numbers of the rest of this 
 | Miniboss | ×3 | ×1.2 | ×1.2 | ×0.8 | ×0.7 | always bold | under 15% | at 10% |
 | Boss | ×5 | ×1.3 | ×1.3 | ×0.7 | ×0.6 | always bold | never | at 5% |
 
-Their level raises them as a foe's raises it on land ([[A Ship's Level Raises Its Strength, and the Tiers Reach the
-Sea]], [[Foes]]): their hull, their men and their guns' harm are the table's times the land's `foe_health_times` at their level,
-1.07 a level (×1.31 at level 4, ×6.2 at level 27, `Pirate::strength`, `Captain::raised`); a ship of level 0, as the
-editor stands one, is the table's. A wary ship sizes a Sloop up at its raised strength. Their way, reload, aim and when
-they run and strike stay their rank's.
+Their level raises them as a foe's raises it on land
+([[A Ship's Level Raises Its Strength, and the Tiers Reach the Sea]], [[Foes]]): their hull, their men and their guns'
+harm are the table's times the land's `foe_health_times` at their level, 1.07 a level (×1.31 at level 4, ×6.2 at level
+27, `Pirate::strength`, `Captain::raised`); a ship of level 0, as the editor stands one, is the table's. A wary ship
+sizes a Sloop up at its raised strength. Their way, reload, aim and when they run and strike stay their rank's.
 
 Their men are as many as their hull makes them (6 to 94, whole men), so hull and men give out in the same proportion at
 every rank: a hull hit takes a man or two, and their men give out at about four fifths of their hull, as a Major's do. Their
@@ -271,8 +271,8 @@ by its own hull's box. A captain sizing up a ship reckons their hit share agains
 
 ## How a fight ends
 
-At sea ([[Server]], "The sea"), each a rule the owner chose ([[The Sea's Fights, Waves and Close Views Get a Detailed
-Pass]]) with Claude's numbers:
+At sea ([[Server]], "The sea"), each a rule the owner chose
+([[The Sea's Fights, Waves and Close Views Get a Detailed Pass]]) with Claude's numbers:
 
 - **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where it went, 3 pieces for a
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone as

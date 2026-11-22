@@ -84,6 +84,14 @@ export function markPlace(
   return Math.min(1, Math.max(0, apart / span + 0.5));
 }
 
+/** A place the compass marks beside the ships: a public event's ground, or its heroic task's mark (the growth, the
+ *  tithe-taker), at its bearing as a ship's is, held at the end nearer it while off the strip. */
+export interface PlaceMark {
+  readonly x: number;
+  readonly y: number;
+  readonly kind: 'event' | 'heroic' | 'chest' | 'store';
+}
+
 /** The ships the compass marks of `ships` round a player at `from`: those within their range. */
 export function shipsMarked(ships: readonly ShipMark[], from: readonly [number, number]): ShipMark[] {
   return ships.filter((ship) => Math.hypot(ship.x - from[0], ship.y - from[1]) <= (ship.rangeM ?? SHIP_MARK_RANGE_M));

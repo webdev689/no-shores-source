@@ -3,6 +3,7 @@
 // pictures, are lit as the land is, and dither between tiers by the same thresholds the CPU's tiers test.
 import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
+import { CRYSTAL_WGSL } from './crystal.ts';
 import { CLOTH_COLOURS, COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
 import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
@@ -60,6 +61,9 @@ const GOLD = ${COLOUR_LAYERS.gold}u;
 const IRON = ${COLOUR_LAYERS.iron}u;
 const BONE = ${COLOUR_LAYERS.bone}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
+const CRYSTAL = ${COLOUR_LAYERS.crystal}u;
+// A module's crystal in the city carries no glow of its own a vertex: its core is drawn half alight.
+const CITY_CRYSTAL_GLOW = 0.45;
 const WATER = ${COLOUR_LAYERS.water}u;
 // A plain colour's texels to its uv: the size of the picture it would be (cityBuild lays a plain one as 64 square).
 const PLAIN_TEXELS = 64.0;
@@ -158,7 +162,10 @@ ${CLOTH_CASES}
 
 // The land's light, and the light the ground throws back onto a wall, so a wall in shade still reads. The sun reaches
 // a point at 'from_eye' as the shadow map says, through the clouds' shadows; the lamps light it at night, and the
-// weather wets it. A glowing solid is a flame: brighter when the night round it is dark.
+// weather wets it. A glowing solid is a flame: brighter when the night round it is dark. The Lattice's crystal is
+// drawn by its own light (crystal.ts).
+${CRYSTAL_WGSL}
+
 fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   if layer == GLOW {
     // Each flame flickers on its own, a few times a second, by where it burns: all of one fire together.
@@ -171,6 +178,9 @@ fn lit(layer: u32, albedo: vec3f, normal: vec3f, from_eye: vec3f) -> vec3f {
   let ambient = AMBIENT + BOUNCE * (1.0 - abs(facing.z));
   let direct = max(dot(facing, sky_state.key.xyz), 0.0);
   let sun = select(1.0, sunlit(from_eye, facing), direct > 0.0) * sky_dapple(from_eye);
+  if layer == CRYSTAL {
+    return crystal_colour(facing, from_eye, CITY_CRYSTAL_GLOW, sun);
+  }
   // Fresh snow lies on the flat stone as on the ground round it, the city standing on the eye's own ground. Flat stone
   // (the plaza, a flat roof) holds puddles where no snow lies; walls and sloping roofs are only darkened and sheened.
   // Nothing is wet or snowed on under shelter: read a little out from the face, so a wall's outside is not its room.

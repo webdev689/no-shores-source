@@ -284,3 +284,26 @@ fn a_places_mesh_is_the_nodes_own_where_its_square_holds_it_else_baked_one_a_tic
 fn a_puzzles_points_are_checked_within_the_square_its_places_mesh_is_baked_over() {
     assert_eq!(gear::quests::PLACE_SQUARE, crate::garrison::NODE_AROUND);
 }
+
+#[test]
+fn a_defence_rejoined_stands_the_waves_already_fought_dropping_nothing_and_the_rest_as_any() {
+    let (mut room, player, _, defend) = defence([0.0, 20.0]);
+    run(&mut room, 2);
+    let first = wave(&room, player);
+    assert!(!first.is_empty() && first.iter().all(|id| !room.quests.spoilless.contains(id)), "its first wave drops");
+    let kept = gear::Character::from_json(&room.kept_character(player).expect("kept")).expect("a character");
+    room.leave(player);
+    run(&mut room, 2);
+    let back = joined(&mut room, &kept, [0.0, 20.0]);
+    run(&mut room, 2);
+    let again = wave(&room, back);
+    assert!(!again.is_empty() && again.iter().all(|id| room.quests.spoilless.contains(id)), "fought before: nothing");
+    if defend.waves.len() > 1 {
+        for id in &again {
+            shoot_dead(&mut room, back, *id);
+        }
+        run(&mut room, 2);
+        let next = wave(&room, back);
+        assert!(next.iter().all(|id| !room.quests.spoilless.contains(id)), "a wave not fought before drops as any");
+    }
+}

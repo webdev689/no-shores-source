@@ -1,7 +1,8 @@
-//! A garrison foe's walks home to its post. Once its target stands LEASH from its place at its post, or off the ground
-//! the room's routes cover, it gives its fight up: its target, the blow it saw coming, its hunt and its search. Once a
-//! search finds no one, it lets go. Either way it goes back to its first phase, and walks back to its place, healing as
-//! it goes so it is whole as it arrives, turns to face as it was posted, and stands idle. Leashed, it heeds nothing it
+//! A garrison foe's walks home to its post. Once its target stands past its leash from its place at its post (LEASH,
+//! or one of its own), or off the ground the room's routes cover, it gives its fight up: its target, the blow it saw
+//! coming, its hunt and its search. Once a search finds no one, it lets go. Either way it goes back to its first phase,
+//! and walks back to its place, healing as it goes so it is whole as it arrives, turns to face as it was posted, and
+//! stands idle. Leashed, it heeds nothing it
 //! sees or hears on the way, so the one it gave up on cannot draw it out again at once; only a blow brings it back.
 //! After a search it heeds them as ever, and turns back to the fight only once they alert it. Falling back as its group
 //! gives ground, it runs to its new place, its target and its awareness kept, and fights again from there.
@@ -13,7 +14,7 @@ use crate::react::Reactions;
 use crate::senses::Here;
 use crate::shoot::Bow;
 use crate::steer::{Ask, way_to};
-use crate::tuning::{ALERT_OFF, FALLEN_BACK, HOME_FACED, HOME_REACHED, KEEP_UP, LEASH, SQUARING_PACE};
+use crate::tuning::{ALERT_OFF, FALLEN_BACK, HOME_FACED, HOME_REACHED, KEEP_UP, SQUARING_PACE};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
 use movement::TICK_SECONDS;
@@ -60,14 +61,16 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
     Some(Ask::walking(way, 1.0, true))
 }
 
-/// Whether a foe may fight a fighter where it stands: a garrison foe only within LEASH of its place, and, while that
-/// fighter stands on the ground, only on ground the room's routes cover. A body in the air, on a wall or over a lip
-/// is judged by its distance alone: the navmesh lies on the floor, and its leap or climb lands back on it.
+/// Whether a foe may fight a fighter where it stands: a garrison foe only within its leash (LEASH, or its own) of its
+/// place, and, while that fighter stands on the ground, only on ground the room's routes cover from that place. A body
+/// in the air, on a wall or over a lip is judged by its distance alone: the navmesh lies on the floor, and its leap or
+/// climb lands back on it.
 pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
     let feet = [other.body.x, other.body.y, other.body.z];
     let grounded = other.body.mode == movement::Mode::Ground;
     brain.home.is_none_or(|home| {
-        apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= LEASH && (!grounded || here.world.routes.walkable(feet))
+        let near = apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= brain.leash;
+        near && (!grounded || here.world.routes.walkable(home.at, feet))
     })
 }
 
@@ -107,6 +110,7 @@ fn give_up(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
     brain.bow = Bow::default();
     brain.plan = Plan::Wait;
     (brain.ready_at, brain.slot, brain.blocked, brain.walled) = (None, None, 0, None);
+    brain.leashed = true;
     start_home(brain, Homeward::Leashed);
 }
 

@@ -251,7 +251,7 @@ impl Room {
     /// place's reach the mesh holds. None while the room's living foes leave no room, or the mesh holds no point there.
     fn stand_group(&mut self, key: [usize; 3], goal: &'static GoalDef, place: &Place) {
         let members = foes_of(goal.goal.foes());
-        if members.is_empty() || self.living_foes() + members.len() > self.foes_most {
+        if members.is_empty() || self.living_foes() + members.len() > self.others_most() {
             return;
         }
         let Some(ground) = self.ground_of(place, place.radius) else { return };

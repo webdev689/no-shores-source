@@ -130,10 +130,14 @@ pub struct Brain {
     /// A garrison foe's place at its post, and why it walks back there, if it does.
     pub(crate) home: Option<Home>,
     pub(crate) returning: Option<Homeward>,
+    /// Whether it has ever given up a fight at its leash: the foes it calls after drop nothing.
+    pub(crate) leashed: bool,
     /// The side it fights for, its type's but for a companion's; and a companion's heel: how near its post it stands
     /// before it walks back there.
     pub(crate) side: Side,
     pub(crate) heel: Option<f64>,
+    /// How far from its place it fights: LEASH, but for a foe given its own (`leashed`).
+    pub(crate) leash: f64,
     /// What its group asks of it; until when it is broken, the cover it falls back behind, and whether it rages; who
     /// last struck it, and when.
     pub(crate) orders: Orders,
@@ -148,6 +152,13 @@ pub struct Brain {
 }
 
 impl Brain {
+    /// Whether it has ever given up a fight at its leash, so the foes it calls drop nothing
+    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+    #[must_use]
+    pub fn has_leashed(&self) -> bool {
+        self.leashed
+    }
+
     pub(crate) fn new(foe_type: &'static FoeType, rank: Rank, facing: f64) -> Self {
         Brain {
             foe_type,
@@ -178,8 +189,10 @@ impl Brain {
             bow: Bow::default(),
             home: None,
             returning: None,
+            leashed: false,
             side: foe_type.side(),
             heel: None,
+            leash: crate::tuning::LEASH,
             orders: Orders::default(),
             broken_until: 0,
             cover: None,
@@ -205,6 +218,11 @@ impl Brain {
     #[must_use]
     pub fn home(&self) -> Option<Home> {
         self.home
+    }
+
+    /// Gives it a leash of its own: it fights a fighter within `leash` of its place, LEASH's distance or not.
+    pub fn leashed(&mut self, leash: f64) {
+        self.leash = leash;
     }
 
     /// Makes it a companion: it fights on the players' side and heels to its post (`posted_at`), which its room moves

@@ -84,7 +84,9 @@ on Cloudflare.
   Any other room stands them on its course of blocks on open ground at 0 m, or, for a course laid over open sea
   (`room_open_over_sea`, the [[Prologue]]'s wreck), on its blocks over the sea at 0 m.
 - **Joining:** a player gets a number no one else in the room has had, and comes in with all three healing charges
-  ([[Combat]], "Healing charges"; [[Three Healing Charges, Refilled by Blows and Kills]]), which are never saved. In
+  ([[Combat]], "Healing charges"; [[Three Healing Charges, Refilled by Blows and Kills]]) and whole, unless their
+  character left a room within the last two minutes: then with the health and charges it left with, fallen if it
+  left fallen (`left.rs`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]). In
   a node's room they stand on the ground at the node's spawns in turn, the first player at the first spawn, the next
   at the next; elsewhere at the room's spawn, on the top of the block under it (or the ground where none stands), and
   a respawn stands them there too. A patrol's room may instead stand a player 1.5 m before one of its entrances'
@@ -98,8 +100,10 @@ on Cloudflare.
   exactly as the browser that predicted it did, so a prediction can only differ where the server knows more
   ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
   swing, a guard, a draw or a reload.
-- **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, as the page lets
-  them; on a deck the room walks every body on foot, as the page does. Nothing is fought from the saddle, as the page
+- **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, on the room's
+  word: it takes a page's mounted input only from a character with a horse, a coat worn, which every rider starts with
+  (`may_ride`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); on a deck, the ship's own or one boarded, the
+  room walks every body on foot. Nothing is fought from the saddle, as the page
   asks nothing there: a mounted input's swing, guard, shot and aim are dropped, and its cast refused.
 - **Foes:** on a course, a player may ask for a foe by its type and rank, at a level and with a shield (the
   [[Test Ground]]'s panel), one with each input; the room stands it 5 m along the player's aim, which follows their
@@ -218,10 +222,12 @@ voyage's harder difficulty, each a room of its own whose ships come at the level
 (`room_difficulty` after `room_open_sea`). A player sets their ship's course: the world points it sails through
 in turn, to the nearest metre, and its pace, one of DFO's steps, 5, 10, 20, 30, 40, 60 or 100 times a ship's 12 m/s,
 or 1, the world's own time, which the page sails it at while its view is close on it ([[Game]], "At sea").
-A ship not yet at sea puts to sea at the course's first point, and only within 3 km of a port city's roadstead, where
-the page first lays it off the city it leaves (`Harbours::puts_to_sea`; a sea opened with no port cities puts it to sea
-anywhere); one at sea starts the course from where it is, to the nearest metre, so the legs it sails are the legs
-judged. A course with no points brings a ship to rest, turned to its
+A ship not yet at sea puts in only by a port city, its course's first point within 3 km of the roadstead, and then at
+that roadstead itself, never the page's own point, the page told so (`Sea::puts_in`; a sea opened with no port cities
+puts it to sea where the page asks); a ship its owner sailed before comes back where the sea last had it, however far
+the page puts it, as a ship sails nowhere while its player is away
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]); one at sea starts the course from where it is, to the nearest
+metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
 facing when it holds one: the helm turned while it lies still. A player sets one course, facings among them, each half
 second, and one sooner is dropped: judging a course against the coasts takes up to a few
 milliseconds, which no player may ask for every tick. The browser keeps its latest course and sends it once the sea
@@ -266,8 +272,8 @@ will take it, by the room's own tick.
   accounts answered for them waits, then sails from where the room last kept it once their character is given back
   (a fight met from the page's spot meanwhile is over for it), or as asked once the host says none is kept
   (`room_none_kept`: the claim failed, or the page sent an input before its token; a token after it still gives it
-  back where it was kept). A character given back with no place kept in it (a new one) puts to sea by Overlook
-  alone: where the page put it or asks, within 3 km of Overlook's roadstead, else at that roadstead. A new account's
+  back where it was kept). A character given back with no place kept in it (a new one) puts to sea at Overlook's
+  roadstead, wherever the page put it or asks. A new account's
   character is the one the room holds, given back to it. The account the
   keeper names (`room_own`) is kept with the player, and after they leave: what floats for it is theirs again when
   they join once more. Whatever
@@ -341,8 +347,10 @@ rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
   the fight since it was last asked, and the fight's clock.
 - A room holds 16 players. Its chances are drawn from one seed, so one room fights the same fight for the same orders.
   A room on land the servers host is given two seeds of its own, random and never sent: one its loot is drawn from,
-  and one its foes' choices are, so what a player sees of the foes tells them nothing of the loot. A node's garrison
-  is drawn, as the room opens, from its id alone, so it stands the same on every machine.
+  and one its foes' choices are, so what a player sees of the foes tells them nothing of the loot. The sea is given
+  the same two: what floats and what each boarded deck drops roll on them, a deck's mixed by its ship, never on the
+  sea's own seed, which its islands' seeds show ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A node's
+  garrison is drawn, as the room opens, from its id alone, so it stands the same on every machine.
 
 ## The bake
 
@@ -384,7 +392,7 @@ an older reader skips them.
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the pirates' Major) or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the fight's number layouts (`crates/combat/src/floats.rs`: a fighter, an intent and a glance cross as plain lists of numbers) and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema, other layouts or another order of that content loads again, once |
-| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
+| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire") |
 
 **Each player's own snapshot.** On land a snapshot is written for each player. Their own fighter crosses whole, as
 they predict from it; everyone else's numbers, and every foe's, cross packed: each in thousandths, a whole number
@@ -529,8 +537,9 @@ so every decision is Rust and the shell only carries bytes and time.
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
-- A full room closes the socket saying so; past 64 sockets, the sea's guard, or a run's eight, a join is turned
-  away (503). A locked node's room takes no one, at any seas: the room answers every join with none and says why
+- A full room closes the socket saying so (1013, "the room is full"), and so does one past its sockets, 64, the
+  sea's guard, or a run's eight: the socket is taken only to be closed, since a page never reads a refused upgrade's
+  status. A locked node's room takes no one, at any seas: the room answers every join with none and says why
   (`refusal`), and the host closes the socket with 4003 and those words, "<name> is locked". A landing, a gate and a
   company's join all come in as a join, so none gets in. Should the room's WebAssembly ever trap, every socket is
   closed and the object starts over.
@@ -592,7 +601,10 @@ so every decision is Rust and the shell only carries bytes and time.
   `rooms.yml`; `server/roomsDeploy.test.ts` fails when it misses a crate, or a file those crates or their build scripts build in). A merge of notes alone deploys nothing. Each deploy is recorded as a deployment to the `rooms`
   environment, which the next run compares with; with none found, it deploys. Without the secret it warns and deploys
   nothing, and when the rooms had something to deploy the page is not published either. Run by hand from `main`, it
-  deploys whatever changed or not, and `npm run server:deploy` does the same from a machine that holds the token itself.
+  deploys whatever changed or not, but only a commit whose own CI check passed (a check run named `check` that
+  succeeded): on any other the run ends red and deploys nothing
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+  `npm run server:deploy` deploys whatever changed or not from a machine that holds the token itself.
   The same workflow deploys the [[Accounts]] first, since the rooms' service binding names their Worker; should that
   fail, the rooms still deploy, beside the accounts last deployed.
 - **Locally**, `npm run server` runs the rooms on Cloudflare's own runtime, at `ws://127.0.0.1:8787/room/<name>`.
@@ -683,8 +695,10 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   the same after an hour open (tested offline).
 - Inputs that catch up several steps in one tick are judged where the last leaves the body, so a body can step out
   and back within one tick unwarned.
-- A ship that leaves the sea room leaves the sea. One unkept (a page with no session, or accounts that do not answer)
-  comes back only by a port city's roadstead.
+- A ship that leaves the sea room leaves the sea. One unkept is its session's (`unkept:` and the token's SHA-256,
+  never the token, through `room_own`), so it comes back where the sea last had it; the sea remembers 1,024 such at
+  most. A page with no session at all is no one the sea knows, and puts in at a port city's roadstead, as a new
+  player does.
 - The sea judges a course against the continents' coasts and the coasts of the islands the player is told of (within
   20 km of where the course starts, or found), as the page bends its voyages round those alone: a long course may pass
   through an island farther off. Its anchorage still lands no one who does not lie at it.

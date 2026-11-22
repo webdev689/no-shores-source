@@ -36,6 +36,8 @@ pub const DISMISS: u8 = 60;
 pub const TRAIN: u8 = 61;
 pub const CHOOSE_OFFICER: u8 = 62;
 pub const GATHER: u8 = 20;
+/// One's chest from a public event opened, by its number among one's drops in `item`.
+pub const OPEN_CHEST: u8 = 21;
 pub const GRANT_VESTIGE: u8 = 30;
 pub const GRANT_NAMED: u8 = 31;
 pub const GRANT_ITEM: u8 = 32;
@@ -94,6 +96,8 @@ pub const SPEAK: u8 = 64;
 pub const CHOOSE_FRAGMENT: u8 = 65;
 /// A puzzle's point used, by its place among its goal's points in `column`.
 pub const USE_POINT: u8 = 66;
+/// A return to the player's ship asked, which the room answers before the page leaves for the sea.
+pub const TO_SHIP: u8 = 73;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -149,6 +153,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         TRAIN => Asked::Gear(Ask::Train { officer: item, column, node }),
         CHOOSE_OFFICER => Asked::Gear(Ask::ChooseOfficer { officer: item, column, node }),
         GATHER => Asked::Gather { node },
+        OPEN_CHEST => Asked::OpenChest { chest: item },
         STOP_GATHER => Asked::StopGather,
         SCAVENGE => Asked::Scavenge { wreck: node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
@@ -188,6 +193,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
+        TO_SHIP => Asked::ToShip,
         _ => return None,
     })
 }
@@ -272,9 +278,11 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
+        Asked::OpenChest { chest } => args = messages::AskArgs { kind: OPEN_CHEST, item: *chest, ..args },
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
         Asked::StopGather => args = messages::AskArgs { kind: STOP_GATHER, ..args },
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
+        Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -453,13 +461,14 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .iter()
         .map(|drop| {
             let (at, from) = (Some(builder.create_vector(&drop.at)), Some(builder.create_vector(&drop.from)));
-            let (kind, rarity, slot) = match &drop.what {
-                Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8),
-                Dropped::AmmoBox => (1, 0, 0),
-                Dropped::Crate => (2, 0, 0),
+            let (kind, rarity, slot, tier) = match &drop.what {
+                Dropped::Vestige(vestige) => (0, vestige.rarity as u8, vestige.slot as u8, 0),
+                Dropped::AmmoBox => (1, 0, 0, 0),
+                Dropped::Crate => (2, 0, 0, 0),
+                Dropped::Chest { tier, .. } => (3, 0, 0, *tier),
             };
             let flying = u8::try_from(drop.rests.saturating_sub(room.clock())).unwrap_or(u8::MAX);
-            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying };
+            let args = messages::GearDropArgs { id: drop.id, rarity, slot, at, kind, from, flying, tier };
             messages::GearDrop::create(&mut builder, &args)
         })
         .collect();

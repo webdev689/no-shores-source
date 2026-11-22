@@ -44,6 +44,9 @@ pub struct NodeFile {
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
     /// space still locked (`city::social_open`).
     pub locked: bool,
+    /// Where its public events are fought, in a zone that holds them ([`EVENT_ZONES`]).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub grounds: Option<Grounds>,
     /// The nodes its layout's gates and way in lead to, each one laid: a patrol area's instances, an instance's patrol
     /// area. The server lets a player through into a node only from one whose gate leads there.
     pub gates: Vec<String>,
@@ -75,6 +78,8 @@ pub fn places_of(layout: &layout::Layout) -> Vec<Place> {
     let runs = layout.runs.iter().filter(|run| !named(&run.name));
     areas.chain(runs.map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M })).collect()
 }
+
+pub use layout::grounds::{EVENT_ZONES, FISSURE_RADIUS, FissureGround, Grounds, RaidGround, grounds_of};
 
 /// A counter of a social space: its station, and its middle.
 #[derive(Debug, Clone, Copy, PartialEq, Serialize)]
@@ -190,6 +195,7 @@ pub fn nodes_of(
             board: None,
             shape_spots,
             locked: false,
+            grounds: None,
             gates: Vec::new(),
             resources: Vec::new(),
             places,
@@ -214,7 +220,9 @@ pub fn nodes_of(
         let places = laid.map(places_of).unwrap_or_default();
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
-        NodeFile { gates, resources, places, paths, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
+        let grounds = laid.and_then(grounds_of);
+        let cut = cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns);
+        NodeFile { grounds, gates, resources, places, paths, ..cut }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);

@@ -3,7 +3,7 @@ import { rayHit } from '../player/playerCamera.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { PLATES } from '../plus/barLayout.ts';
-import { COMPASS, headingOf } from '../plus/compass.ts';
+import { COMPASS, headingOf, type PlaceMark } from '../plus/compass.ts';
 import { compassNode } from './compassNode.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -17,6 +17,7 @@ import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
+import { type BannerTone, PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import { CARD_NEAREST_M, cardStand } from '../player/figures.ts';
 import type { Cards } from '../player/cards.ts';
@@ -66,6 +67,8 @@ export interface HudFrame {
   readonly ammoFull?: boolean;
   /** The loadouts as the weapons' rows show them; none hides them. */
   readonly arms?: ArmsShown | null;
+  /** The zone's public event as the display shows it; none where the zone holds none. */
+  readonly public?: PublicShown | null;
   /** Where the houses' roads' next goal stands in the room (x, y), which the compass marks; none for none. */
   readonly questAt?: readonly [number, number] | null;
 }
@@ -86,6 +89,8 @@ const IRON_NEAR_M = 12;
 const RESPAWN_TICKS = 240;
 /** How long the stamina bar flashes for a swing or a dodge asked with none, and the screen's edge for a blow taken. */
 const FLASH_SECONDS = 0.45;
+/** A view shorter than this (CSS pixels at its zoom) takes the public banner short, clear of the crosshair. */
+const SHORT_VIEW = 480;
 /** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels; and how far clear of the
  *  vitals or the Arts and weapons it stands where it would fall on them: half an arrow and a little more. */
 const ARROW_INSET = 28;
@@ -187,6 +192,15 @@ export class Hud {
   private veil: ReturnType<typeof veilOf> = null;
   private ammo: { readonly ammo: number | null | undefined; readonly most: number | null } = { ammo: null, most: null };
   private heading: number | null = null;
+  /** The public event's banner under the compass, its stores' bars, the places the compass marks round the player
+   *  (`from`), and how long the display has run, which the marks blink by. */
+  private readonly banner = new PublicBanner();
+  private readonly stores = new StoreBars();
+  private places: { readonly from: readonly [number, number]; readonly marks: readonly PlaceMark[] } = {
+    from: [0, 0],
+    marks: [],
+  };
+  private time = 0;
   /** The quest's mark on the compass and where the player stands, as the last frame had them. */
   private quest: { readonly at: readonly [number, number]; readonly from: readonly [number, number] } | null = null;
   private lockSpot: { readonly x: number; readonly y: number } | null = null;
@@ -229,6 +243,11 @@ export class Hud {
     this.ironTold.clear();
   }
 
+  /** The tone the public event's banner shows in under the compass, none while it shows none. */
+  get bannerTone(): BannerTone | null {
+    return this.banner.tone;
+  }
+
   /** Whether a Boss's bar stands under the compass. */
   get bossed(): boolean {
     return this.foeBars.bossShown !== null;
@@ -258,6 +277,15 @@ export class Hud {
       locked: lock,
     };
     this.heading = viewing.camera ? headingOf(viewing.camera.forward) : this.heading;
+    const shown = frame.public ?? null;
+    this.time += seconds;
+    this.places = { from: [own?.x ?? 0, own?.y ?? 0], marks: shown?.places ?? [] };
+    this.banner.update(shown?.banner ?? null, seconds, shown?.beat ?? null);
+    this.stores.update(
+      shown?.stores ?? [],
+      (point) => project(frame.matrix, point, frame.width, frame.height),
+      seconds,
+    );
     this.quest = frame.questAt && own ? { at: frame.questAt, from: [own.x, own.y] } : null;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
     const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
@@ -423,10 +451,13 @@ export class Hud {
             Math.min(COMPASS.width, COMPASS.share * room) * zoom,
             this.heading,
             zoom,
-            this.quest?.from,
+            this.places.from,
             [],
             this.quest?.at ?? null,
+            { marks: this.places.marks, time: this.time },
           ),
+        // Under the compass, over the boss bar and the target's plate, so neither ever stands on it.
+        this.banner.node(room, zoom, this.view.height / zoom < SHORT_VIEW),
         this.foeBars.bossNode(Math.round(Math.min(PLATES.boss.width, PLATES.boss.share * room) * zoom), zoom),
         this.targetShare > 0 && this.targetNode(room, zoom),
       ],
@@ -442,6 +473,7 @@ export class Hud {
         this.vitals.node(zoom),
         arms,
         this.lockSpot && lockMarkNode(this.lockSpot),
+        ...this.stores.nodes(zoom),
         ...this.foeBars.overheadNodes(),
         ...this.rings.map((ring) =>
           parryNode(ring.edge && clear ? clear(ring, RING_CLEAR) : ring, ring.span, ring.kind, ring.window),

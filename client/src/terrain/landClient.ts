@@ -21,6 +21,7 @@ export type LandRequest =
   | { readonly kind: 'layouts-named'; readonly ids: readonly string[] }
   | { readonly kind: 'window'; readonly rect: readonly [number, number, number, number] }
   | { readonly kind: 'boxes'; readonly rect: readonly [number, number, number, number] }
+  | { readonly kind: 'grounds'; readonly id: string }
   | { readonly kind: 'dab'; readonly brush: Brush; readonly point: readonly [number, number]; readonly starts: boolean }
   | { readonly kind: 'settle' }
   | { readonly kind: 'setEdits'; readonly editsText: string }
@@ -108,6 +109,8 @@ export interface LandWorker {
   /** The open landmass's exact ground over a rect (west, north, east, south) as JSON, and the city's boxes there. */
   window(rect: readonly [number, number, number, number]): Promise<string>;
   boxes(rect: readonly [number, number, number, number]): Promise<readonly Block[]>;
+  /** Where the open landmass's node `id` fights its public events, as the bake writes them (JSON; `null` for none). */
+  grounds(id: string): Promise<string>;
   dab(brush: Brush, point: readonly [number, number], starts: boolean): Promise<LandPatch>;
   settle(): Promise<LandView>;
   setEdits(editsText: string): Promise<LandView>;
@@ -173,6 +176,7 @@ export function startLandWorker(): LandWorker {
       return text;
     },
     boxes: async (rect) => (await ask({ kind: 'boxes', rect })).boxes ?? [],
+    grounds: async (id) => (await ask({ kind: 'grounds', id })).text ?? 'null',
     dab: async (brush, point, starts) => {
       const { patch } = await ask({ kind: 'dab', brush, point, starts });
       if (!patch) throw new Error('the land worker answered no patch');

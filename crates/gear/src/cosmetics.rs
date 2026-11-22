@@ -256,6 +256,15 @@ impl Default for Cosmetics {
     }
 }
 
+impl crate::Character {
+    /// Whether the character has a horse to ride: a coat worn, which every rider starts with
+    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+    #[must_use]
+    pub fn may_ride(&self) -> bool {
+        !self.cosmetics.coat.is_empty()
+    }
+}
+
 impl Cosmetics {
     /// The one of a kind worn.
     #[must_use]

@@ -17,6 +17,8 @@ code:
   - client/src/game/gameFrame.ts#startFrames
   - client/src/game/pageWaters.ts#watersOnce
   - client/src/game/flow.ts#next
+  - client/src/game/travel.ts#startTravel
+  - client/src/game/tripBack.ts#tripOrBack
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
   - client/src/game/swingView.ts#SwingView
@@ -113,14 +115,14 @@ interface, the Test Ground's and the editors' panels too, is laid at the ratio i
 `flow.ts` holds where the player is: loading behind a veil, on foot in a node, at sea, or over an island's side
 choosing a landing; on foot and at sea a menu may be open. It is pure: the game hands it what happened and draws what
 it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
-`game.ts` keeps the flow, the travel between places and the player's actions, and `gameFrame.ts` draws each frame of
-the mode the flow is in, a frame on foot first heeding the activities' word (`startActivities`: a gate that shut, a
-company that fell); each mode is its own module.
+`game.ts` keeps the flow, the ways into each place and the player's actions, `travel.ts` the travel between places
+behind the veil, and `gameFrame.ts` draws each frame of the mode the flow is in, a frame on foot first heeding the
+activities' word (`startActivities`: a gate that shut, a company that fell); each mode is its own module.
 
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
-| On foot | M, then Return to ship | The veil, "Returning to your ship", then at sea |
+| On foot | M, then Return to ship | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
@@ -133,7 +135,16 @@ A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at
 only say it is locked.
 
 The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
-A way that fails stays on the veil, saying why, and Enter tries it again.
+
+A trip that fails, its room full or out of reach, puts the player back where they stood before it, joined again:
+aboard their ship, on the island's beach, in the dungeon, or in the node at its arrival spot
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
+the trip be one that sent them out of where they stood (a gate shut on them, their company fallen), they are taken
+to the hub, Overlook's social space, its landmass opened first where another is. The veil says why while they go
+("You could not reach The Saltgrass Downs:" and the reason), and once it lifts the same words stand as a toast for
+8 s. Only when the hub fails too does the trip stay on the veil, saying why, and Enter tries it again; so does the
+first arrival, which has nowhere to go back to. A room past its sockets takes the join only to close it, saying the
+room is full, as a browser's WebSocket never reads a refused join's status.
 
 ## Arriving
 

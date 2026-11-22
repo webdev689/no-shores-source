@@ -204,6 +204,9 @@ pub struct Character {
     /// The game's letters waiting at the mail counter, oldest first (`mail.rs`).
     #[serde(default)]
     pub mail: Vec<crate::mail::Letter>,
+    /// The body as it last left a room, given back on a return (`left.rs`); none before it first leaves one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub left: Option<crate::left::Left>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -269,6 +272,7 @@ impl Character {
             cosmetics: crate::cosmetics::Cosmetics::default(),
             quests: crate::quests::QuestLog::default().kept(),
             mail: Vec::new(),
+            left: None,
             unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [

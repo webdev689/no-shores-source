@@ -1,4 +1,5 @@
 use super::*;
+use crate::gear_door::{NodeCounter, counter_of};
 use combat::Fighter;
 use combat::sight::apart;
 use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};
@@ -172,6 +173,13 @@ fn an_open_sea_holds_the_unix_minute_it_is_set_to() {
         let Opened::Sea(sea) = opened else { panic!("a sea is open") };
         assert_eq!(sea.minute, 29_891_520);
     });
+}
+
+#[test]
+fn an_open_sea_takes_the_hosts_own_loot_and_world_seeds() {
+    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 7));
+    assert!(crate::gear_door::reseed([1, 2, 3, 4]), "a sea is reseeded as a room on land is");
 }
 
 #[test]

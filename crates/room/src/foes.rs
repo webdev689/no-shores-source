@@ -65,8 +65,8 @@ impl Foe {
 }
 
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
-/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield; and the companion
-/// it is, if one, whose faction is the players' (0).
+/// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield; the companion it
+/// is, if one, whose faction is the players' (0); and the name it stands under in place of its type's (empty for none).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct FoeSeen {
     pub foe: FighterId,
@@ -79,6 +79,7 @@ pub struct FoeSeen {
     pub fighter: Fighter,
     pub level: u8,
     pub shield: Option<gear::element::Shield>,
+    pub name: &'static str,
     pub companion: Option<crate::Companion>,
 }
 
@@ -165,8 +166,9 @@ impl ::foes::Routes for MeshRoutes<'_> {
         self.mesh.path_length(from, to)
     }
 
-    fn walkable(&self, point: [f64; 3]) -> bool {
-        let near = self.mesh.nearest_point(point);
+    fn walkable(&self, from: [f64; 3], point: [f64; 3]) -> bool {
+        // Placed on the part of the mesh `from` stands on: a joined mesh walks no way between its parts.
+        let near = self.mesh.nearest_point_from(from, point);
         near.is_some_and(|near| combat::sight::apart([near[0], near[1]], [point[0], point[1]]) <= ON_MESH)
     }
 }
@@ -315,7 +317,7 @@ impl Room {
         let behind = if call.place == Place::Behind { CALLED_BEHIND } else { 0.0 };
         let (from_x, from_y) = (at.body.x + back_sin * behind, at.body.y - back_cos * behind);
         for index in 0..call.count {
-            if self.living_foes() >= self.foes_most {
+            if self.living_foes() >= self.others_most() {
                 return;
             }
             let side = if index % 2 == 0 { -1.0 } else { 1.0 };
@@ -327,6 +329,10 @@ impl Room {
             let id = self.stand_foe(called_type, call.rank, spot, at.aim, Some(caller));
             // A called foe fights at its caller's level, and stands with no shield.
             self.gird(id, self.foes.get(&caller).map_or(0, |found| found.level), None);
+            // The calls of a fight after its caller leashed drop nothing: pulling it again pays no more.
+            if self.foes.get(&caller).is_some_and(|found| found.brain.has_leashed()) {
+                self.quests.spoilless.insert(id);
+            }
             let Some(found) = self.foes.get_mut(&id) else { continue };
             found.caller = Some(caller);
             if let Some(called) = called {
@@ -578,6 +584,7 @@ impl Room {
                 fighter: found.fighter,
                 level: found.level,
                 shield: found.shield,
+                name: self.names.get(&foe).copied().unwrap_or_default(),
                 companion: self.companion(foe),
             }
         })

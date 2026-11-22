@@ -49,6 +49,8 @@ throws more often than an Elite, a Boss's called foes fall with it and a garriso
 ground, after Bungie's ([[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]); the roster, the
 numbers and how the groups do it are Claude's ([[The Enemies as Claude Builds Them]],
 [[Foe Groups as Claude Builds Them]]). How each foe thinks is [[Foes]]; ships' ranks are [[Naval Combat]]'s.
+The Lattice, the next faction, has its types in the roster and comes out of the Fissure, a public event
+([[Public Events]]); its look is drawn ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[Lattice]]).
 
 ## Factions
 
@@ -61,9 +63,11 @@ prologue's wreck every boarder fights on the Grey Tithe's side ([[The Wreck's Bo
 |---|---|---|---|---|---|
 | 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane, the Elite Dungeons' 18 Bosses | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
 | 2 | Pirates | at sea | | Skirmisher, Swordsman, Brute, Archer, Captain | Pirate Sloop |
+| 3 | The Lattice | on land | Husk, Flicker, Idol, Ravager, Bulwark, Heart | | |
 
 The Grey Tithe holds the land: a garrison of its foes stands in every node but the social spaces, on every continent
-(below). The pirates hold no land.
+(below), and its Tithe-Taker comes only with its raid on a hamlet. The pirates hold no land. The Lattice hold none
+either: they pour out of a Fissure while it is open ([[Public Events]]), and their leaders are never screened.
 
 ## The roster
 
@@ -112,10 +116,21 @@ out among them ([[Foes]]).
 | 36 | Sluice-Warden Abel Rook (rotwater-sewers's Boss) | Captain | `sword_steel` |  | Boss |
 | 37 | Abbess Ylva Frost (frozen-sepulchre's Boss) | Captain | `flail_iron` | `shield_kite_steel` | Boss |
 | 38 | Catacomb-Reeve Silas Brine (brine-catacombs's Boss) | Captain | `warhammer_iron` |  | Boss |
+| 39 | Husk (Lattice) | Swordsman | `sword_iron` | | Minor, Major |
+| 40 | Flicker (Lattice) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
+| 41 | Idol (Lattice) | Archer | `bow_short_iron` | | Major, Elite |
+| 42 | Ravager (Lattice) | Brute | `warhammer_iron` | | Major, Elite |
+| 43 | Bulwark (Lattice) | Brute | `mace_iron` | `shield_kite_iron` | Elite, Miniboss |
+| 44 | Heart (Lattice) | Captain | `flail_iron` | | Boss, with no phases of its own yet |
+| 45 | Tithe-Taker | Captain | `mace_iron` | | Elite |
 
 Types 21 to 38 are the Elite Dungeons' Bosses, one each ([[Activities]]): each a Grey Tithe land Captain, the faction
 of the dungeon garrison it ends, at Boss rank, fighting in Corvane's three phases under a name of its own over its
 bar, dressed as Corvane is.
+
+The Lattice's hands are those of the forge's weapons of the same reach: the [[Lattice]]'s own blades, emitter, maul and
+anchor are drawn and dressed over them. A foe may stand under a name of its own in place of its type's, sent with it: a
+public event's Warden and Marrow, and the Fissure's crystal growth.
 
 The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 130, 70; Archer 50, 18; Captain 160,
 60 (with [[Foes]]' other numbers for each).
@@ -146,7 +161,9 @@ elite tier is [[Foes]]' (quicker wind-ups and cooldowns, one blow in three iron,
   starts clean, and every phase's call comes. Called foes have no post: they never leash ([[Foes]]).
 - **A garrison's Boss or Miniboss walking home** to its post, leashed or its search let go, goes back to its first
   phase as the walk begins: its numbers, blows and chains are that phase's, a roar owed is dropped, and the foes it
-  called fall as at its death. It roars into no later phase on the way. Its next fight has every phase and call again.
+  called fall as at its death. It roars into no later phase on the way. Its next fight has every phase and call again,
+  but the foes it calls after a leash drop nothing, so pulling it to its leash again and again pays no more
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
 - **Captain Brannoc Thule's**:
   1. **The blade**: sweep and lunge, feints, chains of one.
   2. **The boarding**: adds charge and leap; wind-ups ×0.85, cooldowns ×0.8, chains of two.
