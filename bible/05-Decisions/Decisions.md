@@ -86,7 +86,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Gear Screens Follow Destiny, on Enhanced Plus]]
 - [[The Ship Is Managed and Walked From the Sea's Panel]]
 - [[The Sloop Is About 18 m Long]]
-- [[Pirates Must Be Met at Sea]]
 - [[The Audit's Calls Are Claude's]]
 - [[The Water Is Stylised Realism]]
 - [[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]
@@ -274,6 +273,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue Is Passed Over, Its Camera and Footing Clear]]
 - [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
 - [[The Audit's Leftovers Are Fixed as Claude Suggested]]
+- [[Pirates Are Replaced by the Grey Tithe]]
+- [[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]
+- [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -296,3 +298,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Player's Display Takes DFO's Compass and Bar Layout]], by [[The Vitals Keep Their Panel Under DFO's Compass]]
 - [[The Rooms Deploy on Each Merge]], by [[The Rooms Deploy When Their Code Changes]]
 - [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]
+- [[Pirates Must Be Met at Sea]], by [[Pirates Are Replaced by the Grey Tithe]]
