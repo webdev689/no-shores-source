@@ -14,7 +14,7 @@ import type { HullMask } from '../water/hullMask.ts';
 import type { FleetInput, FleetVessel } from './fleetLink.ts';
 import type { FleetSloop } from './fleetPlay.ts';
 import { AimCamera, aimHullOf } from './aimCamera.ts';
-import { aimOf, easedAimOf, lookOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
+import { aimOf, easedAimOf, type MarkDrawer, SHIP_RUNG } from './naval.ts';
 import type { Orbit } from './orbit.ts';
 import { SAILS_RUNG } from './sailing.ts';
 
@@ -54,6 +54,8 @@ export class FleetScene {
   /** What draws its lay's aim over the water, where the marks' device can, and the eye it is laid from. */
   private readonly aimView: AimView | null;
   private readonly aimEye = new AimCamera();
+  /** The look the aim laid at its last frame, while it lays one. */
+  private aimed: FightLook | null = null;
 
   constructor(play: FleetSloop, marks: MarkDrawer, shown: (hull: number) => number = (hull) => hull) {
     this.play = play;
@@ -67,20 +69,23 @@ export class FleetScene {
     return vessel.captain ? this.shown(hullOfCaptain(vessel)) : SLOOP_HULL;
   }
 
-  /** The look the camera lays while aiming from it. */
-  look(orbit: Orbit, view: LandView): FightLook {
-    return lookOf(orbit, this.play, view);
+  /** The look the aim camera laid at its last frame (`aimCamera`), while it lays one. */
+  look(): FightLook | null {
+    return this.aimed;
   }
 
   /** The camera `seconds` on: eased out to its battery while `aiming` and its guns can speak, short of every other
-   *  ship afloat, and home again. */
+   *  ship afloat, and home again; the look it lays is kept for the next step (`look`). */
   aimCamera(orbit: Orbit, view: LandView, shown: number, aiming: boolean, seconds: number): Orbit {
     const alongside = this.play
       .others()
       .filter((vessel) => vessel.state !== 'sunk')
       .map((vessel) => aimHullOf([...vessel.ship], vessel.pose[0] ?? 0, this.hullOf(vessel)));
     const speaks = aiming && this.play.session.own()?.state === 'afloat';
-    return easedAimOf(this.aimEye, orbit, this.play, view, shown, speaks, alongside, seconds);
+    const how = { shown, aiming: speaks, alongside };
+    const aimed = easedAimOf(this.aimEye, orbit, this.play, view, how, this.lay, seconds);
+    this.aimed = aimed.look;
+    return aimed.orbit;
   }
 
   /** One frame: its orders owed and sent, its look's lay laid, the room's events made effects and fires burned. Answers

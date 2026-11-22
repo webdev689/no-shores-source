@@ -20,8 +20,11 @@ export const ROOM_FOES_MOST = 24;
 export const CREW_ALIVE_MOST = ROOM_FOES_MOST - ALIVE_MOST;
 /** How far from the boarder he faces a crewman stands with no spot laid for him, metres. */
 const APART_M = 1.6;
-/** How far round a zone's checkpoint the crew regrouping there stand, metres. */
-const REGROUP_M = 1.8;
+/** How far round a zone's checkpoint the crew regrouping there stand, metres: first, then nearer, then farther. */
+const REGROUP_M = [1.8, 1.2, 2.6] as const;
+/** The room a crewman stands in, metres: the level's own room for a figure (tools/wreck/wreck_level.py), so no
+ *  spot is at a deck's edge, where its body would press against the sea's rim. */
+const ROOM_M = 0.45;
 /** A spot this much higher or lower than the boarder's feet is another deck, metres. */
 const SAME_DECK_M = 0.6;
 const TRIES = 8;
@@ -58,9 +61,8 @@ export function crewSpots(zone: Zone, course: readonly CourseBlock[]): CrewSpot[
       const turn = Math.ceil(attempt / 2) * (attempt % 2 ? 1 : -1) * ((2 * Math.PI) / TRIES);
       const way = home + turn;
       const spot: Point = [foe.at[0] + Math.sin(way) * APART_M, foe.at[1] - Math.cos(way) * APART_M];
-      const top = topAt(course, ...spot);
       const taken = spots.some((other) => apart(other.at, spot) < 1);
-      if (taken || top <= 0 || Math.abs(top - deck) > SAME_DECK_M || !inArea(zone.area, ...spot)) continue;
+      if (taken || !roomy(course, spot, deck) || !inArea(zone.area, ...spot)) continue;
       spots.push({ at: spot, facing: facingFrom(spot, foe.at) });
       break;
     }
@@ -68,8 +70,8 @@ export function crewSpots(zone: Zone, course: readonly CourseBlock[]): CrewSpot[
   return spots;
 }
 
-/** Where `count` of the crew regroup in a zone the player reaches: round its checkpoint on its deck, each a step apart,
- *  facing the middle of its wave (its area's with none). */
+/** Where `count` of the crew regroup in a zone the player reaches: round its checkpoint on its deck with room round
+ *  each, each a step apart, facing the middle of its wave (its area's with none). */
 export function regroupSpots(zone: Zone, course: readonly CourseBlock[], count: number): CrewSpot[] {
   const [x, y] = zone.checkpoint;
   const deck = topAt(course, x, y);
@@ -82,18 +84,35 @@ export function regroupSpots(zone: Zone, course: readonly CourseBlock[], count: 
   ];
   const ahead = facingFrom([x, y], toward);
   const spots: CrewSpot[] = [];
-  for (let step = 0; step < TRIES * 2 && spots.length < count; step++) {
-    // Round the checkpoint from the side facing on, either way in turn.
-    const way = ahead + Math.ceil(step / 2) * (step % 2 ? 1 : -1) * (Math.PI / TRIES);
-    const spot: Point = [x + Math.sin(way) * REGROUP_M, y - Math.cos(way) * REGROUP_M];
-    const top = topAt(course, ...spot);
-    if (top <= 0 || Math.abs(top - deck) > SAME_DECK_M || spots.some((other) => apart(other.at, spot) < 1)) continue;
-    spots.push({ at: spot, facing: facingFrom(spot, toward) });
-  }
+  for (const reach of REGROUP_M)
+    for (let step = 0; step < TRIES * 2 && spots.length < count; step++) {
+      // Round the checkpoint from the side facing on, either way in turn.
+      const way = ahead + Math.ceil(step / 2) * (step % 2 ? 1 : -1) * (Math.PI / TRIES);
+      const spot: Point = [x + Math.sin(way) * reach, y - Math.cos(way) * reach];
+      if (!roomy(course, spot, deck) || spots.some((other) => apart(other.at, spot) < 1)) continue;
+      spots.push({ at: spot, facing: facingFrom(spot, toward) });
+    }
   return spots;
 }
 
 const apart = (one: Point, other: Point) => Math.hypot(one[0] - other[0], one[1] - other[1]);
+
+/** Whether a body stands at `spot` on the deck `deck` high with room round it: its feet and all round them out to
+ *  `ROOM_M` on the same deck. */
+function roomy(course: readonly CourseBlock[], spot: Point, deck: number): boolean {
+  const ground = (x: number, y: number) => {
+    const top = topAt(course, x, y);
+    return top > 0 && Math.abs(top - deck) <= SAME_DECK_M;
+  };
+  // Felt every 22.5 degrees, at half the room and the whole, so a single post beside it is felt too.
+  const round = Array.from({ length: 16 }, (_unused, index) => (index * Math.PI) / 8);
+  return (
+    ground(...spot) &&
+    [ROOM_M / 2, ROOM_M].every((reach) =>
+      round.every((way) => ground(spot[0] + Math.sin(way) * reach, spot[1] - Math.cos(way) * reach)),
+    )
+  );
+}
 
 /** What standing the crew needs of the wreck's run: its room, its foes' figures, the foes the room last showed, its
  *  layout, and the level the boarders stand at. */

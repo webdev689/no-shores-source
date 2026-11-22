@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { MarkDrawer } from '../editor/naval.ts';
+import { sweptBoxes } from '../editor/shipClear.ts';
+import { SLOOP_HULL } from '../ships/hulls.ts';
 import { eyeFor, FIELD_OF_VIEW, HEIGHT } from '../overworld/overworldCamera.ts';
 import type { FightCaptain, FightOrders, FightVessel, FightView } from '../rules/fightRules.ts';
 import { BAR_OVER_M } from '../ships/shipBars.ts';
@@ -249,28 +251,50 @@ test('while aiming the look may rise over the horizon to the longest throw; the 
   assert.ok(shot && shot.pitch >= 0.05 - 1e-9, `the orbit looks ${shot?.pitch} down`);
 });
 
-test('a held aim keeps its look on the side it laid on: no drag takes it over the bow or the stern', async () => {
+test('a held aim looks square off the side it was taken on: a drag across lays nothing new, up and down lays range', async () => {
   const { fight, orders, frames } = ordered();
   const turn = (degrees: number) => fight.drag((degrees * Math.PI) / 180 / 0.005, 0);
-  const bearing = () => orders.at(-1)?.aim?.bearing ?? Number.NaN;
-  // Aimed looking over the bow: nothing is held until the look first lays on a side.
+  const heading = vessel.ship[2] ?? 0;
+  // Aimed while looking a little off the starboard bow: the view swings square off the starboard side.
+  turn(20);
   fight.aim(true);
-  turn(90);
-  await frames(2);
-  assert.ok(Math.abs(bearing() - 90) < 1, `turned onto the starboard battery it bears ${bearing()}`);
-  turn(100);
-  await frames(2);
-  assert.ok(Math.abs(bearing() - 139) < 1, `dragged past the stern it stops at ${bearing()}`);
+  const shots = await frames(60);
+  const last = shots.at(-1);
+  assert.equal(orders.at(-1)?.aim?.bearing, 90);
+  assert.ok(last && Math.abs(last.yaw - (heading + Math.PI / 2)) < 0.02, `it looks along ${last?.yaw}`);
+  const range = orders.at(-1)?.aim?.range ?? 0;
   turn(-200);
+  await frames(5);
+  assert.equal(orders.at(-1)?.aim?.bearing, 90, 'dragged across the bow, it holds its side');
+  assert.ok(Math.abs((orders.at(-1)?.aim?.range ?? 0) - range) < 1e-9, 'and its range');
+  fight.drag(0, -40);
   await frames(2);
-  assert.ok(Math.abs(bearing() - 36) < 1, `dragged across the bow onto port it stops at ${bearing()}`);
-  // Let go, the camera turns as it likes again.
+  assert.ok((orders.at(-1)?.aim?.range ?? 0) > range + 5, 'a drag up lays it farther');
+  // Let go, the camera goes on round the ship from where the aim looked, and turns as it likes again.
   fight.aim(false);
-  turn(-36);
-  await frames(2);
+  const [after] = await frames(1);
+  assert.ok(after && Math.abs(after.yaw - (heading + Math.PI / 2)) < 0.05, 'no swing as it eases home');
+  turn(-120);
   fight.aim(true);
-  await frames(2);
-  assert.ok(Math.abs(bearing()) < 1, `aimed again over the bow it bears ${bearing()}`);
+  await frames(30);
+  assert.equal(orders.at(-1)?.aim?.bearing, -90, 'aimed again looking to port, port lays');
+});
+
+test("the fight's camera, zoomed all the way in, stands back past its own ship's rig, easing there", async () => {
+  const { fight, frames } = ordered();
+  for (let notch = 0; notch < 10; notch++) fight.wheel(-100, notch);
+  const [x = 0, y = 0] = vessel.ship;
+  const [heave = 0] = vessel.pose;
+  const deck = [x, y, heave + 6];
+  const astern = (await frames(120)).at(-1);
+  fight.drag(Math.PI / 0.005, 0);
+  const [first] = await frames(1);
+  const ahead = (await frames(60)).at(-1);
+  assert.ok(astern && first && ahead);
+  // Its jib's stay runs out 16 m forward of its middle: looking aft from ahead, the eye stands past its foot.
+  assert.ok(away(ahead, deck) > 17, `from ahead ${away(ahead, deck)} m back`);
+  assert.ok(away(astern, deck) < away(ahead, deck), 'from astern, nearer');
+  assert.ok(away(first, deck) > away(astern, deck) + 1, 'out quickly as the look comes round');
 });
 
 test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s steps it again', async () => {
@@ -286,25 +310,46 @@ test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s step
 
 test("out of the aim the wheel zooms the fight's camera by half again a notch, and never steps the load", async () => {
   const { fight, orders, frames } = ordered();
-  const [far] = await frames(1);
+  const settled = async () => (await frames(120)).at(-1);
+  const far = await settled();
   fight.wheel(-100, 1);
-  const [nearer] = await frames(1);
+  const nearer = await settled();
   const [x = 0, y = 0] = vessel.ship;
   const [heave = 0] = vessel.pose;
   const deck = [x, y, heave + 6];
   assert.ok(far && nearer);
-  assert.ok(
-    Math.abs(away(far, deck) - 75) < 1e-6 && Math.abs(away(nearer, deck) - 50) < 1e-6,
-    `${away(nearer, deck)} m`,
-  );
+  assert.ok(Math.abs(away(far, deck) - 75) < 0.1 && Math.abs(away(nearer, deck) - 50) < 0.1, `${away(nearer, deck)} m`);
   fight.wheel(100, 2);
   fight.wheel(100, 2.01);
-  const [out] = await frames(1);
-  assert.ok(out && Math.abs(away(out, deck) - 75) < 1e-6, 'no farther than the fight camera stands');
+  const out = await settled();
+  assert.ok(out && Math.abs(away(out, deck) - 75) < 0.1, 'no farther than the fight camera stands');
   for (let notch = 0; notch < 20; notch++) fight.wheel(-100, 3 + notch);
-  const [closest] = await frames(1);
-  assert.ok(closest && Math.abs(away(closest, deck) - 11.4) < 1e-6, 'no nearer than DFO keeps');
+  const closest = await settled();
+  // DFO's nearest is 11.4 m; looking forward from astern, the Sloop's boom swinging over its quarter keeps it farther.
+  assert.ok(closest && away(closest, deck) >= 11.4 && away(closest, deck) < 15, `${closest && away(closest, deck)} m`);
   assert.equal(orders.filter((sent) => sent.load).length, 0);
+});
+
+test("swung fast round the ship at its nearest, the fight's camera never stands inside its hull or its sails' swing", async () => {
+  const { fight, frames } = ordered();
+  for (let notch = 0; notch < 20; notch++) fight.wheel(-100, 1 + notch);
+  await frames(120);
+  const [x = 0, y = 0, heading = 0] = vessel.ship;
+  const [heave = 0] = vessel.pose;
+  for (let frame = 0; frame < 90; frame++) {
+    fight.drag(40, 0);
+    const [shot] = await frames(1);
+    const [east, south, up] = [(shot?.eye[0] ?? 0) - x, (shot?.eye[1] ?? 0) - y, (shot?.eye[2] ?? 0) - heave];
+    const [along, out] = [
+      east * Math.sin(heading) - south * Math.cos(heading),
+      east * Math.cos(heading) + south * Math.sin(heading),
+    ];
+    const inside = sweptBoxes(SLOOP_HULL).some(
+      ([low, high]) =>
+        along > low[0] && along < high[0] && out > low[1] && out < high[1] && up > low[2] && up < high[2],
+    );
+    assert.ok(!inside, `frame ${frame}: ${along.toFixed(1)} ${out.toFixed(1)} ${up.toFixed(1)}`);
+  }
 });
 
 test("each captain's plate is keyed by its own fight number, so plates in a fight of three never share a lift", () => {
@@ -333,13 +378,13 @@ test("its own gun's kick shakes the fight's eye, and it stands still again withi
   assert.ok(moved(kicked.frame(0.1, 2.5, 1000, () => undefined)) < 1e-9);
 });
 
-test("the fight's readout: its plate and rose, the card on the nearest captain, E to board one the room would take", () => {
+test("the fight's readout: its plate and its abilities' bar, the card on the nearest captain, E to board one the room would take", () => {
   const display = (view: FightView, mayBoard = false) =>
     new SeaCombat({ ...ROOM, mayBoard } as SeaRoom, view, MARKS, 0).display(1);
   const model = display(FIRST);
   assert.ok(model, 'a fight on shows it');
   assert.equal(model.ship?.name, 'Your Sloop');
-  assert.equal(model.ship?.port.ready, true);
+  assert.equal(model.ship?.abilities.find((ability) => ability.id === 'port')?.state, 'ready');
   assert.equal(model.card?.name, 'Pirate Sloop');
   assert.match(model.card?.sub ?? '', / - 640 m$/);
   const struck = { ...captain, ship: [5010, 6000, 2, 0, 0, 0, 0, 0], state: 'struck' } as const;
@@ -415,4 +460,20 @@ test('a fight the room no longer lists, the link joined again with no frame betw
   const fight = new SeaCombat(room, FIRST, MARKS, 0);
   nothingFought();
   assert.ok(await pannedUp(fight));
+});
+
+test("each captain's ship carries its people as the fight leaves its men; the player's own and one boarded carry none", () => {
+  const struck: FightCaptain = { ...captain, crew: 6, max_crew: 12, state: 'struck', run_out: ['port'] };
+  const fight = new SeaCombat(ROOM, { ...FIRST, captain: struck }, MARKS, 0);
+  const [own, theirs] = fight.ships(0.1, 0, 0, 1);
+  assert.equal(own?.crew, undefined);
+  assert.deepEqual(theirs?.crew, {
+    key: 'fight-1',
+    faction: 2,
+    rank: 2,
+    share: 0.5,
+    state: 'struck',
+    runOut: ['port'],
+  });
+  assert.equal(fight.ships(0.1, 0, 0, 1, 1)[1]?.crew, undefined, "boarded, its crew is the fight on foot's");
 });

@@ -12,7 +12,7 @@ import { Flotsam } from './flotsam.ts';
 import { hullPaint, hullWaterline, SLOOP_HULL } from './hulls.ts';
 import { type SailRig, windOff } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
-import { BLOW_S, magazineOf, NEAR_MISS_M, NEAR_SPLASH_M } from './fightMoments.ts';
+import { magazineOf, NEAR_MISS_M, NEAR_SPLASH_M } from './fightMoments.ts';
 import { KICKS } from './shake.ts';
 
 /** The fight's events as the feel reads them: the World Editor's, a ball's hit naming where on the ship it struck in its
@@ -66,9 +66,6 @@ export interface Cue {
   readonly gain?: number;
   readonly kick?: number;
 }
-
-/** The side of it a blow came from. */
-export type BlowSide = 'bow' | 'stern' | 'port' | 'starboard';
 
 type Window = (point: Point) => readonly [number, number, number];
 
@@ -134,12 +131,11 @@ export class FightFeel {
   private readonly magazines = new Map<number, number>();
   /** Every ship told going down, so each is told once. */
   private readonly sinking = new Set<number>();
-  /** Its side a blow last came from, and when; and when each side of it last came ready. */
-  private lastBlow: { readonly side: BlowSide; readonly at: number } | null = null;
-  private readonly ready: [number | null, number | null] = [null, null];
   /** Its guns' reload and each captain's sides run out at the last frame. */
   private reloads: readonly [number, number] | null = null;
   private readonly runOut = new Map<number, number>();
+  /** When each captain's side was first seen run out, by its number and side, while it stands run out. */
+  private readonly ranOut = new Map<string, number>();
   /** Its volley while its balls are aloft, and its tally once the last is down. */
   private volley: { balls: number; hits: number; holed: number; rig: number; lastShot: number } | null = null;
   private tallied: {
@@ -316,10 +312,7 @@ export class FightFeel {
       [0, 1, 2].map((axis) => (middle[axis] ?? 0) + (offOf(axes, spot)[axis] ?? 0)) as unknown as Point,
     );
     this.call('ship.hit', struck, part === 'hull' ? 0.9 : 0.3);
-    if (event.ship === 0) {
-      this.kick(event.zone === 'holed' ? KICKS.holed : KICKS.hit, struck);
-      if (part === 'hull') this.lastBlow = { side: blowSide(ship, spot), at: now };
-    }
+    if (event.ship === 0) this.kick(event.zone === 'holed' ? KICKS.holed : KICKS.hit, struck);
     if (part === 'hull') {
       this.hullHit(ship, spot, now, toWindow, true);
       if (event.zone === 'holed') this.effects.timber(toWindow([middle[0], middle[1], 0]), now);
@@ -428,10 +421,8 @@ export class FightFeel {
     const left = own?.vessel.guns?.left;
     if (own && left) {
       ([0, 1] as const).forEach((side) => {
-        if ((this.reloads?.[side] ?? 0) > 0 && left[side] <= 0) {
-          this.ready[side] = now;
+        if ((this.reloads?.[side] ?? 0) > 0 && left[side] <= 0)
           this.call('ship.ready', toWindow(lying(own.vessel).middle));
-        }
       });
       this.reloads = left;
     }
@@ -439,6 +430,11 @@ export class FightFeel {
       const sides = ship.vessel.run_out?.length ?? 0;
       if (sides > (this.runOut.get(number) ?? 0)) this.call('ship.runout', toWindow(lying(ship.vessel).middle));
       this.runOut.set(number, sides);
+      for (const side of ['port', 'starboard']) {
+        const key = `${number} ${side}`;
+        if (!ship.vessel.run_out?.includes(side)) this.ranOut.delete(key);
+        else if (!this.ranOut.has(key)) this.ranOut.set(key, now);
+      }
       if (sides > 0 && ship.vessel.state === 'afloat') this.glints(ship, now, seconds, toWindow);
     });
     const share = own && own.vessel.max_hull ? (own.vessel.hull ?? 0) / own.vessel.max_hull : 1;
@@ -470,23 +466,19 @@ export class FightFeel {
     this.effects.glint(toWindow(middle), ports, 1, now, seconds);
   }
 
-  /** The side of it a blow last came from while it is told, or null. */
-  blow(now: number): BlowSide | null {
-    return this.lastBlow && now - this.lastBlow.at < BLOW_S ? this.lastBlow.side : null;
+  /** Its last volley's tally while it is shown, or null. */
+  /** How long captain `number`'s `side` has stood run out at `now`, seconds; 0 while it is not. */
+  ranOutFor(number: number, side: string, now: number): number {
+    const since = this.ranOut.get(`${number} ${side}`);
+    return since === undefined ? 0 : Math.max(0, now - since);
   }
 
-  /** Its last volley's tally while it is shown, or null. */
   tally(
     now: number,
   ): { readonly balls: number; readonly hits: number; readonly holed: number; readonly rig: number } | null {
     if (!this.tallied || now - this.tallied.at > TALLY_S) return null;
     const { balls, hits, holed, rig } = this.tallied;
     return { balls, hits, holed, rig };
-  }
-
-  /** When its side (0 port, 1 starboard) last came ready, seconds, or null. */
-  readyAt(side: 0 | 1): number | null {
-    return this.ready[side];
   }
 
   /** Whether it is still drawn: not yet gone under. */
@@ -587,11 +579,4 @@ function hullGap(ship: FeelShip, point: Point): number {
   const { lengthM, beamM } = hullWaterline(ship.hull);
   const out = (value: number, half: number) => Math.max(0, Math.abs(value) - half);
   return Math.hypot(out(ahead, lengthM / 2), out(aside, beamM / 2), Math.max(0, up - deckOverM(ship.hull), -up));
-}
-
-/** The side of it a blow at `spot` (its frame) struck: its bow or stern, or a beam, by which it lies nearer. */
-function blowSide(ship: FeelShip, spot: Point): BlowSide {
-  const { lengthM, beamM } = hullWaterline(ship.hull);
-  if (Math.abs(spot[0]) / (lengthM / 2) >= Math.abs(spot[1]) / (beamM / 2)) return spot[0] >= 0 ? 'bow' : 'stern';
-  return spot[1] >= 0 ? 'starboard' : 'port';
 }

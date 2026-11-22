@@ -14,3 +14,6 @@ status: in force
   shows, the fight's display, its effects and its feel ([[Naval Combat]]).
 - DFO's naval scenes and display come over by [[Pick - Sailing and Naval Combat]], as the porting procedure has it.
 - The guns still fire square broadsides ([[Ship Guns Keep Square Broadsides]]).
+- Replaced in part: the aim's eye and look by [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]; the battery rose by
+  [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]; the warning's panel by
+  [[The Broadside Warning Is Written Over the Sea, Not a Panel]].

@@ -15,7 +15,8 @@ type Point = readonly [number, number, number];
 interface Entry {
   readonly waterline: { readonly length_m: number; readonly beam_m: number; readonly draught_m: number };
   readonly sails: readonly SailCorners[];
-  readonly guns: readonly { readonly mouth_m: Point }[];
+  readonly guns: readonly { readonly side: string; readonly mouth_m: Point }[];
+  readonly boxes: { readonly hull: readonly [Point, Point] };
 }
 // The manifest is the export's own, in the repository: its entries are as `Entry` says.
 const ENTRIES = ships.ships as unknown as Readonly<Record<HullName, Entry>>;
@@ -40,6 +41,17 @@ export function hullOfCaptain(ship: {
 export function hullWaterline(hull: number): Waterline {
   const { length_m, beam_m, draught_m } = ENTRIES[hullName(hull)].waterline;
   return { lengthM: length_m, beamM: beam_m, draughtM: draught_m };
+}
+
+/** Its hull's box as its export measured it, in its frame (x to its bow, y to starboard, z up from its waterline):
+ *  its lowest corner, then its highest. */
+export function hullBox(hull: number): readonly [Point, Point] {
+  return ENTRIES[hullName(hull)].boxes.hull;
+}
+
+/** Its guns' mouths in its frame, as its export measured them. */
+export function hullMouths(hull: number): readonly Point[] {
+  return ENTRIES[hullName(hull)].guns.map((gun) => gun.mouth_m);
 }
 
 /** Its sails' corners as its export measured them. */
@@ -74,7 +86,7 @@ export interface HullPaint {
 
 /** Its stripe, fitted through the mouths of its highest tier of guns, so it follows its sheer. */
 export function hullPaint(hull: number): HullPaint {
-  const mouths = ENTRIES[hullName(hull)].guns.map((gun) => gun.mouth_m);
+  const mouths = hullMouths(hull);
   const highest = Math.max(...mouths.map((mouth) => mouth[2]));
   // A lower tier of guns stands a deck's height under the upper one; the upper tier's own mouths keep within a metre.
   const tier = mouths.filter((mouth) => mouth[2] > highest - 1);
@@ -83,4 +95,13 @@ export function hullPaint(hull: number): HullPaint {
   const spread = tier.reduce((sum, mouth) => sum + (mouth[0] - meanX) ** 2, 0);
   const rise = spread > 0 ? tier.reduce((sum, mouth) => sum + (mouth[0] - meanX) * (mouth[2] - meanZ), 0) / spread : 0;
   return { atM: meanZ - rise * meanX, rise };
+}
+
+/** Each of its guns, fore to aft along each side as its export numbered them: its side, and its mouth in its frame
+ *  (metres to its bow, to its starboard, up from its waterline). */
+export function hullGuns(hull: number): { readonly side: 'port' | 'starboard'; readonly mouth: Point }[] {
+  return ENTRIES[hullName(hull)].guns.map((gun) => ({
+    side: gun.side === 'starboard' ? 'starboard' : 'port',
+    mouth: gun.mouth_m,
+  }));
 }

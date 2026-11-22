@@ -57,6 +57,7 @@ export function storied(options: { land?: LandWorker; refused?: boolean } = {}) 
         hints: (hints: (readonly [string, string])[]) => done.push(`hints ${hints[0]?.join(' ') ?? ''}`),
         shipBars: () => undefined,
         seaFight: () => undefined,
+        sight: () => undefined,
         tasks: {
           show: (quest: { steps: { text: string; count?: number }[] } | null) =>
             quest &&

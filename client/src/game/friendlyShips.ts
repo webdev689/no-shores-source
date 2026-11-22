@@ -1,6 +1,7 @@
 // The friendly ships the waters' traffic sails between the port cities, as the page draws them at sea and from land:
 // asked of the waters' rules a few times a second round the eye at world time, moved smoothly between answers along
-// their way, each drawn as its hull in friendly colours, its sails set and filled (furled at anchor), posed on the swell.
+// their way, each drawn as its hull in friendly colours, its sails set and filled (furled at anchor), posed on the
+// swell, with its plain crew aboard.
 import type { ShipMark } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
 import type { TrafficShip } from '../rules/watersRules.ts';
@@ -8,6 +9,7 @@ import type { OpenWaters } from './pageWaters.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import { hullSails, hullWaterline } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
+import { plainCrew } from '../ships/shipCrew.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import { poseOnSwell } from '../ships/swellPose.ts';
 import { HULLS, type HullMask } from '../water/hullMask.ts';
@@ -125,7 +127,8 @@ export class FriendlyShips {
   }
 
   /** Each ship as the ships layer draws it, `scale` times its size, in friendly colours, its sails set and filled by
-   *  the wind blowing toward `windBearing` (furled at anchor), posed on `water`'s swell at `time`. */
+   *  the wind blowing toward `windBearing` (furled at anchor), posed on `water`'s swell at `time`, its plain crew
+   *  aboard. */
   drawn(
     ships: readonly FriendlySailing[],
     scale: number,
@@ -155,7 +158,13 @@ export class FriendlyShips {
         roll: pose.roll,
         scale,
       };
-      return { hull: ship.hull, place, rig, look: { side: 'friendly' as const } };
+      return {
+        hull: ship.hull,
+        place,
+        rig,
+        look: { side: 'friendly' as const },
+        crew: plainCrew(`friendly-${ship.id}`),
+      };
     });
   }
 }

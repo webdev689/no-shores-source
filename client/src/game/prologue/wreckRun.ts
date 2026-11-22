@@ -20,7 +20,7 @@ import { CARD_NEAREST_M } from '../../player/figures.ts';
 import { handsZoom } from '../../player/playerCamera.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { IDLE, type InputFrame } from '../../player/input.ts';
-import { newPlayer, playerCamera, shownBody } from '../../player/player.ts';
+import { cameraFollowed, newPlayer, playerCamera, shownBody } from '../../player/player.ts';
 import type { Walker } from '../../player/walker.ts';
 import { type CombatRules, startCombatRules } from '../../rules/combatRules.ts';
 import type { FighterView } from '../../rules/fighters.ts';
@@ -33,6 +33,7 @@ import { worldOutput } from '../uiSounds.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
 import type { Arms, Boarder } from './tutorial.ts';
+import { cameraCourse } from './wreckCamera.ts';
 import { WreckCrew } from './wreckCrew.ts';
 import { courseOf, titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
@@ -83,6 +84,11 @@ export class WreckRun {
   /** The wreck's ground; the heaps standing are added to it. */
   private readonly base: readonly Block[];
   private course: Block[];
+  /** The course as the camera keeps clear of it (`cameraCourse`), once the wreck's mesh has come, and with the heaps
+   *  standing; the course itself until then. */
+  private cameraBase: readonly Block[] | null = null;
+  private seen: Block[];
+  private readonly origin: readonly [number, number];
   readonly boxes: readonly Block[];
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
@@ -121,6 +127,8 @@ export class WreckRun {
     this.steps = parts.fight.steps(context.movement);
     this.base = courseOf(layout);
     this.course = [...this.base];
+    this.seen = [...this.base];
+    this.origin = drawn.origin;
     this.foes = new FoeFigures(rosterOf(parts.module));
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     [this.scenery, this.gearHeld] = [drawn.scenery, drawn.gear];
@@ -177,9 +185,24 @@ export class WreckRun {
 
   /** The course as it stands now, laid on the room, the page's own movement and the fight's rules alike. */
   private relay(): void {
-    const gates = [...this.scenery.standing].flatMap((zone) => this.layout.zones[zone]?.gate ?? []);
-    this.course = [...this.base, ...gates];
+    this.course = [...this.base, ...this.gates()];
+    this.seen = [...(this.cameraBase ?? this.base), ...this.gates()];
     for (const rules of [this.context.movement, this.combat]) rules.setCourse(this.course);
+  }
+
+  /** The heaps standing across the way. */
+  private gates(): Block[] {
+    return [...this.scenery.standing].flatMap((zone) => this.layout.zones[zone]?.gate ?? []);
+  }
+
+  /** What the camera keeps clear of: what is drawn, once the wreck's mesh has come (`cameraCourse`). */
+  private get cameraBlocks(): readonly Block[] {
+    const { mesh } = this.scenery;
+    if (!this.cameraBase && mesh) {
+      this.cameraBase = cameraCourse(this.base, mesh, this.origin);
+      this.seen = [...this.cameraBase, ...this.gates()];
+    }
+    return this.seen;
   }
 
   /** A zone's heap stands across the way on from it. The foes' routes were laid without it: a foe that runs at it
@@ -356,7 +379,7 @@ export class WreckRun {
   /** The shot the run's camera takes of the player standing still: where a cutscene hands play over from. */
   restingShot(): Shot {
     const { walker, movement, groundAt } = this.context;
-    return shotOfOrbit(playerCamera(walker.player, movement, this.course), LENS, groundAt, CAMERA_CLEARANCE_M);
+    return shotOfOrbit(playerCamera(walker.player, movement, this.cameraBlocks), LENS, groundAt, CAMERA_CLEARANCE_M);
   }
 
   /** One frame: the player plays and fights (nothing pressed while `paused`, the fight's buttons only while
@@ -384,7 +407,9 @@ export class WreckRun {
       this.takeArms();
     }
     const bodies = [...foes.placed.values()].map((placed) => [placed.x, placed.y, placed.z] as const);
-    const aimed = () => playerCamera(walker.player, movement, this.course);
+    // The boom eases in and out round what is drawn, as on foot, rather than snapping each frame.
+    if (!held && !frozen) walker.player = cameraFollowed(walker.player, movement, this.cameraBlocks, null, seconds);
+    const aimed = () => playerCamera(walker.player, movement, this.cameraBlocks);
     const camera = () => pushedIn(aimed(), effects.anima.push);
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: !held && !frozen,

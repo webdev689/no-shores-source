@@ -48,6 +48,7 @@ import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
+import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { HULLS } from '../water/hullMask.ts';
 
@@ -96,6 +97,8 @@ export interface FrameParts {
   readonly shipModels: ShipModels;
   readonly figureView: FigureView;
   readonly traffic: FriendlyTraffic;
+  /** The people aboard every other ship drawn, at sea and seen from land. */
+  readonly crews: ShipPeople;
   readonly discovered: Discovered;
   readonly charting: Charting<Landmass>;
   readonly seaWeather: ReturnType<typeof seaWeatherOn>;
@@ -242,7 +245,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       (x, y) => parts.groundAt(x, y) ?? body.z,
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
-    const cards = [...shown.figures, ...met, ...nodes, ...walking];
+    const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
+    const cards = [...shown.figures, ...met, ...nodes, ...walking, ...crews];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
@@ -322,7 +326,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       ...{ hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share, dark: shown.dark },
       ...(swell ? { swell } : {}),
     };
-    const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);
+    const ships = [...shown.ships, ...fleet.ships];
+    const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
+    const drawers = standing(ships, [...shown.figures, ...crews], herDeck);
     scene.draw(shown.shot, size, clock, seconds, drawers, more);
     showStanding(here.boarding.standing ?? { kind: 'inside' });
     const { landmass, seaWord } = playing;

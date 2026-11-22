@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HULL_FIT, HULLS } from '../../water/hullMask.ts';
+import { HULLS, hullEdge } from '../../water/hullMask.ts';
+import wreck from '../../../../content/prologue/wreck.json' with { type: 'json' };
 import { courseOf, inArea, layoutAt, readWreck, topAt } from './wreckLayout.ts';
 
 const layout = readWreck();
 const course = courseOf(layout);
+/** The ground as the export laid it, its dead ends with it. */
+const LAID = wreck.course.map((block) => ({ ...block, bottom: 0 }));
 /** The movement rules' step and the reach of a jump over a lip, metres (crates/movement's TUNING). */
 const STEP_M = 0.5;
 const REACH_M = 1.8;
@@ -69,19 +72,16 @@ test("the ground's blocks lie on whole squares, as the rules' rim round them is 
     assert.ok(!over(fire.at[0], fire.at[1]), `the sea a fire burns on at ${fire.at.join(', ')}`);
 });
 
-test("no sea is drawn inside the wreck's hulls or over its rafts: a footprint over every ship and raft", () => {
+test("no sea is drawn over any of the wreck's ground, its dead ends' too, and none cut away under a fire on the sea", () => {
   assert.ok(layout.dry.length >= 10 && layout.dry.length <= HULLS, `${layout.dry.length} footprints`);
-  const inside = (x: number, y: number) =>
-    layout.dry.some((mask) => {
-      const [east, south] = [x - mask.x, y - mask.y];
-      const along = east * Math.sin(mask.heading) - south * Math.cos(mask.heading);
-      const across = east * Math.cos(mask.heading) + south * Math.sin(mask.heading);
-      return (along / mask.halfLength) ** 2 + (across / mask.halfBeam) ** 2 <= HULL_FIT ** 2;
-    });
-  for (const [x, y] of [layout.wake.at, ...layout.zones.flatMap((zone) => [zone.checkpoint, ...zone.crew])])
-    assert.ok(inside(x, y), `the sea under ${x}, ${y} is not drawn`);
+  // As the water's own shader tells a footprint's inside (`hullEdge` mirrors it).
+  const inside = (x: number, y: number) => layout.dry.some((mask) => hullEdge(mask, [x, y]).outside < 0);
+  for (const block of LAID)
+    for (let x = block.minX + 0.15; x < block.maxX; x += 0.3)
+      for (let y = block.minY + 0.15; y < block.maxY; y += 0.3)
+        assert.ok(inside(x, y), `the sea is drawn over the ground at ${x.toFixed(2)}, ${y.toFixed(2)}`);
   for (const fire of layout.fires.filter((each) => each.at[2] < 0.2))
-    assert.ok(!inside(fire.at[0], fire.at[1]), `the sea a fire burns on at ${fire.at.join(', ')} is drawn`);
+    assert.ok(!inside(fire.at[0], fire.at[1]), `the sea a fire burns on at ${fire.at.join(', ')} is not drawn`);
 });
 
 /** Each point along the path, every centimetre, and the top under it. */
@@ -258,9 +258,9 @@ test('fires burn on the decks, on the sea and along the yards and rails', () => 
   assert.ok(layout.fires.filter((fire) => fire.at[2] < 0.2).length >= 4, 'some on the sea');
   for (const fire of layout.fires) {
     if (fire.along || fire.at[2] < 0.2) continue;
-    // On the ground, or on a heap that closes a way for good: no body stands on one, so its block is a wall
-    // HEAP_WALL_M over the deck, and the fire burns on the heap under the wall's top.
-    const top = topAt(course, fire.at[0], fire.at[1]);
+    // On the ground as laid, a dead end's too, or on a heap that closes a way for good: no body stands on one, so
+    // its block is a wall HEAP_WALL_M over the deck, and the fire burns on the heap under the wall's top.
+    const top = topAt(LAID, fire.at[0], fire.at[1]);
     const onHeap = fire.at[2] <= top && fire.at[2] >= top - HEAP_WALL_M;
     assert.ok(Math.abs(top - fire.at[2]) < 0.6 || onHeap, `a fire at ${fire.at.join(', ')}`);
   }
