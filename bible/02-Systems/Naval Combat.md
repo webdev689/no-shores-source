@@ -206,9 +206,10 @@ so they never tack.
   (up to 80 m at the mark), its speed (up to 80%) and course (up to 40°) as they lead it, and their elevation (up to
   3°), each at their whole want of skill and a Major's rank, scaled by both, and most often small (the mean of two
   draws). The volley flies wide by what they misjudge across the mark, so some pass a ship's bow or stern at any
-  range. Against a Sloop sailing on or weaving, a Minor's balls strike about a quarter of the time, a Major's a third,
-  an Elite's to a Boss's about half (`captain_gunnery`). One run out too long unfired, or that loses its mark, is run
-  in. They never fire on a wreck.
+  range. Against a Sloop sailing on or weaving, a Minor's balls strike its hull about one time in seven, a Major's
+  one in three, an Elite's to a Boss's about one in two (`captain_gunnery`). Their misjudged elevation never passes
+  what their carriage depresses or raises to. One run out too long unfired, or that loses its mark, is run in. They
+  never fire on a wreck.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
   ship that outguns them. A chase that gains nothing in 150 s is given up, and a wreck left after 30 s. They leave the
   fight when they have sunk, or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each
@@ -660,7 +661,9 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   in the top right corner while the fight's readout shows, off the sky the aim looks at.
 
 The World Editor's fight and its fleet room aim the same way (`easedAimOf`), their look laid from the aim's last
-frame, and draw the lay with `AimView` after the water.
+frame, and draw the lay with `AimView` after the water; a drag across while aiming turns nothing there either. Let
+go, the editor's camera eases back to its own place round the ship, and its drag up past the guns' longest throw
+runs on unheld until it comes back (the editor keeps its own camera).
 
 ## An ambush
 

@@ -29,7 +29,7 @@ test('the shot at the helm keeps the crew off the player: none nearer the lens c
   const crew = new Brig([0, 0], 0).crew(PLACE, 0);
   const you = onDeck(PLACE, ...helmInShip());
   for (let step = -4; step <= 4; step++) {
-    const { eye, look } = creationEye((step * Math.PI) / 4);
+    const { eye, look } = creationEye((step * Math.PI) / 4, VIEW.width / VIEW.height);
     const [eyeWorld, lookWorld] = [onDeck(PLACE, ...eye), onDeck(PLACE, ...look)];
     const shot = { ...CREATION_LENS, eye: eyeWorld, ...lookAt(eyeWorld, lookWorld) };
     const player = figureBox(shot, you, 0.85);

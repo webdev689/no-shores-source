@@ -1,5 +1,5 @@
 use super::*;
-use crate::arms::{PIRATE_SLOOP, SLOOP_ARMS, Side};
+use crate::arms::{Build, PIRATE_SLOOP, SLOOP_ARMS, Side};
 use crate::gunnery::Guns;
 use crate::random::Mulberry32;
 use sailing::pose::Pose;
@@ -149,15 +149,40 @@ fn a_better_crew_and_a_higher_rank_misjudge_less() {
 
 #[test]
 fn its_gunners_lead_a_mark_by_its_way_as_they_last_saw_it() {
-    // A mark that has just come about, sailing north now, its way smoothed still southward: laid on where that way
-    // would carry it, so its ball passes astern of it.
-    let mark = Mark { velocity: [0.0, -5.0], smoothed: [0.0, 5.0], ..target_east(60.0) };
-    let mut deck = Deck::new();
-    deck.step(0.0, &mark);
-    let Some(lay) = deck.step(1.4, &mark).fire else { panic!("it fires") };
-    let judged = deck.run.judged[Side::Starboard.index()];
-    let lead = lead_point([0.0, 0.0], mark.place, judged.way(mark.smoothed), lay.gun.speed);
-    assert!(lead[1] > 0.0, "laid south of it, where its old way would take it: {lead:?}");
+    // A mark that has just come about, closing on it now, its way smoothed still opening the range: laid where that
+    // way would carry it, farther than it will be. Gunners of whole skill misjudge nothing else.
+    let mark = Mark { velocity: [-5.0, 0.0], smoothed: [5.0, 0.0], ..target_east(60.0) };
+    let ship = heading_north();
+    let sure = Build { skill: 1.0, ..PIRATE_SLOOP };
+    let mut run = RunOut::new();
+    let guns = Guns::new();
+    let mut draws = Mulberry32::new(3);
+    let at = Aboard { ship: &ship, pose: &LEVEL, arms: &SLOOP_ARMS, guns: &guns, build: &sure, aim_error: 1.0 };
+    captain_guns(&mut run, &at, &mark, 0.0, &mut draws);
+    let Some(lay) = captain_guns(&mut run, &at, &mark, 1.4, &mut draws).fire else { panic!("it fires") };
+    let laid_on = |velocity: [f64; 2]| {
+        let lead = lead_point([0.0, 0.0], mark.place, velocity, lay.gun.speed);
+        let target = [lead[0], lead[1], SLOOP_ARMS.hull[1][2] * AIM_FREEBOARD];
+        crate::gunnery::lay_on(&ship, &LEVEL, &SLOOP_ARMS, Side::Starboard, crate::guns::Shot::Round, target).elevation
+    };
+    assert!((lay.elevation - laid_on(mark.smoothed)).abs() < 1e-9, "laid on its old way");
+    assert!(lay.elevation > laid_on(mark.velocity) + 1e-4, "farther than its true way would lay");
+}
+
+#[test]
+fn a_misjudged_elevation_never_passes_what_its_carriage_raises_to() {
+    // Laid near its longest throw, the gunners' misjudgement upward is held at the carriage's highest.
+    let far = target_east(145.0);
+    let mut held = 0;
+    for seed in 1..40 {
+        let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
+        deck.step(0.0, &far);
+        if let Some(lay) = deck.step(1.4, &far).fire {
+            assert!(lay.elevation <= lay.gun.max_el_deg * DEG + 1e-12, "{seed}: {}", lay.elevation);
+            held += u32::from((lay.elevation - lay.gun.max_el_deg * DEG).abs() < 1e-12);
+        }
+    }
+    assert!(held > 0, "some volleys laid at the carriage's highest");
 }
 
 #[test]

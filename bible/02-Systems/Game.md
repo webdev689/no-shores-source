@@ -542,7 +542,9 @@ picture, so the interface the game draws over the world keeps its colour.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
 - The people seen aboard another ship are drawn, not the room's: another player's Sloop shows plain people, not that
   player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships moored by a
-  social space's pier carry no one.
+  social space's pier carry no one. A captain's ship met at sea is known by its sea number and in its fight by its
+  fight's, which the fight's view does not tie together: its hands are laid out afresh as its fight begins and ends,
+  each starting from a spot of its own.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.
 - Past the far square, about 2 km ahead of the camera, nothing is shadowed; the plants cast into the near square

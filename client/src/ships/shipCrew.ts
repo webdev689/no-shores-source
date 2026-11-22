@@ -49,7 +49,7 @@ const goneDown = (crew: Pick<ShipCrew, 'state'>) => crew.state === 'sinking' || 
 export function handsShown(hull: number, crew: Pick<ShipCrew, 'share' | 'state'>): number {
   if (goneDown(crew)) return 0;
   const whole = HANDS_BY_HULL[hull] ?? HANDS_BY_HULL[0] ?? 0;
-  const share = Math.min(1, Math.max(0, crew.share));
+  const share = Number.isFinite(crew.share) ? Math.min(1, Math.max(0, crew.share)) : 0;
   // A share whose hands come a hair of rounding over a whole number is that number.
   return Math.max(0, Math.ceil(whole * share - 1e-9));
 }

@@ -26,6 +26,6 @@ status: in force
 | How far they are drawn | While a figure stands 4 or more pixels tall; at most 40 figures a frame on other ships, nearest first | Smaller is never seen; the cap keeps the cards bounded |
 | What the gunners misjudge | Each volley, drawn as its side runs out: where the mark stands across their line (up to 80 m at the mark), its speed (up to 80%) and course (up to 40°) as they lead it, their elevation (up to 3°), at their whole want of skill and a Major's rank, scaled by both, most often small | Their lay was exact: the mark's true way, a gate that let fire only what would strike, and errors too small to tell at 40 m, where a Sloop abeam spans 30°. Misjudging across the mark misses at any range |
 | The way they lead on | The mark's way as they last saw it, smoothed over a second | A ship that comes about is led where it was going, as a gunner would |
-| How often they strike | Against a Sloop sailing on or weaving: a Minor's balls about a quarter of the time, a Major's a third, an Elite's to a Boss's about half; before, 60 to 100% at every rank | "Insane" was every volley landing; a higher rank still shoots better |
+| How often they strike | Against a Sloop sailing on or weaving, its hull: a Minor's balls about one time in seven, a Major's one in three, an Elite's to a Boss's about one in two; before, 58 to 85% at every rank | "Insane" was nearly every ball landing; a higher rank still shoots better |
 
 Links: [[Naval Combat]], [[Game]], [[Crew]].

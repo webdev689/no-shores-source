@@ -114,6 +114,17 @@ test('the arranger never plays a take twice running, and a pairing never heard c
   assert.equal(new Set(pairs).size, 6, `all six pairings before any again: ${pairs}`);
 });
 
+test("one fight's last take and the next fight's opening are no pairing heard", () => {
+  const form = SONG.form;
+  assert.ok(form);
+  // One fight played a, c, b, c and ended on c; the next opened on a. At c, c then a was never heard (only across
+  // the two fights), so it comes before c then b, which was.
+  const played = [0, 2, 1, 2].reduce((heard, take, index) => hearing(heard, take, index === 0), UNHEARD);
+  const heard = hearing(played, 0, true);
+  const after = new Set(Array.from({ length: 40 }, (_unused, roll) => takeAfter(form, 2, heard, () => roll / 40)));
+  assert.deepEqual([...after], [0]);
+});
+
 test('a song opens on a take that opens, never the one it opened on last', () => {
   const form = SONG.form!;
   let heard = UNHEARD;

@@ -13,6 +13,7 @@ test('each hull carries its own hands, cut by the share of its men left, one at 
   assert.equal(handsShown(3, { ...whole, share: 0 }), 0);
   assert.equal(handsShown(0, { ...whole, share: 2 / 3 }), 2, 'two thirds of three are two');
   assert.equal(handsShown(0, { ...whole, share: 1 / 3 + 1e-15 }), 1, 'a hair of rounding over one hand is one');
+  assert.equal(handsShown(0, { ...whole, share: Number.NaN }), 0, 'a share not known shows none');
 });
 
 test('struck, a ship keeps its hands and its captain leaves the wheel; going down or gone, no one is aboard', () => {

@@ -93,7 +93,7 @@ export function listenForControls(game: Controlled): void {
   });
   // The pad's presses do as the keys do, but under the gear screen or the sheet, whose buttons they are; B is
   // Escape in the game's menu, at the helm's map and at a landing; in the story A is a tap. Start and View open and shut the
-  // menu and the sheet wherever their keys would.
+  // menu and the sheet wherever their keys would, the story's wreck included.
   input.onPad((pressed, buttons) => {
     // A button being bound in the sheet is the sheet's alone.
     if (hud.controls.rebinding.slot) return;
@@ -103,8 +103,9 @@ export function listenForControls(game: Controlled): void {
     if (buttons.has('B') && !covered && contextOf(playing) === 'menu') return change({ kind: 'back' });
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
     else if (playing.flow.mode !== 'story' && !covered) act((id) => !escape && pressed.has(id), escape);
-    if (pressed.has('character') && playing.flow.mode !== 'story' && !hud.controls.open)
-      openGearWindow({ view: 'character', toggle: true });
+    // In the story too: the gear window rests wherever the story keeps no gear, and opens on the wreck, where the
+    // teaching asks for it, from the pad as from the keys.
+    if (pressed.has('character') && !hud.controls.open) openGearWindow({ view: 'character', toggle: true });
     if (pressed.has('controls') && (hud.controls.open || hud.keysOffered) && !gearScreenOpen()) {
       hud.controls.toggle();
       if (hud.controls.open) document.exitPointerLock();

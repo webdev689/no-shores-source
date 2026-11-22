@@ -236,6 +236,18 @@ test('a release fires the lay the look last held, as the aim lets go', async () 
   assert.equal(asked[2]?.aim, null, 'no look held, none laid');
 });
 
+test('a frame with no look laid, as the view eases round to the other side, lets the last look go', async () => {
+  const { fights, asked } = source();
+  const fighting = await begun(fights);
+  fighting.advance(0.1, { ...IDLE, look: { bearing: 90, range: 70 } }, 1, failed);
+  await settle();
+  fighting.advance(0.1, IDLE, 1.1, failed);
+  await settle();
+  fighting.advance(0.1, { ...IDLE, fire: true }, 1.2, failed);
+  await settle();
+  assert.deepEqual([asked.at(-1)?.fire, asked.at(-1)?.aim], [true, null], 'the starboard lay is not fired');
+});
+
 test('two releases queued behind one step both fire the lay the look held', async () => {
   const asked: FightOrders[] = [];
   const held: (() => void)[] = [];

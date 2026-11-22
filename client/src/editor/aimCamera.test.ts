@@ -13,6 +13,7 @@ import {
   segmentBoxEntry,
 } from './aimCamera.ts';
 import { aimStation } from './aimStation.ts';
+import { sweptBoxes } from './shipClear.ts';
 import { hullBox, SLOOP_HULL } from '../ships/hulls.ts';
 
 // Heading north: starboard is east, forward is north (south negative).
@@ -43,15 +44,43 @@ const settled = (camera: AimCamera, ask: AimAsk, frames = 180) => {
   return frame;
 };
 
-test('pressing aim eases the view out to its battery over a fifth of a second, smoothstepped, not in one frame', () => {
+test('pressing aim eases the view out to its battery over a fifth of a second, not in one frame', () => {
   const camera = new AimCamera();
   const first = camera.frame(asked(1), 1 / 60);
-  // DFO's: k eases by 1 - e^(-dt / tau), the eye moves by k smoothstepped.
-  const k = 1 - Math.exp(-(1 / 60) / AIM_CAM_TAU);
-  const share = k * k * (3 - 2 * k);
-  assert.ok(near(gap(first.eye, HOME.eye), share * gap(ON_STARBOARD, HOME.eye), 1e-6));
+  // DFO's: k eases by 1 - e^(-dt / tau), the eye moves by k smoothstepped: barely, the first frame.
+  assert.ok(AIM_CAM_TAU > 0.1 && gap(first.eye, HOME.eye) < 0.05 * gap(ON_STARBOARD, HOME.eye), 'barely moved');
   const aimed = settled(camera, asked(1));
   assert.ok(gap(aimed.eye, ON_STARBOARD) < 0.01, 'three seconds on it stands at the battery');
+});
+
+/** Whether a point in the world stands inside any part of the ship at `SHIP` (its hull or a sail's swing). */
+const inside = (hull: number, point: readonly number[]) => {
+  const [along, out, up] = [SHIP.y - (point[1] ?? 0), (point[0] ?? 0) - SHIP.x, point[2] ?? 0];
+  return sweptBoxes(hull).some(
+    ([low, high]) => along > low[0] && along < high[0] && out > low[1] && out < high[1] && up > low[2] && up < high[2],
+  );
+};
+
+test('from the far beam, out to the battery and home again, the eye goes round the ship, never through its rig', () => {
+  for (const hull of [0, 2]) {
+    const ship = { ...SHIP, hull };
+    // The camera's own place across the ship from the side looked at, as the fight's orbit stands when aiming starts.
+    for (const home of [
+      { eye: [SHIP.x - 14, SHIP.y + 2, 8] as const, yaw: Math.PI / 2, pitch: 0.3 },
+      { eye: [SHIP.x - 75, SHIP.y, 30] as const, yaw: Math.PI / 2, pitch: 0.3 },
+    ]) {
+      const camera = new AimCamera();
+      const ask = (want: 1 | -1 | null) => asked(want, { ship, home });
+      for (let frame = 0; frame < 150; frame++) {
+        const { eye } = camera.frame(ask(1), 1 / 60);
+        assert.ok(!inside(hull, eye), `hull ${hull}, out, frame ${frame}: ${eye.map((value) => value.toFixed(1))}`);
+      }
+      for (let frame = 0; frame < 150; frame++) {
+        const { eye } = camera.frame(ask(null), 1 / 60);
+        assert.ok(!inside(hull, eye), `hull ${hull}, home, frame ${frame}: ${eye.map((value) => value.toFixed(1))}`);
+      }
+    }
+  }
 });
 
 test('the view looks square off the side taken at the water its guns are laid on: the sight is on the lay', () => {
@@ -90,6 +119,13 @@ test("a look past the guns' longest throw or short of their nearest is held ther
   assert.ok(near(STATION.eye[1] + lookReach(-far.heldPitch, STATION.eye[2]), 63, 1e-6), 'its pitch held to match');
   const close = settled(new AimCamera(), asked(1, { pitch: 1.2 }));
   assert.ok(close.look && near(close.look.range, STATION.nearestM), `held at ${close.look?.range} m`);
+});
+
+test("a ship drawn as one hull and firing another's guns lays no nearer than those guns reach", () => {
+  const brigFiringSloop = { ...SHIP, hull: 2, guns: SLOOP_HULL };
+  const close = settled(new AimCamera(), asked(1, { ship: brigFiringSloop, pitch: 1.2 }));
+  assert.ok(close.look && near(close.look.range, aimStation(SLOOP_HULL).nearestM), `${close.look?.range} m`);
+  assert.ok(aimStation(2).nearestM > aimStation(SLOOP_HULL).nearestM + 2, "the Brig's own reach nearer is longer");
 });
 
 test('letting go eases the view home again, and once home the camera is its own', () => {

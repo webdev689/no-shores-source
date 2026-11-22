@@ -126,9 +126,13 @@ export function takeAfter(form: Form, from: number, heard: Heard, random: () => 
   return freshest(candidates(form, from), paired, heard, random);
 }
 
-/** `heard` with `take` played after it, as an opening or not. */
+/** Between one fight's takes and the next's in what was heard: no take follows another across it. */
+const BREAK = -1;
+
+/** `heard` with `take` played after it, as an opening (after a break) or not. */
 export function hearing(heard: Heard, take: number, opening: boolean): Heard {
-  return { takes: [...heard.takes, take].slice(-REMEMBERED), opened: opening ? take : heard.opened };
+  const takes = opening ? [...heard.takes, BREAK, take] : [...heard.takes, take];
+  return { takes: takes.slice(-REMEMBERED), opened: opening ? take : heard.opened };
 }
 
 /** Chooses the takes of every song with a form, remembering each song's own across its fights. */

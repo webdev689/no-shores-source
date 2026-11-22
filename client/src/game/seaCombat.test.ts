@@ -277,18 +277,21 @@ test('a held aim looks square off the side it was taken on: a drag across lays n
   assert.equal(orders.at(-1)?.aim?.bearing, -90, 'aimed again looking to port, port lays');
 });
 
-test("the fight's camera, zoomed all the way in, stands back past its own ship's rig", async () => {
+test("the fight's camera, zoomed all the way in, stands back past its own ship's rig, easing there", async () => {
   const { fight, frames } = ordered();
   for (let notch = 0; notch < 10; notch++) fight.wheel(-100, notch);
   const [x = 0, y = 0] = vessel.ship;
   const [heave = 0] = vessel.pose;
-  const [astern] = await frames(1);
+  const deck = [x, y, heave + 6];
+  const astern = (await frames(120)).at(-1);
   fight.drag(Math.PI / 0.005, 0);
-  const [ahead] = await frames(1);
-  assert.ok(astern && ahead);
+  const [first] = await frames(1);
+  const ahead = (await frames(60)).at(-1);
+  assert.ok(astern && first && ahead);
   // Its jib's stay runs out 16 m forward of its middle: looking aft from ahead, the eye stands past its foot.
-  assert.ok(away(ahead, [x, y, heave + 6]) > 17, `from ahead ${away(ahead, [x, y, heave + 6])} m back`);
-  assert.ok(away(astern, [x, y, heave + 6]) < away(ahead, [x, y, heave + 6]), 'from astern, nearer');
+  assert.ok(away(ahead, deck) > 17, `from ahead ${away(ahead, deck)} m back`);
+  assert.ok(away(astern, deck) < away(ahead, deck), 'from astern, nearer');
+  assert.ok(away(first, deck) > away(astern, deck) + 1, 'out quickly as the look comes round');
 });
 
 test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s steps it again', async () => {
@@ -304,24 +307,23 @@ test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s step
 
 test("out of the aim the wheel zooms the fight's camera by half again a notch, and never steps the load", async () => {
   const { fight, orders, frames } = ordered();
-  const [far] = await frames(1);
+  const settled = async () => (await frames(120)).at(-1);
+  const far = await settled();
   fight.wheel(-100, 1);
-  const [nearer] = await frames(1);
+  const nearer = await settled();
   const [x = 0, y = 0] = vessel.ship;
   const [heave = 0] = vessel.pose;
   const deck = [x, y, heave + 6];
   assert.ok(far && nearer);
-  assert.ok(
-    Math.abs(away(far, deck) - 75) < 1e-6 && Math.abs(away(nearer, deck) - 50) < 1e-6,
-    `${away(nearer, deck)} m`,
-  );
+  assert.ok(Math.abs(away(far, deck) - 75) < 0.1 && Math.abs(away(nearer, deck) - 50) < 0.1, `${away(nearer, deck)} m`);
   fight.wheel(100, 2);
   fight.wheel(100, 2.01);
-  const [out] = await frames(1);
-  assert.ok(out && Math.abs(away(out, deck) - 75) < 1e-6, 'no farther than the fight camera stands');
+  const out = await settled();
+  assert.ok(out && Math.abs(away(out, deck) - 75) < 0.1, 'no farther than the fight camera stands');
   for (let notch = 0; notch < 20; notch++) fight.wheel(-100, 3 + notch);
-  const [closest] = await frames(1);
-  assert.ok(closest && Math.abs(away(closest, deck) - 11.4) < 1e-6, 'no nearer than DFO keeps');
+  const closest = await settled();
+  // DFO's nearest is 11.4 m; looking forward from astern, the Sloop's boom swinging over its quarter keeps it farther.
+  assert.ok(closest && away(closest, deck) >= 11.4 && away(closest, deck) < 15, `${closest && away(closest, deck)} m`);
   assert.equal(orders.filter((sent) => sent.load).length, 0);
 });
 

@@ -80,6 +80,11 @@ const SHOT_WHEEL_S = 0.18;
 /** Out of the aim the wheel zooms the fight's camera, DFO's helm zoom: a notch is this many times nearer or farther,
  *  from DFO's nearest (its foot camera's far end, metres) out to the fight camera's own distance. */
 const ZOOM = { ratio: 1.5, nearestM: 11.4 } as const;
+/** How fast the fight's camera stands back as more of the ship comes between, and comes in again, seconds (time
+ *  constants): out about as fast as the aim's eye moves, in slowly enough that a look swinging past the bow never
+ *  pumps it. */
+const BACK_OUT_S = 0.12;
+const BACK_IN_S = 0.6;
 /** The way a ship's foam shows round its bow, m/s: a Sloop's whole. */
 const UNDER_WAY = 2;
 
@@ -140,8 +145,9 @@ export class SeaCombat {
   /** When the wheel last turned, seconds, and how far back the fight's camera stands. */
   private wheelAt = -Infinity;
   private distance: number = ORBIT.distance;
-  /** How far back the camera stood last frame to be clear of the player's own ship, metres. */
-  private clearance = 0;
+  /** How far back the camera stands from the ship's middle as drawn, eased toward the zoom's distance or as far as
+   *  clears the ship, metres. */
+  private backed: number = ORBIT.distance;
   private readonly aimCamera = new AimCamera();
   /** The hull the player's ship is drawn as, and how it lies where it is drawn on another swell than the rules'
    *  (the story's): the aim's eye and the camera's clearance ride it as drawn. */
@@ -266,7 +272,8 @@ export class SeaCombat {
 
   /** The right button held aims; let go, the lay held fires. A left click while aiming holds fire. */
   aim(held: boolean): void {
-    if (this.aiming && !held) this.fire = true;
+    // Let go while the view still eases round to the side taken, nothing is laid, so nothing fires.
+    if (this.aiming && !held && this.aimed?.look) this.fire = true;
     if (this.aiming && !held) this.leaveAim();
     this.aiming = held;
     this.orbit = { ...this.orbit, pitch: this.pitched(this.orbit.pitch) };
@@ -295,7 +302,7 @@ export class SeaCombat {
     if (!steps) return;
     if (!this.aiming) {
       const distance = this.distance * ZOOM.ratio ** Math.sign(steps);
-      this.distance = Math.min(ORBIT.distance, Math.max(ZOOM.nearestM, this.clearance, distance));
+      this.distance = Math.min(ORBIT.distance, Math.max(ZOOM.nearestM, distance));
       return;
     }
     if (time - this.wheelAt >= SHOT_WHEEL_S) this.loadSteps += Math.sign(steps);
@@ -307,17 +314,20 @@ export class SeaCombat {
     const [x = 0, y = 0, heading = 0] = this.last.player.ship;
     const [heave = 0, pitch = 0, roll = 0] = this.last.player.pose;
     const drawn = this.ownPose?.(x, y, heading) ?? { heave, pitch, roll };
-    return { x, y, heading, ...drawn, hull: this.ownHull };
+    return { x, y, heading, ...drawn, hull: this.ownHull, guns: SLOOP_HULL };
   }
 
-  /** The fight's camera round the player's ship, standing back at least as far as clears its hull and its rig. */
-  private orbitAt(): Orbit {
+  /** The fight's camera round the player's ship `seconds` on, standing back at least as far as clears its hull and
+   *  its rig: eased out quickly as the look comes round to where more of the ship stands, and back in slowly. */
+  private orbitAt(seconds: number): Orbit {
     const ship = this.ownShip();
     const target = { targetX: ship.x - this.window.leftM, targetY: ship.y - this.window.topM, targetZ: ship.heave };
     const lookAt = [ship.x, ship.y, ship.heave + ORBIT.lookOverM] as const;
-    this.clearance = orbitClearance(ship, lookAt, this.orbit.yaw, Math.max(PITCH[0], this.orbit.pitch));
-    const distance = Math.max(this.distance, this.clearance);
-    return { ...target, targetZ: target.targetZ + ORBIT.lookOverM, ...this.orbit, distance };
+    const clearance = orbitClearance(ship, lookAt, this.orbit.yaw, Math.max(PITCH[0], this.orbit.pitch));
+    const wanted = Math.max(this.distance, clearance);
+    const tau = wanted > this.backed ? BACK_OUT_S : BACK_IN_S;
+    this.backed += (wanted - this.backed) * (1 - Math.exp(-Math.max(0, seconds) / tau));
+    return { ...target, targetZ: target.targetZ + ORBIT.lookOverM, ...this.orbit, distance: this.backed };
   }
 
   /** The aim's frame: the orbit's view eased out to the ship's battery on the side looked at while aiming (never for
@@ -342,7 +352,7 @@ export class SeaCombat {
    *  which the view pans down to from the sea's by `share`. */
   frame(seconds: number, time: number, far: number, fail: (error: unknown) => void, swell?: ShelteredSwell): Shot {
     [this.swell, this.waterTime] = [swell, time];
-    const aimed = this.aimAt(this.orbitAt(), seconds);
+    const aimed = this.aimAt(this.orbitAt(seconds), seconds);
     this.aimed = aimed;
     // The guns laid no nearer than their lowest and no farther than their longest, the look's pitch held there.
     if (this.aiming) this.orbit = { ...this.orbit, pitch: aimed.heldPitch };

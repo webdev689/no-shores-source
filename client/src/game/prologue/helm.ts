@@ -19,8 +19,9 @@ const NEAREST_M = 3.4;
 const WIDE = 16 / 9;
 const EYE_M = 1.45;
 /** The figure the camera keeps whole: its height and breadth with a margin (sword and shield held out), how far its
- *  nearest part stands before its feet, and the height of its middle. */
-const FIGURE = { tall: 2.4, broad: 1.7, depth: 0.6, middle: 0.95 } as const;
+ *  nearest part stands before its feet (a corner of its breadth, the camera turned any way round it), and the height
+ *  of its middle. */
+const FIGURE = { tall: 2.4, broad: 1.7, depth: 0.85, middle: 0.95 } as const;
 /** Where the figure stands, clear of the creation window (creation.ts): on a screen wider than tall the window has
  *  the right from 49% across, so the figure keeps the left 46%; on one taller than wide the window has the bottom
  *  from 54% down, so the figure keeps the top 51%. Each is a box of the view's -1..1 across and up. */
@@ -35,9 +36,18 @@ export function helmInShip(): Point3 {
   return [-y, x, z];
 }
 
-/** The creation camera's eye and look in the Brig's frame, turned `turn` radians round the player from in front, for
- *  a view `aspect` wide to its height: back far enough that the whole figure fits the part of the view the window
- *  leaves clear, and turned so the figure stands in the middle of that part. */
+/** Where the creation camera opens round the player, radians from in front of them, to starboard positive, by the
+ *  view's width to its height: off the helm's port side, the side the storm's run comes in on. From in front, the
+ *  wheel and its binnacle hid two thirds of the figure; abeam they hide a twenty-fifth of it on a wide view, the eye
+ *  a metre clear of the rail, and 60° round about a sixth on a tall one, where the camera stands farther back. On a
+ *  wide view it is two of the turn's steps round, so the turns come round to in front of them as they did. */
+export function openingTurn(aspect: number): number {
+  return ((aspect <= 1 ? -60 : -90) * Math.PI) / 180;
+}
+
+/** The creation camera's eye and look in the Brig's frame, turned `turn` radians round the player from where it
+ *  opens (`openingTurn`), for a view `aspect` wide to its height: back far enough that the whole figure fits the part
+ *  of the view the window leaves clear, and turned so the figure stands in the middle of that part. */
 export function creationEye(turn: number, aspect = WIDE): { readonly eye: Point3; readonly look: Point3 } {
   const [forward, starboard, up] = helmInShip();
   const clear = aspect <= 1 ? CLEAR.tall : CLEAR.wide;
@@ -51,7 +61,8 @@ export function creationEye(turn: number, aspect = WIDE): { readonly eye: Point3
     depth(FIGURE.tall / (half * (clear.top - clear.bottom))),
     depth(FIGURE.broad / (half * aspect * (clear.right - clear.left))),
   );
-  const [along, across] = [Math.cos(turn), Math.sin(turn)];
+  const round = openingTurn(aspect) + turn;
+  const [along, across] = [Math.cos(round), Math.sin(round)];
   const eye: Point3 = [forward + along * distance, starboard + across * distance, up + EYE_M];
   // The camera faces back toward the player, turned off them so they stand at the clear part's middle: to its right
   // for a figure left of the view's middle, below it for a figure above.

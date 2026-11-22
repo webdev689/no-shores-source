@@ -7,6 +7,7 @@ import { hullBox, hullMouths, hullSails } from '../ships/hulls.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import { lookPitch, lookReach } from './aim.ts';
 import { aimStation } from './aimStation.ts';
+import { clearAround } from './shipClear.ts';
 
 /** How long the eye takes to ease in or out, and from one battery to the other: its time constant, seconds. */
 export const AIM_CAM_TAU = 0.22;
@@ -21,6 +22,11 @@ const YARDS_OVER_BOX_M = 4;
 const DRIFT_TAU = 0.25;
 /** Taken again on the other side, the view goes out there once it has eased this near home. */
 const SWAP_SHARE = 0.05;
+/** On its way between the camera's own place and the battery the eye keeps this far out past the ship and its rig,
+ *  metres, coming in to the battery's station at the end. */
+const ROUND_CLEAR_M = 0.6;
+/** The eye's way round the ship is felt at this many points each way, to choose the way that keeps nearer it. */
+const ROUND_FELT = 12;
 
 type Point = readonly [number, number, number];
 
@@ -37,7 +43,8 @@ export interface AimHull {
 }
 
 /** The ship the guns are laid from, as it is drawn: its middle (metres east and south), heading (radians clockwise
- *  from north), its waterline's height, its bow's rise and its heel to starboard (radians), and its hull's number. */
+ *  from north), its waterline's height, its bow's rise and its heel to starboard (radians), its hull's number, and the
+ *  hull whose guns the rules fire where that is another (the story's Brig fires a Sloop's). */
 export interface AimShip {
   readonly x: number;
   readonly y: number;
@@ -46,6 +53,7 @@ export interface AimShip {
   readonly pitch: number;
   readonly roll: number;
   readonly hull: number;
+  readonly guns?: number;
 }
 
 /** A view: its eye (world metres) and its look, yaw clockwise from north and pitch down from the horizon (radians). */
@@ -222,7 +230,8 @@ export class AimCamera {
     this.drift += (laidDrift(ask.lay, side, ship.heading) - this.drift) * driftStep;
     const height = station.eye[2];
     const asked = station.eye[1] + lookReach(-ask.pitch, height);
-    const range = Math.min(laidReach(ask.lay, side, ship), Math.max(station.nearestM, asked));
+    const { nearestM } = aimStation(ship.guns ?? ship.hull);
+    const range = Math.min(laidReach(ask.lay, side, ship), Math.max(nearestM, asked));
     const heldPitch = range === asked ? ask.pitch : -lookPitch(range - station.eye[1], height);
     // The point laid on the water, square off the battery's middle and on along the keel as far as the balls drift.
     const along = station.eye[0] + this.drift;
@@ -237,16 +246,47 @@ export class AimCamera {
     const [yaw, pitch] = [Math.atan2(east, -south), Math.atan2(-up, flat)];
     const length = Math.hypot(flat, up) || 1;
     const k = this.share * this.share * (3 - 2 * this.share);
+    const drawn = toWorld(ship, roundShip(ship.hull, toLocal(ship, home.eye), this.local, k));
     const laying = wanted === side;
     const look = laying
       ? { bearing: 90 * side, range, ray: [...eye, east / length, south / length, up / length] }
       : null;
     return {
-      eye: toward(home.eye, eye, k),
+      eye: drawn,
       yaw: home.yaw + turnTo(home.yaw, yaw) * k,
       pitch: home.pitch + (pitch - home.pitch) * k,
       look,
       heldPitch,
     };
   }
+}
+
+/** A place in a ship's frame as its bearing from its bow (radians, to starboard positive), its distance out from its
+ *  middle, and its height. */
+function roundOf(point: Point): [number, number, number] {
+  return [Math.atan2(point[1], point[0]), Math.hypot(point[0], point[1]), point[2]];
+}
+
+/** The point `share` of the way round a ship (by its hull's number) from `from` to `to`, both in its frame: bearing,
+ *  distance out and height each eased, the way round its bow or its stern that keeps nearer it, and never nearer it
+ *  than its hull and every sail's swing allow, short of the end itself. A straight line from the camera's place on
+ *  one beam to a battery on the other passed through its rig. */
+export function roundShip(hull: number, from: Point, to: Point, share: number): Point {
+  const [[bearing, out, up], [toBearing, toOut, toUp]] = [roundOf(from), roundOf(to)];
+  const short = turnTo(bearing, toBearing);
+  const other = short - Math.sign(short || 1) * 2 * Math.PI;
+  const pointAt = (turn: number, along: number): Point => {
+    if (along >= 1) return to;
+    const round = bearing + turn * along;
+    const height = up + (toUp - up) * along;
+    // Clear of the ship all the way, its margin given up as the eye comes in to the battery, which stands clear.
+    const least = clearAround(hull, round, height) + ROUND_CLEAR_M * (1 - along);
+    const reach = Math.max(out + (toOut - out) * along, least);
+    return [Math.cos(round) * reach, Math.sin(round) * reach, height];
+  };
+  const furthest = (turn: number) =>
+    Math.max(
+      ...Array.from({ length: ROUND_FELT + 1 }, (_unused, index) => roundOf(pointAt(turn, index / ROUND_FELT))[1]),
+    );
+  return pointAt(furthest(short) <= furthest(other) ? short : other, share);
 }

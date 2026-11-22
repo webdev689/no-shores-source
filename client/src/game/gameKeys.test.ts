@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { type Controlled, contextOf, listenForControls } from './gameKeys.ts';
+import { OPEN_AT } from './gearScreen.ts';
 import { FakeEvent, fakePage } from './pageForTests.ts';
 
 type Playing = Parameters<typeof contextOf>[0];
@@ -57,4 +58,31 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
   sea.fight = {};
   repair();
   assert.deepEqual(asked, ['repair', 'repair']);
+});
+
+test("in the story the pad's Start asks for the Character page, which opens wherever the story keeps gear", () => {
+  const { window } = fakePage();
+  globalThis.CustomEvent ??= class extends Event {
+    readonly detail: unknown;
+    constructor(type: string, init?: { detail?: unknown }) {
+      super(type);
+      this.detail = init?.detail;
+    }
+  } as unknown as typeof CustomEvent;
+  const opened: unknown[] = [];
+  window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as { detail: unknown }).detail));
+  let pad: ((pressed: Set<string>, buttons: Set<string>) => void) | null = null;
+  const nothing = () => undefined;
+  listenForControls({
+    playing: { flow: { mode: 'story' }, sea: null, foot: null, helmMap: { busy: false } },
+    input: { onPad: (listener: typeof pad) => (pad = listener) },
+    ui: { typing: false },
+    hud: { controls: { open: false, rebinding: { slot: null } } },
+    story: { press: nothing },
+    retry: () => null,
+    change: nothing,
+  } as unknown as Controlled);
+  assert.ok(pad);
+  (pad as (pressed: Set<string>, buttons: Set<string>) => void)(new Set(['character']), new Set(['Start']));
+  assert.deepEqual(opened, [{ view: 'character', toggle: true }]);
 });

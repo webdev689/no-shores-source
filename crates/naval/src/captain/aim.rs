@@ -273,7 +273,9 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             let off = libm::atan2(judged.across_m, range.max(1.0));
             let (sine, cosine) = (libm::sin(off), libm::cos(off));
             let dir = [laid.dir[0] * cosine - laid.dir[1] * sine, laid.dir[0] * sine + laid.dir[1] * cosine];
-            Lay { elevation: laid.elevation + judged.elevation, dir, ..laid }
+            // Never past what its carriage depresses or raises to.
+            let (low, high) = (laid.gun.min_el_deg * DEG, laid.gun.max_el_deg * DEG);
+            Lay { elevation: (laid.elevation + judged.elevation).clamp(low, high), dir, ..laid }
         };
         // The mark's near side, where a ball laid past its middle's reach still strikes it.
         let toward = depth.min(range) / range.max(1e-6);

@@ -308,7 +308,9 @@ export class SongPlayer {
       }
       this.cursor = toTick;
     }
-    if (this.cursor >= length && this.looping) {
+    // A seam the song fades out before is never heard: nothing is arranged past it.
+    const fadesFirst = this.stopAt !== null && this.origin + length * tickSeconds >= this.stopAt;
+    if (this.cursor >= length && this.looping && !fadesFirst) {
       // The next pass, or the next take, begins where this one ends, to the tick: written as whole bars, a song loops
       // on its bar line and its takes meet on one.
       const next = this.take === null ? null : this.arranger.after(song, this.take);

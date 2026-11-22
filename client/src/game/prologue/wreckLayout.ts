@@ -81,6 +81,11 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
   return layout;
 }
 
+/** The keys on R2 of a wreck's mesh and its light, read without the rest of its layout. */
+export function drawnKeys(file: WreckFile = wreck): { readonly mesh: string; readonly light: string } {
+  return { mesh: file.mesh, light: file.light };
+}
+
 /** Each file's layout once read: its dead ends found and its footprints fitted once. */
 const readLayouts = new WeakMap<WreckFile, WreckLayout>();
 
@@ -119,7 +124,7 @@ function layoutOf(file: WreckFile): WreckLayout {
       })),
       laid,
     ),
-    drawn: { mesh: file.mesh, light: file.light },
+    drawn: drawnKeys(file),
   };
 }
 

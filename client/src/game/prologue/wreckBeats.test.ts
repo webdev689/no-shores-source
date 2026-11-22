@@ -113,6 +113,26 @@ test('the throw overboard begins black, as the fight faded out, and only then fa
   assert.ok(shown.drawers?.includes(scenery.drawer), 'the wreck is drawn');
 });
 
+test('Thule and his crew crow turned toward the camera from the rail: none shows it his back', async () => {
+  const compiled = new WebAssembly.Module(
+    await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
+  );
+  const { story } = recorded(FOOT_VIEW, { 'stage.parts.roster': rosterOf(compiled) }, armouredDress(FIRST_LOOK));
+  const beat = new Overboard(story, layout, scenery);
+  for (const second of [0.5, 3, 6]) {
+    const shown = beat.frame(tick(second));
+    const crowing = (shown.actors ?? []).filter((actor) => actor.id !== YOU_ID);
+    assert.ok(crowing.length > 0);
+    for (const actor of crowing) {
+      const toEye = Math.atan2(shown.shot.eye[0] - actor.x, -(shown.shot.eye[1] - actor.y));
+      assert.ok(
+        Math.cos(actor.facing - toEye) > 0.3,
+        `${actor.id} faces ${actor.facing.toFixed(2)}, the eye ${toEye.toFixed(2)}`,
+      );
+    }
+  }
+});
+
 test('the deep shows the wreck above and the Brig with its own hands, and speaks on its own clock', () => {
   const { story, calls } = recorded();
   const beat = new Deep(story, layout, scenery);
@@ -130,6 +150,20 @@ test('the deep shows the wreck above and the Brig with its own hands, and speaks
   assert.ok(!calls.includes('stage.play(deep, true)'), 'the voice waits for the flash to fade');
   beat.frame(tick(1.2));
   assert.ok(calls.includes('stage.play(deep, true)'));
+});
+
+test('the throw overboard and the wake cut short say and sound nothing more', () => {
+  const { story, calls } = recorded();
+  const overboard = new Overboard(story, layout, scenery);
+  overboard.frame(tick(0.2));
+  calls.length = 0;
+  overboard.skip();
+  overboard.frame(tick(0.1));
+  assert.ok(!calls.some((call) => call.startsWith('stage.play') || call.includes('splash')), calls.join(' '));
+  const wake = new Wake(story, layout, scenery, new Promise(() => undefined));
+  calls.length = 0;
+  wake.skip();
+  assert.ok(!calls.some((call) => call.includes('thud')), calls.join(' '));
 });
 
 test('the deep cut short says nothing more and flashes no more', () => {
@@ -175,6 +209,25 @@ test("the wake eases out of the eyes to over the player's shoulder, their hands 
   assert.ok(beat.done, 'control comes 15.5 s in');
   rest.eye.forEach((value, axis) => assert.ok(Math.abs((handed.shot.eye[axis] ?? 0) - value) < 1e-6));
   assert.ok(Math.abs(handed.shot.yaw - rest.yaw) < 1e-6 && Math.abs(handed.shot.pitch - rest.pitch) < 1e-6);
+});
+
+test("the wake takes the run's shot as it leaves the eyes, and draws the player only once a metre out of them", async () => {
+  const { story } = recorded();
+  const [x, y] = layout.wake.at;
+  const deck = topAt(courseOf(layout), x, y);
+  // The run's shot before the wreck's mesh has come (in at the head), and after (back over the shoulder).
+  let rest: Shot = { eye: [x, y + 0.5, deck + 1.9], yaw: 0, pitch: 0.2, fov: 0.8, near: 0.1, far: 1000 };
+  const run = Promise.resolve({ restingShot: () => rest } as unknown as WreckRun);
+  const beat = new Wake(story, layout, scenery, run);
+  await run;
+  beat.frame(tick(12.9));
+  rest = { ...rest, eye: [x, y + 3.6, deck + 2.2] };
+  const first = beat.frame(tick(0.15));
+  assert.ok(!first.actors?.some((actor) => actor.id === YOU_ID), 'not drawn while the camera is still at the eyes');
+  let shown = first;
+  for (let step = 0; step < 60 && !beat.done; step++) shown = beat.frame(tick(0.05));
+  while (!beat.done) shown = beat.frame(tick(0.05));
+  rest.eye.forEach((value, axis) => assert.ok(Math.abs((shown.shot.eye[axis] ?? 0) - value) < 1e-6, 'the later shot'));
 });
 
 test('the wake cut short leaves the eyes open, though the director frames it once more', () => {

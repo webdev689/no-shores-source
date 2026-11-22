@@ -116,12 +116,13 @@ export class Crew {
   }
 
   /** The crew `seconds` on: a hand at a spot waits, then sets off for another the deck leaves a clear way to. A hand
-   *  `posts` names a spot for walks straight there and stands facing its way; let go, they wait a moment, then walk
-   *  on as before. */
+   *  `posts` names a spot for walks straight there once the deck leaves a clear way to it (else walks on, and asks
+   *  again from where it comes to), and stands facing its way; let go, they wait a moment, then walk on as before. */
   step(seconds: number, posts: readonly (Post | null)[] = []): void {
     this.walking.forEach((hand, index) => {
       const post = posts[index] ?? null;
-      if (post !== hand.post)
+      const clear = post === null || clearLeg(this.deck, [hand.x, hand.y], [post.x, post.y]);
+      if (post !== hand.post && clear)
         [hand.post, hand.target, hand.waiting] = [post, post && [post.x, post.y, post.z], PAUSE_S[0]];
       if (hand.post) {
         if (hand.target && this.walkOn(hand, seconds) !== null) hand.facing = hand.post.facing;

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { cellHeight, SLOOP_DECK } from '../ships/deck.ts';
+import { cellHeight, HULL_DECKS, SLOOP_DECK } from '../ships/deck.ts';
 import { clearLeg, Crew, STAND_INS } from './crew.ts';
 
 test('the stand-in hands walk its deck from spot to spot, always on it and clear of its wheel', () => {
@@ -39,4 +39,28 @@ test('the same seed walks the same crew, however the seconds are cut', () => {
 test("a leg is clear only where every point of it is deck, without a step past the planks' own", () => {
   assert.ok(clearLeg(SLOOP_DECK, SLOOP_DECK.helm, [SLOOP_DECK.helm[0] - 0.3, SLOOP_DECK.helm[1]]));
   assert.ok(!clearLeg(SLOOP_DECK, SLOOP_DECK.helm, [5, SLOOP_DECK.helm[1]]), 'over its side');
+});
+
+test('a hand sent to a post walks there only once the deck leaves a clear way; never through what stands on it', () => {
+  const deck = HULL_DECKS[2] ?? SLOOP_DECK;
+  const crew = new Crew(deck, 5, 4);
+  const spots = new Crew(deck, 9, 40).hands.map((hand) => [hand.x, hand.y, hand.z] as const);
+  // A post across the deck from each hand, as a run-out battery's guns stand across from a hand on the other side.
+  const posts = crew.hands.map((hand) => {
+    const far = spots.reduce((best, spot) =>
+      Math.hypot(spot[0] - hand.x, spot[1] - hand.y) > Math.hypot(best[0] - hand.x, best[1] - hand.y) ? spot : best,
+    );
+    return { x: far[0], y: far[1], z: far[2], facing: 0 };
+  });
+  for (let tick = 0; tick < 60 * 30; tick++) {
+    const before = crew.hands.map((hand) => [hand.x, hand.y] as const);
+    crew.step(1 / 60, posts);
+    crew.hands.forEach((hand, index) => {
+      const [x = 0, y = 0] = before[index] ?? [];
+      assert.ok(
+        clearLeg(deck, [x, y], [hand.x, hand.y]),
+        `a hand stepped through what stands on the deck at ${x}, ${y}`,
+      );
+    });
+  }
 });

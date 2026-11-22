@@ -149,7 +149,10 @@ export class Fighting {
     if (input.press) this.presses.push(input.press);
     if (input.fire) this.fires++;
     if (input.boost) this.boosts++;
+    // A frame aimed with no look laid (the view easing round to the other side) lets the last look go, so a release
+    // then fires nothing rather than the side laid before; one owed a release keeps it until it is sent.
     if (input.look) this.lastLook = input.look;
+    else if (!input.fire && this.fires === 0) this.lastLook = null;
     this.loadSteps += input.loadSteps;
     this.owed = Math.min(this.owed + seconds, MOST_TICKS * TICK_SECONDS);
     if (this.pending || this.answer.over) return;

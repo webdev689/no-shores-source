@@ -1,6 +1,8 @@
-//! How often a captain's balls strike a player's Sloop sailing on and weaving, by its rank: its gunners lay on where
-//! they judge the Sloop will be, and miss by their want of skill as a crew of that rank does.
+//! How often a captain's balls strike a player's Sloop's hull, sailing on and weaving, by its rank: its gunners lay on
+//! where they judge the Sloop will be, and miss by their want of skill as a crew of that rank does. A ball stops at a
+//! hull, so each strikes one at most; one through a sail first is counted by its hull's alone.
 
+use naval::damage::Zone;
 use naval::fight::{CAPTAIN, Event, Fight, Orders, PLAYER};
 use naval::ranks::{Commission, PIRATES, Rank};
 use naval::shots::ShotEvent;
@@ -19,7 +21,7 @@ impl Waters for Open {
 
 const WIND: [f64; 2] = [3.0, 1.0];
 
-/// How many of a bold captain of `rank`'s balls strike the player's Sloop, and how many it fires, over `minutes` of
+/// How many of a bold captain of `rank`'s balls strike the player's Sloop's hull, and how many it fires, over `minutes` of
 /// a fight on each of `seeds`, the Sloop under all plain sail and weaving: hard over one way for 4 s, steady 8 s,
 /// hard over the other 4 s, steady 8 s; or holding its course, with `weaving` false; until the fight ends.
 fn struck_share(rank: Rank, weaving: bool, minutes: u32, seeds: u32) -> (u32, u32) {
@@ -50,7 +52,9 @@ fn struck_share(rank: Rank, weaving: bool, minutes: u32, seeds: u32) -> (u32, u3
             for event in fight.step(&[(PLAYER, orders)], &Open, &|_| WIND, time) {
                 match event {
                     Event::Shot(ShotEvent::Muzzle { shooter, .. }) if shooter == CAPTAIN => fired += 1,
-                    Event::Shot(ShotEvent::Hit { shooter, target, .. }) if shooter == CAPTAIN && target == PLAYER => {
+                    Event::Shot(ShotEvent::Hit { shooter, target, zone, .. })
+                        if shooter == CAPTAIN && target == PLAYER && zone != Zone::Rig =>
+                    {
                         struck += 1;
                     }
                     _ => {}
@@ -66,14 +70,17 @@ fn struck_share(rank: Rank, weaving: bool, minutes: u32, seeds: u32) -> (u32, u3
 
 #[test]
 fn captains_miss_often_and_a_higher_rank_less() {
-    let share = |rank: Rank| {
-        let (struck, fired) = struck_share(rank, false, 2, 3);
+    let share = |rank: Rank, weaving: bool| {
+        let (struck, fired) = struck_share(rank, weaving, 2, 3);
         assert!(fired >= 9, "{rank:?} fired {fired}");
         f64::from(struck) / f64::from(fired)
     };
-    let [minor, major, boss] = [share(Rank::Minor), share(Rank::Major), share(Rank::Boss)];
-    assert!(minor < 0.45 && major < 0.5 && boss < 0.65, "{minor} {major} {boss}");
-    assert!(boss > minor && boss > 0.3, "{minor} {boss}");
+    for weaving in [false, true] {
+        let [minor, major, boss] =
+            [share(Rank::Minor, weaving), share(Rank::Major, weaving), share(Rank::Boss, weaving)];
+        assert!(minor < 0.4 && major < 0.45 && boss < 0.6, "weaving {weaving}: {minor} {major} {boss}");
+        assert!(boss > minor && boss > 0.25, "weaving {weaving}: {minor} {boss}");
+    }
 }
 
 #[test]
