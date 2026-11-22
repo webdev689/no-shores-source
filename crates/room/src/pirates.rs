@@ -203,6 +203,17 @@ impl Pirates {
         self.chasing.get(&player).copied()
     }
 
+    /// Sets the player's next roll to wait its first wait again, as a ship that has travelled to new waters.
+    pub fn wait_first(&mut self, player: PlayerId) {
+        self.waits.insert(player, FIRST_ROLL_S);
+    }
+
+    /// How long the player's next roll waits yet, seconds.
+    #[cfg(test)]
+    pub(crate) fn wait_of(&self, player: PlayerId) -> Option<f64> {
+        self.waits.get(&player).copied()
+    }
+
     /// One tick of `seconds` on `chart`, each player's ship at sea in `ships`. Each ship takes the sight of the player
     /// nearest it if it is farther than the ship's, sails on and goes once no player keeps it; then each player's roll
     /// comes due. Answers each bold ship that came within `ENGAGE_RANGE` of a player this tick, with that player, for

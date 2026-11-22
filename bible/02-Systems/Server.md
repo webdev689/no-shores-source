@@ -31,6 +31,7 @@ code:
   - crates/protocol/gear.fbs
   - crates/protocol/src/lib.rs#read_input
   - crates/protocol/src/lib.rs#read_course
+  - crates/room/src/sea_travel.rs#TravelRefused
   - crates/protocol/src/land.rs#snapshot_bytes
   - crates/protocol/src/pack.rs#pack
   - crates/protocol/src/lib.rs#read_inputs
@@ -239,6 +240,13 @@ will take it, by the room's own tick.
   touches a continent's coast in the layout ([[World Map]]). The coasts are judged in whole metres, in integer
   arithmetic. A pace neither one of the steps nor 1, a point outside the world's frame, and a course of more than 64
   points are refused.
+- **Travel.** A course asked with the travel flag (the held map's) takes the
+  ship most of the way at once (`sea_travel.rs`). It is refused while the player fights, stands on a deck or boards,
+  is off the helm, or is any hostile ship's quarry, when the course ends in the water the ship is in, and as any
+  course is refused. Taken, the ship lies on the course's last leg 400 m short of its end (at the leg's start where the
+  leg is shorter), heading along it, its course the end alone at the pace asked, and the player's next roll for a
+  hostile ship waits its first 30 s again; the hostile ships no player keeps go as ever. Either way the player is told
+  (code 24: taken, or the reason's number), and a refused travel leaves the ship as it was.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
 - Pirates and the Grey Tithe's ships sail among the players', each with its faction and rank, and a bold one that
   meets a player fights them in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a ship of
