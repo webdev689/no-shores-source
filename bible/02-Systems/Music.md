@@ -295,6 +295,8 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
 
 ## Limits
 
+- Every score is built as the game starts, all its takes at once: 100 to 170 ms in Node, not yet measured in a
+  browser.
 - One fight score, and one pair of calm pieces, serves every climate of its family: the coast and the highland share
   green's.
 - The calm pieces out of danger play while it is at sea, whether it is under way or hove to.

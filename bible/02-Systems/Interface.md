@@ -983,6 +983,8 @@ button's corner and screen, and the Tailor's wares.
 
 ## Limits
 
+- On a view under 386 px tall (a phone held sideways) the broadside warning reaches down over the sight; the sea
+  fight has no touch controls yet.
 - The sea fight's readout writes at the face's 11 px where DFO's wrote 10, 12 and 15, and the sight's aim line at 11
   where DFO's was 13; the laid side's soft 8 px glow stands as a hard gold
   halo round its broadside's ring; and a long ship's name on the card is cut short a little sooner, the face's
