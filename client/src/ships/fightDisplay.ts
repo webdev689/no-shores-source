@@ -86,7 +86,6 @@ export function fightDisplay(
         tell: RUN_OUT_S,
         braceKey: board.braceKey,
         braced: player.guns.braced,
-        more: running.length - 1,
       }
     : null;
   const state = near?.state === 'struck' ? 'struck' : near?.state === 'sinking' ? 'sinking' : 'afloat';

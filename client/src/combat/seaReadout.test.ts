@@ -213,7 +213,6 @@ const WARN: SeaWarning = {
   tell: 1.3,
   braceKey: 'C',
   braced: false,
-  more: 0,
 };
 const warnedOf = (more: Partial<SeaWarning> = {}) => ({ ...MODEL, warn: { ...WARN, ...more } });
 const WARN_LABEL = 'Broadside from the Pirate Brig';
@@ -222,32 +221,26 @@ test('the broadside warning stands under the target card at the top, never over 
   assert.equal(readoutOf({ ...MODEL, card: null }).under, UNDER_COMPASS, 'under the compass with nothing shown');
   const carded = readoutOf(MODEL).under;
   assert.equal(carded, UNDER_COMPASS + 37 + 8, 'under the card');
-  for (const more of [0, 2]) {
-    const warned = readoutOf(warnedOf({ more }));
+  for (const braced of [false, true]) {
+    const warned = readoutOf(warnedOf({ braced }));
     const root = warned.node();
     const warn = labelled(root, WARN_LABEL);
     assert.deepEqual(warn?.float?.at, [0.5, 0], 'set from the top, not the middle where the sight is');
     assert.equal(warn?.float?.y, carded, 'just under the card');
     const box = root && laidOf(root).find((laid) => laid.node === warn)?.box;
     assert.ok(box, 'laid');
-    assert.equal(warned.under, box.y + box.height + 8, `the plates just under it, ${more} more batteries`);
+    assert.equal(warned.under, box.y + box.height + 8, `the plates just under it, braced ${braced}`);
     assert.ok(box.y + box.height < 720 / 2 - 40, 'well over the sight');
   }
 });
 
-test('the warning is no panel: its words over the sea, BROADSIDE large between two signs, then who, where, the shot and the brace', () => {
+test('the warning is no panel and few words: BROADSIDE large between two signs, then the brace large by its key', () => {
   const warn = labelled(readoutOf(warnedOf()).node(), WARN_LABEL);
   assert.equal(warn?.draw, undefined, 'nothing drawn behind it');
   assert.equal(warn?.fill, undefined);
-  assert.deepEqual(wordsIn(warn), [
-    'BROADSIDE',
-    'PIRATE BRIG - 140 M ON YOUR STARBOARD BEAM',
-    'CHAIN SHOT - TEARS YOUR SAILS',
-    'C',
-    'BRACE - HALVES THE HARM TO HULL AND SAILS',
-  ]);
-  const title = allOf(warn).find((node) => node.text?.words === 'BROADSIDE');
-  assert.equal(title?.text?.size, 2, 'twice the words’ size, as the game’s other warnings');
+  assert.deepEqual(wordsIn(warn), ['BROADSIDE', 'C', 'BRACE']);
+  const sizeOf = (said: string) => allOf(warn).find((node) => node.text?.words === said)?.text?.size;
+  assert.deepEqual([sizeOf('BROADSIDE'), sizeOf('C'), sizeOf('BRACE')], [3, 2, 2]);
   assert.equal(allOf(warn).filter((node) => node.picture?.key === 'broadside sign').length, 2);
   assert.ok(
     allOf(warn).every((node) => !node.text || node.text.words === 'C' || node.text.edge === 'halo'),
@@ -255,14 +248,10 @@ test('the warning is no panel: its words over the sea, BROADSIDE large between t
   );
 });
 
-test('braced, the warning says so in brass with no key to press; grape is said to spare no men; more batteries are counted', () => {
-  const braced = labelled(readoutOf(warnedOf({ braced: true, load: 'grape', more: 2 })).node(), WARN_LABEL);
-  assert.deepEqual(wordsIn(braced).slice(2), [
-    'GRAPE SHOT - CUTS DOWN YOUR CREW',
-    'BRACED - HALVES THE HARM TO HULL AND SAILS, NOT TO MEN',
-    '2 MORE BATTERIES RUN OUT AT YOU',
-  ]);
-  const brace = allOf(braced).find((node) => String(node.text?.words ?? '').startsWith('BRACED'));
+test('braced, the warning says so in brass with no key to press', () => {
+  const braced = labelled(readoutOf(warnedOf({ braced: true })).node(), WARN_LABEL);
+  assert.deepEqual(wordsIn(braced), ['BROADSIDE', 'BRACED']);
+  const brace = allOf(braced).find((node) => node.text?.words === 'BRACED');
   assert.equal(brace?.text?.colour, TONES.brassHi);
 });
 
@@ -275,7 +264,7 @@ test('the fuse burns in from both ends over the battery’s tell, then flashes w
     withMotionReduced(reduced, () => {
       const readout = readoutOf(warnedOf(), 0);
       readout.update(warnedOf(), now);
-      const fuse = allOf(labelled(readout.node(), WARN_LABEL)).find((node) => node.height === 2 && node.draw);
+      const fuse = allOf(labelled(readout.node(), WARN_LABEL)).find((node) => node.height === 4 && node.draw);
       assert.ok(fuse, 'a fuse under the title');
       return coloursDrawn({ ...fuse, width: 100 }).has(written('#ff7a5c'));
     });

@@ -904,17 +904,15 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
   once it can be boarded, or "Going down". The name keeps its first three letters, cut short after them, however long
   its class and state. The ships' plates keep under it while it shows, as under the compass.
 - **The broadside warning** stands under the card while a hostile captain afloat has a battery run out at the Sloop
-  (the Sloop within 45° of that side's beam), written over the sea with no panel, as "Return to the area" is
-  ([[The Broadside Warning Is Written Over the Sea, Not a Panel]]): "BROADSIDE" in blood red capitals at twice the words' size between two blood triangles, each round a "!", pulsing
-  to pale every half second; under it the battery's tell (1.3 s, the captain's `RUN_OUT_S`) as a fuse, a red rule
-  burning in from both ends, which once burnt flashes every quarter second with the title as the battery may fire;
-  then, in outlined capitals, whose battery, how far and where from the bow ("Pirate Brig - 140 m on your starboard
-  beam"; dead ahead, off the bow, on the beam, off the quarter or astern, `bowWords`), its shot and what it does
-  ("Chain shot - tears your sails"), and the brace over its keycap ("Brace - halves the harm to hull and sails", with
-  ", not to men" for grape), in brass with no keycap once braced ("Braced - ..."), and while others stand run out,
-  how many ("2 more batteries run out at you"). The nearest battery is the one named; another's tell burns afresh. A
-  reader hears it once as it comes, in one line. With less motion asked for, it neither pulses nor flashes; the fuse
-  still burns.
+  (the Sloop within 45° of that side's beam), written over the sea with no panel, as "Return to the area" is, in three
+  large lines ([[The Broadside Warning Is Written Over the Sea, Not a Panel]]): "BROADSIDE" in blood red capitals at
+  three times the words' size between two blood triangles, each round a "!", pulsing to pale every half second; under
+  it the battery's tell (1.3 s, the captain's `RUN_OUT_S`) as a 4 px fuse, a red rule burning in from both ends, which
+  once burnt flashes every quarter second with the title as the battery may fire; and "BRACE" at twice the words'
+  size beside its keycap, "BRACED" in brass with no keycap once braced. That captain's compass mark is lit; the
+  nearest battery is the one warned of, and another's tell burns afresh. A reader hears it once as it comes, in one
+  line: whose battery, how far and where from the bow (`bowWords`), its shot and what it does, and the brace. With
+  less motion asked for, it neither pulses nor flashes; the fuse still burns.
 - **The tally**, under the middle of the screen, for 4 s once the Sloop's last volley's last ball is down: "3 of 6 balls
   struck - 1 below the waterline - 2 in the rigging".
 

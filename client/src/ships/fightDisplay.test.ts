@@ -146,7 +146,6 @@ test("the broadside warning names the nearest captain running out its guns at th
       tell: RUN_OUT_S,
       braceKey: 'C',
       braced: true,
-      more: 0,
     },
     'a struck ship runs out no guns at the player',
   );
@@ -154,7 +153,7 @@ test("the broadside warning names the nearest captain running out its guns at th
   assert.equal(pad.warn?.braceKey, 'B', 'the brace as bound, on the pad played last');
 });
 
-test('a battery warns only run out at the player: not an ally’s, not one turned away, and the rest are counted', () => {
+test('a battery warns only run out at the player: not an ally’s, not one turned away; the nearest named', () => {
   const board = { boardable: false, boardKey: 'E', braceKey: 'C' };
   const warnOf = (captains: FightCaptain[]) =>
     fightDisplay({ ...VIEW, captain: captains[0]!, others: captains.slice(1) }, new FightFeel(1), 0, board).warn;
@@ -164,7 +163,7 @@ test('a battery warns only run out at the player: not an ally’s, not one turne
     captain('Pirate Brig', 200, { run_out: ['port'] }),
     captain('Pirate Sloop', -90, { run_out: ['starboard'], id: 2 }),
   ]);
-  assert.deepEqual([many?.name, many?.bearing, many?.more], ['Pirate Sloop', 'on your port beam', 1], 'nearest first');
+  assert.deepEqual([many?.name, many?.bearing], ['Pirate Sloop', 'on your port beam'], 'nearest first');
 });
 
 test('where a ship lies is said from the bow as a sailor says it, a quarter of a side each', () => {

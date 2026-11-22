@@ -65,7 +65,7 @@ export interface SeaFightModel {
 
 /** A battery run out at the player's ship: which (`id`, its captain's number and side, so another's tell starts
  *  afresh), whose, how far off and where from the player's bow, the shot it is loaded with, its tell, the brace's key
- *  and whether the player stands braced, and how many other batteries stand run out at them too. */
+ *  and whether the player stands braced. */
 export interface SeaWarning {
   readonly id: string;
   readonly name: string;
@@ -76,7 +76,6 @@ export interface SeaWarning {
   readonly tell: number;
   readonly braceKey: string;
   readonly braced: boolean;
-  readonly more: number;
 }
 
 /** What each load does to the player's ship, as its rules hurt (crates/naval/src/damage.rs). */
@@ -87,17 +86,12 @@ const SHOT_HARM: Readonly<Record<SeaShot, string>> = {
   heated: 'Heated shot - can set you alight',
 };
 
-/** The warning's words: its title, whose battery and where, its shot and what it does, the brace as it stands (bracing
- *  halves the harm to hull and sails, never to men), the other batteries run out, and all of it as one line for a
- *  screen reader. */
+/** The warning's words: its title, the brace as it stands, and for a screen reader one line of whose battery, where
+ *  from the bow, and its shot and what it does. */
 export function seaWarnWords(warn: SeaWarning) {
   const who = `${warn.name} - ${Math.round(warn.range)} m ${warn.bearing}`;
-  const shot = SHOT_HARM[warn.load];
-  const halves = `halves the harm to hull and sails${warn.load === 'grape' ? ', not to men' : ''}`;
-  const brace = `${warn.braced ? 'Braced' : 'Brace'} - ${halves}`;
-  const more = warn.more > 0 ? `${warn.more} more ${warn.more === 1 ? 'battery' : 'batteries'} run out at you` : '';
-  const said = `Broadside from the ${who}. ${shot}. ${warn.braced ? 'Braced' : `${warn.braceKey}: brace`}.`;
-  return { title: 'Broadside', who, shot, brace, more, said };
+  const said = `Broadside from the ${who}. ${SHOT_HARM[warn.load]}. ${warn.braced ? 'Braced' : `${warn.braceKey}: brace`}.`;
+  return { title: 'Broadside', brace: warn.braced ? 'Braced' : 'Brace', said };
 }
 
 /** The gap between the card and a ship's plate under it, CSS pixels. */
