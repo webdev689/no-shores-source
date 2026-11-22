@@ -301,7 +301,7 @@ export class Hall {
       const accounts = [...new Set([...this.sockets.values()].flatMap((each) => each.speaker?.account ?? []))];
       // An ask that fails keeps the last answer, to be asked again with the next line.
       const found = await this.deps.places(accounts).then(
-        (of) => (this.places = { at: this.deps.now(), of }).of,
+        (answered) => (this.places = { at: this.deps.now(), of: answered }).of,
         () => this.places.of,
       );
       this.placing = null;
