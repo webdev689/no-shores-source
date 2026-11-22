@@ -105,7 +105,8 @@ each part works is in its system note.
   [[A Player May Mute Another]], [[Inspect Opens the Character Tab]] under their emblem's banner
   ([[Inspect Shows the Player's Emblem Banner]]), and Prestige beside the level on the Character tab
   ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]),
-  with no Fruit of Dagon stat ([[The Character Tab Shows No Fruit of Dagon]]); Claude's calls in
+  with no Fruit of Dagon stat ([[The Character Tab Shows No Fruit of Dagon]]) and the Weapons heading under the Art
+  ([[The Weapons Heading Stands Under the Art]]); Claude's calls in
   [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]. A full audit of the first pass was folded in (the
   hall's limits per account, look-alike letters, the welcome race, plates deduped and none at sea, the menu's keys and
   waits). Tested offline (the room, the wire, the hall and its queries, the panel's law, the menus) and pictured
