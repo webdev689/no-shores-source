@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CROSSHAIR_REACH, crosshairPoint } from './crosshair.ts';
+import { CROSSHAIR_REACH, crosshairPoint, shotBodies } from './crosshair.ts';
 
 /** A view from 1.5 m up at the origin, looking north (`pitch` down positive). */
 const looking = (pitch: number) => ({
@@ -42,4 +42,20 @@ test('on rising land it meets the ground where its line goes under it, not at he
     rising,
   );
   assert.ok(Math.abs(before + 4) < 1e-6, 'a block before the rise stops it first');
+});
+
+test('the crosshair passes a dead foe and a companion to the living foe behind, as the room flies the shot', () => {
+  const ahead = (y: number) => ({ x: 0, y, z: 0 });
+  const drawn = new Map([
+    [5, ahead(-5)],
+    [6, ahead(-8)],
+    [7, ahead(-15)],
+  ]);
+  const foes = new Map([
+    [5, { view: { side: 'foes', action: { kind: 'dead', elapsed: 1 } } }],
+    [6, { view: { side: 'players', action: { kind: 'idle' } } }],
+    [7, { view: { side: 'foes', action: { kind: 'idle' } } }],
+  ] as const);
+  const [, y] = crosshairPoint(looking(0), 1, [], shotBodies(drawn, foes));
+  assert.ok(Math.abs(y + 14.65) < 1e-6, `${y}`);
 });

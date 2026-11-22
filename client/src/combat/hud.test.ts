@@ -536,3 +536,16 @@ test('a parry ring for a head off the screen stands at the edge the way it lies,
   assert.ok(Math.abs(nearY - downAt([drawnHead.x, drawnHead.y, 1.6])) < 1, `round the drawn head: ${nearY}`);
   assert.ok(Math.abs(nearY - downAt([near.x, near.y, 1.6])) > 20, 'not round the body nearer the eye');
 });
+
+test('a room left, its foes are forgotten: the next room’s foe of the same number shows no plate of the last', () => {
+  const { matrix, foeAt } = levelView();
+  const hud = new Hud();
+  const hit = { tick: 0n, kind: EVENT.hit, how: 0, striker: 1, defender: 5, amount: 4, stroke: 0 };
+  // Far aside, out of the cone: only the target plate would show it.
+  const old = foeAt(5, 'Brigand', 10, 10 * Math.tan(Math.PI / 3));
+  hud.update(bare({ matrix, foes: [old], events: [hit] }), 1 / 60);
+  assert.ok(wordsIn(drawn(hud)).includes('Brigand'), 'struck, it is the target');
+  hud.forget();
+  hud.update(bare({ matrix, foes: [{ ...old, name: 'Wolf' }] }), 1 / 60);
+  assert.ok(!wordsIn(drawn(hud)).includes('Wolf'), 'the new room’s foe 5 is no target');
+});

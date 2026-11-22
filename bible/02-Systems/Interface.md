@@ -393,6 +393,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   [[The Display as Claude Lays It Out]]). Its bars do what DFO's Enhanced UI Plus does with them
   ([[Pick - Enhanced Plus UI]]). It takes a larger step where the view is 1500 by 900 or more, and stands at twice
   its first size past 1440p (2400 by 1300), as the rest of the display does (`combat/hudLayout.ts`).
+  In a new room, or shown again after hiding, it forgets every foe it kept (the target, the plates, the wind-ups
+  told), as each room numbers its foes afresh (`Hud.forget`).
 - **The compass** is a strip 18 px down the top's middle, 520 px wide (60% of a narrower view) and 26 px tall over a 2
   px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
@@ -609,7 +611,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and in the story), A jumps, B tapped dodges and held crouches, X uses,
   Y draws or sheathes, LB and RB cast the Tenets and both together the Anima, the cross's left and right draw the
   loadouts, its down drinks and its up mounts, the right stick's click changes the view, Start opens the menu at
-  Character, View the sheet and View held the game's menu; dead, A respawns. At the helm the left stick steers, sails on
+  Character, View the sheet and View held the game's menu; dead, A respawns. The pad last used, its
+  presses fight on foot with the pointer free as with it locked, the menu shut (`handsFree`); a click on a free pointer
+  only locks it. At the helm the left stick steers, sails on
   and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed, its up
   opens the map and its down repairs (walking the ship's own deck too), Y manages the ship, B leaves the helm, and at the map or a landing B steps back.
   In a sea fight the left stick steers and sets the sails, its click bursts, LT aims, RT fires, LT let go unfired holds

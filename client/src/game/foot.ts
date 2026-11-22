@@ -17,7 +17,7 @@ import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
-import { crosshairPoint } from '../player/crosshair.ts';
+import { crosshairPoint, shotBodies } from '../player/crosshair.ts';
 import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
@@ -418,7 +418,7 @@ export class Foot {
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
       hands: hands && !still,
-      markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
+      markOf: () => crosshairPoint(camera(), aspect, this.boxes, shotBodies(foes.placed, fight.foes), groundAt),
       zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });

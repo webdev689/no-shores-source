@@ -148,11 +148,13 @@ export class SeaRoom {
       this.fight = view;
       this.events.push(...view.events);
       this.naval.push(...view.naval);
-    } else if (this.fight?.over === null) this.fight = null;
+    }
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.
     const told = snapshot.told.filter((each) => each.player === this.own).map((each) => each.numbers[0]);
     if (told.includes(TOLD.WASHED_UP)) this.washUp(snapshot);
     else if (told.includes(TOLD.MOORED)) this.moor(snapshot);
+    // Washed up, the fight was sunk first; otherwise one the room no longer lists is gone.
+    if (!own) this.leaveFight();
   }
 
   /** The player washed up: their fight is over for them, and their ship lies where the room moored it. */
@@ -304,12 +306,19 @@ export class SeaRoom {
   pump(seconds: number): void {
     if (this.link.rejoining) {
       [this.ships, this.pirates, this.onDeck] = [[], [], null];
-      if (this.fight?.over === null) this.fight = { ...this.fight, over: 'gone', events: [] };
+      this.leaveFight();
     }
     this.link.pump(seconds);
   }
 
+  /** A fight still on that the room no longer holds for the player is over for them: their ship has left it. */
+  private leaveFight(): void {
+    if (this.fight?.over === null) this.fight = { ...this.fight, over: 'gone', events: [] };
+  }
+
+  /** Lets the room go: a fight in it is over for the player, the ship having left it. */
   close(): void {
+    this.leaveFight();
     this.link.close?.();
   }
 }
