@@ -29,7 +29,6 @@ export function travelRefusal(refused: number): string {
 
 export class SeaTravel {
   readonly away: SailAway;
-  private readonly end: Point2;
   private readonly passage: Passage;
   private readonly ready: () => boolean;
   /** Seconds since the travel was asked, and the sea room it was sent to and its joins then: a room joined since, or
@@ -37,10 +36,13 @@ export class SeaTravel {
   private asked: number | null = null;
   private sentTo: SeaRoom | null = null;
   private sentJoins: number | undefined;
+  /** The end of the course sent, which the room sails the ship on to once it has taken the travel. */
+  private sentEnd: Point2;
 
-  /** Travels for `end`, in the water named `water`: `ready` says when the new waters round the ship have loaded. */
+  /** Travels for `end` (until a course is sent, whose own end it then is), in the water named `water`: `ready` says
+   *  when the new waters round the ship have loaded. */
   constructor(water: string, end: Point2, passage: Passage, ready: () => boolean) {
-    [this.end, this.passage, this.ready] = [end, passage, ready];
+    [this.sentEnd, this.passage, this.ready] = [end, passage, ready];
     this.away = new SailAway(water, () => this.ask());
   }
 
@@ -57,7 +59,7 @@ export class SeaTravel {
     // it for a course with nowhere to start: it is asked once the room has it.
     const room = this.passage.room;
     [this.sentTo, this.sentJoins] = [room?.ownShip ? room : null, room?.joins];
-    if (this.sentTo) this.passage.travel();
+    if (this.sentTo) this.sentEnd = this.passage.travel().at(-1) ?? this.sentEnd;
   }
 
   /** Ends the travel at once, `room` told to forget it: the player has the ship again. */
@@ -83,7 +85,7 @@ export class SeaTravel {
     else if (answer === TAKEN && moved) {
       // Laid where the room has it, with no easing across the way it did not sail.
       this.passage.placeAt({ x: moved.x, y: moved.y, heading: moved.heading });
-      this.passage.sailAlong([this.end]);
+      this.passage.sailAlong([this.sentEnd]);
       this.away.answer(null);
     } else if (answer !== null || this.asked > ANSWER_WITHIN_S) {
       const why = answer !== null && answer !== TAKEN ? travelRefusal(answer) : 'The sea did not answer.';

@@ -316,7 +316,7 @@ player elsewhere (the company's Go to them waits); a travel left behind any othe
 3. Black for at least 1.5 s, and longer until the room has answered and no continent near the ship's new place is
    still to open (`Charting.waiting`), the land waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
    Taken, the ship is laid where the room put it, 400 m short of the course's end on its last leg, with no easing
-   across the jump, and sails on to the end; the view over it snaps there too, and the old waters' islands, flotsam
+   across the jump, and sails on to the end of the course the room was sent; the view over it snaps there too, and the old waters' islands, flotsam
    and marks go with the room's next word.
 4. The black lifts over 1.5 s on a low wide shot off the ship's starboard bow, 110 m out and 5 m up, that pans round
    its beam to a view from its stern, 60 m back and 16 m up, as it sails in, 4 s.

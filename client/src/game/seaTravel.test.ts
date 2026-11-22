@@ -17,7 +17,8 @@ function travelling() {
     forgetTravel: () => asked.push('forget'),
   } as unknown as SeaRoom;
   const passage = {
-    travel: () => asked.push('travel'),
+    // The course the room is sent ends where the planned route ends, short of the place chosen.
+    travel: () => [asked.push('travel'), [[400_000, 150_000], [549_000, 151_000]]][1],
     placeAt: (lie: { x: number; y: number }) => asked.push(`placed ${lie.x},${lie.y}`),
     sailAlong: (points: readonly (readonly number[])[]) => asked.push(`along ${points.join(' ')}`),
     stop: () => asked.push('stop'),
@@ -38,7 +39,7 @@ test('the travel is asked as the fade begins; taken, the ship is laid where the 
   assert.deepEqual(asked, ['travel']);
   answer(0);
   travel.step(0.1, room);
-  assert.deepEqual(asked, ['travel', 'placed 549600,150000', 'along 550000,150000']);
+  assert.deepEqual(asked, ['travel', 'placed 549600,150000', 'along 549000,151000'], 'along the course the room holds');
   assert.equal(travel.away.refused, null);
 });
 
