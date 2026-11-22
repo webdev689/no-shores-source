@@ -27,11 +27,13 @@ export const COMPASS = { top: 18, width: 520, share: 0.6, height: 26, rule: 2, g
 /** How far down the first thing under the compass stands, in CSS pixels. */
 export const UNDER_COMPASS = COMPASS.top + COMPASS.height + COMPASS.rule + COMPASS.gap;
 
-/** What a ship is to the player, which colours its mark: one that would take the player, another player's, one whose
- *  colours are down, or a friendly merchantman in Overlook's blue. */
-export type ShipMarkKind = 'hostile' | 'ship' | 'struck' | 'friendly';
+/** What a ship is to the player, which colours its mark: one that would take the player, one with a battery run out at
+ *  them (lit, as the broadside warning names it), another player's, one whose colours are down, or a friendly
+ *  merchantman in Overlook's blue. */
+export type ShipMarkKind = 'hostile' | 'firing' | 'ship' | 'struck' | 'friendly';
 export const SHIP_MARK_COLOURS: Readonly<Record<ShipMarkKind, string>> = {
   hostile: '#ee5745',
+  firing: '#ffc2b8',
   ship: '#ebe0c2',
   struck: '#8f8f8f',
   friendly: '#2f5d9a',
@@ -80,6 +82,14 @@ export function markPlace(
   if (Math.hypot(east, south) < 1e-9) return 0.5;
   const apart = shortest(turnsOf(Math.atan2(east, -south)) - heading);
   return Math.min(1, Math.max(0, apart / span + 0.5));
+}
+
+/** A place the compass marks beside the ships: a public event's ground, or its heroic task's mark (the growth, the
+ *  tithe-taker), at its bearing as a ship's is, held at the end nearer it while off the strip. */
+export interface PlaceMark {
+  readonly x: number;
+  readonly y: number;
+  readonly kind: 'event' | 'heroic' | 'chest' | 'store';
 }
 
 /** The ships the compass marks of `ships` round a player at `from`: those within their range. */

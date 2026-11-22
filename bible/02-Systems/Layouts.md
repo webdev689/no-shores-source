@@ -221,7 +221,8 @@ from the sea, fresh water and the claim's edge), then:
    terrain draws its cliffs in; in a layout with a `stone` of chalk its rubble wears chalk's white instead (the client
    turns its rubble solids to the `chalk` material, a picture of the same stone tile brought to white).
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
-   wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
+   wilds or arena as an event's ground, each hamlet's three stores, its raiders' approach and their two banners, where
+   each wilds' fissure opens beside its obelisk and its growth spot ([[Public Events]]), two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
    5 m clear of every way's edge, each resource 12 m from every other and from each beacon, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside

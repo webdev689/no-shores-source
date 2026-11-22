@@ -1,28 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type RoseSide, type SeaFightModel, seaFightWords } from './seaFight.ts';
+import { type SeaFightModel, seaFightWords } from './seaFight.ts';
 
-const side = (more: Partial<RoseSide> = {}): RoseSide => ({
-  fill: 1,
-  ready: true,
-  fresh: false,
-  laid: false,
-  load: 'Round',
-  left: 0,
-  ...more,
-});
-const ship = {
-  name: 'Your Sloop',
-  hull: 1,
-  sail: 1,
-  crew: 1,
-  fire: false,
-  braced: false,
-  boost: { state: 'ready', share: 1 } as const,
-  port: side(),
-  starboard: side(),
-  blow: null,
-};
 const card = {
   name: 'Pirate Brig',
   sub: 'Brig - 70 m',
@@ -34,17 +13,6 @@ const card = {
   faction: 2,
   band: 'orange',
 } as const;
-
-test("the rose's chip says its load, and the seconds a side still loads", () => {
-  const words = seaFightWords({
-    ship: { ...ship, port: side({ ready: false, fill: 0.4, left: 3.2 }) },
-    card: null,
-    tally: null,
-    warn: null,
-  });
-  assert.equal(words.port, 'Round 4s');
-  assert.equal(words.starboard, 'Round');
-});
 
 test("the card says DFO's states: hostile, colours struck with the key that boards it, going down", () => {
   const state = (more: Partial<SeaFightModel['card'] & object>) =>

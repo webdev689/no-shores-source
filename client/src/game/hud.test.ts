@@ -7,9 +7,13 @@ import { QuadList } from '../ui/quads.ts';
 import { type Face, widthOf } from '../ui/text.ts';
 import { Interface, type UiEvent } from '../ui/ui.ts';
 import { BINDS } from '../player/input.ts';
+import type { FightVessel } from '../rules/fightRules.ts';
+import { shipAbilities } from '../ships/shipAbilities.ts';
+import type { Box } from '../ui/quads.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
-import { type OnFoot, type StripHint, footHints, withMapKey } from './hints.ts';
+import { HINTS, type OnFoot, type StripHint, footHints, withMapKey } from './hints.ts';
 import { Hud } from './hud.ts';
+import { placeNode } from './hudPieces.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
 const face: Face = { glyph: () => block };
@@ -26,6 +30,14 @@ function renderer(): UiRenderer {
     text: () => undefined,
     measure: (words: string, size: number) => widthOf(face, words, size),
   } as unknown as UiRenderer;
+}
+
+/** A frame of `hud` over a view `width` by `height`; answers the nodes laid. */
+function laidAt(ui: Interface, hud: Hud, width: number, height: number): Laid[] {
+  ui.frame({ width, height, scale: 1 }, [], 1 / 60, true);
+  const root: Node = hud.node(ui);
+  ui.draw(root);
+  return layout(root, { x: 0, y: 0, width, height }, { face });
 }
 
 /** A frame of `hud` hearing `events`; answers the nodes laid. */
@@ -366,4 +378,79 @@ test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem 
   assert.equal(emblem?.box.width, 17, '62% of its ring');
   const badge = laid.find((each) => each.node.picture?.key.startsWith('mark badge'));
   assert.ok(badge && badge.box.y < 286, 'over the ring');
+});
+
+test("at a phone's width the place's name gives way to a public event's banner, but not to the next event's line", () => {
+  const view = { width: 500, height: 900, big: false, doubled: false, fight: true, bossed: false };
+  const rest = { plates: false, seaFight: false, speaking: false, map: false };
+  assert.equal(placeNode({ ...view, ...rest, banner: 'running' }, 'Saltgrass Downs', 'Wilds'), null);
+  assert.ok(placeNode({ ...view, ...rest, banner: 'next' }, 'Saltgrass Downs', 'Wilds'));
+  assert.ok(placeNode({ ...view, ...rest, width: 800, banner: 'heroic' }, 'Saltgrass Downs', 'Wilds'));
+});
+
+test('under 1024 px the tracker gives way to a running event’s banner, but not to the next event’s line', () => {
+  const narrow = { width: 900, height: 600, scale: 1 };
+  const shown = (banner: 'running' | 'next') => {
+    const [ui, hud] = [new Interface(renderer()), new Hud()];
+    hud.onBesides(() => ({ fight: false, bossed: false, speaking: false, map: false, banner }));
+    hud.tasks.show(
+      { name: 'The Fissure', task: 'Saltgrass Downs', steps: [{ text: 'Open your chest', clock: 108 }] },
+      0,
+    );
+    ui.frame(narrow, [], 1 / 60, true);
+    const root = hud.node(ui);
+    return words(layout(root, { x: 0, y: 0, width: narrow.width, height: narrow.height }, { face }));
+  };
+  assert.ok(!shown('running').includes('Open your chest'));
+  assert.ok(shown('next').includes('Open your chest') && shown('next').includes('1:48'));
+});
+
+test("in a sea fight the ship's bar stands at the bottom left, clear of the key strip on every screen, and goes with the readout", () => {
+  const vessel: FightVessel = {
+    ship: [0, 0, 0, 0, 0, 0, 0, 2],
+    pose: [0, 0, 0, 0],
+    hull: 60,
+    max_hull: 60,
+    sail: 40,
+    max_sail: 40,
+    crew: 10,
+    max_crew: 10,
+    state: 'afloat',
+    fires: 0,
+    guns: { left: [3, 0], progress: [0.5, 1], load: 'round', braced: false },
+    boost: [0, 1],
+  };
+  const ship = { name: 'Your Sloop', hull: 1, sail: 1, crew: 1, fire: false, abilities: shipAbilities(vessel, null) };
+  const apart = (one: Box, other: Box) =>
+    one.x + one.width <= other.x ||
+    other.x + other.width <= one.x ||
+    one.y + one.height <= other.y ||
+    other.y + other.height <= one.y;
+  const sizes = [
+    [1280, 720, 1],
+    [1920, 1080, 1],
+    [2560, 1440, 2],
+    [800, 600, 1],
+    [480, 800, 1],
+    [400, 700, 1],
+  ] as const;
+  for (const [width, height, zoom] of sizes) {
+    const [ui, hud] = [new Interface(renderer()), new Hud()];
+    hud.veil(null);
+    for (const hints of [HINTS.fight, HINTS.aim]) {
+      hud.hints(hints);
+      hud.seaFight({ ship, card: null, tally: null, warn: null });
+      const laid = laidAt(ui, hud, width, height);
+      const [bar, strip] = [boxOf(laid, 'fight-ship'), boxOf(laid, 'hud:hints')];
+      assert.ok(bar && strip, `${width} by ${height}: both shown`);
+      assert.deepEqual(
+        [bar.x, bar.y + bar.height],
+        [28 * zoom, height - 22 * zoom],
+        `${width} by ${height}: its corner`,
+      );
+      assert.ok(apart(bar, strip), `${width} by ${height}: ${JSON.stringify([bar, strip])}`);
+    }
+    hud.seaFight(null);
+    assert.equal(boxOf(laidAt(ui, hud, width, height), 'fight-ship'), undefined, 'gone with the readout');
+  }
 });

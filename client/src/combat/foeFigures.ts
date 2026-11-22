@@ -13,7 +13,21 @@ import type { Fighting, KeptFoe } from './fighting.ts';
 import { type Flashes, dissolveShare } from './flashes.ts';
 import type { MarkedFoe } from './foeBars.ts';
 import { ironOutline } from './glints.ts';
+import {
+  CHANGE_S,
+  LATTICE_PLAIN,
+  blinkShare,
+  bulwarkChanged,
+  latticeBlinks,
+  latticeDresses,
+  latticeHidden,
+  latticeMove,
+  latticeOfBody,
+  withoutLayers,
+} from './lattice.ts';
+import { type LatticeShown, WAVE, latticeWaves, layLatticeLooks, waveFade } from './latticeLooks.ts';
 import { overheadMarks } from './overheads.ts';
+import { MARK, PUBLIC_KIND, PUBLIC_PHASE, type PublicEvent } from '../network/publicMessages.ts';
 import { officerName } from './companions.ts';
 
 type Point = readonly [number, number, number];
@@ -28,6 +42,8 @@ export interface FoeFeel {
 }
 
 /** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
+/** How far past the Fissure's ground a foe coming still climbs out of it, metres. */
+const POUR_REACH_M = 10;
 const PLAIN_DISSOLVE_AFTER_S = (FIGHT_TICKS.death + 6) / 60;
 
 /** Foes' figures are numbered down from here, never twice in the page's life: the forge keeps each figure's last card
@@ -36,6 +52,16 @@ let nextFoeId = -1;
 /** How far back a foe's pace is read, in seconds. The rules hold a foe still a tick between steps as it keeps to a
  *  place that moves (its place on a ring, a target's heels), and a pace read tick by tick flicks it to a stand. */
 const PACE_SECONDS = 0.1;
+
+/** The chest of the fighter numbered `id` in `fight`, a player or another, as the Lattice's looks aim at it; null for
+ *  none. */
+function targetOf(fight: Fighting, id: number | null): Point | null {
+  if (id === null) return null;
+  const view = id === fight.player ? fight.own : fight.others.get(id)?.body;
+  return view ? [view.x, view.y, view.z + CHEST_M] : null;
+}
+/** How high a fighter's chest is, as a shot aims at it (metres). */
+const CHEST_M = 1.2;
 
 /**
  * Every foe of a fight as a figure in its type's dress, by the room's number for each: drawn gliding between the
@@ -60,6 +86,15 @@ export class FoeFigures {
   private readonly dissolves = new Map<number, { readonly look: GlowLook; readonly start: number }>();
   /** What stands over each foe drawn last: where its feet were drawn, and whether it is staggered or Exposed. */
   private readonly over = new Map<number, { feet: Point; staggered: boolean; exposed: boolean }>();
+  /** Each Lattice foe drawn from its own pictures as last drawn, for what the game draws over them. */
+  private readonly lattice = new Map<number, LatticeShown>();
+  /** When each Bulwark began its change (page seconds). */
+  private readonly changes = new Map<number, number>();
+  /** When each Lattice foe died (page seconds): its wave burst then, and its figure fades from then. */
+  private readonly dying = new Map<number, number>();
+  /** The room (by the fight's joins) whose foes a frame has drawn: those there on the first frame of a room, joined
+   *  or joined again, came before the page did. */
+  private seenIn: number | null = null;
 
   /** Each type's dress, from the rules' roster, is made once. */
   constructor(roster: readonly FoeType[]) {
@@ -122,14 +157,25 @@ export class FoeFigures {
     feel: FoeFeel | null = null,
   ): CardAt[] {
     const cards: CardAt[] = [];
+    // The Fissure's growth is a foe the room strikes like one, but only its crystal stands there: no figure.
+    const growths = (fight.publicHeld?.marks ?? []).filter((mark) => mark.kind === MARK.growth).map((mark) => mark.id);
     for (const kept of fight.foes.values()) {
-      const dress = this.dressOf(kept);
-      if (!dress) continue;
+      if (growths.includes(kept.id)) continue;
+      const typeDress = this.dressOf(kept);
+      if (!typeDress) continue;
+      // A Lattice foe is drawn from its own pictures once they are published, else as a plain figure its size.
+      const kind = latticeOfBody(typeDress.body);
+      const plain = !!kind && !forge.draws(typeDress.body, `${typeDress.body}_idle`, null);
+      const own = plain ? null : kind;
+      const dress = plain ? LATTICE_PLAIN : typeDress;
       let placed = this.figures.get(kept.id);
       if (!placed) {
-        const { x, y } = kept.view;
+        const { x, y, z } = kept.view;
         placed = { id: nextFoeId--, x, y, z: 0, facing: 0, dress, anim: 'idle', frame: null, spin: false };
         this.figures.set(kept.id, placed);
+        // The Fissure pours its foes out: each that comes while it runs climbs out of its death wave, played back.
+        if (kind && this.seenIn === fight.joins && pouring(fight.public, x, y))
+          latticeWaves.burst([x, y, z], kind.strain, kind.scale, clock, true);
       }
       // Its moves as its drawing shows them, held back while a blow landing holds it.
       const view = feel ? feel.held(kept.id, kept.view) : kept.view;
@@ -144,11 +190,18 @@ export class FoeFigures {
       const doing = { ...now, moving: pace.moving, running: pace.running, speed: pace.speed, over };
       const draws = (anim: string, held: string | null) => forge.draws(dress.body, anim, held);
       const walking = (action: string) => forge.walking(dress, action);
-      const move = shownMove(doing, (anim) => forge.frames(dress.body, anim), draws, walking);
+      const frames = (anim: string) => forge.frames(dress.body, anim);
+      const shown = shownMove(doing, frames, draws, walking);
+      const changed = this.changed(kept, own?.body ?? '', clock);
+      const move = (own && latticeMove(own.body, doing, shown, frames, changed.changed, changed.changing)) || shown;
       const moveFrames = forge.frames(dress.body, move.anim);
       const loop = this.loops.get(kept.id) ?? new Loop();
       this.loops.set(kept.id, loop);
       const frameShown = loop.frame(move, moveFrames, frameTicks * tickSeconds, clock);
+      // Its own parts shown in the frames they belong to.
+      const drawnDress = own
+        ? withoutLayers(dress, latticeHidden(own.body, move.anim, frameShown, changed.changed))
+        : dress;
       const [x, y, z] = this.glides.follow(
         kept.id,
         [kept.view.x, kept.view.y, kept.view.z],
@@ -163,7 +216,12 @@ export class FoeFigures {
         ...likelyMoves(right, left, draws, dress.outfit.grip ?? null, walking),
         ...['thrust', 'chop', 'swing2h', 'parry', 'hurt', 'death'],
       ];
-      forge.warm(dress, likely, 0, placed.id);
+      // A Lattice foe's every dress it is drawn in, each by the parts it hides and under a name of its own (so one's
+      // queue never drops another's), with only the moves that show it.
+      if (own)
+        for (const { hidden, anims } of latticeDresses(own.body, changed.changed, frames))
+          forge.warm(withoutLayers(dress, hidden), () => anims, 0, `${placed.id} ${hidden.join(' ')}`);
+      else forge.warm(dress, likely, 0, placed.id);
       const moved = feel ? feel.shift(kept.id, kept.view) : ([0, 0, 0] as const);
       const alive = kept.view.action.kind !== 'dead';
       const knocked = flashes.knockOf(kept.id, alive);
@@ -174,13 +232,39 @@ export class FoeFigures {
       ] as const;
       const { view: side, flip } = viewOf(placed.facing, drawnAt[0], drawnAt[1], eye.x, eye.y);
       feel?.drawn.set(kept.id, { feet: drawnAt, anim: move.anim, flip });
-      const dissolve = this.dissolving(kept.id, alive, clock);
-      const exposed = (kept.statuses?.expose ?? 0) > 0;
       const action = kept.view.action;
+      if (kind && action.kind === 'dead' && !this.dying.has(kept.id)) {
+        // Its wave bursts as it falls; one long dead when first seen burst and faded already.
+        const fresh = action.elapsed * tickSeconds < 1;
+        this.dying.set(kept.id, fresh ? clock : clock - WAVE.fadeS);
+        if (fresh) latticeWaves.burst(drawnAt, kind.strain, kind.scale, clock);
+      }
+      if (alive) this.dying.delete(kept.id);
+      const dying = this.dying.get(kept.id);
+      const blink =
+        own && doing.fight?.kind === 'dodge' && latticeBlinks(own.body) ? blinkShare(doing.fight.progress) : 0;
+      const dissolve =
+        dying !== undefined
+          ? { share: Math.max(waveFade(clock - dying), 1e-3), look: 0 as const }
+          : blink > 0
+            ? { share: blink, look: 3 as const }
+            : this.dissolving(kept.id, alive, clock);
+      const exposed = (kept.statuses?.expose ?? 0) > 0;
       const staggered = action.kind === 'staggered' && action.cause !== 'charged';
       this.over.set(kept.id, { feet: drawnAt, staggered, exposed: exposed && alive });
+      if (own && alive)
+        this.lattice.set(kept.id, {
+          ...own,
+          anim: move.anim,
+          frame: frameShown,
+          frames: moveFrames,
+          feet: drawnAt,
+          facing: placed.facing,
+          target: targetOf(fight, kept.view.target),
+        });
+      else this.lattice.delete(kept.id);
       if (dissolve && dissolve.share >= 1) continue;
-      const card = forge.card(placed.id, dress, move.anim, side, frameShown, flip);
+      const card = forge.card(placed.id, drawnDress, move.anim, side, frameShown, flip);
       const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
       if (card)
         cards.push({
@@ -194,12 +278,17 @@ export class FoeFigures {
           jitter: flashes.shakeOf(kept.id),
           dissolve,
           smear: feel?.smear?.(kept.id) ?? null,
+          ...(plain && kind && { scale: kind.scale }),
+          ...(own && { crystal: true }),
         });
     }
     for (const [id, placed] of this.figures) if (!fight.foes.has(id)) forge.forget(placed.id);
-    for (const kept of [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over])
+    const keptBy = [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over, this.lattice];
+    for (const kept of [...keptBy, this.changes, this.dying])
       for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));
+    // Once the room has had its first word (its foes, or the player's own fighter), any foe after is one that came.
+    if (fight.foes.size > 0 || fight.own !== null) this.seenIn = fight.joins;
     return cards;
   }
 
@@ -256,11 +345,28 @@ export class FoeFigures {
   overheads(eye: Point, clock: number): number[] {
     const out: number[] = [];
     for (const shown of this.over.values()) overheadMarks(out, shown.feet, eye, clock, shown);
+    for (const shown of this.lattice.values()) layLatticeLooks(out, shown, eye);
+    latticeWaves.lay(out, eye, clock);
     return out;
   }
 
-  /** Each foe as the display marks it: its type's name and faction from the roster, where its figure is drawn; a
-   *  companion by their officer's own name, an ally of no faction. */
+  /** Whether a Bulwark (`body`) has changed, and how far through its change it is at `clock` (null once it is done, or
+   *  for any other foe). */
+  private changed(kept: KeptFoe, body: string, clock: number): { changed: boolean; changing: number | null } {
+    if (body !== 'bulwark' || !bulwarkChanged(kept.phase, kept.view.health, kept.view.healthMax)) {
+      // Healed back past half, it plays its change again when brought down to it.
+      this.changes.delete(kept.id);
+      return { changed: false, changing: null };
+    }
+    const began = this.changes.get(kept.id) ?? clock;
+    this.changes.set(kept.id, began);
+    const through = (clock - began) / CHANGE_S;
+    return { changed: true, changing: through < 1 ? through : null };
+  }
+
+  /** Each foe as the display marks it: its own name (a public event's Warden, Marrow or growth) or else its type's, and
+   *  its faction from the roster, where its figure is drawn; a companion by their officer's own name, an ally of no
+   *  faction. */
   marked(fight: Fighting): MarkedFoe[] {
     return [...fight.foes.values()].map((kept) => {
       const figure = this.figures.get(kept.id);
@@ -270,11 +376,17 @@ export class FoeFigures {
         return { ...kept, name: officerName(kept.companion), faction: '', factionNumber: 0, view, ally: true };
       return {
         ...kept,
-        name: type?.name ?? 'Foe',
+        name: kept.name || (type?.name ?? 'Foe'),
         faction: type?.factionName ?? '',
         factionNumber: kept.faction || (type?.faction ?? 0),
         view,
       };
     });
   }
+}
+
+/** Whether a foe coming at (`x`, `y`) pours out of a running Fissure: on its ground or by it. */
+function pouring(event: PublicEvent | null, x: number, y: number): boolean {
+  if (event?.kind !== PUBLIC_KIND.fissure || event.phase !== PUBLIC_PHASE.running) return false;
+  return Math.hypot(x - event.ground[0], y - event.ground[1]) <= event.radius + POUR_REACH_M;
 }

@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { InputFrame } from '../../player/input.ts';
 import { STORM } from './skies.ts';
 import type { Tick } from './beat.ts';
+import { YOU_ID } from './helm.ts';
 import { FIRST_LOOK, type Look } from './look.ts';
 import { Making, type MakingSteps } from './making.ts';
 import type { Story } from './story.ts';
@@ -74,6 +75,34 @@ test('the steps end the helm, the look chosen and kept, even where the browser k
   await settle();
   assert.ok(making.done);
   assert.equal(helm.look, chosen);
+});
+
+test('a turn at a press turns the figure on the spot, the camera standing still; done, it faces the bow again', async () => {
+  const { story: helm } = story();
+  let turn: (step: -1 | 1) => void = () => undefined;
+  let finish: (look: Look) => void = () => undefined;
+  const making = new Making(helm, {
+    account: async () => ({ kind: 'alone' }),
+    look: (_root, _start, _changed, turning) => {
+      turn = turning;
+      return new Promise((resolve) => (finish = resolve));
+    },
+  });
+  await settle();
+  const facing = (frame: ReturnType<Making['frame']>) => frame.actors?.find((actor) => actor.id === YOU_ID)?.facing;
+  const first = making.frame(tick);
+  turn(-1);
+  turn(-1);
+  let shown = first;
+  for (let step = 0; step < 30; step++) shown = making.frame(tick);
+  assert.deepEqual(shown.shot, first.shot, 'the camera stands where it opened');
+  assert.ok(Math.abs((facing(shown) ?? 0) + Math.PI / 2) < 0.01, `turned to its left, to port: ${facing(shown)}`);
+  finish(FIRST_LOOK);
+  await settle();
+  assert.equal(making.done, false, 'not done while it faces away from the bow');
+  for (let step = 0; step < 30 && !making.done; step++) shown = making.frame(tick);
+  assert.ok(making.done);
+  assert.ok(Math.abs(facing(shown) ?? 1) < 0.01, 'facing the bow, as it stands in the beats after');
 });
 
 test('a step that fails is thrown from the frame, so the story goes on past the helm', async () => {

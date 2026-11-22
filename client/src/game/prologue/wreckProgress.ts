@@ -10,6 +10,9 @@ export const BROUGHT_BACK_S = 1.2;
 /** The boss fight ends once Thule is brought under this share of his health, or this long after it begins. */
 export const BOSS_UNDER = 1 / 3;
 export const BOSS_SECONDS = 150;
+/** The arena is reached once the player stands this far clear of its heap's place, metres: the heap stands again
+ *  behind them as the boss fight begins, and the camera behind them needs room before it. */
+export const ARENA_CLEAR_M = 1.6;
 
 /** How the boss fight ended: the player fell, or the fight was stopped with Thule still standing. */
 export type Outcome = 'felled' | 'overpowered';
@@ -117,8 +120,10 @@ export class WreckProgress {
     let checkpoint: readonly [number, number] | null = null;
     // A body in the sea reaches no zone: its feet are not on the deck.
     const inSea = seen.z < IN_THE_SEA_M && topAt(this.layout.course, seen.x, seen.y) === 0;
+    const clearOfHeap = apartFrom(arena.gate, seen.x, seen.y) >= ARENA_CLEAR_M;
     zones.forEach((zone, index) => {
       if (index <= this.zone || inSea || !this.allowed(index) || !inArea(zone.area, seen.x, seen.y)) return;
+      if (index === arena.zone && !clearOfHeap) return;
       this.zone = index;
       checkpoint = zone.checkpoint;
     });
@@ -144,4 +149,11 @@ export class WreckProgress {
     }
     return { checkpoint, stand, open, bringBack: back };
   }
+}
+
+/** How far (x, y) stands from a block, across the deck, metres: 0 over it. */
+function apartFrom(block: { minX: number; maxX: number; minY: number; maxY: number }, x: number, y: number): number {
+  const east = Math.max(block.minX - x, 0, x - block.maxX);
+  const south = Math.max(block.minY - y, 0, y - block.maxY);
+  return Math.hypot(east, south);
 }

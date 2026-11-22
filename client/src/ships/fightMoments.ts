@@ -1,13 +1,12 @@
 // DFO's sea-fight moments as numbers and laws (navalFeel.js, navalShots.js): how near a ball whistles and a fall
-// throws its water aboard, how long a blow's side is told, and whether a burning ship going down blows its magazine,
-// drawn from its own seed so every machine that knows it sees the same. `FightFeel` plays them.
+// throws its water aboard, and whether a burning ship going down blows its magazine, drawn from its own seed so every
+// machine that knows it sees the same. `FightFeel` plays them.
 
 /** DFO's moments (navalFeel.js, navalShots.js): a ball whistles going by within this of its hull; a fall within this
- *  throws its water aboard; the side a blow came from is told this long (seconds); a burning ship going down blows
- *  its magazine at this share, this long into its going down (seconds, from and to). */
+ *  throws its water aboard; a burning ship going down blows its magazine at this share, this long into its going down
+ *  (seconds, from and to). */
 export const NEAR_MISS_M = 8;
 export const NEAR_SPLASH_M = 6;
-export const BLOW_S = 1.4;
 export const MAGAZINE_CHANCE = 0.55;
 export const MAGAZINE_DELAY = [1.5, 4.5] as const;
 /** A share in [0, 1) from `seed` and `salt`: a ship's own draw, the same on every machine that knows it. */

@@ -67,7 +67,23 @@ export interface Press {
   readonly ceiling: number;
 }
 
-/** A song as the player plays it. `level` is how far over the music's own level it plays (1 unless it says). */
+/** A take of a song's form: its section, its first bar and its length in bars, the sections that may follow it, and
+ *  whether a song may open on it. */
+export interface Take {
+  readonly section: string;
+  readonly first: number;
+  readonly bars: number;
+  readonly next: readonly string[];
+  readonly opens: boolean;
+}
+
+/** A song written as takes (`makeForm`): the player strings them together as it plays, in no fixed order. */
+export interface Form {
+  readonly takes: readonly Take[];
+}
+
+/** A song as the player plays it. `level` is how far over the music's own level it plays (1 unless it says). A song
+ *  with a `form` plays its takes as the arranger chooses them; one without loops whole. */
 export interface Song {
   readonly name: string;
   readonly beatsPerMinute: number;
@@ -79,6 +95,7 @@ export interface Song {
   readonly kit: { readonly volume: number; readonly drums: ReadonlyMap<number, KitDrum> };
   readonly level: number;
   readonly press: Press | null;
+  readonly form?: Form;
 }
 
 /** A track as a score names it; its channel is its place in the score's list, the drums' channel passed over. */

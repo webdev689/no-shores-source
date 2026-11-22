@@ -38,6 +38,7 @@ const drop = (fields: Partial<GearDrop>): GearDrop => ({
   kind: DROPPED.vestige,
   from: FROM,
   flying: 94,
+  tier: 0,
   ...fields,
 });
 

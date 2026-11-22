@@ -59,6 +59,10 @@ pub enum Asked {
     FindLore {
         chapter: u16,
     },
+    /// Opens one's chest from a public event, by its number among one's drops, within `public::CHEST_REACH`.
+    OpenChest {
+        chest: u32,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -332,6 +336,7 @@ impl Room {
             Asked::Art(ask) => self.ask_art(player, ask),
             Asked::UsePoint { point } => self.use_point(player, point),
             Asked::FindLore { chapter } => self.find_lore(player, chapter),
+            Asked::OpenChest { chest } => self.open_chest(player, chest),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

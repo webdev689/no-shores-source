@@ -28,6 +28,11 @@ const SITE_COLOURS: Record<string, string> = {
   foes: '#ff4d4d',
   objective: '#ffd84d',
   door: '#ff9f1c',
+  fissure: '#ff2a55',
+  growth: '#ff7aa2',
+  store: '#c9a26b',
+  approach: '#9a9a9a',
+  banner: '#e6e6e6',
 };
 /** A run's colour by whether it runs in the open or through a building, and the thinnest its line is drawn, pixels. */
 const RUN_COLOURS = { open: '#ff7a3d', building: '#d45cff' } as const;

@@ -6,15 +6,18 @@ import type { Gpu } from '../gpu.ts';
 import type { ShipLook } from './dress.ts';
 import { type HullName, hullName, hullPaint, hullSails, SLOOP_HULL } from './hulls.ts';
 import type { SailRig } from './sails.ts';
+import type { ShipCrew } from './shipCrew.ts';
 import { loadShip } from './shipMesh.ts';
 import { type ShipCamera, type ShipPlace, SHIP_SLOTS, ShipView } from './shipView.ts';
 
-/** A ship as a frame draws it: its hull's number, its place, its rig (none for no canvas or flag) and its look. */
+/** A ship as a frame draws it: its hull's number, its place, its rig (none for no canvas or flag) and its look; and
+ *  who is seen aboard it, for every ship but the player's own (whose people are drawn as its own). */
 export interface DrawnShip {
   readonly hull: number;
   readonly place: ShipPlace;
   readonly rig: SailRig | null;
   readonly look: ShipLook;
+  readonly crew?: ShipCrew;
 }
 
 /** Opens a hull's model by its number. */

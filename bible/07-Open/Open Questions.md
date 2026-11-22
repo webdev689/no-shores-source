@@ -5,10 +5,13 @@ type: index
 
 Decisions waiting on the owner. None is in force until the owner decides it and it moves to [[Decisions]].
 
-- **Enemy factions.** Whether presence shifts over time, whether project-final's crystal faction comes over, and
-  what sets one faction apart ([[Enemy Factions Start With the Grey Tithe]]).
+- **Enemy factions.** Whether presence shifts over time, what sets one faction apart, and where each is present
+  ([[Enemy Factions Start With the Grey Tithe]]).
 - **Being the pirate.** Whether a player may attack merchantmen for their cargo, and what notoriety it brings
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
+- **The opening voyage.** The prologue's first attackers at sea are pirates, its own call; the lore has the opening's
+  ships the Grey Tithe's, unknown under grey sails. The chart that disagrees with the coast is not in it yet
+  ([[The Game Shows the Mystery and Explains Almost None of It]]).
 - **Friendly ships' port factions.** Which port faction each friendly ship belongs to
   ([[The Waters Come From the Islands]]).
 - **Ship materials.** Which materials there are, what each upgrade costs, and the small islands' wreckage: built as
@@ -16,8 +19,31 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   [[Ship Power]]).
 - **Crew as companions.** Which of DFO's companion systems the crew comes from: its naval `crewCompanions`, its
   fleet's `companionSlots`, or another.
-- **The Grey Tithe.** Whether the sea's pirates become the Grey Tithe. Its roster, its boss on land and where its
-  garrisons stand are built as Claude chose them, to rename or change ([[The Enemies as Claude Builds Them]]).
+- **The Grey Tithe.** Its roster, its boss on land and where its garrisons stand are built as Claude chose them, to
+  rename or change ([[The Enemies as Claude Builds Them]]). How deep the Covenant under them goes, and when the
+  player learns it. Whether its sails are unmarked, as the lore has them, or fly its colours and flag, as its ships at
+  sea do ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]).
+- **The Lattice in the game.** Whether it comes to sea; where it stands beside the Grey Tithe's garrisons; its
+  emblem; its foes' numbers on their roles, without the parries and guards the roles give, and with their own blows;
+  the Heart's fight, its phases and the Husks it tears out. Its looks and moves are
+  Claude's to change ([[The Lattice Are the Ruined Ports' People, Overtaken]], [[The Lattice as Claude Shapes It]]).
+- **The Lattice's armour and weapons.** How its red and purple share the set, and its shapes; whether the Atheric
+  gear keeps it where Daedric stood; what the horse's Daedric barding becomes, since the set leaves it out and its
+  name is Bethesda's ([[The Lattice's Armour and Weapons Take Daedric's Place]], [[Gear]]).
+- **The Lattice's places and events**, being talked through with the owner
+  ([[The Lattice Comes Into the Game Meaningfully, Talked Through First]]): the nine story missions' shape (three acts
+  of three, one to a port, or one chain through the islands), when the player first meets the Lattice, where the Heart
+  falls and how near the ninth comes to the Cube; who gives the side quests between them; where its corrupted areas lie
+  and where its props stand ([[The Lattice Has Props of Its Own, Made in Blender]]).
+- **The public events**, built on Claude's calls ([[Public Events as Claude Builds Them]]), each the owner's to change:
+  the Heart not yet rendered; the events at the top of Saltmere's band; the Grey Tithe's garrison joining the
+  Fissure's fight; other players' numbers crowding an event; the Tithe-Taker without a ledger; a leaver's vault past
+  its 20; the end chest and the heroic task, which the offers and the owner called Destiny 1's, are Destiny 2's.
+- **The one mystery.** What the Cube is called, how long it stays unseen, and what calls in the deep
+  ([[Raum's Lore Is Adapted Into One Mystery]]).
+- **The islands.** The owner's "Islands dont come and go" beside the discoveries that fade when nobody is near
+  ([[The World Map]]) and the small islands of the sea that fade once nothing holds them ([[Islands]], "Held and
+  faded").
 - **The factions' people.** The Stormcallers' and the Veiled's keepers in Overlook have no names of their own yet, as
   the Lamplighters' Elder Maren Hale has; their speakers are "Stormcaller" and "The Veiled"
   ([[Factions and Vendors as Claude Shapes Them]]).

@@ -1,15 +1,8 @@
 import assert from 'node:assert/strict';
 import type { Child } from '../ui/node.ts';
 import { test } from 'node:test';
-import {
-  AbilityBar,
-  ANIMA_ROWS,
-  filteredSvg,
-  abilityBarOf,
-  spentBetween,
-  tenetShown,
-  USED_SECONDS,
-} from './abilityBar.ts';
+import { AbilityBar, ANIMA_ROWS, abilityBarOf, spentBetween, tenetShown } from './abilityBar.ts';
+import { USED_SECONDS } from './ringSlot.ts';
 import { allOf, wordsIn } from './nodes.test.ts';
 
 /** A slot's label, or none for a slot not shown. */
@@ -77,11 +70,11 @@ test('on the display a spell just cast flashes, a Tenet counting its last second
   );
   assert.deepEqual(wordsIn(slots()[1]), ['4', 'Q'], 'Quicken has 4 s left');
   assert.ok(
-    keys(1).some((key) => key.startsWith('tenet sweep')),
+    keys(1).some((key) => key.startsWith('ring sweep')),
     'its wedge still dark',
   );
   assert.equal(
-    keys(2).some((key) => key.startsWith('tenet sweep')),
+    keys(2).some((key) => key.startsWith('ring sweep')),
     false,
     'Arc Lash ready',
   );
@@ -126,19 +119,9 @@ test('a Tenet its road has not earned stands dark under a padlock, saying which 
     false,
   );
   assert.equal(
-    keys(2).some((key) => key.startsWith('tenet sweep')),
+    keys(2).some((key) => key.startsWith('ring sweep')),
     false,
     'no wedge on one not to be had',
   );
   assert.deepEqual(wordsIn(slots[2]), ['G'], 'nor its seconds');
-});
-
-test('a picture’s colours are turned by a filter laid over it inside its own SVG', () => {
-  const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2"><rect width="1" height="1"/></svg>';
-  assert.equal(filteredSvg(svg, 1, 1), svg, 'untouched');
-  const turned = filteredSvg(svg, 0.45, 0.8);
-  assert.match(turned, /^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" viewBox="0 0 2 2"><defs>/);
-  assert.match(turned, /type="saturate" values="0.45"/);
-  assert.match(turned, /slope="0.8"/);
-  assert.match(turned, /<g filter="url\(#turned\)"><rect width="1" height="1"\/><\/g><\/svg>$/);
 });

@@ -23,7 +23,8 @@ sideways goes away. It's rarely useful with faster turning."
 - In a sea fight every ship sails a fifth faster than before and turns twice as fast, answering the wheel twice as
   fast from slow.
 - Tapping Shift in a sea fight gives the player's ship half again its speed for 4 s, then 12 s to recharge; a ring on
-  the ship's plate shows it.
+  the ship's plate shows it (replaced in part: the ring stands in the ship's bar at the bottom left,
+  [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]).
 - No ship rows sideways.
 
 ## Claude's calls

@@ -2,6 +2,10 @@
 // lying in their room's node that they have not.
 import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
 
+/** The lore's ask: a chapter lying in the node found, by its number in `item` (its place in content/lore/lore.json,
+ *  book by book). */
+export const LORE_ASKS = { findLore: 73 } as const;
+
 /** A chapter of the lore lying in the node: its number, and where it lies, x and y. */
 export interface LoreLying {
   readonly chapter: number;

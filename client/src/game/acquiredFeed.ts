@@ -194,7 +194,8 @@ export class AcquiredFeed {
   private rowNode(row: Row, sizes: Sizes, now: number, still: boolean): Node {
     const { slide, fade } = this.motion(row, now, still);
     const rarity = row.gain.rarity;
-    const count = row.total > 1 || !row.gain.item ? `+${row.total.toLocaleString()}` : '';
+    const pips = row.gain.pips ?? 0;
+    const count = pips > 0 ? '' : row.total > 1 || !row.gain.item ? `+${row.total.toLocaleString()}` : '';
     return {
       minWidth: 240,
       gap: 12,
@@ -234,6 +235,7 @@ export class AcquiredFeed {
           offset: !still && now - row.bumped < ENTER_MS ? [0, -1] : undefined,
           children: [words(count, sizes.name, INK.brassLit, { edge: 'shadow' })],
         },
+        pips > 0 && pipsNode(pips),
         {
           width: WELL_PX,
           height: WELL_PX,
@@ -265,4 +267,21 @@ export class AcquiredFeed {
       ],
     };
   }
+}
+
+/** A chest's tier as four diamonds, so many filled in brass. */
+function pipsNode(lit: number): Node {
+  return {
+    direction: 'row',
+    gap: 3,
+    alignY: 'center',
+    children: [0, 1, 2, 3].map((place) => {
+      const fill = place < lit ? INK.brassLit : 'none';
+      return svgNode(
+        `chest pip ${fill}`,
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><path d="M5 1 9 5 5 9 1 5Z" fill="${fill}" stroke="${INK.brassLit}" stroke-width="1.2"/></svg>`,
+        10,
+      );
+    }),
+  };
 }

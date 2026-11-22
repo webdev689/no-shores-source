@@ -22,7 +22,7 @@ def _placed(module, made, name, material, middle, turn, smooth=False):
     if smooth:
         for polygon in mesh.polygons:
             polygon.use_smooth = True
-    item = kit._object(module, f'{name}{len(module.objects)}', mesh, material)
+    item = kit.item_of(module, f'{name}{len(module.objects)}', mesh, material)
     item.location = middle
     item.rotation_euler = turn
     return item

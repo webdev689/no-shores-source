@@ -50,14 +50,15 @@ test('it sails along its heading at its storm way, and stops when the story stop
   assert.equal(brig.sailed().underWay, false);
 });
 
-test('the creation camera stands in front of the player and looks to their side, so they stand left', () => {
+test('the creation camera stands off the helm to port, abeam of the player on a wide view, and looks to their side', () => {
   const [forward, starboard] = helmInShip();
-  const { eye, look } = creationEye(0);
-  assert.ok(eye[0] > forward + 3, 'in front of them, toward its bow');
-  // Looking aft from in front, the camera's right is its port side: the look goes to port of the player.
-  assert.ok(look[1] < starboard, 'the look to their side');
-  const turned = creationEye(Math.PI / 2).eye;
-  assert.ok(turned[1] > starboard + 3, 'a quarter turn round them stands to starboard');
+  const { eye, look } = creationEye();
+  assert.ok(eye[1] < starboard - 3, 'off their port side');
+  assert.ok(Math.abs(eye[0] - forward) < 0.5, 'abeam of them on a wide view, neither before them nor astern');
+  // Looking to starboard from their port side, the camera's right is aft: the look goes aft of them, so they stand
+  // left on the view.
+  assert.ok(look[0] < forward, 'the look to their side');
+  assert.ok(creationEye(9 / 16).eye[0] > forward + 1, 'on a tall view a little forward of abeam');
 });
 
 test('a move held plays through once and stays on its last frame; a looping one goes round', () => {

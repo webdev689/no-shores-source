@@ -224,7 +224,7 @@ test("its own gun kicks the eye and booms; a captain's booms and does not kick",
   assert.deepEqual(kicks(feel), []);
 });
 
-test("a ball striking it is heard and jars its eye, a hole harder; the side it came from is told for DFO's 1.4 s", () => {
+test('a ball striking it is heard and jars its eye, a hole harder', () => {
   const feel = new FightFeel(4);
   const ships = new Map([[0, own()]]);
   frame(feel, ships, [{ kind: 'hit', ship: 0, at: [0, 2, 1], part: 'hull' }], 0);
@@ -234,11 +234,8 @@ test("a ball striking it is heard and jars its eye, a hole harder; the side it c
     cues.flatMap((cue) => (cue.kick === undefined ? [] : [cue.kick])),
     [1.6],
   );
-  assert.equal(feel.blow(0.5), 'starboard');
-  assert.equal(feel.blow(1.5), null);
   frame(feel, ships, [{ kind: 'hit', ship: 0, by: 1, zone: 'holed', point: [0, -8, 1] }], 2);
   assert.deepEqual(kicks(feel), [2.5]);
-  assert.equal(feel.blow(2.1), 'bow');
 });
 
 test('a fall alongside throws its water over its rail and rocks it; one further off does neither', () => {
@@ -268,7 +265,7 @@ test('a ball going by it close whistles once, where it passed; its own going out
   assert.deepEqual(sounds(feel), []);
 });
 
-test('its side coming ready is heard and told, as a captain running out is heard', () => {
+test('its side coming ready is heard, as a captain running out is heard', () => {
   const feel = new FightFeel(7);
   const ships = new Map([
     [0, own({ guns: { left: [2, 0] } })],
@@ -280,7 +277,6 @@ test('its side coming ready is heard and told, as a captain running out is heard
   ships.set(1, { ...captain, vessel: { ...captain.vessel, run_out: ['port'] } });
   frame(feel, ships, [], 0.1);
   assert.deepEqual(sounds(feel).sort(), ['ship.ready', 'ship.runout']);
-  assert.ok(feel.readyAt(0) === 0.1 && feel.readyAt(1) === null);
   for (let tick = 2; tick < 20; tick++) frame(feel, ships, [], tick / 10);
   assert.ok(
     feel.marks(1.95).some((mark) => mark.blend === 'glow' && mark.x > 90),
@@ -384,4 +380,21 @@ test("its volley's tally is told within four seconds of its last shot, though ot
   step([{ kind: 'muzzle', ship: 0, point: [0, 2, 2], launch: [0, 300, 0] }], 0);
   step([], 4.5);
   assert.deepEqual(feel.tally(4.6), { balls: 1, hits: 0, holed: 0, rig: 0 });
+});
+
+test('it times each captain side from when it was first seen run out, and forgets it once run in', () => {
+  const feel = new FightFeel(7);
+  const captain = brig();
+  const ships = new Map([
+    [0, own()],
+    [1, captain],
+  ]);
+  frame(feel, ships, [], 0);
+  ships.set(1, { ...captain, vessel: { ...captain.vessel, run_out: ['port'] } });
+  frame(feel, ships, [], 0.5);
+  frame(feel, ships, [], 1.5);
+  assert.deepEqual([feel.ranOutFor(1, 'port', 1.5), feel.ranOutFor(1, 'starboard', 1.5)], [1, 0]);
+  ships.set(1, captain);
+  frame(feel, ships, [], 2);
+  assert.equal(feel.ranOutFor(1, 'port', 2), 0);
 });
