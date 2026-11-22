@@ -136,7 +136,8 @@ part at once, her words with it. The game is the player's from there.
 
 **The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
 first arrival, Elder Maren Hale of the Lamplighters starts at a point of the townsfolk's ways at least 15 m from the
-player, and out of their view where one is, and comes to them by the ways at 1.5 m/s. She stops 1.8 m before a player on
+player, and out of their view where one is, and comes to them by the ways at 1.5 m/s, on the floor the plaza's
+townsfolk stand on ([[Game]]), up on a podium or a landing. She stops 1.8 m before a player on
 the ways, facing them; for a player off them, she stops at the point of the ways nearest them and greets them there once
 they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest stop
 first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the Stormcallers, the

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { KEEPERS } from './keepers.ts';
 import { type Plaza, Townsfolk, inPlaza, plazaFrameOf, plazaOf, plazaPoint, shapeSpot } from './townsfolk.ts';
-import { POSTS, SOCIAL } from './welcome/plazaForTests.ts';
+import { FRAME, POSTS, SOCIAL } from './welcome/plazaForTests.ts';
 
 /** A plaza 260 m across and 120 m deep, its middle at (1000, 2000), the sea to the south (+y). */
 const PLAZA: Plaza = {
@@ -122,4 +122,12 @@ test('every townsperson wears only garments their body is drawn in at work and a
     for (const garment of dress.outfit.garments)
       assert.ok(DRAWN_AT_WORK[dress.body]?.includes(garment), `a ${dress.body} townsperson in ${garment}`);
   assert.ok(new Set(people.map(({ dress }) => dress.outfit.garments.join())).size >= 6, 'dressed variously');
+});
+
+test('a hub whose ring reaches out a long arm keeps its plaza’s own middle and seaward, and Shape faces that middle', () => {
+  const arm = [...SOCIAL.ring, [1000, 1500] as const, [1010, 1500] as const];
+  const node = { ...SOCIAL, ring: arm, plazaBounds: [870, 1940, 1130, 2060] as const };
+  assert.deepEqual(plazaFrameOf(plazaOf(node)), FRAME);
+  const shape = new Townsfolk({ ...plazaOf(node), stations: [] }, 7).peopleAt(0, { shape: [1095, 2002.5] }).at(-1);
+  assert.ok(Math.abs((shape?.facing ?? 0) + Math.PI / 2) < 0.05, 'facing west, to the plaza’s middle');
 });

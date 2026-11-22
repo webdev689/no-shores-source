@@ -161,7 +161,11 @@ the only social node whose file carries his places.
 
 **Its people.** Each keeper stands behind their counter in their own dress (`client/src/game/keepers.ts`), Elder
 Maren Hale behind the Lamplighters'; the Harbourmaster and the chandler as the townsfolk are. While the room says Shape
-is here, he stands at his week's place, facing the plaza's middle, his mark over him, E within 3 m opening his wares.
+is here, he stands at his week's place, facing the plaza's middle (the plan's own plaza, `plazaBounds`, however far
+the ring reaches past it), his mark over him, E within 3 m opening his wares. In Overlook's hub his places stand
+clear of the townsfolk: 1.7 m or more from every way's line (a walker keeps 0.7 m right of it and over a metre from
+him) and over a metre from every post; at the pier's head 2 m out past the walkers' end, and on the switchback's
+middle landing 2 m aside of their line, away from the flights.
 
 `city::settle` lays the plan's levels on the land as pads, rectangles of ground set to a level that the ground reads
 before its own relief (`land::pads`): the terraces, the plaza and the landmark's ground. So the city's ground is the

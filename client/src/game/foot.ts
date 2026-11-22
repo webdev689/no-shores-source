@@ -41,7 +41,7 @@ import type { GearHere } from './gearScreen.ts';
 import { type StripHint, keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
-import { PlazaLife, countersOf } from './plazaLife.ts';
+import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import {
   dungeonPlace,
@@ -111,6 +111,8 @@ export class Foot {
   readonly seas: Difficulty;
   /** The ground's height under a world point as drawn: the land's, or a dungeon's floor. */
   readonly groundAt: (x: number, y: number) => number | null;
+  /** The floor a placed figure stands on: in a social space on a pier, a podium or a landing (`floorOver`). */
+  readonly floor: (x: number, y: number) => number;
   /** The ceiling over a world point in a dungeon, which the camera stays under; none on a node's land. */
   private readonly roof: ((x: number, y: number) => number | null) | null;
   private readonly module: WebAssembly.Module;
@@ -180,7 +182,7 @@ export class Foot {
     this.foes = new FoeFigures(parts.roster);
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
     this.prompt = context.usePrompt;
-    const floor = (x: number, y: number) => context.movement.standing(x, y).z;
+    this.floor = floorOver(node.kind === 'social' ? opened.boxes : [], (x, y) => context.movement.standing(x, y).z);
     const placing: Others = {
       place: (dress, x, y, facing) => {
         const one = { id: nextOtherId(), x, y, z: 0, facing, dress, anim: 'idle', frame: null, spin: false };
@@ -192,7 +194,7 @@ export class Foot {
         context.forge.forget(one.id);
       },
     };
-    this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
+    this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, this.floor) : null;
   }
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
@@ -464,8 +466,7 @@ export class Foot {
     const eye = { x: eyeX, y: eyeY, nearest };
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
-    const muzzle = walker.muzzle;
-    const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
+    const [muzzle, gearNow, floor] = [walker.muzzle, this.gear?.gear ?? null, this.floor];
     const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props());
     const dropped = dropsLaid(this.drops, gearNow?.drops ?? [], clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
