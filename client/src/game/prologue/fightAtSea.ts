@@ -10,6 +10,7 @@ import { SAILS_RUNG } from '../../editor/sailing.ts';
 import type { CaptainAt, FightCaptain, FightEvent, FightVessel, FightView, ShipState } from '../../rules/fightRules.ts';
 import type { Swell } from '../../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
+import { HULL_NAMES } from '../../ships/hulls.ts';
 import type { ShipBar } from '../../ships/shipBars.ts';
 import { shipSails, shipWaterline, type Waterline } from '../../ships/shipMesh.ts';
 import type { ShipCamera, ShipPlace } from '../../ships/shipView.ts';
@@ -20,6 +21,7 @@ import type { Founder } from './sailing.ts';
 import type { FightHeard } from '../audio/ambience/seaFight.ts';
 import type { Shot } from '../camera.ts';
 import { SeaCombat } from '../seaCombat.ts';
+import { aimLineOf, type Sight } from '../seaSight.ts';
 import type { FightReadout } from '../seaPanel.ts';
 
 /** A captain the story sets upon the player: its bearing off the player's bow (radians, to starboard), how far off
@@ -181,7 +183,7 @@ export class StoryFight {
       },
       fightEnd: () => land.fightEnd(),
     };
-    const combat = new SeaCombat({ source, own: 'Brig' }, first, hull.marks, now);
+    const combat = new SeaCombat({ source, own: 'Brig', hull: HULL_NAMES.indexOf(OWN_HULL) }, first, hull.marks, now);
     return new StoryFight(land, combat, { heard, answered }, hull.sails, rigs);
   }
 
@@ -207,6 +209,8 @@ export class StoryFight {
   }): StoryFightFrame {
     if (this.failure !== null) throw this.failure;
     const scale = input.drawnScale ?? 1;
+    // The aim's eye and the camera ride the Brig as it is drawn here, on the story's swell.
+    this.combat.ownPose = (x, y, heading) => this.onSwell(input, 'own', { x, y, heading }, scale);
     const shot = this.combat.frame(input.seconds, input.time, input.far, (error) => {
       this.failure = error;
     });
@@ -217,16 +221,7 @@ export class StoryFight {
     const drawn = (vessel: FightVessel | FightCaptain, hull: 'own' | 'captain', rig: SailRig) => {
       const [x = 0, y = 0, heading = 0, , , , , rung = 0] = vessel.ship;
       rig.step(input.seconds, { offDeg: windOff(heading, windBearing), set: rung === SAILS_RUNG }, input.time);
-      const { lengthM, beamM } = this.waterlines[hull];
-      const lies = { x, y, heading };
-      const swell = poseOnSwell(
-        input.swell,
-        () => Infinity,
-        lies,
-        (lengthM / 2) * scale,
-        (beamM / 2) * scale,
-        input.time,
-      );
+      const swell = this.onSwell(input, hull, { x, y, heading }, scale);
       // Its hurts and its going down settle, trim and list it as the rules have it, on the swell drawn here: the
       // rules' own pose rides a swell of theirs, so taking it as it goes down would jump it.
       const [settled, trim, list] = 'founder' in vessel && vessel.founder ? vessel.founder : [0, 0, 0];
@@ -264,6 +259,18 @@ export class StoryFight {
     };
   }
 
+  /** How a ship of `kind` lying at `lies` rides the story's swell this frame, drawn `scale` times its size. */
+  private onSwell(
+    input: { readonly swell: Swell | undefined; readonly time: number },
+    kind: 'own' | 'captain',
+    lies: { readonly x: number; readonly y: number; readonly heading: number },
+    scale: number,
+  ): { heave: number; pitch: number; roll: number } {
+    const { lengthM, beamM } = this.waterlines[kind];
+    const [halfLength, halfBeam] = [(lengthM / 2) * scale, (beamM / 2) * scale];
+    return poseOnSwell(input.swell, () => Infinity, lies, halfLength, halfBeam, input.time);
+  }
+
   /** Each afloat ship's footprint on the water: the player's ship's the Brig's, each captain's a Sloop's. */
   private hulls(player: FightVessel, captains: readonly FightVessel[], scale: number): HullMask[] {
     const hull = (vessel: FightVessel, kind: 'own' | 'captain'): HullMask[] => {
@@ -297,6 +304,12 @@ export class StoryFight {
   /** Whether the guns are being aimed, for the keys shown. */
   get aiming(): boolean {
     return this.combat.aimingNow;
+  }
+
+  /** The aim line under the sight while the guns are laid: the side, its load, its range and why it waits. */
+  get aimLine(): Sight | null {
+    const view = this.answered.latest;
+    return aimLineOf(view.lay, view.player);
   }
 
   holdFire(): void {

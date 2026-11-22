@@ -191,6 +191,7 @@ export class Stage {
     flames.clear();
     hud.tasks.show(null);
     hud.seaFight(null);
+    hud.sight(false, null);
     hud.toast();
     hud.reach({ kind: 'inside' });
     hud.hints([]);

@@ -230,6 +230,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foes Walk and Run at Three Quarters of a Player's Pace]]
 - [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 - [[The Crew Still Standing Regroup Ahead]]
+- [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

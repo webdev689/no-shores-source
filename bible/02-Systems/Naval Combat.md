@@ -30,6 +30,9 @@ code:
   - client/src/editor/fighting.ts#Fighting
   - client/src/editor/aim.ts#lookReach
   - client/src/editor/aimCamera.ts#AimCamera
+  - client/src/editor/aimStation.ts#aimStation
+  - client/src/editor/shipClear.ts#orbitClearance
+  - client/src/editor/shipClear.ts#swingOf
   - client/src/editor/naval.ts#aimOf
   - client/src/ships/aimView.ts#AimView
   - client/src/game/seaSight.ts#aimLineOf
@@ -108,7 +111,7 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
 - **The loads** are round, grape, chain and heated shot, with DFO's factors over round shot: grape is slower and wider
   and kills men (less as its flight lengthens), chain tears canvas, heated shot sets a ship alight. A loaded side drawn
   for a new load takes half its reload; one loading keeps its progress.
-- **A look on a ship** lays for the point it meets (DFO's `lookOnShip`): the look's ray from the aim eye is tested
+- **A look on a ship** lays for the point it meets (DFO's `lookOnShip`): the look's ray from the aim's eye is tested
   against the ship's hull's box and its sails' boxes out to the laid gun's longest throw and 60 m, the nearest entry taken.
   The side is laid on that point, its range out along the fire and its own height. A look on the ship's canvas lays chain
   for that very point and every other load for its hull's middle. The point is led along the fire by the ship's way over the
@@ -380,9 +383,9 @@ whole bring the Pirate Sloop to strike.
 
 While sailing, `F` calls a pirate captain, a Major in their Sloop, onto the ring 650 to 1000 m round the Sloop, where the
 water floats it, heading across its waters on a slant; `F` again sends the captain off. The fight then steps the Sloop in its
-helm's place. Holding the right mouse aims: the camera eases out to the aim eye past the ports on the side looked at,
-as the game's fight does ("The aim, as DFO's"), the look's bearing picks the side, and where it meets the water is the range, on at 30 m a degree past the dip (DFO's
-lookReach), unless the look is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
+helm's place. Holding the right mouse aims as the game's fight does ("The aim, as DFO's"): the camera eases out to
+the battery on the side looked at and looks square off it, and a drag up or down lays the range, unless the view's
+middle is on the captain's ship: then the guns are laid on the point it meets. Letting go fires the lay held; a
 left click holds fire, the wheel changes shot, `C` braces, and `Shift` bursts.
 
 The captain's ship is drawn in their hull and their faction's colours ([[Sailing]], "Its look"), and the water cuts its footprint
@@ -589,17 +592,34 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and Aims as DFO's Does]]). Ported from
 DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
 
-- **The eye** (`AimCamera`, in the game's fight) eases out to the aim eye over DFO's 0.22 s, smoothstepped, and home
-  again on the release; a look carried onto the other battery carries it to that battery's eye eased in the ship's own
-  frame, so its way never drags it. Once the look lays on a side, it is held there until the aim is let go: no drag
-  and no turn of the ship takes it out of that side's arc, past 35° off the bow and short of 40° off the stern, where
-  the guns bear ([[A Held Aim Keeps the Camera on Its Side]]); an aim taken over the bow holds nothing until the look
-  first lays on a side. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
-  waterline's box, from its draught to a metre over its upper gun line). A crippled ship's guns are silent: its eye
-  never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
-- **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water
-  (DFO's look is free); out of the aim the orbit keeps its own clamp, 0.05 to 1.2 rad down.
-- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, and under it DFO's aim line at the face's 11 px (DFO's 13) in
+- **The side** is the one the camera looks toward as the aim is taken, the nearer one even over the bow or the stern,
+  and it is held until the aim is let go ([[A Held Aim Keeps the Camera on Its Side]],
+  [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]). Taken again on the other side, the view eases home
+  first and then out to the other battery, never across the ship.
+- **The eye** (`AimCamera`) eases out over DFO's 0.22 s, smoothstepped, to its battery's station (`aimStation`):
+  abreast the middle of the side's upper guns, 1.5 m out past the widest of its hull and its guns' mouths, 3.1 m over
+  its gun line (DFO's height over the Sloop's), and out past where any of its own sails can swing, whatever the wind:
+  a square sail braced round its mast, a gaff swung to its beam about its raked luff and bellying forward of it
+  (`swingOf`). The Sloop's stands 4.9 m out, forward of its mast where its boom never comes; the Brig's 6.7 m out,
+  past its main course's yard. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
+  swell), so nothing of the ship moves relative to it; the view itself stays level. On its way out from the ports it
+  stops 1.2 m short of any ship afloat alongside (that ship's box from its keel to a metre over its rail, as wide as
+  its hull, its guns' mouths or its low yards over its side). A crippled ship's guns are silent: its eye never moves.
+- **Where it looks**: square off the side, at the water its guns are laid on, so the crosshair at the view's middle
+  stands on the landing zone. A drag left or right does nothing while the aim is held; a drag up or down lays the
+  guns farther or nearer, the range read from the drag as DFO's lookReach reads a look from the eye's height (where
+  it meets the water, then on at 30 m a degree past the dip, up to 0.15 rad over the horizon), and the view pitched
+  down to that point. The range is held between the guns' nearest (their lowest elevation, -10°, from their mouths)
+  and their longest throw from where they leave. The view follows the landing zone's drift along the keel, the
+  ship's own way the balls carry (read from the lay's ends, eased over 0.25 s so a late answer never jerks it). The
+  look's ray runs from the eye along the view's middle, so a ship under the crosshair is laid on. Let go, the camera
+  goes on round the ship looking the way the aim looked, so it eases home without a swing; out of the aim the orbit
+  keeps its own clamp, 0.05 to 1.2 rad down.
+- **The fight's camera** stands back from the ship's middle, 6 m over its waterline, at least as far as clears every
+  part of the ship its look back passes through (`orbitClearance`): its hull's box and each sail's box as far as it
+  swings, and 2 m more; the wheel's zoom goes no nearer.
+- **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, in the sea's fights and the story's,
+  and under it DFO's aim line at the face's 11 px (DFO's 13) in
   the HUD's outline: the side and its shot, the range the guns are laid to (the mean of where each gun stops, out
   along the fire from the ship's ports), "(longest)" within a metre of their longest throw, " - on target" in red while the
   side can fire, or dimmed " - reloading 4.2 s", " - braced" or " - guns silent".
@@ -614,12 +634,12 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   picture after the water, hidden where the world's depth stands nearer.
 - **The wheel**: while aiming a notch steps the load, but only after 0.18 s of quiet since the last, so a trackpad's
   stream of small turns steps it once; out of the aim it zooms the fight's camera, a notch half again nearer or
-  farther, from 11.4 m (DFO's nearest) to the fight camera's own 75 m.
+  farther, from 11.4 m (DFO's nearest, or as near as clears the ship) to the fight camera's own 75 m.
 - **The screen**: a captain's plate stands under the compass, never over it; the sea's status line ("Fighting") stands
   in the top right corner while the fight's readout shows, off the sky the aim looks at.
 
-The World Editor's fight and its fleet room ease the eye the same way (`easedAimOf`) and draw the lay with `AimView`
-after the water.
+The World Editor's fight and its fleet room aim the same way (`easedAimOf`), their look laid from the aim's last
+frame, and draw the lay with `AimView` after the water.
 
 ## An ambush
 

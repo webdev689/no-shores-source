@@ -2,11 +2,12 @@
 // down from the raised sea to their Sloop at true scale, every captain in its own hull and colours, and the sea
 // room's fight is fought there, by the World Editor's own fight (its aim, lay, effects and panel), until every
 // captain sinks or is gone; then it pans back up.
-import { AIM_LOOK_TOP, batterySide, lookBearing, yawInBattery } from '../editor/aim.ts';
-import { AimCamera, aimHullOf } from '../editor/aimCamera.ts';
+import { AIM_LOOK_TOP, lookBearing } from '../editor/aim.ts';
+import { AimCamera, type AimFrame, aimHullOf, type AimShip } from '../editor/aimCamera.ts';
 import { type FightInput, type FightSource, Fighting } from '../editor/fighting.ts';
 import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
 import { cameraOf, type Orbit } from '../editor/orbit.ts';
+import { orbitClearance } from '../editor/shipClear.ts';
 import { SAILS_RUNG } from '../editor/sailing.ts';
 import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { SeaFightModel } from '../plus/seaFight.ts';
@@ -129,9 +130,8 @@ export class SeaCombat {
   private readonly held = new Set<string>();
   private readonly presses: string[] = [];
   private aiming = false;
-  /** The side the aim's look has laid on since the aim was taken, or null until it first does: from then until it is
-   *  let go, no drag and no turn of the ship under it takes the look out of that battery's arc. */
-  private aimSide: 1 | -1 | null = null;
+  /** The aim's last frame: the view it drew and the look it laid. */
+  private aimed: AimFrame | null = null;
   private fire = false;
   /** Shift tapped since the last frame: a burst of speed asked for. */
   private boost = false;
@@ -139,7 +139,13 @@ export class SeaCombat {
   /** When the wheel last turned, seconds, and how far back the fight's camera stands. */
   private wheelAt = -Infinity;
   private distance: number = ORBIT.distance;
+  /** How far back the camera stood last frame to be clear of the player's own ship, metres. */
+  private clearance = 0;
   private readonly aimCamera = new AimCamera();
+  /** The hull the player's ship is drawn as, and how it lies where it is drawn on another swell than the rules'
+   *  (the story's): the aim's eye and the camera's clearance ride it as drawn. */
+  private readonly ownHull: number;
+  ownPose: ((x: number, y: number, heading: number) => { heave: number; pitch: number; roll: number }) | null = null;
   /** Where the frame's ships were last drawn from, in the window, and when. */
   private drawnFrom: { readonly eye: readonly [number, number, number]; readonly now: number } | null = null;
   /** How far down the view has come, 0 the sea's to 1 the fight's, and which way it goes. */
@@ -157,9 +163,9 @@ export class SeaCombat {
 
   /** The fight the sea room began (`room`, which steps it and says whether a boarding would be taken now), or one a
    *  source of its own steps (the story's, on the land worker's door, `own` naming the player's ship's kind on its
-   *  plate); its first view `first`. */
+   *  plate and `hull` the hull it is drawn as); its first view `first`. */
   constructor(
-    fought: SeaRoom | { readonly source: FightSource; readonly own: string },
+    fought: SeaRoom | { readonly source: FightSource; readonly own: string; readonly hull?: number },
     first: FightView,
     marks: MarkDrawer & Partial<Pick<MarkView, 'drawOver' | 'drawLight'>>,
     now: number,
@@ -169,6 +175,7 @@ export class SeaCombat {
     this.marks = marks;
     const own = 'source' in fought ? fought : null;
     this.room = own ? { mayBoard: false } : (fought as SeaRoom);
+    this.ownHull = own?.hull ?? SLOOP_HULL;
     this.naval = new Naval(marks, shown);
     this.naval.shipsOf = (answer) => this.feelShips(answer);
     const source = own?.source ?? roomSource(fought as SeaRoom, first);
@@ -244,11 +251,11 @@ export class SeaCombat {
     this.held.clear();
   }
 
-  /** A drag of the view, in pixels: it turns the camera round the ship, or the aim's look, which may rise over the
-   *  horizon. */
+  /** A drag of the view, in pixels: it turns the camera round the ship; while aiming, the look stays square off
+   *  the side taken and a drag up or down lays the guns farther or nearer. */
   drag(right: number, down: number): void {
-    this.orbit = { yaw: this.orbit.yaw + right * DRAG_TURN, pitch: this.pitched(this.orbit.pitch + down * DRAG_TURN) };
-    this.holdAimSide();
+    const yaw = this.aiming ? this.orbit.yaw : this.orbit.yaw + right * DRAG_TURN;
+    this.orbit = { yaw, pitch: this.pitched(this.orbit.pitch + down * DRAG_TURN) };
   }
 
   /** A pitch within the aim's clamp while aiming, else the orbit's. */
@@ -256,29 +263,24 @@ export class SeaCombat {
     return Math.min(PITCH[1], Math.max(this.aiming ? -AIM_LOOK_TOP : PITCH[0], pitch));
   }
 
-  /** While aiming, the look kept on the battery it first laid on; out of the aim, no side is held. */
-  private holdAimSide(): void {
-    if (!this.aiming) {
-      this.aimSide = null;
-      return;
-    }
-    const heading = this.last.player.ship[2] ?? 0;
-    this.aimSide ??= batterySide(this.orbit.yaw, heading);
-    if (this.aimSide !== null) this.orbit = { ...this.orbit, yaw: yawInBattery(this.orbit.yaw, heading, this.aimSide) };
-  }
-
   /** The right button held aims; let go, the lay held fires. A left click while aiming holds fire. */
   aim(held: boolean): void {
     if (this.aiming && !held) this.fire = true;
+    if (this.aiming && !held) this.leaveAim();
     this.aiming = held;
     this.orbit = { ...this.orbit, pitch: this.pitched(this.orbit.pitch) };
-    this.holdAimSide();
   }
 
   holdFire(): void {
+    if (this.aiming) this.leaveAim();
     this.aiming = false;
     this.orbit = { ...this.orbit, pitch: this.pitched(this.orbit.pitch) };
-    this.holdAimSide();
+  }
+
+  /** Let go of the aim, the camera goes on round the ship looking the way the aim looked, so it eases home without a
+   *  swing. */
+  private leaveAim(): void {
+    if (this.aimed) this.orbit = { ...this.orbit, yaw: this.aimed.yaw };
   }
 
   /** Whether the right button holds the aim. */
@@ -292,46 +294,58 @@ export class SeaCombat {
     if (!steps) return;
     if (!this.aiming) {
       const distance = this.distance * ZOOM.ratio ** Math.sign(steps);
-      this.distance = Math.min(ORBIT.distance, Math.max(ZOOM.nearestM, distance));
+      this.distance = Math.min(ORBIT.distance, Math.max(ZOOM.nearestM, this.clearance, distance));
       return;
     }
     if (time - this.wheelAt >= SHOT_WHEEL_S) this.loadSteps += Math.sign(steps);
     this.wheelAt = time;
   }
 
-  private orbitAt(): Orbit {
-    const [x = 0, y = 0] = this.last.player.ship;
-    const [heave = 0] = this.last.player.pose;
-    const target = { targetX: x - this.window.leftM, targetY: y - this.window.topM, targetZ: heave + ORBIT.lookOverM };
-    return { ...target, ...this.orbit, distance: this.distance };
+  /** The player's ship as it is drawn: on the rules' pose, or the swell it is drawn on. */
+  private ownShip(): AimShip {
+    const [x = 0, y = 0, heading = 0] = this.last.player.ship;
+    const [heave = 0, pitch = 0, roll = 0] = this.last.player.pose;
+    const drawn = this.ownPose?.(x, y, heading) ?? { heave, pitch, roll };
+    return { x, y, heading, ...drawn, hull: this.ownHull };
   }
 
-  /** The eye the fight is drawn from this frame, world metres: the orbit's, eased out to the ship's battery on the side
-   *  looked at while aiming (never for a crippled ship, its guns silent), short of every other ship afloat. */
-  private eyeAt(orbit: Orbit, seconds: number): readonly [number, number, number] {
+  /** The fight's camera round the player's ship, standing back at least as far as clears its hull and its rig. */
+  private orbitAt(): Orbit {
+    const ship = this.ownShip();
+    const target = { targetX: ship.x - this.window.leftM, targetY: ship.y - this.window.topM, targetZ: ship.heave };
+    const lookAt = [ship.x, ship.y, ship.heave + ORBIT.lookOverM] as const;
+    this.clearance = orbitClearance(ship, lookAt, this.orbit.yaw, Math.max(PITCH[0], this.orbit.pitch));
+    const distance = Math.max(this.distance, this.clearance);
+    return { ...target, targetZ: target.targetZ + ORBIT.lookOverM, ...this.orbit, distance };
+  }
+
+  /** The aim's frame: the orbit's view eased out to the ship's battery on the side looked at while aiming (never for
+   *  a crippled ship, its guns silent), short of every other ship afloat, and the look it lays. */
+  private aimAt(orbit: Orbit, seconds: number): AimFrame {
     // The orbit's own eye keeps the orbit's clamp, so a look raised over the horizon never takes it under the sea.
     const [eastM, southM, upM] = cameraOf({ ...orbit, pitch: Math.max(PITCH[0], orbit.pitch) }).eye;
-    const home = [eastM + this.window.leftM, southM + this.window.topM, upM] as const;
-    const { ship, pose, state } = this.last.player;
-    const [x = 0, y = 0, heading = 0] = ship;
-    const lying = { x, y, heading, heave: pose[0] ?? 0 };
-    const want = this.aiming && state === 'afloat' ? (lookBearing(this.orbit.yaw, heading) >= 0 ? 1 : -1) : null;
+    const eye = [eastM + this.window.leftM, southM + this.window.topM, upM] as const;
+    const home = { eye, yaw: orbit.yaw, pitch: orbit.pitch };
+    const ship = this.ownShip();
+    const afloat = this.last.player.state === 'afloat';
+    const want = this.aiming && afloat ? (lookBearing(this.orbit.yaw, ship.heading) >= 0 ? 1 : -1) : null;
     const alongside = this.vessels()
       .slice(1)
       .filter(({ vessel }) => vessel.state !== 'sunk')
       .map(({ vessel, hull }) => aimHullOf(vessel.ship, vessel.pose[0] ?? 0, hull));
-    return this.aimCamera.eye(home, want, lying, alongside, seconds);
+    const ask = { home, want, ship, pitch: this.orbit.pitch, lay: this.last.lay, alongside } as const;
+    return this.aimCamera.frame(ask, seconds);
   }
 
   /** One frame of the fight, `seconds` on at `time`: it steps, and answers the fight's own view, drawing to `far`,
    *  which the view pans down to from the sea's by `share`. */
   frame(seconds: number, time: number, far: number, fail: (error: unknown) => void, swell?: ShelteredSwell): Shot {
     [this.swell, this.waterTime] = [swell, time];
-    // Nor does the ship turning under a held aim leave the look outside its battery's arc.
-    this.holdAimSide();
-    const orbit = this.orbitAt();
-    const eye = this.eyeAt(orbit, seconds);
-    const look = this.aiming ? this.naval.look(orbit, this.fought, this.window, eye) : null;
+    const aimed = this.aimAt(this.orbitAt(), seconds);
+    this.aimed = aimed;
+    // The guns laid no nearer than their lowest and no farther than their longest, the look's pitch held there.
+    if (this.aiming) this.orbit = { ...this.orbit, pitch: aimed.heldPitch };
+    const look = this.aiming ? aimed.look : null;
     const input: FightInput = {
       held: this.held,
       press: this.presses.shift(),
@@ -354,10 +368,11 @@ export class SeaCombat {
     if (!this.naval.fighting) this.going = -1;
     this.down = Math.min(1, Math.max(0, this.down + (this.going * seconds) / PAN_S));
     const jar = this.shake.jarAt(time);
+    const { eye } = aimed;
     return {
       eye: [eye[0] + jar.east, eye[1] + jar.south, eye[2] + jar.up],
-      yaw: this.orbit.yaw + jar.yaw,
-      pitch: this.orbit.pitch + jar.pitch,
+      yaw: aimed.yaw + jar.yaw,
+      pitch: aimed.pitch + jar.pitch,
       fov: FIELD_OF_VIEW,
       near: 0.3,
       far,

@@ -238,6 +238,7 @@ export class Battle implements Beat {
     if (heads) this.sayCries(shown.shot, heads, tick.viewport);
     const { hud } = stage.parts;
     hud.hints(fight.aiming ? HINTS.aim : HINTS.fight);
+    hud.sight(fight.aiming && !shown.over, fight.aimLine);
     hud.seaFight(shown.over ? null : shown.display);
     hud.tasks.show(seaFightQuest(QUEST, shown.readout.left, shown.readout.men));
     hud.toast(...shown.readout.said);
@@ -275,9 +276,9 @@ export class Battle implements Beat {
     const { hud } = this.story.stage.parts;
     hud.tasks.show(null);
     hud.seaFight(null);
+    hud.sight(false, null);
     hud.toast();
     hud.hints([]);
-    hud.seaFight(null);
     hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: [0, 1, 0] }, 1));
     // The calm draws its sails, and each wreck's, on from where the fight left them.
     const { sailing } = this.story;

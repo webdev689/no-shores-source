@@ -248,28 +248,47 @@ test('while aiming the look may rise over the horizon to the longest throw; the 
   assert.ok(shot && shot.pitch >= 0.05 - 1e-9, `the orbit looks ${shot?.pitch} down`);
 });
 
-test('a held aim keeps its look on the side it laid on: no drag takes it over the bow or the stern', async () => {
+test('a held aim looks square off the side it was taken on: a drag across lays nothing new, up and down lays range', async () => {
   const { fight, orders, frames } = ordered();
   const turn = (degrees: number) => fight.drag((degrees * Math.PI) / 180 / 0.005, 0);
-  const bearing = () => orders.at(-1)?.aim?.bearing ?? Number.NaN;
-  // Aimed looking over the bow: nothing is held until the look first lays on a side.
+  const heading = vessel.ship[2] ?? 0;
+  // Aimed while looking a little off the starboard bow: the view swings square off the starboard side.
+  turn(20);
   fight.aim(true);
-  turn(90);
-  await frames(2);
-  assert.ok(Math.abs(bearing() - 90) < 1, `turned onto the starboard battery it bears ${bearing()}`);
-  turn(100);
-  await frames(2);
-  assert.ok(Math.abs(bearing() - 139) < 1, `dragged past the stern it stops at ${bearing()}`);
+  const shots = await frames(60);
+  const last = shots.at(-1);
+  assert.equal(orders.at(-1)?.aim?.bearing, 90);
+  assert.ok(last && Math.abs(last.yaw - (heading + Math.PI / 2)) < 0.02, `it looks along ${last?.yaw}`);
+  const range = orders.at(-1)?.aim?.range ?? 0;
   turn(-200);
+  await frames(5);
+  assert.equal(orders.at(-1)?.aim?.bearing, 90, 'dragged across the bow, it holds its side');
+  assert.ok(Math.abs((orders.at(-1)?.aim?.range ?? 0) - range) < 1e-9, 'and its range');
+  fight.drag(0, -40);
   await frames(2);
-  assert.ok(Math.abs(bearing() - 36) < 1, `dragged across the bow onto port it stops at ${bearing()}`);
-  // Let go, the camera turns as it likes again.
+  assert.ok((orders.at(-1)?.aim?.range ?? 0) > range + 5, 'a drag up lays it farther');
+  // Let go, the camera goes on round the ship from where the aim looked, and turns as it likes again.
   fight.aim(false);
-  turn(-36);
-  await frames(2);
+  const [after] = await frames(1);
+  assert.ok(after && Math.abs(after.yaw - (heading + Math.PI / 2)) < 0.05, 'no swing as it eases home');
+  turn(-120);
   fight.aim(true);
-  await frames(2);
-  assert.ok(Math.abs(bearing()) < 1, `aimed again over the bow it bears ${bearing()}`);
+  await frames(30);
+  assert.equal(orders.at(-1)?.aim?.bearing, -90, 'aimed again looking to port, port lays');
+});
+
+test("the fight's camera, zoomed all the way in, stands back past its own ship's rig", async () => {
+  const { fight, frames } = ordered();
+  for (let notch = 0; notch < 10; notch++) fight.wheel(-100, notch);
+  const [x = 0, y = 0] = vessel.ship;
+  const [heave = 0] = vessel.pose;
+  const [astern] = await frames(1);
+  fight.drag(Math.PI / 0.005, 0);
+  const [ahead] = await frames(1);
+  assert.ok(astern && ahead);
+  // Its jib's stay runs out 16 m forward of its middle: looking aft from ahead, the eye stands past its foot.
+  assert.ok(away(ahead, [x, y, heave + 6]) > 17, `from ahead ${away(ahead, [x, y, heave + 6])} m back`);
+  assert.ok(away(astern, [x, y, heave + 6]) < away(ahead, [x, y, heave + 6]), 'from astern, nearer');
 });
 
 test('a trackpad burst steps the load once; a notch after a quiet of 0.18 s steps it again', async () => {
