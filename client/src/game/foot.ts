@@ -84,11 +84,12 @@ export interface FootFrame {
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
  * whatever foes its room holds as the Test Ground fights. The node's room is the authority: alone, the room crate runs
- * in the page on the same ground; online, the server's. It judges the edge and the fight, and the page predicts the
- * player by its own rules and takes its word; every other player and foe is shown where it last saw them. Online, the
- * room keeps the player's gear, which their figure wears; a mark stands over what E uses within reach: a station's
- * keeper, Shape or a dungeon's entrance. A social space's keepers and townsfolk walk it. In a patrol, E at an entrance's
- * door goes into its dungeon; in a dungeon, its floor is the ground, and E at its exit door goes out.
+ * in the rooms' worker on the same ground; online, the server's. It judges the edge and the fight, and the page
+ * predicts the player by its own rules and takes its word; every other player and foe is shown where it last saw
+ * them. Online, the room keeps the player's gear, which their figure wears; a mark stands over what E uses within
+ * reach: a station's keeper, Shape or a dungeon's entrance. A social space's keepers and townsfolk walk it. In a
+ * patrol, E at an entrance's door goes into its dungeon; in a dungeon, its floor is the ground, and E at its exit door
+ * goes out.
  */
 export class Foot {
   readonly node: NodeInfo;
@@ -182,7 +183,7 @@ export class Foot {
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
    *  names, keeping how they hold the camera, and joins its room: online the server's at the voyage's `seas`, signed
-   *  in with the session's token; alone one in the page that may stand the foes the context asks for. */
+   *  in with the session's token; alone one in the rooms' worker that may stand the foes asked for. */
   static async enter(
     context: FootContext,
     node: NodeInfo,
@@ -219,7 +220,7 @@ export class Foot {
   }
 
   /** Takes the player into dungeon `number` of the patrol `patrol` (its node and its node file's text, which a room
-   *  alone opens it from), at its way in, and joins its room: online the server's at `seas`, alone one in the page. */
+   *  alone opens it from), at its way in, and joins its room: online the server's at `seas`, alone the worker's. */
   static async enterDungeon(
     context: FootContext,
     patrol: { readonly node: NodeInfo; readonly text: string },

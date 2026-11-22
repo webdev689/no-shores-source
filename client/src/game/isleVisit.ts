@@ -1,5 +1,5 @@
 // A visit to one of the sea's islands: the ship sails in round it to its anchorage and the player walks ashore on its
-// beach, into its room (the server's, or the same room in the page), standing on its own fine ground among its
+// beach, into its room (the server's, or the same room in the rooms' worker), standing on its own fine ground among its
 // modules' boxes, in the world's metres. On foot E scavenges a wreck within reach, once each, and opens the dungeon's
 // door; the room judges both.
 import type { GearState } from '../network/gearMessages.ts';
@@ -12,7 +12,7 @@ import type { IsleHeld, Isles } from './isles.ts';
 import type { Sea } from './sea.ts';
 
 /** The player walks ashore on an island: online into its room on the server, which opens on the sea's word; alone
- *  into the same room in the page, opened on the page's sea's word (`word`). */
+ *  into the same room in the rooms' worker, opened on the sea's word (`word`). */
 export async function ashoreOn(
   context: FootContext,
   held: IsleHeld,

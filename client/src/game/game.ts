@@ -103,7 +103,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     rooms,
     roomModule,
     groundAt: (x, y) => groundAt(x, y),
-    // Under `npm run dev` only, `?spawn=` asks a room in the page for foes to fight.
+    // Under `npm run dev` only, `?spawn=` asks a room playing alone for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
     trips,
@@ -282,7 +282,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
-   *  room in the page. */
+   *  room in the rooms' worker. */
   let seaSeas: Difficulty = 'normal';
   let switching = Promise.resolve();
   const enterSea = async (seas: Difficulty) => {
