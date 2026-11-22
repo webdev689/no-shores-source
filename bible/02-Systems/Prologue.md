@@ -54,6 +54,8 @@ code:
   - client/src/game/prologue/wreckProgress.ts#WreckProgress
   - client/src/game/prologue/wreckRun.ts#WreckRun
   - client/src/game/prologue/wreckCamera.ts#cameraCourse
+  - client/src/game/prologue/wreckGround.ts#withoutDeadEnds
+  - client/src/game/prologue/wreckDry.ts#dryFitted
   - client/src/game/prologue/wreckCrew.ts#WreckCrew
   - client/src/game/prologue/wreckCrew.ts#crewSpots
   - client/src/game/prologue/wreckScenery.ts#WreckScenery
@@ -297,7 +299,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   takes one of them for a foe. The wreck's room holds 24 foes alive, as a node's; no more than 18 of the crew live at
   once, so the boarders always have room. A zone is cleared once its boarders are down, whatever became of its crew.
   As the player reaches each zone after the first, but the arena, the crew still standing from the zones before it
-  regroup there ([[The Crew Still Standing Regroup Ahead]]): each is posted round its checkpoint, 1.8 m out and a step apart on its deck, facing
+  regroup there ([[The Crew Still Standing Regroup Ahead]]): each is posted round its checkpoint, 1.8 m out (then
+  1.2 m, then 2.6 m, where 1.8 m has no room), a step apart on its deck with 0.45 m of the same deck all round it, so
+  none stands at an edge against the sea's rim, facing
   its wave, walks there by the room's routes (`Room::story_post`) and joins its fight. None comes into the arena:
   Thule's fight is one on one.
 - **Heaps across the way.** Each zone but the first and the arena has a heap of wreckage across the way on from it,
@@ -317,7 +321,12 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   alike, while what falls or flies over the sea meets it at 0 m. No body climbs there
   ([[Climbing Is Off in the Prologue]]): no wall is taken hold of, no lip hung from, and only a lip within a vault
   (1.2 m) of the floor is gone over; the foes' navmesh over the sea is baked by the same rule. The page's own steps, its walk and its fight's prediction alike, stand on the same rim,
-  made by the rules from the blocks (`setRim`), to the bit. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
+  made by the rules from the blocks (`setRim`), to the bit. The ground the rim holds is the export's without its
+  dead ends (`withoutDeadEnds`): every square from which no body can walk back to the path, a step (0.5 m) up at most
+  from one square to the next and any drop down, and that a body can step or drop into, is left out, so the rim
+  holds bodies at its edge there too. They are slips of ground at most 60 squares across: slots at the waterline
+  beside the Sloop's side, a ledge by the Frigate's gun deck, and some 190 others. Foes never jump, so a ledge they
+  could not step out of held them in the sea. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
   back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, its gun deck and
   the Sloop's side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
@@ -406,7 +415,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   in blocks, as the game's pixels are, and kept as its square root, so its dim falloff keeps its steps. Each fire is
   also a lamp of the night, lighting the figures, the ships and the sea round it. The wreck does not ride the swell,
   which rises past its decks: every beat that draws it hands the water its ships' waterlines and its rafts as
-  footprints (`dry`, ten ellipses, the water's hull masks), so no sea is drawn inside a hull or over a deck. Each heap is its own run of the mesh, drawn while it stands. The mesh and the
+  footprints (`dry`, the water's hull masks), so no sea is drawn inside a hull or over any of its ground, its dead ends'
+  too. The export lays one a ship or raft, a hull's shape pointed at its bow; each is fitted to the ground nearest
+  it (`dryFitted`) and laid again in pieces no longer than 6 m along it, each piece's middle, length and outline
+  station by station following its own ground: 44 footprints, of the water's 48. The sea under a fire burning on it
+  is still drawn. Each heap is its own run of the mesh, drawn while it stands. The mesh and the
   light (about 12 MB) are fetched once the story is past its intro; the wake keeps its eyes shut until they come. The
   fires burn in all four beats. Every figure they stand makes a move the forge draws its clothes in: the deep's
   fallen crew lie in `fallen`, Thule's crew leap and cry out. It lets go of its GPU buffers once the deep ends.

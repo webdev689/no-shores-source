@@ -3,10 +3,9 @@
 // stood in at the head, which showed only its crown. Its boom keeps clear of what is drawn instead: each wall lowered
 // to the top of the timber and iron the mesh stands there, masts and spars still standing whole.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
+import { SQUARE_M, type Squares, squaresOf } from './wreckGround.ts';
 import { WRECK_VERTEX_BYTES, type WreckMesh } from './wreckView.ts';
 
-/** The course's squares, metres (tools/wreck/wreck_course.py): a block covers whole squares. */
-const SQUARE_M = 0.3;
 /** How far apart the mesh is felt over its faces, metres: under half a square, so every square it covers is felt. */
 const FELT_M = 0.12;
 /** The mesh's sail part (tools/wreck/export_wreck.py PARTS): canvas and rags no camera keeps clear of. */
@@ -15,30 +14,6 @@ const SAIL_PART = 3;
 const LOWERED_M = 0.3;
 /** What is drawn counts up to this far over a block's top, for the rounding of its height, metres. */
 const OVER_TOP_M = 0.05;
-
-/** Where each square of the course is felt: the block that covers it, by its place in the course. */
-interface Squares {
-  readonly west: number;
-  readonly north: number;
-  readonly columns: number;
-  readonly rows: number;
-  readonly owner: Int32Array;
-}
-
-function squaresOf(course: readonly CourseBlock[]): Squares {
-  const west = Math.min(...course.map((block) => block.minX));
-  const north = Math.min(...course.map((block) => block.minY));
-  const columns = Math.ceil((Math.max(...course.map((block) => block.maxX)) - west) / SQUARE_M) + 1;
-  const rows = Math.ceil((Math.max(...course.map((block) => block.maxY)) - north) / SQUARE_M) + 1;
-  const owner = new Int32Array(columns * rows).fill(-1);
-  const squareOf = (value: number, from: number) => Math.floor((value - from) / SQUARE_M + 1e-6);
-  course.forEach((block, index) => {
-    for (let row = squareOf(block.minY, north); row < squareOf(block.maxY, north); row++)
-      for (let column = squareOf(block.minX, west); column < squareOf(block.maxX, west); column++)
-        owner[row * columns + column] = index;
-  });
-  return { west, north, columns, rows, owner };
-}
 
 /** The course's blocks as the camera keeps clear of them, the wreck's mesh laid at `origin` (world metres east and
  *  south): each block whose top stands over what is drawn there lowered to the highest timber or iron under its top. */

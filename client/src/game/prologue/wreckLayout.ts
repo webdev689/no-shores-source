@@ -1,5 +1,7 @@
 import wreck from '../../../../content/prologue/wreck.json' with { type: 'json' };
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
+import { dryFitted } from './wreckDry.ts';
+import { withoutDeadEnds } from './wreckGround.ts';
 import type { HullMask } from '../../water/hullMask.ts';
 
 type Point = readonly [number, number];
@@ -72,6 +74,17 @@ type WreckFile = typeof wreck;
 /** Reads a wreck's file into its layout at the world's origin; throws on an arena no gate closes. The arena's gate is
  *  the heap across the way into it, the zone before it's. */
 export function readWreck(file: WreckFile = wreck): WreckLayout {
+  const kept = readLayouts.get(file);
+  if (kept) return kept;
+  const layout = layoutOf(file);
+  readLayouts.set(file, layout);
+  return layout;
+}
+
+/** Each file's layout once read: its dead ends found and its footprints fitted once. */
+const readLayouts = new WeakMap<WreckFile, WreckLayout>();
+
+function layoutOf(file: WreckFile): WreckLayout {
   const [wakeX = 0, wakeY = 0, wakeFacing = 0] = file.wake;
   const zones = file.zones.map((zone) => ({
     name: zone.name,
@@ -83,8 +96,9 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
   }));
   const gate = zones[file.arena.zone - 1]?.gate;
   if (!gate) throw new Error("no gate closes the way into the wreck's arena");
+  const laid = file.course.map((block) => ({ ...block, bottom: 0 }));
   return {
-    course: file.course.map((block) => ({ ...block, bottom: 0 })),
+    course: withoutDeadEnds(laid, file.path.map(pointOf)),
     wake: { at: [wakeX, wakeY], facing: wakeFacing * RADIANS },
     path: file.path.map(pointOf),
     zones,
@@ -94,14 +108,17 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
       const along = 'along' in fire ? fire.along : null;
       return { at: [x, y, z], size: fire.size, along: along ? [along[0] ?? 0, along[1] ?? 0, along[2] ?? 0] : null };
     }),
-    dry: file.dry.map(([x = 0, y = 0, heading = 0, halfLength = 0, halfBeam = 0]) => ({
-      x,
-      y,
-      heading,
-      halfLength,
-      halfBeam,
-      way: 0,
-    })),
+    dry: dryFitted(
+      file.dry.map(([x = 0, y = 0, heading = 0, halfLength = 0, halfBeam = 0]) => ({
+        x,
+        y,
+        heading,
+        halfLength,
+        halfBeam,
+        way: 0,
+      })),
+      laid,
+    ),
     drawn: { mesh: file.mesh, light: file.light },
   };
 }
