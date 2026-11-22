@@ -15,6 +15,8 @@ const SHUT = 'The bounty board opens after the prologue.';
 /** The board's screen's name, as the menu's header shows it: no keeper keeps it. */
 export const BOARD_TITLE = 'The Bounty Board';
 const DAY_MS = 86_400_000;
+/** The board's panel's padding at its sides. */
+const BOARD_PADDING = 22;
 
 export interface BountyRow {
   readonly place: number;
@@ -97,7 +99,9 @@ function nextBoard(until: number | null, size: number): Node {
  *  chosen tile's card with its press, E, Enter or a click on a tile taking or turning it in; the arrows move between
  *  tiles. Before the prologue the tiles rest grey and the card says why. */
 export function boardPage(context: MenuContext, resetAt: () => number | null, now = roomNow): Node {
-  const { gear, ui, sizes } = context;
+  const { gear, ui, sizes, room } = context;
+  // The card stands beside the tiles, or under them on a phone, within the board's padding either way.
+  const cardWidth = Math.min(130 * (sizes.label + 1), room.width - 2 * BOARD_PADDING);
   const rows = bountyRows(gear);
   const shut = gear.prologueDone === false;
   const ids = new Map(rows.map((row) => [row.place, `bounty-${row.place}`]));
@@ -114,10 +118,10 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
     return pressNode('board-press', label, role, 'E', sizes.label, { label: `${label}: ${row.name}` });
   };
   const card: Node = shut
-    ? { id: 'bounty-card', role: 'panel', width: 260, padding: [12, 14], children: [stateLine(SHUT, 'locked')] }
+    ? { id: 'bounty-card', role: 'panel', width: cardWidth, padding: [12, 14], children: [stateLine(SHUT, 'locked')] }
     : chosen
-      ? bountyCardNode(chosen, payOf(gear), foot(chosen), 260, sizes.label)
-      : { width: 260, text: { words: 'Six a day, from the board in Overlook’s plaza.', colour: INK.faint } };
+      ? bountyCardNode(chosen, payOf(gear), foot(chosen), cardWidth, sizes.label)
+      : { width: cardWidth, text: { words: 'Six a day, from the board in Overlook’s plaza.', colour: INK.faint } };
   const tiles = [0, 1, 2].map((pool): Node => ({
     gap: 8,
     children: rows
@@ -125,7 +129,7 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
       .map((row) => {
         const id = `bounty-${row.place}`;
         const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
-        return bountyTileNode(row, id, 80, row.place === chosenPlace, lit, shut);
+        return bountyTileNode(row, id, sizes.label > 1 ? 112 : 80, row.place === chosenPlace, lit, shut);
       }),
   }));
   const reset = resetAt();
@@ -139,9 +143,12 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
         role: 'panel',
         direction: 'column',
         gap: 8,
-        padding: [18, 22],
+        padding: [18, BOARD_PADDING],
         children: [
-          { padding: [0, 0, 6, 0], text: { words: 'Bounties for XP and Aurem, posted each day.', colour: INK.faint } },
+          {
+            padding: [0, 0, 6, 0],
+            text: { words: 'Bounties for XP and Aurem, posted each day.', size: sizes.label, colour: INK.faint },
+          },
           {
             gap: 24,
             wrap: true,

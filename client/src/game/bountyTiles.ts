@@ -19,8 +19,10 @@ const GLYPH_PIXELS = 16;
 const STONE = [INK.stoneHi, INK.stoneLo, INK.stoneLo, INK.stoneHi];
 const BRASS = [INK.brassLit, INK.brass, INK.brass, INK.brassLit];
 const GILT = ['#f3cf86', '#7a5424', '#5c3f1a', '#c08a3e'];
-/** The tile whose card shows: white, as Destiny marks what is selected and the menu marks its focus. */
+/** The tile whose card shows: ringed in white just outside its edge, as Destiny marks what is selected and the menu
+ *  marks its focus, so its state's edge still shows inside the ring. */
 const CHOSEN = '#f2efe6';
+const RING_OUT = 4;
 
 /** The tile whose card shows, kept between frames: the one the pointer or the focus last came to, as a click focuses
  *  the tile it presses, and the first while none has. */
@@ -54,10 +56,10 @@ function gauge(count: number, target: number, height: number, colour: string, wi
   };
 }
 
-/** A bounty's tile `size` pixels square (its glyph at three or four times its pixels): its own glyph on its kind's
- *  ground, and its state: open plain, taken with a gauge of its count, done with a gold edge, turned in dimmed with a
- *  tick; lit under the pointer or the keys. Pressed with the pointer, Enter or E; one `shut`, before the prologue,
- *  is never marked chosen. */
+/** A bounty's tile `size` pixels square (its glyph at three, four or six times its pixels): its own glyph on its
+ *  kind's ground, and its state: open plain, taken with a gauge of its count, done with a gold edge, turned in dimmed
+ *  with a tick; lit under the pointer or the keys. Pressed with the pointer, Enter or E; one `shut`, before the
+ *  prologue, is never marked chosen. */
 export function bountyTileNode(
   row: BountyRow,
   id: string,
@@ -67,7 +69,7 @@ export function bountyTileNode(
   shut = false,
 ): Node {
   const said = { open: 'Not taken', held: row.progress, done: 'Done', paid: 'Turned in' }[row.state];
-  const glyph = size >= 80 ? 4 * GLYPH_PIXELS : 3 * GLYPH_PIXELS;
+  const glyph = (size >= 112 ? 6 : size >= 80 ? 4 : 3) * GLYPH_PIXELS;
   const counting = row.state === 'held' || row.state === 'done';
   const tile: Node = {
     id,
@@ -80,8 +82,14 @@ export function bountyTileNode(
     alignY: 'center',
     fill: POOL_GROUNDS[row.pool] ?? INK.well,
     draw: edged(row.state === 'done' ? GILT : lit ? BRASS : STONE, 2),
-    ...(chosen && !shut && { outline: { width: 2, colour: CHOSEN } }),
     children: [
+      chosen &&
+        !shut && {
+          width: size + 2 * RING_OUT,
+          height: size + 2 * RING_OUT,
+          outline: { width: 2, colour: CHOSEN },
+          float: { to: 'parent', anchor: [0.5, 0.5], at: [0.5, 0.5] },
+        },
       {
         ...pixelNode(`bounty ${row.name} ${row.pool}`, bountyGlyphSvg(row.name, row.pool), [16, 16], glyph),
         opacity: row.state === 'paid' ? 0.45 : 1,
@@ -128,7 +136,7 @@ export function bountyCardNode(row: BountyRow, pay: Pay, foot: Child, width: Siz
     gap: 6,
     padding: [12, 14, 14, 14],
     children: [
-      words(row.name.toUpperCase(), size + 1, INK.brassLit, { tracking: 1 }),
+      { width: 'grow', ...words(row.name.toUpperCase(), size, INK.brassLit, { tracking: 1, ellipsis: true }) },
       {
         gap: 6,
         alignY: 'center',

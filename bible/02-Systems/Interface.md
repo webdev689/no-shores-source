@@ -796,10 +796,10 @@ never while a press is held. Each press is an ask the room answers.
     a cannon firing, a great fish, a wolf over the swell, a torch, steps down into the dark, a lantern) on its kind's
     ground, with no words on it (a bounty not drawn wears the mark of where it counts: two peaks, a wave, an arched
     door): a gauge of its count while held, a gilded edge once done, its glyph dimmed with a drawn tick once turned in. A
-    slot not taken is an empty frame. The hovered, focused or pressed tile's card stands under the grid: its name, its
-    kind by its mark, its words, its count, and what it pays, XP and Aurem each by its glyph. Bounties are taken and
-    turned in at the board alone. The column stands at the right wherever it fits beside the quests, as wide as its
-    head; on a phone (under 600 px) it stands under them.
+    slot not taken is an empty frame. The hovered, focused or pressed tile, ringed white just outside its edge, has its
+    card under the grid: its name, cut short where too long, its kind by its mark, its words, its count, and what it
+    pays, XP and Aurem each by its glyph. Bounties are taken and turned in at the board alone. The column stands at the
+    right wherever it fits beside the quests, as wide as its head; on a phone (under 600 px) it stands under them.
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
     time; This week's, a page of the week and the countdown to the weekly reset; Later's, its name alone. Each row
@@ -1013,9 +1013,10 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   what a player can use"; [[Activities]], "Quests and bounties"), after
   Destiny's Bounty Tracker ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): one
   line, "Bounties for XP and Aurem, posted each day."; the day's six as tiles, a row to each kind (land on stone, the
-  sea on deep water, dungeons on old blood), each its bounty's own glyph at four times its pixels, showing its state
-  with no words; under them the rising sun and the time to the next board, over a bar filling as the day goes; and
-  beside them the chosen tile's card: its name, its kind by its mark, its words, a gauge with its count, what it pays
+  sea on deep water, dungeons on old blood), each its bounty's own glyph at four times its pixels (six where the
+  menu's words are large), showing its state with no words, the chosen one ringed white; under them the rising sun
+  and the time to the next board, over a bar filling as the day goes; and beside them, or under them on a phone, the
+  chosen tile's card: its name, its kind by its mark, its words, a gauge with its count, what it pays
   the player now (XP and Aurem each by its glyph, resting once paid), and its press, Take on one not held or Turn in on
   one done, with E on its keycap, each asked with the day of the board shown. The arrows move between tiles; E or a
   click takes or turns one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the

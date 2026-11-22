@@ -6,7 +6,7 @@ import type { QuestState } from '../network/questMessages.ts';
 import { BANNER_KEYS, bannerSvg } from '../plus/journalArt.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface, UiEvent } from '../ui/ui.ts';
-import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
+import { byId, fakeInterface, laidOf, laidWith, nodesOf, wordsIn } from '../ui/uiForTests.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { sizesOf } from './gearNodes.ts';
 import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
@@ -216,6 +216,17 @@ test('the timers stand within the room the menu gives the page, however many row
   const [page, timers] = [ui.boxOf('journal'), ui.boxOf('journal-timers')];
   assert.ok(page && timers);
   assert.ok(timers.y + timers.height <= page.y + 240, 'no lower than the page’s room');
+});
+
+test('a bounty’s card keeps its name within its edge, cut short where it is too long', () => {
+  const long = BOARD.map((one, place) => (place === 1 ? { ...one, name: 'A Name Far Too Long For Any Card' } : one));
+  const { tree } = journalOf({ week: () => null, kept: () => geared(null, long) });
+  const laid = laidOf(tree(), 1280, 900);
+  const card = laidWith(laid, 'bounty-card');
+  const name = laid.find((each) => each.node.text?.words === 'A NAME FAR TOO LONG FOR ANY CARD');
+  assert.ok(card && name);
+  assert.ok(name.box.x + name.box.width <= card.box.x + card.box.width, 'within the card');
+  assert.equal(name.node.text?.ellipsis, true, 'cut short');
 });
 
 test('the keys’ focus on a quest’s card edges it white, and no other card', () => {
