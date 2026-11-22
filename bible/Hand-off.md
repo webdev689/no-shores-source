@@ -264,6 +264,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#143, Vestiges as project-final's crystals** (`ccr-e806aa9f-fngvgz`), tested offline, waiting for the owner's
+  yes to merge ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
+  [[Pick - project-final Drops]]): the crystal baked in the page in the owner's white, green, yellow, red and cyan
+  blue; every drop popped, bounced, settled and hovering as project-final's loot; the line kept over the halo; the
+  room's rest 94 ticks; the Vestige glyph the crystal's still; Magic green and Legendary red everywhere. Not yet seen
+  in a live fight.
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
   after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
   and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
@@ -526,6 +532,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **The Blender bakes** the owner approved in [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]:
+  the nine island resources, the Ammo box and crate (with turning frames, since drops now turn), and the ship's four
+  modules and four materials, modelled in Blender and baked to sprites in place of their code glyphs; the officers'
+  posts, currencies, elements, statuses, nodes and the Arts' emblems stay code. Its own pull request, after #143.
 - **Overlook's hub** ([[Overlook's Hub as Claude Shapes It]]): a frame's cost on a real GPU with some 125 figures and
   the courts' pieces; the audit's risks left open (a walker's step to the side of a post's line or round a sharp turn
   is not walked against the real hub's boxes, kept posts' people are not booked against walkers, routines' maths may

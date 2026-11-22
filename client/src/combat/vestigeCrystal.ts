@@ -2,6 +2,7 @@
 // glow. Built as faces and baked here the first time a rarity is shown, into pixel pictures: the frames of its spin
 // for the world, and a still for the screens.
 
+import { RARITIES } from '../player/gear.ts';
 import type { PixelPicture } from './dropPictures.ts';
 
 type Vector = readonly [number, number, number];
@@ -20,14 +21,26 @@ interface Tones {
   readonly glow: Vector;
 }
 
-/** The owner's white, green, yellow, red and cyan blue, by rarity. */
-const TONES: readonly Tones[] = [
-  { middle: [206, 213, 226], light: [245, 248, 253], dark: [142, 150, 170], glow: [206, 218, 245] },
-  { middle: [78, 198, 110], light: [152, 240, 174], dark: [32, 108, 62], glow: [120, 240, 150] },
-  { middle: [232, 216, 78], light: [247, 240, 166], dark: [140, 128, 31], glow: [250, 236, 120] },
-  { middle: [240, 68, 66], light: [255, 130, 120], dark: [150, 30, 30], glow: [255, 120, 110] },
-  { middle: [79, 216, 240], light: [184, 242, 251], dark: [31, 116, 134], glow: [120, 232, 250] },
+/** The owner's white, then each finer rarity's own colours (green, yellow, red and cyan blue), each with its glow. */
+const GLOWS: readonly Vector[] = [
+  [120, 240, 150],
+  [250, 236, 120],
+  [255, 120, 110],
+  [120, 232, 250],
 ];
+const WHITE: Tones = { middle: [206, 213, 226], light: [245, 248, 253], dark: [142, 150, 170], glow: [206, 218, 245] };
+const channels = (hex: string): Vector =>
+  [1, 3, 5].map((start) => Number.parseInt(hex.slice(start, start + 2), 16)) as unknown as Vector;
+const TONES: readonly Tones[] = RARITIES.map((rarity, index) =>
+  index === 0
+    ? WHITE
+    : {
+        middle: channels(rarity.colour),
+        light: channels(rarity.lit),
+        dark: channels(rarity.shade),
+        glow: GLOWS[index - 1] ?? WHITE.glow,
+      },
+);
 
 /** The gem, in its own units: its facets round the waist, the waist's radius, how far its crown rises over the waist
  *  and its pavilion falls under it, how unevenly the waist is cut, and its shards and their length. */

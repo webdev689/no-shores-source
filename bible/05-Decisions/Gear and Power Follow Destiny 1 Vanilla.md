@@ -109,6 +109,9 @@ its nodes, and a node's card listing its costs as held against needed.
     armour piece.
 - **The rarities:** Normal (white), Magic (blue), Rare (yellow), Legendary (gold) and Atheric (cyan blue). Atheric
   and Aurem are spelled as written: DFO's names put to new uses.
+
+  Replaced in part by [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]: Magic is green and
+  Legendary red.
 - **What a player wears:**
   - **Weapons:** one set, a main hand and an off hand. The off hand holds a second weapon, which carries Attack, or a
     shield, which carries Defense but no Prestige.
