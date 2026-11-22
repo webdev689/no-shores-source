@@ -1,4 +1,4 @@
-use super::tests::{met, sea, ticks, told, vessel_mut};
+use super::tests::{floating_for, met, sea, ticks, told, vessel_mut};
 use super::*;
 use crate::harbour::Repair;
 use crate::sea::decks::HOLD_TICKS;
@@ -101,15 +101,15 @@ fn what_floats_is_gathered_only_by_a_player_whose_character_the_room_holds() {
     vessel.damage.hull = 0.0;
     vessel.damage.scuttle();
     ticks(&mut sea, 22 * 60);
-    assert_eq!(sea.flotsam_for(player).count(), 3, "no character: every piece floats on beside it");
+    assert_eq!(floating_for(&sea, player).count(), 3, "no character: every piece floats on beside it");
     sea.harbour.characters.insert(player, gear::Character::starting());
-    let pieces: Vec<[f64; 2]> = sea.flotsam_for(player).map(|piece| piece.at).collect();
+    let pieces: Vec<[f64; 2]> = floating_for(&sea, player).map(|piece| piece.at).collect();
     if let Some(sailing) = sea.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut()) {
         sailing.ship.x = pieces[0][0];
         sailing.ship.y = pieces[0][1];
     }
     sea.tick();
-    assert!(sea.flotsam_for(player).count() < 3, "with one, their ship gathers them");
+    assert!(floating_for(&sea, player).count() < 3, "with one, their ship gathers them");
 }
 
 #[test]
@@ -288,12 +288,12 @@ fn what_their_ship_gathers_at_sea_flags_their_character_changed() {
     assert!(change(&mut sea, player));
     ticks(&mut sea, 20);
     assert!(!change(&mut sea, player));
-    let piece = sea.flotsam_for(player).next().unwrap().at;
+    let piece = floating_for(&sea, player).next().unwrap().at;
     if let Some(sailing) = sea.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut()) {
         (sailing.ship.x, sailing.ship.y) = (piece[0], piece[1]);
     }
     sea.tick();
-    assert!(sea.flotsam_for(player).count() < 3);
+    assert!(floating_for(&sea, player).count() < 3);
     assert!(change(&mut sea, player), "gathered");
 }
 

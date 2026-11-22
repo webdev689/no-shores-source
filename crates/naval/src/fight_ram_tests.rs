@@ -129,3 +129,21 @@ fn hulls_that_overlap_are_pushed_apart() {
     assert_eq!(overlap(&one, &other), None, "pushed apart, half each way");
     assert_eq!((hull_of(&fight, CAPTAIN), hull_of(&fight, PLAYER)), (264.0, 240.0), "a push is no blow");
 }
+
+#[test]
+fn a_player_going_down_pushed_apart_keeps_foundering() {
+    let posed = |overlapping: bool| {
+        let mut fight = bow_to_side(0.5, 0.0);
+        let x = if overlapping { 1.2 } else { 200.0 };
+        let theirs = Ship { x, y: 0.5, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
+        fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("captain")).ship = theirs;
+        let player = fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("player"));
+        player.damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+        player.damage.sink_t = 10.0;
+        fight.step(&[(PLAYER, ROWING)], &Open, &|_| WIND, 0.0);
+        fight.vessel(PLAYER).map(|vessel| vessel.pose).unwrap_or_else(|| panic!("player"))
+    };
+    let (alone, pushed) = (posed(false), posed(true));
+    assert!(alone.heave < -0.1, "it settles as it goes down: {}", alone.heave);
+    assert_eq!([pushed.heave, pushed.pitch, pushed.roll], [alone.heave, alone.pitch, alone.roll]);
+}

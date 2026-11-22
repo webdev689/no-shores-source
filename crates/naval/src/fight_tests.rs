@@ -27,6 +27,11 @@ fn sloop_at(x: f64, y: f64) -> Ship {
     Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
 }
 
+/// Where each gun of the player's lay stops, the fight's ships as they lie now.
+fn ends(fight: &Fight, laid: &Lay) -> Vec<Option<crate::shots::Stop>> {
+    crate::laying::ends_of(&Sighted::of(PLAYER, player(fight)), laid, &fight.sighted(), &Open, 0.0)
+}
+
 fn player(fight: &Fight) -> &Vessel {
     fight.vessel(PLAYER).unwrap_or_else(|| panic!("the player's ship is in the fight"))
 }
@@ -201,6 +206,7 @@ fn the_rest_of_the_volley_that_made_it_strike_cannot_sink_it() {
         gun: crate::guns::Gun { hull, ..gun },
         shot: Shot::Round,
         sail: None,
+        rigged: false,
     };
     fight.strike(&hit(10.0), &mut events);
     assert_eq!(captain(&fight).damage.state, State::Struck);
@@ -224,9 +230,7 @@ fn the_lay_reads_on_target_only_where_its_balls_would_strike_it() {
     let fight = alongside(50.0, Temper::Wary);
     let on = |range_m: f64| {
         let laid = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None });
-        laid.is_some_and(|laid| {
-            fight.ends(PLAYER, &laid, &Open, 0.0).iter().flatten().any(|stop| stop.strike.is_some())
-        })
+        laid.is_some_and(|laid| ends(&fight, &laid).iter().flatten().any(|stop| stop.strike.is_some()))
     };
     assert!(on(50.0));
     assert!(!on(44.0), "the balls splash short of it");
@@ -257,7 +261,7 @@ fn a_look_on_its_hull_lays_on_that_point_and_its_unscattered_volley_strikes_it()
         (laid.elevation - on.elevation).abs() < 1e-12 && Lay { elevation: on.elevation, ..laid } == on
     });
     assert!(same, "laid for the point the look meets on its side, not the water's 300 m: {laid:?} against {on:?}");
-    let ends = laid.map(|laid| fight.ends(PLAYER, &laid, &Open, 0.0)).unwrap_or_default();
+    let ends = laid.map(|laid| ends(&fight, &laid)).unwrap_or_default();
     assert_eq!(ends.len(), 3);
     assert!(ends.iter().all(|end| end.is_some_and(|stop| stop.strike.is_some() && !stop.water)), "{ends:?}");
 }
@@ -302,7 +306,7 @@ fn each_gun_ends_where_an_unscattered_ball_fired_by_the_fight_stops() {
         let Some(laid) = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None }) else {
             panic!("the starboard side bears");
         };
-        let ends = fight.ends(PLAYER, &laid, &Open, 0.0);
+        let ends = ends(&fight, &laid);
         let carry = carry_of(&player(&fight).ship);
         let mut balls: Vec<Ball> =
             (0..3).map(|index| crate::gunnery::aimed(&laid, index, carry, 0.0, (PLAYER, Flag::Player))).collect();
@@ -377,6 +381,7 @@ fn a_captain_whose_fires_made_it_strike_is_graced_against_the_volley_then_aloft(
         gun: crate::guns::Gun { hull: 100.0, ..crate::guns::SWIVEL },
         shot: Shot::Round,
         sail: None,
+        rigged: false,
     };
     let mut events = Vec::new();
     fight.strike(&hit, &mut events);
@@ -398,6 +403,7 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_it() {
             gun,
             shot: Shot::Round,
             sail: None,
+            rigged: false,
         };
         let before = captain(&fight).damage.clone();
         for _ in 0..10 {

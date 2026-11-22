@@ -365,3 +365,12 @@ fn a_harder_seas_ships_come_at_the_levels_its_tier_raises_foes_to_on_land_and_of
         }
     }
 }
+
+#[test]
+fn a_bold_ship_by_the_edge_of_home_waters_meets_no_player_inside_them() {
+    let home = OneWater { holder: Holder::Home, open: |_, _| false, ..PIRATE_WATER };
+    let mut pirates = Pirates { sailing: vec![standing(1, [700.0, 0.0], 0.0, true)], ..Pirates::default() };
+    assert!(pirates.tick(1.0, &[voyager(5, [0.0, 0.0], 0, false)], &home).is_empty(), "home waters hold no hostile");
+    pirates.chase(5, Some(1));
+    assert!(pirates.tick(1.0, &[voyager(5, [0.0, 0.0], 0, false)], &home).is_empty(), "nor one it chases");
+}

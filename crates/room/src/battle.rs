@@ -225,6 +225,18 @@ impl Fights {
         Ok((id, pirate))
     }
 
+    /// A boarder's own ship as they stand on a struck deck: it takes no orders or course, its helm, brace and lay let
+    /// go and its sails furled.
+    pub fn stand_down(&mut self, player: PlayerId) {
+        let Some((fought, crew)) = self.of_mut(player) else { return };
+        if let Some(own) = fought.crews.get_mut(&player) {
+            own.orders = QUIET;
+        }
+        if let Some(own) = fought.fight.ships.get_mut(&crew.ship) {
+            own.ship.rung = 0;
+        }
+    }
+
     /// The captain a player would board: the nearest who struck within `BOARD_REACH_M` of their ship, both making less
     /// way than `BOARD_WAY_M_S`, whose deck holds a crew. Answers its number and its ship as it sailed at sea.
     pub fn alongside(&self, player: PlayerId) -> Result<(ShipId, Pirate), BoardRefused> {
@@ -306,6 +318,23 @@ impl Fights {
             fought.take_out(player);
         }
         self.drop_empty();
+    }
+
+    /// What the fights owe the players `before` (an account's numbers before it rejoined) is owed to `player` now,
+    /// once however many of them fought, and a last stand they spent stays spent.
+    pub fn owe_to(&mut self, before: &[PlayerId], player: PlayerId) {
+        let fought = self.list.iter_mut().flat_map(|fought| [&mut fought.fought, &mut fought.stood]);
+        for players in fought.chain(self.lost.iter_mut().map(|sank| &mut sank.players)) {
+            let mut seen = Vec::new();
+            players.retain_mut(|each| {
+                if before.contains(each) {
+                    *each = player;
+                }
+                let first = !seen.contains(each);
+                seen.push(*each);
+                first
+            });
+        }
     }
 
     /// Ends each fight with no player left in it. A captain of one going down, or struck (scuttled with no boarder),

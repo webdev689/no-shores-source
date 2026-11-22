@@ -31,6 +31,11 @@ impl Sea {
     }
 }
 
+/// Each piece floating for `player`.
+pub(super) fn floating_for(sea: &Sea, player: PlayerId) -> impl Iterator<Item = &crate::flotsam::Floating> {
+    sea.flotsam().iter().filter(move |piece| piece.player == player)
+}
+
 pub(super) fn ticks(sea: &mut Sea, count: usize) {
     for _ in 0..count {
         sea.tick();
@@ -187,7 +192,7 @@ fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_it_and_their_
     }
     assert_eq!(laid.len(), 3, "a Minor lays three pieces for its one player");
     assert!(laid.iter().all(|(to, _)| *to == player));
-    let pieces: Vec<_> = sea.flotsam_for(player).copied().collect();
+    let pieces: Vec<_> = floating_for(&sea, player).copied().collect();
     assert_eq!(pieces.len(), 3);
     assert!(pieces.iter().all(|piece| piece.level == 9), "rolled at its level");
     // Its ship brought onto them gathers them, each told with what it held, the ship's materials among it.
@@ -230,7 +235,7 @@ fn a_boarder_fights_a_captains_crew_on_its_deck_opens_its_hold_and_it_is_scuttle
         foe.fighter.action = combat::Action::Dead { elapsed: 0 };
     }
     sea.tick();
-    let hold = sea.flotsam_for(player).count();
+    let hold = floating_for(&sea, player).count();
     assert_eq!(hold, 6, "its hold: what floats, twice over");
     assert_eq!(sea.leave_deck(player), Ok(()));
     assert!(!sea.on_deck(player) && sea.decks().is_empty());
@@ -293,4 +298,26 @@ fn a_ship_that_goes_down_counts_once_toward_the_sea_bounty_of_each_kept_player_w
     let held = &sea.harbour.characters[&player];
     assert_eq!(held.activity.today.bounties.get(&place), Some(&1), "once, though listed twice among her fighters");
     assert!(sea.harbour.changed.contains(&player), "the count is saved and sent");
+}
+
+#[test]
+fn what_a_fight_owes_a_player_who_rejoined_goes_to_their_new_number_once() {
+    let (mut sea, ada) = met(20.0, Rank::Minor);
+    assert!(sea.own(ada, "ada"));
+    let ben = sea.join();
+    sea.course_anywhere(ben, &[[50_010.0, 50_000.0]], 10).unwrap();
+    sea.tick();
+    assert!(sea.fights.fighting(ben), "ben keeps the fight going");
+    sea.leave(ada);
+    let again = sea.join();
+    assert!(sea.own(again, "ada"));
+    sea.course_anywhere(again, &[[49_990.0, 50_000.0]], 10).unwrap();
+    sea.tick();
+    assert!(sea.fights.fighting(again), "back in the same fight");
+    let captain = sea.fights.of_mut(ben).unwrap().0.fight.ships.get_mut(&CAPTAIN).unwrap();
+    captain.damage.apply(Hurt { hull: 1e6, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+    ticks(&mut sea, (naval::damage::SINK_SECONDS * 60.0) as usize + 10);
+    let count = |player| sea.harbour.flotsam.pieces.iter().filter(|piece| piece.player == player).count();
+    assert!(count(ben) > 0, "it sank and floats for ben");
+    assert_eq!((count(ada), count(again)), (0, count(ben)), "nothing for the old number, once for the new");
 }

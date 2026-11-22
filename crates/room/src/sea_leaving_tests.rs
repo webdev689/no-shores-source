@@ -1,6 +1,6 @@
 //! Losing and leaving: what a player who leaves a fight is kept as, what floats for whom across a rejoin, who takes a
 //! ship's lot and its hold, and a captain's ship that goes down after its last player left its fight.
-use super::tests::{met, vessel_mut};
+use super::tests::{floating_for, met, vessel_mut};
 use super::*;
 use crate::battle::Sank;
 use crate::harbour::JOINED;
@@ -89,10 +89,10 @@ fn what_floats_for_a_player_waits_for_their_account_though_they_drop_and_rejoin(
     sea.leave(player);
     let stranger = sea.join();
     assert!(sea.own(stranger, "account-2"));
-    assert_eq!(sea.flotsam_for(stranger).count(), 0, "another account's pieces are not theirs");
+    assert_eq!(floating_for(&sea, stranger).count(), 0, "another account's pieces are not theirs");
     let back = sea.join();
     assert!(sea.own(back, "account-1"));
-    assert_eq!(sea.flotsam_for(back).count(), 3, "what floats waits for their account");
+    assert_eq!(floating_for(&sea, back).count(), 3, "what floats waits for their account");
 }
 
 #[test]

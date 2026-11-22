@@ -109,7 +109,8 @@ sea's soundscape ([[Ambience]]).
   and kills men (less as its flight lengthens), chain tears canvas, heated shot sets a ship alight. A loaded side drawn
   for a new load takes half its reload; one loading keeps its progress.
 - **A look on a ship** lays for the point it meets (DFO's `lookOnShip`): the look's ray from the aim eye is tested
-  against the ship's hull's box and its sails' boxes out to the laid gun's longest throw and 60 m, the nearest entry taken.
+  against the ship's hull's box and its standing sails' boxes (none where a mast has fallen, as a ball passes there)
+  out to the laid gun's longest throw and 60 m, the nearest entry taken.
   The side is laid on that point, its range out along the fire and its own height. A look on the ship's canvas lays chain
   for that very point and every other load for its hull's middle. The point is led along the fire by the ship's way over the
   ball's flight there. A look that meets no part of the ship lays for the water's range, and so does a ray from an eye
@@ -261,10 +262,11 @@ Pass]]) with Claude's numbers:
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone
   as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
   of their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
-  floating are theirs again (`Sea::own`). A ship drops as one foe of its rank at its level does (its water's, raised by
+  floating are theirs again (`Sea::own`), and so is what a fight they fought still owes them (its flotsam, ship XP and
+  bounties when a captain goes down), once however often they joined it. A ship drops as one foe of its rank at its level does (its water's, raised by
   the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece laid for each player holds its
   Vestige by its rank's chance (at Elite or Abyss times the tier's reward, as a harder voyage's kill on land,
-  `vestige_chance`), an Ammo box by its rank, and from a Miniboss or a Boss an Ammo crate. Every piece holds the
+  `loot_kill`), an Ammo box by its rank, and from a Miniboss or a Boss an Ammo crate. Every piece holds the
   ship's salvage ([[Ship Power]], "Found"); what the player has no room for is lost with the piece. For an Elite or
   higher one piece of each player's is a chest, its salvage rolled as a ship one rank higher. A piece looks like a
   crate or a barrel (half each by its draw) or a chest.
@@ -293,7 +295,8 @@ Pass]]) with Claude's numbers:
   what floats, twice over, for each boarder, every chest's salvage a rank higher still, and its drop what a foe one
   rank above the ship would leave; on top of the lot every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
   minute after it fell every boarder still aboard is sent back; it is scuttled when the last one has left it. A
-  boarder's own ship takes no orders or course while they stand on the struck ship's deck. Its deck room fights with the boarder's
+  boarder's own ship takes no orders or course while they stand on the struck ship's deck: as they board, its helm,
+  brace and lay let go and its sails are furled, so it drifts to a stop beside the struck ship. Its deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
   The sea's snapshot carries each deck to its boarders alone: their numbers there, the ship's hull, its deck room's own
   snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's, at the sea's minute,
@@ -424,6 +427,8 @@ snapshot (whose events carry the sea's kinds after its own, 12 to 19) and the Wo
 and `Hit` come with its shot's own events, the hit carrying where on the ship it struck in its frame and the part. Each
 ship's harm is kept by the number the events name it by: at sea the player is 0, the first captain 1, and each other
 captain's number comes with them in the view, so one leaving the fight never moves another's holes onto their ship.
+The first captain keeps its place in the view once it has left the fight, but no longer as hostile to the player, so the
+task does not count it among the ships left to beat.
 
 - **A gun fired** (`muzzle`): a bloom at its mouth for 0.11 s and a tongue of fire along the shot, its light, and
   eight puffs of powder smoke that roll out down the shot, slow to the wind and hang as a bank down the ship's side 9 to
@@ -551,7 +556,7 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   who holds their course meets it, one who turns away evades it, until it loses them. The voyage's hold keeps its
   own law as it comes near along the way.
 - **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of
-  it begins the fight with it whatever its temper, as a bold ship that meets a player does; a wary one runs as
+  it begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary one runs as
   captains run. The room lets go of the chase once it has left the sea.
 - **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it: their
   voyage's pace as it is held (144 m/s at ×60), the world's own while they lie at rest, and real time where another
@@ -574,7 +579,7 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **Joining.** A player not fighting who comes within 750 m of any ship of such a fight, or of a fight with players in
   it, joins it: their Sloop heaves to there and is put into it with the hurts it keeps, and its captains choose whom
   to fight by their own law, the one each fights reckoned nearer ("How a fight ends").
-- **The meeting.** A bold ship within 750 m of a player who is not fighting meets them: it leaves the sea and the fight
+- **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets them: it leaves the sea and the fight
   begins with it where it lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it each tick
   by the players' orders on the fight of many ships, so the Sloop's stem may ram the captain's, on waters made from the coasts
   (open sea, the swell on it, dry land on them), until every captain has sunk or gone; its last view is shown once,
