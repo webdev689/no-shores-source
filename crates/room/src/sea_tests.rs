@@ -514,6 +514,25 @@ fn a_fight_beside_a_friendly_ship_is_won_once_the_tithe_ship_is_beaten_and_the_f
 }
 
 #[test]
+fn a_friendly_ship_that_strikes_leaves_the_fight_at_once_and_sails_on_while_the_player_fights_on() {
+    let (mut sea, player) = friendly_at_sea(true);
+    sea.tick();
+    next_course(&mut sea, player, &[[50_000.0, 49_200.0]], 5).unwrap();
+    (0..60 * 60).find(|_| {
+        sea.tick();
+        sea.fights().next().is_some()
+    });
+    let fought = sea.fights.of_mut(player).expect("their fight").0;
+    let Some(friend) = fought.fight.ships.get_mut(&(CAPTAIN + 1)) else { panic!("the friendly ship") };
+    let hull = friend.damage.max_hull * 0.95;
+    friend.damage.apply(naval::damage::Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+    ticks(&mut sea, 2);
+    let (_, fought) = sea.fights().next().expect("the player fights on with the Tithe ship");
+    assert!(fought.friends.is_empty(), "the friendly ship left it");
+    assert_eq!(sea.friendlies.sailing.iter().map(|ship| ship.traffic).collect::<Vec<_>>(), [77], "and sails on");
+}
+
+#[test]
 fn a_wary_tithe_ship_never_attacks_and_two_tithe_ships_never_meet() {
     let (mut sea, _) = friendly_at_sea(false);
     ticks(&mut sea, 600);

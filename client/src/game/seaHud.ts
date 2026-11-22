@@ -131,7 +131,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
     atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
   );
   // In a fight, and sailing away to other waters, the sea bar goes: its map, pace, Manage and Leave wait, as its keys do.
-  const ship = { canLeave: here.inRoom, canManage: true };
+  const ship = { canLeave: here.sighted !== null, canManage: true };
   const barred = atHelm || aboard.active || deck || here.fight || here.travelling;
   hud.seaBar(onSea && !barred ? { ...shown, ...ship } : null);
   showSight(hud, here, deck !== null);

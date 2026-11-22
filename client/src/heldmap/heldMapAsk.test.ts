@@ -10,7 +10,6 @@ const waters: MapWaters = {
   rows: 3,
   cellM: 1_000,
   water: Int16Array.from([0, -1, 1, 1, 0, -1, 1, 1, 0, 0, 1, 1]),
-  seam: new Uint8Array(12),
   waters: [
     { continent: 0, id: 'continent-1', name: 'The Lantern Sea', holder: 'home', levels: [1, 5] },
     { continent: 1, id: 'continent-3', name: 'The Elmwater', holder: 'grey-tithe', levels: [8, 14] },

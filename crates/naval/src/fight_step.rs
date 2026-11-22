@@ -376,13 +376,15 @@ impl Fight {
                 (vessel.damage.state == State::Sunk, matches!(vessel.damage.state, State::Struck | State::Sinking));
             let Sailor::Captain(command) = &mut vessel.sailor else { continue };
             let engaging = command.mind.mode == Mode::Engage;
+            // A friendly ship holds no crew for boarders: one that struck sails off at once.
+            let yielded = vessel.damage.state == State::Struck && own == Flag::Player;
             // Out of every foe's guns and not engaging: it breaks off once that has lasted its give-up time.
             command.out_of_reach_since =
                 if out_of_reach && !engaging && !struck { command.out_of_reach_since.or(Some(clock)) } else { None };
             let broke_off = command.out_of_reach_since.is_some_and(|since| clock - since >= CHASE_GIVE_UP_S);
             let end = if sunk {
                 Some(End::Sunk)
-            } else if !self.ambush && (nearest > DESPAWN_BEYOND || broke_off) && !engaging && !struck {
+            } else if yielded || !self.ambush && (nearest > DESPAWN_BEYOND || broke_off) && !engaging && !struck {
                 // One who struck lies hove to for boarders until it is scuttled.
                 Some(End::Gone)
             } else {

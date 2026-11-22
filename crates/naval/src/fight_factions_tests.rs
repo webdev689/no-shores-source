@@ -317,3 +317,22 @@ fn a_volley_from_any_hull_of_one_rank_throws_the_same_broadside() {
         assert!((whole - sloops).abs() < 1e-9, "{rank:?}: {whole} against its rank's Sloop's {sloops}");
     }
 }
+
+#[test]
+fn a_friendly_captain_that_strikes_leaves_the_fight_at_once_and_is_never_held_or_scuttled() {
+    let friendly = Commission { faction: PLAYERS, rank: Rank::Major };
+    let mut fight = two_captains(friendly, Commission { faction: GREY_TITHE, rank: Rank::Major });
+    fight.put_to_sea(PLAYER, Ship { rung: 0, ..sloop_at(-300.0, 0.0) }, &Open, 0.0);
+    tick(&mut fight);
+    let Some(vessel) = fight.ships.get_mut(&FIRST) else { panic!("the friendly ship") };
+    let hull = vessel.damage.max_hull * 0.95;
+    vessel.damage.apply(Hurt { hull, sail: 0.0, crew: 0.0, fire: false }, fight.clock, 0.0);
+    let events = tick(&mut fight);
+    assert!(events.contains(&Event::Gone { ship: FIRST, end: End::Gone }), "it sails off: {events:?}");
+    let left = fight.vessel(FIRST).map(|vessel| vessel.damage.state);
+    assert_eq!(left, Some(State::Struck), "afloat, its colours down");
+    for _ in 0..(STRUCK_HOLD_S as usize + 5) * 60 {
+        let events = tick(&mut fight);
+        assert!(!events.iter().any(|event| matches!(event, Event::Gone { ship: FIRST, .. })), "never scuttled");
+    }
+}

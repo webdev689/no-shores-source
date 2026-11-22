@@ -37,6 +37,12 @@ fn sailing<T: Copy>(fight: &Fight, (id, at_sea): &(ShipId, T), stays: impl Fn(&V
     Some((fight.vessel(*id).filter(|vessel| stays(vessel))?.ship, *at_sea))
 }
 
+/// A friendly ship that has left its fight (struck, or with no foe left) and is afloat, where the fight left it.
+pub(crate) fn sailed_off(fight: &Fight, (id, friend): (ShipId, Friendly)) -> Option<Friendly> {
+    let ship = fight.vessel(id).filter(|vessel| afloat(vessel) && !vessel.in_fight())?.ship;
+    Some(Friendly { x: ship.x, y: ship.y, heading: ship.heading, ..friend })
+}
+
 /// Whether a ship is still afloat: neither going down nor sunk, whether or not it struck or runs.
 pub(crate) fn afloat(vessel: &Vessel) -> bool {
     !matches!(vessel.damage.state, naval::damage::State::Sinking | naval::damage::State::Sunk)
@@ -134,6 +140,14 @@ pub(crate) fn step_clashes(
         let waters = CoastWaters { coasts, swell: &clash.swell };
         let wind = clash.wind;
         clash.fight.step(&[], &waters, &|_| wind, time);
+        // A friendly ship that struck sails off at once, parted from the Tithe ships it fought.
+        let (off, kept) =
+            std::mem::take(&mut clash.friends).into_iter().partition(|&pair| sailed_off(&clash.fight, pair).is_some());
+        clash.friends = kept;
+        let off: Vec<Friendly> =
+            off.into_iter().filter_map(|pair: (ShipId, Friendly)| sailed_off(&clash.fight, pair)).collect();
+        let tithe: Vec<u32> = clash.crews.iter().map(|(_, hostile)| hostile.id).collect();
+        friendlies.back_from_clash(&tithe, off);
     }
     for clash in clashes.iter().filter(|clash| clash.settled()) {
         let (tithe, friends) = clash.sail_on();

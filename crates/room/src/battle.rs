@@ -7,7 +7,7 @@
 //! afloat sails on for its port.
 
 use crate::PlayerId;
-use crate::clash::{Clash, ship_at, sighted};
+use crate::clash::{Clash, sailed_off, ship_at, sighted};
 use crate::friendlies::Friendly;
 use crate::hostiles::{Hostile, Hostiles, Voyager};
 use crate::sea::Coast;
@@ -526,7 +526,7 @@ impl Fights {
             }
         }
         self.list.retain(|fought| fought.fight.over().is_none());
-        let mut sank = std::mem::take(&mut self.lost);
+        let (mut sank, mut released) = (std::mem::take(&mut self.lost), Vec::new());
         for fought in &mut self.list {
             let orders: Vec<(ShipId, Orders)> = fought.crews.values().map(|crew| (crew.ship, crew.orders)).collect();
             let waters = CoastWaters { coasts, swell: &fought.swell };
@@ -560,7 +560,12 @@ impl Fights {
             for (player, _) in gone {
                 fought.take_out(player);
             }
+            let friends = std::mem::take(&mut fought.friends).into_iter();
+            let (off, kept) = friends.partition(|&pair| sailed_off(&fought.fight, pair).is_some());
+            fought.friends = kept;
+            released.extend(off.into_iter().filter_map(|pair: (ShipId, Friendly)| sailed_off(&fought.fight, pair)));
         }
+        self.freed.extend(released);
         self.drop_empty();
         (outcomes, sank)
     }

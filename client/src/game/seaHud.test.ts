@@ -78,7 +78,6 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
       waterWords: null,
       fight,
       sighted: null,
-      inRoom: true,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
   const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
@@ -146,7 +145,6 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
       waterWords: null,
       fight,
       sighted: null,
-      inRoom: true,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
   const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices: [] };
@@ -188,7 +186,6 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
     waterWords: null,
     fight,
     sighted: null,
-    inRoom: true,
   } as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
   const notices = ['The Tithe Schooner joined the fight.'];
@@ -241,7 +238,6 @@ test('while the ship sails away to other waters the sea bar goes, so nothing on 
       boarding: { words: null },
       fight: null,
       sighted: null,
-      inRoom: true,
       travelling,
     }) as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };

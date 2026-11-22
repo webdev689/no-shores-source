@@ -333,7 +333,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined);
     parts.seaView.reachM = Math.max(0, shown.shot.eye[2]) * 6;
-    const fleet = traffic.atSea(shown, parts.waterHere(), { seconds, time: clock, taken: here.taken });
+    const fleet = traffic.atSea(shown, parts.waterHere(), {
+      seconds,
+      time: clock,
+      taken: here.sighted?.taken ?? new Set(),
+    });
     // Walking its deck, what the player carries lights round them as it does ashore.
     const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
     const more = {

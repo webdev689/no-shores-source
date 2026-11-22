@@ -137,11 +137,6 @@ export class Sea {
     return this.passage.position;
   }
 
-  /** The traffic ids the room has taken off their routes: the friendly ships it draws where it has them. */
-  get taken(): ReadonlySet<number> {
-    return this.room?.taken ?? new Set();
-  }
-
   /** The landmass drawn and charted from now on. */
   setLandmass(landmass: Landmass): void {
     this.landmass = landmass;
@@ -173,12 +168,8 @@ export class Sea {
     this.passage.sendVoyage();
   }
 
-  /** Whether the ship is in the sea room, which judges the helm left and taken. */
-  get inRoom(): boolean {
-    return this.room !== null;
-  }
-
-  /** The other ships the sea room shows round it, every other player's and every hostile one; none out of a room. */
+  /** The sea room the ship is in, which judges the helm left and taken, and shows the ships round it: every other
+   *  player's, every hostile one and the friendly ones it keeps; none out of a room. */
   get sighted(): SeaRoom | null {
     return this.room;
   }

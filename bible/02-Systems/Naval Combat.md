@@ -289,10 +289,11 @@ At sea ([[Server]], "The sea"), each a rule the owner chose
   holds the ship's salvage ([[Ship Power]], "Found"); what the player has no room for is lost with the piece. For an
   Elite or higher one piece of each player's is a chest, its salvage rolled as a ship one rank higher. A piece looks
   like a crate or a barrel (half each by its draw) or a chest.
-- **Striking, and boarding.** A captain who strikes lies hove to with their colours down. For 90 s any player in the
-  fight may board the captain's ship: their ship within 30 m of it, both under 2 m/s, and its deck holding a crew (a friendly ship has
-  none, so it is never boarded). With no one aboard by then it is scuttled
-  (`Sinking`) and lays what floats. A struck captain never sails off from the fight. The page tells the player its
+- **Striking, and boarding.** A Tithe captain who strikes lies hove to with their colours down. For 90 s any player in
+  the fight may board the captain's ship: their ship within 30 m of it, both under 2 m/s, and its deck holding a crew.
+  With no one aboard by then it is scuttled (`Sinking`) and lays what floats. A struck Tithe captain never sails off
+  from the fight. A friendly ship holds no crew for boarders: one that strikes leaves its fight at once, afloat, and
+  sails on for its port (`sailed_off`), never held struck nor scuttled. The page tells the player its
   colours are down and to come alongside, naming it ("The Tithe Brig's colours are down: …"); E asks to board it
   when the sea's snapshot says the player may (`may_board`, from `Fights::alongside`, the rule a boarding is taken by;
   the fight's controls let E through), and the sea's line says "Boarders away: the Tithe Brig's crew stands to meet
@@ -609,7 +610,7 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   its route at 5 m/s, and its 600 s at the roadstead), so the page draws it once. Each ship stays where the fight has
   it, and the snapshot shows it there, the friendly one among the friendly ships. The fight lasts while either fights
   on; then one who struck, sank or runs leaves the sea, a Tithe ship that won sails on as hostile ships do, and a
-  friendly ship afloat sails on for its route's far port at the traffic's 5 m/s, round any coast in its way, home
+  friendly ship afloat (at once, one that strikes) sails on for its route's far port at the traffic's 5 m/s, round any coast in its way, home
   waters or not, kept while a player is within 1.1 times its sight and gone at its port or once none is. Two that
   parted meet again only once they have been 750 m apart. None meets a friendly ship lying in Overlook's home waters,
   which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
