@@ -135,7 +135,7 @@ fn a_sinking_pays_its_and_its_officers_aboard_and_a_won_deck_now_and_then_gives_
     let mut characters: BTreeMap<PlayerId, Character> = [(3, Character::starting()), (4, Character::starting())].into();
     let id =
         characters.get_mut(&3).and_then(|character| character.sign_on(Officer::new(0, Post::Bosun, Rarity::Magic, 1)));
-    let sank = Sank { pirate, at: [0.0, 0.0], players: vec![3, 9], wind: [0.0, 0.0] };
+    let sank = Sank { pirate, at: [0.0, 0.0], players: vec![3, 9], wind: [0.0, 0.0], struck: false };
     assert_eq!(pay_sinking(&sank, &mut characters), vec![3], "a player the sea holds no character for is passed by");
     let paid = &characters[&3];
     assert!(paid.ship_xp > 0 && paid.xp == 0);

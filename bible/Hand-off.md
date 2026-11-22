@@ -385,9 +385,20 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
-- **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, merged with `main`, audited and
-  tested offline (the full check) and live headless (the menu holding the keys at ratios 1 and 1.25), in #127,
-  which supersedes #112**: no HTML
+- **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
+  check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
+  account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
+  tasks gives its Art early, then its two Tenets, then three fragments of their choosing
+  ([[Each House Has Its Own Road to Its Art]], [[The Houses' Roads as Claude Shapes Them]], [[Quests]]). The owner's
+  second ask ([[Missions Are Varied, Not Only Simple Tasks]]) added six step kinds any later mission can use: escort,
+  tail, defend, puzzle, unseen and race, each judged by the rooms. Each road goes round the island once (about 2,370
+  km of sailing, so a road runs past the 45 to 60 minutes asked). Every task has an id and the save keeps roads and
+  tasks by id. A comprehensive audit (rules, client, story) is fixed with tests. Not yet walked end to end by a
+  person or on a real GPU. Needs the owner's yes to merge (it deploys the page and the rooms, and adds `content/quests`
+  and `content/story/cast.json` to the rooms' code list).
+- **The whole plan of the owner's four points, on `main` (#127)**, merged with the owner's yes ("Merge and deploy"),
+  which deploys the page and the rooms; checked on the deployed page headless (the game in its worker, the menu holding
+  the keys). Asked of the owner: whether to close #112, which #127 holds. No HTML
   anywhere in the interface ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and
   every page of it, the story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game,
   each page one canvas and its script, and a repo check (`html`) refusing new HTML with no way round it; the game in a
@@ -399,8 +410,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   stands; no shared memory. Five audits (the drawn interface, the screens, the thread, the network, the repo's rules)
   found an input that stalled a room (verified now under tight limits), a pointer off at a fractional ratio, a Discord
   sign-in's return that stopped the game, keys leaking past the menu, Space and Backspace lost in a field, no modal
-  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Needs the owner's yes:
-  the `html` check by name (a new check), and the merge. Playing alone at sea is now sent the per-player cut of the
+  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Playing alone at sea is now sent the per-player cut of the
   snapshot, as with others.
 - **The co-dev's `webgpu-shot` cannot picture the game now**: it reads the page's WebGPU canvas, and the game draws
   from its worker. Its picture runs work for the Test Ground and the World Editor, which stay on the page; for the
@@ -603,6 +613,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
+  140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
+- **`tools/uiShot.mjs` writes blank pictures**: the interface lays its quads, but the shot's read-back is only the
+  ground under SwiftShader. The game's own frame read back from its worker shows the interface whole, so check
+  pictures that way meanwhile.
 - **After the four points**: the game's frame time on a real GPU, in and out of the worker; a sound heard by a person
   from the worker's cues; holding a press with the pad's A, which waits on an "A held" signal from the interface (main
   had no pad holds either).

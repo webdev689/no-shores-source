@@ -210,3 +210,21 @@ test('a node between two marks clears both, and one on another mark takes a clea
     'the port and the ruin where they lie',
   );
 });
+
+test('a place the quest names keeps its ring through the layout', () => {
+  const place = { text: 'Saltgrass Downs', x: 100, y: 100, kind: 'patrol', chosen: false };
+  const lettering = layOut({
+    ...ASK,
+    places: [
+      { ...place, quest: true },
+      { ...place, text: 'Elsewhere', x: 400 },
+    ],
+  });
+  assert.deepEqual(
+    lettering.letters.map((letter) => [letter.text, letter.quest === true]),
+    [
+      ['Saltgrass Downs', true],
+      ['Elsewhere', false],
+    ],
+  );
+});

@@ -102,6 +102,37 @@ test('on the display a spell just cast flashes, a Tenet counting its last second
   assert.equal(bar.node(false), null, 'hidden with no state');
 });
 
+test('a Tenet its road has not earned stands dark under a padlock, saying which road earns it', () => {
+  assert.deepEqual(abilityBarOf({ art: STORM, animaShare: 1, tenets: [1, 1], earned: 0b011 }).locked, [
+    false,
+    false,
+    true,
+  ]);
+  assert.deepEqual(abilityBarOf({ art: STORM, animaShare: 1, tenets: [1, 1] }).locked, [false, false, false], 'unsaid');
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  const bar = new AbilityBar(pictures);
+  bar.update({ art: STORM, animaShare: 1, tenets: [1, 0.97], earned: 0b001 }, 1 / 60);
+  const slots = bar.node(false)?.children ?? [];
+  const keys = (slot: number) => allOf(slots[slot]).flatMap((node) => node.picture?.key ?? []);
+  assert.equal(labelOf(slots[1]), "Quicken (Q), earned on the Stormcallers' road");
+  assert.equal(labelOf(slots[2]), "Arc Lash (G), earned on the Stormcallers' road");
+  assert.equal(labelOf(slots[0]), 'Tempest (R), ready', 'the Art itself, earned');
+  assert.ok(
+    keys(2).some((key) => key.startsWith('ability lock')),
+    'a padlock over it',
+  );
+  assert.equal(
+    keys(0).some((key) => key.startsWith('ability lock')),
+    false,
+  );
+  assert.equal(
+    keys(2).some((key) => key.startsWith('tenet sweep')),
+    false,
+    'no wedge on one not to be had',
+  );
+  assert.deepEqual(wordsIn(slots[2]), ['G'], 'nor its seconds');
+});
+
 test('a picture’s colours are turned by a filter laid over it inside its own SVG', () => {
   const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2 2"><rect width="1" height="1"/></svg>';
   assert.equal(filteredSvg(svg, 1, 1), svg, 'untouched');

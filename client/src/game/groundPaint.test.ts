@@ -69,6 +69,7 @@ test("a building run's floor is painted, a keep's paved and a mine's in earth, a
     name: kind,
     kind,
     place: 'rock',
+    mouth: [-30, 0] as [number, number],
     line: [
       [-30, 0],
       [0, 0],

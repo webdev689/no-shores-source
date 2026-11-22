@@ -38,7 +38,7 @@ import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { type Use, groundRings, useAt } from './footGear.ts';
+import { type Speak, type Use, groundRings, useAt } from './footGear.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
 import { type StripHint, keysShown, onFoot } from './hints.ts';
@@ -67,6 +67,8 @@ export interface FootContext {
   readonly session: () => Promise<string | null>;
   /** What E does where the player stands, drawn low in the middle of the view. */
   readonly usePrompt: UsePrompt;
+  /** What E does at a counter a quest names: speaks with its keeper. */
+  readonly speak?: Speak;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }
@@ -469,7 +471,8 @@ export class Foot {
     const gear = this.gear;
     const { x, y } = walker.player.body;
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
-    this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
+    const near = (asked: GearAsk) => gear?.ask(asked);
+    this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, near, this.context.speak)) : null;
     this.prompt.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
