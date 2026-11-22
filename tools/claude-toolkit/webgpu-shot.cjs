@@ -127,9 +127,11 @@ const OWN_TEXTURE = () => {
     return { rgba, width: texture.width, height: texture.height };
   };
   if (inWorker) {
+    // Always answered, with null if there is no picture (none drawn, the device lost), so the page never waits on it.
     channel.onmessage = async ({ data }) => {
-      const picture = data === 'read' && (await read());
-      if (picture) channel.postMessage(picture);
+      if (data !== 'read') return;
+      const picture = await read().catch(() => null);
+      channel.postMessage(picture ?? 'none');
     };
     return;
   }
@@ -154,6 +156,7 @@ const OWN_TEXTURE = () => {
     if (data === 'frame') scope.__shotFrames += 1;
     else if (data === 'drawing') workerDrew = true;
     else if (data?.rgba) answer?.(data);
+    else if (data === 'none') answer?.(null);
   };
   scope.__shotLay = async () => {
     let picture = await read();
@@ -162,6 +165,8 @@ const OWN_TEXTURE = () => {
       picture = await new Promise((resolve) => {
         answer = resolve;
         channel.postMessage('read');
+        // A worker gone or stuck answers nothing: the picture is given up after 20 s.
+        setTimeout(() => resolve(null), 20_000);
       });
       canvas = handed;
     }
@@ -222,7 +227,11 @@ async function main() {
       url.searchParams.delete('__webgpuShot');
       const response = await route.fetch({ url: url.href });
       const body = `(${OWN_TEXTURE})();\n(${SHADER_ERRORS})();\n${await response.text()}`;
-      await route.fulfill({ response, body });
+      // The patched script is longer and already decoded: the original's length and encoding no longer hold.
+      const headers = { ...response.headers() };
+      delete headers['content-length'];
+      delete headers['content-encoding'];
+      await route.fulfill({ response, body, headers });
     },
   );
   await page.addInitScript(OWN_TEXTURE);

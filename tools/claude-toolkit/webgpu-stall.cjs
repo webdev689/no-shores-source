@@ -8,11 +8,12 @@
 // every few seconds, too slow to reach a hang that comes minutes in, while with nothing submitted the worker's
 // JavaScript runs every frame at full speed. A beat (`sighted`, `wreck`, ...) starts the story there, as `?prologue=`
 // does in development: the unminified build's beat line is patched to read it. The probe taps to start, then every
-// 10 s collects the worker's garbage and prints its heap and frames drawn; a worker that does not answer in 8 s is
-// paused and its stack printed, and the probe exits 2.
+// 10 s collects the worker's garbage and prints its heap and frames drawn. A worker that does not answer in 8 s, or
+// whose frames stop (with nothing submitted), is paused, its stack printed, and the probe exits 2; one that never
+// started, or a beat that could not be chosen, exits 1, never as "no stall".
 const { createServer } = require('node:http');
 const { readFileSync } = require('node:fs');
-const { extname, join } = require('node:path');
+const { extname, resolve, sep } = require('node:path');
 const { chromium } = require('playwright');
 const { OWN_TEXTURE, SHADER_ERRORS } = require('./webgpu-shot.cjs');
 
@@ -26,21 +27,30 @@ const DROP_SUBMITS = () => {
 // Dropped first, so the driver's count of frames wraps the dropping submit.
 const prelude = [...(gpu ? [] : [DROP_SUBMITS]), OWN_TEXTURE, SHADER_ERRORS].map((patch) => `(${patch})();`).join('\n');
 const BEAT_LINE = 'const from = backAtHelm(sessionStorage, prologuePlayed(localStorage)) ? "creation" : null;';
-const TYPES = { '.js': 'text/javascript', '.html': 'text/html', '.json': 'application/json', '.wasm': 'application/wasm' };
+const TYPES = {
+  ...{ '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.json': 'application/json' },
+  ...{ '.wasm': 'application/wasm', '.svg': 'image/svg+xml', '.png': 'image/png', '.webp': 'image/webp' },
+  ...{ '.woff2': 'font/woff2', '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg' },
+};
+let beatLaid = false;
 
 const served = createServer((asked, answer) => {
   let path = decodeURIComponent(new URL(asked.url, 'http://x').pathname);
   if (path.endsWith('/')) path += 'index.html';
+  const file = resolve(dist, `.${path}`);
   let body;
   try {
-    body = readFileSync(join(dist, path));
+    if (!file.startsWith(resolve(dist) + sep)) throw new Error('outside the build');
+    body = readFileSync(file);
   } catch {
     answer.statusCode = 404;
     return answer.end();
   }
   if (/\/assets\/gameWorker-[^/]+\.js$/.test(path)) body = `${prelude}\n${body}`;
-  else if (beat && path.endsWith('.js') && body.includes(BEAT_LINE))
+  else if (beat && path.endsWith('.js') && body.includes(BEAT_LINE)) {
     body = String(body).replace(BEAT_LINE, `const from = ${JSON.stringify(beat)};`);
+    beatLaid = true;
+  }
   answer.setHeader('content-type', TYPES[extname(path)] ?? 'application/octet-stream');
   answer.end(body);
 });
@@ -79,12 +89,16 @@ async function main() {
   });
   const call = (method, params = {}) => {
     const id = ++nextId;
-    cdp.send('Target.sendMessageToTarget', { sessionId: worker, message: JSON.stringify({ id, method, params }) });
     return new Promise((done) => {
       waiting.set(id, done);
-      setTimeout(() => waiting.delete(id) && done(null), 8000);
+      const unanswered = () => waiting.delete(id) && done(null);
+      // A worker gone (crashed, out of memory, closed) answers nothing, as one stuck does not.
+      const message = JSON.stringify({ id, method, params });
+      cdp.send('Target.sendMessageToTarget', { sessionId: worker, message }).catch(unanswered);
+      setTimeout(unanswered, 8000);
     });
   };
+  let [lastFrames, why] = [null, ''];
   await page.goto('http://localhost:5173/');
   while (Date.now() - started < seconds * 1000 && !stalled) {
     await page.waitForTimeout(10_000);
@@ -94,26 +108,39 @@ async function main() {
       if (!found) continue;
       ({ sessionId: worker } = await cdp.send('Target.attachToTarget', { targetId: found.targetId }));
       await call('Runtime.enable');
+      if (beat && !beatLaid) {
+        console.log(`the beat "${beat}" cannot be chosen in this build: build it with --minify false`);
+        break;
+      }
       await page.mouse.click(320, 180);
       await page.keyboard.press('Space');
     }
     await call('HeapProfiler.collectGarbage');
     const heap = await call('Runtime.getHeapUsage');
     const frames = await call('Runtime.evaluate', { expression: 'self.__shotFrames', returnByValue: true });
-    if (!heap || !frames) {
+    const drawn = frames?.result?.result?.value ?? null;
+    // With nothing submitted a frame takes no time: frames that stop while the worker answers are a freeze too, as
+    // a wait on the GPU or on a message that never ends.
+    if (!heap || !frames) why = 'it stopped answering';
+    else if (!gpu && lastFrames !== null && drawn === lastFrames) why = `its frames stopped at ${drawn}`;
+    lastFrames = drawn;
+    if (why) {
       stalled = true;
+      console.log(`${clock()} the game's worker is frozen: ${why}`);
       await call('Debugger.enable');
       await call('Debugger.pause');
       await page.waitForTimeout(3000);
       break;
     }
     const megabytes = (heap.result.usedSize / 1e6).toFixed(1);
-    console.log(`${clock()} s: heap ${megabytes} MB after collection, ${frames.result.result.value} frames`);
+    console.log(`${clock()} s: heap ${megabytes} MB after collection, ${drawn} frames`);
   }
-  console.log(stalled ? 'stalled' : `no stall in ${seconds} s`);
+  // A probe that never reached the worker, or the beat, has tested nothing: it says so rather than "no stall".
+  const failed = !worker ? "the game's worker never started" : beat && !beatLaid ? 'the beat was not chosen' : '';
+  console.log(stalled ? 'stalled' : failed || `no stall in ${seconds} s`);
   await Promise.race([browser.close(), new Promise((done) => setTimeout(done, 5000))]);
   served.close();
-  process.exit(stalled ? 2 : 0);
+  process.exit(stalled ? 2 : failed ? 1 : 0);
 }
 
 main().catch((error) => {
