@@ -22,11 +22,23 @@ const GILT = ['#f3cf86', '#7a5424', '#5c3f1a', '#c08a3e'];
 /** The tile whose card shows: white, as Destiny marks what is selected and the menu marks its focus. */
 const CHOSEN = '#f2efe6';
 
-/** The tile chosen among those laid (their ids by place): the one under the pointer or the focus, else `kept` while it
- *  is still among them, else the first. */
-export function chosenTile(ui: Interface, ids: ReadonlyMap<number, string>, kept: number | null): number | null {
-  for (const [place, id] of ids) if (ui.hovered(id) || ui.focused(id)) return place;
-  return kept !== null && ids.has(kept) ? kept : ([...ids.keys()][0] ?? null);
+/** The tile whose card shows, kept between frames: the one the pointer or the focus last came to, as a click focuses
+ *  the tile it presses, and the first while none has. */
+export class TileChoice {
+  place: number | null = null;
+  private hovered: number | null = null;
+  private focused: number | null = null;
+
+  /** The tile chosen among those laid, their ids by place. */
+  choose(ui: Interface, ids: ReadonlyMap<number, string>): number | null {
+    const find = (lays: (id: string) => boolean) => [...ids].find(([, id]) => lays(id))?.[0] ?? null;
+    const [hovered, focused] = [find((id) => ui.hovered(id)), find((id) => ui.focused(id))];
+    if (hovered !== null && hovered !== this.hovered) this.place = hovered;
+    else if (focused !== null && focused !== this.focused) this.place = focused;
+    [this.hovered, this.focused] = [hovered, focused];
+    if (this.place === null || !ids.has(this.place)) this.place = [...ids.keys()][0] ?? null;
+    return this.place;
+  }
 }
 
 /** A gauge of a count toward its target, `height` pixels tall, filled in `colour`. */

@@ -55,7 +55,7 @@ impl Run {
         Run { pays: Pays::Today { patrol: patrol.to_owned(), number }, ..Run::default() }
     }
 
-    /// Notes a clear counted toward an account's bounties and quests on `day`: false for one counted already that day,
+    /// Notes a clear counted toward an account's bounties on `day`: false for one counted already that day,
     /// since a cleared end post stands again two minutes on with no player near, and its cache opens again.
     pub(crate) fn count_clear(&mut self, owner: &str, day: u64) -> bool {
         if self.cleared_for.0 != day {

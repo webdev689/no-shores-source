@@ -1,4 +1,4 @@
-//! What a room counts toward the bounties and side quests (`gear::objectives`): each foe felled for each player who
+//! What a room counts toward the bounties (`gear::objectives`): each foe felled for each player who
 //! shares its kill, each resource node gathered, and each dungeon cleared for each player the room keeps as its cache
 //! opens, on the island the room stands on.
 
@@ -11,7 +11,7 @@ impl Room {
         self.island = gear::world::ISLANDS.iter().map(|(id, ..)| *id).find(|id| *id == continent);
     }
 
-    /// Counts a feat toward a player's bounties and side quests, sending their gear again when a count moved.
+    /// Counts a feat toward a player's bounties, sending their gear again when a count moved.
     pub(crate) fn saw(&mut self, player: PlayerId, feat: &Feat<'_>) {
         let day = self.day();
         let Some(found) = self.players.get_mut(&player) else { return };

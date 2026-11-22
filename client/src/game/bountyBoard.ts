@@ -5,7 +5,7 @@
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { roomNow } from '../sky/worldClock.ts';
-import { bountyCardNode, bountyTileNode, chosenTile, stateLine } from './bountyTiles.ts';
+import { TileChoice, bountyCardNode, bountyTileNode, stateLine } from './bountyTiles.ts';
 import { INK, pressNode, words } from './gearNodes.ts';
 import { iconNode } from './journalIcons.ts';
 import { countdownWords } from './journalWords.ts';
@@ -67,7 +67,7 @@ export function bountyWords(row: BountyRow): string {
 }
 
 /** The tile last chosen on the board, kept as the screen is built again each frame. */
-let chosenPlace: number | null = null;
+const choice = new TileChoice();
 
 /** The next board: the rising sun and the time left, over a bar filling as the day goes. */
 function nextBoard(until: number | null, size: number): Node {
@@ -101,13 +101,12 @@ export function boardPage(context: MenuContext, resetAt: () => number | null, no
   const rows = bountyRows(gear);
   const shut = gear.prologueDone === false;
   const ids = new Map(rows.map((row) => [row.place, `bounty-${row.place}`]));
-  chosenPlace = chosenTile(ui, ids, chosenPlace);
-  for (const row of rows) {
-    const id = `bounty-${row.place}`;
-    if (!shut && row.press && (ui.clicked(id) || ui.keysOn(id).includes('e'))) context.ask(row.press.ask);
-  }
+  const chosenPlace = choice.choose(ui, ids);
+  for (const row of rows) if (!shut && row.press && ui.clicked(`bounty-${row.place}`)) context.ask(row.press.ask);
   const chosen = rows.find((row) => row.place === chosenPlace) ?? null;
-  if (!shut && chosen?.press && ui.clicked('board-press')) context.ask(chosen.press.ask);
+  // E on any tile takes or turns in the one whose card shows, as the card's keycap says.
+  const keyed = [...ids.values()].some((id) => ui.keysOn(id).includes('e'));
+  if (!shut && chosen?.press && (keyed || ui.clicked('board-press'))) context.ask(chosen.press.ask);
   const foot = (row: BountyRow): Child => {
     if (!row.press) return row.state === 'paid' ? stateLine('Turned in', 'taken', sizes.label) : null;
     const { label } = row.press;

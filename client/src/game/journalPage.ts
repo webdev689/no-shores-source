@@ -9,7 +9,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { type BountyRow, bountyWords, payOf } from './bountyBoard.ts';
-import { bountyCardNode, bountyTileNode, chosenTile, stateLine } from './bountyTiles.ts';
+import { TileChoice, bountyCardNode, bountyTileNode, stateLine } from './bountyTiles.ts';
 import { INK, type Sizes, words } from './gearNodes.ts';
 import { iconNode, pixelNode } from './journalIcons.ts';
 import { timersNode } from './journalTimers.ts';
@@ -82,7 +82,7 @@ export class Journal {
   /** Whether the timers are down over the page. */
   down = false;
   private pageAt = 0;
-  private chosen: number | null = null;
+  private readonly choice = new TileChoice();
   /** Where the focus goes once laid: to the timers' Close as they drop, back to the hourglass as they go up. */
   private focusing: string | null = null;
 
@@ -257,18 +257,18 @@ export class Journal {
     const column = bountyColumnOf(gear, week?.today.day ?? null);
     const tile = sizes.name > 1 ? 88 : 64;
     const ids = new Map(column.taken.map((row) => [row.place, `bounty-${row.place}`]));
-    this.chosen = chosenTile(ui, ids, this.chosen);
+    const chosenPlace = this.choice.choose(ui, ids);
     const slots: Node[] = column.taken.map((row) => {
       const id = `bounty-${row.place}`;
       const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
-      return bountyTileNode(row, id, tile, row.place === this.chosen, lit);
+      return bountyTileNode(row, id, tile, row.place === chosenPlace, lit);
     });
     for (let slot = column.taken.length; slot < column.slots; slot += 1)
       slots.push({ role: 'well', width: tile, height: tile });
     const lines: Child[] = [];
     for (let first = 0; first < slots.length; first += 3)
       lines.push({ gap: 8, children: slots.slice(first, first + 3) });
-    const chosen = column.taken.find((row) => row.place === this.chosen);
+    const chosen = column.taken.find((row) => row.place === chosenPlace);
     const foot = (row: BountyRow): Child =>
       row.state === 'held' ? null : stateLine(bountyWords(row), 'taken', sizes.label);
     const said: Child = chosen

@@ -158,12 +158,17 @@ test('the chosen tile’s card says its name, kind, words, count and pay, and E 
   frame();
   assert.ok(card().includes('Turned in') && card().includes('1/1'));
   click(ui, frame, 'bounty-0');
-  ui.focusOn('bounty-2');
+  // Pointed at after the click, Broadside's card shows, and E on the tile still focused turns in the card's bounty.
+  frame([{ kind: 'pointer', x: (ui.boxOf('bounty-2')?.x ?? 0) + 4, y: (ui.boxOf('bounty-2')?.y ?? 0) + 4 }]);
+  frame();
+  assert.ok(card().includes('BROADSIDE'), 'the card follows the pointer past the tile clicked');
+  assert.equal(ui.focusedId, 'bounty-0');
   frame([{ kind: 'key', key: 'e' }]);
   assert.deepEqual(asked, [
     { kind: ASKS.takeBounty, node: 0, item: 20_778 },
     { kind: ASKS.turnInBounty, node: 2, item: 20_778 },
   ]);
+  ui.focusOn('bounty-2');
   frame([{ kind: 'key', key: 'ArrowDown' }]);
   frame();
   assert.equal(ui.focusedId, 'bounty-4', 'the arrows move between tiles, two a row');
