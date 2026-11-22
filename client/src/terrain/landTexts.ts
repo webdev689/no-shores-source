@@ -9,13 +9,26 @@ export interface LandTexts {
   readonly buildersText: string | null;
 }
 
-/** Reads the land's texts; a part the pages do not serve is null, and the land is settled without it. */
-export async function loadLandTexts(base: string): Promise<LandTexts> {
-  const read = async (path: string) => {
-    const answer = await fetch(`${base}world/${path}`);
+const texts = new Map<string, Promise<string>>();
+
+/** A file of the pages' `world/` folder, fetched once however many ask: the land's texts and the city's assets read
+ *  the same tables and blocks. One that fails is fetched afresh the next time. */
+export function worldText(base: string, path: string): Promise<string> {
+  const url = `${base}world/${path}`;
+  const kept = texts.get(url);
+  if (kept) return kept;
+  const reading = fetch(url).then((answer) => {
     if (!answer.ok) throw new Error(`world/${path}: ${answer.status}`);
     return answer.text();
-  };
+  });
+  texts.set(url, reading);
+  reading.catch(() => texts.get(url) === reading && texts.delete(url));
+  return reading;
+}
+
+/** Reads the land's texts; a part the pages do not serve is null, and the land is settled without it. */
+export async function loadLandTexts(base: string): Promise<LandTexts> {
+  const read = (path: string) => worldText(base, path);
   const rmbText = await read('rmb/index.json').catch(() => null);
   if (rmbText === null) return { rmbText, buildersText: null };
   try {

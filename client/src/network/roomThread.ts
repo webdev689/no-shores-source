@@ -89,14 +89,27 @@ export class RoomThread implements RoomLink {
     return opened;
   }
 
-  /** A node's room from its file's text, as `LocalRoom.openNode`. */
+  /** A node's room from its file's text, as `LocalRoom.openNode`: joined before entrance `entrance`'s door if given,
+   *  the player's gear going to `gear`. */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,
     snapshot: (snapshot: Snapshot) => void,
     foeAsks = false,
+    { gear, entrance }: { gear?: (gear: GearMessage) => void; entrance?: number } = {},
   ): Promise<RoomThread> {
-    return RoomThread.open(module, { how: 'node', nodeText, foeAsks }, snapshot);
+    return RoomThread.open(module, { how: 'node', nodeText, foeAsks, entrance }, snapshot, gear);
+  }
+
+  /** Dungeon `number` of a patrol from the patrol's node file's text, as `LocalRoom.openDungeon`. */
+  static openDungeon(
+    module: WebAssembly.Module,
+    patrolText: string,
+    number: number,
+    snapshot: (snapshot: Snapshot) => void,
+    gear?: (gear: GearMessage) => void,
+  ): Promise<RoomThread> {
+    return RoomThread.open(module, { how: 'dungeon', patrolText, number }, snapshot, gear);
   }
 
   /** The sea round a layout's continents, as `LocalRoom.openSea`, the player's gear going to `gear`. */

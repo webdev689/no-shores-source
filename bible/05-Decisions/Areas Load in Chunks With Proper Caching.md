@@ -33,3 +33,12 @@ Under "Whatever is most detailed", the owner's to change:
   ambience's and the story's as each is first asked for; a long recording fetched in chunks of 1 MB (about a minute),
   two held at most; the page alone keeping the samples; 192 MB of samples held before the least lately played are let
   go, never one played in the last two minutes nor a sound of play; every file kept in the browser's own storage.
+- Packs ([[Player]], "Its strips are fetched ahead"): each picture pack read in blocks of 256 KB, rather than whole,
+  so a single picture never costs a whole pack, sixteen blocks held in each thread besides the browser's storage; the
+  composing worker's fetched strips cut from 96 MB to 32 MB, since its blocks come back from the disk.
+- The browser's storage: every file of R2 the game reads kept there (the forge's index and tables, picture packs,
+  recordings, flora, ship meshes, city modules, the wreck), and kept within 1 GB, the files kept longest ago let go
+  first.
+- Preloading: a continent's flora fetched into the storage as the ship comes within 120 km of its coast, twice as far
+  as it is opened.
+- Memory: the item pictures kept for the gear screens capped at 256, the least lately asked for let go first.

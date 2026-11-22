@@ -839,7 +839,8 @@ decodes each and keeps it; the worker holds only its shape and how it measures, 
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
 played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
 fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
-changes, so one let go comes back from the disk.
+changes, so one let go comes back from the disk. The storage holds every file the game reads from R2, within 1 GB, the
+files kept longest ago let go first.
 
 ## The sea fight's readout
 
@@ -1008,8 +1009,8 @@ button's corner and screen, and the Tailor's wares.
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.
 - Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
   pictures on the player's own figure, which is not theirs.
-- A join reaches a company member on foot on the landmass open now; one across the sea, or at sea, is not reached, and
-  the Roster says so.
+- A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
+  or at sea, is not reached, and the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has

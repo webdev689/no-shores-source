@@ -59,11 +59,13 @@ export type MeshBuilder = {
     normal: readonly number[],
     mapping: readonly (readonly number[])[],
   ): void;
+  /** `normal` winds the triangle; `cornerNormals`, where given, are what each corner keeps, so a curve shades smooth. */
   tri(
     picture: readonly number[],
     corners: readonly (readonly number[])[],
     normal: readonly number[],
     mapping: readonly (readonly number[])[],
+    cornerNormals?: readonly (readonly number[])[],
   ): void;
   model(): ForgedModel;
 };
@@ -84,11 +86,13 @@ export function meshBuilder(): MeshBuilder {
     corners: readonly (readonly number[])[],
     normal: readonly number[],
     mapping: readonly (readonly number[])[],
+    cornerNormals?: readonly (readonly number[])[],
   ): Bucket => {
     const into = bucket(picture[0], picture[1]);
     for (let k = 0; k < corners.length; k++) {
+      const kept = cornerNormals?.[k] ?? normal;
       into.positions.push(corners[k][0], corners[k][1], corners[k][2]);
-      into.normals.push(normal[0], normal[1], normal[2]);
+      into.normals.push(kept[0], kept[1], kept[2]);
       into.uvs.push(mapping[k][0], mapping[k][1]);
     }
     return into;
@@ -103,9 +107,9 @@ export function meshBuilder(): MeshBuilder {
       if (facesNormal(corners, normal)) into.indices.push(base, base + 1, base + 2, base, base + 2, base + 3);
       else into.indices.push(base, base + 2, base + 1, base, base + 3, base + 2);
     },
-    tri(picture, corners, normal, mapping) {
+    tri(picture, corners, normal, mapping, cornerNormals) {
       const base = bucket(picture[0], picture[1]).positions.length / 3;
-      const into = lay(picture, corners, normal, mapping);
+      const into = lay(picture, corners, normal, mapping, cornerNormals);
       if (facesNormal(corners, normal)) into.indices.push(base, base + 1, base + 2);
       else into.indices.push(base, base + 2, base + 1);
     },

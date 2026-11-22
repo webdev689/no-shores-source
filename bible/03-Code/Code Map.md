@@ -30,7 +30,7 @@ decision, made in the same change as its entry here.
 | `client/src/shadow.ts` | The sun's shadow map round the eye, which every drawer of the [[Game]]'s scene casts into and reads |
 | `client/src/soundSamples.ts` | The recorded sounds the owner picked from Freesound, fetched as they are wanted (long ones a chunk at a time), held within a budget, levelled and played for the [[Interface]]'s cues and the world's, with their credits |
 | `client/src/soundMeasure.ts` | How loud a recording is, measured once where it is decoded: its level, its rush and its loudness over each window the game asks |
-| `client/src/contentCache.ts` | R2's files and ranges of them, kept in the browser's own storage, since a file named by its hash never changes |
+| `client/src/contentCache.ts` | R2's files and ranges of them, kept in the browser's own storage within 1 GB, since a file named by its hash never changes |
 | `client/src/elementGlow.ts` | The [[Weapon Glow]]'s colours, outline field, shader and bursts, which the figures, the first person and the fight's effects draw with |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up, and sails the Sloop alone or, through what its page offers, in a fleet room |
 | `client/src/terrain/` | The terrain layer: the land drawn in rings round the eye on WebGPU, and the land crate's worker, for the [[World Editor]] and the game |
@@ -89,6 +89,7 @@ decision, made in the same change as its entry here.
 | `crates/movement-wasm` | Movement for the browser: a door crate, a body stepped one tick at a time |
 | `crates/layout` | The [[Layouts]] of patrol areas and instances: areas, paths, carved land, RMB villages, set pieces, great works, walk-in rooms, sites and sections |
 | `crates/reach` | [[Reach]]: a node's section of the land, the warning past its edge, death beyond it and the respawn |
+| `crates/dungeon` | [[Dungeons]]: the patrol areas' dungeons, laid by DFO's Forge from a seed, rooms and corridors on a grid of 3.2 m cells |
 | `crates/isle` | [[Islands]]: a sea island from its seed and climate, the same on the server and in every browser: its shape, its fine ground, its places and its dressing of the Blender modules content/islands/kits.json names |
 | `crates/navmesh` | The [[Navmesh]]: where a foe can walk, baked from a course's blocks over open ground or any terrain, the links where the movement rules climb a block's side or drop off its edge, the paths across both, and the firing spots shooters fight from |
 | `crates/combat` | [[Combat]]: how fighters swing, guard, parry and dodge, their stamina and poise, the soft lock, foes' telegraphed blows, shots in flight, and the statuses a fighter is given |
@@ -97,7 +98,7 @@ decision, made in the same change as its entry here.
 | `crates/sailing` | [[Sailing]]: how a ship sails, its helm, its sails against the wind, its pose on the swell and where it grounds, one tick at a time |
 | `crates/gear` | [[Gear]]: items, their rarity, nodes and costs, Prestige and level, Attack and Defense against a foe's level, Vestiges, weapons' elements and foes' shields, emblems and cosmetics, the [[Arts]] a player wears and their levels, the [[Factions]] they pledge to, Shape and his Shapes, and what a player holds and shows others |
 | `crates/naval` | [[Naval Combat]]: guns laid and fired, balls in flight, the harm they do, a ship's rigging shot away (`rigging.rs`), the events a fight sends (`fight_events.rs`), and a captain who fights, one tick at a time |
-| `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
+| `crates/protocol` | The [[Server]]'s messages: the schema, `messages.fbs` and the gear's `gear.fbs`, the Rust `flatc` makes from it, and the server's side of reading and writing them. A door crate |
 | `crates/room-wasm` | The room for its Cloudflare host: a door crate, bytes in and bytes out; a fleet ship's prediction and lay for a browser; and the foes' roster for the browser |
 | `crates/room-wasm/src/waters_door.rs` | The waters and the friendly traffic for the browser: the water at a point, the held map's grid as bytes, the ships near a point ([[World Map]]) |
 | `crates/room-wasm/src/snapshot_door.rs` | The room's snapshot after its tick, sent to each player as theirs: at sea what floats, a ship's kept hurts, what the sea tells and a boarded deck only to the player they are for ([[Server]]) |
@@ -126,6 +127,7 @@ decision, made in the same change as its entry here.
 | `tools/ships/build_ship.py`, `ship_hull.py`, `ship_rig.py`, `ship_fittings.py`, `ship_details.py`, `ship_mesh.py` | Build a new hull's model in the Sloop's style from its numbers: its shell, rig, fittings, finer work and rigging, the Sloop's guns, and its companionway into the cabin ([[Hulls]]) |
 | `tools/ships/build_cabin.py`, `cabin_props.py` | Build the one cabin every ship opens into, and furnish it along its walls and stern ([[Hulls]]) |
 | `tools/ships/ship_pictures.ts` | Writes the pictures a ship's parts wear, from the procedural painter, for `paint_ship.py` to pack into its model |
+| `tools/dungeon/` | The [[Dungeon Modules]]: Blender scripts that build each dungeon style's kit and landmarks (`styles/`), the kit they build with (`kit/`, `shapes.py`, `details.py`), the envelopes a piece keeps, the pack writer, the contact sheets and the publisher; the `dungeon` crate's `build.rs` reads the landmarks from `content/dungeon/landmarks.json` |
 | `tools/forge_dyes.mjs` | Reads Daggerfall's palette once into the forge's dye table |
 | `tools/freesound/` | Finds candidate sounds on Freesound's public pages for the cues in `content/audio/freesound.json`, on GitHub's machines (the `freesound` workflow), and publishes the owner's picks to R2 with their credits ([[Sounds Come From Freesound, Judged on a Test Sheet]]): the workflow runs on each push that changes the cue list, `tools/freesound/` or itself, cuts long picks in a step that holds no key, then puts the picks on R2 with the repository's Cloudflare token, keeping the game's `sounds.json` in its download for a commit to take in |
 | `tools/install-flatc.sh`, `tools/schema.mjs` | Install the pinned `flatc`, and make the messages' code with it into `generated/` ([[Toolchain]]) |
@@ -170,16 +172,16 @@ and outside crates it may use (`CRATES`, [[Checks]]):
   `serde_json`; `land`, which may use `world`, `serde` and `serde_json`; `movement`, which may use only `libm`;
   `sailing`, which may use `land` and `libm`; `naval`, which may use `sailing` and `libm`; `combat`, which may use
   `movement` and `libm`; `navmesh`, which may use `movement` and `libm`; `foes`, which may use `combat`, `movement`
-  and `libm`; `reach`, which uses no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and `libm`; `gear`,
-  which may use `serde`, `serde_json` and `libm`; and `city`,
+  and `libm`; `reach` and `dungeon`, which use no other crate; `isle`, which may use `movement`, `serde`, `serde_json` and
+  `libm`; `gear`, which may use `serde`, `serde_json` and `libm`; and `city`,
   which may use `land`, `world`, `serde`, `serde_json` and `libm`.
 - **The server**, at multiplayer ([[Server-Authoritative Multiplayer]]): the authority. It depends on the rules and its
-  own platform crates, never on the client. Its core is `room`, which may use `combat`, `foes`, `gear`, `isle`, `land`,
+  own platform crates, never on the client. Its core is `room`, which may use `combat`, `dungeon`, `foes`, `gear`, `isle`, `land`,
   `movement`, `naval`, `navmesh`, `reach`, `sailing`, `world` and `libm`; its messages are `protocol`, which may use
   `combat`, `gear`, `movement`, `naval`, `room`, `sailing` and `flatbuffers`; and `room-wasm` puts them behind a WebAssembly door for
   the Cloudflare shell in `server/`, and for a browser playing alone or predicting its ship in a fleet, reading a
-  node's baked file, an island's word and the layout with `foes`, `gear`, `isle`, `land`, `naval`, `sailing`, `world`,
-  `serde` and `serde_json`.
+  node's baked file, an island's word and the layout with `dungeon`, `foes`, `gear`, `isle`, `land`, `naval`, `sailing`,
+  `world`, `serde` and `serde_json`.
 - **Tools** run at build time, never in a room or a browser. `bake` may use `city`, `land`, `world`, `serde` and
   `serde_json`.
 - **Door crates** hand memory across a boundary and are the only crates that may hold unsafe code. They are

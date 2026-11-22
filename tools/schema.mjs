@@ -6,7 +6,12 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+// The schema's root, and every file it includes (a player's gear in `gear.fbs`).
 const SCHEMA = 'crates/protocol/messages.fbs';
+const SCHEMAS = readdirSync('crates/protocol', { encoding: 'utf8' })
+  .filter((name) => name.endsWith('.fbs'))
+  .sort()
+  .map((name) => join('crates/protocol', name));
 // The content whose entries cross the wire by their place in its lists (tools/numbered.json).
 const NUMBERED = JSON.parse(readFileSync('tools/numbered.json', 'utf8')).paths;
 const OUT = 'generated/messages';
@@ -20,8 +25,8 @@ if (installed !== `flatc version ${pinned}`)
   throw new Error(`flatc ${pinned} is pinned, but ${flatc} is "${installed}"`);
 
 rmSync(OUT, { recursive: true, force: true });
-execFileSync(flatc, ['--rust', '-o', join(OUT, 'rust'), SCHEMA]);
-execFileSync(flatc, ['--ts', '-o', join(OUT, 'ts'), SCHEMA]);
+execFileSync(flatc, ['--rust', '--gen-all', '-o', join(OUT, 'rust'), SCHEMA]);
+execFileSync(flatc, ['--ts', '--gen-all', '-o', join(OUT, 'ts'), SCHEMA]);
 // flatc's TypeScript imports its own files as .js; the client and Node's test runner import them as .ts.
 for (const name of readdirSync(join(OUT, 'ts'), { recursive: true, encoding: 'utf8' })) {
   if (!name.endsWith('.ts')) continue;
@@ -29,13 +34,13 @@ for (const name of readdirSync(join(OUT, 'ts'), { recursive: true, encoding: 'ut
   writeFileSync(path, readFileSync(path, 'utf8').replace(/(from '\.{1,2}\/[^']*)\.js'/g, "$1.ts'"));
 }
 
-// The protocol's version is the hash of the schema, of the fight's numbers as combat lays them out (a fighter, an
-// intent and a glance cross as plain lists of numbers), and of the content numbered on the wire, never a number bumped
-// by hand: a page and a room built from different layouts, or from lists in a different order, know it from the room's
-// welcome.
+// The protocol's version is the hash of the schema's files, of the fight's numbers as combat lays them out (a fighter,
+// an intent and a glance cross as plain lists of numbers), and of the content numbered on the wire, never a number
+// bumped by hand: a page and a room built from different layouts, or from lists in a different order, know it from the
+// room's welcome.
 const FLOATS = 'crates/combat/src/floats.rs';
 const hash = createHash('sha256');
-for (const path of [SCHEMA, FLOATS, ...NUMBERED]) hash.update(readFileSync(path));
+for (const path of [...SCHEMAS, FLOATS, ...NUMBERED]) hash.update(readFileSync(path));
 const version = hash.digest().readUInt32BE(0);
 writeFileSync(join(OUT, 'rust', 'version.rs'), `${version}\n`);
 writeFileSync(join(OUT, 'ts', 'version.ts'), `export const PROTOCOL = ${version};\n`);

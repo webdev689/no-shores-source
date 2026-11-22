@@ -2,6 +2,7 @@
 // every city built after: a module's solid is drawn from its group's mesh in its material's picture. A city built
 // before they come draws no module; the loaders that build cities wait for them.
 import manifest from '../../../content/modules/modules.json' with { type: 'json' };
+import { contentBytes } from '../contentCache.ts';
 
 /** One surface group: positions in the module's frame (x east, y south, z up), normals in 127ths, triangles. */
 export type ModuleMesh = {
@@ -65,9 +66,7 @@ export function loadModules(): Promise<void> {
     (manifest as Listed).modules.flatMap((module, number) =>
       module.groups.map(async (group, index) => {
         try {
-          const answer = await fetch(`${manifest.base}${group.mesh}`);
-          if (!answer.ok) throw new Error(`${answer.status}`);
-          meshes.set(`${number}:${index}`, readModuleMesh(await answer.arrayBuffer()));
+          meshes.set(`${number}:${index}`, readModuleMesh((await contentBytes(`${manifest.base}${group.mesh}`)).bytes));
         } catch (error) {
           console.error(`module ${number}'s ${group.mesh} cannot be drawn:`, error);
         }

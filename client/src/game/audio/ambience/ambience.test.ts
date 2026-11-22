@@ -187,6 +187,33 @@ test("the player's own steps are heard on its deck as they walk it, a step a str
   assert.equal(stepped.mock.callCount(), 4, 'set down elsewhere, not walked');
 });
 
+test('in a dungeon none of the open air is heard: the island fades out and no strike thunders underground', (context) => {
+  const thundered = mock.method(ScapePlayer.prototype, 'thunder', () => undefined);
+  context.after(() => {
+    thundered.mock.restore();
+    SKY_NOW.current = { ...SKY_NOW.current, strikes: [], worldS: 0 };
+  });
+  const fake = fakeAudio();
+  const ambience = new Ambience(world, () => fake, { random: seeded(6) });
+  const step = (seconds: number, underground: boolean) => {
+    for (let time = 0; time < seconds; time += 0.1) {
+      ambience.onFoot(patrol, land, ear, [], underground);
+      ambience.frame(0.1);
+      (fake.audio as { currentTime: number }).currentTime += 0.1;
+    }
+  };
+  step(1, false);
+  assert.equal(ambience.stats.places, 1, 'the island heard on its land');
+  SKY_NOW.current = {
+    ...SKY_NOW.current,
+    strikes: [{ x: 30, y: 0, atS: 1000, toGround: true, power: 1 }],
+    worldS: 1000,
+  };
+  step(CROSSFADE_S + 30, true);
+  assert.equal(ambience.stats.places, 0, 'nothing of the island underground');
+  assert.equal(thundered.mock.callCount(), 0, 'a strike overhead is not heard');
+});
+
 test('a strike still on its way thunders though the strikes heard before it are let go', (context) => {
   const thundered = mock.method(ScapePlayer.prototype, 'thunder', () => undefined);
   context.after(() => {

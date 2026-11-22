@@ -6,7 +6,13 @@ import type { PortInfo } from '../rules/watersRules.ts';
 
 /** How a room is opened, as `LocalRoom` opens it. */
 export type Opening =
-  | { readonly how: 'node'; readonly nodeText: string; readonly foeAsks: boolean }
+  | {
+      readonly how: 'node';
+      readonly nodeText: string;
+      readonly foeAsks: boolean;
+      readonly entrance: number | undefined;
+    }
+  | { readonly how: 'dungeon'; readonly patrolText: string; readonly number: number }
   | {
       readonly how: 'sea';
       readonly layoutText: string;
@@ -39,7 +45,12 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
     const snapshot = (whole: Snapshot) => say({ kind: 'snapshot', id, snapshot: whole });
     // Each word on the player's gear, before its tick's snapshot, as the room gives them.
     const gear = (said: GearMessage) => say({ kind: 'gear', id, gear: said });
-    if (opening.how === 'node') return LocalRoom.openNode(module, opening.nodeText, snapshot, opening.foeAsks, gear);
+    if (opening.how === 'node') {
+      const { nodeText, foeAsks, entrance } = opening;
+      return LocalRoom.openNode(module, nodeText, snapshot, foeAsks, { gear, entrance });
+    }
+    if (opening.how === 'dungeon')
+      return LocalRoom.openDungeon(module, opening.patrolText, opening.number, snapshot, gear);
     if (opening.how === 'island') return LocalRoom.openIsland(module, opening.word, snapshot, opening.seas, gear);
     const { layoutText, seed, ports, seas } = opening;
     return LocalRoom.openSea(module, layoutText, snapshot, seed, ports, seas, gear);

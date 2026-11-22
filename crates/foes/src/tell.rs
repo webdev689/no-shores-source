@@ -138,7 +138,7 @@ pub fn windup_near(here: &Here<'_, '_>, spot: [f64; 3]) -> bool {
 
 /// The shapes it may throw at its target from here: in reach its blows of reach, but only at a target that, moving as
 /// it moves now, still stands in reach as the blow's wind-up ends; out of it the gap-closers whose band it stands in, a
-/// charge's lane and a leap's line clear of the blocks.
+/// charge's lane and a leap's line clear of the blocks and the ground's walls.
 fn pool(here: &Here<'_, '_>, sight: &Sight, reach: f64) -> Vec<Shape> {
     let near = sight.distance <= reach + 0.5;
     let feet = here.feet();
@@ -162,7 +162,8 @@ fn pool(here: &Here<'_, '_>, sight: &Sight, reach: f64) -> Vec<Shape> {
                     feet[1] - libm::cos(sight.toward) * length,
                     feet[2] + 0.9,
                 ];
-                (CHARGE_FROM.0..=CHARGE_FROM.1).contains(&sight.distance) && clear_line(here.world.blocks, from, to)
+                (CHARGE_FROM.0..=CHARGE_FROM.1).contains(&sight.distance)
+                    && clear_line(here.world.blocks, here.world.terrain, from, to)
             }
             Shape::Leap => (LEAP_FROM.0..=LEAP_FROM.1).contains(&sight.distance) && sight.seen,
             _ => true,

@@ -451,6 +451,13 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let casting = found.casting;
     let ship = Some(crate::ship_wire::ship_offset(&mut builder, character, room.recruiting_at(player)));
     let more = crate::standing_wire::standing_of(&mut builder, room, player, character);
+    // In a patrol, its entrances: x, y, the ground's height, the yaw and the model, each.
+    let dungeons: Vec<f64> = room
+        .entrances()
+        .iter()
+        .flat_map(|entrance| [entrance.at[0], entrance.at[1], entrance.at[2], entrance.yaw, entrance.model as f64])
+        .collect();
+    let dungeons = (!dungeons.is_empty()).then(|| builder.create_vector(&dungeons));
     let quests = crate::quest_wire::quests_of(&mut builder, room, player, character);
     let args = messages::GearArgs {
         xp: character.xp,
@@ -519,6 +526,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         quest_ward: Some(quests.ward),
         claimed: found.claimed,
         scavenged: Some(scavenged),
+        dungeons,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

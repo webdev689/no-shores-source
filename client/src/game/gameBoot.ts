@@ -102,7 +102,18 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   };
   scene.setLand(landmass.view, terrainFor(landmass), biomeOf(landmass.id));
   const views = { scene, figureView, shipModels, forge, firstPerson, store, sloop };
-  const modules = { roomModule, builtSloop, land, movement, seaWeather, seaView, drawersOn, terrainFor, biomeOf };
+  const modules = {
+    roomModule,
+    builtSloop,
+    land,
+    movement,
+    seaWeather,
+    seaView,
+    drawersOn,
+    terrainFor,
+    biomeOf,
+    cityAssets,
+  };
   return {
     hud,
     stack,

@@ -58,13 +58,24 @@ export function seaRoomName(difficulty: Difficulty): string {
   return difficulty === 'normal' ? 'sea' : `sea--${difficulty}`;
 }
 
+/** A patrol's dungeon's room's name: one for each dungeon at each difficulty (`node-<id>--dungeon-<number>`,
+ *  `node-<id>--elite--dungeon-<number>`). */
+export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficulty, number: number): string {
+  const seas = difficulty === 'normal' ? '' : `--${difficulty}`;
+  return `node-${patrol.id}${seas}--dungeon-${number}`;
+}
+
 /** Other names for Elite and Abyss, which a place the accounts kept may still carry. */
 const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
 
-/** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`); null for any other room. */
-export function nodeOfRoom(room: string): { readonly id: string; readonly seas: Difficulty } | null {
-  const found = /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?$/.exec(room);
+/** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`), and the patrol's dungeon it is
+ *  (`--dungeon-<number>` after those, never a node's own name); null for any other room. */
+export function nodeOfRoom(
+  room: string,
+): { readonly id: string; readonly seas: Difficulty; readonly dungeon: number | null } | null {
+  const found = /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?$/.exec(room);
   if (!found?.[1]) return null;
   const named = found[2];
-  return { id: found[1], seas: named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty)) };
+  const dungeon = found[3] === undefined ? null : Number(found[3]);
+  return { id: found[1], seas: named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty)), dungeon };
 }

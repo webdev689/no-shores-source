@@ -233,6 +233,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 shots: &shots,
                 lines: &lines,
                 spells: &spells,
+                cache: &[],
             };
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })

@@ -245,6 +245,9 @@ export interface GearState {
   readonly day?: number;
   /** Where they stand on the houses' roads; none from a room that sends none. */
   readonly quest?: QuestState;
+  /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
+   *  of the six entrance models it is (0 to 5). */
+  readonly dungeons?: readonly number[];
 }
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
@@ -445,6 +448,7 @@ export function gearOf(gear: Gear): GearState {
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
     day: gear.day(),
     quest: questOf(gear),
+    dungeons: Array.from(gear.dungeonsArray() ?? []),
   };
 }
 

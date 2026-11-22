@@ -85,6 +85,21 @@ test('a company member is joined from on foot or at sea, never while landing or 
   assert.equal(next(landing, join), landing);
 });
 
+test("on foot the player goes into a patrol's dungeon and out again, each behind the veil", () => {
+  const patrol: Flow = { mode: 'foot', node: 'saltgrass-downs', menu: false };
+  const into = { kind: 'enter', node: 'saltgrass-downs--dungeon-0', name: 'The Cells of the Saltgrass Downs' } as const;
+  const entering = next(patrol, into);
+  assert.equal(entering.mode === 'loading' && entering.words, 'Entering The Cells of the Saltgrass Downs');
+  const inside = next(entering, { kind: 'loaded' });
+  assert.deepEqual(inside, { mode: 'foot', node: 'saltgrass-downs--dungeon-0', menu: false });
+  const out = { kind: 'leave', node: 'saltgrass-downs', name: 'The Cells of the Saltgrass Downs' } as const;
+  const leaving = next(inside, out);
+  assert.equal(leaving.mode === 'loading' && leaving.words, 'Leaving The Cells of the Saltgrass Downs');
+  assert.deepEqual(next(leaving, { kind: 'loaded' }), patrol);
+  assert.equal(next({ ...patrol, menu: true }, into).mode, 'foot', 'not with a menu open');
+  assert.equal(next({ mode: 'sea', menu: false }, out).mode, 'sea', 'only on foot');
+});
+
 test('washed up from the sea, the veil says why and the player stands in the port city’s social space', () => {
   const words = 'Washed up at Sunspire. Your ship lies at its moorings.';
   const washUp = { kind: 'wash-up', node: 'sunspire-social', words } as const;

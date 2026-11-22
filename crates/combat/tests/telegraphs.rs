@@ -10,7 +10,7 @@ use combat::shapes::{IRON_EXTRA, Shape, Telegraph, TelegraphOrder};
 use combat::{CombatInput, Happening, Intent, ticks};
 use common::{foe_at, run};
 use core::f64::consts::{FRAC_PI_2, PI};
-use movement::Controls;
+use movement::{Controls, Flat};
 
 fn order(shape: Shape, windup: u32, bearing: f64, ahead: f64) -> TelegraphOrder {
     TelegraphOrder { shape, windup, iron: false, feint_at: None, bearing, ahead }
@@ -120,10 +120,10 @@ fn a_quick_charge_runs_its_lane_and_no_further() {
 #[test]
 fn a_shapes_blow_stops_at_a_wall_and_does_not_reach_a_body_high_above() {
     let ring = Telegraph::begin(&order(Shape::Ring, 40, 0.0, 0.0), [0.0, 0.0, 0.0]);
-    assert!(ring.strikes([0.0, -3.0, 0.0], &[]));
+    assert!(ring.strikes([0.0, -3.0, 0.0], &[], &Flat));
     let wall = [movement::Block { min_x: -1.0, min_y: -2.2, max_x: 1.0, max_y: -2.0, top: 3.0, bottom: 0.0 }];
-    assert!(!ring.strikes([0.0, -3.0, 0.0], &wall), "behind a wall");
-    assert!(!ring.strikes([0.0, -3.0, 3.0], &[]), "up on a block three metres high");
+    assert!(!ring.strikes([0.0, -3.0, 0.0], &wall, &Flat), "behind a wall");
+    assert!(!ring.strikes([0.0, -3.0, 3.0], &[], &Flat), "up on a block three metres high");
 }
 
 #[test]
