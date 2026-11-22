@@ -286,7 +286,8 @@ export class FoeFigures {
     for (const kept of [...keptBy, this.changes, this.dying])
       for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));
-    if (fight.foes.size > 0) this.seenIn = fight.joins;
+    // Once the room has had its first word (its foes, or the player's own fighter), any foe after is one that came.
+    if (fight.foes.size > 0 || fight.own !== null) this.seenIn = fight.joins;
     return cards;
   }
 

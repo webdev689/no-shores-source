@@ -134,7 +134,7 @@ export class PublicView {
   } | null = null;
   /** The chests the player asked to open, when, and as they last lay. */
   private readonly opened = new Map<number, { readonly at: number; readonly chest: ChestLike }>();
-  /** The last frame's clock, and whether the room's event was there: with none (its room lost), no chest is shown. */
+  /** The last frame's wall time, and whether the room's event was there: with none (its room lost), no chest is shown. */
   private last: number | null = null;
   private present = true;
 
@@ -146,15 +146,22 @@ export class PublicView {
   /** What shakes the player's view (0 to 1) as the ground trembles; the course the fissure's spires stand in. */
   private readonly feel: { tremor(trauma: number): void };
   private readonly course: SpireCourse | null;
+  /** The ring's colour this frame, kept between frames so its arcs make none. */
+  private readonly ringColour: [number, number, number, number] = [0, 0, 0, 0];
+  /** The wall's seconds: a hidden tab and the room's countdowns are told by them, since the frame clock moves at most a
+   *  tenth of a second a frame. */
+  private readonly now: () => number;
 
   /** The events of `zone`, shaking `feel`'s view; the fissure's spires stood among the place's `boxes` in each of
-   *  `courses` (the page's movement and fight), where given. */
+   *  `courses` (the page's movement and fight), where given; `now` reads the wall's seconds. */
   constructor(
     zone: string,
     feel: { tremor(trauma: number): void } = { tremor: () => undefined },
     course: { boxes: readonly Block[]; courses: ConstructorParameters<typeof SpireCourse>[1] } | null = null,
+    now: () => number = () => performance.now() / 1000,
   ) {
     this.zone = zone;
+    this.now = now;
     this.feel = feel;
     this.course = course && new SpireCourse(course.boxes, course.courses);
   }
@@ -169,27 +176,33 @@ export class PublicView {
     clock: number,
     marks: number[],
     floor: (x: number, y: number) => number,
+    { quiet = false, held = null }: { quiet?: boolean; held?: PublicEvent | null } = {},
   ): PublicFrame {
-    const event = this.counted(word, clock);
+    const wall = this.now();
+    const event = this.counted(word, wall);
     this.course?.frame(word, floor);
     if (event && event.kind !== PUBLIC_KIND.none) this.lastKind = event.kind;
     // Back from a hidden tab, the last beat shows; what was heard meanwhile is long over.
-    const stale = this.last !== null && clock - this.last > STALE_S;
-    this.last = clock;
+    const stale = this.last !== null && wall - this.last > STALE_S;
+    this.last = wall;
     this.present = event !== null;
     const chests = this.chests(this.present ? drops : [], clock);
-    const moments = this.moments.frame(event, stale ? [] : events, bodies.feet, bodies.where, chests, clock);
+    const moments = this.moments.frame(event, stale ? [] : events, bodies.feet, bodies.where, chests, clock, wall);
     const beat = events.reduce<BannerBeat | null>((last, each) => BEATS[each.kind] ?? last, null) ?? moments.beat;
     const sounds = stale ? [] : [...this.sounds(event, events, bodies, clock), ...moments.sounds];
-    if (!stale && moments.chime !== null) rarityChime(moments.chime);
-    if (!stale && moments.tick) play('tab');
+    // The event's own interface sounds are not played while the game is paused, as the world's are not.
+    const loud = !stale && !quiet;
+    if (loud && moments.chime !== null) rarityChime(moments.chime);
+    if (loud && moments.tick) play('tab');
     if (!stale && moments.tremor > 0) this.feel.tremor(moments.tremor);
     this.lay(event, marks, floor, clock, bodies.shot.eye);
     this.moments.lay(event, moments, chests, bodies.player, bodies.feet, marks, clock, bodies.shot.eye);
     const marksHeld = (event?.marks ?? []).map((mark) => this.held(mark, bodies));
     const age = this.clock.ager(clock);
+    // A room lost or rejoining leaves its stores standing, as their walls stand in the page's movement.
+    const standing = held && { ...held, marks: held.marks.filter((mark) => mark.kind === MARK.store) };
     const props = eventProps(
-      event && { phase: event.phase, ticksLeft: event.ticksLeft, marks: marksHeld },
+      event ? { phase: event.phase, ticksLeft: event.ticksLeft, marks: marksHeld } : standing,
       chests,
       age,
       clock,
@@ -199,7 +212,7 @@ export class PublicView {
     // A frame with no event (the room lost a while) forgets nothing: on its return no beat is played again.
     if (event) this.clock.done(true);
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
-    const chime = stale
+    const chime = !loud
       ? null
       : events.some((each) => each.kind === EVENT.heroicMissed)
         ? 'refused'
@@ -241,12 +254,12 @@ export class PublicView {
     };
   }
 
-  /** The event with its next one's start counted on from the room's last word, to the second: the room tells it to the
-   *  minute. */
-  private counted(event: PublicEvent | null, clock: number): PublicEvent | null {
+  /** The event with its next one's start counted on from the room's last word, to the second at `wall` (seconds): the
+   *  room tells it to the minute. */
+  private counted(event: PublicEvent | null, wall: number): PublicEvent | null {
     if (!event) return null;
-    if (this.nextWord?.ticks !== event.nextTicks) this.nextWord = { ticks: event.nextTicks, at: clock };
-    const gone = Math.round((clock - this.nextWord.at) * TICKS_PER_SECOND);
+    if (this.nextWord?.ticks !== event.nextTicks) this.nextWord = { ticks: event.nextTicks, at: wall };
+    const gone = Math.round((wall - this.nextWord.at) * TICKS_PER_SECOND);
     return gone > 0 ? { ...event, nextTicks: Math.max(0, event.nextTicks - gone) } : event;
   }
 
@@ -343,17 +356,12 @@ export class PublicView {
         this.ringLand = { x, y, radius: ring.radius, at: clock, z };
       }
       const under = this.ringLand?.z ?? [];
+      const colour = this.ringColour;
+      [colour[0], colour[1], colour[2]] = event?.heroic === HEROIC.met ? RING_HEROIC : RING.colour;
+      colour[3] = alpha;
       for (let arc = 0; arc < RING.arcs; arc += 1) {
         const z = under[arc] ?? 0;
-        const colour = event?.heroic === HEROIC.met ? RING_HEROIC : RING.colour;
-        markRing(
-          marks,
-          [x, y, z],
-          ring.radius - RING.widthM,
-          ring.radius,
-          [...colour, alpha],
-          [arc * step, (arc + 1) * step],
-        );
+        markRing(marks, [x, y, z], ring.radius - RING.widthM, ring.radius, colour, [arc * step, (arc + 1) * step]);
       }
     }
     for (const mark of event?.marks ?? []) {
@@ -382,7 +390,7 @@ export class PublicView {
       const placeOf = (id: number) => bodies.where(id) ?? event.ground;
       switch (each.kind) {
         case EVENT.publicBegun:
-          heard.push({ cue: fissureEvent ? 'story.deep' : 'foe.alert', at: fissureEvent ? fissure : event.ground });
+          heard.push({ cue: fissureEvent ? 'amb.ice.crack' : 'foe.alert', at: fissureEvent ? fissure : event.ground });
           break;
         case EVENT.publicStage:
           // The Fissure's stage is the ground splitting again, and the Warden climbing out with a crash; the raid's, the
@@ -390,7 +398,7 @@ export class PublicView {
           if (!fissureEvent) heard.push({ cue: 'foe.alert', at: event.ground });
           else
             heard.push(
-              { cue: 'story.deep', at: fissure },
+              { cue: 'amb.ice.crack', at: fissure },
               ...(event.stage >= 2 ? [{ cue: 'story.crash', at: fissure }] : []),
             );
           break;
@@ -414,7 +422,7 @@ export class PublicView {
           }
           break;
         case EVENT.publicFailed:
-          if (fissureEvent) heard.push({ cue: 'story.deep', at: fissure });
+          if (fissureEvent) heard.push({ cue: 'amb.ice.crack', at: fissure });
           break;
         case EVENT.storePlundered: {
           const store = event.marks.find((mark) => mark.kind === MARK.store && mark.id === each.defender);
@@ -422,7 +430,7 @@ export class PublicView {
           break;
         }
         case EVENT.chestOpened:
-          heard.push({ cue: 'story.creak', at: placeOf(each.striker) });
+          heard.push({ cue: 'ship.ready', at: placeOf(each.striker) });
           break;
         default:
       }

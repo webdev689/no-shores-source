@@ -348,8 +348,8 @@ export class Hud {
       standing.kind === 'warned' && warningNode(view, countdownText(standing.secondsLeft)),
       hintsNode(view, this.hintsShown, sea !== null, Boolean(sea?.landfall)),
       // In a view too narrow for the tracker to stand clear of the compass's column, it gives way to a public event's
-      // banner, which holds the same objective.
-      !(besides.banner && width < 1024) && this.tasks.node(view, clock, still),
+      // banner, which holds the same objective; the next event's line holds none, so the tracker stands beside it.
+      !(besides.banner && besides.banner !== 'next' && width < 1024) && this.tasks.node(view, clock, still),
       {
         width: 'grow',
         height: 'grow',

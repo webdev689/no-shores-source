@@ -29,7 +29,11 @@ impl Room {
             return true;
         }
         let way = self.inert_ways.entry(id).or_default();
-        let next = self.nav.find_path_kept(way, from, to).and_then(|path| path.get(1).copied()).unwrap_or(to);
+        // A walker standing on a corner of its way finds that corner again in the path: the next point is past it.
+        let ahead = |path: Vec<[f64; 3]>| {
+            path.into_iter().skip(1).find(|point| apart([point[0], point[1]], [from[0], from[1]]) > 1e-9)
+        };
+        let next = self.nav.find_path_kept(way, from, to).and_then(ahead).unwrap_or(to);
         let leg = apart([from[0], from[1]], [next[0], next[1]]).max(1e-9);
         let share = (pace * TICK_SECONDS / leg).min(1.0);
         let (x, y) = (from[0] + (next[0] - from[0]) * share, from[1] + (next[1] - from[1]) * share);
@@ -82,14 +86,14 @@ impl Room {
         self.names.remove(&id);
     }
 
-    /// The foes the room moves itself are never stepped, so their statuses run down here, as a stepped foe's do; and
-    /// the ways of those it no longer moves are let go.
+    /// The foes the room moves itself are never stepped, so their statuses, poise and staggers run down here, as a
+    /// stepped foe's do; and the ways of those it no longer moves are let go.
     pub(crate) fn wear_inert(&mut self) {
         let inert = &self.inert;
         self.inert_ways.retain(|id, _| inert.contains(id));
         for id in &self.inert {
-            if let Some(foe) = self.foes.get_mut(id) {
-                foe.fighter.statuses = foe.fighter.statuses.ticked(&foe.fighter.action);
+            if let Some(foe) = self.foes.get_mut(id).filter(|foe| !foe.fighter.dead()) {
+                combat::step::wear(&mut foe.fighter);
             }
         }
     }

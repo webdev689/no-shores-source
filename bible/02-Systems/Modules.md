@@ -133,11 +133,11 @@ are written with paving last, since the first group carries the parts and paving
 
 ## Baking and publishing
 
-bpy is Blender as a Python module, on Python 3.13:
-`pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` installs bpy 5.3.0 and what it
-needs, each wheel by its hash. The bake takes in the Lattice's own builders (`tools/lattice/props.py` and
-`growth.py`) and through them the [[Sprite Forge]]'s bodies, rig and materials (`tools/forge/tools/sprite-forge/`),
-which need nothing more.
+bpy is Blender as a Python module, on Python 3.13: `pip install --require-hashes --only-binary=:all: -r
+tools/modules/requirements.txt` installs bpy 5.3.0 and what it needs, each wheel by its hash; the hashes are of the
+wheels for x86-64 Linux and Python 3.13, so it installs only there (CI bakes on `ubuntu-24.04` with Python 3.13.18). The
+bake takes in the Lattice's own builders (`tools/lattice/props.py` and `growth.py`) and through them the
+[[Sprite Forge]]'s bodies, rig and materials (`tools/forge/tools/sprite-forge/`), which need nothing more.
 
 | Command | What it does |
 |---|---|
@@ -145,23 +145,27 @@ which need nothing more.
 | `python -I tools/modules/publish.py <folder>` | Uploads the meshes the manifest names to R2, unless R2 already serves them, and checks each answers |
 | `python -I tools/modules/render.py <module> <picture.png> [--parts] [--eye x,y,z]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked, from a given eye when asked |
 
-A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes)
-and glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at
-most 32,000 triangles. The bake is made to give the same bytes from the same scripts on any machine: each group's
-vertices and triangles are written sorted, since an exact boolean's threads hand its faces back in a different order
-each run; positions are written to a tenth of a millimetre and normals to a thousandth, and the manifest's sockets,
-parts, pads and mouths to the millimetre, each zero without its sign, since a coordinate one machine leaves a hair
-under zero another leaves a hair over. A piece turned through an angle (a slanted rod, a turned slab) is still placed
-by trigonometry another machine's library may round a last bit differently, and a coordinate landing on a rounding's
-edge would then bake other bytes: a thin piece that need not slant (a flower's stem) stands upright. The event props
-also work each corner's normal out from the rounded positions in doubles (the area-weighted faces it smooths with),
-since Blender's own single-float normals differ between CPUs in their last bits (`_steady_normals`; the other modules
-keep Blender's). A module's random draws are seeded by its place in the catalogue, so a new module goes at the
-catalogue's end; the event props, after the hub's, keep seeds of their own. The `modules` workflow bakes on every
-change to the module tools, to the Lattice's builders and the forge files they take in, or to `tools/r2.py`; it fails
-if the bake does not make the committed manifest or if a second bake does not make the same bytes, keeping a
-differing bake for a week (`modules-differed`) to set beside another machine's, and a second job, which installs
-nothing, publishes the first bake's meshes with the repository's Cloudflare token.
+A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes) and
+glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at most
+32,000 triangles. The bake is made to give the same bytes from the same scripts on any machine: each group's vertices
+and triangles are written sorted, since an exact boolean's threads hand its faces back in a different order each run;
+positions are written to a tenth of a millimetre and normals to a thousandth, and the manifest's sockets, parts, pads
+and mouths to the millimetre, each zero without its sign, since a coordinate one machine leaves a hair under zero
+another leaves a hair over. A piece turned through an angle (a slanted rod, a turned slab) is still placed by
+trigonometry another machine's library may round a last bit differently, and a coordinate landing on a rounding's edge
+would then bake other bytes: a thin piece that need not slant (a flower's stem) stands upright. The event props also
+work each corner's normal out from the rounded positions in doubles (the area-weighted faces it smooths with), since
+Blender's own single-float normals differ between CPUs in their last bits (`_steady_normals`; a corner whose faces have
+no area takes every face at its point, and a point with none of any area points up; the other modules keep Blender's).
+Their rock (`organic`) is likewise roughed out along normals worked out once in doubles from the remeshed surface
+(`_double_normals`), where the other modules' rock keeps Blender's, read as each point moves. `python -I
+tools/modules/test_kit.py` checks both on small meshes, and the workflow runs it before it bakes. A module's random
+draws are seeded by its place in the catalogue, so a new module goes at the catalogue's end; the event props, after the
+hub's, keep seeds of their own. The `modules` workflow bakes on every change to the module tools, to the Lattice's
+builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make the committed
+manifest or if a second bake does not make the same bytes, keeping both bakes of a failed run, as far as each went, for
+a week (`modules-differed`) to set beside each other and another machine's, and a second job, which installs nothing,
+publishes the first bake's meshes with the repository's Cloudflare token.
 
 ## In the game
 
@@ -194,7 +198,9 @@ nothing, publishes the first bake's meshes with the repository's Cloudflare toke
   Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the Tithe's banner
   its unmarked grey, as its sails are); the crystal is lit as above, its
   brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A module that
-  opens first sets the scene's depth far over its mouth, so its chasm under the ground is seen.
+  opens draws each point of its chasm under the ground at the depth where the eye's line to it crosses the land at
+  its foot, 2 to 4% of that distance nearer (`chasm_depth`), so the land round the mouth gives way and anything nearer
+  keeps its place; a point whose crossing falls outside the mouth is not drawn.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
   (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
@@ -210,9 +216,9 @@ stand on the ground at every edge, and no cliff stair stands taller than it was 
 
 - The city draws a module's crystal half alight everywhere: its glow by vertex reaches only the event props' drawer,
   and only that drawer gives crystal's light into the light layer.
-- The fissure's mouth opens the depth of whatever is drawn before it there, a rise of the land or a layout's piece
-  standing in front of it as well as the land under it; the events stand on clear ground. Grass drawn after it can
-  stand over the chasm.
+- The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
+  than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
+  behind it; the events stand on clear ground. Grass drawn after it can stand over the chasm.
 - Every city's load fetches the event props' meshes with the rest.
 - A module's surfaces carry no ambient occlusion of their own, and their pictures are laid flat by axis, not
   unwrapped.

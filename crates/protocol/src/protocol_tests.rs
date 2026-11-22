@@ -419,6 +419,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let stood = (event.stage(), event.stages(), event.progress(), event.needed(), event.heroic(), event.bonus());
     assert_eq!(stood, (2, 2, 11, 14, 2, true));
     assert_eq!(event.ground().unwrap().iter().collect::<Vec<_>>(), public.ground.to_vec());
+    assert_eq!(event.next_ground().unwrap().iter().collect::<Vec<_>>(), public.next_ground.to_vec());
+    assert_eq!((event.radius(), event.heroic_ticks()), (27.5, 1_234), "how far round, and the window's ticks");
     let marks: Vec<_> = event.marks().unwrap().iter().map(|mark| (mark.kind(), mark.id(), mark.health())).collect();
     assert_eq!(marks, vec![(1, 0, 0.25), (5, 9, 1.0)]);
     let ashore = read.foes().unwrap().get(1);

@@ -42,41 +42,41 @@ more than the countdown its start minute leaves, and one past its end is ended q
 its foes gone (unjumped, two minutes past its end). An event has 8 minutes; won or failed, its result shows for 12
 seconds, and the next is shown from then.
 
-**The grounds.** The layout marks them with its other sites ([[Layouts]]): three stores in each hamlet, on clear
-ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of every building, set piece and prop and 2 m
-off every way; the point its raiders come in from, 36 m out toward the zone's nearest camp (the Vale has none: from the
-shore); their two banners, 28 m out, 6 m either side; and in each wilds where its fissure opens, 12 m (or 9, or 15)
-from its middle beside the obelisk its battlefield stands there, on ground 15.4 m east and west and 9.8 m north and
-south (the fissure's own mesh, square to the grid, its long side east and west) clear of the obelisk, the ruins and
-everything standing, and the spot its crystal growth rises, 14 to 20 m from the fissure. A store stands square to the
-grid as one of three stacks (the page draws store `n` as the stack after its own), and its box, which a body runs
-into on the page and in the room alike, covers that stack and the plundered one it turns into: 2.604 by 2.049 by 1.73
-m high, 2.5 by 2.224 by 1.27 m, or 2.6 by 2.049 by 0.9 m; each is laid out in 2.604 by 2.224 m, room for any of
-them. The bake writes a zone's grounds into its node file, for
-Saltmere's three zones only: the Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the
-middle of its stores, reaching 10 m past the farthest (20 m at least), with its stores, approach and banners.
+**The grounds.** The layout marks them with its other sites ([[Layouts]]), in the three zones alone: three stores in the
+first hamlet with room for them, on clear ground beside its houses within 35 m of its plaza, 8 m apart, 1.5 m clear of
+every building, set piece and prop and 2 m off every way; the point its raiders come in from, 36 m out toward the zone's
+nearest camp (the Vale has none: from the shore); their two banners, 28 m out, 6 m either side; and in its first wilds
+where its fissure opens, 12 m (or 9, or 15) from its middle beside the obelisk its battlefield stands there, on ground
+15.4 m east and west and 9.8 m north and south (the fissure's own mesh, square to the grid, its long side east and west)
+clear of the obelisk, the ruins and everything standing, and the spot its crystal growth rises, 14 to 20 m from the
+fissure. A store stands square to the grid as one of three stacks (the page draws store `n` as the stack after its own),
+and its box, which a body runs into on the page and in the room alike, covers that stack and the plundered one it turns
+into: 2.604 by 2.049 by 1.73 m high, 2.5 by 2.224 by 1.4 m, or 2.6 by 2.049 by 1.0 m; each is laid out in 2.604 by 2.224
+m, room for any of them. The bake writes a zone's grounds into its node file, for Saltmere's three zones only: the
+Fissure's at its fissure's site, 25 m round, with its growth's spot; the raid's at the middle of its stores, reaching 10
+m past the farthest (20 m at least), with its stores, approach and banners.
 
 **The navmesh.** A node's room bakes its mesh round its garrison only ([[Navmesh]]). As a zone's room opens, it bakes a
 rectangle round each ground (the Fissure's circle and its growth's spot; the raid's circle, its approach and where its
 waves form) 16 m further, as far as a player shoots into the fight from, and joins them to the garrison's as parts of
 one mesh, with no way between them. Baking both grounds as Saltmere's real node files open, natively in a release
 build, measured once at commit 2b4cb9f1: 466 ms for Saltgrass Downs, 497 ms for Gullwing Vale, 550 ms for Driftwood
-Moors. In WebAssembly it is not measured.
+Moors. In Node's WebAssembly the room opens in 0.7 to 1.0 s, as "Limits" gives.
 
 **Its foes**, its growth and its tithe-taker among them, stand at the event's level (the top of the island's band,
-raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the
-nearest player there, and fights a player within a leash of the event's reach (its ground's radius, or its farthest
-point from its middle past it: the growth's spot, the approach, where the raid's waves form) and 16 m more, measured
-from its own place (the ground's middle, or a Collector's post at its store), on ground the room's mesh covers; past
-that it gives them up and walks back. A zone's room that holds events stands 40 foes alive at most and keeps 16 of them
-for its event (the most it stands at once: a Fissure's living foes short of a wave, its fullest wave and its growth or
-Warden); its garrison stands again, calls and arrives only while the foes not of the event stay within 24, as in any
-other node. The growth, the Warden and Marrow stand half their health more for each player at the event beyond the first
-(the most seen at the Fissure; those on the raid's ground as Marrow comes). The Fissure's growth and the raid's
-tithe-taker the room handles itself: their brains are left be, so neither moves on its own nor strikes; the growth
-stands where it rose, and the tithe-taker walks the navmesh at his own pace, keeping his way from tick to tick; their
-statuses still wear off. A raid's approach, where its waves form and its raiders' home (the stores' middle) are put on
-the navmesh as it begins, at its nearest point.
+raised by the voyage's seas), at home round the event's ground. Each but the growth and the tithe-taker hunts the living
+player nearest its home as it stands, wherever they are, and fights a player within a leash of the event's reach (its
+ground's radius, or its farthest point from its middle past it: the growth's spot, the approach, where the raid's waves
+form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post at its store), on ground
+the room's mesh covers; past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
+at most and keeps 16 of them for its event (the most it stands at once: a Fissure's living foes short of a wave, its
+fullest wave and its growth or Warden); its garrison stands again, calls and arrives only while the foes not of the
+event stay within 24, as in any other node. The growth, the Warden and Marrow stand half their health more for each
+player at the event beyond the first (the most seen at the Fissure; those on the raid's ground as Marrow comes). The
+Fissure's growth and the raid's tithe-taker the room handles itself: their brains are left be, so neither moves on its
+own nor strikes; the growth stands where it rose, and the tithe-taker walks the navmesh at his own pace, keeping his way
+from tick to tick; their statuses still wear off. A raid's approach, where its waves form and its raiders' home (the
+stores' middle) are put on the navmesh as it begins, at its nearest point.
 
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
@@ -136,7 +136,8 @@ from a heroic one, the bonus's tier rolling twice and keeping the better. A Vest
 the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a leaver's goes
 to the vault however full, since the ground they leave would lose it.
 
-**The wire.** Each snapshot of a zone's room carries `public_event` ([[Server]]): the event running or showing its
+**The wire.** A snapshot of a zone's room carries `public_event` ([[Server]]), but one built on a base leaves it
+out while it stands as the base's counted on, the page counting its countdowns on alike ("Limits"): the event running or showing its
 result (kind 1 the Fissure, 2 the raid, 0 none) and its phase (0 waiting, 1 running, 2 won, 3 failed), its ground and
 radius, its countdown in ticks; the next's kind, ground and ticks until it starts; its stage of how many; its progress
 toward what it needs (shards set of shards needed, or the stores' health left per mille); its heroic task (0 not yet,
@@ -163,25 +164,29 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 
 - **The banner** (`combat/publicBanner.ts`), drawn as nodes of the game's own interface as every part of the HUD is,
   stands in the compass's column under the compass and over the boss bar and the target's plate, so neither stands on
-  it, 440 px wide at most or three quarters of a narrower view. Running: "Public
-  event" (or "Heroic public event") over the name and place, the countdown at the right, the objective and its bar
-  (shards set of needed; the stores' health, with the wave in the objective and the next one's countdown while it
-  comes), the heroic task with its window's
-  countdown while it is open ("Break the growth", "Kill the tithe-taker"; for its first 5 s the call "A crystal growth
-  rises: break it!" or "The tithe-taker has come to count: kill him before he goes") or "Heroic" once met, and the
-  bonus ("seal it before 4:00", "lose no store"), struck through once lost. In the last minute the clock is red and
-  pulses. A player carrying a shard reads "Carrying a shard: take it to the fissure"; a store under attack puts
+  it, 440 px wide at most or three quarters of a narrower view (in a view under 480 px high, two lines across three
+  quarters of it, clear of the crosshair: the result once over, the name, the heroic task and the clock, then the
+  objective and its count).
+  Running: "Public event" (or "Heroic public event") over the name and place, the countdown at the right, the
+  objective and its bar (shards set of needed; the stores' health, with the wave in the objective and the next one's
+  countdown while it comes), the heroic task with its window's countdown while it is open ("Break the growth", "Kill
+  the tithe-taker"; for its first 5 s the call "A crystal growth rises: break it!" or "The tithe-taker has come to
+  count: kill him before he goes") or "Heroic" once met, and the bonus ("seal it before 4:00", "lose no store"),
+  struck through once lost. In the last minute the clock is red and pulses. A player carrying a shard reads
+  "Carrying a shard: take it to the fissure"; a store under attack puts
   "Store under attack" before the objective. Away from the ground, the metres to it stand beside the place. Over, for
   its 12 s: "Event complete" with the chest's tier, or "Event failed" and why. Between events, one line: the next
   event, where, and in how many minutes (m:ss in its last minute, counted on by the page), and under it what runs or
   comes next elsewhere on Saltmere, from the same schedule. Its tone (gold, heroic orange, won green, failed red) runs
   down its left edge; it slides in afresh at each beat (begun, a stage, heroic met or missed, won, failed, the heroic
   chance opening with an orange flare, the next a minute off). A screen reader hears each beat (`announce`), never the
-  ticking clocks. In a view under 1024 px wide the tracker gives way to it (it holds the same objective), and at a
-  phone's width (600 px) the place's name does too, but not to the next event's line.
+  ticking clocks. In a view under 1024 px wide the tracker gives way to it while an event runs or has just ended (it
+  holds the same objective), and at a phone's width (600 px) the place's name does too; neither to the next event's
+  line.
 - **The tracker** (`tasks.ts`) holds the steps while one runs: the shards still to carry or the Warden; the wave and
   the stores still standing; the heroic task; the bonus while it holds. After, "Open your chest (1:48)" while a chest
-  lies, over the two minutes it lies.
+  lies, over the two minutes it lies, its clock never read out. The page counts it, and the next event's last minute, on
+  the wall's seconds.
 - **The boss bar** shows the climax's Miniboss, the Warden or Marrow, without the phase line; the music takes its
   boss part while one stands. On the ground of a running event the music holds at tension at least, at the peak in
   its last minute and once heroic is met.
@@ -199,7 +204,8 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   from their drops (drawn as props, not as drop pictures), and E within 2.5 m opens the one in reach (its lid swings
   and it stands open 6 s from the asking). The fissure, its scar and the stores stand square to the grid, as the
   room stands them; the Tithe's banner is drawn in its grey canvas. The page's own movement and fight stand the
-  fissure's four spires (`game/fissureSpires.ts`) at its mark while it runs, as the room does. The crystal's lamps go
+  fissure's four spires (`game/fissureSpires.ts`) at the event's ground while it runs, as the room does, and takes them
+  away once the room is lost. The crystal's lamps go
   with them, and a warm one at each raid banner's head. The fissure's chasm is seen through its mouth: each point of it under the ground is drawn at the depth where
   the eye's line crosses the land at the foot, a little nearer, so the land there gives way and nearer land or houses
   keep theirs. Its crack flares at each beat, its width eases to the room's, and a shard set arcs into it over 0.4 s.
@@ -207,15 +213,19 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   picture's own texels; each Lattice foe coming while it runs climbs out of its wave played backwards. A raid won
   topples its banners; a failed Fissure closes into the plain turf. A Lattice figure's crystal glows of itself at
   night. The ground trembles (the camera's shake) as the Lattice pours out, a shard is set and the seal bursts.
-  A room lost leaves no event on the screen, and a page come mid-event or back from a hidden tab replays no beat.
-- **Sounds**, all samples the game already holds: the ground splitting (`story.deep`) or the Tithe sighted (`foe.alert`)
+  A room lost leaves no event on the screen but its stores, whose walls still stand; a page come mid-event replays no
+  beat; and one back from a hidden tab slides the last beat in, but plays none of the sounds, stings, chimes or
+  tremors kept meanwhile.
+- **Sounds**, all samples the game already holds, none longer than 4.5 s, each held 5 s at most and faded
+  (`HEARD_MOST_S`, `combat/worldSounds.ts`): the ground splitting (`amb.ice.crack`) or the Tithe sighted (`foe.alert`)
   as one begins and at each stage; a shard taken (`element.cosmic`, and the player's own chimes) and set
   (`finish.cosmic`); the growth broken (`shield.break`) or the tithe-taker killed (`kill`); the seal's burst
-  (`story.crash`); a store plundered (`sea.ship.break`); a chest opened (`story.creak` and the interface's open); a
+  (`story.crash`); a store plundered (`sea.ship.break`); a chest opened (`ship.ready` and the interface's open); a
   heroic task missed (the interface's refusal); the heroic chance (`cast.charge` at its target); the next a minute off
-  and the start (`drop.land` at the player and a chime); the Warden climbing out (`story.deep` and `story.crash`); a
-  chest coming (`drop.land`); the last ten seconds (the interface's tick); a Fissure failed (`story.deep`); a raid won
-  (`amb.social.crowd`) or failed (`story.crash`). A chest opened shows in the reward feed with its tier as four pips,
+  and the start (`drop.land` at the player and a chime); the Warden climbing out (`amb.ice.crack` and `story.crash`); a
+  chest coming (`drop.land`); the last ten seconds (the interface's `tab`); a Fissure failed (`amb.ice.crack`); a raid
+  won (`story.flash`) or failed (`story.crash`). The interface's own (the chimes, the `tab`, the refusal) are not played
+  while the game is paused. A chest opened shows in the reward feed with its tier as four pips,
   its XP and its reputation. **Stings**, through the music director's `moment`, in the place's own fight score: its
   cadence as one begins, its victory for heroic met and won, its defeat for failed.
 - **Alone**, the page asks its land worker for the node's grounds (`land_grounds`, from
@@ -243,8 +253,9 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
   glow at night and the seal's wave in its picture's own texels.
 - The Heart is in the roster only: it has no phases of its own and stands in no event.
 - The stores, banners, fissures and growth spots are chosen before the layout stands its beacons and resource marks,
-  so they could meet; `crates/room/tests/grounds_planned.rs` holds Saltmere's three layouts clear of them, and each
-  fissure clear of its battlefield's obelisk and ruins.
+  climbs, cliff stairs, retaining walls, footbridges, talus and graves, so they could meet;
+  `crates/room/tests/grounds_planned.rs` holds Saltmere's three finished layouts' grounds clear of every box but the
+  stores' own, and each fissure clear of its battlefield's obelisk and ruins.
 - A vault filled past its 20 by a leaver's chest shows more than its limit until its player takes some out.
 - The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
   than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
@@ -252,8 +263,14 @@ sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event a
 - A chest's two minutes in the tracker run from when the page first saw it: a page come later counts the whole two.
 - A store's box covers both its whole and its plundered stack, so a body meets it as the larger of the two.
 - The fissure's spires are not in the navmesh: a Lattice foe's way may run into one.
-- The marks that never move (the stores, the banners, the approach) go in every snapshot: a land room's snapshot is
-  one for every player, so sending them only when they change would need the welcome to carry them and the page to
-  keep them; packed, they are 24 bytes each.
+- A snapshot built on a base leaves the events out while they stand as the base's counted on, but whenever anything
+  of them changes (a shard's life, the tithe-taker's step, a store's health) they come whole, every mark among them,
+  24 bytes each. Over the door test's two players a raid's snapshots average 602 bytes and a Fissure's 610; waiting,
+  the events cost a snapshot nothing.
+- Opening a zone's room bakes both its grounds' navmesh. Measured once in Node's WebAssembly, a release build of commit
+  2f6ce090 opening the bake's own node files, fresh each time, three times each on a machine shared with other work:
+  Saltgrass Downs 0.75 to 0.95 s, Gullwing Vale 0.71 to 0.82 s, Driftwood Moors 0.85 to 1.0 s (their garrisons alone
+  0.14 to 0.21 s); the module's memory after it 48.8, 47.8 and 46.2 MB (27.3 to 27.7 MB without the grounds), and a
+  WebAssembly memory never shrinks. Under the isolate's 128 MB, so the grounds are still baked as the room opens.
 - The page stands the fissure's spires on its movement's floor, which counts a box a step high; the room stands them
   on the bare ground. They agree because a fissure's ground is chosen clear of everything standing.

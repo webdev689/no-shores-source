@@ -15,12 +15,24 @@ const compiled = new WebAssembly.Module(
   await built('wasm32-unknown-unknown/release/room_wasm.wasm', 'run `npm run wasm` first'),
 );
 
-/** The room door's test holds the same node, script and fingerprints (crates/room-wasm/src/public_door_tests.rs). */
-const FISSURE_HASH = '83109f7a';
-const RAID_HASH = '4bdce632';
-const FISSURE_MINUTE = 15_000;
-const RAID_MINUTE = 15_015;
-const MOST_TICKS = 8 * 3_600;
+/** The room door's test holds the same node and script; its fingerprints, minutes and where each event ended are read
+ *  from it (crates/room-wasm/src/public_door_tests.rs), so the two can never hold different ones. */
+const door = await readFile(new URL('../crates/room-wasm/src/public_door_tests.rs', import.meta.url), 'utf8');
+const doorHolds = (name: string): string => {
+  const found = new RegExp(`const ${name}: [^=]+= ([^;]+);`).exec(door)?.[1];
+  if (found === undefined) throw new Error(`${name} is not in the room door's test`);
+  return found;
+};
+const doorNumbers = (name: string): number[] =>
+  doorHolds(name)
+    .replace(/[[\]"]/g, '')
+    .split(',')
+    .map((each) => each.split('*').reduce((product, part) => product * Number(part.trim().replaceAll('_', '')), 1));
+const FISSURE_HASH = doorHolds('FISSURE_HASH').replaceAll('"', '');
+const RAID_HASH = doorHolds('RAID_HASH').replaceAll('"', '');
+const [FISSURE_MINUTE = 0] = doorNumbers('FISSURE_MINUTE');
+const [RAID_MINUTE = 0] = doorNumbers('RAID_MINUTE');
+const [MOST_TICKS = 0] = doorNumbers('MOST_TICKS');
 /** A viewer who is no player: the snapshot cut for them is whole, everyone and every foe packed. */
 const NO_VIEWER = 0;
 /** A sword in the main hand, by combat's arms code. */
@@ -85,7 +97,7 @@ const NODE = {
 };
 
 /** Plays an event from `minute` with two scripted players until its result has shown a second. */
-async function play(minute: number): Promise<{ hash: string; ended: readonly number[] }> {
+async function play(minute: number): Promise<{ hash: string; ended: readonly number[]; at: readonly number[] }> {
   const room = startRoomDoor(compiled);
   assert.equal(room.openNode(JSON.stringify(NODE)), true);
   assert.equal(room.minute(minute), true);
@@ -95,7 +107,7 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
     assert.equal(room.restoreCharacter(player, seasoned(room.character(player) ?? '')), true);
   let hash = 0x811c_9dc5;
   let last: Read | null = null;
-  let ended: { tick: number; event: number[] } | null = null;
+  let ended: { tick: number; event: number[]; at: number[] } | null = null;
   for (let tick = 1; tick <= MOST_TICKS; tick++) {
     for (const player of players) {
       const intent = decide(last, player, tick);
@@ -111,21 +123,26 @@ async function play(minute: number): Promise<{ hash: string; ended: readonly num
     if (message?.kind !== 'snapshot') throw new Error('a snapshot');
     last = readOf(message);
     const event = message.public;
-    if (event && event.phase >= 2) ended ??= { tick, event: [event.kind, event.phase, event.heroic] };
+    if (event && event.phase >= 2) {
+      ended ??= { tick, event: [event.kind, event.phase, event.heroic], at: [tick, event.stage, event.progress] };
+    }
     if (ended && tick >= ended.tick + 60) break;
   }
-  return { hash: hash.toString(16).padStart(8, '0'), ended: ended?.event ?? [0, 0, 0] };
+  const hex = hash.toString(16).padStart(8, '0');
+  return { hash: hex, ended: ended?.event ?? [0, 0, 0], at: ended?.at ?? [0, 0, 0] };
 }
 
 test('two scripted players seal a heroic Fissure to the same fingerprint through WebAssembly as natively', async () => {
-  const { hash, ended } = await play(FISSURE_MINUTE);
+  const { hash, ended, at } = await play(FISSURE_MINUTE);
   assert.deepEqual(ended, [1, 2, 2], 'the Fissure won, heroic');
+  assert.deepEqual(at, doorNumbers('FISSURE_ENDED'), "the tick it was won at, the Warden's stage and the shards set");
   assert.equal(hash, FISSURE_HASH);
 });
 
 test('two scripted players hold a heroic raid to the same fingerprint through WebAssembly as natively', async () => {
-  const { hash, ended } = await play(RAID_MINUTE);
+  const { hash, ended, at } = await play(RAID_MINUTE);
   assert.deepEqual(ended, [2, 2, 2], 'the raid held, heroic');
+  assert.deepEqual(at, doorNumbers('RAID_ENDED'), "the tick it was held at, Marrow's wave and the stores left");
   assert.equal(hash, RAID_HASH);
 });
 

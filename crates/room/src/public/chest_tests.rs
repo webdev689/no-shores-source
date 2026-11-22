@@ -81,3 +81,84 @@ fn a_leavers_chest_vestige_with_their_ten_and_their_vault_full_is_kept_in_the_va
     assert_eq!(character.vestiges_held(true), gear::character::VAULT_MOST + 1, "kept in the vault, over its limit");
     assert_eq!(room.drops_for(player).count(), 0, "nothing laid on the ground for leave() to sweep away");
 }
+
+#[test]
+fn a_player_the_section_killed_opens_no_chest() {
+    let (mut room, player, chest) = chested();
+    let at = chest_at(&room, player).unwrap();
+    place(&mut room, player, [at[0] + 1.0, at[1]]);
+    room.players.get_mut(&player).unwrap().standing = crate::Standing::Dead { ticks: 0, fell: true };
+    assert_eq!(room.open_chest(player, chest), OUT_OF_REACH, "dead, though their body stands");
+}
+
+#[test]
+fn a_chest_is_its_players_alone_and_a_dead_player_or_one_far_above_or_below_it_cannot_open_it() {
+    let (mut room, owner, chest) = chested();
+    let other = room.join().expect("room for a second player");
+    let at = chest_at(&room, owner).unwrap();
+    place(&mut room, other, [at[0] + 1.0, at[1]]);
+    let before = room.players[&other].character.clone();
+    assert_eq!(room.open_chest(other, chest), OUT_OF_REACH, "another's chest, asked for by its number");
+    assert_eq!(room.players[&other].character, before, "paid them nothing");
+    assert!(chest_at(&room, owner).is_some(), "it still lies for its owner");
+    place(&mut room, owner, [at[0] + 1.0, at[1]]);
+    let body = &mut room.players.get_mut(&owner).unwrap().fighter.body;
+    body.z = at[2] + 2.5;
+    assert_eq!(room.open_chest(owner, chest), OUT_OF_REACH, "on a ledge above it");
+    room.players.get_mut(&owner).unwrap().fighter.body.z = at[2] - 2.5;
+    assert_eq!(room.open_chest(owner, chest), OUT_OF_REACH, "below it");
+    room.players.get_mut(&owner).unwrap().fighter.body.z = at[2] + 1.5;
+    let fell = &mut room.players.get_mut(&owner).unwrap().fighter;
+    (fell.health, fell.action) = (0.0, combat::fighter::Action::Dead { elapsed: 0 });
+    assert_eq!(room.open_chest(owner, chest), OUT_OF_REACH, "fallen");
+    let fell = &mut room.players.get_mut(&owner).unwrap().fighter;
+    (fell.health, fell.action) = (fell.health_max, combat::fighter::Action::Idle);
+    assert_eq!(room.open_chest(owner, chest), 0, "standing again, within reach across and up");
+}
+
+#[test]
+fn a_chest_stands_three_metres_out_from_the_grounds_middle_on_its_players_side() {
+    let (mut room, players) = room_at(0, 1);
+    for (side, offset) in [[0.0, 10.0], [-20.0, 0.0], [6.0, -6.0]].into_iter().enumerate() {
+        place(&mut room, players[0], [FISSURE_AT[0] + offset[0], FISSURE_AT[1] + offset[1]]);
+        room.lay_chest(players[0], 1, FISSURE_AT, 5);
+        let at = room.drops_for(players[0]).last().expect("the chest").at;
+        let out = [at[0] - FISSURE_AT[0], at[1] - FISSURE_AT[1]];
+        assert!((libm::hypot(out[0], out[1]) - 3.0).abs() < 1e-9, "side {side}: 3 m out, {out:?}");
+        let along = (out[0] * offset[0] + out[1] * offset[1]) / (3.0 * libm::hypot(offset[0], offset[1]));
+        assert!(along > 1.0 - 1e-9, "side {side}: toward the player, {out:?}");
+    }
+}
+
+#[test]
+fn opened_in_person_with_their_ten_full_its_vestige_goes_to_the_vault_and_with_the_vault_full_to_the_ground() {
+    let fill = |room: &mut Room, player: PlayerId, vault: bool| {
+        let character = &mut room.players.get_mut(&player).unwrap().character;
+        for _ in 0..gear::character::VESTIGES_MOST {
+            let id = character.take_id();
+            assert!(character.pick_up(gear::Vestige::new(id, gear::Rarity::Normal, gear::Slot::Head, 1)));
+        }
+        for _ in 0..if vault { gear::character::VAULT_MOST } else { 0 } {
+            let id = character.take_id();
+            character.vestiges.insert(id, (gear::Vestige::new(id, gear::Rarity::Normal, gear::Slot::Head, 1), true));
+        }
+    };
+    let (mut room, player, chest) = chested();
+    fill(&mut room, player, false);
+    let at = chest_at(&room, player).unwrap();
+    place(&mut room, player, [at[0] + 1.0, at[1]]);
+    assert_eq!(room.open_chest(player, chest), 0);
+    let character = &room.players[&player].character;
+    assert_eq!((character.vestiges_held(false), character.vestiges_held(true)), (10, 1), "to the vault");
+    assert_eq!(room.drops_for(player).count(), 0, "nothing on the ground");
+    let (mut room, player, chest) = chested();
+    fill(&mut room, player, true);
+    let at = chest_at(&room, player).unwrap();
+    place(&mut room, player, [at[0] + 1.0, at[1]]);
+    assert_eq!(room.open_chest(player, chest), 0);
+    let character = &room.players[&player].character;
+    assert_eq!(character.vestiges_held(true), gear::character::VAULT_MOST, "the vault kept to its limit");
+    let lying: Vec<[f64; 3]> =
+        room.drops_for(player).filter(|drop| matches!(drop.what, Dropped::Vestige(_))).map(|drop| drop.at).collect();
+    assert_eq!(lying, [at], "laid on the ground where the chest stood");
+}

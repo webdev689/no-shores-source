@@ -15,7 +15,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.dirname(HERE)
 FOLDERS = [os.path.join(TOOLS, 'lattice'), os.path.join(TOOLS, 'forge', 'tools', 'sprite-forge')]
 # The files the modules share a name with in the Lattice's and the forge's folders.
-SHARED_NAMES = ('props', 'shapes', 'render')
+SHARED_NAMES = sorted({name[:-3] for name in os.listdir(HERE) if name.endswith('.py')}
+                      & {name[:-3] for folder in FOLDERS for name in os.listdir(folder) if name.endswith('.py')})
 
 
 def _theirs(*names):

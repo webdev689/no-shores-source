@@ -9,6 +9,7 @@ import { rosterOf } from '../rules/roster.ts';
 import type { Fighting, KeptFoe } from './fighting.ts';
 import { Flashes } from './flashes.ts';
 import { FoeFigures } from './foeFigures.ts';
+import { latticeWaves } from './latticeLooks.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const roster = rosterOf(
@@ -296,4 +297,24 @@ test('a Lattice foe with its pictures plays its own moves, and dying fades as it
   const later = figures.cards(dead, published, { x: 0, y: 5 }, 1.15, 1, 1 / 60, new Flashes())[0]?.dissolve;
   assert.ok(later && later.share > 0.4 && later.share < 1, 'faded as the wave takes it');
   assert.equal(figures.cards(dead, published, { x: 0, y: 5 }, 2, 1, 1 / 60, new Flashes()).length, 0, 'gone');
+});
+
+test('a Fissure’s first wave into a room empty of foes climbs out of its wave; foes there as the room came do not', () => {
+  const fissure = { kind: 1, phase: 1, ground: [0, 0, 0], radius: 30 };
+  const bursts: boolean[] = [];
+  const burst = latticeWaves.burst.bind(latticeWaves);
+  latticeWaves.burst = (...asked) => void bursts.push(asked[4] ?? false);
+  try {
+    const empty = { foes: new Map(), roomTick: 10, joins: 1, own: {}, public: fissure } as unknown as Fighting;
+    const come = (fight: Fighting) => ({ ...fight, joins: 1, own: {}, public: fissure }) as unknown as Fighting;
+    const figures = new FoeFigures(latticeRoster);
+    figures.cards(empty, forge, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+    figures.cards(come(huskFight()), forge, { x: 0, y: 5 }, 0.1, 1, 1 / 60, new Flashes());
+    assert.deepEqual(bursts, [true], 'the first wave climbs out');
+    const late = new FoeFigures(latticeRoster);
+    late.cards(come(huskFight()), forge, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+    assert.deepEqual(bursts, [true], 'one there on the page’s first frame came before it');
+  } finally {
+    latticeWaves.burst = burst;
+  }
 });

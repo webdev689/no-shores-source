@@ -85,6 +85,7 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
     [event?.stage, event?.stages, event?.progress, event?.needed, event?.heroic, event?.bonus, event?.nextWaveTicks],
     [2, 2, 11, 14, HEROIC.met, true, 1_500],
   );
+  assert.deepEqual([event?.radius, event?.nextGround, event?.heroicTicks], [27.5, [140, 60, 4.5], 1_234]);
   assert.deepEqual(event?.marks, [
     { kind: MARK.fissure, id: 0, at: [10, -20.5, 3.25], health: 0.25, state: 0 },
     { kind: MARK.carried, id: 9, at: [12, -18, 3.5], health: 1, state: 0 },

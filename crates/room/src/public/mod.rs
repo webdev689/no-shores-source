@@ -136,8 +136,8 @@ pub(crate) enum Play {
 
 /// The event running: what, from which minute, how it stands, its countdown (or its result's time left), its stage,
 /// its heroic task and the time left to do it, whether its bonus holds, how far from their place its foes fight, its
-/// foes and those of them whose fall it has counted, each player's part, and its foes withdrawing, each with where it
-/// goes and the tick it is gone by.
+/// foes and those of them whose fall it has counted, each player's part, who was laid a chest for it, and its foes
+/// withdrawing, each with where it goes and the tick it is gone by.
 #[derive(Debug)]
 pub(crate) struct Running {
     pub kind: Kind,
@@ -153,6 +153,7 @@ pub(crate) struct Running {
     pub foes: Vec<FighterId>,
     pub fallen: BTreeSet<FighterId>,
     pub parts: BTreeMap<Who, Part>,
+    pub chested: BTreeSet<Who>,
     pub withdrawing: Vec<(FighterId, [f64; 3], u64)>,
     pub play: Play,
 }
@@ -313,6 +314,7 @@ impl Room {
             foes: Vec::new(),
             fallen: BTreeSet::new(),
             parts: BTreeMap::new(),
+            chested: BTreeSet::new(),
             withdrawing: Vec::new(),
             play,
         };
@@ -330,7 +332,7 @@ impl Room {
         for (id, player) in &self.players {
             let body = player.fighter.body;
             let part = running.parts.entry(self.who(*id)).or_default();
-            if !player.fighter.dead() && apart([body.x, body.y], middle) <= radius {
+            if player.living() && apart([body.x, body.y], middle) <= radius {
                 part.present += 1;
             }
         }
@@ -370,20 +372,36 @@ impl Room {
         self.foes_most.saturating_sub(EVENT_ROOM) + event.min(EVENT_ROOM)
     }
 
-    /// A player's account told: the part they took under their number until then is their account's.
+    /// A player's account told: the part they took under their number until then is their account's. Told while a
+    /// won event's result shows, they are laid the chest their account earned if neither it nor their number was laid
+    /// one: a player back under a new number as it was won had none.
     pub(crate) fn own_part(&mut self, player: PlayerId) {
         let who = self.who(player);
-        let Some(running) = self.public.as_mut().and_then(|public| public.running.as_mut()) else { return };
-        let Some(before) = running.parts.remove(&Who::Player(player)) else { return };
-        let part = running.parts.entry(who).or_default();
-        (part.present, part.did) = (part.present + before.present, part.did || before.did);
+        let Some(mut public) = self.public.take() else { return };
+        let owed = public.running.as_mut().and_then(|running| {
+            if let Some(before) = running.parts.remove(&Who::Player(player)) {
+                let part = running.parts.entry(who.clone()).or_default();
+                (part.present, part.did) = (part.present + before.present, part.did || before.did);
+            }
+            let laid = running.chested.contains(&who) || running.chested.contains(&Who::Player(player));
+            let earned = running.phase == Phase::Won && !laid && running.parts.get(&who).is_some_and(took_part);
+            earned.then(|| {
+                running.chested.insert(who);
+                (running.kind, tier(running))
+            })
+        });
+        let owed = owed.map(|(kind, tier)| (self.ground_of(&public, kind).0, tier, self.event_level(public.level)));
+        self.public = Some(public);
+        if let Some((middle, tier, level)) = owed {
+            self.lay_chest(player, tier, middle, level);
+        }
     }
 
     /// The living players on the ground an event of `kind` is fought on.
     pub(crate) fn players_on(&self, public: &Public, kind: Kind) -> usize {
         let (middle, radius) = self.ground_of(public, kind);
         let on = |player: &&crate::players::Player| {
-            !player.fighter.dead() && apart([player.fighter.body.x, player.fighter.body.y], middle) <= radius
+            player.living() && apart([player.fighter.body.x, player.fighter.body.y], middle) <= radius
         };
         self.players.values().filter(on).count()
     }
@@ -438,7 +456,7 @@ impl Room {
 
     /// The living player nearest a point, and where they stand.
     pub(crate) fn nearest_player(&self, point: [f64; 2]) -> Option<(PlayerId, [f64; 3])> {
-        let living = self.players.iter().filter(|(_, player)| !player.fighter.dead());
+        let living = self.players.iter().filter(|(_, player)| player.living());
         let at = |player: &crate::players::Player| {
             let body = player.fighter.body;
             [body.x, body.y, body.z]
@@ -475,6 +493,13 @@ impl Room {
             .collect()
     }
 
+    /// Whether a kill is the players' work: any but a foe's not at a player's leave (a garrison's fighting the
+    /// event's), so a player who has since left, or a kill the room names no one for, still counts. The heroic tasks
+    /// are the players' to meet.
+    pub(crate) fn by_players(&self, killer: FighterId) -> bool {
+        !self.foes.contains_key(&killer) || self.is_companion(killer)
+    }
+
     /// The draws of an event's `nth` wave, apart from every other's.
     pub(crate) fn wave_draws(&self, running: &Running, nth: u32) -> naval::random::Mulberry32 {
         let seed = self.world_seed ^ STREAM ^ running.start.rotate_left(17) ^ u64::from(nth);
@@ -488,17 +513,19 @@ impl Room {
         running.phase = Phase::Won;
         running.ticks_left = RESULT_TICKS;
         self.tell(EventKind::PublicWon, None, 0, 0, f64::from(running.kind as u8));
-        let tier = 1 + u8::from(running.bonus) + if running.heroic == Heroic::Met { 2 } else { 0 };
+        let tier = tier(running);
         let (middle, _) = self.ground_of(public, running.kind);
         let took = |player: &PlayerId| running.parts.get(&self.who(*player)).is_some_and(took_part);
         let earned: Vec<PlayerId> = self.players.keys().copied().filter(took).collect();
         let level = self.event_level(public.level);
         for player in earned {
+            running.chested.insert(self.who(player));
             self.lay_chest(player, tier, middle, level);
         }
     }
 
-    /// Failed, by its countdown or its stores: its foes withdraw, and it leaves nothing lasting.
+    /// Failed, by its countdown or its stores: its foes withdraw, and it leaves nothing lasting. A growth still
+    /// standing is gone at once and the tithe-taker's round is over, so neither leaves a mark behind.
     pub(crate) fn fail(&mut self, running: &mut Running) {
         self.close_heroic(running);
         running.phase = Phase::Failed;
@@ -508,9 +535,15 @@ impl Room {
         let to = match &mut running.play {
             Play::Fissure(fissure) => {
                 self.fell_spires(&mut fissure.spires);
+                if let Some(growth) = fissure.growth.take() {
+                    self.gone(growth);
+                }
                 fissure.at
             }
-            Play::Raid(raid) => raid.formed,
+            Play::Raid(raid) => {
+                raid.taker = None;
+                raid.formed
+            }
             Play::Aside => return,
         };
         self.withdraw(running, to);
@@ -538,6 +571,11 @@ impl Room {
     }
 }
 
+/// The tier of chest a won event pays: 1, more with its bonus, two more heroic.
+fn tier(running: &Running) -> u8 {
+    1 + u8::from(running.bonus) + if running.heroic == Heroic::Met { 2 } else { 0 }
+}
+
 /// Whether a player's part makes them one who took part.
 pub(crate) fn took_part(part: &Part) -> bool {
     part.did || part.present >= PRESENT_TICKS
@@ -546,9 +584,13 @@ pub(crate) fn took_part(part: &Part) -> bool {
 #[cfg(test)]
 mod chest_tests;
 #[cfg(test)]
+mod fissure_rules_tests;
+#[cfg(test)]
 mod fissure_tests;
 #[cfg(test)]
 mod fixture;
+#[cfg(test)]
+mod raid_rules_tests;
 #[cfg(test)]
 mod raid_tests;
 #[cfg(test)]

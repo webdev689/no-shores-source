@@ -2,7 +2,10 @@
 //! at; the last wave broken with a store standing wins it, every store plundered fails it, as does its countdown; the
 //! tithe-taker walks his round and leaves unless he is killed, which brings a fourth wave led by Marrow.
 
-use super::fixture::{RAID_MINUTE, place, room_at, running, running_mut, standing, strike, ticks, told};
+use super::fixture::{
+    RAID_MINUTE, killed_by_a_foe, place, recovers_from_a_stagger, room_at, running, running_mut, standing, strike,
+    ticks, told,
+};
 use super::raid::{MARROW_NAME, PLUNDER_TICKS, WAVE_GAP};
 use super::seen::{BANNER, PLUNDERED, STORE};
 use super::{Heroic, Phase, Play};
@@ -10,17 +13,17 @@ use crate::{Dropped, EventKind, PlayerId, Room};
 use ::foes::roster::{COLLECTOR, TITHE_TAKER};
 use combat::fighter::FighterId;
 
-fn raid(room: &Room) -> &super::raid::Raid {
+pub(super) fn raid(room: &Room) -> &super::raid::Raid {
     let Play::Raid(raid) = &running(room).play else { panic!("a raid") };
     raid
 }
 
-fn taker(room: &Room) -> Option<FighterId> {
+pub(super) fn taker(room: &Room) -> Option<FighterId> {
     raid(room).taker.as_ref().map(|taker| taker.foe)
 }
 
 /// A player breaks the wave standing: fells each of its foes in turn, then waits out the gap to the next.
-fn break_wave(room: &mut Room, player: PlayerId) {
+pub(super) fn break_wave(room: &mut Room, player: PlayerId) {
     for foe in raid(room).wave_foes.clone() {
         if room.foes.get(&foe).is_some_and(|found| !found.fighter.dead()) {
             strike(room, player, foe, 1.0e7);
@@ -32,7 +35,7 @@ fn break_wave(room: &mut Room, player: PlayerId) {
     }
 }
 
-fn chests(room: &Room, player: PlayerId) -> Vec<u8> {
+pub(super) fn chests(room: &Room, player: PlayerId) -> Vec<u8> {
     let tier = |drop: &crate::Drop| if let Dropped::Chest { tier, .. } = drop.what { Some(tier) } else { None };
     room.drops_for(player).filter_map(tier).collect()
 }
@@ -58,6 +61,8 @@ fn breaking_three_waves_with_every_store_whole_wins_the_bonus_chest_and_the_tith
     assert_eq!(running(&room).heroic, Heroic::Missed);
     assert_eq!(chests(&room, players[0]), [2], "won, no store lost");
     assert_eq!(told(&mut room, EventKind::PublicStage).len(), 2, "the second and third waves came");
+    let formed = raid(&room).formed;
+    assert!(running(&room).withdrawing.iter().all(|(_, to, _)| *to == formed), "the Tithe march out");
 }
 
 #[test]
@@ -72,8 +77,14 @@ fn collectors_standing_at_the_stores_plunder_them_and_every_store_plundered_fail
         let found = room.foes.get_mut(foe).unwrap();
         (found.fighter.body.x, found.fighter.body.y) = (store[0], store[1] - 1.5);
     }
-    let raided = raid(&room).collectors[&collectors[0]];
-    ticks(&mut room, PLUNDER_TICKS as u64 + 5);
+    // Each Collector at its own store, the first at the first: the store plundered is that one, by it alone.
+    for (nth, foe) in collectors.iter().enumerate() {
+        running_mut(&mut room).play_raid_mut().collectors.insert(*foe, nth);
+    }
+    let raided = 0;
+    ticks(&mut room, PLUNDER_TICKS as u64 - 5);
+    assert!(raid(&room).stores[raided].1 > 0.0, "not yet plundered short of twenty seconds");
+    ticks(&mut room, 10);
     assert!(raid(&room).stores[raided].1 <= 0.0, "plundered in twenty seconds");
     assert!(!running(&room).bonus, "a store lost");
     assert!(!told(&mut room, EventKind::StorePlundered).is_empty());
@@ -129,7 +140,7 @@ fn the_tithe_taker_killed_on_his_round_turns_it_heroic_and_marrow_must_be_broken
 }
 
 impl super::Running {
-    fn play_raid_mut(&mut self) -> &mut super::raid::Raid {
+    pub(super) fn play_raid_mut(&mut self) -> &mut super::raid::Raid {
         let Play::Raid(raid) = &mut self.play else { panic!("a raid") };
         raid
     }
@@ -158,22 +169,32 @@ fn a_wave_the_room_has_no_room_for_waits_and_one_killed_late_still_brings_the_th
     assert_eq!((running(&room).heroic, raid(&room).wave_foes.len()), (Heroic::Met, 7), "its heroic two came");
 }
 
-/// Saltmere's three zones' rooms as their node files open them, each with its grounds.
-fn saltmeres_rooms() -> Vec<(&'static str, Room, super::RaidGround)> {
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
-    let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
-    let continent = world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
-    let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
-    let builders = bake::builders(&root).expect("the builders read");
-    let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
-    let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("continent-1 bakes");
+/// Saltmere's three zones' node files as the bake writes them, baked once for every test that opens them.
+fn saltmeres_nodes() -> &'static [bake::NodeFile] {
+    static BAKED: std::sync::OnceLock<Vec<bake::NodeFile>> = std::sync::OnceLock::new();
+    BAKED.get_or_init(|| {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let read =
+            |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
+        let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
+        let continent =
+            world.continents.into_iter().find(|continent| continent.id == "continent-1").expect("continent-1");
+        let edits = land::edits::parse(&read("content/world/land/continent-1.json")).expect("the edits parse");
+        let builders = bake::builders(&root).expect("the builders read");
+        let city = city::rmb::Blocks::from_index(&read("content/world/rmb/index.json")).expect("the RMB index reads");
+        let nodes = bake::nodes_of(&continent, edits, &city, &builders).expect("continent-1 bakes");
+        nodes.into_iter().filter(|node| super::ZONES.contains(&node.id.as_str())).collect()
+    })
+}
+
+/// Saltmere's three zones' rooms as their node files open them, each with both its grounds.
+pub(super) fn saltmeres_rooms() -> Vec<(&'static str, Room, super::RaidGround, super::FissureGround)> {
     super::ZONES
         .into_iter()
         .map(|zone| {
-            let node = nodes.iter().find(|node| node.id == zone).expect("the zone bakes");
+            let node = saltmeres_nodes().iter().find(|node| node.id == zone).expect("the zone bakes");
             let read = node.grounds.clone().expect("its grounds");
-            let raid = read.raid.expect("its raid");
+            let (raid, fissure) = (read.raid.expect("its raid"), read.fissure.expect("its Fissure"));
             let raid = super::RaidGround {
                 at: raid.at,
                 radius: raid.radius,
@@ -181,20 +202,22 @@ fn saltmeres_rooms() -> Vec<(&'static str, Room, super::RaidGround)> {
                 approach: raid.approach,
                 banners: raid.banners,
             };
+            let fissure = super::FissureGround { at: fissure.at, radius: fissure.radius, growth: fissure.growth };
             let section = crate::Section { ring: node.ring.clone(), spawns: node.spawns.clone(), falls_kill: false };
             let blocks = node.boxes.iter().map(movement::Block::from_floats).collect();
             let floor = crate::Floor::Land(Box::new(node.ground.clone()));
             let levels = gear::world::island_levels(&node.continent);
             let mut room = Room::garrisoned(floor, blocks, section, node.kind, (zone, levels));
-            room.open_public(zone, super::Grounds { fissure: None, raid: Some(raid.clone()) }, None);
-            (zone, room, raid)
+            let grounds = super::Grounds { fissure: Some(fissure.clone()), raid: Some(raid.clone()) };
+            room.open_public(zone, grounds, None);
+            (zone, room, raid, fissure)
         })
         .collect()
 }
 
 #[test]
 fn on_saltmeres_real_grounds_the_raiders_come_in_and_make_for_their_home_on_the_navmesh() {
-    for (zone, mut room, ground) in saltmeres_rooms() {
+    for (zone, mut room, ground, _) in saltmeres_rooms() {
         let minute =
             (15_000..15_030).find(|minute| super::schedule(zone, *minute) == Some((super::Kind::Raid, *minute)));
         room.minute = minute.expect("a raid within half an hour");
@@ -221,8 +244,8 @@ fn on_saltmeres_real_grounds_the_raiders_come_in_and_make_for_their_home_on_the_
         let formed = raid(&room).formed;
         assert!(on_mesh(formed), "{zone}: where its waves form {formed:?} is on the navmesh");
         assert!(room.nav.find_path(formed, home).is_some(), "{zone}: a way in from where they form");
-        let out = combat::sight::apart([home[0], home[1]], [formed[0], formed[1]]);
-        assert!(running(&room).leash > out + 10.0, "{zone}: they fight from where they form, {out} m out");
+        let out = combat::sight::apart(ground.at, ground.formed());
+        assert!(running(&room).leash >= out + 16.0 - 1e-9, "{zone}: they fight 16 m past where they form, {out} m out");
         let wave = raid(&room).wave_foes.clone();
         assert!(wave.iter().all(|id| room.foes[id].brain.target().is_some()), "{zone}: every raider hunts");
     }
@@ -308,7 +331,8 @@ fn a_broken_wave_tells_the_page_how_long_until_the_next() {
 #[test]
 fn a_wave_forms_out_of_sight_beyond_the_approach_and_marches_in() {
     let (mut room, players) = room_at(RAID_MINUTE, 1);
-    place(&mut room, players[0], [100.0, 0.0]);
+    // At the store farthest from the approach: out of a Crossbowman's reach from where its wave forms.
+    place(&mut room, players[0], [100.0, 10.0]);
     room.tick();
     let middle = [super::fixture::RAID_AT[0], super::fixture::RAID_AT[1]];
     let approach = raid(&room).approach;
@@ -346,4 +370,45 @@ fn the_garrison_keeps_a_nodes_own_places_beside_the_events_living_foes() {
     let event = standing(&room).len();
     assert!(event > 0);
     assert_eq!(room.others_most(), crate::NODE_FOES_MOST + event, "the event's own never count against the garrison");
+}
+
+#[test]
+fn the_tithe_taker_staggered_comes_out_of_it_though_the_room_moves_him_himself() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker came with the second wave");
+    recovers_from_a_stagger(&mut room, found);
+}
+
+#[test]
+fn the_tithe_taker_killed_by_no_player_leaves_the_heroic_task_to_them() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    let found = taker(&room).expect("the tithe-taker came with the second wave");
+    let foe = standing(&room).into_iter().find(|id| *id != found).expect("a raider standing");
+    killed_by_a_foe(&mut room, found, foe);
+    room.tick();
+    assert_ne!(running(&room).heroic, Heroic::Met, "a foe met no task of the players'");
+}
+
+#[test]
+fn failed_with_the_tithe_taker_on_his_round_he_leaves_no_mark_behind() {
+    let (mut room, players) = room_at(RAID_MINUTE, 1);
+    place(&mut room, players[0], [100.0, 0.0]);
+    room.tick();
+    break_wave(&mut room, players[0]);
+    assert!(taker(&room).is_some(), "the tithe-taker came with the second wave");
+    running_mut(&mut room).ticks_left = 1;
+    room.tick();
+    assert_eq!(running(&room).phase, Phase::Failed);
+    assert!(taker(&room).is_none(), "his round is over");
+    for _ in 0..super::RESULT_TICKS - 1 {
+        let marks = room.public_seen().unwrap().marks;
+        assert!(marks.iter().all(|mark| mark.kind != super::seen::TITHE_TAKER), "no mark of him at the approach");
+        room.tick();
+    }
 }

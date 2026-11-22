@@ -75,6 +75,8 @@ const IRON_NEAR_M = 12;
 const RESPAWN_TICKS = 240;
 /** How long the stamina bar flashes for a swing or a dodge asked with none, and the screen's edge for a blow taken. */
 const FLASH_SECONDS = 0.45;
+/** A view shorter than this (CSS pixels at its zoom) takes the public banner short, clear of the crosshair. */
+const SHORT_VIEW = 480;
 /** How far inside the canvas's edge an arrow to a foe off the screen stands, in CSS pixels; and how far clear of the
  *  vitals or the Arts and weapons it stands where it would fall on them: half an arrow and a little more. */
 const ARROW_INSET = 28;
@@ -391,7 +393,7 @@ export class Hud {
             time: this.time,
           }),
         // Under the compass, over the boss bar and the target's plate, so neither ever stands on it.
-        this.banner.node(room, zoom),
+        this.banner.node(room, zoom, this.view.height / zoom < SHORT_VIEW),
         this.foeBars.bossNode(Math.round(Math.min(PLATES.boss.width, PLATES.boss.share * room) * zoom), zoom),
         this.targetShare > 0 && this.targetNode(room, zoom),
       ],

@@ -33,8 +33,12 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 8 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "83109f7a";
-pub const RAID_HASH: &str = "4bdce632";
+pub const FISSURE_HASH: &str = "53611472";
+pub const RAID_HASH: &str = "9e5636da";
+/// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
+/// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille).
+pub const FISSURE_ENDED: [u32; 3] = [13_258, 2, 28];
+pub const RAID_ENDED: [u32; 3] = [20_978, 4, 920];
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -71,6 +75,8 @@ struct Read {
     kind: u8,
     phase: u8,
     heroic: u8,
+    stage: u8,
+    progress: u16,
     ground: [f64; 2],
     marks: Vec<(u8, u32, [f64; 2], u8)>,
 }
@@ -111,6 +117,8 @@ fn read(bytes: &[u8]) -> Read {
         kind: event.kind(),
         phase: event.phase(),
         heroic: event.heroic(),
+        stage: event.stage(),
+        progress: event.progress(),
         ground: [ground.get(0), ground.get(1)],
         marks: marks.collect(),
     }
@@ -168,23 +176,20 @@ fn decide(read: &Read, player: u32, tick: u32) -> (Controls, CombatInput) {
 }
 
 /// The character each scripted player plays: a starting one at SEASONED, its gear Rare at that level, as a player who
-/// comes to Saltmere's events (its foes at 1 to 4) is; written for the browser's test to give its players too.
+/// comes to Saltmere's events (its foes at 1 to 4) is.
 fn seasoned() -> String {
     let mut character = gear::Character::starting();
     character.xp = gear::power::xp_for_level(SEASONED);
     for (item, _) in character.items.values_mut() {
         (item.level, item.rarity) = (SEASONED, gear::Rarity::Rare);
     }
-    let text = character.to_json();
-    let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
-    std::fs::create_dir_all(folder).unwrap();
-    std::fs::write(format!("{folder}/scripted-character.json"), &text).unwrap();
-    text
+    character.to_json()
 }
 
 /// Plays an event from `minute` with two scripted players until it is won or failed and its result has shown a
-/// second: its fingerprint, and the event as it stood when it ended (its kind, phase and heroic task).
-fn play(minute: u32) -> (String, (u8, u8, u8)) {
+/// second: its fingerprint, the event as it stood when it ended (its kind, phase and heroic task), and the tick, stage
+/// and progress it ended at.
+fn play(minute: u32) -> (String, (u8, u8, u8), [u32; 3]) {
     assert!(open_node(EVENTS_NODE.as_bytes()));
     assert!(set_minute(minute));
     let players = [room_join(), room_join()];
@@ -211,25 +216,58 @@ fn play(minute: u32) -> (String, (u8, u8, u8)) {
         // The same tick's taken once: a second cut of it, for no one, changes nothing the room holds.
         last = read(&snapshot(NO_VIEWER));
         if last.phase >= 2 {
-            ended = ended.or(Some((tick, (last.kind, last.phase, last.heroic))));
+            let at = [tick, u32::from(last.stage), u32::from(last.progress)];
+            ended = ended.or(Some((tick, (last.kind, last.phase, last.heroic), at)));
         }
-        if ended.is_some_and(|(at, _)| tick >= at + 60) {
+        if ended.is_some_and(|(at, _, _)| tick >= at + 60) {
             break;
         }
     }
-    (format!("{hash:08x}"), ended.map_or((0, 0, 0), |(_, event)| event))
+    let (event, at) = ended.map_or(((0, 0, 0), [0; 3]), |(_, event, at)| (event, at));
+    (format!("{hash:08x}"), event, at)
 }
 
 #[test]
 fn two_scripted_players_seal_a_heroic_fissure_to_the_same_fingerprint_natively_as_in_webassembly() {
-    let (hash, event) = play(FISSURE_MINUTE);
+    let (hash, event, at) = play(FISSURE_MINUTE);
     assert_eq!(event, (1, 2, 2), "the Fissure won, heroic");
+    assert_eq!(at, FISSURE_ENDED, "the tick it was won at, the Warden's stage and the shards set");
     assert_eq!(hash, FISSURE_HASH);
 }
 
 #[test]
 fn two_scripted_players_hold_a_heroic_raid_to_the_same_fingerprint_natively_as_in_webassembly() {
-    let (hash, event) = play(RAID_MINUTE);
+    let (hash, event, at) = play(RAID_MINUTE);
     assert_eq!(event, (2, 2, 2), "the raid held, heroic");
+    assert_eq!(at, RAID_ENDED, "the tick it was held at, Marrow's wave and the stores left");
     assert_eq!(hash, RAID_HASH);
+}
+
+/// Whether a snapshot carries the zone's events.
+fn carries_events(bytes: &[u8]) -> bool {
+    messages::root_as_from_room(bytes).unwrap().snapshot().unwrap().public_event().is_some()
+}
+
+/// A player shows the last tick's snapshot and the room ticks on: the snapshot then cut for them.
+fn after_showing(player: PlayerId, tick: u32) -> Vec<u8> {
+    let sent = room::Input { sequence: tick, seen: u64::from(tick), ..room::Input::default() };
+    assert_eq!(input(player, &protocol::input_bytes(&sent)), TAKEN);
+    room_tick();
+    snapshot(player)
+}
+
+#[test]
+fn a_snapshot_carries_the_events_only_when_they_stand_otherwise_than_its_base_counted_on() {
+    for minute in [FISSURE_MINUTE + 10, FISSURE_MINUTE] {
+        assert!(open_node(EVENTS_NODE.as_bytes()));
+        assert!(set_minute(minute));
+        let player = room_join();
+        room_tick();
+        assert!(carries_events(&snapshot(player)), "{minute}: built on none, whole");
+        // Waiting, or the Fissure's first wave pouring out: nothing changes but the countdowns.
+        for tick in 1..30 {
+            assert!(!carries_events(&after_showing(player, tick)), "{minute}: tick {tick} counted on");
+        }
+        assert!(carries_events(&snapshot(NO_VIEWER)), "{minute}: a page come now is sent them whole");
+    }
 }

@@ -80,6 +80,8 @@ def main():
     asked = parser.parse_args()
     kit.reset()
     module = kit.Module(asked.module, catalogue.SEEDS[asked.module])
+    # As the bake builds it: an event prop's rock is roughed out along its steady normals.
+    module.steady = asked.module in catalogue.EVENTS
     catalogue.BUILDERS[asked.module](module)
     colours = {**COLOURS, **dye_colours()}
     materials = {}

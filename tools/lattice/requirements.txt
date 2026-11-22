@@ -1,5 +1,3 @@
-# What the Lattice's renders import, each wheel by its hash: the forge's own pins, and SciPy, which the forge's body
-# lofts with (body.py's PchipInterpolator). Installed by .github/workflows/lattice.yml with --require-hashes.
+# What the Lattice's renders import, each wheel by its hash: the forge's own pins, SciPy among them, which the forge's
+# body lofts with (body.py's PchipInterpolator). Installed by .github/workflows/lattice.yml with --require-hashes.
 -r ../forge/tools/sprite-forge/artbirds-requirements.txt
-scipy==1.18.1 \
-    --hash=sha256:fdaf5ea890a6183d0565f51a61799d67081bd5b1cf03c5f4b3fd3732108625c9

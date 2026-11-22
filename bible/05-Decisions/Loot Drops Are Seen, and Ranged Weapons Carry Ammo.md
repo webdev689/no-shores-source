@@ -19,5 +19,5 @@ This came within the round the owner handed over in full ("Build it all to 100%.
 - **Foes drop an Ammo box**, an item in the world.
 - **An Ammo crate is a consumable.**
 
-How the drops look and are picked up, the capacities and how ammo is found, kept and used are Claude's, in [[Arts and
-Loadouts as Claude Shapes Them]]; DFO's drops come over as [[Pick - Loot Drops]].
+How the drops look and are picked up, the capacities and how ammo is found, kept and used are Claude's, in
+[[Arts and Loadouts as Claude Shapes Them]]; DFO's drops come over as [[Pick - Loot Drops]].

@@ -71,6 +71,25 @@ class MergeFoe(unittest.TestCase):
         self.assertTrue(green > red > blue, 'grey graded green, never a living tone')
 
 
+    def test_a_body_named_as_a_path_is_refused(self):
+        looks, skins = tables()
+        for name in ('../../site', 'husk/x', 'Husk', ''):
+            own = render('husk_hurt', ['body'], [101, 119], {})
+            own['bodies'] = {name: own['bodies']['husk']}
+            with self.assertRaises(SystemExit):
+                forge_publish.merge_foe(looks, skins, own)
+        self.assertEqual(sorted(looks['bodies']), ['male'], 'nothing laid in before the refusal')
+
+
+class Beside(unittest.TestCase):
+    def test_a_pack_published_again_keeps_its_one_place(self):
+        index = {'packs': ['packs/a.webp', 'packs/b.webp'], 'pictures': {'old': [1, 0, 9, 'w'], 'kept': [0, 0, 4, 'w']}}
+        new = {'packs': ['packs/b.webp', 'packs/c.webp'], 'pictures': {'old': [0, 3, 9, 'w'], 'new': [1, 0, 5, 'w']}}
+        forge_publish.beside(index, new)
+        self.assertEqual(index['packs'], ['packs/a.webp', 'packs/b.webp', 'packs/c.webp'])
+        self.assertEqual(index['pictures'], {'old': [1, 3, 9, 'w'], 'kept': [0, 0, 4, 'w'], 'new': [2, 0, 5, 'w']})
+
+
 class WaveFrames(unittest.TestCase):
     def test_the_strip_is_cut_into_its_frames(self):
         from PIL import Image

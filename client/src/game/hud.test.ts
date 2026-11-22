@@ -322,3 +322,20 @@ test("at a phone's width the place's name gives way to a public event's banner, 
   assert.ok(placeNode({ ...view, ...rest, banner: 'next' }, 'Saltgrass Downs', 'Wilds'));
   assert.ok(placeNode({ ...view, ...rest, width: 800, banner: 'heroic' }, 'Saltgrass Downs', 'Wilds'));
 });
+
+test('under 1024 px the tracker gives way to a running event’s banner, but not to the next event’s line', () => {
+  const narrow = { width: 900, height: 600, scale: 1 };
+  const shown = (banner: 'running' | 'next') => {
+    const [ui, hud] = [new Interface(renderer()), new Hud()];
+    hud.onBesides(() => ({ fight: false, bossed: false, speaking: false, map: false, banner }));
+    hud.tasks.show(
+      { name: 'The Fissure', task: 'Saltgrass Downs', steps: [{ text: 'Open your chest', clock: '1:48' }] },
+      0,
+    );
+    ui.frame(narrow, [], 1 / 60, true);
+    const root = hud.node(ui);
+    return words(layout(root, { x: 0, y: 0, width: narrow.width, height: narrow.height }, { face }));
+  };
+  assert.ok(!shown('running').includes('Open your chest (1:48)'));
+  assert.ok(shown('next').includes('Open your chest (1:48)'));
+});

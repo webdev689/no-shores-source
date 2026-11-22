@@ -2,7 +2,6 @@
 
 use crate::asks::{Ask, Here};
 use crate::character::Character;
-use crate::chests::{CHEST_AUREM, CHEST_XP};
 use crate::dice::Dice;
 use crate::kinds::{Slot, Stock};
 use crate::world::Difficulty;
@@ -11,15 +10,23 @@ const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
 
 #[test]
 fn each_tier_pays_more_and_always_holds_a_vestige_and_no_tier_past_four_opens() {
-    let mut paid = Vec::new();
-    for tier in 1..=4 {
+    // Each tier's XP, Aurem, Fragments and Essence of each stock and the island's resource, at level 5 and level 10.
+    let at_five = [(1_500, 120, 2, 0, 3), (2_200, 180, 3, 0, 4), (3_200, 260, 5, 1, 6), (4_500, 360, 7, 2, 8)];
+    let at_ten = [(2_250, 180), (3_300, 270), (4_800, 390), (6_750, 540)];
+    for (tier, (five, ten)) in (1..=4).zip(at_five.into_iter().zip(at_ten)) {
         let mut character = Character::starting();
         let chest = character.open_chest(tier, (5, Difficulty::Normal), Some(0), &DICE).expect("a chest of this tier");
-        assert_eq!((chest.xp, chest.aurem), (CHEST_XP[usize::from(tier) - 1], CHEST_AUREM[usize::from(tier) - 1]));
+        assert_eq!((chest.xp, chest.aurem), (five.0, five.1), "tier {tier} at level 5");
         assert_eq!(character.materials.aurem, Character::starting().materials.aurem + chest.aurem);
-        paid.push((chest.xp, character.materials.fragments(Stock::Weapon), character.materials.resource(0)));
+        let starting = Character::starting().materials;
+        for stock in [Stock::Weapon, Stock::Armor] {
+            assert_eq!(character.materials.fragments(stock), starting.fragments(stock) + five.2, "tier {tier}");
+            assert_eq!(character.materials.essence(stock), starting.essence(stock) + five.3, "tier {tier}");
+        }
+        assert_eq!(character.materials.resource(0), starting.resource(0) + five.4, "tier {tier}");
+        let chest = Character::starting().open_chest(tier, (10, Difficulty::Normal), None, &DICE).expect("a chest");
+        assert_eq!((chest.xp, chest.aurem), ten, "tier {tier} at level 10");
     }
-    assert!(paid.windows(2).all(|pair| pair[0].0 < pair[1].0 && pair[0].1 < pair[1].1 && pair[0].2 < pair[1].2));
     assert_eq!(Character::starting().open_chest(5, (5, Difficulty::Normal), None, &DICE), None);
     assert_eq!(Character::starting().open_chest(0, (5, Difficulty::Normal), None, &DICE), None);
 }
@@ -60,5 +67,8 @@ fn a_chest_pays_reputation_to_the_faction_pledged_while_its_cape_is_worn() {
 fn a_chest_on_a_harder_voyage_pays_its_xp_and_aurem_times_the_seas_reward_as_a_kill_does() {
     let calm = Character::starting().open_chest(4, (5, Difficulty::Normal), None, &DICE).unwrap();
     let storm = Character::starting().open_chest(4, (5, Difficulty::Abyss), None, &DICE).unwrap();
-    assert_eq!((storm.xp, storm.aurem), (calm.xp * 2, calm.aurem * 2));
+    let reward = Difficulty::Abyss.reward();
+    assert_eq!(reward, 2.0, "the Abyss pays twice a calm sea's");
+    let raised = |amount: u32| (f64::from(amount) * reward) as u32;
+    assert_eq!((storm.xp, storm.aurem), (raised(calm.xp), raised(calm.aurem)));
 }

@@ -122,16 +122,18 @@ The weapons take under a minute on four cores; `weaponart.py --check` checks the
 
 The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes
 `tools/lattice/render-request.txt`, whose first line names the foes, or by hand on `main`. Its actions are pinned by
-commit, as `ci.yml`, `pages.yml` and `rooms.yml` pin theirs. A job plans one render job for each move of each foe
-asked for and one for the wave (`tools/lattice/jobs.py`), they render in parallel without the token, and one job
-pulls the tables, lays them all in (`lattice`), adds them to what is published and ends its log with the manifest. A
-first line `publish-from <run id>` renders nothing: the publish job downloads that earlier run's `lattice-*`
-artifacts (while GitHub keeps them) and lays them into the tables as published now, so the forge's own changes to
-the tables never need the Lattice rendered again. Both workflows publish in one concurrency group (`forge`), as
-both publish the same tables: one publishes at a time, and GitHub keeps one more waiting, so a newer run that waits
-replaces an older one still waiting. Each installs only the exact wheels its requirements name by their hashes (the
-forge `tools/forge/tools/sprite-forge/artbirds-requirements.txt`, the Lattice `tools/lattice/requirements.txt`: the
-forge's wheels and SciPy), and its checkout keeps no git credential.
+commit, as `ci.yml`, `pages.yml` and `rooms.yml` pin theirs. A job plans one render job for each move of each foe asked
+for and one for the wave (`tools/lattice/jobs.py`), they render in parallel without the token, and one job pulls the
+tables, lays them all in (`lattice`), adds them to what is published and ends its log with the manifest. A first line
+`publish-from <run id>` renders nothing: the publish job checks that earlier run is this workflow's own, run on this
+repository by a push or by hand, downloads its `lattice-*` artifacts (while GitHub keeps them) and lays them into the
+tables as published now, those `main`'s `content/forge/renders.json` names (the publish job starts from it, not the
+branch's), refusing a body whose name is not lower-case letters and underscores, so the forge's own changes to the
+tables never need the Lattice rendered again. Both workflows publish in one concurrency group (`forge`), as both publish
+the same tables: one publishes at a time, and GitHub keeps one more waiting, so a newer run that waits replaces an older
+one still waiting. Each installs only the exact wheels its requirements name by their hashes (the forge
+`tools/forge/tools/sprite-forge/artbirds-requirements.txt`, the Lattice `tools/lattice/requirements.txt`: the forge's
+wheels, SciPy among them, and nothing more), and its checkout keeps no git credential.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
 doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here.

@@ -15,14 +15,16 @@ pub(crate) const RAID_MINUTE: u64 = 15_015;
 pub(crate) const FISSURE_AT: [f64; 2] = [0.0, -100.0];
 pub(crate) const RAID_AT: [f64; 2] = [100.0, 0.0];
 
+/// The grounds as the bake plans them (layout::grounds): the Fissure 25 m round, its growth 17 m out; the raid's
+/// 10 m past its farthest store and 20 m at least, its approach 36 m out and its banners 28 m out, 6 m either side.
 pub(crate) fn grounds() -> Grounds {
-    let fissure = FissureGround { at: FISSURE_AT, radius: 30.0, growth: [17.0, -100.0] };
+    let fissure = FissureGround { at: FISSURE_AT, radius: 25.0, growth: [17.0, -100.0] };
     let raid = RaidGround {
         at: RAID_AT,
-        radius: 30.0,
+        radius: 20.0,
         stores: vec![[92.0, -4.0], [108.0, -4.0], [100.0, 10.0]],
-        approach: [100.0, -45.0],
-        banners: vec![[94.0, -36.0], [106.0, -36.0]],
+        approach: [100.0, -36.0],
+        banners: vec![[94.0, -28.0], [106.0, -28.0]],
     };
     Grounds { fissure: Some(fissure), raid: Some(raid) }
 }
@@ -93,4 +95,25 @@ pub(crate) fn ticks(room: &mut Room, count: u64) {
 /// Every event of a kind told since the room was last asked.
 pub(crate) fn told(room: &mut Room, kind: crate::EventKind) -> Vec<crate::Event> {
     room.take_events().into_iter().filter(|event| event.kind == kind).collect()
+}
+
+/// A foe the room moves itself, staggered with its poise half full, comes out of it as a stepped foe does: its stagger
+/// runs out, its poise drains and its immunity to another ends, so it takes no more from a blow than before.
+pub(crate) fn recovers_from_a_stagger(room: &mut Room, foe: FighterId) {
+    let found = room.foes.get_mut(&foe).expect("the foe");
+    let fighter = &mut found.fighter;
+    fighter.action = combat::fighter::Action::Staggered { left: 30, cause: combat::fighter::Cause::Poise };
+    (fighter.poise, fighter.poise_immune, fighter.poise_rest) = (fighter.poise_max / 2.0, 90, 0);
+    ticks(room, 6 * 60);
+    let fighter = &room.foes[&foe].fighter;
+    assert_eq!(fighter.action, combat::fighter::Action::Idle, "its stagger ran out");
+    assert!(!fighter.staggered(), "so a blow takes no more of it");
+    assert_eq!((fighter.poise, fighter.poise_immune), (0.0, 0), "its poise drained and its immunity ended");
+}
+
+/// A foe of the event killed by another foe (a garrison's, as one fights it), as the room tells a kill.
+pub(crate) fn killed_by_a_foe(room: &mut Room, foe: FighterId, killer: FighterId) {
+    let found = room.foes.get_mut(&foe).expect("the foe");
+    (found.fighter.health, found.fighter.action) = (0.0, combat::fighter::Action::Dead { elapsed: 0 });
+    room.tell(crate::EventKind::Killed, None, killer, foe, 0.0);
 }
