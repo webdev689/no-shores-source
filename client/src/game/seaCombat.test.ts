@@ -332,13 +332,13 @@ test("its own gun's kick shakes the fight's eye, and it stands still again withi
   assert.ok(moved(kicked.frame(0.1, 2.5, 1000, () => undefined)) < 1e-9);
 });
 
-test("the fight's readout: its plate and rose, the card on the nearest captain, E to board one the room would take", () => {
+test("the fight's readout: its plate and its abilities' bar, the card on the nearest captain, E to board one the room would take", () => {
   const display = (view: FightView, mayBoard = false) =>
     new SeaCombat({ ...ROOM, mayBoard } as SeaRoom, view, MARKS, 0).display(1);
   const model = display(FIRST);
   assert.ok(model, 'a fight on shows it');
   assert.equal(model.ship?.name, 'Your Sloop');
-  assert.equal(model.ship?.port.ready, true);
+  assert.equal(model.ship?.abilities.find((ability) => ability.id === 'port')?.state, 'ready');
   assert.equal(model.card?.name, 'Pirate Sloop');
   assert.match(model.card?.sub ?? '', / - 640 m$/);
   const struck = { ...captain, ship: [5010, 6000, 2, 0, 0, 0, 0, 0], state: 'struck' } as const;

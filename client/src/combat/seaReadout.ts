@@ -1,33 +1,27 @@
 // The sea fight's readout as the interface draws it, built as the on-foot display is (`plus/seaFight.ts` holds what it
 // shows and its words): the player's ship's plate at the top left is the vitals' long thin bars (Hull over Sails over
-// Crew, the hull's frame flashing low as health's does; a fire and a brace chip under them; and the battery rose of its
-// sides' reloads); the target card under the compass is the target's plate (the faction's emblem, its name, one hull
-// bar in its rank's colour, its class, distance and state as small words); the tally of the last volley under the
-// view's middle; and DFO's warning under the card while a battery is run out at the player's ship.
+// Crew, the hull's frame flashing low as health's does, a fire chip under them); the ship's abilities stand at the
+// bottom left as the Arts' bar does on foot (`shipAbilityBar.ts`); the target card under the compass is the target's
+// plate (the faction's emblem, its name, one hull bar in its rank's colour, its class, distance and state as small
+// words); the tally of the last volley under the view's middle; and DFO's warning under the card while a battery is
+// run out at the player's ship.
 import { BAR_TONES, CORNER, VITAL_SIZES } from '../plus/barFrame.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { UNDER_COMPASS } from '../plus/compass.ts';
 import { EMBLEM_PIXELS, emblemSvg } from '../plus/emblems.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { lowShare, Meter } from '../plus/meter.ts';
-import {
-  type BoostRing,
-  CARD_GAP,
-  type RoseSide,
-  SHIP_BARS,
-  type SeaFightModel,
-  seaFightWords,
-} from '../plus/seaFight.ts';
+import { CARD_GAP, SHIP_BARS, type SeaFightModel, seaFightWords } from '../plus/seaFight.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
-import type { Drawing, Node, Text } from '../ui/node.ts';
+import type { Node, Text } from '../ui/node.ts';
 import { lineHeight } from '../ui/text.ts';
-import { drawCells, drawMeter, edges, faded, grownBy, paintBox, ring, thinBarNode } from './barDraw.ts';
+import { drawMeter, edges, grownBy, paintBox, ring, thinBarNode } from './barDraw.ts';
+import { type CapFace, ShipAbilityBar, shipBarSize } from './shipAbilityBar.ts';
 
-/** The hull's low blink (on for its first half), a side's flash as it comes ready (two of 0.35 s, lit for the second
- *  half of each) and the warning's pulse (its lit look for the second half of each 0.5 s), in seconds. */
+/** The hull's low blink (on for its first half) and the warning's pulse (its lit look for the second half of each
+ *  0.5 s), in seconds. */
 const LOW_BLINK = 0.9;
-const FRESH_FLASH = 0.35;
 const WARN_PULSE = 0.5;
 /** The card's emblem square, the emblem at three screen pixels a pixel inside a 2 px edge, as the target plate's. */
 const EMBLEM_SQUARE = EMBLEM_PIXELS * 3 + 4;
@@ -37,14 +31,11 @@ const cardTall = (ally: boolean) => (ally ? lineHeight(1) + 3 + 12 : EMBLEM_SQUA
 const WARN_TALL = lineHeight(1) + 3 + 4 + 4;
 /** The letters of the card's name kept however long the words after it, as a browser's row shrinks them all. */
 const NAME_KEPT = 3;
-/** The rose's width, as wide as its longest words ("Heated 88s" a side), so it never shifts as they change. */
-const ROSE_WIDE = 172;
-/** The colours the palette does not name: the fire's chip, a state going down and a blow's edge, the warning's words
- *  and edges, the tally's miss. */
+/** The colours the palette does not name: the fire's chip, a state going down, the warning's words and edges, the
+ *  tally's miss. */
 const INKS = {
   fire: '#ffb066',
   sinking: '#ee5745',
-  blowWords: '#ffd0c8',
   warn: '#ffd9cf',
   warnLit: '#ff9c8a',
   miss: '#b3a684',
@@ -65,60 +56,15 @@ const words = (said: string, colour: string, tracking?: number): Text => ({
   ...(tracking ? { tracking } : {}),
 });
 
-/** The boost ring's look in each state, its lit part's ink and its word's colour: brass once ready, the words' white
- *  while it bursts, dim stone as it recharges. */
-const BOOST_LOOKS = {
-  ready: { ink: TONES.brassHi, word: TONES.brassHi },
-  burst: { ink: TONES.word, word: TONES.word },
-  charging: { ink: TONES.stoneMid, word: TONES.stoneLit },
-} as const;
-/** The ring's size in pixels, outline and all, and the steps its lit part moves in (so few pictures are made). */
-const BOOST_SIZE = 16;
-const BOOST_STEPS = 32;
-
-/** The boost ring's pixels: an outline round a ring lit clockwise from the top as far as `lit` of it, the rest the
- *  bars' track, round a dark chip with its own outline. */
-export function boostCells(ink: string, lit: number): (string | null)[] {
-  const half = BOOST_SIZE / 2;
-  return Array.from({ length: BOOST_SIZE * BOOST_SIZE }, (unused, index) => {
-    const [across, down] = [(index % BOOST_SIZE) + 0.5 - half, Math.floor(index / BOOST_SIZE) + 0.5 - half];
-    const far = Math.hypot(across, down);
-    if (far > half) return null;
-    if (far > half - 1 || (far > 4 && far <= 5)) return TONES.outline;
-    if (far <= 4) return TONES.groundChip;
-    const turned = (Math.atan2(across, -down) / (2 * Math.PI) + 1) % 1;
-    return turned < lit ? ink : TONES.groundTrack;
-  });
+/** How far the ship's bar reaches from the view's bottom left, in its pixels: across from the left edge, and up from
+ *  the foot. */
+export interface Reach {
+  readonly right: number;
+  readonly up: number;
 }
 
-/** The ship's boost ring and its word, said to a reader as its state. */
-function boostNode(boost: BoostRing, said: string, zoom: number): Node {
-  const look = BOOST_LOOKS[boost.state];
-  const lit = Math.round(Math.min(1, Math.max(0, boost.share)) * BOOST_STEPS) / BOOST_STEPS;
-  return {
-    direction: 'row',
-    alignY: 'center',
-    gap: 4 * zoom,
-    label: said,
-    children: [
-      {
-        width: BOOST_SIZE * zoom,
-        height: BOOST_SIZE * zoom,
-        draw: (ui, box, scale, clip, fade) =>
-          drawCells(
-            { ui, box, scale: scale * zoom, clip, fade },
-            `boost ${look.ink} ${lit}`,
-            BOOST_SIZE,
-            BOOST_SIZE,
-            () => boostCells(look.ink, lit),
-          ),
-      },
-      { text: { ...words('Boost', look.word, 1), size: zoom } },
-    ],
-  };
-}
-
-/** The readout: the plate with its rose, the card and the tally, kept from frame to frame and drawn by the interface. */
+/** The readout: the plate, the ship's bar, the card and the tally, kept from frame to frame and drawn by the
+ *  interface. */
 export class SeaFightReadout {
   private readonly bars = {
     hull: new Meter({ pieceLeast: PIECE_LEAST.vital }),
@@ -132,18 +78,30 @@ export class SeaFightReadout {
   private now = 0;
   /** The card's ship last shown, so its bar forgets another's losses. */
   private carded: string | null = null;
-  /** Since when each side's flash, the hull's warning and the broadside's have run, seconds; null while none does. */
-  private readonly since: Record<'port' | 'starboard' | 'low' | 'warn', number | null> = {
-    port: null,
-    starboard: null,
-    low: null,
-    warn: null,
-  };
+  /** Since when the hull's warning and the broadside's have run, seconds; null while neither does. */
+  private readonly since: Record<'low' | 'warn', number | null> = { low: null, warn: null };
   private layout = { length: 0, wide: false, zoom: 1 };
+  /** The ship's abilities at the bottom left. */
+  private readonly abilities: ShipAbilityBar;
 
   /** How far down the ships' plates may stand, CSS pixels: under the card and the warning while they show, else under
    *  the compass. */
   under = UNDER_COMPASS;
+
+  /** With `face`, a key on the ship's bar that is no word (a mouse's button, a pad's) stands drawn on its keycap. */
+  constructor(face: CapFace | null = null) {
+    this.abilities = new ShipAbilityBar(face);
+  }
+
+  /** How far the ship's bar reaches from the view's bottom left while it shows, in the view's pixels; none while it
+   *  does not. */
+  get reach(): Reach | null {
+    const { wide, zoom } = this.layout;
+    const count = this.model ? this.abilities.count : 0;
+    if (count === 0) return null;
+    const { width, height } = shipBarSize(count, wide, zoom);
+    return { right: CORNER.side * zoom + width, up: CORNER.foot * zoom + height };
+  }
 
   /** Lays the bars as the vitals on foot are laid (`combat/hudLayout.ts`): their `length`, and whether they stand at
    *  the larger step or doubled. Unlaid, as in the World Editor, they stand at the first step, 160 px long. */
@@ -161,9 +119,8 @@ export class SeaFightReadout {
     if (ship) {
       for (const kind of ['hull', 'sail', 'crew'] as const) this.bars[kind].set(ship[kind], seconds);
       this.mark('low', lowShare(ship.hull));
-      this.mark('port', ship.port.fresh);
-      this.mark('starboard', ship.starboard.fresh);
     }
+    this.abilities.update(ship?.abilities ?? null, seconds);
     if (card) {
       if (this.carded !== card.name) this.cardHull.forget();
       this.carded = card.name;
@@ -199,7 +156,8 @@ export class SeaFightReadout {
       height: 'grow',
       through: true,
       children: [
-        model.ship && this.plateNode(model.ship, said),
+        model.ship && this.plateNode(model.ship),
+        this.abilitiesNode(),
         model.card && {
           width: 'grow',
           direction: 'column',
@@ -216,8 +174,21 @@ export class SeaFightReadout {
     };
   }
 
-  /** The ship's plate at the top left: the thin bars, the chips under them and the rose. */
-  private plateNode(ship: NonNullable<SeaFightModel['ship']>, said: ReturnType<typeof seaFightWords>): Node {
+  /** The ship's abilities at the bottom left, where the Arts' bar stands on foot, at its step and zoom. */
+  private abilitiesNode(): Node | null {
+    const { wide, zoom } = this.layout;
+    const bar = this.abilities.node(wide, zoom);
+    return (
+      bar && {
+        ...bar,
+        id: 'fight-ship',
+        float: { to: 'screen', at: [0, 1], anchor: [0, 1], x: CORNER.side * zoom, y: -CORNER.foot * zoom, z: 1 },
+      }
+    );
+  }
+
+  /** The ship's plate at the top left: the thin bars, and the fire's chip under them while it burns. */
+  private plateNode(ship: NonNullable<SeaFightModel['ship']>): Node {
     const { length, wide, zoom } = this.layout;
     const sizes = wide ? VITAL_SIZES.wide : VITAL_SIZES.base;
     const still = motionReduced();
@@ -242,11 +213,6 @@ export class SeaFightReadout {
       padding: [zoom, 6 * zoom, zoom, 6 * zoom],
       children: [{ text: { ...words(text, colour), size: zoom } }],
     });
-    const chips = [
-      boostNode(ship.boost, said.boost, zoom),
-      ship.fire && chip('On fire', INKS.fire),
-      ship.braced && chip('Braced', TONES.word),
-    ];
     return {
       label: 'Your ship',
       direction: 'column',
@@ -256,70 +222,11 @@ export class SeaFightReadout {
         bar('hull', 'Hull', FILLS.health),
         bar('sail', 'Sails', FILLS.sails),
         bar('crew', 'Crew', FILLS.stamina),
-        { direction: 'row', alignY: 'center', gap: 6 * zoom, padding: [4 * zoom, 0, 0, 0], children: chips },
-        this.roseNode(ship, said, zoom),
-      ],
-    };
-  }
-
-  /** The battery rose: Bow over the two sides' chips over Stern, each side filling from its foot as it loads, gold
-   *  round where the look lays it, flashing as it comes ready, edged in blood where a blow lands. */
-  private roseNode(
-    ship: NonNullable<SeaFightModel['ship']>,
-    said: ReturnType<typeof seaFightWords>,
-    zoom: number,
-  ): Node {
-    const still = motionReduced();
-    const end = (name: 'bow' | 'stern', text: string): Node => ({
-      width: 'grow',
-      alignX: 'center',
-      ...(ship.blow === name ? { draw: blowEdge(zoom) } : {}),
-      children: [{ text: { ...words(text, ship.blow === name ? INKS.blowWords : TONES.stoneLit), size: zoom } }],
-    });
-    const side = (name: 'port' | 'starboard'): Node => {
-      const rose: RoseSide = ship[name];
-      const age = this.age(name);
-      // A side come ready flashes brass twice, lit for the second half of each; held lit with reduced motion.
-      const flashed = age !== null && (still || age % FRESH_FLASH >= FRESH_FLASH / 2);
-      const lit = flashed && !still;
-      const colour = ship.blow === name ? INKS.blowWords : lit ? TONES.outline : rose.laid ? TONES.brassHi : TONES.word;
-      const border = rose.laid ? TONES.brassHi : rose.ready ? TONES.brass : TONES.stoneDim;
-      return {
-        width: 'grow',
-        alignX: 'center',
-        padding: [3 * zoom, 5 * zoom, 3 * zoom, 5 * zoom],
-        draw: (ui, box, scale, clip, fade) => {
-          const pen = { ui, box, scale: scale * zoom, clip, fade };
-          const step = pen.scale;
-          if (rose.laid) {
-            ring(pen, box, TONES.outline);
-            for (let glow = 1; glow <= 3; glow++)
-              ring(pen, grownBy(box, glow * step), faded('rgba(243,207,134,0.45)', (4 - glow) / 4));
-          } else {
-            ring(pen, box, TONES.outline);
-            paintBox(pen, { ...box, x: box.x + 2 * step, y: box.y + 2 * step }, 'rgba(0,0,0,0.35)');
-          }
-          const inner = grownBy(box, -step);
-          paintBox(pen, inner, flashed ? TONES.brassHi : TONES.groundChip);
-          if (!flashed) {
-            const filled = Math.round(Math.max(0, Math.min(1, rose.fill)) * inner.height);
-            paintBox(pen, { ...inner, y: inner.y + inner.height - filled, height: filled }, faded(TONES.brassLo, 0.8));
-          }
-          edges(pen, box, [border]);
-          if (ship.blow === name) blowEdge(zoom)(ui, box, scale, clip, fade);
+        ship.fire && {
+          direction: 'row',
+          padding: [4 * zoom, 0, 0, 0],
+          children: [chip('On fire', INKS.fire)],
         },
-        children: [{ text: { ...words(said[name], colour), size: zoom } }],
-      };
-    };
-    return {
-      width: ROSE_WIDE * zoom,
-      direction: 'column',
-      gap: 3 * zoom,
-      padding: [4 * zoom, 0, 0, 0],
-      children: [
-        end('bow', 'Bow'),
-        { direction: 'row', gap: 3 * zoom, width: 'grow', children: [side('port'), side('starboard')] },
-        end('stern', 'Stern'),
       ],
     };
   }
@@ -424,9 +331,3 @@ export class SeaFightReadout {
     };
   }
 }
-
-/** A blow's 2 px blood edge, round the outside of what it lands on. */
-const blowEdge =
-  (zoom: number): Drawing =>
-  (ui, box, scale, clip, fade) =>
-    ring({ ui, box, scale: scale * zoom, clip, fade }, box, INKS.sinking, 2);

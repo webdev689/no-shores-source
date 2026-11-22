@@ -146,18 +146,19 @@ const PICTURES: Readonly<Record<string, readonly string[]>> = {
 };
 
 /** The picture of the pad's button `name` beside words at `size` steps of the face, each texel a pixel larger than
- *  the step, as the mouse's, and edged dark to read over the world; null for a name it has none for. */
-export function padIconNode(name: string, size: number): Node | null {
+ *  the step, as the mouse's, and edged dark to read over the world; null for a name it has none for. `onCap`, it
+ *  stands on a keycap the cap's height holds: every texel `size` pixels, with no dark edge of its own. */
+export function padIconNode(name: string, size: number, onCap = false): Node | null {
   const shape = PICTURES[name];
   if (!shape) return null;
-  const rows = outlined(shape);
+  const rows = onCap ? shape : outlined(shape);
   const width = rows[0]?.length ?? 0;
-  const texel = size + 1;
+  const texel = onCap ? size : size + 1;
   return {
     width: width * texel,
     height: rows.length * texel,
     picture: {
-      key: `pad icon ${name}`,
+      key: `pad icon ${name}${onCap ? ' on cap' : ''}`,
       source: { pixels: () => iconPixels(rows, 'l', TONES.stoneLit) },
       pixel: { width, height: rows.length },
     },

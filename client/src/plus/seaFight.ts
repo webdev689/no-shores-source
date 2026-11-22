@@ -1,27 +1,31 @@
 // The sea fight's readout in the Plus kit, after DFO's helm readout (navalHud.js): what it shows and the words it says
 // them in. The display draws it as it draws the on-foot HUD (`combat/seaReadout.ts`): the player's SHIP PLATE at the
-// top left is the vitals' long thin bars (Hull over Sails over Crew; its BOOST RING, a fire and a brace chip under
-// them; and the BATTERY ROSE of its sides' reloads); the TARGET CARD under the compass is the target's plate (the
-// faction's emblem, its name, one hull bar in its rank's colour, its class, distance and state as small words); the
-// TALLY of the last volley; and the WARNING under the card while a battery is run out at the player's ship.
+// top left is the vitals' long thin bars (Hull over Sails over Crew, a fire chip under them); the SHIP'S BAR at the
+// bottom left holds its abilities as the Arts' bar holds theirs (each broadside's reload, the burst, the brace and the
+// load); the TARGET CARD under the compass is the target's plate (the faction's emblem, its name, one hull bar in its
+// rank's colour, its class, distance and state as small words); the TALLY of the last volley; and the WARNING under
+// the card while a battery is run out at the player's ship.
 import { BAR_TONES, VITAL_SIZES } from './barFrame.ts';
 
-/** A side of the player's guns as the rose shows it: its share loaded, whether ready, just come ready, laid by the look, its
- *  load and the seconds it still loads. */
-export interface RoseSide {
-  readonly fill: number;
-  readonly ready: boolean;
-  readonly fresh: boolean;
-  readonly laid: boolean;
-  readonly load: string;
-  readonly left: number;
-}
+/** The pictures the ship's bar draws its abilities with: a side's gun, the burst, the brace and each load. */
+export type ShipIcon = 'port' | 'starboard' | 'burst' | 'brace' | 'round' | 'grape' | 'chain' | 'heated';
 
-/** The ship's burst of speed as its ring shows it: ready (lit whole), bursting (draining as the burst runs out) or
- *  charging (filling as it recharges), and the share of the ring lit. */
-export interface BoostRing {
-  readonly state: 'ready' | 'burst' | 'charging';
-  readonly share: number;
+/** One of the ship's abilities as its bar shows it, so another is one more of them: which it is and its picture, its
+ *  name and the key that uses it as a keycap draws it (`pad:` before a pad's button); whether it is ready, recharging
+ *  or in use, and whether it cannot be used now; how far it has recharged (1 ready) and the seconds still to go; the
+ *  share of a use still to run; whether its side is laid by the look; and how it stands, in words, for a reader. */
+export interface ShipAbility {
+  readonly id: string;
+  readonly icon: ShipIcon;
+  readonly name: string;
+  readonly key: string;
+  readonly state: 'ready' | 'charging' | 'active';
+  readonly unable: boolean;
+  readonly charge: number;
+  readonly left: number;
+  readonly running: number;
+  readonly laid: boolean;
+  readonly said: string;
 }
 
 /** What the readout shows: the player's ship, the ship the card is on, and its last volley's count; any of them none. */
@@ -32,11 +36,7 @@ export interface SeaFightModel {
     readonly sail: number;
     readonly crew: number;
     readonly fire: boolean;
-    readonly braced: boolean;
-    readonly boost: BoostRing;
-    readonly port: RoseSide;
-    readonly starboard: RoseSide;
-    readonly blow: 'bow' | 'stern' | 'port' | 'starboard' | null;
+    readonly abilities: readonly ShipAbility[];
   } | null;
   readonly card: {
     readonly name: string;
@@ -64,13 +64,8 @@ export interface SeaFightModel {
 /** The gap between the card and a ship's plate under it, CSS pixels. */
 export const CARD_GAP = 8;
 
-/** What the boost ring says to a reader in each state. */
-const BOOST_WORDS = { ready: 'Boost ready', burst: 'Boosting', charging: 'Boost recharging' } as const;
-
-/** The readout's words, as DFO's `navalHudText` says them: a side's chip, the card's state and the tally's line; and
- *  the boost ring's, for a reader. */
+/** The readout's words, as DFO's `navalHudText` says them: the card's state and the tally's line. */
 export function seaFightWords(model: SeaFightModel) {
-  const side = (rose: RoseSide) => (rose.ready ? rose.load : `${rose.load} ${Math.ceil(rose.left)}s`);
   const card = model.card;
   const state = !card
     ? ''
@@ -85,9 +80,6 @@ export function seaFightWords(model: SeaFightModel) {
           : '';
   const tally = model.tally;
   return {
-    port: model.ship ? side(model.ship.port) : '',
-    starboard: model.ship ? side(model.ship.starboard) : '',
-    boost: model.ship ? BOOST_WORDS[model.ship.boost.state] : '',
     state,
     tally: tally
       ? `${tally.hits} of ${tally.balls} ${tally.balls === 1 ? 'ball' : 'balls'} struck` +

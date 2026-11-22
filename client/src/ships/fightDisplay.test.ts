@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, FightVessel, FightView } from '../rules/fightRules.ts';
-import { boostRing, fightDisplay } from './fightDisplay.ts';
+import { fightDisplay } from './fightDisplay.ts';
 import { FightFeel } from './fightFeel.ts';
 
 const vessel: FightVessel = {
@@ -44,21 +44,37 @@ const VIEW: FightView = {
   fingerprint: '',
 };
 
-test("the plate shows the ship's hurts, fire and brace, and the rose each side's reload, the laid side gold", () => {
+test("the plate shows the ship's hurts and fire, and its bar each side's reload, its burst, brace and load", () => {
   const model = fightDisplay(VIEW, new FightFeel(1), 0, { boardable: false, boardKey: 'E', braceKey: 'C' });
-  assert.deepEqual(
-    model.ship && [model.ship.hull, model.ship.sail, model.ship.crew, model.ship.fire, model.ship.braced],
-    [0.5, 1, 0.8, true, true],
-  );
-  assert.deepEqual(
-    model.ship && [model.ship.port.fill, model.ship.port.ready, model.ship.port.left, model.ship.port.laid],
-    [0.4, false, 2.5, false],
-  );
-  assert.deepEqual(model.ship && [model.ship.starboard.ready, model.ship.starboard.laid, model.ship.starboard.load], [
+  assert.deepEqual(model.ship && [model.ship.hull, model.ship.sail, model.ship.crew, model.ship.fire], [
+    0.5,
+    1,
+    0.8,
     true,
-    true,
-    'Chain',
   ]);
+  const shown = (model.ship?.abilities ?? []).map((ability) => [ability.id, ability.state, ability.unable]);
+  assert.deepEqual(shown, [
+    ['port', 'charging', true],
+    ['starboard', 'ready', true],
+    ['burst', 'ready', false],
+    ['brace', 'active', false],
+    ['load', 'ready', false],
+  ]);
+  assert.equal(model.ship?.abilities[4]?.icon, 'chain');
+  assert.deepEqual(
+    model.ship?.abilities.map((ability) => ability.key),
+    ['Right button', 'Right button', 'Shift', 'C', 'Wheel'],
+    "the game's own keys where none are given",
+  );
+});
+
+test("the side the look lays glows on the bar while it may fire, with the keys the game's binds give", () => {
+  const unbraced = { ...VIEW, player: { ...vessel, guns: { ...vessel.guns, braced: false } } };
+  const keys = { aim: 'pad:LT', burst: 'pad:LS', brace: 'pad:B', load: 'pad:Right' };
+  const model = fightDisplay(unbraced, new FightFeel(1), 0, { boardable: false, boardKey: 'X', braceKey: 'B', keys });
+  const starboard = model.ship?.abilities.find((ability) => ability.id === 'starboard');
+  assert.deepEqual([starboard?.laid, starboard?.key], [true, 'pad:LT']);
+  assert.equal(model.ship?.abilities.find((ability) => ability.id === 'port')?.laid, false);
 });
 
 test('the card is on the nearest captain: its name, class and distance, struck with the board key when it can be boarded', () => {
@@ -122,14 +138,12 @@ test("the broadside warning names the nearest captain running out its guns, as D
   assert.equal(pad.warn, 'Broadside from the Pirate Brig - B: brace', 'the brace as bound, on the pad played last');
 });
 
-test('the boost ring is whole once ready, drains while the ship bursts and fills as it recharges', () => {
-  assert.deepEqual(boostRing([0, 1]), { state: 'ready', share: 1 });
-  assert.deepEqual(boostRing([0.75, 0]), { state: 'burst', share: 0.75 });
-  assert.deepEqual(boostRing([0, 0.25]), { state: 'charging', share: 0.25 });
+test("the burst on the bar is the player's own, from the rules' view", () => {
   const model = fightDisplay({ ...VIEW, player: { ...vessel, boost: [0.5, 0] } }, new FightFeel(1), 0, {
     boardable: false,
     boardKey: 'E',
     braceKey: 'C',
   });
-  assert.deepEqual(model.ship?.boost, { state: 'burst', share: 0.5 }, "the player's own burst, from the rules' view");
+  const burst = model.ship?.abilities.find((ability) => ability.id === 'burst');
+  assert.deepEqual([burst?.state, burst?.running], ['active', 0.5]);
 });

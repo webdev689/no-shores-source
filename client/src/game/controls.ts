@@ -3,6 +3,7 @@
 // window's own key is written where it is not bound.
 import { type BindId, type Binds, type Device, type Slot, isStickWay } from '../player/binds.ts';
 import { BINDS } from '../player/input.ts';
+import type { ShipKeys } from '../ships/shipAbilities.ts';
 
 /** One row of the sheet: what it does (on the pad, where that differs), the controls it stands for, and the keys or
  *  the pad's buttons written where they are not bound (`pad:` names a pad's). */
@@ -204,4 +205,17 @@ export function boundCap(id: BindId, device: Device = BINDS.device, binds: Binds
   const [first] = binds[id][device];
   if (first === undefined) return '';
   return device === 'keys' ? keyName(first) : padName(first);
+}
+
+/** The keycaps of the ship's bar in a sea fight, for the keys or the pad last used: the aim's, the burst's, the
+ *  brace's and the next load's, which on the keys is the wheel while no key is bound to it. */
+export function shipKeys(device: Device = BINDS.device, binds: Binds = BINDS.now): ShipKeys {
+  const cap = (id: BindId) => boundCap(id, device, binds);
+  const load = cap('shotNext');
+  return {
+    aim: cap('aim'),
+    burst: cap('burst'),
+    brace: cap('brace'),
+    load: load === '' && device === 'keys' ? 'Wheel' : load,
+  };
 }

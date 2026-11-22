@@ -83,6 +83,14 @@ export function keycap(key: string, size = 1): Node {
   };
 }
 
+/** A key that is no word as it stands on a bar's keycap, each texel `texel` pixels: the mouse with its button lit in
+ *  brass, an arrow, or the pad's button (`pad:` before its name), as the key strip draws them; null for a key the cap
+ *  writes in words. */
+export function capFace(key: string, texel: number): Node | null {
+  if (key.startsWith('pad:')) return padIconNode(key.slice('pad:'.length), texel, true);
+  return iconNode(key, texel, true);
+}
+
 /** A line of what keys do, each key on its keycap (keys doing the same joined, each on its own) and its words. */
 export function hintRow(hints: readonly Hint[], size = 1): Node[] {
   return hints.map(([key, words]) => ({

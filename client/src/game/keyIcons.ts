@@ -86,19 +86,21 @@ export function iconPixels(rows: readonly string[], lit: string, rest: string): 
 export const isMouse = (name: string): boolean => name in ICONS && !ICONS[name]?.key;
 
 /** The picture of the key or button `name` beside words at `size` steps of the face: an arrow's texels each `size`
- *  CSS pixels a side, the mouse's a pixel more, so it stands as tall as a keycap; null for a key written in words. */
-export function iconNode(name: string, size: number): Node | null {
+ *  CSS pixels a side, the mouse's a pixel more, so it stands as tall as a keycap; null for a key written in words.
+ *  `onCap`, it stands on a keycap the cap's height holds: every texel `size` pixels, the mouse with no dark edge of
+ *  its own, the cap's ground being dark. */
+export function iconNode(name: string, size: number, onCap = false): Node | null {
   const icon = ICONS[name];
   if (!icon) return null;
-  const rows = icon.key ? icon.rows : outlined(icon.rows);
+  const rows = icon.key || onCap ? icon.rows : outlined(icon.rows);
   const width = rows[0]?.length ?? 0;
   const rest = icon.key ? '#efe8d6' : TONES.stoneLit;
-  const texel = icon.key ? size : size + 1;
+  const texel = icon.key || onCap ? size : size + 1;
   return {
     width: width * texel,
     height: rows.length * texel,
     picture: {
-      key: `key icon ${name}`,
+      key: `key icon ${name}${onCap && !icon.key ? ' on cap' : ''}`,
       source: { pixels: () => iconPixels(rows, icon.lit, rest) },
       pixel: { width, height: rows.length },
     },

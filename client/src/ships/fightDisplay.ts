@@ -1,47 +1,32 @@
 // The sea fight's readout as the Plus kit shows it (plus/seaFight.ts), from the fight's view and its feel: the ship's
-// plate, boost ring and rose, the card on the captain the look is on (the nearest while its guns are not laid), its
+// plate and its abilities' bar, the card on the captain the look is on (the nearest while its guns are not laid), its
 // last volley's tally, and the broadside warning under the card.
-import type { BoostRing, SeaFightModel } from '../plus/seaFight.ts';
-import type { FightBoost, FightCaptain, FightView } from '../rules/fightRules.ts';
+import type { SeaFightModel } from '../plus/seaFight.ts';
+import type { FightCaptain, FightView } from '../rules/fightRules.ts';
 import type { FightFeel } from './fightFeel.ts';
 import { rankBand } from '../rules/roster.ts';
 import { hullOfCaptain, HULL_NAMES } from './hulls.ts';
-
-/** A side's flash as it comes ready, seconds (DFO's READY_FLASH_S). */
-export const READY_FLASH_S = 0.7;
+import { SHIP_KEYS, shipAbilities, type ShipKeys } from './shipAbilities.ts';
 
 const word = (name: string) => `${name[0]?.toUpperCase() ?? ''}${name.slice(1)}`;
 const share = (have: number, most: number) => (most > 0 ? have / most : 0);
 
-/** The boost ring for a ship's burst: draining while it bursts, filling as it recharges, whole once ready. */
-export function boostRing([burst, charged]: FightBoost): BoostRing {
-  if (burst > 0) return { state: 'burst', share: burst };
-  return charged >= 1 ? { state: 'ready', share: 1 } : { state: 'charging', share: charged };
-}
-
 /** The readout at `now`: whether the card's captain can be boarded now, the key that boards it and the key that
- *  braces; the player's ship's kind (`own`) its plate names. */
+ *  braces in words, and the keycaps of the ship's bar (the game's own keys where none are given); the player's ship's
+ *  kind (`own`) its plate names. */
 export function fightDisplay(
   view: FightView,
-  feel: Pick<FightFeel, 'blow' | 'readyAt' | 'tally'>,
+  feel: Pick<FightFeel, 'tally'>,
   now: number,
-  board: { readonly boardable: boolean; readonly boardKey: string; readonly braceKey: string },
+  board: {
+    readonly boardable: boolean;
+    readonly boardKey: string;
+    readonly braceKey: string;
+    readonly keys?: ShipKeys;
+  },
   own = 'Sloop',
 ): SeaFightModel {
   const { player, lay } = view;
-  const { guns } = player;
-  const side = (index: 0 | 1) => {
-    const ready = guns.left[index] <= 0;
-    const since = now - (feel.readyAt(index) ?? -Infinity);
-    return {
-      fill: ready ? 1 : guns.progress[index],
-      ready,
-      fresh: since >= 0 && since < READY_FLASH_S,
-      laid: lay?.side === (index === 0 ? 'port' : 'starboard'),
-      load: word(guns.load),
-      left: guns.left[index],
-    };
-  };
   const [ownX = 0, ownY = 0] = player.ship;
   const apart = (captain: FightCaptain) => Math.hypot((captain.ship[0] ?? 0) - ownX, (captain.ship[1] ?? 0) - ownY);
   // The card is on the ship the look is on: while the guns are laid, the captain nearest where they fall; else the
@@ -67,11 +52,7 @@ export function fightDisplay(
       sail: share(player.sail, player.max_sail),
       crew: share(player.crew, player.max_crew),
       fire: player.fires > 0,
-      braced: guns.braced,
-      boost: boostRing(player.boost),
-      port: side(0),
-      starboard: side(1),
-      blow: feel.blow(now),
+      abilities: shipAbilities(player, lay?.side ?? null, board.keys ?? SHIP_KEYS),
     },
     card: near
       ? {
