@@ -64,7 +64,7 @@ test('a carried shard is held at its carrier’s off hand: theirs as drawn, the 
   // Facing north from an eye behind them, the off (left) hand shows to the west, before the card toward the eye.
   assert.ok(own && own[0] < 0 && own[1] > 0, `own: ${own}`);
   // The other faces east, seen from the south-west: its off hand shows on the eye's left, nearer the eye.
-  const near = (at: readonly number[]) => Math.hypot(at[0] - 0, at[1] - 4);
+  const near = (point: readonly number[]) => Math.hypot(point[0] - 0, point[1] - 4);
   assert.ok(theirs && near(theirs) < near([10, 10]), `theirs: ${theirs}`);
   const first = bodies({ shot: { eye: [0, 0, 1.6], yaw: 0, pitch: 0 }, firstPerson: true });
   const [held] = shards(view.frame(event, [], [], first, 0, [], () => 0));

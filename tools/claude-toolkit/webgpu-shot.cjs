@@ -122,7 +122,8 @@ const OWN_TEXTURE = () => {
       laid.getContext('2d').putImageData(new ImageData(rgba, texture.width, texture.height), 0, 0);
       const png = new Uint8Array(await (await laid.convertToBlob({ type: 'image/png' })).arrayBuffer());
       let text = '';
-      for (let at = 0; at < png.length; at += 0x8000) text += String.fromCharCode(...png.subarray(at, at + 0x8000));
+      for (let start = 0; start < png.length; start += 0x8000)
+        text += String.fromCharCode(...png.subarray(start, start + 0x8000));
       return { png: btoa(text) };
     }
     document.getElementById('__shot')?.remove();
@@ -212,18 +213,18 @@ async function main() {
       page.evaluate(() => document.body.innerText).then((why) => console.log('game stopped:', why), () => undefined),
     );
   });
-  const on = () => game ?? page;
+  const driven = () => game ?? page;
   const framesOn = async (count) => {
-    const from = await on().evaluate(() => self.__shotFrames);
+    const from = await driven().evaluate(() => self.__shotFrames);
     const until = Date.now() + 600_000;
-    while ((await on().evaluate(() => self.__shotFrames)) < from + count) {
+    while ((await driven().evaluate(() => self.__shotFrames)) < from + count) {
       if (Date.now() > until) throw new Error(`${count} frames were not drawn in 10 minutes`);
       await page.waitForTimeout(100);
     }
   };
   // Writes the picture to `path`: from the worker's own texture, or the page laid over and screenshot.
   const shoot = async (path) => {
-    const laid = await on().evaluate(() => self.__shotLay());
+    const laid = await driven().evaluate(() => self.__shotLay());
     if (laid?.png) return writeFileSync(path, Buffer.from(laid.png, 'base64'));
     if (laid) console.log('shot:', laid);
     await page.screenshot({ path });
@@ -252,7 +253,7 @@ async function main() {
     }
     else if (step.clickText) await page.getByText(step.clickText).first().click();
     else if (step.frames) await framesOn(step.frames);
-    else if (step.eval) console.log('eval:', JSON.stringify(await on().evaluate(step.eval)));
+    else if (step.eval) console.log('eval:', JSON.stringify(await driven().evaluate(step.eval)));
     else if (step.views) {
       const listed = typeof step.views === 'string' ? JSON.parse(readFileSync(step.views, 'utf8'))[step.zone] : step.views;
       mkdirSync(step.into ?? '.', { recursive: true });
@@ -261,10 +262,10 @@ async function main() {
         // three times, until the body stands within 2 m of its point and is not fallen.
         let where = null;
         for (let attempt = 0; attempt < 3; attempt++) {
-          const stood = await on().evaluate((one) => self.__qaView?.(one.slice(0, 4)), view);
+          const stood = await driven().evaluate((one) => self.__qaView?.(one.slice(0, 4)), view);
           if (!stood) break;
           await page.waitForTimeout((step.settle ?? 10) * 1000);
-          where = await on().evaluate(() => self.__qaWhere());
+          where = await driven().evaluate(() => self.__qaWhere());
           if (!where.dead && Math.hypot(where.x - view[0], where.y - view[1]) <= 2) break;
           console.log(`view ${number} attempt ${attempt}: ${JSON.stringify(where)}`);
         }
