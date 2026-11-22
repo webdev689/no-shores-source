@@ -32,6 +32,16 @@ test('each keeper who deals with a player wears their own mark over their crown;
   assert.ok(keeperPicture('harbourmaster'), 'the Harbourmaster has a sign of his own');
 });
 
+test("the Postmaster's sealed letter beats over him while letters wait for the player, and stands still while none does", () => {
+  const here = { stations: [station('mail', [0, 0]), station('weaponsmith', [10, 0])] };
+  const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
+  const beating = (mail: readonly unknown[]) =>
+    markedHere({ mail } as unknown as GearState, here, () => 0).map((mark) => mark.beating);
+  assert.equal(markedHere(null, here, () => 0)[0]?.picture, keeperPicture('mail'), 'his own sign');
+  assert.deepEqual(beating([letter]), [true, false], 'his alone, while a letter waits');
+  assert.deepEqual(beating([]), [false, false]);
+});
+
 test('the bounty board wears a gold "!" over its gable, a sign of its own in the keepers\' diamond; no other plaza one', () => {
   const here = countersOf({ stations: [], board: [5, 2], boardAt: [5, 0] });
   const marked = markedHere(null, here, () => 1);

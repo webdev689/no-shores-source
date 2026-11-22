@@ -141,6 +141,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   136: 'There is no such keeper.',
   137: 'They have nothing more to say to you now.',
   138: 'No fragment of that Art waits to be chosen.',
+  141: 'There is no such letter.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

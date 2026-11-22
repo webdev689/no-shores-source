@@ -1,7 +1,8 @@
 // What wears a mark over it on foot (combat/marksOver.ts lays them): over each keeper who deals with a player their
 // sign in its brass diamond, or a faction's emblem in the diamond edged in its Art's colour, as their screen shows them
-// (npc/npcMarks.ts); over the bounty board its gold "!"; over Shape on his week's spot his own; and over each dungeon
-// entrance's door a door. A resource node wears none: its own picture stands on the ground (nodeCards.ts).
+// (npc/npcMarks.ts), the Postmaster's sealed letter beating while letters wait; over the bounty board its gold "!";
+// over Shape on his week's spot his own; and over each dungeon entrance's door a door. A resource node wears none: its
+// own picture stands on the ground (nodeCards.ts).
 
 import type { PixelPicture } from '../combat/dropPictures.ts';
 import { type Marked, OVER_HEAD_M, WIDTH_M } from '../combat/marksOver.ts';
@@ -107,12 +108,15 @@ export function markedHere(
 ): Marked[] {
   const marked: Marked[] = [];
   const crown = (x: number, y: number, top = BODY_HEIGHT): Point => [x, y, floor(x, y) + top + OVER_HEAD_M];
+  // The Postmaster's mark beats while letters wait for the player, so it is seen from across the plaza.
+  const waiting = (gear?.mail?.length ?? 0) > 0;
   for (const station of here.stations ?? []) {
     // A keeper away from their post (the elder on her welcome) leaves it unmarked until they are back.
     const there = !awayFromCounters.has(station.kind) && offerAt([station], ...station.counter);
     const picture = there ? markOfKind(station.kind) : null;
     const top = station.kind === 'board' ? BOARD_TOP_M : BODY_HEIGHT;
-    if (picture) marked.push({ picture, at: crown(...station.keeper, top) });
+    if (picture)
+      marked.push({ picture, at: crown(...station.keeper, top), beating: waiting && station.kind === 'mail' });
   }
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const own = keeperPicture('shape');

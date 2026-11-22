@@ -3,7 +3,8 @@
 //! armour raising a player past level 20; a weapon's Attack and armour's Defense against a foe's level; Vestiges, the
 //! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems and cosmetics; the factions
 //! and the Arts' levels; Shape and his Shapes; the houses' roads; everything a player holds; the game's one clock,
-//! its day and week; what is on, drawn by the day and the week; and the bounties.
+//! its day and week; what is on, drawn by the day and the week; the bounties; and the game's mail, which keeps what a
+//! player would have lost.
 
 pub mod activities;
 pub mod activity;
@@ -26,6 +27,7 @@ pub mod gate;
 pub mod grid;
 pub mod item;
 pub mod kinds;
+pub mod mail;
 pub mod objectives;
 mod old_hands;
 pub mod power;
@@ -38,6 +40,7 @@ pub mod shape;
 pub mod ship;
 pub mod shown;
 pub mod story;
+mod vault;
 pub mod vendor;
 pub mod vestige;
 pub mod world;
@@ -78,6 +81,8 @@ mod gate_tests;
 mod item_tests;
 #[cfg(test)]
 mod keep_tests;
+#[cfg(test)]
+mod mail_tests;
 #[cfg(test)]
 mod objectives_tests;
 #[cfg(test)]

@@ -14,6 +14,7 @@ pub mod hub;
 pub mod landmarks;
 pub mod landmarks_inland;
 pub mod life;
+pub mod mail;
 pub mod modules;
 pub mod ramps;
 pub mod rmb;

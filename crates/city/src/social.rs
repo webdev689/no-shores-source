@@ -1,7 +1,8 @@
 //! Stage I: the city's social space, the one part of it a player walks, as Destiny 1's Tower is the one part of its
 //! City walked. A plaza the Tower's size beside the landmark on its seaward side, level with the landmark's foot,
 //! walled all round with a parapet and laid out as a courtyard (`courtyard`); Overlook's is its hub (`hub`), the bounty
-//! board on it (`board`). From it the city below and the harbour are seen whole and never reached.
+//! board and the mail counter on it (`board`, `mail`). From it the city below and the harbour are seen whole and never
+//! reached.
 
 use crate::board::Board;
 use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, townsfolk_life, visitor_spots};

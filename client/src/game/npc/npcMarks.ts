@@ -1,9 +1,9 @@
 // The keepers' marks, drawn pixel by pixel as the Arts' emblems are: each keeper's sign in brass in a diamond, as
 // Destiny marks a vendor beside their name (an eye for the Mage, a shield for the Armorsmith, a sword for the
-// Weaponsmith, a needle and thread for the Tailor, a horseshoe for the Tack, an anchor for the Harbourmaster, and for
-// Shape a shape that is no shape); the bounty board's gold "!", as Destiny marks a bounty; and the glyph of Shapes, the
-// currency only he takes. A faction's mark is its emblem (npcScreen.ts). The same marks bob over the keepers and the
-// board in the world (overheadMarks.ts).
+// Weaponsmith, a needle and thread for the Tailor, a horseshoe for the Tack, an anchor for the Harbourmaster, a sealed
+// letter for the Postmaster, and for Shape a shape that is no shape); the bounty board's gold "!", as Destiny marks a
+// bounty; and the glyph of Shapes, the currency only he takes. A faction's mark is its emblem (npcScreen.ts). The same
+// marks bob over the keepers and the board in the world (overheadMarks.ts).
 
 import type { PixelPicture } from '../../combat/dropPictures.ts';
 
@@ -17,6 +17,19 @@ const SHAPES = ['#15121c', '#4a4258', '#9a8fb0', '#e9e2f7'];
 
 /** Each keeper's sign, 11 × 11, laid in the middle of the diamond. */
 const SIGNS: Readonly<Record<string, readonly string[]>> = {
+  mail: [
+    '...........',
+    '.ddddddddd.',
+    '.dd.....dd.',
+    '.d.d...d.d.',
+    '.d..d.d..d.',
+    '.d...c...d.',
+    '.d..ccc..d.',
+    '.d...c...d.',
+    '.d.......d.',
+    '.ddddddddd.',
+    '...........',
+  ],
   vault: [
     '...........',
     '..ddddddd..',

@@ -14,6 +14,7 @@ code:
   - crates/city/src/social.rs#plaza
   - crates/city/src/stations.rs#stations
   - crates/city/src/board.rs#board
+  - crates/city/src/mail.rs#mail_counter
   - crates/city/src/courtyard.rs#visitor_spots
   - crates/city/src/lib.rs#social_open
   - content/world/social.json
@@ -123,8 +124,13 @@ city stands on it:
    alone the bounty board stands (`board`, [[Activities]]), on the notice board's landing against the Watch Court's
    west range (`hub::BOARD_LANDING_M`), a metre in from its back and facing the court, read from the landing more
    than 8 m from every counter and every place of Shape's. It is two timber posts and a timber face 3.6 m wide, six
-   plaster notices in two rows, a lamp and a small gable roof, so the hub draws, collides and lights it as the rest. It is no station
-   and no keeper stands at it; a player reads it from 2 m before its face, where its counter is. Its node is
+   plaster notices in two rows, a lamp and a small gable roof, so the hub draws, collides and lights it as the rest.
+   It is no station and no keeper stands at it; a player reads it from 2 m before its face, where its counter is. On
+   the court's west side between the landing and the west vault house, 12 m landward of the middle and 42 m across,
+   stands the mail counter (`mail`, [[Gear]], "The mail"), a station of its own: a timber counter with two parcels,
+   the Postmaster behind it facing the court, served a metre before it as a stall is, and behind him a rack of
+   pigeonholes holding letters under a lamp, more
+   than 8 m from every other counter, Shape's spots, the arrivals and the board. Its node is
    `<city id>-social`. The landmark and the plaza stand on one platform 12 m over the highest ground under either and
    over every terrace within 250 m of the plaza, so from the plaza the city below is seen whole, over its roofs, as
    from Destiny 1's Tower. Only the cells under the landmark's base rise to it; under the plaza the cells keep

@@ -1,5 +1,5 @@
 //! What a player holds: every item, where each is (worn in a slot, carried, or in the vault), their Vestiges, their
-//! materials and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack, and the
+//! materials, their mail and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack, and the
 //! traits their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten Vestiges,
 //! and a vault of twenty weapons, twenty armour and twenty Vestiges.
 
@@ -201,6 +201,9 @@ pub struct Character {
     /// Their place in every quest, and the fragment choices their roads gave (`quests.rs`).
     #[serde(default, deserialize_with = "crate::quests::lenient")]
     pub quests: crate::quests::QuestLog,
+    /// The game's letters waiting at the mail counter, oldest first (`mail.rs`).
+    #[serde(default)]
+    pub mail: Vec<crate::mail::Letter>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -265,6 +268,7 @@ impl Character {
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
             quests: crate::quests::QuestLog::default().kept(),
+            mail: Vec::new(),
             unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [
@@ -342,7 +346,15 @@ impl Character {
             character.items.insert(id, (item, at));
         }
         shields.settle(&mut character);
+        for letter in &mut character.mail {
+            letter.item = letter.item.take().map(|item| {
+                let id = item.id;
+                item.kept(id, resources)
+            });
+        }
+        let letters = character.mail.iter().map(|letter| &letter.id);
         let held = character.items.keys().chain(character.vestiges.keys()).chain(character.crew.officers.keys());
+        let held = held.chain(letters);
         let highest = held.max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.arts = std::mem::take(&mut character.arts).kept();
@@ -356,7 +368,7 @@ impl Character {
         Some(character)
     }
 
-    /// A fresh number for an item or Vestige, never one it already holds.
+    /// A fresh number for an item, Vestige or letter, never one it already holds.
     pub fn take_id(&mut self) -> u32 {
         loop {
             let id = self.next_id;
@@ -364,6 +376,7 @@ impl Character {
             if !self.items.contains_key(&id)
                 && !self.vestiges.contains_key(&id)
                 && !self.crew.officers.contains_key(&id)
+                && !self.mail.iter().any(|letter| letter.id == id)
             {
                 return id;
             }

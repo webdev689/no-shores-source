@@ -67,6 +67,9 @@ pub const FINISH_PROLOGUE: u8 = 68;
 /// `day` sends it.
 pub const TAKE_BOUNTY: u8 = 69;
 pub const TURN_IN_BOUNTY: u8 = 70;
+/// A letter taken from the mail, by its number in `item`; and every letter there is room for.
+pub const TAKE_LETTER: u8 = 71;
+pub const TAKE_ALL_LETTERS: u8 = 72;
 /// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
@@ -137,6 +140,8 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         FINISH_PROLOGUE => Asked::Gear(Ask::FinishPrologue),
         TAKE_BOUNTY => Asked::Gear(Ask::TakeBounty { place: node, day: u64::from(item) }),
         TURN_IN_BOUNTY => Asked::Gear(Ask::TurnInBounty { place: node, day: u64::from(item) }),
+        TAKE_LETTER => Asked::Gear(Ask::TakeLetter { letter: item }),
+        TAKE_ALL_LETTERS => Asked::Gear(Ask::TakeAllLetters),
         INFUSE => Asked::Gear(Ask::Infuse { item, fed: ask.count() }),
         RECRUIT => Asked::Gear(Ask::Recruit { faction: column, offer: node }),
         STATION => Asked::Gear(Ask::Station { officer: item, duty: duty_of(ask.slot())? }),
@@ -255,6 +260,8 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
                 args = messages::AskArgs { kind: CHOOSE_FRAGMENT, column: art, node: fragment, ..args };
             }
             Ask::FinishPrologue => args = messages::AskArgs { kind: FINISH_PROLOGUE, ..args },
+            Ask::TakeLetter { letter } => args = messages::AskArgs { kind: TAKE_LETTER, item: letter, ..args },
+            Ask::TakeAllLetters => args = messages::AskArgs { kind: TAKE_ALL_LETTERS, ..args },
             Ask::TakeBounty { place, day } => {
                 let item = u32::try_from(day).unwrap_or(u32::MAX);
                 args = messages::AskArgs { kind: TAKE_BOUNTY, item, node: place, ..args };
@@ -565,6 +572,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         bounties: Some(bounties),
         bounty_xp,
         bounty_aurem,
+        mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

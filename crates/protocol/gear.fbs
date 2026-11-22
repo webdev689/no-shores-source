@@ -67,6 +67,17 @@ table GearDrop {
   flying: ubyte;
 }
 
+// A letter of the game's mail: its number, where what it holds came from (the gear crate's `mail::Source`, which the
+// page words), whether it tells of a letter a full mailbox let go, and what it holds, a Vestige (never in the vault) or
+// an item, each numbered anew as it is taken; a letter may hold neither.
+table GearLetter {
+  id: uint;
+  from: ubyte;
+  crowded: bool;
+  vestige: GearVestige;
+  item: GearItem;
+}
+
 // A bounty of the day's board as it stands for a player: its words, how many it asks, how many they have counted,
 // whether they hold it and whether they turned it in.
 table GearBounty {
@@ -215,6 +226,8 @@ table Gear {
   bounties: [GearBounty];
   bounty_xp: uint;
   bounty_aurem: uint;
+  // The game's letters waiting for them at the mail counter, oldest first.
+  mail: [GearLetter];
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

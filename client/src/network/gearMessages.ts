@@ -5,6 +5,7 @@ import type { GearItem as GearItemTable } from '../../../generated/messages/ts/o
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
 import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
+import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
@@ -90,6 +91,9 @@ export const ASKS = {
    *  board shown in `item` (the gear's `day`): at the bounty board. */
   takeBounty: 69,
   turnInBounty: 70,
+  /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
+  takeLetter: 71,
+  takeAllLetters: 72,
 } as const;
 
 /** Shape's place while he is away. */
@@ -262,6 +266,8 @@ export interface GearState {
   readonly bounties?: readonly GearBounty[];
   readonly bountyXp?: number;
   readonly bountyAurem?: number;
+  /** The game's letters waiting at the mail counter, oldest first. */
+  readonly mail?: readonly GearLetter[];
 }
 
 /** A bounty of the day's board as it stands for the player (protocol's `GearBounty`). */
@@ -506,6 +512,7 @@ export function gearOf(gear: Gear): GearState {
     }),
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
+    mail: mailOf(gear, itemOf),
   };
 }
 

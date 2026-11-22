@@ -124,8 +124,8 @@ pub struct Gathering {
 
 /// A social space's counter that serves a player's gear: the Mage's identifies Vestiges, a vault's keeps gear, a
 /// smith's sells its own wares, the Tailor's emblems and dyes, the Tack's the horse's pieces, a faction's its pledge,
-/// cape, packages and Art, Shape's, wherever he stands that week, his wares; and the bounty board takes and turns in
-/// bounties.
+/// cape, packages and Art, Shape's, wherever he stands that week, his wares, and the mail's hands over its letters;
+/// and the bounty board takes and turns in bounties.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CounterKind {
     Mage,
@@ -136,6 +136,7 @@ pub enum CounterKind {
     /// A faction's, by its number.
     Faction(u8),
     Shape,
+    Mail,
     /// The bounty board, which takes and turns in bounties: no keeper stands at it.
     Board,
 }
@@ -174,6 +175,7 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         Ask::BuyFromShape { .. } => Some(CounterKind::Shape),
         Ask::Speak { keeper } => keeper_counter(*keeper),
         Ask::TakeBounty { .. } | Ask::TurnInBounty { .. } => Some(CounterKind::Board),
+        Ask::TakeLetter { .. } | Ask::TakeAllLetters => Some(CounterKind::Mail),
         _ => None,
     }
 }

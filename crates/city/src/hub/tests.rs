@@ -263,6 +263,28 @@ fn the_bounty_board_stands_on_its_landing_facing_the_court_read_clear_of_every_c
 }
 
 #[test]
+fn the_postmasters_counter_stands_in_the_watch_court_clear_of_every_other_counter_the_board_and_the_arrivals() {
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let mail: Vec<_> = social.stations.iter().filter(|station| station.kind == StationKind::Mail).collect();
+    assert_eq!(mail.len(), 1, "one mail counter, Overlook's");
+    let at = mail[0].counter;
+    let board = social.board.expect("the bounty board").front;
+    let others =
+        social.stations.iter().filter(|station| station.kind != StationKind::Mail).map(|station| station.counter);
+    let spots = social.visitor_spots.iter().chain(&social.spawns).copied();
+    // Twice a counter's reach (the room's 4 m) apart, so where the mail serves no other counter does.
+    for [x, y] in others.chain(spots).chain([board]) {
+        let apart = libm::hypot(at[0] - x, at[1] - y);
+        assert!(apart > 8.0, "something {apart:.1} m from the mail counter");
+    }
+    // Served before the counter, as a stall is, its keeper behind it: the ring round where it is served clears the rack
+    // 3 m behind the counter.
+    let keeper = mail[0].keeper;
+    assert!(libm::hypot(keeper[0] - at[0], keeper[1] - at[1]) > 2.4, "its keeper behind the counter");
+}
+
+#[test]
 fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
     let (_, plan) = planned();
     let social = &plan.social;

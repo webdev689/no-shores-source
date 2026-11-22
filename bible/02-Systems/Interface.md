@@ -223,7 +223,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   atlas grows a layer at a time, up to 8 of 2048 square; full, it is laid afresh once the frame is
   drawn, each picture laid again as it is next wanted. A quad can turn about its middle, as an arrow does. One larger
   than a layer (2047 device pixels a side) is laid scaled down to fit and stretched back over its box; one whose own
-  texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn.
+  texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn. One laid at no
+  size, as a page's is on its first frame before its room is known, is not drawn.
 - **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the
   pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
   way, or by the pad's cross, whose up and down always move focus and whose left and right step a slider; A presses,
@@ -281,7 +282,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **A page of the menu** is a function of what the menu gives it (`MenuContext`) answering its nodes each frame: the
   gear and the way to ask of it, the pictures, the room its body leaves, the menu's sizes on this screen, the holds,
   the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
-  everything on the screen and kept above the footer; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
+  everything on the screen and kept above the footer, the pointer passing through it to what it describes where
+  there is no room beside it; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
   reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view, and
   Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
   Art's and Appearance stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
@@ -316,7 +318,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
   each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
-  the Journal, its timers down, the bounty board and a dungeon's entrance card. A shot may hear its events on a later
+  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card. A shot may hear its events on a later
   frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
 
@@ -756,7 +758,9 @@ never while a press is held. Each press is an ask the room answers.
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
-  used is spent, not gained. Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
+  used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
+  Postmaster's mark; a letter taken is not a gain, though what it held is.
+  Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
   lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
   with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's
   level, a fragment of its Core, the ship's materials and a module gained are rows. Prestige is not a gain: it is
@@ -960,9 +964,9 @@ bars (`combat/barDraw.ts#thinBarNode`) with the kit's bar (`plus/meter.ts`, with
 
 ## The social space's counters
 
-Every keeper in the social space who deals with a player, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
-([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]); E at one opens it in the menu's
-window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
+Every keeper in the social space who deals with a player, the Postmaster and Shape among them, keeps a screen, as
+Destiny's keep theirs in the Tower ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]);
+E at one opens it in the menu's window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
 - **The Harbourmaster's counter** sells the Shipwright's six modules of the day, each held to buy, its hover card
@@ -988,7 +992,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone.
   The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
   (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
-  back, and the focus goes back where it came from.
+  back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone, the keeper stands
+  over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
@@ -1006,6 +1011,16 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   under a thin bar of the menu's.
 - **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape is away. He comes on
   Fridays."
+- **The Postmaster's** (`mailPage`), in Overlook's plaza alone ([[Gear]], "The mail"): no currencies, as he sells
+  nothing; LETTERS with how many of the 50 wait at the heading's right, then Take all (a primary press) while any
+  waits, or "No letters wait for you."; then each letter oldest first, a sunk well holding the tile of what it holds
+  (an item's own picture, a module's or a Vestige's glyph, framed in its rarity with its pips, its card under the
+  pointer or the focus: an item's as its page's, a Vestige's its slot and level), its name in its rarity's colour, the
+  letter's words (`letterWords`), and Take. Where the column is narrower than 420 px, as on a phone, a letter stands
+  in one column: its tile and name, its words the well's whole width, then Take at its end. A click on the tile or
+  Take, or E on either while it holds the focus, takes that letter, once until the room answers; the focus then goes
+  to the same press of the next letter, or the one before. A letter there is no room for stays, the footer saying why,
+  and he speaks only to thank. The footer: Click / E (Take).
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
   refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is

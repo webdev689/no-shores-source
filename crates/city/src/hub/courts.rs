@@ -29,6 +29,9 @@ const OBELISK_TOWARD_M: f64 = 8.0;
 const INLAY_M: f64 = 0.02;
 /// The notice board's landing: its middle across, its size across and along, and its height (three steps of 0.15).
 pub const BOARD_LANDING_M: [f64; 4] = [-51.5, 6.0, 9.0, 0.45];
+/// Where the Postmaster's counter stands: metres seaward of the plaza's middle, and across it, on the court's west
+/// side between the board's landing and the west vault house.
+const MAIL_AT_M: [f64; 2] = [-12.0, -42.0];
 
 /// A unit vector across the plaza (toward its positive end), and seaward.
 fn across_of(frame: &Frame) -> [f64; 2] {
@@ -136,6 +139,10 @@ pub fn watch_court(frame: &Frame, laid: &mut Laid) {
     let (board, pieces) = crate::board::board(frame.at(0.0, middle - wide / 2.0 + 1.0), frame.level + high, across);
     laid.solids.extend(pieces);
     laid.board = Some(board);
+    // The Postmaster's counter, its keeper facing the court (`mail`).
+    let (mail, pieces) = crate::mail::mail_counter(frame.at(MAIL_AT_M[0], MAIL_AT_M[1]), frame.level, across);
+    laid.solids.extend(pieces);
+    laid.stations.push(mail);
     for side in [-1.0, 1.0] {
         laid.piece(stand_at(
             "bench",

@@ -246,6 +246,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 - [[The Crew Still Standing Regroup Ahead]]
 - [[The Server Is the Authority Over Everything]]
+- [[A Mail Vendor Keeps Lost Items and the Game's Mail]]
 - [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]
 
 - [[Overlook Is Our Own Game]]

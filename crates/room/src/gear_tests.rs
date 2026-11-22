@@ -154,17 +154,25 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
 }
 
 #[test]
-fn a_vestige_left_lying_is_gone_after_two_minutes() {
+fn a_vestige_left_lying_goes_to_the_mail_after_two_minutes() {
     let mut room = room();
     let player = room.join().expect("a room with space");
     let captain = stand(&mut room, ::foes::Role::Captain, 0, -30.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
+    let rarity = room.drops_for(player).find_map(|drop| match &drop.what {
+        Dropped::Vestige(vestige) => Some(vestige.rarity),
+        _ => None,
+    });
+    assert!(rarity.is_some(), "the Captain dropped a Vestige");
     for _ in 0..DROP_TICKS {
         room.tick();
     }
     assert_eq!(room.drops_for(player).count(), 0);
-    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0);
+    let character = &room.player(player).expect("in").character;
+    assert_eq!(character.vestiges_held(false), 0);
+    let posted: Vec<_> = character.mail.iter().filter_map(|letter| letter.vestige.as_ref()).collect();
+    assert_eq!(posted.iter().map(|vestige| vestige.rarity).collect::<Vec<_>>(), rarity.into_iter().collect::<Vec<_>>());
 }
 
 #[test]
@@ -237,6 +245,27 @@ fn the_bounty_board_takes_bounties_at_its_own_counter_alone() {
     assert_eq!(ask(&mut room, player, 2, take), 0, "at the board");
     assert_eq!(room.player(player).expect("in").character.activity.today.bounties.get(&2), Some(&0));
     assert_eq!(crate::asks::counter_for(&Ask::TurnInBounty { place: 2, day: 20_778 }), Some(CounterKind::Board));
+}
+
+#[test]
+fn the_mail_hands_over_its_letters_at_its_own_counter_alone() {
+    use crate::asks::{Counter, CounterKind};
+    use gear::mail::{Posted, Source};
+    let mut room = room();
+    let mage = Counter { kind: CounterKind::Mage, at: [-10.0, 0.0] };
+    room.counters = Some(vec![Counter { kind: CounterKind::Mail, at: [10.0, 0.0] }, mage]);
+    let player = room.join().expect("a room with space");
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    character.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Head, 4)));
+    let take = Asked::Gear(Ask::TakeLetter { letter: character.mail[0].id });
+    assert_eq!(ask(&mut room, player, 1, take.clone()), answer_code(Err(Refusal::NotHere)), "mid-plaza");
+    move_to(&mut room, player, -8.0, 0.0);
+    assert_eq!(ask(&mut room, player, 2, take.clone()), answer_code(Err(Refusal::NotHere)), "at the Mage's");
+    move_to(&mut room, player, 8.0, 0.0);
+    assert_eq!(ask(&mut room, player, 3, take), 0, "at the mail counter");
+    let character = &room.player(player).expect("in").character;
+    assert!(character.mail.is_empty() && character.vestiges_held(false) == 1);
+    assert_eq!(crate::asks::counter_for(&Ask::TakeAllLetters), Some(CounterKind::Mail));
 }
 
 #[test]

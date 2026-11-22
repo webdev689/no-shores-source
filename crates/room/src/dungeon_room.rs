@@ -41,14 +41,6 @@ pub(crate) struct Cache {
     pub open: bool,
 }
 
-impl Cache {
-    /// Where a Vestige `metres` before the cache lies, on the floor `cache_by` keeps clear toward its post.
-    pub(crate) fn before(&self, metres: f64) -> [f64; 3] {
-        let (east, south) = (libm::sin(self.facing), -libm::cos(self.facing));
-        [self.at[0] + east * metres, self.at[1] + south * metres, self.at[2]]
-    }
-}
-
 /// The navmesh's cell in a dungeon: an eighth of the Forge's, so every wall lies on a cell's edge, and the bake holds
 /// about a third of the columns the land's 0.25 m would over the dungeon's whole rectangle.
 const NAV_CELL_M: f64 = CELL_M / 8.0;
@@ -251,7 +243,7 @@ impl Room {
                 (gear::objectives::Feat::Cleared { island: self.island, tier: self.difficulty }, self.day());
             for player in players {
                 self.lay_cache_vestige(player, &cache, level);
-                self.pay_clear(player, level, &cache);
+                self.pay_clear(player, level);
                 // Counted as the clear pays, for those the room keeps, once a day each however often the cache opens.
                 let owner = self.players.get(&player).and_then(|found| found.owner.clone());
                 let first =

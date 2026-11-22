@@ -1,8 +1,8 @@
-// Pictures of the Journal, the bounty board and a dungeon's entrance card, headless (`tools/uiShot.mjs`): the menu
-// drawn whole as the game draws it, over sample gear, the day's and week's word and an entrance's card. The game never
-// imports it.
+// Pictures of the Journal, the bounty board, the Postmaster's letters and a dungeon's entrance card, headless
+// (`tools/uiShot.mjs`): the menu drawn whole as the game draws it, over sample gear, the day's and week's word and an
+// entrance's card. The game never imports it.
 import type { GearBounty, GearState } from '../network/gearMessages.ts';
-import { state } from '../network/gearForTests.ts';
+import { item, state } from '../network/gearForTests.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import type { Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
@@ -124,16 +124,16 @@ function weekOf(now: number, untilDay = 20 * HOUR + 55 * 60_000, untilWeek = 2 *
   };
 }
 
-/** The menu as the game starts it, over `GEAR` and the day's word, opened at `view`, one a picture: built afresh for
+/** The menu as the game starts it, over `gear` and the day's word, opened at `view`, one a picture: built afresh for
  *  each interface a shot draws with, `then` run once it is open. */
-function menuShot(view: View, then: () => void = () => undefined): (ui: Interface) => Node {
+function menuShot(view: View, then: () => void = () => undefined, gear = GEAR): (ui: Interface) => Node {
   const layers = new WeakMap<Interface, Layer>();
   return (ui) => {
     let layer = layers.get(ui);
     if (!layer) {
       const opened = roomNow();
-      const here = { gear: GEAR, ask: () => undefined, forge: null, dress: null };
-      const source = { week: () => weekOf(opened), kept: () => GEAR };
+      const here = { gear, ask: () => undefined, forge: null, dress: null };
+      const source = { week: () => weekOf(opened), kept: () => gear };
       layer = startGearWindow(
         () => false,
         null,
@@ -158,6 +158,19 @@ export const journalShot = menuShot('journal');
 export const journalTimersShot = menuShot('journal', () => dispatchEvent(new KeyboardEvent('keydown', { key: 't' })));
 /** The bounty board's screen, its six tiles in their states and the chosen one's card. */
 export const boardShot = menuShot('board');
+
+/** Three letters at the Postmaster's: a Rare Vestige left lying, a Legendary hull salvaged into a full mailbox, and a
+ *  piece with no name sent on. */
+const LETTERS: GearState = {
+  ...GEAR,
+  mail: [
+    { id: 31, from: 0, crowded: false, vestige: { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false }, item: null },
+    { id: 32, from: 4, crowded: true, vestige: null, item: item({ id: 0, rarity: 3, kind: 25, bucket: 8, level: 6 }) },
+    { id: 33, from: 1, crowded: false, vestige: null, item: item({ id: 0, rarity: 1, kind: 2, level: 11 }) },
+  ],
+};
+/** The Postmaster's screen, his three letters waiting. */
+export const postmasterShot = menuShot('mail', undefined, LETTERS);
 
 /** The Abyss Dungeon of the week's card at its entrance: its rules, its three modifiers and what it pays. */
 const ABYSS_CARD: EntranceCard = {

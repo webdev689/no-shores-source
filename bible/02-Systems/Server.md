@@ -491,19 +491,22 @@ so every decision is Rust and the shell only carries bytes and time.
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
   unread.
 - A browser's one text message is its session's token. In a node's room, a dungeon's, an island's and at sea the
-  player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. A socket
-  there that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
-  session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
-  never sign in cannot hold a room's places; every page of the game sends one, a guest's included. While the accounts do
-  not answer a claim, or the look before it, the player plays on unkept, and a look unanswered claims nothing. The Test
-  Ground's rooms and a fleet's keep nothing and take anyone. A
-  character the room's gate shuts ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's
-  reason. A save keeps the keys a room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in
-  its day's activity and its story, and in each item and Vestige, so a room that knows fewer fields carries the newer
-  ones through; a room built before this keeping drops them, so a rollback to one loses them. A new value of a kind the
-  room knows (a slot, a rarity) reads as a broken save, which is left untouched, and a list longer than the room's Arts
-  or factions is cut to them. At sea the room also tells the accounts the player is there, again every 30 seconds, and
-  that they left, for the Roster. A second text message, or any other, closes the socket.
+  player's character is claimed with it from the [[Accounts]], saved as it changes and let go when they leave. As a
+  player leaves, the host first has the room send every Vestige still lying for them to their mail (`mailLying`, at sea
+  from the captain's deck they stand on; [[Gear]], "The mail"), then reads their character for its last save, then lets
+  the room take them out, so the save keeps what they left lying. Not yet so: a player whose socket a second sign-in
+  replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket
+  there that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no session, is closed with 4003 and "Sign in to
+  play online." (in a run, "Sign in to enter this run."), so sockets that never sign in cannot hold a room's places;
+  every page of the game sends one, a guest's included. While the accounts do not answer a claim, or the look before it, the player plays on
+  unkept, and a look unanswered claims nothing. The Test Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts
+  ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. A save keeps the keys a
+  room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in its day's activity and its story,
+  and in each item and Vestige, so a room that knows fewer fields carries the newer ones through; a room built before
+  this keeping drops them, so a rollback to one loses them. A new value of a kind the room knows (a slot, a rarity)
+  reads as a broken save, which is left untouched, and a list longer than the room's Arts or factions is cut to them. At
+  sea the room also tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster.
+  A second text message, or any other, closes the socket.
 - **Where a character comes from** ([[The Server Is the Authority Over Everything]]): each claim says which room held
   the character before ([[Accounts]], "Moving between rooms"), and a node's room, its dungeons' and its runs' judge by
   it alone how it arrives (`arrival.ts`), never by the page, on a look before the claim, so a character turned away

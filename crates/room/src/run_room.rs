@@ -5,7 +5,6 @@
 //! clear in its period pays as the cache opens (`pay_clear`), by the record each character keeps (`gear::clears`).
 
 use super::{Pays, REVIVES, Run};
-use crate::dungeon_room::Cache;
 use crate::{PlayerId, Room};
 use ::foes::Rank;
 use ::foes::roster::REEVE;
@@ -17,10 +16,6 @@ use gear::activities::{
 use gear::clock::{day_of, week_of};
 use gear::gate::Place;
 use gear::world::island_levels;
-
-/// How far before the cache the Vestige a first clear pays lies (m), beyond the cache's own, when neither the carried
-/// ten nor the vault has room for it.
-const BONUS_BEFORE_M: f64 = 1.4;
 
 /// Which dungeon a run is of.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -116,9 +111,9 @@ impl Room {
 
     /// Pays a player the room keeps as the cache opens: the day's clear in the day the run was opened for, or at Normal
     /// in the shared room of today's dungeon of the day, and the week's in the week the run was opened for. Its Vestige
-    /// is kept with the record that pays it, in the carried ten or the vault, so it is never lost once paid; only with
-    /// both full does it lie BONUS_BEFORE_M before the cache. Nothing once taken.
-    pub(crate) fn pay_clear(&mut self, player: PlayerId, level: u8, cache: &Cache) {
+    /// is kept with the record that pays it, in the carried ten, else the vault, else the mail, so it is never lost
+    /// once paid. Nothing once taken.
+    pub(crate) fn pay_clear(&mut self, player: PlayerId, level: u8) {
         let Some(pays) = self.run.as_ref().map(|run| run.pays.clone()) else { return };
         let (day, now, tier) = (self.day(), week_of(self.minute), self.difficulty);
         let dice = self.dice(player);
@@ -144,9 +139,7 @@ impl Room {
         };
         let Some(vestige) = vestige else { return };
         found.gear_changed = true;
-        if !character.keep_paid(vestige.clone()) {
-            self.lay(player, crate::Dropped::Vestige(vestige), cache.before(BONUS_BEFORE_M), cache.at);
-        }
+        character.keep_paid(vestige);
     }
 }
 

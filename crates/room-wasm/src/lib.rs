@@ -117,6 +117,7 @@ fn counter_of(found: &NodeCounter) -> Option<Counter> {
         "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
         "tailor" => CounterKind::Tailor,
         "tack" => CounterKind::Tack,
+        "mail" => CounterKind::Mail,
         _ => CounterKind::Faction(faction()?.id),
     };
     Some(Counter { kind, at: found.at })

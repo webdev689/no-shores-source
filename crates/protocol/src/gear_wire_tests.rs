@@ -1,6 +1,7 @@
 use super::*;
 use crate::{input_bytes, read_input};
 use gear::Vestige;
+use gear::mail::{Posted, Source};
 use room::{Input, ResourceNode};
 
 fn asked_input(asked: Asked) -> Input {
@@ -63,6 +64,8 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Speak { keeper: 12 }),
         Asked::Gear(Ask::ChooseFragment { art: 2, fragment: 4 }),
         Asked::UsePoint { point: 3 },
+        Asked::Gear(Ask::TakeLetter { letter: 41 }),
+        Asked::Gear(Ask::TakeAllLetters),
     ]
 }
 
@@ -172,7 +175,8 @@ fn an_ask_the_room_does_not_know_reads_as_none() {
 }
 
 /// A room whose first player holds a granted Legendary sword worn, a Vestige carried, two Ammo crates and half their
-/// ammunition, with a resource node spent and an Ammo box lying for them.
+/// ammunition, with a resource node spent, an Ammo box lying for them, and two letters in their mail: a Rare Vestige
+/// for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
 fn furnished() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.furnish(Some([0.0, 0.0]), vec![ResourceNode { x: 0.0, y: 1.0, resource: 4 }]);
@@ -204,6 +208,10 @@ fn furnished() -> (Room, PlayerId) {
     ask(&mut room, 6, Asked::Grant(Grant::Crates(2)));
     ask(&mut room, 7, Asked::Grant(Grant::Ammo(gear::ammo::AMMO_FULL / 2)));
     room.lay_drop(player, Dropped::AmmoBox, [1.0, 2.0, 0.0]);
+    let mut kept = gear::Character::from_json(&room.kept_character(player).expect("in")).expect("a character");
+    kept.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Arms, 9)));
+    kept.post(Source::Salvage, Posted::Item(gear::Item::new(0, Kind::Hull, Rarity::Magic, 6, Slot::Hull)));
+    assert!(room.restore_character(player, &kept.to_json()), "the character kept again");
     (room, player)
 }
 
@@ -289,6 +297,29 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!(drops[0].from().map(|from| from.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
     let flying = u8::try_from(room::REST_TICKS - 1).expect("a tick");
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
+}
+
+#[test]
+fn a_players_mail_crosses_with_where_each_letters_holding_came_from_and_what_it_holds() {
+    let (room, player) = furnished();
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let letters: Vec<_> = gear.mail().expect("the mail").iter().collect();
+    let kept = &room.player(player).expect("in").character.mail;
+    assert_eq!(
+        letters.iter().map(|letter| letter.id()).collect::<Vec<_>>(),
+        kept.iter().map(|letter| letter.id).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        letters.iter().map(|letter| (letter.from(), letter.crowded())).collect::<Vec<_>>(),
+        [(Source::LeftLying as u8, false), (Source::Salvage as u8, false)]
+    );
+    let vestige = letters[0].vestige().expect("its Vestige");
+    assert_eq!((vestige.rarity(), vestige.slot(), vestige.level(), vestige.vaulted()), (2, Slot::Arms as u8, 9, false));
+    assert!(letters[0].item().is_none() && letters[1].vestige().is_none());
+    let item = letters[1].item().expect("its item");
+    assert_eq!((item.kind(), item.rarity(), item.level(), item.at()), (Kind::Hull as u8, 1, 6, 0));
+    assert!(item.columns().is_some_and(|columns| !columns.is_empty()), "its nodes spelled out");
 }
 
 #[test]

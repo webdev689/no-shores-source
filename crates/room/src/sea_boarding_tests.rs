@@ -278,6 +278,40 @@ fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
 }
 
 #[test]
+fn a_boarders_vestige_lying_on_the_deck_goes_to_their_mail_as_they_leave_the_sea_or_step_off() {
+    for leaving_the_sea in [true, false] {
+        let (mut sea, player) = met(20.0, Rank::Minor);
+        sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+        strike(&mut sea, player);
+        let ship = sea.fights.of_mut(player).unwrap().1.ship;
+        vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+        sea.board(player).unwrap();
+        let boarder = sea.decks.boarded[0].aboard[&player];
+        let vestige = gear::Vestige::new(0, gear::Rarity::Rare, gear::Slot::Head, 9);
+        sea.decks.boarded[0].room.lay_drop(boarder, crate::Dropped::Vestige(vestige), [900.0, 900.0, 0.0]);
+        let mail = if leaving_the_sea {
+            sea.mail_lying(player);
+            let kept = sea.kept_character(player).expect("their character");
+            gear::Character::from_json(&kept).expect("a character").mail
+        } else {
+            let room = &mut sea.decks.boarded[0].room;
+            let hands = room.ashore.hands.clone();
+            for (id, foe) in &mut room.foes {
+                if !hands.contains_key(id) {
+                    foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+                }
+            }
+            sea.tick();
+            ticks(&mut sea, HOLD_TICKS as usize + 1);
+            assert!(!sea.on_deck(player), "stepped off");
+            sea.harbour.characters[&player].mail.clone()
+        };
+        let posted: Vec<_> = mail.iter().filter_map(|letter| letter.vestige.as_ref().map(|kept| kept.rarity)).collect();
+        assert_eq!(posted, [gear::Rarity::Rare], "leaving the sea: {leaving_the_sea}");
+    }
+}
+
+#[test]
 fn a_ship_sunk_toward_a_bounty_while_its_player_fights_a_deck_is_still_counted_when_they_step_off() {
     let (mut sea, player) = met(20.0, Rank::Minor);
     sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);

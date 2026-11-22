@@ -207,6 +207,17 @@ pub extern "C" fn room_character(player: PlayerId) -> u64 {
     hand_over(character(player))
 }
 
+/// What still lies for a player goes to their mail (`Room::mail_lying`), at sea from the captain's deck they stand on.
+/// A host calls it as the player leaves, before it reads their character for its last save; a fleet keeps none.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_mail_lying(player: PlayerId) {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.mail_lying(player),
+        Opened::Sea(sea) => sea.mail_lying(player),
+        Opened::Fleet(_) => {}
+    });
+}
+
 /// Gives a player the character written at `address` as JSON; 1 if it was one and they are in, 0 if not.
 ///
 /// # Safety

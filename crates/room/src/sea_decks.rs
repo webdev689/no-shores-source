@@ -132,6 +132,7 @@ impl Sea {
     pub(super) fn step_off(&mut self, index: usize, player: PlayerId) {
         let Some(deck) = self.decks.boarded.get_mut(index) else { return };
         let Some(boarder) = deck.aboard.remove(&player) else { return };
+        deck.room.mail_lying(boarder);
         let kept = deck.room.kept_character(boarder).and_then(|text| gear::Character::from_json(&text));
         // A hand who fell this very tick is counted before their player leaves.
         deck.room.keep_hands();
@@ -238,6 +239,15 @@ impl Sea {
         let boarders: Vec<PlayerId> = self.decks.boarded[index].aboard.keys().copied().collect();
         for player in boarders {
             self.step_off(index, player);
+        }
+    }
+
+    /// What still lies for a boarder on the captain's deck goes to their mail, as they leave the sea: before their
+    /// character's last save is read from the deck (`kept_character`).
+    pub fn mail_lying(&mut self, player: PlayerId) {
+        if let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player)) {
+            let boarder = deck.aboard[&player];
+            deck.room.mail_lying(boarder);
         }
     }
 

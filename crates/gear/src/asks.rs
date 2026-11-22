@@ -1,9 +1,10 @@
 //! What a player asks of their gear, and the rules each ask must pass: wearing and taking off, buying and choosing
 //! nodes, dismantling, feeding an item a Fruit of Dagon, using an Ammo crate, wearing a cosmetic and marking the
-//! prologue played anywhere; identifying a Vestige, the vault, the vendors, the factions and Shape only at their
-//! counters in a social space; and taking and turning in a bounty at the bounty board. An ask refused changes nothing.
+//! prologue played anywhere; identifying a Vestige, the vault (`vault.rs`), the vendors, the factions, Shape and the
+//! mail only at their counters in a social space; and taking and turning in a bounty at the bounty board. An ask
+//! refused changes nothing.
 
-use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};
+use crate::character::{At, CARRIED_MOST, Character, Stuff};
 use crate::dice::{Dice, Purpose};
 use crate::emblems::Deed;
 use crate::item::{Item, NAMED_LEVEL, NONE_CHOSEN};
@@ -163,6 +164,11 @@ pub enum Ask {
         art: u8,
         fragment: u8,
     },
+    /// Takes a letter's Vestige or item by the letter's number, or every letter there is room for: at the mail counter.
+    TakeLetter {
+        letter: u32,
+    },
+    TakeAllLetters,
 }
 
 /// Why an ask was refused.
@@ -249,6 +255,8 @@ pub enum Refusal {
     NothingToSay = 136,
     /// No fragment choice waits for that Art.
     NoChoice = 137,
+    /// No letter of that number waits in the mail, or none at all: answered as 141.
+    NoSuchLetter = 140,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -314,6 +322,8 @@ impl Character {
             Ask::BuyFromShape { ware, shown } => self.buy_from_shape(ware, shown, here),
             Ask::Speak { keeper } => self.speak(keeper, here),
             Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
+            Ask::TakeLetter { letter } => self.take_letter(letter, here),
+            Ask::TakeAllLetters => self.take_all_letters(here),
         }
         .map(|done| {
             // A level reached or a piece fully upgraded earns its emblem as it happens; a fragment choice left with
@@ -387,7 +397,7 @@ impl Character {
 
     /// Moves items at once, if every slot still carries nine at most afterwards, or no more than it did: a slot two
     /// hands' pieces were read into may carry past nine, and only empties.
-    fn settle_moves(&mut self, moves: &[(u32, At)]) -> Result<(), Refusal> {
+    pub(crate) fn settle_moves(&mut self, moves: &[(u32, At)]) -> Result<(), Refusal> {
         let mut after = self.clone();
         for (id, at) in moves {
             if let Some(entry) = after.items.get_mut(id) {
@@ -555,39 +565,6 @@ impl Character {
         }
         item.xp = item.xp.saturating_add(FRUIT_ITEM_XP).min(item.xp_most());
         self.materials.fruit -= 1;
-        Ok(None)
-    }
-
-    fn move_item(&mut self, id: u32, here: Here, from: At, to: At) -> Result<Option<Done>, Refusal> {
-        if !here.social {
-            return Err(Refusal::NotHere);
-        }
-        let (item, at) = self.items.get(&id).ok_or(Refusal::NoSuchItem)?;
-        if *at != from {
-            return Err(Refusal::WrongPlace);
-        }
-        if to == At::Vault && self.vaulted(item.kind.stock()) >= VAULT_MOST {
-            return Err(Refusal::VaultFull);
-        }
-        self.settle_moves(&[(id, to)])?;
-        Ok(None)
-    }
-
-    fn move_vestige(&mut self, id: u32, here: Here, into_vault: bool) -> Result<Option<Done>, Refusal> {
-        if !here.social {
-            return Err(Refusal::NotHere);
-        }
-        let (_, vaulted) = *self.vestiges.get(&id).ok_or(Refusal::NoSuchVestige)?;
-        if vaulted == into_vault {
-            return Err(Refusal::WrongPlace);
-        }
-        let room = if into_vault { VAULT_MOST } else { VESTIGES_MOST };
-        if self.vestiges_held(into_vault) >= room {
-            return Err(if into_vault { Refusal::VaultFull } else { Refusal::VestigesFull });
-        }
-        if let Some(entry) = self.vestiges.get_mut(&id) {
-            entry.1 = into_vault;
-        }
         Ok(None)
     }
 }

@@ -168,8 +168,8 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it. A kill on a ship's
   deck earns no boon, as it pays no officer ([[Naval Combat]]).
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and keeps the
-  Vestige with the record that pays it, in the carried ten or else the vault, so a Vestige once paid is never lost; only
-  with both full does it lie 1.4 m before the cache (`pay_clear`, `keep_paid`). A player playing unkept finds the
+  Vestige with the record that pays it, in the carried ten, else the vault, else the mail ([[Gear]], "The mail"), so a
+  Vestige once paid is never lost (`pay_clear`, `keep_paid`). A player playing unkept finds the
   cache's own Vestige alone. A run's first clear pays only in the day or the week it was opened for, as its modifiers
   are fixed then. The day's pays in a run opened while its dungeon was its island's dungeon of the day, with that day's
   modifier at Elite and Abyss, and cleared that day; and at Normal in a patrol's shared room while it is its island's
