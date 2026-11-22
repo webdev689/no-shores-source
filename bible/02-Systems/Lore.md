@@ -46,10 +46,13 @@ It starts with none: the books are the owner's to write.
 - **Lying in the world.** A node's room lays each chapter its file places there, at the bearing and distance from its
   place's middle; one at a place the node does not hold lies nowhere. Each player who has not found it is shown it.
   A player alive within 2.5 m of it finds it (ask 73); out of reach, dead, already found or in another node, it is
-  refused. Found in a room before the player's kept character comes back, it is carried into it, as the story is.
-- **Checked.** The file's ids are unique and hold no `/`, each book's category is one of its own, each quest and task
-  named is one, each place is named; a chapter laid in the first landmass lies at a place its node holds, inside its
-  ring, as the bake lays it.
+  refused. It is shown and found only while the room holds the player's own character: never on a page playing
+  alone, nor before a signed-in player's kept character has come. A chapter the room gave before then (the story's)
+  is carried into it, as the story is.
+- **Checked.** The file's ids are unique and hold no `/`, each category has a book and each book a chapter, each
+  book's category is one of its own, each quest and task named is one, and each chapter laid in the world lies at a
+  node the world holds, at a place that node holds, inside its ring, as the bake lays it. The file is hashed into the
+  protocol's version (`tools/numbered.json`), as chapters cross the wire by their place in it.
 
 ## On the wire
 
@@ -71,7 +74,6 @@ number in `item`.
 
 ## Limits
 
-- **Online only.** A page playing alone keeps no character, so it finds no lore, as it walks no road ([[Quests]]).
+- **Online only.** A page playing alone keeps no character, so no lore lies for it and it finds none, as it walks no
+  road ([[Quests]]).
 - **Read in one browser.** Another browser, or a cleared one, shows every chapter found as new again.
-- **The first landmass checked.** Only its nodes are baked for the check of where a chapter lies; one laid further
-  afield is checked once its continent is baked there.

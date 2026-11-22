@@ -2,7 +2,12 @@
 //! and keeping them.
 
 use crate::character::Character;
-use crate::lore::{Found, LoreDef, key_of, lore};
+use crate::lore::{CategoryDef, Found, LoreDef, key_of, lore};
+
+/// A category of the lore by its id.
+fn gear_category(id: &str) -> CategoryDef {
+    CategoryDef { id: id.to_owned() }
+}
 use crate::quests::Road;
 
 /// Lore of two books, as a file might hold it: a chapter of the story's, one of a task's, one at a place.
@@ -66,6 +71,9 @@ fn a_file_that_names_what_is_not_there_says_so_line_by_line() {
     placed.books[1].chapters[0].found =
         Found::Place { node: "saltgrass-downs".into(), place: String::new(), bearing: 0.0, at: 1.0 };
     assert_eq!(placed.problems().len(), 1, "a place with no name");
+    let mut empty = sample();
+    empty.categories.push(gear_category("bare"));
+    assert_eq!(empty.problems(), ["bare has no book"], "a category whose tile would open on nothing");
     let mut slashed = sample();
     slashed.books[0].id = "fir/st".into();
     assert_eq!(slashed.problems().len(), 1, "a / would make two keys one");

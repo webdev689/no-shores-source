@@ -326,10 +326,8 @@ The decisions in [[Open Questions]] are not repeated here.
   4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
   (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
 - **Browser QA** ([[Toolkit]]):
-  - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker (#147, #124: the hooks and the plan's `init`
-    at the head of the game worker's script, each picture from the worker's own texture, R2 read by the driver 8 at a
-    time; observation 0068 logs the port lesson). Run it on an idle machine: during a cargo build the world did not
-    draw in 4 min, and idle it drew in under 5.
+  - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker. Run it on an idle machine: beside a
+    cargo build the world may not draw for minutes.
   - The held map raised on foot pictures well. `?face=<degrees>` is not an address flag: patch a built copy's
     `askedArrival` to face a way.
   - `tools/uiShot.mjs` draws the menu whole through the real renderer (the Journal's and the Compendium's pictures).

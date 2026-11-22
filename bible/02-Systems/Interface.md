@@ -852,7 +852,7 @@ never while a press is held. Each press is an ask the room answers.
 - **Compendium** ([[Lore]], [[The Compendium Holds the Lore Books, After Destiny's]]): the lore books, laid as Destiny's
   Collections and Lore screens.
   - **Its front**: "LORE" with how many of its chapters are found of all ("3/6"), then a tile for each category, in rows
-    that fit the menu (176 by 168 px, 224 by 208 where the names are larger): its motif in brass, 48 px (64 px), dim
+    that fit the menu (176 by 168 px, 224 by 208 where the names are larger): its motif in brass, 64 px (80 px), dim
     stone while nothing of it is found; its name; how many of its chapters are found, in lit brass once all are; and a
     bar of that share in brass. Pressed, it opens the category. With no lore in the game it says "No lore has been
     found. The lore books you find in the world, on quests and in the story are kept here." under three faint stone
@@ -864,9 +864,10 @@ never while a press is held. Each press is an ask the room answers.
     "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
     instead, so everything stays in view); and the chapter chosen in a panel as tall as the book beside it, its title in
     lit brass at the names' larger size and its words paragraph by paragraph, scrolled within the page's room, with the
-    book's chapters numbered under it, each found one a press (the
+    book's chapters numbered under it (the panel takes the keys' focus, so a screen reader reads the chapter whole), each found one a press (the
     one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
-    book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found.
+    book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found; the
+    focus goes to that book, or to "‹ LORE" while nothing of the category is found.
   - **Covers** are drawn pixel for pixel, 24 by 30: a spine in the cloth's dark with two brass bands, the cloth lit along
     its top and shaded along its fore-edge and foot, a brass corner at each of the face's corners, and the book's motif
     tooled in brass in the face's middle (`coverSvg`).

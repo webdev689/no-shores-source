@@ -119,7 +119,8 @@ export class Compendium {
     this.open = category.def.id;
     this.book = book?.def.id ?? null;
     this.chapter = book ? firstChapter(book) : null;
-    this.focusing = book ? bookId(book.def.id) : LORE_BACK;
+    // A book found takes the focus; with none found, the way back, as a stone cover takes no press.
+    this.focusing = book && book.found > 0 ? bookId(book.def.id) : LORE_BACK;
   }
 
   /** The front: "LORE" with how much of it is found, and a tile for each category; with no lore, why. */
@@ -193,7 +194,11 @@ export class Compendium {
             alignX: 'center',
             children: [words(category.def.name, sizes.name, INK.word, { ellipsis: true })],
           },
-          words(`${category.found}/${category.total}`, 1, category.found === category.total ? INK.brassLit : INK.faint),
+          words(
+            `${category.found}/${category.total}`,
+            1,
+            category.total > 0 && category.found === category.total ? INK.brassLit : INK.faint,
+          ),
           foundBar(category.found, category.total),
           category.unread && newMark(10),
         ],
@@ -378,6 +383,9 @@ export class Compendium {
     return {
       id: 'lore-reading',
       role: 'panel',
+      // The keys' focus takes it, so a screen reader reads the chapter whole.
+      focusable: chapter?.found === true,
+      label: chapter?.found ? `${chapter.def.title}. ${said.join(' ')}` : undefined,
       width: 'grow',
       minHeight: Math.min(tall, height),
       direction: 'column',

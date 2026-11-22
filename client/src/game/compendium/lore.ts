@@ -42,6 +42,8 @@ export class Lore {
     this.toasted = this.toasted.filter((toast) => toast.until > now);
     if (!gear || gear.quest?.claimed === false || !gear.lore) return;
     const account = this.account();
+    // The same word heard again, as each frame hears it until the next comes.
+    if (gear.lore === this.foundNow && this.heard?.account === account) return;
     const found = new Set(gear.lore);
     const before = this.heard?.account === account ? this.heard.found : null;
     this.heard = { account, found };

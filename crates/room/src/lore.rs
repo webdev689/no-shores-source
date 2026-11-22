@@ -41,10 +41,12 @@ impl Room {
         found.character.lore.iter().filter_map(|key| self.lore().number_of(key)).collect()
     }
 
-    /// The chapters lying here that a player has not found: each its number and where it lies.
+    /// The chapters lying here that a player has not found: each its number and where it lies. None for a player whose
+    /// own character the room does not hold (a page playing alone, or one whose kept character has not come), as what
+    /// they found would be kept nowhere.
     #[must_use]
     pub fn lore_here(&self, player: PlayerId) -> Vec<(u16, [f64; 2])> {
-        let Some(found) = self.players.get(&player) else { return Vec::new() };
+        let Some(found) = self.players.get(&player).filter(|found| found.claimed) else { return Vec::new() };
         let lore = self.lore();
         let unfound = |number: u16| lore.key_at(number).is_some_and(|key| !found.character.finds_lore(&key));
         self.lore_lying().into_iter().filter(|(number, _)| unfound(*number)).collect()

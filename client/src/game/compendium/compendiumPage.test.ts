@@ -136,3 +136,14 @@ test('on a narrow menu the book chosen is named over its chapter rather than dra
   const covers = nodesOf(tree()).filter((node) => node.picture?.key === 'lore cover bell true');
   assert.equal(covers.length, 1, 'its cover in the list alone');
 });
+
+test('a category with nothing found gives the focus to the way back; a chapter shown reads whole to a screen reader', () => {
+  const bare = compendiumOf([4]);
+  bare.click(categoryId('drowned'));
+  assert.ok(bare.ui.focused(LORE_BACK), 'not a stone cover, which takes no press');
+  const { tree, click } = compendiumOf([0, 2, 4]);
+  click(categoryId('drowned'));
+  const reading = byId(tree(), 'lore-reading');
+  assert.equal(reading?.focusable, true);
+  assert.equal(reading?.label, 'It Rang Once. The bell rang once. Then the sea came in, slow and grey.');
+});

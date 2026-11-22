@@ -75,8 +75,12 @@ export interface CategoryShown {
 }
 
 /** Every chapter of `lore`, book by book in the file's order, which the wire numbers them by: its book and itself. */
-export function chaptersOf(lore: LoreFile = LORE): { readonly book: BookDef; readonly chapter: ChapterDef }[] {
-  return lore.books.flatMap((book) => book.chapters.map((chapter) => ({ book, chapter })));
+const flat = new WeakMap<LoreFile, readonly { readonly book: BookDef; readonly chapter: ChapterDef }[]>();
+export function chaptersOf(lore: LoreFile = LORE): readonly { readonly book: BookDef; readonly chapter: ChapterDef }[] {
+  // Laid out once a file: the menu's tab asks it for each chapter found, every frame.
+  const kept = flat.get(lore) ?? lore.books.flatMap((book) => book.chapters.map((chapter) => ({ book, chapter })));
+  flat.set(lore, kept);
+  return kept;
 }
 
 /** A chapter's key, as characters keep it and the browser keeps it read: its book's id and its own. */

@@ -72,10 +72,13 @@ impl LoreDef {
             .flat_map(|book| book.chapters.iter().map(|chapter| (key_of(&book.id, &chapter.id), &chapter.found)))
     }
 
-    /// A chapter's number, from its key.
+    /// A chapter's number, from its key: found without making a key for every chapter, as it is asked for each chapter
+    /// a player holds whenever their gear is sent.
     #[must_use]
     pub fn number_of(&self, key: &str) -> Option<u16> {
-        self.chapters().position(|(kept, _)| kept == key).and_then(|at| u16::try_from(at).ok())
+        let (book, chapter) = key.split_once('/')?;
+        let mut numbers = self.books.iter().flat_map(|it| it.chapters.iter().map(move |each| (&it.id, &each.id)));
+        numbers.position(|(at, id)| at == book && id == chapter).and_then(|at| u16::try_from(at).ok())
     }
 
     /// A chapter's key, from its number.
@@ -99,6 +102,11 @@ impl LoreDef {
         }
         if self.chapters().count() > CHAPTERS_MOST {
             problems.push(format!("more than {CHAPTERS_MOST} chapters"));
+        }
+        for category in &self.categories {
+            if !self.books.iter().any(|book| book.category == category.id) {
+                problems.push(format!("{} has no book", category.id));
+            }
         }
         for book in &self.books {
             if !self.categories.iter().any(|category| category.id == book.category) {

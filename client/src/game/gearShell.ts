@@ -50,8 +50,12 @@ export function tabsNode(
 ): Node {
   const each = Math.floor((width - 36) / TABS.length);
   const keys = view.width >= 1500 && !(view.width >= 2400 && view.height >= 1300);
-  // The names step down together under 1100 px, or where one would not fit its tab.
-  const fits = TABS.every((tab) => ui.renderer.measure(TAB_PRESSES[tab].label.toUpperCase(), 2) + 16 <= each);
+  // The names step down together under 1100 px, or where one would not fit its tab, its keycap beside it.
+  const cap = (opens?: 'character' | 'inventory') =>
+    keys && opens ? 8 + Math.max(18, ui.renderer.measure(boundCap(opens), capSize) + 10) : 0;
+  const fits = TABS.every(
+    (tab) => ui.renderer.measure(TAB_PRESSES[tab].label.toUpperCase(), 2) + cap(TAB_PRESSES[tab].opens) + 16 <= each,
+  );
   const size = view.width < 1100 || !fits ? 1 : 2;
   const step = TABS.length > 1 ? Math.floor((width - each * TABS.length) / (TABS.length - 1)) : 0;
   return {
