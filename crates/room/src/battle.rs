@@ -53,6 +53,8 @@ pub enum Joined {
 pub struct Crew {
     pub ship: ShipId,
     pub orders: Orders,
+    /// The rung its sails stood at as its player boarded a struck deck, set again as they come back aboard.
+    pub furled_from: Option<i8>,
 }
 
 /// A fight with players in it: the fight, each player's place in it, what happened in its last tick, each captain's
@@ -161,7 +163,7 @@ impl SeaFight {
         let ship = self.given.map_or(PLAYER, |given| given.max(PLAYERS_FROM - 1) + 1);
         self.given = Some(ship);
         self.fight.put_to_sea_kept(ship, own, kept, &waters, time);
-        self.crews.insert(player, Crew { ship, orders: QUIET });
+        self.crews.insert(player, Crew { ship, orders: QUIET, furled_from: None });
         if !self.fought.contains(&player) {
             self.fought.push(player);
         }
@@ -229,11 +231,22 @@ impl Fights {
     /// go and its sails furled.
     pub fn stand_down(&mut self, player: PlayerId) {
         let Some((fought, crew)) = self.of_mut(player) else { return };
+        let Some(own) = fought.fight.ships.get_mut(&crew.ship) else { return };
+        let rung = core::mem::replace(&mut own.ship.rung, 0);
         if let Some(own) = fought.crews.get_mut(&player) {
-            own.orders = QUIET;
+            (own.orders, own.furled_from) = (QUIET, Some(rung));
         }
+    }
+
+    /// A boarder back aboard their own ship: its sails set again at the rung they stood at as they boarded.
+    pub fn stand_up(&mut self, player: PlayerId) {
+        let Some((fought, crew)) = self.of_mut(player) else { return };
+        let Some(rung) = crew.furled_from else { return };
         if let Some(own) = fought.fight.ships.get_mut(&crew.ship) {
-            own.ship.rung = 0;
+            own.ship.rung = rung;
+        }
+        if let Some(own) = fought.crews.get_mut(&player) {
+            own.furled_from = None;
         }
     }
 

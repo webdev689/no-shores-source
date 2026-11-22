@@ -312,7 +312,8 @@ Pass]]) with Claude's numbers:
   every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its
   crew has fallen, and a minute after it fell every boarder still aboard is sent back; it is scuttled when the last one
   has left it. A boarder's own ship takes no orders or course while they stand on the struck ship's deck: as they board,
-  its helm, brace and lay let go and its sails are furled, so it drifts to a stop beside the struck ship. Its deck room
+  its helm, brace and lay let go and its sails are furled, so it drifts to a stop beside the struck ship; as they come back aboard, its sails are set again
+  at the rung they stood at when they boarded. Its deck room
   fights with the boarder's character, the real one even when the accounts answer after boarding, and gives it back with
   what was won aboard. The sea's snapshot carries each deck to its boarders alone: their numbers there, the ship's hull,
   its deck room's own snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's,

@@ -141,6 +141,7 @@ impl Sea {
         deck.room.keep_hands();
         let fallen = deck.room.fallen_hands(boarder);
         deck.room.leave(boarder);
+        self.fights.stand_up(player);
         self.fights.lose_men(player, f64::from(fallen) / naval::arms::LARGE_BOAT.crew);
         if let (Some(character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             let mut character = with_sea_kept(character, held);
