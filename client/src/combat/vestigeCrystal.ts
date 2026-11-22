@@ -56,8 +56,8 @@ const HALF = (CROWN + PAVILION) / 2;
 
 /** The world's frame, 0.7 m tall in 27 pixels with the gem filling two thirds of it, and the frames of one turn. The
  *  screens' still is 18 pixels, drawn twice over in a glyph's 36. */
-export const FRAME_M = 0.7;
-export const FRAME_PIXELS = 27;
+const FRAME_M = 0.7;
+const FRAME_PIXELS = 27;
 export const PIXEL_M = FRAME_M / FRAME_PIXELS;
 const FILL = 0.66;
 export const SPIN_FRAMES = 12;
@@ -126,7 +126,7 @@ function shard(faces: Face[], base: Vector, way: Vector, length: number, width: 
 }
 
 /** The gem's faces in a rarity's tones: its waist of facets, a tall crown, a short pavilion, and the shards. */
-export function crystalFaces(tones: Tones): Face[] {
+function crystalFaces(tones: Tones): Face[] {
   const faces: Face[] = [];
   const waist = Array.from({ length: FACETS }, (unused, facet): Vector => {
     const angle = (facet / FACETS) * TAU;
@@ -178,7 +178,7 @@ interface Baked {
 
 /** The gem turned `angle` round its axis: its faces drawn nearest first, its outline darkened, and its silhouette
  *  blurred into a halo of its glow, in steps. */
-export function bake(tones: Tones, angle: number, size: number, fill = FILL): Baked {
+function bake(tones: Tones, angle: number, size: number, fill = FILL): Baked {
   const scale = (size * fill) / 2 / HALF;
   const middle = size / 2;
   const colour: Vector[] = Array.from({ length: size * size }, (): Vector => [0, 0, 0]);
