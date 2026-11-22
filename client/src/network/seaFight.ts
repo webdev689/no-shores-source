@@ -148,7 +148,7 @@ export function fightViewOf(
     boost: [next(), next()],
     hull_kind: next(),
   });
-  // A captain's Sloop, then its mode, whether it is hostile to the player, and its sides run out.
+  // A captain's Sloop, then its mode, whether it is hostile to the player (not of their side), and its sides run out.
   const commanded = (id: number, commission: Commissioned): FightCaptain => {
     const base = vessel();
     const mode = named(MODES);

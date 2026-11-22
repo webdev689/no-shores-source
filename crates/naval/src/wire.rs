@@ -177,9 +177,9 @@ fn stop_numbers(stop: Option<&Stop>) -> [f64; STOP_NUMBERS] {
     [1.0, stop.time, x, y, z, water, struck, strike_x, strike_y, strike_z]
 }
 
-/// A captain's mind as the browser of the player sailing `me` shows it: its mode, whether it is hostile to them, and
-/// its sides run out.
-fn captain_numbers(mind: &Captain, me: ShipId) -> [f64; 4] {
+/// A captain's mind as a player's browser shows it: its mode, whether it is hostile to them (any captain not of the
+/// players' side, whichever ship it marks now), and its sides run out.
+fn captain_numbers(mind: &Captain) -> [f64; 4] {
     let mode = match mind.mode {
         Mode::Cruise => 0.0,
         Mode::Engage => 1.0,
@@ -188,7 +188,8 @@ fn captain_numbers(mind: &Captain, me: ShipId) -> [f64; 4] {
         Mode::Sinking => 4.0,
     };
     let run_out = |side: Side| f64::from(u8::from(mind.run.out(side).is_some()));
-    [mode, f64::from(u8::from(mind.hostile_to(me))), run_out(Side::Port), run_out(Side::Starboard)]
+    let hostile = mind.commission.faction != crate::ranks::PLAYERS;
+    [mode, f64::from(u8::from(hostile)), run_out(Side::Port), run_out(Side::Starboard)]
 }
 
 /// The fight as the browser of the player sailing `me` shows it, after a tick whose events are `events`, its lay the
@@ -228,7 +229,7 @@ pub fn view_numbers(
     let mut numbers = vec![fight.clock, over];
     numbers.extend(vessel_numbers(player));
     numbers.extend(vessel_numbers(captain));
-    let mut mind = captain_numbers(&command.mind, me);
+    let mut mind = captain_numbers(&command.mind);
     // Gone from the fight, the first captain keeps its place (and every ship its number) but is no foe left to beat.
     if !captain.in_fight() {
         mind[1] = 0.0;
@@ -245,7 +246,7 @@ pub fn view_numbers(
     for (id, vessel, mind) in others {
         numbers.extend([seen(id), f64::from(mind.commission.faction), f64::from(mind.commission.rank.number())]);
         numbers.extend(vessel_numbers(vessel));
-        numbers.extend(captain_numbers(mind, me));
+        numbers.extend(captain_numbers(mind));
     }
     let balls: Vec<&_> = fight.balls.iter().filter(|ball| ball.fired).collect();
     numbers.push(balls.len() as f64);

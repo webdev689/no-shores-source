@@ -450,8 +450,10 @@ snapshot (whose events carry the sea's kinds after its own, 12 to 19) and the Wo
 and `Hit` come with its shot's own events, the hit carrying where on the ship it struck in its frame and the part. Each
 ship's harm is kept by the number the events name it by: at sea the player is 0, the first captain 1, and each other
 captain's number comes with them in the view, so one leaving the fight never moves another's holes onto their ship.
-The first captain keeps its place in the view once it has left the fight, but no longer as hostile to the player, so the
-task does not count it among the ships left to beat.
+A captain is hostile to the player in the view when it is not of the players' side, whichever ship it marks now: a
+Tithe ship fighting a friendly one is the player's foe for the compass, the music, the broadside warning and the card,
+and a friendly ship never is. The first captain keeps its place in the view once it has left the fight, but no longer
+as hostile to the player, so the task does not count it among the ships left to beat.
 
 - **A gun fired** (`muzzle`): a bloom at its mouth for 0.11 s and a tongue of fire along the shot, its light, and
   eight puffs of powder smoke that roll out down the shot, slow to the wind and hang as a bank down the ship's side 9 to

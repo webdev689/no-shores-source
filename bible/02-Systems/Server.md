@@ -427,7 +427,7 @@ heated). The view: the clock and its end (0 on, 1 sunk, 2 gone); each ship, the 
 (its own 8, its pose's 4, hull, canvas and men with their most, its state, its fires, each side's seconds left and
 progress, its load and brace, its burst's share still to run and its recharge's share done, and its hull: 0 the Sloop,
 1 the Schooner, 2 the Brig, 3 the Frigate); the
-captain's mode, whether it is hostile and its sides run out; any other captains in the fight, a count and each one's
+captain's mode, whether it is hostile (not of the players' side) and its sides run out; any other captains in the fight, a count and each one's
 faction, rank, 29 numbers, mode, hostility and sides run out; the balls aloft, a count and four each; the lay, 0 or 1
 and its side, elevation, reach, landing zone's radius, whether on target, and a count of sixteen each: the gun's
 launch (six), then where its ball stops (whether it does, its time, point, whether in the water, and whether and

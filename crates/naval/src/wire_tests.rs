@@ -178,3 +178,30 @@ fn a_first_captain_that_has_left_the_fight_is_no_longer_shown_hostile() {
     assert_eq!(numbers[hostile_at], 0.0, "gone, it is no foe the player has left to beat");
     assert_eq!(numbers[2 + 2 * VESSEL_NUMBERS + 4..][..2], [1.0, 2.0], "the other keeps its number");
 }
+
+#[test]
+fn a_tithe_captain_is_hostile_to_the_player_whichever_ship_it_marks_and_a_friendly_one_never() {
+    let friendly = Commission { faction: crate::ranks::PLAYERS, rank: crate::ranks::Rank::Major };
+    // The Tithe's captain first, 300 m from the friendly ship and 3 km from the player: it marks the friendly one.
+    let captains =
+        [(sloop_at(0.0, -3_000.0, 3.0), Commission::default(), 7), (sloop_at(300.0, -3_000.0, 0.0), friendly, 8)];
+    let mut fight = Fight::among(&captains, &Open, 0.0);
+    fight.put_to_sea(PLAYER, sloop_at(0.0, 0.0, 0.0), &Open, 0.0);
+    let idle = Orders {
+        helm: sailing::ship::Helm { steer: 0.0, climb: 0 },
+        aim: None,
+        fire: false,
+        brace: false,
+        load: None,
+        boost: false,
+    };
+    for _ in 0..2 {
+        fight.step(&[(PLAYER, idle)], &Open, &|_| [1.5, 0.0], 0.0);
+    }
+    let numbers = view_numbers(&fight, PLAYER, &[], None, &Open, 0.0);
+    let hostile_at = 2 + 2 * VESSEL_NUMBERS + 1;
+    assert_eq!(numbers[hostile_at], 1.0, "the Tithe's captain, though it marks the friendly ship");
+    let other = &numbers[2 + 2 * VESSEL_NUMBERS + 4..];
+    let mind_at = 1 + 3 + VESSEL_NUMBERS;
+    assert_eq!((other[2], other[mind_at + 1]), (0.0, 0.0), "the friendly captain, of the players' side, is no foe");
+}
