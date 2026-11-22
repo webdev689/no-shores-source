@@ -59,8 +59,9 @@ fn a_tithe_ship_and_a_friendly_ship_fight_where_the_fight_has_them_until_one_str
         }
     }
     assert!(clashes.is_empty(), "settled within twenty minutes");
-    let on = hostiles.sailing.len() + friendlies.sailing.len();
-    assert_eq!(on, 1, "one sails on: {:?} {:?}", hostiles.sailing, friendlies.sailing);
+    // The Tithe ship sails on only unstruck; the friendly ship whenever it is afloat.
+    let on = (hostiles.sailing.len(), friendlies.sailing.len());
+    assert!(on.0 <= 1 && on.1 <= 1 && on != (0, 0), "who sails on: {on:?}");
 }
 
 #[test]
@@ -96,7 +97,8 @@ fn the_one_who_strikes_leaves_the_sea_and_the_winner_sails_on_from_where_it_lies
         step_clashes(&mut clashes, at_sea, &[[0.0, 1_000.0]], (&[], 2.0 / 60.0));
         assert!(clashes.is_empty(), "nobody fights on");
         let sailing = (hostiles.sailing.iter().map(|ship| ship.id).collect(), friendlies.sailing.len());
-        let wanted: (Vec<u32>, usize) = if loser == CAPTAIN { (vec![], 1) } else { (vec![3], 0) };
+        // A friendly ship still afloat sails on for its port, struck or not; a Tithe ship that struck leaves the sea.
+        let wanted: (Vec<u32>, usize) = if loser == CAPTAIN { (vec![], 1) } else { (vec![3], 1) };
         assert_eq!(sailing, wanted, "{sails_on} sails on");
     }
 }

@@ -212,3 +212,13 @@ test("a friendly ship's card is the players' side's, and a Tithe ship's its rank
   const tithe = card(captain('Tithe Sloop', 90, { hostile: false }));
   assert.notEqual(tithe?.band, 'ally', 'the Tithe fights the players, whichever ship it marks now');
 });
+
+test('a struck friendly ship shows no board key: it holds no deck crew to fight', () => {
+  const struck = captain('Merchant Sloop', 40, { faction: 0, hostile: false, state: 'struck' });
+  const model = fightDisplay({ ...VIEW, captain: struck, others: [] }, new FightFeel(1), 0, {
+    boardable: true,
+    boardKey: 'E',
+    braceKey: 'C',
+  });
+  assert.deepEqual([model.card?.state, model.card?.boardKey], ['struck', null]);
+});

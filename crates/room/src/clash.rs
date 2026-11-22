@@ -37,6 +37,11 @@ fn sailing<T: Copy>(fight: &Fight, (id, at_sea): &(ShipId, T), stays: impl Fn(&V
     Some((fight.vessel(*id).filter(|vessel| stays(vessel))?.ship, *at_sea))
 }
 
+/// Whether a ship is still afloat: neither going down nor sunk, whether or not it struck or runs.
+pub(crate) fn afloat(vessel: &Vessel) -> bool {
+    !matches!(vessel.damage.state, naval::damage::State::Sinking | naval::damage::State::Sunk)
+}
+
 impl Clash {
     /// The fight of a Tithe ship and the friendly ship it met, each where it lay and under its sails, under the swell
     /// and the wind of `weather`: the Tithe ship's seed draws the fight's chances. The friendly ship fights in its own
@@ -91,7 +96,8 @@ impl Clash {
         !captains.any(|command| command.mind.mode == Mode::Engage)
     }
 
-    /// The ships that sail on once it is over, where the fight left them: each afloat, unstruck and not running.
+    /// The ships that sail on once it is over, where the fight left them: each Tithe ship afloat, unstruck and not
+    /// running, and each friendly ship afloat (`afloat`).
     #[must_use]
     pub fn sail_on(&self) -> (Vec<Hostile>, Vec<Friendly>) {
         let sails_on = |vessel: &Vessel| {
@@ -99,7 +105,7 @@ impl Clash {
         };
         let tithe = self.crews.iter().filter_map(|crew| sailing(&self.fight, crew, sails_on));
         let tithe = tithe.map(|(ship, hostile)| Hostile { x: ship.x, y: ship.y, heading: ship.heading, ..hostile });
-        let friends = self.friends.iter().filter_map(|crew| sailing(&self.fight, crew, sails_on));
+        let friends = self.friends.iter().filter_map(|crew| sailing(&self.fight, crew, afloat));
         let friends = friends.map(|(ship, friend)| Friendly { x: ship.x, y: ship.y, heading: ship.heading, ..friend });
         (tithe.collect(), friends.collect())
     }

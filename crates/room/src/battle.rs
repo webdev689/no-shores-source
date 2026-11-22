@@ -133,6 +133,13 @@ fn crewed(hostile: &Hostile) -> bool {
     !::foes::crews::deck_crew(hostile.commission.faction, rank).is_empty()
 }
 
+/// Each friendly ship of a fight still afloat, where the fight left it.
+fn friends_afloat(fought: &SeaFight) -> impl Iterator<Item = Friendly> + '_ {
+    let afloat = |id: &ShipId| fought.fight.vessel(*id).filter(|vessel| crate::clash::afloat(vessel));
+    let freed = fought.friends.iter().filter_map(move |(id, friend)| Some((afloat(id)?.ship, *friend)));
+    freed.map(|(ship, friend)| Friendly { x: ship.x, y: ship.y, heading: ship.heading, ..friend })
+}
+
 fn apart(from: [f64; 2], to: [f64; 2]) -> f64 {
     let (east, south) = (to[0] - from[0], to[1] - from[1]);
     (east * east + south * south).sqrt()
@@ -362,9 +369,10 @@ impl Fights {
     }
 
     /// Ends each fight with no player left in it. A captain of one going down, or struck (scuttled with no boarder),
-    /// goes down all the same, told with the next tick's.
+    /// goes down all the same, told with the next tick's; a friendly ship afloat sails on.
     fn drop_empty(&mut self) {
         for fought in self.list.iter().filter(|fought| fought.crews.is_empty()) {
+            self.freed.extend(friends_afloat(fought));
             for (id, vessel) in &fought.fight.ships {
                 let down = matches!(vessel.damage.state, State::Struck | State::Sinking);
                 let going = down && vessel.command().is_some_and(|it| it.gone.is_none());
@@ -505,14 +513,7 @@ impl Fights {
         self.ended.retain(|old| unseen.iter().all(|new| new.player != old.player));
         self.ended.extend(unseen.into_iter().map(|seen| FightSeen { may_board: false, ..seen }));
         for fought in self.list.iter().filter(|fought| fought.fight.over().is_some()) {
-            let afloat = |id: &ShipId| fought.fight.vessel(*id).filter(|vessel| vessel.damage.state != State::Sunk);
-            let freed = fought.friends.iter().filter_map(|(id, friend)| Some((afloat(id)?.ship, *friend)));
-            self.freed.extend(freed.map(|(ship, friend)| Friendly {
-                x: ship.x,
-                y: ship.y,
-                heading: ship.heading,
-                ..friend
-            }));
+            self.freed.extend(friends_afloat(fought));
             for (player, crew) in &fought.crews {
                 let Some(vessel) = fought.fight.vessel(crew.ship) else { continue };
                 let (ship, damage) = (vessel.ship, &vessel.damage);

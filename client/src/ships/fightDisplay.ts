@@ -110,7 +110,8 @@ export function fightDisplay(
           sail: share(near.sail, near.max_sail),
           state,
           hostile: near.hostile,
-          boardKey: state === 'struck' && board.boardable ? board.boardKey : null,
+          // A friendly ship holds no deck crew to fight: it is never boarded.
+          boardKey: state === 'struck' && board.boardable && near.faction !== FRIENDLY ? board.boardKey : null,
           faction: near.faction,
           // A friendly ship fights for the players; a Tithe ship against them, whichever ship it marks now.
           band: near.faction === FRIENDLY ? 'ally' : rankBand(near.rank),

@@ -87,7 +87,9 @@ impl Friendlies {
             let here = [tithe.x, tithe.y];
             let parted = |id: u64| self.parted.contains(&(tithe.id, id));
             let sailing = self.sailing.iter().copied().filter(|friend| !parted(friend.traffic));
-            let ships = traffic.map(|traffic| (traffic, traffic.ships_near(here, ENGAGE_RANGE, world_s)));
+            let ships = traffic
+                .filter(|_| tithe.bold)
+                .map(|traffic| (traffic, traffic.ships_near(here, ENGAGE_RANGE, world_s)));
             let routed = ships.into_iter().flat_map(|(traffic, ships)| {
                 let open = |ship: &TrafficShip| ship.progress_m < ship.length_m && !self.taken.contains_key(&ship.id);
                 ships.into_iter().filter(open).map(move |ship| (taken_of(traffic, &ship, &tithe), Some(ship)))
