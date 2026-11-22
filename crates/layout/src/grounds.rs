@@ -25,14 +25,14 @@ pub const STORE_HALF: [f64; 2] = [1.302, 1.112];
 const STORE_SUNK: f64 = 0.3;
 /// The stores stand within this of the plaza, this far from each other, and this far clear of every building, set
 /// piece and prop, and of every way's edge.
-const STORES_FROM_PLAZA: f64 = 35.0;
-const STORES_APART: f64 = 8.0;
-const STORE_CLEAR: f64 = 1.5;
-const STORE_OFF_WAYS: f64 = 2.0;
+pub const STORES_FROM_PLAZA: f64 = 35.0;
+pub const STORES_APART: f64 = 8.0;
+pub const STORE_CLEAR: f64 = 1.5;
+pub const STORE_OFF_WAYS: f64 = 2.0;
 /// How far out from the plaza a hamlet's raiders come in, and how far its banners stand, either side of the way in.
-const APPROACH_M: f64 = 36.0;
-const BANNERS_M: f64 = 28.0;
-const BANNERS_APART: f64 = 6.0;
+pub const APPROACH_M: f64 = 36.0;
+pub const BANNERS_M: f64 = 28.0;
+pub const BANNERS_APART: f64 = 6.0;
 /// How far from the fissure its crystal growth rises: the nearest of these that is clear.
 const GROWTH_M: [f64; 3] = [17.0, 14.0, 20.0];
 /// How far from the wilds' middle its fissure opens, the nearest of these that is clear: off the obelisk the
@@ -41,7 +41,7 @@ const GROWTH_M: [f64; 3] = [17.0, 14.0, 20.0];
 /// far it keeps clear of everything standing.
 const FISSURE_M: [f64; 3] = [12.0, 9.0, 15.0];
 pub const FISSURE_HALF: [f64; 2] = [7.7, 4.9];
-const FISSURE_CLEAR: f64 = 1.0;
+pub const FISSURE_CLEAR: f64 = 1.0;
 
 /// What a box covers, west, north, east and south.
 type Print = [f64; 4];
@@ -203,8 +203,8 @@ pub const EVENT_ZONES: [&str; 3] = ["saltgrass-downs", "gullwing-vale", "driftwo
 /// How far round the fissure its event is fought, metres; and how far past its stores a raid's ground reaches, and
 /// the least it reaches from its middle.
 pub const FISSURE_RADIUS: f64 = 25.0;
-const RAID_PAST: f64 = 10.0;
-const RAID_LEAST: f64 = 20.0;
+pub const RAID_PAST: f64 = 10.0;
+pub const RAID_LEAST: f64 = 20.0;
 
 /// Where a zone's public events are fought.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]

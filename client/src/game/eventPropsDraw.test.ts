@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { moduleMouth, moduleNumber } from '../city/modules.ts';
+import { EVENT_LAMPS } from '../sky/lamps.ts';
 import { EventPropsDraw } from './eventPropsDraw.ts';
 import { MATERIALS, packLips } from './eventPropsPack.ts';
 import type { Gpu } from '../gpu.ts';
@@ -59,6 +60,11 @@ test('the drawer makes its pipelines only once it has props to draw, not as the 
     const drawer = new EventPropsDraw({ device, format: 'bgra8unorm' } as unknown as Gpu);
     drawer.set([]);
     assert.deepEqual(made, [], 'none at boot');
+    // A frame with no props makes no list of lamps: each such frame hands the scene the one kept empty list.
+    const lamps = EVENT_LAMPS.current;
+    drawer.set([]);
+    assert.equal(EVENT_LAMPS.current, lamps, 'the same list, frame after frame');
+    assert.equal(lamps.length, 0);
   } finally {
     globalThis.fetch = fetched;
   }

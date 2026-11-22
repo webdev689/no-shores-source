@@ -4,7 +4,7 @@ import layout from '../content/world/layout.json' with { type: 'json' };
 import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm';
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Count, counted } from './budget.ts';
-import { Keeper, TOKEN } from './keeping.ts';
+import { Keeper, partFrom, TOKEN } from './keeping.ts';
 import { isleRoom, nodeRoom, seaRoom, seaRoomName } from './roomNames.ts';
 import { SEA_PORTS } from './seaPorts.ts';
 import { type RoomDoor, startRoomDoor } from './roomDoor.ts';
@@ -266,10 +266,7 @@ export class RoomHost extends DurableObject<Env> {
     if (!held) return;
     this.players.delete(socket);
     if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
-    // Their chests are opened for them, then the character's last save reads it, before the room lets them go.
-    this.guarded(() => this.room.parting(held.player), undefined);
-    void this.keeper?.leave(held.player);
-    this.guarded(() => this.room.leave(held.player), undefined);
+    partFrom(this.room, this.keeper, held.player, (call) => this.guarded(call, undefined));
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
       clearInterval(this.ticking);

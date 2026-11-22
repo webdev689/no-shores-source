@@ -584,9 +584,13 @@ pub(crate) fn took_part(part: &Part) -> bool {
 #[cfg(test)]
 mod chest_tests;
 #[cfg(test)]
+mod fissure_rules_tests;
+#[cfg(test)]
 mod fissure_tests;
 #[cfg(test)]
 mod fixture;
+#[cfg(test)]
+mod raid_rules_tests;
 #[cfg(test)]
 mod raid_tests;
 #[cfg(test)]

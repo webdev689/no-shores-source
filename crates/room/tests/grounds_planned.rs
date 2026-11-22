@@ -7,9 +7,10 @@ use layout::field::{distance, ring_holds};
 use layout::sites::SiteKind;
 use std::path::Path;
 
-/// Continent 1's layouts as the bake settles them.
-fn continent_one() -> Vec<layout::Layout> {
-    continent("continent-1")
+/// Continent 1's layouts as the bake settles them, settled once for every test here.
+fn continent_one() -> &'static [layout::Layout] {
+    static SETTLED: std::sync::OnceLock<Vec<layout::Layout>> = std::sync::OnceLock::new();
+    SETTLED.get_or_init(|| continent("continent-1"))
 }
 
 /// A continent's layouts as the bake settles them.
@@ -79,7 +80,7 @@ fn only_the_grounds_an_event_is_fought_on_are_marked_so_no_other_hamlet_has_a_st
     let hamlets = |laid: &layout::Layout| laid.areas.iter().filter(|area| area.kind == AreaKind::Hamlet).count();
     let elsewhere: Vec<&layout::Layout> = layouts
         .iter()
-        .chain(&highlands)
+        .chain(highlands.iter())
         .filter(|laid| !bake::EVENT_ZONES.contains(&laid.id.as_str()) && hamlets(laid) > 0)
         .collect();
     assert!(!elsewhere.is_empty(), "hamlets outside the event zones");
@@ -208,5 +209,60 @@ fn saltmeres_fissures_open_on_clear_ground_beside_their_battlefields_obelisk_nev
                 fissure.at
             );
         }
+    }
+}
+
+#[test]
+fn saltmeres_grounds_keep_every_distance_the_bake_plans_them_by() {
+    use layout::grounds::{
+        APPROACH_M, BANNERS_APART, BANNERS_M, FISSURE_CLEAR, FISSURE_HALF, RAID_LEAST, RAID_PAST, STORE_CLEAR,
+        STORE_HALF, STORE_OFF_WAYS, STORES_APART, STORES_FROM_PLAZA,
+    };
+    let layouts = continent_one();
+    for id in bake::EVENT_ZONES {
+        let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
+        let grounds = bake::grounds_of(laid).expect("an event zone has grounds");
+        let (raid, fissure) = (grounds.raid.expect("a raid"), grounds.fissure.expect("a fissure"));
+        let held = laid.sites.iter().find(|site| site.kind == SiteKind::Store).and_then(|site| site.holds.clone());
+        let hamlet = laid.areas.iter().find(|area| Some(&area.name) == held.as_ref()).expect("the raided hamlet");
+        let standing: Vec<[f64; 6]> = (laid.seating.buildings.iter().chain(&laid.seating.props))
+            .map(|seated| {
+                let [west, north, east, south] = seated.footprint;
+                [west, north, east, south, 0.0, 0.0]
+            })
+            .chain(laid.seating.solids.iter().map(|solid| solid.bounds()))
+            .collect();
+        for (nth, store) in raid.stores.iter().enumerate() {
+            assert!(distance(*store, hamlet.at) <= STORES_FROM_PLAZA + 1e-9, "{id}: within 35 m of the plaza");
+            for other in &raid.stores[nth + 1..] {
+                assert!(distance(*store, *other) >= STORES_APART - 1e-9, "{id}: stores 8 m apart");
+            }
+            let hit = standing.iter().find(|print| overlaps(*store, STORE_HALF, STORE_CLEAR, **print));
+            assert!(hit.is_none(), "{id}: the store at {store:?} is 1.5 m clear of everything standing, not {hit:?}");
+            for path in &laid.paths {
+                let off = path.points.windows(2).map(|pair| layout::paths::off_line(*store, pair[0], pair[1]));
+                let edge = path.tier.width() / 2.0 + STORE_HALF[0].max(STORE_HALF[1]) + STORE_OFF_WAYS;
+                assert!(off.fold(f64::INFINITY, f64::min) > edge, "{id}: the store at {store:?} 2 m off the ways");
+            }
+        }
+        // The approach out along its line, and the banners either side of it: as far as asked, or stepped in 3 m at
+        // a time to clear ground.
+        let stepped = |out: f64, asked: f64| (0..12).any(|step| (out - (asked - f64::from(step) * 3.0)).abs() < 1e-6);
+        let out = distance(raid.approach, hamlet.at);
+        assert!(stepped(out, APPROACH_M), "{id}: the approach {out} m out");
+        let toward = [(raid.approach[0] - hamlet.at[0]) / out, (raid.approach[1] - hamlet.at[1]) / out];
+        let aside = libm::hypot(BANNERS_M, BANNERS_APART);
+        for banner in &raid.banners {
+            let banner_out = distance(*banner, hamlet.at);
+            assert!(stepped(banner_out, aside), "{id}: a banner {banner_out} m out");
+            let along = ((banner[0] - hamlet.at[0]) * toward[0] + (banner[1] - hamlet.at[1]) * toward[1]) / banner_out;
+            assert!((along - BANNERS_M / aside).abs() < 1e-6, "{id}: a banner 6 m aside of the way in at 28 m");
+        }
+        let across = |banner: [f64; 2]| (banner[0] - hamlet.at[0]) * toward[1] - (banner[1] - hamlet.at[1]) * toward[0];
+        assert!(across(raid.banners[0]) * across(raid.banners[1]) < 0.0, "{id}: one either side");
+        let reach = raid.stores.iter().map(|store| distance(*store, raid.at)).fold(0.0, f64::max);
+        assert!((raid.radius - (reach + RAID_PAST).max(RAID_LEAST)).abs() < 1e-9, "{id}: the raid's radius");
+        let hit = standing.iter().find(|print| overlaps(fissure.at, FISSURE_HALF, FISSURE_CLEAR, **print));
+        assert!(hit.is_none(), "{id}: the fissure is 1 m clear of everything standing, not {hit:?}");
     }
 }

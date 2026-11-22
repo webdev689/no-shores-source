@@ -15,14 +15,16 @@ pub(crate) const RAID_MINUTE: u64 = 15_015;
 pub(crate) const FISSURE_AT: [f64; 2] = [0.0, -100.0];
 pub(crate) const RAID_AT: [f64; 2] = [100.0, 0.0];
 
+/// The grounds as the bake plans them (layout::grounds): the Fissure 25 m round, its growth 17 m out; the raid's
+/// 10 m past its farthest store and 20 m at least, its approach 36 m out and its banners 28 m out, 6 m either side.
 pub(crate) fn grounds() -> Grounds {
-    let fissure = FissureGround { at: FISSURE_AT, radius: 30.0, growth: [17.0, -100.0] };
+    let fissure = FissureGround { at: FISSURE_AT, radius: 25.0, growth: [17.0, -100.0] };
     let raid = RaidGround {
         at: RAID_AT,
-        radius: 30.0,
+        radius: 20.0,
         stores: vec![[92.0, -4.0], [108.0, -4.0], [100.0, 10.0]],
-        approach: [100.0, -45.0],
-        banners: vec![[94.0, -36.0], [106.0, -36.0]],
+        approach: [100.0, -36.0],
+        banners: vec![[94.0, -28.0], [106.0, -28.0]],
     };
     Grounds { fissure: Some(fissure), raid: Some(raid) }
 }

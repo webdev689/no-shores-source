@@ -119,3 +119,26 @@ fn a_room_opened_late_in_a_minute_runs_its_event_out_and_shows_the_whole_result_
     let failed_at = failed_at.expect("its countdown ran out and it failed, shown");
     assert_eq!(ticked - failed_at, super::RESULT_TICKS, "its result shown its whole time");
 }
+
+/// A day of every zone's slots, for the page's tests to check its own reading of the schedule against
+/// (client/src/game/publicLaw.test.ts).
+#[test]
+fn a_day_of_the_schedule_is_written_for_the_page_to_agree_with() {
+    let first = 20_000 * 1_440_u64;
+    // A day and the slots after it, so the page can look ahead from its last minute.
+    let minutes = first..first + 1_440 + 2 * PERIOD_MINUTES + 30;
+    let zones: serde_json::Map<String, serde_json::Value> = ZONES
+        .into_iter()
+        .map(|zone| {
+            let slots = minutes.clone().map(|minute| {
+                let (kind, start) = schedule(zone, minute).expect("an event zone");
+                serde_json::json!([kind as u8, start])
+            });
+            (zone.to_owned(), slots.collect())
+        })
+        .collect();
+    let written = serde_json::json!({ "first": first, "countdown": super::COUNTDOWN_MINUTES, "zones": zones });
+    let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
+    std::fs::create_dir_all(folder).expect("the folder");
+    std::fs::write(format!("{folder}/schedule.json"), written.to_string()).expect("written");
+}
