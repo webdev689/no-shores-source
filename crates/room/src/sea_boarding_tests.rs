@@ -287,3 +287,21 @@ fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
     assert!(!sea.on_deck(player), "stepped off");
     assert_eq!(road(&sea, player), Some((3, 6)), "the tally ship boarded and taken");
 }
+
+#[test]
+fn a_boarder_kept_while_still_aboard_keeps_what_the_sea_gave_them_meanwhile() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+    sea.board(player).unwrap();
+    // While they fight its deck, an officer joins at sea and their ship earns.
+    let held = sea.harbour.characters.get_mut(&player).unwrap();
+    held.sign_on(gear::crew::Officer::new(0, gear::crew::Post::Bosun, gear::Rarity::Magic, 1)).expect("signed on");
+    held.earn_ship_xp(500);
+    // Their tab closes before they step off: the account keeps what the sea gave too.
+    let kept = gear::Character::from_json(&sea.kept_character(player).expect("kept")).expect("read");
+    assert_eq!(kept.crew.officers.len(), 1, "the officer who joined");
+    assert_eq!(kept.ship_xp, 500, "the ship's experience");
+}
