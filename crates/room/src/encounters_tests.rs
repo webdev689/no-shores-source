@@ -117,6 +117,8 @@ fn a_wipe_at_abyss_keeps_the_broken_seals_and_starts_the_court_over() {
     let of = RunOf::Elite { place: "saltworm-warrens".into() };
     let mut room = Room::dungeon_run(&of, gear::Difficulty::Abyss, FRIDAY_NINE).expect("the week's Abyss run");
     let players = [room.join().expect("in"), room.join().expect("in")];
+    let (x, y) = room.spawn_points[0];
+    let wave = crate::encounters::seals::seals_tests::stand_one(&mut room, [x, y]);
     {
         let encounters = room.encounters.as_mut().expect("encounters");
         encounters.seals[0].state = SealState::Broken;
@@ -135,6 +137,7 @@ fn a_wipe_at_abyss_keeps_the_broken_seals_and_starts_the_court_over() {
     assert_eq!(encounters.court.reckoning_from, None);
     assert!(room.garrison[0].standing.is_empty(), "its Boss held back again while a seal holds");
     assert!(room.garrison.iter().all(|post| !post.arrival), "no wave stands again");
+    assert!(!room.foes.contains_key(&wave), "its foes gone");
 }
 
 #[test]

@@ -78,6 +78,8 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
   const broken = seen.seals.filter((seal) => seal.state === SEAL_STATE.broken).length;
   const kicker = `Seals broken ${broken} of ${seen.seals.length}`;
   const plain = { place: '', urgent: false, heroic: null, bonus: null } as const;
+  // The Boss fallen, the Court is over: the cache and the portal say the rest.
+  if (seen.woken && !seen.boss) return null;
   if (seen.woken) {
     const warned = seen.reckoningTicks > 0;
     const objective = warned ? 'Stand in the light' : seen.ward > 0 ? 'Break the anchors' : 'Defeat the Boss';

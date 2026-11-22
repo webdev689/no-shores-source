@@ -15,9 +15,11 @@ pub const RUNE_SHOWN_TICKS: u64 = 60;
 pub const LITANY_PAUSE_TICKS: u64 = 120;
 pub const RUNE_REACH_M: f64 = 0.9;
 pub const WRONG_FOES: usize = 2;
-/// A Weighing: its plates held together this long in all, a plate stood on within this reach, a wave every so often,
-/// and two plates in play in a run of fewer than this many players.
+/// A Weighing: its plates held together this long in all, a plate stood on within this reach and held this long after
+/// its last player steps off (so one player can hold two), a wave every so often, and two plates in play in a run of
+/// fewer than this many players.
 pub const WEIGHING_TICKS: u64 = 6 * 60;
+pub const PLATE_LINGER_TICKS: u64 = 3 * 60;
 pub const PLATE_REACH_M: f64 = 1.0;
 pub const WEIGHING_WAVE_TICKS: u64 = 15 * 60;
 pub const ALL_PLATES_FROM: usize = 3;
@@ -114,8 +116,8 @@ impl Room {
         done
     }
 
-    /// A Weighing's tick: held while a living player stands on every plate in play; a wave at its doorways every
-    /// WEIGHING_WAVE_TICKS. Broken once held WEIGHING_TICKS in all.
+    /// A Weighing's tick: held while every plate in play is stood on by a living player, or was within
+    /// PLATE_LINGER_TICKS; a wave at its doorways every WEIGHING_WAVE_TICKS. Broken once held WEIGHING_TICKS in all.
     fn keep_weighing(
         &mut self,
         encounters: &mut Encounters,
@@ -123,12 +125,15 @@ impl Room {
         plan: &SealPlan,
         standing: &[[f64; 3]],
     ) -> bool {
-        let in_play = plates_for(self.players.len());
-        let on: Vec<bool> = plan.pieces[..in_play]
-            .iter()
-            .map(|&plate| standing.iter().any(|&at| near(at, plate) <= PLATE_REACH_M))
-            .collect();
+        let (in_play, clock) = (plates_for(self.players.len()), self.clock);
         let found = &mut encounters.seals[seal];
+        for (plate, pressed) in plan.pieces[..in_play].iter().zip(&mut found.pressed) {
+            if standing.iter().any(|&at| near(at, *plate) <= PLATE_REACH_M) {
+                *pressed = Some(clock);
+            }
+        }
+        let held = |pressed: &Option<u64>| pressed.is_some_and(|at| clock - at <= PLATE_LINGER_TICKS);
+        let on: Vec<bool> = found.pressed[..in_play].iter().map(held).collect();
         if on.iter().all(|held| *held) {
             found.held += 1;
         }
@@ -294,4 +299,4 @@ fn keep_ascent(seal: &mut Seal, plan: &SealPlan, inside: &[(PlayerId, [f64; 3], 
 
 #[cfg(test)]
 #[path = "seals_tests.rs"]
-mod seals_tests;
+pub(crate) mod seals_tests;

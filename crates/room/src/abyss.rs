@@ -79,6 +79,7 @@ impl Room {
         self.pending.clear();
         self.spells.list.clear();
         self.drops.clear();
+        self.drop_waves();
         for post in 0..self.garrison.len() {
             self.stand_post(post);
         }

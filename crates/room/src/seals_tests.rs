@@ -29,6 +29,15 @@ fn inside(room: &mut Room, player: PlayerId, seal: &SealPlan) {
     put(room, player, [x, y, 0.0]);
 }
 
+/// One of the dungeon's foes stood at a point, as a wave's are; its number.
+pub(crate) fn stand_one(room: &mut Room, at: [f64; 2]) -> FighterId {
+    let before: Vec<FighterId> = room.foes.keys().copied().collect();
+    let mut encounters = room.encounters.take().expect("encounters");
+    room.stand_foes(&mut encounters, None, &[at], 1);
+    room.encounters = Some(encounters);
+    *room.foes.keys().find(|id| !before.contains(id)).expect("one stood")
+}
+
 #[test]
 fn a_litany_shows_its_runes_in_turn_and_breaks_once_they_are_stepped_in_order() {
     let mut room = elite_room("krakens-grotto");
@@ -108,6 +117,24 @@ fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_n
 }
 
 #[test]
+fn a_plate_stays_held_three_seconds_after_its_player_steps_off_so_one_player_can_hold_two() {
+    let mut room = elite_room("pale-undercroft");
+    let player = hardy(&mut room);
+    let seal = seal_of(&room, SealKind::Weighing);
+    let laid = plan(&room, seal);
+    put(&mut room, player, laid.pieces[0]);
+    room.tick();
+    put(&mut room, player, laid.pieces[1]);
+    ticks(&mut room, 100);
+    assert_eq!(state(&room, seal).held, 100, "the first plate still held as the second is stood on");
+    assert_eq!(room.encounter_seen().expect("seen").seals[seal].marks, vec![1, 1]);
+    ticks(&mut room, PLATE_LINGER_TICKS);
+    let held = state(&room, seal).held;
+    assert!(held < 100 + PLATE_LINGER_TICKS, "the first let go three seconds after it was left: {held}");
+    assert_eq!(room.encounter_seen().expect("seen").seals[seal].marks, vec![0, 1]);
+}
+
+#[test]
 fn a_weighings_waves_come_every_fifteen_seconds_from_its_doorways() {
     let mut room = elite_room("pale-undercroft");
     let player = hardy(&mut room);
@@ -173,15 +200,19 @@ fn a_holdfast_is_held_in_its_ring_and_a_relic_drained_by_foes_halves_the_hold() 
     assert!(state(&room, seal).held >= HOLDFAST_WAVE_TICKS, "held in its ring");
     let foes_after_waves = room.foes.len();
     assert!(foes_after_waves > 0, "a wave every twelve seconds");
-    // The waves' foes stand in the ring, draining the relic.
-    let drainers = room.foes.values().filter(|foe| {
-        let body = foe.fighter.body;
-        libm::hypot(body.x - laid.pieces[0][0], body.y - laid.pieces[0][1]) <= crate::encounter_plan::RELIC_RING_M
-    });
-    let (held, relic) = (state(&room, seal).held, state(&room, seal).relic);
-    assert!(relic < 1.0 || drainers.count() == 0);
+    // A foe in the ring drains a twentieth of the relic a second.
+    room.send_foes_away();
+    room.encounters.as_mut().expect("encounters").seals[seal].relic = 1.0;
+    let foe = stand_one(&mut room, [laid.pieces[0][0] + 0.5, laid.pieces[0][1]]);
+    for _ in 0..60 {
+        let body = &mut room.foes.get_mut(&foe).expect("it").fighter.body;
+        (body.x, body.y) = (laid.pieces[0][0] + 0.5, laid.pieces[0][1]);
+        put(&mut room, player, laid.pieces[0]);
+        room.tick();
+    }
+    assert!((state(&room, seal).relic - (1.0 - 60.0 * RELIC_DRAIN)).abs() < 1e-9, "a second's draining");
+    let held = state(&room, seal).held;
     room.encounters.as_mut().expect("encounters").seals[seal].relic = RELIC_DRAIN / 2.0;
-    let foe = *room.foes.keys().next().expect("a foe");
     let body = &mut room.foes.get_mut(&foe).expect("it").fighter.body;
     (body.x, body.y) = (laid.pieces[0][0] + 0.5, laid.pieces[0][1]);
     room.take_events();

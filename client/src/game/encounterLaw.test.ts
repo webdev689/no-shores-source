@@ -85,10 +85,11 @@ test("every task is one plain line, and the Court's tells its ward and its Recko
   assert.equal(taskOf(SEAL_KIND.weighing, 3), 'Hold all three plates together');
   assert.equal(taskOf(SEAL_KIND.ascent, 0), 'Climb to the seal stone');
   assert.equal(taskOf(SEAL_KIND.holdfast, 0), "Hold the relic's ring");
-  const court = encounterBanner(layout, seen({ woken: true, ward: 1, anchors: [1, 0.4, 0] }), [9, 1.6, 0]);
+  const court = encounterBanner(layout, seen({ woken: true, boss: 7, ward: 1, anchors: [1, 0.4, 0] }), [9, 1.6, 0]);
   assert.deepEqual([court?.title, court?.objective, court?.bar?.label], [COURT, 'Break the anchors', '1 of 3']);
-  const reckoning = encounterBanner(layout, seen({ woken: true, ward: 2, reckoningTicks: 601 }), [9, 1.6, 0]);
+  const reckoning = encounterBanner(layout, seen({ woken: true, boss: 7, ward: 2, reckoningTicks: 601 }), [9, 1.6, 0]);
   assert.deepEqual([reckoning?.objective, reckoning?.clock, reckoning?.urgent], ['Stand in the light', '11', true]);
+  assert.equal(encounterBanner(layout, seen({ woken: true, boss: 0 }), [9, 1.6, 0]), null, 'the Boss fallen: none');
   const words = [...Object.values(SEAL_NAMES), ...[1, 2, 3, 4].map((kind) => taskOf(kind, 3))];
   assert.ok(
     words.every((line) => !line.includes('—') && line.length <= 44),

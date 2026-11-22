@@ -25,14 +25,15 @@ pub enum SealState {
 }
 
 /// A seal as it stands: how long it has been held (a Litany: how many runes stepped in order), when its Litany's show
-/// begins again, which of its pieces were stood on last tick, its relic's strength (1 whole), when its next wave
-/// comes, and its waves' foes.
+/// begins again, which of its pieces were stood on last tick and the tick each was last stood on, its relic's strength
+/// (1 whole), when its next wave comes, its waves' foes and how many waves it has stood.
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct Seal {
     pub state: SealState,
     pub held: u64,
     pub shown_from: u64,
     pub on: Vec<bool>,
+    pub pressed: Vec<Option<u64>>,
     pub relic: f64,
     pub next_wave: u64,
     pub waves: Vec<FighterId>,
@@ -46,6 +47,7 @@ impl Seal {
             held: 0,
             shown_from: 0,
             on: vec![false; pieces],
+            pressed: vec![None; pieces],
             relic: 1.0,
             next_wave: 0,
             waves: Vec::new(),
@@ -133,6 +135,7 @@ impl Room {
     /// The Boss's post emptied: its foe sent away, never counted cleared while its seals hold (`held_back`).
     fn hold_boss(&mut self) {
         let Some(post) = self.garrison.first_mut() else { return };
+        post.leader = None;
         let gone = std::mem::take(&mut post.standing);
         self.send_away(&gone);
     }
@@ -297,13 +300,17 @@ impl Room {
         }
     }
 
-    /// An Abyss run started over: its waves are gone, each seal not broken waits again, and the Court starts over,
-    /// its Boss held back again while a seal holds.
-    pub(crate) fn encounters_start_over(&mut self) {
+    /// An Abyss run starting over: every wave is gone before the posts stand again, since a wave never stands again.
+    pub(crate) fn drop_waves(&mut self) {
         let waves: Vec<FighterId> =
             self.garrison.iter().filter(|post| post.arrival).flat_map(|post| post.standing.clone()).collect();
         self.send_away(&waves);
         self.garrison.retain(|post| !post.arrival);
+    }
+
+    /// An Abyss run started over: each seal not broken waits again, and the Court starts over, its Boss held back
+    /// again while a seal holds.
+    pub(crate) fn encounters_start_over(&mut self) {
         let Some(encounters) = self.encounters.as_mut() else { return };
         for (seal, plan) in encounters.seals.iter_mut().zip(&encounters.plan.seals) {
             if seal.state != SealState::Broken {
@@ -345,11 +352,7 @@ impl Room {
             boss: self.boss().unwrap_or(0),
             ward: if court.ward_up { u8::try_from(court.wards_broken + 1).unwrap_or(u8::MAX) } else { 0 },
             wards_broken: u8::try_from(court.wards_broken).unwrap_or(u8::MAX),
-            anchors: court
-                .anchors
-                .iter()
-                .map(|&held| per_mille(held as f64 / court::ANCHOR_TICKS as f64))
-                .collect(),
+            anchors: court.anchors.iter().map(|&held| per_mille(held as f64 / court::ANCHOR_TICKS as f64)).collect(),
             reckoning_ticks,
             reckoning_at,
             fury: self.fury_step(),

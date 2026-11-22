@@ -320,8 +320,9 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   it; one stepping on any rune further on darkens them all, starts the show again two seconds on and stands two of the
   dungeon's foes at its doorways (`RuneWrong`). It never harms anyone itself. Every rune lit breaks it.
 - **The Weighing** (split up): three plates as far apart as the room allows, or the two farthest in a run of fewer
-  than three players. It is held each tick a living player stands within 1 m of every plate in play, and broken once
-  held 6 s in all; while it runs a wave comes every 15 s at its doorways.
+  than three players. A plate stood on by a living player within 1 m stays held 3 s after the last steps off, so one
+  player can hold two. It is held each tick every plate in play is, and broken once held 6 s in all; while it runs a
+  wave comes every 15 s at its doorways.
 - **The Ascent** (a climb): the longest line of free cells one beside the next from the doorway a company comes in by,
   three to six, a pad on each: 1.6 m square, the first 0.4 m high and reaching back to the doorway's cell, each 0.4 m
   over the one before, the top one under the room's lowest ceiling less a body's height and 0.3 m. Clear of rock,
@@ -352,8 +353,9 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   30 s, to three times (`modded_blow`).
 - **Harm** from the drowned floor and the Reckoning is settled as a foe's blow is (`settle`), unguarded and
   undodged: shields, deaths, revives and the plates' displays treat it as any harm.
-- **A wipe at Abyss** keeps every broken seal; the rest wait again, every wave is gone, and the Court starts over, its
-  Boss held back again unless every seal is broken. Leaving and coming back keeps everything: it is the room's.
+- **A wipe at Abyss** keeps every broken seal; the rest wait again, every wave is gone before the posts stand again
+  (any dungeon's, as a wave never stands again), and the Court starts over, its Boss held back again unless every seal
+  is broken. Leaving and coming back keeps everything: it is the room's.
 - **On the wire.** Each snapshot carries the encounters whole (`EncounterSeen`, about 190 bytes): each seal's kind,
   state, progress, its pieces' marks and its relic's strength; whether the Boss woke and its number; the ward up and
   those broken; each anchor's progress; the ticks until a Reckoning lands and its anchor; and Fury's step. Where the
@@ -461,7 +463,8 @@ or glows, and is read as standing none (`readDungeon`).
   (or the one running) with its task in a line ("Step on the runes in the order they light", "Hold all three plates
   together" or "Hold both plates together", "Climb to the seal stone", "Hold the relic's ring") and its progress; once
   the Boss wakes, the Court ("Defeat the Boss", "Break the anchors" while warded, "Stand in the light" with the
-  Reckoning's seconds left in the banner's large clock, red and pulsing); between seals only the count. It slides in
+  Reckoning's seconds left in the banner's large clock, red and pulsing); between seals only the count; none once
+  the Boss has fallen. It slides in
   afresh as the Boss wakes, a seal breaks or a ward rises or breaks; the music stings as one breaks or rises, and its
   mood holds tense while a seal runs and at its peak in the Court. A wrong rune and a drained relic play the refused
   sound. The page's fighter predicts on the pads (`fighter_dungeon`).
