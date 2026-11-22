@@ -83,8 +83,8 @@ test('a players own gear the server wrote reads back whole, every column spelled
   assert.ok(sword);
   assert.deepEqual(
     [sword.source, gear.mail?.[0]?.vestige?.source],
-    [5, 5],
-    'each from a sea dungeon, as its look says',
+    [3, 5],
+    'Harbourwarden, mithril, an Elite Dungeon’s; the letter’s Vestige a sea dungeon’s',
   );
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);
   assert.deepEqual(

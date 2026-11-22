@@ -84,8 +84,8 @@ fn a_vestige_opens_to_its_own_sources_named_piece_where_it_has_one() {
         make(1, Rarity::Legendary, Slot::Torso, 20, source, &dice(seed)).expect("a Legendary torso").named
     };
     for seed in 0..40 {
-        assert_eq!(from(Source::Dungeon, seed).as_deref(), Some("tithebreaker_plate"));
-        assert_eq!(from(Source::Sea, seed).as_deref(), Some("saltwind_jerkin"));
+        assert_eq!(from(Source::Sea, seed).as_deref(), Some("tithebreaker_plate"));
+        assert_eq!(from(Source::Elite, seed).as_deref(), Some("saltwind_jerkin"));
     }
     // The world has no Legendary torso of its own, so its Vestige opens to another source's, which keeps its own.
     let opened: Vec<Item> =
@@ -159,7 +159,7 @@ fn a_named_piece_kept_before_sources_reads_as_its_entrys_content() {
     let id = character.take_id();
     character.items.insert(id, (Item { id, ..sword }, crate::character::At::Carried));
     let read = Character::from_json(&character.to_json()).expect("reads");
-    assert_eq!(read.items[&id].0.source, Source::Sea, "Harbourwarden is the sea dungeons'");
+    assert_eq!(read.items[&id].0.source, Source::Elite, "Harbourwarden, mithril, is the Elite Dungeons'");
 }
 
 #[test]

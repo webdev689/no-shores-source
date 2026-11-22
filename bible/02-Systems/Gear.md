@@ -515,7 +515,7 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
 Every item and Vestige keeps the content it came from (`gear::Source`), as the owner chose
 ([[Armour and Weapon Looks Belong to the Content That Gives Them]]; Claude's calls in
 [[The Playlist and Its Dungeons as Claude Shapes Them]]): the world, a faction, a dungeon, an Elite Dungeon, an Abyss
-Dungeon, a sea dungeon or a Breach. Its looks follow it ("Looks", below), and its card names it ("From").
+Dungeon, a sea dungeon or a Breach. Its looks follow it ("Looks", below), and its card names it ("From"), but a ship's module's, which keeps no look of a content.
 
 - **The room's content** (`Room.source`): a patrol's dungeon, shared or a run at any tier, is a dungeon's; an Elite
   Dungeon's run at Normal or Elite an Elite Dungeon's, and at Abyss an Abyss Dungeon's; a sea island's dungeon a sea

@@ -62,7 +62,7 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   but the armour, garments and weapons drawn are still each page's own word; whether those should be the room's too
   ([[Server]]).
 - **Named pieces for each content.** A Vestige now opens to its own content's named pieces where it has any of its
-  slot and colour ([[Armour and Weapon Looks Belong to the Content That Gives Them]]), and the 39 there are spread
+  slot and colour ([[Armour and Weapon Looks Belong to the Content That Gives Them]]), and the 40 named weapons and armour pieces outside the factions are spread
   thinly: the world has one Legendary Melee piece (Mooring Chain) and only guns for Ranged, no named armour, and no
   Atheric but two guns; a dungeon has no Atheric; an Elite Dungeon's Legendaries are three Melee pieces. Where a content
   has none, its Vestige opens to any content's. Whether to write more named pieces for each content (their names and

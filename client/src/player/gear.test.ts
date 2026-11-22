@@ -115,10 +115,10 @@ test('the hands hold the drawn loadout in its look, or the nearest metal the for
   const greatsword = item({ id: 6, kind: 22, at: 2 });
   assert.deepEqual(gearHands(state([greatsword]), WARDROBE), hands('sword_iron', null, 'hilt'), 'on its hilt');
   assert.deepEqual(gearHands(state([brace]), WARDROBE), hands(null, null), 'no Melee worn, bare hands');
-  // The forge draws no orcish crossbow: an Elite Dungeon's falls to its own content's silver before the nearer dwarven.
+  // The forge draws no orcish crossbow: an Elite Dungeon's falls to its own content's mithril before dwarven, as near.
   const crossbows: Wardrobe = { ...WARDROBE, right: ['crossbow_dwarven', 'crossbow_silver', 'crossbow_mithril'] };
-  const elite = item({ id: 7, kind: 9, rarity: 2, level: 20, at: 3, source: 3 });
-  assert.deepEqual(gearHands(state([elite]), crossbows, 1).right, 'crossbow_silver', 'its own content first');
+  const elite = item({ id: 7, kind: 9, rarity: 2, level: 1, at: 3, source: 3 });
+  assert.deepEqual(gearHands(state([elite]), crossbows, 1).right, 'crossbow_mithril', 'its own content first');
   const world = item({ id: 7, kind: 9, rarity: 2, level: 20, at: 3, source: 0 });
   assert.deepEqual(gearHands(state([world]), crossbows, 1).right, 'crossbow_silver', 'steel undrawn: the nearest');
 });
@@ -184,11 +184,11 @@ test("a weapon's look: a named piece's as written; a rolled one climbs with its 
   const from = (source: number, rarity: number, level: number) =>
     [0, 1, 2].map((name) => look({ rarity, level, name, source }).metal).join(' ');
   assert.deepEqual([from(0, 1, 1), from(0, 1, 20)], ['iron steel iron', 'steel steel steel'], 'the world');
-  assert.deepEqual([from(3, 2, 1), from(3, 2, 20)], ['silver orcish silver', 'orcish orcish orcish'], 'Elite');
+  assert.deepEqual([from(3, 2, 1), from(3, 2, 20)], ['orcish mithril orcish', 'mithril mithril mithril'], 'Elite');
   assert.deepEqual(from(4, 2, 1), 'adamantium ebony adamantium', 'an Abyss Dungeon');
   assert.deepEqual(
     [from(2, 2, 1), from(5, 1, 1), from(6, 2, 20)],
-    ['dwarven dwarven dwarven', 'elven mithril elven', 'daedric daedric daedric'],
+    ['silver silver silver', 'elven dwarven elven', 'daedric daedric daedric'],
   );
   const makes = (kind: number) => [1, 2, 3].map((id) => look({ kind, rarity: 1, id }).make).join(' ');
   assert.deepEqual(

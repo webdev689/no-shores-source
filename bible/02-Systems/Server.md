@@ -548,7 +548,8 @@ so every decision is Rust and the shell only carries bytes and time.
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
   from its node at any seas. A playlist's run takes one from the sea alone, and a run of the week's two from the sea
-  too, as the Playlist beside a port launches them; neither leads out to its node. A character that came by none of these ways may still join one of its company who plays
+  too, as the Playlist beside a port launches them; a playlist's run never leads out to its node, and the page takes a
+  run of the week's two back to the sea when the Playlist launched it. A character that came by none of these ways may still join one of its company who plays
   in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").

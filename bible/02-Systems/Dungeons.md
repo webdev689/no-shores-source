@@ -315,7 +315,7 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   laid in an order drawn once, and the first that fits is laid there. A room too small or too cluttered for a kind is
   passed over. Every one of the 18 lays its full count; most hold a Litany, and five an Ascent.
 - **Where pieces stand.** A piece stands on a spot of its room: a cell's middle or one of its four quarters' (0.8 m
-  toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
+  each way toward a corner), never on the way in's or the portal's cell, nor a doorway's (but an anchor), each 0.9 m from
   every solid. Runes stand 2 m apart at the least, plates 6.4 m (two cells).
 - **The Litany** (a puzzle): four to six runes, drawn, on its floor. While no rune is lit, they show in turn, each a
   second, then a two second pause, and again. A living player stepping within 0.9 m of the next rune in order lights
