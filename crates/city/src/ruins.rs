@@ -50,8 +50,7 @@ pub fn heap(at: [f64; 3], size: [f64; 3], turn: f64) -> Solid {
 /// through it ends there (a dome, a gable or an arch broken through falls whole), and any light it carried is out.
 #[must_use]
 pub fn broken_landmark(solids: Vec<Solid>, level: f64) -> Vec<Solid> {
-    let top = solids.iter().map(|solid| solid.at[2] + solid.size[2]).fold(level, f64::max);
-    let cut = level + (top - level) * LANDMARK_KEPT;
+    let cut = landmark_break(&solids, level);
     solids
         .into_iter()
         .filter_map(|solid| {
@@ -85,11 +84,23 @@ pub fn broken_landmark(solids: Vec<Solid>, level: f64) -> Vec<Solid> {
         .collect()
 }
 
+/// The height a landmark standing on `level` breaks at: a third of the way up from the platform to its top.
+#[must_use]
+pub fn landmark_break(solids: &[Solid], level: f64) -> f64 {
+    let top = solids.iter().map(|solid| solid.at[2] + solid.size[2]).fold(level, f64::max);
+    level + (top - level) * LANDMARK_KEPT
+}
+
+/// The window round the plaza (west, north, east, south) that no rubble or crystal of the ways lies in.
+#[must_use]
+pub fn plaza_window(plaza: [f64; 4]) -> [f64; 4] {
+    [plaza[0] - PLAZA_CLEAR_M, plaza[1] - PLAZA_CLEAR_M, plaza[2] + PLAZA_CLEAR_M, plaza[3] + PLAZA_CLEAR_M]
+}
+
 /// Rubble scattered along the ways: a few heaps in each avenue's cell, seeded by the cell, none near the plaza.
 #[must_use]
 pub fn street_rubble(grid: &Grid, cells: &[Cell], plaza: [f64; 4], seed: u32) -> Vec<Solid> {
-    let clear =
-        [plaza[0] - PLAZA_CLEAR_M, plaza[1] - PLAZA_CLEAR_M, plaza[2] + PLAZA_CLEAR_M, plaza[3] + PLAZA_CLEAR_M];
+    let clear = plaza_window(plaza);
     let mut heaps = Vec::new();
     for cell in cells.iter().filter(|cell| cell.used == Use::Avenue) {
         let Footing::Level { level } = cell.footing else { continue };

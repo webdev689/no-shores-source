@@ -16,6 +16,7 @@ pub mod landmarks_inland;
 pub mod life;
 pub mod mail;
 pub mod modules;
+pub mod overtaken;
 pub mod ramps;
 pub mod rmb;
 pub mod rock;
@@ -252,8 +253,12 @@ pub fn plan_as(city: &City, ground: &Ground, blocks: &Blocks, ruined: bool) -> R
     pads.push(Pad::flat(base, level));
     let (name, landmark_solids, wrecks) = if ruined {
         works.extend(ruins::street_rubble(&grid, &cells, social.bounds, seed));
+        works.extend(overtaken::crusted(&works, ruins::plaza_window(social.bounds), seed));
         let wrecks = harbour.map(|at| ruins::wrecks(ground, &footprint, at, seed)).unwrap_or_default();
-        (ruins::ruined_name(&city.name), ruins::broken_landmark(built.solids, level), wrecks)
+        let crown = overtaken::crown(&built.solids, ruins::landmark_break(&built.solids, level), seed);
+        let mut landmark = ruins::broken_landmark(built.solids, level);
+        landmark.extend(crown);
+        (ruins::ruined_name(&city.name), landmark, wrecks)
     } else {
         (city.name.clone(), built.solids, Vec::new())
     };

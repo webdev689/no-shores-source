@@ -77,7 +77,14 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     assert_eq!(ruin.name, "Ruins of Mistfall");
     assert!(ruin.ruined && ruin.social.stations.is_empty(), "no one keeps a counter");
     // The landmark broken to what it keeps over the platform, its light out.
-    let top = |plan: &Plan| plan.landmark.iter().map(|solid| solid.at[2] + solid.size[2]).fold(f64::MIN, f64::max);
+    // Its stone, not the crystal crowning it (`a_ruin_is_overtaken_by_the_lattices_crystal_and_its_plaza_kept_clear`).
+    let top = |plan: &Plan| {
+        plan.landmark
+            .iter()
+            .filter(|solid| solid.material != Material::Crystal)
+            .map(|solid| solid.at[2] + solid.size[2])
+            .fold(f64::MIN, f64::max)
+    };
     let level = port.social.level;
     assert!(
         (top(&ruin) - (level + (top(&port) - level) * city::ruins::LANDMARK_KEPT)).abs() < 1e-6,
@@ -119,5 +126,49 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     assert!(ruin.works.iter().all(|solid| !matches!(solid.shape, Shape::Arch { .. })), "every gate breached");
     // The same every time, and pinned, so every machine lays the same ruin.
     assert_eq!(ruin, plan_as(&city, &landmass.surface, &blocks, true).expect("the ruin plans again"));
-    assert_eq!(fingerprint(&ruin), "0aa79975fce0e825");
+    assert_eq!(fingerprint(&ruin), "41427f4134e6ac32");
+    // Without its crystal the ruin is as it was before the Lattice overtook it: the crystal alone moved its pin.
+    let mut bare = ruin.clone();
+    bare.landmark.retain(|solid| solid.material != Material::Crystal);
+    bare.works.retain(|solid| solid.material != Material::Crystal);
+    assert_eq!(fingerprint(&bare), "0aa79975fce0e825");
+}
+
+#[test]
+fn a_ruin_is_overtaken_by_the_lattices_crystal_and_its_plaza_kept_clear() {
+    let (landmass, city) = land_of("continent-6");
+    let blocks = city::rmb::Blocks::default();
+    let ruin = plan_as(&city, &landmass.surface, &blocks, true).expect("the ruin plans");
+    let port = plan_as(&city, &landmass.surface, &blocks, false).expect("the port plans");
+    let crystal = |solids: &[city::solids::Solid]| {
+        solids.iter().filter(|solid| solid.material == Material::Crystal).copied().collect::<Vec<_>>()
+    };
+    assert!(crystal(&port.landmark).is_empty() && crystal(&port.works).is_empty(), "a port city is untouched");
+    // The landmark crowned: its tallest spire reaches back toward the height the landmark had.
+    let top = |solids: &[city::solids::Solid]| solids.iter().map(|solid| solid.bounds()[5]).fold(f64::MIN, f64::max);
+    let level = port.social.level;
+    let (had, kept) = (
+        top(&port.landmark),
+        top(&ruin.landmark.iter().filter(|solid| solid.material != Material::Crystal).copied().collect::<Vec<_>>()),
+    );
+    let crown = crystal(&ruin.landmark);
+    assert!(crown.len() >= 15, "{} spires in the crown", crown.len());
+    let reached = top(&crown);
+    assert!(reached > kept + 0.7 * (had - kept) && reached <= had, "{reached} of {kept} to {had}");
+    assert!(crown.iter().all(|solid| solid.at[2] > level + 0.5 * (kept - level)), "the crown grows from the break");
+    // The rubble of the ways and the breaches crusted with small shards, none in the plaza's window.
+    let shards = crystal(&ruin.works);
+    let heaps = ruin.works.iter().filter(|solid| solid.material == Material::Rubble).count();
+    assert!(shards.len() >= 2 * heaps, "{} shards on {heaps} heaps", shards.len());
+    assert!(shards.iter().all(|solid| solid.size[2] <= 3.0), "small shards");
+    let [west, north, east, south] = ruin.social.bounds;
+    let window = [west - 110.0, north - 110.0, east + 110.0, south + 110.0];
+    for shard in &shards {
+        let [low_x, low_y, high_x, high_y, ..] = shard.bounds();
+        assert!(
+            high_x <= window[0] || low_x >= window[2] || high_y <= window[1] || low_y >= window[3],
+            "{:?} lies in the plaza's window",
+            shard.at
+        );
+    }
 }
