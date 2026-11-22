@@ -15,7 +15,7 @@ import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
-import { likelyMoves, Loop, type Shown, shownMove } from './playerMoves.ts';
+import { likelyMoves, Loop, type Shown, shownMove, steadyMoves } from './playerMoves.ts';
 
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
@@ -366,18 +366,22 @@ export class Walker {
       (anim, drawn) => forge.draws(dress.body, anim, drawn),
       (action) => forge.walking(dress, action),
     );
-    const warm = (shown: Dress, glow: GlowLook, owner: number | string) => {
+    const warm = (shown: Dress, glow: GlowLook, owner: number | string, steady = false) => {
       const { drawn, right, left, grip } = shown.outfit;
       const draws = (anim: string, held: string | null) => forge.draws(shown.body, anim, held);
       const walking = (action: string) => forge.walking(shown, action);
+      const [inRight, inLeft] = [drawn ? right : null, drawn ? left : null];
       const likely = () =>
-        likelyMoves(drawn ? right : null, drawn ? left : null, draws, drawn ? (grip ?? null) : null, walking);
+        steady
+          ? steadyMoves(inRight, inLeft, draws)
+          : likelyMoves(inRight, inLeft, draws, drawn ? (grip ?? null) : null, walking);
       forge.warm(shown, likely, glow, owner);
     };
     warm(dress, outfit.drawn ? this.shownGlow[0] : 0, you.id);
-    // The weapon the other way too, so drawing it or putting it away shows at once.
+    // The weapon the other way too, standing and on the move, so drawing it or putting it away shows at once; only
+    // those, as a whole second dress warmed would crowd the kept cards.
     const other = otherHand(dress);
-    if (other) warm(other, other.outfit.drawn ? this.shownGlow[0] : 0, `${you.id} other hand`);
+    if (other) warm(other, other.outfit.drawn ? this.shownGlow[0] : 0, `${you.id} other hand`, true);
     // The other loadout's too, so a swap shows it at once.
     if (this.spare) warm({ ...dress, outfit: { ...this.spare, drawn: true } }, this.spareGlow, `${you.id} spare`);
     forge.pump();
