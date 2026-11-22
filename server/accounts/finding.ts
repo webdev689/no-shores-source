@@ -11,6 +11,7 @@ import { RUN_MOST } from '../roomNames.ts';
 import { liveAccount } from './characters.ts';
 import { FOUND_KEPT_MS } from './companies.ts';
 import type { Db } from './database.ts';
+import { apartFrom } from './people.ts';
 import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
 import { drawnOf, playlistBand, playlistOf, playlistRun, playlistShut } from './playlists.ts';
 
@@ -116,14 +117,7 @@ export async function seekerOf(
     .prepare(`SELECT json_extract(body, '$.shown.level') AS level FROM characters WHERE account_id = ?1`)
     .bind(account)
     .first<{ level: number | null }>();
-  const { results } = await database
-    .prepare(
-      `SELECT blocked_id AS other FROM blocks WHERE blocker_id = ?1
-       UNION SELECT blocker_id AS other FROM blocks WHERE blocked_id = ?1 ORDER BY other`,
-    )
-    .bind(account)
-    .all<{ other: string }>();
-  return { account, level: Number(kept?.level ?? 1) || 1, apart: results.map((row) => row.other) };
+  return { account, level: Number(kept?.level ?? 1) || 1, apart: await apartFrom(database, account) };
 }
 
 /** A seeker's socket, as the finder speaks to it. */

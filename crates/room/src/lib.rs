@@ -38,6 +38,7 @@ mod left;
 pub mod patrol;
 mod perks;
 pub mod pirates;
+mod plates;
 mod players;
 mod power;
 pub mod public;
@@ -66,6 +67,7 @@ pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
 pub use perks::trim_of;
+pub use plates::Plate;
 pub use players::{
     CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
@@ -372,6 +374,7 @@ impl Room {
             found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
+        found.plate.menu = input.menu;
         found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
         if found.held {
             // Taken in order, so the next follows on; played as standing still, asking and casting nothing.

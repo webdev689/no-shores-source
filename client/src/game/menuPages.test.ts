@@ -104,18 +104,20 @@ const ROSTER: Roster = {
   guild: null,
   guildInvites: [],
   blocked: ['Rook', 'Sable'],
+  muted: ['Wren'],
 };
 
 /** A link to fake accounts answering `account`, and every ask made of it. */
 function fakeLink(account: Account | null, roster: Roster | string = ROSTER) {
   const asked: string[] = [];
   let blocked = typeof roster === 'string' ? [] : [...roster.blocked];
+  let muted = typeof roster === 'string' ? [] : [...(roster.muted ?? [])];
   const link = {
     said: null,
     session: async () => account,
     roster: async () => {
       asked.push('roster');
-      return typeof roster === 'string' ? roster : { ...roster, blocked };
+      return typeof roster === 'string' ? roster : { ...roster, blocked, muted };
     },
     details: async (name: string) => {
       asked.push(`details ${name}`);
@@ -124,6 +126,7 @@ function fakeLink(account: Account | null, roster: Roster | string = ROSTER) {
     social: async (path: string, body: Record<string, unknown> = {}) => {
       asked.push(`${path} ${JSON.stringify(body)}`);
       if (path === 'unblock') blocked = blocked.filter((name) => name !== body['name']);
+      if (path === 'unmute') muted = muted.filter((name) => name !== body['name']);
       return null;
     },
     login: async (name: string, password: string) => {
@@ -270,6 +273,24 @@ test('a blocked player is unblocked, the focus kept on the list', async () => {
   assert.ok(asked.includes('unblock {"name":"Rook"}'));
   assert.match(settings.shows(), /BLOCKED PLAYERS \| Sable \| Unblock \| Rook is unblocked\./);
   assert.equal(settings.ui.focusedId, 'unblock-Sable');
+});
+
+test('a muted player is listed under the blocked and unmuted from Settings', async () => {
+  const { link, asked } = fakeLink({ id: 'a', username: 'Ana', discord: false, guest: false });
+  const account = new AccountPanel(link, fakePage().page);
+  const settings = drawn((context) => settingsPage(context, account));
+  await settle();
+  settings.frame();
+  assert.match(settings.shows(), /MUTED PLAYERS \| Wren \| Unmute/);
+  settings.click('unmute-Wren');
+  await settle();
+  await settle();
+  settings.frame();
+  assert.ok(asked.includes('unmute {"name":"Wren"}'));
+  assert.match(
+    settings.shows(),
+    /MUTED PLAYERS \| None\. Mute a player from their menu, or with \/mute in the chat\. \| Wren is unmuted\./,
+  );
 });
 
 test('offline, Social says the Roster needs an account', () => {

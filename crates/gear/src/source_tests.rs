@@ -190,6 +190,21 @@ fn an_item_with_no_room_is_laid_as_a_vestige_of_the_content_it_dropped_in() {
 }
 
 #[test]
+fn what_others_see_of_a_worn_piece_carries_its_content() {
+    let mut character = Character::starting();
+    // The starting kit's own head piece is put away for the Abyss Dungeons' helm.
+    for (_, at) in character.items.values_mut().filter(|(_, at)| *at == crate::character::At::Worn(Slot::Head)) {
+        *at = crate::character::At::Carried;
+    }
+    let id = character.take_id();
+    let helm = Item { id, source: Source::Abyss, ..Item::new(id, Kind::Head, Rarity::Rare, 20, Slot::Head) };
+    character.items.insert(id, (helm, crate::character::At::Worn(Slot::Head)));
+    let shown = character.shown();
+    let piece = shown.worn.iter().find(|piece| piece.slot == Slot::Head as u8).expect("the helm worn");
+    assert_eq!(piece.source, Source::Abyss as u8, "the inspect screen draws it in the Abyss Dungeons' sets");
+}
+
+#[test]
 fn faction_and_breach_pieces_take_their_own_source() {
     for named in &catalogue().items {
         if named.faction.is_some() {

@@ -16,9 +16,18 @@
       "migrations_dir": "migrations",
     },
   ],
-  // Find a Company (finder.ts): one Durable Object for each dungeon a run is found for, reached by WebSocket.
-  "durable_objects": { "bindings": [{ "name": "FINDERS", "class_name": "CompanyFinder" }] },
-  "migrations": [{ "tag": "finders", "new_sqlite_classes": ["CompanyFinder"] }],
+  // Find a Company (finder.ts): one Durable Object for each dungeon a run is found for, reached by WebSocket; and the
+  // chat's one hall (chat.ts).
+  "durable_objects": {
+    "bindings": [
+      { "name": "FINDERS", "class_name": "CompanyFinder" },
+      { "name": "CHATS", "class_name": "ChatHall" },
+    ],
+  },
+  "migrations": [
+    { "tag": "finders", "new_sqlite_classes": ["CompanyFinder"] },
+    { "tag": "chat", "new_sqlite_classes": ["ChatHall"] },
+  ],
   // The pages a Discord sign-in may come back to, by origin and path: the published game alone. `npm run accounts`
   // gives the dev server's own.
   "vars": { "PAGES": "https://lattymoy.github.io/no-shores-source/" },

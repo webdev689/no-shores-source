@@ -40,6 +40,8 @@ export interface Roster {
   } | null;
   readonly guildInvites: readonly { readonly name: string; readonly tag: string; readonly from: string }[];
   readonly blocked: readonly string[];
+  /** Those the player mutes, whose chat lines never reach them; none from accounts before mutes. */
+  readonly muted?: readonly string[];
 }
 
 /** A worn piece as others see it, numbered as the gear message numbers it. */
@@ -54,6 +56,8 @@ export interface ShownPiece {
   readonly attack: number;
   readonly defense: number;
   readonly gilded: boolean;
+  /** The content it came from, which its look follows; none in what an older room kept, read as the world's. */
+  readonly source?: number;
 }
 
 /** Another player's details, as Destiny's Inspect shows them. */
@@ -66,6 +70,10 @@ export interface Details extends Person {
     readonly attack: number;
     readonly emblem: string;
     readonly worn: readonly ShownPiece[];
+    /** Their Prestige and the Art they wear at its level (0 for none); none from a room that kept neither. */
+    readonly prestige?: number;
+    readonly art?: number;
+    readonly art_level?: number;
   } | null;
 }
 
@@ -129,6 +137,11 @@ export class AccountLink {
   /** Where Find a Company is for a run's base, by WebSocket, at these accounts. */
   finderAt(base: string): string {
     return `${this.base.replace(/^http/, 'ws')}/v1/find/${base}`;
+  }
+
+  /** Where the chat's hall is, by WebSocket, at these accounts. */
+  get chatAt(): string {
+    return `${this.base.replace(/^http/, 'ws')}/v1/chat`;
   }
 
   /** The account the accounts last said the page plays as, none until they have. */

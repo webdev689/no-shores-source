@@ -56,6 +56,8 @@ table Input {
   // The inputs before it that the room has not yet shown taken, oldest first, so one lost on the way is taken from
   // the next to arrive; the room takes only those it has not had.
   earlier: [Input];
+  // Whether a menu is open on the player's screen, which others see over their head.
+  menu: bool;
 }
 
 // A ship's course in the sea room: the world points it sails through in turn, x then y in metres, and its pace, one of
@@ -160,6 +162,15 @@ table Dressed {
   dress: string;
 }
 
+// What others read over a player's head: their username (none for a guest), their level, and whether a menu is open
+// on their screen.
+table Plate {
+  player: uint;
+  name: string;
+  level: ubyte;
+  menu: bool;
+}
+
 // The room's welcome: the joining player's number, everyone's dress so far, and in a node's room the node's id and
 // the rect its ground is cut to (west, north, east, south), for the browser to cut the same.
 table Joined {
@@ -172,6 +183,8 @@ table Joined {
   // World time at the room's first tick, seconds: a tick's world time is this and its ticks' seconds, which the
   // room's weather is read at and a browser's prediction reads it at too.
   epoch: double;
+  // Everyone's plate so far.
+  plates: [Plate];
 }
 
 // One player as the room last stepped them: the number of their last input it took, what their figure showed with
@@ -504,6 +517,8 @@ table Snapshot {
   // In an Abyss run, the revives its company has left; -1 in any other room.
   revives: byte = -1;
   public_event: PublicEvent;
+  // On land, the plates that changed since the snapshot the screen showed, as dresses are sent.
+  plates: [Plate];
   // In an Elite Dungeon's room, its encounters, sent whole in each snapshot; none in any other room.
   encounter: EncounterSeen;
 }

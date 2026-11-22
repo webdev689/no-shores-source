@@ -7,9 +7,13 @@ status: in force
 
 > "Please go above and beyond with this, take autonomy, and return when everything is 100% complete"
 
+> Shown the three built: "Lets do a deep comprehensive audit, and detailed design pass. I want the detail to be AAA
+> grade and as close to bug free as possible. Come back when this is 100%"
+
 ## What it settles
 
-Claude's choices for [[Armour and Weapon Looks Belong to the Content That Gives Them]],
+The owner asked for a deep comprehensive audit and a detailed design pass, to AAA detail and as near bug free as can
+be; the calls below are the work after it. Claude's choices for [[Armour and Weapon Looks Belong to the Content That Gives Them]],
 [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]] and
 [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]. The owner can change any of them.
 

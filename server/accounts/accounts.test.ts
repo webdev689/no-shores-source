@@ -90,7 +90,7 @@ test('one room at a time holds a character; a claim waits for another to let go,
 
   // A second room waits three seconds for the first to let go, then takes the character anyway.
   const second = await kept.claim(token, 'room-b:1');
-  assert.deepEqual(second, { account: first.account, body: '{"xp":5}', from: 'room-a' });
+  assert.deepEqual(second, { account: first.account, body: '{"xp":5}', from: 'room-a', name: null });
   assert.equal(
     waited.reduce((sum, millis) => sum + millis, 0),
     3000,
@@ -101,12 +101,22 @@ test('one room at a time holds a character; a claim waits for another to let go,
   // Let go with a last save, the next claim takes it at once.
   assert.equal(await kept.release(first.account, 'room-b:1', '{"xp":9}'), true);
   waited.length = 0;
-  assert.deepEqual(await kept.claim(token, 'room-a:2'), { account: first.account, body: '{"xp":9}', from: 'room-b' });
+  assert.deepEqual(await kept.claim(token, 'room-a:2'), {
+    account: first.account,
+    body: '{"xp":9}',
+    from: 'room-b',
+    name: null,
+  });
   assert.deepEqual(waited, []);
 
   // A hold its room stopped saving lapses.
   clock.now += HOLD_MS + 1;
-  assert.deepEqual(await kept.claim(token, 'room-c:1'), { account: first.account, body: '{"xp":9}', from: 'room-a' });
+  assert.deepEqual(await kept.claim(token, 'room-c:1'), {
+    account: first.account,
+    body: '{"xp":9}',
+    from: 'room-a',
+    name: null,
+  });
   assert.deepEqual(waited, []);
 
   // Let go untouched (its gate shut), it was never in that room: the next claim comes from the room before.

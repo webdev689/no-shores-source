@@ -133,6 +133,17 @@ fn lines() -> Vec<(u64, Line)> {
 
 const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
 
+/// A named player's plate with a menu open, and a guest's with none.
+fn plates() -> Vec<(PlayerId, room::Plate)> {
+    let named = room::Plate { name: "Wooden_Osprey".to_owned(), level: 24, menu: true };
+    vec![(7, named), (9, room::Plate { level: 6, ..room::Plate::default() })]
+}
+
+/// The welcome the tests read: player 7 in a node's room, with everyone's dress and plate.
+fn welcome() -> Vec<u8> {
+    joined_bytes(7, crate::Present { dressed: &DRESSED, plates: &plates() }, Some(NODE), 1_234_567.25)
+}
+
 /// A Dawnflare heading to its end, and a Duskraven's bolt seeking a foe.
 const SPELLS: [room::SpellSeen; 2] = [
     room::SpellSeen {
@@ -228,11 +239,14 @@ const SHIPS: [(PlayerId, Ship); 2] = [
 /// The room's middle the test snapshot measures others from, as a node's rect (-1, -4, 3, 0) floors it.
 const MIDDLE: [f64; 2] = [1.0, -2.0];
 
+/// What the test snapshot carries of what happened: its shots, its lines and the plates changed.
+type Happened<'snapshot> = (&'snapshot [Shot], &'snapshot [(u64, Line)], &'snapshot [(PlayerId, room::Plate)]);
+
 /// The test snapshot, for player 9: whole, building on nothing.
 fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
-    (shots, lines): (&'snapshot [Shot], &'snapshot [(u64, Line)]),
+    (shots, lines, plates): Happened<'snapshot>,
     public: &'snapshot room::public::PublicSeen,
 ) -> Snapshot<'snapshot> {
     Snapshot {
@@ -247,6 +261,7 @@ fn snapshot<'snapshot>(
         base_foes: None,
         players,
         dressed: &DRESSED,
+        plates,
         foes,
         events: &EVENTS,
         shots,
@@ -299,6 +314,7 @@ fn an_input_reads_back_as_its_number_intent_look_dress_arms_view_ask_and_respawn
         ask: Some(room::Asked::Gear(gear::Ask::Feed { item: 4 })),
         spawn_level: 12,
         cast: Some(room::Cast { spell: 8, aim: Some([3.0, -12.5, 0.25]) }),
+        menu: true,
     };
     assert_eq!(read_input(&input_bytes(&sent)).unwrap(), sent);
     let unaimed = Input { cast: Some(room::Cast { spell: 2, aim: None }), ..sent.clone() };
@@ -380,19 +396,21 @@ fn every_standing_crosses_and_comes_back() {
 
 #[test]
 fn a_welcome_and_snapshots_read_back_to_the_bit() {
-    let welcome = joined_bytes(7, &DRESSED, Some(NODE), 1_234_567.25);
+    let welcome = welcome();
     let joined = flatbuffers::root::<messages::FromRoom>(&welcome).unwrap().joined().unwrap();
     assert_eq!((joined.player(), joined.node(), joined.epoch()), (7, Some(NODE.0), 1_234_567.25));
     assert_eq!(joined.bounds().unwrap().iter().collect::<Vec<_>>(), NODE.1);
     assert_eq!(dressed_in(joined.dressed()), vec![(7, DRESSED[0].1.to_owned())]);
-    let plain = joined_bytes(7, &[], None, 0.0);
+    assert_eq!(crate::plates_wire::plates_of(joined.plates()), plates(), "a guest's plate reads back nameless");
+    let plain = joined_bytes(7, crate::Present::default(), None, 0.0);
     let plain = flatbuffers::root::<messages::FromRoom>(&plain).unwrap().joined().unwrap();
     assert_eq!((plain.node(), plain.bounds().is_none()), (None, true));
 
-    let (players, foes, shots, lines, public) = (players(), foes(), shots(), lines(), public());
-    let bytes = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines), &public));
+    let (players, foes, shots, lines, plates, public) = (players(), foes(), shots(), lines(), plates(), public());
+    let bytes = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines, &plates), &public));
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert_eq!(read.tick(), 1234);
+    assert_eq!(crate::plates_wire::plates_of(read.plates()), plates);
     let read_players: Vec<_> = read.players().unwrap().iter().collect();
     assert_eq!(read_players.iter().map(messages::Seen::player).collect::<Vec<_>>(), [7, 9]);
     assert!(read_players[0].fighter().is_none(), "another player's fighter crosses packed");
@@ -557,9 +575,9 @@ fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
 fn the_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
-    let (players, foes, shots, lines, public) = (players(), foes(), shots(), lines(), public());
-    std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE), 1_234_567.25)).unwrap();
-    let snapshot = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines), &public));
+    let (players, foes, shots, lines, plates, public) = (players(), foes(), shots(), lines(), plates(), public());
+    std::fs::write(format!("{folder}/joined.bin"), welcome()).unwrap();
+    let snapshot = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines, &plates), &public));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
@@ -604,7 +622,7 @@ fn an_input_pointing_at_one_earlier_input_again_and_again_is_refused_before_it_i
 #[test]
 fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
     let none = crate::public_wire_tests::public();
-    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[]), &none) };
+    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[], &[]), &none) };
     let cache = [12.5, 30.0, 0.0, 1.25, 1.0];
     let read = |snapshot: &Snapshot<'_>| {
         let bytes = snapshot_bytes(snapshot);
@@ -618,7 +636,7 @@ fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
 #[test]
 fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none() {
     let none = crate::public_wire_tests::public();
-    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[]), &none) };
+    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[], &[]), &none) };
     let read = |snapshot: &Snapshot<'_>| {
         let bytes = snapshot_bytes(snapshot);
         flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot").revives()

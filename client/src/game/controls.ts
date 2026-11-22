@@ -107,6 +107,7 @@ export const CONTROL_GROUPS: readonly ControlGroup[] = [
       row('Character', 'character'),
       row('Inventory', 'inventory'),
       row('Details', 'details'),
+      row('Chat', 'chat'),
       fixed('Tab', 'Next', padName('D-pad')),
       fixed('Left arrow / Right arrow', 'Tabs', `${padName('LB')} / ${padName('RB')}`),
       fixed('Esc', 'Back; free the mouse', padName('B')),

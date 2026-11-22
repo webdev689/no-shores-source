@@ -47,6 +47,7 @@ fn public_bytes() -> (usize, usize) {
         base_foes: None,
         players: &[],
         dressed: &[],
+        plates: &[],
         foes: &[],
         events: &[],
         shots: &[],

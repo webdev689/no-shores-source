@@ -62,7 +62,7 @@ export function hearing(forge: Cards) {
   });
   const heard: { fight: Fighting | null } = { fight: null };
   const received = (snapshot: Snapshot) => {
-    players.takeDresses(snapshot.dressed);
+    players.take(snapshot);
     heard.fight?.receive(snapshot);
     if (heard.fight) players.seen(snapshot.players, heard.fight.player, forge);
   };
