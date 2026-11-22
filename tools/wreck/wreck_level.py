@@ -39,7 +39,7 @@ ZONES = (
      'crew': ((25.7, -17.6), (13.0, -17.0), (16.6, -17.4))},
     {'name': "the Frigate's waist", 'area': (-24.5, -18.0, 5.8, -0.3), 'checkpoint': (3.0, -13.0),
      'wave': ((11, 1, (-17.0, -6.0), 90), (17, 1, (-15.4, -6.0), 270), (8, 1, (-18.0, -10.0), 90),
-              (14, 1, (-16.4, -10.0), 270), (9, 2, (0.2, -3.5), 180)),
+              (14, 1, (-16.4, -10.0), 270), (9, 2, (1.2, -6.8), 180)),
      'crew': ((-19.8, -8.0), (-13.8, -8.0), (-16.2, -3.8))},
     {'name': "the Frigate's gun deck", 'area': (-19.5, -28.4, 4.6, -22.0), 'checkpoint': (0.1, -25.2),
      'wave': ((10, 1, (-13.0, -27.0), 180), (13, 1, (-13.0, -28.6), 0), (11, 1, (-10.6, -31.5), 270)),
@@ -47,14 +47,6 @@ ZONES = (
     {'name': "the Frigate's quarterdeck", 'area': (-4.9, -41.0, 4.9, -30.7), 'checkpoint': (1.6, -33.2),
      'wave': (), 'crew': ()},
 )
-
-# The camera's way back from the arena's heap to the player after its flight down the wreck: out past the Frigate's
-# port side, clear of her masts, then over the wreckage off her port bow; points (x, y) and heights over the sea.
-FLIGHT_BACK = ((-9.5, -24.0, 9.5), (-14.0, -4.0, 8.5))
-
-# The masts still standing, by the ship's frame and where along her each stands: the Brig's fore, and the Frigate's
-# fore and main. A camera flying the wreck keeps clear of them.
-MASTS = (('brig', 6.85), ('frigate', 11.4), ('frigate', -0.55))
 
 # The arena is the last zone; Thule stands before the wheel, facing the way in.
 ARENA_ZONE = len(ZONES) - 1
@@ -143,7 +135,7 @@ def check(reach, gates, climb, place=game):
     arena = reach.flood(game(ZONES[ARENA_ZONE]['checkpoint']))
     if not reach.reaches(arena, game(THULE)) or not reach.clear(game(THULE), FIGURE_ROOM_M):
         faults.append("Thule's place is not reached from the arena's checkpoint, or has no room round it")
-    whole = len(reach.flood(game(WAKE[0]))) * reach.square_m2
+    whole = len(reach.flood(game(WAKE[0]), roomy=False)) * reach.square_m2
     if whole < GROUND_LEAST_M2:
         faults.append(f'the ground a body walks is {whole:.0f} m2, under {GROUND_LEAST_M2:.0f}')
     return faults

@@ -64,6 +64,7 @@ export const KIND_WORDS = {
   boss: 'World boss',
   port: 'Port',
   hostile: 'Hostile',
+  quest: 'Quest',
 } as const;
 
 export type MarkKind = keyof typeof KIND_WORDS;

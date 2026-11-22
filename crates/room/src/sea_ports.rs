@@ -8,6 +8,7 @@ use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
 use crate::harbour::{HELD, JOINED, MOORED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
 use crate::players::GEAR_EVERY_TICKS;
+use gear::quests::Event as QuestEvent;
 use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
@@ -27,7 +28,7 @@ impl Sea {
 
     /// What its fights' tick made of each player and each captain's ship that sank: a player's ship where the fight
     /// has it, its hurts kept once it lets it go, a player whose ship went down washed up, and what floats laid for
-    /// each player who fought a ship that sank.
+    /// each player who fought a ship that sank, whose quest logs are told it was sunk or struck.
     pub(super) fn after_fights(&mut self, outcomes: Vec<Outcome>, sank: &[Sank]) {
         for outcome in outcomes {
             match outcome {
@@ -44,6 +45,20 @@ impl Sea {
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
             self.harbour.changed.extend(crate::ship_power::pay_sinking(ship, &mut self.harbour.characters));
+            let how = if ship.struck { "strike" } else { "sink" };
+            if let Some(side) = crate::quests::side_of(ship.pirate.commission.faction) {
+                ship.players.iter().for_each(|player| self.tell_sea(*player, &QuestEvent::Sea { side, how }));
+            }
+        }
+    }
+
+    /// Tells a player's quest log of a ship beaten: their deck room's while they fight on a captain's deck, which
+    /// holds their character then, else the one the sea keeps.
+    fn tell_sea(&mut self, player: PlayerId, event: &QuestEvent<'_>) {
+        if let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player)) {
+            deck.room.tell_quest(deck.aboard[&player], event);
+        } else if self.harbour.characters.get_mut(&player).is_some_and(|character| character.tell(event)) {
+            self.harbour.changed.insert(player);
         }
     }
 

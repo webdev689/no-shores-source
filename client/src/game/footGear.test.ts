@@ -1,8 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { resourcePicture } from '../combat/dropPictures.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
+import { OVER_NODE_M, REACH_M, marksSeen } from '../combat/marksOver.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
-import { NODE_REACH_M, groundRings, useAt } from './footGear.ts';
+import type { QuestState } from '../network/questMessages.ts';
+import { NODE_REACH_M, POINT_REACH_M, nodeBeams, questRings, useAt } from './footGear.ts';
+import { markedHere } from './overheadMarks.ts';
+import { QUESTS } from './quests/questBook.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { SERVED_M } from './plazaLife.ts';
 import { awayFromCounters } from './townsfolk.ts';
@@ -35,33 +40,66 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
   );
 });
 
-test('a counter whose keeper is away still opens, which calls her back to it', () => {
+test('a counter whose keeper is away still opens, which calls her back to it, and her mark goes with her', () => {
   const LAMPLIGHTERS: StationInfo = { kind: 'lamplighters', keeper: [0, -2], counter: [0, 0] };
   const here = { stations: [LAMPLIGHTERS] };
   awayFromCounters.add('lamplighters');
   try {
     assert.equal(useAt(0, 0, here, null, () => undefined)?.words, 'Lamplighters', 'offered while she walks the plaza');
-    assert.equal(groundRings(null, here, () => 0, 0).length > 0, true, 'and ringed');
+    assert.deepEqual(
+      markedHere(null, here, () => 0),
+      [],
+      'no mark over her empty post',
+    );
   } finally {
     awayFromCounters.delete('lamplighters');
   }
+  assert.equal(markedHere(null, here, () => 0).length, 1, 'marked again once she is back');
 });
 
-test('the ground rings each dealing counter, and each node twice under a beam, on the floor; a drop is no ring', () => {
-  const one = groundRings(null, { stations: [WEAPONSMITH] }, () => 0, 0).length;
-  assert.equal(one % MARK_FLOATS, 0);
-  assert.equal(
-    groundRings(null, { stations: [WEAPONSMITH, CHANDLER] }, () => 0, 0).length,
-    one,
-    'the chandler deals with no one',
+/** The heights of marks' vertices. */
+const heights = (vertices: readonly number[]) => vertices.filter((unused, index) => index % MARK_FLOATS === 2);
+
+test('each node still to gather wears its mark under a beam standing clear over it, its floor read once', () => {
+  const nodes = Array.from({ length: 12 }, (unused, resource) => ({ index: resource, x: 10, y: 0, resource }));
+  let reads = 0;
+  const floor = () => {
+    reads += 1;
+    return 2;
+  };
+  const marked = markedHere({ ...lying, nodes: nodes.filter((node) => resourcePicture(node.resource)) }, {}, floor);
+  assert.equal(reads, marked.length, 'its floor read once');
+  for (const mark of marked) {
+    const beams = nodeBeams([mark], 0);
+    // A beam is two crossed planes of two triangles each.
+    assert.equal(beams.length, 12 * MARK_FLOATS);
+    const foot = Math.min(...heights(beams));
+    for (let far = 1; far < REACH_M; far += 0.5)
+      for (const [seconds, eyeHigh] of [
+        [0, 1.6],
+        [0.25, 1.6],
+        [0.75, 1.6],
+        [0.25, 12],
+      ] as const) {
+        // The eye `far` from the mark's foot, `eyeHigh` over the floor.
+        const across = Math.sqrt(Math.max(0, far ** 2 - (eyeHigh - OVER_NODE_M) ** 2));
+        const seen = marksSeen([mark], [10 + across, 0, 2 + eyeHigh], seconds, false);
+        assert.ok(seen.length > 0, `seen ${far} m off`);
+        assert.ok(Math.max(...heights(seen)) < foot, `the mark clear under its beam ${far} m off`);
+      }
+  }
+  assert.equal(reads, marked.length, 'the beams read no floor');
+  assert.deepEqual(
+    nodeBeams(
+      markedHere(null, {}, () => 0),
+      0,
+    ),
+    [],
+    'no gear, no nodes',
   );
-  const all = groundRings(lying, { stations: [WEAPONSMITH] }, () => 2, 0);
-  // A beam is two crossed planes of two triangles each.
-  assert.equal(all.length, one * 3 + 12 * MARK_FLOATS);
-  assert.ok(Math.abs((all[one + 2] ?? 0) - 2) < 0.1, "a node's ring stands on the floor's height, just over it");
 });
 
-test("Shape's offer is within a counter's reach of his week's spot, ringed there, and gone with him", () => {
+test("Shape's offer is within a counter's reach of his week's spot, marked there, and gone with him", () => {
   const visitorSpots = [
     [40, 40],
     [60, 0],
@@ -90,6 +128,95 @@ test("Shape's offer is within a counter's reach of his week's spot, ringed there
     null,
     'he has left',
   );
-  const counter = groundRings(null, here, () => 0, 0).length;
-  assert.equal(groundRings(shape, here, () => 0, 0).length, counter * 2, 'a ring of his own');
+  assert.equal(
+    markedHere(shape, here, () => 0).length,
+    markedHere(null, here, () => 0).length + 1,
+    'a mark of his own',
+  );
+});
+
+/** The Stormcallers' road at its first task holding a goal of `kind`, with the varied fields `more`. */
+function storm(kind: string, more: Partial<QuestState> = {}): QuestState {
+  const quest = QUESTS.findIndex((each) => each.id === 'stormcallers');
+  const task = QUESTS[quest]?.tasks.findIndex((each) => each.goals.some((goal) => goal.kind === kind)) ?? -1;
+  assert.ok(task >= 0, `a ${kind} step on the Stormcallers' road`);
+  return { quest: quest + 1, task, counts: [], done: [0, 0, 0, 0], choices: [0, 0, 0], at: null, ...more };
+}
+
+/** The name the offer to use the first point of the Stormcallers' first puzzle gives it. */
+const firstPoint = (): string => {
+  const quest = storm('puzzle');
+  const goal = QUESTS[quest.quest - 1]?.tasks[quest.task]?.goals.find((each) => each.kind === 'puzzle');
+  return (goal?.points?.[0]?.name ?? '').replace(/^The /, 'the ');
+};
+
+/** The colours of each vertex of `marks`, as `r g b` to two places. */
+const coloursOf = (marks: readonly number[]) =>
+  new Set(
+    Array.from({ length: marks.length / MARK_FLOATS }, (_unused, vertex) =>
+      marks
+        .slice(vertex * MARK_FLOATS + 3, vertex * MARK_FLOATS + 6)
+        .map((value) => value.toFixed(2))
+        .join(' '),
+    ),
+  );
+
+test("a puzzle's points stand ringed under beams, gold once lit; E uses an unlit one within reach, asking 66", () => {
+  const points = [
+    { x: 50, y: 0, lit: false },
+    { x: 60, y: 0, lit: true },
+  ];
+  const rods = { ...lying, nodes: [], quest: storm('puzzle', { points }) } as GearState;
+  const used: GearAsk[] = [];
+  const near = useAt(50 + POINT_REACH_M - 0.1, 0, {}, rods, (each) => used.push(each));
+  assert.equal(near?.words, `Use ${firstPoint()}`);
+  near?.run();
+  assert.deepEqual(used, [{ kind: ASKS.usePoint, column: 0 }]);
+  assert.equal(
+    useAt(60, 0.5, {}, rods, () => undefined),
+    null,
+    'lit, it is used no more',
+  );
+  const theirs = { ...rods, quest: { ...rods.quest!, claimed: false } } as GearState;
+  assert.equal(
+    useAt(50, 0, {}, theirs, () => undefined),
+    null,
+    "a room's starting character's rods",
+  );
+  assert.deepEqual(
+    questRings(theirs, () => 0, 0),
+    [],
+    'nor ringed',
+  );
+  assert.equal(
+    useAt(50 + POINT_REACH_M + 0.1, 0, {}, rods, () => undefined),
+    null,
+    'out of reach',
+  );
+  const one = questRings({ ...rods, quest: storm('puzzle', { points: [points[0]!] }) }, () => 0, 0);
+  const both = questRings(rods, () => 0, 0);
+  assert.ok(one.length > 0 && both.length === one.length * 2, 'each point its rings and beam');
+  const lit = questRings({ ...rods, quest: storm('puzzle', { points: [points[1]!] }) }, () => 0, 0);
+  assert.notDeepEqual(coloursOf(lit), coloursOf(one), 'lit, it glows another colour');
+  assert.deepEqual(
+    questRings({ ...rods, quest: storm('puzzle') }, () => 0, 0),
+    [],
+    'none here',
+  );
+});
+
+test('a ward a quest defends by name is ringed under a beam where it stands', () => {
+  const glass = {
+    ...lying,
+    nodes: [],
+    quest: storm('defend', { ward: { x: 5, y: 5, health: 1 } }),
+  } as GearState;
+  const marks = questRings(glass, () => 2, 0);
+  assert.ok(marks.length > 0);
+  assert.ok(Math.abs((marks[2] ?? 0) - 2) < 0.1, 'on the floor');
+  assert.deepEqual(
+    questRings({ ...glass, quest: storm('defend') }, () => 2, 0),
+    [],
+    'not in this room',
+  );
 });

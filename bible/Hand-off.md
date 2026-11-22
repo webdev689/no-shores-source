@@ -264,17 +264,38 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **The intro's freeze and the game's memory, on `main`** with the owner's yes ("Lets merge and deokoy this"), which
-  deploys the page and the rooms ([[Areas Load in Chunks With Proper Caching]]). The source map message the owner sent
-  is an injected script's, not the game's.
+- **The controls and the marks are on `main`**, merged with the owner's yes ("Yes start the merges and deploys"),
+  each after an independent audit whose findings were all fixed ("Fix all"): the key strip that follows the moment and
+  K's sheet of every control (#130, [[The Key Strip Follows the Moment, and K Opens Every Control]]); every control
+  rebound and kept with the account, the pad as Destiny's, the pad's cursor in windows and DFO's gauntlet as the
+  pointer (#133, [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]],
+  [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]); a mark over each keeper and usable thing in
+  place of the rings on the ground (#134, [[What a Player Can Use Wears Its Mark Over It]]). Tested offline with the
+  full check. Not yet: a real controller, the mouse's gauntlet seen in Chromium and Firefox (headless pictures never
+  show the system cursor), the binds' D1 migration and route live, the marks on a real GPU.
+- **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
+  and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
+  with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges,
+  with the owner's yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134,
+  the Postmaster's letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a
+  door.
+- **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
+  external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
+  So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
+  (cfd75bba), unmerged; the marks were pictured with it.
+- **The intro's freeze and the game's memory, on `main`** with the owner's yes ("Lets merge and deokoy this", then
+  "Deploy" for the rest), which deploys the page and the rooms ([[Areas Load in Chunks With Proper Caching]]). The
+  source map message the owner sent is an injected script's, not the game's.
   - #136: any error thrown in a frame stopped the game's loop for good, the picture frozen and the music playing on;
     each frame now runs under `FrameGuard` (`frameGuard.ts`). And the leaks two audits found, each with a test.
   - #137: every recording was decoded at the first tap, about 112 minutes of audio, some 2.5 GB and a second copy in
     the worker; now they come as wanted, long ones a 1 MB chunk at a time, held once within 192 MB ([[Interface]],
     "How recordings load"). Not yet heard: the seams between a bed's chunks.
-  - The areas' chunks and caching, the decision's rest, on its own pull request: picture packs read in 256 KB blocks,
-    every R2 file kept by the browser within 1 GB, a continent's flora fetched ahead, one fetch per `world/` file, and
-    memory caps. Tested offline.
+  - #139: the areas' chunks and caching, the decision's rest: picture packs read in 256 KB blocks, every R2 file kept
+    by the browser within 1 GB, a continent's flora fetched ahead, one fetch per `world/` file, and memory caps.
+  - #140: a city's vertices copied for the GPU a number at a time (about 17 ms for 600,000, where slicing took 125).
+  - `main`'s check at #131 failed only because `client/src/ships/shipTags.test.ts` fetched ship meshes from `r2.dev`
+    and got HTTP 500: those tests make every deploy wait on R2 answering.
   - Not seen on a real GPU: headless Chromium in the cloud container loses the game's WebGPU device about 2 s after
     start on every commit tried (the published page too).
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
@@ -349,10 +370,18 @@ Where the work stands now, for the next session. Each session rewrites this note
   named here. Tested offline: the full check, and the freeze against the real room (a press there parries, and
   dodges, each at its first freeze). Not yet seen or played in a browser: the eyes over the scene, the arms on the
   deck, the menu over the story, the frozen frame. Open: the owner's "teaching them the inventory" is taught on the
-  Character page (I), where gear is worn, which the owner may want otherwise; the wreck's tool still writes the
-  flight's masts and way back into its layout, which the page no longer reads (removing them rebuilds and publishes
-  the wreck); the step up to where the player wakes is too high for foes, so a player who stays up there is not
+  Character page (I), where gear is worn, which the owner may want otherwise; the step up to where the player wakes is too high for foes, so a player who stays up there is not
   reached until they come down; the game's headless pictures cannot draw the game since it draws in a worker.
+- **The playtest's wreck notes, on branch `claude/beautiful-mendel-rnj0xh`, wait on the owner's yes** to merge: the
+  ramp from the Frigate's gun deck up onto the raft off its port quarter, where that zone's wave fights, was walled by
+  splinters (gaps of 0.3 to 0.6 m) since climbing went off, so the wave was never reached, its heap on the last ramp
+  never cleared, and the arena could not be reached; every ramp's way is now cleared where it meets a deck
+  (`clear_ways`), and the level's check walks with a body's width, which found the Frigate's waist's pistoleer boxed in
+  on her forecastle, now stood on her waist just aft of it. The Brig's crew still standing regroup at each zone's
+  checkpoint as the player reaches it ([[The Crew Still Standing Regroup Ahead]]). The layout no longer carries the
+  dropped flight's masts and way back. The wreck is rebuilt by its workflow and the layout taken whole from it.
+  Tested offline: the full check, the wreck built and its level checked here with Blender's module (bpy 5.3.0, as
+  CI), the ramp pictured before and after, and a crewman walking from one zone to the next in the real room.
 - **#75, the sea as the owner decided it**, on `main`, merged with the owner's yes ("Merge and deploy"), which deploys
   the page and the rooms from CI: waters, ships by water, the three ports, hulls, waves, fights, boarding, ship power
   and crew, the procedural islands and their plants, the Enhanced Plus readout and ships as "it", with main through
@@ -363,9 +392,20 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
-- **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, merged with `main`, audited and
-  tested offline (the full check) and live headless (the menu holding the keys at ratios 1 and 1.25), in #127,
-  which supersedes #112**: no HTML
+- **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
+  check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
+  account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
+  tasks gives its Art early, then its two Tenets, then three fragments of their choosing
+  ([[Each House Has Its Own Road to Its Art]], [[The Houses' Roads as Claude Shapes Them]], [[Quests]]). The owner's
+  second ask ([[Missions Are Varied, Not Only Simple Tasks]]) added six step kinds any later mission can use: escort,
+  tail, defend, puzzle, unseen and race, each judged by the rooms. Each road goes round the island once (about 2,370
+  km of sailing, so a road runs past the 45 to 60 minutes asked). Every task has an id and the save keeps roads and
+  tasks by id. A comprehensive audit (rules, client, story) is fixed with tests. Not yet walked end to end by a
+  person or on a real GPU. Needs the owner's yes to merge (it deploys the page and the rooms, and adds `content/quests`
+  and `content/story/cast.json` to the rooms' code list).
+- **The whole plan of the owner's four points, on `main` (#127)**, merged with the owner's yes ("Merge and deploy"),
+  which deploys the page and the rooms; checked on the deployed page headless (the game in its worker, the menu holding
+  the keys). Asked of the owner: whether to close #112, which #127 holds. No HTML
   anywhere in the interface ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and
   every page of it, the story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game,
   each page one canvas and its script, and a repo check (`html`) refusing new HTML with no way round it; the game in a
@@ -377,8 +417,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   stands; no shared memory. Five audits (the drawn interface, the screens, the thread, the network, the repo's rules)
   found an input that stalled a room (verified now under tight limits), a pointer off at a fractional ratio, a Discord
   sign-in's return that stopped the game, keys leaking past the menu, Space and Backspace lost in a field, no modal
-  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Needs the owner's yes:
-  the `html` check by name (a new check), and the merge. Playing alone at sea is now sent the per-player cut of the
+  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Playing alone at sea is now sent the per-player cut of the
   snapshot, as with others.
 - **The co-dev's `webgpu-shot` cannot picture the game now**: it reads the page's WebGPU canvas, and the game draws
   from its worker. Its picture runs work for the Test Ground and the World Editor, which stay on the page; for the
@@ -577,6 +616,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
+  140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
+- **`tools/uiShot.mjs` writes blank pictures**: the interface lays its quads, but the shot's read-back is only the
+  ground under SwiftShader. The game's own frame read back from its worker shows the interface whole, so check
+  pictures that way meanwhile.
 - **After the four points**: the game's frame time on a real GPU, in and out of the worker; a sound heard by a person
   from the worker's cues; holding a press with the pad's A, which waits on an "A held" signal from the interface (main
   had no pad holds either).
