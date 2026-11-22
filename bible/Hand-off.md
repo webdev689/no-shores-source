@@ -144,6 +144,32 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **Looks by content, the Playlist and the matchmade dungeons' encounters** (branch
+  `claude/bible-dungeon-matchmaking-5421wl`, one pull request), for the owner's yes to merge, which deploys the page
+  and the rooms. The owner's three asks and "take autonomy" are recorded
+  ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
+  [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
+  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]), every call of Claude's in
+  [[The Playlist and Its Dungeons as Claude Shapes Them]].
+  - Looks ([[Gear]], "Where it came from"): every item and Vestige keeps its content (`gear::Source`); each armour set
+    and metal belongs to one content (`content/gear/looks.json`); rooms stamp their loot; a Vestige opens to its own
+    content's named piece where there is one; the item card says "From …". The three daedric Atherics moved to ebony
+    and adamantium (the Abyss Dungeons), daedric kept for the Breaches.
+  - The Playlist ([[Activities]], "The Playlist"; [[Interface]], "The Playlist"): a mark beside Overlook's, Sunspire's
+    and Rimeholt's harbours opens it; the Elite and the Abyss Playlist (bands of five levels, the day's modifiers, a
+    daily and a weekly at three clears), the week's two beside them; Find a Company over one pool, Launch alone or
+    for a company; runs entered from the sea and left back to it. The owner found the first screen ("really bad");
+    it is now crests on a chart and one card, after the owner's Vanguard reference.
+  - Encounters ([[Dungeons]], "Encounters"): every Elite Dungeon run lays two or three seals (the Litany, the Weighing,
+    the Ascent's climb over a drowned floor, the Holdfast), the Boss waking only once they break; the Court's wards
+    and anchors, the Reckoning and Fury; a wipe at Abyss keeps broken seals.
+  - Tested offline: `cargo xtask check` on the branch's head (it names the commit last); two read-only reviews and an
+    audit, every finding fixed with a test. Not yet: played by hand or in a deployed room; a dungeon's encounters
+    pictured (the dungeon picture driver waits for an HTML "Enter" prompt the game now draws in its worker, so it
+    never lands); the Playlist screen pictured only as an interface layer, not over the game.
+  - Open for the owner: named pieces for each content ([[Open Questions]]); Launch's Elite Dungeon is drawn by the
+    page, so a modified page could always pick one (Find a Company draws on the server); the Playlist's tiles of words
+    are gone, but its look is the owner's to judge.
 - **The owner's bugs and polish** (#148, branch `claude/prologue-bugs-polish-lphicj`), merged with the owner's yes ("Merge and deploy"), which
   deploys the page and the rooms;, the owner's six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's
   calls: [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
@@ -182,8 +208,8 @@ The decisions in [[Open Questions]] are not repeated here.
 - **#141's calls.** Claude's calls in bringing #97 under the owner's loot rules: a dungeon's cache pays a dungeon's
   clear (an item, a Vestige one time in three, XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, and the dungeon
   of the day a Boss Captain's kill.
-- **The audit's leftovers, all fixed as the owner took them** (#152, branch `ccr-1e1aa6da-yox2v1`), for the owner's
-  yes to merge, which deploys the page and the rooms ([[The Audit's Leftovers Are Fixed as Claude Suggested]], its
+- **The audit's leftovers, all fixed as the owner took them** (#152, branch `ccr-1e1aa6da-yox2v1`), merged on `main`
+  (and #157 after it, the game named No Shores: [[The Game Is Named No Shores]]), which deploys the page and the rooms ([[The Audit's Leftovers Are Fixed as Claude Suggested]], its
   Claude's calls there): the asset workflows' token held only by jobs that upload; a hand run of the rooms' deploy
   refused without main's check; the Sloop checked by its hash; guests capped at 500 an hour and deleted unused 30
   days; riding on the room's word; health, charges and the Arts' charge kept with the character through a return;
@@ -289,6 +315,11 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
+- **Unchecked, from the encounters' headless run**: on an Elite Dungeon's node the game's worker logged a WebGPU
+  validation error each frame ("Instance range ... requires a larger buffer (28) than the bound buffer size (24) of
+  the vertex buffer at slot 1 with stride 28"), the city models' instances by its look; whether `main` shows it too.
+  The dungeon picture driver (`tools/claude-toolkit/dungeon-plan.ts`) waits for an HTML "Enter" prompt the game now
+  draws in its worker, so it cannot picture a dungeon until it waits on the game's own word.
 - **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
