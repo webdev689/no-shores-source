@@ -37,6 +37,7 @@ import { SeaRoom } from './seaRoom.ts';
 import { type Landfall, landfallOf, pictureAt, roomWords, shownScale } from './seaLaw.ts';
 import { isleOff, isleWords, keptClear } from './isleLaw.ts';
 import type { Isles } from './isles.ts';
+import { SeaTravel } from './seaTravel.ts';
 import { SeaView } from './seaView.ts';
 
 /** The Overworld is not to scale: the Sloop is drawn this long, metres, so one reads from the raised view, and every
@@ -83,6 +84,8 @@ export class Sea {
   /** Its wake; and whether the sea room's link was lost. */
   private readonly wake = new Wake();
   private roomLost = false;
+  /** A travel to other waters under way, seen sailing away, until the player has the ship again. */
+  travelling: SeaTravel | null = null;
   private press: Press | null = null;
   private room: SeaRoom | null = null;
   /** Each join and leave counted, so a join that comes after another, or after the player left, is let go. */
@@ -285,6 +288,15 @@ export class Sea {
     this.passage.sailTo(point);
   }
 
+  /** Travels to `point` in the water named `water`, seen sailing away: under way for it from the helm, the room asked
+   *  as the picture fades; `ready` says when the waters round the ship have loaded. */
+  travelTo(point: Point2, water: string, ready: () => boolean): void {
+    if (this.combat || this.travelling) return;
+    this.sailTo(point);
+    this.travelling = new SeaTravel(water, point, this.passage, ready);
+    this.view.travel();
+  }
+
   /** One step of the pace dial: -1 slower, +1 faster. */
   stepPace(direction: number): void {
     // Off the helm the room takes no new course, so the dial waits for the player's return to it.
@@ -380,7 +392,13 @@ export class Sea {
     this.keepRoom(dt, time);
     this.aboard.step(dt, time, input.controls, input.paused, this.room);
     const { view } = this;
-    if (!this.combat) this.passage.advance(dt, view.closeShare > 0 || view.helmView || this.aboard.active);
+    const watched = view.closeShare > 0 || view.helmView || this.aboard.active || this.travelling !== null;
+    if (!this.combat) this.passage.advance(dt, watched);
+    this.travelling?.step(dt, this.room);
+    if (this.travelling?.away.control) {
+      this.travelling = null;
+      view.sail();
+    }
     view.step(dt);
     if (view.kind === 'sail' && !this.aboard.active) view.turn(input.turn, input.tilt, dt);
     const { ship } = this.passage;
@@ -410,12 +428,16 @@ export class Sea {
     const fought = combat?.frame(dt, time, seaShot.far, fail, input.swell);
     const boarded = this.boarding.frame(this.room, combat?.view ?? null, input);
     if (boarded) combat?.letGo();
+    const helmShot = view.helmShot(trueLying, seaShot.far);
+    const travelled = this.travelling?.away.shot(ship, helmShot);
     const down =
       combat && fought
         ? { near: boarded?.shot ?? fought, share: combat.share }
-        : view.kind === 'helm'
-          ? { near: view.helmShot(trueLying, seaShot.far), share: view.helmShare }
-          : aboardShot && { near: aboardShot, share: this.aboard.share };
+        : travelled
+          ? { near: { ...helmShot, ...travelled.near }, share: travelled.share }
+          : view.kind === 'helm'
+            ? { near: helmShot, share: view.helmShare }
+            : aboardShot && { near: aboardShot, share: this.aboard.share };
     const shown = down ? panShot(seaShot, down.near, down.share) : seaShot;
     const { near, share } = down ?? { near: view.closest(overworld, trueLying), share: view.closeShare };
     const posed = combat ? combat.lying : ship;
@@ -472,7 +494,7 @@ export class Sea {
           ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, view.helmShare > 0.5)
           : [],
       firstPerson: boarded ? boarded.firstPerson : !combat && this.aboard.firstPerson,
-      dark: boarded?.dark ?? 0,
+      dark: boarded?.dark ?? this.travelling?.away.dark ?? 0,
       feet: combat ? null : this.aboard.feetOn(lying),
       stirs: combat ? combat.stirs() : own.underWay ? this.wake.stirs(lying, this.hull.waterline, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],

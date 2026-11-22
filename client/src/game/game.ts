@@ -46,6 +46,7 @@ import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
 import { nodeOfRoom, seaRoomName } from './rooms.ts';
 import { Sea } from './sea.ts';
+import { sailOrTravel } from './seaTravel.ts';
 import { SeaWord } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
 import { shipPanelOnceBuilt } from './shipPanel.ts';
@@ -130,7 +131,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     helmMap: new HelmMap({
       ...{ gpu, store, stack, outlines: continents.map((each) => each.outline) },
       sea: () => playing.sea,
-      sail: (to, seas) => sailFor(to, seas),
+      sail: (to, seas, travel) => sailFor(to, seas, travel),
       shut: () => screens.seasShut(),
       made: (map) => {
         if (opened) map.setWaters(opened.map);
@@ -454,23 +455,22 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (anchored) goIsle(anchored, ashoreWords(anchored));
   };
 
-  /** A destination set on the map: the ship sails for it. A voyage set at another difficulty sails in that
-   *  difficulty's sea room; mid-fight the ship stays in the room it fights in; one switch at a time, each waiting for
-   *  the last. */
-  const sailFor = (sail: Point2, seas: Difficulty) => {
+  /** A destination set on the map: the ship sails for it, or travels there. A voyage set at another difficulty sails
+   *  in that difficulty's sea room; mid-fight the ship stays in the room it fights in; one switch at a time, each
+   *  waiting for the last. A travel's cinematic begins at once, and asks whichever room the ship is in by its fade. */
+  const sailFor = (sail: Point2, seas: Difficulty, travel: boolean) => {
     const sea = playing.sea;
-    if (!sea || sea.fight || seas === seaSeas) sea?.sailTo(sail);
-    else {
-      seaSeas = seas;
-      switching = switching
-        .then(() => {
-          sea.leaveRoom();
-          return enterSea(seas);
-        })
-        .then(() => sea.sailTo(sail))
-        // A room that will not open leaves the ship sailing alone, and says so, as a link lost does.
-        .catch(() => sea.sailAlone(sail));
-    }
+    if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));
+    if (!sea || sea.fight || seas === seaSeas) return;
+    seaSeas = seas;
+    switching = switching
+      .then(() => {
+        sea.leaveRoom();
+        return enterSea(seas);
+      })
+      .then(() => void (sea.travelling ?? sea.sailTo(sail)))
+      // A room that will not open leaves the ship sailing alone, and says so, as a link lost does.
+      .catch(() => sea.sailAlone(sail));
   };
 
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the

@@ -97,6 +97,8 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // On a struck ship's deck, the display says where its fight stands and lists the keys on foot.
   const deck = here.boarding.words;
   hud.place(...seaPlace(here, shown, state));
+  // Sailing away to other waters, the veil says where to while the picture is black.
+  if (here.travelling) hud.veil(here.travelling.away.veil);
   const { fight } = here;
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.

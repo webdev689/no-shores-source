@@ -114,3 +114,19 @@ test('washed up in the snapshot that lets the fight go, the fight is over as sun
   atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0 }], [[20, 5, 0, 1]]);
   assert.equal(room.takeFight()?.over, 'sunk');
 });
+
+test('a travel waits its turn as a course does, no course takes its place, and the room’s answer is taken once', async () => {
+  const { room, sent, atTick } = await joined();
+  atTick(1000);
+  room.travel([[550_000, 150_000]], 10);
+  room.course([[60_000, 150_000]], 10);
+  atTick(1045);
+  assert.deepEqual(sent.at(-1), courseBytes([[550_000, 150_000]], 10, true), 'the travel is sent, not the course');
+  assert.equal(room.takeTravelled(), null, 'no answer yet');
+  atTick(1050, [], [[24, 1049, 4]]);
+  assert.equal(room.takeTravelled(), 4, 'refused: the ship’s own water');
+  assert.equal(room.takeTravelled(), null, 'taken once');
+  room.course([[60_000, 150_000]], 10);
+  atTick(1095);
+  assert.deepEqual(sent.at(-1), courseBytes([[60_000, 150_000]], 10), 'courses are sent again once it is answered');
+});

@@ -78,6 +78,10 @@ export class SeaRoom {
   private waitingFacing = false;
   /** The helm left while a course waited: sent just after it, so the room takes the course from the helm. */
   private leaveWaiting = false;
+  /** A travel asked and not yet answered, which no course takes the place of; and the room's answer, until taken
+   *  (crates/room/src/sea_travel.rs: 0 taken, else why it was refused). */
+  private travelAsked = false;
+  private travelled: number | null = null;
 
   private constructor(link: Closable) {
     this.link = link;
@@ -89,7 +93,7 @@ export class SeaRoom {
     if (this.link.joins === this.joined) return;
     [this.joined, this.own, this.fresh] = [this.link.joins, this.link.player, true];
     [this.tick, this.courseSentAt, this.waitingCourse] = [null, null, null];
-    [this.waitingFacing, this.leaveWaiting] = [false, false];
+    [this.waitingFacing, this.leaveWaiting, this.travelAsked] = [false, false, false];
   }
 
   /** Whether the player joined the sea again since this was last asked, after its socket closed: their ship is to be
@@ -151,6 +155,8 @@ export class SeaRoom {
     }
     // An ended fight's last view, shown in one snapshot, is kept until it is taken.
     const told = snapshot.told.filter((each) => each.player === this.own).map((each) => each.numbers[0]);
+    const travelled = snapshot.told.find((each) => each.player === this.own && each.numbers[0] === TOLD.TRAVELLED);
+    if (travelled) [this.travelled, this.travelAsked] = [travelled.numbers[2] ?? null, false];
     if (told.includes(TOLD.WASHED_UP)) this.washUp(snapshot);
     else if (told.includes(TOLD.MOORED)) this.moor(snapshot);
     // Washed up, the fight was sunk first; otherwise one the room no longer lists is gone.
@@ -251,12 +257,28 @@ export class SeaRoom {
   /** Sets the ship's course: the points ahead, at a pace; none brings it to rest. One set sooner after the last than
    *  the sea takes waits for a later snapshot, and a newer course takes its place. */
   course(points: readonly Point2[], pace: SailedPace): void {
+    if (this.travelAsked) return;
     [this.waitingCourse, this.waitingFacing] = [courseBytes(points, pace), false];
     this.sendCourse();
   }
 
+  /** Asks to travel a course to the other waters it ends in: sent as a course is, in its turn, and no course sent
+   *  in its place until the room answers. */
+  travel(points: readonly Point2[], pace: SailedPace): void {
+    [this.waitingCourse, this.waitingFacing, this.travelAsked] = [courseBytes(points, pace, true), false, true];
+    this.sendCourse();
+  }
+
+  /** The room's answer to the travel asked, taken once: 0 taken, else why it was refused; null before. */
+  takeTravelled(): number | null {
+    const travelled = this.travelled;
+    this.travelled = null;
+    return travelled;
+  }
+
   /** Brings the ship to rest turned to `heading`, radians clockwise from north: sent as a course is, in its turn. */
   face(heading: number): void {
+    if (this.travelAsked) return;
     [this.waitingCourse, this.waitingFacing] = [faceBytes(heading), true];
     this.sendCourse();
   }
