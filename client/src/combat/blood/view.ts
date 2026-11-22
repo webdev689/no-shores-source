@@ -1,5 +1,5 @@
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../../gpu.ts';
-import { type Atlas, BLOOD_ABSORB_ENCODED, BLOOD_BASE, INK_DEPTH, atlasCells, buildAtlas, dropletArt } from './art.ts';
+import { type Atlas, BLOOD_ABSORB_ENCODED, BLOOD_BASE, INK_DEPTH, atlasCells, bloodSheet, dropletArt } from './art.ts';
 import { GIB_COUNT } from './gibs.ts';
 import { type BloodMarks, DROP_QUAD, GIB_QUAD, MAX_BODIES, MAX_FLYING } from './marks.ts';
 import { FLOATS_PER_VERTEX, QUAD_FLOATS, type Tint, type Vector, quadIndices, writeQuad } from './spray.ts';
@@ -168,7 +168,7 @@ export class BloodView {
         ],
       });
     };
-    this.sheetGroup = artGroup(buildAtlas(), 0);
+    this.sheetGroup = artGroup(bloodSheet(), 0);
     this.dropletGroup = artGroup(dropletArt(), 1);
   }
 

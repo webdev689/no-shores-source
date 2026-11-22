@@ -178,7 +178,9 @@ on, and the sky over it.
 - **The story.** While the [[Prologue]] plays, each beat tells the director what plays: a song of the story's own in
   the layers of the mood it asks; a silence, let ring out or cut at once (the crash, and the black after it); or the
   fight it plays, heard as any fight. At sea that is the sea's own fight song. On the wreck it is the Boarding's first
-  phase in the fight's layers, tense at least, until Thule wakes his own score; the player beaten plays its end. Its
+  phase in the fight's layers, tense at least, until Thule wakes his own score; the player beaten plays its end. A death
+  before Thule is not heard as one (`heardOnWreck`): the player rises at the last checkpoint in seconds, and the
+  Boarding plays on. Its
   tension, heard for minutes on the wreck, changes take by take: the taiko's heartbeat, the bass's strikes, the
   strings' voicing, the bell, a soft shriek, the organ swelling into a rising take, the chords turned. The story's
   songs leave the ambience at 0.8.

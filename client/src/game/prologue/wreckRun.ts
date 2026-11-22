@@ -463,7 +463,7 @@ export class WreckRun {
         foeFeel,
       ),
     );
-    const lying = this.armsLie ? this.lying.figure(walker.you.dress) : null;
+    const lying = this.armsLie ? this.lying.figure(walker.you.dress, clock) : null;
     if (lying) figures.push(lying);
     const muzzle = walker.muzzle;
     const marks = effects.marks(fight, seconds, {
@@ -495,7 +495,8 @@ export class WreckRun {
       },
       others: new Map(),
       foes: foes.placed,
-      ground: { blocks: this.course, groundAt },
+      // The wreck is timber throughout: every step on it is on planks.
+      ground: { blocks: this.course, wooden: this.course, groundAt },
       landed: [],
       crates: null,
     });

@@ -79,8 +79,10 @@ const outputOf =
   () =>
     answering() ? ({ audio: fake.audio, out: fake.out } as unknown as ReturnType<SoundOut> & object) : null;
 
+/** Fetches nothing: the fake's recordings have all come. */
+const fetched = () => undefined;
 const ambienceOn = (fake: ReturnType<typeof fakeAudio>, answering = () => true) =>
-  new Ambience(outputOf(fake, answering), fake.play);
+  new Ambience(outputOf(fake, answering), fake.play, fetched);
 const cues = (fake: ReturnType<typeof fakeAudio>) => fake.played.map((each) => each.cue);
 
 test('nothing plays before the output answers, yet the levels glide on', () => {
@@ -121,10 +123,7 @@ test('a bed whose recording has not come makes no new node each frame while it w
   let come = false;
   const play = ((...args: unknown[]) =>
     come ? (fake.play as (...all: unknown[]) => unknown)(...args) : null) as unknown as typeof playSample;
-  const ambience = new Ambience(
-    outputOf(fake, () => true),
-    play,
-  );
+  const ambience = new Ambience(outputOf(fake, () => true), play, fetched);
   ambience.set({ rain: 1 }, 0);
   ambience.frame(0.016);
   const waiting = fake.made.length;
@@ -197,10 +196,7 @@ test("a scene's first gull flock plays as soon as its recording has come, not a 
     let coming = asksBeforeItComes;
     const play = ((...asked: Parameters<typeof fake.play>) =>
       coming-- > 0 ? null : fake.play(...asked)) as typeof fake.play;
-    const ambience = new Ambience(
-      outputOf(fake, () => true),
-      play,
-    );
+    const ambience = new Ambience(outputOf(fake, () => true), play, fetched);
     ambience.set({ gulls: 1 }, 0);
     for (let frame = 1; frame <= 600; frame++) {
       fake.audio.currentTime += 1 / 60;
@@ -236,6 +232,7 @@ test('the output moving to a new context carries the beds and the heart over', (
   const ambience = new Ambience(
     () => ({ audio: current.audio, out: current.out }) as unknown as ReturnType<SoundOut>,
     play,
+    fetched,
   );
   ambience.set({ rain: 1 }, 0);
   ambience.heartbeat(true);
@@ -305,4 +302,19 @@ test("every story cue the Freesound list holds is one of the story's sounds, and
     assert.ok(picked.has(recorded.cue), `${recorded.cue} is picked`);
     assert.ok(recorded.loudness.loud > 0 && recorded.loudness.peak >= recorded.loudness.loud, `${recorded.cue}`);
   }
+});
+
+test("the story's one-shots are fetched as its sound wakes, so one heard once is not lost to its own fetch", () => {
+  const fake = fakeAudio();
+  const asked: string[] = [];
+  let answering = false;
+  const ambience = new Ambience(outputOf(fake, () => answering), fake.play, (audio, ids) => asked.push(...ids));
+  ambience.frame(0.016);
+  assert.deepEqual(asked, [], 'nothing before the sound wakes');
+  answering = true;
+  ambience.frame(0.016);
+  const shots = Object.values(RECORDED_SHOTS).map((shot) => shot.cue);
+  assert.deepEqual(asked.toSorted(), shots.toSorted(), 'every one-shot, the crash and the splash among them');
+  ambience.frame(0.016);
+  assert.equal(asked.length, shots.length, 'once');
 });

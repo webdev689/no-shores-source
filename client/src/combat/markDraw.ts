@@ -62,6 +62,12 @@ fn see_through(colour: vec4f) -> vec4f {
   return see_through(in.colour);
 }
 
+// Over the finished picture, only where the scene stands nearer: a mark seen through what hides it.
+@fragment fn hidden_fragment(in: Out) -> @location(0) vec4f {
+  if (in.position.z >= textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
+  return see_through(in.colour);
+}
+
 ${LIGHT_WGSL}
 // Its light: only what stands in the air gives any. A mark on the ground (a dither's code) and light already added
 // (a drop's line, a muzzle's pool) give none.
@@ -79,6 +85,9 @@ const VERTEX_LAYOUT: GPUVertexBufferLayout = {
   ],
 };
 const BLENDED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
+/** The over-the-picture fragments: the see-through marks where nothing hides them, or marks only where something does. */
+type OverEntry = 'over_fragment' | 'hidden_fragment';
+const OVER_ENTRIES: readonly OverEntry[] = ['over_fragment', 'hidden_fragment'];
 
 /** Where `origin` (world metres) lies in the ground's dither, wrapped to its period. */
 export function ditherOrigin(origin: Point): [number, number, number, number] {
@@ -93,12 +102,9 @@ export class MarkDraw {
   private readonly solid: GPURenderPipeline;
   private readonly clear: GPURenderPipeline;
   private readonly light: GPURenderPipeline;
-  private over: {
-    layout: GPUBindGroupLayout;
-    pipeline: GPURenderPipeline;
-    depth: GPUTexture | null;
-    group: GPUBindGroup | null;
-  } | null = null;
+  private overLayout: GPUBindGroupLayout | null = null;
+  private readonly overs = new Map<OverEntry, GPURenderPipeline>();
+  private overGroup: { depth: GPUTexture; group: GPUBindGroup } | null = null;
   private readonly view: GPUBuffer;
   private readonly group: GPUBindGroup;
   private readonly order = new MarkOrder();
@@ -143,6 +149,7 @@ export class MarkDraw {
     });
     this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer: this.view } }] });
+    this.warmOvers();
   }
 
   /** The marks the next frame draws, measured from a point `origin` in the world (where a mark at 0 lies), seen from
@@ -183,8 +190,23 @@ export class MarkDraw {
   /** The see-through marks over a finished single-sampled picture `target`, hidden where `depth` (the scene's depth,
    *  one float a pixel) stands nearer. */
   drawClearOver(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture, matrix: Float32Array): void {
+    this.drawOver(encoder, target, depth, matrix, 'over_fragment');
+  }
+
+  /** The see-through marks over a finished picture, only where `depth` stands nearer: seen through what hides them. */
+  drawHiddenOver(encoder: GPUCommandEncoder, target: GPUTextureView, depth: GPUTexture, matrix: Float32Array): void {
+    this.drawOver(encoder, target, depth, matrix, 'hidden_fragment');
+  }
+
+  private drawOver(
+    encoder: GPUCommandEncoder,
+    target: GPUTextureView,
+    depth: GPUTexture,
+    matrix: Float32Array,
+    entry: OverEntry,
+  ): void {
     if (!this.buffer || this.counts.clear === 0) return;
-    const over = this.overOf(depth);
+    const over = this.overOf(depth, entry);
     this.writeView(matrix);
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(over.pipeline);
@@ -210,39 +232,58 @@ export class MarkDraw {
     this.gpu.device.queue.writeBuffer(this.view, 0, this.values);
   }
 
-  /** The over-the-picture pipeline, made the first time, and its bind group for `depth`, made again as it changes. */
-  private overOf(depth: GPUTexture): { pipeline: GPURenderPipeline; group: GPUBindGroup } {
+  /** The over-the-picture pipelines' layout, made once. */
+  private overLayoutOf(): GPUBindGroupLayout {
+    this.overLayout ??= this.gpu.device.createBindGroupLayout({
+      entries: [
+        { binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} },
+        { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
+      ],
+    });
+    return this.overLayout;
+  }
+
+  /** How an over-the-picture pipeline for `entry` is made. */
+  private overMade(entry: OverEntry): GPURenderPipelineDescriptor {
     const { device, format } = this.gpu;
-    if (!this.over) {
-      const layout = device.createBindGroupLayout({
-        entries: [
-          { binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} },
-          { binding: 1, visibility: SHADER_STAGE.fragment, texture: { sampleType: 'unfilterable-float' } },
-        ],
-      });
-      const pipeline = device.createRenderPipeline({
-        layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
-        vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
-        fragment: {
-          module: this.module,
-          entryPoint: 'over_fragment',
-          targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }],
-        },
-        primitive: { topology: 'triangle-list' },
-      });
-      this.over = { layout, pipeline, depth: null, group: null };
+    return {
+      layout: device.createPipelineLayout({ bindGroupLayouts: [this.overLayoutOf()] }),
+      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
+      fragment: { module: this.module, entryPoint: entry, targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }] },
+      primitive: { topology: 'triangle-list' },
+    };
+  }
+
+  /** Both over-the-picture pipelines, made off the frame as the marks are made, so the first mark over the water or
+   *  through a wall never waits on one. */
+  private warmOvers(): void {
+    for (const entry of OVER_ENTRIES)
+      void this.gpu.device
+        .createRenderPipelineAsync(this.overMade(entry))
+        .then((pipeline) => {
+          if (!this.overs.has(entry)) this.overs.set(entry, pipeline);
+        })
+        .catch(() => undefined);
+  }
+
+  /** The over-the-picture pipeline for `entry` (made at once should it not have come yet), and its bind group for
+   *  `depth`, made again as it changes. */
+  private overOf(depth: GPUTexture, entry: OverEntry): { pipeline: GPURenderPipeline; group: GPUBindGroup } {
+    const { device } = this.gpu;
+    const layout = this.overLayoutOf();
+    let pipeline = this.overs.get(entry);
+    if (!pipeline) {
+      pipeline = device.createRenderPipeline(this.overMade(entry));
+      this.overs.set(entry, pipeline);
     }
-    if (this.over.depth !== depth || !this.over.group) {
-      this.over.depth = depth;
-      this.over.group = device.createBindGroup({
-        layout: this.over.layout,
-        entries: [
-          { binding: 0, resource: { buffer: this.view } },
-          { binding: 1, resource: depth.createView() },
-        ],
-      });
+    if (this.overGroup?.depth !== depth) {
+      const entries = [
+        { binding: 0, resource: { buffer: this.view } },
+        { binding: 1, resource: depth.createView() },
+      ];
+      this.overGroup = { depth, group: device.createBindGroup({ layout, entries }) };
     }
-    return { pipeline: this.over.pipeline, group: this.over.group };
+    return { pipeline, group: this.overGroup.group };
   }
 
   destroy(): void {

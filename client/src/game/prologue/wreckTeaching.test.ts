@@ -54,34 +54,42 @@ function forged(): { forge: Cards; carded: Picture[] } {
   return { forge, carded };
 }
 
-test("the player's sword and shield lie on the quiet deck a few steps ahead of where they wake", () => {
+test("the player's sword and shield lie out on the quiet deck, well ahead of where they wake", () => {
   const [x, y, z] = armsAt(layout);
   assert.ok(inArea(quiet, x, y), 'on the quiet deck');
   assert.ok(z > IN_THE_SEA_M && z === topAt(course, x, y), 'on its planks, not in the sea');
   const away = Math.hypot(x - wakeX, y - wakeY);
-  assert.ok(away > 2 && away <= ARMS_ALONG_M, `${away.toFixed(2)} m from where they wake`);
+  assert.ok(away > 6 && away <= ARMS_ALONG_M, `${away.toFixed(2)} m from where they wake`);
   const { facing } = layout.wake;
   const ahead = (x - wakeX) * Math.sin(facing) - (y - wakeY) * Math.cos(facing);
   assert.ok(ahead / away > Math.cos(Math.PI / 4), 'ahead of them as they stand, as play begins');
   const arms = new LyingArms(layout, forged().forge);
   assert.ok(arms.reached([x + 1, y, z]) && !arms.reached([x + 2, y, z]), 'taken up by walking over them');
-  const marks: number[] = [];
-  arms.mark(marks, 0, [wakeX, wakeY, z + 1.6]);
-  assert.ok(marks.length > 0, "a drop's line of light over them");
 });
 
-test('the arms on the deck are the item itself, drawn once as the Character page draws it, lying true to size', async () => {
+test('the arms on the deck are the item itself, drawn once, moving as a drop: popped up, settled, hovering', async () => {
   const { forge, carded } = forged();
   const arms = new LyingArms(layout, forge);
   const body = armouredDress(FIRST_LOOK);
-  assert.equal(arms.figure(body), null, 'nothing until the forge has drawn it');
+  const [x, y, deck] = armsAt(layout);
+  assert.equal(arms.figure(body, 0), null, 'nothing until the forge has drawn it');
   await new Promise((resolve) => setTimeout(resolve, 0));
-  const lying = arms.figure(body);
-  assert.ok(lying, 'then the item');
-  assert.deepEqual([lying.x, lying.y, lying.z], [...armsAt(layout)]);
-  assert.equal(lying.facesEye, true, 'lying face up to the eye');
-  assert.equal(lying.scale, 1 / 4, "the forge draws a weapon four times a figure's pixels a metre");
-  arms.figure(body);
+  const first = arms.figure(body, 10);
+  assert.ok(first, 'then the item');
+  assert.ok(!first.facesEye, 'upright, turned to the eye as a drop is');
+  assert.equal(first.scale, 1 / 4, "the forge draws a weapon four times a figure's pixels a metre");
+  const eye = [x, y - 6, deck + 1.6] as const;
+  const unlit: number[] = [];
+  arms.mark(unlit, 10, eye);
+  assert.equal(unlit.length, 0, 'no line while it pops');
+  const popped = arms.figure(body, 10.3);
+  assert.ok(popped && popped.z > first.z + 0.3, 'popped up from where it lay');
+  const resting = [12, 12.4, 12.8].map((clock) => arms.figure(body, clock)?.z ?? 0);
+  assert.ok(resting.every((z) => z > deck && z < deck + 0.5), 'hovering over the deck');
+  assert.ok(Math.max(...resting) - Math.min(...resting) > 0.01, 'bobbing');
+  const lit: number[] = [];
+  arms.mark(lit, 12.8, eye);
+  assert.ok(lit.length > 0, "a drop's line of light over it once it rests");
   assert.equal(carded.length, 1, 'one card, made once');
   assert.ok((carded[0]?.width ?? 0) > 64, "the sword with the shield behind it, as a loadout's picture");
 });

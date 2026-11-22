@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { AMMO_BOX } from './dropPictures.ts';
 import { MARK_FLOATS, ditherCode } from './marks.ts';
-import { MIN_RAD, MOST, REACH_M, WIDTH_M, marksSeen } from './marksOver.ts';
+import { HIDDEN_SHARE, MIN_RAD, MOST, REACH_M, WIDTH_M, marksHidden, marksSeen } from './marksOver.ts';
 
 /** The widest a laid mark stands across, metres, from its vertices. */
 const widthOf = (vertices: readonly number[]): number => {
@@ -56,4 +56,21 @@ test('a beating mark swells and eases back, a mark that does not beat keeps its 
   assert.ok(Math.min(...swelling) > WIDTH_M * 0.95, 'never narrower than at rest');
   for (const still of [widths(false, false), widths(true, true)])
     assert.ok(Math.max(...still) - Math.min(...still) < 1e-9, 'still');
+});
+
+test('a mark seen through what hides it is laid flat and faded, measured from the eye, and fades further at its end', () => {
+  const picture = AMMO_BOX;
+  const marked = [{ picture, at: [5, 0, 2] as const }];
+  const eye = [5, -10, 2] as const;
+  const seen = marksSeen(marked, eye, 0, true);
+  const hidden = [...marksHidden(marked, eye, 0)];
+  const opacities = hidden.filter((unused, index) => index % MARK_FLOATS === 6);
+  assert.ok(opacities.length > 0 && opacities.every((opacity) => Math.abs(opacity - HIDDEN_SHARE) < 1e-6), 'faded');
+  const alongSeen = new Set(seen.filter((unused, index) => index % MARK_FLOATS === 1).map((y) => y.toFixed(4)));
+  const along = new Set(hidden.filter((unused, index) => index % MARK_FLOATS === 1).map((y) => y.toFixed(4)));
+  assert.ok(alongSeen.size > 1 && along.size === 1, 'laid flat, in one plane, where a whole mark stacks its layers');
+  const across = hidden.filter((unused, index) => index % MARK_FLOATS === 0);
+  assert.ok(Math.min(...across) > -1 && Math.max(...across) < 1, 'measured from the eye');
+  const far = [...marksHidden(marked, [5, -(REACH_M - 1), 2], 0)].filter((unused, index) => index % MARK_FLOATS === 6);
+  assert.ok(far.every((opacity) => opacity > 0 && opacity < HIDDEN_SHARE), 'fading further at its end');
 });

@@ -1,21 +1,24 @@
-// What the wreck's teaching stands on its deck: the player's sword and shield lying where the ram threw them, drawn as
-// the item itself, as the Character page shows it, with a drop's line of light over it, until the player walks over
+// What the wreck's teaching stands on its deck: the player's sword and shield where the ram threw them, a way along the
+// quiet deck, drawn as the item itself, as the Character page shows it, and moving as a drop of loot does: popped up
+// from the deck, bouncing to rest, then hovering and bobbing under its rarity's line, until the player walks over
 // them; and where the Tithe boarder the player meets one on one comes from.
-import { inReach, markDropLine } from '../../combat/drops.ts';
+import { CRYSTAL_FEEL, inReach, markDropLine, motionAt, RISE_S } from '../../combat/drops.ts';
 import type { GearItem, GearState } from '../../network/gearMessages.ts';
 import type { Card, CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { CARRIED, gearHands, KINDS, MELEE, WORN } from '../../player/gear.ts';
+import { PX_PER_M } from '../../player/figures.ts';
 import { ItemPictures } from '../../player/itemPictures.ts';
 import type { Arms } from './tutorial.ts';
 import { pointAlong, topAt, type WreckLayout } from './wreckLayout.ts';
 
 type Point = readonly [number, number, number];
 
-/** How far along the path from where the player wakes their arms lie, metres: just ahead of them as they stand. */
-export const ARMS_ALONG_M = 3;
+/** How far along the path from where the player wakes their arms lie, metres: out on the quiet deck, past the step
+ *  down from where they woke. */
+export const ARMS_ALONG_M = 8;
 /** The boarder's two places along the path, metres: at the far end of the quiet deck, or, should the player stand
- *  there, back by their arms, below the step up to where they woke. Either way the farther from the player. */
+ *  there, back below the step up to where they woke. Either way the farther from the player. */
 const BOARDER_ALONG_M = [13, 4.5] as const;
 /** The boarder: a Grey Tithe Hookman, an axe fought as a swordsman fights, at the lowest rank. */
 export const BOARDER = { type: 8, rank: 1 } as const;
@@ -49,6 +52,8 @@ export const ARMS_ITEM: GearItem = {
 /** The forge draws a weapon's picture this many times as many pixels a metre as a figure's (weaponart.py `SIZE`): a
  *  card of it at this share stands true to size. */
 const TRUE_SIZE = 1 / 4;
+/** The seed of their pop and first turn, as a drop's is drawn from its number. */
+const SEED = 7;
 
 /** Where the player's sword and shield lie on the deck. */
 export function armsAt(layout: WreckLayout): Point {
@@ -80,13 +85,19 @@ export function boarderAt(layout: WreckLayout, x: number, y: number): { at: [num
   return { at: [standX, standY], facing: Math.atan2(x - standX, -(y - standY)) };
 }
 
-/** The arms lying on the deck as the player sees them: the item's own picture, once the forge has drawn it, lying
- *  face up to the eye as a fallen body is drawn, at its true size, with a Normal drop's line over it. */
+/** The arms on the deck as the player sees them: the item's own picture, once the forge has drawn it, upright and
+ *  turned to the eye at its true size, popped up from where they lie the first time it is drawn and moving as a
+ *  Vestige's crystal does (`motionAt`), under a Normal drop's line once they rest. */
 export class LyingArms {
   private readonly place: Point;
   private readonly forge: Cards;
   private readonly pictures: ItemPictures;
   private card: Card | null = null;
+  /** When they were first drawn, on the page's clock: their pop begins then. */
+  private began: number | null = null;
+  /** Where their card's top stands this frame, and how long they have rested, for the line over them. */
+  private top: Point | null = null;
+  private rested = 0;
 
   constructor(layout: WreckLayout, forge: Cards) {
     this.place = armsAt(layout);
@@ -94,20 +105,32 @@ export class LyingArms {
     this.pictures = new ItemPictures(forge);
   }
 
-  /** The arms as a card among the figures, drawn on `body` as the Character page draws them; none until the forge has
-   *  drawn their picture. */
-  figure(body: Dress): CardAt | null {
+  /** The arms as a card among the figures at `clock` seconds of the page's clock, drawn on `body` as the Character
+   *  page draws them; none until the forge has drawn their picture. */
+  figure(body: Dress, clock: number): CardAt | null {
     if (!this.card) {
       const picture = this.pictures.pictureOf(ARMS_ITEM, body, () => undefined);
       if (picture) this.card = this.forge.cardOf(picture);
     }
-    const [x, y, z] = this.place;
-    return this.card && { card: this.card, x, y, z, flip: false, scale: TRUE_SIZE, facesEye: true };
+    if (!this.card) return null;
+    this.began ??= clock;
+    const motion = motionAt(CRYSTAL_FEEL, this.place, this.place, SEED, clock - this.began);
+    const [x, y, middle] = motion.middle;
+    // The card's foot stands where a crystal's foot would, its picture's root being where the forge put it.
+    const metres = TRUE_SIZE / PX_PER_M;
+    const bottom = middle - CRYSTAL_FEEL.low;
+    const z = bottom - (this.card.root[1] - this.card.height) * metres;
+    this.top = [x, y, z + this.card.root[1] * metres];
+    this.rested = motion.settled ? motion.since : 0;
+    return { card: this.card, x, y, z, flip: false, scale: TRUE_SIZE };
   }
 
-  /** Lays the line of light over them into `out`, for an eye at `eye`, `clock` seconds on the page's clock. */
+  /** Lays the line of light over them into `out` once they rest, rising as a drop's does, for an eye at `eye`,
+   *  `clock` seconds on the page's clock. */
   mark(out: number[], clock: number, eye: Point): void {
-    markDropLine(out, { place: this.place, rarity: ARMS_ITEM.rarity, over: 0.1 }, clock, eye);
+    if (!this.top || this.rested <= 0) return;
+    const rise = Math.min(1, this.rested / RISE_S);
+    markDropLine(out, { place: this.top, rarity: ARMS_ITEM.rarity, over: 0, share: rise }, clock, eye);
   }
 
   /** Whether feet at `feet` stand over them, near enough to take them up. */

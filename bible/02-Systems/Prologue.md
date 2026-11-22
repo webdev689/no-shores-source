@@ -141,7 +141,8 @@ part at once, her words with it. The game is the player's from there.
 
 **The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
 first arrival, Elder Maren Hale of the Lamplighters starts at a point of the townsfolk's ways at least 15 m from the
-player, and out of their view where one is, and comes to them by the ways at 1.5 m/s. She stops 1.8 m before a player on
+player, and out of their view where one is, and comes to them by the ways at three quarters of a player's walk, about 3.3 m/s, her walk's frames paced to it
+([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]). She stops 1.8 m before a player on
 the ways, facing them; for a player off them, she stops at the point of the ways nearest them and greets them there once
 they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest stop
 first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the Stormcallers, the
@@ -391,10 +392,12 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   serves. Each step's keys, and the frozen fight's words, name the controls as bound now on the keys or the pad played
   last; below are the defaults on the keys. A step done early stays done, and a task stays up 1.5 s once all of it is met, so its last tick is seen. In
   turn:
-  - "Find your sword and shield": they lie on the deck 3 m along the path from where the player wakes, below the step
-    down from it, drawn as the item itself (`LyingArms`): the forge's picture of it, as the Character page shows it,
-    lying face up to the eye at its true size, with a Normal drop's line of light over it. Walked over, the room puts
-    them in the pack
+  - "Find your sword and shield": they lie out on the quiet deck 8 m along the path from where the player wakes,
+    past the step down from it ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]), drawn as the item itself
+    (`LyingArms`): the forge's picture of it, as the Character page shows it, upright and turned to the eye at its true
+    size, moving as a drop of loot does: popped up from the deck the first time it is drawn, bouncing to rest, then
+    hovering and bobbing as a Vestige's crystal does, its Normal drop's line of light rising over it once it rests.
+    Walked over, the room puts them in the pack
     (`Room::story_take_arms`). Should they leave the pack (dismantled), they lie on the deck again.
   - "Equip your sword and shield": Open your Character page (I; ticked by the menu open once the arms are taken),
     Equip them from the Melee slot, Close it (Esc).

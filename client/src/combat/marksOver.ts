@@ -1,13 +1,13 @@
 // The marks over what a player can use on foot, after DFO's marks over the people who do something: a pixel picture
-// standing on a point over each, bobbing, turned to the eye and hidden by what stands before it, never narrower on the
-// screen than MIN_RAD of the view so a keeper across the plaza still shows one, faded out over the last fifth of its
-// reach, the nearest MOST of them; one beating while something waits there swells and eases back; each holds still
-// under reduced motion. It is laid as the drops' pictures are
-// (drops.ts). What wears one is the game's (game/overheadMarks.ts) and the Test Ground's (testground/gearGround.ts).
+// standing on a point over each, bobbing, turned to the eye, seen faded through what stands before it, never narrower
+// on the screen than MIN_RAD of the view so a keeper across the plaza still shows one, faded out over the last fifth of
+// its reach, the nearest MOST of them; one beating while something waits there swells and eases back; each holds still
+// under reduced motion. It is laid as the drops' pictures are (drops.ts). What wears one is the game's
+// (game/overheadMarks.ts) and the Test Ground's (testground/gearGround.ts).
 
 import type { PixelPicture } from './dropPictures.ts';
 import { markPicture, PIXEL_M } from './drops.ts';
-import { ditherCode } from './marks.ts';
+import { ditherCode, MARK_FLOATS } from './marks.ts';
 import { motionReduced } from '../plus/kit.ts';
 
 type Point = readonly [number, number, number];
@@ -33,6 +33,8 @@ const BEAT_HZ = 0.75;
 export const MOST = 12;
 /** A whole mark's opacity: solid, lighting nothing. */
 const WHOLE = ditherCode(1);
+/** How much of a mark shows where something stands before it: seen through walls, faded. */
+export const HIDDEN_SHARE = 0.45;
 
 /** One mark to lay: its picture, and the point its foot stands on before the bob. */
 export interface Marked {
@@ -45,7 +47,13 @@ export interface Marked {
 /** The marks seen from `eye` at `seconds`, as mark vertices: the nearest MOST within reach, each bobbing on a phase of
  *  its own and a beating one swelling unless `holding`, as wide as WIDTH_M or MIN_RAD of the view, whichever is wider,
  *  fading at the far end. */
-export function marksSeen(marked: readonly Marked[], eye: Point, seconds: number, holding = motionReduced()): number[] {
+export function marksSeen(
+  marked: readonly Marked[],
+  eye: Point,
+  seconds: number,
+  holding = motionReduced(),
+  share = 1,
+): number[] {
   const out: number[] = [];
   const near = marked
     .map((mark) => ({ mark, far: Math.hypot(mark.at[0] - eye[0], mark.at[1] - eye[1], mark.at[2] - eye[2]) }))
@@ -62,9 +70,20 @@ export function marksSeen(marked: readonly Marked[], eye: Point, seconds: number
     const fading = REACH_M * (1 - FADE);
     // Whole, it is drawn by the ground's code for a mark kept whole, which gives the light layer no light: the
     // brightest brass of a keeper's sign would otherwise light the sign itself in blocks over its own colours.
-    const opacity = far <= fading ? WHOLE : Math.max(0, (REACH_M - far) / (REACH_M - fading));
+    const faded = far <= fading ? 1 : Math.max(0, (REACH_M - far) / (REACH_M - fading));
+    const opacity = faded >= 1 && share >= 1 ? WHOLE : faded * share;
     const bobbing: Point = [mark.at[0], mark.at[1], mark.at[2] + bob];
     markPicture(out, mark.picture, bobbing, eye, width / cells / (mark.picture.pixelM ?? PIXEL_M), opacity);
   }
   return out;
+}
+
+/** The same marks as `marksSeen` lays them, laid flat at HIDDEN_SHARE of their opacity and measured from `eye`, for
+ *  drawing only where something stands before them (`MarkDraw.drawHiddenOver`): so a keeper's mark inside their
+ *  stall, or the Hall's, is seen through its walls. */
+export function marksHidden(marked: readonly Marked[], eye: Point, seconds: number): Float32Array {
+  const out = marksSeen(marked, eye, seconds, motionReduced(), HIDDEN_SHARE);
+  for (let start = 0; start < out.length; start += MARK_FLOATS)
+    for (let axis = 0; axis < 3; axis += 1) out[start + axis] = (out[start + axis] ?? 0) - (eye[axis] ?? 0);
+  return new Float32Array(out);
 }

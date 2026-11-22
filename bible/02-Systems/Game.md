@@ -244,14 +244,17 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the gear names them online,
   over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
-  0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
+  0.32 m across, turned to the eye, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
   still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. The Postmaster's
   sealed letter beats while letters wait for the player, swelling a fifth wider and easing back every 1.3 s, so it is
   seen from across the plaza; it stands still while none waits, and under reduced motion. A whole mark
   gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
   layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
-  is laid flat, so no layer shows through another.
+  is laid flat, so no layer shows through another. Where something stands before a mark, a keeper's stall, the Hall's
+  walls or a hill, it is drawn through it, faded to 0.45 and laid flat, after the scene and only where the scene's depth
+  stands nearer (`marksHidden`, `MarkDraw.drawHiddenOver`;
+  [[A Mark Over What a Player Can Use Is Seen Through Walls]]).
 - **On the ground**: each resource node stands as the forge's picture of its island's resource (`nodeCards`,
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they

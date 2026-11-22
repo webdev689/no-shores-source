@@ -275,6 +275,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
 - [[The Audit's Leftovers Are Fixed as Claude Suggested]]
 - [[The Game Is Named No Shores]]
+- [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]
+- [[A Mark Over What a Player Can Use Is Seen Through Walls]]
+- [[The Wreck's Arms Lie Farther Out, as a Loot Drop]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

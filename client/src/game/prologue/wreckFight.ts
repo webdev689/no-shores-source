@@ -41,6 +41,18 @@ const END_S = 0.6;
 /** What the frozen fight asks of the player, naming the key as bound now on the keys or the pad. */
 const asked = (lesson: 'parry' | 'dodge'): string =>
   lesson === 'parry' ? `Press ${askedKey('guard')} to parry` : `Press ${askedKey('dodge')} to dodge`;
+/** The wreck's fight as the music hears it from the foot's `heard`: no foe of `thule`'s rank or over but him, once he
+ *  is `heard`; the player dead only once the fight is `beaten`, so his score's end plays then. A death before him is
+ *  not heard: the player rises at the last checkpoint in seconds, and the Boarding plays on. */
+export function heardOnWreck(
+  heard: Hearing,
+  thule: HeardFoe,
+  { thuleHeard, beaten }: { readonly thuleHeard: boolean; readonly beaten: boolean },
+): Hearing {
+  const foes = heard.foes.filter((foe) => foe.rank < thule.rank);
+  return { ...heard, dead: beaten, foes: thuleHeard ? [...foes, thule] : foes };
+}
+
 /** While the fight is frozen the world drains this far toward grey under the interface, easing there and back over
  *  this long, so the stop reads as time held. */
 const FROZEN_DRAIN = 0.55;
@@ -199,7 +211,7 @@ export class WreckFight implements Beat {
   }
 
   /** The fight as the music hears it. Thule is heard from his cry on, before the room stands him, and as the one
-   *  foe throughout, so his score wakes once; the fight over, the player is beaten, and his score's end plays. */
+   *  foe throughout, so his score wakes once (`heardOnWreck`). */
   private hearing(fight: FootHeard, distance: number): Hearing {
     const thule: HeardFoe = {
       id: THULE_ID,
@@ -211,9 +223,7 @@ export class WreckFight implements Beat {
       engaged: true,
     };
     const heard = hearFoot({ kind: 'sea' }, fight);
-    const foes = heard.foes.filter((foe) => foe.rank < thule.rank);
-    const beaten = !!this.run?.outcome;
-    return { ...heard, dead: heard.dead || beaten, foes: this.coming || this.fought ? [...foes, thule] : foes };
+    return heardOnWreck(heard, thule, { thuleHeard: !!(this.coming || this.fought), beaten: !!this.run?.outcome });
   }
 
   frame(tick: Tick): StoryFrame | null {
