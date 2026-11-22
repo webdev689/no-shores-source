@@ -11,8 +11,10 @@ use movement::blocks::ground_at;
 
 /// How long a drop lies for its player, in the room's ticks of 1/60 s: two minutes.
 pub const DROP_TICKS: u64 = 7_200;
-/// How long a drop may be in the air before it can be taken: the longest a crystal bounces, about 1.6 s.
-pub const REST_TICKS: u64 = 94;
+/// How long a drop may be in the air before it can be taken, the longest it can bounce: a Vestige's crystal about
+/// 1.6 s, ammunition 1 s.
+pub const VESTIGE_REST_TICKS: u64 = 94;
+pub const AMMO_REST_TICKS: u64 = 60;
 /// How near a player walks to a drop to take it, across and up, in metres.
 pub const PICK_UP_REACH: f64 = 1.5;
 const PICK_UP_HEIGHT: f64 = 2.0;
@@ -91,12 +93,12 @@ impl Room {
     /// Lays a drop for a player, numbered as their own: a Vestige by its number, anything else a fresh one.
     fn lay(&mut self, player: PlayerId, what: Dropped, at: [f64; 3], from: [f64; 3]) {
         let Some(found) = self.players.get_mut(&player) else { return };
-        let id = match &what {
-            Dropped::Vestige(vestige) => vestige.id,
-            Dropped::AmmoBox | Dropped::Crate => found.character.take_id(),
+        let (id, flies) = match &what {
+            Dropped::Vestige(vestige) => (vestige.id, VESTIGE_REST_TICKS),
+            Dropped::AmmoBox | Dropped::Crate => (found.character.take_id(), AMMO_REST_TICKS),
         };
         found.gear_changed = true;
-        let (rests, until) = (self.clock + REST_TICKS, self.clock + DROP_TICKS);
+        let (rests, until) = (self.clock + flies, self.clock + DROP_TICKS);
         self.drops.push(Drop { player, id, what, at, from, rests, until });
     }
 

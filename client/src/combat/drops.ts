@@ -8,13 +8,10 @@
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
 import { AMMO_BOX, AMMO_CRATE, type PixelPicture } from './dropPictures.ts';
-import { CROWN_M, SPIN_FRAMES, crystalSpin, hashOf } from './vestigeCrystal.ts';
+import { CROWN_M, SPIN_FRAMES, crystalFrame, hashOf } from './vestigeCrystal.ts';
 
 type Point = readonly [number, number, number];
 
-/** How long a drop may fly before the room lets it be taken, seconds: its 94 ticks (crates/room/src/drops.rs
- *  REST_TICKS), the longest a crystal bounces. */
-export const REST_S = 94 / 60;
 const TICK_S = 1 / 60;
 /** How long its line takes to rise once it settles, seconds. */
 export const RISE_S = 0.4;
@@ -22,7 +19,8 @@ export const RISE_S = 0.4;
 /** How a drop moves: its middle's height over the body as it leaves, its pop upward and the most more it may have,
  *  the pull, the share of a bounce's speed it keeps and of its way along the ground, the speed under which it settles,
  *  its middle's height over the ground as it bounces and as it hovers, how long it takes to rise there, its bob's
- *  height and rate (radians a second), and its turn in the air and at rest (radians a second). project-final's. */
+ *  height and rate (radians a second), and its turn in the air and at rest (radians a second): project-final's. And how
+ *  long the room waits before it may be taken, the longest it can bounce (crates/room/src/drops.rs, its REST_TICKS). */
 export interface Feel {
   readonly leaves: number;
   readonly pop: number;
@@ -38,6 +36,7 @@ export interface Feel {
   readonly bobRate: number;
   readonly airTurn: number;
   readonly restTurn: number;
+  readonly restS: number;
 }
 
 export const CRYSTAL_FEEL: Feel = {
@@ -55,6 +54,7 @@ export const CRYSTAL_FEEL: Feel = {
   bobRate: 1.9,
   airTurn: 7,
   restTurn: 2.4,
+  restS: 94 / 60,
 };
 
 /** Ammunition pops lower and settles sooner. */
@@ -73,12 +73,13 @@ export const AMMO_FEEL: Feel = {
   bobRate: 2,
   airTurn: 5,
   restTurn: 2.4,
+  restS: 60 / 60,
 };
 
 /** How long each arc of a flight lasts, seconds: the first from leaving `fall` metres over where it lands, popped up
  *  at `pop`, then each bounce, until one lands slower than it settles. */
 export function arcsOf(feel: Feel, pop: number, fall: number): number[] {
-  const first = (pop + Math.sqrt(pop * pop + 2 * feel.pull * Math.max(0, fall))) / feel.pull;
+  const first = (pop + Math.sqrt(Math.max(0, pop * pop + 2 * feel.pull * fall))) / feel.pull;
   const arcs = [first];
   for (let speed = feel.pull * first - pop; speed >= feel.settles;) {
     speed *= feel.keeps;
@@ -96,11 +97,14 @@ export interface Motion {
   readonly turn: number;
 }
 
-/** A drop's motion thrown from `from` (a body's feet) to rest on `rest`, its pop and its first turn drawn from `seed`. */
+/** A drop's motion thrown from `from` (a body's feet) to rest on `rest`, its pop and its first turn drawn from
+ *  `seed`. */
 export function motionAt(feel: Feel, from: Point, rest: Point, seed: number, seconds: number): Motion {
-  const pop = feel.pop + hashOf(seed) * feel.popMore;
   const floor = rest[2] + feel.low;
-  const arcs = arcsOf(feel, pop, from[2] + feel.leaves - floor);
+  const fall = from[2] + feel.leaves - floor;
+  // Thrown up to a spot over where it leaves, it pops at least high enough to land there.
+  const pop = Math.max(feel.pop + hashOf(seed) * feel.popMore, Math.sqrt(2 * feel.pull * Math.max(0, -fall)));
+  const arcs = arcsOf(feel, pop, fall);
   const flight = arcs.reduce((sum, each) => sum + each, 0);
   const firstTurn = hashOf(seed + 0.5) * 2 * Math.PI;
   if (seconds >= flight) {
@@ -157,10 +161,8 @@ export function pictureOf(
 ): { readonly body: PixelPicture; readonly halo: PixelPicture | null } {
   if (drop.kind === DROPPED.ammoBox) return { body: AMMO_BOX, halo: null };
   if (drop.kind === DROPPED.crate) return { body: AMMO_CRATE, halo: null };
-  const spin = crystalSpin(drop.rarity);
   const frame = ((Math.floor((turn / (2 * Math.PI)) * SPIN_FRAMES) % SPIN_FRAMES) + SPIN_FRAMES) % SPIN_FRAMES;
-  const found = spin[frame] ?? spin[0];
-  return { body: found?.body ?? AMMO_BOX, halo: found?.halo ?? null };
+  return crystalFrame(drop.rarity, frame);
 }
 
 /** A colour written `#rrggbb` as red, green and blue from 0 to 1. */
@@ -187,8 +189,8 @@ const runsKept = [new WeakMap<PixelPicture, readonly number[]>(), new WeakMap<Pi
 /**
  * A picture's rectangles of one colour, each as far across and down as it may run. Laid in layers, its colours go on
  * in turn, the one spread widest first, each running under the colours laid after it, so a diamond inside a diamond
- * is a rectangle a step rather than a run a row. Laid flat, for a picture seen through or in many colours, where one layer would show
- * through another, no rectangle covers another.
+ * is a rectangle a step rather than a run a row. Laid flat, for a picture seen through or in many colours, where one
+ * layer would show through another or stand too far before it, no rectangle covers another.
  */
 function runsOf(picture: PixelPicture, asked: boolean): readonly number[] {
   const layered = asked && picture.colours.length <= MOST_LAYERS;
@@ -423,7 +425,8 @@ export class DropsShown {
       lying.add(key);
       if (!this.began.has(key)) {
         // Told of at rest, it is as though it rested long ago, and chimes no more.
-        const flown = drop.flying > 0 ? REST_S - drop.flying * TICK_S : REST_S + RISE_S;
+        const { restS } = feelOf(drop);
+        const flown = drop.flying > 0 ? restS - drop.flying * TICK_S : restS + RISE_S;
         this.began.set(key, seconds - Math.max(0, flown));
         if (drop.flying === 0) this.rested.add(key);
       }

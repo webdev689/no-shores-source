@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
+import { readFromRoom } from '../network/messages.ts';
 import { AMMO_BOX, AMMO_CRATE, type PixelPicture, resourcePicture } from './dropPictures.ts';
 import {
   AMMO_FEEL,
@@ -8,7 +10,6 @@ import {
   DropsShown,
   LINE_M,
   PIXEL_M,
-  REST_S,
   RISE_S,
   arcsOf,
   lineLight,
@@ -24,6 +25,7 @@ type Point = readonly [number, number, number];
 const FROM = [0, -10, 0] as const;
 const REST = [0, -8, 0.5] as const;
 const EYE = [0, 0, 1.6] as const;
+const FROM_FEET = [0, 0, 0] as const;
 
 const drop = (fields: Partial<GearDrop>): GearDrop => ({
   id: 1,
@@ -57,7 +59,7 @@ test('a drop pops out of the body, bounces until it settles where the room threw
   assert.ok(Math.abs(thrown(0).middle[2] - 1.1) < 1e-9 && !thrown(0).settled, 'it leaves the body 1.1 m up');
   const flight = arcsOf(CRYSTAL_FEEL, CRYSTAL_FEEL.pop, 1).length;
   assert.ok(flight >= 3, 'it comes down and bounces at least twice');
-  const steps = Array.from({ length: 200 }, (unused, step) => thrown((step / 200) * REST_S));
+  const steps = Array.from({ length: 200 }, (unused, step) => thrown((step / 200) * CRYSTAL_FEEL.restS));
   assert.ok(Math.max(...steps.map((each) => each.middle[2])) > 1.5, 'it pops up over where it left');
   const settled = steps.findIndex((each) => each.settled);
   assert.ok(settled > 0, 'it settles within the time the room gives it');
@@ -69,20 +71,45 @@ test('a drop pops out of the body, bounces until it settles where the room threw
     assert.ok(each.middle[1] >= last - 1e-9, 'it never flies back toward the body');
     last = each.middle[1];
   }
-  const hovering = Array.from({ length: 100 }, (unused, step) => thrown(REST_S + 1 + step / 20).middle[2] - REST[2]);
+  const hovering = Array.from(
+    { length: 100 },
+    (unused, step) => thrown(CRYSTAL_FEEL.restS + 1 + step / 20).middle[2] - REST[2],
+  );
   assert.ok(Math.min(...hovering) >= 0.42 - 0.05 - 1e-9 && Math.max(...hovering) <= 0.42 + 0.05 + 1e-9, 'hovering');
   assert.ok(Math.max(...hovering) - Math.min(...hovering) > 0.08, 'and bobbing');
   const turned = (from: number) => thrown(from + 0.1).turn - thrown(from).turn;
-  assert.ok(turned(0.1) > turned(REST_S + 1) * 2, 'it turns fast in the air and slowly at rest');
+  assert.ok(turned(0.1) > turned(CRYSTAL_FEEL.restS + 1) * 2, 'it turns fast in the air and slowly at rest');
 });
 
-test('the room waits for the longest a drop can bounce, and no longer', () => {
+test('the room waits for the longest each drop can bounce, and no longer', () => {
   for (const feel of [CRYSTAL_FEEL, AMMO_FEEL]) {
     // Its highest pop, from a body a step over where it lands.
     const longest = arcsOf(feel, feel.pop + feel.popMore, feel.leaves - feel.low + 0.5).reduce((sum, arc) => sum + arc);
-    assert.ok(longest <= REST_S, `${longest} s`);
-    if (feel === CRYSTAL_FEEL) assert.ok(longest > REST_S - 1 / 60, 'the crystal sets it');
+    assert.ok(longest <= feel.restS && longest > feel.restS - 1 / 60, `${longest} s against ${feel.restS} s`);
   }
+});
+
+test('the page waits on an Ammo box as long as the room does: a box it has just laid flies its whole rest', async () => {
+  // crates/protocol/src/gear_wire_tests.rs writes it, an Ammo box just laid among its gear.
+  const bytes = await readFile(new URL('../../../target/protocol/gear.bin', import.meta.url));
+  const gear = readFromRoom(new Uint8Array(bytes));
+  const box = gear?.kind === 'gear' ? gear.drops.find((each) => each.kind === DROPPED.ammoBox) : undefined;
+  assert.equal(box?.flying, Math.round(AMMO_FEEL.restS * 60));
+});
+
+test('thrown up to a spot over the body, a drop pops high enough to land there, never jumping', () => {
+  for (const feel of [CRYSTAL_FEEL, AMMO_FEEL])
+    for (const rise of [0, 0.5, 1.2, 2, 3]) {
+      const rest = [0, 2, rise] as const;
+      let [last, worst] = [motionAt(feel, FROM_FEET, rest, 3, 0).middle[2], 0];
+      for (let seconds = 0.001; seconds < feel.restS + 1; seconds += 0.001) {
+        const height = motionAt(feel, FROM_FEET, rest, 3, seconds).middle[2];
+        worst = Math.max(worst, Math.abs(height - last));
+        last = height;
+      }
+      assert.ok(worst < 0.02, `${rise} m up: ${worst} m in a millisecond`);
+      assert.ok(motionAt(feel, FROM_FEET, rest, 3, feel.restS).settled, `${rise} m up: settled in time`);
+    }
 });
 
 test('a Vestige is its crystal, turning through its frames, in its rarity; ammunition is its picture', () => {
@@ -132,7 +159,7 @@ test('in flight a drop is its picture alone; at rest its line rises, a rarer one
     Array.from({ length: flying.length / MARK_FLOATS }, (unused, vertex) => flying[vertex * MARK_FLOATS + 6]),
   );
   assert.deepEqual([...opacities].sort(), [-1, 1], 'the gem solid, its halo light added');
-  const rested = shown.frame([drop({ rarity: 4 })], 10 + REST_S + RISE_S, EYE).marks;
+  const rested = shown.frame([drop({ rarity: 4 })], 10 + CRYSTAL_FEEL.restS + RISE_S, EYE).marks;
   const line = rested.slice(rested.length - 12 * 2 * 6 * MARK_FLOATS);
   const heights = Array.from(
     { length: line.length / MARK_FLOATS },
@@ -155,16 +182,16 @@ test('in flight a drop is its picture alone; at rest its line rises, a rarer one
 test('a Vestige chimes by its rarity as it comes to rest, once; one told of at rest flies and chimes no more', () => {
   const shown = new DropsShown();
   assert.deepEqual(shown.frame([drop({ rarity: 2 })], 0, EYE).rested, []);
-  assert.deepEqual(shown.frame([drop({ rarity: 2 })], REST_S, EYE).rested, [2]);
-  assert.deepEqual(shown.frame([drop({ rarity: 2 })], REST_S + 1, EYE).rested, []);
+  assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS, EYE).rested, [2]);
+  assert.deepEqual(shown.frame([drop({ rarity: 2 })], CRYSTAL_FEEL.restS + 1, EYE).rested, []);
   const late = new DropsShown();
   assert.deepEqual(late.frame([drop({ id: 9, rarity: 4, flying: 0 })], 0, EYE).rested, []);
   const ammo = new DropsShown();
   ammo.frame([drop({ kind: DROPPED.ammoBox })], 0, EYE);
-  const box = ammo.frame([drop({ kind: DROPPED.ammoBox })], REST_S, EYE);
+  const box = ammo.frame([drop({ kind: DROPPED.ammoBox })], AMMO_FEEL.restS, EYE);
   assert.deepEqual(box.rested, [], 'ammo never chimes');
   assert.deepEqual(box.landed, [drop({ kind: DROPPED.ammoBox }).at], 'but every drop is told of where it lands');
-  assert.deepEqual(ammo.frame([drop({ kind: DROPPED.ammoBox })], REST_S + 1, EYE).landed, [], 'once');
+  assert.deepEqual(ammo.frame([drop({ kind: DROPPED.ammoBox })], AMMO_FEEL.restS + 1, EYE).landed, [], 'once');
 });
 
 test('an Ammo box at rest stepped onto at full ammunition is told once each time, never while standing on it', () => {
@@ -191,7 +218,10 @@ test('an Ammo box at rest stepped onto at full ammunition is told once each time
   assert.deepEqual(walk(new DropsShown(), [[onBox, false], full(onBox)]), [false, true], 'nor until it is full there');
   const steps = Array.from({ length: 100 }, () => full(onBox));
   const told = walk(new DropsShown(), steps, [drop({ kind: DROPPED.ammoBox })]).indexOf(true);
-  assert.ok(told > 20 && told <= 94, `only once it settles, by the time the room lets it be taken: ${told}`);
+  assert.ok(
+    told > 20 && told <= AMMO_FEEL.restS * 60,
+    `only once it settles, by the time the room lets it be taken: ${told}`,
+  );
   for (const kind of [DROPPED.vestige, DROPPED.crate])
     assert.deepEqual(walk(new DropsShown(), [full(onBox)], [drop({ kind, flying: 0 })]), [false], 'an Ammo box alone');
 });

@@ -1,7 +1,7 @@
 // The gear screens' glyphs, drawn pixel by pixel to sit with the forge's pixel figures and Enhanced Plus's carved
-// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a Vestige's crystal, an Ammo box
-// and an Ammo crate (the pictures drops stand as on the ground), and an empty place. Enhanced Plus has no icons of its
-// own for these, and the classic item art stays behind, so they are ours.
+// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a Vestige's crystal, an Ammo
+// box and an Ammo crate (the pictures drops stand as on the ground), and an empty place. Enhanced Plus has no icons of
+// its own for these, and the classic item art stays behind, so they are ours.
 
 import { AMMO_BOX, AMMO_CRATE, OUTLINE, resourcePicture } from '../combat/dropPictures.ts';
 import { crystalStill } from '../combat/vestigeCrystal.ts';
@@ -139,11 +139,12 @@ export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): s
   return pictureSvg(MAPS[glyph], PALETTES[glyph] ?? [OUTLINE]);
 }
 
-/** The letters a map draws with, each a colour of its palette in turn; a dot is none. */
+/** The letters a hand-drawn map draws with, each a colour of its palette in turn; a dot is none. A picture is read by
+ *  each letter's code from 'a', so a baked one (a crystal's) may run past 'l'. */
 export const GLYPH_LETTERS = 'abcdefghijkl';
 
-/** Rows of letters as an SVG picture as large as its map (12 cells, a ship glyph's 24, a crystal's 18): each run of one letter
- *  along a row a strip in its colour, crisp at any size. */
+/** Rows of letters as an SVG picture as large as its map (12 cells, a ship glyph's 24, a crystal's 18): each run of
+ *  one letter along a row a strip in its colour, crisp at any size. */
 function pictureSvg(rows: readonly string[], colours: readonly string[]): string {
   const strips: string[] = [];
   rows.forEach((row, line) => {

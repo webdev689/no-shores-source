@@ -58,7 +58,7 @@ const HALF = (CROWN + PAVILION) / 2;
  *  screens' still is 18 pixels, drawn twice over in a glyph's 36. */
 const FRAME_M = 0.7;
 const FRAME_PIXELS = 27;
-export const PIXEL_M = FRAME_M / FRAME_PIXELS;
+const PIXEL_M = FRAME_M / FRAME_PIXELS;
 const FILL = 0.66;
 export const SPIN_FRAMES = 12;
 const STILL_PIXELS = 18;
@@ -285,25 +285,25 @@ export interface CrystalFrame {
 }
 
 const toneOf = (rarity: number): Tones => TONES[rarity] ?? (TONES[0] as Tones);
-const spins = new Map<number, readonly CrystalFrame[]>();
+const frames = new Map<string, CrystalFrame>();
 const stills = new Map<number, PixelPicture>();
 
-/** A rarity's turn, baked the first time it is asked for. */
-export function crystalSpin(rarity: number): readonly CrystalFrame[] {
-  const kept = spins.get(rarity);
+/** A frame of a rarity's turn, baked the first time it is shown: one at a time, so a crystal first seen costs a frame
+ *  of baking, not its whole turn. */
+export function crystalFrame(rarity: number, frame: number): CrystalFrame {
+  const key = `${rarity}:${frame}`;
+  const kept = frames.get(key);
   if (kept) return kept;
-  const frames = Array.from({ length: SPIN_FRAMES }, (unused, frame): CrystalFrame => {
-    const baked = bake(toneOf(rarity), (frame / SPIN_FRAMES) * TAU, FRAME_PIXELS);
-    const colourAt = (pixel: number) => baked.colours[pixel] ?? ([0, 0, 0] as Vector);
-    const solid = (pixel: number) => (baked.shown[pixel] === 1 ? colourHex(colourAt(pixel)) : null);
-    const glowing = (pixel: number) => {
-      const alpha = baked.shown[pixel] ?? 0;
-      return alpha > 0 && alpha < 1 ? colourHex(scaled(colourAt(pixel), alpha)) : null;
-    };
-    return { body: pictured(baked, solid, PIXEL_M), halo: pictured(baked, glowing, PIXEL_M) };
-  });
-  spins.set(rarity, frames);
-  return frames;
+  const baked = bake(toneOf(rarity), (frame / SPIN_FRAMES) * TAU, FRAME_PIXELS);
+  const colourAt = (pixel: number) => baked.colours[pixel] ?? ([0, 0, 0] as Vector);
+  const solid = (pixel: number) => (baked.shown[pixel] === 1 ? colourHex(colourAt(pixel)) : null);
+  const glowing = (pixel: number) => {
+    const alpha = baked.shown[pixel] ?? 0;
+    return alpha > 0 && alpha < 1 ? colourHex(scaled(colourAt(pixel), alpha)) : null;
+  };
+  const made = { body: pictured(baked, solid, PIXEL_M), halo: pictured(baked, glowing, PIXEL_M) };
+  frames.set(key, made);
+  return made;
 }
 
 /** A rarity's crystal for the screens: still, its halo see-through. */

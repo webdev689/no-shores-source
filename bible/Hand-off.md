@@ -268,7 +268,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   yes to merge ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
   [[Pick - project-final Drops]]): the crystal baked in the page in the owner's white, green, yellow, red and cyan
   blue; every drop popped, bounced, settled and hovering as project-final's loot; the line kept over the halo; the
-  room's rest 94 ticks; the Vestige glyph the crystal's still; Magic green and Legendary red everywhere. Not yet seen
+  room's rest 94 ticks for a Vestige and 60 for ammunition; the Vestige glyph the crystal's still; Magic green and Legendary red everywhere. Not yet seen
   in a live fight.
 - **The controls and the marks are on `main`**, merged with the owner's yes ("Yes start the merges and deploys"),
   each after an independent audit whose findings were all fixed ("Fix all"): the key strip that follows the moment and

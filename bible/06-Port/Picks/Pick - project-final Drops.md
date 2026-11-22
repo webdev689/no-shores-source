@@ -33,12 +33,20 @@ a halo, popped out of a body to bounce, settle and hover. The owner approved it 
   ([[Gear]], "Drops").
 - The random scatter: the room chooses where a drop rests, and the flight is fitted to land there.
 - The ammo bricks, the cache chest, the Bits shard and the Scraps hex, the WebGL billboards and the atlas files.
-- The tiers' blue and purple: the owner's colours are white, green, yellow, red and cyan blue.
+- The tiers' blue and purple: the owner's colours are white, green, yellow, red and cyan blue, taken from the
+  rarities. Legendary's red is `#fa5e5a`, a little lighter than project-final's `#f04442`, so its name reads at 4.5:1
+  on the kit's presses.
+- The smooth glow over the gem: it and the halo are both cut into 8 steps, so a frame keeps to a few dozen colours,
+  and colours are rounded where project-final truncates them.
+- The halo blended over what stands behind: it is added light, as the line is.
+- One wait for every drop: a Vestige may be taken after 94 ticks and ammunition after 60, the longest each bounces.
 - The engram name.
 
 ## Our version
 
-The crystal is baked in the page the first time a rarity is shown, so no picture is kept as a file
-(`client/src/combat/vestigeCrystal.ts`), and drawn as the drops' marks are, its halo as added light. The motion is
+The crystal is baked in the page a frame at a time, the first time its turn reaches each, so no picture is kept as
+a file and no frame waits on a whole turn (`client/src/combat/vestigeCrystal.ts`). It is drawn as the drops' marks
+are, laid flat in one plane since its colours are many, its halo as added light. Thrown up to a spot over the body,
+a drop pops at least high enough to land there. The motion is
 worked out from the flight's arcs rather than stepped, so the same drop is in the same place on every frame
 (`client/src/combat/drops.ts#motionAt`). See [[Gear]], "Drops".

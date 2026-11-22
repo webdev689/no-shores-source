@@ -47,7 +47,7 @@ code:
   - crates/room/src/power.rs#pay_kill
   - crates/room/src/drops.rs#drop_spoils
   - client/src/combat/drops.ts#motionAt
-  - client/src/combat/vestigeCrystal.ts#crystalSpin
+  - client/src/combat/vestigeCrystal.ts#crystalFrame
   - crates/gear/src/ammo.rs#capacity
   - crates/gear/src/ammo.rs#box_chance
   - crates/room/src/asks.rs#answer
@@ -278,8 +278,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
-  section's ring, so a piece never rests out of its player's reach. A piece is taken only once 94 ticks (about 1.6 s)
-  have passed, the longest it can bounce.
+  section's ring, so a piece never rests out of its player's reach. A piece is taken only once it has had time to
+  settle, the longest it can bounce: a Vestige 94 ticks (about 1.6 s) after it is thrown, ammunition 60 (1 s).
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
   the room sends the player's gear again without it, so their page stops showing it.
@@ -288,16 +288,17 @@ DFO's spoils ([[Pick - Loot Drops]]).
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
   says "Ammo full" on the player, once each time they step within reach of such a box at rest, never again while they
   stand there ([[Interface]], "A blow's words"; `DropsShown`).
-- **Seen** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]], [[Pick - project-final Drops]]).
-  Each piece pops up out of the body (a Vestige from 1.1 m at 4.4 to 5.4 m/s, ammunition from 0.9 m at 2.8 to 3.4),
-  falls under 16 m/s², and bounces, keeping 0.4 of its speed (ammunition 0.3) and 0.55 of its way along the ground at
-  each, until it lands slower than 1.1 m/s (1.6); it comes down on the room's spot. Settled, it rises over 0.35 s
-  (0.28) from 0.18 m to hover at 0.42 m (0.2 to 0.5), bobbing 5 cm (6) and turning: 7 radians a second in the air,
-  2.4 at rest. A Vestige is a crystal, a faceted gem crusted with shards, in its rarity's white, green, yellow, red or
-  cyan blue, baked as it turns into 12 frames of 27 pixels for 0.7 m, cel-shaded in five bands, its outline darkened
-  and a halo of its glow round it, added light; an Ammo box or crate is its picture, turned to the eye. A thin line
-  rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's
-  white at 0.7 m. A glint climbs it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it settles
+- **Seen** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
+  [[Pick - project-final Drops]]). Each piece pops up out of the body (a Vestige from 1.1 m at 4.4 to 5.4 m/s, ammunition from 0.9 m at 2.8
+  to 3.4), falls under 16 m/s², and bounces, keeping 0.4 of its speed (ammunition 0.3) and 0.55 of its way along the
+  ground at each, until it lands slower than 1.1 m/s (1.6); it comes down on the room's spot, and one thrown up to a
+  spot over the body pops at least high enough to land there. Settled, it rises over 0.35 s (0.28) from 0.18 m to
+  hover at 0.42 m (0.2 to 0.5), bobbing 5 cm (6). A Vestige is a crystal, turning 7 radians a second in the air and
+  2.4 at rest, a faceted gem crusted with shards, in its rarity's white, green, yellow, red or cyan blue, baked into
+  12 frames of 27 pixels for 0.7 m as its turn first reaches each, cel-shaded in five bands, its outline darkened and
+  a halo of its glow round it, added light; an Ammo box or crate is its picture, turned to the eye. A thin line rises
+  from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white
+  at 0.7 m. A glint climbs it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it settles
   ([[Interface]]).
 
 ## Ammo

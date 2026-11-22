@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { resourcePicture } from '../combat/dropPictures.ts';
-import { crystalSpin } from '../combat/vestigeCrystal.ts';
+import { crystalFrame } from '../combat/vestigeCrystal.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { gearMarked, nodesInReach } from './gearGround.ts';
 
@@ -29,12 +29,12 @@ test("the stall wears a sealed Vestige's mark over it and each node not yet spen
   const marked = gearMarked({ x: 20, y: 0 }, lying);
   assert.deepEqual(
     marked.map((mark) => mark.picture),
-    [crystalSpin(0)[0]?.body, resourcePicture(1)],
+    [crystalFrame(0, 0).body, resourcePicture(1)],
     'a drop lying for the player wears none',
   );
   assert.deepEqual(marked[0]?.at.slice(0, 2), [20, 0], 'over the stall');
   assert.deepEqual(
     gearMarked({ x: 20, y: 0 }, null).map((mark) => mark.picture),
-    [crystalSpin(0)[0]?.body],
+    [crystalFrame(0, 0).body],
   );
 });

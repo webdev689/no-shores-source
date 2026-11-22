@@ -273,7 +273,7 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!((drops[0].id(), drops[0].rarity(), drops[0].slot(), drops[0].kind()), (3, 2, Slot::Torso as u8, 0));
     assert_eq!(drops[0].at().map(|at| at.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
     assert_eq!(drops[0].from().map(|from| from.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
-    let flying = u8::try_from(room::REST_TICKS - 1).expect("a tick");
+    let flying = u8::try_from(room::AMMO_REST_TICKS - 1).expect("a tick");
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
 }
 
