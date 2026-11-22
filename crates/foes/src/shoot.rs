@@ -199,7 +199,7 @@ pub fn fire(
     aim: bool,
 ) -> Ask {
     let tick = here.tick();
-    let clear = sight.seen && sees(here.world.blocks, &here.fighter, &sight.fighter);
+    let clear = sight.seen && sees(here.world.blocks, here.world.terrain, &here.fighter, &sight.fighter);
     let ready = matches!(here.fighter.action, Action::Idle) && tick >= brain.bow.shot_ready;
     let facing = off(brain.heading, sight.toward) <= SWING_FACE / 4.0;
     let roll = if aim { 0.0 } else { here.dice.roll(Purpose::Aimed) };

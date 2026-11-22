@@ -70,6 +70,7 @@ impl Room {
                 seed: self.world_seed,
                 fighters: noticed,
                 blocks: &self.blocks,
+                terrain: &self.floor,
                 routes: &routes[mesh],
                 spots: &spots[mesh],
                 director: self.director,

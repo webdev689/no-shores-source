@@ -22,6 +22,7 @@ use std::cell::RefCell;
 
 mod course_door;
 mod deck_door;
+mod dungeon_door;
 mod snapshot_door;
 pub use snapshot_door::snapshot;
 mod fighter_door;
@@ -29,12 +30,15 @@ mod fleet_door;
 mod gear_door;
 mod isle_door;
 mod roster_door;
+mod run_door;
 mod sea_door;
 mod sent;
 mod waters_door;
 
+pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
-pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute};
+pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
+pub use run_door::{activities_json, gates_json, open_run};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's, and why it takes no
 /// player when its node is locked; the sea; or a fleet.
@@ -82,6 +86,9 @@ struct NodeFile {
     boxes: Vec<[f64; BLOCK_FLOATS]>,
     #[serde(default)]
     counters: Vec<NodeCounter>,
+    /// In Overlook's social space, where a player stands to read the bounty board.
+    #[serde(default)]
+    board: Option<[f64; 2]>,
     #[serde(default)]
     shape_spots: Vec<[f64; 2]>,
     #[serde(default)]
@@ -110,6 +117,7 @@ fn counter_of(found: &NodeCounter) -> Option<Counter> {
         "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
         "tailor" => CounterKind::Tailor,
         "tack" => CounterKind::Tack,
+        "mail" => CounterKind::Mail,
         _ => CounterKind::Faction(faction()?.id),
     };
     Some(Counter { kind, at: found.at })
@@ -168,11 +176,15 @@ pub fn open_node(text: &[u8]) -> bool {
     let blocks = node.boxes.iter().map(Block::from_floats);
     let section = Section { ring: node.ring, spawns: node.spawns, falls_kill: node.kind == NodeKind::Social };
     // Its garrison stands at its island's levels; a city's social space serves a player's gear at its counters; a
-    // patrol keeps its island's resource nodes.
+    // patrol keeps its island's resource nodes and lays its dungeons' entrances; an Elite Dungeon's node lays its one.
     let levels = gear::world::island_levels(&node.continent);
     let floor = Floor::Land(Box::new(node.ground));
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
-    room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
+    room.set_island(&node.continent);
+    room.counters = (node.kind == NodeKind::Social).then(|| {
+        let board = node.board.map(|at| Counter { kind: CounterKind::Board, at });
+        node.counters.iter().filter_map(counter_of).chain(board).collect()
+    });
     room.shape_spots = node.shape_spots;
     room.set_places(node.places);
     room.set_paths(node.paths);
@@ -180,12 +192,20 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource
     {
-        room.start_patrol(u8::try_from(resource).unwrap_or_default(), &node.resources);
+        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default(), &node.resources);
     }
-    let refusal = node.locked.then(|| format!("{} is locked", node.name));
+    if node.kind == NodeKind::Dungeon {
+        room.lay_elite_entrance(&node.id);
+    }
+    let refusal = lock_words(node.locked, &node.name);
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
     keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });
     true
+}
+
+/// Why a locked node's room takes no player, in the words the page shows; None while it is open.
+fn lock_words(locked: bool, name: &str) -> Option<String> {
+    locked.then(|| format!("{name} is locked"))
 }
 
 /// Why the open room takes no player: a locked node's says so; None for any other room.
@@ -553,48 +573,21 @@ pub extern "C" fn room_story_wreck() {
     story_wreck();
 }
 
-/// A fleet player's ship stepped by the helms written at `address`, as `fleet_door::predict` reads them; answers their
-/// ship's and its pose's numbers.
-///
-/// # Safety
-/// `address` must point at `length` readable bytes, as `reserve` gives.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn fleet_predict(address: *const u8, length: usize) -> u64 {
-    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
-    hand_over(fleet_door::predict(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
-}
-
-/// A fleet player's lay for the look written at `address`, as `fleet_door::lay` reads it; answers its numbers.
-///
-/// # Safety
-/// `address` must point at `length` readable bytes, as `reserve` gives.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn fleet_lay(address: *const u8, length: usize) -> u64 {
-    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
-    let numbers = floats_of(unsafe { std::slice::from_raw_parts(address, length) });
-    hand_over(fleet_door::lay(&numbers).iter().flat_map(|value| value.to_le_bytes()).collect())
-}
-
 #[cfg(test)]
 #[path = "climb_door_tests.rs"]
 mod climb_door_tests;
 #[cfg(test)]
 #[path = "course_door_tests.rs"]
 mod course_door_tests;
-
 #[cfg(test)]
 #[path = "door_tests.rs"]
 mod door_tests;
-
 #[cfg(test)]
 #[path = "fleet_door_tests.rs"]
 mod fleet_door_tests;
-
 #[cfg(test)]
 #[path = "garrison_door_tests.rs"]
 mod garrison_door_tests;
-
 #[cfg(test)]
 #[path = "load_tests.rs"]
 mod load_tests;

@@ -45,3 +45,9 @@ export class WorldClock {
 
 /** The page's one world clock, which the rooms' snapshots set right and the sky reads. */
 export const WORLD_CLOCK = new WorldClock();
+
+/** The moment now in milliseconds since 1970, as the rooms keep it: the wall's, set right by their word, so a page
+ *  whose own clock is wrong still turns the day and the week with them. */
+export function roomNow(): number {
+  return EPOCH_UNIX_MS + WORLD_CLOCK.seconds() * 1000;
+}

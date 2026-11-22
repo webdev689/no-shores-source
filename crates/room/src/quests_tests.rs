@@ -83,6 +83,8 @@ pub(crate) fn node_room(id: &str, places: &[(&str, [f64; 2], f64)]) -> Room {
 /// A character on a quest's task: pledged to its house, every quest before it done.
 pub(crate) fn on_road(quest: usize, task: usize) -> Character {
     let mut character = Character::starting();
+    // A road is walked past the prologue, which a patrol's gate asks for.
+    character.story.prologue = true;
     character.allegiance.pledge = quests().quests[quest].faction;
     character.quests.set_task(quest, task);
     let character = Character::from_json(&character.to_json()).expect("made whole");

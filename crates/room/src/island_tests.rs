@@ -178,6 +178,18 @@ fn a_wrecks_salvage_is_paid_into_the_scavengers_ship_materials() {
 }
 
 #[test]
+fn an_island_of_a_harder_sea_shuts_to_a_character_below_its_level_and_gives_it_none() {
+    let mut room = Room::island(&plan(Kind::Cove), AT, None, Some((5, 9)), None);
+    room.set_difficulty(gear::Difficulty::Abyss);
+    let player = room.join().expect("a room with space");
+    let low = gear::Character::starting();
+    assert_eq!(room.shut(&low), Some(gear::gate::Shut::Seas(gear::Difficulty::Abyss)), "Abyss seas open at level 20");
+    assert!(!room.restore_character(player, &low.to_json()), "never given");
+    room.set_difficulty(gear::Difficulty::Normal);
+    assert_eq!(room.shut(&low), None, "an island of the Normal sea is open to anyone");
+}
+
+#[test]
 fn an_islands_nodes_all_stand_and_each_is_gathered_once_by_each_account_while_its_room_is_open() {
     let plan = plan(Kind::Cove);
     const BRINEGLASS: u8 = 0;

@@ -74,7 +74,8 @@ fn every_garrison_foe_stands_at_its_islands_level_raised_by_the_seas_its_ranks_h
 #[test]
 fn one_garrison_foe_in_five_is_drawn_a_shield_of_an_element_drawn_evenly_and_a_level_drawn_evenly() {
     let seed = node_seed("glade");
-    let girds: Vec<(u8, Option<Element>)> = (0..6000).map(|nth| gird_of(seed, nth, Some((1, 4)))).collect();
+    let girds: Vec<(u8, Option<Element>)> =
+        (0..6000).map(|nth| gird_of(seed, nth, Some((1, 4)), gear::element::SHIELD_CHANCE)).collect();
     let share = |count: usize| count as f64 / girds.len() as f64;
     let shields: Vec<Element> = girds.iter().filter_map(|(_, shield)| *shield).collect();
     assert!((share(shields.len()) - 0.2).abs() < 0.02, "one in five: {}", share(shields.len()));
@@ -86,8 +87,12 @@ fn one_garrison_foe_in_five_is_drawn_a_shield_of_an_element_drawn_evenly_and_a_l
         let each = share(girds.iter().filter(|(drawn, _)| *drawn == level).count());
         assert!((each - 0.25).abs() < 0.03, "level {level} evenly: {each}");
     }
-    assert_eq!(gird_of(seed, 7, None).0, 0, "no island, no level");
-    assert_eq!(gird_of(seed, 7, Some((1, 4))), gird_of(seed, 7, Some((1, 4))), "the same draw every time");
+    assert_eq!(gird_of(seed, 7, None, gear::element::SHIELD_CHANCE).0, 0, "no island, no level");
+    assert_eq!(
+        gird_of(seed, 7, Some((1, 4)), gear::element::SHIELD_CHANCE),
+        gird_of(seed, 7, Some((1, 4)), gear::element::SHIELD_CHANCE),
+        "the same draw every time"
+    );
 }
 
 #[test]

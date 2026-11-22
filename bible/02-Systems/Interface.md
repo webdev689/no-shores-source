@@ -37,6 +37,15 @@ code:
   - client/src/plus/tones.ts#TONES
   - client/src/plus/tones.ts#FILLS
   - client/src/plus/emblems.ts#emblemSvg
+  - client/src/game/journalPage.ts#Journal
+  - client/src/game/journalTimers.ts#timersNode
+  - client/src/game/journalWords.ts#questCardsOf
+  - client/src/plus/journalArt.ts#bannerSvg
+  - client/src/plus/journalArt.ts#bannerFor
+  - client/src/game/bountyGlyphs.ts#bountyGlyphSvg
+  - client/src/game/bountyTiles.ts#bountyTileNode
+  - client/src/game/journalIcons.ts#iconSvg
+  - client/src/game/entranceCard.ts#EntranceCardView
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
   - client/src/game/hud.ts#Hud
@@ -166,6 +175,7 @@ code:
   - client/src/game/npc/npcSpeech.ts#speechBand
   - client/src/game/npc/factionRows.ts#factionRows
   - content/story/keepers.json
+  - client/src/game/bountyBoard.ts#boardPage
   - client/src/game/gearNodes.ts#ringNode
   - client/src/player/elementGlyphs.ts#elementSvg
   - client/src/face.ts#outlineOf
@@ -219,7 +229,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   atlas grows a layer at a time, up to 8 of 2048 square; full, it is laid afresh once the frame is
   drawn, each picture laid again as it is next wanted. A quad can turn about its middle, as an arrow does. One larger
   than a layer (2047 device pixels a side) is laid scaled down to fit and stretched back over its box; one whose own
-  texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn.
+  texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn. One laid at no
+  size, as a page's is on its first frame before its room is known, is not drawn.
 - **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the
   pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
   way, or by the pad's cross, whose up and down always move focus and whose left and right step a slider; A presses,
@@ -277,7 +288,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **A page of the menu** is a function of what the menu gives it (`MenuContext`) answering its nodes each frame: the
   gear and the way to ask of it, the pictures, the room its body leaves, the menu's sizes on this screen, the holds,
   the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
-  everything on the screen and kept above the footer; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
+  everything on the screen and kept above the footer, the pointer passing through it to what it describes where
+  there is no room beside it; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
   reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view, and
   Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
   Art's and Appearance stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
@@ -311,7 +323,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   words in a span's colour wrapping across a break, at two sizes, with a halo and with a hard shadow, a chip, a field
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
-  each size.
+  each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
+  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card. A shot may hear its events on a later
+  frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
+  to come; the page asks for reduced motion, so a screen stands settled.
 
 ## How it works
 
@@ -643,13 +658,16 @@ font made where the face is read (`useMendedFace`, `trueType.ts`), first in its 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
 the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
 whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
-keys on keycaps where the menu is wide enough; Journal
-and Guild marked Later, each a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
+keys on keycaps where the menu is wide enough; Guild
+marked Later, a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
 between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
-username or Discord and hollow for a guest's; pressed, it opens Settings. Under them, the whole width of the menu,
-stands the player's banner
+username or Discord and hollow for a guest's; pressed, it opens Settings. On the Journal its place is DFO's timer
+hourglass in a sunk well, edged in brass under the pointer, which stands turned over while its timers are down;
+pressed, or T, it drops the timers from the Journal's top
+([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). Under them, the whole width of
+the menu, stands the player's banner
 ([[The Menu's Tabs Fill Its Top, Its Banner Under Them]]): their emblem drawn to the banner's width at three times its
 cells, so it is never cut off, their name, level, Prestige and Defense over it, and their Aurem at its end, left blank
 on the Inventory, which shows it. Once shown it stays, though the room's word goes; only its numbers wait for it. It opens with a short
@@ -748,7 +766,9 @@ never while a press is held. Each press is an ask the room answers.
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
-  used is spent, not gained. Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
+  used is spent, not gained. Letters newly in the mail show as one row, "Sent to the mail" and how many, under the
+  Postmaster's mark; a letter taken is not a gain, though what it held is.
+  Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
   lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
   with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's
   level, a fragment of its Core, the ship's materials and a module gained are rows. Prestige is not a gain: it is
@@ -769,6 +789,50 @@ never while a press is held. Each press is an ask the room answers.
   swelling over the hold and glinting faster toward its end; the refusal is the synthesiser's low double buzz. One
   listener hears every press, as DFO's does. Nothing sounds before the player's first press or key, as
   browsers ask.
+- **Journal** ([[Activities]], [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]):
+  - **The quests** are the houses' roads ([[Quests]]) as story missions: the opening, walked from the start, and each
+    house's road the player walks, each at its task, and each road done, in the roads' order. They show as cards six a
+    page in two columns (one under 900 px); how many show stands beside the title, and the page between its drawn
+    arrows at the head's right; a card alone in its row keeps its column's width. Each card shows its banner, sixteen
+    by twenty-four: a story mission's swallowtail pennant in blood and brass, charged with a star, a crown, a
+    watchtower, an anchor, an open eye or a ship, one to each road by its place in the roads' file, so no two roads
+    wear the same (a side quest's shield, its field stone, plum, sea, moss, ochre or slate, charged with a lozenge, a
+    key, a fish, a sheaf of wheat, a hammer or a compass rose, is drawn for quests of other kinds). Then its name, the
+    first line its opening scene says as a line of its tale, and its task's number in a brass badge with the task's
+    words, the last task with a brass tick once the road is done. The keys' focus edges a card white. A name too long
+    for its card is cut short there and read whole to a screen reader with the rest of its card. With
+    none to show (before any room's word, or a word not on the player's own character), it says why, the two banners
+    resting over the line.
+  - **The bounties**: six slots three to a row under "Bounties", with how many are taken. A tile bears its bounty's own
+    glyph, sixteen square (a dagger in the Tithe's coin sack, a sword under a chevron, a pick over ore, a horned skull,
+    a cannon firing, a great fish, a wolf over the swell, a torch, steps down into the dark, a lantern) on its kind's
+    ground, with no words on it (a bounty not drawn wears the mark of where it counts: two peaks, a wave, an arched
+    door): a gauge of its count while held, a gilded edge once done, its glyph dimmed with a drawn tick once turned in. A
+    slot not taken is an empty frame. The hovered, focused or pressed tile, ringed white just outside its edge, has its
+    card under the grid: its name, cut short where too long, its kind by its mark, its words, its count, and what it
+    pays, XP and Aurem each by its glyph. Bounties are taken and turned in at the board alone. The column stands at the
+    right wherever it fits beside the quests, as wide as its head; on a phone (under 600 px) it stands under them.
+  - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
+    Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
+    time; This week's, a page of the week and the countdown to the weekly reset; Later's, its name alone. Each row
+    is its icon in a sunk well, its name and its marks. Under Today: the dungeon of the day (an arched door), each
+    tier's seas (calm water, a rearing wave, a maelstrom) with this character's tick or padlock, the day's modifier's
+    icon on the Elite and the Abyss seas it is on, what it pays (the Vestige glyph and a chest), and each island's
+    dungeon with its levels, read down its columns, the band this character's level falls in lit; and the bounties (a
+    sealed notice), their six a day said at the foot.
+    Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
+    burning eye), each its level, its tick or padlock, the Abyss's five revives (a heart) and its wipe (a skull), its
+    modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
+    Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
+    an arc, Exposure's broken heart) and its pay (the Vestige
+    in its rarity, Essence, the boon's star); and the Abyss boon while held, by XP's glyph. Under Later, Breaches (a
+    rift). The panel's foot says in words whatever the pointer or the focus rests on, and each mark's words are read
+    to a screen reader with its row as the focus takes it; the arrows step between the rows. Each countdown is drawn
+    afresh each frame. The panel drops from under the hourglass, or with T, on its own ground, edged and ruled in
+    brass, the focus going to its Close; Escape, Close, T or the hourglass takes it up, the focus going back to the
+    hourglass, and it goes up as the Journal is left; the page under it rests, dimmed and out of the keys' and the
+    pointer's reach.
+  - It reads the rules and the last word of the character a room sent, so it reads the same at sea.
 - **Ship.** Two parts on the inventory's shelf tabs ([[Ship Power]], [[Crew]]). Manage: the ship's papers as Manage
   shows them at sea (its hull, canvas, guns, loads and measure, its voyage while it is at sea), its materials and its
   hands, beside its power (its level, a meter to the next, its numbers) and its modules fitted and carried, each a
@@ -836,6 +900,29 @@ already doing. In the game they play through the interface's engine at the World
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
 The Test Ground makes its own sound at full volume on the first click into its view.
 
+## At a dungeon's entrance
+
+E at a dungeon's entrance ([[Game]], "A dungeon") opens a card drawn in a window of the menu's kit, in the middle of
+the view (`EntranceCardView`, a layer of its own over the menu's), its words as large as the menu's on the same
+screen: the dungeon's name in its header; under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite
+Dungeon · Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss
+Dungeon of the week's "Never matched. Bring your company."), its modifiers each led by its icon as the timers draw it,
+with what each does, and what it pays, "Taken today" or "Taken this week" once this character's record holds it; why
+it is shut, in its gate's words, if it is; and Enter (E) and Close (Esc) on its footer, Enter resting while it is
+shut. It reads as the Journal's timers do ([[Activities]]),
+built again as the minute or the character's word changes. While it stands the world is dimmed, the pointer is free
+and no key of the game's or the menu's acts behind it. It goes if the player falls, goes into a dungeon or leaves
+the place.
+
+Where the run is matched (an Elite Dungeon at Normal, or the Elite Dungeon of the week), it is open, and the page is
+signed in to the accounts, Find a Company (F) stands on the footer beside Enter. While it finds, the card shows
+"Finding a company · 0:23", counting up, and "A run starts with four, or with fewer after a minute.", and the press
+is Stop finding (F). A run found closes the card and goes into it. Enter goes in alone and Close or Escape leaves,
+each stopping the search. A search that ended unasked says why on the card ("You are finding a company in another
+tab.", or "The search stopped. Try again."). A search for a run the card no longer opens ends, as when the week
+turns while it finds; a run found just as the week turned, for a run the card built again no longer opens, is not
+gone into, and the card says "The week turned. Try again.".
+
 ## How recordings load
 
 Recordings come as they are wanted, as the owner decided areas load ([[Areas Load in Chunks With Proper Caching]]):
@@ -847,7 +934,8 @@ decodes each and keeps it; the worker holds only its shape and how it measures, 
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
 played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
 fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
-changes, so one let go comes back from the disk.
+changes, so one let go comes back from the disk. The storage holds every file the game reads from R2, within 1 GB, the
+files kept longest ago let go first.
 
 ## The sea fight's readout
 
@@ -919,9 +1007,9 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
 
 ## The social space's counters
 
-Every keeper in the social space who deals with a player, and Shape, keeps a screen, as Destiny's keep theirs in the Tower
-([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]); E at one opens it in the menu's
-window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
+Every keeper in the social space who deals with a player, the Postmaster and Shape among them, keeps a screen, as
+Destiny's keep theirs in the Tower ([[Overlook's Keepers Are the Mage, the Smiths, the Tailor, the Tack and Shape]]);
+E at one opens it in the menu's window, its name where the tabs stand. The prompt names the keeper by their title ("The Mage", "Shape"). The room
 serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]]).
 
 - **The Harbourmaster's counter** sells the Shipwright's six modules of the day, each held to buy, its hover card
@@ -942,11 +1030,13 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the materials an Art's rise takes), the band they speak in, then their wares in rows under engraved headings, each a
   gear tile held to buy, its price under it, red with "Not enough" when short, a card on hover or focus; a ware that
   cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
-  room would sell. At the foot "Stock refresh" and the time to the next midnight, UTC (0:00:00 at midnight), for the
-  smiths, the Tailor and the Tack, or "Leaves in" and the time left for Shape, by the world's clock to Sunday 21:00 UTC.
+  room would sell. At the foot "Stock refresh" and the time to the next daily reset, 09:00 UTC, for the smiths, the
+  Tailor and the Tack, or "Leaves in" and the time left for Shape, to Sunday 21:00 UTC: both counted in minutes by the
+  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone.
   The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
   (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
-  back, and the focus goes back where it came from.
+  back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone, the keeper stands
+  over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
@@ -964,12 +1054,34 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   under a thin bar of the menu's.
 - **Shape's**: WARES, his six of the week priced in Shapes, held to buy; while he is away, "Shape is away. He comes on
   Fridays."
+- **The Postmaster's** (`mailPage`), in Overlook's plaza alone ([[Gear]], "The mail"): no currencies, as he sells
+  nothing; LETTERS with how many of the 50 wait at the heading's right, then Take all (a primary press) while any
+  waits, or "No letters wait for you."; then each letter oldest first, a sunk well holding the tile of what it holds
+  (an item's own picture, a module's or a Vestige's glyph, framed in its rarity with its pips, its card under the
+  pointer or the focus: an item's as its page's, a Vestige's its slot and level), its name in its rarity's colour, the
+  letter's words (`letterWords`), and Take. Where the column is narrower than 420 px, as on a phone, a letter stands
+  in one column: its tile and name, its words the well's whole width, then Take at its end. A click on the tile or
+  Take, or E on either while it holds the focus, takes that letter, once until the room answers; the focus then goes
+  to the same press of the next letter, or the one before. A letter there is no room for stays, the footer saying why,
+  and he speaks only to thank. The footer: Click / E (Take).
 - **What they say.** As the screen opens the keeper greets the player in a line of their own, typed and voiced in
   the band as [[Speech]] types and voices the dialogue box's; after a ware bought they thank them, and after a
   refusal for want of the price they say so ("Not yet, dear. Come back when you can. I will be here."). Each line is
   a scene of `content/story/keepers.json`, said in turn, held to [[Dialogue]]. Once typed whole, the line is read to a
   screen reader from a polite live copy, as every line of the dialogue box is; the currencies are read with their
   names.
+- **The bounty board** in Overlook's plaza, which no keeper keeps and over which stands its gold "!" ([[Game]], "Over
+  what a player can use"; [[Activities]], "Quests and bounties"), after
+  Destiny's Bounty Tracker ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): one
+  line, "Bounties for XP and Aurem, posted each day."; the day's six as tiles, a row to each kind (land on stone, the
+  sea on deep water, dungeons on old blood), each its bounty's own glyph at four times its pixels (six where the
+  menu's words are large), showing its state with no words, the chosen one ringed white; under them the rising sun
+  and the time to the next board, over a bar filling as the day goes; and beside them, or under them on a phone, the
+  chosen tile's card: its name, its kind by its mark, its words, a gauge with its count, what it pays
+  the player now (XP and Aurem each by its glyph, resting once paid), and its press, Take on one not held or Turn in on
+  one done, with E on its keycap, each asked with the day of the board shown. The arrows move between tiles; E or a
+  click takes or turns one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the
+  padlock and "The bounty board opens after the prologue."
 
 ## Emblems
 
@@ -1055,8 +1167,8 @@ button's corner and screen, and the Tailor's wares.
   over figures are laid apart. Two Boss ships' plates stand 56 px apart, as far as the first stands down.
 - Another player's details show their pieces' initials, not their pictures, and not their figure: the page draws
   pictures on the player's own figure, which is not theirs.
-- A join reaches a company member on foot on the landmass open now; one across the sea, or at sea, is not reached, and
-  the Roster says so.
+- A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
+  or at sea, is not reached, and the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has

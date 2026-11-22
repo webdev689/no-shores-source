@@ -98,6 +98,15 @@ fn off_leg(point: [f64; 2], from: [f64; 2], to: [f64; 2]) -> f64 {
     apart(point, [from[0] + along_x * share, from[1] + along_y * share])
 }
 
+/// The room of the dungeon behind an island's door at Normal: its water's continent, its style (`isle::Kind::dungeon`)
+/// and its seed folded to 32 bits in 8 hex digits (server/roomNames.ts `seaDungeonRoom`). The page names its door's
+/// room so from the seed and water the sea told it (client/src/game/isleLaw.ts `dungeonRoomName`).
+#[must_use]
+pub fn dungeon_room(seed: u64, continent: &str) -> String {
+    let folded = (seed ^ (seed >> 32)) as u32;
+    format!("sea-dungeon-{continent}-{}-{folded:08x}", Kind::of(seed).dungeon())
+}
+
 /// Whose guards stand on an isle in a water: its holder's, a contested water's drawn by its seed; none at home.
 fn guards_of(holder: Holder, seed: u64) -> Option<u8> {
     match holder {
@@ -303,6 +312,14 @@ impl Sea {
     /// Holds an island while players stand ashore on it, its room's word: whether it stands.
     pub fn hold_ashore(&mut self, id: u32, seed: u64) -> bool {
         self.islands.hold_ashore(id, seed, self.clock)
+    }
+
+    /// The standing island whose door leads into the dungeon room `room` (`dungeon_room`, its name at Normal): a sea
+    /// island's dungeon opens on this word alone, never for a seed or a style a page names.
+    #[must_use]
+    pub fn island_behind(&self, room: &str) -> Option<&SeaIsland> {
+        let water = |island: &SeaIsland| self.chart.water_id(island.at).map(|water| dungeon_room(island.seed, water));
+        self.islands.standing.iter().find(|island| water(island).is_some_and(|door| door == room))
     }
 
     /// Whether a course's path stands on, or crosses, a continent's coast or the coast of an island the player is

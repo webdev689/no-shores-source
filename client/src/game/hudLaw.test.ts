@@ -90,6 +90,20 @@ test("the warning's count and the wait to respawn are the reach rules' own, read
   assert.equal(dead, RESPAWN_SECONDS * 60);
 });
 
+test("in a dungeon's room the words under its name start with the room's", () => {
+  const dungeon = { kind: 'dungeon', continent: 'continent-1' } as const;
+  assert.ok(placeWords(dungeon, 'the Ossuary').startsWith('The Ossuary · Dungeon'));
+  assert.ok(placeWords(dungeon, null).startsWith('Dungeon'));
+});
+
+test('in an Abyss run the words under its name end with the revives its company has left', () => {
+  const dungeon = { kind: 'dungeon', continent: 'continent-1' } as const;
+  assert.equal(placeWords(dungeon, 'the Ossuary', 3), `${placeWords(dungeon, 'the Ossuary')} · 3 revives left`);
+  assert.ok(placeWords(dungeon, null, 1).endsWith(' · 1 revive left'));
+  assert.ok(placeWords(dungeon, null, 0).endsWith(' · No revives left'));
+  assert.equal(placeWords(dungeon, null, -1), placeWords(dungeon, null), 'none counted outside Abyss');
+});
+
 test("a place's words name its kind, and its island where the owner has named one", () => {
   assert.equal(placeWords({ kind: 'social', continent: 'continent-1' }), 'Social space · Saltmere');
   assert.equal(placeWords({ kind: 'patrol', continent: 'continent-9' }), 'Patrol');

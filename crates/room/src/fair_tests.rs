@@ -4,6 +4,7 @@
 
 use super::*;
 use combat::arms::{OffHand, Ranged, Stroke, WeaponClass};
+use combat::fighter::Action;
 use combat::{CombatInput, Intent};
 use movement::Controls;
 use std::collections::BTreeMap;

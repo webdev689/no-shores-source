@@ -9,6 +9,7 @@ pub mod asks;
 mod atheric;
 pub mod battle;
 pub mod boarding_hands;
+mod bounties;
 pub mod chart;
 pub mod clash;
 mod companions;
@@ -17,6 +18,9 @@ pub mod crew;
 pub mod deck;
 mod deck_fight;
 mod drops;
+pub mod dungeon_ground;
+mod dungeon_room;
+mod entrances;
 pub mod fleet;
 mod floor;
 pub mod flotsam;
@@ -33,8 +37,10 @@ mod power;
 mod quests;
 mod recharge;
 mod routes;
+mod run;
 pub mod sea;
 pub mod sea_weather;
+mod seeing;
 pub mod ship_power;
 pub mod sighting;
 mod spells;
@@ -48,6 +54,7 @@ pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
 pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
+pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
@@ -57,6 +64,7 @@ pub use players::{
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
 pub use power::{allowed_arms, arms_allowed, loadout_arms};
+pub use run::{REVIVES, RunOf, elite_laid};
 pub use spells::{BOLT, SpellSeen};
 pub use steps::{StepSeen, way_between, way_length};
 
@@ -65,10 +73,7 @@ use combat::fighter::{FighterId, player};
 use combat::judge::swing_blow;
 use combat::shots::Line;
 use combat::strike::struck;
-// The tests reach these through `super::*`, as before the dead were raised in players.rs.
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
-#[cfg(test)]
-use combat::{fighter::Action, tuning::RESPAWN};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
@@ -170,8 +175,19 @@ pub struct Room {
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
     pub(crate) gathered: std::collections::BTreeMap<String, Vec<u8>>,
+    /// A patrol's dungeons' entrances, or an Elite Dungeon's node's one (`entrances.rs`).
+    pub(crate) entrances: Vec<entrances::Entrance>,
+    /// What the gates know it as (`gear::gate`): none for a course, which no gate shuts.
+    pub(crate) place: Option<gear::gate::Place>,
+    /// A dungeon's run (`run.rs`): what its clear pays, its modifiers and its revives; none in any other room.
+    pub(crate) run: Option<run::Run>,
+    /// The island it stands on, by its continent's id, for the feats it counts (`bounties.rs`); none at sea.
+    pub(crate) island: Option<&'static str>,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
+    /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
+    pub(crate) facing: f64,
+    pub(crate) cache: Option<dungeon_room::Cache>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
@@ -235,8 +251,14 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: false,
             gathered: std::collections::BTreeMap::new(),
+            entrances: Vec::new(),
+            place: None,
+            run: None,
+            island: None,
             ashore: companions::Ashore::default(),
             isle: None,
+            facing: core::f64::consts::PI,
+            cache: None,
             minute: 0,
             shape_spots: Vec::new(),
             quests: quests::QuestGround::default(),
@@ -251,7 +273,9 @@ impl Room {
 
     /// A body standing at a spawn: on the ground in a node's room, on the top of the block under it on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
-        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) }
+        let body =
+            if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
+        Body { facing: self.facing, ..body }
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
@@ -266,18 +290,27 @@ impl Room {
         if self.players.len() >= PLAYERS_MOST {
             return None;
         }
-        let id = self.next_id();
+        let body = self.next_spawn();
+        Some(self.join_standing(body))
+    }
+
+    /// A body standing at the next spawn in turn, as each join is stood.
+    pub(crate) fn next_spawn(&mut self) -> Body {
         let turn = self.joins % self.spawn_points.len().max(1);
         self.joins += 1;
-        let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
-        let fighter = player(self.stand(spawn), BARE_HANDS);
-        let mut joined = Player::new(fighter, self.clock, self.is_test_ground());
+        self.stand(self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0)))
+    }
+
+    /// A new player standing as `body` stands, with nothing drawn; in the prologue's wreck room, armed for the story.
+    pub(crate) fn join_standing(&mut self, body: Body) -> PlayerId {
+        let id = self.next_id();
+        let mut joined = Player::new(player(body, BARE_HANDS), self.clock, self.is_test_ground());
         if self.story {
             story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
         self.arrived(id);
-        Some(id)
+        id
     }
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
@@ -311,8 +344,14 @@ impl Room {
         }
         found.received = input.sequence;
         found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
+        if found.held {
+            // Taken in order, so the next follows on; played as standing still, asking and casting nothing.
+            let Input { sequence, seen, shown, arms, .. } = input;
+            input = Input { sequence, seen, shown, arms, ..Input::default() };
+        }
         // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
-        if let Some(dress) = input.dress.take() {
+        // One that does not read is refused, and the last that did is kept.
+        if let Some(dress) = input.dress.take().filter(|dress| gear::cosmetics::read_dress(dress).is_some()) {
             found.dress_next = (dress != found.dress_sent).then_some(dress);
         }
         // A player never begins a telegraphed blow.
@@ -341,6 +380,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_cache();
         self.keep_quests();
         self.keep_steps();
         self.pick_up_drops();
@@ -376,6 +416,11 @@ impl Room {
                     self.take_ask(id, asked);
                 }
                 self.ask_cast(id, input.cast.filter(|_| !input.intent.controls.mounted));
+                // Nothing is fought from the saddle, as the page never asks it: no swing, guard, shot or aim.
+                if input.intent.controls.mounted {
+                    let pitch = input.intent.combat.pitch;
+                    input.intent.combat = combat::CombatInput { pitch, ..combat::CombatInput::default() };
+                }
                 // A cast under way holds off a drink, so neither is lost to the other; the page holds its press too.
                 if self.players.get(&id).is_some_and(|found| found.casting.releasing.is_some()) {
                     input.intent.combat.heal = false;
@@ -443,7 +488,7 @@ impl Room {
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
-                self.sweep = struck(id, fighter, &attack, view, &self.blocks);
+                self.sweep = struck(id, fighter, &attack, view, &self.blocks, &self.floor);
                 for defender in self.sweep.clone() {
                     let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
@@ -466,8 +511,9 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    let loosed =
-                        self.held(id, gear::Slot::Ranged).map(|held| power::Loosed { aimed: aimed(&shot), ..held });
+                    let loosed = self
+                        .held(id, gear::Slot::Ranged)
+                        .map(|held| power::Loosed { aimed: power::aimed(&shot), ..held });
                     self.shots.push((shot, loosed));
                 }
             }
@@ -475,13 +521,6 @@ impl Room {
             Some(Happening::Drank(healed)) => self.tell(EventKind::Healed, None, id, id, healed),
             _ => {}
         }
-    }
-
-    /// Every fighter now, players then foes, each in the order of their numbers.
-    #[must_use]
-    pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
-        let players = self.players.iter().map(|(id, found)| (*id, found.fighter));
-        players.chain(self.foes.iter().map(|(id, foe)| (*id, foe.fighter))).collect()
     }
 
     /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,
@@ -502,45 +541,6 @@ impl Room {
             foe.fighter = fighter;
         }
     }
-
-    /// The number of a player's last input received, the latest tick their screen said it showed, and the tick they
-    /// joined at; none for no such player.
-    #[must_use]
-    pub fn heard(&self, player: PlayerId) -> Option<(u32, u64, u64)> {
-        self.players.get(&player).map(|found| (found.received, found.shown_tick, found.joined))
-    }
-
-    /// Every player as the room last stepped them, in the order of their numbers.
-    pub fn seen(&self) -> impl Iterator<Item = Seen> + '_ {
-        self.players.iter().map(|(&player, found)| Seen {
-            player,
-            fighter: found.fighter,
-            standing: found.standing,
-            shown: found.shown.clone(),
-            acknowledged: found.acknowledged,
-        })
-    }
-
-    /// The shots in flight.
-    pub fn shots(&self) -> impl Iterator<Item = &Shot> {
-        self.shots.iter().map(|(shot, _)| shot)
-    }
-
-    /// The balls that stopped since this was last asked, each as its line, to send to everyone once so every screen
-    /// ends its tracer where it stopped, however many ticks a snapshot follows.
-    pub fn take_lines(&mut self) -> Vec<Line> {
-        std::mem::take(&mut self.lines)
-    }
-
-    /// What happened in the fight since this was last asked, to send to everyone once.
-    pub fn take_events(&mut self) -> Vec<Event> {
-        std::mem::take(&mut self.events)
-    }
-
-    #[must_use]
-    pub fn clock(&self) -> u64 {
-        self.clock
-    }
 }
 
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
@@ -558,6 +558,8 @@ mod fair_tests;
 mod fight_tests;
 #[cfg(test)]
 mod foe_tests;
+#[cfg(test)]
+mod gate_tests;
 #[cfg(test)]
 mod gear_tests;
 #[cfg(test)]
@@ -580,10 +582,3 @@ mod ring_tests;
 mod room_tests;
 #[cfg(test)]
 mod spread_tests;
-
-/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage to the bit
-/// (`combat::step`'s quick shot, power 1), and one loosed from the draw at its draw's power and the aimed trim, which
-/// may be more or, with Hair Trigger, less.
-pub(crate) fn aimed(shot: &Shot) -> bool {
-    shot.damage != combat::shots::shot_numbers(shot.ranged).1
-}

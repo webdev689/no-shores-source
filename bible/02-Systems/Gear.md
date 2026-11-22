@@ -32,6 +32,7 @@ code:
   - crates/gear/src/character.rs#has_drawn_trait
   - crates/gear/src/asks.rs#Ask
   - crates/gear/src/vestige.rs#dropped
+  - crates/room/src/dungeon_room.rs#keep_cache
   - crates/gear/src/vestige.rs#opens_to
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
@@ -46,6 +47,9 @@ code:
   - crates/room/src/power.rs#empower
   - crates/room/src/power.rs#pay_kill
   - crates/room/src/drops.rs#drop_spoils
+  - crates/room/src/drops.rs#mail_lying
+  - crates/gear/src/mail.rs#Letter
+  - crates/gear/src/mail.rs#carry_or_post
   - crates/gear/src/ammo.rs#capacity
   - crates/gear/src/ammo.rs#box_chance
   - crates/room/src/asks.rs#answer
@@ -142,7 +146,14 @@ number is one of [[Gear as Claude Shapes It]].
   [[The Whole Game Gets a Balance Pass]]. A foe of level 0 fights by combat's own numbers and those two alone.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
-  for two minutes ("Drops", below).
+  for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
+  them a quarter more of its XP, rounded down, to them and to the weapon that earned it, and as much more reputation
+  as the kill's own goes ([[Factions]]) (`boon_xp`).
+- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens,
+  and every player then in the dungeon's room finds a Vestige lying before it, theirs alone, whoever struck it: sure,
+  at the end foe's level, in the colours a boss's kill leaves, and lying for them as a kill's drop does ("Drops",
+  below; [[Dungeons]], "In the rooms"). A run's first clear in its period lays a second, further out: the dungeon of
+  the day's, or the week's two's ([[Activities]], "What it pays, once").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
@@ -152,8 +163,10 @@ number is one of [[Gear as Claude Shapes It]].
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
-  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
-  serves them all within reach of its stall. The Test Ground alone hands out gear.
+  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]), a bounty taken
+  or turned in at the bounty board's (`CounterKind::Board`, [[Activities]]), and a letter taken at the mail's
+  (`CounterKind::Mail`); the [[Test Ground]] serves them all within reach of its stall. The Test Ground alone hands
+  out gear.
 
 ## Loadouts
 
@@ -273,8 +286,9 @@ DFO's spoils ([[Pick - Loot Drops]]).
   (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
   Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
 - **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
-  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, what
-  they have no room for lost with it (`room::flotsam`).
+  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, a
+  Vestige they have no room for sent to the mail and any other part they have no room for lost with it
+  (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
@@ -282,7 +296,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
   rests.
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
-  the room sends the player's gear again without it, so their page stops showing it.
+  the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
+  to the mail. A Vestige still lying as its player leaves the room goes there too ("The mail").
 - **Ammo full.** A box walked onto at full ammunition stays where it lies. The share kept is the character's own, worn
   Ranged weapon or not: one with only Melee worn and a full share leaves the box, and one whose share is short takes it.
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
@@ -292,6 +307,36 @@ DFO's spoils ([[Pick - Loot Drops]]).
   Vestige glyph in its rarity's colours, an Ammo box or an Ammo crate. A thin line rises from its top as it rests:
   Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs
   it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it comes to rest ([[Interface]]).
+
+## The mail
+
+[[A Mail Vendor Keeps Lost Items and the Game's Mail]], in [[Factions and Vendors as Claude Shapes Them]]'s shape
+("The mail"), after Destiny's Postmaster.
+
+- **Letters.** Each character keeps a mailbox (`Character.mail`, `gear::mail`): letters only the game writes, oldest
+  first, each its number, which no item, Vestige or officer of theirs shares, where what it holds came from (a
+  `mail::Source`, kept as its number, which the page words), whether it tells of a letter a full mailbox let go, and
+  what it holds, a Vestige or an item, or neither. A letter keeps any key a later build wrote on it, as items and
+  Vestiges do; taken, one holding such a key gives what this build knows of it and stays, so a rollback loses nothing.
+- **What goes there.** What a player owned and would lose: a Vestige drop that lay its two minutes out, or still lay
+  as they left the room ("Drops"); a first clear's Vestige while the carried ten and the vault were full
+  ([[Activities]], "Where it is paid"); a Vestige in flotsam gathered while the ten were full; a module salvaged while
+  its slot carried nine ([[Ship Power]]). Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
+  past their most are not items, and stay as they were.
+- **Fifty letters.** A mailbox keeps 50 (`MAIL_MOST`). One more lets go the letter holding the least (by rarity, a
+  letter holding what this build does not know above all), the oldest of those and the new one among them, and the
+  newest letter kept says so: the new one, or the one before it when the new one held the least and went. So nothing
+  leaves the mail unsaid. A post makes room for its own letter only, so a mailbox a later build kept fuller loses no
+  more than one letter a post. 50 is more than the carried ten and the vault's twenty Vestiges together, and keeps a
+  save far under what the [[Accounts]] keep.
+- **Taking.** At the mail counter in Overlook's plaza only ([[Interface]], "The social space's counters"), free: 71
+  takes one letter by its number in `item`, its Vestige into the carried ten or its item into its slot's nine, each
+  numbered anew; refused while there is no room ("You already carry ten Vestiges.", "That slot already carries
+  nine."), and a letter not there is refused as "There is no such letter." 72 takes every letter there is room for,
+  oldest first, leaving the rest, and is refused only when it can take none.
+- **Sent.** The gear message carries the letters, oldest first (`GearLetter`): each its number, its source, whether it
+  tells of a letter a full mailbox let go, and its Vestige or its item with every column of its nodes, as a carried
+  piece's.
 
 ## Ammo
 
@@ -322,15 +367,16 @@ the factions' counters are in [[Factions]].
 - **The Mage** identifies Vestiges, free.
 - **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
   ("Cosmetics").
+- A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
-  the week's (`gear::shape`, weeks counted from Monday 00:00 UTC). He sells six pieces for the week, four Legendary
-  and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold from level
-  20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
-  only from kills at the Elite and Abyss seas (Rough and Storm today): one in 33 kills at Elite, one in 17 at Abyss, and
+  the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
+  Legendary and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold
+  from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
+  only from kills at the Elite and Abyss seas: one in 33 kills at Elite, one in 17 at Abyss, and
   2 or 4 from a Boss or Miniboss; a player holds 200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
-  room steps, playing alone), whose day sets the wares and whose week sets Shape. It
-  sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
+  Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
@@ -350,9 +396,9 @@ and its art (`gear::emblems`).
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
   (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Abyss
-  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of twelve,
-  the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks and a
-  piece fully upgraded are earned as they happen.
+  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of
+  twelve, the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks
+  and a piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
   others see of it beside it (`shown`): level, Defense, the Melee loadout's Attack (the Ranged one's without one),
   the emblem worn, and each piece worn.
@@ -455,7 +501,9 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   in every mounted move, drawn over the hide unless it lies more than 0.15 m behind it, so its far side and inside stay
   hidden, and in the riding view its own published strip. Own Colours, Bay and Bare change nothing. The room puts the
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
-  player's dress naming one that is not of its kind is refused as any broken dress is. Of the colours a dress lays by
+  player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
+  in its hands keep only the pieces of the slots worn, by the same layer names (`layers_of`), and a light in the left
+  hand. Of the colours a dress lays by
   layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape
   worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to

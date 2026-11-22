@@ -13,6 +13,25 @@ pub trait Terrain {
         false
     }
 
+    /// Whether a wall of the terrain stands across the straight line from `from` to `to` (x, y, z) below the line where
+    /// it crosses, so a look, a blow, a noise or a throw along it meets the wall; a line passes over a wall lower than
+    /// itself. Unlike a move, a line keeps no half-width off a wall. Open ground has none.
+    fn line_walled(&self, _from: [f64; 3], _to: [f64; 3]) -> bool {
+        false
+    }
+
+    /// How far along the segment from `from` to `to` (0 to 1) it first enters a wall of the terrain below the wall's
+    /// top, if it does: where a shot meets a wall exactly, however thin. Open ground has none.
+    fn wall_entry(&self, _from: [f64; 3], _to: [f64; 3]) -> Option<f64> {
+        None
+    }
+
+    /// The ground a shot falls onto at (x, y): the terrain's height, but under the walls `wall_entry` answers, the floor
+    /// they stand on, so a shot meets a wall at its face and never a slope up to its top.
+    fn floor_at(&self, x: f64, y: f64) -> f64 {
+        self.height_at(x, y)
+    }
+
     /// Whether a body here may climb: take hold of a wall, hang from a lip, or go over one higher than a vault. Where
     /// it may not, it only vaults or mantles a lip within `TUNING.vault` of the floor under it.
     fn climbs(&self) -> bool {

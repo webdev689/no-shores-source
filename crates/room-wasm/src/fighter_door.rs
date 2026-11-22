@@ -45,6 +45,20 @@ pub fn set_ground(text: &[u8]) -> bool {
     kept
 }
 
+/// Keeps a dungeon's ground for predicting a fighter without a room, from the JSON ask `room_dungeon` takes (a
+/// patrol's id and name and its number, an Elite Dungeon's place, or a seed and a style), and an empty course: a
+/// dungeon's jambs and pillars are its ground's own. Answers whether the ask was a dungeon.
+pub fn set_dungeon(text: &[u8]) -> bool {
+    let Some(floor) = crate::dungeon_door::asked(text)
+        .and_then(|(seed, style, blocks)| Floor::of_dungeon(&dungeon::Dungeon::forge_within(seed, style, blocks)))
+    else {
+        return false;
+    };
+    FLOOR.with(|kept_floor| *kept_floor.borrow_mut() = floor);
+    COURSE.with(|course| *course.borrow_mut() = movement::Blocks::default());
+    true
+}
+
 /// Keeps a ship's deck for predicting a fighter without a room, from its grid's numbers (`Heights::from_floats`), in
 /// place of any ground: its deck room's own floor, to the bit. Numbers that are not a grid keep open ground; answers
 /// whether they were one.
@@ -56,7 +70,7 @@ pub fn set_heights(bytes: &[u8]) -> bool {
 }
 
 /// Keeps the rim round a course laid over the sea for predicting a fighter without a room, from its blocks' numbers,
-/// five each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
+/// six each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
 /// as the room holds it. Answers whether the numbers were blocks.
 pub fn set_rim(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);
@@ -170,6 +184,17 @@ pub unsafe extern "C" fn fighter_rim(address: *const u8, length: usize) -> u32 {
 pub unsafe extern "C" fn fighter_ground(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(set_ground(unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// Keeps the dungeon asked for by the JSON written at `address` for predicting (`set_dungeon`); 1 if it was one, 0 if
+/// not.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn fighter_dungeon(address: *const u8, length: usize) -> u32 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    u32::from(set_dungeon(unsafe { std::slice::from_raw_parts(address, length) }))
 }
 
 /// Keeps the deck whose grid's numbers are written at `address` for predicting; 1 if they were a grid, 0 if not.

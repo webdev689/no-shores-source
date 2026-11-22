@@ -29,6 +29,9 @@ code:
   - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
+  - client/src/game/footTrips.ts#tripAt
+  - client/src/game/dungeonTrips.ts#dungeonTrips
+  - client/src/game/dungeonDrawers.ts#DungeonDrawers
   - client/src/game/sea.ts#Sea
   - client/src/game/seaView.ts#SeaView
   - client/src/game/landmass.ts#openLandmass
@@ -102,15 +105,19 @@ the screen reader's announcements.
 choosing a landing; on foot and at sea a menu may be open. It is pure: the game hands it what happened and draws what
 it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
 `game.ts` keeps the flow, the travel between places and the player's actions, and `gameFrame.ts` draws each frame of
-the mode the flow is in; each mode is its own module.
+the mode the flow is in, a frame on foot first heeding the activities' word (`startActivities`: a gate that shut, a
+company that fell); each mode is its own module.
 
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
 | On foot | M, then Return to ship | The veil, "Returning to your ship", then at sea |
+| On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
+| On foot in a patrol | E at an entrance's door, offered as "Enter" and the dungeon's name | The veil, "Entering" the dungeon, then on foot at its way in |
+| In a dungeon | E at its exit door, offered as "Leave" | The veil, "Leaving" the dungeon, then before its entrance's door, facing out |
 | On foot | E in a gate's basin, or at an instance's way in | The veil, "Entering" the instance or "Returning to" the patrol area, then on foot at the other's way in or gate ([[Layouts]], "Gates") |
 
 A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at or entered: its mark and its gate
@@ -133,7 +140,9 @@ is `<city id>-social`): a way to look round the world. An id the world does not 
 does a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
 never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
 (the game waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
-name says "Ruins" (`placeWords`). With
+name says "Ruins" (`placeWords`). Online, a node's room lets a kept character in only by a way that leads there
+([[Server]], "Where a character comes from"; [[The Server Is the Authority Over Everything]]), so any other room than
+Overlook's sends it back to its ship, the veil saying "You cannot reach this place from where you were.". With
 `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's spawn,
 offline: a way to look at one place.
 
@@ -208,10 +217,15 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
   the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)
   or a faction's emblem in the diamond edged in its Art's colour, and none while the keeper is away from the counter
-  (the elder on her welcome); over Shape on his spot his own. As DFO's, a mark's foot stands 0.2 m over the crown,
+  (the elder on her welcome); over the bounty board in Overlook's hub its gold "!" in the keepers' diamond, over its
+  gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the gear names them online,
+  over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
+  over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
-  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. A whole mark
+  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. The Postmaster's
+  sealed letter beats while letters wait for the player, swelling a fifth wider and easing back every 1.3 s, so it is
+  seen from across the plaza; it stands still while none waits, and under reduced motion. A whole mark
   gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
   layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
   is laid flat, so no layer shows through another.
@@ -223,13 +237,108 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
-  ([[Interface]], "The social space's counters"); within 2.5 m of a node it reads "Hold to gather" and its
+  ([[Interface]], "The social space's counters"), and at the bounty board its bounties, offered as "The Bounty Board:
+  bounties for XP and Aurem"; within 2.5 m of a node it reads "Hold to gather" and its
   resource, and held it asks the room to gather it (`GatherHold`): a ring traced round the keycap's edge fills over the
   two seconds with the menus' build-up sound; that is all, no tool and no move of the figure's. A sea island's nodes
   are offered and drawn as a patrol's ([[Islands]]). Letting go of E before the ring is full asks the room to stop, as does leaving
   or the page losing its focus; a step or a blow stops it there, and a refusal ends it. A node is not offered on
-  horseback, nor while its resource is full. Neither is offered while a menu is up or the player lies dead, past the
-  edge or felled by a foe.
+  horseback, nor while its resource is full. On a patrol or an Elite Dungeon's node within 2.5 m of an entrance's door
+  E goes into its dungeon, and in a dungeon within 2.5 m of its exit door it goes out ([[#A dungeon]]). None is offered while a menu is up or
+  the player lies dead, past the edge or felled by a foe.
+
+## A dungeon
+
+A patrol's three dungeons and each Elite Dungeon ([[Dungeons]], [[Activities]]) are entered on foot from their
+node's entrances, and a sea island's from its door at sea, each through the Game's veil (`footTrips.ts`,
+`dungeonTrips`).
+
+- **The entrances.** The patrol's room says where each stands, among the player's gear (`Gear.dungeons`; alone too,
+  where the page's room tells nothing else of the gear). Each is drawn among the patrol's drawers as its forged
+  entrance model (`EntranceView`), lifted by the height its Daggerfall dungeon block stands it at and turned as an RMB
+  block's yaw turns a model, in the island's climate's pictures through the city's own pipelines, so the sun lights
+  it and it casts its shadow. Its door is its door quad's middle, turned and lifted, and wears a door's mark over it
+  (above, "Over what a player can use").
+- **Going in.** Within 2.5 m of a door E offers "Enter" and the dungeon's name, the room module's own `room_dungeon`
+  asked with the patrol's id, its name and the entrance's number, or an Elite Dungeon's node's own name. Taken, it
+  opens the entrance's card ([[Interface]], "At a dungeon's entrance"), whose Enter, or E again, goes in; before the
+  room module is read it goes straight in. A run Find a Company found is gone into by its own name, and only where it
+  is one of that entrance's run's at its tier now. The veil says "Entering" the dungeon; the page leaves the node's room and joins the dungeon's. A patrol's dungeon at
+  Normal is its one shared room, `node-<patrol id>--dungeon-<number>`. At Elite or Abyss it is a run: the run of a
+  company member already in that dungeon at that tier, found in a fresh Roster, or a new one
+  (`node-<patrol id>--abyss--dungeon-<number>--run-<instance>`). An Elite Dungeon's entrance opens the week's Elite or
+  Abyss Dungeon's run where its node was reached at that tier and it is this week's (`eliteRun`, by what is on at the
+  minute), the veil saying "Entering Saltworm Warrens, the Abyss Dungeon of the week"; otherwise the Elite Dungeon's
+  run at Normal. Alone, the shared room opens in the page from the patrol's node file with `room_open_dungeon`, and
+  any other from its name with `room_open_run`, a patrol's run with the patrol's node file too. The player stands at its way in, facing into its room. A trip in keeps
+  the seas of the room the player stands in, and every way out of a dungeon comes out at its room's own seas, so a
+  company stays together at its seas: an Elite Dungeon's run at Normal, gone into from Elite seas, comes out at
+  Normal, as a member who came in by the Roster does. "Go to them" for a
+  member in a dungeon goes into the very room they are in, at their seas, the veil saying "Joining your company at"
+  its name.
+- **A sea island's dungeon** is entered by E at its door on the island ([[Islands]], "The door") by its room's name
+  (`enterSeaDungeon(room, back)`, `sea-dungeon-<continent>-<style>-<seed>`, with `--elite` or `--abyss` after it for
+  its tier), shared at Normal and a run above it. It is laid by its seed and style and named "The <Style> of the
+  Sea", the veil saying "Entering The Caverns of the Sea". Leaving it the veil says "Leaving" it and the player goes
+  back to the sea, at their ship. An island standing a player at its door would stand them 1.5 m before it
+  along its bearing out, facing that way (`back`, the door's point and the bearing out, as a patrol's entrance
+  stands a player out of it). A company member in one is not joined from the Roster: "They are across the sea.".
+- **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
+  is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
+  0.35 m off and cannot climb, with no course; the movement door finds the floor at 0 m. The camera keeps short of the
+  rock beside each open cell and under the ceiling over it, and the shots stop on the rock. The place's name on the heads-up
+  display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
+- **Going out.** Within 2.5 m of the exit door E offers "Leave", and within 2.5 m of the return portal on the end
+  room's far wall while it stands open (while the cache does, once the end foe has fallen). Taken, the veil says
+  "Leaving" the dungeon, by the way out kept as the player went in: the node's room is joined at the entrance the
+  player went in by, online its address with `?entrance=<number>`, alone the node's room opened again in the page and
+  joined with `room_join_at`. The player stands 1.5 m before the entrance's door, facing away from it; online the
+  room keeps them there once it keeps their character as come out of that dungeon, else it stands them at a spawn.
+- **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives
+  left", "1 revive left", "No revives left"). When the room says this player's company fell (`Wiped`, `heardRun`),
+  the page takes them out by the way they came in, even with the menu open, the veil saying "Your company fell.
+  Leaving" the dungeon: before its entrance, or from a sea island's back to the sea.
+
+**Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
+near-black, then the blows' arcs, the see-through marks and their light over the picture, and last death's grey, as
+the game's scene draws them. Wherever the player goes that is no dungeon, its pictures and the scene's targets are let go. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
+wall wherever an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a
+wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
+lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit
+door; the return portal, an arch of the end room's trim standing off its wall round a face of its wall darkened, which
+while the portal stands open glows bright and shimmering and lights the room as a torch does; and the forged props the
+dungeon lays, each standing and turned as the city stands a prop. Every surface wears a picture the procedural
+textures paint: the brackets and the cache's bands the textures' ironwork (archive 93), the cache's wood the island's
+timber; only a flame and the open portal glow in a colour, as the city's braziers do. Its pictures are filed by role as the Forge files them: a room whose number leaves 2 over three wears the
+style's second set and any other its main one, as every corridor does; record 0 for a wall (1 in a room whose number
+is odd), 2 the floor, 3 the ceiling and 4 the trim, each set turned to the island's climate and painted by the
+procedural textures as the city paints its own ([[Procedural Textures]]). Their UVs run in world metres, one picture to
+3.2 m. The exit door wears the door picture its entrance's model wears.
+
+- **The light.** The 32 lights that reach nearest the eye each light round them in their kind's own colour, reach
+  and flicker, none in step, fading to nothing at their reach, a face turned from one catching half: a torch warm to
+  8 m, a brazier deep orange to 9 m, candles pale to 4.5 m, crystals a steady blue-green to 7 m, a lantern warm to
+  8 m, a hearth's fire to 9.5 m, and the open portal cold. A faint light lies everywhere in the mood of the style of
+  each cell (`MOODS`): the crypt's cold grey-blue, the halls' grey, the cells' sickly green, the sanctum's pale gold,
+  the caverns' teal and the mines' dusty brown, enough that a room past every light still shows its walls. Each
+  torch is an iron bracket off its wall, plate, arm and cup, under a flame that glows as the city's braziers glow;
+  the props and the fixtures are lit by the same light as the walls.
+- **The fixtures** (`dungeonFixtures.ts`), each shaped by where it stands: a brazier, an iron bowl on three legs heaped
+  with embers under flames; three to five candles of wax, each with its small flame; five to eight crystals leaning
+  out from where they grow, glowing; a lantern of glowing glass in an iron frame on its chain; a hearth's embers and
+  flames.
+- **The ceilings** (`dungeonCeilings.ts`): a room's ceiling flat; a barrel vault across its narrower side, rising up to
+  1.6 m over its walls; a dome over its middle, up to 2.2 m; or a cave's rough rock a quarter to over a metre over its
+  walls, as are the corridors of the caverns. Where two cells' ceilings differ along their edge, the higher one's side
+  is closed up to it. A cave's walls bulge in and out by up to 0.22 m between their edges and meet each edge exactly.
+- **The looks.** Each cell wears its own look's pictures (`cellLooks`), so a dungeon whose last block lies in the style
+  below changes as the player goes down.
+- **Names.** The words under the place's name start with the room the player stands in: "The Ossuary · Dungeon ·
+  Saltmere".
+- **The figures**, the player's, the foes' and their fight's marks and blood, are drawn as on a node, but each figure
+  lit by the light where it stands, at its chest's height, in place of the sun.
+- **The cache** is a chest of boxes, wood in the island's timber and bands of the textures' ironwork, where the room's
+  `Snapshot.cache` stands it and facing its way, its lid shut, or thrown back while it stands open.
 
 ## The edge
 
@@ -435,11 +544,20 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   A room whose socket closes, for a deploy or a dropped network, is joined again by itself ([[Server]], "The
   browser's side"): meanwhile the heads-up display says "Reconnecting…" and the player plays on alone, nothing sent;
   joined again, they are a new player there, standing where the room puts them, their dress and session sent again.
-  A room that sends the player away is lost: the display says so and they play on alone.
+  A room that sends the player away is lost: the display says so and they play on alone. A room whose gate shuts
+  to the player's character ([[Activities]]) sends them back to their ship, the veil saying why, as "Abyss seas open
+  at level 20. Returning to your ship".
   With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the game
-  makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
+  makes the player a guest or keeps their session, and the node's room keeps their character. A page with no session
+  (the accounts out of reach, or a local server with no `?accounts=`) is sent away by each room that keeps characters
+  five seconds after it joins, as from a shut gate: "Sign in to play online.". Their gear shows in
   the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played
   alone, the room in the game's worker keeps no gear.
+- **A run's room** ([[Activities]]) is its dungeon's room's name and an instance (`runOf`): eight letters or digits
+  the page draws at random (`runInstance`). A company member's run of the same dungeon at the same tier is found
+  among the places a fresh Roster gives the company's members (`companyPlaces`, `sharedRun`), so a company enters
+  one run. The Roster says where a member plays (`placeWords`): a patrol's dungeon with its difficulty, or "Elite
+  Dungeon", "Elite Dungeon of the week" or "Abyss Dungeon of the week".
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as it lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on the ship
   is taken 60 ticks after its course is sent, a round trip's allowance of a second: until then the game sails it at
@@ -547,5 +665,6 @@ picture, so the interface the game draws over the world keeps its colour.
   each starting from a spot of its own.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.
+- In a dungeon nothing casts a shadow, and a light lights through a wall a room on its other side within its reach.
 - Past the far square, about 2 km ahead of the camera, nothing is shadowed; the plants cast into the near square
   only.

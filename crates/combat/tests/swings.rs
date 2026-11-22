@@ -8,7 +8,7 @@ use combat::fighter::{Action, Swing};
 use combat::strike::{struck, weapon_reach};
 use combat::{CombatInput, Happening, Intent, Stroke, Surroundings, step_fighter};
 use common::{SWORD, foe_at, idle, player_at, run, swinging};
-use movement::{Block, Controls};
+use movement::{Block, Controls, Flat};
 
 #[test]
 fn a_sword_swing_lands_its_blow_as_the_third_of_five_frames_begins_and_ends_at_the_fifth() {
@@ -110,21 +110,27 @@ fn a_blow_strikes_every_foe_its_arc_and_reach_hold_the_locks_target_first_then_t
         swing: Swing::Plain,
         left_hand: false,
     };
-    assert_eq!(struck(1, &striker, &attack(Stroke::Up), &fighters, &[]), vec![2], "a thrust's narrow arc holds one");
     assert_eq!(
-        struck(1, &striker, &attack(Stroke::Left), &fighters, &[]),
+        struck(1, &striker, &attack(Stroke::Up), &fighters, &[], &Flat),
+        vec![2],
+        "a thrust's narrow arc holds one"
+    );
+    assert_eq!(
+        struck(1, &striker, &attack(Stroke::Left), &fighters, &[], &Flat),
         vec![8, 2, 4, 3],
         "a sweep strikes all four in its arc, nearest first, no cap"
     );
     assert!(
-        struck(1, &striker, &attack(Stroke::Down), &fighters, &[]).iter().all(|id| *id != 5 && *id != 6 && *id != 7)
+        struck(1, &striker, &attack(Stroke::Down), &fighters, &[], &Flat)
+            .iter()
+            .all(|id| *id != 5 && *id != 6 && *id != 7)
     );
     let wall = [Block { min_x: -2.0, min_y: -1.2, max_x: 2.0, max_y: -1.0, top: 3.0, bottom: 0.0 }];
-    assert!(struck(1, &striker, &attack(Stroke::Left), &fighters, &wall).is_empty(), "nothing through a wall");
+    assert!(struck(1, &striker, &attack(Stroke::Left), &fighters, &wall, &Flat).is_empty(), "nothing through a wall");
     let mut locked = striker;
     locked.target = Some(3);
     assert_eq!(
-        struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[]),
+        struck(1, &locked, &attack(Stroke::DownLeft), &fighters, &[], &Flat),
         vec![3, 8, 2, 4],
         "the lock's target first"
     );
@@ -142,11 +148,22 @@ fn a_players_weapon_reaches_a_tenth_further_than_a_foes_and_bare_fists_as_far() 
     };
     // A chop reaches the weapon's reach and a body's radius: 2.15 m in a foe's hands, 2.33 m in a player's.
     let foe_struck = foe_at(0.0, -2.25, core::f64::consts::PI);
-    assert_eq!(struck(1, &player_at(0.0, 0.0), &attack, &[(2, foe_struck)], &[]), vec![2], "the player reaches it");
+    assert_eq!(
+        struck(1, &player_at(0.0, 0.0), &attack, &[(2, foe_struck)], &[], &Flat),
+        vec![2],
+        "the player reaches it"
+    );
     let player_struck = player_at(0.0, -2.25);
-    assert!(struck(1, &foe_at(0.0, 0.0, 0.0), &attack, &[(2, player_struck)], &[]).is_empty(), "a foe falls short");
+    assert!(
+        struck(1, &foe_at(0.0, 0.0, 0.0), &attack, &[(2, player_struck)], &[], &Flat).is_empty(),
+        "a foe falls short"
+    );
     let nearer = player_at(0.0, -2.1);
-    assert_eq!(struck(1, &foe_at(0.0, 0.0, 0.0), &attack, &[(2, nearer)], &[]), vec![2], "and reaches nearer in");
+    assert_eq!(
+        struck(1, &foe_at(0.0, 0.0, 0.0), &attack, &[(2, nearer)], &[], &Flat),
+        vec![2],
+        "and reaches nearer in"
+    );
     assert!((weapon_reach(WeaponClass::Greatsword, true) - 2.3 * 1.1).abs() < 1e-12);
     assert_eq!(weapon_reach(WeaponClass::Greatsword, false), 2.3);
     assert_eq!(weapon_reach(WeaponClass::Fists, true), weapon_reach(WeaponClass::Fists, false));

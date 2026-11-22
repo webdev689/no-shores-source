@@ -1,5 +1,6 @@
 // The baked flora (tools/flora): each form's near mesh and its biome's pictures on R2, named in
 // content/nature/flora.json. A biome's plants are drawn only once its meshes and pictures have loaded.
+import { contentBytes } from '../contentCache.ts';
 import manifest from '../../../content/nature/flora.json' with { type: 'json' };
 import type { Cast } from './kinds.ts';
 
@@ -104,6 +105,21 @@ export function formsOf(cast: Cast, biome: string, flora: Flora = FLORA): readon
   return forms;
 }
 
+/** Every file a biome's flora is drawn from, whatever kinds a place casts: its forms' meshes and its pictures. */
+export function floraFiles(biome: string, flora: Flora = FLORA): readonly string[] {
+  const entry = flora.biomes[biome];
+  if (!entry) return [];
+  const meshes = Object.values(entry.kinds).flatMap((forms) => forms.map((form) => form.mesh));
+  const pictures = entry.layers.flatMap((layer) => [layer.albedo, layer.normal]);
+  return [...new Set([...meshes, ...pictures])].map((key) => flora.base + key);
+}
+
+/** Fetches a biome's flora into the browser's storage ahead of its land, a file at a time, so its land's opening
+ *  reads them from the disk; one that fails is fetched as the land opens, as it would have been. */
+export async function warmFlora(biome: string, read: (url: string) => Promise<unknown> = contentBytes): Promise<void> {
+  for (const url of floraFiles(biome)) await read(url).catch(() => undefined);
+}
+
 /** A near mesh's vertices from its bytes: a little-endian count, then that many vertices. */
 export function decodeMesh(bytes: ArrayBuffer): { readonly vertices: ArrayBuffer; readonly count: number } {
   if (bytes.byteLength < 4) throw new Error('a flora mesh with no header');
@@ -124,14 +140,11 @@ export async function loadFlora(cast: Cast, biome: string, flora: Flora = FLORA)
   const forms = formsOf(cast, biome, flora);
   const entry = flora.biomes[biome];
   if (!entry || forms.length === 0) return null;
-  const bytes = async (key: string) => {
-    const answer = await fetch(flora.base + key);
-    if (!answer.ok) throw new Error(`${key}: ${answer.status}`);
-    return answer;
-  };
+  // Kept by the browser once fetched: a biome left and come back to reads its flora from the disk.
+  const bytes = async (key: string) => (await contentBytes(flora.base + key)).bytes;
   const picture = async (key: string) =>
-    createImageBitmap(await (await bytes(key)).blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
-  const meshes = await Promise.all(forms.map(async (form) => decodeMesh(await (await bytes(form.mesh)).arrayBuffer())));
+    createImageBitmap(new Blob([await bytes(key)]), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+  const meshes = await Promise.all(forms.map(async (form) => decodeMesh(await bytes(form.mesh))));
   const layers = await Promise.all(
     entry.layers.map(async (layer) => ({ albedo: await picture(layer.albedo), normal: await picture(layer.normal) })),
   );

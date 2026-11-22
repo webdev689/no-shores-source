@@ -36,11 +36,17 @@ pub struct NodeFile {
     pub boxes: Vec<city::collision::Box2>,
     /// In a social space, the counters that answer a player's gear, which the room serves only at each.
     pub counters: Vec<Counter>,
+    /// In Overlook's social space, where a player stands to read the bounty board: its counter, apart from the
+    /// stations' since no keeper stands at it.
+    pub board: Option<[f64; 2]>,
     /// In a social space Shape visits, the places he may stand, one a week.
     pub shape_spots: Vec<[f64; 2]>,
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
     /// space still locked (`city::social_open`).
     pub locked: bool,
+    /// The nodes its layout's gates and way in lead to, each one laid: a patrol area's instances, an instance's patrol
+    /// area. The server lets a player through into a node only from one whose gate leads there.
+    pub gates: Vec<String>,
     /// In a patrol area, its layout's resource places, where its room's nodes stand, in the layout's order.
     pub resources: Vec<[f64; 2]>,
     /// The places the houses' roads name: each of its layout's areas, and each run at its mouth.
@@ -77,7 +83,7 @@ pub struct Counter {
     pub at: [f64; 2],
 }
 
-/// What a node's index lists of it.
+/// What a node's index lists of it: the server reads where each node's gates lead from it.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Listed {
     pub id: String,
@@ -85,18 +91,22 @@ pub struct Listed {
     pub name: String,
     pub continent: String,
     pub bounds: [f64; 4],
+    pub gates: Vec<String>,
 }
 
 impl From<&NodeFile> for Listed {
     fn from(node: &NodeFile) -> Self {
-        let NodeFile { id, kind, name, continent, bounds, .. } = node;
-        Listed { id: id.clone(), kind: *kind, name: name.clone(), continent: continent.clone(), bounds: *bounds }
+        let NodeFile { id, kind, name, continent, bounds, gates, .. } = node;
+        let (id, name, continent, gates) = (id.clone(), name.clone(), continent.clone(), gates.clone());
+        Listed { id, kind: *kind, name, continent, bounds: *bounds, gates }
     }
 }
 
-/// The longest room name the server's router takes, and the prefix of a node's room.
-pub const ROOM_NAME_LIMIT: usize = 40;
+/// The longest room name the server's router takes, the prefix of a node's room, and the longest ending one takes: a
+/// run of a patrol's last dungeon at Abyss.
+pub const ROOM_NAME_LIMIT: usize = 64;
 pub const NODE_ROOM: &str = "node-";
+pub const LONGEST_ENDING: &str = "--abyss--dungeon-2--run-00000000";
 
 /// Why a world's nodes cannot each have a file and a room of their own: two with one id (an edits file checks its
 /// own ids only), the index's own name, or an id too long for a room's name. None when every node can.
@@ -108,8 +118,11 @@ pub fn ids_problem(nodes: &[NodeFile]) -> Option<String> {
             Some(format!("two nodes are called {}", node.id))
         } else if node.id == "index" {
             Some("no node may be called index, the index's own name".to_owned())
-        } else if NODE_ROOM.len() + node.id.len() > ROOM_NAME_LIMIT {
-            Some(format!("{} is too long for its room's name, {NODE_ROOM}<id>, of {ROOM_NAME_LIMIT}", node.id))
+        } else if NODE_ROOM.len() + node.id.len() + LONGEST_ENDING.len() > ROOM_NAME_LIMIT {
+            Some(format!(
+                "{} is too long for its rooms' names, {NODE_ROOM}<id>{LONGEST_ENDING}, of {ROOM_NAME_LIMIT}",
+                node.id
+            ))
         } else {
             None
         }
@@ -174,8 +187,10 @@ pub fn nodes_of(
             ground,
             boxes,
             counters,
+            board: None,
             shape_spots,
             locked: false,
+            gates: Vec::new(),
             resources: Vec::new(),
             places,
             paths,
@@ -189,6 +204,9 @@ pub fn nodes_of(
             || (whole(&node.ring), whole(&node.spawns)),
             |layout| (layout.ring.clone(), layout.spawns.clone()),
         );
+        // As the page's passages go: through an area that leads to a node with a layout of its own.
+        let leading = laid.into_iter().flat_map(|layout| &layout.areas).filter_map(|area| area.leads_to.as_ref());
+        let gates = leading.filter(|to| layouts.iter().any(|layout| &&layout.id == to)).cloned().collect();
         let resources = laid.map_or_else(Vec::new, |layout| {
             let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource);
             places.filter_map(|site| site.node).collect()
@@ -196,7 +214,7 @@ pub fn nodes_of(
         let places = laid.map(places_of).unwrap_or_default();
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
-        NodeFile { resources, places, paths, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
+        NodeFile { gates, resources, places, paths, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -204,6 +222,7 @@ pub fn nodes_of(
         let visited = city::shape_visits(&plan.id);
         NodeFile {
             counters: counters.map(|station| Counter { kind: station.kind, at: station.counter }).collect(),
+            board: social.board.map(|board| board.front),
             shape_spots: if visited { social.visitor_spots.clone() } else { Vec::new() },
             locked: !city::social_open(&plan.id),
             ..cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
@@ -345,14 +364,31 @@ mod tests {
     }
 
     #[test]
+    fn a_patrol_area_s_gate_leads_to_its_instance_and_the_instance_s_way_in_back_and_the_index_says_so() {
+        const GLADE_AND_GROVE: &str = r#"{ "strokes": [], "nodes": [{ "id": "glade", "kind": "patrol",
+            "name": "The Glade", "ring": [[260000, 360000], [261000, 360000], [261000, 361000], [260000, 361000]],
+            "spawns": [[260500, 360500]] }, { "id": "grove", "kind": "mission", "name": "The Grove",
+            "ring": [[262000, 360000], [263000, 360000], [263000, 361000], [262000, 361000]],
+            "spawns": [[262500, 360500]] }] }"#;
+        let layout = world::layout::parse(SQUARE).unwrap();
+        let edits = land::edits::parse(GLADE_AND_GROVE).unwrap();
+        let nodes = nodes_of(&layout.continents[0], edits, &Blocks::default(), &Builders::default()).unwrap();
+        let gates = |id: &str| nodes.iter().find(|node| node.id == id).map(|node| node.gates.clone());
+        assert_eq!(gates("glade"), Some(vec!["grove".to_owned()]));
+        assert_eq!(gates("grove"), Some(vec!["glade".to_owned()]));
+        assert!(nodes.iter().all(|node| Listed::from(node).gates == node.gates), "the index lists them");
+    }
+
+    #[test]
     fn nodes_sharing_an_id_one_called_index_and_an_id_too_long_for_a_room_are_refused() {
         let (node, _) = glade();
         let called = |id: &str| NodeFile { id: id.to_owned(), ..node.clone() };
         assert_eq!(ids_problem(&[called("glade"), called("glen")]), None);
         assert_eq!(ids_problem(&[called("glade"), called("glade")]), Some("two nodes are called glade".to_owned()));
         assert!(ids_problem(&[called("index")]).is_some());
-        assert_eq!(ids_problem(&[called(&"a".repeat(35))]), None, "node- and 35 make 40");
-        assert!(ids_problem(&[called(&"a".repeat(36))]).is_some());
+        let longest = ids_problem(&[called(&"a".repeat(27))]);
+        assert_eq!(longest, None, "node-, 27 and --abyss--dungeon-2--run-00000000 make 64");
+        assert!(ids_problem(&[called(&"a".repeat(28))]).is_some());
     }
 
     #[test]

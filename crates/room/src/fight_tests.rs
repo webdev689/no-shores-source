@@ -1,5 +1,6 @@
 use super::*;
 use combat::arms::{OffHand, Stroke, WeaponClass};
+use combat::fighter::Action;
 use combat::{CombatInput, Intent};
 use judging::{Check, How};
 use movement::Controls;
@@ -59,6 +60,24 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
     assert!((hit.amount - chop).abs() < 1e-9);
     assert!((room.fighter(foe).unwrap().health - (130.0 - chop)).abs() < 1e-9);
     assert_eq!(room.fighter(player).unwrap().target, Some(foe), "the lock takes the foe it struck");
+}
+
+#[test]
+fn nothing_is_fought_from_the_saddle() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let held = [
+        CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() },
+        CombatInput { guard: true, ..CombatInput::default() },
+    ];
+    for (sequence, combat) in (1..=30).zip(held.into_iter().cycle()) {
+        let mut riding = asking(sequence, room.clock(), combat);
+        riding.intent.controls.mounted = true;
+        room.input(player, riding).unwrap();
+        room.tick();
+        let action = room.fighter(player).unwrap().action;
+        assert!(!matches!(action, Action::Attack(_) | Action::Guard { .. }), "on horseback: {action:?}");
+    }
 }
 
 #[test]

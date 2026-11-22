@@ -298,33 +298,35 @@ Where the work stands now, for the next session. Each session rewrites this note
   place of the rings on the ground (#134, [[What a Player Can Use Wears Its Mark Over It]]). Tested offline with the
   full check. Not yet: a real controller, the mouse's gauntlet seen in Chromium and Firefox (headless pictures never
   show the system cursor), the binds' D1 migration and route live, the marks on a real GPU.
-- **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
-  and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
-  with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges,
-  with the owner's yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134,
-  the Postmaster's letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a
-  door.
+- **The dungeons-to-mail stack is on `main`** (#72 → #88 → #97 → #122 → #123), merged with the owner's yes ("Yeah we
+  need to merge the entire stack"), each after catching up with main through #140 and #139 and passing
+  `cargo xtask check` on its head, tested offline, main's CI green after each. The owner's answers on the way: the
+  Journal's quest cards show main's houses' roads ("Journal shows main's (Recommended)"), this stack's empty quest
+  engine dropped; the asset workflows publish with `R2_TOKEN` ("The token is already in secrets",
+  [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); the board wears a gold "!", an entrance a door and
+  the Postmaster his sealed letter, beating while mail waits ("!, letter, door (Recommended)"). Main's drawn interface
+  took the Journal, its timers, the board's screen, the entrance card and the Postmaster's screen, each rebuilt and
+  pictured headless through `uiShot` (13 defects fixed on #97's, five on his). Not yet tested live: anything of it in
+  the deployed rooms, the accounts' migration of each character's room, a real GPU.
 - **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
   external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
   So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
   (cfd75bba), unmerged; the marks were pictured with it.
-- **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
-  ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map
-  message they sent is an injected script's, not the game's.
-  - #136 (branch `claude/keen-cannon-4nbe4z`): any error thrown in a frame stopped the game's loop for good, the
-    picture frozen and the music playing on; each frame now runs under `FrameGuard` (`frameGuard.ts`), which reports
-    it and asks for the next. And the leaks two audits found, each fixed with a test that fails without it: the blood
-    view's pictures, an audio node a frame for a bed not yet come, unclosed bitmaps, figure frames never trimmed in
-    cutscenes, a sea join after the player left, a failed landing's socket, the worker's waits with no page audio, a
-    wreck run opened late, the forge's last cards. Tested offline (the full check).
-  - The second (branch `claude/keen-cannon-4nbe4z-audio`, stacked on #136): every recording was decoded at the
-    first tap, about 112 minutes of audio, some 2.5 GB of samples and a second copy in the worker. Now recordings come
-    as they are wanted, long ones a 1 MB chunk at a time, held once on the page within 192 MB, every file kept in the
-    browser's Cache Storage ([[Interface]], "How recordings load"). Tested against R2 headless: 26 MiB held after the
-    wake, a reload asking R2 for 4 files where the first visit asked for 96. Not yet heard: the seams between a bed's
-    chunks.
+- **The intro's freeze and the game's memory, on `main`** with the owner's yes ("Lets merge and deokoy this", then
+  "Deploy" for the rest), which deploys the page and the rooms ([[Areas Load in Chunks With Proper Caching]]). The
+  source map message the owner sent is an injected script's, not the game's.
+  - #136: any error thrown in a frame stopped the game's loop for good, the picture frozen and the music playing on;
+    each frame now runs under `FrameGuard` (`frameGuard.ts`). And the leaks two audits found, each with a test.
+  - #137: every recording was decoded at the first tap, about 112 minutes of audio, some 2.5 GB and a second copy in
+    the worker; now they come as wanted, long ones a 1 MB chunk at a time, held once within 192 MB ([[Interface]],
+    "How recordings load"). Not yet heard: the seams between a bed's chunks.
+  - #139: the areas' chunks and caching, the decision's rest: picture packs read in 256 KB blocks, every R2 file kept
+    by the browser within 1 GB, a continent's flora fetched ahead, one fetch per `world/` file, and memory caps.
+  - #140: a city's vertices copied for the GPU a number at a time (about 17 ms for 600,000, where slicing took 125).
+  - `main`'s check at #131 failed only because `client/src/ships/shipTags.test.ts` fetched ship meshes from `r2.dev`
+    and got HTTP 500: those tests make every deploy wait on R2 answering.
   - Not seen on a real GPU: headless Chromium in the cloud container loses the game's WebGPU device about 2 s after
-    start on every commit tried (the published page too), so the intro could not be run headless at all.
+    start on every commit tried (the published page too).
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
   after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
   and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
@@ -418,7 +420,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   Tested offline: the full check, and the game's HUD with a sea fight on it pictured headless at 1280x720, 1920x1080
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
-  room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
+  room through `Sea.minute`; #97 takes an island's door into its dungeon.
 - **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
   check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
   account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
@@ -545,11 +547,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   effects stay, and at what settings, is the owner's to say; each is one line in `combat/attackFeel.ts` (`FEEL`).
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
-- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
-  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
-  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into
-  `main` that changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run
-  by hand.
+- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `rooms` workflow alone reads;
+  the workflows that publish to R2 read `R2_TOKEN`, a token for R2 alone, already among the secrets. The one
+  the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy writes the
+  stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into `main` that
+  changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run by hand.
 - #62's: no weapon is seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and
   `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes
@@ -605,17 +607,27 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **Play the stack in the deployed rooms** (tested live), now it is on `main`: a dungeon of each style (a band's
+  fight, the Reeve's fall, the cache's Vestige, the portal out, the door mark over each entrance); the Journal and the
+  board (take a bounty, count it, turn it in, drop the timers with T, a road's card at its task); a sea bounty's count
+  in the Journal at sea; an arrival of each kind and one refused (a landing, a gate, a dungeon and back out, a company
+  join); a Vestige left lying and taken from the Postmaster, his letter beating while mail waits; and picture the
+  board, his counter and his figure in the hub. A change to `tools/dungeon/` or the contracts publishes new packs:
+  take the manifest line from the workflow's log into `content/dungeon/modules.json`.
+- **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
+  `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA), once `webgpu-shot`
+  can picture the game again: since #127 the game draws in its worker, which it cannot read (above).
 - **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
   draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
-- **Areas in chunks, after the recordings** ([[Areas Load in Chunks With Proper Caching]]): the forge's picture packs
-  read in fixed blocks kept in Cache Storage (at the intro's start some 60 range requests went to one pack within
-  2 ms; one block holds them all), through `contentCache.ts`; the next area's land, pictures and sounds fetched ahead
-  of a switch; a cap on what the browser's storage keeps, least lately used let go; R2's `Cache-Control: immutable`
-  set by `tools/r2.py` once it is checked that Cloudflare's object API takes the header (and marking the files
-  already there writes to R2: the owner's yes); then the hitching measured on a real GPU, which a cloud session
-  cannot do.
+- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is opened
+  on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
+  difficulty changes; a city is built in one go on the game's thread after each landmass switch and every 1.5 km
+  (`landDrawers.ts`, `cityView.ts`); flora is decoded and its mips made again on every switch, the same biome too.
+  A landmass cannot be prepared before it opens: the land's worker holds one. R2's own `Cache-Control` waits on a
+  test upload (the owner's yes, a write to R2). Then the hitching measured on a real GPU, which a cloud session cannot
+  do.
 - **Memory still worth measuring**: the figure cards' 4000-texture budget (`player/cards.ts`) against a real GPU's
   memory; the scene's full-size targets, about 590 MB at 5120 by 2880 (`scene.ts`), with no cap at the device's
   limits; the item pictures' cache (`player/itemPictures.ts`), uncapped.
@@ -623,11 +635,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   the courts' pieces; the audit's risks left open (a walker's step to the side of a post's line or round a sharp turn
   is not walked against the real hub's boxes, kept posts' people are not booked against walkers, routines' maths may
   round differently by engine, puddles form on lawn as on flat stone); pictures of the Harbour Stair and the road, the
-  fall, and the townsfolk at work. The activities session (#97) reads `Social.board` and sets it from
-  `hub::BOARD_LANDING_M` when it merges.
-- **The islands** ([[Islands]]): the door's trip into its dungeon, once the Dungeons session pushes its
-  `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
-  islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
+  fall, and the townsfolk at work.
+- **The islands** ([[Islands]]): coming out of a door's dungeon back onto its island, before the door, rather than at
+  the ship (the trip takes the door's point already, `SeaBack`); the islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
   its own height, turn and size); pictures of the landfall offer, E's prompts and washing up in the game itself (staging at sea
   headless outran its budget here).
 - **The sea after #75**: the friendly ships' port factions (deferred by the owner); ships' own upgrade materials,

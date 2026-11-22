@@ -9,7 +9,7 @@ import { Cards, type CardMaker } from './cards.ts';
 import { plainDress } from './dressing.ts';
 import { KINDS, WORN } from './gear.ts';
 import type { Picture } from './picture.ts';
-import { ItemPictures } from './itemPictures.ts';
+import { ItemPictures, PICTURES_KEPT } from './itemPictures.ts';
 
 // A figure one pixel wide and three tall: skin, a fist, skin. A sword held in the fist lies behind it at the grip.
 const cell = { cell: [1, 3], frames: 1, root: [0, 2] } as const;
@@ -195,4 +195,28 @@ test('a staff’s large picture takes its metal’s ramp on its greys, as the fi
   const pictures = new ItemPictures(forgeOver({ '@art/weapons/staff_iron.png': staff }, dyes));
   const drawnStaff = await drawn(pictures, item('staff', 0));
   assert.deepEqual(texels(drawnStaff), [[...(ramp[8] ?? [])], [...GRIP], [...(ramp[8] ?? [])], [...POMMEL]]);
+});
+
+test('pictures past the most kept are let go, those asked for least lately first', { timeout: 20000 }, async () => {
+  const pictures = new ItemPictures(forge);
+  const sword = item('sword', 0);
+  const wornBy = (body: number) => plainDress('human', body / (PICTURES_KEPT + 2));
+  const draw = (body: number) =>
+    new Promise<void>((done) => {
+      if (pictures.pictureOf(sword, wornBy(body), done)) done();
+    });
+  for (let body = 0; body <= PICTURES_KEPT; body++) {
+    await draw(body);
+    // The first is shown all along, so it is asked for after each.
+    pictures.pictureOf(sword, wornBy(0), () => {});
+  }
+  assert.ok(
+    pictures.pictureOf(sword, wornBy(0), () => {}),
+    'the one shown all along is kept',
+  );
+  assert.equal(
+    pictures.pictureOf(sword, wornBy(1), () => {}),
+    null,
+    'the one asked for least lately was let go',
+  );
 });

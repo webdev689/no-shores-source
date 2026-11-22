@@ -178,6 +178,7 @@ impl Room {
                 seed: self.seed,
                 fighters: &self.fighters,
                 blocks: &self.blocks,
+                terrain: &movement::Flat,
                 routes: &*self.routes,
                 spots: &*self.spots,
                 director: self.director,
@@ -298,7 +299,7 @@ impl Room {
             }
             Happening::Struck(attack) => {
                 let striker = self.fighter(by);
-                for defender in struck(by, &striker, &attack, &self.fighters, &self.blocks) {
+                for defender in struck(by, &striker, &attack, &self.fighters, &self.blocks, &movement::Flat) {
                     let blow = swing_blow(by, &self.fighter(by), &attack, defender);
                     let verdict = self.judged(by, defender, &blow);
                     self.tell(by, Seen::Landed { on: defender, verdict });
