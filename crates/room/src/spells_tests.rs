@@ -336,6 +336,17 @@ fn casting_any_spell_but_vanish_ends_the_veil_and_a_spell_already_out_does_not()
 }
 
 #[test]
+fn casting_ends_the_grace_a_player_stood_again_with() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 1, &[]);
+    stand_foe(&mut room, 0.0, -4.0, 1000.0);
+    let graced = room.clock() + 180;
+    room.players.get_mut(&player).expect("in").graced = graced;
+    cast(&mut room, player, ARC_LASH, None, 0);
+    assert_eq!(room.players[&player].graced, 0, "casting is attacking, so striking first");
+}
+
+#[test]
 fn a_spell_never_takes_its_caster_s_soft_lock() {
     let (mut room, player) = room_with_player();
     wearing(&mut room, player, 1, &[]);

@@ -50,7 +50,8 @@ export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number,
   const art = taken && artOf(taken.art);
   // None worn (the prologue's player has none): no bar to show.
   if (!taken || !art) return null;
-  const seconds = Math.max(0, tick - takenAt) / 60;
+  // Seconds as the room counts its recharge: fewer under a run's Trickle.
+  const seconds = Math.max(0, tick - takenAt) / 60 / (taken.recharge ?? 1);
   const runOn = (share: number, rechargeS: number | undefined) =>
     rechargeS ? Math.min(1, share + seconds / rechargeS) : share;
   const [first, second] = art.tenets;

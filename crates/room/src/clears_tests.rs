@@ -106,3 +106,17 @@ fn a_wave_that_stands_and_falls_after_a_clear_pays_no_clear_again() {
     let gained = room.players[&player].character.xp - cleared;
     assert!(gained < 1_000, "the wave's kill alone, not the dungeon's clear again: {gained}");
 }
+
+#[test]
+fn a_player_who_rejoins_keeps_their_share_of_the_clear() {
+    let (mut room, player) = cleared_room(NodeKind::Dungeon);
+    assert!(room.own(player, "account"));
+    fell_all(&mut room, player);
+    room.part(player);
+    let back = room.join().expect("room");
+    assert!(room.own(back, "account"));
+    let before = room.players[&back].character.xp;
+    room.tick();
+    let paid = room.players[&back].character.xp - before;
+    assert!(paid >= 2_000, "the same account, back under a new id, is paid the clear: {paid}");
+}

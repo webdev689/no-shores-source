@@ -138,10 +138,11 @@ number is one of [[Gear as Claude Shapes It]].
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
   slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
-  its colour and slot (`keep_found`).
+  its colour and slot at the foe's level, whatever a named item's own (`keep_found`).
 - **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
   once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
-  player still in the room who shared a kill of it since its last clear is paid, at the garrison's highest level as a
+  player still in the room who shared a kill of it since its last clear (as their account, so one who rejoined keeps
+  it) is paid, at the garrison's highest level as a
   kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
   (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
   Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid

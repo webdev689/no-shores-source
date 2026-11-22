@@ -7,12 +7,13 @@ use crate::{NodeKind, PlayerId, Room};
 use gear::rewards::Clear;
 use std::collections::BTreeSet;
 
-/// A garrison that pays a clear: which, who has fought it since it last paid, and whether it has paid since a group
-/// last stood.
+/// A garrison that pays a clear: which, who has fought it since it last paid (by their accounts too, so one who
+/// rejoins under a new number keeps their share), and whether it has paid since a group last stood.
 #[derive(Debug)]
 pub(crate) struct Clearing {
     pub clear: Clear,
     pub fought: BTreeSet<PlayerId>,
+    pub owners: BTreeSet<String>,
     pub paid: bool,
 }
 
@@ -24,14 +25,16 @@ pub(crate) fn clearing_of(kind: NodeKind) -> Option<Clearing> {
         NodeKind::Boss => Clear::WorldBoss,
         _ => return None,
     };
-    Some(Clearing { clear, fought: BTreeSet::new(), paid: false })
+    Some(Clearing { clear, fought: BTreeSet::new(), owners: BTreeSet::new(), paid: false })
 }
 
 impl Room {
     /// Notes that a player shared a kill of the room's garrison, so its clear pays them.
     pub(crate) fn fought_garrison(&mut self, player: PlayerId) {
+        let owner = self.players.get(&player).and_then(|found| found.owner.clone());
         if let Some(clearing) = self.clearing.as_mut() {
             clearing.fought.insert(player);
+            clearing.owners.extend(owner);
         }
     }
 
@@ -51,8 +54,14 @@ impl Room {
             return;
         }
         clearing.paid = true;
-        let (clear, fought) = (clearing.clear, std::mem::take(&mut clearing.fought));
-        for player in fought {
+        let (clear, fought, owners) =
+            (clearing.clear, std::mem::take(&mut clearing.fought), std::mem::take(&mut clearing.owners));
+        let shared = |id: &PlayerId, owner: Option<&String>| {
+            fought.contains(id) || owner.is_some_and(|owner| owners.contains(owner))
+        };
+        let paid: Vec<PlayerId> =
+            self.players.iter().filter(|(id, found)| shared(id, found.owner.as_ref())).map(|(id, _)| *id).collect();
+        for player in paid {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
             let vestiges = found.character.reward_clear(clear, level.unwrap_or(0), self.difficulty, &dice);
