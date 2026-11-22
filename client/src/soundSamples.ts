@@ -1,10 +1,12 @@
 // The game's recorded sounds, the interface's and the world's: the owner's picks from Freesound and from DFO's own
-// (content/audio/sounds.json), kept on R2 under the hash of their bytes. Each is fetched once the page's sound wakes,
-// levelled to one peak and one loudness so a quiet recording and a loud one sit together, and played for its cue, one
-// of its files in turn where it has several; until it has come, or where it cannot, it is silent. Each Freesound
-// recording carries its credit, which Settings lists.
+// (content/audio/sounds.json), kept on R2 under the hash of their bytes, each levelled to one peak and one loudness
+// and played for its cue; silent until it has come. Each Freesound recording carries its credit, which Settings lists.
+// They come as they are wanted, long ones a chunk at a time, and are held within a budget, since all of them decoded
+// at once would not fit in a page's memory.
 
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
+import { contentBytes, type Fetched } from './contentCache.ts';
+import { channelsOf, matchedLevel, type Loudness, type Measured, measuredOf, measureOver } from './soundMeasure.ts';
 
 /** A recorded sound's credit, as the licence asks it to be given. */
 export interface SoundCredit {
@@ -17,59 +19,45 @@ export interface SoundCredit {
   readonly changes: string;
 }
 
-/** The peak a recorded sound is levelled to, the interface's presses' loudness; and the loudness none passes, as
- *  its loudest 20 ms (-24 dBFS): a held tone levelled by its peak alone sounds far louder than a click. */
-const PEAK = 0.3;
-const LOUD = 0.063;
-const WINDOW_S = 0.02;
-const loaded = new Map<string, { readonly buffer: AudioBuffer; readonly level: number; readonly rush: number }[]>();
-const lastPlayed = new Map<string, number>();
-let asked = false;
+/** A file longer than this is fetched a chunk of this many bytes at a time: about a minute of a 128 kbps recording. */
+export const CHUNK_BYTES = 1_000_000;
+/** The decoded samples held before the least lately played are let go: a soft limit, as a sound played or come in the
+ *  last KEPT_PLAYED_S is never let go for it, nor the short sounds of play, which must sound the moment they are
+ *  asked for. */
+export const HELD_BYTES = 192 * 1024 * 1024;
+const KEPT_PLAYED_S = 120;
+/** A long recording's chunks held at once: the one playing and the next. */
+const CHUNKS_HELD = 2;
+/** A file or chunk that failed to come is not asked for again until this many seconds have passed. */
+const FAILED_WAIT_S = 30;
 
-/** A sound's peak, the root mean square of its loudest `windowS` seconds (of all of it, where it is shorter), and the
- *  seconds into it that loudest stretch is centred on. */
-export interface Measure {
-  readonly peak: number;
-  readonly loud: number;
-  readonly centre: number;
+/** A recording held, decoded: its buffer, how it measures, its decoded size, the chunk of its file it is (null for
+ *  a whole file), and when it last played, or came, on the audio clock. */
+interface Held {
+  readonly file: string;
+  readonly buffer: AudioBuffer;
+  readonly measured: Measured;
+  readonly bytes: number;
+  readonly chunk: number | null;
+  playedAt: number;
 }
 
-/** What matching a recording's level asks of a measure. */
-export type Loudness = Pick<Measure, 'peak' | 'loud'>;
-
-export function measureOf(channels: readonly Float32Array[], sampleRate: number, windowS: number): Measure {
-  let [peak, loudest, centre] = [0, 0, 0];
-  for (const samples of channels) {
-    const window = Math.min(samples.length, Math.max(1, Math.round(sampleRate * windowS)));
-    let sum = 0;
-    for (let index = 0; index < samples.length; index++) {
-      const sample = samples[index] ?? 0;
-      peak = Math.max(peak, Math.abs(sample));
-      sum += sample * sample - (index >= window ? (samples[index - window] ?? 0) ** 2 : 0);
-      if (index >= window - 1 && sum / window > loudest)
-        [loudest, centre] = [sum / window, Math.max(0, index - window / 2) / sampleRate];
-    }
-  }
-  return { peak, loud: Math.sqrt(loudest), centre };
+/** A context that decodes elsewhere and keeps the samples there, handing back only how they measure: the game's
+ *  worker's (`thread/audioAway.ts`). */
+interface MeasuringContext {
+  decodeMeasured(data: ArrayBuffer): Promise<{ buffer: AudioBuffer; measured: Measured }>;
 }
 
-/** How much a recording is turned up or down: its peak to PEAK, unless its loudest 20 ms would then pass LOUD. */
-export function levelOf(channels: readonly Float32Array[], sampleRate: number): number {
-  const { peak, loud } = measureOf(channels, sampleRate, WINDOW_S);
-  return Math.min(PEAK / Math.max(0.01, peak), LOUD / Math.max(1e-4, loud));
+/** A recording's bytes decoded, and measured: by the page where the samples are kept there, else here. */
+async function decodedMeasured(audio: BaseAudioContext, bytes: ArrayBuffer) {
+  const away = audio as Partial<MeasuringContext>;
+  if (typeof away.decodeMeasured === 'function') return away.decodeMeasured(bytes);
+  const buffer = await audio.decodeAudioData(bytes);
+  return { buffer, measured: measuredOf(channelsOf(buffer), buffer.sampleRate) };
 }
 
-/** The seconds into a recording its loudest 20 ms come: a whoosh's rush. */
-export const rushOf = (channels: readonly Float32Array[], sampleRate: number): number =>
-  measureOf(channels, sampleRate, WINDOW_S).centre;
-
-/** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
-export const rushOfCue = (id: string): number => Math.max(0, ...(loaded.get(id) ?? []).map((sound) => sound.rush));
-
-/** The gain that sets a recording (`mine`) as loud as the sound it stands in for (`theirs`), its peak never past
- *  `most` (in the same units; that sound's own peak where not given). */
-export const matchedLevel = (mine: Loudness, theirs: Loudness, most = theirs.peak): number =>
-  Math.min(theirs.loud / Math.max(1e-6, mine.loud), most / Math.max(1e-6, mine.peak));
+/** Whether a cue is fetched as soon as the sound wakes: the short sounds of play, not the ambience or the story's. */
+export const fetchedAtWake = (id: string): boolean => !id.startsWith('amb.') && !id.startsWith('story.');
 
 /** A sound's files: a Freesound pick's one, or each variant of one of DFO's own. */
 export const keysOf = (sound: { readonly key: string } | { readonly keys: readonly string[] }): readonly string[] =>
@@ -81,47 +69,165 @@ export function variantOf(count: number, last: number | undefined, roll = Math.r
   return (last + 1 + Math.floor(roll * (count - 1))) % count;
 }
 
-const channelsOf = (buffer: AudioBuffer) =>
-  Array.from({ length: buffer.numberOfChannels }, (unused, channel) => buffer.getChannelData(channel));
-
-const measured = new WeakMap<AudioBuffer, Map<number, Measure>>();
-
-/** A buffer's measure over `windowS`, taken once. */
-function measureOfBuffer(buffer: AudioBuffer, windowS: number): Measure {
-  const byWindow = measured.get(buffer) ?? new Map<number, Measure>();
-  measured.set(buffer, byWindow);
-  const known = byWindow.get(windowS);
-  if (known) return known;
-  const made = measureOf(channelsOf(buffer), buffer.sampleRate, windowS);
-  byWindow.set(windowS, made);
-  return made;
-}
-
-/** Fetches and decodes every recorded sound, once. */
-export function loadSamples(audio: AudioContext): void {
-  if (asked) return;
-  asked = true;
-  for (const [id, sound] of Object.entries(bank.sounds))
-    for (const key of keysOf(sound))
-      void fetch(bank.base + key)
-        .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`${answer.status}`))))
-        .then((bytes) => audio.decodeAudioData(bytes))
-        .then((buffer) => {
-          const variants = loaded.get(id) ?? [];
-          const channels = channelsOf(buffer);
-          const level = levelOf(channels, buffer.sampleRate);
-          loaded.set(id, [...variants, { buffer, level, rush: rushOf(channels, buffer.sampleRate) }]);
-        })
-        // A sound that cannot be fetched leaves its cue as it was before it was picked.
-        .catch(() => undefined);
-}
-
 /** When a recording starts (the context's time; at once where not given), and the loudness of the sound it took the
  *  place of, measured over `windowS`, which it takes in place of its own levelling, its peak never past `most` (that
  *  sound's own where not given): what the mix's ceiling leaves it. */
 export interface SamplePlay {
   readonly when?: number;
   readonly like?: { readonly measured: Loudness; readonly windowS: number; readonly most?: number };
+}
+
+type Bank = { readonly base: string; readonly sounds: Readonly<Record<string, Parameters<typeof keysOf>[0]>> };
+type Read = (url: string, range?: readonly [number, number]) => Promise<Fetched>;
+
+/** Every recording the game plays, fetched and held as it is wanted. */
+export class Samples {
+  private readonly bank: Bank;
+  private readonly read: Read;
+  private readonly most: number;
+  private readonly held = new Map<string, Held[]>();
+  /** Each file and chunk on its way. */
+  private readonly coming = new Set<string>();
+  /** Each long file's size, once its first chunk has said it. */
+  private readonly sizes = new Map<string, number>();
+  /** The sound each cue played last, so the next play is another: by the sound, as a chunk let go moves the rest. */
+  private readonly lastPlayed = new Map<string, Held>();
+  /** When each file and chunk that failed to come failed, on the audio clock. */
+  private readonly failed = new Map<string, number>();
+  private audio: BaseAudioContext | null = null;
+
+  constructor(sounds: Bank, read: Read = contentBytes, most = HELD_BYTES) {
+    [this.bank, this.read, this.most] = [sounds, read, most];
+  }
+
+  /** The page's sound has woken on `audio`: the short sounds of play are fetched now, the rest as each is wanted. */
+  wake(audio: BaseAudioContext): void {
+    if (this.audio) return;
+    this.audio = audio;
+    for (const id of Object.keys(this.bank.sounds)) if (fetchedAtWake(id)) this.want(id);
+  }
+
+  /** Fetches each of `id`'s files not held or on its way. */
+  want(id: string): void {
+    const sound = this.bank.sounds[id];
+    if (!sound || !this.audio) return;
+    const held = this.held.get(id) ?? [];
+    for (const file of keysOf(sound)) if (!held.some((each) => each.file === file)) this.fetch(id, file, 0);
+  }
+
+  /** The bytes of decoded samples held now. */
+  get bytes(): number {
+    let total = 0;
+    for (const variants of this.held.values()) for (const each of variants) total += each.bytes;
+    return total;
+  }
+
+  /** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
+  rushOf(id: string): number {
+    return Math.max(0, ...(this.held.get(id) ?? []).map((each) => each.measured.rush));
+  }
+
+  /** Plays `id` into `out`, its pitch at `rate`, answering it as it plays; null, and fetched, where it has not come. */
+  play(audio: AudioContext, out: AudioNode, id: string, rate = 1, play: SamplePlay = {}): AudioBufferSourceNode | null {
+    this.audio ??= audio;
+    const variants = this.held.get(id);
+    if (!variants || variants.length === 0) {
+      this.want(id);
+      return null;
+    }
+    const last = this.lastPlayed.get(id);
+    const lastAt = last ? variants.indexOf(last) : -1;
+    const sound = variants[variantOf(variants.length, lastAt < 0 ? undefined : lastAt)];
+    if (!sound) return null;
+    this.lastPlayed.set(id, sound);
+    sound.playedAt = audio.currentTime;
+    // A long recording's next chunk is fetched as one of its chunks plays, so the next play has it.
+    if (sound.chunk !== null) this.nextChunk(id, sound.file);
+    const source = audio.createBufferSource();
+    source.buffer = sound.buffer;
+    source.playbackRate.value = rate;
+    const gain = audio.createGain();
+    const { like } = play;
+    gain.gain.value = like
+      ? matchedLevel(measureOver(sound.measured, like.windowS), like.measured, like.most)
+      : sound.measured.level;
+    source.connect(gain).connect(out);
+    source.start(play.when ?? 0);
+    return source;
+  }
+
+  private nextChunk(id: string, file: string): void {
+    const size = this.sizes.get(file);
+    if (!size || [...this.coming].some((each) => each.startsWith(`${file} `))) return;
+    const count = Math.max(1, Math.ceil(size / CHUNK_BYTES));
+    const held = new Set((this.held.get(id) ?? []).filter((each) => each.file === file).map((each) => each.chunk));
+    const free = Array.from({ length: count }, (unused, chunk) => chunk).filter((chunk) => !held.has(chunk));
+    const chunk = free[Math.floor(Math.random() * free.length)];
+    if (chunk !== undefined) this.fetch(id, file, chunk);
+  }
+
+  /** Fetches chunk `chunk` of `file` (all of it, where it is no longer than a chunk), decodes and holds it. */
+  private fetch(id: string, file: string, chunk: number): void {
+    const audio = this.audio;
+    const coming = `${file} ${chunk}`;
+    if (!audio || this.coming.has(coming)) return;
+    const failedAt = this.failed.get(coming);
+    if (failedAt !== undefined && audio.currentTime - failedAt < FAILED_WAIT_S) return;
+    this.coming.add(coming);
+    const first = chunk * CHUNK_BYTES;
+    void this.read(this.bank.base + file, [first, first + CHUNK_BYTES - 1])
+      .then(async ({ bytes, total }) => {
+        // Only a part of the file came: it is long, and taken a chunk at a time.
+        const long = total !== null && total > bytes.byteLength;
+        if (long) this.sizes.set(file, total);
+        const { buffer, measured } = await decodedMeasured(audio, bytes);
+        const held = buffer.length * buffer.numberOfChannels * 4;
+        const playedAt = audio.currentTime;
+        this.keep(id, { file, buffer, measured, bytes: held, chunk: long ? chunk : null, playedAt });
+      })
+      // A sound that cannot be fetched leaves its cue silent, as before it was picked, and is asked for again later.
+      .catch(() => this.failed.set(coming, audio.currentTime))
+      .finally(() => this.coming.delete(coming));
+  }
+
+  private keep(id: string, sound: Held): void {
+    const variants = [...(this.held.get(id) ?? []), sound];
+    // A long recording keeps its newest chunks, the one played least lately let go, never the one just come.
+    const chunks = variants.filter((each) => each.file === sound.file && each.chunk !== null);
+    if (chunks.length > CHUNKS_HELD) {
+      chunks.splice(chunks.indexOf(sound), 1);
+      const oldest = chunks.reduce((one, other) => (other.playedAt < one.playedAt ? other : one));
+      variants.splice(variants.indexOf(oldest), 1);
+    }
+    this.held.set(id, variants);
+    this.trim();
+  }
+
+  /** Lets go of the sounds played least lately until the held samples are within their budget, keeping any played in
+   *  the last KEPT_PLAYED_S. */
+  private trim(): void {
+    let over = this.bytes - this.most;
+    if (over <= 0) return;
+    const now = this.audio?.currentTime ?? 0;
+    const all = [...this.held.entries()]
+      .filter(([id]) => !fetchedAtWake(id))
+      .flatMap(([id, variants]) => variants.map((sound) => ({ id, sound })));
+    for (const { id, sound } of all.sort((one, other) => one.sound.playedAt - other.sound.playedAt)) {
+      if (over <= 0 || now - sound.playedAt < KEPT_PLAYED_S) return;
+      const variants = (this.held.get(id) ?? []).filter((each) => each !== sound);
+      if (variants.length > 0) this.held.set(id, variants);
+      else this.held.delete(id);
+      over -= sound.bytes;
+    }
+  }
+}
+
+/** The game's one bank of recordings. */
+const samples = new Samples(bank);
+
+/** Starts fetching the recordings, once the page's sound has woken. */
+export function loadSamples(audio: BaseAudioContext): void {
+  samples.wake(audio);
 }
 
 /** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come. */
@@ -132,24 +238,11 @@ export function playSample(
   rate = 1,
   play: SamplePlay = {},
 ): AudioBufferSourceNode | null {
-  const variants = loaded.get(id);
-  if (!variants || variants.length === 0) return null;
-  const index = variantOf(variants.length, lastPlayed.get(id));
-  lastPlayed.set(id, index);
-  const sound = variants[index];
-  if (!sound) return null;
-  const source = audio.createBufferSource();
-  source.buffer = sound.buffer;
-  source.playbackRate.value = rate;
-  const gain = audio.createGain();
-  const { like } = play;
-  gain.gain.value = like
-    ? matchedLevel(measureOfBuffer(sound.buffer, like.windowS), like.measured, like.most)
-    : sound.level;
-  source.connect(gain).connect(out);
-  source.start(play.when ?? 0);
-  return source;
+  return samples.play(audio, out, id, rate, play);
 }
+
+/** The seconds into a cue's recording its rush comes, the latest of its files'; 0 until it has come. */
+export const rushOfCue = (id: string): number => samples.rushOf(id);
 
 /** Every Freesound recording's credit, by name; DFO's own sounds owe none. */
 export function soundCredits(): SoundCredit[] {

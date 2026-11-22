@@ -69,8 +69,10 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
 - **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
   frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
   the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
-  struck the fighter moves at a third of its pace. A click picks the stroke at random, as Daggerfall Unity's click to
-  attack does, among the strokes that reach the locked foe when some do (the page rolls it): up thrusts half a metre
+  struck the fighter moves at a third of its pace. The player's swings chain the side cut (left), the overhead (down)
+  and the thrust (up) in turn, starting over at the side cut after a second without a swing; a stroke that does not
+  reach the locked foe gives way to the next in the chain that does (the page chooses it,
+  [[The Player's Swings Chain Side Cut, Overhead and Thrust]]). A foe's strokes come by chance. Up thrusts half a metre
   further, in a narrow arc; down chops, heavier on poise and half again on a guard; left and right sweep the widest arc;
   the diagonals slash between. A blow strikes every fighter of another side within its reach and arc (close in, almost
   any way it faces), near the striker's height, with no block between them, each taking the whole blow; the soft lock's
@@ -105,17 +107,19 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   stands through a blow until its poise breaks. A blow on a player already flinching does not start the flinch again,
   and a blow in a swing's follow-through or a reload does not flinch at all (that would end it sooner). While no
   poise stagger can begin, blows do not fill the meter; an overreached foe staggers at the first blow whatever.
-- **Presses kept.** A press of the attack, the guard, the dodge or the drink is kept 8 ticks: one made while the
-  fighter is busy (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as
-  soon as it can be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press
-  wins over a button only held: a click of the attack swings out of a held guard, and a riposte is struck through
-  one. The guard, held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
+- **Presses kept.** A press of the attack, the guard, the dodge or the drink is kept 8 ticks: one made while the fighter
+  is busy (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as soon as it
+  can be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press wins over a
+  button only held: a click of the attack swings out of a held guard, and a riposte is struck through one. A click that
+  cannot swing yet, for want of stamina, riding off the ground or in a swap, holds no guard down: the guard rises and
+  stays up until the swing can start. The guard, held or pressed, cuts a swing's follow-through short once its blow has
+  landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
   at once, but a swap begun as another was put away runs on. A click made in a swap is kept until it ends, however
-  early, and its swing starts on the tick the swap ends, once, with the stroke the click rolled for the new weapon
+  early, and its swing starts on the tick the swap ends, once, with the stroke the chain gives the new weapon
   ([[A Click During a Weapon Swap Swings as It Ends]]); the page predicts it by the same rules, so the first person
   and the figure swing on that tick. A trigger pulled in a swap to a ranged weapon fires then if it is loaded, as a
   pull at rest does, and does nothing if not. The newest press wins: a guard, a dodge or another swap pressed after
@@ -149,12 +153,13 @@ once. The camera stays its player's.
 ## Foes' telegraphed blows
 
 A foe may wind up a telegraphed blow, as DFO's TELL draws them (which foe, when and which shape is its brain's:
-[[Foes]]): a shape on the ground it stands still through, landing
-on whoever's feet stand in it when the wind-up ends, within a blow's height of the foe and with no block between them
-(a leap's from where it lands). A lunge and a charge are lanes ahead, a sweep an arc, a slam a
-disc just ahead, a ring an annulus safe at the foe's feet, a leap a disc where its target stood, and an aimed shot the
-line its arrow flies. A lunge and a charge turn after their target through the first half of the wind-up, and never once a charge has set
-off. A charge crosses its lane and a leap flies to its disc as the wind-up ends. A feint is cut short. A non-iron blow can be parried
+[[Foes]]): a shape on the ground it stands still through, landing on whoever's feet stand in it when the wind-up ends,
+within a blow's height of the foe and with no block between them (a charge's height and a leap's both from where it
+comes down, a leap's line from there too, a charge's from where it set off, so a wall it runs into never shields a body
+pinned before it). A lunge and a charge are lanes ahead, a sweep an arc, a slam a disc just ahead, a ring an annulus
+safe at the foe's feet, a leap a disc where its target stood, and an aimed shot the line its arrow flies. A lunge and a
+charge turn after their target through the first half of the wind-up, and never once a charge has set off. A charge
+crosses its lane and a leap flies to its disc as the wind-up ends. A feint is cut short. A non-iron blow can be parried
 or blocked by a fighter facing the foe; an iron one, winding up a fifth of a second longer, must be dodged, and an iron
 slam or ring knocks down. A blow that finds no one leaves its foe overreached for its shape's punish (longer for iron,
 half again after a perfect dodge), taking 1.3 times more and staggered by the first blow landed.
@@ -186,7 +191,8 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   power at none to half again at a full second; a foe's drawn shot strikes as a quick one, times its might. Letting
   the aim go lowers the weapon unfired.
 - **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block, the
-  ground the room stands bodies on (a node's land, its hills included) or a body stops it; a pistolet's or
+  ground the room stands bodies on (a node's land, its hills included), a dungeon's wall where it first enters one,
+  or a body stops it; a pistolet's or
   thunderlock's ball reaches 60 m along its line at once from a player's gun, and flies from a foe's, at 70 m/s and
   110 m/s, so it can be dodged. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and
@@ -230,13 +236,16 @@ gives every one through one door, `Room::give`, for the status's own time unless
   striker's Linked (as the striker stands then) and its defender's Expose, each multiplying the others, before a foe's
   shield takes its share. Only a swing makes a Veiled backstab. The event it tells says whether the blow was a crit
   (for a hit, a block or a guard broken) and the element it carried: a weapon's own, a spell's Art's, none for a fist;
-  a kill's event carries the killing blow's ([[Server]]).
+  a kill's event carries the killing blow's ([[Server]]). It says how the blow was struck: a swing, a riposte, a
+  counter, a telegraphed or iron blow, a shot, a spell, or an Atheric's leap, burst or bite ([[Gear]], "Atherics"); a
+  leap's and a burst's say too which fighter they came from.
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
   fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
 - **A foe walking home** sheds its Expose and its Charge, with the Charge's stagger and the immunity after one, as it
   turns home, so its next fight is fresh ([[Foes]], "The leash").
 - **The Arts** give statuses through the same door: Quicken's Haste, Arc Lash's Charge, the Sunwell's Linked,
-  Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]).
+  Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]). So do
+  the weapons' verbs and the Atherics' perks ([[Gear]], "Verbs" and "Atherics").
 - **The weapons' perks** give them through it too, as a player's blow lands on a foe or the foe falls ([[Gear]],
   "Verbs"): Expose from Exposing Strikes and Marked Shot, Charge from Thunderclap and Shocking Rounds, Crit from Keen
   Eye; Exploit marks a swing on an Exposed foe a crit. Each is the perk of the loadout the blow came from, never of a

@@ -34,12 +34,17 @@ function renderer(): UiRenderer {
 
 /** The menu on a fake page, its gear `gear` (null for none), resting while `resting` says; with a step of frames and
  *  the keys pressed on the page, and every ask it made. */
-function menu(gear: GearState | null = sampleGear(), resting = () => false, papers: ShipPanel | null = null) {
+function menu(
+  gear: GearState | null = sampleGear(),
+  resting = () => false,
+  papers: ShipPanel | null = null,
+  view = VIEW,
+) {
   const { window } = fakePage();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
-    innerWidth: VIEW.width,
-    innerHeight: VIEW.height,
+    innerWidth: view.width,
+    innerHeight: view.height,
     setInterval: () => 0,
     requestAnimationFrame: () => 0,
   });
@@ -57,12 +62,14 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false, pape
       () => papers,
       () => null,
       resting,
+      here,
+      { week: () => null, kept: () => null },
     ),
   );
   const ui = new Interface(renderer());
   ui.speak = () => undefined;
   const frame = (events: UiEvent[] = []) => {
-    ui.frame(VIEW, events, 1 / 60);
+    ui.frame(view, events, 1 / 60);
     ui.draw(stack.node(ui));
   };
   /** A key as the page sends it: to the window's listeners, and a key going down to the interface's next frame. */
@@ -122,6 +129,26 @@ test('the tabs open their pages; the arrows on a tab move to the next and open i
   frame();
   assert.equal(ui.focusedId, 'tab-journal');
   assert.equal(ui.boxOf('shelf-materials'), null, 'the Journal is shown');
+});
+
+test("the pad's bumpers turn the menu's tabs, round from the last to the first, and a toggling ask shuts it", () => {
+  const { ui, frame, open, window } = menu();
+  open('character');
+  frame([{ kind: 'pad', button: 'next' }]);
+  frame();
+  assert.ok(ui.boxOf('shelf-materials'), 'RB: the Inventory');
+  frame([{ kind: 'pad', button: 'previous' }]);
+  frame([{ kind: 'pad', button: 'previous' }]);
+  frame();
+  frame();
+  assert.ok(
+    ui.boxOf('gear-screen') && !ui.boxOf('slot-0') && !ui.boxOf('shelf-materials'),
+    'LB twice: round to the last tab',
+  );
+  open('character');
+  window.dispatchEvent(new FakeEvent(OPEN_AT, { detail: { view: 'character', toggle: true } }));
+  frame();
+  assert.equal(ui.boxOf('gear-screen'), null, 'Start again shuts it, as I does');
 });
 
 test('a slot opens its flyout of nine, a carried piece is worn by a click, and Escape steps back before closing', () => {
@@ -212,6 +239,22 @@ test('a hover card shows beside a slot under the pointer, kept on the screen', (
   assert.ok(card, 'the card is laid');
   assert.ok(card.x + card.width <= VIEW.width, 'within the screen');
   assert.ok(card.x + card.width <= slot.x || card.x >= slot.x + slot.width, 'beside the slot, not over it');
+});
+
+test('the hover card lets the pointer through, so where it must cover its tile, as on a phone, it holds still', () => {
+  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
+  const mail = [{ id: 31, from: 0, crowded: false, vestige, item: null }];
+  const { ui, open, frame } = menu({ ...sampleGear(), mail }, () => false, null, { width: 390, height: 844, scale: 1 });
+  open('mail');
+  const tile = ui.boxOf('letter-31');
+  assert.ok(tile);
+  frame([{ kind: 'pointer', x: tile.x + 4, y: tile.y + 4 }]);
+  const shown = Array.from({ length: 4 }, () => (frame(), [ui.hovered('letter-31'), ui.boxOf('gear-card') !== null]));
+  assert.deepEqual(shown.slice(1), [
+    [true, true],
+    [true, true],
+    [true, true],
+  ]);
 });
 
 test('without a room keeping gear the menu says where gear shows, and the inventory none of its shelves', () => {
@@ -390,4 +433,23 @@ test('with the menu open, Tab never reaches the sea bar under it, and Enter pres
   frame([{ kind: 'key', key: 'Enter' }]);
   frame();
   assert.equal(left, 0, 'Enter presses nothing under the menu');
+});
+
+test('on the Journal the hourglass stands in the account mark’s place, T drops its timers, and they go up as it is left', () => {
+  const { ui, frame, key, open } = menu();
+  open('journal');
+  assert.ok(ui.boxOf('hourglass') && !ui.boxOf('account-mark'), 'the hourglass in the mark’s place');
+  assert.equal(ui.boxOf('journal-timers'), null);
+  key('t');
+  frame();
+  assert.ok(ui.boxOf('journal-timers'), 'T drops the timers');
+  key('Escape');
+  frame();
+  assert.ok(ui.boxOf('gear-screen') && !ui.boxOf('journal-timers'), 'Escape takes them up before the menu');
+  key('t');
+  frame();
+  open('character');
+  assert.ok(ui.boxOf('account-mark') && !ui.boxOf('hourglass'), 'the mark again on another tab');
+  open('journal');
+  assert.equal(ui.boxOf('journal-timers'), null, 'gone up as the Journal was left');
 });

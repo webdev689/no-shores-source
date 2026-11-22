@@ -170,6 +170,19 @@ renderer can key it as `archive_record`.
     arch3dSeams. Its place judge imports tamrielGround, tamrielCountry, tamrielDungeons, ethericSea and worldLanes.
   - (f) **The open country has no ground on the server.** `game-server/src/fieldBody.js` checks only the walking
     pace there.
+- **`ccr-cab30c1a-oddrwb`** (Dungeons 2.0, read at 648073ab): the Forge and the dungeon engine, approved as far as
+  they fit ([[Pick - Dungeons 2.0]]).
+  - The Forge (`world/forge/forgeGrid`, `forgeMesh`, `forgeBlock`, `forgeDungeon`, `forgePictures`): **Cut**, Rust
+    rebuild. The grid, rooms, ways and mesh are ours; the blocks are served as Daggerfall RDB records with its
+    markers, people and riddles.
+  - The plan and its print (`world/dungeon/plan/`): **Clean**, not needed: one Rust crate lays the same dungeon
+    everywhere.
+  - The engine's parts (`scenes/dungeon/`, `systems/dungeon/`): the heart **Cut**, Rust rebuild; traps and last fire
+    **Cut**, left behind, as they lean on DFU's stats, rest and light table; the director **Clean**, left behind, as
+    the garrison does what it would. **Proposed, awaiting the owner**: moods and dressing **Cut**, their law rebuilt
+    (a style's own faint light, a room's dressing and lights by its purpose, the forged props in place of DFU's
+    sprites); landmarks **Clean**, their law rebuilt (each room named for its purpose, the name on the screen while
+    the player stands in it).
 - **`pve-fixed-levels`**: no change in these paths.
 - **`ccr-d314ccd0-3nwvjt`**: field fixes to `interior/interiorLights` and `road/roadPainter`. Both files are Can't.
 

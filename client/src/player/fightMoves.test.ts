@@ -98,6 +98,17 @@ test('a foe that moved over a snapshot of several ticks walks at its own pace, n
   assert.deepEqual([walked.moving, walked.running, Math.round(walked.speed * 100) / 100], [true, false, 3]);
 });
 
+test('a foe runs at three quarters of a player’s run and walks at as much of a walk; one on the players’ side at theirs', () => {
+  const dress = foeDress(swordsman);
+  assert.ok(dress);
+  const runs = (speed: number, side: FighterView['side'] = 'foes') =>
+    foeDoing({ ...standing, side, x: speed / 60 }, { ...standing, side }, dress, 1 / 60).running;
+  assert.equal(runs(7.59 * 0.75), true, 'a foe’s run');
+  assert.equal(runs(4.43 * 0.75), false, 'a foe’s walk');
+  assert.equal(runs(4.43, 'players'), false, 'a companion’s walk');
+  assert.equal(runs(7.59, 'players'), true);
+});
+
 test('a foe climbing a wall shows the climb going, as it rises; held on the wall, its first frame', () => {
   const dress = foeDress(swordsman);
   assert.ok(dress);

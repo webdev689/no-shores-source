@@ -36,6 +36,10 @@ pub struct Snapshot<'snapshot> {
     /// The balls that stopped, each with the tick it stopped, sent among the shots as its last segment and its muzzle.
     pub lines: &'snapshot [(u64, Line)],
     pub spells: &'snapshot [SpellSeen],
+    /// A dungeon's cache as `Room::cache` gives it; empty, and left out of the bytes, in any other room.
+    pub cache: &'snapshot [f64],
+    /// In an Abyss run, the revives its company has left (`Room::revives`); none in any other room.
+    pub revives: Option<u8>,
     /// A zone's public events, sent whole each time; none in a room whose zone holds none.
     pub public: Option<&'snapshot room::public::PublicSeen>,
 }
@@ -161,6 +165,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
                 stroke: event.stroke.map_or(0, |stroke| stroke as u8),
                 crit: event.crit,
                 element: event.element,
+                from: event.from.unwrap_or(0),
             };
             messages::Event::create(&mut builder, &args)
         })
@@ -187,6 +192,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let gone_players = (!snapshot.gone_players.is_empty()).then(|| builder.create_vector(snapshot.gone_players));
     let gone_foes = (!snapshot.gone_foes.is_empty()).then(|| builder.create_vector(snapshot.gone_foes));
     let middle = builder.create_vector(&snapshot.middle);
+    let cache = (!snapshot.cache.is_empty()).then(|| builder.create_vector(snapshot.cache));
+    let revives = snapshot.revives.map_or(-1, |left| i8::try_from(left).unwrap_or(i8::MAX));
     let public_event = snapshot.public.map(|seen| crate::public_wire::public_offset(&mut builder, seen));
     let args = messages::SnapshotArgs {
         tick,
@@ -200,6 +207,8 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         gone_players,
         gone_foes,
         middle: Some(middle),
+        cache,
+        revives,
         public_event,
         ..messages::SnapshotArgs::default()
     };

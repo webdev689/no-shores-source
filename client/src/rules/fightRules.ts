@@ -5,7 +5,7 @@ export type ShotName = 'round' | 'grape' | 'chain' | 'heated';
 /** The loads in the order a gunner steps through them. */
 export const SHOT_CYCLE: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 export type SideName = 'port' | 'starboard';
-export type ShipState = 'afloat' | 'struck' | 'sinking' | 'sunk' | 'wrecked';
+export type ShipState = 'afloat' | 'struck' | 'sinking' | 'sunk';
 export type CaptainMode = 'cruise' | 'engage' | 'flee' | 'struck' | 'sinking';
 export type Point = readonly [number, number, number];
 
@@ -92,7 +92,7 @@ export type FightEvent =
       readonly side?: SideName;
       readonly left?: number;
     }
-  | { readonly kind: 'no-sail'; readonly wrecked: boolean }
+  | { readonly kind: 'no-sail' }
   | { readonly kind: 'load'; readonly shot: ShotName }
   | { readonly kind: 'ram'; readonly ship: number; readonly by: number; readonly point: Point; readonly dealt: number }
   | { readonly kind: 'gone'; readonly ship: number; readonly sunk: boolean };

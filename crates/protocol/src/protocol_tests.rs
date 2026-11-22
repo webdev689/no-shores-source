@@ -104,17 +104,19 @@ pub const EVENTS: [Event; 2] = [
         stroke: None,
         crit: false,
         element: 0,
+        from: None,
     },
     Event {
         tick: 1234,
         kind: EventKind::Hit,
-        how: Some(How::Riposte),
+        how: Some(How::Leap),
         striker: 9,
         defender: 12,
         amount: 35.0,
         stroke: Some(Stroke::Left),
         crit: true,
         element: 2,
+        from: Some(14),
     },
 ];
 
@@ -250,6 +252,8 @@ fn snapshot<'snapshot>(
         shots,
         lines,
         spells: &SPELLS,
+        cache: &[],
+        revives: None,
         public: Some(public),
     }
 }
@@ -430,9 +434,11 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(ashore.name(), None, "and no name of an event's");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
-    assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 2, 35.0)]);
+    assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 8, 35.0)]);
     let marked: Vec<_> = read.events().unwrap().iter().map(|event| (event.crit(), event.element())).collect();
     assert_eq!(marked, vec![(false, 0), (true, 2)], "a crit and a blow's element cross");
+    let from: Vec<_> = read.events().unwrap().iter().map(|event| event.from()).collect();
+    assert_eq!(from, vec![0, 14], "and the foe a leap leapt from");
     let flying = read.shots().unwrap().get(0);
     assert_eq!((flying.owner(), flying.ranged()), (12, 1));
     assert_eq!(flying.at().unwrap().iter().collect::<Vec<_>>(), shots[0].at.to_vec());
@@ -592,4 +598,31 @@ fn an_input_pointing_at_one_earlier_input_again_and_again_is_refused_before_it_i
     // As many as an input may carry, written once each, still read.
     let earlier: Vec<Input> = (1..=8).map(|sequence| input(sequence, Controls::default())).collect();
     assert_eq!(read_inputs(&inputs_bytes(&input(9, Controls::default()), &earlier)).expect("read").len(), 9);
+}
+
+#[test]
+fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
+    let none = crate::public_wire_tests::public();
+    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[]), &none) };
+    let cache = [12.5, 30.0, 0.0, 1.25, 1.0];
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        let message = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message");
+        message.snapshot().expect("a snapshot").cache().map(|cache| cache.iter().collect::<Vec<f64>>())
+    };
+    assert_eq!(read(&plain), None);
+    assert_eq!(read(&Snapshot { cache: &cache, ..plain }), Some(cache.to_vec()));
+}
+
+#[test]
+fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none() {
+    let none = crate::public_wire_tests::public();
+    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[]), &none) };
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot").revives()
+    };
+    assert_eq!(read(&plain), -1);
+    assert_eq!(read(&Snapshot { revives: Some(5), ..plain }), 5);
+    assert_eq!(read(&Snapshot { revives: Some(0), ..plain }), 0);
 }

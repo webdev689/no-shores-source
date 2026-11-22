@@ -134,14 +134,18 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   fill. A press that moves more than 6 px is a pan, not a click.
 - **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
-  sail (Enter), or says why no way leads there. Escape lets the choice go, then lowers the map.
+  sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once
   the player sets sail with it; letting the destination go lets it go too. The node landed at is joined at the
   voyage's difficulty ([[Server]], "The host"). Elite here is the voyage's tier, never a foe's rank; the Roster says
   "Elite difficulty" where a player is, and reads a place kept under the tiers' old names (`--rough`, `--storm`) as
-  Elite and Abyss.
+  Elite and Abyss. The presses stand after a "Seas" label. A difficulty the player's level shuts rests, titled with
+  its gate's reason, and the first reason stands in a line under the row ("Elite seas open at level 10."), read from
+  the rules by the last word of the character a room sent ([[Activities]]); before any word none is shut. A pick the
+  level shuts, kept from an earlier voyage or another character, falls to the hardest difficulty open below it, and
+  Set sail takes that one, so no voyage sails for a sea room whose gate would turn the player away.
 - **Turning back.** Escape on the way down to the helm turns the view back before the map is raised.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation
@@ -152,10 +156,10 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 The map on land speaks in icon glyphs, with little text, and a table on it says what each glyph is
 ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
-- **Raising.** On foot, N anywhere (with no menu or gear screen up): the view goes into the player's eyes (from third
+- **Raising.** On foot, N anywhere but in a dungeon, under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
   person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
   pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
-  waits; N or Escape turns back. Up, N or Escape lowers it, and the view goes back as it was. The fight's crosshair,
+  waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
   plates and compass, and a gate's offer, give way while it is up.
 - **The view** opens centred on the player, 400 m across, held to the land's sheet: its ring and 40 m past it. A drag
   pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.
@@ -179,8 +183,9 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
     horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler; each faction's coin in its
     cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
     and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
-    door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource's small ring with
-    ore, a sprig of herbs, a log of timber or a crate of salvage. The player's red-brown arrow points where they look.
+    door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
+    a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
+    where they look.
   - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
     (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
     it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar

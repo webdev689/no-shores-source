@@ -138,3 +138,10 @@ fn a_look_or_a_push_that_is_no_number_never_reaches_the_fight() {
     let Some((_, Happening::Loosed(ball))) = happenings.first() else { panic!("{happenings:?}") };
     assert!(ball.at.iter().chain(&ball.velocity).all(|number| number.is_finite()), "{ball:?}");
 }
+
+#[test]
+fn a_click_that_cannot_swing_for_want_of_stamina_never_holds_a_guard_pressed_after_it_down() {
+    let spent = combat::Fighter { stamina: 0.0, ..player_at(0.0, 0.0) };
+    let (_, happenings) = script(spent, &[swinging(0.0, Stroke::Down), guarding(0.0)]);
+    assert_eq!(happenings, [(1, Happening::Guarded { window: true })]);
+}

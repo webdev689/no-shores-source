@@ -1,16 +1,16 @@
 /**
- * Companies, after Destiny 1's fireteams: up to three players, one of them its leader. A player alone leads their own. Another
- * joins by an invite, or by asking to, as the leader's privacy allows: anyone, the leader's friends, those invited, or
- * no one. The leader can remove a member or hand the lead on; a leader who leaves hands it to the longest there. A
- * member away from the game ten minutes leaves it.
+ * Companies: up to four players, as an Elite Dungeon's run is for, one of them its leader. A player alone leads their
+ * own. Another joins by an invite, or by asking to, as the leader's privacy allows: anyone, the leader's friends,
+ * those invited, or no one. The leader can remove a member or hand the lead on; a leader who leaves hands it to the
+ * longest there. A member away from the game ten minutes leaves it.
  */
 
 import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
 import { AWAY_MS, LAST_SEEN, accountNamed, blocks } from './people.ts';
 
-/** The most players a company holds, as Destiny 1's held for a patrol or a strike. */
-export const COMPANY_MOST = 3;
+/** The most players a company holds: four, as an Elite Dungeon's run is for. */
+export const COMPANY_MOST = 4;
 /** How long an invite stands. */
 export const INVITE_MS = 10 * 60_000;
 /** Who may join: anyone, the leader's friends, those invited, no one. */
@@ -34,6 +34,24 @@ export async function companyOf(
     .bind(company.id)
     .all<{ account_id: string }>();
   return { ...company, members: results.map((row) => row.account_id) };
+}
+
+/** How long whom a run was found for admits them (`finding.ts`): a day, far past any run. */
+export const FOUND_KEPT_MS = 24 * 60 * 60_000;
+
+/** Those a player may share `room` with at `now`: their company's members, longest there first (or the player alone),
+ *  then those `room` was found for with them within FOUND_KEPT_MS (`finding.ts`). */
+export async function companionsOf(database: Db, account: string, room: string, now: number): Promise<string[]> {
+  const company = (await companyOf(database, account))?.members ?? [account];
+  const { results } = await database
+    .prepare(
+      `SELECT found.account_id FROM found_runs AS mine JOIN found_runs AS found ON found.room = mine.room
+       WHERE mine.room = ?1 AND mine.account_id = ?2 AND mine.found_at >= ?3
+       ORDER BY found.found_at, found.account_id`,
+    )
+    .bind(room, account, now - FOUND_KEPT_MS)
+    .all<{ account_id: string }>();
+  return [...new Set([...company, ...results.map((row) => row.account_id)])];
 }
 
 /** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the

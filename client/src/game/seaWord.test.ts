@@ -5,13 +5,14 @@ import { SeaWord, linesOf, washedUpWords } from './seaWord.ts';
 
 const FACTS = { engageM: 750, holdReachM: 1_642.8, repairReachM: 3_000, shipNames: [] };
 
-test('the sea’s word becomes the player’s lines: washing up, a piece gathered, a ship joining, its colours struck', () => {
-  const kinds = new Map([[7, 'chest']]);
+test('the sea’s word becomes the player’s lines: washing up, a piece that gave nothing, a ship joining, its colours struck', () => {
+  const kinds = new Map([[8, 'chest']]);
   const names = new Map([[1, 'Tithe Brig']]);
   const lines = linesOf(
     [
       [20, 100, 1, 1],
       [21, 101, 7, 3, 1, 0],
+      [21, 101, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       [22, 102, 0, 2, 3, 1],
       [22, 103, 4, 0, 0, 0],
     ],
@@ -25,15 +26,20 @@ test('the sea’s word becomes the player’s lines: washing up, a piece gathere
     'The Tithe Brig’s colours are down: come alongside and press E to board it.',
     'Boarders away: the Tithe Brig’s crew stands to meet them.',
     'Your ship went down: you washed up at Sunspire; your ship lies at its roadstead.',
-    'Gathered a chest: a Rare Vestige, an Ammo box.',
+    'Gathered a chest: nothing you had room for.',
     'The Pirate Schooner joined the fight.',
     'Player 4 joined the fight.',
   ]);
 });
 
-test('the best find reads as English: an Atheric Vestige', () => {
-  const lines = linesOf([[21, 1, 7, 5, 0, 0]], [], { kinds: new Map(), ports: [], nameOf: () => null });
-  assert.deepEqual(lines, ['Gathered a crate: an Atheric Vestige.']);
+test('a piece gathered that held anything is left to the feed, which tells it from the gear', () => {
+  const words = { kinds: new Map(), ports: [], nameOf: () => null };
+  for (const held of [
+    [21, 1, 7, 5, 0, 0, 0, 0, 0, 0, 0],
+    [21, 1, 7, 0, 0, 0, 4, 0, 0, 0, 0],
+    [21, 1, 7, 0, 0, 0, 0, 0, 0, 0, 1],
+  ])
+    assert.deepEqual(linesOf([held], [], words), [], `${held.join(',')}`);
 });
 
 test('the ship’s repair reads its time left, whole, or how to have it, by the rules’ reach', () => {

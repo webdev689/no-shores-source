@@ -12,7 +12,8 @@ import type { Child, Node } from '../ui/node.ts';
 import { rarityNumber } from './appearance/appearanceModel.ts';
 import { wardrobeSvg } from './appearance/appearanceMarks.ts';
 import { levelOf } from './artLevels.ts';
-import { artCard, artOf, emblemSvg } from './artsCards.ts';
+import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
+import { ARTS, artCard, artOf, emblemSvg, frameSvg } from './artsCards.ts';
 import { ART_DIAMOND_KEY } from './artsPage.ts';
 import { APPEARANCE_KEY } from './appearanceButton.ts';
 import { emblemOf } from './emblemArt.ts';
@@ -55,11 +56,11 @@ const FIGURE_AROUND = 264;
 /** What a worn slot's presses do, and a carried piece's. */
 const SLOT_HINTS: readonly Hint[] = [
   ['Click', 'Swap'],
-  ['Right-click / X', 'Details'],
+  ['Right-click / details', 'Details'],
 ];
 const CELL_HINTS: readonly Hint[] = [
   ['Click', 'Equip'],
-  ['Right-click / X', 'Details'],
+  ['Right-click / details', 'Details'],
   [DISMANTLE_KEY, 'Hold to dismantle'],
 ];
 
@@ -250,11 +251,63 @@ function pipsSvg(level: number, element: number): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 8">${pips.join('')}</svg>`;
 }
 
-/** The worn Art's diamond, which opens its screen, its name in its element and its level's pips beside it. */
+/** What the Art's row says while none is worn: the houses' roads give them. */
+export const NO_ART_WORDS = 'Pledge to a house; its road gives its Art.';
+
+/** The Art's row while none is worn: an empty diamond under a padlock, which opens the Arts' screen (each Art locked
+ *  there, saying which road earns it), and words saying how one is had. */
+function noArtNode(context: MenuContext, open: () => void): Node {
+  const { ui, sizes } = context;
+  const first = ARTS[0];
+  if (ui.clicked(ART_DIAMOND_KEY)) open();
+  context.card(ART_DIAMOND_KEY, () =>
+    cardNode(
+      {
+        name: 'No Art',
+        rarity: 0,
+        kind: 'Art',
+        big: null,
+        rows: [],
+        element: 0,
+        traits: [],
+        words: NO_ART_WORDS,
+        compare: null,
+      },
+      null,
+      [['Click', 'Open its screen']],
+      sizes,
+      { tone: rarityTone(0) },
+    ),
+  );
+  const diamond: Node = {
+    id: ART_DIAMOND_KEY,
+    press: true,
+    label: `Art: none. ${NO_ART_WORDS}`,
+    width: 96,
+    height: 96,
+    alignX: 'center',
+    alignY: 'center',
+    ...(first && { picture: { key: 'art none', source: { svg: frameSvg(first) }, tint: 'rgb(110,110,110)' } }),
+    children: [
+      svgNode('art none lock', mapSvg(LOCK_MAP, 0), 30, 36),
+      ui.focused(ART_DIAMOND_KEY) && ui.keyFocused && focusRing(96, 96),
+    ],
+  };
+  return holder(
+    'art-holder',
+    diamond,
+    slotWords(context, 'Art', 'None', INK.faint, words(NO_ART_WORDS, sizes.label, INK.faint, { wrap: true }), true),
+    true,
+  );
+}
+
+/** The worn Art's diamond, which opens its screen, its name in its element and its level's pips beside it; while none
+ *  is worn, the row saying how one is had. */
 function artNode(context: MenuContext): Node | null {
   const { gear, ui, sizes } = context;
-  const art = gear.arts ? (artOf(gear.arts.art) ?? null) : null;
-  if (!art || !context.arts) return null;
+  if (!gear.arts || !context.arts) return null;
+  const art = artOf(gear.arts.art) ?? null;
+  if (!art) return noArtNode(context, context.arts);
   const level = levelOf(gear.standing, art.id).level;
   if (ui.clicked(ART_DIAMOND_KEY)) context.arts();
   context.card(ART_DIAMOND_KEY, () =>

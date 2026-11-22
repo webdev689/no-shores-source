@@ -1,5 +1,5 @@
 //! What a player holds: every item, where each is (worn in a slot, carried, or in the vault), their Vestiges, their
-//! materials and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack, and the
+//! materials, their mail and their XP; and what follows from it: their level, Prestige, Defense, each loadout's Attack, and the
 //! traits their worn gear gives. Destiny 1's limits hold: nine carried in each slot beside the one worn, ten Vestiges,
 //! and a vault of twenty weapons, twenty armour and twenty Vestiges.
 
@@ -166,6 +166,12 @@ pub struct Character {
     /// The Ranged loadout's ammunition, as a share of its capacity in `ammo::AMMO_FULL` parts.
     #[serde(default = "crate::ammo::full")]
     pub ammo: u16,
+    /// What they have done this day and this week (`activity.rs`).
+    #[serde(default)]
+    pub activity: crate::activity::Activity,
+    /// How far they are through the story (`story.rs`).
+    #[serde(default = "crate::story::Story::kept_before")]
+    pub story: crate::story::Story,
     /// Their ship's hull, canvas and men, each in ten-thousandths of whole, kept until it is repaired (the sea
     /// room's).
     #[serde(default = "whole_ship")]
@@ -192,6 +198,12 @@ pub struct Character {
     /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
+    /// Their place in every quest, and the fragment choices their roads gave (`quests.rs`).
+    #[serde(default, deserialize_with = "crate::quests::lenient")]
+    pub quests: crate::quests::QuestLog,
+    /// The game's letters waiting at the mail counter, oldest first (`mail.rs`).
+    #[serde(default)]
+    pub mail: Vec<crate::mail::Letter>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -243,8 +255,10 @@ impl Character {
             next_id: 1,
             emblems: Vec::new(),
             emblem: crate::emblems::starting(),
-            arts: crate::arts::WornArts::default(),
+            arts: crate::arts::WornArts::unearned(),
             ammo: crate::ammo::AMMO_FULL,
+            activity: crate::activity::Activity::default(),
+            story: crate::story::Story::default(),
             ship: whole_ship(),
             ship_at: None,
             ship_xp: 0,
@@ -253,6 +267,8 @@ impl Character {
             scavenged: Vec::new(),
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
+            quests: crate::quests::QuestLog::default().kept(),
+            mail: Vec::new(),
             unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [
@@ -285,8 +301,8 @@ impl Character {
     /// of each island's resource added since it was kept, its stocks stay within their caps, each item is as an item
     /// should be (`Item::kept`), a node bought whose trait no longer fits its piece is given back
     /// (`old_hands::unfit`), one worn in a slot it does not fit or that another fills is carried, and its next
-    /// number stays past every one it holds. So no keeping, old or broken, can make a room refuse or fail on it. One
-    /// kept before the loadouts is read into them (`old_hands.rs`).
+    /// number stays past every one it holds, and its activities hold only what the board has. So no keeping, old or
+    /// broken, can make a room refuse or fail on it. One kept before the loadouts is read into them (`old_hands.rs`).
     #[must_use]
     pub fn from_json(text: &str) -> Option<Self> {
         let mut kept: serde_json::Value = serde_json::from_str(text).ok()?;
@@ -330,19 +346,29 @@ impl Character {
             character.items.insert(id, (item, at));
         }
         shields.settle(&mut character);
+        for letter in &mut character.mail {
+            letter.item = letter.item.take().map(|item| {
+                let id = item.id;
+                item.kept(id, resources)
+            });
+        }
+        let letters = character.mail.iter().map(|letter| &letter.id);
         let held = character.items.keys().chain(character.vestiges.keys()).chain(character.crew.officers.keys());
+        let held = held.chain(letters);
         let highest = held.max().copied().unwrap_or(0);
         character.next_id = character.next_id.max(highest.saturating_add(1)).max(1);
         character.arts = std::mem::take(&mut character.arts).kept();
+        character.activity = std::mem::take(&mut character.activity).kept();
         character.crew = std::mem::take(&mut character.crew).kept();
         character.fit_first_modules();
         character.allegiance = std::mem::take(&mut character.allegiance).kept();
+        character.quests = std::mem::take(&mut character.quests).kept();
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         character.earn_due();
         Some(character)
     }
 
-    /// A fresh number for an item or Vestige, never one it already holds.
+    /// A fresh number for an item, Vestige or letter, never one it already holds.
     pub fn take_id(&mut self) -> u32 {
         loop {
             let id = self.next_id;
@@ -350,6 +376,7 @@ impl Character {
             if !self.items.contains_key(&id)
                 && !self.vestiges.contains_key(&id)
                 && !self.crew.officers.contains_key(&id)
+                && !self.mail.iter().any(|letter| letter.id == id)
             {
                 return id;
             }

@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
-import { Bob, ChainSwing, LOWERED_GONE, lowerDrop, lowerStep, runFrameAt, swayFrame } from './fpMotion.ts';
+import { Bob, ChainSwing, LOWERED_GONE, Sway, lowerDrop, lowerStep, runFrameAt, swayFrame } from './fpMotion.ts';
 
 test('a standing chain hangs at rest on the middle frame', () => {
   const chain = new ChainSwing();
@@ -73,4 +73,27 @@ test('a frame of no known length leaves the lowering where it was', () => {
   const lower = lowerStep(0.5, 1, Number.NaN);
   assert.equal(lower, 0.5);
   assert.ok(lowerStep(lower, 1, 0.01) > 0.5, 'and it goes on from there');
+});
+
+test('the weapon lags behind a turn and a tilt, settles as the look does, and swings aside with the steps', () => {
+  const sway = new Sway();
+  const step = (yaw: number, pitch = 0, stride = 0, moving = false) =>
+    sway.step(1 / 60, { yaw, pitch }, stride, moving, false);
+  step(0);
+  let turned: readonly [number, number] = [0, 0];
+  for (let frame = 1; frame <= 20; frame += 1) turned = step(frame * 0.05);
+  assert.ok(turned[0] < -6 && turned[0] >= -12, `turning right, it lags left: ${turned[0]}`);
+  let settled: readonly [number, number] = [0, 0];
+  for (let frame = 0; frame < 60; frame += 1) settled = step(1);
+  assert.ok(Math.abs(settled[0]) < 0.1, `stopped, it settles: ${settled[0]}`);
+  for (let frame = 0; frame < 10; frame += 1) settled = step(1, frame * 0.03);
+  assert.ok(settled[1] < -3, `tilting down, it lags up: ${settled[1]}`);
+  const walk = new Sway();
+  const aside = [0, 1.25, 2.5, 3.75].map((stride) => {
+    for (let frame = 0; frame < 30; frame += 1) walk.step(1 / 60, { yaw: 0, pitch: 0 }, stride, true, false);
+    return walk.step(1 / 60, { yaw: 0, pitch: 0 }, stride, true, false)[0];
+  });
+  assert.ok(aside[1] > 1.5 && aside[3] < -1.5 && Math.abs(aside[2] ?? 1) < 0.1, `${aside}`);
+  const across = Math.abs(walk.step(0.5, null, 1.25, true, false)[0]);
+  assert.ok(across < 0.5, `on a wall or a horse, none: ${across}`);
 });

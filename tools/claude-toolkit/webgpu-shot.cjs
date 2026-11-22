@@ -35,6 +35,7 @@ const { chromium } = require('playwright');
 const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
 
 const SHADER_ERRORS = () => {
+  if (typeof GPUAdapter === 'undefined') return;
   // A validation error (a destroyed buffer drawn, a bad binding) loses the frame without a word: say each one.
   const requestDevice = GPUAdapter.prototype.requestDevice;
   GPUAdapter.prototype.requestDevice = async function (descriptor) {
@@ -284,7 +285,10 @@ async function main() {
   await browser.close();
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+// The stall probe (webgpu-stall.cjs) puts the same patches in the game's worker.
+module.exports = { OWN_TEXTURE, SHADER_ERRORS };
+if (require.main === module)
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

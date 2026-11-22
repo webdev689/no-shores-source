@@ -1,6 +1,6 @@
 //! Where a ship meets the water: the bed under a point and the water's surface over it at a moment.
 
-use crate::helm::{WIND_RATED, sea_wind};
+use crate::helm::WIND_RATED;
 use land::ground::{Ground, WaterAt};
 use land::sea::Swell;
 use sky::air::Air;
@@ -72,22 +72,6 @@ impl Waters for OpenSea<'_> {
     fn lagged(&self, x: f64, y: f64, time: f64, lag: f64) -> Spot {
         Spot { bed: -OPEN_SEA_DEPTH_M, surface: Some(self.swell.lagged_height_at(x, y, time, OPEN_SEA_DEPTH_M, lag)) }
     }
-}
-
-/// The weather's wind a ship is rated for, metres a second: a moderate sea's middle (`world::weather::WIND_M_S`).
-pub const RATED_M_S: f64 = 6.5;
-
-/// The wind a ship sails by under the weather's wind `wind` (metres a second, east and south): blowing the same way,
-/// its strength in the sailing law's units, held inside the law's band (`sea_wind`) so every ship still sails, from a
-/// calm's light air to a storm's gale.
-#[must_use]
-pub fn weather_wind(wind: [f64; 2]) -> [f64; 2] {
-    let strength = (wind[0] * wind[0] + wind[1] * wind[1]).sqrt();
-    if strength <= 0.0 {
-        return [0.0, 0.0];
-    }
-    let held = sea_wind(WIND_RATED * strength / RATED_M_S) / strength;
-    [wind[0] * held, wind[1] * held]
 }
 
 /// The weather's usual wind, m/s: the breeze a ship is rated for.

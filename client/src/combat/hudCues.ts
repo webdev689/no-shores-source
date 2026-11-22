@@ -92,27 +92,45 @@ export function lockMarkNode(spot: { readonly x: number; readonly y: number }): 
   return centred('lock mark', svg, 20, spot);
 }
 
-/** A parry ring over a foe at a blow the player can parry: a fixed inner ring 14 px across and one `span` px across
- *  closing onto it, gold once a press would parry; an iron blow's red mark with no ring. */
+/** A parry ring's span as its blow begins and as it lands (its fixed ring's), CSS pixels. */
+export const RING = { widest: 90, closed: 24 } as const;
+/** A parry ring's stroke and the dark edge round it, CSS pixels: bold, so it reads on sky and ground alike. */
+const RING_STROKE = 4;
+const RING_EDGE = 2;
+
+/** A parry ring over a foe at a blow the player can parry: a fixed ring `RING.closed` px across and one `span` px
+ *  across closing onto it, each bold over a dark edge, and the parry window as a faint gold band from the fixed ring
+ *  out to `window` px across, edged there by a hard gold line the closing ring crosses as the window opens (none at
+ *  0); gold once a press would parry. An iron blow's red mark with no ring. */
 export function parryNode(
   spot: { readonly x: number; readonly y: number },
   span: number,
   kind: 'ring' | 'now' | 'iron',
+  window = 0,
 ): Node {
-  const side = Math.ceil(span) + 8;
+  const side = Math.ceil(Math.max(span, window, RING.closed)) + 2 * (RING_EDGE + 4);
   const middle = side / 2;
   const colour = kind === 'now' ? '#ffd95a' : '#f2f2f2';
-  const shade = kind === 'now' ? 'rgba(255,217,90,0.45)' : 'rgba(0,0,0,0.5)';
   const circle = (across: number, stroke: string, width: number, fill = 'none') =>
     `<circle cx="${middle}" cy="${middle}" r="${(across - width) / 2}" fill="${fill}" stroke="${stroke}" stroke-width="${width}"/>`;
-  const body =
-    kind === 'iron'
-      ? circle(16, 'rgba(0,0,0,0.5)', 2) + circle(14, '#ffffff', 2, '#e0281c')
-      : circle(16, shade, 2) +
-        circle(14, colour, 2) +
-        circle(Math.round(span) + 2, shade, 2) +
-        circle(Math.round(span), colour, 2);
-  return centred(`parry ${kind} ${kind === 'iron' ? 0 : Math.round(span)}`, svgOf(side, body), side, spot);
+  // A ring `across` px wide outside: its colour over a dark edge either side of it.
+  const ring = (across: number) =>
+    circle(across + 2 * RING_EDGE, 'rgba(0,0,0,0.75)', RING_STROKE + 2 * RING_EDGE) +
+    circle(across, colour, RING_STROKE);
+  if (kind === 'iron') {
+    const body = circle(16, 'rgba(0,0,0,0.5)', 2) + circle(14, '#ffffff', 2, '#e0281c');
+    return centred('parry iron 0', svgOf(side, body), side, spot);
+  }
+  const [closing, opens] = [Math.round(span), Math.round(window)];
+  // Faint, so the foe's head shows through it; its hard edge is the line to time the press by.
+  const band =
+    opens > RING.closed
+      ? circle(opens, 'rgba(255,217,90,0.2)', (opens - RING.closed) / 2) +
+        circle(opens + 2, 'rgba(0,0,0,0.75)', 4) +
+        circle(opens, '#ffd95a', 2)
+      : '';
+  const body = band + ring(RING.closed) + ring(closing);
+  return centred(`parry ${kind} ${closing} ${opens}`, svgOf(side, body), side, spot);
 }
 
 /** An arrow at the screen's edge pointing at a threat off it, `angle` radians from the right, its point's root on

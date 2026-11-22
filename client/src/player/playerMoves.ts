@@ -65,14 +65,18 @@ const jumpFrame = (rising: number) => (rising > 1.5 ? 0 : rising < -1.5 ? 2 : 1)
 const WALK_FRAME = 0.25;
 /** How long each frame of a tumble's hurt move shows, seconds. */
 const TUMBLE_FRAME_S = 0.09;
-/** The movement rules' full walk, metres a second, the pace the walk's frames are drawn for. */
+/** The movement rules' full walk and full run, metres a second, the paces the walk's and the run's frames are drawn
+ *  for. */
 export const FULL_WALK = 4.43;
+export const FULL_RUN = 7.59;
 
-/** How long a walking frame lasts at `speed`: slower than a full walk, as much longer as the walk is slower, so the
- *  feet keep to the ground; never shorter. A speed not known (0) steps at a full walk's pace. */
-export function walkFrameSeconds(speed: number): number {
-  return speed > 0 ? WALK_FRAME * Math.max(1, FULL_WALK / speed) : WALK_FRAME;
-}
+/** How long a frame `frameSeconds` long at a full pace `full` lasts at `speed`: slower, as much longer as it is slower,
+ *  so the feet keep to the ground; never shorter. A speed not known (0) steps at the full pace. */
+const pacedFrame = (speed: number, full: number, frameSeconds: number): number =>
+  speed > 0 ? frameSeconds * Math.max(1, full / speed) : frameSeconds;
+/** How long a walking frame lasts at `speed`, and a running one (a foe's run is slower than a player's). */
+export const walkFrameSeconds = (speed: number): number => pacedFrame(speed, FULL_WALK, WALK_FRAME);
+export const runFrameSeconds = (speed: number): number => pacedFrame(speed, FULL_RUN, WALK_FRAME / 2);
 
 /** A figure's looping moves, played on by the time passed: a loop that slows or quickens goes on from the frame it
  *  shows, where a frame picked off the page's clock would jump. Its first loop starts where the clock has it. */
@@ -214,6 +218,12 @@ export function likelyMoves(
   return [...new Set([...own, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
 }
 
+/** The moves a figure shows standing and on the move with these hands: what a draw or a sheathe shows first. */
+export function steadyMoves(right: string | null, left: string | null, draws: Draws): string[] {
+  const kit = kitOf(right, left, draws);
+  return [...new Set([kit.idle, kit.walk, ...(kit.run ? [kit.run] : []), 'idle', 'walk', 'run'])];
+}
+
 /** A move as the right hand's bow, crossbow or staff plays it, where the forge draws its own (`hurt_bow`); else the
  *  move itself. */
 function ownMove(anim: string, right: string | null, draws: Draws): string {
@@ -314,9 +324,10 @@ export function strokeFrame(progress: number, lands = BLOW_LANDS, span = 3): num
  * The move the player's figure shows, by DFO's law: a move chosen by hand first; then on a ledge or a wall its move by
  * progress or looping; in the air the jump by rising or falling; mounted, the horse's; a cast; a blow, the owner's blow
  * for the stroke and the hold where drawn, else a stroke of the weapon's attack (frames 0-2, the next blow 3-5); a
- * shot, its weapon's own move, then its reload; crouching; running; else the weapon's own walk and rest, the walk's
- * steps slowed below a full walk. `draws` says whether the forge draws a held thing in a move. Moving, a blow, a shot,
- * a reload, a ranged weapon aimed and the cast play their own on the move where the figure draws it whole (`walking`).
+ * shot, its weapon's own move, then its reload; crouching; running, its strides slowed below a full run; else the
+ * weapon's own walk and rest, the walk's steps slowed below a full walk. `draws` says whether the forge draws a held
+ * thing in a move. Moving, a blow, a shot, a reload, a ranged weapon aimed and the cast play their own on the move
+ * where the figure draws it whole (`walking`).
  */
 export function shownMove(
   doing: Doing,
@@ -383,8 +394,8 @@ export function shownMove(
   }
   if (doing.crouched) return doing.moving ? loop('crouch_walk', WALK_FRAME * 2) : loop('crouch_idle', WALK_FRAME);
   if (doing.running && doing.moving) {
-    if (kit.run && draws(kit.run, doing.right)) return loop(kit.run, WALK_FRAME / 2);
-    if (draws('run', doing.drawn ? doing.right : null)) return loop('run', WALK_FRAME / 2);
+    if (kit.run && draws(kit.run, doing.right)) return loop(kit.run, runFrameSeconds(doing.speed));
+    if (draws('run', doing.drawn ? doing.right : null)) return loop('run', runFrameSeconds(doing.speed));
   }
   const rest = doing.moving ? kit.walk : kit.idle;
   const shown = draws(rest, doing.drawn ? doing.right : null) ? rest : doing.moving ? 'walk' : 'idle';

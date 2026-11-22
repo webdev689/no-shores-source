@@ -101,17 +101,21 @@ const CAST_MARGIN_TEXELS = 4;
  */
 export function boxReaches(cascade: Cascade, ahead: readonly [number, number], low: Vector, high: Vector): boolean {
   const reach = cascade.reachM * (1 + (2 * CAST_MARGIN_TEXELS) / SHADOW_SIZE);
-  for (const axis of [axes.right, axes.up]) {
-    // The box's span along the axis, from the square's middle.
-    const middle = ahead[0] * axis[0] + ahead[1] * axis[1];
-    let [least, most] = [-middle, -middle];
-    for (const k of [0, 1, 2] as const) {
-      least += axis[k] * (axis[k] >= 0 ? low[k] : high[k]);
-      most += axis[k] * (axis[k] >= 0 ? high[k] : low[k]);
-    }
-    if (most < -reach || least > reach) return false;
+  return spans(axes.right, ahead, low, high, reach) && spans(axes.up, ahead, low, high, reach);
+}
+
+/** Whether the box's span along `axis`, from the square's middle, meets the square: asked for every tile and cell a
+ *  frame, so summed in place. */
+function spans(axis: Vector, ahead: readonly [number, number], low: Vector, high: Vector, reach: number): boolean {
+  const middle = ahead[0] * axis[0] + ahead[1] * axis[1];
+  let least = -middle;
+  let most = -middle;
+  for (let k = 0; k < 3; k++) {
+    const along = axis[k] ?? 0;
+    least += along * (along >= 0 ? (low[k] ?? 0) : (high[k] ?? 0));
+    most += along * (along >= 0 ? (high[k] ?? 0) : (low[k] ?? 0));
   }
-  return true;
+  return !(most < -reach || least > reach);
 }
 
 /** What a caster's shadow pass reads at group 1: the matrix of the cascade being drawn. */

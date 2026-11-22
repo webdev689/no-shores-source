@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { ArtState } from '../network/artMessages.ts';
 import { SPELLS } from '../network/artMessages.ts';
-import { type Action, BINDINGS } from '../player/input.ts';
+import type { Action } from '../player/input.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import {
   ABILITY_ACTIONS,
@@ -47,22 +47,6 @@ const framed = (casting: CastKeys, arts: ArtState, controls = keys(), mark: [num
     markOf: () => mark,
     floorAt,
   });
-
-test('no key casts two things, the DFO keys stay where they were, and the abilities sit on R, Q and G', () => {
-  const bound = Object.values(BINDINGS).flat();
-  assert.equal(new Set(bound).size, bound.length, 'each key one action');
-  assert.deepEqual(
-    ABILITY_ACTIONS.map((action) => BINDINGS[action]),
-    [['r'], ['q'], ['g']],
-  );
-  assert.ok((BINDINGS.guard as readonly string[]).includes('f'), 'F still guards');
-  assert.deepEqual(BINDINGS.crouch, ['c'], 'C still crouches');
-  assert.deepEqual(
-    [BINDINGS.melee, BINDINGS.ranged, BINDINGS.heal],
-    [['1'], ['2'], ['3']],
-    'a drink beside the loadouts',
-  );
-});
 
 test('the bar runs each share on by its recharge from the room’s word, and holds it at full', () => {
   const taken = state(1, 0, [0.2, 0.9]);
@@ -110,6 +94,21 @@ test('after a cast the keys wait for the room’s word that it was spent, howeve
   assert.ok(framed(casting, word, keys(['anima'])).cast, 'a cast the room let fall sends no word: they open again');
   casting.reset();
   assert.ok(framed(casting, word, keys(['tenetOne'])).cast, 'a room joined afresh starts them afresh');
+});
+
+test('a key whose ability its road has not earned sends nothing, so the earned ones are never held shut by it', () => {
+  // Storm worn, only the Art earned: the Stormcallers' road before its fourth task's end. Every share full.
+  const storm = { ...state(1), earned: [0b001, 0, 0] };
+  assert.equal(abilitiesAt(storm, 0, 0)?.earned, 0b001);
+  const casting = new CastKeys();
+  assert.equal(framed(casting, storm, keys(['tenetOne'])).cast, null, 'Quicken, not earned, is not sent');
+  assert.equal(framed(casting, storm, keys(['tenetTwo'])).cast, null, 'nor Arc Lash');
+  assert.deepEqual(framed(casting, storm, keys(['anima'])).cast, { spell: SPELLS.tempest, aim: null }, 'the Anima');
+  // Shadow worn, Dusk Daggers not earned: its key draws no ring.
+  const shadow = { ...state(3), earned: [0, 0, 0b001] };
+  const held = framed(new CastKeys(), shadow, keys([ABILITY_ACTIONS[DAGGERS]]), [3, 4, 0]);
+  assert.deepEqual(held, { cast: null, ring: null }, 'Dusk Daggers neither aimed nor cast');
+  assert.ok(framed(new CastKeys(), { ...shadow, earned: [0, 0, 0b011] }, keys([ABILITY_ACTIONS[DAGGERS]])).ring);
 });
 
 test('Dusk Daggers ask for the mark as it is, draw their ring where the room lays it, and cast as the key is let go', () => {

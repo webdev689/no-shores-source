@@ -9,8 +9,13 @@ use std::sync::OnceLock;
 /// How many Core slots each Art has, and how many fragments it offers.
 pub const CORE_SLOTS: usize = 3;
 pub const FRAGMENTS: usize = 6;
-/// The Art a new player wears: Storm.
+/// The Art a character kept before wears when theirs is none the rules know: Storm. A new player wears none (0).
 pub const FIRST_ART: u8 = 1;
+/// An Art's earned bits: the Art (its Anima with it), its first Tenet and its second; and all three.
+pub const EARNED_ART: u8 = 1;
+pub const EARNED_TENET_ONE: u8 = 2;
+pub const EARNED_TENET_TWO: u8 = 4;
+pub const ALL_EARNED: u8 = 7;
 /// An Art's highest level, at which its spells are as `content/arts/arts.json` writes them.
 pub const LEVEL_MOST: u8 = 5;
 
@@ -173,8 +178,9 @@ pub fn arts() -> &'static ArtsDef {
     })
 }
 
-/// The Art a player wears, and for each Art by its number less one: its Core (in each slot a fragment's place in its
-/// Art's list, or none), its level, the XP toward its next, and the fragments it owns, one bit each by place.
+/// The Art a player wears (0 none), and for each Art by its number less one: its Core (in each slot a fragment's place
+/// in its Art's list, or none), its level, the XP toward its next, the fragments it owns, one bit each by place, and
+/// what of it is earned (`EARNED_ART` and the Tenets' bits).
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize, Serialize)]
 #[serde(default)]
 pub struct WornArts {
@@ -185,6 +191,9 @@ pub struct WornArts {
     /// None only in a character kept before fragments were owned, which owns what its Cores held (`kept`).
     #[serde(default)]
     pub owned: Option<Vec<u8>>,
+    /// None only in a character kept before Arts were earned, which earned every one (`kept`).
+    #[serde(default)]
+    pub earned: Option<Vec<u8>>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -200,29 +209,48 @@ impl Default for WornArts {
             levels: vec![1; count],
             xp: vec![0; count],
             owned: Some(vec![0; count]),
+            earned: None,
             unknown: crate::character::UnknownKeys::new(),
         }
     }
 }
 
 impl WornArts {
-    /// The Test Ground's: every Art at its highest level owning every fragment, so each spell is tried as written.
+    /// A new player's: no Art earned, and none worn until a house's road gives one.
+    #[must_use]
+    pub fn unearned() -> Self {
+        let empty = Self::default();
+        WornArts { worn: 0, earned: Some(vec![0; empty.levels.len()]), ..empty }
+    }
+
+    /// The Test Ground's: every Art earned, at its highest level owning every fragment, so each spell is tried as
+    /// written.
     #[must_use]
     pub fn mastered() -> Self {
         let empty = Self::default();
         let count = empty.levels.len();
-        WornArts { levels: vec![LEVEL_MOST; count], owned: Some(vec![(1 << FRAGMENTS) - 1; count]), ..empty }
+        let owned = Some(vec![(1 << FRAGMENTS) - 1; count]);
+        WornArts { levels: vec![LEVEL_MOST; count], owned, earned: Some(vec![ALL_EARNED; count]), ..empty }
     }
 
-    /// As kept, made whole: an Art the rules do not know is Storm; a Core, a level, XP and owned fragments for every
-    /// Art; a level within 1 to `LEVEL_MOST` and XP within its bar; a fragment that is none of its Art's, set twice, or
-    /// not owned taken out. A character kept before fragments were owned owns those its Cores held.
+    /// As kept, made whole: an Art worn that the rules do not know is Storm, and one not earned is none; a Core, a
+    /// level, XP, owned fragments and earned bits for every Art; a level within 1 to `LEVEL_MOST` and XP within its
+    /// bar; a fragment that is none of its Art's, set twice, or not owned taken out. A character kept before fragments
+    /// were owned owns those its Cores held, and one kept before Arts were earned earned them all.
     #[must_use]
     pub fn kept(mut self) -> Self {
         let count = arts().arts.len();
-        if arts().art(self.worn).is_none() {
+        let mut earned = self.earned.take().unwrap_or_else(|| vec![ALL_EARNED; count]);
+        earned.resize(count, 0);
+        earned.iter_mut().for_each(|bits| *bits &= ALL_EARNED);
+        if self.worn != 0 && arts().art(self.worn).is_none() {
             self.worn = FIRST_ART;
         }
+        let worn = arts().arts.iter().position(|art| art.id == self.worn);
+        if worn.is_some_and(|at| earned[at] & EARNED_ART == 0) {
+            self.worn = 0;
+        }
+        self.earned = Some(earned);
         self.cores.resize(count, [None; CORE_SLOTS]);
         self.levels.resize(count, 1);
         self.xp.resize(count, 0);
@@ -278,6 +306,8 @@ pub enum ArtRefusal {
     FragmentSet = 113,
     /// The fragment is not the player's: it is had by rising the Art, or bought, at its faction's counter.
     NotOwned = 114,
+    /// The Art is not the player's to wear: its house's road gives it.
+    NotEarned = 115,
 }
 
 impl Character {
@@ -293,6 +323,9 @@ impl Character {
         };
         let index = arts().arts.iter().position(|found| found.id == art).ok_or(ArtRefusal::NoSuchArt)?;
         let (Some(slot), Some(fragment)) = (slot, fragment) else {
+            if self.earned(art) & EARNED_ART == 0 {
+                return Err(ArtRefusal::NotEarned);
+            }
             self.arts.worn = art;
             return Ok(());
         };
@@ -314,11 +347,31 @@ impl Character {
         Ok(())
     }
 
-    /// The Art the player wears.
+    /// The Art the player wears, or the first when they wear none: where none is worn matters, `worn_art`.
     #[must_use]
     pub fn art(&self) -> &'static ArtDef {
         let found = arts().art(self.arts.worn);
         found.or_else(|| arts().arts.first()).expect("content/arts holds Arts: its test says so")
+    }
+
+    /// The Art the player wears; none before a house's road gives one.
+    #[must_use]
+    pub fn worn_art(&self) -> Option<&'static ArtDef> {
+        arts().art(self.arts.worn)
+    }
+
+    /// What of an Art the player has earned, by the Art's number: `EARNED_ART` and the Tenets' bits; every one for a
+    /// character kept before Arts were earned.
+    #[must_use]
+    pub fn earned(&self, art: u8) -> u8 {
+        let Some(at) = arts().arts.iter().position(|found| found.id == art) else { return 0 };
+        self.arts.earned.as_ref().map_or(ALL_EARNED, |earned| earned.get(at).copied().unwrap_or(0))
+    }
+
+    /// Whether an ability of an Art is earned: 0 its Anima, with the Art; 1 and 2 its Tenets.
+    #[must_use]
+    pub fn ability_earned(&self, art: u8, ability: u8) -> bool {
+        1_u8.checked_shl(u32::from(ability)).is_some_and(|bit| self.earned(art) & bit != 0)
     }
 
     /// An Art's Core, by the Art's number: each slot's fragment, or none.
@@ -328,10 +381,11 @@ impl Character {
         index.and_then(|index| self.arts.cores.get(index)).copied().unwrap_or([None; CORE_SLOTS])
     }
 
-    /// A fragment of the worn Art, by its key, if its Core holds it: only the worn Art's Core counts.
+    /// A fragment of the worn Art, by its key, if its Core holds it: only the worn Art's Core counts, and none with no
+    /// Art worn.
     #[must_use]
     pub fn fragment(&self, key: &str) -> Option<&'static FragmentDef> {
-        self.fragment_of(self.art().id, key)
+        self.fragment_of(self.worn_art()?.id, key)
     }
 
     /// A fragment of the Art numbered `art`, by its key, if that Art's Core holds it, worn or not.

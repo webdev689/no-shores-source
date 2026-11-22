@@ -11,11 +11,12 @@ use crate::dice::Dice;
 use crate::noises::stir_of;
 use crate::roles::Numbers;
 use crate::share::sooner;
-use crate::tuning::{ENGAGE_RANGE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
+use crate::tuning::{ENGAGE_RANGE, FOE_PACE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
 use combat::tuning::STRIKE_HEIGHT;
 use combat::{Fighter, FighterId, Status};
+use movement::TUNING;
 
 /// A foe in its room this tick: its id, its fighter, the room, its numbers and its dice.
 #[derive(Clone, Copy, Debug)]
@@ -41,6 +42,23 @@ impl Here<'_, '_> {
     #[must_use]
     pub fn feet(&self) -> [f64; 3] {
         [self.fighter.body.x, self.fighter.body.y, self.fighter.body.z]
+    }
+
+    /// The most of a player's walk or run it asks of itself: a foe's share (`FOE_PACE`), an ally's whole.
+    #[must_use]
+    pub fn pace(&self) -> f64 {
+        if self.fighter.side.is_players() { 1.0 } else { FOE_PACE }
+    }
+
+    /// How fast it walks, and runs, in metres a second, at its own pace: Hasted, faster.
+    #[must_use]
+    pub fn walk(&self) -> f64 {
+        TUNING.walk * self.pace() * combat::status::pace(&self.fighter)
+    }
+
+    #[must_use]
+    pub fn run(&self) -> f64 {
+        TUNING.run * self.pace() * combat::status::pace(&self.fighter)
     }
 
     /// A fighter of the room by id.
@@ -132,8 +150,9 @@ pub fn sense(brain: &mut Brain, here: &Here<'_, '_>, board: &Board) -> Option<Si
 
 /// The stir of every foe of another side it hears, each with what it adds and where.
 fn stirring<'here>(here: &'here Here<'_, '_>) -> impl Iterator<Item = (f64, [f64; 3])> + 'here {
-    let heard =
-        |other: &Fighter| stir_of(other).map(|noise| (noise.heard_at(here.feet(), here.world.blocks), noise.at));
+    let heard = |other: &Fighter| {
+        stir_of(other).map(|noise| (noise.heard_at(here.feet(), here.world.blocks, here.world.terrain), noise.at))
+    };
     here.world.fighters.iter().filter(|(_, other)| here.hostile(other)).filter_map(move |(_, other)| heard(other))
 }
 
@@ -147,7 +166,7 @@ fn kept(brain: &mut Brain, here: &Here<'_, '_>) -> Option<Sight> {
     let tick = here.tick();
     let target = brain.target?;
     match here.enemy(target) {
-        Some(other) if sees(here.world.blocks, &here.fighter, other) => {
+        Some(other) if sees(here.world.blocks, here.world.terrain, &here.fighter, other) => {
             brain.last_seen = Some(feet(other));
             brain.seen_at = tick;
             Some(sight(here, target, other, true, brain.last_seen))
@@ -177,7 +196,9 @@ pub(crate) fn in_sight(here: &Here<'_, '_>) -> Vec<(f64, FighterId, Fighter, f64
         .filter_map(|(id, other)| {
             let distance = apart(at, [other.body.x, other.body.y]);
             let turn = off(here.fighter.aim, bearing(at, [other.body.x, other.body.y]));
-            let seen = distance <= here.range() && turn <= SIGHT_ARC && sees(here.world.blocks, &here.fighter, other);
+            let seen = distance <= here.range()
+                && turn <= SIGHT_ARC
+                && sees(here.world.blocks, here.world.terrain, &here.fighter, other);
             let ahead = (libm::cos(turn) - edge) / (1.0 - edge);
             let gain = SIGHT_GAIN * (1.0 - distance / here.range()) * ahead / 60.0;
             seen.then_some((distance, *id, *other, gain))

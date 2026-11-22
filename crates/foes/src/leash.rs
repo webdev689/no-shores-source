@@ -17,7 +17,7 @@ use crate::steer::{Ask, way_to};
 use crate::tuning::{ALERT_OFF, FALLEN_BACK, HOME_FACED, HOME_REACHED, KEEP_UP, SQUARING_PACE};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
-use movement::{TICK_SECONDS, TUNING};
+use movement::TICK_SECONDS;
 
 /// What its leash asks this tick: its walk back, once it has given its fight up; none for a foe with no post, one
 /// whose target stands near enough its post, or one still winding up a blow (a roar's new phase begins in its wind-up).
@@ -137,7 +137,7 @@ fn walk_home(brain: &mut Brain, here: &Here<'_, '_>, home: Home) -> Ask {
         && let Some(way) = way_to(here, home.at)
     {
         if brain.heel.is_none() {
-            brain.calls.heal = missing * (TUNING.walk * TICK_SECONDS / left).min(1.0);
+            brain.calls.heal = missing * (here.walk() * TICK_SECONDS / left).min(1.0);
         }
         return Ask::walking(way, 1.0, brain.heel.is_some());
     }

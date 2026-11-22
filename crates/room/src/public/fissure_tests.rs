@@ -489,7 +489,12 @@ fn its_spires_stand_as_tools_modules_draws_them_and_a_body_runs_into_them_while_
     // Nothing passes through a spire, a body or a blow.
     let spire = super::fissure::SPIRES[2];
     let (at, mid) = ([FISSURE_AT[0] + spire[3], FISSURE_AT[1] + spire[1], 0.0], spire[5] / 2.0);
-    assert!(!combat::sight::clear_line(&room.blocks, [at[0] + 2.0, at[1] + 0.2, mid], [at[0] - 2.0, at[1] + 0.2, mid]));
+    assert!(!combat::sight::clear_line(
+        &room.blocks,
+        &room.floor,
+        [at[0] + 2.0, at[1] + 0.2, mid],
+        [at[0] - 2.0, at[1] + 0.2, mid]
+    ));
     running_mut(&mut room).ticks_left = 1;
     room.tick();
     assert_eq!(room.blocks.len(), before, "failed, the fissure closing: its spires gone");

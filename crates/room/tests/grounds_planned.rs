@@ -266,3 +266,22 @@ fn saltmeres_grounds_keep_every_distance_the_bake_plans_them_by() {
         assert!(hit.is_none(), "{id}: the fissure is 1 m clear of everything standing, not {hit:?}");
     }
 }
+
+#[test]
+fn saltmeres_held_map_marks_a_public_event_where_its_fissure_and_its_raid_are_fought_and_nowhere_else_there() {
+    let layouts = continent_one();
+    for id in bake::EVENT_ZONES {
+        let laid = layouts.iter().find(|layout| layout.id == id).expect("the zone lays out");
+        let grounds = bake::grounds_of(laid).expect("an event zone has grounds");
+        let marked: Vec<[f64; 2]> =
+            laid.sites.iter().filter(|site| site.kind == SiteKind::Event).map(|site| site.at).collect();
+        let fissure = grounds.fissure.expect("its wilds holds a fissure");
+        let raid = grounds.raid.expect("its hamlet holds a raid");
+        assert_eq!(marked.len(), 2, "{id}: two marks, the fissure's and the raid's: {marked:?}");
+        let near = |at: [f64; 2], within: f64| marked.iter().any(|mark| distance(*mark, at) <= within);
+        let wilds = laid.areas.iter().filter(|area| area.kind == AreaKind::Wilds);
+        let opened = wilds.clone().find(|area| distance(area.at, fissure.at) <= area.radius).expect("its wilds");
+        assert!(near(opened.at, 0.0), "{id}: the wilds the fissure opens in is marked");
+        assert!(near(raid.at, raid.radius), "{id}: the raid's ground is marked");
+    }
+}

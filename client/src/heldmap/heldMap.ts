@@ -1,7 +1,6 @@
 // The held map at the helm: the parchment raised in the player's gauntlets, the discovered world on it, panned,
 // zoomed and clicked to choose where to sail; lowered with or without a destination. The forge's art is the owner's
 // own; its rules are DFO's held map's (heldMapLaw.ts).
-import { TONES } from '../plus/tones.ts';
 import type { Gpu } from '../gpu.ts';
 import { forgeName } from '../firstperson/fpFrames.ts';
 import { WORLD_FRAME } from '../overworld/discovery.ts';
@@ -17,6 +16,7 @@ import {
   raised,
   type Rect,
   routeOf,
+  seasChoices,
   SHEET,
   stageOf,
   toInk,
@@ -26,6 +26,7 @@ import {
   wheelFactor,
   zoomAt,
 } from './heldMapLaw.ts';
+import { heldCardNode } from './heldMapCard.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 import { paintLand } from './landLetters.ts';
 import type { LandSheet } from './landSheet.ts';
@@ -34,9 +35,7 @@ import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
 import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
 import type { MapWaters } from './watersWash.ts';
-import { button } from '../ui/controls.ts';
-import type { Child, Drawing, Node } from '../ui/node.ts';
-import { colourOf } from '../ui/quads.ts';
+import type { Child } from '../ui/node.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 
@@ -78,13 +77,14 @@ export type Course =
   { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string };
 
 /** What the map is asked each frame: where the ship lies and heads (on land, the player, in the world), what is
- *  discovered, and the course sailed now. */
+ *  discovered, the course sailed now, and the places the quest walked names, which it rings. */
 export interface HeldMapScene {
   readonly ship: Point2;
   readonly heading: number;
   readonly places: readonly MapPlace[];
   readonly knownIslands: number;
   readonly course: readonly Point2[];
+  readonly quest?: readonly string[];
 }
 
 type Phase =
@@ -97,11 +97,6 @@ type Choice = { readonly at: Point2; readonly name: string; readonly course: Cou
 
 /** The difficulty a voyage sets out at: its island's foes as they are, or raised, paying more. */
 export type Difficulty = 'normal' | 'elite' | 'abyss';
-const DIFFICULTY_WORDS: readonly (readonly [Difficulty, string, string])[] = [
-  ['normal', 'Normal', 'The island’s foes as they are.'],
-  ['elite', 'Elite', 'Foes two levels higher; half again the XP, Aurem and Vestiges.'],
-  ['abyss', 'Abyss', 'Foes three levels higher; twice the XP, Aurem and Vestiges.'],
-];
 
 export class HeldMap {
   private readonly view: HeldMapView;
@@ -130,10 +125,14 @@ export class HeldMap {
   private ink: Rect = { x: 0, y: 0, width: 1, height: 1 };
   private press: { x: number; y: number; view: View; panning: boolean } | null = null;
   private choice: Choice | null = null;
+  /** The key that sets sail, as bound now, which its press names. */
+  sailKey: () => string = () => 'Enter';
   /** The difficulty the voyage set out at: what the card showed when the player set sail. */
   difficulty: Difficulty = 'normal';
   /** The difficulty chosen on the card, kept only once the player sets sail with it. */
   private picked: Difficulty = 'normal';
+  /** Why each difficulty is shut to the player by their level (null where open), as the map was last raised. */
+  private shut: readonly (string | null)[] = [];
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
@@ -180,14 +179,17 @@ export class HeldMap {
   }
 
   /** Raises the map in the player's gauntlets (`null` bare hands), centred on the ship, the sea charted so far laid on
-   *  it. */
+   *  it, the difficulties `shut` says why are shut (by tier, null where open) shut on its card. */
   open(
     viewport: { readonly width: number; readonly height: number },
     ship: Point2,
     gauntlets: string | null,
     charted: Uint8Array,
+    shut: readonly (string | null)[],
   ): void {
     if (this.phase.kind !== 'closed') return;
+    this.shut = shut;
+    this.picked = seasChoices(this.picked, shut).picked;
     this.view.setCharted(charted);
     this.charted = charted;
     this.chartings++;
@@ -304,10 +306,11 @@ export class HeldMap {
     this.mapView = zoomAt(this.mapView, x - this.ink.x, y - this.ink.y, factor, this.ink, this.extent);
   }
 
-  /** Sets sail for the destination chosen, if it has a course. */
+  /** Sets sail for the destination chosen, if it has a course, at the hardest difficulty open up to the one picked: a
+   *  shut one never sails, as the sea's room would refuse it. */
   setSail(): void {
     if (!this.choice?.course.ok) return;
-    this.difficulty = this.picked;
+    this.difficulty = seasChoices(this.picked, this.shut).picked;
     this.close(this.choice.at);
   }
 
@@ -453,7 +456,8 @@ export class HeldMap {
       const [x, y] = toInk(this.mapView, place.at[0], place.at[1]);
       if (!onSheet(x, y)) continue;
       this.placed.push({ place, x, y });
-      places.push({ text: place.name, x, y, kind: place.kind, chosen: this.choice?.place === place.id });
+      const quest = scene.quest?.includes(place.id) === true;
+      places.push({ text: place.name, x, y, kind: place.kind, chosen: this.choice?.place === place.id, quest });
     }
     const [shipX, shipY] = toInk(this.mapView, scene.ship[0], scene.ship[1]);
     const lettering = layOut({
@@ -512,61 +516,25 @@ export class HeldMap {
     const shown = this.shownAt;
     const choice = this.choice;
     if (!shown || !choice) return null;
+    // A pick kept from an earlier voyage, or another character's, falls to the hardest tier open to this one.
+    this.picked = seasChoices(this.picked, this.shut).picked;
     const ok = choice.course.ok;
-    const words = ok ? `Set a course for ${choice.name}` : choice.course.why;
-    const said = (text: string): Node => ({ text: { words: text, colour: TONES.ink, wrap: false }, through: true });
-    return {
-      id: 'held-card',
-      alignY: 'center',
-      gap: 14,
-      padding: [8, 14],
-      opacity: shown.lift,
-      // Drawn, not filled, so only its presses take the pointer and a click beside them reaches the map.
-      draw: cardGround,
-      float: {
-        to: 'screen',
-        anchor: [0.5, 1],
-        x: Math.round(this.ink.x + this.ink.width / 2),
-        y: Math.round(this.ink.y + shown.drop - 12),
-      },
-      children: [
-        said(words),
-        ok && {
-          gap: 0,
-          children: DIFFICULTY_WORDS.map(([difficulty, label, told]) =>
-            button(ui, `held-seas:${difficulty}`, label, () => (this.picked = difficulty), {
-              role: difficulty === this.picked ? 'primary' : 'button',
-              padding: [7, 14],
-              label: `${label}: ${told}`,
-            }),
-          ),
-        },
-        ok && button(ui, 'held-sail', 'Set sail  Enter', () => this.setSail(), { role: 'primary', padding: [7, 14] }),
-      ],
+    const card = {
+      ...{ words: ok ? `Set a course for ${choice.name}` : choice.course.why, ok, picked: this.picked },
+      ...{ shut: this.shut, lift: shown.lift, sail: ['Set sail', this.sailKey()].filter(Boolean).join('  ') },
+      at: [this.ink.x + this.ink.width / 2, this.ink.y + shown.drop - 12] as const,
     };
+    return heldCardNode(
+      ui,
+      card,
+      (seas) => (this.picked = seas),
+      () => this.setSail(),
+    );
   }
 }
 
-/** The card's ground and its gold edge. */
-const cardGround: Drawing = (renderer, box, scale, clip, fade) => {
-  const tone = (css: string) => {
-    const [red, green, blue, alpha] = colourOf(css);
-    return [red, green, blue, alpha * fade] as const;
-  };
-  const { x, y, width, height } = box;
-  renderer.quads.add(box, tone('rgba(10, 13, 17, 0.72)'), clip);
-  const gold = tone('#f3cf6a');
-  for (const edge of [
-    { x, y, width, height: scale },
-    { x, y: y + height - scale, width, height: scale },
-    { x, y, width: scale, height },
-    { x: x + width - scale, y, width: scale, height },
-  ])
-    renderer.quads.add(edge, gold, clip);
-};
-
 /** What the map's layout reads, as one string: the map's view, the stage's ink and hands, the face's loading, how often
- *  the charted sea was set, the ship's point and heading, the places and islands known, and the place chosen. */
+ *  the charted sea was set, the ship's point and heading, the places and islands known, the choice and the quest's. */
 export function layoutKey(
   view: View,
   stage: { readonly ink: Rect; readonly sprite: Rect },
@@ -575,8 +543,9 @@ export function layoutKey(
   scene: HeldMapScene,
   chosen: string | null,
 ): string {
-  const { ship, heading, places, knownIslands } = scene;
-  return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ship, heading, places, knownIslands, chosen]);
+  const { ship, heading, places, knownIslands, quest } = scene;
+  const read = [ship, heading, places, knownIslands, chosen, quest];
+  return JSON.stringify([view, stage.ink, stage.sprite, fonts, chartings, ...read]);
 }
 
 /** A value made again only when its key changes: the held map's layout, keyed by `layoutKey`. */

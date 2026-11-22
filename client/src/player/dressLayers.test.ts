@@ -32,8 +32,12 @@ const metals = ['iron', 'elven', 'silver', 'ebony'];
 const wardrobe: Wardrobe = {
   sets: { helm: sets, pauldrons: sets, cuirass: sets, gauntlets: sets, greaves: sets, boots: sets },
   garments: ['shirt_long_round', 'breeches', 'shoes', 'casual_cloak', 'formal_cloak'],
-  right: ['sword', 'dagger', 'staff', 'bow_long'].flatMap((weapon) => metals.map((metal) => `${weapon}_${metal}`)),
-  left: ['shield_kite', 'shield_round', 'dagger'].flatMap((shield) => metals.map((metal) => `${shield}_${metal}`)),
+  right: ['sword', 'dagger', 'staff', 'bow_long', 'bow_short']
+    .flatMap((weapon) => metals.map((metal) => `${weapon}_${metal}`))
+    .concat(['pistolet', 'thunderlock']),
+  left: ['shield_buckler', 'shield_kite', 'shield_round', 'shield_tower', 'dagger'].flatMap((shield) =>
+    metals.map((metal) => `${shield}_${metal}`),
+  ),
   hairStyles: ['crop'],
 };
 const plain: Outfit = {
@@ -60,6 +64,12 @@ test("every layer the page dresses a faction piece's colour on, and that colour,
     );
     const coloured = Object.entries(dressed.dyes).filter(([, colour]) => factionColours.has(colour));
     assert.ok(coloured.length > 0, `${piece.named} is dressed in its faction's colour`);
+    const armour = Object.entries(dressed.armour).map(([part, set]) => `${part}_${set}`);
+    for (const layer of [...armour, dressed.right, dressed.left].filter((each) => each !== null))
+      assert.ok(
+        piece.on.some((start) => layer.startsWith(start)),
+        `${piece.named}: the room drops ${layer}`,
+      );
     for (const [layer, colour] of coloured) {
       assert.ok(
         piece.on.some((start) => layer.startsWith(start)),

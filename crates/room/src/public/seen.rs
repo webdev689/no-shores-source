@@ -91,7 +91,7 @@ impl Room {
         let running = public.running.as_ref();
         let (_, now) = schedule(public.zone, self.minute.max(1))?;
         let (next_kind, next_start) = schedule(public.zone, now + PERIOD_MINUTES)?;
-        let (next_middle, _) = self.ground_of(public, next_kind);
+        let (next_middle, _) = self.event_ground(public, next_kind);
         // To the minute: the host sets the room's minute, and the page counts on from it.
         let next_ticks = ticks(next_start.saturating_sub(self.minute) * TICKS_PER_MINUTE);
         let mut seen = PublicSeen {
@@ -114,7 +114,7 @@ impl Room {
             next_wave_ticks: 0,
         };
         // The running event's ground, or, while none runs, the next's.
-        let (middle, radius) = self.ground_of(public, running.map_or(next_kind, |running| running.kind));
+        let (middle, radius) = self.event_ground(public, running.map_or(next_kind, |running| running.kind));
         (seen.ground, seen.radius) = (self.on_ground(middle), radius);
         self.public_marks(public, running, &mut seen);
         Some(seen)

@@ -7,7 +7,6 @@ import kits from '../../../content/islands/kits.json' with { type: 'json' };
 export const PARTS: readonly string[] = kits.parts;
 /** The kits: one a biome's, and the common kit every climate shares. */
 export const KITS: readonly string[] = kits.kits;
-export const COMMON_KIT = 'common';
 
 /** Every module's name by its number: the contract's names in byte order, the isle crate's catalog order, which is
  *  the number a placement names. */

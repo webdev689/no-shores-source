@@ -2,8 +2,8 @@
 //! least SPAWN_CLEAR from every spawn. Each group walks a beat from its post (`beat.rs`), but for a Boss's or a
 //! Miniboss's, which holds its post. The room's world seed, mixed from the node's id, draws who stands where, each
 //! foe's level from its island's band and its shield, and each beat, so every machine stands the same; the seas raise
-//! the levels once the host sets them. A cleared group stands again STAND_AGAIN later, once no player is within
-//! CLEAR_AROUND of its post and the living foes leave it room; each foe is leashed to its place in its group.
+//! the levels once the host sets them. A cleared group stands again STAND_AGAIN later (a Miniboss's or a Boss's,
+//! GREAT_STAND_AGAIN), once no player is within CLEAR_AROUND of its post and the living foes leave it room.
 //! The baked square reaches inland from the spawn rather than round it, so it holds the garrison past the spawn's
 //! clear ground without growing: a bake's cost grows far faster than its area.
 
@@ -31,6 +31,8 @@ pub(crate) const SPAWN_CLEAR: f64 = 25.0;
 /// A cleared group stands again this many ticks (120 s) after its last foe fell, once no player stands within
 /// CLEAR_AROUND metres of its post.
 pub(crate) const STAND_AGAIN: u64 = 120 * 60;
+/// A group with a Miniboss or a Boss stands again only 10 minutes after it fell, so neither is farmed: the owner's.
+pub(crate) const GREAT_STAND_AGAIN: u64 = 600 * 60;
 pub(crate) const CLEAR_AROUND: f64 = 40.0;
 /// Posts are chosen on a lattice this many metres apart, this far inside the section's edge and the baked square's,
 /// and this far from each other; a group stands this far round its post.
@@ -73,15 +75,21 @@ pub(crate) struct Post {
 }
 
 /// A garrison foe's level, drawn evenly from its island's band (0 with none), and its shield's element if it stands
-/// with one, as `gear::element::Shield::rolled` draws for any foe: one in five, of an element drawn evenly. Each is the
-/// `nth` foe's draw from the node's seed, apart from every other draw of the garrison.
-pub(crate) fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
+/// with one, as `gear::element::Shield::rolled` draws for any foe: at `shield_chance` (one in five but under Ironclad),
+/// of an element drawn evenly. Each is the `nth` foe's draw from the node's seed, apart from every other draw of the
+/// garrison.
+pub(crate) fn gird_of(
+    seed: u64,
+    nth: u32,
+    levels: Option<(u8, u8)>,
+    shield_chance: f64,
+) -> (u8, Option<gear::Element>) {
     let dice = Dice { seed, tick: 0, player: nth };
     let level = levels.map_or(0, |(low, high)| {
         let band = usize::from(high.saturating_sub(low)) + 1;
         low.saturating_add(u8::try_from(dice.pick(Purpose::Patrol, 0, band)).unwrap_or(0))
     });
-    (level, gear::element::Shield::rolled(&dice, 0, 1.0).map(|shield| shield.element))
+    (level, gear::element::Shield::rolled(&dice, 0, 1.0, shield_chance).map(|shield| shield.element))
 }
 
 const PATROL: [(u8, Rank); 6] = [
@@ -92,7 +100,7 @@ const PATROL: [(u8, Rank); 6] = [
     (CROSSBOWMAN, Minor),
     (CROSSBOWMAN, Major),
 ];
-const DUNGEON: [(u8, Rank); 6] = [
+pub(crate) const DUNGEON: [(u8, Rank); 6] = [
     (RUNNER, Major),
     (COLLECTOR, Major),
     (CROSSBOWMAN, Major),
@@ -178,29 +186,47 @@ impl Room {
 
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, among its
 /// layout's boxes inside that square, and never over its whole section, which would cost more time and memory than a
-/// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone.
+/// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone;
+/// a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
-    let (walked, bounds): (Vec<Block>, navmesh::Bounds) = match section {
-        Some(section) => {
-            let bounds = ground_around(&[], ground_middle(section, first), NODE_AROUND);
-            let inside = |block: &&Block| {
-                block.min_x < bounds.max_x
-                    && block.max_x > bounds.min_x
-                    && block.min_y < bounds.max_y
-                    && block.max_y > bounds.min_y
-            };
-            (blocks.iter().filter(inside).copied().collect(), bounds)
-        }
-        None => (blocks.to_vec(), ground_around(blocks, first, GROUND_AROUND)),
+    let Some(section) = section else {
+        return over(floor, blocks, ground_around(blocks, first, GROUND_AROUND));
     };
-    match (floor, section) {
-        (Floor::Flat, _) => NavMesh::bake(&walked, bounds, &navmesh::AGENT),
-        (Floor::Sea(_), _) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
+    if let Floor::Dungeon(_) = floor {
+        return crate::dungeon_room::baked(floor, first, section);
+    }
+    let (bounds, walked) = square_of(blocks, ground_middle(section, first));
+    match floor {
         // A deck's mesh covers its ring alone: its planks and the walls round them.
-        (Floor::Deck(_), Some(section)) => {
-            NavMesh::bake_on(&walked, floor, ring_bounds(&section.ring), &navmesh::AGENT)
-        }
-        _ => NavMesh::bake_on(&walked, floor, bounds, &navmesh::AGENT),
+        Floor::Deck(_) => NavMesh::bake_on(&walked, floor, ring_bounds(&section.ring), &navmesh::AGENT),
+        _ => over(floor, &walked, bounds),
+    }
+}
+
+/// A square round a place and its navmesh, baked as a node's own is round its first spawn.
+pub(crate) fn square(floor: &Floor, blocks: &[Block], middle: (f64, f64)) -> (navmesh::Bounds, NavMesh) {
+    let (bounds, walked) = square_of(blocks, middle);
+    (bounds, over(floor, &walked, bounds))
+}
+
+/// The square NODE_AROUND each way round `middle`, and the blocks that reach into it.
+pub(crate) fn square_of(blocks: &[Block], middle: (f64, f64)) -> (navmesh::Bounds, Vec<Block>) {
+    let bounds = ground_around(&[], middle, NODE_AROUND);
+    let inside = |block: &&Block| {
+        block.min_x < bounds.max_x
+            && block.max_x > bounds.min_x
+            && block.min_y < bounds.max_y
+            && block.max_y > bounds.min_y
+    };
+    (bounds, blocks.iter().filter(inside).copied().collect())
+}
+
+/// A navmesh over `bounds`: on open ground, over the sea, or on the floor's own ground.
+fn over(floor: &Floor, walked: &[Block], bounds: navmesh::Bounds) -> NavMesh {
+    match floor {
+        Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
+        Floor::Sea(_) => NavMesh::bake_over_sea(walked, bounds, &navmesh::AGENT),
+        _ => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
     }
 }
 
@@ -272,6 +298,17 @@ fn open_points(section: &Section, middle: (f64, f64)) -> Vec<(f64, f64)> {
     open
 }
 
+/// What the gates know a node of a kind as: an Elite Dungeon's opens after the prologue, a mission's or a boss's by
+/// its seas alone.
+fn place_of(kind: NodeKind) -> gear::gate::Place {
+    match kind {
+        NodeKind::Social => gear::gate::Place::Social,
+        NodeKind::Patrol => gear::gate::Place::Patrol,
+        NodeKind::Dungeon => gear::gate::Place::EliteDungeon,
+        NodeKind::Mission | NodeKind::Boss => gear::gate::Place::Node,
+    }
+}
+
 impl Room {
     /// A node's room of its kind, its chances drawn from its id: as it opens, the garrison its kind holds stands in it,
     /// at its island's band of `levels` (none for a node of no island, whose foes fight by combat's own numbers).
@@ -284,8 +321,10 @@ impl Room {
         (id, levels): (&str, Option<(u8, u8)>),
     ) -> Self {
         let mut room = Self::node(floor, blocks, section);
+        (room.quests.node, room.quests.levels) = (Some(id.to_owned()), levels);
         room.world_seed = node_seed(id);
         room.foes_most = NODE_FOES_MOST;
+        room.place = Some(place_of(kind));
         room.stand_garrison(kind, levels);
         room
     }
@@ -311,10 +350,20 @@ impl Room {
                 }
             }
         }
-        let (seed, mut nth) = (self.world_seed, 0_u32);
+        self.gird_and_stand(levels);
+        if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
+            self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
+        }
+        self.clearing = crate::clears::clearing_of(kind);
+    }
+
+    /// Draws each posted foe's level from its island's band and its shield, in the order the posts were laid, and
+    /// stands every post.
+    pub(crate) fn gird_and_stand(&mut self, levels: Option<(u8, u8)>) {
+        let (seed, mut nth, shield_chance) = (self.world_seed, 0_u32, self.shield_chance());
         for post in &mut self.garrison {
             for &(_, rank, _, _) in &post.members {
-                let (level, shield) = gird_of(seed, nth, levels);
+                let (level, shield) = gird_of(seed, nth, levels, shield_chance);
                 // A Boss or a Miniboss never stands shielded, at the owner's word; the draw is still made, so every
                 // other foe's stays as it was.
                 post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));
@@ -323,9 +372,6 @@ impl Room {
         }
         for post in 0..self.garrison.len() {
             self.stand_post(post);
-        }
-        if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
-            self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
         }
     }
 
@@ -340,7 +386,8 @@ impl Room {
         (section, lattice): (&Section, &[(f64, f64)]),
         (draws, beats): (&mut Mulberry32, &mut Mulberry32),
     ) -> Option<Post> {
-        let at = self.nav.nearest_point([x, y, self.floor.height_at(x, y)])?;
+        let mesh = self.mesh_at([x, y, 0.0]);
+        let at = mesh.nearest_point([x, y, self.floor.height_at(x, y)])?;
         let round = &group.members[usize::from(group.leads)..];
         let start = draws.draw() * TAU;
         let mut members = Vec::new();
@@ -352,13 +399,12 @@ impl Room {
         for (turn, &(number, rank)) in round.iter().enumerate() {
             let outward = start + TAU * turn as f64 / round.len() as f64;
             let place = [at[0] + libm::sin(outward) * SPREAD, at[1] - libm::cos(outward) * SPREAD, at[2]];
-            members.push((number, rank, self.nav.nearest_point(place)?, outward));
+            members.push((number, rank, mesh.nearest_point(place)?, outward));
         }
         // A Boss's or a Miniboss's group, at the farthest post, holds it: the one fight a player seeks out there.
-        let beat =
-            (!group.farthest).then(|| Beat::drawn((&self.nav, &self.floor), at, lattice, section, beats)).flatten();
+        let beat = (!group.farthest).then(|| Beat::drawn((mesh, &self.floor), at, lattice, section, beats)).flatten();
         if let Some(beat) = &beat {
-            let places = beat.places((&self.nav, &self.floor), members.len(), false);
+            let places = beat.places((mesh, &self.floor), members.len(), false);
             for (member, (place, facing)) in members.iter_mut().zip(places) {
                 (member.2, member.3) = (place, facing);
             }
@@ -408,9 +454,11 @@ impl Room {
         }
     }
 
-    /// A garrison level raised by the room's seas; 0, none, stays none.
-    fn at_seas(&self, level: u8) -> u8 {
-        if level == 0 { 0 } else { self.difficulty.raise(level) }
+    /// A garrison level raised by the room's seas, or the week's run's own level whatever the seas; 0, none, stays
+    /// none.
+    pub(crate) fn at_seas(&self, level: u8) -> u8 {
+        let fixed = self.run.as_ref().and_then(|run| run.foes_at);
+        if level == 0 { 0 } else { fixed.unwrap_or_else(|| self.difficulty.raise(level)) }
     }
 
     /// Raises every garrison foe standing to its level at the room's seas, which a host sets once the room has opened:
@@ -457,10 +505,13 @@ impl Room {
                 apart([player.fighter.body.x, player.fighter.body.y], [found.at[0], found.at[1]]) <= CLEAR_AROUND
             });
             let room_for = self.living_foes() + found.members.len() <= self.others_most();
-            if self.clock >= cleared + STAND_AGAIN && !near && room_for {
+            let great = found.members.iter().any(|(_, rank, _, _)| matches!(rank, Rank::Miniboss | Rank::Boss));
+            let again = if great { GREAT_STAND_AGAIN } else { STAND_AGAIN };
+            if self.clock >= cleared + again && !near && room_for {
                 self.stand_post(post);
             }
         }
+        self.pay_garrison_clear();
     }
 }
 
@@ -488,7 +539,7 @@ impl Room {
                 near && foe.brain.alertness() == Alertness::Idle && !foe.brain.returning()
             });
             let marching = beat.step(self.clock, ready);
-            let places = beat.places((&self.nav, &self.floor), living.len(), marching);
+            let places = beat.places((self.mesh_at(self.garrison[post].at), &self.floor), living.len(), marching);
             for (id, (place, facing)) in living.iter().zip(places) {
                 if let Some(foe) = self.foes.get_mut(id) {
                     foe.brain.keep_to(place, facing, marching);
@@ -543,3 +594,7 @@ mod crowd_tests;
 #[cfg(test)]
 #[path = "beat_tests.rs"]
 mod beat_tests;
+
+#[cfg(test)]
+#[path = "clears_tests.rs"]
+mod clears_tests;

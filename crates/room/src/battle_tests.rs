@@ -118,3 +118,22 @@ fn a_ships_level_raises_its_hull_men_and_guns_as_a_foes_level_raises_it_on_land_
     let joined = fights.list[0].fight.vessel(CAPTAIN + 1).unwrap();
     assert_eq!(joined.damage.max_hull, twenty_seven.0, "one who joins a fight is raised as one who began it");
 }
+
+#[test]
+fn a_player_who_leaves_and_comes_back_keeps_a_spent_last_stand_and_no_ship_number_is_given_twice() {
+    let mut fights = begun();
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
+    let first = fights.list[0].crews[&2].ship;
+    fights.list[0]
+        .fight
+        .fit(first, naval::fight::fitting::Fitting { stood: true, ..naval::fight::fitting::Fitting::default() });
+    fights.leave(2);
+    assert!(fights.join((3, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
+    assert!(fights.join((2, sloop(0.0, 700.0), [1.0; 3]), &[], 0.0));
+    let [newcomer, back] = [3, 2].map(|player| fights.list[0].crews[&player].ship);
+    assert!(newcomer != first && back != first && back != newcomer, "{first}, {newcomer}, {back}");
+    let mut characters = BTreeMap::new();
+    characters.insert(2, gear::Character::starting());
+    fights.fit(&characters);
+    assert!(fights.list[0].fight.fitting(back).is_some_and(|fitted| fitted.stood), "its stand spent this fight");
+}

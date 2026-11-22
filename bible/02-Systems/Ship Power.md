@@ -17,6 +17,7 @@ code:
   - crates/gear/src/vendor.rs#for_ship
   - crates/naval/src/fitting.rs#Fitting
   - crates/naval/src/fitting.rs#gunners_lay
+  - crates/naval/src/fight_exotics.rs#hampered
   - crates/room/src/ship_power.rs#fitting
   - crates/room/src/ship_power.rs#pay_sinking
   - crates/room/src/flotsam.rs#Held
@@ -55,11 +56,14 @@ are in [[Crew]].
   level climbed costs 150 Aurem and 2 of the kept module's first material.
 - **Found** (`ship::found`): each piece of what floats where a ship went down holds one common material (1 to 3), a
   chance of Heartwood (2% a rank) and of a module (3% and 1% a rank); its chest holds three (2 to 4 each), Heartwood
-  from 30% and a module one time in two, of the better colours. An island's wreckage holds two (2 to 5) and a module one
-  time in ten, an isle's three (3 to 6) and one in five. A sea Breach's hold always holds a module of the better
-  colours, three materials of 4 to 8 and two Heartwood. A module's colour is never past what its level could drop, as
-  a Vestige's is ([[Gear]], "Vestiges").
-- **The Shipwright** sells six modules a day, three Rare and three Magic, at the buyer's ship's level, at the
+  25% and 5% a rank (a chest is rolled at a Miniboss's or a Boss's) and a module one time in two. An island's wreckage
+  holds two (1 to 3), Heartwood 5% and a module 8%, an isle's three (3 to 6) and one in five. A sea Breach's hold always
+  holds a module, three materials of 4 to 8 and two Heartwood. Every Heartwood and module chance is raised by the
+  voyage's tier, as a kill's chances are. A module is coloured as a Vestige from a foe of its source's rank ([[Gear]],
+  "Vestiges"): a piece its ship's, a chest the rank it is rolled at, a cove's wreckage a Minor's, an isle's an
+  Elite's, a Breach's a Boss's; never past what its level could drop. By the whole find, a cove's wreckage holds less
+  than a Minor ship's pieces, an isle's about a Major's, and an Elite's far more.
+- **The Shipwright** sells six modules a day (the clock's, from 09:00 UTC: [[Activities]]), three Rare and three Magic, at the buyer's ship's level, at the
   Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
 
 ## At sea
@@ -73,14 +77,45 @@ are in [[Crew]].
 - **Its trim** (`ship::trim`): its fitted modules' chosen perks and its posted officers' posts and perks, as factors on
   its guns' reload and scatter, its harm on a ship's hull, canvas and men (and on one below a third of its hull), its
   way and turning in a fight, what its hull, canvas and men take (its hull below a third, below its waterline, its men
-  below half), its ram, its Carpenter's patches and its sight. The words of each perk are in
+  below half), its ram, its Carpenter's patches and its sight. A ball in the rigging, whose harm is all canvas and
+  men, takes the canvas perks and the crew perks, never the hull's. The words of each perk are in
   `content/gear/traits.json`; a test holds every module's and officer's perk to a factor the sea reads.
+- **Its modules' perks** ([[The Perk Pass as Claude Shapes It]]): each thing a module's perk does is done by one perk.
+  Guns offer in handling Quick Tackle (reload 10% faster), Steady Lay (scatter 15% less), Heavy Charge and Hot Guns; in
+  their finish, what is loaded, Double Shotted (hole a hull 10% more), Chain Locker (tear canvas 20% more) and Grape
+  Locker (cut down men 20% more); in their perks Raking Fire (20% more on a ship below a third of its hull), Firing
+  Drill (reload 5% faster and scatter 5% less), Run Out and Overcharged. A hull offers Oak Ribs (it takes 10% less),
+  Copper Sheathing (a ball below its waterline harms it 20% less), Iron Ram, Last Timbers, Carpenter's Stores (its
+  Carpenter patches back 25% more of each ball's harm, so it asks for one at that post) and Stripped Ballast; sails
+  Storm Canvas (tears 12% less), Flying Jib (sails 6% faster), Lookout Yard, Crowd of Sail, Reefed Sails and Backed
+  Sails; rigging Quick Braces (turns 10% faster), Grapnels, Boarding Nets (balls cut down 12% fewer of its men), Taut
+  Rigging, Boarding Ladders and Preventer Stays. No module offers a perk twice. The officers' perks are their own
+  ([[Crew]]).
+- **Perks that give and take**: Heavy Charge (balls hole a hull 15% more, guns reload 8% slower), Hot Guns (reload
+  18% faster, scatter 12% more), Run Out (reload 12% faster, balls cut down 10% more of its men), Overcharged (hole a
+  hull 20% more, scatter 15% more), Stripped Ballast (sails 8% faster in a fight, its hull takes 8% more), Crowd of
+  Sail (sails 10% faster, its canvas tears 15% more), Reefed Sails (its canvas tears 20% less, it sails 5% slower),
+  Backed Sails (turns 12% faster, sails 4% slower), Taut Rigging (turns 15% faster, its canvas tears 10% more),
+  Boarding Ladders (three more hands board, balls cut down 10% more of its men) and Preventer Stays (its canvas tears
+  15% less, it turns 8% slower).
+- **Its Atheric** ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]]) carries an intrinsic,
+  always on while it is fitted, and its own node (`naval::fight::exotics`):
+
+  | Atheric | Intrinsic | Its own |
+  |---|---|---|
+  | Kraken's Roar (guns) | **From the Deep**: its balls in a ship's waterline band hole it twice as hard | **Feeding**: a ship it sinks reloads both its sides at once |
+  | Leviathan's Rib (hull) | **Living Bone**: afloat in a fight its hull mends 1% of its whole a second, with a Carpenter or none | **Hard to Kill**: once a fight, a ball that would sink it leaves it a tenth of its hull |
+  | Stormcaller's Sheet (sails) | **Own Wind**: torn canvas costs it no way while any canvas stands; with none left it sails as any ship does | **Squall**: each ball that strikes it gives it 3% more way for 6 s, to 15% |
+  | The Spider's Web (rigging) | **Web**: four more hands board with it, and a ship its balls strike in the rigging turns 30% slower for 6 s | **Snare**: in a fight, a ship of another flag within 30 m of it sails 15% slower, under sail or at its oars |
+
+  A ship sinks to the ball that takes the last of its hull: that ball's shooter sank it. Only a player's ship is
+  fitted, so a captain's carries none of these. The trim's numbers cross in the gear message beside the rest.
 - **Its hands.** The player's Sloop carries ten men ([[Crew]]): balls cut them down as a captain's are, a thinned crew
   reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
-- **What a fight pays.** A captain it fought going down pays it that captain's rank's foe's experience at the
-  captain's level (`reward_sinking`), and every officer aboard the same; the player earns none of it. What floats holds
-  ship salvage beside its Vestige and ammunition (`flotsam::Held`).
+- **What a fight pays.** A captain going down pays the ship the experience a kill of a foe of its rank would, at its
+  level, raised by the sea's tier (`reward_sinking`), and every officer aboard the same; the player earns none of it.
+  What floats holds ship salvage beside the ship's one kill's drop (`flotsam::Held`).
 
 ## In the browser
 
@@ -99,5 +134,9 @@ browser predicting its ship fits it alike.
 
 ## Limits
 
-- Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. A Lookout's sight
+- A player beaten on a boarded deck who washes up and comes back into the same fight comes back under a new number
+  (none is given twice, so a ball still flying from their old ship is laid at no one's door), its Squall and
+  Carpenter's debt begun again; a Hard to Kill spent there stays spent.
+- Way and turn act in a fight; out of one the sea moves the ship on a course at its own pace. The fleet room fits a
+  plain ship, so no Atheric acts there and a browser's prediction of its ship needs none of them. A Lookout's sight
   lengthens each ship's sight in that player's own sea snapshot.

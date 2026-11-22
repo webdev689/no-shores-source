@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { test } from 'node:test';
 import { ASKS } from '../../network/gearMessages.ts';
 import { priceWord, purseOf, rowsOf } from './npcWares.ts';
@@ -74,11 +75,13 @@ test('the Tack sells the day’s coats and bardings', () => {
 });
 
 test('Shape sells his week’s wares for Shapes while here, and is gone while away', () => {
-  const wares = [item({ id: 0, rarity: 3, price: 7 }), item({ id: 1, rarity: 4, price: 15 })];
+  const wares = [item({ id: 0, rarity: 3, price: 7, named: 'seawall' }), item({ id: 1, rarity: 4, price: 15 })];
   const here = state({ shapes: 10, shape: { place: 2, wares } });
   const [row] = rowsOf('shape', here);
   assert.equal(row?.heading, 'Wares');
-  assert.deepEqual(row?.wares[0]?.ask, { kind: ASKS.buyFromShape, node: 0 });
+  const seawall = items.items.findIndex((entry) => entry.id === 'seawall');
+  assert.ok(seawall >= 0);
+  assert.deepEqual(row?.wares[0]?.ask, { kind: ASKS.buyFromShape, node: 0, item: seawall }, 'the piece shown, named');
   assert.deepEqual(row?.wares[1]?.price, { amount: 15, currency: 'shapes' });
   assert.equal(row?.wares[1]?.short, true);
   assert.deepEqual(rowsOf('shape', state({ shape: null })), [

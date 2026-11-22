@@ -1,4 +1,5 @@
 import { castOf } from './cast.ts';
+import { blocksOf, type TileBlocks } from './cull.ts';
 import { type FloraForm, formsOf } from './flora.ts';
 import type { Cast, Kind } from './kinds.ts';
 import { formKinds, PLANTED_FLOATS, type ScatterGround, scatterTile, TILE_M } from './scatter.ts';
@@ -59,6 +60,8 @@ export interface Packed {
   readonly groups: readonly Group[];
   /** How far a plant's crown may reach past its tile's edge, metres, the far ones widened as they thin. */
   readonly spread: number;
+  /** The tiles gathered in blocks, for the culls to pass over a whole square at once (each tile alone without). */
+  readonly blocks?: TileBlocks;
 }
 
 /** One layer of a tile: its plants, sorted by form, where each form's begin (and the last ends), and the store's
@@ -386,7 +389,16 @@ export class NatureField {
       length += run.length;
     }
     this.scratch = out;
-    this.packing = { anchor, list: out.slice(0, length), corners, tiles: bounds, groups, spread: this.reach.spread };
+    const spread = this.reach.spread;
+    this.packing = {
+      anchor,
+      list: out.slice(0, length),
+      corners,
+      tiles: bounds,
+      groups,
+      spread,
+      blocks: blocksOf(bounds),
+    };
     // The new list names none of what was let go, so its pages and numbers may be handed out again.
     this.store.recycle();
     this.freeNumbers.push(...this.retiredNumbers);

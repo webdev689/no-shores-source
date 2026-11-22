@@ -64,3 +64,19 @@ export function castPlace(record: number, element: string, right: boolean) {
 /** Whether a hand holds something other than its own bare fist. */
 export const holds = (holding: Holding | null | undefined) =>
   !!holding && !(holding.kind === 'weapon' && holding.wielded.kind === 'fists');
+
+/** A picture placed at `quad` swayed by `sway` (design pixels across and down), never so far off an edge it is cut at
+ *  (a gun's stock at the right, a shield's arm at the left, any arm at the foot) that the cut comes into sight; one
+ *  held `still` stays where it is. */
+export function swayedQuad<
+  Quad extends { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
+>(quad: Quad, sway: readonly [number, number], still = false): Quad {
+  if (still) return quad;
+  const [left, right] = [-quad.x, quad.x + quad.width - DESIGN_WIDTH];
+  const below = quad.y + quad.height - DESIGN_HEIGHT;
+  let across = sway[0];
+  if (left >= 0) across = Math.min(across, left);
+  if (right >= 0) across = Math.max(across, -right);
+  const down = below >= 0 ? Math.max(sway[1], -below) : sway[1];
+  return { ...quad, x: quad.x + across, y: quad.y + down };
+}

@@ -14,7 +14,6 @@ import type { SeaRoom } from './seaRoom.ts';
 import { aimLineOf } from './seaSight.ts';
 import { seaFightQuest } from './seaPanel.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
-import type { Quest } from './tasks.ts';
 
 /** What the display reads off the game besides the sea: whether a landing is being chosen or the sea's controls are
  *  the player's, the island the ship lies off and the sea's own name, the clock, its build once Manage asks for it, its
@@ -32,6 +31,8 @@ export interface SeaHudState {
   readonly friendly: readonly ShipMark[];
   /** What the sea's word says now, DFO's toasts: a ship sighted, who joins, colours struck, what floats gathered. */
   readonly notices: readonly string[];
+  /** Whether the mouse is free, for a click on the deck to take it. */
+  readonly free: boolean;
 }
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
@@ -96,7 +97,16 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
   hud.hints(
-    deck ? deck.hints : seaHints({ fighting: fight !== null, landing: state.landing, atHelm, ...aboard.where }),
+    deck
+      ? deck.hints
+      : seaHints({
+          fighting: fight !== null,
+          aiming: fight?.aimingNow ?? false,
+          landing: state.landing,
+          atHelm,
+          ...aboard.where,
+          free: state.free,
+        }),
   );
   hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
   // shortcut: at sea the tracker shows only a fight's task, so a quest's would be hidden; share it once quests sail.
@@ -125,12 +135,11 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
 }
 
 /** Takes down what the sea alone shows, once the player is on land: the ships' plates and the sight, the fight's
- *  readout and its task (the land's `quest` in its place), the sea bar, Manage's panel and the wheel's offer. */
-export function hideSeaHud(hud: Hud, quest: Quest | null = null): void {
+ *  readout, the sea bar, Manage's panel and the wheel's offer. The tracker is the land's own to show. */
+export function hideSeaHud(hud: Hud): void {
   // With no plate to place, the pose is never read.
   hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: forwardOf(0, 0) }, 1));
   hud.seaFight(null);
-  hud.tasks.show(quest);
   hud.seaBar(null);
   hud.shipPanel(null);
   hud.wheelOffer(false);

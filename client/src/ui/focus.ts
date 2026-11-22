@@ -3,6 +3,14 @@
 import type { Laid, Node } from './node.ts';
 import type { Box } from './quads.ts';
 
+/** The arrow keys' ways, across and down. */
+export const ARROWS: Readonly<Record<string, readonly [number, number]>> = {
+  arrowup: [0, -1],
+  arrowdown: [0, 1],
+  arrowleft: [-1, 0],
+  arrowright: [1, 0],
+};
+
 /** Whether `node` acts: it is pressed, typed in or focused, and has an id to be known by. */
 export const acts = (node: Node): boolean =>
   Boolean((node.press || node.field || node.focusable) && !node.disabled && node.id);
@@ -57,4 +65,23 @@ export function toward(
     if (score < bestScore) [best, bestScore] = [laid, score];
   }
   return best;
+}
+
+/** Scrolls each list that holds `focused`, the innermost first, until it is in sight in all of them; answers how far
+ *  that moves it down. */
+export function scrollToShow(focused: Laid, scrolls: Map<string, number>): number {
+  let [top, bottom] = [focused.box.y, focused.box.y + focused.box.height];
+  for (let holder = focused.parent; holder; holder = holder.parent) {
+    const id = holder.node.id;
+    if (!holder.node.scroll || !id) continue;
+    const scrolled = scrolls.get(id) ?? 0;
+    const above = holder.box.y - top;
+    const below = bottom - (holder.box.y + holder.box.height);
+    const wanted = above > 0 ? scrolled - above : below > 0 ? scrolled + below : scrolled;
+    const next = Math.max(0, Math.min(wanted, holder.content - holder.box.height));
+    scrolls.set(id, next);
+    // Scrolled, the node moves within the holders outside this one.
+    [top, bottom] = [top - (next - scrolled), bottom - (next - scrolled)];
+  }
+  return top - focused.box.y;
 }

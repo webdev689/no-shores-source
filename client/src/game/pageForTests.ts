@@ -23,6 +23,11 @@ export class FakeEvent {
     this.defaultPrevented = true;
   }
   stopPropagation(): void {}
+  /** Whether a listener kept it from every listener after it. */
+  stopped = false;
+  stopImmediatePropagation(): void {
+    this.stopped = true;
+  }
 }
 
 class Listeners {
@@ -35,7 +40,7 @@ class Listeners {
     this.heard.get(type)?.delete(heard);
   }
   dispatchEvent(event: FakeEvent): boolean {
-    for (const heard of [...(this.heard.get(event.type) ?? [])]) heard(event);
+    for (const heard of [...(this.heard.get(event.type) ?? [])]) if (!event.stopped) heard(event);
     return !event.defaultPrevented;
   }
 }

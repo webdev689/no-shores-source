@@ -22,7 +22,7 @@ const MOST_RANGE_M: f64 = 1e5;
 
 /// Each event's kind and how many numbers follow it: muzzle (ship, point, launch), hit (ship struck, by, zone,
 /// point), splash and land (point), run-out (side), state (ship, state), refused (why, side, seconds left), no-sail
-/// (wrecked), load (shot), ram (ship struck, by, point, hull dealt); then, each naming the fight's tick it happened on
+/// (always 0), load (shot), ram (ship struck, by, point, hull dealt); then, each naming the fight's tick it happened on
 /// first: splash (x, y), hit (ship, point in its frame, part: 0 hull, 1 sail, 2 rig), sail lost (ship, sail), mast
 /// fell (ship, mast), struck (ship), sinking (ship), flotsam (its number, x, y, kind: 0 crate, 1 barrel, 2 chest),
 /// gathered (its number, the player), boarding (ship).
@@ -100,7 +100,6 @@ fn state_number(state: State) -> f64 {
         State::Struck => 1.0,
         State::Sinking => 2.0,
         State::Sunk => 3.0,
-        State::Wrecked => 4.0,
     }
 }
 
@@ -147,7 +146,7 @@ fn event_numbers(event: &Event, tick: f64, seen: &impl Fn(ShipId) -> f64) -> Opt
             Refusal::Braced => vec![7.0, 2.0, 0.0, 0.0],
             Refusal::Reloading { side, left } => vec![7.0, 3.0, side_number(side), left],
         },
-        Event::NoSail { wrecked, .. } => vec![8.0, f64::from(u8::from(wrecked))],
+        Event::NoSail { .. } => vec![8.0, 0.0],
         Event::Load { shot, .. } => vec![9.0, shot_number(shot)],
         Event::Ram { ship, by, point: at, dealt } => {
             [vec![10.0, seen(ship), seen(by)], point(at), vec![dealt]].concat()

@@ -102,8 +102,10 @@ export class Ambience {
       });
   }
 
-  /** The player on foot in `node` of `land`, the camera at `ear`, a social space's people walking about. */
-  onFoot(node: NodeInfo, land: Landmass, ear: Ear, folk: Heard['folk'] = []): void {
+  /** The player on foot in `node` of `land`, the camera at `ear`, a social space's people walking about. Underground,
+   *  in a dungeon, none of the open air is heard: its place fades out as behind a veil. */
+  onFoot(node: NodeInfo, land: Landmass, ear: Ear, folk: Heard['folk'] = [], underground = false): void {
+    if (underground) return;
     const lay = this.layOf(land);
     const shore = shoreOf([ear.eye[0], ear.eye[1]], lay.outline);
     this.hear(placeOf(this.continents, node), ear.eye, ear.yaw, [0, 0], lay, {

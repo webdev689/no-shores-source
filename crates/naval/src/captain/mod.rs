@@ -1,7 +1,7 @@
-//! A captain who fights, as DFO's: whom it takes on (bold, or wary of a stronger ship), when it runs, chases, gives
-//! up or leaves a wreck, the course that brings its broadside to bear or keeps its station, and its helm. It sails its
-//! rank's hull under the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of its
-//! rudder, and its sail share the rung of its ladder whose way is nearest.
+//! A captain who fights, as DFO's: whom it takes on (bold, or wary of a stronger ship), when it runs, chases or gives
+//! up, the course that brings its broadside to bear or keeps its station, and its helm. It sails its rank's hull under
+//! the same helm as the player (`sailing::ship`): DFO's commanded swing becomes a share of its rudder, and its sail
+//! share the rung of its ladder whose way is nearest.
 
 pub mod aim;
 pub mod course;
@@ -45,8 +45,6 @@ pub const CHASE_GIVE_UP_S: f64 = 150.0;
 pub const CHASE_GAIN: f64 = 0.1;
 /// Past this many of its fighting ranges it closes on an intercept.
 pub const CLOSE_FROM: f64 = 1.8;
-/// A wrecked player it does not board is left after this long.
-pub const WRECK_SPARE_S: f64 = 30.0;
 /// A captain of an ordinary rank runs under this share of its hull (`ranks::SCALES`); a wary one takes a prize
 /// under this share, or at these odds.
 pub const PIRATE_RUNS_AT: f64 = 0.3;
@@ -132,7 +130,6 @@ pub struct Sighting {
     pub ship: Ship,
     pub level: f64,
     pub hull_share: f64,
-    pub wrecked: bool,
     pub power: Power,
 }
 
@@ -175,10 +172,9 @@ pub struct Captain {
     provoked: BTreeMap<ShipId, f64>,
     spared: BTreeMap<ShipId, f64>,
     target: Option<ShipId>,
-    /// The ship its chase, its wreck's watch, its mark's velocity and its side presented are about.
+    /// The ship its chase, its mark's velocity and its side presented are about.
     marked: Option<ShipId>,
     chase: Option<Chase>,
-    wreck_since: Option<f64>,
     enemy_vel: Option<[f64; 2]>,
     want_prev: Option<f64>,
     want_rate: f64,
@@ -226,7 +222,6 @@ impl Captain {
             target: None,
             marked: None,
             chase: None,
-            wreck_since: None,
             enemy_vel: None,
             want_prev: None,
             want_rate: 0.0,
@@ -292,7 +287,6 @@ impl Captain {
             self.clock,
             ship(self.target),
             ship(self.marked),
-            self.wreck_since.unwrap_or(-1.0),
             self.want_prev.unwrap_or(-9.0),
             self.want_rate,
         ];
@@ -314,7 +308,7 @@ impl Captain {
     }
 
     /// Whether it would take this ship on, sparing aside: afloat, and provoked or of a mind to take it. That ship's
-    /// hands hold off mending its wreck while the captain lies near.
+    /// hands hold off mending it while the captain lies near.
     #[must_use]
     pub fn would_take(&self, vessel: &Own, enemy: &Sighting) -> bool {
         vessel.damage.fighting() && (self.provoked_by(enemy.id) || self.takes_prize(vessel, enemy))
@@ -325,10 +319,9 @@ impl Captain {
         self.provoked.insert(by, self.clock);
     }
 
-    /// Whether it takes a ship on: always if bold; if wary, only a wreck, a hull nearly gone, or one it outguns
-    /// well.
+    /// Whether it takes a ship on: always if bold; if wary, only a hull nearly gone, or one it outguns well.
     fn takes_prize(&self, vessel: &Own, enemy: &Sighting) -> bool {
-        if self.temper == Temper::Bold || enemy.wrecked || enemy.hull_share < GRAPPLE_HULL {
+        if self.temper == Temper::Bold || enemy.hull_share < GRAPPLE_HULL {
             return true;
         }
         odds(&self.power(vessel.damage), &enemy.power, [vessel.arms, arms_of(enemy.hull)]) >= WARY_ODDS
@@ -376,21 +369,6 @@ impl Captain {
         true
     }
 
-    /// A wreck it will not board is left, and spared, after `WRECK_SPARE_S`.
-    fn wreck_on(&mut self, wrecked: bool, wreck: ShipId) -> bool {
-        if !wrecked {
-            self.wreck_since = None;
-            return true;
-        }
-        let since = *self.wreck_since.get_or_insert(self.clock);
-        if self.clock - since < WRECK_SPARE_S {
-            return true;
-        }
-        self.spared.insert(wreck, self.clock + SPARE_S);
-        self.wreck_since = None;
-        false
-    }
-
     /// Its enemy among the ships it sees, and how far off: the nearest it would fight and does not spare, within
     /// its sight (farther for the one it fights), the one it fights reckoned nearer.
     fn choose<'seen>(&self, vessel: &Own, sightings: &'seen [Sighting]) -> Option<(&'seen Sighting, f64)> {
@@ -425,10 +403,10 @@ impl Captain {
         )
     }
 
-    /// Marks a new ship: what it remembered of another (its chase, its wreck, its way, its side to it) is let go.
+    /// Marks a new ship: what it remembered of another (its chase, its way, its side to it) is let go.
     fn mark(&mut self, ship: ShipId) {
         if self.marked.is_some_and(|marked| marked != ship) {
-            (self.chase, self.wreck_since, self.enemy_vel, self.present) = (None, None, None, None);
+            (self.chase, self.enemy_vel, self.present) = (None, None, None);
         }
         self.marked = Some(ship);
     }
@@ -477,11 +455,10 @@ impl Captain {
             self.mark(enemy.id);
         }
         let apart = chosen.map_or(f64::INFINITY, |(_, apart)| apart);
-        let mut seen = chosen.is_some_and(|(enemy, apart)| self.chase_on(apart, enemy.id));
+        let seen = chosen.is_some_and(|(enemy, apart)| self.chase_on(apart, enemy.id));
         if !seen {
-            (self.chase, self.wreck_since) = (None, None);
+            self.chase = None;
         }
-        seen = seen && chosen.is_some_and(|(enemy, _)| self.wreck_on(enemy.wrecked, enemy.id));
         let threat = self.threat(vessel, sightings);
         let outgunned = threat.is_some_and(|threat| {
             odds(&threat.power, &self.power(vessel.damage), [arms_of(threat.hull), vessel.arms]) > 1.0
@@ -561,10 +538,9 @@ impl Captain {
         Helm { steer: if most > 0.0 { command / most } else { 0.0 }, climb: (rung - vessel.ship.rung).signum() }
     }
 
-    /// Its guns after its step: against its enemy (`enemy`, the ship it has as its target, as it sees it now)
-    /// while it is not a wreck.
+    /// Its guns after its step: against its enemy (`enemy`, the ship it has as its target, as it sees it now).
     pub fn aim(&mut self, vessel: &Own, enemy: Option<&Sighting>, draws: &mut Mulberry32) -> Battery {
-        let Some(enemy) = enemy.filter(|enemy| self.target == Some(enemy.id) && !enemy.wrecked) else {
+        let Some(enemy) = enemy.filter(|enemy| self.target == Some(enemy.id)) else {
             self.run.clear();
             return Battery { run_out: None, fire: None };
         };

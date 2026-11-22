@@ -13,6 +13,7 @@ crate-type = ["cdylib", "rlib"]
 gear = { path = "../gear" }
 isle = { path = "../isle" }
 combat = { path = "../combat" }
+dungeon = { path = "../dungeon" }
 foes = { path = "../foes" }
 land = { path = "../land" }
 movement = { path = "../movement" }

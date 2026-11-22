@@ -2,11 +2,11 @@ use super::*;
 use naval::captain::{Temper, temper_for};
 use naval::damage::State;
 use naval::ranks::{Commission, GREY_TITHE, PIRATES, Rank};
-use sailing::waters::{RATED_M_S, weather_wind};
+use sailing::helm::WIND_RATED;
 
 /// A flat sea under a rated wind from the south.
 pub fn still() -> (land::sea::Swell, [f64; 2]) {
-    (land::sea::Swell { waves: Vec::new(), ..land::sea::Swell::default() }, weather_wind([0.0, -RATED_M_S]))
+    (land::sea::Swell { waves: Vec::new(), ..land::sea::Swell::default() }, [0.0, -WIND_RATED])
 }
 
 /// The first seed whose ship of `commission` is bold or not, as asked.

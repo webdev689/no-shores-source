@@ -87,6 +87,8 @@ export class ShipHarm {
   private struckAt: number | null = null;
   private sinkingAt: number | null = null;
   private seed = 7;
+  /** How many times it has changed: a canvas laid from it holds until this moves. */
+  changes = 0;
 
   constructor(corners: readonly SailCorners[]) {
     this.layout = mastsOf(corners);
@@ -101,16 +103,19 @@ export class ShipHarm {
 
   /** A ball through its hull at `at` (its frame): a ragged hole stays there. */
   scar(spot: Point): void {
+    this.changes += 1;
     this.scars.push({ at: spot, size: 0.4 + this.draw() * 0.3 });
   }
 
   /** A ball through a sail's cell: the canvas there is gone. */
   hole(sail: number, cell: number): void {
+    this.changes += 1;
     if (!this.lost.has(sail) && cell >= 0 && cell < SAIL_CELLS) this.holes[sail]?.add(cell);
   }
 
   /** Its canvas's harm, `share` of it gone (0 to 1): each sail standing is holed to match, new holes beside old. */
   wear(share: number): void {
+    this.changes += 1;
     const wanted = Math.round(Math.min(1, Math.max(0, share)) * SAIL_CELLS * MOST_HOLED_SHARE);
     this.holes.forEach((holes, sail) => {
       if (this.lost.has(sail)) return;
@@ -136,21 +141,25 @@ export class ShipHarm {
 
   /** A sail torn from it at `now`: it falls to leeward of it (`side`). */
   loseSail(sail: number, now: number, side: 1 | -1): void {
+    this.changes += 1;
     if (!this.lost.has(sail) && sail >= 0 && sail < this.holes.length)
       this.lost.set(sail, { at: now, side, astern: 0 });
   }
 
   /** A mast gone over its `side` at `now`, every sail on it with it. */
   fellMast(mast: number, now: number, side: 1 | -1): void {
+    this.changes += 1;
     if (this.fallen.has(mast) || mast < 0 || mast >= this.layout.masts.length) return;
     this.fallen.set(mast, { at: now, side, astern: 0 });
   }
 
   strike(now: number): void {
+    this.changes += 1;
     this.struckAt ??= now;
   }
 
   sink(now: number): void {
+    this.changes += 1;
     this.sinkingAt ??= now;
   }
 
@@ -165,6 +174,7 @@ export class ShipHarm {
 
   /** Its gone parts drift astern of it as it sails on at `way` (m/s): a part in the water stays where it fell. */
   step(seconds: number, way: number, now: number): void {
+    this.changes += 1;
     for (const gone of [...this.lost.values(), ...this.fallen.values()])
       if (now - gone.at >= FALL_S) gone.astern += Math.max(0, way) * seconds;
   }

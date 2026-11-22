@@ -1,5 +1,5 @@
 use super::*;
-use crate::harbour::{Harbours, REPAIR_MOST_S};
+use crate::harbour::{HELD, Harbours, REPAIR_MOST_S};
 use crate::pirates::Pirate;
 use naval::damage::{Hurt, State};
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
@@ -15,6 +15,22 @@ pub(super) fn sea() -> Sea {
     sea
 }
 
+impl Sea {
+    /// Sets a player's course as though their ship lay by a port city's roadstead: the tests' and the measurements'
+    /// ships put to sea far from their port cities, so these stand aside while it is set.
+    pub(crate) fn course_anywhere(
+        &mut self,
+        player: PlayerId,
+        points: &[[f64; 2]],
+        pace: u16,
+    ) -> Result<(), crate::sea::CourseRefused> {
+        let ports = std::mem::take(&mut self.harbour.harbours);
+        let set = self.course(player, points, pace);
+        self.harbour.harbours = ports;
+        set
+    }
+}
+
 pub(super) fn ticks(sea: &mut Sea, count: usize) {
     for _ in 0..count {
         sea.tick();
@@ -25,7 +41,7 @@ pub(super) fn ticks(sea: &mut Sea, count: usize) {
 pub(super) fn met(out: f64, rank: Rank) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let commission = Commission { faction: PIRATES, rank };
     let bold = Pirate { level: 9, ..Pirate::standing(1, 7, commission, [50_000.0, 50_000.0 - out], 0.0, true) };
     sea.pirates.sailing.push(bold);
@@ -50,7 +66,7 @@ pub(super) fn told(sea: &Sea, player: PlayerId, code: f64) -> Option<Vec<f64>> {
 fn a_voyage_sails_at_its_paces_way_by_the_canvas_it_keeps_never_under_half() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     sea.tick();
     let ticks_waited = super::super::COURSE_EVERY_TICKS as usize;
     for (canvas, way) in [(0.8, 0.8), (0.2, 0.5)] {
@@ -70,7 +86,7 @@ fn a_voyage_sails_at_its_paces_way_by_the_canvas_it_keeps_never_under_half() {
 fn a_wary_ship_meets_a_player_whose_sloop_it_outguns_and_lets_a_sound_one_be() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let minor = Commission { faction: PIRATES, rank: Rank::Minor };
     sea.pirates.sailing.push(Pirate::standing(1, 7, minor, [50_000.0, 49_400.0], 0.0, false));
     sea.tick();
@@ -120,7 +136,7 @@ fn a_ships_hurts_are_kept_after_a_fight_and_it_starts_the_next_with_them() {
 fn a_ships_hurts_are_kept_in_the_players_character_across_sessions() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let mut character = gear::Character::starting();
     character.ship = [5_000, 10_000, 2_500];
     assert!(sea.restore_character(player, &character.to_json()));
@@ -151,7 +167,7 @@ fn by_a_port_at_rest_a_ship_is_repaired_free_over_a_second_a_hundredth_and_saili
     let (kept, left) = sea.kept(player).unwrap();
     assert!((kept[0] - 30.0 / REPAIR_MOST_S).abs() < 1e-6 && left == 0.0, "stopped where it stood: {kept:?}");
     let far = sea.join();
-    sea.course(far, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(far, &[[50_000.0, 50_000.0]], 10).unwrap();
     sea.tick();
     sea.berths.get_mut(&far).unwrap().kept = [0.5; 3];
     assert_eq!(sea.repair(far), Err(RepairRefused::NotThere), "10 km from the nearest roadstead");
@@ -174,6 +190,21 @@ fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_it_and_their_
     let pieces: Vec<_> = sea.flotsam_for(player).copied().collect();
     assert_eq!(pieces.len(), 3);
     assert!(pieces.iter().all(|piece| piece.level == 9), "rolled at its level");
+    // Its ship brought onto them gathers them, each told with what it held, the ship's materials among it.
+    sea.harbour.characters.insert(player, gear::Character::starting());
+    let mut held = Vec::new();
+    for piece in pieces {
+        let ship = &mut sea.berths.get_mut(&player).unwrap().sailing.as_mut().unwrap().ship;
+        [ship.x, ship.y] = piece.at;
+        sea.tick();
+        held.extend(sea.take_told().into_iter().filter(|(_, numbers)| numbers[0] == HELD));
+    }
+    assert_eq!(held.len(), 3, "each piece told: {held:?}");
+    let materials = |numbers: &[f64]| numbers[6..10].iter().sum::<f64>();
+    assert!(held.iter().all(|(_, numbers)| numbers.len() == 11 && materials(numbers) > 0.0), "{held:?}");
+    let stock = sea.harbour.characters[&player].materials.ship;
+    let told: f64 = held.iter().map(|(_, numbers)| materials(numbers)).sum();
+    assert_eq!(told, f64::from(stock.timber + stock.canvas + stock.iron + stock.heartwood), "what it took, told");
 }
 
 #[test]
@@ -236,4 +267,30 @@ fn a_fight_takes_the_weather_where_it_began_and_keeps_it() {
     assert_eq!((fought.swell.bearing, fought.wind), (swell.bearing, wind));
     ticks(&mut sea, 120);
     assert_eq!(sea.fights.of_mut(player).unwrap().0.wind, wind, "kept while it lasts");
+}
+
+#[test]
+fn a_ship_that_goes_down_counts_once_toward_the_sea_bounty_of_each_kept_player_who_fought_her() {
+    let (mut sea, player) = met(60.0, Rank::Elite);
+    let friday_nine = 29_919_420;
+    sea.minute = friday_nine;
+    let day = gear::clock::day_of(friday_nine);
+    let place = gear::bounties::board(day)
+        .iter()
+        .position(|bounty| matches!(bounty.objective, gear::objectives::Objective::Sink { .. }))
+        .and_then(|place| u8::try_from(place).ok())
+        .expect("the board holds a sea bounty");
+    let mut character = gear::Character::starting();
+    character.activity.today = gear::activity::Today { day, bounties: [(place, 0)].into(), ..Default::default() };
+    assert!(sea.restore_character(player, &character.to_json()));
+    let fought = &mut sea.fights.of_mut(player).unwrap().0;
+    fought.fought.push(player);
+    let vessel = fought.fight.ships.get_mut(&CAPTAIN).unwrap();
+    vessel.damage.hull = 0.0;
+    vessel.damage.scuttle();
+    sea.harbour.changed.clear();
+    ticks(&mut sea, 22 * 60);
+    let held = &sea.harbour.characters[&player];
+    assert_eq!(held.activity.today.bounties.get(&place), Some(&1), "once, though listed twice among her fighters");
+    assert!(sea.harbour.changed.contains(&player), "the count is saved and sent");
 }

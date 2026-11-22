@@ -54,6 +54,10 @@ export interface StoryFrame {
   /** Where the world's own soundscape is heard round the frame's focus: at sea (on a ship's deck or over it, under
    *  way or not), or ashore on Saltmere's coast. None: the story's own sounds alone. */
   readonly heard?: WorldHeard;
+  /** How far the picture drains toward grey under the interface, 0 to 1: a frozen fight's. */
+  readonly drain?: number;
+  /** How dark the picture is under the interface, 0 to 1: the player's view blinking open as they arrive. */
+  readonly dark?: number;
 }
 
 export type WorldHeard =
@@ -145,6 +149,9 @@ export class Stage {
 
   /** Every frame of the story, drawn or not: the beds and spot sounds move on, and the scenes' time. */
   step(seconds: number): void {
+    // The figures' frames asked for past the most kept are let go before this frame asks for any, as on foot: in a
+    // cutscene nothing else does, and every view and frame of every figure shown would be kept.
+    this.parts.forge.pump();
     this.parts.ambience.frame(seconds);
     this.tick(seconds);
   }
@@ -288,6 +295,8 @@ export class Stage {
       focus: frame.focus,
       // The screen's blur in CSS pixels, as device pixels of the picture.
       blur: screen.blurPixels * (canvas.width / Math.max(1, canvas.clientWidth)),
+      drain: frame.drain ?? 0,
+      dark: frame.dark ?? 0,
     });
     const view = { width: canvas.clientWidth, height: canvas.clientHeight };
     const heads = new Map<string, readonly [number, number] | null>();

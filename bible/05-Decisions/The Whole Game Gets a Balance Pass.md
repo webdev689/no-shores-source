@@ -5,6 +5,9 @@ status: in force
 ---
 # The Whole Game Gets a Balance Pass
 
+Its two multipliers are replaced by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a
+player's blow on a foe strikes half again, and a foe's on a player three quarters.
+
 > "Enemies are overtuned, and it's too hard. You also don't deal enough damage. We need a comprehensive balance pass"
 
 Asked which fights it should cover (the prologue only, or the whole game), the owner chose "The whole game".

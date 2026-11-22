@@ -1,38 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { handle } from './accounts/accounts.ts';
-import { characters } from './accounts/characters.ts';
-import { sqliteForTests } from './accounts/sqliteForTests.ts';
-import { Keeper, type KeptRoom, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
-
-/** A room on land whose players' characters are plain strings; `{` starts one it can read. */
-function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
-  const held = new Map<number, string>();
-  return {
-    held,
-    character: (player) => held.get(player) ?? null,
-    restoreCharacter: (player, kept) => kept.startsWith('{') && held.has(player) && Boolean(held.set(player, kept)),
-    own: (player) => held.has(player),
-  };
-}
-
-async function world() {
-  const database = sqliteForTests();
-  const clock = { now: 5_000_000 };
-  const kept = characters(
-    database,
-    () => clock.now,
-    () => Promise.resolve(),
-  );
-  const guest = await handle(new Request('https://a.test/v1/guest', { method: 'POST' }), {
-    database,
-    now: () => clock.now,
-    discord: null,
-    pages: [],
-  });
-  const { token } = (await guest.json()) as { token: string };
-  return { database, clock, kept, token };
-}
+import { NO_WAY_HERE } from './arrival.ts';
+import { Keeper, partFrom, SAVE_AFTER_CHANGE_MS, SAVE_UNCHANGED_MS } from './keeping.ts';
+import { roomOf, world } from './keepingForTests.ts';
 
 test('a signed-in player plays their kept character, saved after a change and kept while they play', async () => {
   const { clock, kept, token } = await world();
@@ -284,6 +254,51 @@ test('a change that changed nothing is not saved again, and a leaving save waits
   assert.equal((await kept.claim(token, 'room-b:1'))?.body, '{"xp":3}', 'the newest lands last');
 });
 
+test('a character the room’s gate shuts is let go untouched, and its player sent away with the reason', async () => {
+  const { clock, kept, token } = await world();
+  const plaza = roomOf();
+  plaza.held.set(1, '{"level":1}');
+  const first = new Keeper(kept, plaza, 'node-overlook-social', () => undefined);
+  assert.equal(
+    await first.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  await first.leave(1);
+  const abyss = roomOf((body) => (body === '{"level":1}' ? 'Abyss seas open at level 20.' : ''));
+  abyss.held.set(2, '{"starting":true}');
+  const sent: [number, string | undefined][] = [];
+  const gated = new Keeper(kept, abyss, 'node-tidewall--abyss', (player, why) => sent.push([player, why]));
+  assert.equal(
+    await gated.signIn(
+      2,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    false,
+  );
+  assert.deepEqual(sent, [[2, 'Abyss seas open at level 20.']]);
+  assert.equal(abyss.held.get(2), '{"starting":true}', 'never given the kept character');
+  const back = roomOf();
+  back.held.set(3, '{"starting":true}');
+  const again = new Keeper(kept, back, 'node-overlook-social', () => undefined);
+  assert.equal(
+    await again.signIn(
+      3,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  assert.equal(back.held.get(3), '{"level":1}', 'as it was kept, at once');
+});
+
 test('a new account’s character is the one the room holds, given back to the room so it keeps it', async () => {
   const { clock, kept, token } = await world();
   const room = roomOf();
@@ -304,7 +319,7 @@ test('a new account’s character is the one the room holds, given back to the r
   assert.deepEqual(given, ['{"starting":true}'], 'no kept character yet: the room’s own, given back');
 });
 
-test("a leaver's chest is opened before their character's last save reads it, and the room lets them go last", () => {
+test("a leaver's chest is opened and what lies for them mailed before their last save reads it; the room lets them go last", () => {
   // The room's character for player 1: its XP, which opening the chest lying for them raises.
   let gained = 10;
   let joined = true;
@@ -314,6 +329,7 @@ test("a leaver's chest is opened before their character's last save reads it, an
       steps.push(`parting ${player}`);
       gained += 500;
     },
+    mailLying: (player: number) => steps.push(`mail ${player}`),
     leave: (player: number) => {
       steps.push(`leave ${player}`);
       joined = false;
@@ -329,7 +345,7 @@ test("a leaver's chest is opened before their character's last save reads it, an
   };
   partFrom(room, keeper, 1, (call) => call());
   assert.deepEqual(kept, ['{"player":1,"xp":510}'], "the kept character holds the chest's XP");
-  assert.deepEqual(steps, ['parting 1', 'leave 1']);
+  assert.deepEqual(steps, ['parting 1', 'mail 1', 'leave 1']);
   // A fault in the room is caught by the guard, and the rest still runs.
   const faulty = { ...room, parting: () => assert.fail('the room faulted') };
   const caught: unknown[] = [];
@@ -343,4 +359,72 @@ test("a leaver's chest is opened before their character's last save reads it, an
   assert.equal(caught.length, 1);
   assert.deepEqual(steps.slice(-1), ['leave 1'], 'the room still lets them go');
   assert.equal(kept.length, 2, 'and their character is still kept');
+});
+
+test('a room that turns an arrival away judges before it claims, so the room playing the character keeps it', async () => {
+  const { clock, kept, token } = await world();
+  const plaza = roomOf();
+  plaza.held.set(1, '{"level":1}');
+  const lost: number[] = [];
+  const first = new Keeper(kept, plaza, 'node-overlook-social', (player) => void lost.push(player));
+  assert.equal(
+    await first.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  const far = roomOf();
+  far.held.set(2, '{"starting":true}');
+  const sent: [number, string | undefined][] = [];
+  const judging = new Keeper(kept, far, 'node-gullwing-vale', (player, why) => sent.push([player, why]));
+  judging.judgingArrivals(() => false);
+  assert.equal(
+    await judging.signIn(
+      2,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    false,
+  );
+  assert.deepEqual(sent, [[2, NO_WAY_HERE]], 'turned away, saying why');
+  plaza.held.set(1, '{"level":2}');
+  first.changed(1);
+  await first.due(clock.now + 3_600_000);
+  assert.deepEqual(lost, [], 'the plaza still holds the character: its next save is its own');
+});
+
+test('a room that judges arrivals, whose look the accounts never answer, leaves the player unkept without a claim', async () => {
+  const { clock, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const claims: string[] = [];
+  const silent = {
+    ...kept,
+    look: () => Promise.reject(new Error('the accounts are down')),
+    claim: (asked: string, holder: string) => (claims.push(holder), kept.claim(asked, holder)),
+  };
+  const sent: [number, string | undefined][] = [];
+  const judging = new Keeper(
+    silent,
+    room,
+    'node-gullwing-vale',
+    (player, why) => sent.push([player, why]),
+    () => Promise.resolve(),
+  );
+  judging.judgingArrivals(() => true);
+  assert.equal(
+    await judging.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    false,
+  );
+  assert.deepEqual(claims, [], 'never taken from the room that plays it');
+  assert.deepEqual(sent, [], 'it plays on unkept');
 });

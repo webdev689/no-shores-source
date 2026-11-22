@@ -5,7 +5,8 @@
 // levels keep gliding meanwhile, and the sound picks up where they stand once it returns.
 
 import { clampLevel, glided, nextGapS, seededRandom, thunderShape } from './ambienceShapes.ts';
-import { type Loudness, playSample } from '../soundSamples.ts';
+import type { Loudness } from '../soundMeasure.ts';
+import { playSample } from '../soundSamples.ts';
 
 /** Where the world's sounds play; the game passes uiSounds' worldOutput. Null while there is no sound. */
 export type SoundOut = () => { readonly audio: AudioContext; readonly out: AudioNode } | null;
@@ -83,8 +84,8 @@ const HAND_OVER_S = 1.5;
 const EASE_S = 0.04;
 /** The one-shots' level against the beds: the crash is the loudest thing in the mission. */
 const SHOTS_GAIN = 0.55;
-/** A heartbeat at a frightened 75 a minute. */
-const BEAT_S = 60 / 75;
+/** A heartbeat at a frightened 75 a minute: a beat this many seconds apart. */
+export const HEART_BEAT_S = 60 / 75;
 const SEED = 0x5a17;
 
 interface Glide {
@@ -101,6 +102,8 @@ interface BedGraph {
   written: number;
   /** The recording's play now sounding, once one has come, and when it ends. */
   play: { readonly fade: GainNode; readonly source: AudioBufferSourceNode; readonly endsAt: number } | null;
+  /** The fade made for a play whose recording has not come, kept for the next try rather than made each frame. */
+  waiting: GainNode | null;
 }
 
 interface Engine {
@@ -130,6 +133,8 @@ export class Ambience {
   );
   /** The gulls' countdown to their next cry, in seconds at their full level: quieter, it counts down slower. */
   private gullCountdownS: number | null = null;
+  /** When the last flock ends on the audio clock: the next one's gap begins only then. */
+  private gullEndsAt = 0;
   private engine: Engine | null = null;
   private heart = false;
   private nextBeatAt = 0;
@@ -233,11 +238,14 @@ export class Ambience {
     }
     const gulls = this.heard('gulls');
     const gullsGain = engine.beds.get('gulls')?.gain;
-    if (gulls > 0 && gullsGain) {
+    // The recording is a whole flock, so the next waits for it to end: never two flocks over each other.
+    if (gulls > 0 && gullsGain && now >= this.gullEndsAt) {
       let countdown = (this.gullCountdownS ?? nextGapS(GULL_GAP_S, this.random())) - step * gulls;
       if (countdown <= 0) {
-        this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain);
-        countdown = nextGapS(GULL_GAP_S, this.random());
+        const flockS = this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain);
+        this.gullEndsAt = now + flockS;
+        // A recording not yet come is asked for again next frame, as a bed's is, so a scene's first flock is not lost.
+        countdown = flockS > 0 ? nextGapS(GULL_GAP_S, this.random()) : 0;
       }
       this.gullCountdownS = countdown;
     }
@@ -247,7 +255,7 @@ export class Ambience {
       // Beats are laid a little ahead of the clock, so an uneven frame never makes the heart stumble.
       while (this.nextBeatAt < now + 0.15) {
         this.shot(RECORDED_SHOTS.heartbeat, 1, this.nextBeatAt);
-        this.nextBeatAt += BEAT_S;
+        this.nextBeatAt += HEART_BEAT_S;
       }
     }
   }
@@ -279,8 +287,9 @@ export class Ambience {
   private teardown(): void {
     const engine = this.engine;
     this.engine = null;
-    // The heart's next beat was on the old clock; a new context's clock starts again near 0.
+    // The heart's next beat and the last flock's end were on the old clock; a new context's clock starts again near 0.
     this.nextBeatAt = 0;
+    this.gullEndsAt = 0;
     if (!engine) return;
     const { audio } = engine;
     const end = audio.currentTime + FADE_S;
@@ -299,10 +308,10 @@ export class Ambience {
   }
 
   /** A one-shot's recording at `level`, now or at `when` on the audio clock, `after` seconds on, into the shots or
-   *  `into`, as loud as the sound it took the place of. */
-  private shot(recorded: Recorded, level = 1, when?: number, after = 0, into?: AudioNode): void {
+   *  `into`, as loud as the sound it took the place of; its length in seconds, 0 until its recording has come. */
+  private shot(recorded: Recorded, level = 1, when?: number, after = 0, into?: AudioNode): number {
     const engine = this.live();
-    if (!engine) return;
+    if (!engine) return 0;
     const { audio } = engine;
     const sized = audio.createGain();
     sized.gain.value = level;
@@ -311,6 +320,7 @@ export class Ambience {
     const source = this.play(audio, sized, recorded.cue, 1, { when: (when ?? audio.currentTime) + after, like });
     if (source) source.addEventListener('ended', () => sized.disconnect());
     else sized.disconnect();
+    return source?.buffer?.duration ?? 0;
   }
 
   /** A bed's recording, once it has come: each play fades into the next before it ends, at equal power, so the bed
@@ -319,13 +329,11 @@ export class Ambience {
     const playing = built.play;
     if (playing && now < playing.endsAt - RECORDED_FADE_S) return;
     const { audio } = engine;
-    const fade = audio.createGain();
+    const fade = built.waiting ?? audio.createGain();
     const like = { measured: recorded.loudness, windowS: RECORDED_WINDOW_S, most: Infinity };
     const source = this.play(audio, fade, recorded.cue, 1, { when: now, like });
-    if (!source?.buffer) {
-      fade.disconnect();
-      return;
-    }
+    built.waiting = source?.buffer ? null : fade;
+    if (!source?.buffer) return;
     fade.gain.setValueCurveAtTime(FADE_IN, now, RECORDED_FADE_S);
     fade.connect(built.gain);
     if (playing) {
@@ -341,7 +349,7 @@ export class Ambience {
     const gain = engine.audio.createGain();
     gain.gain.value = 0;
     gain.connect(engine.master);
-    const built = { gain, written: 0, play: null };
+    const built = { gain, written: 0, play: null, waiting: null };
     engine.beds.set(bed, built);
     return built;
   }

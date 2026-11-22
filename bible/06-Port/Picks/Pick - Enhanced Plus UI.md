@@ -17,7 +17,7 @@ dfo_paths:
   - src/ui/profileBadge.js
   - src/scenes/naval/navalHost.js
 dfo_commit: b172380aa7 (ccr-aff93cb4-gw1nto-audit); the health bars, compass and HUD places fc2a8e6, on the same
-  branch; the profile mark read at 1c0fd681 (main)
+  branch; the profile mark read at 1c0fd681 (main); the timers hourglass read at 1c0fd681 (main)
 ---
 # Pick - Enhanced Plus UI
 
@@ -68,5 +68,16 @@ The style kit and its frame are the [[Interface]]'s roles, and the [[Game]]'s he
 and the boss bar, the plates over foes and ships' plates do what Enhanced Plus does with them ([[Interface]],
 [[Enemies]], [[Plates Stay Light and Bars Do What Enhanced Plus Does]]). The main menu's profile mark
 (`profileBadge.js` and its style in `enhancedStyle.js`) is the menu's account mark, in its top line
-([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]). The themes, the pad, the touch layer and the
-windows have not come over.
+([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]). The pad's cursor and the gauntlet came over as a pick of
+their own ([[Pick - Pad Cursor and Gauntlet]]); the themes, the rest of the pad, the touch layer and the windows have
+not.
+
+DFO's timer hourglass (`.px-hourglass`) comes over at the owner's word, read at 1c0fd681
+([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): drawn in the kit
+(`journalArt.ts`), it stands in the account mark's place on the Journal alone, lit under the pointer and turned over
+while its timers are down. Pressed, it drops the owner's "detailed timer drop down", which is ours, laid as the timers
+window (`enhancedTimers.js`) lays its rows: a head per group, carrying its reset counting down to its moment in the
+player's own clock, a row a thing to do under it, and the focus going in as it opens and back to the hourglass as it
+shuts. Its words are written fresh, and its rows are the day's and the week's activities. The window itself stays
+behind with the other windows, with DFO's own rows (gates, the serpent, raids, seats and battles), its bar of group
+buttons, its rows' doors, and its placing beside the profile mark.

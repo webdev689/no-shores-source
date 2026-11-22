@@ -2,16 +2,13 @@
 // module, and every other player's figure in it, numbered for the forge, kept from each of its snapshots; and a social
 // space's people drawn, each keeping a step of its own.
 import type { FootContext } from './foot.ts';
-import type { Striker } from '../combat/attackFeel.ts';
-import type { Fighting, KeptFoe } from '../combat/fighting.ts';
-import type { Snapshot } from '../network/roomConnection.ts';
+import type { Fighting } from '../combat/fighting.ts';
+import { type RoomLink, RoomConnection, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
-import type { Dress } from '../player/dressing.ts';
 import { cardStand, type Placed, viewOf } from '../player/figures.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { PlacedLoop } from '../player/playerMoves.ts';
 import { type CombatRules, startCombatRules } from '../rules/combatRules.ts';
-import type { FighterView } from '../rules/fighters.ts';
 import { type FoeType, rosterOf } from '../rules/roster.ts';
 
 /** Other players' figures loop a move at this many frames a second where their screen gave no frame. */
@@ -33,12 +30,18 @@ export function nextOtherId(): number {
 const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster: readonly FoeType[] }>();
 
 /** The fight's rules and roster on the context's room module, made once for it. */
-export async function rulesOf(context: FootContext): Promise<{ combat: CombatRules; roster: readonly FoeType[] }> {
+export async function rulesOf(
+  context: Pick<FootContext, 'roomModule'>,
+): Promise<{ combat: CombatRules; roster: readonly FoeType[] }> {
   const module = await context.roomModule;
   const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
   fightRules.set(module, rules);
   return rules;
 }
+
+/** The rules' roster of foe types, made once a module as the fight's rules are. */
+export const rosterFor = async (module: Promise<WebAssembly.Module>): Promise<readonly FoeType[]> =>
+  (await rulesOf({ roomModule: module })).roster;
 
 /** Every other player's figure in a room, and what each of its snapshots shows of them and of the player's fight
  *  once `heard.fight` stands: before it there is no own number to tell the player from the others. */
@@ -55,7 +58,7 @@ export function hearing(forge: Cards) {
       frame: null,
       spin: false,
     }),
-    remove: () => undefined,
+    remove: (placed) => forge.forget(placed.id),
   });
   const heard: { fight: Fighting | null } = { fight: null };
   const received = (snapshot: Snapshot) => {
@@ -89,24 +92,10 @@ export function folkCards(
   return cards;
 }
 
-/** What a figure's hands hold, as a blow's arc draws it. */
-const handsOf = (dress: Dress | null | undefined) => ({
-  right: dress?.outfit.right ?? null,
-  left: dress?.outfit.left ?? null,
-});
-
-/** Every blow being struck: the player's own (`own`, their dress and its glow), each foe's in its dress
- *  (`foeDress`), and each other player's (`others`, dressed as `placed` holds them). */
-export function strikersOf(
-  fight: Fighting,
-  own: { readonly dress: Dress; readonly looks: Striker['looks'] },
-  foeDress: (kept: KeptFoe) => Dress | null,
-  others: ReadonlyMap<number, FighterView>,
-  placed: ReadonlyMap<number, { readonly dress?: Dress | null }>,
-): Striker[] {
-  return [
-    { id: fight.player, player: true, view: fight.own, ...handsOf(own.dress), looks: own.looks },
-    ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foeDress(kept)) })),
-    ...[...others].map(([number, view]) => ({ id: number, player: true, view, ...handsOf(placed.get(number)?.dress) })),
-  ];
+/** A line on the room the player plays in: their number in it or word that it was lost; nothing alone. */
+export function roomNote(link: RoomLink): string {
+  if (!(link instanceof RoomConnection)) return '';
+  if (link.rejoining) return 'Reconnecting…';
+  if (link.open) return `In the room as player ${link.player}`;
+  return `The room was lost: ${link.lost ?? 'playing on alone'}`;
 }

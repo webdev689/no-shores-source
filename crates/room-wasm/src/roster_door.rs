@@ -35,8 +35,8 @@ mod tests {
     fn the_roster_reads_as_every_type_with_its_faction_ranks_and_hands() {
         let roster: Value = serde_json::from_str(&roster_json()).unwrap();
         let types = roster.as_array().unwrap();
-        assert_eq!(types.len(), 27);
-        let warden = &types[24];
+        assert_eq!(types.len(), 45);
+        let warden = &types[42];
         assert_eq!(
             (warden["type"].as_u64(), warden["name"].as_str(), warden["faction_name"].as_str()),
             (Some(43), Some("Bulwark"), Some("The Lattice"))

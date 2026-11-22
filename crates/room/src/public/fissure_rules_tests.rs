@@ -141,7 +141,10 @@ fn the_growth_stands_in_no_ones_way_a_body_walks_through_where_it_rose() {
     assert_eq!(room.blocks.len(), blocks, "no box stands with it");
     let at = room.foes[&growth].fighter.body;
     let across = ([at.x - 3.0, at.y, at.z + 1.0], [at.x + 3.0, at.y, at.z + 1.0]);
-    assert!(combat::sight::clear_line(&room.blocks, across.0, across.1), "nothing stops a body or a blow there");
+    assert!(
+        combat::sight::clear_line(&room.blocks, &room.floor, across.0, across.1),
+        "nothing stops a body or a blow there"
+    );
 }
 
 #[test]

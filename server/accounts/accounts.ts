@@ -1,13 +1,15 @@
 /**
  * The accounts' web API. Every player is an account from their first visit: a guest, whose session's token their
  * browser keeps. A guest may add a username and password, and any account may sign in or link with Discord
- * (`discord.ts`). Answers are JSON, open to any page: a session travels only as a bearer token, never a cookie.
+ * (`discord.ts`), and keep the controls they bound (`binds.ts`). Answers are JSON, open to any page: a session travels
+ * only as a bearer token, never a cookie.
  */
 
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { type AccountRow, HEADERS, LAPSED, bodyOf, json, refused, sessionOf, signedIn, within } from './http.ts';
 import { type DiscordApp, NONCE, backTo, callback, start, taken, ticketFor } from './discord.ts';
 import { INVITE_MS } from './companies.ts';
+import { bindsAsk } from './binds.ts';
 import { socialAsk, socialRead } from './social.ts';
 import { USERNAME, refusalOf, skeleton } from './names.ts';
 import { NO_ONES_PASSWORD, hashOf, hashPassword, passwordMatches, randomToken } from './secrets.ts';
@@ -36,6 +38,7 @@ const LIMITS = {
   ticket: { most: 10, window: 10 * MINUTE },
   social: { most: 60, window: 60 * MINUTE },
   report: { most: 10, window: 24 * 60 * MINUTE },
+  binds: { most: 120, window: 60 * MINUTE },
 } as const;
 
 /** An account as its player sees it. */
@@ -277,6 +280,13 @@ async function respond(request: Request, deps: Deps): Promise<Response> {
     }
     case 'POST /v1/discord/finish':
       return finish(request, deps, now);
+    case 'GET /v1/binds':
+    case 'PUT /v1/binds': {
+      const account = await signedIn(request, database, now);
+      if (!account) return refused(401, 'Not signed in.');
+      if (!(await within(database, `binds:${account.id}`, LIMITS.binds, now))) return refused(429, 'Too many saves.');
+      return bindsAsk(request, database, account, now);
+    }
     default:
       return social(request, deps, route, now);
   }

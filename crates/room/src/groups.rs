@@ -129,7 +129,7 @@ impl Room {
     /// The point halfway along the navmesh's way from one post to another, on the mesh, inside the section and clear of
     /// every spawn; none where there is no such way or point.
     fn halfway(&self, from: [f64; 3], to: [f64; 3], section: &Section) -> Option<[f64; 3]> {
-        let path = self.nav.find_path(from, to)?;
+        let path = self.mesh_at(from).find_path(from, to)?;
         let legs: Vec<f64> = path.windows(2).map(|leg| apart([leg[0][0], leg[0][1]], [leg[1][0], leg[1][1]])).collect();
         let mut left = legs.iter().sum::<f64>() / 2.0;
         let mut point = from;
@@ -141,7 +141,7 @@ impl Room {
             }
             left -= length;
         }
-        let point = self.nav.nearest_point(point)?;
+        let point = self.mesh_at(point).nearest_point(point)?;
         let clear = section.spawns.iter().all(|&[x, y]| apart([point[0], point[1]], [x, y]) >= SPAWN_CLEAR);
         (clear && inside(&section.ring, point[0], point[1])).then_some(point)
     }
@@ -398,7 +398,7 @@ impl Room {
     fn spaced(&self, point: [f64; 3], out: f64, turn: f64, laid: &mut Vec<[f64; 3]>) -> ([f64; 3], f64) {
         let at = |out: f64, facing: f64| {
             let (x, y) = (point[0] + libm::sin(facing) * out, point[1] - libm::cos(facing) * out);
-            self.nav.nearest_point([x, y, self.floor.height_at(x, y)]).unwrap_or(point)
+            self.mesh_at(point).nearest_point([x, y, self.floor.height_at(x, y)]).unwrap_or(point)
         };
         let clear =
             |place: [f64; 3]| laid.iter().all(|other| apart([place[0], place[1]], [other[0], other[1]]) >= ROOM);
@@ -523,7 +523,8 @@ impl Room {
         let open = open_points(&section, ground_middle(&section, first));
         let near = open.into_iter().map(|(x, y)| [x, y]).filter(clear);
         let Some(from) = near.min_by(|one, two| nearest(*one).total_cmp(&nearest(*two))) else { return };
-        let Some(at) = self.nav.nearest_point([from[0], from[1], self.floor.height_at(from[0], from[1])]) else {
+        let ground = [from[0], from[1], self.floor.height_at(from[0], from[1])];
+        let Some(at) = self.mesh_at(ground).nearest_point(ground) else {
             return;
         };
         let hunted =
@@ -552,7 +553,8 @@ impl Room {
         {
             let Some(foe_type) = foe_type(number) else { continue };
             let id = self.stand_foe(foe_type, rank, place, facing, None);
-            let (level, shield) = gird_of(self.world_seed ^ WAVE_STREAM, called * 16 + nth as u32, levels);
+            let (level, shield) =
+                gird_of(self.world_seed ^ WAVE_STREAM, called * 16 + nth as u32, levels, self.shield_chance());
             self.gird(id, self.at_seas(level), shield);
             let clock = self.clock;
             if let Some(foe) = self.foes.get_mut(&id) {
@@ -578,7 +580,7 @@ impl Room {
             .map(|nth| {
                 let facing = start + TAU * nth as f64 / count.max(1) as f64;
                 let (x, y) = (point[0] + libm::sin(facing) * out, point[1] - libm::cos(facing) * out);
-                (self.nav.nearest_point([x, y, self.floor.height_at(x, y)]).unwrap_or(point), facing)
+                (self.mesh_at(point).nearest_point([x, y, self.floor.height_at(x, y)]).unwrap_or(point), facing)
             })
             .collect()
     }

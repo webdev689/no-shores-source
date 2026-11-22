@@ -6,6 +6,7 @@ code:
   - client/src/cinema/cues.ts#Cues
   - client/src/cinema/cues.ts#HoldToSkip
   - client/src/cinema/screen.ts#Screen
+  - client/src/cinema/eyelids.ts#lidOf
   - client/src/game/blur.ts#BlurView
   - client/src/cinema/lightning.ts#Lightning
   - client/src/cinema/ambience.ts#Ambience
@@ -47,7 +48,12 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   menu's: fades to black or white over any time, a white flash, the letterbox's bars, eyelids that close from above
   and below for waking, the title (the game's name over a brass rule, sized to fit a phone's width) and a prompt that
   breathes under it. Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`), except the eyelids, which
-  the story sets frame by frame. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
+  the story sets frame by frame, with the light through them (`lidOf`, [[The Wreck Opens by Teaching the Player]]): each lid's edge curves away
+  from the eye's middle, so the opening between them is an almond, widest a little off the middle and closing from
+  its corners, its edge fading softly into the eye; the upper lid leads and the lower lags, and shut each stands past
+  its own edge's depth (`lidDrop`), so no crack is left; an uneven fringe of lashes along each edge shows as the lids
+  come down and goes as they meet; shut, a warm red light comes through them, as far as the story says, more toward
+  the eye than at the brow. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
   the interface, as death's grey is, so the words over it stay sharp: a Gaussian whose deviation is the blur's CSS
   pixels, set each frame, so it follows each frame and clears at once.
   While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or pulls it to reload
@@ -68,6 +74,7 @@ it is gone the levels keep gliding, so the sound picks up where they stand.
   gulls and creaking timbers. A scene sets each from 0 to 1 and it glides there, eased at both ends. Each play of a
   bed's recording fades into the next at equal power. A bed is built only once it is first heard.
 - **Gulls.** The sea's gull cries at random gaps that shorten as the gulls' level grows and stop when it falls silent.
+  The recording is a whole flock, so each gap begins only once the last flock has ended: never two over each other.
 - **One-shots.** Thunder arrives a second for every 0.343 km, quieter the farther it is: within 2.5 km the weather's
   crack, past it its roll. Then the crash of two hulls, a splash from a plank to a body, a body hitting the deck, the
   ears ringing, a heartbeat, the deep's bright flash and the rush of a fast camera move. Each lets go of its nodes once

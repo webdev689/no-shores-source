@@ -14,7 +14,6 @@ import { EVENT, type Tone, wordOf } from './cues.ts';
 
 /** How long a word stands, in frames at 60 a second: a crit's and a kill's longer. */
 export const WORD_FRAMES = { plain: 57, loud: 72 } as const;
-export const WORD_SECONDS = WORD_FRAMES.plain / 60;
 /** A word's motion, in frames: popped 1.4 times for two, 1.15 for two, then risen 4 px every 4; blinking out over its
  *  last 6. */
 const POP = [1.4, 1.4, 1.15, 1.15] as const;

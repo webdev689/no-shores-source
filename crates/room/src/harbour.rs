@@ -87,6 +87,20 @@ impl Harbours {
     pub fn in_reach(&self, at: [f64; 2]) -> bool {
         self.ports.iter().any(|(_, port)| libm::hypot(port[0] - at[0], port[1] - at[1]) <= REPAIR_REACH_M)
     }
+
+    /// Whether a ship not yet at sea may put to sea at `at`: within reach of a port city's roadstead, where the page
+    /// first lays it off the city it leaves. A sea opened with no port cities has nowhere else: there it puts to sea
+    /// anywhere.
+    #[must_use]
+    pub fn puts_to_sea(&self, at: world::geometry::Point) -> bool {
+        self.ports.is_empty() || self.in_reach([at.x as f64, at.y as f64])
+    }
+
+    /// The roadstead of the port a new character first puts to sea from: Overlook's (`world::ports::MAIN_PORTS`).
+    #[must_use]
+    pub fn starting(&self) -> Option<[f64; 2]> {
+        self.ports.iter().find(|(id, _)| id == world::ports::MAIN_PORTS[0]).map(|(_, roadstead)| *roadstead)
+    }
 }
 
 /// Each player's repair under way, stepped a tick at a time.
@@ -168,7 +182,9 @@ pub const JOINED: f64 = 22.0;
 /// A player told where their ship lies once the accounts gave it back: the code, the tick, x and y, and its heading.
 pub const MOORED: f64 = 23.0;
 /// A player told what a piece they gathered held: the code, the tick, the piece, the Vestige's rarity (0 none, else
-/// the gear crate's number and one), and whether it held an Ammo box and an Ammo crate (1 or 0).
+/// the gear crate's number and one), whether it held an Ammo box and an Ammo crate (1 or 0), each ship's material
+/// taken (`ShipMaterial::ALL`'s order), and whether a module was taken (1 or 0): what tells the player a piece that
+/// gave them nothing.
 pub const HELD: f64 = 21.0;
 
 #[cfg(test)]

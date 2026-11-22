@@ -3,6 +3,7 @@
 // flickers as the fires burn; the storm sky's lights every face as much as nothing over it hides. The heaps of
 // wreckage that close the way are runs of the same mesh, each drawn while it stands.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../../gpu.ts';
+import { contentBytes } from '../../contentCache.ts';
 import { FRONT_FACE, holdPictures, releasePictures } from '../../ships/shipView.ts';
 import { SKY_WGSL, skyUniformFor } from '../../sky/skyUniform.ts';
 import { SHIP_PICTURE_TEXELS } from '../../textures/shipPictures.ts';
@@ -59,14 +60,12 @@ export async function loadWreck(
   base: string,
   keys: { readonly mesh: string; readonly light: string },
 ): Promise<{ readonly mesh: WreckMesh; readonly light: ImageBitmap }> {
-  const [mesh, light] = await Promise.all([fetch(base + keys.mesh), fetch(base + keys.light)]);
-  if (!mesh.ok) throw new Error(`the wreck's mesh did not come (${mesh.status})`);
-  if (!light.ok) throw new Error(`the wreck's light did not come (${light.status})`);
+  const [mesh, light] = await Promise.all([contentBytes(base + keys.mesh), contentBytes(base + keys.light)]);
   // The picture's alpha is the sky's light, not a coverage: kept apart from its colour, and its numbers as they are.
   const options: ImageBitmapOptions = { premultiplyAlpha: 'none', colorSpaceConversion: 'none' };
   return {
-    mesh: readWreckMesh(await mesh.arrayBuffer()),
-    light: await createImageBitmap(await light.blob(), options),
+    mesh: readWreckMesh(mesh.bytes),
+    light: await createImageBitmap(new Blob([light.bytes]), options),
   };
 }
 

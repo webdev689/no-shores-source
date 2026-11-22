@@ -190,11 +190,10 @@ export function elsewhereOf(event: PublicEvent, zone: string): string {
 
 /** The tracker's step for a chest of a `kind` event in `zone` still lying for the player, `left` seconds more. */
 export function chestQuestOf(left: number, zone: string, kind: number): Quest {
-  const shown = clockOf(Math.max(0, left) * TICKS_PER_SECOND);
   return {
     name: NAMES[kind] ?? 'Public event',
     task: placeOf(zone, kind),
-    steps: [{ text: 'Open your chest', clock: shown }],
+    steps: [{ text: 'Open your chest', clock: Math.max(0, left) }],
   };
 }
 

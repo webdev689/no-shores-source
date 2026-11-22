@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { runsInView, tilesInView } from './cull.ts';
+import { blocksOf, runsInView, tilesCasting, tilesInView } from './cull.ts';
 import type { Packed } from './field.ts';
 
 /** A camera at the eye looking north along the ground, 50° high, depth reversed: points measured from the eye. */
@@ -52,4 +52,27 @@ test('neighbouring tiles in view draw as one run; a tile out of view splits the 
   assert.deepEqual(runsInView(group, Uint8Array.from([1, 1, 0])), [10, 7]);
   assert.deepEqual(runsInView(group, Uint8Array.from([1, 0, 1])), [10, 3, 17, 5]);
   assert.deepEqual(runsInView(group, Uint8Array.from([0, 0, 0])), []);
+});
+
+test('the tiles gathered in blocks are culled tile for tile as they are one by one, in view and casting alike', () => {
+  let state = 7;
+  const random = () => ((state = (state * 1103515245 + 12345) % 2 ** 31) / 2 ** 31) as number;
+  for (let round = 0; round < 60; round++) {
+    const rows = Array.from({ length: 1500 }, () => [
+      (random() - 0.5) * 9000,
+      (random() - 0.5) * 9000,
+      random() * 200,
+      200 + random() * 100,
+    ]);
+    const alone = packedWith(rows);
+    const gathered = { ...alone, blocks: blocksOf(alone.tiles) };
+    assert.equal(gathered.blocks.members.length, rows.length, 'every tile in one block');
+    const view = lookingNorth(0.5 + random() * 2);
+    const anchor = [(random() - 0.5) * 400, (random() - 0.5) * 400, -random() * 60] as const;
+    assert.deepEqual(tilesInView(gathered, view, anchor, 1.5), tilesInView(alone, view, anchor, 1.5), 'in view');
+    const reach = 150 + random() * 600;
+    const reaches = (low: readonly number[], high: readonly number[]) =>
+      high[0]! > -reach && low[0]! < reach && high[1]! > -reach && low[1]! < reach && high[2]! > -40;
+    assert.deepEqual(tilesCasting(gathered, anchor, 1.5, reaches), tilesCasting(alone, anchor, 1.5, reaches), 'cast');
+  }
 });

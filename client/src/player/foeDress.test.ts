@@ -15,7 +15,7 @@ const roster = rosterOf(
 );
 
 test("every type in the rules' roster is dressed, holding the roster's own weapons drawn, in the forge's dyes", () => {
-  assert.equal(roster.length, 27);
+  assert.equal(roster.length, 45);
   for (const type of roster) {
     const dress = foeDress(type);
     assert.ok(dress, `${type.name} is dressed`);

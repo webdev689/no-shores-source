@@ -9,14 +9,14 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
   ([[Enemy Factions Start With the Grey Tithe]]).
 - **Being the pirate.** Whether a player may attack merchantmen for their cargo, and what notoriety it brings
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
-- **The opening voyage.** The Grey Tithe's attack, the ram, the deck fight and Thule, to be talked through before
-  it is built ([[Overlook Is a Shared World After Destiny 1]]). The prologue's first attackers at sea are pirates, its
-  own call; the lore has the opening's ships the Grey Tithe's, unknown under grey sails. The chart that disagrees with
-  the coast is not in it yet ([[The Game Shows the Mystery and Explains Almost None of It]]).
+- **The opening voyage.** The prologue's first attackers at sea are pirates, its own call; the lore has the opening's
+  ships the Grey Tithe's, unknown under grey sails. The chart that disagrees with the coast is not in it yet
+  ([[The Game Shows the Mystery and Explains Almost None of It]]).
 - **Friendly ships' port factions.** Which port faction each friendly ship belongs to
   ([[The Waters Come From the Islands]]).
-- **Ship materials.** Which materials there are, what each upgrade costs, and the small islands' wreckage, all
-  planned and not built ([[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]).
+- **Ship materials.** Which materials there are, what each upgrade costs, and the small islands' wreckage: built as
+  Claude chose them, to change ([[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]],
+  [[Ship Power]]).
 - **Crew as companions.** Which of DFO's companion systems the crew comes from: its naval `crewCompanions`, its
   fleet's `companionSlots`, or another.
 - **The Grey Tithe.** Its roster, its boss on land and where its garrisons stand are built as Claude chose them, to

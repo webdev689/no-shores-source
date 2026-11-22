@@ -66,6 +66,12 @@
     "shapeHello3": [{ "who": "shape", "say": "I was here before. You do not remember. No one does." }],
     "shapeThanks1": [{ "who": "shape", "say": "It was always yours." }],
     "shapeThanks2": [{ "who": "shape", "say": "Carry it carefully." }],
-    "shapeShort1": [{ "who": "shape", "say": "Not enough Shapes. Not yet." }]
+    "shapeShort1": [{ "who": "shape", "say": "Not enough Shapes. Not yet." }],
+
+    "postmasterHello1": [{ "who": "postmaster", "say": "Whatever you leave lying out there ends up here. I sort it." }],
+    "postmasterHello2": [{ "who": "postmaster", "say": "The sea gives back what you drop. To me, mostly." }],
+    "postmasterHello3": [{ "who": "postmaster", "say": "Nothing posted here goes missing. I would know." }],
+    "postmasterThanks1": [{ "who": "postmaster", "say": "Signed for. Try to keep hold of it this time." }],
+    "postmasterThanks2": [{ "who": "postmaster", "say": "There. One less parcel on my shelves." }]
   }
 }

@@ -33,15 +33,19 @@ const PLACE_LOOKS: Readonly<Record<PlaceMark['kind'], { colour: string; size: nu
   store: { colour: '#e0483c', size: 13, blink: 0.5 },
 };
 
-/** The compass `width` CSS pixels wide at `zoom`, turned to `heading` (turns from north), marking `ships` round a
- *  player at `from`, and a public event's `places` on its foot, those that blink by `time` (seconds) unless motion is
- *  reduced. Nothing else on it moves but by the view. */
+/** The houses' roads' mark: a brass diamond with a dark edge, where the task's next goal stands. */
+const QUEST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 10"><path d="M4 0 8 4 4 8 0 4Z" fill="${TONES.brassHi}" stroke="rgba(0,0,0,0.9)" stroke-width="0.8"/></svg>`;
+
+/** The compass `width` CSS pixels wide at `zoom`, turned to `heading` (turns from north), marking `ships` and the
+ *  quest's next goal at `quest` round a player at `from`, and a public event's `places` on its foot, those that blink
+ *  by `time` (seconds) unless motion is reduced. Nothing else on it moves but by the view. */
 export function compassNode(
   width: number,
   heading: number,
   zoom = 1,
   from: readonly [number, number] = [0, 0],
   ships: readonly ShipMark[] = [],
+  quest: readonly [number, number] | null = null,
   places: { readonly marks: readonly PlaceMark[]; readonly time: number } = { marks: [], time: 0 },
 ): Node {
   const { height, rule } = COMPASS;
@@ -74,6 +78,14 @@ export function compassNode(
     picture: { key: `compass ship ${ship.kind}`, source: { svg: shipSvg(SHIP_MARK_COLOURS[ship.kind]) } },
     float: { at: [markPlace([ship.x, ship.y], from, heading), 0], anchor: [0.5, 0], z: 1 },
   }));
+  if (quest)
+    marks.push({
+      width: 8 * zoom,
+      height: 8 * zoom,
+      label: 'Quest',
+      picture: { key: 'compass quest', source: { svg: QUEST_SVG } },
+      float: { at: [markPlace(quest, from, heading), 0], anchor: [0.5, 0], z: 1 },
+    });
   const still = motionReduced();
   const placed = places.marks.map((place): Node => {
     const look = PLACE_LOOKS[place.kind];

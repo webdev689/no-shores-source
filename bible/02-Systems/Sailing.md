@@ -11,7 +11,6 @@ code:
   - crates/sailing/src/ship.rs#step_pulled
   - crates/sailing/src/pose.rs#pose_of
   - crates/sailing/src/waters.rs#LandWaters
-  - crates/sailing/src/waters.rs#weather_wind
   - crates/sailing/src/pose.rs#lag_of
   - crates/room/src/sea_weather.rs#SeaWeather
   - crates/sailing/src/waters.rs#sail_wind
@@ -37,7 +36,7 @@ code:
   - client/src/ships/dress.ts#DRESSES
   - client/src/ships/flag.ts#flagGrid
   - client/src/ships/flagPictures.ts#flagPictures
-  - client/src/ships/shipView.ts#shipViewNamed
+  - client/src/ships/shipModels.ts#openHull
   - client/src/textures/shipPictures.ts#shipPictures
   - tools/ships/shape_ship.py#main
   - tools/ships/export_ship.py#main
@@ -85,8 +84,8 @@ sail the other hulls ([[Hulls]]) by the same laws.
   first-order lag answers it, its time constant 0.02 s a metre of its waterline's length (`lag_of`), so a bigger hull
   answers slower and rides the short waves less. The swell replaces the mod's sine bob over a flat sea. It heels into
   a turn as the mod's boat did, once it makes a wake (0.5 m/s). On a lake or river it floats at its level.
-- **Its hurts.** A ship's damage holds back the way its sails and its oars may ask ([[Naval Combat]]): bare poles
-  leave it 35% of it, and a wreck's oars pull 35%. A sound ship's step is unchanged.
+- **Its hurts.** A ship's damage holds back the way its sails may ask ([[Naval Combat]]): bare poles leave it 35% of
+  it. A sound ship's step is unchanged.
 - **The ground.** Its keel has three points: aft, amidships and forward. A point is aground where the water over the
   bed is shallower than its draught. A step grounds it if it puts a point aground that was afloat, or carries one
   already aground onto higher ground. Then it runs on unswung if only its swing grounds it, or swings clear if only
@@ -228,8 +227,8 @@ Boat's sizes; a spanker is a gaff sail:
   from its yard, head first, and floats astern; its flag comes down its mast when it strikes. The harm goes with the
   fight.
 
-Any published hull is drawn by its name (`shipViewNamed`: its mesh and its sails' corners from `ships.json`), as
-the story draws the Brig and the Frigate.
+Any published hull is drawn by its number (`openHull`: its mesh and its sails' corners from `ships.json`), as the
+story draws the Brig and the Frigate.
 
 In the editor its sails are set on the helm's top rung; at sea, while it is under way. They are drawn in the wind
 the rules sail it in, where it is, which the page reads from the sky's law.

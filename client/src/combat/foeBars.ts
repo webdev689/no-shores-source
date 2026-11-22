@@ -146,7 +146,8 @@ export class FoeBars {
       }
       // With no camera no angle is known, so the cone shows none.
       const off = camera ? bodyDegrees(camera, feet, HEAD_M) : Number.NaN;
-      const held = foe.rank === BOSS_RANK ? 0 : Math.max(viewing.fought(foe.id), viewing.locked === foe.id ? 1 : 0);
+      const kept = foe.held || viewing.locked === foe.id ? 1 : 0;
+      const held = foe.rank === BOSS_RANK ? 0 : Math.max(viewing.fought(foe.id), kept);
       if (!(off < edge) && held <= 0 && !(this.cones.get(foe.id) ?? 0)) {
         this.cones.set(foe.id, 0);
         continue;

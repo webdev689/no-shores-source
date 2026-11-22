@@ -127,6 +127,7 @@ pub fn mark(zone: &str, field: &Field, areas: &[Area], paths: &[Path], seating: 
         at,
         radius,
         holds: Some(holds.to_owned()),
+        node: None,
     };
     let mut sites = Vec::new();
     let hamlets = areas.iter().filter(|area| area.kind == AreaKind::Hamlet);
@@ -159,6 +160,25 @@ pub fn mark(zone: &str, field: &Field, areas: &[Area], paths: &[Path], seating: 
         sites.push(site(SiteKind::Growth, growth, 2.5, &area.name));
     }
     sites
+}
+
+/// In a zone that holds public events, the held map's public event marks stand where they are fought: the wilds its
+/// fissure opens in, and the hamlet its stores stand in, over that hamlet; no other wilds or arena there is marked.
+pub fn mark_events(zone: &str, areas: &[Area], sites: &mut Vec<Site>) {
+    if !EVENT_ZONES.contains(&zone) {
+        return;
+    }
+    let holder = |kind: SiteKind| sites.iter().find(|site| site.kind == kind).and_then(|site| site.holds.clone());
+    let (opened, raided) = (holder(SiteKind::Fissure), holder(SiteKind::Store));
+    sites.retain(|site| site.kind != SiteKind::Event || (opened.is_some() && site.holds == opened));
+    let hamlet = raided.and_then(|name| areas.iter().find(|area| area.name == name));
+    sites.extend(hamlet.map(|area| Site {
+        kind: SiteKind::Event,
+        at: area.at,
+        radius: area.radius,
+        holds: Some(area.name.clone()),
+        node: None,
+    }));
 }
 
 /// The first point clear by `clear`, round `from` at each of `rings` in turn, twelve ways from the north; the first

@@ -114,25 +114,35 @@ fn a_dress_is_passed_on_once_each_time_it_changes_and_to_everyone_who_joins_late
     let mut room = room();
     let (first, second) = (room.join().expect("a room with space"), room.join().expect("a room with space"));
     let dressed = |sequence, dress: &str| Input { dress: Some(dress.to_owned()), ..input(sequence, WALK) };
-    room.input(first, dressed(1, "red")).unwrap();
-    room.input(first, dressed(2, "red")).unwrap();
+    let (red, blue) = (r#"{"outfit":{"garments":["red"]}}"#, r#"{"outfit":{"garments":["blue"]}}"#);
+    room.input(first, dressed(1, red)).unwrap();
+    room.input(first, dressed(2, red)).unwrap();
     room.tick();
-    assert_eq!(room.take_dress_changes(), vec![(first, "red".to_owned())]);
+    assert_eq!(room.take_dress_changes(), vec![(first, red.to_owned())]);
     assert_eq!(room.take_dress_changes(), vec![]);
     // A change hard on the heels of the last waits its turn, a second after it.
-    room.input(first, dressed(3, "blue")).unwrap();
+    room.input(first, dressed(3, blue)).unwrap();
     room.tick();
     assert_eq!(room.take_dress_changes(), vec![]);
     for _ in 0..60 {
         room.tick();
     }
-    assert_eq!(room.take_dress_changes(), vec![(first, "blue".to_owned())]);
-    assert_eq!(room.dresses().collect::<Vec<_>>(), vec![(first, "blue")]);
+    assert_eq!(room.take_dress_changes(), vec![(first, blue.to_owned())]);
+    assert_eq!(room.dresses().collect::<Vec<_>>(), vec![(first, blue)]);
     assert!(room.dresses().all(|(player, _)| player != second));
     // A boarder come over a ship's side has no welcome to bring the dresses aboard: every one is passed on once more.
     room.announce_dresses();
-    assert_eq!(room.take_dress_changes(), vec![(first, "blue".to_owned())]);
+    assert_eq!(room.take_dress_changes(), vec![(first, blue.to_owned())]);
     assert_eq!(room.take_dress_changes(), vec![]);
+    // A dress that does not read is refused, the input taken all the same, and the last good one is still shown.
+    for (sequence, bad) in [(4, "red"), (5, r#"{"outfit":"red"}"#)] {
+        assert_eq!(room.input(first, dressed(sequence, bad)), Ok(()));
+    }
+    for _ in 0..=60 {
+        room.tick();
+    }
+    assert_eq!(room.take_dress_changes(), vec![]);
+    assert_eq!(room.dresses().collect::<Vec<_>>(), vec![(first, blue)]);
 }
 
 #[test]
@@ -146,4 +156,30 @@ fn a_move_name_that_is_not_one_and_a_look_past_its_limit_are_refused() {
     let huge = Input { dress: Some("x".repeat(DRESS_LIMIT + 1)), ..input(1, WALK) };
     assert_eq!(room.input(player, huge), Err(Refused::BadLook));
     assert_eq!(room.input(player, showing("crouch_walk")), Ok(()));
+}
+
+#[test]
+fn a_held_players_inputs_are_taken_in_order_and_stand_still_until_they_are_let_play() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("in");
+    let at = |room: &Room| {
+        let body = room.players[&player].fighter.body;
+        [body.x, body.y]
+    };
+    let start = at(&room);
+    assert!(room.hold(player, true));
+    let ahead =
+        |sequence| Input { sequence, intent: Intent { controls: WALK, ..Intent::default() }, ..Input::default() };
+    for sequence in 1..=30 {
+        assert_eq!(room.input(player, ahead(sequence)), Ok(()), "every input taken in its order while held");
+        room.tick();
+    }
+    assert_eq!(at(&room), start, "held, the player stood still");
+    assert!(room.hold(player, false));
+    for sequence in 31..=60 {
+        assert_eq!(room.input(player, ahead(sequence)), Ok(()), "and the next follows on");
+        room.tick();
+    }
+    assert_ne!(at(&room), start, "let play, the player walks");
+    assert!(!room.hold(99, true), "no such player");
 }

@@ -89,6 +89,8 @@ interface BedPlaying {
     readonly panner: PannerNode | null;
     play: { readonly gain: GainNode; readonly source: AudioBufferSourceNode; readonly endsAt: number } | null;
   } | null;
+  /** The gain made for a play whose recording has not come, kept for the next try rather than made each frame. */
+  waiting: GainNode | null;
 }
 
 /** An equal-power fade in and out over a crossfade: a play and the one it fades from sum to the same loudness. */
@@ -147,7 +149,7 @@ export class ScapePlayer {
     this.gain.gain.value = 0;
     this.gain.connect(out);
     this.send = roomOf(audio, this.scape.room, random, this.gain);
-    this.beds = this.scape.beds.map((layer, nth) => ({ layer, seed: nth * 7.31 + 1.7, chain: null }));
+    this.beds = this.scape.beds.map((layer, nth) => ({ layer, seed: nth * 7.31 + 1.7, chain: null, waiting: null }));
     this.clocks = this.scape.voices.map((voice, nth) => ({ voice, seed: nth * 3.77 + 0.9, next: NaN, density: 0 }));
   }
 
@@ -281,15 +283,13 @@ export class ScapePlayer {
   /** The bed's recording played again, fading in over the play before it, which fades out. */
   private nextBedPlay(playing: BedPlaying, audio: AudioContext, now: number, law: number): void {
     const { layer } = playing;
-    const gain = audio.createGain();
+    const gain = playing.waiting ?? audio.createGain();
     // A bed lies far under the mix's ceiling (BED_LEVEL), so its recording takes the bed's loudness, spiky or not.
     const loud = SOFTER_BEDS[layer.bed] ?? BED_LOUD;
     const like = { measured: { peak: 1, loud }, windowS: BED_MEASURED_S, most: Infinity };
     const source = playSample(audio, gain, layer.recorded, between(this.random, [0.98, 1.02]), { like });
-    if (!source?.buffer) {
-      gain.disconnect();
-      return;
-    }
+    playing.waiting = source?.buffer ? null : gain;
+    if (!source?.buffer) return;
     const standing = layer.at !== 'wide';
     const bed = playing.chain ?? {
       ...bedChain(audio, { standing, near: layer.near ?? NEAR_M[layer.at] }, this.gain, this.send),
@@ -374,6 +374,11 @@ export class ScapePlayer {
 
   /** The social space's people's steps, each where they walk, within earshot. */
   private steps(heard: Heard): void {
+    // The people heard no more are let go: a place's people are new each visit.
+    if (this.walked.size > heard.folk.length) {
+      const present = new Set(heard.folk.map((person) => person.id));
+      for (const id of this.walked.keys()) if (!present.has(id)) this.walked.delete(id);
+    }
     for (const person of heard.folk) {
       const kept = this.walked.get(person.id);
       if (!kept || person.anim !== 'walk') {

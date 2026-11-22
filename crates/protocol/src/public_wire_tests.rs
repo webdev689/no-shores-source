@@ -52,6 +52,8 @@ fn public_bytes() -> (usize, usize) {
         shots: &[],
         lines: &[],
         spells: &[],
+        cache: &[],
+        revives: None,
         public: None,
     };
     let mark =

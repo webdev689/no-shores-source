@@ -40,7 +40,7 @@ code:
 - **`flatc` 25.12.19**, Google's own release ([[Messages Are FlatBuffers]]). `tools/install-flatc.sh` holds the
   version and the checksum of its download, and refuses a download that does not match. It fetches the Linux build
   only.
-- **`npm run schema`** makes the Rust and the TypeScript from `crates/protocol/messages.fbs` into
+- **`npm run schema`** makes the Rust and the TypeScript from `crates/protocol/messages.fbs` (and `gear.fbs`) into
   `generated/messages/` (not in git). On its first run on a machine it installs the pinned `flatc` into
   `target/flatc/`, so nothing is installed by hand, in a cloud session, CI or the Pages build; it refuses any other
   `flatc`. `cargo xtask check`, `dev` and `build` run it first.
@@ -80,7 +80,10 @@ For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bp
 `--dry-run` writes the mesh into the working folder, so run it from one outside the repo. It reads the objects named
 `Cannon.Port.<n>` and `Cannon.Starboard.<n>` (fore to aft) as its guns, faces in a material named `sail` as canvas
 (one box a connected piece), the faces of every other named material as its hull, and faces in an empty slot as spars
-and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access the publishers use.
+and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access the publishers use. In CI each
+workflow that publishes to R2 hands it the repository's `R2_TOKEN` secret, a token for R2 alone, since those workflows
+run on a push to any branch; only the `rooms` workflow holds `CLOUDFLARE_TOKEN`, which deploys the Workers and the
+accounts' database ([[The Asset Workflows Publish to R2 With a Token for R2 Alone]]).
 
 For the modules (`tools/modules/`, [[Modules]]): on Python 3.13,
 `pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt` (bpy 5.3.0 and what it needs, each

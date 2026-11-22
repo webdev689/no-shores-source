@@ -637,10 +637,16 @@ def hang_over(fighter, name, drapes, under=None):
     return under
 
 
+def set_of(name):
+    """The armour set or metal a layer is graded in, by its name (`<piece>_<set>`): a pair's left twin's (`_l`) and a
+    short sword's (`_short`) their metal's, as the right hand's."""
+    return {k.lower(): k for k in armour.SETS}.get(name.removesuffix('_l').removesuffix('_short').rsplit('_', 1)[-1])
+
+
 def set_graded(ly, *args):
     """`render` a layer in its armour set's own grades (armour.SET_GRADE) over the run's, by the layer's name
-    (`<piece>_<set>`), and the run's put back after."""
-    m = {k.lower(): k for k in armour.SETS}.get(ly.name.rsplit('_', 1)[-1])
+    (`set_of`), and the run's put back after."""
+    m = set_of(ly.name)
     own = armour.SET_GRADE.get(m, {})
     was = {k: forge.GRADE.get(k) for k in own}
     forge.GRADE.update(own)
@@ -894,8 +900,8 @@ class Keys:
             mats = {rendercache.plain(m.name) for ob in [*ly.obs, *(d.ob for d in ly.drapes)]
                     for m in getattr(ob.data, 'materials', ()) if m}
             used = mats | {m.split('.')[0] for m in mats}
-            grades = {k: v for k, v in {**forge.GRADE, **armour.SET_GRADE.get({k.lower(): k for k in armour.SETS}.get(
-                ly.name.rsplit('_', 1)[-1]), {})}.items() if k.split('@')[0] in used}
+            grades = {k: v for k, v in {**forge.GRADE, **armour.SET_GRADE.get(set_of(ly.name), {})}.items()
+                      if k.split('@')[0] in used}
             self.made[ly.name] = rendercache.digest(
                 self.run, ly.name, self._worn(ly, True), grades, ly.dye, ly.weapon, bool(getattr(ly, 'extras', None)),
                 ('cloth', rendercache.VERSION['cloth']) if ly.drapes else None, *drape_tags(ly))
