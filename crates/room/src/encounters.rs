@@ -348,7 +348,7 @@ impl Room {
             anchors: court
                 .anchors
                 .iter()
-                .map(|&held| per_mille(held as f64 / crate::court::ANCHOR_TICKS as f64))
+                .map(|&held| per_mille(held as f64 / court::ANCHOR_TICKS as f64))
                 .collect(),
             reckoning_ticks,
             reckoning_at,
@@ -360,3 +360,8 @@ impl Room {
 #[cfg(test)]
 #[path = "encounters_tests.rs"]
 pub(crate) mod encounters_tests;
+
+#[path = "court.rs"]
+pub mod court;
+#[path = "seals.rs"]
+pub mod seals;

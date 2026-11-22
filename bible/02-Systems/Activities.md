@@ -15,6 +15,7 @@ code:
   - crates/room/src/run.rs#modded_blow
   - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/abyss.rs#start_over
+  - crates/room/src/encounters.rs#encounters_start_over
   - crates/room-wasm/src/run_door.rs#open_run
   - client/src/game/activities.ts#eliteRun
   - client/src/game/dungeonTrips.ts#dungeonTrips
@@ -99,6 +100,9 @@ Company]]).
 - **Its end** holds a Boss with its own name and nameplate in place of a Reeve: one of the roster's types 21 to 38
   (`ISLAND_PLACES` names each dungeon's), a land Captain of its garrison's faction fighting in Corvane's three phases
   ([[Enemies]]).
+- **Its encounters**: two or three seals in rooms along its walk (the Litany, the Weighing, the Ascent, the Holdfast),
+  its Boss standing only once every seal is broken, and a Court of wards, anchors, the Reckoning and Fury round it
+  ([[Dungeons]], "Encounters").
 - **Its node** keeps its open-air approach and gains the entrance.
 - **For four players**, matched together ([[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]]).
 
@@ -133,8 +137,9 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   its five revives with it (`start_over`): its foes stand again at their posts, its shots, spells and drops are gone,
   its cache shuts, and its players stand whole at the way in. The page takes them out by the way they came in, the veil
   saying "Your company fell. Leaving" the dungeon, and the place line shows the revives left ("3 revives left", "No
-  revives left"). A run once won is never wiped, though its end post stands again later and shuts its cache, so a
-  cleared run keeps what it paid; and a room no one is in is never wiped.
+  revives left"). An Elite Dungeon keeps its broken seals through a wipe, the rest waiting again, and starts its Court
+  over ([[Dungeons]], "Encounters"). A run once won is never wiped, though its end post stands again later and shuts
+  its cache, so a cleared run keeps what it paid; and a room no one is in is never wiped.
 - **Modifiers** are drawn from a set, each one hook in the rules (`room::run`), read only in a room whose run
   carries it. Each says what it does in a line of its own (`Modifier::words`), which the screens show:
   - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes. "Shadow spells deal double

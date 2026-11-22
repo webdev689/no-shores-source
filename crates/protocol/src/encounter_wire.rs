@@ -3,7 +3,7 @@
 
 use crate::wire::overlook::wire as messages;
 use flatbuffers::{FlatBufferBuilder, WIPOffset};
-use room::EncounterSeen;
+use room::encounters::EncounterSeen;
 
 /// The encounters as the snapshot's `encounter` table.
 pub(crate) fn encounter_offset<'built>(
@@ -50,7 +50,7 @@ pub fn encounter_of(snapshot: &messages::Snapshot<'_>) -> Option<EncounterSeen> 
         .map(|seals| {
             seals
                 .iter()
-                .map(|seal| room::SealSeen {
+                .map(|seal| room::encounters::SealSeen {
                     kind: seal.kind(),
                     state: seal.state(),
                     progress: seal.progress(),

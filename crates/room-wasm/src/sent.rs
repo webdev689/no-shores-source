@@ -39,7 +39,7 @@ struct Now {
     cache: Option<[f64; 5]>,
     revives: Option<u8>,
     public: Option<PublicSeen>,
-    encounter: Option<room::EncounterSeen>,
+    encounter: Option<room::encounters::EncounterSeen>,
 }
 
 #[derive(Debug, Default)]

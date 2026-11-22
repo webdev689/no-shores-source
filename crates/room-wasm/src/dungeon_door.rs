@@ -187,11 +187,11 @@ fn encounters_json(plan: &room::encounter_plan::EncounterPlan) -> Value {
         "seals": seals,
         "anchors": plan.anchors,
         "reach": {
-            "rune": room::seals::RUNE_REACH_M,
-            "plate": room::seals::PLATE_REACH_M,
+            "rune": room::encounters::seals::RUNE_REACH_M,
+            "plate": room::encounters::seals::PLATE_REACH_M,
             "relic": room::encounter_plan::RELIC_RING_M,
-            "anchor": room::court::ANCHOR_REACH_M,
-            "light": room::court::LIGHT_REACH_M,
+            "anchor": room::encounters::court::ANCHOR_REACH_M,
+            "light": room::encounters::court::LIGHT_REACH_M,
         },
     })
 }

@@ -43,7 +43,7 @@ pub struct Snapshot<'snapshot> {
     /// A zone's public events, sent whole each time; none in a room whose zone holds none.
     pub public: Option<&'snapshot room::public::PublicSeen>,
     /// In an Elite Dungeon's room, its encounters (`Room::encounter_seen`); none in any other room.
-    pub encounter: Option<&'snapshot room::EncounterSeen>,
+    pub encounter: Option<&'snapshot room::encounters::EncounterSeen>,
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and

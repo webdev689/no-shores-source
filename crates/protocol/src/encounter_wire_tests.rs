@@ -3,7 +3,7 @@
 use crate::encounter_wire::encounter_of;
 use crate::land::{Snapshot, snapshot_bytes};
 use crate::wire::overlook::wire as messages;
-use room::{EncounterSeen, SealSeen};
+use room::encounters::{EncounterSeen, SealSeen};
 
 /// The encounters the client's test expects: a Litany broken, a Weighing running two plates with the first held, an
 /// Ascent waiting; the Boss, number 31, warded at one third with one ward broken, its anchors part stood on; a
