@@ -164,22 +164,52 @@ test('every one-shot plays its recording and lets go of its nodes once it has pl
   assert.equal(fake.live.size, before);
 });
 
-test('the gulls cry on a seeded clock while their level is up, fewer while it is lower, and stop with it', () => {
+test('the gulls cry on a seeded clock while their level is up, one flock at a time, fewer while lower, and stop', () => {
   const cries = (level: number, glideS: number) => {
     const fake = fakeAudio();
     const ambience = ambienceOn(fake);
     ambience.set({ gulls: level }, glideS);
-    for (let frame = 0; frame < 1800; frame++) ambience.frame(1 / 60);
-    const crying = cues(fake).filter((cue) => cue === 'amb.sea.gull').length;
+    for (let frame = 0; frame < 1800; frame++) {
+      fake.audio.currentTime += 1 / 60;
+      ambience.frame(1 / 60);
+    }
+    const starts = fake.played.filter((each) => each.cue === 'amb.sea.gull').map((each) => each.when);
+    // The fake's every recording lasts 10 s.
+    assert.ok(
+      starts.every((when, index) => index === 0 || when >= starts[index - 1] + 10),
+      'each flock starts once the last has ended',
+    );
+    const crying = starts.length;
     ambience.set({ gulls: 0 }, 0);
     for (let frame = 0; frame < 600; frame++) ambience.frame(1 / 60);
     return { crying, after: cues(fake).filter((cue) => cue === 'amb.sea.gull').length };
   };
   const first = cries(1, 2);
   assert.deepEqual(cries(1, 2), first, 'the same every run');
-  assert.ok(first.crying >= 10, 'thirty seconds of gulls faded in over two');
+  assert.ok(first.crying >= 2, 'thirty seconds of ten-second flocks, faded in over two');
   assert.equal(first.after, first.crying, 'silent gulls cry no more');
   assert.ok(cries(0.2, 0).crying < cries(1, 0).crying);
+});
+
+test("a scene's first gull flock plays as soon as its recording has come, not a whole gap later", () => {
+  const firstFlockFrame = (asksBeforeItComes: number) => {
+    const fake = fakeAudio();
+    let coming = asksBeforeItComes;
+    const play = ((...asked: Parameters<typeof fake.play>) =>
+      coming-- > 0 ? null : fake.play(...asked)) as typeof fake.play;
+    const ambience = new Ambience(
+      outputOf(fake, () => true),
+      play,
+    );
+    ambience.set({ gulls: 1 }, 0);
+    for (let frame = 1; frame <= 600; frame++) {
+      fake.audio.currentTime += 1 / 60;
+      ambience.frame(1 / 60);
+      if (cues(fake).includes('amb.sea.gull')) return frame;
+    }
+    return Infinity;
+  };
+  assert.equal(firstFlockFrame(3), firstFlockFrame(0) + 3, 'three frames on, as the recording comes');
 });
 
 test('nonsense numbers are taken as nothing, and thunder too far away is not heard', () => {

@@ -315,12 +315,16 @@ Where the work stands now, for the next session. Each session rewrites this note
   place of the rings on the ground (#134, [[What a Player Can Use Wears Its Mark Over It]]). Tested offline with the
   full check. Not yet: a real controller, the mouse's gauntlet seen in Chromium and Firefox (headless pictures never
   show the system cursor), the binds' D1 migration and route live, the marks on a real GPU.
-- **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
-  and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
-  with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges,
-  with the owner's yes. #122's move of the asset workflows to `R2_TOKEN` has the owner's named yes
-  ([[The Asset Workflows Publish to R2 With a Token for R2 Alone]]). Meeting #134, the board wears a gold "!", an
-  entrance a door, and the Postmaster's sealed letter beats while mail waits, as his ring did.
+- **The dungeons-to-mail stack is on `main`** (#72 → #88 → #97 → #122 → #123), merged with the owner's yes ("Yeah we
+  need to merge the entire stack"), each after catching up with main through #140 and #139 and passing
+  `cargo xtask check` on its head, tested offline, main's CI green after each. The owner's answers on the way: the
+  Journal's quest cards show main's houses' roads ("Journal shows main's (Recommended)"), this stack's empty quest
+  engine dropped; the asset workflows publish with `R2_TOKEN` ("The token is already in secrets",
+  [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); the board wears a gold "!", an entrance a door and
+  the Postmaster his sealed letter, beating while mail waits ("!, letter, door (Recommended)"). Main's drawn interface
+  took the Journal, its timers, the board's screen, the entrance card and the Postmaster's screen, each rebuilt and
+  pictured headless through `uiShot` (13 defects fixed on #97's, five on his). Not yet tested live: anything of it in
+  the deployed rooms, the accounts' migration of each character's room, a real GPU.
 - **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
   external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
   So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
@@ -434,38 +438,6 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`; #97 takes an island's door into its dungeon.
-- **The stack #72, #88, #97, #122, #123 is merged to `main`**, with the owner's yes; each merge deployed the page
-  and the rooms. A player's gear stands in
-  `crates/protocol/gear.fbs`, which `messages.fbs` includes, so the schema keeps under 600 lines.
-  - **#72, the dungeons**: DFO's Dungeons 2.0 within the patrol areas, perfect and insanely varied as the owner asked
-    ([[The Dungeons Are Perfect and Insanely Varied]], Claude's calls in [[Dungeons as Claude Builds Them]],
-    [[Dungeons]]). Six styles, two to five blocks, rooms shaped, purposed, named, furnished and lit by their style,
-    cave mouths for the caverns and the mines. Headless pictures of every room of six dungeons. It asks the owner
-    whether the dungeons' taking DFO's moods, dressing and landmarks as law, which the Pick List had left behind, stands.
-  - **#88, the dungeon modules**: each style's own pieces built by script in Blender, a kit of eighteen and three
-    landmarks ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]], [[Dungeon Modules]]), drawn from packs the
-    `dungeon-modules` workflow publishes to R2. Its shader tests run the shader's own functions on numbers.
-  - **#97, the activities**: the clock, the gates, the dungeon of the day, Elite Dungeons and their Bosses, the week's
-    two, modifiers, Abyss's revives and wipes, private runs, companies and Find a Company, the bounties on their own
-    engine, and the Journal drawn by the game
-    ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]). The bounty board stands on the hub's notice board landing, facing the Watch Court (`hub::BOARD_LANDING_M`). A run
-    holds a joining player's inputs as standing still until it keeps them (`Room::hold`). Three questions wait in its
-    description: dungeon interiors and #102's encounters, the timers' borrowed row layout, and the fight director's
-    heat with a run's modifiers.
-  - **#122, the server's authority** ([[The Server Is the Authority Over Everything]]): rooms judge where a kept
-    character comes from on a look before they claim it; `?entrance=` on the server's word; a ship first puts to sea
-    by a port's roadstead; a sea island's dungeon opens behind an island the sea holds and lets go a player the sea
-    does not land within 20 s; a look's eye within 100 m; no socket without a session past five seconds; `test-`
-    names; a dress shows what is worn; and the asset workflows' `R2_TOKEN`, which needs the owner's named yes and the
-    owner's token. Not tested live: the accounts' migration.
-  - **#123, the Postmaster** ([[A Mail Vendor Keeps Lost Items and the Game's Mail]]): a mailbox of the game's
-    letters for what a player would lose, its counter in the hub's Watch Court; fifty letters, the one holding the
-    least let go first; a first clear's Vestige to the vault before the mail. His screen is drawn by the game, and his
-    sealed letter beats over him while mail waits. Not pictured: his figure and counter in the hub.
-- **#125, main's screens**, off `main`, waits on the owner's yes: the Harbourmaster's wares wear their rows again, and
-  under 600 px the menu's tabs scroll, a keeper stands over the rest and the vault's sides stack. Tested offline; it
-  merges into `main` cleanly.
-
 - **The houses' roads and the varied missions, merged to `main` (#131), tested offline (the full
   check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
   account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
@@ -652,20 +624,13 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **#72 once the owner says yes**: squash-merge it, which deploys the page and the rooms, then play a dungeon in a
-  deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out.
-- **#88 once #72 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
-  merge; then play a dungeon of each style in a deployed room. A change to `tools/dungeon/` or the contracts
-  publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
-- **#97, merged**: play the Journal and the board in a deployed room (tested live): take a bounty, count it, turn it in,
-  and drop the timers with T; sink a ship for a sea bounty and watch its count in the Journal at sea; and picture
-  the board on the hub's landing. Known, small: before any gear has come a tier's seas show open, the server still
-  refusing them.
-- **#122, merged**: the owner creates `R2_TOKEN` if not yet made, or the asset workflows publish nothing; play an arrival of each kind in the deployed rooms
-  (tested live): a landing, a gate, a dungeon and back out at its entrance, a company join, and one refused.
-- **#123, merged**: leave a Vestige
-  lying in a deployed room and take it from the Postmaster (tested live), and picture his counter and figure.
-- **#125 once the owner says yes**: merge it; the stack's screens take it as main comes in.
+- **Play the stack in the deployed rooms** (tested live), now it is on `main`: a dungeon of each style (a band's
+  fight, the Reeve's fall, the cache's pay, the portal out, the door mark over each entrance); the Journal and the
+  board (take a bounty, count it, turn it in, drop the timers with T, a road's card at its task); a sea bounty's count
+  in the Journal at sea; an arrival of each kind and one refused (a landing, a gate, a dungeon and back out, a company
+  join); a Vestige left lying and taken from the Postmaster, his letter beating while mail waits; and picture the
+  board, his counter and his figure in the hub. A change to `tools/dungeon/` or the contracts publishes new packs:
+  take the manifest line from the workflow's log into `content/dungeon/modules.json`.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA), once `webgpu-shot`
   can picture the game again: since #127 the game draws in its worker, which it cannot read (above).
