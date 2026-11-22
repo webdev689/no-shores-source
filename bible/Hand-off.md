@@ -402,6 +402,24 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
+- **#97, the activities**, stacked on #88 (and #88 on #72), waits on the owner's yes, which deploys the page and the
+  rooms: the clock, the gates, the dungeon of the day, Elite Dungeons and their Bosses, the week's two, modifiers,
+  Abyss's revives and wipes, private runs, companies of four and Find a Company, the bounties on their own engine, the
+  bounty board in the plaza under its gold "!", and the Journal, drawn by the game ([[The Journal Holds the Quests, the
+  Bounties at Its Side and the Timers at Its Top]]): the houses' roads as story missions' cards, the bounties as tiles beside them, each bounty its own glyph,
+  the timers dropping from DFO's hourglass, led by icons drawn for them ("more icons and less text"), each clock once in
+  its group's head and each mark's words said at the panel's foot; and the board's screen as tiles after Destiny's
+  Bounty Tracker, each bounty named. Claude's calls are in its description. Three questions wait there: should dungeon
+  interiors give ground and call waves as #102's encounters do on Mission and Dungeon nodes; is the timers' row layout,
+  borrowed from DFO's cut timers window, within the owner's word; and should the fight director's heat divide a run's
+  modifiers out. Tested offline: the full check, and pictures of the Journal, the timers and the board in the game's own
+  face from a harness with the real modules (at 390x844, 860x600, 1280x720, 1920x1080 and 2560x1440, no box wider than
+  its room), read by two design critiques. Not yet tested live. At 390 px wide the menu's own tab row overlaps itself,
+  as it did before. It now holds #88 with #72 and main through #75 (83ffaa42): the sea keeps characters, so ships sunk
+  or taken count toward the sea bounties; the sea's and the islands' rooms gate by their tier on the server; a deck's
+  kills count toward no land bounty and earn no boon; main's muster and Shipwright turn at 09:00 UTC with the clock;
+  the prologue's and the board's asks are 64 to 66; an island's door goes into its dungeon. Not yet seen in a picture
+  since: the Journal's and the board's kit surfaces with the borders main's framed-surface test now gives them.
 - **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
   areas, perfect and insanely varied as the owner asked ([[The Dungeons Are Perfect and Insanely Varied]], Claude's
   calls in [[Dungeons as Claude Builds Them]], [[Dungeons]]). Six styles, two to five blocks, a deeper last block in
@@ -611,6 +629,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **#88 once #72 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
   merge; then play a dungeon of each style in a deployed room. A change to `tools/dungeon/` or the contracts
   publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
+- **#97 once #88 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
+  merge; then play the Journal and the board in a deployed room (tested live): take a bounty, count it, turn it in,
+  and drop the timers with T.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA), once `webgpu-shot`
   can picture the game again: since #127 the game draws in its worker, which it cannot read (above).
@@ -632,11 +653,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   the courts' pieces; the audit's risks left open (a walker's step to the side of a post's line or round a sharp turn
   is not walked against the real hub's boxes, kept posts' people are not booked against walkers, routines' maths may
   round differently by engine, puddles form on lawn as on flat stone); pictures of the Harbour Stair and the road, the
-  fall, and the townsfolk at work. The activities session (#97) reads `Social.board` and sets it from
-  `hub::BOARD_LANDING_M` when it merges.
-- **The islands** ([[Islands]]): the door's trip into its dungeon, once the Dungeons session pushes its
-  `sea-dungeon-…` room and trip (the page names the room; until then E at the door says it is not open); the
-  islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
+  fall, and the townsfolk at work.
+- **The islands** ([[Islands]]): coming out of a door's dungeon back onto its island, before the door, rather than at
+  the ship (the trip takes the door's point already, `SeaBack`); the islands' trees, shrubs and grass from the Flora pipeline once #63 is on main (through `ScatterGround.planted`, with
   its own height, turn and size); pictures of the landfall offer, E's prompts and washing up in the game itself (staging at sea
   headless outran its budget here).
 - **The sea after #75**: the friendly ships' port factions (deferred by the owner); ships' own upgrade materials,

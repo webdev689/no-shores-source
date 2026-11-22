@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { accounts, slowly } from './accountsForTests.ts';
 import { characters } from './characters.ts';
 import { INVITE_MS } from './companies.ts';
+import { foundRun } from './finding.ts';
 import type { Details, Roster } from './roster.ts';
 
 /** A world of named players, each one's token, and a way to ask as them. */
@@ -58,10 +59,11 @@ test('a block ends what is between two players, and what the blocked one asks af
   assert.deepEqual(names((await ben.roster()).asking), ['Ada']);
 });
 
-test('a company holds three, joined by invite or as its leader allows, and its lead passes on', async () => {
-  const { player, play } = await world('Ada', 'Ben', 'Cal', 'Dee');
-  for (const name of ['Ada', 'Ben', 'Cal', 'Dee']) await play(name, 'node-overlook-social');
-  const [ada, ben, cal, dee] = ['Ada', 'Ben', 'Cal', 'Dee'].map(player) as [
+test('a company holds four, joined by invite or as its leader allows, and its lead passes on', async () => {
+  const { player, play } = await world('Ada', 'Ben', 'Cal', 'Dee', 'Eve');
+  for (const name of ['Ada', 'Ben', 'Cal', 'Dee', 'Eve']) await play(name, 'node-overlook-social');
+  const [ada, ben, cal, dee, eve] = ['Ada', 'Ben', 'Cal', 'Dee', 'Eve'].map(player) as [
+    ReturnType<typeof player>,
     ReturnType<typeof player>,
     ReturnType<typeof player>,
     ReturnType<typeof player>,
@@ -76,7 +78,9 @@ test('a company holds three, joined by invite or as its leader allows, and its l
   assert.deepEqual(names((await ben.roster()).company?.members ?? []), ['Ada', 'Ben'], 'the leader first');
   await ada.ask('company/privacy', { privacy: 0 });
   assert.equal((await cal.ask('company/join', { name: 'Ben' })).status, 200, 'Public: anyone joins');
-  assert.equal((await dee.ask('company/join', { name: 'Ada' })).status, 409, 'three at most');
+  assert.equal((await dee.ask('company/join', { name: 'Ada' })).status, 200, 'the fourth comes in');
+  assert.equal((await eve.ask('company/join', { name: 'Ada' })).status, 409, 'four at most');
+  await dee.ask('company/leave');
   assert.equal((await ben.ask('company/kick', { name: 'Cal' })).status, 403, 'only the leader removes');
   assert.equal((await ada.ask('company/lead', { name: 'Cal' })).status, 200);
   await cal.ask('company/kick', { name: 'Ada' });
@@ -181,7 +185,7 @@ type Player = ReturnType<Awaited<ReturnType<typeof world>>['player']>;
 async function playing(...named: string[]) {
   const made = await world(...named);
   for (const name of named) await made.play(name, 'node-overlook-social');
-  return { ...made, players: named.map(made.player) as [Player, Player, Player, Player, Player] };
+  return { ...made, players: named.map(made.player) as [Player, Player, Player, Player, Player, Player] };
 }
 
 test('a block between the joiner and any member keeps them out, by join or by invite, answered as closed', async () => {
@@ -218,11 +222,12 @@ test('an invite ends when its sender joins another company', async () => {
 
 test('a full company is refused before the one joining leaves their own', async () => {
   const {
-    players: [ada, ben, cal, dee, eve],
-  } = await playing('Ada', 'Ben', 'Cal', 'Dee', 'Eve');
+    players: [ada, ben, cal, dee, eve, fay],
+  } = await playing('Ada', 'Ben', 'Cal', 'Dee', 'Eve', 'Fay');
   await ada.ask('company/privacy', { privacy: 0 });
   await ben.ask('company/join', { name: 'Ada' });
   await cal.ask('company/join', { name: 'Ada' });
+  await fay.ask('company/join', { name: 'Ada' });
   await dee.ask('company/invite', { name: 'Eve' });
   await eve.ask('company/accept', { name: 'Dee' });
   assert.equal((await eve.ask('company/join', { name: 'Ada' })).status, 409);
@@ -375,4 +380,27 @@ test('the Roster reads no table of every account to find those in a room', async
     const scans = plan.results.filter((step) => /^SCAN (accounts|characters|presence)\b/.test(step.detail));
     assert.deepEqual(scans, [], sql);
   }
+});
+
+test('a player’s companions are their company’s members, longest there first, or themselves alone', async () => {
+  const { player, kept, tokens } = await world('Ada', 'Ben', 'Cal');
+  await player('Ada').ask('company/invite', { name: 'Ben' });
+  await player('Ben').ask('company/accept', { name: 'Ada' });
+  const account = async (name: string) => (await kept.claim(tokens[name] ?? '', `room:${name}`))?.account ?? '';
+  const [ada, ben, cal] = [await account('Ada'), await account('Ben'), await account('Cal')];
+  assert.deepEqual(await kept.companions(ben, 'node-x--run-a1b2c3d4'), [ada, ben]);
+  assert.deepEqual(await kept.companions(cal, 'node-x--run-a1b2c3d4'), [cal]);
+});
+
+test('a player’s companions in a run are their company, and those found for that run with them alone', async () => {
+  const { player, kept, tokens, deps } = await world('Ada', 'Ben', 'Cal', 'Dee');
+  await player('Ada').ask('company/invite', { name: 'Ben' });
+  await player('Ben').ask('company/accept', { name: 'Ada' });
+  const account = async (name: string) => (await kept.claim(tokens[name] ?? '', `room:${name}`))?.account ?? '';
+  const [ada, ben, cal, dee] = [await account('Ada'), await account('Ben'), await account('Cal'), await account('Dee')];
+  await foundRun(deps.database, 'node-krakens-grotto--run-k3j4h5g6', [cal, dee], 0);
+  assert.deepEqual(await kept.companions(ben, 'node-x--run-a1b2c3d4'), [ada, ben]);
+  assert.deepEqual((await kept.companions(cal, 'node-krakens-grotto--run-k3j4h5g6')).sort(), [cal, dee].sort());
+  assert.deepEqual(await kept.companions(cal, 'node-krakens-grotto--run-a1b2c3d4'), [cal], 'for one run alone');
+  assert.deepEqual(await kept.companions(ada, 'node-krakens-grotto--run-k3j4h5g6'), [ada, ben], 'not found for it');
 });

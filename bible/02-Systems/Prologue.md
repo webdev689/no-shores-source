@@ -82,8 +82,11 @@ beat that fails ends the story with its screen kept, so the black lifts only onc
 The intro offers no skip once it has reached Saltmere. Each beat sets its own weather, sound and lightning at
 its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
 has played the story to its end (kept in the browser, `overlook.prologue`) sees the intro and the title, and Begin
-takes them straight to Overlook's social space. While the story plays the menu (I, O) opens only on the wreck, while
-the player plays it, and shuts as that ends. At its end the
+takes them straight to Overlook's social space. Every way onto foot comes after the story, played through or passed
+over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
+on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
+character. While the story plays the menu (I, O) opens only on the wreck, while the player plays it, and shuts as that
+ends. At its end the
 story lets go of what it alone drew with on the GPU (the Brig's and the Frigate's views, the birds, the fire and any
 wreck still drawn); the Frigate's view is made only once a beat draws it, so a player who sees only the intro never
 makes it.
@@ -413,7 +416,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 
 - Every ship is a Sloop by the naval rules, whatever is drawn: the Brig's guns and hull are the Sloop's in the fight.
 - Thule's ship is drawn as the Frigate, without the Tithe Ram's iron ram bow ([[Hulls]]): the Tithe Ram is not built.
-- The look and whether the story was played are kept in the browser, not with the account.
+- The look is kept in the browser; whether the story was played is kept in the browser, and with the account once a
+  room is told.
 - The story's songs are written to its beats' lengths, not timed to their moments: a song begins on the director's
   bar line, so a moment can fall up to a bar from its music.
 - The decks are boxes half a metre across: a deck's camber and the slope of its sheer are steps of 5 cm, a mast or a

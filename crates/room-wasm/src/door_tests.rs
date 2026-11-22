@@ -473,6 +473,66 @@ fn a_patrols_room_is_joined_before_an_entrance_and_sends_its_entrances() {
 }
 
 #[test]
+fn a_node_says_why_its_gate_shuts_to_a_kept_character_or_a_new_one() {
+    assert!(open_node(node_file().to_string().as_bytes()));
+    assert!(set_difficulty(1));
+    assert_eq!(shut(0, b""), "This place opens after the prologue.");
+    let mut past = gear::Character::starting();
+    past.story.prologue = true;
+    assert_eq!(shut(0, past.to_json().as_bytes()), "Elite seas open at level 10.");
+    assert_eq!(shut(0, b"not a character"), "", "left for the restore to refuse");
+    let mut social = node_file();
+    social["kind"] = json!("social");
+    assert!(open_node(social.to_string().as_bytes()));
+    assert_eq!(shut(0, b""), "");
+}
+
+#[test]
+fn an_elite_dungeon_is_laid_for_a_browser_by_its_place_and_its_node_sends_its_one_entrance() {
+    let ask = br#"{"place":"krakens-grotto","name":"Kraken's Grotto"}"#;
+    let laid: Value = serde_json::from_str(&dungeon_door::dungeon_json(ask)).unwrap();
+    assert_eq!((laid["name"].as_str(), laid["style"].as_str()), (Some("Kraken's Grotto"), Some("caverns")));
+    let (seed, style) = room::elite_laid("krakens-grotto").unwrap();
+    let native = dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+    assert_eq!(
+        (laid["columns"].as_u64(), laid["rows"].as_u64()),
+        (Some(native.columns as u64), Some(native.rows as u64))
+    );
+    assert_eq!(dungeon_door::dungeon_json(br#"{"place":"saltgrass-downs","name":"x"}"#), "null");
+    assert!(fighter_door::set_dungeon(ask));
+    let mut node = node_file();
+    node["id"] = json!("krakens-grotto");
+    node["kind"] = json!("dungeon");
+    node["continent"] = json!("continent-1");
+    node["ring"] = json!([[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]]);
+    node["bounds"] = json!([-900.0, -900.0, 900.0, 900.0]);
+    assert!(open_node(node.to_string().as_bytes()));
+    let player = dungeon_door::room_join_at(0);
+    assert_ne!(player, 0);
+    assert_eq!(dungeon_door::room_join_at(1), 0, "one entrance");
+}
+
+#[test]
+fn a_social_space_with_the_bounty_board_serves_its_asks_at_its_counter_and_one_without_has_none() {
+    let boards = || {
+        with_open(|opened| match opened {
+            Opened::Land { room, .. } => {
+                room.counters.iter().flatten().filter(|counter| counter.kind == CounterKind::Board).count()
+            }
+            Opened::Sea(_) | Opened::Fleet(_) => 0,
+        })
+    };
+    let mut social = node_file();
+    social["kind"] = json!("social");
+    social["board"] = json!([5.0, 0.0]);
+    assert!(open_node(social.to_string().as_bytes()));
+    assert_eq!(boards(), Some(1));
+    social.as_object_mut().expect("an object").remove("board");
+    assert!(open_node(social.to_string().as_bytes()), "every other city's file, which holds no board");
+    assert_eq!(boards(), Some(0));
+}
+
+#[test]
 fn what_the_sea_tells_a_player_goes_to_them_alone() {
     let layout = r#"{ "continents": [{ "id": "continent-2", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     assert!(open_sea(layout.as_bytes(), 66));
@@ -581,13 +641,45 @@ fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_change
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     room_tick();
     assert!(gear_door::gear(player).is_empty(), "no character held yet");
+    // A Friday's 09:00 UTC, the sea's minute: a bounty held that day is counted on it.
+    let minute = 20_778 * 1_440 + 540;
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.minute = minute;
+        }
+    });
     let mut character = gear::Character::starting();
     character.materials.add_aurem(777);
+    character.activity.today.day = gear::clock::day_of(minute);
+    character.activity.today.bounties.insert(2, 1);
     assert!(gear_door::restore_character(player, character.to_json().as_bytes()));
     let bytes = gear_door::gear(player);
     let gear = messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear");
     assert_eq!(gear.aurem(), character.materials.aurem, "the character given back");
+    assert_eq!(u64::from(gear.day()), gear::clock::day_of(minute), "the sea's day");
+    let held = gear.bounties().expect("the board").get(2);
+    assert_eq!((held.held(), held.count()), (true, 1), "the bounty counted at sea, today's");
     assert!(gear_door::gear(player).is_empty(), "sent once until it changes again");
+}
+
+#[test]
+fn at_sea_each_sailors_gear_carries_their_own_characters_story_alone() {
+    small_sea();
+    let (done, new) = (room_join(), room_join());
+    for player in [done, new] {
+        assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    }
+    room_tick();
+    let mut past = gear::Character::starting();
+    past.story.prologue = true;
+    assert!(gear_door::restore_character(done, past.to_json().as_bytes()));
+    assert!(gear_door::restore_character(new, gear::Character::starting().to_json().as_bytes()));
+    let prologue = |player| {
+        let bytes = gear_door::gear(player);
+        messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear").prologue_done()
+    };
+    // Written one after the other, as the sea writes each sailor's.
+    assert_eq!((prologue(done), prologue(new)), (true, false), "one's prologue is not another's");
 }
 
 #[test]
@@ -613,4 +705,15 @@ fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_t
     assert_eq!(seen_at_sea(one), (vec![one, near], vec![1]));
     assert_eq!(seen_at_sea(near), (vec![one, near], vec![2]), "40 km off, within the page's farthest view");
     assert_eq!(seen_at_sea(far), (vec![far], vec![]), "250 km off, they see no one");
+}
+
+#[test]
+fn the_sea_says_why_its_tier_shuts_to_a_kept_character_or_a_new_one() {
+    small_sea();
+    assert_eq!(shut(0, b""), "", "the Normal sea is open to anyone");
+    assert!(set_difficulty(2));
+    assert_eq!(shut(0, b""), "Abyss seas open at level 20.");
+    let mut seasoned = gear::Character::starting();
+    seasoned.xp = gear::power::xp_for_level(20);
+    assert_eq!(shut(0, seasoned.to_json().as_bytes()), "", "a character of level 20 sails it");
 }

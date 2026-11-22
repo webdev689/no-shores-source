@@ -57,6 +57,8 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false, pape
       () => papers,
       () => null,
       resting,
+      here,
+      { week: () => null, kept: () => null },
     ),
   );
   const ui = new Interface(renderer());
@@ -410,4 +412,23 @@ test('with the menu open, Tab never reaches the sea bar under it, and Enter pres
   frame([{ kind: 'key', key: 'Enter' }]);
   frame();
   assert.equal(left, 0, 'Enter presses nothing under the menu');
+});
+
+test('on the Journal the hourglass stands in the account mark’s place, T drops its timers, and they go up as it is left', () => {
+  const { ui, frame, key, open } = menu();
+  open('journal');
+  assert.ok(ui.boxOf('hourglass') && !ui.boxOf('account-mark'), 'the hourglass in the mark’s place');
+  assert.equal(ui.boxOf('journal-timers'), null);
+  key('t');
+  frame();
+  assert.ok(ui.boxOf('journal-timers'), 'T drops the timers');
+  key('Escape');
+  frame();
+  assert.ok(ui.boxOf('gear-screen') && !ui.boxOf('journal-timers'), 'Escape takes them up before the menu');
+  key('t');
+  frame();
+  open('character');
+  assert.ok(ui.boxOf('account-mark') && !ui.boxOf('hourglass'), 'the mark again on another tab');
+  open('journal');
+  assert.equal(ui.boxOf('journal-timers'), null, 'gone up as the Journal was left');
 });

@@ -64,6 +64,12 @@ const fn row(
     FoeType { number, faction, name, domain, role, right, left, ranks, standoff: 1.0, boss_phases: &[] }
 }
 
+/// An Elite Dungeon's Boss: a land Captain of the dungeon garrison's own faction, the Reeve's, at Boss rank, fighting
+/// in the High Assessor's three phases under a name of its own.
+const fn warden(number: u8, name: &'static str, right: &'static str, left: &'static str) -> FoeType {
+    FoeType { boss_phases: &CORVANE, ..row(number, GREY_TITHE, Land, name, Captain, right, left, &[Rank::Boss]) }
+}
+
 /// The numbers of the types the rules name elsewhere: in a garrison, or called by a Boss.
 pub const RUNNER: u8 = 1;
 pub const COLLECTOR: u8 = 2;
@@ -75,8 +81,9 @@ pub const DECKHAND: u8 = 7;
 pub const HIGH_ASSESSOR: u8 = 18;
 
 /// Every type. The marksman stands off half as far again as an archer; each Boss fights in its own phases. The Brig's
-/// crew fight by a swordsman's and a skirmisher's numbers, as the boarders they fight do.
-pub const ROSTER: [FoeType; 20] = [
+/// crew fight by a swordsman's and a skirmisher's numbers, as the boarders they fight do. Types 21 to 38 are the Elite
+/// Dungeons' Bosses, one each, in `gear::activities`' order.
+pub const ROSTER: [FoeType; 38] = [
     row(RUNNER, GREY_TITHE, Land, "Runner", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
     row(COLLECTOR, GREY_TITHE, Land, "Collector", Swordsman, "sword_iron", "shield_kite_iron", LOW),
     row(CROSSBOWMAN, GREY_TITHE, Land, "Crossbowman", Archer, "crossbow_iron", "", LOW),
@@ -112,6 +119,24 @@ pub const ROSTER: [FoeType; 20] = [
     },
     row(19, CREW, Deck, "Crew", Swordsman, "sword_iron", "", LOW),
     row(20, CREW, Deck, "Crew", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
+    warden(21, "Wreck-Reeve Oswin Tarr", "sword_steel", ""),
+    warden(22, "Pearl-Keeper Isolde Varne", "mace_iron", "shield_kite_iron"),
+    warden(23, "Forgemaster Garrick Soot", "warhammer_iron", ""),
+    warden(24, "Tithe-Warden Mabry Hollis", "mace_iron", "shield_kite_iron"),
+    warden(25, "Wrecker Dunstan Black", "axe_iron", ""),
+    warden(26, "Sister-Assessor Aldith", "flail_iron", "shield_kite_iron"),
+    warden(27, "Cistern-Steward Corwin Vey", "sword_steel", "shield_kite_steel"),
+    warden(28, "Vaultwarden Hesk Amaro", "warhammer_iron", ""),
+    warden(29, "Gaoler Renna Crake", "sword_iron", "shield_kite_iron"),
+    warden(30, "Barrow-Reeve Tobin Silt", "mace_iron", ""),
+    warden(31, "Treasurer Lucan Deeps", "sword_ebony", ""),
+    warden(32, "Factor Odile Coralle", "flail_iron", ""),
+    warden(33, "Lord-Assessor Edric Barrow", "sword_ebony", "shield_kite_steel"),
+    warden(34, "Digmaster Ulf Hargreave", "axe_iron", ""),
+    warden(35, "Bog-Reeve Hester Mire", "mace_iron", "shield_kite_iron"),
+    warden(36, "Sluice-Warden Abel Rook", "sword_steel", ""),
+    warden(37, "Abbess Ylva Frost", "flail_iron", "shield_kite_steel"),
+    warden(38, "Catacomb-Reeve Silas Brine", "warhammer_iron", ""),
 ];
 
 /// The type a number names, or none.

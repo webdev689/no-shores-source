@@ -5,6 +5,7 @@
  * next) before taking it anyway, so the room that held it learns from its next save that the player went elsewhere.
  */
 
+import { companionsOf } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
 import { present } from './people.ts';
 import { hashOf } from './secrets.ts';
@@ -23,12 +24,27 @@ export interface Claimed {
   readonly body: string | null;
 }
 
+/** The account a session's token is for, seen at `now`; null when the token is no session, or one that lapsed. */
+export async function liveAccount(database: Db, token: string, now: number): Promise<string | null> {
+  const session = await database
+    .prepare(
+      `UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2 AND (seen_at >= ?3 OR EXISTS
+       (SELECT 1 FROM accounts WHERE accounts.id = sessions.account_id AND username IS NULL AND discord_id IS NULL))
+       RETURNING account_id`,
+    )
+    .bind(now, await hashOf(token), now - SESSION_IDLE_MS)
+    .first<{ account_id: string }>();
+  return session?.account_id ?? null;
+}
+
 /** What the accounts answer the rooms over their binding. */
 export interface Characters {
+  look(token: string): Promise<Claimed | null>;
   claim(token: string, holder: string): Promise<Claimed | null>;
   save(account: string, holder: string, body: string): Promise<boolean>;
   release(account: string, holder: string, body: string | null): Promise<boolean>;
   present(token: string, room: string | null): Promise<boolean>;
+  companions(account: string, room: string): Promise<string[]>;
 }
 
 /** The characters on a database, with a clock and a way to wait. */
@@ -45,19 +61,11 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
           )
           .bind(holder, now() + HOLD_MS, account, now())
     ).first<{ body: string | null }>();
-  /** The account a session's token is for, seen now; null when the token is no session, or one that lapsed. */
-  const live = async (token: string) => {
-    const session = await database
-      .prepare(
-        `UPDATE sessions SET seen_at = ?1 WHERE token_hash = ?2 AND (seen_at >= ?3 OR EXISTS
-         (SELECT 1 FROM accounts WHERE accounts.id = sessions.account_id AND username IS NULL AND discord_id IS NULL))
-         RETURNING account_id`,
-      )
-      .bind(now(), await hashOf(token), now() - SESSION_IDLE_MS)
-      .first<{ account_id: string }>();
-    return session?.account_id ?? null;
-  };
+  const live = (token: string) => liveAccount(database, token, now());
   return {
+    /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
+     *  first, or the player alone, then those it was found for with them. */
+    companions: (account, room) => companionsOf(database, account, room, now()),
     /** Notes that a session's player is in a room that keeps no character, or with none that they left it; false
      *  when the token is no live session. */
     async present(token, room) {
@@ -65,6 +73,17 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
       if (account === null) return false;
       await present(database, account, room, now());
       return true;
+    },
+    /** The account a session's token is for and its character as last kept, taken from no room that holds it; null
+     *  when the token is no session, or one that lapsed. */
+    async look(token) {
+      const account = await live(token);
+      if (account === null) return null;
+      const kept = await database
+        .prepare('SELECT body FROM characters WHERE account_id = ?1')
+        .bind(account)
+        .first<{ body: string | null }>();
+      return { account, body: kept?.body ?? null };
     },
     /** The account a session's token is for, its character held for `holder`; null when the token is no session, or
      *  one that lapsed. */

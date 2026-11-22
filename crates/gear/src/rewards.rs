@@ -45,7 +45,7 @@ pub fn worth(foe: Foe) -> Worth {
 }
 
 /// A worth at the foe's level: times (5 + its level) ÷ 10.
-fn at_level(amount: u32, foe_level: u8) -> u32 {
+pub(crate) fn at_level(amount: u32, foe_level: u8) -> u32 {
     amount * (5 + u32::from(foe_level)) / 10
 }
 
@@ -89,6 +89,21 @@ impl Character {
         let vestige = vestige::dropped(chance, worth.boss, foe_level, dice)
             .map(|(rarity, slot, level)| Vestige::new(self.take_id(), rarity, slot, level));
         Reward { xp, aurem, vestige }
+    }
+
+    /// Keeps a Vestige a first clear pays as it is paid: in the carried ten, else in the vault; false, keeping nothing,
+    /// when both are full. Numbered as it is kept, as one taken off the ground is.
+    pub fn keep_paid(&mut self, vestige: Vestige) -> bool {
+        let vaulted = if self.vestiges_held(false) < crate::character::VESTIGES_MOST {
+            false
+        } else if self.vestiges_held(true) < crate::character::VAULT_MOST {
+            true
+        } else {
+            return false;
+        };
+        let id = self.take_id();
+        self.vestiges.insert(id, (Vestige { id, ..vestige }, vaulted));
+        true
     }
 
     /// Takes a Vestige off the ground into the carried ten; refused, leaving it lying, when they are full.

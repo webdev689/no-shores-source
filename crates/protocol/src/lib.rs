@@ -33,6 +33,7 @@ use wire::overlook::wire as messages;
 /// The protocol's version: the schema's hash, which a room's welcome carries.
 pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/messages/rust/version.rs"));
 
+mod bounty_wire;
 pub mod fleet;
 pub mod gear_wire;
 pub mod land;

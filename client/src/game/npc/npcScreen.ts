@@ -14,7 +14,7 @@ import type { View } from '../gearScreen.ts';
 import { KEEPERS, KEEPER_KINDS, type KeeperKind } from '../keepers.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { vaultPage } from '../stationPages.ts';
-import { clockWords, secondsToMidnight, shapeSecondsLeft } from './npcClock.ts';
+import { clockWords, countdownsAt } from './npcClock.ts';
 import { factionOf, rankRewards, reputationOf } from './factionRows.ts';
 import { keeperFigure } from './npcFigure.ts';
 import { keeperMarkSvg } from './npcMarks.ts';
@@ -23,7 +23,7 @@ import { hush, keeperSays, speechBand } from './npcSpeech.ts';
 import { type KeeperLook, coinGlyph, meter, rowsNode } from './npcTiles.ts';
 import { type Ware, purseOf, rowsOf } from './npcWares.ts';
 
-/** The keepers whose wares change each day at midnight. */
+/** The keepers whose wares change at each daily reset. */
 const DAILY: readonly KeeperKind[] = ['armorsmith', 'weaponsmith', 'tailor', 'tack'];
 /** The menu's brass, the ground of a keeper who serves no Art. */
 const BRASS = '#c08a3e';
@@ -199,11 +199,11 @@ function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): No
   };
 }
 
-/** The foot's countdown, to the second: to midnight, or to Shape's leaving. */
+/** The foot's countdown, to the second: to the daily reset, or to Shape's leaving, by the rules' clock. */
 function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: number): Node | null {
   const shape = kind === 'shape' ? gear.shape : null;
   if (!DAILY.includes(kind) && !shape) return null;
-  const now = Date.now();
+  const left = countdownsAt(Date.now());
   return {
     role: 'well',
     width,
@@ -212,7 +212,7 @@ function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: nu
     alignY: 'center',
     children: [
       { text: { words: (shape ? 'Leaves in' : 'Stock refresh').toUpperCase(), size: look.text, tracking: 2 } },
-      words(clockWords(shape ? shapeSecondsLeft(now) : secondsToMidnight(now)), look.text, INK.word, { tracking: 2 }),
+      words(left ? clockWords(shape ? left.shape : left.stock) : '', look.text, INK.word, { tracking: 2 }),
     ],
   };
 }

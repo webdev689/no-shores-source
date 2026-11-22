@@ -132,6 +132,10 @@ pub fn watch_court(frame: &Frame, laid: &mut Laid) {
         let out = middle + wide / 2.0 + f64::from(3 - step) * 0.4 - 0.2;
         laid.solids.push(frame.block(0.0, out, 0.0, [0.4, long, rise], Material::Stone));
     }
+    // The bounty board stands on it a metre in from its back, its face to the court and read from the landing.
+    let (board, pieces) = crate::board::board(frame.at(0.0, middle - wide / 2.0 + 1.0), frame.level + high, across);
+    laid.solids.extend(pieces);
+    laid.board = Some(board);
     for side in [-1.0, 1.0] {
         laid.piece(stand_at(
             "bench",

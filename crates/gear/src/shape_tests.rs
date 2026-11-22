@@ -1,12 +1,13 @@
-//! Shape: here from Friday 09:00 to Sunday 21:00 UTC, one place and six pieces a week, sold for Shapes, which only
-//! the Elite and Abyss seas give.
+//! Shape: here from Friday 09:00 to Sunday 21:00 UTC, one place and six pieces a week of the clock's, from Tuesday
+//! 09:00 UTC, sold for Shapes, which only the Elite and Abyss seas give.
 
 use crate::asks::{Ask, Here, Refusal};
 use crate::character::Character;
+use crate::clock::week_of;
 use crate::dice::Dice;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
-use crate::shape::{PLACES, WARES, found, place, present, price, wares, week_of};
+use crate::shape::{PLACES, WARES, found, minutes_left, place, present, price, wares};
 use crate::world::Difficulty;
 
 const DICE: Dice = Dice { seed: 5, tick: 9, player: 1 };
@@ -24,8 +25,21 @@ fn shape_comes_friday_morning_and_goes_sunday_evening() {
     assert!(present(in_month(22, 20, 59)), "Sunday evening");
     assert!(!present(in_month(22, 21, 0)), "gone at nine on Sunday");
     assert!(!present(in_month(24, 12, 0)), "Tuesday");
-    assert_eq!(week_of(in_month(16, 0, 0)), week_of(in_month(22, 23, 59)), "one week from Monday");
-    assert_ne!(week_of(in_month(22, 23, 59)), week_of(in_month(23, 0, 0)));
+    assert_eq!(minutes_left(in_month(20, 9, 0)), 2 * 1_440 + 12 * 60, "as he comes");
+    assert_eq!(minutes_left(in_month(22, 20, 59)), 1, "a minute before he goes");
+    assert_eq!((minutes_left(in_month(22, 21, 0)), minutes_left(in_month(20, 8, 59))), (0, 0), "none while away");
+}
+
+#[test]
+fn his_place_and_wares_hold_from_one_tuesday_nine_to_the_next() {
+    let week = week_of(in_month(20, 9, 0));
+    for moment in [in_month(17, 9, 0), in_month(23, 0, 0), in_month(24, 8, 59)] {
+        assert_eq!((place(week_of(moment)), wares(week_of(moment))), (place(week), wares(week)), "the visit's week");
+    }
+    let next = week_of(in_month(24, 9, 0));
+    assert_eq!(next, week + 1, "the week turns at Tuesday 09:00");
+    assert_eq!(week_of(in_month(17, 8, 59)), week - 1, "a minute before it is the week before");
+    assert_ne!(wares(next), wares(week));
 }
 
 #[test]

@@ -32,7 +32,7 @@ test('a dungeon laid through WebAssembly is the bytes the crate lays natively', 
   const door = startRoomDoor(compiled);
   const text =
     AGREED_ASKS.map(([patrol, name, number]) => door.dungeon(patrol, name, number)).join('') +
-    door.dungeonOf(...AGREED_SEEDED);
+    door.layout(JSON.stringify({ seed: AGREED_SEEDED[0], style: AGREED_SEEDED[1], name: AGREED_SEEDED[2] }));
   assert.equal(fnv1a(new TextEncoder().encode(text)), AGREED_HASH);
 });
 

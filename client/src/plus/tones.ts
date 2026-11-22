@@ -24,6 +24,14 @@ export const TONES = {
   /** The HUD's own words, over the world. */
   ink: '#f2efe6',
   wordDim: '#e2dccd',
+  /** DFO's hourglass glass. */
+  glass: '#d8cfae',
+  /** Stone gone to blood, as `BEVELS.blood` lights and shades it. */
+  blood: '#b83a2e',
+  bloodDark: '#5a130f',
+  /** Deep water, the ground of what is done at sea; and old blood, of what is done in a dungeon, as dim as it. */
+  sea: '#1d2a33',
+  bloodDeep: '#3e1814',
   /** The players' side: a companion's name over their head. */
   ally: '#9fd4ff',
 } as const;

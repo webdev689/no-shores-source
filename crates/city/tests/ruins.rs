@@ -53,8 +53,9 @@ fn overlook_is_planned_as_it_was() {
     assert!(!plan.ruined && plan.wrecks.is_empty());
     assert_eq!(plan.name, "Overlook");
     assert!(!plan.social.stations.is_empty(), "a port city keeps its counters");
-    // The plan before ruins were laid, pinned: a port city's plan must not change with them.
-    assert_eq!(fingerprint(&plan), "1abe6e7b2a86ec50");
+    assert!(plan.social.board.is_some(), "Overlook's hub holds the bounty board");
+    // The plan with its hub's bounty board, pinned: a port city's plan must not change with the ruins.
+    assert_eq!(fingerprint(&plan), "c951850aa2794aa8");
 }
 
 #[test]

@@ -13,7 +13,7 @@ use gear::ship::materials::ShipMaterial;
 use movement::TICK_SECONDS;
 use naval::fight::Event;
 use naval::wire::told_numbers;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 
 /// A player who leaves a fight with less than this share of their hull is kept as a sunk ship comes back.
@@ -49,6 +49,22 @@ impl Sea {
             let how = if ship.struck { "strike" } else { "sink" };
             if let Some(side) = crate::quests::side_of(ship.pirate.commission.faction) {
                 ship.players.iter().for_each(|player| self.tell_sea(*player, &QuestEvent::Sea { side, how }));
+            }
+            self.count_down(ship);
+        }
+    }
+
+    /// Counts a captain's ship sunk or taken toward the bounties of each player who fought her whose character the
+    /// sea keeps, once each, by the water she went down in and her captain's rank, on the sea's day
+    /// (`gear::objectives::count_ship_down`); a count that moved is saved and sent.
+    fn count_down(&mut self, sank: &Sank) {
+        let water = self.chart.water_id(sank.at);
+        let (rank, day) = (sank.pirate.commission.rank.number(), gear::clock::day_of(self.minute));
+        let fought: BTreeSet<PlayerId> = sank.players.iter().copied().collect();
+        for player in fought {
+            let Some(character) = self.harbour.characters.get_mut(&player) else { continue };
+            if gear::objectives::count_ship_down([character], water, rank, day) {
+                self.harbour.changed.insert(player);
             }
         }
     }
@@ -329,13 +345,24 @@ impl Sea {
         self.harbour.characters.get(&player)
     }
 
-    /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea
-    /// or the text is not a character. Their ship lies where the room last kept it, wherever the page first put it to
-    /// sea: a fight they met from the page's spawn is over for them. With nowhere kept, the course held for them sails.
+    /// Why the sea's gate shuts to a character: the level its tier opens at, as on land (`gear::gate`); never at
+    /// Normal.
+    #[must_use]
+    pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {
+        gear::gate::shut(character, gear::gate::Place::Node, self.pirates.difficulty)
+    }
+
+    /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
+    /// the text is not a character, or the sea's gate shuts to it (`shut`). Their ship lies where the room last kept
+    /// it, wherever the page first put it to sea: a fight they met from the page's spawn is over for them. With nowhere
+    /// kept, the course held for them sails.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let (Some(character), true) = (gear::Character::from_json(text), self.berths.contains_key(&player)) else {
             return false;
         };
+        if self.shut(&character).is_some() {
+            return false;
+        }
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
         if at.is_some() && self.fights.fighting(player) {

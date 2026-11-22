@@ -291,8 +291,9 @@ Pass]]) with Claude's numbers:
   boarder's own ship takes no orders or course while they stand on the struck ship's deck. Its deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
   The sea's snapshot carries each deck to its boarders alone: their numbers there, the ship's hull, its deck room's own
-  snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's, sent through the
-  sea's link, and every boarder's dress is sent again as each one comes over its side, who had no welcome to bring it.
+  snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's, at the sea's minute,
+  sent through the sea's link, and the sea's once more as they step off; and every boarder's dress is sent again as
+  each one comes over its side, who had no welcome to bring it.
 - **The fight on a struck deck, on the page** (`deckBoarding.ts`, `deckFight.ts`). Once the sea says the player stands on
   the struck ship's deck, the page plays on foot there exactly as on land: the same `Foot`, controls, first and third person,
   display, bars and marks, its crew drawn as the land's foes and the other boarders as players. Its link is the sea's:

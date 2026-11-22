@@ -2,7 +2,7 @@
 // tests of what a screen builds, presses and lays, without a GPU.
 import { glyphDrawn } from './glyphs.ts';
 import { layout } from './layout.ts';
-import type { Laid, Node } from './node.ts';
+import type { Child, Laid, Node } from './node.ts';
 import { QuadList } from './quads.ts';
 import { type Face, widthOf } from './text.ts';
 import { Interface, type UiEvent } from './ui.ts';
@@ -51,3 +51,17 @@ export const wordsOf = (laid: readonly Laid[]): string[] =>
 /** The laid node with `id`. */
 export const laidWith = (laid: readonly Laid[], id: string): Laid | undefined =>
   laid.find((each) => each.node.id === id);
+
+/** Every node of a tree as built, before it is laid. */
+export const nodesOf = (node: Child): Node[] => (node ? [node, ...(node.children ?? []).flatMap(nodesOf)] : []);
+
+/** The words of every node of a tree as built, in order. */
+export const wordsIn = (node: Child): string[] =>
+  nodesOf(node).flatMap((each) => {
+    const words = each.text?.words;
+    if (words === undefined) return [];
+    return [typeof words === 'string' ? words : words.map((span) => span.words).join('')];
+  });
+
+/** The node of a tree as built with `id`. */
+export const byId = (node: Child, id: string): Node | undefined => nodesOf(node).find((each) => each.id === id);

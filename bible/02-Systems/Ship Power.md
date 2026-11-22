@@ -60,7 +60,7 @@ are in [[Crew]].
   time in ten, an isle's three (3 to 6) and one in five. A sea Breach's hold always holds a module of the better
   colours, three materials of 4 to 8 and two Heartwood. A module's colour is never past what its level could drop, as
   a Vestige's is ([[Gear]], "Vestiges").
-- **The Shipwright** sells six modules a day, three Rare and three Magic, at the buyer's ship's level, at the
+- **The Shipwright** sells six modules a day (the clock's, from 09:00 UTC: [[Activities]]), three Rare and three Magic, at the buyer's ship's level, at the
   Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
 
 ## At sea

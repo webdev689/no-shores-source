@@ -1,21 +1,22 @@
-//! A patrol's dungeon for a browser: its layout as the `dungeon` crate lays it, so a page draws it and predicts a body
-//! on it from the rules rather than from a copy of them. And the dungeon's room: opened from its patrol's node file,
-//! and a patrol's room joined before one of its entrances.
+//! A dungeon for a browser, a patrol's, an Elite Dungeon's or one laid by a seed: its layout as the `dungeon` crate
+//! lays it, so a page draws it and predicts a body on it from the rules rather than from a copy of them. And the
+//! dungeon's room: opened from its patrol's node file, and a node's room joined before one of its entrances.
 
 use crate::{NodeFile, Opened, keep, with_open};
-use dungeon::{Cell, Dungeon, Side};
+use dungeon::{BLOCKS, Cell, Dungeon, ELITE_BLOCKS, Side};
 use room::{NodeKind, PlayerId, Room};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-/// Which dungeon: its place's name, and either its patrol's id and its number among the patrol's, or the seed and the
-/// style's key it is laid by where no patrol lays it (a sea island's).
+/// Which dungeon: its place's name, and either its patrol's id and its number among the patrol's, an Elite Dungeon's
+/// place (its node's id), or the seed and the style's key it is laid by where no patrol lays it (a sea island's).
 #[derive(Deserialize)]
 struct Asked {
     patrol: Option<String>,
     name: String,
     #[serde(default)]
     number: usize,
+    place: Option<String>,
     seed: Option<u32>,
     style: Option<String>,
 }
@@ -29,17 +30,21 @@ const fn side_number(side: Side) -> u8 {
     }
 }
 
-/// The seed and style of the dungeon an ask names, or None for an ask that does not read, a number past the patrol's
-/// dungeons, or a seed without a style that is one.
-pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
+/// The seed and style of the dungeon an ask names and the blocks it is laid within, or None for an ask that does not
+/// read, a number past the patrol's dungeons, a place that is no Elite Dungeon, or a seed without a style that is one.
+pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style, (usize, usize))> {
     let asked = serde_json::from_slice::<Asked>(text).ok()?;
-    match (asked.patrol, asked.seed, asked.style) {
-        (_, Some(seed), Some(key)) => Some((seed, dungeon::style_of(&key)?)),
-        (Some(patrol), None, None) => {
-            (asked.number < dungeon::PER_PATROL).then(|| dungeon::of_patrol(&patrol, asked.number))
+    let (seed, style) = match (asked.patrol, asked.place, asked.seed, asked.style) {
+        (_, Some(place), None, None) => {
+            return room::elite_laid(&place).map(|(seed, style)| (seed, style, ELITE_BLOCKS));
         }
-        _ => None,
-    }
+        (_, None, Some(seed), Some(key)) => (seed, dungeon::style_of(&key)?),
+        (Some(patrol), None, None, None) => {
+            (asked.number < dungeon::PER_PATROL).then(|| dungeon::of_patrol(&patrol, asked.number))?
+        }
+        _ => return None,
+    };
+    Some((seed, style, BLOCKS))
 }
 
 /// The dungeon asked for as JSON, or null for an ask that does not read. Its return portal stands on the end room's
@@ -52,10 +57,12 @@ pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
 /// are the jambs, the pillars, then the props', the fixtures' and the landmarks' solids (a hanging has none).
 #[must_use]
 pub fn dungeon_json(text: &[u8]) -> String {
-    let (Ok(found), Some((seed, style))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
+    let (Ok(found), Some((seed, style, blocks))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
         return Value::Null.to_string();
     };
-    let laid = Dungeon::forge(seed, style);
+    let laid = Dungeon::forge_within(seed, style, blocks);
+    // An Elite Dungeon has a name of its own; any other is named for its style and its place.
+    let name = if found.place.is_some() { found.name } else { dungeon::name(&style, &found.name) };
     let cells: Vec<i32> = laid
         .cells
         .iter()
@@ -112,7 +119,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
     json!({
-        "name": dungeon::name(&style, &found.name),
+        "name": name,
         "style": style.key,
         "pictures": style.pictures,
         "looks": looks,
@@ -158,13 +165,13 @@ pub fn open_dungeon(text: &[u8], number: usize) -> bool {
         return false;
     }
     let Some(room) = Room::dungeon(&node.id, number, gear::world::island_levels(&node.continent)) else { return false };
-    let refusal = node.locked.then(|| format!("{} is locked", node.name));
+    let refusal = crate::lock_words(node.locked, &node.name);
     keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
     true
 }
 
-/// A patrol's dungeon as JSON (`dungeon_json`), asked for by the JSON written at `address`, `length`
-/// bytes long: its patrol's id and name and its number.
+/// A dungeon as JSON (`dungeon_json`), asked for by the JSON written at `address`, `length` bytes long: its patrol's
+/// id and name and its number, an Elite Dungeon's place and name, or a seed, a style and a name.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.

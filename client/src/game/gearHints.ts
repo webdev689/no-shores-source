@@ -21,6 +21,8 @@ export const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = 
   ],
   harbourmaster: [['Hold', 'Buy']],
   ship: [['Click', 'Open a module or an officer']],
+  board: [['Click / E', 'Take or turn in']],
+  journal: [['T', 'Timers']],
   item: [
     ['Hold', 'Buy a node'],
     ['Click', 'Choose one bought'],

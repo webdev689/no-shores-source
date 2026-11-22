@@ -52,6 +52,8 @@ const PARAPET_THICK_M: f64 = 0.8;
 #[derive(Debug, Default)]
 pub(crate) struct Laid {
     pub solids: Vec<Solid>,
+    /// The bounty board, on its landing (`courts::watch_court`).
+    pub board: Option<crate::board::Board>,
     pub stations: Vec<Station>,
     pub spots: Vec<[f64; 2]>,
     pub sockets: Vec<(String, String, [f64; 3], [f64; 2])>,
@@ -146,6 +148,7 @@ pub fn overlook(ground: &Ground, frame: &Frame, bounds: [f64; 4]) -> Social {
         ring,
         spawns,
         plants,
+        board: laid.board,
         solids: laid.solids,
         stations: laid.stations,
         visitor_spots: laid.spots,

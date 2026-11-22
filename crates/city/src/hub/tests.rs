@@ -221,6 +221,48 @@ fn every_market_keeper_is_reached_from_a_way_point_near_their_stall() {
 }
 
 #[test]
+fn the_bounty_board_stands_on_its_landing_facing_the_court_read_clear_of_every_counter() {
+    let (_, plan) = planned();
+    let social = &plan.social;
+    let board = social.board.expect("Overlook's hub holds the bounty board");
+    let [_, wide, long, high] = super::BOARD_LANDING_M;
+    let sized = |solid: &&crate::solids::Solid| {
+        let mut size = [solid.size[0], solid.size[1]];
+        size.sort_by(f64::total_cmp);
+        (size[0] - wide).abs() < 1e-9 && (size[1] - long).abs() < 1e-9 && (solid.size[2] - high).abs() < 1e-9
+    };
+    let landing = social.solids.iter().find(sized).expect("the landing").bounds();
+    let on = |[x, y]: [f64; 2], inset: f64| {
+        x > landing[0] + inset && x < landing[2] - inset && y > landing[1] + inset && y < landing[3] - inset
+    };
+    assert!(on(board.at, 0.5) && on(board.front, 0.5), "the board and where it is read on the landing");
+    let pieces: Vec<_> = social
+        .solids
+        .iter()
+        // The range's banner hangs over it on the wall behind.
+        .filter(|solid| !matches!(solid.shape, crate::solids::Shape::Module { .. }))
+        .map(crate::solids::Solid::bounds)
+        .filter(|piece| {
+            let apart =
+                libm::hypot((piece[0] + piece[2]) / 2.0 - board.at[0], (piece[1] + piece[3]) / 2.0 - board.at[1]);
+            apart < 2.2 && piece[4] > landing[4] + 1e-9
+        })
+        .collect();
+    assert_eq!(pieces.len(), 11, "its posts, face, six notices, lamp and roof");
+    assert!(pieces.iter().all(|piece| piece[4] >= landing[5] - 1e-9), "standing on its top");
+    let middle = [(social.bounds[0] + social.bounds[2]) / 2.0, (social.bounds[1] + social.bounds[3]) / 2.0];
+    let from = |[x, y]: [f64; 2]| libm::hypot(x - middle[0], y - middle[1]);
+    assert!(from(board.front) < from(board.at) - 1.9, "its face toward the court");
+    // Twice a counter's reach (the room's 4 m) apart, so where the board serves no other counter does: every
+    // station's, the Harbourmaster's among them, and every spot Shape may stand at.
+    let counters = social.stations.iter().map(|station| station.counter).chain(social.visitor_spots.iter().copied());
+    for [x, y] in counters {
+        let apart = libm::hypot(board.front[0] - x, board.front[1] - y);
+        assert!(apart > 8.0, "a counter {apart:.1} m from where the board is read");
+    }
+}
+
+#[test]
 fn the_hubs_places_are_named_inside_its_ring_the_quay_among_them() {
     let (_, plan) = planned();
     let social = &plan.social;

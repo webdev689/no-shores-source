@@ -1,7 +1,7 @@
 //! What a player asks of their gear, and the rules each ask must pass: wearing and taking off, buying and choosing
-//! nodes, dismantling, feeding an item a Fruit of Dagon, using an Ammo crate and wearing a cosmetic anywhere;
-//! identifying a Vestige, the vault, the vendors, the factions and Shape only at their counters in a social space. An
-//! ask refused changes nothing.
+//! nodes, dismantling, feeding an item a Fruit of Dagon, using an Ammo crate, wearing a cosmetic and marking the
+//! prologue played anywhere; identifying a Vestige, the vault, the vendors, the factions and Shape only at their
+//! counters in a social space; and taking and turning in a bounty at the bounty board. An ask refused changes nothing.
 
 use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, VESTIGES_MOST};
 use crate::dice::{Dice, Purpose};
@@ -75,6 +75,19 @@ pub enum Ask {
     UseCrate,
     /// Buys an Ammo crate: at the Weaponsmith's counter only.
     BuyCrate,
+    /// Marks the prologue played: anywhere, and only that.
+    FinishPrologue,
+    /// Takes a bounty of the day's board, by its place on it and the day of the board shown: at the bounty board only,
+    /// after the prologue.
+    TakeBounty {
+        place: u8,
+        day: u64,
+    },
+    /// Turns in a bounty done, by its place and the day of the board shown: at the bounty board only, once.
+    TurnInBounty {
+        place: u8,
+        day: u64,
+    },
     /// Feeds a carried module into a kept one of its kind, raising it to the fed one's level (`ship::infuse`).
     Infuse {
         item: u32,
@@ -210,6 +223,15 @@ pub enum Refusal {
     NoSuchCosmetic,
     /// An Art has no fragment at that place.
     NoSuchFragment,
+    /// The bounty board opens after the prologue. The board's refusals are numbered apart, answered 81 to 85, so a list
+    /// growing above them never moves them.
+    BoardShut = 80,
+    /// No such place, a board of another day than the room's, or a room whose day is behind the character's record.
+    NoSuchBounty,
+    BountyHeld,
+    /// Not held, or its count short of its target.
+    BountyNotDone,
+    BountyPaid,
     /// No Ranged weapon is worn for an Ammo crate to fill: answered as 120, one past its number as every refusal is.
     NoRanged = 119,
     NoSuchOfficer = 130,
@@ -273,6 +295,9 @@ impl Character {
             Ask::BuyEmblem { emblem } => self.buy_emblem(emblem, here),
             Ask::UseCrate => self.use_crate(),
             Ask::BuyCrate => self.buy_crate(here),
+            Ask::FinishPrologue => self.finish_prologue(),
+            Ask::TakeBounty { place, day } => self.take_bounty(place, day, here),
+            Ask::TurnInBounty { place, day } => self.turn_in_bounty(place, day, here),
             Ask::Infuse { item, fed } => self.infuse(item, fed),
             Ask::Recruit { faction, offer } => self.recruit(faction, offer, here),
             Ask::Station { officer, duty } => self.station(officer, duty),

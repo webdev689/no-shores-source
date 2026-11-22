@@ -224,6 +224,22 @@ fn a_social_space_serves_each_ask_at_its_own_counter() {
 }
 
 #[test]
+fn the_bounty_board_takes_bounties_at_its_own_counter_alone() {
+    use crate::asks::{Counter, CounterKind};
+    let mut room = room();
+    room.counters = Some(vec![Counter { kind: CounterKind::Board, at: [10.0, 0.0] }]);
+    room.set_minute(29_919_420);
+    let player = room.join().expect("a room with space");
+    room.players.get_mut(&player).expect("in").character.story.prologue = true;
+    let take = Asked::Gear(Ask::TakeBounty { place: 2, day: 20_778 });
+    assert_eq!(ask(&mut room, player, 1, take.clone()), answer_code(Err(Refusal::NotHere)), "mid-plaza");
+    move_to(&mut room, player, 8.0, 0.0);
+    assert_eq!(ask(&mut room, player, 2, take), 0, "at the board");
+    assert_eq!(room.player(player).expect("in").character.activity.today.bounties.get(&2), Some(&0));
+    assert_eq!(crate::asks::counter_for(&Ask::TurnInBounty { place: 2, day: 20_778 }), Some(CounterKind::Board));
+}
+
+#[test]
 fn walking_to_or_from_the_mage_sends_the_gear_again() {
     use crate::asks::{Counter, CounterKind};
     let mut room = room();
@@ -440,4 +456,37 @@ fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wear
     assert_eq!((worn.kind, worn.rarity), (Kind::Bow, Rarity::Normal), "a Normal one handed out");
     assert_eq!(found.character.at(bow), Some(At::Carried), "the Atheric one still carried");
     assert_eq!(found.character.at(mace), Some(At::Worn(Slot::Melee)), "the Atheric mace carried was worn");
+}
+
+#[test]
+fn the_vendors_day_turns_at_nine_utc_and_every_player_is_sent_the_new_wares() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.set_minute(29_919_419); // A Friday, 08:59 UTC.
+    assert_eq!(room.day(), 20_777);
+    assert!(room.take_gear_change(player));
+    room.set_minute(29_919_419);
+    assert!(!room.player(player).expect("in").gear_changed, "the same day sends nothing");
+    room.set_minute(29_919_420);
+    assert_eq!(room.day(), 20_778);
+    assert!(room.player(player).expect("in").gear_changed, "the new day's wares go out");
+    let here = room.here(player, &gear::Ask::UseCrate);
+    assert_eq!((here.day, here.week), (20_778, 2_968));
+}
+
+#[test]
+fn a_ware_shown_before_nine_utc_sells_till_then_and_is_refused_once_the_day_turns() {
+    use crate::asks::{Counter, CounterKind};
+    use gear::vendor::Vendor;
+    let mut room = room();
+    room.counters = Some(vec![Counter { kind: CounterKind::Vendor(Vendor::Weaponsmith), at: [10.0, 0.0] }]);
+    room.set_minute(29_919_419); // A Friday, 08:59 UTC: still the clock's day 20,777.
+    let player = room.join().expect("a room with space");
+    move_to(&mut room, player, 8.0, 0.0);
+    room.players.get_mut(&player).expect("in").character.materials.add_aurem(10_000);
+    let vend = |day| Asked::Gear(Ask::Vend { vendor: Vendor::Weaponsmith, ware: 0, day });
+    assert_eq!(ask(&mut room, player, 1, vend(20_777)), 0, "sold at 08:59 as that day's");
+    room.set_minute(29_919_420);
+    assert_eq!(ask(&mut room, player, 2, vend(20_777)), answer_code(Err(Refusal::NotSold)), "shown before 09:00");
+    assert_eq!(ask(&mut room, player, 3, vend(20_778)), 0, "the new day's");
 }

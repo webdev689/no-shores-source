@@ -20,7 +20,10 @@ impl Room {
         self.patrol = true;
         let Some(section) = &self.section else { return };
         let dry = |x: f64, y: f64| crate::entrances::dry(&self.floor, x, y);
-        self.entrances = crate::entrances::laid(node, &self.floor, &dry, &section.ring, &section.spawns, places);
+        let dungeons: Vec<(u32, dungeon::Style)> =
+            (0..dungeon::PER_PATROL).map(|number| dungeon::of_patrol(node, number)).collect();
+        let (ring, spawns) = (&section.ring, &section.spawns);
+        self.entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, ring, spawns, places);
     }
 
     /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it.
@@ -83,8 +86,10 @@ impl Room {
             if let Some(owner) = &found.owner {
                 self.gathered.entry(owner.clone()).or_default().push(gathering.node);
             }
-            found.character.gather(usize::from(node.resource));
+            let resource = node.resource;
+            found.character.gather(usize::from(resource));
             found.character.tell(&gear::quests::Event::Gather);
+            self.saw(player, &gear::objectives::Feat::Gathered { resource });
         }
     }
 }

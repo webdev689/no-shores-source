@@ -117,7 +117,8 @@ The sea room holds its islands (`sea_islands.rs`):
 - **The door** stands where the dungeon of its style is entered: E there gives the dungeons' trip its room,
   `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the sea's tier
   (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,
-  `DungeonDoor`). Until that trip is in, E there says the way down is not open yet.
+  `DungeonDoor`), and the trip goes in (`enterSeaDungeon`): shared at Normal, a run at Elite or Abyss ([[Game]], "A
+  sea island's dungeon"). Leaving it, the player goes back to the sea at their ship.
 
 ## On the page
 

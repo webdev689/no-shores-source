@@ -36,6 +36,9 @@ pub struct NodeFile {
     pub boxes: Vec<city::collision::Box2>,
     /// In a social space, the counters that answer a player's gear, which the room serves only at each.
     pub counters: Vec<Counter>,
+    /// In Overlook's social space, where a player stands to read the bounty board: its counter, apart from the
+    /// stations' since no keeper stands at it.
+    pub board: Option<[f64; 2]>,
     /// In a social space Shape visits, the places he may stand, one a week.
     pub shape_spots: Vec<[f64; 2]>,
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
@@ -95,10 +98,10 @@ impl From<&NodeFile> for Listed {
 }
 
 /// The longest room name the server's router takes, the prefix of a node's room, and the longest ending one takes: a
-/// patrol's last dungeon's at Abyss difficulty.
+/// run of a patrol's last dungeon at Abyss.
 pub const ROOM_NAME_LIMIT: usize = 64;
 pub const NODE_ROOM: &str = "node-";
-pub const LONGEST_ENDING: &str = "--abyss--dungeon-2";
+pub const LONGEST_ENDING: &str = "--abyss--dungeon-2--run-00000000";
 
 /// Why a world's nodes cannot each have a file and a room of their own: two with one id (an edits file checks its
 /// own ids only), the index's own name, or an id too long for a room's name. None when every node can.
@@ -179,6 +182,7 @@ pub fn nodes_of(
             ground,
             boxes,
             counters,
+            board: None,
             shape_spots,
             locked: false,
             resources: Vec::new(),
@@ -209,6 +213,7 @@ pub fn nodes_of(
         let visited = city::shape_visits(&plan.id);
         NodeFile {
             counters: counters.map(|station| Counter { kind: station.kind, at: station.counter }).collect(),
+            board: social.board.map(|board| board.front),
             shape_spots: if visited { social.visitor_spots.clone() } else { Vec::new() },
             locked: !city::social_open(&plan.id),
             ..cut(id, NodeKind::Social, plan.name.clone(), social.ring.clone(), social.spawns.clone())
@@ -356,8 +361,9 @@ mod tests {
         assert_eq!(ids_problem(&[called("glade"), called("glen")]), None);
         assert_eq!(ids_problem(&[called("glade"), called("glade")]), Some("two nodes are called glade".to_owned()));
         assert!(ids_problem(&[called("index")]).is_some());
-        assert_eq!(ids_problem(&[called(&"a".repeat(41))]), None, "node-, 41 and --abyss--dungeon-2 make 64");
-        assert!(ids_problem(&[called(&"a".repeat(42))]).is_some());
+        let longest = ids_problem(&[called(&"a".repeat(27))]);
+        assert_eq!(longest, None, "node-, 27 and --abyss--dungeon-2--run-00000000 make 64");
+        assert!(ids_problem(&[called(&"a".repeat(28))]).is_some());
     }
 
     #[test]

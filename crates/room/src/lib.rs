@@ -9,6 +9,7 @@ pub mod asks;
 mod atheric;
 pub mod battle;
 pub mod boarding_hands;
+mod bounties;
 pub mod chart;
 pub mod clash;
 mod companions;
@@ -36,8 +37,10 @@ mod power;
 mod quests;
 mod recharge;
 mod routes;
+mod run;
 pub mod sea;
 pub mod sea_weather;
+mod seeing;
 pub mod ship_power;
 pub mod sighting;
 mod spells;
@@ -61,6 +64,7 @@ pub use players::{
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
 };
 pub use power::{allowed_arms, arms_allowed, loadout_arms};
+pub use run::{REVIVES, RunOf, elite_laid};
 pub use spells::{BOLT, SpellSeen};
 pub use steps::{StepSeen, way_between, way_length};
 
@@ -171,7 +175,14 @@ pub struct Room {
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
     pub(crate) gathered: std::collections::BTreeMap<String, Vec<u8>>,
+    /// A patrol's dungeons' entrances, or an Elite Dungeon's node's one (`entrances.rs`).
     pub(crate) entrances: Vec<entrances::Entrance>,
+    /// What the gates know it as (`gear::gate`): none for a course, which no gate shuts.
+    pub(crate) place: Option<gear::gate::Place>,
+    /// A dungeon's run (`run.rs`): what its clear pays, its modifiers and its revives; none in any other room.
+    pub(crate) run: Option<run::Run>,
+    /// The island it stands on, by its continent's id, for the feats it counts (`bounties.rs`); none at sea.
+    pub(crate) island: Option<&'static str>,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
@@ -241,6 +252,9 @@ impl Room {
             patrol: false,
             gathered: std::collections::BTreeMap::new(),
             entrances: Vec::new(),
+            place: None,
+            run: None,
+            island: None,
             ashore: companions::Ashore::default(),
             isle: None,
             facing: core::f64::consts::PI,
@@ -325,6 +339,11 @@ impl Room {
         }
         found.received = input.sequence;
         found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
+        if found.held {
+            // Taken in order, so the next follows on; played as standing still, asking and casting nothing.
+            let Input { sequence, seen, shown, arms, .. } = input;
+            input = Input { sequence, seen, shown, arms, ..Input::default() };
+        }
         // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
         if let Some(dress) = input.dress.take() {
             found.dress_next = (dress != found.dress_sent).then_some(dress);
@@ -493,13 +512,6 @@ impl Room {
         }
     }
 
-    /// Every fighter now, players then foes, each in the order of their numbers.
-    #[must_use]
-    pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
-        let players = self.players.iter().map(|(id, found)| (*id, found.fighter));
-        players.chain(self.foes.iter().map(|(id, foe)| (*id, foe.fighter))).collect()
-    }
-
     /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,
     /// dodging and staggered as it is now, so a foe's answers count the same whatever the player's lag.
     pub(crate) fn as_seen(&self, foe: FighterId, view: &[(FighterId, Fighter)]) -> Option<Fighter> {
@@ -518,45 +530,6 @@ impl Room {
             foe.fighter = fighter;
         }
     }
-
-    /// The number of a player's last input received, the latest tick their screen said it showed, and the tick they
-    /// joined at; none for no such player.
-    #[must_use]
-    pub fn heard(&self, player: PlayerId) -> Option<(u32, u64, u64)> {
-        self.players.get(&player).map(|found| (found.received, found.shown_tick, found.joined))
-    }
-
-    /// Every player as the room last stepped them, in the order of their numbers.
-    pub fn seen(&self) -> impl Iterator<Item = Seen> + '_ {
-        self.players.iter().map(|(&player, found)| Seen {
-            player,
-            fighter: found.fighter,
-            standing: found.standing,
-            shown: found.shown.clone(),
-            acknowledged: found.acknowledged,
-        })
-    }
-
-    /// The shots in flight.
-    pub fn shots(&self) -> impl Iterator<Item = &Shot> {
-        self.shots.iter().map(|(shot, _)| shot)
-    }
-
-    /// The balls that stopped since this was last asked, each as its line, to send to everyone once so every screen
-    /// ends its tracer where it stopped, however many ticks a snapshot follows.
-    pub fn take_lines(&mut self) -> Vec<Line> {
-        std::mem::take(&mut self.lines)
-    }
-
-    /// What happened in the fight since this was last asked, to send to everyone once.
-    pub fn take_events(&mut self) -> Vec<Event> {
-        std::mem::take(&mut self.events)
-    }
-
-    #[must_use]
-    pub fn clock(&self) -> u64 {
-        self.clock
-    }
 }
 
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same
@@ -574,6 +547,8 @@ mod fair_tests;
 mod fight_tests;
 #[cfg(test)]
 mod foe_tests;
+#[cfg(test)]
+mod gate_tests;
 #[cfg(test)]
 mod gear_tests;
 #[cfg(test)]

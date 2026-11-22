@@ -101,7 +101,7 @@ test('the roster reads from the rules: every type it drives with its name, facti
     ranks: number[];
     right: string;
   }[];
-  assert.equal(roster.length, 20);
+  assert.equal(roster.length, 38);
   const thule = roster.find((entry) => entry.type === 12);
   assert.deepEqual(
     [thule?.name, thule?.faction_name, thule?.ranks, thule?.right],
@@ -447,6 +447,66 @@ test('a patrol’s dungeon opens from the patrol’s node file, and a patrol’s
   const snapshot = readFromRoom(room.snapshot(player));
   const seen = snapshot?.kind === 'snapshot' ? snapshot.players.find((each) => each.player === player) : undefined;
   assert.ok(seen, 'standing in the patrol');
+});
+
+test('a node’s room says why its gate shuts to a character, and to a new one', () => {
+  const room = startRoomDoor(compiled);
+  assert.equal(room.shut(0, null), '', 'no room open shuts nothing');
+  assert.equal(room.openNode(nodeFile().text), true);
+  assert.equal(room.difficulty(2), true);
+  assert.equal(room.shut(0, null), 'This place opens after the prologue.');
+  const player = room.join();
+  const kept = JSON.parse(room.character(player) ?? '{}') as { story: { prologue: boolean } };
+  kept.story.prologue = true;
+  assert.equal(room.shut(player, JSON.stringify(kept)), 'Abyss seas open at level 20.');
+  assert.equal(room.restoreCharacter(player, JSON.stringify(kept)), false, 'never given');
+});
+
+test('a run’s room opens from its ask with its revives, and what is on reads as the rules draw it', () => {
+  const room = startRoomDoor(compiled);
+  const friday = 29_919_420;
+  const drawn = JSON.parse(room.activities(friday)) as {
+    day: number;
+    week: number;
+    dayModifier: string;
+    weekAbyss: unknown;
+  };
+  assert.deepEqual([drawn.day, drawn.week, drawn.dayModifier], [20_778, 2_968, 'burn-shadow']);
+  assert.deepEqual(drawn.weekAbyss, {
+    place: 'saltworm-warrens',
+    modifiers: ['lightswitch', 'burn-divine', 'juggler'],
+    level: 30,
+    opens: 28,
+  });
+  assert.equal(room.openRun(JSON.stringify({ dungeon: { place: 'saltworm-warrens' }, tier: 2, minute: friday })), true);
+  const player = room.join();
+  room.tick();
+  assert.equal((readFromRoom(room.snapshot(player)) as { revives: number }).revives, 5);
+  assert.equal(room.openRun(JSON.stringify({ dungeon: { place: 'krakens-grotto' }, tier: 2, minute: friday })), false);
+  const laid = JSON.parse(room.layout(JSON.stringify({ place: 'krakens-grotto', name: 'Kraken’s Grotto' }))) as {
+    name: string;
+    style: string;
+  };
+  assert.deepEqual([laid.name, laid.style], ['Kraken’s Grotto', 'caverns']);
+});
+
+test('a patrol’s dungeon’s run opens only with its patrol’s file, and takes no player while the patrol is locked', () => {
+  const ask = JSON.stringify({ dungeon: { patrol: 'gullwing-vale', number: 0 }, tier: 1, minute: 29_919_420 });
+  const patrol = (locked: boolean) =>
+    JSON.stringify({ id: 'gullwing-vale', kind: 'patrol', name: 'Gullwing Vale', locked });
+  const room = startRoomDoor(compiled);
+  assert.equal(room.openRun(ask), false, 'without its patrol’s file');
+  assert.equal(room.openRun(ask, patrol(true)), true);
+  assert.deepEqual([room.join(), room.refusal()], [0, 'Gullwing Vale is locked']);
+  assert.equal(room.openRun(ask, patrol(false)), true);
+  assert.notEqual(room.join(), 0);
+});
+
+test('the gates read as the rules judge them for a level and a story', () => {
+  const room = startRoomDoor(compiled);
+  const gates = JSON.parse(room.gates(9, true)) as { day: unknown[]; weekElite: unknown };
+  assert.deepEqual(gates.day, [null, 'Elite seas open at level 10.', 'Abyss seas open at level 20.']);
+  assert.equal(gates.weekElite, 'This dungeon opens at level 24.');
 });
 
 test('an input carrying those before it is taken whole after a loss, and what the room already had is passed over', () => {

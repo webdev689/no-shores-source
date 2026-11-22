@@ -33,6 +33,8 @@ pub enum EventKind {
     ShieldBroken = 13,
     /// A player's drink healed them, the amount what it gave back.
     Healed = 14,
+    /// Every player in an Abyss run fell at once: the run starts over. Told to each player.
+    Wiped = 15,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round

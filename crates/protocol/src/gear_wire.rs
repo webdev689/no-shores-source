@@ -61,6 +61,12 @@ pub const GRANT_OFFICERS: u8 = 43;
 pub const SCAVENGE: u8 = 63;
 /// A gather let go of before it is done: E released.
 pub const STOP_GATHER: u8 = 67;
+/// The prologue played, which the room keeps with the character.
+pub const FINISH_PROLOGUE: u8 = 68;
+/// A bounty taken or turned in: its place on the board in `node`, the day of the board shown in `item`, as the gear's
+/// `day` sends it.
+pub const TAKE_BOUNTY: u8 = 69;
+pub const TURN_IN_BOUNTY: u8 = 70;
 /// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
@@ -128,6 +134,9 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
+        FINISH_PROLOGUE => Asked::Gear(Ask::FinishPrologue),
+        TAKE_BOUNTY => Asked::Gear(Ask::TakeBounty { place: node, day: u64::from(item) }),
+        TURN_IN_BOUNTY => Asked::Gear(Ask::TurnInBounty { place: node, day: u64::from(item) }),
         INFUSE => Asked::Gear(Ask::Infuse { item, fed: ask.count() }),
         RECRUIT => Asked::Gear(Ask::Recruit { faction: column, offer: node }),
         STATION => Asked::Gear(Ask::Station { officer: item, duty: duty_of(ask.slot())? }),
@@ -244,6 +253,15 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::Speak { keeper } => args = messages::AskArgs { kind: SPEAK, column: keeper, ..args },
             Ask::ChooseFragment { art, fragment } => {
                 args = messages::AskArgs { kind: CHOOSE_FRAGMENT, column: art, node: fragment, ..args };
+            }
+            Ask::FinishPrologue => args = messages::AskArgs { kind: FINISH_PROLOGUE, ..args },
+            Ask::TakeBounty { place, day } => {
+                let item = u32::try_from(day).unwrap_or(u32::MAX);
+                args = messages::AskArgs { kind: TAKE_BOUNTY, item, node: place, ..args };
+            }
+            Ask::TurnInBounty { place, day } => {
+                let item = u32::try_from(day).unwrap_or(u32::MAX);
+                args = messages::AskArgs { kind: TURN_IN_BOUNTY, item, node: place, ..args };
             }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
@@ -459,6 +477,16 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         .collect();
     let dungeons = (!dungeons.is_empty()).then(|| builder.create_vector(&dungeons));
     let quests = crate::quest_wire::quests_of(&mut builder, room, player, character);
+    let (today, this_week) = (&character.activity.today, &character.activity.this_week);
+    let cleared: Vec<u8> = gear::Difficulty::ALL
+        .into_iter()
+        .enumerate()
+        .filter(|(_, tier)| today.cleared.contains(tier))
+        .filter_map(|(number, _)| u8::try_from(number).ok())
+        .collect();
+    let cleared = Some(builder.create_vector(&cleared));
+    let bounties = crate::bounty_wire::bounties_of(&mut builder, character, room.day());
+    let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level());
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -527,6 +555,16 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         claimed: found.claimed,
         scavenged: Some(scavenged),
         dungeons,
+        prologue_done: character.story.prologue,
+        activity_day: u32::try_from(today.day).unwrap_or(u32::MAX),
+        cleared,
+        activity_week: u32::try_from(this_week.week).unwrap_or(u32::MAX),
+        week_elite: this_week.elite,
+        week_abyss: this_week.abyss,
+        boon: this_week.boon,
+        bounties: Some(bounties),
+        bounty_xp,
+        bounty_aurem,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

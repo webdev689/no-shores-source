@@ -143,10 +143,14 @@ number is one of [[Gear as Claude Shapes It]].
   [[The Whole Game Gets a Balance Pass]]. A foe of level 0 fights by combat's own numbers and those two alone.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
-  for two minutes ("Drops", below).
-- **A dungeon's cache.** When a dungeon's Reeve falls, its cache opens, and every player then in the dungeon's room
-  finds a Vestige lying before it, theirs alone, whoever struck him: sure, at the Reeve's level, in the colours a
-  Reeve's kill leaves (a boss's), and lying for them as a kill's drop does ("Drops", below; [[Dungeons]], "In the rooms").
+  for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
+  them a quarter more of its XP, rounded down, to them and to the weapon that earned it, and as much more reputation
+  as the kill's own goes ([[Factions]]) (`boon_xp`).
+- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens,
+  and every player then in the dungeon's room finds a Vestige lying before it, theirs alone, whoever struck it: sure,
+  at the end foe's level, in the colours a boss's kill leaves, and lying for them as a kill's drop does ("Drops",
+  below; [[Dungeons]], "In the rooms"). A run's first clear in its period lays a second, further out: the dungeon of
+  the day's, or the week's two's ([[Activities]], "What it pays, once").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
@@ -156,8 +160,9 @@ number is one of [[Gear as Claude Shapes It]].
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
-  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
-  serves them all within reach of its stall. The Test Ground alone hands out gear.
+  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]), and a bounty taken
+  or turned in at the bounty board's (`CounterKind::Board`, [[Activities]]); the [[Test Ground]] serves them all
+  within reach of its stall. The Test Ground alone hands out gear.
 
 ## Loadouts
 
@@ -326,15 +331,16 @@ the factions' counters are in [[Factions]].
 - **The Mage** identifies Vestiges, free.
 - **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
   ("Cosmetics").
+- A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
-  the week's (`gear::shape`, weeks counted from Monday 00:00 UTC). He sells six pieces for the week, four Legendary
-  and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold from level
-  20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
-  only from kills at the Elite and Abyss seas (Rough and Storm today): one in 33 kills at Elite, one in 17 at Abyss, and
+  the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
+  Legendary and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold
+  from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
+  only from kills at the Elite and Abyss seas: one in 33 kills at Elite, one in 17 at Abyss, and
   2 or 4 from a Boss or Miniboss; a player holds 200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
-  room steps, playing alone), whose day sets the wares and whose week sets Shape. It
-  sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
+  Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
@@ -354,9 +360,9 @@ and its art (`gear::emblems`).
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
   (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Abyss
-  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of twelve,
-  the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks and a
-  piece fully upgraded are earned as they happen.
+  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of
+  twelve, the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks
+  and a piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
   others see of it beside it (`shown`): level, Defense, the Melee loadout's Attack (the Ranged one's without one),
   the emblem worn, and each piece worn.
