@@ -136,7 +136,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   (staggered, down, drinking or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and
   up) the
   diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and
-  each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown.
+  each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
+  ship's bar in a sea fight is built of the same rings and keycaps (`combat/ringSlot.ts`; [[Interface]], "The sea
+  fight's readout").
 
 ## In the rules
 

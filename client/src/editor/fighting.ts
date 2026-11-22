@@ -207,7 +207,7 @@ export class Fighting {
       .filter(({ apart }) => apart <= LINE_REACH_M)
       .sort((one, other) => one.apart - other.apart);
     const whole = (have: number, most: number) => `${Math.ceil(have)}/${most}`;
-    // The player's own hurts and guns are the readout's plate and rose.
+    // The player's own hurts and guns are the readout's plate and its abilities' bar.
     const lines = [
       ...near.map(
         ({ captain, apart }) =>

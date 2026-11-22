@@ -23,7 +23,7 @@ import { factionSide } from '../ships/dress.ts';
 import { BOOST_KEY } from '../ships/helmKeys.ts';
 import type { BindId } from '../player/binds.ts';
 import { BINDS, type InputFrame, axis } from '../player/input.ts';
-import { boundWord } from './controls.ts';
+import { boundWord, shipKeys } from './controls.ts';
 import { hullOfCaptain, hullSails, hullWaterline, plateOverM, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import type { MarkView } from '../ships/markView.ts';
@@ -532,10 +532,10 @@ export class SeaCombat {
     return this.captains.map(bar).filter((shown) => shown !== null);
   }
 
-  /** The fight's readout at `now`: its plate and rose, the card on the nearest captain, E to board one struck
-   *  alongside, and its last volley's tally; none once the fight is over. */
+  /** The fight's readout at `now`: its plate and its abilities' bar with their keys as bound, the card on the nearest
+   *  captain, E to board one struck alongside, and its last volley's tally; none once the fight is over. */
   display(now: number): SeaFightModel | null {
-    const keys = { boardKey: boundWord('use'), braceKey: boundWord('brace') };
+    const keys = { boardKey: boundWord('use'), braceKey: boundWord('brace'), keys: shipKeys() };
     return this.naval.display(now, { boardable: this.room.mayBoard, ...keys });
   }
 

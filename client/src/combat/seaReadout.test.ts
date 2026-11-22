@@ -1,26 +1,33 @@
-// The sea fight's readout is the on-foot display's own build: the ship's plate the vitals' thin bars, the card the
-// target plate, so the sea reads as the same display.
+// The sea fight's readout is the on-foot display's own build: the ship's plate the vitals' thin bars, its abilities
+// the Arts' bar, the card the target plate, so the sea reads as the same display.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { VITAL_SIZES } from '../plus/barFrame.ts';
 import { UNDER_COMPASS } from '../plus/compass.ts';
-import type { RoseSide, SeaFightModel } from '../plus/seaFight.ts';
+import type { SeaFightModel, ShipAbility } from '../plus/seaFight.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { drawLaid } from '../ui/drawLaid.ts';
 import type { Node } from '../ui/node.ts';
 import { allOf, coloursDrawn, fakeRenderer, laidOf, wordsIn, written } from './nodes.test.ts';
 import { withMotionReduced } from './page.test.ts';
-import { boostCells, SeaFightReadout } from './seaReadout.ts';
+import { SeaFightReadout } from './seaReadout.ts';
 
-const side = (more: Partial<RoseSide> = {}): RoseSide => ({
-  fill: 1,
-  ready: true,
-  fresh: false,
-  laid: false,
-  load: 'Round',
-  left: 0,
-  ...more,
-});
+/** One of the ship's abilities, ready unless `more` says otherwise. */
+const ability = (id: string, icon: ShipAbility['icon'], name: string, more: Partial<ShipAbility> = {}) =>
+  ({
+    id,
+    icon,
+    name,
+    key: 'C',
+    state: 'ready',
+    unable: false,
+    charge: 1,
+    left: 0,
+    running: 0,
+    laid: false,
+    said: 'ready',
+    ...more,
+  }) as const satisfies ShipAbility;
 const MODEL: SeaFightModel = {
   ship: {
     name: 'Your Sloop',
@@ -28,11 +35,14 @@ const MODEL: SeaFightModel = {
     sail: 0.5,
     crew: 1,
     fire: false,
-    braced: true,
-    boost: { state: 'charging', share: 0.25 },
-    port: side(),
-    starboard: side(),
-    blow: null,
+    // Braced, its guns holding fire, and its burst recharging.
+    abilities: [
+      ability('port', 'port', 'Port broadside', { unable: true }),
+      ability('starboard', 'starboard', 'Starboard broadside', { unable: true }),
+      ability('burst', 'burst', 'Burst', { state: 'charging', charge: 0.25, left: 9 }),
+      ability('brace', 'brace', 'Brace', { state: 'active', running: 1 }),
+      ability('load', 'round', 'Round shot'),
+    ],
   },
   card: {
     name: 'Pirate Brig',
@@ -87,23 +97,46 @@ test("the ship's plate is the vitals' thin bars: Hull over Sails over Crew, each
     ],
   );
   assert.deepEqual(plate?.float && [plate.float.x, plate.float.y], [28, 14], "at the vitals' corner");
-  assert.deepEqual(wordsIn(plate), ['BOOST', 'Braced', 'Bow', 'Round', 'Round', 'Stern'], 'no words inside the bars');
   readout.lay({ length: 333, wide: true, zoom: 1 });
   const wide = labelled(readout.node(), 'Hull');
   assert.deepEqual([wide?.width, wide?.height], [333, VITAL_SIZES.wide.health], 'laid as the vitals are');
 });
 
-test("the boost ring under the ship's bars is lit as far as its burst has recharged, and says so to a reader", () => {
-  const charging = readoutOf(MODEL).node() ?? {};
-  assert.ok(labelled(charging, 'Boost recharging'));
-  assert.ok(tilesDrawn(charging).includes(`boost ${TONES.stoneMid} 0.25`), 'a quarter lit, in dim stone');
-  // Clockwise from the top: a cell just right of the top is lit, one just left of it is not.
-  const cells = boostCells(TONES.stoneMid, 0.25);
-  assert.deepEqual([cells[1 * 16 + 9], cells[1 * 16 + 6]], [TONES.stoneMid, TONES.groundTrack]);
-  if (!MODEL.ship) return;
-  const ready = readoutOf({ ...MODEL, ship: { ...MODEL.ship, boost: { state: 'ready', share: 1 } } }).node() ?? {};
-  assert.ok(labelled(ready, 'Boost ready'));
-  assert.ok(tilesDrawn(ready).includes(`boost ${TONES.brassHi} 1`), 'lit whole in brass');
+test("the plate keeps only its bars and the fire's chip: the burst, the brace and the guns stand on the ship's bar", () => {
+  const plate = (model: SeaFightModel) => labelled(readoutOf(model).node(), 'Your ship');
+  assert.deepEqual(wordsIn(plate(MODEL)), [], 'braced and recharging, yet no words on the plate');
+  assert.ok(MODEL.ship);
+  assert.deepEqual(wordsIn(plate({ ...MODEL, ship: { ...MODEL.ship, fire: true } })), ['On fire']);
+  const shown = allOf(plate(MODEL));
+  assert.equal(
+    shown.some((node) => /Boost|Braced|Bow|Stern|broadside/.test(`${node.label ?? ''} ${node.text?.words ?? ''}`)),
+    false,
+    'no boost ring, brace chip or battery rose',
+  );
+});
+
+test("the ship's bar stands at the Arts' corner at the bottom left, at each step and doubled, its abilities in order", () => {
+  const readout = readoutOf(MODEL);
+  const bar = () => labelled(readout.node(), 'Your Ship');
+  const placed = (node: Node | null) => node?.float && [node.float.at, node.float.anchor, node.float.x, node.float.y];
+  assert.deepEqual(placed(bar()), [[0, 1], [0, 1], 28, -22], '28 in and 22 up, as the Arts and weapons');
+  assert.deepEqual(
+    (bar()?.children ?? []).map((slot) => slot && slot.label?.split(' (')[0]),
+    ['Port broadside', 'Starboard broadside', 'Burst', 'Brace', 'Round shot'],
+  );
+  const ringSide = () => (bar()?.children?.[0] as Node | undefined)?.children?.[0];
+  assert.equal((ringSide() as Node | undefined)?.width, 44);
+  assert.equal(readout.reach?.right, 28 + 5 * 44 + 4 * 8);
+  readout.lay({ length: 333, wide: true, zoom: 1 });
+  assert.equal((ringSide() as Node | undefined)?.width, 66, 'the larger step');
+  assert.equal(bar()?.gap, 12);
+  readout.lay({ length: 333, wide: false, zoom: 2 });
+  assert.deepEqual(placed(bar()), [[0, 1], [0, 1], 56, -44], 'doubled past 1440p');
+  assert.equal((ringSide() as Node | undefined)?.width, 88);
+  assert.equal(readout.reach?.right, 56 + (5 * 44 + 4 * 8) * 2);
+  readout.update(null, 1);
+  assert.equal(readout.node(), null, 'gone with the readout');
+  assert.equal(readout.reach, null);
 });
 
 test("the hull's frame flashes blood low as health's does, on for the first half of each 0.9 s", () => {
@@ -212,23 +245,6 @@ test('the warning is said to a screen reader once as it comes, and again only wh
   } finally {
     page.document = was;
   }
-});
-
-test("a side's chip fills from its foot as it loads, glows gold round where the look lays it, and flashes as it comes ready", () => {
-  const rose = (model: SeaFightModel, now: number, from = 0) => {
-    const readout = readoutOf(model, from);
-    readout.update(model, now);
-    return labelled(readout.node(), 'Your ship');
-  };
-  const loading = { ...MODEL, ship: { ...MODEL.ship!, port: side({ ready: false, fill: 0.5, left: 3.2 }) } };
-  const plate = rose(loading, 0);
-  assert.ok(wordsIn(plate).includes('Round 4s'), 'its load and the seconds it still loads');
-  assert.ok(plate && coloursDrawn(plate).has(written('rgba(122,84,36,0.8)')), 'filled in brass from its foot');
-  const laid = rose({ ...MODEL, ship: { ...MODEL.ship!, port: side({ laid: true }) } }, 0);
-  assert.ok(laid && coloursDrawn(laid).has(written(TONES.brassHi)), 'edged in light brass where laid');
-  const fresh = { ...MODEL, ship: { ...MODEL.ship!, starboard: side({ fresh: true }) } };
-  const lit = (now: number) => coloursDrawn(rose(fresh, now) ?? {}).has(written(TONES.brassHi));
-  assert.deepEqual([lit(0.1), lit(0.25), lit(0.4), lit(0.6)], [false, true, false, true], 'twice, in steps');
 });
 
 test("the tally says the last volley under the view's middle, a miss dimmed", () => {

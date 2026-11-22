@@ -12,6 +12,7 @@ import {
   cellsOf,
   controlWords,
   doesFor,
+  shipKeys,
   withKey,
 } from './controls.ts';
 import { linesOf } from './seaWord.ts';
@@ -81,6 +82,14 @@ test('each row says what it does in a few words, for the keys and the pad', () =
 test("a prompt names a control's first key, or the pad's button, as last played", () => {
   assert.deepEqual([boundWord('use', 'keys'), boundWord('use', 'pad'), boundWord('ashore', 'pad')], ['E', 'X', '']);
   assert.deepEqual([boundCap('confirm', 'keys'), boundCap('confirm', 'pad')], ['Enter', 'pad:A']);
+});
+
+test("the ship's bar shows the aim, the burst, the brace and the load's step as bound, the wheel where no key steps it", () => {
+  assert.deepEqual(shipKeys('keys', DEFAULTS), { aim: 'Right button', burst: 'Shift', brace: 'C', load: 'Wheel' });
+  assert.deepEqual(shipKeys('pad', DEFAULTS), { aim: 'pad:LT', burst: 'pad:LS', brace: 'pad:B', load: 'pad:Right' });
+  const bound = rebind(DEFAULTS, { id: 'shotNext', device: 'keys', place: 0 }, 'x').binds ?? DEFAULTS;
+  const braced = rebind(bound, { id: 'brace', device: 'keys', place: 0 }, 'v').binds ?? bound;
+  assert.deepEqual([shipKeys('keys', braced).load, shipKeys('keys', braced).brace], ['X', 'V']);
 });
 
 test("a press names its control's key as bound now, on the keys or the pad played last, and none where it has none", () => {
