@@ -408,7 +408,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
   strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
-  under its rule, 56 px down: a public event's banner ([[Public Events]]), then a boss's bar, then the target's plate.
+  under its rule, 56 px down: a public event's banner ([[Public Events]]), or in an Elite Dungeon its encounters'
+  ([[Dungeons]], "Encounters"), then a boss's bar, then the target's plate.
   A view too narrow for health's bar to stand 150 px long beside the compass stands the whole column under the vitals
   instead. On foot past 1440p the whole column (the compass, the banner, the boss bar and the target's plate) stands
   at twice its size, as the corners do. At sea it marks each hostile

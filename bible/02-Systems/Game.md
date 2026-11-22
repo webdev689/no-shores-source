@@ -308,7 +308,8 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   stands a player out of it). A company member in one is not joined from the Roster: "They are across the sea.".
 - **On foot inside.** The player is predicted on the dungeon's own ground, as its room judges bodies: the fight's door
   is handed the dungeon's ask (`fighter_dungeon`), which keeps its rock, jambs and pillars as walls a body stays
-  0.35 m off and cannot climb, with no course; the movement door finds the floor at 0 m. The camera keeps short of the
+  0.35 m off and cannot climb, and for a course an Elite Dungeon's Ascents' pads (none in any other); the movement
+  door finds the floor at 0 m. The camera keeps short of the
   rock beside each open cell and under the ceiling over it, and the shots stop on the rock. The place's name on the heads-up
   display is the dungeon's, over "Dungeon" and the island's name. Foes are never asked of a dungeon's room.
 - **Going out.** Within 2.5 m of the exit door E offers "Leave", and within 2.5 m of the return portal on the end
@@ -317,6 +318,9 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   player went in by, online its address with `?entrance=<number>`, alone the node's room opened again in the page and
   joined with `room_join_at`. The player stands 1.5 m before the entrance's door, facing away from it; online the
   room keeps them there once it keeps their character as come out of that dungeon, else it stands them at a spawn.
+- **An Elite Dungeon's encounters.** Its seals, its pads and drowned floors, the Court's anchors and the Reckoning's
+  light are drawn and its banner shown as [[Dungeons]] says ("Encounters", "In the Game"), from the layout's plan and
+  each snapshot's `encounter`, held with the cache (`heardRun`).
 - **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives
   left", "1 revive left", "No revives left"). When the room says this player's company fell (`Wiped`, `heardRun`),
   the page takes them out by the way they came in, even with the menu open, the veil saying "Your company fell.

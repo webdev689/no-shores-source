@@ -42,3 +42,39 @@ test('a dungeon names its patrol, and an ask the door cannot read is null', () =
   assert.match(laid.name, /^The \w+ of the Saltgrass Downs$/);
   assert.equal(door.dungeon('saltgrass-downs', 'The Saltgrass Downs', 1.5), 'null');
 });
+
+/** The 18 Elite Dungeons, island by island, and the hash the room-wasm crate pins for their answers, each with its
+ *  encounters (crates/room-wasm/src/dungeon_door.rs ELITE_HASH). */
+const ELITE_PLACES = [
+  'krakens-grotto',
+  'pearl-tomb',
+  'cinder-deep',
+  'hollow-crypt',
+  'black-tide-caverns',
+  'pale-undercroft',
+  'forsaken-cistern',
+  'sandworn-vault',
+  'smugglers-labyrinth',
+  'silt-barrows',
+  'deepwater-vault',
+  'coral-halls',
+  'barrow-halls',
+  'saltworm-warrens',
+  'mire-hollows',
+  'rotwater-sewers',
+  'frozen-sepulchre',
+  'brine-catacombs',
+] as const;
+const ELITE_HASH = '25351a6c05217df4';
+
+test("every Elite Dungeon's encounters laid through WebAssembly are the bytes the crate lays natively", () => {
+  const door = startRoomDoor(compiled);
+  const text = ELITE_PLACES.map((place) => door.layout(JSON.stringify({ place, name: place }))).join('');
+  assert.equal(fnv1a(new TextEncoder().encode(text)), ELITE_HASH);
+  for (const place of ELITE_PLACES) {
+    const laid = JSON.parse(door.layout(JSON.stringify({ place, name: place }))) as {
+      encounters: { seals: unknown[]; anchors: unknown[] };
+    };
+    assert.ok(laid.encounters.seals.length >= 2 && laid.encounters.anchors.length === 3, place);
+  }
+});

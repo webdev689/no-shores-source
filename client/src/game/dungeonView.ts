@@ -1,6 +1,6 @@
-// A dungeon drawn on WebGPU: its floor's mesh, dressed in its styles' pieces and landmarks, and its cache in its
-// pictures, painted by the city's painter, lit by the lights nearest the eye. A Drawer the dungeon's scene draws into
-// its pass.
+// A dungeon drawn on WebGPU: its floor's mesh, dressed in its styles' pieces and landmarks and an Elite Dungeon's
+// encounters, its drowned floors' water while their seals hold, and its cache in its pictures, painted by the city's
+// painter, lit by the lights nearest the eye. A Drawer the dungeon's scene draws into its pass.
 import { CITY_BUFFER_USAGE } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
 import { CityPainter } from '../city/painter.ts';
@@ -17,6 +17,8 @@ import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.t
 import { dressingOf } from './dungeonDressing.ts';
 import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS } from './dungeonLight.ts';
 import { dungeonMesh } from './dungeonMesh.ts';
+import { drownedNow, layEncounters, waterMesh } from './encounterMesh.ts';
+import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { ModulePack } from './dungeonModules.ts';
 import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
 import { layModel } from './entrances.ts';
@@ -92,6 +94,9 @@ type Drawn = {
   readonly floor: Buffers;
   chest: Buffers | null;
   shown: Cache | null;
+  /** The still water over the Ascents' floors whose seals hold, and which those are, as last built. */
+  water: Buffers | null;
+  drowned: string;
   /** The lights the walls were last drawn by, the nearest the eye: the figures are lit by the same. */
   nearest: readonly Light[] | null;
 };
@@ -151,6 +156,7 @@ export class DungeonView {
         });
         for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
         dressing.lay(mesh);
+        layEncounters(mesh, layout);
       },
       dressing,
     );
@@ -210,6 +216,8 @@ export class DungeonView {
       floor,
       chest: null,
       shown: null,
+      water: null,
+      drowned: '',
       nearest: null,
     };
   }
@@ -225,6 +233,20 @@ export class DungeonView {
     drawn.shown = cache;
     for (const buffer of [drawn.chest?.vertices, drawn.chest?.indices]) buffer?.destroy();
     drawn.chest = cache ? this.buffersOf(chestMesh(cache, drawn.wood), drawn.book) : null;
+  }
+
+  /** An Elite Dungeon's encounters as the room last said: its drowned floors' water built again only as a seal over
+   *  one breaks or the room says it holds again. */
+  setEncounter(seen: EncounterSeen | null): void {
+    const drawn = this.drawn;
+    if (!drawn) return;
+    const drowned = drownedNow(drawn.layout, seen);
+    const key = drowned.join(',');
+    if (key === drawn.drowned && (drawn.water !== null) === drowned.length > 0) return;
+    drawn.drowned = key;
+    for (const buffer of [drawn.water?.vertices, drawn.water?.indices]) buffer?.destroy();
+    const water = waterMesh(drawn.layout, drowned);
+    drawn.water = water ? this.buffersOf(water, drawn.book) : null;
   }
 
   /** The light a figure standing at a point is lit by at `time`, as the walls round it are: the lights they were last
@@ -273,7 +295,7 @@ export class DungeonView {
     device.queue.writeBuffer(drawn.view, 0, view);
     pass.setPipeline(this.pipeline);
     pass.setBindGroup(0, drawn.group);
-    for (const buffers of [drawn.floor, drawn.chest]) {
+    for (const buffers of [drawn.floor, drawn.chest, drawn.water]) {
       if (!buffers) continue;
       pass.setVertexBuffer(0, buffers.vertices);
       pass.setIndexBuffer(buffers.indices, 'uint32');
@@ -294,6 +316,8 @@ export class DungeonView {
       drawn.floor.indices,
       drawn.chest?.vertices,
       drawn.chest?.indices,
+      drawn.water?.vertices,
+      drawn.water?.indices,
     ])
       buffer?.destroy();
     this.drawn = null;

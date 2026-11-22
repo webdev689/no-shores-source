@@ -39,6 +39,7 @@ struct Now {
     cache: Option<[f64; 5]>,
     revives: Option<u8>,
     public: Option<PublicSeen>,
+    encounter: Option<room::encounters::EncounterSeen>,
 }
 
 #[derive(Debug, Default)]
@@ -90,6 +91,7 @@ impl Sent {
             cache: room.cache(),
             revives: room.revives(),
             public: room.public_seen(),
+            encounter: room.encounter_seen(),
         };
         let own: BTreeMap<_, _> = now
             .players
@@ -180,6 +182,7 @@ impl Sent {
             cache: now.cache.as_ref().map_or(&[], |cache| cache.as_slice()),
             revives: now.revives,
             public,
+            encounter: now.encounter.as_ref(),
         })
     }
 }

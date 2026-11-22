@@ -255,6 +255,7 @@ fn snapshot<'snapshot>(
         cache: &[],
         revives: None,
         public: Some(public),
+        encounter: Some(&crate::encounter_wire_tests::ENCOUNTER),
     }
 }
 

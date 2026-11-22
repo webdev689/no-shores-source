@@ -91,11 +91,11 @@ test("a point is named for the dungeon's room it stands in, and nothing in a cor
 });
 
 test('an Abyss run’s revives are heard from each snapshot, and its wipe once it names this player', () => {
-  const held = { revives: -1, wiped: false };
-  heardRun(held, { revives: 5, events: [] }, 7);
-  assert.deepEqual(held, { revives: 5, wiped: false });
-  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 8 } as FightEvent] }, 7);
+  const held = { revives: -1, wiped: false, encounter: null };
+  heardRun(held, { revives: 5, events: [], encounter: null }, 7);
+  assert.deepEqual(held, { revives: 5, wiped: false, encounter: null });
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 8 } as FightEvent], encounter: null }, 7);
   assert.equal(held.wiped, false, 'another player’s word');
-  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent] }, 7);
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent], encounter: null }, 7);
   assert.equal(held.wiped, true);
 });

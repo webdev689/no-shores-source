@@ -56,7 +56,7 @@ pub extern "C" fn room_qa_move(x: f64, y: f64) {
 edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, refusal: None, .. } => room.join(),',
      '        Opened::Land { room, refusal: None, .. } => dungeon_door::qa_entrance().and_then(|number| room.join_at(number)).or_else(|| room.join()),')
 if os.environ.get('QA_NOFOES') == '1':
-    edit('crates/room/src/dungeon_room.rs', '        room.stand_dungeon_garrison(&dungeon, levels);', '        let _ = levels;')
+    edit('crates/room/src/dungeon_room.rs', '        room.stand_dungeon_garrison(dungeon, levels, end);', '        let _ = (levels, end);')
 PY
 CARGO_TARGET_DIR="$out/target" cargo build -q -p room-wasm --target wasm32-unknown-unknown --release
 cp "$out/target/wasm32-unknown-unknown/release/room_wasm.wasm" "$out/room-qa.wasm"

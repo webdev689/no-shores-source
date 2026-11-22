@@ -79,6 +79,34 @@ export interface DungeonLayout {
   /** The landmarks' lights: each x, y, z and its kind, the fixtures' kinds and then 6 spirit, 7 daylight, 8 water and
    *  9 rune. */
   readonly glows: readonly (readonly [number, number, number, number])[];
+  /** An Elite Dungeon's encounters, as its room lays them; none in any other dungeon. */
+  readonly encounters?: EncounterLayout;
+}
+
+/** One seal of an Elite Dungeon: its kind (network/encounterMessages.ts `SEAL_KIND`), its room, its pieces (x, y, z:
+ *  a Litany's runes in the order they light, a Weighing's plates, an Ascent's seal stone, a Holdfast's relic), its
+ *  pads (min x, min y, max x, max y, top), the cells its drowned floor covers, and its doorways' middles. */
+export interface SealLayout {
+  readonly kind: number;
+  readonly room: number;
+  readonly pieces: readonly Triple[];
+  readonly pads: readonly (readonly [number, number, number, number, number])[];
+  readonly drowned: readonly number[];
+  readonly doors: readonly (readonly [number, number])[];
+}
+
+/** An Elite Dungeon's encounters as `room_dungeon` answers them: its seals in walk order, the Court's anchors, and
+ *  how near a piece's middle a player stands on it (m), as the room judges. */
+export interface EncounterLayout {
+  readonly seals: readonly SealLayout[];
+  readonly anchors: readonly Triple[];
+  readonly reach: {
+    readonly rune: number;
+    readonly plate: number;
+    readonly relic: number;
+    readonly anchor: number;
+    readonly light: number;
+  };
 }
 
 export const ROCK = -2;
@@ -163,9 +191,18 @@ export function ceilingAt(layout: DungeonLayout, x: number, y: number): number |
   return openAt(layout, column, row) ? (layout.ceilings[row * layout.columns + column] ?? null) : null;
 }
 
-/** The doorways' jambs and the pillars, as blocks, each standing on the dungeon's one floor at 0 m. */
+/** The doorways' jambs, the pillars and the solids, and an Elite Dungeon's Ascents' pads, as blocks, each standing on
+ *  the dungeon's one floor at 0 m. */
 export function courseOf(layout: DungeonLayout): Block[] {
-  return layout.boxes.map(([minX, minY, maxX, maxY, top]) => ({ minX, minY, maxX, maxY, top, bottom: 0 }));
+  const pads = (layout.encounters?.seals ?? []).flatMap((seal) => seal.pads);
+  return [...layout.boxes, ...pads].map(([minX, minY, maxX, maxY, top]) => ({
+    minX,
+    minY,
+    maxX,
+    maxY,
+    top,
+    bottom: 0,
+  }));
 }
 
 /** The course and every cell of rock beside an open one, standing over the ceilings: what the camera keeps short of

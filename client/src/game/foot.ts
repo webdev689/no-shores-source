@@ -469,6 +469,7 @@ export class Foot {
     const shownPublic = this.publicView.frame(fight.public, publicEvents, chests, seen, clock, dropped.marks, floor, {
       quiet: paused,
       held: fight.publicHeld,
+      encounter: { layout: this.dungeon?.layout, seen: this.held.encounter },
     });
     const marks = effects.marks(fight, seconds, {
       eye: shot.eye,

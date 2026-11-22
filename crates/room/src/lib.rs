@@ -22,6 +22,8 @@ mod deck_fight;
 mod drops;
 pub mod dungeon_ground;
 mod dungeon_room;
+pub mod encounter_plan;
+pub mod encounters;
 mod entrances;
 pub mod fleet;
 mod floor;
@@ -209,6 +211,8 @@ pub struct Room {
     pub(crate) inert_ways: BTreeMap<FighterId, navmesh::Way>,
     /// Its node and places, and the groups the houses' roads stood here (`quests.rs`).
     pub(crate) quests: quests::QuestGround,
+    /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
+    pub(crate) encounters: Option<Box<encounters::Encounters>>,
 }
 
 impl Room {
@@ -284,6 +288,7 @@ impl Room {
             inert_ways: BTreeMap::new(),
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
+            encounters: None,
         }
     }
 
@@ -403,6 +408,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_encounters();
         self.keep_public();
         self.keep_cache();
         self.keep_quests();

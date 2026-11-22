@@ -65,8 +65,9 @@ impl Room {
     }
 
     /// Starts an Abyss run over: every player is told Wiped; every foe, its way and the board's memory of it are
-    /// gone; shots, blows waiting, spells and drops are dropped; every post stands again; the cache shuts and the
-    /// revives are back at REVIVES; and every player stands whole at the way in.
+    /// gone; shots, blows waiting, spells and drops are dropped; every post stands again, an Elite Dungeon's seals kept
+    /// as they were broken and its Court started over (`encounters.rs`); the cache shuts and the revives are back at
+    /// REVIVES; and every player stands whole at the way in.
     pub(crate) fn start_over(&mut self) {
         let players: Vec<PlayerId> = self.players.keys().copied().collect();
         for &id in &players {
@@ -78,9 +79,11 @@ impl Room {
         self.pending.clear();
         self.spells.list.clear();
         self.drops.clear();
+        self.drop_waves();
         for post in 0..self.garrison.len() {
             self.stand_post(post);
         }
+        self.encounters_start_over();
         if let Some(cache) = self.cache.as_mut() {
             cache.open = false;
         }

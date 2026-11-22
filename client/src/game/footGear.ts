@@ -85,7 +85,7 @@ export function useAt(
 }
 
 /** A beam of light standing `height` over `base`, in two crossed planes so it is seen from every side, fading upward. */
-function markBeam(
+export function markBeam(
   out: number[],
   base: readonly number[],
   { height, half }: { readonly height: number; readonly half: number },

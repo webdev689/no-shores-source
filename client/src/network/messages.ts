@@ -9,6 +9,7 @@ import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/moveme
 import { unpack } from './pack.ts';
 import { withOthers } from './seaFight.ts';
 import { type PublicEvent, publicOf } from './publicMessages.ts';
+import { type EncounterSeen, encounterOf } from './encounterMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
@@ -253,6 +254,8 @@ export type FromRoomMessage =
       readonly spells: readonly SeenSpell[];
       /** A zone's public events; null in a room whose zone holds none. */
       readonly public: PublicEvent | null;
+      /** An Elite Dungeon's encounters; null in any other room. */
+      readonly encounter: EncounterSeen | null;
       /** On land, the tick of the snapshot this one builds on (0 for none), and the players and foes gone since it:
        *  the players and foes it holds are those that changed since (`snapshots.ts` makes it whole again). */
       readonly base: bigint;
@@ -542,6 +545,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       fights,
       spells: spellsOf(snapshot),
       public: publicOf(snapshot),
+      encounter: encounterOf(snapshot),
       base: snapshot.base(),
       gonePlayers: Array.from(snapshot.gonePlayersArray() ?? []),
       goneFoes: Array.from(snapshot.goneFoesArray() ?? []),
