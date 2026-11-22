@@ -267,10 +267,11 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             lay_on(ship, at.pose, at.arms, side, at.guns.load, target)
         };
         // Fired as they judge it: as far across the mark as they misjudge it, the ship swinging under them as they
-        // touch off, and as high or low as they misjudge their elevation.
+        // touch off, but never further off its beam than it ever fires (`BEAR_DEG`), so the broadside stays square
+        // and no ball flies near its bow or stern; and as high or low as they misjudge their elevation.
         let misjudged = |share: f64| {
             let laid = lay_k(share);
-            let off = libm::atan2(judged.across_m, range.max(1.0));
+            let off = libm::atan2(judged.across_m, range.max(1.0)).clamp(-BEAR_DEG * DEG, BEAR_DEG * DEG);
             let (sine, cosine) = (libm::sin(off), libm::cos(off));
             let dir = [laid.dir[0] * cosine - laid.dir[1] * sine, laid.dir[0] * sine + laid.dir[1] * cosine];
             // Never past what its carriage depresses or raises to.

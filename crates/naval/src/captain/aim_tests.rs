@@ -121,20 +121,24 @@ fn its_lay_is_long_or_short_by_its_crews_error() {
 }
 
 #[test]
-fn a_volley_flies_as_far_across_its_mark_as_its_gunners_misjudge_it() {
+fn a_volley_flies_as_far_across_its_mark_as_its_gunners_misjudge_it_within_its_bearing() {
     // Square off its beam is due east; each volley flies off it by as much as its gunners misjudge the mark across
-    // their line, up to their whole error 60 m off: some pass its bow or stern, 10.6 m either side of its middle.
-    let most = JUDGE_ACROSS_M * (1.0 - PIRATE_SLOOP.skill);
-    let mut wide = 0;
+    // their line, but never more than 13 degrees off its beam (10.6 m at 60 m off, a Sloop's half length abeam).
+    let (mut wide, mut held) = (0, 0);
     for seed in 1..60 {
         let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
         deck.step(0.0, &target_east(60.0));
+        let judged = deck.run.judged[Side::Starboard.index()].across_m;
         let Some(lay) = deck.step(1.4, &target_east(60.0)).fire else { panic!("seed {seed} fires") };
+        let off = libm::atan2(lay.dir[1], lay.dir[0]) / DEG;
+        assert!(off.abs() <= BEAR_DEG + 1e-9, "{seed}: {off} degrees off its beam");
         let across = 60.0 * lay.dir[1] / lay.dir[0];
-        assert!(across.abs() <= most + 1e-6, "{seed}: {across} m across");
+        let most = 60.0 * libm::tan(BEAR_DEG * DEG);
+        assert!((across - judged.clamp(-most, most)).abs() < 1e-6, "{seed}: {across} m across, judged {judged}");
         wide += u32::from(across.abs() > 10.6);
+        held += u32::from(off.abs() >= BEAR_DEG - 1e-9);
     }
-    assert!((5..40).contains(&wide), "{wide} of 59 volleys pass wide of a Sloop abeam");
+    assert!((5..40).contains(&wide) && held > 0, "{wide} of 59 volleys pass wide of a Sloop abeam, {held} at 13°");
 }
 
 #[test]

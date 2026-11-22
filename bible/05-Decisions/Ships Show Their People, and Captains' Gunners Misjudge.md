@@ -10,7 +10,7 @@ status: in force
 ## What it settles
 
 - Every other ship carries its crew on deck and its captain, seen as the player's own hands are.
-- Captains' ships hit far less often: a Minor's balls one time in seven, a Boss's one in two.
+- Captains' ships hit less often: a Minor's balls 14 to 33 times in a hundred, a Boss's about 56.
 
 ## Claude's calls
 
@@ -24,8 +24,8 @@ status: in force
 | Struck, sinking, sunk | Struck, the hands stay and the captain stands off the wheel; going down or sunk, no one aboard | An empty wheel reads as struck |
 | Guns run out | Half the hands seen go to that side's upper guns, one a gun, facing out | The tell is seen on deck as well as at the ports |
 | How far they are drawn | While a figure stands 4 or more pixels tall; at most 40 figures a frame on other ships, nearest first | Smaller is never seen; the cap keeps the cards bounded |
-| What the gunners misjudge | Each volley, drawn as its side runs out: where the mark stands across their line (up to 80 m at the mark), its speed (up to 80%) and course (up to 40°) as they lead it, their elevation (up to 3°), at their whole want of skill and a Major's rank, scaled by both, most often small | Their lay was exact: the mark's true way, a gate that let fire only what would strike, and errors too small to tell at 40 m, where a Sloop abeam spans 30°. Misjudging across the mark misses at any range |
+| What the gunners misjudge | Each volley, drawn as its side runs out: where the mark stands across their line (up to 80 m at the mark), its speed (up to 80%) and course (up to 40°) as they lead it, their elevation (up to 3°), at their whole want of skill and a Major's rank, scaled by both, most often small | Their lay was exact: the mark's true way, a gate that let fire only what would strike, and errors too small to tell at 40 m, where a Sloop abeam spans 30°. The miss across is held within the 13° off its beam a ship fires within, so the broadside stays square ([[Ship Guns Keep Square Broadsides]]) |
 | The way they lead on | The mark's way as they last saw it, smoothed over a second | A ship that comes about is led where it was going, as a gunner would |
-| How often they strike | Against a Sloop sailing on or weaving, its hull: a Minor's balls about one time in seven, a Major's one in three, an Elite's to a Boss's about one in two; before, 58 to 85% at every rank | "Insane" was nearly every ball landing; a higher rank still shoots better |
+| How often they strike | Against a Sloop sailing on or weaving, its hull: a Minor's balls 14 to 33 in a hundred (0.3 to 1.2 hull hits a minute), a Major's about half (1.5 to 8 a minute), an Elite's to a Boss's 44 to 64 in a hundred (5 to 34 a minute); on `main`, 56 to 86 in a hundred (6 to 40 a minute) | "Insane" was nearly every ball landing; a higher rank still shoots better. Whether this is few enough is the owner's to say |
 
 Links: [[Naval Combat]], [[Game]], [[Crew]].

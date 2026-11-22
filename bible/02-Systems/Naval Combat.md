@@ -205,9 +205,11 @@ so they never tack.
   ([[Ships Show Their People, and Captains' Gunners Misjudge]]): where the mark stands across their line as they fire
   (up to 80 m at the mark), its speed (up to 80%) and course (up to 40°) as they lead it, and their elevation (up to
   3°), each at their whole want of skill and a Major's rank, scaled by both, and most often small (the mean of two
-  draws). The volley flies wide by what they misjudge across the mark, so some pass a ship's bow or stern at any
-  range. Against a Sloop sailing on or weaving, a Minor's balls strike its hull about one time in seven, a Major's
-  one in three, an Elite's to a Boss's about one in two (`captain_gunnery`). Their misjudged elevation never passes
+  draws). The volley flies wide by what they misjudge across the mark, as the ship swings under them, but never more
+  than the 13° off its beam it ever fires within (`BEAR_DEG`), so the broadside stays square
+  ([[Ship Guns Keep Square Broadsides]]). Against a Sloop sailing on or weaving, a Minor's balls strike its hull 14 to
+  33 times in a hundred (0.3 to 1.2 hull hits a minute), a Major's about half (1.5 to 8), an Elite's to a Boss's 44 to
+  64 in a hundred (5 to 34 a minute) (`captain_gunnery`, six fights of 4 minutes a rank). Their misjudged elevation never passes
   what their carriage depresses or raises to. One run out too long unfired, or that loses its mark, is run in. They
   never fire on a wreck.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
@@ -713,6 +715,9 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
 
 ## Limits
 
+- A captain's odds and the hulls' hull points (`captain::odds::hit_share_at`) count its gunners' scatter and window,
+  not what they misjudge each volley, so a captain reckons itself a better shot than it is when it chooses to fight
+  or run, and each hull's hull points are scaled to an exact gunner's fire.
 - Every captain sails their rank's hull, the Tithe's and the pirates' alike; there is no iron ram bow (the Tithe Ram)
   and no Fluyt yet, and no other classes.
 - A player's view of a fight shows its captains; the other players' Sloops in it are drawn from the sea's ships, where

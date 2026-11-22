@@ -78,8 +78,8 @@ fn captains_miss_often_and_a_higher_rank_less() {
     for weaving in [false, true] {
         let [minor, major, boss] =
             [share(Rank::Minor, weaving), share(Rank::Major, weaving), share(Rank::Boss, weaving)];
-        assert!(minor < 0.4 && major < 0.45 && boss < 0.6, "weaving {weaving}: {minor} {major} {boss}");
-        assert!(boss > minor && boss > 0.25, "weaving {weaving}: {minor} {boss}");
+        assert!(minor < 0.4 && major < 0.65 && boss < 0.7, "weaving {weaving}: {minor} {major} {boss}");
+        assert!(minor < major && minor < boss && boss > 0.25, "weaving {weaving}: {minor} {major} {boss}");
     }
 }
 
@@ -90,7 +90,11 @@ fn measure_struck_share_by_rank() {
         for weaving in [false, true] {
             let (struck, fired) = struck_share(rank, weaving, 4, 6);
             let share = f64::from(struck) / f64::from(fired.max(1));
-            eprintln!("{rank:?} weaving {weaving}: {struck} of {fired} balls struck ({:.0}%)", share * 100.0);
+            let a_minute = f64::from(struck) / 24.0;
+            eprintln!(
+                "{rank:?} weaving {weaving}: {struck} of {fired} balls struck ({:.0}%), {a_minute:.1} a minute",
+                share * 100.0
+            );
         }
     }
 }
