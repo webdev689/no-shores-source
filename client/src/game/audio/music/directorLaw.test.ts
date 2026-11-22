@@ -283,3 +283,15 @@ test("the wreck's fights play the Boarding's first part, tense at least, until T
   ]);
   assert.deepEqual(atSea.cue, { kind: 'sea', song: 'storm' }, "the fight at sea is the sea's own");
 });
+
+test("a public event's climax plays the boss score while it stands", () => {
+  const warden = foe({ rank: 4, name: 'The Warden of the Fissure', alert: 2, engaged: true });
+  assert.equal(run([{ ...calm, foes: [warden] }]).cue.kind, 'boss');
+  assert.equal(run([{ ...calm, foes: [{ ...warden, name: 'Grimwald' }] }]).cue.kind, 'family', 'a plain Miniboss');
+});
+
+test('on the ground of a running event the mood holds at least as the event asks', () => {
+  assert.equal(run([{ ...calm, least: 'tension' }]).mood, 'tension');
+  assert.equal(run([{ ...calm, least: 'peak' }]).mood, 'peak');
+  assert.equal(run([{ ...calm, foes: [foe({ engaged: true, alert: 2 })], least: 'tension' }]).mood, 'combat');
+});

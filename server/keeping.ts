@@ -302,3 +302,18 @@ export class Keeper {
     if (body !== null) await characters.save(held.account, held.holder, body).catch(() => false);
   }
 }
+
+/** Lets a player go from a room: their chests are opened for them, what still lies for them goes to their mail, then
+ *  their character's last save reads it, and only then does the room let them go. `guarded` runs a call into the room,
+ *  catching a fault in it. */
+export function partFrom(
+  room: { parting(player: number): void; mailLying(player: number): void; leave(player: number): void },
+  keeper: Pick<Keeper, 'leave'> | null,
+  player: number,
+  guarded: (call: () => void) => void,
+): void {
+  guarded(() => room.parting(player));
+  guarded(() => room.mailLying(player));
+  void keeper?.leave(player);
+  guarded(() => room.leave(player));
+}

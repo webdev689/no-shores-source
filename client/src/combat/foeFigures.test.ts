@@ -9,6 +9,7 @@ import { rosterOf } from '../rules/roster.ts';
 import type { Fighting, KeptFoe } from './fighting.ts';
 import { Flashes } from './flashes.ts';
 import { FoeFigures } from './foeFigures.ts';
+import { latticeWaves } from './latticeLooks.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const roster = rosterOf(
@@ -60,6 +61,21 @@ test('a foe stands in its type’s dress where the room saw it, flashing once st
   assert.deepEqual([placed?.x, placed?.y, placed?.dress.outfit.right], [3, -4, 'sword_iron']);
   const [marked] = figures.marked(fightWith(3, -4, 10));
   assert.deepEqual([marked?.name, marked?.faction, marked?.view.x], ['Collector', 'The Grey Tithe', 3]);
+});
+
+test('a foe the room names (a Warden, Marrow, the growth) is marked by its own name', () => {
+  const fight = fightWith(3, -4, 10);
+  const kept = fight.foes.get(7);
+  if (kept) fight.foes.set(7, { ...kept, name: 'Reeve Ancel Marrow, the Tithe’s Hand' });
+  const [marked] = new FoeFigures(roster).marked(fight);
+  assert.deepEqual([marked?.name, marked?.faction], ['Reeve Ancel Marrow, the Tithe’s Hand', 'The Grey Tithe']);
+});
+
+test('the Fissure’s growth, a foe the room strikes, stands as its crystal alone: no figure is drawn for it', () => {
+  const fight = Object.assign(fightWith(3, -4, 10), {
+    publicHeld: { marks: [{ kind: 2, id: 7, at: [3, -4, 0], health: 1, state: 2 }] },
+  }) as unknown as Fighting;
+  assert.deepEqual(new FoeFigures(roster).cards(fight, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes()), []);
 });
 
 test('a foe the room no longer holds is let go, and the forge forgets its last card', () => {
@@ -232,4 +248,77 @@ test('a foe dressed in its own clothes is drawn in them, with its type’s weapo
   assert.notDeepEqual(own, typeDress);
   assert.deepEqual([own?.race, own?.body, own?.outfit.garments], ['felid', 'female', look.outfit.garments]);
   assert.deepEqual([own?.outfit.right, own?.outfit.left, own?.outfit.drawn], [crew.right, crew.left, true]);
+});
+
+/** A Lattice Husk (type 39) the room saw at the origin, doing `action`, beside the roster's own types. */
+function huskFight(action: KeptFoe['view']['action'] = { kind: 'idle' } as KeptFoe['view']['action']) {
+  const fight = fightWith(0, 0, 10);
+  const kept = fight.foes.get(7);
+  if (!kept) throw new Error('no foe');
+  const foe = { ...kept, type: 39, faction: 3, view: { ...kept.view, action } };
+  return { ...fight, foes: new Map([[7, foe]]) } as unknown as Fighting;
+}
+const latticeRoster = [
+  ...roster,
+  {
+    type: 39,
+    name: 'Husk',
+    faction: 3,
+    factionName: 'The Lattice',
+    domain: 'land',
+    role: 1,
+    ranks: [1],
+    right: null,
+    left: null,
+  },
+];
+
+test('a Lattice foe whose pictures are not published is drawn as a plain figure', () => {
+  const figures = new FoeFigures(latticeRoster);
+  const asked: string[] = [];
+  const unpublished = {
+    ...forge,
+    draws: (body: string) => body !== 'husk',
+    card: (...[, dress]: Parameters<Cards['card']>) => (asked.push(dress.body), card),
+  } as unknown as Cards;
+  const [drawn] = figures.cards(huskFight(), unpublished, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+  assert.deepEqual(asked, ['male']);
+  assert.ok(drawn, 'drawn, not left out');
+});
+
+test('a Lattice foe with its pictures plays its own moves, and dying fades as its wave bursts', () => {
+  const figures = new FoeFigures(latticeRoster);
+  const asked: string[] = [];
+  const published = {
+    ...forge,
+    card: (...[, dress, anim]: Parameters<Cards['card']>) => (asked.push(`${dress.body} ${anim}`), card),
+  } as unknown as Cards;
+  figures.cards(huskFight(), published, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+  assert.deepEqual(asked, ['husk husk_idle']);
+  const dead = huskFight({ kind: 'dead', elapsed: 1 } as KeptFoe['view']['action']);
+  const fading = figures.cards(dead, published, { x: 0, y: 5 }, 1, 1, 1 / 60, new Flashes())[0]?.dissolve;
+  assert.ok(fading && fading.share < 0.1, 'at once, no fall first');
+  const later = figures.cards(dead, published, { x: 0, y: 5 }, 1.15, 1, 1 / 60, new Flashes())[0]?.dissolve;
+  assert.ok(later && later.share > 0.4 && later.share < 1, 'faded as the wave takes it');
+  assert.equal(figures.cards(dead, published, { x: 0, y: 5 }, 2, 1, 1 / 60, new Flashes()).length, 0, 'gone');
+});
+
+test('a Fissure’s first wave into a room empty of foes climbs out of its wave; foes there as the room came do not', () => {
+  const fissure = { kind: 1, phase: 1, ground: [0, 0, 0], radius: 30 };
+  const bursts: boolean[] = [];
+  const burst = latticeWaves.burst.bind(latticeWaves);
+  latticeWaves.burst = (...asked) => void bursts.push(asked[4] ?? false);
+  try {
+    const empty = { foes: new Map(), roomTick: 10, joins: 1, own: {}, public: fissure } as unknown as Fighting;
+    const come = (fight: Fighting) => ({ ...fight, joins: 1, own: {}, public: fissure }) as unknown as Fighting;
+    const figures = new FoeFigures(latticeRoster);
+    figures.cards(empty, forge, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+    figures.cards(come(huskFight()), forge, { x: 0, y: 5 }, 0.1, 1, 1 / 60, new Flashes());
+    assert.deepEqual(bursts, [true], 'the first wave climbs out');
+    const late = new FoeFigures(latticeRoster);
+    late.cards(come(huskFight()), forge, { x: 0, y: 5 }, 0, 1, 1 / 60, new Flashes());
+    assert.deepEqual(bursts, [true], 'one there on the page’s first frame came before it');
+  } finally {
+    latticeWaves.burst = burst;
+  }
 });

@@ -1,6 +1,7 @@
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import { loadForgedBirds } from '../combat/forgedBirds.ts';
+import { loadLatticeWave } from '../combat/latticeLooks.ts';
 import { openCards } from '../player/cards.ts';
 import { loadNodeCards } from './nodeCards.ts';
 import type { FigureView } from './figureView.ts';
@@ -9,6 +10,7 @@ import type { FigureView } from './figureView.ts';
 export async function openForge(gpu: Gpu, figures: FigureView) {
   const { forge, store } = await openCards(figures);
   loadForgedBirds((path) => store.strip(path));
+  loadLatticeWave((path) => store.strip(path));
   loadNodeCards(
     (path) => store.strip(path),
     (pixels, width, height, root) => figures.card(pixels, width, height, root),

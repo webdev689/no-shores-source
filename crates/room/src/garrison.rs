@@ -504,7 +504,7 @@ impl Room {
             let near = self.players.values().any(|player| {
                 apart([player.fighter.body.x, player.fighter.body.y], [found.at[0], found.at[1]]) <= CLEAR_AROUND
             });
-            let room_for = self.living_foes() + found.members.len() <= self.foes_most;
+            let room_for = self.living_foes() + found.members.len() <= self.others_most();
             let great = found.members.iter().any(|(_, rank, _, _)| matches!(rank, Rank::Miniboss | Rank::Boss));
             let again = if great { GREAT_STAND_AGAIN } else { STAND_AGAIN };
             if self.clock >= cleared + again && !near && room_for {

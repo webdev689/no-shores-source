@@ -72,9 +72,31 @@ export function justMet(before: Quest | null, after: Quest | null): number[] {
   });
 }
 
+/** Whether two quests read alike, word for word: compared field by field, so a frame that changes nothing makes nothing. */
+export function sameQuest(one: Quest | null, other: Quest | null): boolean {
+  if (one === null || other === null) return one === other;
+  if (one.name !== other.name || one.task !== other.task || one.steps.length !== other.steps.length) return false;
+  return one.steps.every((step, index) => {
+    const that = other.steps[index];
+    const keys = step.keys ?? [];
+    const thoseKeys = that?.keys ?? [];
+    return (
+      that !== undefined &&
+      step.text === that.text &&
+      step.count === that.count &&
+      step.clock === that.clock &&
+      step.share === that.share &&
+      Boolean(step.done) === Boolean(that.done) &&
+      keys.length === thoseKeys.length &&
+      keys.every((key, place) => key === thoseKeys[place])
+    );
+  });
+}
+
 export class TaskTracker {
   private shown: Quest | null = null;
-  private written = '';
+  /** Whether anything was shown yet: the first call takes note even of no quest. */
+  private begun = false;
   /** When the task now came (seconds), and when its steps just met were met. */
   private freshAt = Number.NEGATIVE_INFINITY;
   private metAt = Number.NEGATIVE_INFINITY;
@@ -83,9 +105,8 @@ export class TaskTracker {
   /** Shows `quest`, or hides the tracker for none. Called every frame, it takes note only when the quest's words
    *  change; a new task slides in, and a step just met flashes as its box is ticked. */
   show(quest: Quest | null, now = performance.now() / 1000): void {
-    const written = JSON.stringify(quest);
-    if (written === this.written) return;
-    this.written = written;
+    if (this.begun && sameQuest(quest, this.shown)) return;
+    this.begun = true;
     const before = this.shown;
     const met = justMet(before, quest);
     const fresh = quest !== null && (this.shown?.task !== quest.task || this.shown.name !== quest.name);
@@ -175,7 +196,10 @@ function stepNode(step: Step, size: number, flash: number): Node {
       step.done
         ? { width: box, height: box, fill: TONES.brass, draw: edged(BRASS_EDGE) }
         : { width: box, height: box, role: 'well', bevel: 1 },
-      { padding: [0, 2, 0, 0], children: [{ text: { words: step.text, size, colour } }] },
+      {
+        padding: [0, 2, 0, 0],
+        children: [{ text: { words: step.text, size, colour } }],
+      },
       ...(step.keys ?? []).map((key) => keycap(key, size)),
       leftOf(step) !== undefined && { width: 'grow' },
       leftOf(step) !== undefined && {

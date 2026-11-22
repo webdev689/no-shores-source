@@ -23,7 +23,7 @@ recorded in [[Enemies]]. The owner can change any of them.
 |---|---|---|
 | The Grey Tithe on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve | The roster offered; each fights as one of the five roles ([[Foes]]) |
 | The Grey Tithe on deck | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | The same; Thule is the Boss |
-| The pirates | A faction of their own, at sea only: the sea's pirate ships, and five deck crews (Skirmisher, Swordsman, Brute, Archer, Captain) | Whether they become the Grey Tithe stays the owner's |
+| The pirates | A faction of their own, at sea only: the sea's pirate ships, and five deck crews (Skirmisher, Swordsman, Brute, Archer, Captain) | They stay their own ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]) |
 | A boss on land | High Assessor Corvane, a flail and kite shield, with three phases of his own: the levy; the summons, calling two Crossbowmen behind him; the seizure, calling two Collectors to his sides | "No exceptions"; to rename or change |
 | Where the factions stand | The Grey Tithe garrisons every patrol, mission, dungeon and boss node on every continent, Corvane on the boss nodes; the social spaces and the pirates hold no land | "Each Enemy faction in the world has a presence", fixed for now |
 | A garrison | Patrol: three or four groups of two to four Minors and Majors; mission: those, an Elite Enforcer and an Elite Reeve; dungeon: Majors and Elites, a Reeve Miniboss at the farthest post; boss: Corvane and four Majors. A cleared group stands again after 120 s with no player within 40 m | Enough to fight without crowding a node's room |

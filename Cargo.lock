@@ -203,6 +203,7 @@ dependencies = [
 name = "land-wasm"
 version = "0.0.0"
 dependencies = [
+ "bake",
  "city",
  "land",
  "layout",

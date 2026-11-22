@@ -8,7 +8,7 @@
 
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
-import type { GearItem, GearState } from '../network/gearMessages.ts';
+import { DROPPED, type GearItem, type GearState } from '../network/gearMessages.ts';
 import { RARITIES, STOCK_NAMES, resourceName } from '../player/gear.ts';
 import { ARTS, emblemSvg } from './artsCards.ts';
 import { gearName, moduleGlyph, SHIP_MATERIALS } from './shipGear.ts';
@@ -35,6 +35,8 @@ export interface Gain {
   /** The picture of what has no glyph of the menu's, as SVG markup: Shapes' mark, a cosmetic's colours or its
    *  barding's mark, an Art's or its faction's emblem. */
   readonly icon: string | null;
+  /** A chest's tier, 1 to 4, shown as pips in place of a count. */
+  readonly pips?: number;
   /** Whether it stands as a short line, a count beside its icon (and its word, where the icon alone is not enough),
    *  over the items' rows: currency, XP, reputation, an Art's progress. */
   readonly compact: boolean;
@@ -131,9 +133,18 @@ function cosmeticGain(number: number): Gain[] {
   return [gain(`cosmetic-${number}`, cosmetic.name, 1, { rarity: rarityNamed(cosmetic.rarity), icon })];
 }
 
-/** What `after` holds that `before` did not: counts grown, and items, Vestiges and emblems new. */
+/** A public event's chest opened between two words (lying in `before`, gone in `after`), its tier as pips; the XP
+ *  and reputation it gave are told as any are. */
+function chestGains(before: GearState, after: GearState): Gain[] {
+  const chest = before.drops.find(
+    (drop) => drop.kind === DROPPED.chest && !after.drops.some((left) => left.id === drop.id),
+  );
+  return chest ? [gain(`chest-${chest.id}`, chest.tier >= 3 ? 'Heroic chest' : 'Chest', 1, { pips: chest.tier })] : [];
+}
+
+/** What `after` holds that `before` did not: counts grown, and items, Vestiges and emblems new; a chest opened. */
 export function gainsOf(before: GearState, after: GearState): Gain[] {
-  const gains: Gain[] = [];
+  const gains: Gain[] = chestGains(before, after);
   if (after.aurem > before.aurem) gains.push(line('aurem', 'Aurem', after.aurem - before.aurem, { glyph: 'aurem' }));
   const [shapes, shapesBefore] = [after.shapes ?? 0, before.shapes ?? 0];
   if (shapes > shapesBefore) gains.push(line('shapes', 'Shapes', shapes - shapesBefore, { icon: shapesSvg() }));

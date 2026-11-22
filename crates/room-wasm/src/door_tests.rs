@@ -1,4 +1,5 @@
 use super::*;
+use crate::gear_door::{NodeCounter, counter_of};
 use combat::Fighter;
 use combat::sight::apart;
 use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};

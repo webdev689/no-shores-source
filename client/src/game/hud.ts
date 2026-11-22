@@ -1,4 +1,5 @@
 import { hudLayout } from '../combat/hudLayout.ts';
+import type { BannerTone } from '../combat/publicBanner.ts';
 import { SeaFightReadout } from '../combat/seaReadout.ts';
 import { type CameraPose, projectPoint } from '../overworld/overworldCamera.ts';
 import { compassNode } from './compassNode.ts';
@@ -52,6 +53,8 @@ export type { ScreenMark } from './hudMarks.ts';
 export interface Besides {
   readonly fight: boolean;
   readonly bossed: boolean;
+  /** The tone a public event's banner shows in under the compass, none while it shows none. */
+  readonly banner?: BannerTone | null;
   readonly speaking: boolean;
   readonly map: boolean;
 }
@@ -369,7 +372,9 @@ export class Hud {
         Boolean(sea?.landfall),
         this.fight.reach,
       ),
-      this.tasks.node(view, clock, still),
+      // In a view too narrow for the tracker to stand clear of the compass's column, it gives way to a public event's
+      // banner, which holds the same objective; the next event's line holds none, so the tracker stands beside it.
+      !(besides.banner && besides.banner !== 'next' && width < 1024) && this.tasks.node(view, clock, still),
       {
         width: 'grow',
         height: 'grow',

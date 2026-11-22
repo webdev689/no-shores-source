@@ -35,6 +35,7 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+pub mod public;
 mod quests;
 mod recharge;
 mod routes;
@@ -194,6 +195,13 @@ pub struct Room {
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
+    /// A zone's public events (`public/`); the foes the room moves itself, whose brains it leaves be; and the names
+    /// some foes stand under in place of their type's.
+    pub(crate) public: Option<public::Public>,
+    pub(crate) inert: BTreeSet<FighterId>,
+    pub(crate) names: BTreeMap<FighterId, &'static str>,
+    /// The way each foe the room moves itself walks, kept from tick to tick.
+    pub(crate) inert_ways: BTreeMap<FighterId, navmesh::Way>,
     /// Its node and places, and the groups the houses' roads stood here (`quests.rs`).
     pub(crate) quests: quests::QuestGround,
 }
@@ -265,6 +273,10 @@ impl Room {
             cache: None,
             minute: 0,
             shape_spots: Vec::new(),
+            public: None,
+            inert: BTreeSet::new(),
+            inert_ways: BTreeMap::new(),
+            names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
         }
     }
@@ -319,6 +331,7 @@ impl Room {
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
+        self.open_chests_of(player);
         self.steps_left(player);
         self.part(player);
         self.drops.retain(|drop| drop.player != player);
@@ -384,6 +397,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_public();
         self.keep_cache();
         self.keep_quests();
         self.keep_steps();
@@ -527,25 +541,6 @@ impl Room {
             Some(Happening::Feinted(_)) => self.tell(EventKind::Feinted, None, id, id, 0.0),
             Some(Happening::Drank(healed)) => self.tell(EventKind::Healed, None, id, id, healed),
             _ => {}
-        }
-    }
-
-    /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,
-    /// dodging and staggered as it is now, so a foe's answers count the same whatever the player's lag.
-    pub(crate) fn as_seen(&self, foe: FighterId, view: &[(FighterId, Fighter)]) -> Option<Fighter> {
-        let then = view.iter().find(|(other, _)| *other == foe).map(|(_, then)| then.body)?;
-        self.fighter(foe).map(|now| Fighter { body: then, ..*now })
-    }
-
-    pub(crate) fn fighter(&self, id: FighterId) -> Option<&Fighter> {
-        self.players.get(&id).map(|found| &found.fighter).or_else(|| self.foes.get(&id).map(|foe| &foe.fighter))
-    }
-
-    pub(crate) fn set_fighter(&mut self, id: FighterId, fighter: Fighter) {
-        if let Some(found) = self.players.get_mut(&id) {
-            found.fighter = fighter;
-        } else if let Some(foe) = self.foes.get_mut(&id) {
-            foe.fighter = fighter;
         }
     }
 }

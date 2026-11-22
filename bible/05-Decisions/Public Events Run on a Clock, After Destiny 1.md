@@ -1,0 +1,52 @@
+---
+type: decision
+date: 2026-11-20
+status: in force
+---
+# Public Events Run on a Clock, After Destiny 1
+
+> Asked how a patrol space's public event starts, offered on a clock as Destiny 1's (set times, the next one's shown
+> ahead, a countdown to finish each), rising on their own, or both: "On a clock, like D1"
+
+> Asked what happens when players fail or ignore a Lattice event, offered nothing lasting, corruption spreading, or
+> only some events: "Nothing lasting, like D1"
+
+> Asked what an event pays, offered gear drops (a chest at its end, a better tier for a bonus objective, as in D1),
+> materials, reputation, or something unique: "Gear drops", "Materials", "Reputation"
+
+> Asked which of Claude's event ideas to take, offered a crystal fall, a pylon or nest growing, a fissure opening and
+> a Grey Tithe raid: "Grey Tithe raid", "Fissure opens", "The two I checked with unique mechanics but not overly
+> complicated + an elite (heroic) event trigger"
+
+> Asked the fissure's mechanic, offered sealing it with crystal, breaking its anchors or holding its edge: "Seal it
+> with crystal". Asked the Grey Tithe raid's, offered stopping the collectors, holding the stores, or players caught
+> between the Tithe and the Lattice: "Hold the stores". Asked how an event turns heroic, offered an optional task as
+> in D1, finishing a stage fast, or enough players: "An optional task, like D1"
+
+> Asked the Fissure's heroic task, offered killing the Idol that feeds it, carrying a charged shard, or breaking a
+> growth that rises near it for a short time: "Break the growth". Asked the Grey Tithe raid's, offered hitting their
+> boat, losing no store, or killing the tithe-taker, an officer who counts the stores and leaves soon after: "Kill the
+> tithe-taker". Asked whether the events' numbers (how often each comes round, the countdown's length, how much
+> tougher heroic is) are the owner's to set or Claude's to tune: "Claude tunes them"
+
+> Asked whose reputation an event pays and which patrol spaces hold which event: "Faction reputation for now and only
+> the island of saltmere and associated patrol zones for now"
+
+## What it settles
+
+- **On a clock.** A patrol space's public events come at set times, the next one's time shown ahead, and each has a
+  countdown to finish it, as Destiny 1's ([[Gear and Power Follow Destiny 1 Vanilla]],
+  [[Patrol Areas Are Laid Out With RMB, and Missions Run Through Them]]).
+- **Nothing lasting.** A failed or ignored event ends and comes round again; the space does not change.
+- **What it pays**: gear (a chest at its end, a better tier for a bonus objective), materials and faction reputation
+  ([[Factions]]), for now.
+- **Saltmere only, for now**: the events run on the island of Saltmere and its patrol zones, the Saltgrass Downs, the
+  Gullwing Vale and the Driftwood Moors ([[Layouts]]).
+- **Two events, each with a mechanic of its own, not overly complicated:**
+  - **The Fissure**: a fissure opens, and players seal it with crystal. Heroic: breaking a growth that rises near it
+    for a short time.
+  - **The Grey Tithe raid** ([[The Grey Tithe Take a Tenth, and Overlook Does Not Pay]]): players hold the stores.
+    Heroic: killing the tithe-taker, an officer who counts the stores and leaves soon after.
+- **Heroic.** Each event has an optional task that, done during it, makes it heroic.
+- **The numbers are Claude's**: how often each event comes round, the countdown's length and how much tougher heroic
+  is ([[Public Events as Claude Builds Them]]); the owner may change any. How they run: [[Public Events]].

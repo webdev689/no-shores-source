@@ -7,17 +7,20 @@ frame (x east, y south, z up: Blender's y turned round) for the bake.
 """
 import math
 import random
+from itertools import pairwise
 
 import bpy  # noqa: I001 (Blender's bmesh and mathutils load with bpy)
 import bmesh
 import mathutils
 
 # The game's materials a module's surfaces wear (city's `Material`), each drawn in the climate's picture or its plain
-# colour, in the order its groups are written: paving last, as the first group carries the parts and paving is never
-# run into. Cloth is the plain dyes: undyed linen, crimson, verdant, black, straw and the three factions' own.
+# colour, in the order its groups are written: paving last of those that carry parts, as the first group carries the
+# parts and paving is never run into. Cloth is the plain dyes: undyed linen, crimson, verdant, black, straw and the
+# three factions' own. Crystal is the Lattice's: drawn by code, not a picture, its core glowing as much as its
+# vertices' glow says.
 CLOTHS = ('linen', 'crimson', 'verdant', 'black', 'straw', 'stormcaller_blue', 'lamplighter_gold', 'veiled_dusk')
-MATERIALS = ('stone', 'trim', 'rubble', 'timber', 'iron', 'plaster', 'roof', 'gold', 'bone', 'glow', *CLOTHS, 'paving',
-             'lawn', 'water')
+MATERIALS = ('stone', 'trim', 'rubble', 'chalk', 'turf', 'timber', 'canvas', 'iron', 'plaster', 'roof', 'gold',
+             'crystal', 'bone', 'glow', *CLOTHS, 'paving', 'lawn', 'water')
 
 
 class Module:
@@ -30,6 +33,14 @@ class Module:
         self.pads = []
         self.random = random.Random(seed)
         self.objects = []
+        # An object's materials by its faces' material index, with each one's glow: [(material, glow), ...].
+        self.slots = {}
+        # Whether each corner's normal is worked out from the rounded positions in doubles (`_steady_normals`): the event
+        # props'; the other modules keep Blender's own normals.
+        self.steady = False
+        # Where the module opens the land under its foot (a chasm's mouth): its two lips, each a line of points along
+        # it at the ground, the land between them not drawn.
+        self.mouth = None
 
     def part(self, low, high):
         """A box a body stands on and runs into, from its low corner to its high one."""
@@ -53,12 +64,53 @@ def reset():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def _object(module, name, mesh, material):
+def item_of(module, name, mesh, material, glow=0.0):
     item = bpy.data.objects.new(name, mesh)
     bpy.context.scene.collection.objects.link(item)
-    item['material'] = material
     module.objects.append(item)
+    module.slots[item.name] = [(material, glow)]
     return item
+
+
+def faced(module, item, slots):
+    """Gives an object one material a face, by the face's material index: `slots` is [(material, glow), ...], glow
+    from 0 (crystal dark to its depths) to 1 (its core alight); only crystal glows."""
+    module.slots[item.name] = list(slots)
+    return item
+
+
+def adopted(module, item, slots):
+    """Takes an object built elsewhere in this scene (the Lattice's props) into the module, its faces' materials as
+    `faced` gives them."""
+    if item.name not in bpy.context.scene.collection.objects:
+        bpy.context.scene.collection.objects.link(item)
+    module.objects.append(item)
+    return faced(module, item, slots)
+
+
+def oriented(points, faces, toward):
+    """Each face wound so it faces `toward(middle)` (a direction from its middle): a chasm's walls face into it."""
+    out = []
+    for face in faces:
+        a, b, c = (points[i] for i in face[:3])
+        normal = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
+                  (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
+                  (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
+        middle = [sum(points[i][axis] for i in face) / len(face) for axis in range(3)]
+        hint = toward(middle)
+        out.append(tuple(face) if sum(n * h for n, h in zip(normal, hint)) >= 0 else tuple(reversed(face)))
+    return out
+
+
+def solid_of(module, name, points, faces, material='stone', glow=0.0, smooth=False):
+    """An object of `points` and `faces` (each a tuple of point numbers, wound to face out) in one material, its faces
+    flat unless `smooth`, so a facet or a split board catches the light on its own."""
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata([tuple(point) for point in points], [], [tuple(face) for face in faces])
+    mesh.update()
+    for polygon in mesh.polygons:
+        polygon.use_smooth = smooth
+    return item_of(module, f'{name}{len(module.objects)}', mesh, material, glow)
 
 
 def _box_mesh(size):
@@ -99,7 +151,7 @@ def _worn(item, bevel, wear, seed, cuts=0):
 def block(module, at, size, material='stone', turn=0.0, bevel=0.06, wear=0.04, cuts=0, part=True):
     """A cut block standing on `at` (the middle of its foot), `size` across x, y and up, turned `turn` radians about
     up; a part where it is square to the frame and `part` is asked."""
-    item = _object(module, f'block{len(module.objects)}', _box_mesh(size), material)
+    item = item_of(module, f'block{len(module.objects)}', _box_mesh(size), material)
     item.location = (at[0], at[1], at[2] + size[2] / 2)
     item.rotation_euler = (0.0, 0.0, turn)
     _worn(item, bevel, wear, len(module.objects), cuts)
@@ -117,7 +169,7 @@ def column(module, at, radius, height, material='stone', sides=12, top=1.0, wear
     bmesh.ops.translate(made, vec=(0.0, 0.0, height / 2), verts=made.verts)
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'column{len(module.objects)}', mesh, material)
+    item = item_of(module, f'column{len(module.objects)}', mesh, material)
     item.location = at
     _worn(item, 0.03, wear, len(module.objects), 0)
     if part:
@@ -145,7 +197,7 @@ def rock(module, at, size, seed, material='rubble', part=True, flat_foot=True, d
             point.z = max(point.z, 0.0)
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'rock{len(module.objects)}', mesh, material)
+    item = item_of(module, f'rock{len(module.objects)}', mesh, material)
     item.location = at
     if part:
         module.part(
@@ -167,7 +219,7 @@ def organic(module, blobs, seed, material='rubble', voxel=0.18, rough=0.35, tria
         bmesh.ops.translate(made, vec=mathutils.Vector(middle), verts=sphere)
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'organic{len(module.objects)}', mesh, material)
+    item = item_of(module, f'organic{len(module.objects)}', mesh, material)
     remesh = item.modifiers.new('merge', 'REMESH')
     remesh.mode = 'VOXEL'
     remesh.voxel_size = voxel
@@ -175,11 +227,18 @@ def organic(module, blobs, seed, material='rubble', voxel=0.18, rough=0.35, tria
     bpy.ops.object.modifier_apply(modifier='merge')
     noise = mathutils.noise
     offset = mathutils.Vector((seed * 1.37, seed * 0.71, seed * 0.29))
+    # A steady module's normals are the remeshed surface's, worked out once in doubles: each `co` write marks Blender's
+    # stale, so its next read works them all out again, in single floats, from the points already moved.
+    steady = _double_normals(item.data) if module.steady else None
     for vertex in item.data.vertices:
         point = vertex.co
         bulge = noise.fractal(point * 0.35 + offset, 0.55, 2.0, 3)
         crag = noise.ridged_multi_fractal(point * 1.1 + offset, 0.9, 2.1, 3, 1.0, 2.0) - 0.5
-        vertex.co = point + vertex.normal * rough * (0.7 * bulge + 0.6 * crag)
+        if steady:
+            depth = rough * (0.7 * bulge + 0.6 * crag)
+            vertex.co = [point[axis] + steady[vertex.index][axis] * depth for axis in range(3)]
+        else:
+            vertex.co = point + vertex.normal * rough * (0.7 * bulge + 0.6 * crag)
         if flat_top is not None and vertex.co.z > flat_top:
             vertex.co.z = flat_top + 0.04 * noise.noise(point * 2.0 + offset)
         if vertex.co.z < flat_foot:
@@ -225,7 +284,7 @@ def spire(module, at, radius, height, seed, material='rubble', hanging=False, pa
                    [made.verts[side] for side in range(sides)])
     made.to_mesh(mesh)
     made.free()
-    item = _object(module, f'spire{len(module.objects)}', mesh, material)
+    item = item_of(module, f'spire{len(module.objects)}', mesh, material)
     item.location = at
     if part and not hanging and height > 1.0:
         core = radius * 0.5
@@ -275,6 +334,75 @@ def battlements(module, start, end, z, thick, material='stone', every=2.0, wide=
         block(module, at, (wide, thick, high), material, turn=turn, bevel=0.03, wear=0.03, part=False)
 
 
+def _rounded(value):
+    """A coordinate to a tenth of a millimetre, one that rounds to nothing a plain zero: a residue of float sines and
+    cosines differs in its last bits from one machine to another, and its sign would survive the rounding as a
+    negative zero's bytes in the mesh file."""
+    return round(value, 4) + 0.0
+
+
+# The normal of a point with no face of any area.
+UP = (0.0, 0.0, 1.0)
+
+
+def _steady_normals(mesh, blender):
+    """Each corner's normal from the rounded positions alone, in doubles: the area-weighted sum of the faces at its
+    point that share its smoothing (Blender's own normals for them nearly equal). Blender works its normals out in
+    single floats that differ from one CPU to another in their last bits, which a rounding can turn into a different
+    byte; Blender's normals only choose which faces a corner smooths with, a choice far from any edge."""
+    at = lambda loop: tuple(_rounded(v) for v in mesh.vertices[mesh.loops[loop].vertex_index].co)
+    faces, face_of, corners = {}, {}, {}
+    for triangle in mesh.loop_triangles:
+        a, b, c = (at(loop) for loop in triangle.loops)
+        u, v = [b[i] - a[i] for i in range(3)], [c[i] - a[i] for i in range(3)]
+        cross = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+        face = faces.setdefault(triangle.polygon_index, [0.0, 0.0, 0.0])
+        for axis in range(3):
+            face[axis] += cross[axis]
+        for loop, point in zip(triangle.loops, (a, b, c)):
+            if loop not in face_of:
+                face_of[loop] = triangle.polygon_index
+                corners.setdefault(point, []).append(loop)
+    steady = {}
+    for loops in corners.values():
+        every = {face_of[other] for other in loops}
+        for loop in loops:
+            mine = blender[loop]
+            smoothed = {face_of[other] for other in loops
+                        if sum(a * b for a, b in zip(mine, blender[other])) > 0.999}
+            # Faces of no area smooth with nothing: then every face at the point, and with none of any area, up.
+            steady[loop] = mathutils.Vector(_unit(_summed(faces, smoothed)) or _unit(_summed(faces, every)) or UP)
+    return [steady.get(loop, normal) for loop, normal in enumerate(blender)]
+
+
+def _summed(faces, chosen):
+    """The sum of the `chosen` faces' area vectors, in their order, so it adds alike on every machine."""
+    return [sum(faces[face][axis] for face in sorted(chosen)) for axis in range(3)]
+
+
+def _unit(vector):
+    """`vector` made a unit long, or None where it has no length."""
+    length = math.sqrt(sum(value * value for value in vector))
+    return tuple(value / length for value in vector) if length > 0.0 else None
+
+
+def _double_normals(mesh):
+    """Each vertex's normal from its positions alone, in doubles: the area-weighted sum of its faces' normals (each
+    face cut into a fan of triangles from its first corner), or up where it has none of any area."""
+    points = [tuple(vertex.co) for vertex in mesh.vertices]
+    sums = [[0.0, 0.0, 0.0] for _ in points]
+    for polygon in mesh.polygons:
+        a, *rest = (points[index] for index in polygon.vertices)
+        area = [0.0, 0.0, 0.0]
+        for b, c in pairwise(rest):
+            u, v = [b[i] - a[i] for i in range(3)], [c[i] - a[i] for i in range(3)]
+            cross = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0])
+            area = [area[axis] + cross[axis] for axis in range(3)]
+        for index in polygon.vertices:
+            sums[index] = [sums[index][axis] + area[axis] for axis in range(3)]
+    return [_unit(total) or UP for total in sums]
+
+
 def _in_order(group):
     """Puts a group's vertices and triangles in one order, whatever order Blender made them in: an exact boolean's
     threads hand its faces back in a different order each run, and a mesh's key is the hash of its bytes."""
@@ -290,7 +418,7 @@ def _in_order(group):
 
 
 def exported(module):
-    """The module's surfaces by material, each a list of vertices (position, normal) and triangles, its parts and its
+    """The module's surfaces by material, each a list of vertices (position, normal, glow) and triangles, its parts and its
     sockets, all in the game's frame (x east, y south, z up), and its size: the box round its surfaces and parts."""
     depsgraph = bpy.context.evaluated_depsgraph_get()
     groups = {}
@@ -302,16 +430,20 @@ def exported(module):
         mesh.transform(item.matrix_world)
         mesh.calc_loop_triangles()
         normals = [corner.vector.copy() for corner in mesh.corner_normals]
-        group = groups.setdefault(item['material'], dict(vertices=[], index={}, triangles=[]))
+        if module.steady:
+            normals = _steady_normals(mesh, normals)
+        slots = module.slots[item.name]
         for triangle in mesh.loop_triangles:
+            material, glow = slots[min(triangle.material_index, len(slots) - 1)]
+            group = groups.setdefault(material, dict(vertices=[], index={}, triangles=[]))
             corners = []
             for loop in triangle.loops:
                 point = mesh.vertices[mesh.loops[loop].vertex_index].co
                 normal = normals[loop]
-                # + 0.0 drops a zero's sign: a coordinate a machine leaves a hair under zero is the same bytes.
-                game = (round(point.x, 4) + 0.0, round(-point.y, 4) + 0.0, round(point.z, 4) + 0.0)
+                game = (_rounded(point.x), _rounded(-point.y), _rounded(point.z))
+                # + 0.0 drops a zero's sign, as `_rounded` does a coordinate's.
                 facing = (round(normal.x, 3) + 0.0, round(-normal.y, 3) + 0.0, round(normal.z, 3) + 0.0)
-                key = (game, facing)
+                key = (game, facing, round(glow, 3))
                 if key not in group['index']:
                     group['index'][key] = len(group['vertices'])
                     group['vertices'].append(key)
@@ -332,10 +464,11 @@ def exported(module):
     sockets = [dict(name=s['name'], at=[s['at'][0], -s['at'][1], s['at'][2]], facing=[s['facing'][0], -s['facing'][1]])
                for s in module.sockets]
     size = [max(abs(low[0]), abs(high[0])) * 2, max(abs(low[1]), abs(high[1])) * 2, high[2]]
+    mouth = module.mouth and [[[x, -y] for x, y, _ in lip] for lip in module.mouth]
     unknown = set(groups) - set(MATERIALS)
     if unknown:
         raise ValueError(f'{module.name}: materials the game does not know: {sorted(unknown)}')
     for group in groups.values():
         _in_order(group)
     return dict(groups={name: groups[name] for name in MATERIALS if name in groups}, parts=parts, sockets=sockets,
-                pads=pads, size=[round(side, 3) for side in size])
+                pads=pads, size=[round(side, 3) for side in size], mouth=mouth)
