@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Flow } from './flow.ts';
-import { type Fallback, placeOf, sentOut, tripOrBack } from './tripBack.ts';
+import { type Fallback, onOtherLand, placeOf, sentOut, tripOrBack } from './tripBack.ts';
 
 const FULL = new Error('the room is full');
 const stood: Flow = { mode: 'foot', node: 'saltgrass-downs', menu: false };
@@ -120,4 +120,21 @@ test('the place a trip is for: the ship, the node by its name, else the name the
   const inside: Flow = { mode: 'foot', node: 'saltgrass-downs--dungeon-0', menu: false };
   const into = { kind: 'enter', node: 'saltgrass-downs--dungeon-0', name: 'The Cells' } as const;
   assert.equal(placeOf(inside, into, nameOf), 'The Cells');
+});
+
+test('a hub on another land that cannot be reached puts back the land the player left, so a retry starts there', async () => {
+  let land = 'continent-5';
+  const put: string[] = [];
+  const lands = {
+    now: () => land,
+    open: () => Promise.resolve(void (land = 'continent-1')),
+    put: (back: string) => void (put.push(back), (land = back)),
+  };
+  await assert.rejects(
+    onOtherLand(lands, () => Promise.reject(new Error('the room is full'))),
+    /the room is full/,
+  );
+  assert.deepEqual([land, put], ['continent-5', ['continent-5']]);
+  await onOtherLand(lands, () => Promise.resolve());
+  assert.equal(land, 'continent-1', "reached, the hub's land stays");
 });

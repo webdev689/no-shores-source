@@ -375,3 +375,26 @@ fn a_sea_of_a_harder_tier_shuts_to_a_character_below_its_level_and_keeps_none() 
     assert_eq!(sea.shut(&low), None, "the Normal sea is open to anyone");
     assert!(sea.restore_character(player, &low.to_json()));
 }
+
+#[test]
+fn a_returning_ships_first_course_refused_keeps_where_the_sea_had_it_and_its_heading() {
+    let mut sea = sea();
+    let player = sea.join();
+    assert!(sea.own(player, "unkept:a"));
+    sea.none_kept(player);
+    sea.course(player, &[[60_000.0, 50_000.0], [50_000.0, 45_000.0]], 10).unwrap();
+    ticks(&mut sea, 120);
+    let left = sea.ships().find(|(each, _)| *each == player).unwrap().1;
+    sea.leave(player);
+    let back = sea.join();
+    assert!(sea.own(back, "unkept:a"));
+    sea.none_kept(back);
+    let across = sea.course(back, &[[58_000.0, 50_000.0], [150_000.0, 150_000.0]], 10);
+    assert_eq!(across, Err(crate::sea::CourseRefused::CrossesLand));
+    assert!(told(&sea, back, crate::harbour::MOORED).is_none(), "nothing told of a course refused");
+    ticks(&mut sea, 31);
+    sea.course(back, &[[58_000.0, 50_000.0]], 10).unwrap();
+    let ship = sea.ships().find(|(each, _)| *each == back).unwrap().1;
+    let at = (left.x.round(), left.y.round(), left.heading);
+    assert_eq!((ship.x, ship.y, ship.heading), at, "still where it was, to the metre a course starts at, as it faced");
+}

@@ -94,8 +94,8 @@ export const ASKS = {
   /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
   takeLetter: 71,
   takeAllLetters: 72,
-  /** A return to the player's ship, which the room answers (0, or 105 fallen, 106 struck in the last ten seconds)
-   *  before the page leaves for the sea. */
+  /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
+   *  seconds) before the page leaves for the sea. */
   toShip: 73,
 } as const;
 

@@ -291,7 +291,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       trips.enterSeaDungeon,
     );
   const { travel, behindVeil, retry, tell } = startTravel({
-    ...{ playing, hud, footContext, goInto, goFoot, goSea },
+    ...{ playing, hud, footContext, goInto, goFoot, goSea, showLandmass },
     ashore: () => ashore,
     backAshore: async (held) => {
       await goInto(() => isleFoot(held, null));

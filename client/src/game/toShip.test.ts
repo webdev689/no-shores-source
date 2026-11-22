@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { state } from '../network/gearForTests.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
-import { FIGHTING, askToShip } from './toShip.ts';
+import { FIGHTING, TO_SHIP, askToShip } from './toShip.ts';
 
 /** A room that answers each ask with `answer` after `after` waits. */
 function room(answer: number, after = 2) {
@@ -19,7 +19,7 @@ function room(answer: number, after = 2) {
 }
 
 test('a return to the ship goes on the room yes, and is refused in words while struck or fallen', async () => {
-  const yes = room(0);
+  const yes = room(TO_SHIP);
   assert.equal(await askToShip(yes.asker, false, yes.wait), null);
   assert.deepEqual(yes.asked, [{ kind: 73 }]);
   const struck = room(FIGHTING);
@@ -41,8 +41,8 @@ test("another ask's answer coming first is waited past, for the room's word on t
   const asker = () => ({ gear, ask: () => undefined });
   const wait = () => {
     waits += 1;
-    // The answer to an ask sent before, refused as out of reach, then the room's word on the return.
-    if (waits === 1) gear = { ...gear, answer: 100, answered: 4 };
+    // The answer to an ask sent before, done (0), then the room's word on the return.
+    if (waits === 1) gear = { ...gear, answer: 0, answered: 4 };
     if (waits === 3) gear = { ...gear, answer: FIGHTING, answered: 5 };
     return Promise.resolve();
   };

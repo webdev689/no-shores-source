@@ -595,7 +595,7 @@ fn a_ware_shown_before_nine_utc_sells_till_then_and_is_refused_once_the_day_turn
 
 #[test]
 fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while_fallen() {
-    use crate::asks::{Asked, FALLEN, FIGHTING};
+    use crate::asks::{Asked, FALLEN, FIGHTING, TO_SHIP};
     let mut room = room();
     let player = room.join().expect("a room with space");
     let mut sequence = 0;
@@ -609,7 +609,7 @@ fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while
         room.tick();
         room.player(player).expect("in").answer
     };
-    assert_eq!(to_ship(&mut room), 0, "at peace");
+    assert_eq!(to_ship(&mut room), TO_SHIP, "at peace, a yes no other ask gives");
     let foe = stand_type(&mut room, ::foes::foe_type(14).expect("a type"), ::foes::Rank::Minor, 1, -1.5);
     let whole = room.fighter(player).expect("in").health;
     while room.fighter(player).expect("in").health >= whole {
@@ -624,7 +624,7 @@ fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while
     while room.clock() <= room.player(player).expect("in").struck_at.unwrap() + 600 {
         room.tick();
     }
-    assert_eq!(to_ship(&mut room), 0, "ten seconds past the blow");
+    assert_eq!(to_ship(&mut room), TO_SHIP, "ten seconds past the blow");
     let mut fallen = *room.fighter(player).expect("in");
     fallen.action = combat::Action::Dead { elapsed: 0 };
     room.set_fighter(player, fallen);

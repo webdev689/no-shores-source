@@ -76,3 +76,19 @@ export async function tripOrBack(
   }
   return { flow: fallback.hub.flow, told };
 }
+
+/** Runs `work` on another land, `lands.open` opening it: should the work fail, the land the player left is put back,
+ *  so a retry starts where the trip did. */
+export async function onOtherLand<Land>(
+  lands: { readonly now: () => Land; readonly open: () => Promise<void>; readonly put: (land: Land) => void },
+  work: () => Promise<void>,
+): Promise<void> {
+  const left = lands.now();
+  await lands.open();
+  try {
+    await work();
+  } catch (error) {
+    if (lands.now() !== left) lands.put(left);
+    throw error;
+  }
+}

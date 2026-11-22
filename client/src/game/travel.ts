@@ -10,7 +10,7 @@ import type { Playing } from './gameFrame.ts';
 import type { Hud } from './hud.ts';
 import type { IsleHeld } from './isles.ts';
 import { arrivalFacing } from './nodes.ts';
-import { type Fallback, type Refuge, placeOf, sentOut, TOLD_MS, tripOrBack } from './tripBack.ts';
+import { type Fallback, onOtherLand, type Refuge, placeOf, sentOut, TOLD_MS, tripOrBack } from './tripBack.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What travel asks of the game: the play, the HUD, the ways into a place on foot (`goInto`, `goFoot`) and onto the
@@ -26,6 +26,8 @@ export interface TravelGame {
   /** Walks ashore on `held` again, as the player stood on it. */
   readonly backAshore: (held: IsleHeld) => Promise<void>;
   readonly hubLand: () => Promise<void>;
+  /** Draws a landmass in place of the one shown: the one left, put back when the hub is not reached. */
+  readonly showLandmass: (landmass: Playing['landmass']) => void;
 }
 
 /** Starts travel for `game`: `travel` takes the player elsewhere as `happening` asks, by `work`; `behindVeil` runs
@@ -79,12 +81,12 @@ export function startTravel(game: TravelGame) {
   const hub: Fallback['hub'] = {
     name: 'Overlook',
     flow: { mode: 'foot', node: FIRST_NODE, menu: false },
-    go: async () => {
-      await game.hubLand();
-      const node = playing.landmass.nodes.find((each) => each.id === FIRST_NODE);
-      if (!node) throw new Error('Overlook has no social space');
-      await game.goFoot(node, arrivalFacing(node, playing.landmass.plan, null));
-    },
+    go: () =>
+      onOtherLand({ now: () => playing.landmass, open: game.hubLand, put: game.showLandmass }, async () => {
+        const node = playing.landmass.nodes.find((each) => each.id === FIRST_NODE);
+        if (!node) throw new Error('Overlook has no social space');
+        await game.goFoot(node, arrivalFacing(node, playing.landmass.plan, null));
+      }),
   };
 
   const travel = (happening: Happening, work: () => Promise<void>) => {

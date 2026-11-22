@@ -310,7 +310,7 @@ impl Sea {
         }
         self.stop_repair(player);
         let course: VecDeque<[f64; 2]> = whole_points.iter().map(|point| [point.x as f64, point.y as f64]).collect();
-        let heading = at_sea.map_or(0.0, |ship| ship.heading);
+        let heading = at_sea.map_or_else(|| self.put_in(player, start, whole_points[0]), |ship| ship.heading);
         let ship = Ship { x: start.x as f64, y: start.y as f64, heading, pace, rate: 0 };
         if let Some(berth) = self.berths.get_mut(&player) {
             berth.sailing = Some(Sailing { ship, course });

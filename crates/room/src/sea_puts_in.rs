@@ -28,27 +28,33 @@ impl Sea {
         }
     }
 
-    /// Where a ship not yet at sea puts in, the page told so when it is not where it asked: where the sea last had its
-    /// owner's ship; else, asked by a port city within reach of its roadstead, at that roadstead itself, never the
-    /// page's own point; in a sea with no port cities, where the page asks. None where it may not put to sea.
-    pub(super) fn puts_in(&mut self, player: PlayerId, asked: Point) -> Option<Point> {
-        let owner = self.harbour.accounts.get(&player).cloned();
-        let left = owner.and_then(|owner| self.harbour.left.remove(&owner));
-        let [x, y, heading] = match left {
-            Some([x, y, heading, _]) => [x, y, heading],
+    /// Where a ship not yet at sea puts in: where the sea last had its owner's ship; else, asked by a port city within
+    /// reach of its roadstead, at that roadstead itself, never the page's own point; in a sea with no port cities,
+    /// where the page asks. None where it may not put to sea.
+    pub(super) fn puts_in(&self, player: PlayerId, asked: Point) -> Option<Point> {
+        let left = self.harbour.accounts.get(&player).and_then(|owner| self.harbour.left.get(owner));
+        let [x, y] = match left {
+            Some([x, y, ..]) => [*x, *y],
             None if !self.harbour.harbours.puts_to_sea(asked) => return None,
             None if self.harbour.harbours.ports.is_empty() => return Some(asked),
             None => {
                 let port = self.harbour.harbours.nearest([asked.x as f64, asked.y as f64])?;
-                let [x, y] = self.harbour.harbours.ports.get(port)?.1;
-                [x, y, 0.0]
+                self.harbour.harbours.ports.get(port)?.1
             }
         };
-        let at = whole(&[x, y])?;
+        whole(&[x, y])
+    }
+
+    /// A ship put in at `at` on a course the sea took: where its owner's ship was left is used up, the page told where
+    /// it lies when it is not where it asked; the heading it puts in with, as it was left, else north.
+    pub(super) fn put_in(&mut self, player: PlayerId, at: Point, asked: Point) -> f64 {
+        let owner = self.harbour.accounts.get(&player).cloned();
+        let heading = owner.and_then(|owner| self.harbour.left.remove(&owner)).map_or(0.0, |[.., heading, _]| heading);
         if at != asked {
-            self.harbour.told.push((player, vec![crate::harbour::MOORED, self.clock as f64, x, y, heading]));
+            let told = vec![crate::harbour::MOORED, self.clock as f64, at.x as f64, at.y as f64, heading];
+            self.harbour.told.push((player, told));
         }
-        Some(at)
+        heading
     }
 
     /// A ship played unkept that put to sea before its owner was known (a page's course before its token) is moored
