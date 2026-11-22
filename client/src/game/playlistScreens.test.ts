@@ -88,7 +88,7 @@ test('a launch names its run as the rooms read a playlist’s or the week’s', 
   const playlist = { place: null, seas: 'abyss', playlist: 28, finds: 'playlist-abyss' } as const;
   assert.equal(launchRoom(playlist, 'coral-halls', 'k3j4h5g6'), 'node-coral-halls--abyss--playlist-28--run-k3j4h5g6');
   const week = { place: 'saltworm-warrens', seas: 'abyss', playlist: null, finds: null } as const;
-  assert.equal(launchRoom(week, 'saltworm-warrens', 'k3j4h5g6'), 'node-saltworm-warrens--abyss--run-k3j4h5g6');
+  assert.equal(launchRoom(week, 'saltworm-warrens', 'k3j4h5g6'), 'node-saltworm-warrens--abyss--sea--run-k3j4h5g6');
 });
 
 /** A socket to the finder that writes down what it was sent and how it was closed. */

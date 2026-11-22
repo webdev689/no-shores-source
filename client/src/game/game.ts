@@ -44,7 +44,7 @@ import { arrivalFacing } from './nodes.ts';
 import { gearScreenOpen, startGearWindow } from './gearWindow.ts';
 import { listenForControls } from './gameKeys.ts';
 import { type OpenWaters, seaWatersOf, watersOnce } from './pageWaters.ts';
-import { nodeOfRoom, seaRoomName } from './rooms.ts';
+import { nodeOfRoom, seaRoomName, startedAtSea } from './rooms.ts';
 import { Sea } from './sea.ts';
 import { SeaWord } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
@@ -350,7 +350,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (playing.flow.mode === 'foot' && playing.foot?.fallen)
       return 'You are in their company. Go to them once you respawn.';
     const where = nodeOfRoom(place);
-    const node = where && (where.playlist ? world.nodes : playing.landmass.nodes).find((each) => each.id === where.id);
+    const nodes = startedAtSea(place) ? world.nodes : playing.landmass.nodes; // the Playlist's are the world's
+    const node = where && nodes.find((each) => each.id === where.id);
     if (!where || !node)
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     const facing = arrivalFacing(node, playing.landmass.plan, null);

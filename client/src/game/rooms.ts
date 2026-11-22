@@ -79,7 +79,7 @@ export function nodeOfRoom(room: string): {
   readonly playlist: number | null;
 } | null {
   const found =
-    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?))?(?:--run-([a-z0-9]{8}))?$/.exec(
+    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
       room,
     );
   if (!found?.[1]) return null;
@@ -87,13 +87,14 @@ export function nodeOfRoom(room: string): {
   const dungeon = found[3] === undefined ? null : Number(found[3]);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
   const playlist = found[4] === undefined ? null : Number(found[4]);
-  // A playlist's run is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it (`roomNames.ts`).
-  if (playlist !== null && (dungeon !== null || found[5] === undefined || seas === 'normal')) return null;
-  return { id: found[1], seas, dungeon, run: found[5] ?? null, playlist };
+  // A run started from the Playlist is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it.
+  const marked = playlist !== null || found[5] !== undefined;
+  if (marked && (dungeon !== null || found[6] === undefined || seas === 'normal')) return null;
+  return { id: found[1], seas, dungeon, run: found[6] ?? null, playlist };
 }
 
-// A run's instance is drawn as the server's Find a Company draws one, by one rule.
-export { runInstance } from '../../../server/roomNames.ts';
+// A run's instance is drawn as the server's Find a Company draws one, and a run started at sea read, by one rule.
+export { runInstance, startedAtSea } from '../../../server/roomNames.ts';
 
 /** A run's room: the dungeon's room's name, then its instance. */
 export function runOf(base: string, instance: string): string {

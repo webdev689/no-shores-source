@@ -13,6 +13,7 @@ import {
   seaRoom,
   seaRoomName,
   socketsMost,
+  startedAtSea,
 } from './roomNames.ts';
 
 test('a node has one room at each difficulty, by one spelling each', () => {
@@ -250,6 +251,28 @@ test('a playlist’s run names its Elite Dungeon, its tier and its foes’ level
     assert.equal(nodeRoom(name), null, name);
   assert.ok(privateRun(`node-${room}`));
   assert.ok('node-smugglers-labyrinth--abyss--playlist-32--run-zzzzzzzz'.length <= 64);
+});
+
+test('the week’s run started from the Playlist is marked `--sea`, and opens as the week’s run does', () => {
+  const [marked, door] = ['saltworm-warrens--abyss--sea--run-k3j4h5g6', 'saltworm-warrens--abyss--run-k3j4h5g6'];
+  assert.deepEqual(nodeRoom(marked), nodeRoom(door));
+  assert.equal(runAsk(`node-${marked}`, 29_919_420), runAsk(`node-${door}`, 29_919_420));
+  assert.ok(startedAtSea(`node-${marked}`));
+  assert.ok(startedAtSea('node-saltworm-warrens--abyss--playlist-28--run-k3j4h5g6'), 'a playlist’s run');
+  assert.ok(!startedAtSea(`node-${door}`), 'one gone into by its door');
+  assert.ok(!startedAtSea('sea--run-k3j4h5g6'));
+  for (const name of [
+    'saltworm-warrens--sea--run-k3j4h5g6',
+    'saltworm-warrens--normal--sea--run-k3j4h5g6',
+    'saltworm-warrens--abyss--sea',
+    'saltworm-warrens--abyss--dungeon-1--sea--run-k3j4h5g6',
+    'saltworm-warrens--abyss--sea--dungeon-1--run-k3j4h5g6',
+    'saltworm-warrens--abyss--playlist-28--sea--run-k3j4h5g6',
+    'saltworm-warrens--abyss--sea--playlist-28--run-k3j4h5g6',
+    'saltworm-warrens--abyss--sea--sea--run-k3j4h5g6',
+  ])
+    assert.equal(nodeRoom(name), null, name);
+  assert.ok('node-smugglers-labyrinth--abyss--sea--run-zzzzzzzz'.length <= 64);
 });
 
 test('a run holds four, a company’s most, and only a run is ever full this way', () => {

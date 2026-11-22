@@ -13,6 +13,7 @@ import {
   runOf,
   seaRoomName,
   sharedRun,
+  startedAtSea,
 } from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
@@ -163,10 +164,18 @@ test('a dungeon at Elite or Abyss and every Elite Dungeon is a run, joined where
     run: 'k3j4h5g6',
     playlist: 28,
   });
+  // The week's run launched from the Playlist reads as the week's run, and as one started at sea.
+  const week = 'node-krakens-grotto--abyss--sea--run-k3j4h5g6';
+  assert.deepEqual(nodeOfRoom(week), nodeOfRoom('node-krakens-grotto--abyss--run-k3j4h5g6'));
+  assert.ok(startedAtSea(week) && !startedAtSea('node-krakens-grotto--abyss--run-k3j4h5g6'));
   for (const name of [
     'node-krakens-grotto--playlist-12--run-k3j4h5g6',
     'node-krakens-grotto--elite--playlist-12',
     'node-saltgrass-downs--elite--dungeon-1--playlist-12--run-k3j4h5g6',
+    'node-krakens-grotto--sea--run-k3j4h5g6',
+    'node-krakens-grotto--abyss--sea',
+    'node-saltgrass-downs--elite--dungeon-1--sea--run-k3j4h5g6',
+    'node-krakens-grotto--abyss--playlist-28--sea--run-k3j4h5g6',
   ])
     assert.equal(nodeOfRoom(name), null, name);
   assert.deepEqual(nodeOfRoom('node-krakens-grotto--run-k3j4h5g6'), {

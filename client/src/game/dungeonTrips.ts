@@ -12,7 +12,7 @@ import type { Happening } from './flow.ts';
 import type { DungeonDoor } from './isleLaw.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { PropTable } from '../models/tables.ts';
-import { dungeonRoom, nodeOfRoom, nodeRoom, runInstance, runOf, sharedRun } from './rooms.ts';
+import { dungeonRoom, nodeOfRoom, nodeRoom, runInstance, runOf, sharedRun, startedAtSea } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a trip reads of where the player stands on foot: the place, its node file's text, the seas of its room, the
@@ -168,7 +168,7 @@ export function dungeonTrips(
       void game.module.then((module) => {
         const { name } = askLayout(module, ask);
         const inside = where.dungeon === null ? `${node.id}--dungeon` : `${node.id}--dungeon-${number}`;
-        const away = where.playlist === null ? toNode(node, where.seas, number) : toSea;
+        const away = startedAtSea(place) ? toSea : toNode(node, where.seas, number);
         const work = into({ node, text: '' }, { number, ask }, where.seas, async () => place, away);
         game.travel({ kind: 'join', node: inside, name }, work);
       });

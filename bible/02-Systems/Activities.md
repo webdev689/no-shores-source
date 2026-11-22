@@ -170,7 +170,8 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
 - **Going and coming back.** A run found or launched is gone into from the sea or over the island's side, through a
   voyage's veil; out of it by its door, its portal or a wipe, the player is back on the sea where the ship lies,
   beside the port it was launched from, as a sea island's dungeon leaves back to the sea. The rooms take a player
-  into a playlist's run, or into a run of the week's two, from the sea ([[Server]], "Where a character comes from").
+  into a playlist's run, or the week's run the Playlist names `--sea`, from the sea alone, and out of it only back to
+  the sea ([[Server]], "Where a character comes from").
 - **What it pays.** Every clear pays its kills, its cache and a dungeon's clear, as any run. Beside them:
   - **Daily:** each playlist's first clear each day, a Boss Captain's kill at the run's level and tier (as the dungeon
     of the day pays) and a sure Vestige in a Boss's colours.

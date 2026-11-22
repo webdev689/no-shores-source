@@ -145,8 +145,9 @@ export function playlistScreenOf(
   };
 }
 
-/** The room a launch opens: its place's run at its seas, a playlist's naming its foes' level, then its instance. */
+/** The room a launch opens: its place's run at its seas, a playlist's naming its foes' level and the week's marked
+ *  `--sea` (so the rooms send it back to the sea, never onto its island), then its instance. */
 export function launchRoom(launch: PlaylistLaunch, place: string, instance: string): string {
-  const listed = launch.playlist === null ? '' : `--playlist-${launch.playlist}`;
+  const listed = launch.playlist === null ? '--sea' : `--playlist-${launch.playlist}`;
   return `node-${place}--${launch.seas}${listed}--run-${instance}`;
 }
