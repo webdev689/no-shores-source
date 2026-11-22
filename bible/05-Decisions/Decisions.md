@@ -274,6 +274,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue Is Passed Over, Its Camera and Footing Clear]]
 - [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
 - [[The Audit's Leftovers Are Fixed as Claude Suggested]]
+- [[Armour and Weapon Looks Belong to the Content That Gives Them]]
+- [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]]
+- [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]
+- [[The Playlist and Its Dungeons as Claude Shapes Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
