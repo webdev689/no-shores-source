@@ -37,14 +37,17 @@ import {
 import { type Song, type Tune, makeSong, midiNote } from './score.ts';
 
 type Section = 'tick' | 'theme' | 'answer' | 'full' | 'turn' | 'stop';
-/** The sections a take may lead to, and those a phase may open on: the clock alone, or the clock stopped. */
-const SECTIONS: Readonly<Record<Section, { readonly next: readonly Section[]; readonly opens?: boolean }>> = {
-  tick: { next: ['theme', 'answer', 'turn'], opens: true },
-  theme: { next: ['answer', 'full', 'turn', 'stop'] },
-  answer: { next: ['theme', 'full', 'stop'] },
-  full: { next: ['theme', 'turn', 'stop'] },
-  turn: { next: ['answer', 'full', 'stop'] },
-  stop: { next: ['tick', 'theme', 'answer'], opens: true },
+/** The sections a take may lead to, those a phase may open on (the clock alone, or the clock stopped), and the
+ *  change of the chime each tolls first: the stopped clock's is not the theme's, whose feels it shares. */
+const SECTIONS: Readonly<
+  Record<Section, { readonly next: readonly Section[]; readonly opens?: boolean; readonly change: number }>
+> = {
+  tick: { next: ['theme', 'answer', 'turn'], opens: true, change: 0 },
+  theme: { next: ['answer', 'full', 'turn', 'stop'], change: 1 },
+  answer: { next: ['theme', 'full', 'stop'], change: 2 },
+  full: { next: ['theme', 'turn', 'stop'], change: 3 },
+  turn: { next: ['answer', 'full', 'stop'], change: 0 },
+  stop: { next: ['tick', 'theme', 'answer'], opens: true, change: 2 },
 };
 /** Each phase's takes: a section, the clock's feel it keeps (no two of a section in one), and which of its leads. */
 const PHASE_TAKES: readonly (readonly [Section, number, number])[] = [
@@ -207,7 +210,7 @@ function phaseTake(w: Write, phase: Phase, section: Section, feel: number, lead:
       w.note('bells', bar, 0, 2, tones.pad[0] ?? 'C3', 94);
       w.note('bells', bar, 0.5, 2, tones.pad[1] ?? 'G3', 86);
     }
-    tolled(w, bar, number, feel, Object.keys(SECTIONS).indexOf(section));
+    tolled(w, bar, number, feel, SECTIONS[section].change);
     const gears = number === 2 || (number === 1 && section !== 'tick');
     warKit(w, bar, { full: number === 2, every: number === 3, gears, racing: number === 3, stopped: stop, feel });
     if (!stop && number === 2 && bar === 7) w.hit('chinese', bar, 3, 96);
@@ -243,7 +246,15 @@ function standTake(w: Write, section: Stand, feel: number): void {
   for (let bar = 0; bar < 8; bar++) {
     const name: ChordName = harmony[bar] ?? 'Cm';
     const tones = CHORDS[name];
-    floorBar(w, bar, name, { strings: true, choir: true, organ: 1.2, vel: 1.05, feel });
+    // The toll voices the strings a feel on: in its own feel, its danger's layers would be the count's.
+    floorBar(w, bar, name, {
+      strings: true,
+      choir: true,
+      organ: 1.2,
+      vel: 1.05,
+      feel,
+      voicingShift: section === 'toll' ? 1 : 0,
+    });
     escapement(w, bar, name, { fast: true, vel: 1.1, feel });
     const bell = bar >= 6 ? 'F#4' : 'C4';
     if (section === 'hammer') for (const beat of [0, 2]) w.note('bells', bar, beat, 1.8, beat ? 'F#4' : 'C4', 104);

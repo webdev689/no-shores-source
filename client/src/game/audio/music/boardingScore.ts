@@ -110,9 +110,17 @@ function phaseTake(w: Write, number: 1 | 2 | 3, bpm: number, section: Section, f
     const name: ChordName = harmony[bar] ?? 'Em';
     const tones = CHORDS[name];
     const driven = (number >= 2 || !rise) && !broken;
-    // A rising take's organ swells into the fight bar by bar; a driven one leans in.
+    // A rising take's organ swells into the fight bar by bar; a driven one leans in. Both voice the strings a feel
+    // on: in their own feel, their danger's layers would be a called or broken-down take's.
     const organ = (1 + 0.1 * number) * (rise ? 0.7 + bar * 0.05 : height ? 1.15 : 1);
-    bed(w, bar, name, { drive: driven ? 2 : 1, choir: number >= 2 || height, organ, vel: 1 + 0.03 * number, feel });
+    bed(w, bar, name, {
+      drive: driven ? 2 : 1,
+      choir: number >= 2 || height,
+      organ,
+      vel: 1 + 0.03 * number,
+      feel,
+      voicingShift: rise || height ? 1 : 0,
+    });
     if (broken) {
       for (const beat of FEELS[feel]?.surdo ?? []) w.hit('surdo', bar, beat, 104);
       w.hit('lowTom', bar, 3.5, 84);

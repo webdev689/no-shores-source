@@ -374,15 +374,17 @@ export function drums(w: Write, bar: number, drive: number, feel = 0): void {
 }
 
 /** The bed under a chord for a bar in a feel: the low brass's ostinato (eighths 3-3-2 at `drive` 1, leaning into the
- *  next bar at 2), the bass (struck at 2, held under it), the pad, and the strings and the choir as asked. */
+ *  next bar at 2), the bass (struck at 2, held under it), the pad, and the strings (in the voicing of the feel
+ *  `voicingShift` on from its own) and the choir as asked. */
 export function bed(
   w: Write,
   bar: number,
   name: ChordName,
-  { drive = 0, strings = true, choir = false, organ = 1, vel = 1, feel = 0 },
+  { drive = 0, strings = true, choir = false, organ = 1, vel = 1, feel = 0, voicingShift = 0 },
 ) {
   const tones = CHORDS[name];
-  const { struck, held, lean, voicing } = feelOf(feel);
+  const { struck, held, lean } = feelOf(feel);
+  const { voicing } = feelOf((feel + voicingShift) % FEELS.length);
   if (drive >= 1)
     ACCENT8.forEach((accent, i) => w.note('ostinato', bar, i * 0.5, 0.4, tones.ost, (accent ? 110 : 76) * vel));
   if (drive >= 2)

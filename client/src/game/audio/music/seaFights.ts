@@ -23,12 +23,14 @@ import {
 } from './seaBand.ts';
 import { type Song, type Tune, lay, tune } from './score.ts';
 
-/** A take: its section, its feel, which of its section's leads, and whether its harmony is turned. */
+/** A take: its section, its feel, which of its section's leads, whether its harmony is turned, and the feel whose
+ *  voicing it holds where a take of the same harmony shares its feel. */
 interface Line {
   readonly section: string;
   readonly feel: number;
   readonly lead: number;
   readonly turn?: boolean;
+  readonly voicingOf?: number;
 }
 interface Section {
   readonly harmony: readonly ChordName[];
@@ -167,8 +169,9 @@ const FIGHT_FILLS: readonly (readonly (readonly [Drum, number, number])[])[] = [
 /** A take of the sea fight: the drive, the bass, the timpani and the march in the feel's figures, the strings and the
  *  choir, the brass's stabs; the tune on the brass, the fiddle and the strings, or the horn under the brass; the
  *  intro's stabs or pickup; the break's line over thinned drums. */
-function fightTake(w: Write, harmony: readonly ChordName[], { section, feel, lead, turn }: Line): void {
-  const { drive, timpani, bass, strings, groove } = FIGHT_FEELS[feel] ?? FIGHT_FEELS[0];
+function fightTake(w: Write, harmony: readonly ChordName[], { section, feel, lead, turn, voicingOf }: Line): void {
+  const { drive, timpani, bass, groove } = FIGHT_FEELS[feel] ?? FIGHT_FEELS[0];
+  const { strings } = FIGHT_FEELS[voicingOf ?? feel] ?? FIGHT_FEELS[0];
   const broken = section === 'break';
   // The intro's drive grows into the fight, bar by bar.
   const rising = (bar: number) => (section === 'intro' ? 0.82 + bar * 0.025 : 1);
@@ -223,12 +226,12 @@ function fightTake(w: Write, harmony: readonly ChordName[], { section, feel, lea
 
 const FIGHT_TAKES: readonly Line[] = [
   { section: 'intro', feel: 0, lead: 0 },
-  { section: 'intro', feel: 1, lead: 1 },
+  { section: 'intro', feel: 1, lead: 1, voicingOf: 2 },
   { section: 'intro', feel: 2, lead: 2 },
   { section: 'a', feel: 1, lead: 0 },
   { section: 'a', feel: 2, lead: 1 },
   { section: 'a', feel: 0, lead: 2 },
-  { section: 'a', feel: 1, lead: 3, turn: true },
+  { section: 'a', feel: 1, lead: 3, turn: true, voicingOf: 0 },
   { section: 'b', feel: 0, lead: 0 },
   { section: 'b', feel: 1, lead: 1 },
   { section: 'b', feel: 2, lead: 2 },
@@ -291,8 +294,9 @@ const STORM_FEELS = [
 /** A take of the storm: the drive, the bass and the choir in the feel's figures, the timpani and the kick, the brass's
  *  stabs in open fifths, the unrest's high sixteenths; the theme on the horn, the strings, or the horn and the brass,
  *  answered on the turned chords; a line over the unrest; the breath, quiet, a fragment of the theme. */
-function stormTake(w: Write, harmony: readonly ChordName[], { section, feel, lead, turn }: Line): void {
-  const { drive, bass, timpani, choir, kicks } = STORM_FEELS[feel] ?? STORM_FEELS[0];
+function stormTake(w: Write, harmony: readonly ChordName[], { section, feel, lead, turn, voicingOf }: Line): void {
+  const { drive, bass, timpani, kicks } = STORM_FEELS[feel] ?? STORM_FEELS[0];
+  const { choir } = STORM_FEELS[voicingOf ?? feel] ?? STORM_FEELS[0];
   const breath = section === 'breath';
   const unrest = section === 'unrest' || (section === 'theme' && lead === 2);
   // The drive's take grows into the storm bar by bar, the choir coming in on its third.
@@ -342,7 +346,7 @@ const STORM_TAKES: readonly Line[] = [
   { section: 'theme', feel: 1, lead: 0 },
   { section: 'theme', feel: 2, lead: 1 },
   { section: 'theme', feel: 0, lead: 2 },
-  { section: 'theme', feel: 2, lead: 3, turn: true },
+  { section: 'theme', feel: 2, lead: 3, turn: true, voicingOf: 0 },
   { section: 'unrest', feel: 0, lead: 0 },
   { section: 'unrest', feel: 1, lead: 1 },
   { section: 'unrest', feel: 2, lead: 2 },

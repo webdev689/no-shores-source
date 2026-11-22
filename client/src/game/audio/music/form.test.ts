@@ -136,6 +136,14 @@ test('a song opens on a take that opens, never the one it opened on last', () =>
   }
 });
 
+test("a song does not open on the last fight's opening, even when that take was heard longest ago", () => {
+  const form = SONG.form!;
+  // The last fight opened on a and played c and b after it: of the openings, a was heard longest ago.
+  const heard = hearing(hearing(hearing(UNHEARD, 0, true), 2, false), 1, false);
+  const openings = Array.from({ length: 10 }, (_unused, roll) => openingOf(form, heard, () => roll / 10));
+  assert.deepEqual(new Set(openings), new Set([1]));
+});
+
 /** An audio context that builds nothing, keeping when each source was asked to start. */
 function fakeAudio() {
   const starts: number[] = [];
