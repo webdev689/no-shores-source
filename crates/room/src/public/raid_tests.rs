@@ -344,7 +344,8 @@ fn a_wave_forms_out_of_sight_beyond_the_approach_and_marches_in() {
     let approach_out = combat::sight::apart([approach[0], approach[1]], middle);
     assert!(wave.iter().all(|id| out(&room, id) > approach_out + 8.0), "formed beyond the approach");
     let formed: Vec<f64> = wave.iter().map(|id| out(&room, id)).collect();
-    ticks(&mut room, 3 * 60);
+    // Five seconds: a Collector walks to its store at a foe's pace (`foes::tuning::FOE_PACE`).
+    ticks(&mut room, 5 * 60);
     assert!(wave.iter().zip(&formed).all(|(id, was)| out(&room, id) < was - 5.0), "they march in");
 }
 

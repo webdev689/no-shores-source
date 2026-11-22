@@ -342,6 +342,8 @@ fn corvane_s_called_foes_fall_with_him_in_his_node_and_he_calls_them_all_anew_wh
     assert_eq!(room.garrison[0].cleared_at, None, "his escort stands: his group is not cleared");
     clear(&mut room, 0);
     run(&mut room, STAND_AGAIN + 1);
+    assert_eq!(room.garrison[0].standing[0], corvane, "a Boss's group waits longer than a lesser one");
+    run(&mut room, GREAT_STAND_AGAIN - STAND_AGAIN);
     let again = room.garrison[0].standing[0];
     assert!(again != corvane && room.garrison[0].cleared_at.is_none(), "his group stood again");
     into_its_last_phase(&mut room, again);

@@ -18,7 +18,7 @@ const WIDE_OF_SQUARE: f64 = 0.02;
 /// What a foe's thinking asks of its body and its arms this tick.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct Ask {
-    /// The bearing to move along and at what share of a walk; none to stand.
+    /// The bearing to move along and at what share of a player's walk (or run), held to its own pace; none to stand.
     pub way: Option<(f64, f64)>,
     /// The bearing to face; none to face its way.
     pub face: Option<f64>,
@@ -140,7 +140,8 @@ fn across(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Option<Controls>
         brain.heading = crossing.bearing;
     }
     let jump = square && crossing.jump && body.mode == Mode::Ground;
-    Some(Controls { forward: if square { 1.0 } else { 0.0 }, yaw: brain.heading, jump, ..Controls::default() })
+    // At its own pace, as everywhere: a foe crosses no faster than it walks.
+    Some(Controls { forward: if square { here.pace() } else { 0.0 }, yaw: brain.heading, jump, ..Controls::default() })
 }
 
 /// Whether this tick's step, a share of a walk (or a run) east and south, walks a foe on its feet off an edge more
@@ -167,10 +168,17 @@ pub fn controls(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Intent {
     if let Some((way, pace)) = ask.way
         && (!ask.walk_facing || off(brain.heading, way) <= WALK_FACE)
     {
+        let pace = pace.min(here.pace());
         wish = [libm::sin(way) * pace, -libm::cos(way) * pace];
     }
     if !ask.unspaced {
         wish = spaced(here, wish);
+    }
+    // Running, no push from an ally carries it on along its way past its own run, so a player running away gets away.
+    if let Some((way, _)) = ask.way.filter(|_| ask.run) {
+        let ahead = [libm::sin(way), -libm::cos(way)];
+        let over = (wish[0] * ahead[0] + wish[1] * ahead[1] - here.pace()).max(0.0);
+        wish = [wish[0] - ahead[0] * over, wish[1] - ahead[1] * over];
     }
     let whole = libm::sqrt(wish[0] * wish[0] + wish[1] * wish[1]);
     let length = whole.min(1.0);

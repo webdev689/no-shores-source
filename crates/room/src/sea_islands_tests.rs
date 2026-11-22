@@ -1,5 +1,5 @@
 use super::super::{CourseRefused, Sea};
-use super::{ASHORE_TICKS, FADE_TICKS, FIND_M, NEAR_M, SIGHT_M, apart};
+use super::{ASHORE_TICKS, FADE_TICKS, FIND_M, NEAR_M, SIGHT_M, apart, climate_and_resource, dungeon_room};
 use crate::PlayerId;
 use crate::harbour::{Harbours, SUNK_KEPT, WASHED_UP};
 
@@ -157,18 +157,44 @@ fn an_account_whose_ship_lies_at_an_anchorage_is_landed_there_until_it_sails_on(
     lay_at(&mut sea, anchored, [anchorage[0].round(), anchorage[1].round() + 20.0]);
     sea.tick();
     let islands = sea.islands();
-    assert!(islands.landed(id, seed, "anchored"));
-    assert!(!islands.landed(id, seed, "far-off"), "a ship off the anchorage");
-    assert!(!islands.landed(id, seed ^ 1, "anchored"), "another island of its number");
-    // Gone ashore, it stays landed; back at sea and under way, it is landed nowhere.
+    let first = islands.landed(id, seed, "anchored").expect("landed");
+    assert!(islands.landed(id, seed, "far-off").is_none(), "a ship off the anchorage");
+    assert!(islands.landed(id, seed ^ 1, "anchored").is_none(), "another island of its number");
+    // Gone ashore, it stays landed, the same landing; back at sea and under way, it is landed nowhere.
     sea.leave(anchored);
     ticks(&mut sea, 60);
-    assert!(sea.islands().landed(id, seed, "anchored"), "ashore, its ship left at the anchorage");
+    assert_eq!(sea.islands().landed(id, seed, "anchored"), Some(first), "ashore, its ship left at the anchorage");
     let back = at_rest(&mut sea);
     assert!(sea.own(back, "anchored"));
     lay_at(&mut sea, back, [anchorage[0].round() + 400.0, anchorage[1].round()]);
     sea.tick();
-    assert!(!sea.islands().landed(id, seed, "anchored"), "sailed off");
+    assert!(sea.islands().landed(id, seed, "anchored").is_none(), "sailed off");
+    // Back at its anchorage, it lands again: a landing of its own, a new visit.
+    lay_at(&mut sea, back, [anchorage[0].round(), anchorage[1].round() + 20.0]);
+    sea.tick();
+    let again = sea.islands().landed(id, seed, "anchored").expect("landed again");
+    assert_ne!(again, first, "a new landing");
+}
+
+#[test]
+fn a_standing_islands_dungeon_is_found_by_its_rooms_name_alone_and_no_other() {
+    // The page folds the same seeds to the same eight digits (client/src/game/isleLaw.test.ts).
+    assert!(dungeon_room(255, "continent-2").ends_with("-000000ff"));
+    assert!(dungeon_room(0x1234_5678_9abc_def0, "continent-7").ends_with("-88888888"));
+    let mut sea = sea_round("continent-4", "desert");
+    at_rest(&mut sea);
+    while sea.islands().standing.is_empty() {
+        sea.tick();
+    }
+    let (id, seed, style) =
+        (sea.islands().standing[0].id, sea.islands().standing[0].seed, sea.islands().standing[0].kind.dungeon());
+    let room = dungeon_room(seed, "continent-4");
+    assert!(room.starts_with(&format!("sea-dungeon-continent-4-{style}-")), "{room}");
+    assert_eq!(sea.island_behind(&room).map(|island| island.id), Some(id));
+    let restyled = room.replace(style, if style == "crypt" { "mines" } else { "crypt" });
+    for named in [dungeon_room(seed ^ (1 << 40), "continent-4"), dungeon_room(seed, "continent-5"), restyled] {
+        assert!(sea.island_behind(&named).is_none(), "{named}: no island the sea holds");
+    }
 }
 
 #[test]
@@ -218,8 +244,8 @@ fn an_island_fades_once_nothing_holds_it_and_players_ashore_hold_it() {
 #[test]
 fn a_player_washes_up_at_a_found_island_nearer_than_any_port_unrepaired() {
     let mut sea = sea_round("continent-4", "desert");
-    sea.harbour.harbours = Harbours { ports: vec![("far".into(), [5_000.0, 5_000.0])], ways: None };
     let player = at_rest(&mut sea);
+    sea.harbour.harbours = Harbours { ports: vec![("far".into(), [5_000.0, 5_000.0])], ways: None };
     while sea.islands().standing.is_empty() {
         sea.tick();
     }
@@ -235,4 +261,16 @@ fn a_player_washes_up_at_a_found_island_nearer_than_any_port_unrepaired() {
     let told = sea.harbour.told.iter().find(|(to, numbers)| *to == player && numbers[0] == WASHED_UP);
     assert_eq!(told.map(|(_, numbers)| (numbers[2], numbers[4])), Some((-1.0, f64::from(id))));
     assert_eq!(sea.kept(player).map(|(kept, _)| kept), Some(SUNK_KEPT), "an island does not repair");
+}
+
+#[test]
+fn an_islands_climate_and_resource_are_those_of_the_continent_whose_water_it_lies_in() {
+    let text = r#"{ "continents": [{ "id": "continent-4", "climate": "desert", "outline": [[0, 0], [10, 0], [10, 10]] },
+        { "id": "unnamed", "outline": [[20, 0], [30, 0], [30, 10]] }], "isles": [] }"#;
+    let layout = world::layout::parse(text).expect("a layout");
+    let resources = &gear::catalogue::catalogue().resources;
+    let sunstone = resources.iter().position(|found| found.id == "sunstone").and_then(|at| u8::try_from(at).ok());
+    assert!(sunstone.is_some(), "the catalogue holds Sunstone");
+    assert_eq!(climate_and_resource(&layout.continents[0]), ("desert".to_owned(), sunstone), "continent-4's Sunstone");
+    assert_eq!(climate_and_resource(&layout.continents[1]), (String::new(), None), "none for land with none");
 }

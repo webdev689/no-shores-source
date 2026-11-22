@@ -269,7 +269,7 @@ test('a slow page counts the next event and a chest on the wall’s time, not it
     wall = 10 + frame;
     shown = view.frame(raid([], 2), [], lying, bodies(), 1.1 + frame * 0.1, [], () => 0);
   }
-  assert.equal(shown?.quest?.steps[0]?.clock, '1:48');
+  assert.equal(shown?.quest?.steps[0]?.clock, 108);
 });
 
 test('with no event (its room lost) no chest is drawn, and E opens none', () => {
@@ -351,7 +351,7 @@ test('a chest thumps in, is marked till opened, and the tracker counts the time 
   assert.deepEqual(come.sounds, [{ cue: 'drop.land', at: [1, 0, 0] }]);
   assert.ok(come.shown?.places.some((place) => place.kind === 'chest'));
   const later = view.frame(raid([], 2), [], lying, bodies(), 13, [], () => 0);
-  assert.equal(later.quest?.steps[0]?.clock, '1:48');
+  assert.equal(later.quest?.steps[0]?.clock, 108);
 });
 
 test('on its ground a running event holds the music at tension, and at its peak in the last minute', () => {

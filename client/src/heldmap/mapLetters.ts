@@ -18,8 +18,8 @@ import {
 /** The map's face, Overlook's own (face.css): a port's name a step larger than every other word. */
 export const fontOf = (kind: string) => `500 ${kind === 'port' ? PORT_PX : WORD_PX}px ${FACE}`;
 /** The inks besides the key's iron-gall (mapKey.ts): a lighter brown for ruins and nodes, the route's red-brown for
- *  the place chosen, and the parchment's own colour, which rings every word and fills each water's ring so it reads
- *  over the coasts' lines and the washes. */
+ *  the place chosen and the ring round a place the quest names, and the parchment's own colour, which rings every word
+ *  and fills each water's ring so it reads over the coasts' lines and the washes. */
 export const LIGHT_INK = '#5c4631';
 export const ROUTE = '#781c14';
 export const PARCHMENT = '#eedebe';
@@ -158,6 +158,12 @@ function paintLetter(painter: Painter, letter: MapLetter): void {
     painter.arc(0, 0, half - 0.75, 0, 2 * Math.PI);
     if (letter.kind === 'port') painter.fill();
     else painter.stroke();
+  }
+  if (letter.quest) {
+    painter.strokeStyle = ROUTE;
+    painter.beginPath();
+    painter.arc(0, 0, half + 2.5, 0, 2 * Math.PI);
+    painter.stroke();
   }
   if (!letter.side || letter.side === 'centre') return;
   // A name on the left ends at its offset from the mark; on the right it starts there.

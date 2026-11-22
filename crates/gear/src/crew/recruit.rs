@@ -113,11 +113,12 @@ pub fn taken_odds(rank: u8) -> (f64, Rarity) {
     }
 }
 
-/// The officer a won deck gives its winner, if one joins: rarely, at the deck's level, more often from a higher rank.
+/// The officer a won deck gives its winner, if one joins: rarely, at the deck's level, more often from a higher rank
+/// and on a harder voyage (`raised`, its tier's reward).
 #[must_use]
-pub fn taken(rank: u8, level: u8, dice: &Dice) -> Option<Officer> {
+pub fn taken(rank: u8, level: u8, raised: f64, dice: &Dice) -> Option<Officer> {
     let (chance, grade) = taken_odds(rank);
-    if dice.roll(Purpose::Taken, 0) >= chance {
+    if dice.roll(Purpose::Taken, 0) >= chance * raised {
         return None;
     }
     let post = Post::ALL[dice.pick(Purpose::Taken, 1, Post::ALL.len())];

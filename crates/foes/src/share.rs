@@ -15,13 +15,12 @@ use combat::fighter::Action;
 use combat::lock::sees;
 use combat::strike::reach_of;
 use combat::{Fighter, FighterId};
-use movement::TUNING;
 
 /// How soon, in seconds, it could land a blow on `target`, `distance` m off: its run there, and a beat for each other
 /// foe already at it.
 fn soon(here: &Here<'_, '_>, board: &Board, target: FighterId, distance: f64) -> f64 {
     let beat = here.world.director.pressed().beat;
-    distance / TUNING.run + beat * board.fighting(target, here.me) as f64
+    distance / here.run() + beat * board.fighting(target, here.me) as f64
 }
 
 /// Of the fighters it sees (`seen`, as `in_sight` gives them), the one to go for rather than `kept` (an id and its
@@ -62,7 +61,7 @@ pub fn share(brain: &mut Brain, here: &Here<'_, '_>, board: &Board, sight: Optio
     }
     let striker = brain.struck_by.take().and_then(|id| here.enemy(id).map(|other| (id, *other)));
     if let Some((id, other)) = striker.filter(|(_, other)| within(brain, here, other)) {
-        let seen = sees(here.world.blocks, &here.fighter, &other);
+        let seen = sees(here.world.blocks, here.world.terrain, &here.fighter, &other);
         brain.drawn_at = Some(tick);
         return Some(turn_to(brain, here, id, &other, seen));
     }

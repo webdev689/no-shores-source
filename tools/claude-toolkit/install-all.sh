@@ -41,10 +41,12 @@ s['CLAUDE_MEM_FILE_READ_GATE_ENABLED'] = 'false'; json.dump(s, open(p, 'w'), ind
 "
 # impeccable: `npx impeccable install` downloads from impeccable.style, which this workspace's network blocks.
 # Install its skill from GitHub instead; its engine comes from the npm registry on first use.
-tmp=$(mktemp -d) && clone_at https://github.com/pbakaus/impeccable d41d9860b0094dcb68030657da63461212835aaa "$tmp/impeccable" \
+tmp=$(mktemp -d) && clone_at https://github.com/pbakaus/impeccable b49177d32788f2dc585c42831d845dacf1ebed2c "$tmp/impeccable" \
   && mkdir -p ~/.claude/skills && rm -rf ~/.claude/skills/impeccable \
   && cp -r "$tmp/impeccable/.claude/skills/impeccable" ~/.claude/skills/ && rm -rf "$tmp"
 sh ~/.claude/skills/impeccable/scripts/impeccable telemetry off >/dev/null 2>&1 || true   # no usage beacon
+# Its design hook reviews UI edits as they land; its manifest and consent live outside git, so they are set each session.
+[ -z "${REPO_DIR:-}" ] || (cd "$REPO_DIR" && sh ~/.claude/skills/impeccable/scripts/impeccable hooks on >/dev/null)
 # headroom-ai needs a newer PyYAML than Debian's, which pip cannot uninstall
 pip install --break-system-packages -q --ignore-installed PyYAML==6.0.3
 pip install --break-system-packages -q "headroom-ai[mcp,proxy]==0.44.0" &&   # [mcp] pins mcp<2; mcp 2.x breaks headroom mcp serve

@@ -78,12 +78,16 @@ test('the Fissure’s growth, a foe the room strikes, stands as its crystal alon
   assert.deepEqual(new FoeFigures(roster).cards(fight, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes()), []);
 });
 
-test('a foe the room no longer holds is let go', () => {
+test('a foe the room no longer holds is let go, and the forge forgets its last card', () => {
   const figures = new FoeFigures(roster);
-  figures.cards(fightWith(3, -4, 10), forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());
+  const forgotten: number[] = [];
+  const forgetting = { ...forge, forget: (id: number) => forgotten.push(id) } as unknown as Cards;
+  figures.cards(fightWith(3, -4, 10), forgetting, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes());
+  const figure = figures.placed.get(7)?.id;
   const gone = { foes: new Map(), roomTick: 11 } as unknown as Fighting;
-  assert.deepEqual(figures.cards(gone, forge, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes()), []);
+  assert.deepEqual(figures.cards(gone, forgetting, { x: 0, y: 0 }, 0, 1, 1 / 60, new Flashes()), []);
   assert.equal(figures.placed.size, 0);
+  assert.deepEqual(forgotten, [figure]);
 });
 
 /** A Collector seen tick after tick, from `tick` on, at the places and in the modes `seen` gives, each kept with the

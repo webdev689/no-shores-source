@@ -349,7 +349,7 @@ export class LandScene {
     const bars = fleet ? fleet.bars(view, shown) : this.naval.bars(view, shown);
     // A captain's fight shows its readout; the plates keep under its card, as the game's do.
     if (frame.readout) {
-      frame.readout.update(fleet ? null : this.naval.display(time, { boardable: false, boardKey: 'E' }));
+      frame.readout.update(fleet ? null : this.naval.display(time, { boardable: false, boardKey: 'E', braceKey: 'C' }));
       this.shipPlates.top = frame.readout.under;
     }
     const plates =

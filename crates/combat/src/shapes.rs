@@ -1,10 +1,12 @@
 //! A foe's telegraphed blows, as DFO's TELL draws them: each a shape on the ground its foe winds up to, marked so
 //! the player can read it, landing on whoever's feet stand in it when the wind-up ends. Iron ones cannot be guarded.
 
+use crate::Surroundings;
 use crate::sight::clear_line;
 use crate::ticks;
 use crate::tuning::{CHEST, STRIKE_HEIGHT};
-use movement::Block;
+use movement::blocks::{ground_at, pushed_out, slide};
+use movement::{Block, Body, Near, Terrain};
 
 /// The shapes. A lunge and a charge are lanes ahead; a sweep an arc; a slam a disc just ahead; a ring an annulus about
 /// the foe's feet, safe close in; a leap a disc where its target stood; an aimed shot a line its arrow flies along.
@@ -110,7 +112,7 @@ pub struct TelegraphOrder {
 
 /// A telegraphed blow winding up: its shape, ticks since it began, the wind-up's length, where the shape stands
 /// (the foe's feet when it began) and the bearing it points, how far ahead a leap or an aimed shot reaches, whether it
-/// is iron, and the tick a feint is cut at.
+/// is iron, the tick a feint is cut at, and the height a charge or a leap came down at once it lands.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Telegraph {
     pub shape: Shape,
@@ -121,6 +123,7 @@ pub struct Telegraph {
     pub ahead: f64,
     pub iron: bool,
     pub feint_at: Option<u32>,
+    pub landed_z: Option<f64>,
 }
 
 impl Telegraph {
@@ -137,6 +140,7 @@ impl Telegraph {
             ahead: order.ahead,
             iron: order.iron,
             feint_at: order.feint_at,
+            landed_z: None,
         }
     }
 
@@ -181,15 +185,17 @@ impl Telegraph {
     }
 
     /// Whether its blow strikes a body standing at `feet`: inside its shape on the ground, within a blow's height of
-    /// its foe, and with no block between the body and where the blow comes from (a leap's landing, else its foe).
+    /// its foe where it ends (a charge's or a leap's where it came down), and with no block nor wall of the terrain
+    /// between the body and where the blow comes from (a leap's landing, else its foe as it set off).
     #[must_use]
-    pub fn strikes(&self, feet: [f64; 3], blocks: &[Block]) -> bool {
+    pub fn strikes(&self, feet: [f64; 3], blocks: &[Block], terrain: &dyn Terrain) -> bool {
+        let ends_z = self.landed_z.unwrap_or(self.origin[2]);
         let leap = self.landing().filter(|_| self.shape == Shape::Leap);
-        let from = leap.unwrap_or([self.origin[0], self.origin[1]]);
+        let (from, from_z) = leap.map_or(([self.origin[0], self.origin[1]], self.origin[2]), |at| (at, ends_z));
         let chest = |x: f64, y: f64, z: f64| [x, y, z + CHEST];
         self.holds(feet[0], feet[1])
-            && (feet[2] - self.origin[2]).abs() <= STRIKE_HEIGHT
-            && clear_line(blocks, chest(from[0], from[1], self.origin[2]), chest(feet[0], feet[1], feet[2]))
+            && (feet[2] - ends_z).abs() <= STRIKE_HEIGHT
+            && clear_line(blocks, terrain, chest(from[0], from[1], from_z), chest(feet[0], feet[1], feet[2]))
     }
 
     /// Where its foe's feet go at the end of a charge or a leap: along its lane, or to its disc.
@@ -202,4 +208,28 @@ impl Telegraph {
         };
         Some([self.origin[0] + libm::sin(self.bearing) * reach, self.origin[1] - libm::cos(self.bearing) * reach])
     }
+}
+
+/// A charge crosses its lane and a leap flies to its disc in the last ticks of the wind-up.
+pub(crate) fn travel<B: Near + ?Sized>(
+    body: &Body,
+    telegraph: &Telegraph,
+    around: &Surroundings<'_, B>,
+) -> Option<Body> {
+    let landing = telegraph.landing()?;
+    let travel = telegraph.travel_ticks();
+    let begun = telegraph.windup.saturating_sub(travel);
+    if telegraph.elapsed < begun || travel == 0 {
+        return None;
+    }
+    let left = f64::from(telegraph.windup.saturating_sub(telegraph.elapsed).max(1));
+    let (step_x, step_y) = ((landing[0] - body.x) / left, (landing[1] - body.y) / left);
+    let share = f64::from(telegraph.elapsed - begun + 1) / f64::from(travel);
+    let rise = if telegraph.shape == Shape::Leap { 4.8 * share * (1.0 - share) } else { 0.0 };
+    let (x, y) = slide(around.blocks, around.terrain, body, step_x, step_y);
+    // Off a drop its feet come down beside the block it slid off at its old height: it is set down clear of it.
+    let feet = |x, y| ground_at(around.blocks, around.terrain, x, y, body.z) + rise;
+    let (x, y) = pushed_out(around.blocks, around.terrain, x, y, body.height(), feet);
+    let facing = telegraph.bearing;
+    Some(Body { x, y, z: feet(x, y), vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
 }

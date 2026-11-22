@@ -50,6 +50,8 @@ export class Pictures {
   /** Where `picture` lies in the atlas at `width` by `height` texels, once its pixels have come; null until then, or
    *  when it could not be had. */
   texels(picture: Picture, width: number, height: number): Placed | null {
+    // One laid at no size, as a page's is on its first frame before its room is known, has no pixels to be had.
+    if (width < 1 || height < 1) return null;
     const key = `${picture.key} ${width}x${height}`;
     const { source } = picture;
     let entry = this.entries.get(key);
@@ -74,10 +76,14 @@ export class Pictures {
   private load(key: string, entry: Entry, source: PictureSource, width: number, height: number, pixel: boolean): void {
     const placed = entry.placed;
     if (!placed) return;
+    // A bitmap made here is let go once copied in, or once it is no longer wanted: its pixels are held outside the
+    // script's heap, and only closing it gives them back at once.
     const done = (image: Image) => {
-      if (this.entries.get(key) !== entry) return;
-      this.copy(placed, image);
-      entry.ready = true;
+      if (this.entries.get(key) === entry) {
+        this.copy(placed, image);
+        entry.ready = true;
+      }
+      if ('close' in image) image.close();
     };
     const failed = (error: unknown) => console.warn('a picture could not be had:', error);
     if ('pixels' in source) {

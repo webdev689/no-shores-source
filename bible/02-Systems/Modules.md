@@ -165,7 +165,7 @@ hub's, keep seeds of their own. The `modules` workflow bakes on every change to 
 builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make the committed
 manifest or if a second bake does not make the same bytes, keeping both bakes of a failed run, as far as each went, for
 a week (`modules-differed`) to set beside each other and another machine's, and a second job, which installs nothing,
-publishes the first bake's meshes with the repository's Cloudflare token.
+publishes the first bake's meshes with the repository's `R2_TOKEN`.
 
 ## In the game
 

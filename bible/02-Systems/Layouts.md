@@ -223,12 +223,17 @@ from the sea, fresh water and the claim's edge), then:
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
    wilds or arena as an event's ground, each hamlet's three stores, its raiders' approach and their two banners, where
    each wilds' fissure opens beside its obelisk and its growth spot ([[Public Events]]), two patrol beacons at each place's rim, up to sixteen resource nodes off the
-   paths (ore on steep ground, salvage by the sea, herbs by fresh water, timber elsewhere), each beacon and resource
-   5 m clear of every way's edge, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
-   nearest point. Each beacon and resource is a place before its activity comes (`marks`): a beacon's brazier glowing
-   on a stone plinth in a ring of standing stones; ore as a broken outcrop seamed with metal and its spoil; salvage as
-   broken timbers and spilt stores; herbs by a gatherer's drying rack hung with bundles; timber as felled logs stacked
-   by a stump with its axe, the logs side by side on the lowest ground under the stack.
+   paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
+   5 m clear of every way's edge, each resource 12 m from every other and from each beacon, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
+   nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
+   the section's ring, on water, within a metre of a solid taller than a step or within 1.5 m of a planting, once all is
+   laid), and a patrol stands its material nodes there, a third at a time ([[Server]]). Each beacon and
+   resource is a place (`marks`): a beacon's brazier glowing on a stone plinth in a ring of standing stones; and at each
+   resource node the place its resource comes from, built of the solids' own materials: Brineglass's tide pool ringed
+   with wet stones and salt shards, Cairn Iron's stacked cairn seamed with iron, Heartwood Resin's broad old stump with
+   amber bled down it, Sunstone's desert stones bedded in sand and glowing, Goldgrass's stand of tall gold grass,
+   Mistbloom's low mound of pale flowers, Windthistle's thistles gone to down, Bog Pearl's black pool rimmed with
+   shells, and Rimecrystal's frozen rock grown with spikes of frost.
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, no cell of it touching
     the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
     the landing or the way in.

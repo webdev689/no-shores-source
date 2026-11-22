@@ -4,6 +4,7 @@ import { RARITIES, itemName } from '../player/gear.ts';
 import type { Cards } from '../player/cards.ts';
 import type { Picture } from '../player/picture.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
+import { BINDS, keyNameOf } from '../player/input.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
@@ -18,6 +19,7 @@ import { APPEARANCE_KEY } from './appearanceButton.ts';
 import { artOf, gearAskOf } from './artsCards.ts';
 import { ARTS_HINTS, ART_DIAMOND_KEY, artsPage } from './artsPage.ts';
 import { spellKey } from './artsRows.ts';
+import { boardPage } from './bountyBoard.ts';
 import { characterPage } from './characterPage.ts';
 import { CompanyHud } from './companyHud.ts';
 import { nameCard } from './gearCard.ts';
@@ -38,6 +40,7 @@ import {
 import { TAB_PRESSES, bannerNode, footerNode, screenNode, tabId, tabsNode, topNode } from './gearShell.ts';
 import { inventoryPage } from './inventoryPage.ts';
 import { ITEM_NAME, itemPage } from './itemPage.ts';
+import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
 import type { MenuContext, PlainContext } from './menuPage.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import { hush } from './npc/npcSpeech.ts';
@@ -61,13 +64,12 @@ const isTab = (view: View): view is Tab => (TABS as readonly string[]).includes(
 const ofGear = (view: View) => view === 'character' || view === 'inventory' || view === 'ship' || !isTab(view);
 
 /**
- * The menu, after Destiny's, in the Enhanced Plus kit, drawn by the game: Character (I), Inventory (O), Journal, Ship,
- * Social, Guild and Settings under a header of tabs; a station's screen (the vault, a vendor's stall) in their place
- * when its counter is used; and an item's page laid over either when one is inspected. While it is open the world
- * behind it is dimmed, the pointer is free and the keys and the pad are its; Escape or the pad's B steps back: the
- * item's page, then a slot's flyout, then the menu. Gear shows as the player's room last sent it, each press an ask
- * the room answers; where no room keeps gear it says so. While `resting` (the story plays) it never opens, so its keys
- * stay the story's. Answers the layer that draws it, with the company and what the player gains, shown in play too.
+ * The menu, after Destiny's, in the Enhanced Plus kit, drawn by the game: its tabs (Character (I), Inventory (O),
+ * Journal, Ship, Social, Guild, Settings), a station's screen in their place at its counter, and an item's page over
+ * either. While open the world is dimmed and the pointer, keys and pad are its; Escape or the pad's B steps back: the
+ * item's page, then a slot's flyout, then the menu. Gear shows as the room last sent it, each press an ask; while
+ * `resting` (the story, all but the wreck) it never opens. The Journal and the bounty board read `source`. Answers the
+ * layer that draws it, with the company and what the player gains, shown in play too.
  */
 export function startGearWindow(
   fighting: () => boolean,
@@ -76,13 +78,17 @@ export function startGearWindow(
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
+  fed: () => GearHere | null = here,
+  source: JournalSource | null = null,
 ): Layer {
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
   const picturesOf = (forge: Cards) => (pictures ??= new ItemPictures(forge));
-  const feed = new AcquiredFeed(here, picturesOf);
+  // `fed` is the feed's gear: at sea, the sea's word on it, where the menu shows none.
+  const feed = new AcquiredFeed(fed, picturesOf);
   const company = new CompanyHud(link);
   const holds = new Holds();
+  const journal = new Journal(source);
   let view: View | null = null;
   let slot: number | null = null;
   /** Whether the Character page shows the worn Art's screen, and the Core slot whose flyout is open on it. */
@@ -122,6 +128,8 @@ export function startGearWindow(
   const shut = () => {
     holds.letGo();
     view = null;
+    // The timers go up with the Journal, so they never stand over another tab.
+    journal.up();
     // Its keeper falls silent with it.
     hush();
     play('close');
@@ -145,6 +153,7 @@ export function startGearWindow(
       slot = null;
     } else if (artSlot !== null) [artSlot, focusNext] = [null, `core-${artSlot}`];
     else if (npcStepBack()) return play('back');
+    else if (view === 'journal' && journal.up()) focusNext = HOURGLASS;
     else if (arts) [arts, focusNext] = [false, ART_DIAMOND_KEY];
     else if (appearance) [appearance, focusNext] = [false, APPEARANCE_KEY];
     else return shut();
@@ -155,6 +164,7 @@ export function startGearWindow(
     // A hold under way on the page left behind does not act on it unseen, nor does its card stay.
     holds.letGo();
     const opening = view === null;
+    if (wanted !== 'journal') journal.up();
     [view, slot, inspecting, roster, accountPanel] = [wanted, null, null, null, null];
     [arts, artSlot, appearance] = [false, null, false];
     shelf = onShelf ?? FIRST_SHELF;
@@ -181,8 +191,9 @@ export function startGearWindow(
   nameAgain();
   addEventListener(ACCOUNT_CHANGED, nameAgain);
 
-  /** A page that needs no gear: a page to come, Social or Settings. */
+  /** A page that needs no gear: the Journal, a page to come, Social or Settings. */
   const plainPage = (shown: View, plain: PlainContext): Node => {
+    if (shown === 'journal') return journal.page(plain);
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
@@ -217,7 +228,11 @@ export function startGearWindow(
     // The room's word has come, so no ask of the Art's screen waits any more.
     if (gear && gear !== bannerGear) artPending = null;
     bannerGear = gear ?? bannerGear;
-    // Tabs, their arrows, and the presses of the frame.
+    // Tabs, their arrows, the pad's bumpers, and the presses of the frame.
+    if (frame.turned !== 0 && isTab(shown)) {
+      const next = TABS[(TABS.indexOf(shown) + frame.turned + TABS.length) % TABS.length];
+      if (next) open(next);
+    }
     for (const tab of TABS) {
       const id = tabId(tab);
       if (frame.clicked(id) && view !== tab) open(tab);
@@ -330,6 +345,7 @@ export function startGearWindow(
       else if (shown === 'ship')
         // On its tab the officer whose page is open stands in the slot's place, so Escape steps back from it.
         page = shipTab(context, ship(), [shelf, slot], (part, officer) => ([shelf, slot] = [part, officer]));
+      else if (shown === 'board') page = boardPage(context, () => source?.week()?.today.endsAt ?? null);
       else if (!isTab(shown)) {
         page = stationPage(context, shown);
         if (isKeeperView(shown) && npcChoosing()) aside = npcHints(shown);
@@ -341,9 +357,11 @@ export function startGearWindow(
     // A Vestige opens with a click only at the Mage's counter, so the footer offers it only there.
     const opens: readonly Hint[] =
       gear?.atMage && gear.vestiges.some((each) => !each.vaulted) ? [['Click', 'Open a Vestige']] : [];
+    // A board shut before the prologue takes nothing in or out, so it offers no keys.
+    const shutBoard = shown === 'board' && gear?.prologueDone === false;
     const hints = !ofGear(shown)
       ? (HINTS[shown] ?? [])
-      : !gear
+      : !gear || shutBoard
         ? []
         : item
           ? HINTS.item
@@ -370,7 +388,10 @@ export function startGearWindow(
               children: [words(station.toUpperCase(), 2, INK.brassLit, { tracking: 3 })],
             }
           : tabsNode(frame, shown, (frame.boxOf('gear-top')?.width ?? layer.width - 64) - 36 - 60, layer, sizes.label),
-        accountMark(frame, account, figure.picture, () => open('settings'), sizes.ratio),
+        // On the Journal DFO's hourglass stands in the account mark's place.
+        shown === 'journal'
+          ? journal.hourglass(frame)
+          : accountMark(frame, account, figure.picture, () => open('settings'), sizes.ratio),
       ),
       // On a short screen an item's page takes the banner's height back for its nodes.
       (named !== null || bannerGear !== null) &&
@@ -418,6 +439,9 @@ export function startGearWindow(
   /** The layer: the company, the menu while it is open, what the player gains, and where holds acted. */
   const layer: Layer = (frame) => {
     ui = frame;
+    // Where the menu may no longer open (the story's wreck over, its gear let go), an open one shuts, so it never
+    // keeps the keys from what plays after it.
+    if (view !== null && resting()) shut();
     // Escape, or the pad's B, steps back once, letting go of a hold under way before it could act.
     if (view !== null && frame.escaped) stepOnce();
     holds.frame(frame);
@@ -440,22 +464,23 @@ export function startGearWindow(
 
   addEventListener(OPEN_AT, (event) => {
     if (resting()) return;
-    const { view: wanted, shelf: onShelf } = (event as CustomEvent<Opening>).detail;
-    if (view !== wanted || onShelf !== undefined) open(wanted, onShelf);
+    const { view: wanted, shelf: onShelf, toggle } = (event as CustomEvent<Opening>).detail;
+    if (view !== wanted || onShelf !== undefined || toggle) open(wanted, onShelf);
   });
   addEventListener(
     'keydown',
     (event) => {
       const key = event.key.toLowerCase();
+      const bound = (id: 'character' | 'inventory' | 'details') => BINDS.now[id].keys.includes(keyNameOf(event));
       // A drawn field typed in anywhere keeps its letters.
       const typing = Boolean(ui?.typing);
-      const opens = !typing && !resting() && (key === 'i' || key === 'o');
+      const opens = !typing && !resting() && (bound('character') || bound('inventory'));
       if (!opens && view === null) return;
       // While the menu is open, a key meant for nothing on it never reaches the game; the drawn menu has heard it.
       if (view !== null) event.stopPropagation();
       // Escape steps back as the drawn menu hears it (`escaped`), as the pad's B does.
       if (key === 'escape') event.preventDefault();
-      else if (key === 'x' && !typing) {
+      else if (bound('details') && !typing) {
         // X shows the focused piece's details, as a right press does.
         const shown = ui?.focusedId ? details.get(ui.focusedId) : undefined;
         if (!shown) return;
@@ -464,7 +489,11 @@ export function startGearWindow(
         [returnTo, focusNext] = [ui?.focusedId ?? null, ITEM_NAME];
       } else if (opens && !event.repeat) {
         event.preventDefault();
-        open(key === 'i' ? 'character' : 'inventory');
+        open(bound('character') ? 'character' : 'inventory');
+      } else if (key === 't' && view === 'journal' && !typing && !event.repeat && !event.ctrlKey && !event.altKey) {
+        // T drops the timers, or takes them up.
+        event.preventDefault();
+        journal.toggle();
       } else if (key === 'tab') {
         // Tab walks the drawn menu, which has heard it, and never the page's elements behind it.
         event.preventDefault();
@@ -503,6 +532,8 @@ function cardFloat(
     id: 'gear-card',
     // Measured once laid, it shows from the next frame, where it fits.
     opacity: height > 0 ? 1 : 0,
+    // Where it must cover what it describes, the pointer stays on that, or the card would go and come each frame.
+    through: true,
     float: { to: 'screen', x: Math.max(gap, left), y: Math.max(gap, top), z: 40 },
     children: [card.content()],
   };

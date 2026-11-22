@@ -60,8 +60,9 @@ it ([[The Player Plays as in DFO]]), the same [[Player]] the [[Game]] plays. It 
 ## Playing
 
 The page is one canvas: the view, with a panel either side of it drawn by the game ([[Interface]], "Drawn by the
-game"). The panels scroll under the wheel, and while the mouse is free their controls take Tab, the arrows, Enter
-and the pad, and a field takes the keys typed into it.
+game"). The panels scroll under the wheel, and while the mouse is free their controls take Tab, the arrows and Enter,
+and a field takes the keys typed into it. The pad is theirs only while one of their controls has focus or a field is
+typed in, as the game's is a window's; otherwise its stick walks the player.
 
 Click the view to play; Escape frees the mouse. The body moves by the [[Movement]] rules, and the controls are DFO's:
 
@@ -249,16 +250,21 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   what it came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Crit, Slain, a
   foe's Feint), gold or green when it is good for the player and red when bad, those said together (a stroke over each
   foe it struck) each standing clear of the rest; in first person, words about the player under the crosshair; an arrow
-  at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a foe at a blow at
-  the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once a press of the
-  guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or hard on the
-  heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red mark with no
-  ring; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the [[Game]] has it; a
+  at the screen's edge toward a foe out of view that swings, winds up or draws at the player; round the head of a foe
+  at a blow at the player that can be parried (1.6 m over its feet), a ring closing from 90 px across onto a fixed one
+  24 px across exactly as the blow lands, each 4 px wide over a dark edge, with a gold band on the fixed ring out to
+  where the parry window opens, gold once a press of the guard would parry it (no band, and never gold, while the
+  player's guard could open no window: a ranged weapon in hand, or hard on the heels of a parry missed)
+  ([[Foes Show a Closing Parry Ring]], [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]),
+  and round one winding up an iron blow a red mark with no ring; the head as its figure is drawn, 1.5 m off at least
+  in first person; the band faint, edged by a hard 2 px gold line where the window opens; each kept on the screen,
+  its widest 6 px inside the edge, where the head stands beyond it or behind the eye, set at the edge the way it lies
+  as a threat's arrow is and clear of the vitals and the Arts; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the [[Game]] has it; a
   red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
   with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
-  rolled among those that reach the locked foe. Alone, Escape pauses the fight.
+  the chain's next that reaches the locked foe ([[Combat]], "Swings"). Alone, Escape pauses the fight.
 - **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
   pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
   takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
@@ -275,12 +281,14 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes: the room
   runs on, the player standing still, until it has answered, a second of its time at most, so each answer shows at
   once. A refusal says why.
-- **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
-  the vault is reached, as in a social space.
-- **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
-  Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
-- **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
-  pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
+- **The stall** stands south-east of the start, a sealed Vestige's mark over it as over a keeper ([[Game]], "Over
+  what a player can use"): within 4 m of it a Vestige opens and the vault is reached, as in a social space.
+- **Resource nodes** stand west of the start, each with its resource's mark over it as the course's marker (the
+  game's nodes wear none), two of Saltmere's Brineglass and one of Cairnwatch's Cairn Iron; within 2.5 m one is
+  gathered two seconds after its panel's press, the player standing still, and its mark goes once it is spent.
+- **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and hover, a Vestige as its
+  crystal, under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them. The stall
+  wears a Vestige's crystal for its mark.
 - **The hands** hold what the gear wears: the room takes no other arms. So the player's own hands in the dress
   panel pick a Melee and a Ranged kind, and picking one wears it: the first carried that they may wear, or a Normal
   one of their level handed out. Each picker shows what is worn, so a refused pick shows the kind still worn. Their
@@ -304,10 +312,10 @@ the player there, looking that way, to picture a rock from in front of it or und
 
 ## Playing together
 
-With `?room=` and a room's name in the page's address (`?room=playtest`), the Test Ground joins that room on the
-deployed [[Server]]: everyone who uses the same name is in the same room. A name is letters, digits and hyphens, in
-any case. A whole address joins another server's room instead: locally, under `npm run server`,
-`?room=ws://127.0.0.1:8787/room/<name>`. The player plays as before, predicted here: each
+With `?room=` and a name in the page's address (`?room=playtest`), the Test Ground joins that name's Test Ground
+room, `test-<name>`, on the deployed [[Server]]: everyone who uses the same name is in the same room. A name is
+letters, digits and hyphens, in any case, 59 at most, as the room judges ([[The Server Is the Authority Over Everything]]). A whole address joins another server's room instead: locally,
+under `npm run server`, `?room=ws://127.0.0.1:8787/room/test-<name>`. The player plays as before, predicted here: each
 tick's controls and fight's buttons also go to the room, and the room's word on the player's fighter corrects it. Foes
 are the room's, the same for everyone in it, and fight whoever is near. Every other player in the
 room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
@@ -357,17 +365,17 @@ weapon keeps its own moves and the left hand's thing is worn.
 
 In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
-Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep
-to the ground; never shorter. Running frames last 0.125 s and crouching 0.5 s. Each figure plays its loops on from
-the frame it shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s,
-so a tick the rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge
-the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
-the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
-it faces where it runs, and its foe again once the sprint ends
-([[Locked On, the Figure Faces Its Foe Unless It Sprints]]). Swinging, casting or aiming a ranged weapon, it turns to
-face where the camera looks ([[Aiming, the Figure Faces Straight Ahead]]). Dodging, a figure (the player's, another
-player's or a foe's) faces the way its hop goes, so its roll is drawn going that way, though the rules keep the fighter
-facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
+Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep to
+the ground; never shorter. Running frames last 0.125 s at a full run, 7.59 m/s, and as much longer as a run is slower,
+so a foe's run keeps to the ground too; crouching frames last 0.5 s. Each figure plays its loops on from the frame it
+shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s, so a tick the
+rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge the weapon is worn,
+since both hands hold on. The figure faces where it moves and keeps that facing when still. While the soft lock holds a
+foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting, it faces where it runs,
+and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It Sprints]]). Swinging, casting or
+aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the Figure Faces Straight Ahead]]). Dodging,
+a figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
+though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
 
 ## Dressing
 

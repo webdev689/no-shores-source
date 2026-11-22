@@ -17,9 +17,15 @@
     "weaponsmith": { "name": "The Weaponsmith", "voice": "weaponsmith" },
     "tailor": { "name": "The Tailor", "voice": "tailor" },
     "tack": { "name": "The Tack", "voice": "tack" },
-    "stormcaller": { "name": "Stormcaller", "voice": "stormcaller" },
-    "veiled": { "name": "The Veiled", "voice": "veiled" },
-    "shape": { "name": "Shape", "voice": "shape" }
+    "stormcaller": { "name": "Arlo Kestrel", "voice": "stormcaller" },
+    "veiled": { "name": "Sable", "voice": "veiled" },
+    "shape": { "name": "Shape", "voice": "shape" },
+    "pell": { "name": "Pell", "voice": "pell" },
+    "tobin": { "name": "Tobin", "voice": "tobin" },
+    "wren": { "name": "Wren", "voice": "wren" },
+    "corvane": { "name": "High Assessor Corvane", "voice": "corvane" },
+    "reeve": { "name": "Tithe Reeve", "voice": "reeve" },
+    "postmaster": { "name": "The Postmaster", "voice": "postmaster" }
   },
   "voices": {
     "mate": { "pitchHz": 176, "spreadHz": 22, "muffleHz": 1700, "volume": 0.34, "syllableS": 0.1 },
@@ -41,6 +47,12 @@
     "tack": { "pitchHz": 182, "spreadHz": 22, "muffleHz": 1800, "volume": 0.34, "syllableS": 0.09 },
     "stormcaller": { "pitchHz": 128, "spreadHz": 34, "muffleHz": 2100, "volume": 0.36, "syllableS": 0.07 },
     "veiled": { "pitchHz": 150, "spreadHz": 8, "muffleHz": 1100, "volume": 0.28, "syllableS": 0.12 },
-    "shape": { "pitchHz": 86, "spreadHz": 4, "muffleHz": 1000, "volume": 0.3, "syllableS": 0.16 }
+    "shape": { "pitchHz": 86, "spreadHz": 4, "muffleHz": 1000, "volume": 0.3, "syllableS": 0.16 },
+    "pell": { "pitchHz": 146, "spreadHz": 30, "muffleHz": 2300, "volume": 0.33, "syllableS": 0.08 },
+    "tobin": { "pitchHz": 230, "spreadHz": 28, "muffleHz": 2400, "volume": 0.3, "syllableS": 0.08 },
+    "wren": { "pitchHz": 205, "spreadHz": 10, "muffleHz": 1300, "volume": 0.26, "syllableS": 0.09 },
+    "corvane": { "pitchHz": 96, "spreadHz": 12, "muffleHz": 1200, "volume": 0.4, "syllableS": 0.14 },
+    "reeve": { "pitchHz": 112, "spreadHz": 16, "muffleHz": 1400, "volume": 0.36, "syllableS": 0.11 },
+    "postmaster": { "pitchHz": 124, "spreadHz": 12, "muffleHz": 1500, "volume": 0.32, "syllableS": 0.1 }
   }
 }

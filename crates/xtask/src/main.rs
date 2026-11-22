@@ -15,7 +15,8 @@ const USAGE: &str = "usage: cargo xtask <command>
 commands:
   check   everything CI runs: format, lints, tests, then the repo checks
   shaders only the shaders: every one the client compiles, written out and validated as WGSL
-  repo    only the repo checks: layout, crate names, file size, comments, assets, vault links";
+  repo    only the repo checks: layout, file size, comments, layers, html, assets, versions, crates, vault links
+          and dialogue";
 
 fn main() -> ExitCode {
     let command = std::env::args().nth(1);

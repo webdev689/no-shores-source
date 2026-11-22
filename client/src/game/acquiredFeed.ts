@@ -1,7 +1,9 @@
 // What the player gains, shown at the right of the screen as Destiny shows what is picked up: a row for each gain, its
-// picture in a well of its rarity, its name and how many, sliding in and fading after a few seconds. A gain of the
-// same as a row still shown adds to that row. It shows in play and over the menu alike, so a piece dismantled or a
-// Vestige opened shows what it gave as soon as the room answers, and each batch chimes for its rarest gain.
+// picture in a well of its rarity, its name and how many, sliding in and fading after a few seconds; and over the
+// rows, currency, XP, reputation and an Art's progress as short lines, a count beside its icon with no panel. A gain
+// of the same as one still shown adds to it. It shows in play and over the menu alike, so a piece dismantled or a
+// Vestige opened shows what it gave as soon as the room answers, and each batch chimes for its rarest gain; at sea,
+// what is gathered there is told it (`tell`).
 
 import { edged } from '../combat/barDraw.ts';
 import type { GearState } from '../network/gearMessages.ts';
@@ -29,18 +31,21 @@ import {
 import type { GearHere } from './gearScreen.ts';
 import { chime } from './uiSounds.ts';
 
-/** How long a row stays, how long it takes to come in and to leave, and how many stand at once, the oldest leaving
- *  first. */
+/** How long a row stays, how long it takes to come in and to leave, and how many rows and short lines stand at once,
+ *  each the oldest leaving first: a kill's currency, XP and reputation never push its drops out. */
 const STAY_MS = 4500;
 const ENTER_MS = 220;
 const LEAVE_MS = 400;
 const ROWS_MOST = 6;
+const LINES_MOST = 5;
 /** How long after a room first gives the player's gear its changes are not gains: a room holds a starting character
  *  until the player's own is claimed, a claim waiting on another room for up to some seconds. */
 const SETTLE_MS = 10_000;
 /** A row's picture box and its well, in pixels. */
 const ICON_PX = 36;
 const WELL_PX = 44;
+/** A short line's icon, in pixels. */
+const LINE_ICON_PX = 20;
 
 /** A row shown: its gain, its count so far, when it came, when its count last grew, and when it leaves. */
 interface Row {
@@ -83,6 +88,11 @@ export class AcquiredFeed {
     if (gear === this.last) return;
     const gains = this.now() - this.since < SETTLE_MS ? [] : gainsOf(this.last, gear);
     this.last = gear;
+    this.tell(gains);
+  }
+
+  /** Shows `gains`, and chimes for the rarest of them. */
+  tell(gains: readonly Gain[]): void {
     if (gains.length === 0) return;
     gains.forEach((gain) => this.show(gain));
     chime(Math.max(0, ...gains.map((each) => each.rarity ?? 0)));
@@ -101,24 +111,26 @@ export class AcquiredFeed {
       return;
     }
     this.rows.push({ gain, key: gain.key, total: gain.count, since: now, bumped: -Infinity, leaves: now + STAY_MS });
-    // The oldest leaves once too many stand.
-    const staying = this.rows.filter((row) => row.leaves > now);
-    for (const old of staying.slice(0, Math.max(0, staying.length - ROWS_MOST))) old.leaves = Math.min(old.leaves, now);
+    // The oldest of its kind leaves once too many stand.
+    const staying = this.rows.filter((row) => row.leaves > now && row.gain.compact === gain.compact);
+    const most = gain.compact ? LINES_MOST : ROWS_MOST;
+    for (const old of staying.slice(0, Math.max(0, staying.length - most))) old.leaves = Math.min(old.leaves, now);
   }
 
-  /** A gain's picture: the item's own once drawn, an emblem's sign, a mark of its own, or its glyph. */
-  private iconOf(gain: Gain, sizes: Sizes): Node {
+  /** A gain's picture, `size` pixels: the item's own once drawn, an emblem's sign, a mark of its own, or its glyph. */
+  private iconOf(gain: Gain, sizes: Sizes, size = 24): Node {
     const now = this.here();
     if (gain.item) {
       const pictures = now?.forge ? this.picturesOf(now.forge) : null;
       const picture = pictures && now?.dress ? pictures.pictureOf(gain.item, now.dress, () => undefined) : null;
       return itemIconNode(picture, gain.name, ICON_PX, sizes, gain.rarity ?? 0);
     }
-    if (gain.icon !== null) return svgNode(`gain ${gain.key}`, gain.icon, 24);
-    if (gain.emblem !== null) return emblemNode(emblemOf(gain.emblem), 'sign', 24, 24, 24);
+    if (gain.icon !== null) return svgNode(`gain ${gain.key}`, gain.icon, size);
+    if (gain.emblem !== null) return emblemNode(emblemOf(gain.emblem), 'sign', size, size, size);
     const glyph = gain.glyph === 'item' ? 'empty' : gain.glyph;
-    // A ship glyph's 24 cells stand at their own size, where the gear's 12 stand at three times.
-    return glyphNode(glyph, fineGlyph(glyph) ? 24 : ICON_PX, gain.rarity ?? 0, gain.tint);
+    // A ship glyph's 24 cells stand at their own size, where the gear's 12 stand at three times; a line's are small.
+    const drawn = gain.compact ? size : fineGlyph(glyph) ? 24 : ICON_PX;
+    return glyphNode(glyph, drawn, gain.rarity ?? 0, gain.tint);
   }
 
   /** The feed this frame at the right of `view`: low over the menu's footer while it is open (`low`). */
@@ -140,85 +152,119 @@ export class AcquiredFeed {
         y: low ? -96 : -Math.round(view.height * 0.3),
         z: 30,
       },
-      children: this.rows.map((row): Node => {
-        const coming = Math.min(1, (now - row.since) / ENTER_MS);
-        const going = Math.max(0, (now - row.leaves) / LEAVE_MS);
-        const slide = still ? 0 : Math.round(32 * (1 - (1 - (1 - coming) ** 2)) + 16 * going);
-        const fade = Math.min(coming, 1 - going);
-        const rarity = row.gain.rarity;
-        const pips = row.gain.pips ?? 0;
-        const count = pips > 0 ? '' : row.total > 1 || !row.gain.item ? `+${row.total.toLocaleString()}` : '';
-        return {
-          minWidth: 240,
-          gap: 12,
+      children: [
+        ...this.rows.filter((row) => row.gain.compact).map((row) => this.lineNode(row, sizes, now, still)),
+        ...this.rows.filter((row) => !row.gain.compact).map((row) => this.rowNode(row, sizes, now, still)),
+      ],
+    };
+  }
+
+  /** How far a row has come in and gone, as its slide across and its fade. */
+  private motion(row: Row, now: number, still: boolean): { slide: number; fade: number } {
+    const coming = Math.min(1, (now - row.since) / ENTER_MS);
+    const going = Math.max(0, (now - row.leaves) / LEAVE_MS);
+    const slide = still ? 0 : Math.round(32 * (1 - (1 - (1 - coming) ** 2)) + 16 * going);
+    return { slide, fade: Math.min(coming, 1 - going) };
+  }
+
+  /** A short line, as Destiny shows currency, XP and reputation: its count, its word where it has one, its icon. */
+  private lineNode(row: Row, sizes: Sizes, now: number, still: boolean): Node {
+    const { slide, fade } = this.motion(row, now, still);
+    return {
+      gap: 8,
+      alignY: 'center',
+      padding: [0, 6, 0, 0],
+      opacity: fade,
+      offset: [slide, !still && now - row.bumped < ENTER_MS ? -1 : 0],
+      children: [
+        words(`+${row.total.toLocaleString()}`, sizes.name, INK.word, { edge: 'shadow' }),
+        row.gain.word !== null && words(row.gain.word, sizes.name, INK.brassLit, { edge: 'shadow' }),
+        {
+          width: LINE_ICON_PX,
+          height: LINE_ICON_PX,
+          alignX: 'center',
           alignY: 'center',
-          padding: [4, 14, 4, 4],
-          opacity: fade,
-          offset: [slide, 0],
+          children: [this.iconOf(row.gain, sizes, LINE_ICON_PX)],
+        },
+      ],
+    };
+  }
+
+  /** An item's row: its band, its name in its rarity's colour, how many, and its picture in a well of its rarity. */
+  private rowNode(row: Row, sizes: Sizes, now: number, still: boolean): Node {
+    const { slide, fade } = this.motion(row, now, still);
+    const rarity = row.gain.rarity;
+    const pips = row.gain.pips ?? 0;
+    const count = pips > 0 ? '' : row.total > 1 || !row.gain.item ? `+${row.total.toLocaleString()}` : '';
+    return {
+      minWidth: 240,
+      gap: 12,
+      alignY: 'center',
+      padding: [4, 14, 4, 4],
+      opacity: fade,
+      offset: [slide, 0],
+      picture: {
+        key: 'acquired band',
+        source: {
+          draw: (context, width, height) => {
+            const band = context.createLinearGradient(width, 0, 0, 0);
+            band.addColorStop(0.6, 'rgba(14,11,8,0.82)');
+            band.addColorStop(1, 'rgba(14,11,8,0)');
+            context.fillStyle = band;
+            context.fillRect(0, 0, width, height);
+          },
+        },
+      },
+      children: [
+        { width: 'grow' },
+        {
+          maxWidth: 260,
+          text: {
+            words: row.gain.name,
+            size: sizes.name,
+            colour: rarity !== null ? (RARITIES[rarity]?.colour ?? INK.word) : INK.word,
+            ellipsis: true,
+            wrap: false,
+            edge: 'shadow',
+          },
+        },
+        count !== '' && {
+          minWidth: 24,
+          alignX: 'end',
+          // A row's count grows a moment as more of it comes.
+          offset: !still && now - row.bumped < ENTER_MS ? [0, -1] : undefined,
+          children: [words(count, sizes.name, INK.brassLit, { edge: 'shadow' })],
+        },
+        pips > 0 && pipsNode(pips),
+        {
+          width: WELL_PX,
+          height: WELL_PX,
+          alignX: 'center',
+          alignY: 'center',
+          fill: INK.well,
+          draw: edged(rarityEdges(rarity), 2),
           picture: {
-            key: 'acquired band',
+            key: `acquired glow ${rarityRgb(rarity)}`,
             source: {
               draw: (context, width, height) => {
-                const band = context.createLinearGradient(width, 0, 0, 0);
-                band.addColorStop(0.6, 'rgba(14,11,8,0.82)');
-                band.addColorStop(1, 'rgba(14,11,8,0)');
-                context.fillStyle = band;
+                const light = context.createRadialGradient(
+                  width / 2,
+                  height * 1.15,
+                  0,
+                  width / 2,
+                  height * 1.15,
+                  height * 0.9,
+                );
+                light.addColorStop(0, rgba(rarityRgb(rarity), 0.35));
+                light.addColorStop(1, rgba(rarityRgb(rarity), 0));
+                context.fillStyle = light;
                 context.fillRect(0, 0, width, height);
               },
             },
           },
-          children: [
-            { width: 'grow' },
-            {
-              maxWidth: 260,
-              text: {
-                words: row.gain.name,
-                size: sizes.name,
-                colour: rarity !== null ? (RARITIES[rarity]?.colour ?? INK.word) : INK.word,
-                ellipsis: true,
-                wrap: false,
-                edge: 'shadow',
-              },
-            },
-            count !== '' && {
-              minWidth: 24,
-              alignX: 'end',
-              // A row's count grows a moment as more of it comes.
-              offset: !still && now - row.bumped < ENTER_MS ? [0, -1] : undefined,
-              children: [words(count, sizes.name, INK.brassLit, { edge: 'shadow' })],
-            },
-            pips > 0 && pipsNode(pips),
-            {
-              width: WELL_PX,
-              height: WELL_PX,
-              alignX: 'center',
-              alignY: 'center',
-              fill: INK.well,
-              draw: edged(rarityEdges(rarity), 2),
-              picture: {
-                key: `acquired glow ${rarityRgb(rarity)}`,
-                source: {
-                  draw: (context, width, height) => {
-                    const light = context.createRadialGradient(
-                      width / 2,
-                      height * 1.15,
-                      0,
-                      width / 2,
-                      height * 1.15,
-                      height * 0.9,
-                    );
-                    light.addColorStop(0, rgba(rarityRgb(rarity), 0.35));
-                    light.addColorStop(1, rgba(rarityRgb(rarity), 0));
-                    context.fillStyle = light;
-                    context.fillRect(0, 0, width, height);
-                  },
-                },
-              },
-              children: [this.iconOf(row.gain, sizes)],
-            },
-          ],
-        };
-      }),
+          children: [this.iconOf(row.gain, sizes)],
+        },
+      ],
     };
   }
 }

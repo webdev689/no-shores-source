@@ -12,9 +12,9 @@ const compiled = new WebAssembly.Module(
   }),
 );
 
-test('a room in the page is told the world’s minute as it steps, so its day turns at midnight while it runs', () => {
+test('a room in the page is told the world’s minute as it steps, so its day turns at 09:00 UTC while it runs', () => {
   const realNow = Date.now;
-  let now = Date.UTC(2026, 10, 20, 23, 59, 0);
+  let now = Date.UTC(2026, 10, 21, 8, 59, 0);
   Date.now = () => now;
   try {
     const heard: GearState[] = [];
@@ -31,7 +31,7 @@ test('a room in the page is told the world’s minute as it steps, so its day tu
     assert.ok(before > 0, 'the gear is told as the room opens');
     room.pump(1);
     assert.equal(heard.length, before, 'nothing new while the day stands');
-    now = Date.UTC(2026, 10, 21, 0, 0, 1);
+    now = Date.UTC(2026, 10, 21, 9, 0, 1);
     room.pump(1);
     assert.ok(heard.length > before, 'the gear is told again as the day turns');
   } finally {

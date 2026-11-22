@@ -5,6 +5,8 @@ import type { GearItem as GearItemTable } from '../../../generated/messages/ts/o
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
 import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
+import { type GearLetter, mailOf } from './mailMessages.ts';
+import { type QuestState, questOf } from './questMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -38,6 +40,8 @@ export const ASKS = {
   gather: 20,
   /** One's chest from a public event opened, by its number among one's drops in `item`. */
   openChest: 21,
+  /** A gather let go of before it is done: E released. */
+  stopGather: 67,
   grantVestige: 30,
   grantNamed: 31,
   grantItem: 32,
@@ -76,6 +80,22 @@ export const ASKS = {
   buyCosmetic: 56,
   /** One of Shape's wares of the week, by its place in `node`. */
   buyFromShape: 57,
+  /** The houses' roads: a keeper spoken with (`column` a house's number, or 10 the Mage, 11 the vault, 12 the
+   *  Armorsmith, 13 the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), and a fragment chosen
+   *  (`column` the Art, `node` the fragment's place in its Art's list). */
+  speakWith: 64,
+  chooseFragment: 65,
+  /** A puzzle's point used, by its place among its goal's points in `column`. */
+  usePoint: 66,
+  /** The prologue played, which the room keeps with the character. */
+  finishPrologue: 68,
+  /** A bounty of the day's board taken, or one done turned in: its place on the board in `node` and the day of the
+   *  board shown in `item` (the gear's `day`): at the bounty board. */
+  takeBounty: 69,
+  turnInBounty: 70,
+  /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
+  takeLetter: 71,
+  takeAllLetters: 72,
 } as const;
 
 /** Shape's place while he is away. */
@@ -185,6 +205,8 @@ export interface GearState {
   readonly vestiges: readonly GearVestige[];
   readonly drops: readonly GearDrop[];
   readonly spent: readonly number[];
+  /** On a sea island, the wrecks they have scavenged there, by their places in its list. */
+  readonly scavenged?: readonly number[];
   /** Whether they stand where a Vestige opens: the Mage's counter, or the Test Ground's stall. */
   readonly atMage: boolean;
   readonly answer: number;
@@ -232,9 +254,49 @@ export interface GearState {
   readonly shape?: { readonly place: number; readonly wares: readonly GearItem[] } | null;
   /** In a social space, every faction's wares, each numbered by its place among its faction's and priced in Aurem. */
   readonly factionWares?: readonly GearItem[];
-  /** The day, counted from the epoch, whose smiths' wares these are: a smith's ware is asked by it, so the room
-   *  refuses one shown before the day turned. */
+  /** The clock's day the room's word is of, each beginning at 09:00 UTC (`gear::clock::day_of`): the smiths' wares
+   *  are its, and a smith's ware and a bounty's ask are asked by it, so the room refuses one shown before it turned. */
   readonly day?: number;
+  /** Where they stand on the houses' roads; none from a room that sends none. */
+  readonly quest?: QuestState;
+  /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
+   *  of the six entrance models it is (0 to 5). */
+  readonly dungeons?: readonly number[];
+  /** Whether they have finished the prologue, as kept with their character. */
+  readonly prologueDone?: boolean;
+  /** Their day's and week's record, as kept with their character. */
+  readonly activity?: ActivityRecord;
+  /** The day's six bounties on the board, in its order, and what each pays them when turned in. */
+  readonly bounties?: readonly GearBounty[];
+  readonly bountyXp?: number;
+  readonly bountyAurem?: number;
+  /** The game's letters waiting at the mail counter, oldest first. */
+  readonly mail?: readonly GearLetter[];
+}
+
+/** A bounty of the day's board as it stands for the player (protocol's `GearBounty`). */
+export interface GearBounty {
+  readonly words: string;
+  readonly target: number;
+  readonly count: number;
+  readonly held: boolean;
+  readonly paid: boolean;
+  /** Where it counts: 0 on land, 1 at sea, 2 in dungeons. */
+  readonly pool: number;
+  /** Its short name, as its card heads it. */
+  readonly name: string;
+}
+
+/** Their day's and week's record, as kept with their character (`Gear`'s comment says each field): the day it is for
+ *  and the tiers of the dungeon of the day cleared then (0 Normal, 1 Elite, 2 Abyss); the week it is for, whether
+ *  they cleared each of the week's two, and whether they hold the Abyss boon. The page judges each by its own day. */
+export interface ActivityRecord {
+  readonly day: number;
+  readonly cleared: readonly number[];
+  readonly week: number;
+  readonly elite: boolean;
+  readonly abyss: boolean;
+  readonly boon: boolean;
 }
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
@@ -273,7 +335,7 @@ export interface GearOfficer {
 
 /** The ship's part of the gear message: its experience, level, Prestige, Attack and Defense and how far to its next;
  *  Timber, Canvas, Iron and Heartwood in `stocks`; its hands of its complement; its officers, the officers of the
- *  day at a pledged faction's counter, and its trim at sea. */
+ *  day at a pledged faction's counter, and its trim at sea (the gear crate's `ShipTrim::to_floats`, in its order). */
 export interface GearShip {
   readonly xp: bigint;
   readonly level: number;
@@ -390,6 +452,7 @@ export function gearOf(gear: Gear): GearState {
     vestiges,
     drops,
     spent: Array.from(gear.spentArray() ?? []),
+    scavenged: Array.from(gear.scavengedArray() ?? []),
     atMage: gear.atMage(),
     answer: gear.answer(),
     identified: gear.identified(),
@@ -434,6 +497,27 @@ export function gearOf(gear: Gear): GearState {
           },
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
     day: gear.day(),
+    quest: questOf(gear),
+    dungeons: Array.from(gear.dungeonsArray() ?? []),
+    prologueDone: gear.prologueDone(),
+    activity: {
+      day: gear.activityDay(),
+      cleared: Array.from(gear.clearedArray() ?? []),
+      week: gear.activityWeek(),
+      elite: gear.weekElite(),
+      abyss: gear.weekAbyss(),
+      boon: gear.boon(),
+    },
+    bounties: Array.from({ length: gear.bountiesLength() }, (unusedBounty, place) => {
+      const bounty = gear.bounties(place);
+      const words = bounty?.words() ?? '';
+      const [target, count] = [bounty?.target() ?? 0, bounty?.count() ?? 0];
+      const [held, paid] = [bounty?.held() ?? false, bounty?.paid() ?? false];
+      return { words, target, count, held, paid, pool: bounty?.pool() ?? 0, name: bounty?.name() ?? '' };
+    }),
+    bountyXp: gear.bountyXp(),
+    bountyAurem: gear.bountyAurem(),
+    mail: mailOf(gear, itemOf),
   };
 }
 

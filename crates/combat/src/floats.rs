@@ -198,6 +198,7 @@ fn action_from(kind: f64, numbers: &[f64]) -> Action {
                 ahead: at(7),
                 iron: at(8) != 0.0,
                 feint_at: id_or_none(at(9)),
+                landed_z: None,
             })
         }
         9 => Action::Overreach { left: ticks(0) },

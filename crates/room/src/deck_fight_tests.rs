@@ -56,3 +56,21 @@ fn a_boarder_comes_over_the_rail_on_their_ships_side_clear_of_its_middle_and_its
     found.fighter.action = combat::Action::Dead { elapsed: 0 };
     assert!(room.all_down());
 }
+
+#[test]
+fn a_kill_on_a_deck_pays_by_the_seas_tier_but_drops_no_vestige_or_item_as_the_hold_is_the_boardings_loot() {
+    let paid = |difficulty: gear::Difficulty| {
+        let mut room = Room::deck(&test_deck(), PIRATES, Rank::Miniboss, 20);
+        room.difficulty = difficulty;
+        let player = room.board_at(rail_spot(&test_deck(), 1.0)).expect("aboard");
+        let items = room.players[&player].character.items.len();
+        let mate = *room.foes.iter().find(|(_, foe)| foe.brain.rank == ::foes::Rank::Miniboss).expect("its mate").0;
+        room.mark_struck(player, mate, gear::Slot::Melee);
+        room.pay_kill(mate);
+        let vestiges = room.drops_for(player).filter(|drop| matches!(drop.what, crate::drops::Dropped::Vestige(_)));
+        assert_eq!(vestiges.count(), 0, "{difficulty:?}: no Vestige from the deck");
+        assert_eq!(room.players[&player].character.items.len(), items, "{difficulty:?}: no item from the deck");
+        room.players[&player].character.xp
+    };
+    assert_eq!(paid(gear::Difficulty::Abyss), paid(gear::Difficulty::Normal) * 2, "an Abyss sea's deck pays twice");
+}

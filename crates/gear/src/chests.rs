@@ -26,16 +26,16 @@ pub struct Chest {
     pub vestige: Vestige,
 }
 
-/// A chest's Vestige: a foe's colours from a plain chest, a Boss's from a heroic one; the bonus's tier rolls twice
-/// and keeps the better.
+/// A chest's Vestige: a foe's colours (a Major's, the rank a role's numbers are given at) from a plain chest, a Boss's
+/// from a heroic one; the bonus's tier rolls twice and keeps the better.
 fn chest_vestige(tier: u8, level: u8, dice: &Dice) -> Option<(crate::Rarity, crate::Slot, u8)> {
-    let heroic = tier >= 3;
-    let first = vestige::dropped(1.0, heroic, level, dice)?;
+    let rank = if tier >= 3 { 5 } else { 2 };
+    let first = vestige::of_colours(vestige::colours(rank), level, dice);
     if tier % 2 == 1 {
         return Some(first);
     }
     let again = Dice { tick: dice.tick ^ 0x0063_6865_7374, ..*dice };
-    let second = vestige::dropped(1.0, heroic, level, &again)?;
+    let second = vestige::of_colours(vestige::colours(rank), level, &again);
     Some(if second.0 > first.0 { second } else { first })
 }
 

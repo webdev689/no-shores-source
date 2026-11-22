@@ -1,14 +1,15 @@
 //! What floats where a captain's ship went down: its rank's pieces for each player who fought it, kept for that
 //! player alone as a land drop is, within `SPREAD_M` of where it sank, drifting downwind until they are gathered or
-//! lie their time. Each piece is a drop of the gear loop's own law for a foe of its rank and level (`gear::rewards`,
-//! `gear::ammo`); for an Elite or higher one piece is a chest, rolled as a foe one rank higher. A player's ship within
-//! `GATHER_M` of one of their pieces gathers it, taking what it holds that they have room for.
+//! lie their time. Each piece holds the ship's salvage; the first also holds what one kill of a foe of the ship's rank
+//! and level drops (`gear::rewards`, `gear::ammo`), so a ship drops as one foe does, and its hold as one a rank higher.
+//! For an Elite or higher one piece is a chest, its salvage rolled one rank higher. A player's ship within `GATHER_M`
+//! of one of their pieces gathers it, taking what it holds that they have room for.
 
 use crate::PlayerId;
 use crate::battle::Sank;
 use gear::character::{Character, Vestige};
 use gear::dice::{Dice, Purpose};
-use gear::rewards::{Foe, worth};
+use gear::rewards::Foe;
 use gear::ship::found::{Source, salvage};
 use naval::fight::{Event, Piece};
 use naval::random::Mulberry32;
@@ -49,8 +50,9 @@ fn one_up(rank: Rank) -> Rank {
     Rank::numbered(rank.number() + 1).unwrap_or(Rank::Boss)
 }
 
-/// A piece floating for one player: its number, what it looks like, where it floats, the rank and level it is rolled
-/// for, the tick it is gone, and the wind of the fight it came from, which it drifts down.
+/// A piece floating for one player: its number, what it looks like, where it floats, the rank its salvage is rolled
+/// for, the rank of the kill's drop it holds (the first piece laid alone), its level, the tick it is gone, and the
+/// wind of the fight it came from, which it drifts down.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Floating {
     pub player: PlayerId,
@@ -58,13 +60,14 @@ pub struct Floating {
     pub kind: Piece,
     pub at: [f64; 2],
     pub rank: Rank,
+    pub drop: Option<Rank>,
     pub level: u8,
     pub until: u64,
     pub wind: [f64; 2],
 }
 
-/// What a piece held once gathered: a Vestige, an Ammo box and an Ammo crate, each if it held one and there was room,
-/// and the ship's salvage taken (`gear::ship::found`).
+/// What a piece held once gathered: a Vestige, an Ammo box and an Ammo crate, each if it held one and there was room
+/// (a Vestige without room goes to the mail), and the ship's salvage taken (`gear::ship::found`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Held {
     pub vestige: Option<Vestige>,
@@ -90,8 +93,9 @@ impl Flotsam {
         Flotsam { pieces: Vec::new(), next_id: 1, seed: u64::from(seed), difficulty: gear::Difficulty::Normal }
     }
 
-    /// Lays what floats where a ship sank, `times` over (twice from its hold), each chest rolled `chest_up` ranks
-    /// higher besides; answers each piece laid.
+    /// Lays what floats where a ship sank, `times` over (twice from its hold), each chest's salvage rolled `chest_up`
+    /// ranks higher besides, and the first piece holding a kill's drop `chest_up` ranks higher than the ship's (a
+    /// hold's one higher); answers each piece laid.
     pub fn lay(&mut self, sank: &Sank, clock: u64, (times, chest_up): (usize, u8)) -> Vec<Event> {
         let rank = sank.pirate.commission.rank;
         let level = sank.pirate.level.max(1);
@@ -109,14 +113,13 @@ impl Flotsam {
                 } else {
                     Piece::Barrel
                 };
-                let mut rolled = rank;
-                for _ in 0..if chest { 1 + chest_up } else { 0 } {
-                    rolled = one_up(rolled);
-                }
+                let raised = |times: u8| (0..times).fold(rank, |rolled, _| one_up(rolled));
+                let rolled = if chest { raised(1 + chest_up) } else { rank };
+                let drop = (nth == 0).then(|| raised(chest_up));
                 let id = self.next_id;
                 self.next_id = self.next_id.wrapping_add(1).max(1);
                 let until = clock + FLOAT_TICKS;
-                self.pieces.push(Floating { player, id, kind, at, rank: rolled, level, until, wind: sank.wind });
+                self.pieces.push(Floating { player, id, kind, at, rank: rolled, drop, level, until, wind: sank.wind });
                 laid.push(Event::Flotsam { id, at, kind });
             }
         }
@@ -159,32 +162,42 @@ impl Flotsam {
     }
 }
 
-/// A piece opened into a character: the drop of a foe of its rank and level, each part taken where there is room.
-/// The chance a piece of a ship of `rank` holds a Vestige at `difficulty`: its foe's on land, raised as a harder
-/// voyage raises a kill's.
+/// The chance a ship of `rank` leaves a Vestige at `difficulty`: a foe's of its rank on land, raised as a harder voyage
+/// raises a kill's.
 #[must_use]
 pub fn vestige_chance(rank: Rank, difficulty: gear::Difficulty) -> f64 {
-    (worth(foe_of(rank)).vestige * difficulty.reward()).min(1.0)
+    (gear::vestige::chance(rank.number()) * difficulty.reward()).min(1.0)
 }
 
+/// A piece opened into a character: its salvage, and for the piece holding the kill's drop, what a foe of that rank
+/// and its level drops, each part taken where there is room.
 fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &mut Character) -> Held {
-    let dice = Dice { seed, tick: u64::from(piece.id), player: piece.player };
-    let foe = worth(foe_of(piece.rank));
-    let rank = piece.rank.number();
-    let vestige = gear::vestige::dropped(vestige_chance(piece.rank, difficulty), foe.boss, piece.level, &dice)
-        .map(|(rarity, slot, level)| Vestige::new(0, rarity, slot, level))
-        .filter(|vestige| character.pick_up(vestige.clone()));
-    let ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();
-    let ammo_crate = gear::ammo::drops_crate(rank) && character.take_crate();
-    let salvage = ship_salvage(piece, &dice, character);
-    Held { vestige, ammo_box, ammo_crate, salvage }
+    // Rolled by the piece's own number, unique among all the sea lays, never by its owner's: a rejoin's new number
+    // owns it again (`Sea::own`), and must not roll it again.
+    let dice = Dice { seed, tick: u64::from(piece.id), player: 0 };
+    let mut held = Held { salvage: ship_salvage(piece, difficulty, &dice, character), ..Held::default() };
+    let Some(drop) = piece.drop else { return held };
+    let rank = drop.number();
+    // The best Vestige carried is the one told, the rest posted when the ten are full; the items a Miniboss or a Boss
+    // leaves are kept as they are made.
+    let mut taken: Vec<Vestige> = character.loot_kill(rank, piece.level, difficulty, &dice);
+    taken.retain(|vestige| character.carry_or_post(vestige.clone(), gear::mail::Source::Flotsam));
+    held.vestige = taken.into_iter().max_by_key(|vestige| vestige.rarity);
+    held.ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();
+    held.ammo_crate = gear::ammo::drops_crate(rank) && character.take_crate();
+    held
 }
 
 /// A piece's ship salvage, its own roll: ship materials and now and then a module, as the ship's rules hold them for
 /// a piece of a ship of its rank (`gear::ship::found`), taken where there is room.
-fn ship_salvage(piece: &Floating, dice: &Dice, character: &mut Character) -> gear::ship::found::Taken {
+fn ship_salvage(
+    piece: &Floating,
+    difficulty: gear::Difficulty,
+    dice: &Dice,
+    character: &mut Character,
+) -> gear::ship::found::Taken {
     let source = Source::Flotsam { rank: piece.rank.number(), chest: piece.kind == Piece::Chest };
-    character.take_salvage(salvage(source, piece.level, dice))
+    character.take_salvage(salvage(source, piece.level, difficulty.reward(), dice))
 }
 
 #[cfg(test)]

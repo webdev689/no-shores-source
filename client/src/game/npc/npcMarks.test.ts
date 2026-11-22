@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { keeperMap, keeperMarkSvg, shapesSvg } from './npcMarks.ts';
 
 test('every keeper but the factions’ has a sign of its own in a diamond', () => {
-  const kinds = ['mage', 'vault', 'armorsmith', 'weaponsmith', 'tailor', 'tack', 'shape'];
+  const kinds = ['mage', 'vault', 'armorsmith', 'weaponsmith', 'tailor', 'tack', 'mail', 'shape'];
   const maps = kinds.map((kind) => keeperMap(kind)?.join('/'));
   assert.ok(maps.every(Boolean));
   assert.equal(new Set(maps).size, kinds.length, 'no two drawn the same');

@@ -28,6 +28,9 @@ rules carry them out is [[Gear]].
 | Prestige a piece | Rare at level 20, 13 to 15; Legendary, 18 to 27; a Breach's Legendary, 18 to 30; Atheric, 21 to 30; Normal, Magic and Rare below 20, none | Destiny 1 at launch, its raid armour as the Breaches' (the owner: "Highest prestige drops") |
 | What that reaches | Four Rares, level 24; four Legendaries, 28; three Legendaries and an Atheric, 29; level 30 only with Breach armour | Destiny 1 at launch: level 30 took raid armour |
 
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's XP goes by its kind and its rank, and the captain's 2,000 is gone
+([[Gear]], "A kill's pay").
+
 ### Attack, Defense and damage
 
 | Choice | Chosen | Why |
@@ -115,6 +118,8 @@ Each Atheric has its own, which no other item offers:
 | Tidecaller's Grips | Arms | Ebb: a parry gives back 30 stamina |
 | Driftwalkers | Legs | Slipstream: a counter after a perfect dodge strikes half again as hard as a counter does, Opportunist's included (1.875 times with both) |
 
+Replaced in part by [[The Perk Pass as Claude Shapes It]]: each Atheric weapon has an intrinsic and an own node of its own, Undertow, Last Light, Tolling and Coral Guard becoming intrinsics (Coral Guard 15 stamina and a fifth of the blow back), Updraft gone, and five Atheric weapons more ([[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]]).
+
 Destiny 1's perks were for guns and space magic; these are Overlook's own, for its blades, shots and shields. Its
 armour stats (Intellect, Discipline, Strength) shortened ability cooldowns Overlook does not have, so armour has none
 yet.
@@ -124,9 +129,9 @@ yet.
 | Choice | Chosen | Why |
 |---|---|---|
 | Islands' foe levels | 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26, 26–30, from Overlook's island outward | Destiny 1's worlds climbed as its players did, Earth to Mars; nine islands spread a player's 30 levels so each is worth visiting in turn |
-| The seas | Calm, Rough and Storm: foes 0, 2 or 3 levels higher, never past 32; XP, Aurem and Vestige chance ×1, ×1.5 or ×2 | The owner: a harder voyage pays better and scales its foes. Claude's numbers: a player at the top of an island's band strikes its Storm foes at 0.47, its Rough ones at 0.56; four higher would be the gap that makes a foe immune |
+| The seas | Normal, Elite and Abyss: foes 0, 2 or 3 levels higher, never past 32; XP, Aurem and Vestige chance ×1, ×1.5 or ×2 | The owner: a harder voyage pays better and scales its foes. Claude's numbers: a player at the top of an island's band strikes its Abyss foes at 0.47, its Elite ones at 0.56; four higher would be the gap that makes a foe immune |
 | A patrol's foes | Six camps from the node's name, 150 m apart and 80 m from spawns, two or three foes each within 8 m; a cleared camp stands again 45 s on, once no player is within 40 m; skirmishers 3, swordsmen 3, archers 2, brutes 1 by weight | Fights at known places across a 1.7 km section, so a route can be planned through them, as Destiny's patrol zones hold their enemies at known spots; captains are for bosses |
-| A patrol's nodes | Twelve spots from the node's name, 60 m apart; a third standing at once, the next third every 3 minutes, each gathered once a turn by each player | The owner: nodes at several spots so a farm has routes. Claude's: a turn long enough to walk a route |
+| A patrol's nodes | Twelve spots from the node's name, 60 m apart; a third standing at once, the next third every 3 minutes, each gathered once a turn by each player | The owner: nodes at several spots so a farm has routes. Claude's: a turn long enough to walk a route. The spots are replaced by [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]] |
 
 ### Vendors
 
@@ -167,6 +172,10 @@ these are Claude's numbers for them.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges open at the Mage's counter.
 
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]] and [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: a Vestige's chance and colour go by the foe's rank in Destiny 1's
+order, it opens to its own colour three times in four, and a Miniboss, a Boss and a dungeon's clear leave items as
+themselves too ([[Gear]], "Vestiges").
+
 ### Materials and keeping things
 
 | Choice | Chosen | Why |
@@ -180,6 +189,9 @@ Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges ope
 | What a player carries | One equipped and 9 more in each slot; 10 Vestiges | Destiny 1 at launch |
 | The vault | 20 weapons, 20 armour, shields and cloaks, 20 Vestiges, reached in a social space | Destiny 1 at launch: 20, 20 and 20, in the Tower |
 
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's Aurem goes by
+its kind and rank, and a dismantled Atheric gives 3 Essence ([[Gear]], "A kill's pay", "Asks").
+
 ### Wearing
 
 | Choice | Chosen | Why |
@@ -191,6 +203,8 @@ Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges ope
 | The cloak | Its slot holds one; until there are factions, cloaks belong to none | Claude's: no faction exists yet |
 | Clothing | Every garment is armour of its piece, the everyday ones Normal and Magic, the heavier sets Rare and above; no toggle | The owner: clothing is armour, with a wardrobe later ([[Clothing Is Armour, With a Wardrobe Later]]) |
 | How it looks | Normal and Magic are clothes (Magic adds a tunic or vest, tall boots, a leather helm and gloves); Rare is chain, steel or iron; Legendary silver, elven, dwarven or the knights'; Atheric daedric, ebony, adamantium or mithril; a cloak is casual, formal from Rare | Rarer gear should read as rarer at a glance, as Destiny's does, with the forge's own sets in order of their worth |
+
+Replaced in part by [[The Perk Pass as Claude Shapes It]]: a named piece wears its own look, and a rolled one climbs the metals' and sets' ladders with its rarity and level, so every model the forge draws is worn.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction's cape is a cloak that belongs to it ([[Factions]]).
 

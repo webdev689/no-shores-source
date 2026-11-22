@@ -273,7 +273,7 @@ impl Room {
     /// Stands a wave's foes where it forms, out of sight, and adds them to it: they march in, its Collectors for the
     /// stores, the rest for the players.
     fn raid_members(&mut self, public: &Public, running: &mut Running, raid: &mut Raid, members: Vec<(u8, Rank)>) {
-        let (middle, _) = self.ground_of(public, running.kind);
+        let (middle, _) = self.event_ground(public, running.kind);
         let mut draws = self.wave_draws(running, u32::from(raid.wave) * 8 + raid.wave_foes.len() as u32);
         let start = draws.draw() * TAU;
         let (formed, home) = (raid.formed, raid.home);

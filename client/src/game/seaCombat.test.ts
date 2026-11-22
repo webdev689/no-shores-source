@@ -5,6 +5,7 @@ import { eyeFor, FIELD_OF_VIEW, HEIGHT } from '../overworld/overworldCamera.ts';
 import type { FightCaptain, FightOrders, FightVessel, FightView } from '../rules/fightRules.ts';
 import { BAR_OVER_M } from '../ships/shipBars.ts';
 import { panShot, type Shot } from './camera.ts';
+import { IDLE, type InputFrame } from '../player/input.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { pictureAt, shownScale } from './seaLaw.ts';
 import type { SeaRoom } from './seaRoom.ts';
@@ -225,8 +226,8 @@ test('pressing aim eases the eye out to its battery, not a cut from the orbit in
   assert.ok(last && Math.hypot(last.eye[0] - x, last.eye[1] - y) < 8, "a second on it stands by the ship's side");
 });
 
-test("a crippled ship's guns are silent: aiming never moves its eye", async () => {
-  const { fight, frames } = ordered({ ...FIRST, player: { ...vessel, state: 'wrecked' } });
+test("a sinking ship's guns are silent: aiming never moves its eye", async () => {
+  const { fight, frames } = ordered({ ...FIRST, player: { ...vessel, state: 'sinking' } });
   const [orbit] = await frames(1);
   fight.aim(true);
   const shots = await frames(30);
@@ -343,4 +344,22 @@ test("the fight's readout: its plate and rose, the card on the nearest captain, 
   const struck = { ...captain, ship: [5010, 6000, 2, 0, 0, 0, 0, 0], state: 'struck' } as const;
   assert.equal(display({ ...FIRST, captain: struck }, true)?.card?.boardKey, 'E', 'the room would take it');
   assert.equal(display({ ...FIRST, captain: struck })?.card?.boardKey, null, 'the room would not');
+});
+
+test("the pad's brace tapped braces for that tap alone, and held braces until it is let go", async () => {
+  const { fight, orders, frames } = ordered();
+  const pad = (pressed: boolean, released: boolean): InputFrame => ({
+    ...IDLE,
+    pressed: (id) => pressed && id === 'brace',
+    released: (id) => released && id === 'brace',
+  });
+  fight.padFrame(pad(true, true), 1 / 30);
+  await frames(1);
+  assert.equal(orders.at(-1)?.brace, false, 'a tap comes up in the frame it went down');
+  fight.padFrame(pad(true, false), 1 / 30);
+  await frames(2);
+  assert.equal(orders.at(-1)?.brace, true);
+  fight.padFrame(pad(false, true), 1 / 30);
+  await frames(1);
+  assert.equal(orders.at(-1)?.brace, false);
 });

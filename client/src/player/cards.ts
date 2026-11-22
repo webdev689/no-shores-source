@@ -28,9 +28,10 @@ export interface Card {
 /** One card to draw: where its feet stand (world metres), whether it is mirrored, its flash as it is struck (its
  *  stage, `FLASH` in cardLooks.ts, and colour), how many times life size it stands (1 unless said: a figure aboard a
  *  ship drawn larger than life is drawn as large as it is), its statuses that show (Veiled, Exposed, Charged), how
- *  many pixels it is shaken across, how far it has dissolved as it dies and in which element, the smear its own
- *  swing leaves behind it (figure pixels across the eye's right and up, and its colour; only the Test Ground draws
- *  one), and how hard its weapon's glow surges (1 at rest). */
+ *  many pixels it is shaken across, how far it has dissolved as it dies and in which element, how much of it is still
+ *  to come as it arrives (1 none to 0 whole, `arrivals.ts`), the smear its own swing leaves behind it (figure pixels
+ *  across the eye's right and up, and its colour; only the Test Ground draws one), and how hard its weapon's glow
+ *  surges (1 at rest). */
 export interface CardAt {
   readonly card: Card;
   readonly x: number;
@@ -44,6 +45,7 @@ export interface CardAt {
   readonly charged?: boolean;
   readonly jitter?: number;
   readonly dissolve?: { readonly share: number; readonly look: GlowLook };
+  readonly arrival?: number | undefined;
   readonly smear?: {
     readonly across: number;
     readonly up: number;
@@ -127,6 +129,9 @@ export class Cards {
   private readonly warmed = new Set<string>();
   /** The dress each warmed frame was warmed for, so a warmed frame let go has its dress warmed again. */
   private readonly warmedBy = new Map<string, string>();
+  /** Each body's layers a move carries (its props, instrument or spark), found once a body and move: a figure asks
+   *  every frame, and a body has hundreds of layers. */
+  private readonly carriedBy = new Map<string, readonly string[]>();
   private readonly scene: CardMaker;
   private readonly looks: ForgeLooks;
   private readonly dyes: DyeTable;
@@ -224,6 +229,14 @@ export class Cards {
     return { width, height, pixels, level: true, ...(snap ? { snap: (shown) => snap.snap(shown) } : {}) };
   }
 
+  /** A picture as a card the scene draws among the figures, standing on the middle of its foot unless it says where:
+   *  a piece of gear lying in the world. Its texture is the caller's to let go. */
+  cardOf(picture: Picture): Card {
+    const { width, height, pixels, root } = picture;
+    const bytes = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength);
+    return this.scene.card(bytes, width, height, root ?? [width / 2, height]);
+  }
+
   /** What a body can wear, as the forge draws it; null for a body it has not. */
   wardrobe(body: string): Wardrobe | null {
     const layers = this.looks.bodies[body]?.layers;
@@ -256,7 +269,12 @@ export class Cards {
   private figured(dress: Dress, anim: string, flip: boolean) {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
-    const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
+    const move = `${dress.body} ${anim}`;
+    let carried = this.carriedBy.get(move);
+    if (!carried) {
+      carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
+      this.carriedBy.set(move, carried);
+    }
     const gear = [...dressed.gear, ...carried];
     // A view drawn mirrored keeps each hip piece at its own hip, and what each fist holds in its own fist.
     const held = [dress.outfit.right, dress.outfit.left, ...carried];

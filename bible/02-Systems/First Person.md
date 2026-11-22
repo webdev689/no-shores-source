@@ -11,6 +11,8 @@ code:
   - client/src/firstperson/fpFrames.ts#weaponPicture
   - client/src/firstperson/heldPictures.ts#gunPicture
   - client/src/firstperson/riding.ts#RideMotion
+  - client/src/firstperson/fpMotion.ts#Sway
+  - client/src/firstperson/fpPlaces.ts#swayedQuad
   - client/src/firstperson/climbHands.ts#ClimbHands
   - client/src/firstperson/climbing.ts#climbPlace
 ---
@@ -44,21 +46,22 @@ A weapon in an element glows in it while drawn, each hand in its own weapon's ([
 
 ### Swinging
 
-A click swings once. Holding the button swings again as each blow ends. Each blow takes one of six directions at
-random: down, down and left, left, right, down and right, or up. In the [[Test Ground]] the [[Combat]] rules decide
-when a swing begins and the direction is chosen before it, so the first person swings as the rules do; a swing the
-rules refuse (no stamina, a stagger) is not drawn. A swing the rules begin once the last blow has landed starts the
-strike again, a pair's from the other hand, so no held swing is lost to the frames' rounding; one the rules end early
-(a dodge, a flinch, a guard) ends in the first person at once, and a bow's draw let go too soon to shoot is put away
-without a loose. A swing takes five of DFO's strike frames, and its blow lands as the third begins: a frame lasts
-0.149 s for a sword, three quarters of DFO's swing law at an average Speed ([[Combat]]). A dagger and bare hands come
-round quicker; a mace, a flail and the two-handed weapons slower. In a fight the rules' own swing paces each strike,
-whatever the weapon: its blow's frame shows on the tick they land it and it ends with their swing, and a pair's flurry,
-drawn from the hand already raised, lands when they land it. The strike's own frames run faster than that
-([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]): the first is held until a quarter of
-the way to the blow, the first two run through the last three quarters of that time, the third shows as the blow
-lands, and the last two run over a little over half that time after. The weapon is then at rest while the swing runs
-out. Bare hands' strike to the left goes up and back down over eight frames, paced the same way.
+A click swings once. Holding the button swings again as each blow ends. Out of a fight each blow takes one of six
+directions at random: down, down and left, left, right, down and right, or up. In a fight, the game's or the
+[[Test Ground]]'s, the [[Combat]] rules decide when a swing begins and its stroke, the chain's next ([[Combat]],
+"Swings"), so the first person swings as the rules do; a swing the rules refuse (no stamina, a stagger) is not drawn. A
+swing the rules begin once the last blow has landed starts the strike again, a pair's from the other hand, so no held
+swing is lost to the frames' rounding; one the rules end early (a dodge, a flinch, a guard) ends in the first person at
+once, and a bow's draw let go too soon to shoot is put away without a loose. A swing takes five of DFO's strike frames,
+and its blow lands as the third begins: a frame lasts 0.149 s for a sword, three quarters of DFO's swing law at an
+average Speed ([[Combat]]). A dagger and bare hands come round quicker; a mace, a flail and the two-handed weapons
+slower. In a fight the rules' own swing paces each strike, whatever the weapon: its blow's frame shows on the tick they
+land it and it ends with their swing, and a pair's flurry, drawn from the hand already raised, lands when they land it.
+The strike's own frames run faster than that
+([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]): the first is held until a quarter of the
+way to the blow, the first two run through the last three quarters of that time, the third shows as the blow lands, and
+the last two run over a little over half that time after. The weapon is then at rest while the swing runs out. Bare
+hands' strike to the left goes up and back down over eight frames, paced the same way.
 
 A bow has two shots ([[Ranged Weapons Aim and Fire]]). Not aimed, a pull of the trigger looses a quick shot at once:
 the bow jumps to its sixth frame, the arrow leaving on it, and plays the rest of its release, a frame every 0.0625 s;
@@ -163,7 +166,13 @@ dagger's does. A shield is held a frame below raised, and raised whole for a blo
 the weapon strikes, a shield or a torch ducks below the screen, as fast as a climb lowers a weapon, and comes back up
 once the strike ends. A lantern stays up. A light's flame steps every 0.1 s.
 
-While walking, the picture dips a few design pixels each step, more at a run. A flail at rest wears its chain's swing,
+While walking, the picture dips a few design pixels each step, more at a run. The weapon sways as it is held (`Sway`):
+it lags behind the look as it turns or tilts, 4 design pixels a radian a second and at most 12, catching up over about
+a tenth of a second as the look settles, and swings aside once each two steps, 2 pixels at a walk and 4 at a run. It
+eases out on a wall, where the hands keep their stone, and on a horse, whose reins stay still. A picture cut at an edge
+of the screen (a gun's stock at the right, a shield's or a light's arm at the left, any arm at the foot) never sways
+farther off that edge than it reaches past it, so no gap opens there (`swayedQuad`). A ranged weapon's muzzle is placed
+with its sway, so a tracer starts where it is drawn. A flail at rest wears its chain's swing,
 a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps both arms, the left half a stride behind
 the right. A gun, or one crossbow, is carried across the chest at a run, from the forge's own carry frames in the
 gauntlets worn; a pair of crossbows keeps its own frames. A cast shows both casting hands for 0.28 s and hides the
@@ -173,8 +182,10 @@ Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its
 pictures are composed ahead and kept on the GPU, and so are the other loadout's weapon's, so a swap shows it at once;
 the figure's are composed ahead in the glow the other weapon will show once drawn.
 
-Another figure is never drawn nearer the eye than a metre in first person, on land and on a struck ship's deck alike
-(`cardStand`): a foe in a melee stands that far off along the same line, so it never fills the view. In third person
+Another player or a foe is never drawn nearer the eye than 1.5 m in first person, on land, on a struck ship's deck,
+on the wreck and on the [[Test Ground]] alike (`cardStand`): a foe in a melee stands that far off along the same line,
+so it never fills the view, and its parry ring stands round its head as drawn
+([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). In third person
 no figure is moved off the eye, so the player's own stays where they stand when the camera pulls in by a wall.
 
 ### Climbing

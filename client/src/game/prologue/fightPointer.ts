@@ -1,8 +1,9 @@
-// The story's sea fight taken by the pointer as the sea's own fight is: the right button held aims and let go fires, a
-// left click while aiming holds fire, a drag turns the camera, the wheel steps the shot; the pointer is held to the
-// canvas while a button is down.
+// The story's sea fight taken by the pointer as the sea's own fight is: the aim's button (the right) held aims and let
+// go fires, another click while aiming holds fire, a drag turns the camera, the wheel steps the shot; the pointer is
+// held to the canvas while a button is down.
 
-import { holdPointer } from '../seaCombat.ts';
+import { BINDS } from '../../player/input.ts';
+import { holdPointer } from '../seaPointer.ts';
 
 /** What the pointer drives in a fight. */
 export interface Aimed {
@@ -27,7 +28,7 @@ export function fightPointer(canvas: HTMLCanvasElement, fight: () => Aimed | nul
       if (!fought) return;
       taken(event);
       holdPointer(canvas, event.pointerId);
-      if (event.button === 2) {
+      if (BINDS.now.aim.keys.includes(`mouse${event.button}`)) {
         aiming = true;
         fought.aim(true);
       } else if (aiming) {
@@ -55,7 +56,7 @@ export function fightPointer(canvas: HTMLCanvasElement, fight: () => Aimed | nul
       held = false;
       if (!fought) return;
       taken(event);
-      if (event.button === 2 && aiming) {
+      if (BINDS.now.aim.keys.includes(`mouse${event.button}`) && aiming) {
         aiming = false;
         fought.aim(false);
       }

@@ -9,7 +9,7 @@ use crate::ballistics::Ball;
 use crate::boost::Boost;
 use crate::captain::odds::Power;
 use crate::captain::{Captain, Own, Sighting};
-use crate::damage::{Damage, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State, WRECKED_OARS, way_share_of};
+use crate::damage::{Damage, SINK_CLEAR_M, SINK_LIST_DEG, SINK_PITCH_DEG, State, way_share_of};
 use crate::gunnery::Guns;
 use crate::guns::Shot;
 use crate::random::Mulberry32;
@@ -140,14 +140,14 @@ pub struct Fight {
     stems: BTreeMap<ShipId, ram::Stem>,
     /// Each player's ship as its own gear fits it (`fitting.rs`).
     fittings: BTreeMap<ShipId, fitting::Fitting>,
+    /// Each ship a Web's balls struck in the rigging: until when, and the share of its turn it costs.
+    webbed: BTreeMap<ShipId, (f64, f64)>,
     ambush: bool,
 }
 
-/// What a player's ship's hurts leave its helm: whether it is a wreck, the canvas it has left, and the share of its
-/// way that canvas leaves it.
+/// What a player's ship's hurts leave its helm: the canvas it has left and the share of its way that canvas leaves it.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Hurts {
-    pub wrecked: bool,
     pub sail: f64,
     pub way_share: f64,
     /// The share of the turn its helm asks that its trim gives it.
@@ -159,14 +159,13 @@ pub struct Hurts {
 impl Hurts {
     #[must_use]
     pub fn of(damage: &Damage) -> Self {
-        let (wrecked, way_share) = (damage.state == State::Wrecked, damage.way_share());
-        Self { wrecked, sail: damage.sail, way_share, turn: 1.0, drive: 1.0 }
+        Self { sail: damage.sail, way_share: damage.way_share(), turn: 1.0, drive: 1.0 }
     }
 
     /// Its hurts from its numbers as a snapshot gives them.
     #[must_use]
-    pub fn from_numbers(wrecked: bool, sail: f64, max_sail: f64) -> Self {
-        Self { wrecked, sail, way_share: way_share_of(sail, max_sail), turn: 1.0, drive: 1.0 }
+    pub fn from_numbers(sail: f64, max_sail: f64) -> Self {
+        Self { sail, way_share: way_share_of(sail, max_sail), turn: 1.0, drive: 1.0 }
     }
 
     /// Its hurts as its fitting trims them: the way its canvas leaves it, and its turn.
@@ -178,9 +177,8 @@ impl Hurts {
 }
 
 /// A player's ship of `hull` stepped a tick by its helm, as its hurts let it, at a fight's pace and swing: no sail sets
-/// on a wreck or with its rigging shot away, its sails' and oars' pull is held back, and a burst drives a ship that is
-/// no wreck. Answers the ship and, when its helm climbed for sail it could not set, whether that was for its being a
-/// wreck.
+/// with its rigging shot away, its sails' and oars' pull is held back, and a burst drives it. Answers the ship and
+/// whether its helm climbed for sail it could not set.
 #[must_use]
 pub fn sail_hurt(
     ship: &Ship,
@@ -190,18 +188,16 @@ pub fn sail_hurt(
     waters: &impl Waters,
     wind: [f64; 2],
     time: f64,
-) -> (Ship, Option<bool>) {
+) -> (Ship, bool) {
     let mut helm = helm;
-    let mut refused = None;
-    if (hurts.wrecked || hurts.sail <= 0.0) && ship.rung.saturating_add(helm.climb) >= SAILS_SET {
-        if helm.climb > 0 {
-            refused = Some(hurts.wrecked);
-        }
+    let mut refused = false;
+    if hurts.sail <= 0.0 && ship.rung.saturating_add(helm.climb) >= SAILS_SET {
+        refused = helm.climb > 0;
         helm.climb = if ship.rung >= SAILS_SET { -1 } else { 0 };
     }
     let pull = Pull {
-        sail: if hurts.wrecked { 0.0 } else { hurts.way_share * hurts.drive * FIGHT_PACE },
-        oars: if hurts.wrecked { WRECKED_OARS } else { hurts.drive } * FIGHT_PACE,
+        sail: hurts.way_share * hurts.drive * FIGHT_PACE,
+        oars: hurts.drive * FIGHT_PACE,
         turn: hurts.turn * FIGHT_TURN,
     };
     (step_pulled(ship, &helm, hull, wind, waters, time, TICK_SECONDS, pull), refused)
@@ -253,7 +249,6 @@ fn sighting_of(id: ShipId, vessel: &Vessel) -> Sighting {
         ship: vessel.ship,
         level: vessel.pose.heave,
         hull_share: damage.hull_share(),
-        wrecked: damage.state == State::Wrecked,
         power,
     }
 }
@@ -274,7 +269,8 @@ impl Fight {
     pub fn new(seed: u32) -> Self {
         let ships = BTreeMap::new();
         let (balls, stems, fittings) = (Vec::new(), BTreeMap::new(), BTreeMap::new());
-        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls, stems, fittings, ambush: false }
+        let webbed = BTreeMap::new();
+        Self { clock: 0.0, draws: Mulberry32::new(seed), ships, balls, stems, fittings, webbed, ambush: false }
     }
 
     /// A player's Sloop and one captain of `commission` in its rank's hull, put to sea on the ring round the Sloop,
@@ -373,7 +369,7 @@ impl Fight {
     /// number from `CAPTAIN` on, its temper drawn from its own seed), and every chance of the fight drawn from `seed`.
     /// Each comes to fight it at once: bold, whatever its temper, and cruising straight for it when out of sight.
     /// A captain set where the water does not float it is refused: aground, it could never close nor sink.
-    /// An ambush is fought to the end: no captain sails off, the player's ship is never wrecked (a ball or a fire
+    /// An ambush is fought to the end: no captain sails off, the player's ship never goes down (a ball or a fire
     /// leaves it a point of hull), and it is over once every captain is beaten (`Fight::beaten`).
     pub fn ambush(
         ship: Ship,
@@ -444,6 +440,7 @@ impl Fight {
         self.ships.remove(&id);
         self.stems.remove(&id);
         self.fittings.remove(&id);
+        self.webbed.remove(&id);
         for vessel in self.ships.values_mut() {
             if let Sailor::Captain(command) = &mut vessel.sailor {
                 command.mind.forget(id);
@@ -562,6 +559,8 @@ impl Fight {
 
 #[path = "fight_events.rs"]
 mod events;
+#[path = "fight_exotics.rs"]
+pub mod exotics;
 pub use events::{End, Event, Part, Piece, Refusal};
 #[path = "fitting.rs"]
 pub mod fitting;

@@ -1,4 +1,4 @@
-import type { Orbit } from '../editor/orbit.ts';
+import { FIELD_OF_VIEW, type Orbit } from '../editor/orbit.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { BOOM, boomEased, boomReach } from './boom.ts';
 
@@ -27,6 +27,20 @@ export const AIM = { shoulder: 0.8, back: 3, up: 0.25, thirdZoom: 1.3, firstZoom
  *  `shown` 0.01, else in first; the first person's hands zoom with it. */
 export const aimZoom = (shown: number, aim: number, place: AimPlace = AIM): number =>
   1 + ((shown > 0.01 ? place.thirdZoom : AIM.firstZoom) - 1) * aim;
+
+/** First person's view is this tall, wider than the lens's 50° that third person keeps. */
+const FIRST_PERSON_FOV = (65 * Math.PI) / 180;
+
+/** How far the view is widened, a zoom under 1, as the camera comes into the head (`shown` metres behind it) from
+ *  the nearest third person stands, to first person's 65° at the head: third person keeps the lens's 50°. */
+export function widened(shown: number): number {
+  const first = Math.tan(FIELD_OF_VIEW / 2) / Math.tan(FIRST_PERSON_FOV / 2);
+  return first + (1 - first) * Math.min(1, Math.max(0, shown) / (CAMERA.nearest - CAMERA.notch));
+}
+
+/** How far the first person's hands zoom with `orbit`'s view, `view` as it is shown: by aiming (and any push in),
+ *  never by first person's widening, so the weapon keeps its size. */
+export const handsZoom = (orbit: Orbit, view: ViewMode): number => (orbit.zoom ?? 1) / widened(view.shown);
 
 /** Where third person's aiming view stands and how far it zooms, as `AIM` has it unless the Test Ground's panel sets
  *  its own. */
@@ -77,20 +91,27 @@ type Point = readonly [number, number, number];
 
 /** How far along a ray it first meets a block, as a share of its length (1 where it meets none). */
 export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number {
+  // Asked for each foe's sight and the camera's boom every frame, over every block: a block whose box misses the
+  // ray's own box is passed over, and each axis is cut in place.
+  const [westmost, eastmost] = [Math.min(from[0], to[0]), Math.max(from[0], to[0])];
+  const [northmost, southmost] = [Math.min(from[1], to[1]), Math.max(from[1], to[1])];
+  const [lowest, highest] = [Math.min(from[2], to[2]), Math.max(from[2], to[2])];
   let nearest = 1;
   for (const block of blocks) {
-    const low = [block.minX, block.minY, block.bottom];
-    const high = [block.maxX, block.maxY, block.top];
+    if (block.maxX < westmost || block.minX > eastmost || block.maxY < northmost || block.minY > southmost) continue;
+    if (block.top < lowest || block.bottom > highest) continue;
     let enter = 0;
     let leave = 1;
-    for (const axis of [0, 1, 2] as const) {
-      const delta = to[axis] - from[axis];
-      const [lowAxis, highAxis] = [low[axis] ?? 0, high[axis] ?? 0];
+    for (let axis = 0; axis < 3; axis++) {
+      const delta = (to[axis] ?? 0) - (from[axis] ?? 0);
+      const lowAxis = axis === 0 ? block.minX : axis === 1 ? block.minY : block.bottom;
+      const highAxis = axis === 0 ? block.maxX : axis === 1 ? block.maxY : block.top;
       if (Math.abs(delta) < 1e-9) {
-        if (from[axis] < lowAxis || from[axis] > highAxis) leave = -1;
+        if ((from[axis] ?? 0) < lowAxis || (from[axis] ?? 0) > highAxis) leave = -1;
         continue;
       }
-      const [first, second] = [(lowAxis - from[axis]) / delta, (highAxis - from[axis]) / delta];
+      const first = (lowAxis - (from[axis] ?? 0)) / delta;
+      const second = (highAxis - (from[axis] ?? 0)) / delta;
       enter = Math.max(enter, Math.min(first, second));
       leave = Math.min(leave, Math.max(first, second));
     }
@@ -144,7 +165,8 @@ export function boomFollowed(
 /** The camera as an orbit the scene draws from: at the head in first person; in third at the end of its boom as far
  *  out as it has eased (`boomFollowed`), and never nearer a block or the ground than `BOOM.closest`, so a boom easing
  *  in behind a sudden wall never shows through it; and `aim` (0 to 1) of the way into aiming's view, at `place` over
- *  the shoulder and zoomed. `pitch` is how far it looks down, negative looking up. */
+ *  the shoulder and zoomed; and under the ceiling `roof` gives over a point (null where there is none). `pitch` is how
+ *  far it looks down, negative looking up. */
 export function cameraOrbit(
   head: Point,
   yaw: number,
@@ -154,6 +176,7 @@ export function cameraOrbit(
   aim = 0,
   place: AimPlace = AIM,
   groundAt: ((x: number, y: number) => number | null) | null = null,
+  roof: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
   const forward = forwardOf(yaw, pitch);
   const end = boomEnd(head, yaw, pitch, view, aim, place);
@@ -166,9 +189,15 @@ export function cameraOrbit(
         ? boomReach(head, end, blocks, groundAt, BOOM.clearance)
         : Math.min(view.boom, boomReach(head, end, blocks, groundAt, BOOM.closest));
     const share = length > 1e-6 ? Math.min(1, Math.max(0, shown) / length) : 0;
-    eye = [0, 1, 2].map((axis) => head[axis] + (end[axis] - head[axis]) * share) as unknown as Point;
+    const along = (part: number) =>
+      [0, 1, 2].map((axis) => head[axis] + (end[axis] - head[axis]) * part) as unknown as Point;
+    const reach = along(share);
+    // Under a ceiling by the clearance too, along the same line, so the player stays in the middle of the view.
+    const ceiling = Math.min(roof?.(head[0], head[1]) ?? Infinity, roof?.(reach[0], reach[1]) ?? Infinity);
+    const [over, rise] = [ceiling - BOOM.clearance, end[2] - head[2]];
+    eye = reach[2] > over && rise > 0 ? along(Math.max(0, (over - head[2]) / rise)) : reach;
   }
-  const zoom = aimZoom(view.shown, aim, place);
+  const zoom = aimZoom(view.shown, aim, place) * widened(view.shown);
   return {
     targetX: eye[0] + forward[0],
     targetY: eye[1] + forward[1],

@@ -427,7 +427,7 @@ fn speed_away(sight: &Sight) -> f64 {
 /// pace a swing allows.
 fn lead(here: &Here<'_, '_>, away: f64) -> f64 {
     let strike = f64::from(swing_ticks(here.fighter.arms.melee).0) * TICK_SECONDS;
-    (away - ATTACK_PACE * TUNING.walk).max(0.0) * strike
+    (away - ATTACK_PACE * here.walk()).max(0.0) * strike
 }
 
 /// The side round its target toward which the target's guard faces away from it (1 clockwise, -1 not): a blow from
@@ -494,7 +494,7 @@ fn hold_ring(brain: &mut Brain, here: &Here<'_, '_>, sight: &Sight, ring: f64) -
     let hidden = |place: f64| {
         let at = goal(place);
         let blocks = here.world.blocks;
-        !clear_line(blocks, chest, [at[0], at[1], chest[2]])
+        !clear_line(blocks, here.world.terrain, chest, [at[0], at[1], chest[2]])
             || blocking_at(blocks, at[0], at[1], at[2], TUNING.height).is_some()
     };
     if sight.distance < ring - RING_SLACK {

@@ -1,0 +1,93 @@
+{
+  "parts": [
+    "stone",
+    "stoneAlt",
+    "floor",
+    "ceiling",
+    "trim",
+    "wood",
+    "iron",
+    "bone",
+    "relief",
+    "cloth",
+    "rope",
+    "ore",
+    "brass",
+    "water",
+    "glow",
+    "ember",
+    "crystal",
+    "fungus",
+    "wax"
+  ],
+  "pieces": [
+    "door.a",
+    "door.b",
+    "pillar.base",
+    "pillar.shaft",
+    "pillar.capital",
+    "wall.base",
+    "wall.shaft",
+    "wall.cap",
+    "feature.a",
+    "feature.b",
+    "ceiling.a",
+    "ceiling.b",
+    "ceiling.c",
+    "floor.a",
+    "floor.b",
+    "sconce",
+    "portal",
+    "exit"
+  ],
+  "styles": {
+    "crypt": {
+      "wallEvery": 2,
+      "wallIn": "rooms",
+      "ceiling": "apex",
+      "floor": "slabs",
+      "features": 2,
+      "leastCeiling": 3.2
+    },
+    "halls": {
+      "wallEvery": 2,
+      "wallIn": "rooms",
+      "ceiling": "apex",
+      "floor": "runner",
+      "features": 2,
+      "leastCeiling": 4.0
+    },
+    "cells": {
+      "wallEvery": 3,
+      "wallIn": "rooms+corridors",
+      "ceiling": "beams",
+      "floor": "drain",
+      "features": 1,
+      "leastCeiling": 3.2
+    },
+    "sanctum": {
+      "wallEvery": 2,
+      "wallIn": "rooms",
+      "ceiling": "apex",
+      "floor": "circle",
+      "features": 2,
+      "leastCeiling": 4.4
+    },
+    "caverns": {
+      "wallEvery": 3,
+      "wallIn": "cave rooms",
+      "ceiling": "hang",
+      "floor": "scree",
+      "features": 2,
+      "leastCeiling": 4.4
+    },
+    "mines": {
+      "wallEvery": 1,
+      "wallIn": "rooms+corridors",
+      "ceiling": "beams",
+      "floor": "rails",
+      "features": 1,
+      "leastCeiling": 3.2
+    }
+  }
+}

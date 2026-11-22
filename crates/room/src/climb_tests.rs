@@ -92,6 +92,30 @@ fn a_foe_sent_to_a_place_goes_over_a_wall_when_that_is_shorter_and_round_it_when
 }
 
 #[test]
+fn a_foe_crossing_a_drop_walks_at_its_own_pace_no_faster() {
+    // A broad top 2.3 m up, the foe on it and its place on the ground off its north edge.
+    let block = Block { min_x: -15.0, min_y: -6.0, max_x: 15.0, max_y: 6.0, top: 2.3, bottom: 0.0 };
+    let mut room = Room::new(vec![block], (0.0, 25.0));
+    let foe = put(&mut room, 0.0, 0.0, 0.0);
+    room.foes.get_mut(&foe).expect("put").fighter.body.z = 2.3;
+    sent(&mut room, foe, [0.0, -12.0, 0.0]);
+    let (mut fastest, mut was, mut down) = (0.0_f64, room.foes[&foe].fighter.body, false);
+    for _ in 0..60 * 20 {
+        room.tick();
+        let body = room.foes[&foe].fighter.body;
+        // On its feet on the top, walking to the edge it crosses by.
+        if body.mode == Mode::Ground && was.mode == Mode::Ground && body.z > 2.0 && body.y < -3.5 {
+            fastest = fastest.max(combat::sight::apart([body.x, body.y], [was.x, was.y]) / movement::TICK_SECONDS);
+        }
+        down |= body.z < 0.1;
+        was = body;
+    }
+    let own = TUNING.walk * ::foes::tuning::FOE_PACE;
+    assert!(down, "it came down");
+    assert!(fastest > 0.0 && fastest <= own * 1.02, "{fastest} m/s to the edge, its walk {own}");
+}
+
+#[test]
 fn a_foe_set_down_short_of_its_climb_finds_its_way_up_again() {
     let block = Block { min_x: -3.0, min_y: -14.0, max_x: 3.0, max_y: -9.0, top: 3.5, bottom: 0.0 };
     let mut room = Room::new(vec![block], (0.0, 0.0));
@@ -137,13 +161,13 @@ fn by_a_ledge(number: u8, foe_at: [f64; 3], facing: f64) -> (Room, PlayerId, Fig
 fn a_foe_beneath_a_player_at_a_ledge_s_edge_goes_up_rather_than_swing_at_them_from_below() {
     // Across, the player stands within a sword's reach of the foot of the ledge; up, out of any blow's.
     let (mut room, player, foe) = by_a_ledge(SWORDSMAN, [2.95, 3.7, 0.0], 0.0);
-    let up = (1..=60 * 4).find(|&sequence| {
+    let up = (1..=60 * 5).find(|&sequence| {
         room.input(player, swinging(&room, sequence)).unwrap();
         room.tick();
         let body = room.foes[&foe].fighter.body;
         body.mode == Mode::Ground && body.z == 2.3
     });
-    assert!(up.is_some(), "still beneath it after 4 s: {:?}", room.foes[&foe].fighter.body);
+    assert!(up.is_some(), "still beneath it after 5 s: {:?}", room.foes[&foe].fighter.body);
 }
 
 #[test]

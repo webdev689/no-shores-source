@@ -1,5 +1,5 @@
 import type { ArtState } from './artMessages.ts';
-import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
+import { type FromRoomMessage, type JoinedNode, type PlayerDress, readFromRoom } from './messages.ts';
 import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { LinkMeasure, type Measured } from './linkMeasure.ts';
 import { SnapshotKeeper } from './snapshots.ts';
@@ -25,12 +25,16 @@ export interface RoomLink {
   readonly epoch?: number;
   send(bytes: Uint8Array<ArrayBuffer>): void;
   pump(seconds: number): void;
+  /** Lets the room go, where the link holds one open: a socket, or a room in a worker. */
+  close?(): void;
   /** The player's trim, from the room's last word on their gear; none until it sends it. */
   readonly trim?: readonly number[] | null;
   /** The arms the room lets the player take up, from its last word on their gear; none until it sends it. */
   readonly arms?: readonly number[] | null;
   /** The player's Arts, from the room's last word on their gear; none until it sends it. */
   readonly arts?: ArtState | null;
+  /** Why the room's gate shut to the player, in its words; null while it is open, and always for a room alone. */
+  readonly shut?: string | null;
   /** How many inputs before each go with it, on a link that may lose one; none on a WebSocket, which loses none. */
   readonly resend?: number;
   /** Told each input's number as it is sent, for a link that measures its lag (`linkMeasure.ts`). */
@@ -47,8 +51,14 @@ export function rejoinWait(tries: number): number {
 }
 
 /** The codes a room closes a socket with when it sends its player away for not keeping to the messages (too many,
- *  too large, or not one), or because its node is locked (worker.ts): rejoining would only be sent away again. */
-const SENT_AWAY = [1008, 1009, 4003];
+ *  too large, or not one, worker.ts): rejoining would only be sent away again. */
+const SENT_AWAY = [1008, 1009];
+/** The code a room closes with when it turns the player away and says why, its gate shut to their character or its
+ *  node locked (worker.ts): rejoining would be turned away again. */
+export const SHUT = 4003;
+/** The code a room closes with once the player's character is taken by another of their sockets, in this room or
+ *  another (worker.ts): joining again would take it back, and the two would send each other away for ever. */
+export const ELSEWHERE = 4001;
 
 /** What a socket's messages go to: its welcome, each snapshot, and the player's own gear. */
 interface Heard {
@@ -98,6 +108,8 @@ export class RoomConnection implements RoomLink {
   epoch: number;
   /** Why the room sent the player away, in its words where it gave them; null while the link holds or rejoins. */
   lost: string | null = null;
+  /** Why the room's gate shut to the player, in its words; null while it is open. */
+  shut: string | null = null;
   /** The player's trim, and the arms they may take up, from the room's last word on their gear. */
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
@@ -164,8 +176,9 @@ export class RoomConnection implements RoomLink {
   private watch(socket: WebSocket): void {
     socket.addEventListener('close', (event) => {
       if (socket !== this.socket || this.closed) return;
-      if (SENT_AWAY.includes(event.code)) {
+      if (SENT_AWAY.includes(event.code) || event.code === SHUT || event.code === ELSEWHERE) {
         [this.rejoining, this.lost] = [false, event.reason || 'the room sent the player away'];
+        if (event.code === SHUT) this.shut = this.lost;
         return;
       }
       this.rejoining = true;
@@ -206,9 +219,10 @@ export class RoomConnection implements RoomLink {
     this.gear(gear);
   }
 
-  /** Sends one tick's input bytes; while the socket is not open, nothing is sent. */
+  /** Sends one tick's input bytes; while the socket is not open, or a rejoin's socket is open but not yet welcomed,
+   *  nothing is sent: an input numbered for the last join would be out of order in the new one. */
   send(bytes: Uint8Array<ArrayBuffer>): void {
-    if (this.socket.readyState === WebSocket.OPEN) this.socket.send(bytes);
+    if (!this.rejoining && this.socket.readyState === WebSocket.OPEN) this.socket.send(bytes);
   }
 
   /** The link's lag and loss as the page measures them. */
@@ -222,11 +236,6 @@ export class RoomConnection implements RoomLink {
     const own = snapshot.players.find((seen) => seen.player === this.player);
     if (own) this.measure.snapshot(own.acknowledged, kept, performance.now());
   };
-
-  /** Sends the sea room the player's ship's course and pace; while the socket is not open, nothing is sent. */
-  sendCourse(points: readonly (readonly [number, number])[], pace: number): void {
-    this.send(courseBytes(points, pace));
-  }
 
   /** Whether the socket is open: a room that dropped the player, or a network that dropped the room, closes it. */
   get open(): boolean {

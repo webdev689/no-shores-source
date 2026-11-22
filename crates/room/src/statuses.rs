@@ -17,10 +17,12 @@ impl Room {
     /// already Charged or still immune, and the dead take nothing.
     pub fn give(&mut self, fighter: FighterId, status: Status, ticks: Option<u32>, from: Option<FighterId>) -> bool {
         let ticks = ticks.unwrap_or_else(|| self.lasts(fighter, status));
+        let held = self.fighter(fighter).map_or(0, |now| now.statuses.left(status));
         let Some(next) = self.fighter(fighter).and_then(|now| give(now, status, ticks, from)) else { return false };
         self.set_fighter(fighter, next);
-        // A Sunwell keeps its share as it gives Linked; any other giver's Linked heals as written.
-        if status == Status::Linked {
+        // A Sunwell keeps its share as it gives Linked; any other giver's Linked heals as written, once it outlasts the
+        // one held, which a status given again keeps when it is the longer.
+        if status == Status::Linked && ticks >= held {
             self.spells.linked.remove(&fighter);
         }
         // Overload: a foe the player Charges is Exposed too, as long as the Art that holds it lasts at its level; a
@@ -54,12 +56,15 @@ impl Room {
             return;
         }
         let shares = std::mem::take(&mut self.spells.linked);
-        let players = self.players.iter_mut().map(|(id, found)| (*id, &mut found.fighter));
-        let foes = self.foes.iter_mut().map(|(id, foe)| (*id, &mut foe.fighter));
-        for (id, fighter) in players.chain(foes).filter(|(_, fighter)| fighter.statuses.has(Status::Linked)) {
+        // Exposure slows what returns to the players alone; a foe heals as it always has.
+        let slowed = self.heal_times();
+        let players = self.players.iter_mut().map(|(id, found)| (*id, &mut found.fighter, slowed));
+        let foes = self.foes.iter_mut().map(|(id, foe)| (*id, &mut foe.fighter, 1.0));
+        for (id, fighter, times) in players.chain(foes).filter(|(_, fighter, _)| fighter.statuses.has(Status::Linked)) {
             let share = shares.get(&id).copied();
             if !fighter.dead() {
-                fighter.health = (fighter.health + LINKED_HEAL * share.unwrap_or(1.0)).min(fighter.health_max);
+                let heal = LINKED_HEAL * share.unwrap_or(1.0) * times;
+                fighter.health = (fighter.health + heal).min(fighter.health_max);
             }
             if let Some(share) = share {
                 self.spells.linked.insert(id, share);

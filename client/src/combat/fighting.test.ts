@@ -5,6 +5,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startRoomDoor } from '../../../server/roomDoor.ts';
+import { EVENT } from './cues.ts';
 import { SPELLS } from '../network/artMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { readFromRoom } from '../network/messages.ts';
@@ -16,7 +17,7 @@ import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
 import { ASKS, type GearState } from '../network/gearMessages.ts';
 import { KINDS, WORN } from '../player/gear.ts';
-import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
+import { CHAIN, type FightButtons, Fighting, chained, strokesReaching } from './fighting.ts';
 import { KIND, wear } from './wornForTests.ts';
 
 /** A room's snapshot for a player made whole, as a page's link makes it; null for one passed over. */
@@ -286,7 +287,7 @@ test('a dress too long for the room is never sent: the room takes every input, a
   fight = fighting;
   link.pump(TICK);
   const steps = fighting.steps(movement);
-  for (const dress of ['{"short":1}', 'x'.repeat(5000), 'x'.repeat(5000)]) {
+  for (const dress of ['{"outfit":{"short":1}}', 'x'.repeat(5000), 'x'.repeat(5000)]) {
     fighting.dress = dress;
     for (let count = 0; count < 3; count += 1) {
       steps.step({} as Body, STILL);
@@ -294,7 +295,7 @@ test('a dress too long for the room is never sent: the room takes every input, a
     }
   }
   assert.deepEqual([...answers], ['taken']);
-  assert.deepEqual(dressed, ['{"short":1}']);
+  assert.deepEqual(dressed, ['{"outfit":{"short":1}}']);
 });
 
 test('a swing rolls among the strokes that reach its target, and among all six when none does or none is locked', () => {
@@ -303,6 +304,53 @@ test('a swing rolls among the strokes that reach its target, and among all six w
   assert.deepEqual(strokesReaching(2.3, reach), [1, 6]);
   assert.deepEqual(strokesReaching(3, reach), [1, 2, 3, 4, 5, 6]);
   assert.deepEqual(strokesReaching(null, reach), [1, 2, 3, 4, 5, 6]);
+});
+
+test('the chain goes side cut, overhead, thrust and round, passing over a stroke that does not reach', () => {
+  const all = [1, 2, 3, 4, 5, 6];
+  assert.deepEqual(CHAIN, [3, 1, 6]);
+  assert.equal(chained(null, all), 3, 'it starts with the side cut');
+  assert.equal(chained(3, all), 1);
+  assert.equal(chained(1, all), 6);
+  assert.equal(chained(6, all), 3, 'and goes round');
+  assert.equal(chained(6, [1, 2, 5, 6]), 1, 'past the side cut, which reaches least');
+  assert.equal(chained(1, [6]), 6);
+  assert.equal(chained(6, [6]), 6, 'the thrust again where only it reaches');
+});
+
+test('held, the swings chain side cut, overhead and thrust, and start over after a second without one', () => {
+  let fight: Fighting | null = null;
+  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, room);
+  fight = fighting;
+  fighting.arms = rules.armsCode('sword_iron', null, true);
+  room.pump(TICK);
+  const steps = fighting.steps(movement);
+  const still = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+  let body = {} as Body;
+  const strokes: number[] = [];
+  const hold = (ticks: number, swing: boolean) => {
+    for (let tick = 0; tick < ticks; tick += 1) {
+      fighting.press({ swing, shoot: false, guard: false, dodge: false, pitch: 0 });
+      body = steps.step(body, still);
+      const action = fighting.own?.action;
+      if (fighting.swingsBegun > 0 && action?.kind === 'attack') strokes.push(action.stroke);
+      fighting.swingsBegun = 0;
+      room.pump(TICK);
+    }
+  };
+  hold(150, true);
+  assert.ok(strokes.length >= 4, `${strokes.length} swings`);
+  assert.deepEqual(strokes.slice(0, 4), [3, 1, 6, 3]);
+  strokes.length = 0;
+  hold(120, false);
+  hold(1, true);
+  hold(50, false);
+  hold(1, true);
+  hold(60, false);
+  assert.deepEqual(strokes, [3, 1], 'after a rest the side cut first; a swing soon after takes the overhead');
 });
 
 test('a foe’s two glances are as many ticks apart as the snapshots that brought them', () => {
@@ -350,6 +398,8 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     base: 0n,
     gonePlayers: [],
     goneFoes: [],
+    cache: [],
+    revives: -1,
     vessels: [],
     balls: [],
     naval: [],
@@ -394,7 +444,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, link);
-  [fight, fighting.dress] = [fighting, '{"short":1}'];
+  [fight, fighting.dress] = [fighting, '{"outfit":{"short":1}}'];
   link.pump();
   const steps = fighting.steps(movement);
   const walk = (ticks: number, controls: Controls) => {
@@ -419,7 +469,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   link.pump();
   walk(10, STILL);
   assert.deepEqual([...answers], ['taken'], 'every input numbered anew, from 1');
-  assert.deepEqual(dressed, ['{"short":1}'], 'the dress sent again');
+  assert.deepEqual(dressed, ['{"outfit":{"short":1}}'], 'the dress sent again');
   assert.ok(casts.length > 0 && casts.every((cast) => cast === 0), 'the old room’s cast is not sent');
   assert.equal(fighting.joins, 2);
   const [x, y] = [fighting.own?.x ?? 0, fighting.own?.y ?? 0];
@@ -472,7 +522,7 @@ test('a public event’s beats are kept apart from the fight’s events, and its
     players: [],
     dressed: [],
     foes: [],
-    events: [event(1), event(24), event(15)],
+    events: [event(1), event(EVENT.chestOpened), event(EVENT.publicBegun)],
     shots: [],
     spells: [],
     public: word,
@@ -484,7 +534,7 @@ test('a public event’s beats are kept apart from the fight’s events, and its
   );
   assert.deepEqual(
     fighting.takePublicEvents().map((each) => each.kind),
-    [24, 15],
+    [EVENT.chestOpened, EVENT.publicBegun],
   );
   assert.equal(fighting.takePublicEvents().length, 0, 'handed over once');
   assert.equal(fighting.public, word);

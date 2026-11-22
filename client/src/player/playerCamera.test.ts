@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
+import { BOOM } from './boom.ts';
 import {
   AIM,
   askedView,
@@ -8,10 +9,13 @@ import {
   aimEased,
   cameraOrbit,
   eased,
+  handsZoom,
   rayHit,
   scrolled,
   toggled,
+  widened,
 } from './playerCamera.ts';
+import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 
 test('the wheel pulls back into third person, steps a notch at a time, and comes back into first person', () => {
   let view = scrolled(FIRST_PERSON, 1);
@@ -48,6 +52,24 @@ test('third person sits behind the head and up; a wall between pulls it in', () 
   assert.ok(pulled.targetY + 1 < 1, `${pulled.targetY + 1} is short of the wall`);
 });
 
+test('under a ceiling the third-person camera stays below it, pulled in along its line from the head', () => {
+  const view = { firstPerson: false, distance: 4.5, shown: 4.5 };
+  const [head, pitch] = [[0, 0, 1.7] as const, 1.2];
+  const eyeOf = (orbit: ReturnType<typeof cameraOrbit>) =>
+    [orbit.targetX, orbit.targetY + Math.cos(pitch), orbit.targetZ + Math.sin(pitch)] as const;
+  const open = eyeOf(cameraOrbit(head, 0, pitch, view, []));
+  assert.ok(open[2] > 3.2, `looking down, the camera would stand at ${open[2]} m, over a 3.2 m ceiling`);
+  const under = eyeOf(cameraOrbit(head, 0, pitch, view, [], 0, AIM, null, () => 3.2));
+  assert.ok(Math.abs(under[2] - (3.2 - BOOM.clearance)) < 1e-9, `${under[2]} m is short of the ceiling`);
+  const [outY, outZ, inY, inZ] = [open[1] - head[1], open[2] - head[2], under[1] - head[1], under[2] - head[2]];
+  assert.ok(Math.abs(under[0]) < 1e-9 && Math.abs(outY * inZ - outZ * inY) < 1e-9, 'on the line from the head');
+  assert.deepEqual(
+    eyeOf(cameraOrbit(head, 0, pitch, view, [], 0, AIM, null, () => null)),
+    open,
+    'no ceiling, no change',
+  );
+});
+
 test('aiming in third person stands the camera over the right shoulder and zooms in; in first person it zooms more', () => {
   const head = [0, 0, 1.7] as const;
   const third = { firstPerson: false, distance: 2, shown: 2 };
@@ -56,7 +78,9 @@ test('aiming in third person stands the camera over the right shoulder and zooms
   assert.ok(Math.abs((eye[0] ?? 0) - AIM.shoulder) < 1e-9 && Math.abs((eye[1] ?? 0) - AIM.back) < 1e-9, `${eye}`);
   assert.equal(aimed.zoom, AIM.thirdZoom);
   assert.equal(cameraOrbit(head, 0, 0, third, []).zoom, 1, 'not aiming, no zoom');
-  assert.equal(cameraOrbit(head, 0, 0, { ...third, shown: 0 }, [], 1).zoom, AIM.firstZoom);
+  const firstAimed = cameraOrbit(head, 0, 0, { ...third, shown: 0 }, [], 1);
+  assert.ok(Math.abs((firstAimed.zoom ?? 1) - AIM.firstZoom * widened(0)) < 1e-12, 'from first person’s wider view');
+  assert.ok(Math.abs(handsZoom(firstAimed, { ...third, shown: 0 }) - AIM.firstZoom) < 1e-12, 'the hands zoom as ever');
   assert.ok(aimEased(0, true, 0.05) > 0.5 && aimEased(0, true, 0.05) < 1, 'it eases in');
   const placed = cameraOrbit(head, 0, 0, third, [], 1, { shoulder: -0.4, back: 3, up: 0.6, thirdZoom: 2 });
   assert.deepEqual(
@@ -75,4 +99,16 @@ test('an address asks for first person, or third at a distance', () => {
   assert.equal(askedView('?view=third,99')?.distance, CAMERA.farthest);
   assert.equal(askedView('?at=saltgrass-downs'), null);
   assert.equal(askedView('?view=sideways'), null);
+});
+
+test('first person sees 65° tall where third sees the lens’s 50°, widening as the camera comes into the head', () => {
+  const head = [0, 0, 1.7] as const;
+  const fovOf = (zoom: number) => (2 * Math.atan(Math.tan(FIELD_OF_VIEW / 2) / zoom) * 180) / Math.PI;
+  const first = cameraOrbit(head, 0, 0, FIRST_PERSON, []);
+  assert.ok(Math.abs(fovOf(first.zoom ?? 1) - 65) < 1e-9, `${fovOf(first.zoom ?? 1)}°`);
+  assert.equal(cameraOrbit(head, 0, 0, { firstPerson: false, distance: 2, shown: 2 }, []).zoom, 1, 'third, the lens');
+  assert.equal(widened(CAMERA.nearest - CAMERA.notch), 1, 'third person at its nearest keeps the lens');
+  const coming = widened(CAMERA.nearest / 2);
+  assert.ok(coming > widened(0) && coming < 1, 'between, as it comes in');
+  assert.equal(handsZoom(first, FIRST_PERSON), 1, 'the weapon keeps its size');
 });

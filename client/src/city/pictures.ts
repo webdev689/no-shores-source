@@ -66,7 +66,7 @@ type Choice = readonly [archive: number, record: number, use: PictureUse, tint?:
  * timber; a plastered wall; and flagstones or sandstone cobbles for paving. Winter takes each set's snowed turn, as
  * it is painted, untinted.
  */
-const MATERIALS: Readonly<Record<Climate, Readonly<Record<Pictured, Choice>>>> = {
+export const MATERIALS: Readonly<Record<Climate, Readonly<Record<Pictured, Choice>>>> = {
   temperate: {
     stone: [109, 1, 'wall', [2.2, 2.05, 1.75]],
     trim: [161, 1, 'wall', [2.3, 2.2, 1.95]],

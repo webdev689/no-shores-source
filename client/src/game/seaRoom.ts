@@ -1,4 +1,4 @@
-// The sea room as the ship sails in it, a server's or the one in the page when playing alone: its course sent when
+// The sea room as the ship sails in it, a server's or, playing alone, one in the rooms' worker: its course sent when
 // set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, pirate and fight the room
 // last showed, with its word on the player's body on deck.
 import {
@@ -13,9 +13,10 @@ import {
   type SeenShip,
   walkBytes,
 } from '../network/messages.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type NavalEvent, fightViewOf, ordersNumbers } from '../network/seaFight.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import { type SeenDeck, type SeenFlotsam, type SeenIsle, type SeenKept, TOLD } from '../network/seaHarbour.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Pace } from '../overworld/voyage.ts';
@@ -24,7 +25,7 @@ import type { Body } from '../rules/movementRules.ts';
 import { shipName } from '../ships/shipBars.ts';
 import type { SailedPace } from './seaLaw.ts';
 
-/** A room link that may be closed: a server's socket is; the room in the page has nothing to close. */
+/** A room link that may be closed: a server's socket, or a room let go in the rooms' worker (`RoomThread`). */
 type Closable = RoomLink & { close?(): void };
 
 /** The ticks the page leaves between the courses it sends: the sea takes one each half second (crates/room/src/sea.rs,
@@ -48,6 +49,9 @@ export class SeaRoom {
    *  null while they hold it; and how many words it has sent, so each is taken once. */
   onDeck: { readonly acknowledged: number; readonly body: Body } | null = null;
   words = 0;
+  /** The player's gear as the sea last sent it: the character it keeps for them, or their deck room's while they
+   *  fight aboard another ship. */
+  gearSent: GearState | null = null;
   /** The player's own fight as the room last showed it, and its events since they were last taken. */
   private fight: FightView | null = null;
   private events: FightEvent[] = [];
@@ -104,12 +108,15 @@ export class SeaRoom {
 
   /** Joins the sea through `open`, which hands on each snapshot, the ship put to sea at `start`, at rest. */
   static async join(
-    open: (snapshot: (snapshot: Snapshot) => void) => Promise<Closable> | Closable,
+    open: (snapshot: (snapshot: Snapshot) => void, gear: (gear: GearState) => void) => Promise<Closable> | Closable,
     start: Point2,
     pace: Pace,
   ): Promise<SeaRoom> {
     let room: SeaRoom | null = null;
-    const link = await open((snapshot) => room?.take(snapshot));
+    const link = await open(
+      (snapshot) => room?.take(snapshot),
+      (gear) => room && (room.gearSent = gear),
+    );
     room = new SeaRoom(link);
     room.course([start], pace);
     return room;
@@ -160,10 +167,10 @@ export class SeaRoom {
     if (moored) this.washedAt = { x: moored.x, y: moored.y, heading: moored.heading };
   }
 
-  /** The sea's word on its island `id`, as an island's room opens on it: a sea in the page tells it; a server's sea
-   *  tells the island's own room, so the page is told nothing. */
-  isleWord(id: number): string | null {
-    return this.link instanceof LocalRoom ? this.link.isleWord(id) || null : null;
+  /** The sea's word on its island `id`, as an island's room opens on it: a sea in the rooms' worker tells it; a
+   *  server's sea tells the island's own room, so the page is told nothing. */
+  async isleWord(id: number): Promise<string | null> {
+    return this.link instanceof RoomThread ? (await this.link.isleWord(id)) || null : null;
   }
 
   /** Where the room moored the player's ship once they washed up, taken once. */
@@ -292,8 +299,8 @@ export class SeaRoom {
     this.link.send(ordersBytes(ordersNumbers(orders)));
   }
 
-  /** Lets the room's clock run `seconds`, where the room runs in the page. While the link rejoins, the room's word is
-   *  gone with it: no ship of its is shown, and a fight in it is over, the ship having left it. */
+  /** Lets the room's clock run `seconds`, where the room runs alone, in the rooms' worker. While the link rejoins,
+   *  the room's word is gone with it: no ship of its is shown, and a fight in it is over, the ship having left it. */
   pump(seconds: number): void {
     if (this.link.rejoining) {
       [this.ships, this.pirates, this.onDeck] = [[], [], null];

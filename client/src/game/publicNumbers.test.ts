@@ -17,7 +17,7 @@ const camel = (name: string) => name.charAt(0).toLowerCase() + name.slice(1);
 
 test("the page's public event numbers are the room's: each event told, from PublicBegun to ChestOpened", () => {
   const judging = source('judging.rs');
-  const told = [...judging.matchAll(/^\s+(\w+) = (\d+),$/gm)].filter((row) => Number(row[2]) >= 15);
+  const told = [...judging.matchAll(/^\s+(\w+) = (\d+),$/gm)].filter((row) => Number(row[2]) >= EVENT.publicBegun);
   const kinds = told.slice(0, told.findIndex((row) => row[1] === 'ChestOpened') + 1);
   assert.equal(kinds.length, 10);
   for (const [, name = '', number] of kinds) {

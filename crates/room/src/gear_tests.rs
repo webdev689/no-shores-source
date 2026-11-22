@@ -16,8 +16,17 @@ fn room() -> Room {
 }
 
 fn stand(room: &mut Room, role: ::foes::Role, level: u8, y: f64) -> FighterId {
-    let id = room.next_id();
     let (foe_type, rank) = foes::pirate_in(role).expect("a role the pirates fill");
+    stand_type(room, foe_type, rank, level, y)
+}
+
+/// Captain Brannoc Thule, a Boss, whose kill always leaves a Vestige.
+fn stand_boss(room: &mut Room, level: u8, y: f64) -> FighterId {
+    stand_type(room, ::foes::foe_type(12).expect("Thule"), ::foes::Rank::Boss, level, y)
+}
+
+fn stand_type(room: &mut Room, foe_type: &'static ::foes::FoeType, rank: ::foes::Rank, level: u8, y: f64) -> FighterId {
+    let id = room.next_id();
     let (mut fighter, brain) = ::foes::spawn(foe_type, rank, 0.0, y, core::f64::consts::PI);
     fighter.health *= gear::power::foe_health_times(level);
     fighter.health_max = fighter.health;
@@ -127,26 +136,26 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let events = chop(&mut room, player, 1);
     assert!(events.iter().any(|event| event.kind == EventKind::Killed && event.defender == brute));
     let paid = &room.player(player).expect("in").character;
-    assert_eq!((paid.xp, paid.materials.aurem), (90, 7), "a brute's worth at level 0: 180 and 15, halved");
+    assert_eq!((paid.xp, paid.materials.aurem), (55, 4), "a Major brute's worth at level 0: 110 and 8, halved");
     assert_eq!(room.player(onlooker).expect("in").character.xp, 0, "striking nothing earns nothing");
     let sword = paid.worn(Slot::Melee).expect("the sword");
-    assert_eq!(sword.xp, 90, "the weapon that struck earns it");
+    assert_eq!(sword.xp, 55, "the weapon that struck earns it");
 
-    // The brute's own drop is a roll of the room's dice, so the captain's is told from it and counted from what the
+    // The brute's own drop is a roll of the room's dice, so the Boss's is told from it and counted from what the
     // player holds.
     let held = room.player(player).expect("in").character.vestiges_held(false);
     let earlier: Vec<u32> = room.drops_for(player).map(|drop| drop.id).collect();
-    let captain = stand(&mut room, ::foes::Role::Captain, 0, -8.0);
+    let captain = stand_boss(&mut room, 0, -8.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     let lying: Vec<Drop> = room.drops_for(player).cloned().collect();
     let vestige = lying.iter().find(|drop| matches!(drop.what, Dropped::Vestige(_)) && !earlier.contains(&drop.id));
-    let Drop { id, at, .. } = *vestige.expect("a captain always leaves a Vestige");
+    let Drop { id, at, .. } = *vestige.expect("a Boss always leaves a Vestige");
     assert_eq!(room.drops_for(onlooker).count(), 0);
     room.tick();
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held, "it lies 6 m away");
     move_to(&mut room, player, at[0], at[1]);
-    for _ in 0..REST_TICKS {
+    for _ in 0..VESTIGE_REST_TICKS {
         room.tick();
     }
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held + 1, "walked over, it is taken");
@@ -154,17 +163,26 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
 }
 
 #[test]
-fn a_vestige_left_lying_is_gone_after_two_minutes() {
+fn a_vestige_left_lying_goes_to_the_mail_after_two_minutes() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let captain = stand(&mut room, ::foes::Role::Captain, 0, -30.0);
+    let captain = stand_boss(&mut room, 0, -30.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
+    let rarity = room.drops_for(player).find_map(|drop| match &drop.what {
+        Dropped::Vestige(vestige) => Some(vestige.rarity),
+        _ => None,
+    });
+    assert!(rarity.is_some(), "the Captain dropped a Vestige");
+    assert_eq!(room.drops_for(player).filter(|drop| matches!(drop.what, Dropped::Vestige(_))).count(), 1);
     for _ in 0..DROP_TICKS {
         room.tick();
     }
     assert_eq!(room.drops_for(player).count(), 0);
-    assert_eq!(room.player(player).expect("in").character.vestiges_held(false), 0);
+    let character = &room.player(player).expect("in").character;
+    assert_eq!(character.vestiges_held(false), 0);
+    let posted: Vec<_> = character.mail.iter().filter_map(|letter| letter.vestige.as_ref()).collect();
+    assert_eq!(posted.iter().map(|vestige| vestige.rarity).collect::<Vec<_>>(), rarity.into_iter().collect::<Vec<_>>());
 }
 
 #[test]
@@ -188,6 +206,10 @@ fn asks_are_answered_where_the_player_stands() {
     assert_eq!(ask(&mut room, player, 3, Asked::Gather { node: 0 }), OUT_OF_REACH, "the node is 20 m off");
     move_to(&mut room, player, 1.0, 9.0);
     assert_eq!(ask(&mut room, player, 4, Asked::Gather { node: 0 }), 0);
+    // Held two seconds, it is gathered.
+    for _ in 0..crate::asks::GATHER_TICKS {
+        room.tick();
+    }
     assert_eq!(room.player(player).expect("in").character.materials.resource(0), 3);
     assert_eq!(ask(&mut room, player, 5, Asked::Gather { node: 0 }), OUT_OF_REACH, "spent until they leave");
     assert_eq!(room.player(player).expect("in").answered, 5);
@@ -217,6 +239,43 @@ fn a_social_space_serves_each_ask_at_its_own_counter() {
     let emblem = Asked::Gear(Ask::BuyEmblem { emblem: 0 });
     assert_eq!(ask(&mut room, player, 5, emblem), answer_code(Err(Refusal::NotHere)), "no Tailor here");
     assert_eq!(crate::asks::counter_for(&Ask::BuyEmblem { emblem: 0 }), Some(CounterKind::Tailor));
+}
+
+#[test]
+fn the_bounty_board_takes_bounties_at_its_own_counter_alone() {
+    use crate::asks::{Counter, CounterKind};
+    let mut room = room();
+    room.counters = Some(vec![Counter { kind: CounterKind::Board, at: [10.0, 0.0] }]);
+    room.set_minute(29_919_420);
+    let player = room.join().expect("a room with space");
+    room.players.get_mut(&player).expect("in").character.story.prologue = true;
+    let take = Asked::Gear(Ask::TakeBounty { place: 2, day: 20_778 });
+    assert_eq!(ask(&mut room, player, 1, take.clone()), answer_code(Err(Refusal::NotHere)), "mid-plaza");
+    move_to(&mut room, player, 8.0, 0.0);
+    assert_eq!(ask(&mut room, player, 2, take), 0, "at the board");
+    assert_eq!(room.player(player).expect("in").character.activity.today.bounties.get(&2), Some(&0));
+    assert_eq!(crate::asks::counter_for(&Ask::TurnInBounty { place: 2, day: 20_778 }), Some(CounterKind::Board));
+}
+
+#[test]
+fn the_mail_hands_over_its_letters_at_its_own_counter_alone() {
+    use crate::asks::{Counter, CounterKind};
+    use gear::mail::{Posted, Source};
+    let mut room = room();
+    let mage = Counter { kind: CounterKind::Mage, at: [-10.0, 0.0] };
+    room.counters = Some(vec![Counter { kind: CounterKind::Mail, at: [10.0, 0.0] }, mage]);
+    let player = room.join().expect("a room with space");
+    let character = &mut room.players.get_mut(&player).expect("in").character;
+    character.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Head, 4)));
+    let take = Asked::Gear(Ask::TakeLetter { letter: character.mail[0].id });
+    assert_eq!(ask(&mut room, player, 1, take.clone()), answer_code(Err(Refusal::NotHere)), "mid-plaza");
+    move_to(&mut room, player, -8.0, 0.0);
+    assert_eq!(ask(&mut room, player, 2, take.clone()), answer_code(Err(Refusal::NotHere)), "at the Mage's");
+    move_to(&mut room, player, 8.0, 0.0);
+    assert_eq!(ask(&mut room, player, 3, take), 0, "at the mail counter");
+    let character = &room.player(player).expect("in").character;
+    assert!(character.mail.is_empty() && character.vestiges_held(false) == 1);
+    assert_eq!(crate::asks::counter_for(&Ask::TakeAllLetters), Some(CounterKind::Mail));
 }
 
 #[test]
@@ -436,4 +495,98 @@ fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wear
     assert_eq!((worn.kind, worn.rarity), (Kind::Bow, Rarity::Normal), "a Normal one handed out");
     assert_eq!(found.character.at(bow), Some(At::Carried), "the Atheric one still carried");
     assert_eq!(found.character.at(mace), Some(At::Worn(Slot::Melee)), "the Atheric mace carried was worn");
+}
+
+#[test]
+fn a_kills_pay_by_rank_is_its_ranks_health_against_a_majors() {
+    let foe_type = ::foes::foe_type(14).expect("the pirates' swordsman");
+    let major = foe_type.numbers(::foes::Rank::Major, 1).health;
+    for (rank, pay) in ::foes::Rank::ALL.into_iter().zip(gear::rewards::RANK_PAY) {
+        assert!((foe_type.numbers(rank, 1).health / major - pay).abs() < 1e-12, "{rank:?}");
+    }
+}
+
+/// The fight measured for the balance's record: a level 1 player with the starting sword, swinging and never
+/// guarding, against one level 1 foe of each rank; felling it with the player's health held whole, and being felled
+/// by it standing still. Run by hand to print the table:
+/// `cargo test -p room --release measure_blows -- --ignored --nocapture`.
+#[test]
+#[ignore = "a measurement, printed by hand in release"]
+fn measure_blows() {
+    use ::foes::Rank;
+    let rows = [
+        ("Minor Swordsman", 14, Rank::Minor),
+        ("Major Hookman", 8, Rank::Major),
+        ("Major Brute", 15, Rank::Major),
+        ("Elite Captain", 17, Rank::Elite),
+        ("Miniboss Captain", 17, Rank::Miniboss),
+        ("Boss (Thule)", 12, Rank::Boss),
+    ];
+    eprintln!("| Foe | Felled in | Fells the player in |");
+    for (name, number, rank) in rows {
+        let foe_type = ::foes::foe_type(number).expect("a type");
+        let mut arena = room();
+        let player = arena.join().expect("a room with space");
+        let foe = stand_type(&mut arena, foe_type, rank, 1, -1.5);
+        let (mut landed, mut ticks) = (0, 0_u32);
+        while ticks < 60 * 600 {
+            let (me, them) = (*arena.fighter(player).expect("in"), arena.fighter(foe).copied());
+            let Some(them) = them.filter(|found| !found.dead()) else { break };
+            arena.set_fighter(player, combat::fighter::Fighter { health: me.health_max, ..me });
+            let attack = (ticks % 30 == 0).then_some(Stroke::Down);
+            let mut input = asking(ticks + 1, &arena, CombatInput { attack, ..CombatInput::default() });
+            input.intent.controls.yaw = combat::sight::bearing([me.body.x, me.body.y], [them.body.x, them.body.y]);
+            let near = libm::hypot(me.body.x - them.body.x, me.body.y - them.body.y);
+            input.intent.controls.forward = if near > 1.6 { 1.0 } else { 0.0 };
+            arena.input(player, input).unwrap();
+            arena.tick();
+            ticks += 1;
+            let hits = arena.take_events();
+            landed += hits.iter().filter(|hit| hit.kind == EventKind::Hit && hit.striker == player).count();
+        }
+        let mut arena = room();
+        let player = arena.join().expect("a room with space");
+        stand_type(&mut arena, foe_type, rank, 1, -1.5);
+        let mut felled = 0_u32;
+        while felled < 60 * 600 && !arena.fighter(player).expect("in").dead() {
+            arena.input(player, asking(felled + 1, &arena, CombatInput::default())).unwrap();
+            arena.tick();
+            felled += 1;
+        }
+        let seconds = |ticks: u32| f64::from(ticks) / 60.0;
+        eprintln!("| {name} | {landed} blows, {:.1} s | {:.1} s |", seconds(ticks), seconds(felled));
+    }
+}
+
+#[test]
+fn the_vendors_day_turns_at_nine_utc_and_every_player_is_sent_the_new_wares() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    room.set_minute(29_919_419); // A Friday, 08:59 UTC.
+    assert_eq!(room.day(), 20_777);
+    assert!(room.take_gear_change(player));
+    room.set_minute(29_919_419);
+    assert!(!room.player(player).expect("in").gear_changed, "the same day sends nothing");
+    room.set_minute(29_919_420);
+    assert_eq!(room.day(), 20_778);
+    assert!(room.player(player).expect("in").gear_changed, "the new day's wares go out");
+    let here = room.here(player, &gear::Ask::UseCrate);
+    assert_eq!((here.day, here.week), (20_778, 2_968));
+}
+
+#[test]
+fn a_ware_shown_before_nine_utc_sells_till_then_and_is_refused_once_the_day_turns() {
+    use crate::asks::{Counter, CounterKind};
+    use gear::vendor::Vendor;
+    let mut room = room();
+    room.counters = Some(vec![Counter { kind: CounterKind::Vendor(Vendor::Weaponsmith), at: [10.0, 0.0] }]);
+    room.set_minute(29_919_419); // A Friday, 08:59 UTC: still the clock's day 20,777.
+    let player = room.join().expect("a room with space");
+    move_to(&mut room, player, 8.0, 0.0);
+    room.players.get_mut(&player).expect("in").character.materials.add_aurem(10_000);
+    let vend = |day| Asked::Gear(Ask::Vend { vendor: Vendor::Weaponsmith, ware: 0, day });
+    assert_eq!(ask(&mut room, player, 1, vend(20_777)), 0, "sold at 08:59 as that day's");
+    room.set_minute(29_919_420);
+    assert_eq!(ask(&mut room, player, 2, vend(20_777)), answer_code(Err(Refusal::NotSold)), "shown before 09:00");
+    assert_eq!(ask(&mut room, player, 3, vend(20_778)), 0, "the new day's");
 }

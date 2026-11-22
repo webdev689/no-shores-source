@@ -6,7 +6,7 @@ import type { Cards } from './cards.ts';
 import { plainDress } from './dressing.ts';
 import { overProgress } from './fightMoves.ts';
 import { newPlayer } from './player.ts';
-import { FULL_WALK } from './playerMoves.ts';
+import { FULL_RUN, FULL_WALK } from './playerMoves.ts';
 import { Walker } from './walker.ts';
 
 // The numbers the figures' moves are reckoned by, held to the movement rules' own.
@@ -19,10 +19,12 @@ const rules = await startMovementRules(
 );
 const FORWARD: Controls = { forward: 1, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
 
-test('the full walk the walk’s frames are drawn for is the movement rules’ walk', () => {
+test('the full walk and run the walk’s and the run’s frames are drawn for are the movement rules’', () => {
   rules.setCourse([]);
   const body = rules.step(rules.standing(0, 0), FORWARD);
   assert.ok(Math.abs(Math.hypot(body.vx, body.vy) - FULL_WALK) < 1e-12, `the rules walk ${body.vx}, ${body.vy}`);
+  const ran = rules.step(rules.standing(0, 0), { ...FORWARD, run: true });
+  assert.ok(Math.abs(Math.hypot(ran.vx, ran.vy) - FULL_RUN) < 1e-12, `the rules run ${ran.vx}, ${ran.vy}`);
 });
 
 test('a mantle’s or vault’s progress, from the time since it began and the height risen, keeps to the rules’', () => {

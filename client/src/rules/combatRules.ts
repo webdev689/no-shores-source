@@ -41,6 +41,10 @@ export interface CombatRules {
   /** Keeps a node's window of the ground (its JSON, as the land's worker cuts it) for every later prediction to stand
    *  on, or open ground with none; false if the text is not ground. */
   setGround(windowJson: string | null): boolean;
+  /** Keeps the dungeon an ask names (any ask `room_dungeon` reads: a patrol's by its number, an Elite Dungeon by its
+   *  place, a seed and a style) as the ground every later prediction stands on, its jambs and pillars its own walls
+   *  and the course empty, as the dungeon's room judges bodies; false if there is none. */
+  setDungeon(ask: Readonly<Record<string, string | number>>): boolean;
   /** Keeps a ship's deck, as its grid's numbers (`deckFloats`), for every later prediction to stand on in place of any
    *  ground; false if the numbers are not a grid. */
   setHeights(grid: readonly number[]): boolean;
@@ -71,6 +75,7 @@ interface FightExports {
   release(address: number, length: number): void;
   fighter_course(address: number, length: number): number;
   fighter_ground(address: number, length: number): number;
+  fighter_dungeon(address: number, length: number): number;
   fighter_heights(address: number, length: number): number;
   fighter_rim(address: number, length: number): number;
   fighter_predict(address: number, length: number): bigint;
@@ -127,6 +132,10 @@ export function startCombatRules(module: WebAssembly.Module): CombatRules {
     setGround: (windowJson) => {
       const text = new TextEncoder().encode(windowJson ?? '');
       return lend(text, (address) => exports.fighter_ground(address, text.length)) === 1;
+    },
+    setDungeon: (ask) => {
+      const text = new TextEncoder().encode(JSON.stringify(ask));
+      return lend(text, (address) => exports.fighter_dungeon(address, text.length)) === 1;
     },
     setHeights: (grid) => {
       const floats = new Float64Array(grid);

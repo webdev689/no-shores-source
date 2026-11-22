@@ -184,8 +184,9 @@ test("a patrol area's sheet is its layout: paths, buildings, plantings, areas by
     sites: [
       { kind: 'landing', at: [1100, 2090], radius: 20 },
       { kind: 'event', at: [1150, 2030], radius: 30, holds: 'The Clearing' },
-      { kind: 'resource', at: [1160, 2030], radius: 2, holds: 'ore' },
-      { kind: 'resource', at: [1170, 2030], radius: 2, holds: 'amber' },
+      { kind: 'resource', at: [1160, 2030], radius: 2, holds: 'brineglass', node: [1160, 2035] },
+      { kind: 'resource', at: [1170, 2030], radius: 2, holds: 'amber', node: [1170, 2035] },
+      { kind: 'resource', at: [1180, 2030], radius: 2, holds: 'brineglass' },
     ],
   } as unknown as NodeLayout;
   const patrol: NodeInfo = { ...SOCIAL, id: 'reach-1', kind: 'patrol', name: 'The Reach', stations: [] };
@@ -220,9 +221,9 @@ test("a patrol area's sheet is its layout: paths, buildings, plantings, areas by
     [
       ['landing', 'Landing'],
       ['event', 'Public event'],
-      ['ore', 'Ore'],
+      ['resource', 'Brineglass'],
     ],
-    'a resource no glyph is drawn for is left off',
+    "a resource node named for the island's resource; one of no island's, or with no node, left off",
   );
 });
 

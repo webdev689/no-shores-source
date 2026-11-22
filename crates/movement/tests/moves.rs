@@ -221,6 +221,18 @@ fn a_jump_waits_until_the_feet_have_settled() {
 }
 
 #[test]
+fn a_jump_held_from_landing_lifts_once_the_feet_have_stood_its_tenth_of_a_second() {
+    let jumping = holding(|controls| controls.jump = true);
+    let mut body = Body { grounded: 0.0, ..standing(0.0, 0.0) };
+    let mut ticks = 0;
+    while body.mode == Mode::Ground && ticks < 60 {
+        body = step_body(&body, &jumping, &[], &Flat, TICK_SECONDS);
+        ticks += 1;
+    }
+    assert_eq!(f64::from(ticks), (TUNING.grounded_to_jump / TICK_SECONDS).round(), "lifted on tick {ticks}");
+}
+
+#[test]
 fn on_a_wall_a_jump_kicks_off_away_from_it_but_from_a_lip_it_does_nothing() {
     let tower = block(-5.0, -4.0, 5.0, -1.0, 4.0);
     let jumping = holding(|controls| controls.jump = true);

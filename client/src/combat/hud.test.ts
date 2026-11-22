@@ -305,6 +305,33 @@ test('the compass turns its points with the view, its marks at each ship’s bea
   assert.match(String((marks[0]?.picture?.source as { svg: string }).svg), new RegExp(SHIP_MARK_COLOURS.hostile));
 });
 
+test("the compass marks where the roads' next goal stands, at its bearing or held at the end nearer it", () => {
+  const questMark = (node: Node) => allOf(node).find((each) => each.picture?.key === 'compass quest');
+  assert.equal(questMark(compassNode(520, 0, 1, [0, 0], [], [0, -300]))?.float?.at?.[0], 0.5, 'dead ahead, north');
+  assert.equal(questMark(compassNode(520, 0, 1, [0, 0], [], [300, 0]))?.float?.at?.[0], 1, 'east, off the strip');
+  assert.equal(questMark(compassNode(520, 0)), undefined, 'none to mark');
+  const hud = new Hud();
+  const frame: HudFrame = {
+    own: standing,
+    foes: [],
+    where: () => [0, 0, 0],
+    matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    width: 1280,
+    height: 720,
+    events: [],
+    player: 1,
+    firstPerson: false,
+    pressed: false,
+    lost: null,
+    groundAt: null,
+  };
+  const matrix = viewProjection({ targetX: 0, targetY: 0, targetZ: 1.7, yaw: 0, pitch: 0, distance: 4 }, 16 / 9);
+  hud.update({ ...frame, matrix, questAt: [standing.x, standing.y - 300] }, 1 / 60);
+  assert.ok(questMark(drawn(hud)), 'on the fight’s compass');
+  hud.update({ ...frame, matrix }, 1 / 60);
+  assert.equal(questMark(drawn(hud)), undefined);
+});
+
 test('an arrow to a threat off the screen stands clear of what the page keeps beside the display, as the game’s hints', () => {
   // The game's hints stand over the left edge's middle, where an arrow to a foe off the left would point.
   const box = { left: 28, top: 300, right: 428, bottom: 420 };
@@ -483,4 +510,70 @@ test('in a short, narrow view (844 by 390) a running banner stands clear of the 
     each.node.text ? [each.node.text.words] : [],
   );
   assert.ok(overSaid.includes('EVENT FAILED'), 'the result in words, not by colour alone');
+});
+
+test('a parry ring stands round the head of the foe swinging at the player, kept on the screen where the head is not', () => {
+  const { matrix, foeAt, downAt, placeAt } = levelView();
+  const swing = {
+    kind: 'attack',
+    stroke: 1,
+    elapsed: 6,
+    strike: 24,
+    end: 60,
+    swing: 'plain',
+    leftHand: false,
+  } as const;
+  const swinging = (ahead: number, z = 0) => {
+    const foe = foeAt(2, 'Runner', ahead, 0);
+    return { ...foe, view: { ...foe.view, z, target: 1, action: swing } };
+  };
+  const ringOf = (foe: ReturnType<typeof swinging>) => {
+    const hud = new Hud();
+    hud.update(bare({ matrix, foes: [foe] }), 1 / 60);
+    return allOf(drawn(hud)).find((node) => node.picture?.key.startsWith('parry'));
+  };
+  const seen = ringOf(swinging(6));
+  const head = placeAt(6, 0);
+  assert.ok(Math.abs((seen?.float?.y ?? NaN) - downAt([head.x, head.y, 1.6])) < 1, 'round its head, 6 m off');
+  assert.match(seen?.picture?.key ?? '', /^parry ring 74 57$/, 'three quarters to come; its window, half its wind-up');
+  // A foe on a ledge, a metre and a half off: its head far over the top of the view, its ring at the top edge.
+  const over = ringOf(swinging(1.5, 1.5));
+  assert.equal(over?.float?.y, 51, 'its widest kept inside the top edge');
+});
+
+test('a parry ring for a head off the screen stands at the edge the way it lies, behind the eye too, never in a corner', () => {
+  const { matrix, foeAt, downAt, placeAt } = levelView();
+  const swing = {
+    kind: 'attack',
+    stroke: 1,
+    elapsed: 6,
+    strike: 24,
+    end: 60,
+    swing: 'plain',
+    leftHand: false,
+  } as const;
+  const ringAt = (ahead: number, aside: number, firstPerson = false) => {
+    const foe = foeAt(2, 'Runner', ahead, aside);
+    const hud = new Hud();
+    hud.update(
+      bare({ matrix, firstPerson, foes: [{ ...foe, view: { ...foe.view, target: 1, action: swing } }] }),
+      1 / 60,
+    );
+    const ring = allOf(drawn(hud)).find((node) => node.picture?.key.startsWith('parry'));
+    return [ring?.float?.x ?? NaN, ring?.float?.y ?? NaN] as const;
+  };
+  const [behindX, behindY] = ringAt(-3, 0);
+  assert.ok(
+    Math.abs(behindX - 640) < 1 && Math.abs(behindY - 669) < 1,
+    `straight behind, at the foot: ${behindX}, ${behindY}`,
+  );
+  const [besideX, besideY] = ringAt(0.05, 3);
+  assert.ok(besideX <= 52 || besideX >= 1228, `nearly beside, at a side edge: ${besideX}`);
+  assert.ok(besideY > 200 && besideY < 520, `level with the eye, not in a corner: ${besideY}`);
+  // In first person a foe 0.7 m off is drawn 1.5 m off along the same line, and its ring is round the head drawn.
+  const near = placeAt(0.7, 0);
+  const drawnHead = placeAt(1.5, 0);
+  const [, nearY] = ringAt(0.7, 0, true);
+  assert.ok(Math.abs(nearY - downAt([drawnHead.x, drawnHead.y, 1.6])) < 1, `round the drawn head: ${nearY}`);
+  assert.ok(Math.abs(nearY - downAt([near.x, near.y, 1.6])) > 20, 'not round the body nearer the eye');
 });

@@ -37,17 +37,18 @@ import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { COURSE, RESOURCE_NODES, ROCKS_SHOWN, STALL, START, STOOD, WOODEN } from './course.ts';
 import { rockTriangles } from './rockRow.ts';
-import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
+import { STALL_REACH, gearMarked, nodesInReach } from './gearGround.ts';
+import { marksSeen } from '../combat/marksOver.ts';
 import { GearPanel, type GearView } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
-import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
+import { CARD_NEAREST_M, type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { type Player, newPlayer, playerCamera, shownBody } from '../player/player.ts';
-import { AIM, type AimPlace } from '../player/playerCamera.ts';
+import { AIM, type AimPlace, handsZoom } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
 import { AimPanel } from './aimPanel.ts';
@@ -251,13 +252,7 @@ async function start(): Promise<void> {
   const { forge, store, looks, hair } = await openCards(scene);
   loadForgedBirds((path) => store.strip(path));
   cards = forge;
-  // The first person swings in the direction the fight's rules began the swing with.
-  const strokeShare = () => {
-    const action = fight?.own?.action;
-    const stroke = action?.kind === 'attack' ? action.stroke : (fight?.stroke ?? 1);
-    return (stroke - 0.5) / 6;
-  };
-  const firstPerson = await FirstPerson.open(gpu, store, strokeShare);
+  const firstPerson = await FirstPerson.open(gpu, store);
   const player = new Walker(standing, you, firstPerson, forge);
   walker = player;
   status = 'Click the view to play.';
@@ -321,6 +316,8 @@ async function start(): Promise<void> {
     clock += seconds;
     // The panels hear the page before the game's input is read: what they take is not the world's.
     const tookWheel = page.hear();
+    // The pad is the panels' while they hold the player, as the game's is a window's.
+    input.window(page.takesKeys ? 'panels' : null);
     const heardControls = input.frame();
     const controls = tookWheel ? { ...heardControls, wheel: 0 } : heardControls;
     // The figure wears what the gear wears, and the hands hold it: the room takes no other arms. The left carries the
@@ -372,7 +369,7 @@ async function start(): Promise<void> {
       running,
       hands: controls.locked,
       markOf: () => crosshairPoint(aimView(player.player), aspect, STOOD, bodies),
-      zoomOf: () => aimView(player.player).zoom ?? 1,
+      zoomOf: () => handsZoom(aimView(player.player), player.player.view),
       handsSeconds: feel.shownSeconds(fighting.player, seconds),
     });
     const own = fighting.own;
@@ -387,7 +384,8 @@ async function start(): Promise<void> {
     const sights = shown.aiming || aimHeld || (shown.rangedDrawn && inFirstPerson);
     const feltCamera = feel.camera(aimView(player.player), fighting.player, own, inFirstPerson, sights);
     const camera = pushedIn(feltCamera, effects.anima.push);
-    const eye = eyeOf(camera);
+    // Through the player's own eyes no other figure stands so near that it fills the view, as in the game.
+    const eye = { ...eyeOf(camera), nearest: inFirstPerson ? CARD_NEAREST_M : 0 };
     // Each figure drawn off where it stands by the attack feel; each fighter's figure as drawn, which its arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, camera.yaw);
     const figuresDrawn = new Map<number, DrawnFigure>();
@@ -435,7 +433,7 @@ async function start(): Promise<void> {
       const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       if (number !== undefined) figuresDrawn.set(number, { feet: drawnAt, anim: placed.anim, flip });
       const veiled = number !== undefined && veiledIn(fighting, number);
-      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
+      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
       if (card) drawn.push({ card, ...stand, z: drawnAt[2], flip, flash, veiled });
     }
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn, smear };
@@ -451,7 +449,7 @@ async function start(): Promise<void> {
       muzzleOf: () =>
         fpMuzzle ? screenMuzzle(camera, aspect, fpMuzzle) : figureMuzzle([body.x, body.y, body.z], you.facing),
       more: [
-        ...gearRings(STALL, RESOURCE_NODES, gear, clock),
+        ...marksSeen(gearMarked(STALL, gear), cameraOf(camera).eye, clock),
         ...dropped.marks,
         ...foes.overheads(cameraOf(camera).eye, clock),
       ],

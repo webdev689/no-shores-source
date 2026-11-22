@@ -131,10 +131,10 @@ and its XP and Aurem are the seas' reward times as much, as a kill's are. It hol
 4,500 XP and 120, 180, 260 and 360 Aurem at level 5, each growing with the event's level as a kill's worth does, the
 XP growing the worn Art and the faction pledged while its cape is worn as a kill's XP does; 2, 3, 5 and 7 of each
 Fragment, Essence from the heroic tiers (1, 2) and 3, 4, 6 and 8 of the island's resource, the same at any level;
-and a Vestige always, of the event's level, a foe's colours from a plain chest and a Boss's
-from a heroic one, the bonus's tier rolling twice and keeping the better. A Vestige with no room in the ten goes to
-the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a leaver's goes
-to the vault however full, since the ground they leave would lose it.
+and a Vestige always, of the event's level, a foe's colours from a plain chest (a Major's) and a Boss's from a heroic
+one ([[Gear]]'s colours by rank), the bonus's tier rolling twice and keeping the better. A Vestige with no room in the
+ten goes to the vault, and with no room there either lies on the ground where the chest stood, as any drop does; a
+leaver's goes to the vault however full, since the ground they leave would lose it.
 
 **The wire.** A snapshot of a zone's room carries `public_event` ([[Server]]), but one built on a base leaves it
 out while it stands as the base's counted on, the page counting its countdowns on alike ("Limits"): the event running or showing its
@@ -145,20 +145,22 @@ toward what it needs (shards set of shards needed, or the stores' health left pe
 in (0 while none is on its way); and its marks, each a 24-byte struct, its place in f32: the fissure (how far open),
 the growth (rising, standing, sinking, broken), each store (whole, plundered; always, even waiting), each shard lying
 (its life left) and carried (by whom), the tithe-taker (arriving, counting, leaving), each banner and the approach.
-New fight events: 15 begun, 16 next stage, 17 a shard taken, 18 a shard set, 19 heroic met, 20 heroic missed, 21 won,
-22 failed, 23 a store plundered, 24 a chest opened. A heroic window still open as the event is won or failed is told
+New fight events: 16 begun, 17 next stage, 18 a shard taken, 19 a shard set, 20 heroic met, 21 heroic missed, 22 won,
+23 failed, 24 a store plundered, 25 a chest opened. A heroic window still open as the event is won or failed is told
 missed before the result, so the result is the last beat of its tick. A foe carries the name it stands under, if any;
 a drop of kind 3 is
 a chest, with its tier. The browser reads it all in `client/src/network/publicMessages.ts`.
 
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
-snapshots, play a whole Fissure and a whole raid through the room's door and win each, heroic
-(`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6; the same script, run through
+snapshots, play a whole Fissure and a whole raid through the room's door
+(`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6: they win the Fissure, heroic, and
+meet the raid's heroic task but run out its clock with the stores three quarters whole and its last wave still to
+come, under `main`'s fight (its harm ×1.5 and ×0.75, its foes' pace) ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]); the same script, run through
 WebAssembly by `server/public.test.ts`, comes to the same fingerprints ([[Agree to the Bit]]).
 
 ## The page
 
-The snapshot's `public_event` is kept by the fight (`Fighting.public`), and its events (15 to 24) apart from the
+The snapshot's `public_event` is kept by the fight (`Fighting.public`), and its events (16 to 25) apart from the
 fight's, which read every event as a blow. Each frame on foot, `game/publicView.ts` turns them into what the player
 sees and hears; the words are `game/publicLaw.ts`'s, worked out from the event alone.
 

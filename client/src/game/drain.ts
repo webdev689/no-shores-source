@@ -1,6 +1,7 @@
 // In death the world drains to grey, and comes back in colour on respawn or on leaving. It is drawn into the scene's
 // own picture, last, so the interface the game draws over it keeps its colour. The look is CSS's filter
-// `grayscale(0.92) brightness(0.72) contrast(1.05)`, eased out over 1.4 s each way.
+// `grayscale(0.92) brightness(0.72) contrast(1.05)`, eased out over 1.4 s each way. The same pass darkens the picture
+// as the player arrives and their view blinks open (`arrivals.ts`).
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { easeOut } from '../ui/ease.ts';
 
@@ -55,7 +56,7 @@ export class Drain {
 }
 
 export const DRAIN_SHADER = /* wgsl */ `
-struct Drain { grey: f32, bright: f32, contrast: f32, pad: f32 }
+struct Drain { grey: f32, bright: f32, contrast: f32, dark: f32 }
 @group(0) @binding(0) var<uniform> drain: Drain;
 @group(0) @binding(1) var picture: texture_2d<f32>;
 
@@ -64,14 +65,15 @@ struct Drain { grey: f32, bright: f32, contrast: f32, pad: f32 }
   return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
 }
 
-// CSS's three functions in turn on the picture's stored values, each kept within 0 to 1 as a filter keeps them.
+// CSS's three functions in turn on the picture's stored values, each kept within 0 to 1 as a filter keeps them; then
+// darkened.
 @fragment fn drain_fragment(@builtin(position) position: vec4f) -> @location(0) vec4f {
   let colour = textureLoad(picture, vec2i(position.xy), 0).rgb;
   let luma = dot(colour, vec3f(0.2126, 0.7152, 0.0722));
   let grey = mix(colour, vec3f(luma), drain.grey);
   let bright = clamp(grey * drain.bright, vec3f(0.0), vec3f(1.0));
   let contrast = clamp((bright - 0.5) * drain.contrast + 0.5, vec3f(0.0), vec3f(1.0));
-  return vec4f(contrast, 1.0);
+  return vec4f(contrast * (1.0 - drain.dark), 1.0);
 }
 `;
 
@@ -96,11 +98,12 @@ export class DrainView {
     });
   }
 
-  /** Drains `target`, the picture as drawn, by `share`; at none it records nothing. */
-  encode(encoder: GPUCommandEncoder, target: GPUTexture, share: number): void {
-    if (share <= 0) return;
-    const { grey, bright, contrast } = drainOf(Math.min(1, share));
-    this.gpu.device.queue.writeBuffer(this.uniform, 0, new Float32Array([grey, bright, contrast, 0]));
+  /** Drains `target`, the picture as drawn, by `share` and darkens it by `dark` (0 to 1); at none it records
+   *  nothing. */
+  encode(encoder: GPUCommandEncoder, target: GPUTexture, share: number, dark = 0): void {
+    if (share <= 0 && dark <= 0) return;
+    const { grey, bright, contrast } = drainOf(Math.min(1, Math.max(0, share)));
+    this.gpu.device.queue.writeBuffer(this.uniform, 0, new Float32Array([grey, bright, contrast, Math.min(1, dark)]));
     const held = this.heldFor(target);
     const size = [target.width, target.height];
     encoder.copyTextureToTexture({ texture: target }, { texture: held.texture }, size);

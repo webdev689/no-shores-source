@@ -17,21 +17,38 @@ export const EVENT = {
   shielded: 12,
   shieldBroken: 13,
   healed: 14,
-  publicBegun: 15,
-  publicStage: 16,
-  shardTaken: 17,
-  shardSet: 18,
-  heroicMet: 19,
-  heroicMissed: 20,
-  publicWon: 21,
-  publicFailed: 22,
-  storePlundered: 23,
-  chestOpened: 24,
+  /** Every player in an Abyss run fell at once: told to each, the run starting over. */
+  wiped: 15,
+  publicBegun: 16,
+  publicStage: 17,
+  shardTaken: 18,
+  shardSet: 19,
+  heroicMet: 20,
+  heroicMissed: 21,
+  publicWon: 22,
+  publicFailed: 23,
+  storePlundered: 24,
+  chestOpened: 25,
 } as const;
-export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7 } as const;
+export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 
-/** The element a blow burns in where it lands: a spell's in its caster's Art's, the player's own blow or shot in their
- *  weapon's glow as their page shows it, and any other in what the room says it carried. */
+/** Whether a blow lands as a spell's does, no weapon's swing behind it: a spell, or an Atheric's leap or burst. */
+export const landsAsSpell = (event: FightEvent): boolean =>
+  event.how === HOW.spell || event.how === HOW.leap || event.how === HOW.burst;
+
+/** The fighter a blow came from, which way it pushes its defender and throws its motes: a leap's or a burst's source
+ *  foe, else its striker. */
+export const cameFrom = (event: FightEvent): number =>
+  (event.how === HOW.leap || event.how === HOW.burst) && event.from ? event.from : event.striker;
+
+/** Whether a blow is no weapon's own swing or shot on its foe: a shot, a blow that lands as a spell's, or an Atheric's
+ *  bite back on a block, which flashes on the foe bitten but neither kicks the view, holds the fight nor flares the arc. */
+export const notABlow = (event: FightEvent): boolean =>
+  event.how === HOW.shot || event.how === HOW.bite || landsAsSpell(event);
+
+/** The element a blow burns in where it lands: a spell's in its caster's Art's, an Atheric's leap or burst in its
+ *  perk's own, the player's own blow or shot in their weapon's glow as their page shows it, and any other in what the
+ *  room says it carried. */
 export function blowLook(
   event: FightEvent,
   {
@@ -42,6 +59,7 @@ export function blowLook(
 ): GlowLook {
   const carried = event.element === 1 || event.element === 2 || event.element === 3 ? event.element : 0;
   if (event.how === HOW.spell) return carried || (spellLook?.(event.striker) ?? 0);
+  if (event.how === HOW.leap || event.how === HOW.burst) return carried;
   if (event.striker === player && own) return own;
   return carried;
 }
@@ -105,14 +123,14 @@ export function threatens(view: FighterView, player: number): boolean {
 const PARRY_WINDOW = 12;
 
 /** The parry ring over a foe at a blow the player can parry: the share of its wind-up still to come (1 as it begins,
- *  0 as it lands) and whether a press now would parry it, which it never does while `open` is false (the player's
- *  guard could open no window). An iron blow must be dodged, so it shows no ring to time; a shot is never parried.
- *  Null for none. */
+ *  0 as it lands), whether a press now would parry it, and the share at which the parry window opens (its band on the
+ *  ring); a press never parries, and there is no window, while `open` is false (the player's guard could open none).
+ *  An iron blow must be dodged, so it shows no ring to time; a shot is never parried. Null for none. */
 export function parryCue(
   view: FighterView,
   player: number,
   open = true,
-): { share: number; now: boolean } | 'iron' | null {
+): { share: number; now: boolean; window: number } | 'iron' | null {
   const { action } = view;
   if (view.target !== player) return null;
   if (action.kind === 'telegraph' && action.iron) return 'iron';
@@ -123,7 +141,7 @@ export function parryCue(
         ? [action.windup - action.elapsed, action.windup]
         : [0, 0];
   if (left <= 0 || lead <= 0) return null;
-  return { share: left / lead, now: open && left < PARRY_WINDOW };
+  return { share: left / lead, now: open && left < PARRY_WINDOW, window: open ? Math.min(1, PARRY_WINDOW / lead) : 0 };
 }
 
 /** Where on the screen's edge an arrow points to a point off the screen, and its angle (0 to the right, a quarter turn

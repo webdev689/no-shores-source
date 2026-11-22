@@ -1,13 +1,12 @@
-import { markRing } from '../combat/marks.ts';
+import { resourcePicture } from '../combat/dropPictures.ts';
+import { type Marked, OVER_HEAD_M, OVER_NODE_M } from '../combat/marksOver.ts';
+import { crystalStill } from '../combat/vestigeCrystal.ts';
 import type { GearState } from '../network/gearMessages.ts';
+import { BODY_HEIGHT } from '../player/crosshair.ts';
 
 /** How near the stall a player stands for its asks, and a resource node to gather it, as the room has them. */
 export const STALL_REACH = 4;
 export const NODE_REACH = 2.5;
-/** The stall's ring in brass and a resource node's in sea green (dim once spent), each beating slowly so it is seen
- *  across the ground. */
-const BRASS = [0.93, 0.74, 0.32] as const;
-const NODE = [0.35, 0.85, 0.7] as const;
 
 type Point = { readonly x: number; readonly y: number };
 type Node = Point & { readonly resource: number };
@@ -25,16 +24,14 @@ export function nodesInReach(
   );
 }
 
-/** The rings on the ground: the stall and the resource nodes, at `seconds` of the page's clock. The drops lying for the
- *  player stand as their own pictures (`combat/drops.ts`). */
-export function gearRings(stall: Point, nodes: readonly Node[], gear: GearState | null, seconds: number): number[] {
-  const out: number[] = [];
-  const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
-  markRing(out, [stall.x, stall.y, 0], STALL_REACH - 0.12, STALL_REACH, [...BRASS, 0.8]);
-  markRing(out, [stall.x, stall.y, 0], 0, 0.6, [...BRASS, beat]);
-  nodes.forEach((node, index) => {
-    const spent = gear?.spent.includes(index) ?? false;
-    markRing(out, [node.x, node.y, 0], 0.3, 0.5, [...NODE, spent ? 0.2 : beat]);
-  });
-  return out;
+/** What wears a mark over it on the course's flat ground, as in the game (game/overheadMarks.ts): the stall, as over a
+ *  keeper's crown, a Vestige's crystal, as Vestiges are opened there; and each resource node not yet spent, its
+ *  resource's. The drops lying for the player hover, a Vestige as its crystal (`combat/drops.ts`). */
+export function gearMarked(stall: Point, gear: GearState | null): Marked[] {
+  const marked: Marked[] = [{ picture: crystalStill(0, false), at: [stall.x, stall.y, BODY_HEIGHT + OVER_HEAD_M] }];
+  for (const node of gear?.nodes ?? []) {
+    const picture = resourcePicture(node.resource);
+    if (picture) marked.push({ picture, at: [node.x, node.y, OVER_NODE_M] });
+  }
+  return marked;
 }

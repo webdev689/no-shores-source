@@ -136,7 +136,7 @@ test('a store’s bar stands over it while on the screen, and none off it', () =
 test("the compass marks a public event's places on its foot, the heroic one blinking", () => {
   const places = (time: number) =>
     allOf(
-      compassNode(520, 0, 1, [0, 0], [], {
+      compassNode(520, 0, 1, [0, 0], [], null, {
         marks: [
           { x: 0, y: -100, kind: 'event' },
           { x: 10, y: -100, kind: 'heroic' },

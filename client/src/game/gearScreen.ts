@@ -25,15 +25,17 @@ import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts
 /** The menu's tabs, in the order the header shows them. */
 export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
-/** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), and the
- *  Harbourmaster's. */
-export type Station = KeeperKind | 'harbourmaster';
+/** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), the Harbourmaster's and
+ *  the bounty board. */
+export type Station = KeeperKind | 'harbourmaster' | 'board';
 /** What the menu shows: a tab, or a station's screen. */
 export type View = Tab | Station;
 /** What a counter or a key opens: a view, and the inventory's shelf to open it at. */
 export interface Opening {
   readonly view: View;
   readonly shelf?: string;
+  /** Shuts the menu where it already stands at the view, as its key does. */
+  readonly toggle?: boolean;
 }
 /** The page event that opens the menu at a view, as a station's counter does. */
 export const OPEN_AT = 'overlook:gear';

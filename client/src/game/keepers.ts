@@ -25,11 +25,13 @@ export const KEEPER_KINDS = [
   'stormcallers',
   'lamplighters',
   'veiled',
+  'mail',
   'shape',
 ] as const;
 export type KeeperKind = (typeof KEEPER_KINDS)[number];
 
-const dressed = (
+/** A figure's dress: its body, race and tone, its hair, its garments with their dyes, and any armour. */
+export const dressed = (
   body: 'male' | 'female',
   race: Race,
   tone: number,
@@ -159,6 +161,19 @@ export const KEEPERS: Readonly<Record<KeeperKind, Keeper>> = {
       boots: 'DarkBrown',
     }),
   ),
+  mail: {
+    title: 'The Postmaster',
+    words: 'What you leave behind, or have no room for, is kept here for you.',
+    speaker: 'postmaster',
+    dress: dressed(
+      'male',
+      'felid',
+      0.4,
+      { style: 'crop', colour: 'grey' },
+      ['shirt_long_round', 'vest', 'breeches', 'shoes'],
+      { shirt_long_round: 'White', vest: 'Blue', breeches: 'Grey', shoes: 'DarkBrown' },
+    ),
+  },
   shape: {
     title: 'Shape',
     words: 'Here from Friday until Sunday evening. Trades in Shapes, and nothing else.',

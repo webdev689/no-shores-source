@@ -124,7 +124,6 @@ pub fn state_code(state: State) -> u8 {
         State::Struck => 1,
         State::Sinking => 2,
         State::Sunk => 3,
-        State::Wrecked => 4,
     }
 }
 
@@ -198,7 +197,7 @@ fn naval_parts(event: &Event) -> Option<NavalParts> {
             };
             (REFUSED, ship, 0, why, side, none, none, left)
         }
-        Event::NoSail { ship, wrecked } => (NO_SAIL, ship, 0, u8::from(wrecked), 0, none, none, 0.0),
+        Event::NoSail { ship } => (NO_SAIL, ship, 0, 0, 0, none, none, 0.0),
         Event::Load { ship, shot } => (LOAD, ship, 0, load_code(Some(shot)), 0, none, none, 0.0),
         Event::Gone { ship, end } => (GONE, ship, 0, u8::from(end == End::Gone), 0, none, none, 0.0),
         Event::Ram { ship, by, point, dealt } => (RAM, ship, by, 0, 0, point, none, dealt),

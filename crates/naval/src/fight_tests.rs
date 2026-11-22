@@ -163,13 +163,13 @@ fn a_bold_captain_runs_out_its_guns_and_fires_on_the_player() {
 }
 
 #[test]
-fn bare_yards_or_a_wreck_set_no_sail() {
+fn bare_yards_set_no_sail() {
     let mut fight = alongside(500.0, Temper::Wary);
     player_mut(&mut fight).damage.apply(Hurt { hull: 0.0, sail: 96.0, crew: 0.0, fire: false }, 0.0, 0.0);
     player_mut(&mut fight).ship.rung = 1;
     let climb = Orders { helm: Helm { climb: 1, ..STILL }, ..IDLE };
     let events = run(&mut fight, &climb, 1);
-    assert!(events.contains(&Event::NoSail { ship: PLAYER, wrecked: false }));
+    assert!(events.contains(&Event::NoSail { ship: PLAYER }));
     assert_eq!(player(&fight).ship.rung, 1);
 }
 
@@ -270,6 +270,32 @@ fn a_look_past_it_lays_for_the_water() {
 }
 
 #[test]
+fn a_look_from_an_eye_past_the_fight_cameras_boom_lays_for_the_water_whatever_its_ray_meets() {
+    let fight = alongside(50.0, Temper::Wary);
+    let hull = Sighted::of(CAPTAIN, captain(&fight)).target().hull;
+    // An eye 150 m beyond the captain, looking back through its hull: no camera of the player's stands there.
+    let beyond = [hull.centre[0] + 150.0, hull.centre[1], hull.centre[2]];
+    let aim = Aim { bearing_deg: 90.0, range_m: 300.0, ray: Some([beyond, [-1.0, 0.0, 0.0]]) };
+    let water = fight.laid(PLAYER, &Aim { ray: None, ..aim });
+    assert_eq!(fight.laid(PLAYER, &aim), water);
+    assert_ne!(fight.laid(PLAYER, &looked(&fight, hull.centre)), water, "from its own aim eye the look lays on it");
+}
+
+#[test]
+fn a_look_on_a_ship_off_its_bow_lays_its_guns_square_to_their_side_within_their_carriage() {
+    let mut fight = alongside(50.0, Temper::Wary);
+    captain_mut(&mut fight).ship = sloop_at(10.0, -60.0);
+    let hull = Sighted::of(CAPTAIN, captain(&fight)).target().hull;
+    let aim = looked(&fight, hull.centre);
+    let square = fight.laid(PLAYER, &Aim { ray: None, ..aim }).expect("the starboard side bears");
+    let laid = fight.laid(PLAYER, &aim).expect("the starboard side bears");
+    let (low, high) = (laid.gun.min_el_deg.to_radians(), laid.gun.max_el_deg.to_radians());
+    assert_ne!(laid.elevation, square.elevation, "laid on the ship its ray meets, not the water's 300 m");
+    assert_eq!((laid.side, laid.dir), (square.side, square.dir), "its guns fire square to their side");
+    assert!((low..=high).contains(&laid.elevation), "{} within {low}..{high}", laid.elevation);
+}
+
+#[test]
 fn each_gun_ends_where_an_unscattered_ball_fired_by_the_fight_stops() {
     let fight = alongside(50.0, Temper::Wary);
     for range_m in [50.0, 30.0] {
@@ -329,17 +355,6 @@ fn a_captain_sails_round_land_that_lies_between_it_and_the_player() {
         closest = closest.min((ship.x * ship.x + ship.y * ship.y).sqrt());
     }
     assert!(closest < 120.0, "it never came round the headland: {closest}");
-}
-
-#[test]
-fn a_wreck_does_not_mend_while_a_pirate_who_would_take_it_lies_near() {
-    let mut fight = alongside(60.0, Temper::Bold);
-    player_mut(&mut fight).damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
-    run(&mut fight, &IDLE, 60 * 60);
-    let captain_ship = captain(&fight).ship;
-    let apart = (captain_ship.x * captain_ship.x + captain_ship.y * captain_ship.y).sqrt();
-    assert!(apart < HOSTILE_NEAR_M, "{apart}");
-    assert_eq!(player(&fight).damage.hull, 0.0, "a bold pirate within 700 m would take it: its hands stand by");
 }
 
 #[test]

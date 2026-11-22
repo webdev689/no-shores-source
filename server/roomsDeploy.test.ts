@@ -63,15 +63,23 @@ const filesUnder = (folder: string): string[] =>
 const deployed = (path: string) => roomsCode.some((code) => path === code || path.startsWith(`${code}/`));
 
 test('every file the rooms read lies under the rooms’ code, so a change to it deploys them', () => {
-  // What the room's crates build in: each `include_str!` and `include_bytes!` of their sources, not their tests'.
-  const sources = builtFrom(['room-wasm', 'bake'])
+  // What the room's crates build in: each `include_str!` and `include_bytes!` of their sources, not their tests', and
+  // of their build scripts, with each file a build script reads from beside its manifest.
+  const crates = builtFrom(['room-wasm', 'bake']);
+  const sources = crates
     .flatMap((crate) => filesUnder(`crates/${crate}/src`))
     .filter((path) => path.endsWith('.rs') && !path.endsWith('_tests.rs') && !path.includes('/tests/'));
-  const included = sources.flatMap((path) =>
-    [...readFileSync(new URL(path, repo), 'utf8').matchAll(/include_(?:str|bytes)!\(\s*"([^"]+)"/g)].map(([, file]) =>
+  const reads = (path: string, pattern: RegExp) =>
+    [...readFileSync(new URL(path, repo), 'utf8').matchAll(pattern)].map(([, file]) =>
       normalize(join(dirname(path), file ?? '')),
+    );
+  const scripts = crates.map((crate) => `crates/${crate}/build.rs`).filter((path) => existsSync(new URL(path, repo)));
+  const included = [
+    ...sources.flatMap((path) => reads(path, /include_(?:str|bytes)!\(\s*"([^"]+)"/g)),
+    ...scripts.flatMap((path) =>
+      reads(path, /(?:include_(?:str|bytes)!\(\s*|env!\("CARGO_MANIFEST_DIR"\),\s*)"([^"]+)"/g),
     ),
-  );
+  ];
   // What the protocol's version hashes: the content numbered on the wire, and the list that names it.
   const numbered = [...numberedContent.paths, 'tools/numbered.json'];
   // What the Workers import from beyond their own folder, but the room's WebAssembly built from the crates.

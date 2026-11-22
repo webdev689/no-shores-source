@@ -1,12 +1,14 @@
 // The interface the game draws itself (`ui/`), as the game's frame runs it: its face read as the page starts (until
 // then it draws nothing), the canvas's events heard each frame, its tree drawn over the frame, and what it is typing
-// in handed back to the page.
+// in and the pointer's look (the gauntlet) handed back to the page.
 import type { Gpu } from '../gpu.ts';
 import { eventsOn, type PageEvents } from '../ui/canvasEvents.ts';
 import { readFace } from '../ui/faceReader.ts';
+import { gauntletOver } from '../ui/gauntlet.ts';
 import type { Stack } from '../ui/stack.ts';
 import { Interface } from '../ui/ui.ts';
 import { UiRenderer, uiScale } from '../ui/uiRenderer.ts';
+import { FrameGuard } from '../frameGuard.ts';
 import { drawnPress, drawnReach } from './uiSounds.ts';
 
 export class DrawnInterface {
@@ -17,6 +19,8 @@ export class DrawnInterface {
   private heardAt = 0;
   /** Whether the game's own frames have begun, which end the interface's frames alone. */
   private framing = false;
+  /** What a frame alone throws is reported, and the frames alone go on. */
+  private readonly guard = new FrameGuard();
 
   /** With `stack`, draws it alone each frame (the tap to start, while the world loads) until the game's frames
    *  begin hearing it. */
@@ -61,7 +65,7 @@ export class DrawnInterface {
     if (ui.reached) drawnReach();
     if (ui.pressed) drawnPress(this.heardAt);
     ui.renderer.present(view.width, view.height);
-    this.events.sync(ui.typing, ui.cursor);
+    this.events.sync(ui.typing, gauntletOver(ui.cursor));
   }
 
   /** A frame of `stack` alone, before the game's own frames, and the next asked for. */
@@ -71,8 +75,10 @@ export class DrawnInterface {
       // Heard by nothing while the world loads (the tap to start hears the page itself), so no key pressed then
       // presses what takes the focus once the game's frames begin.
       this.events.take();
-      this.ui?.frame(this.view, [], Math.min(0.1, (now - before) / 1000));
-      this.present(stack);
+      this.guard.run(() => {
+        this.ui?.frame(this.view, [], Math.min(0.1, (now - before) / 1000));
+        this.present(stack);
+      });
       this.alone(stack, now);
     });
   }

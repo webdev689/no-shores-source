@@ -10,14 +10,19 @@ import { SKY_WGSL, skyUniformFor } from '../sky/skyUniform.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
 const VIEW_BYTES = 80;
-const CARD_BYTES = 48 + CARD_LOOK_FLOATS * 4;
+const CARD_BYTES = 64 + CARD_LOOK_FLOATS * 4;
+
+/** The light at a point, red, green and blue. */
+type Light = (point: readonly [number, number, number]) => readonly [number, number, number];
+/** How far over a figure's feet the light it is lit by is taken, metres: about its chest. */
+const LIT_AT_M = 1.2;
 
 /** A figure's card stands upright on its feet, measured from the eye as the land is; the forge's pixels are drawn
  *  texel for texel and anything clear is cut away. Shared by the figures' pass and their shadow's. */
 const CARD = /* wgsl */ `
 struct View { from_eye: mat4x4f, right: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
-struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f }
+struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f, light: vec4f }
 @group(2) @binding(0) var<uniform> card: Card;
 @group(2) @binding(1) var picture: texture_2d<f32>;
 
@@ -110,8 +115,10 @@ const CRYSTAL_FLOOR = 0.8;
   if (card.size.w > 0.5 && brightest > 0.45 && brightest - min(texel.r, min(texel.g, texel.b)) > 0.3) {
     light = max(light, vec3f(CRYSTAL_FLOOR));
   }
+  // Where no sun shines (a dungeon), the light the page found where the figure stands.
+  let lit = select(texel.rgb * light, texel.rgb * card.light.rgb, card.light.w > 0.5);
   // What befalls the figure shows in its own pixels, unshaded: a flash, its statuses, its death.
-  let shown = card_shade(card.status, card.look, card.tint, picture, at, texel.rgb * light, root);
+  let shown = card_shade(card.status, card.look, card.tint, picture, at, lit, root);
   if (shown.a < 0.5) { discard; }
   return vec4f(shown.rgb, 1.0);
 }
@@ -169,6 +176,9 @@ struct Shadowed { @builtin(position) position: vec4f, @location(0) corner: vec2f
 
 /** Draws the forge's figures into the scene's pass, after the land and before the water, and their shadows into the
  *  sun's near map before that. */
+/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, or one still arriving. */
+const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival;
+
 export class FigureView implements CardMaker {
   private readonly gpu: Gpu;
   private readonly pipeline: GPURenderPipeline;
@@ -281,12 +291,13 @@ export class FigureView implements CardMaker {
   }
 
   /** Writes the view's and each card's terms once a frame, for its shadow's pass and its own, and answers each card's
-   *  group. */
+   *  group; `light` lights each figure in place of the sun. */
   private groupsFor(
     fromEye: Float32Array,
     eye: readonly [number, number, number],
     yaw: number,
     figures: readonly CardAt[],
+    light?: Light,
   ): GPUBindGroup[] {
     if (this.written?.fromEye === fromEye && this.written.figures === figures) return this.written.groups;
     const values = new Float32Array(VIEW_BYTES / 4);
@@ -309,6 +320,7 @@ export class FigureView implements CardMaker {
         ...[card.width * metres, card.height * metres, shown.facesEye ? 1 : 0, shown.crystal ? 1 : 0],
         ...[rootX, card.root[1] * metres, 0, 0],
         ...cardLookValues(shown, time, !!smear),
+        ...(light ? [...light([x, y, z + LIT_AT_M]), 1] : [0, 0, 0, 0]),
       ]);
       this.gpu.device.queue.writeBuffer(buffer, 0, cardValues);
       return group;
@@ -333,17 +345,16 @@ export class FigureView implements CardMaker {
     pass.setBindGroup(0, this.viewGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, shadow.casterGroup(this.cast));
-    // A Veiled figure is all but unseen, so it throws no shadow and has no contact shade.
     groups.forEach((group, index) => {
-      if (index >= figures.length || figures[index]?.veiled) return;
+      if (index >= figures.length || unshaded(figures[index])) return;
       pass.setBindGroup(2, group);
       pass.draw(6);
     });
   }
 
   /** Draws the figures from an eye at `eye` (world metres), with the camera's view-projection measured from the eye
-   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given; then the outlines of the
-   *  weapons that glow. */
+   *  and its yaw (radians clockwise from north), in the sun's shadows when a map is given, or lit by `light` where
+   *  no sun shines; then the outlines of the weapons that glow. */
   drawInto(
     pass: GPURenderPassEncoder,
     fromEye: Float32Array,
@@ -351,15 +362,16 @@ export class FigureView implements CardMaker {
     yaw: number,
     figures: readonly CardAt[],
     shadow?: ShadowMap,
+    light?: Light,
   ): void {
     if (figures.length === 0) return;
-    const groups = this.groupsFor(fromEye, eye, yaw, figures);
+    const groups = this.groupsFor(fromEye, eye, yaw, figures, light);
     pass.setBindGroup(0, this.viewGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);
     groups.forEach((group, index) => {
-      if (index >= figures.length || figures[index]?.veiled) return;
+      if (index >= figures.length || unshaded(figures[index])) return;
       pass.setBindGroup(2, group);
       pass.draw(36);
     });
@@ -368,8 +380,8 @@ export class FigureView implements CardMaker {
       pass.setBindGroup(2, group);
       pass.draw(6);
     }
-    // A Veiled figure's weapon shows no outline: it is all but unseen.
-    const glowing = figures.filter(({ card, veiled }) => card.glow && !veiled);
+    // A Veiled figure's weapon shows no outline, as it is all but unseen; nor does one still arriving.
+    const glowing = figures.filter(({ card, veiled, arrival }) => card.glow && !veiled && !arrival);
     this.glows.draw(
       pass,
       fromEye,

@@ -5,13 +5,13 @@
 // While it stands, a touch on the view is the story's alone: no drag pans the page or pulls it to reload, so a held
 // touch is never cut short.
 import { motionReduced } from '../plus/kit.ts';
-import type { Child, Drawing, Node } from '../ui/node.ts';
-import { colourOf } from '../ui/quads.ts';
+import type { Child, Node } from '../ui/node.ts';
 import { touchesHeld } from '../ui/page.ts';
 import type { Layer, Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import { ease } from '../ui/ease.ts';
 import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
+import { lidDrop, lidOf, lidShut } from './eyelids.ts';
 
 /** The title as the screen shows it. */
 export const TITLE = 'Overlook';
@@ -23,31 +23,11 @@ export const playedByTouch = (): boolean => globalThis.matchMedia?.('(pointer: c
 export const SCREEN_Z = 30;
 const BLACK = '#020305';
 const WHITE = '#f4f1ea';
-const LID = '#050403';
 const TITLE_RULE = ruleOf('cinema rule', [
   [0.18, '#b8975a'],
   [0.5, '#e9d8a6'],
   [0.82, '#b8975a'],
 ]);
-
-/** An eyelid, its edge toward the eye half an ellipse across its width and 22% of its height deep, drawn a row of
- *  device pixels at a time; `top` for the upper lid. */
-function lidOf(top: boolean): Drawing {
-  const [red, green, blue] = colourOf(LID);
-  return (renderer, box, _scale, clip, fade) => {
-    const tone = [red, green, blue, fade] as const;
-    const deep = Math.round(box.height * 0.22);
-    const flat = box.height - deep;
-    renderer.quads.add({ x: box.x, y: top ? box.y : box.y + deep, width: box.width, height: flat }, tone, clip);
-    for (let row = 0; row < deep; row++) {
-      // How far across the ellipse reaches at this row, from its widest by the lid's flat part to its tip.
-      const down = (row + 0.5) / deep;
-      const half = (box.width / 2) * Math.sqrt(Math.max(0, 1 - down * down));
-      const y = top ? box.y + flat + row : box.y + deep - 1 - row;
-      renderer.quads.add({ x: box.x + box.width / 2 - half, y, width: 2 * half, height: 1 }, tone, clip);
-    }
-  };
-}
 
 /** The screen's layers, drawn as a layer of `stack` over the game's interface. */
 export class Screen {
@@ -60,16 +40,18 @@ export class Screen {
   private readonly prompted = new Eased(0);
   private readonly skipShown = new Eased(0, ease);
   private shut = 0;
+  private lidLight = 0;
   private blurred = 0;
   private prompt = '';
   private skipShare = 0;
-  private readonly skipWords: string;
+  private readonly touched: boolean;
+  private skipKey = 'Space';
   private readonly removeLayer: () => void;
 
   constructor(stack: Stack, canvas: HTMLCanvasElement, clock: () => number = pageClock) {
     this.canvas = canvas;
     this.clock = clock;
-    this.skipWords = playedByTouch() ? 'Hold to skip' : 'Hold Space to skip';
+    this.touched = playedByTouch();
     touchesHeld(canvas, true);
     const layer: Layer = (ui) => this.node(ui);
     this.removeLayer = stack.add(layer);
@@ -93,9 +75,10 @@ export class Screen {
     this.barred.set(shown ? 1 : 0, motionReduced() ? 0 : 1.2, this.clock());
   }
 
-  /** The eyelids, 0 open to 1 shut. */
-  lids(shut: number): void {
+  /** The eyelids, 0 open to 1 shut, with `light` (0 none to 1 a lit place) seen warm through them as they shut. */
+  lids(shut: number, light = 0): void {
     this.shut = Math.min(1, Math.max(0, shut));
+    this.lidLight = Math.min(1, Math.max(0, light));
   }
 
   /** The view blurred by `pixels`, as eyes that cannot yet focus see it. */
@@ -119,10 +102,11 @@ export class Screen {
     this.prompted.set(text === null ? 0 : 1, 0.8, this.clock());
   }
 
-  /** The skip's hint, faint while a cutscene can be skipped and bright while the hold fills its `share`; null hides it
-   *  where there is nothing to skip. */
-  showSkip(share: number | null): void {
+  /** The skip's hint, faint while a cutscene can be skipped and bright while the hold fills its `share`, naming the
+   *  `key` held for it; null hides it where there is nothing to skip. */
+  showSkip(share: number | null, key = this.skipKey): void {
     this.skipShare = share ?? 0;
+    this.skipKey = key;
     this.skipShown.set(share === null ? 0 : share > 0 ? 0.9 : 0.45, 0.4, this.clock(), 0);
   }
 
@@ -154,18 +138,21 @@ export class Screen {
     const barred = this.barred.value(now);
     const lidTall = Math.round(height * 0.52);
     const lidWide = Math.round(width * 1.1);
-    const lid = (top: boolean): Node => ({
-      id: `cinema-lid-${top ? 'top' : 'bottom'}`,
-      width: lidWide,
-      height: lidTall,
-      draw: lidOf(top),
-      float: {
-        to: 'screen',
-        anchor: [0.5, top ? 0 : 1],
-        at: [0.5, top ? 0 : 1],
-        y: Math.round((top ? this.shut - 1 : 1 - this.shut) * 1.04 * lidTall),
-      },
-    });
+    const lid = (top: boolean): Node => {
+      const shut = lidShut(this.shut)[top ? 'top' : 'bottom'];
+      return {
+        id: `cinema-lid-${top ? 'top' : 'bottom'}`,
+        width: lidWide,
+        height: lidTall,
+        draw: lidOf(top, shut, this.lidLight),
+        float: {
+          to: 'screen',
+          anchor: [0.5, top ? 0 : 1],
+          at: [0.5, top ? 0 : 1],
+          y: Math.round(lidDrop(top, shut, lidTall)),
+        },
+      };
+    };
     const bar = (top: boolean): Child =>
       barred > 0 && {
         width,
@@ -251,7 +238,13 @@ export class Screen {
       float: { to: 'screen', anchor: [1, 1], at: [1, 1], x: -33, y: -33 },
       children: [
         dropped(
-          { words: this.skipWords.toUpperCase(), size: 1, colour: '#efe6cf', tracking: 2, wrap: false },
+          {
+            words: (this.touched ? 'Hold to skip' : `Hold ${this.skipKey} to skip`).toUpperCase(),
+            size: 1,
+            colour: '#efe6cf',
+            tracking: 2,
+            wrap: false,
+          },
           '#000',
           1,
         ),

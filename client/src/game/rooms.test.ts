@@ -2,7 +2,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { LIVE_ACCOUNTS } from '../network/accounts.ts';
 import { LIVE_ROOMS } from '../network/roomAddress.ts';
-import { accountOf, accountsFrom, nodeOfRoom, nodeRoom, roomsFrom, seaRoomName } from './rooms.ts';
+import {
+  accountOf,
+  accountsFrom,
+  dungeonRoom,
+  nodeOfRoom,
+  nodeRoom,
+  roomsFrom,
+  runInstance,
+  runOf,
+  seaRoomName,
+  sharedRun,
+} from './rooms.ts';
 
 test('without ?room= the game plays offline', () => {
   assert.equal(roomsFrom(null), null);
@@ -44,16 +55,56 @@ test('a harder voyage to a patrol is a room of its own; a social space is one fo
 test('a node’s room name reads back as its node and difficulty, the old names as the new tiers', () => {
   for (const seas of ['normal', 'elite', 'abyss'] as const) {
     const room = nodeRoom({ id: 'saltgrass-downs', kind: 'patrol' }, seas);
-    assert.deepEqual(nodeOfRoom(room), { id: 'saltgrass-downs', seas });
+    assert.deepEqual(nodeOfRoom(room), { id: 'saltgrass-downs', seas, dungeon: null, run: null });
   }
   // A place the accounts kept under the other names (a presence or a held character) still reads.
-  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--rough'), { id: 'saltgrass-downs', seas: 'elite' });
-  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--storm'), { id: 'saltgrass-downs', seas: 'abyss' });
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--rough'), {
+    id: 'saltgrass-downs',
+    seas: 'elite',
+    dungeon: null,
+    run: null,
+  });
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--storm'), {
+    id: 'saltgrass-downs',
+    seas: 'abyss',
+    dungeon: null,
+    run: null,
+  });
   assert.equal(nodeOfRoom('sea'), null);
 });
 
 test('a voyage sails in its difficulty’s sea room', () => {
   assert.deepEqual((['normal', 'elite', 'abyss'] as const).map(seaRoomName), ['sea', 'sea--elite', 'sea--abyss']);
+});
+
+test("a patrol's dungeon has one room at each difficulty, named for its patrol and its number", () => {
+  const patrol = { id: 'saltgrass-downs' };
+  assert.equal(dungeonRoom(patrol, 'normal', 0), 'node-saltgrass-downs--dungeon-0');
+  assert.equal(dungeonRoom(patrol, 'elite', 2), 'node-saltgrass-downs--elite--dungeon-2');
+  assert.equal(dungeonRoom(patrol, 'abyss', 1), 'node-saltgrass-downs--abyss--dungeon-1');
+});
+
+test("a room's name reads back as its node, its difficulty and its dungeon; a dungeon only after `--`", () => {
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs'), {
+    id: 'saltgrass-downs',
+    seas: 'normal',
+    dungeon: null,
+    run: null,
+  });
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--abyss--dungeon-2'), {
+    id: 'saltgrass-downs',
+    seas: 'abyss',
+    dungeon: 2,
+    run: null,
+  });
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--rough--dungeon-1'), {
+    id: 'saltgrass-downs',
+    seas: 'elite',
+    dungeon: 1,
+    run: null,
+  });
+  assert.deepEqual(nodeOfRoom('node-dungeon-0'), { id: 'dungeon-0', seas: 'normal', dungeon: null, run: null });
+  assert.equal(nodeOfRoom('sea'), null);
 });
 
 test('the rooms take the session as it stands when they connect, so a sign-in after startup is the one they use', async () => {
@@ -80,4 +131,44 @@ test('the rooms take the session as it stands when they connect, so a sign-in af
   } finally {
     globalThis.fetch = fetched;
   }
+});
+
+test('a dungeon at Elite or Abyss and every Elite Dungeon is a run, joined where the company already is', () => {
+  const base = dungeonRoom({ id: 'saltgrass-downs' }, 'abyss', 2);
+  assert.equal(runOf(base, 'k3j4h5g6'), 'node-saltgrass-downs--abyss--dungeon-2--run-k3j4h5g6');
+  const grotto = nodeRoom({ id: 'krakens-grotto', kind: 'dungeon' }, 'normal');
+  assert.equal(runOf(grotto, 'k3j4h5g6'), 'node-krakens-grotto--run-k3j4h5g6');
+  assert.deepEqual(nodeOfRoom('node-saltgrass-downs--abyss--dungeon-2--run-k3j4h5g6'), {
+    id: 'saltgrass-downs',
+    seas: 'abyss',
+    dungeon: 2,
+    run: 'k3j4h5g6',
+  });
+  assert.deepEqual(nodeOfRoom('node-krakens-grotto--run-k3j4h5g6'), {
+    id: 'krakens-grotto',
+    seas: 'normal',
+    dungeon: null,
+    run: 'k3j4h5g6',
+  });
+  const places = [
+    null,
+    'node-saltgrass-downs',
+    `${base}--run-m9n8b7v6`,
+    'node-saltgrass-downs--abyss--dungeon-1--run-a1b2c3d4',
+  ];
+  assert.equal(sharedRun(base, places), `${base}--run-m9n8b7v6`);
+  assert.equal(
+    sharedRun(dungeonRoom({ id: 'saltgrass-downs' }, 'elite', 2), places),
+    null,
+    'another tier is another run',
+  );
+  assert.match(runInstance(), /^[a-z0-9]{8}$/);
+  assert.equal(
+    runInstance((bytes) => bytes.fill(0)),
+    'aaaaaaaa',
+  );
+  assert.equal(
+    runInstance((bytes) => bytes.fill(35)),
+    '99999999',
+  );
 });

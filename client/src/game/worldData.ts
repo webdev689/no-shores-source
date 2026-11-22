@@ -18,11 +18,20 @@ export interface NodeInfo {
   /** A social space's stations (`nodes.ts`), and where Shape may stand in it, one a week. */
   readonly stations?: readonly StationInfo[];
   readonly visitorSpots?: readonly Point[];
+  /** A social space's bounty board, where a player stands to read it, and where the board itself stands (the city
+   *  crate's `board`). */
+  readonly board?: Point | null;
+  readonly boardAt?: Point | null;
   /** A social space's ways its townsfolk walk, and the posts they keep and visit (`life/`). */
   readonly ways?: Ways;
   readonly posts?: readonly Post[];
   /** A patrol area or mission no one may enter until a pass is done on it (`sitesOf`). */
   readonly locked?: boolean;
+  /** A patrol area's resource places (where, and the island's resource they hold), where its room's nodes stand, in
+   *  its layout's order. */
+  readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
+  /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
+  readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
 }
 
 /** A continent's port city, as its edits file names it. */

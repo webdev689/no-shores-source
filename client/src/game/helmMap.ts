@@ -6,6 +6,7 @@ import type { LandSheet } from '../heldmap/landSheet.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
+import { boundWord } from './controls.ts';
 import type { Discovered } from './discovered.ts';
 import type { Sea } from './sea.ts';
 import type { Stack } from '../ui/stack.ts';
@@ -15,15 +16,18 @@ export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void
 
 /** What the map is made with: the GPU, every continent's coast, the forge's art, the interface it draws its marks on, and
  *  the ship at sea, if one is; what a destination set does (sails for it, in the sea room of the difficulty the map
- *  set); and what is handed to the map once it is made (the waters' tint). */
+ *  set); what is handed to the map once it is made (the waters' tint); and the nodes the quest walked names. */
 export interface HelmMapContext {
   readonly gpu: Gpu;
   readonly outlines: readonly (readonly Point2[])[];
   readonly store: ForgeStore;
   readonly stack: Stack;
   readonly sea: () => Sea | null;
+  /** Why each difficulty's seas are shut to the player by their level, by tier (null where open). */
+  readonly shut: () => readonly (string | null)[];
   readonly sail: (to: Point2, seas: Difficulty) => void;
   readonly made: (map: HeldMap) => void;
+  readonly quest?: () => readonly string[];
 }
 
 /**
@@ -62,6 +66,7 @@ export class HelmMap {
       (to) => this.sea()?.planTo(to) ?? { ok: false, why: 'No ship.' },
       stack,
     );
+    made.sailKey = () => boundWord('confirm');
     made.onLowered((sail) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();
@@ -141,7 +146,7 @@ export class HelmMap {
   ): MapDraw | undefined {
     if (this.wanted && here.view.atHelm && helm.free) {
       this.wanted = false;
-      this.made.open(helm.viewport, here.position, helm.hands, discovered.discovery.charted);
+      this.made.open(helm.viewport, here.position, helm.hands, discovered.discovery.charted, this.context.shut());
     }
     // The map's scene is gathered only while the map is up.
     const map = this.map;
@@ -152,6 +157,7 @@ export class HelmMap {
           places: discovered.places,
           knownIslands: discovered.knownIslands,
           course: here.course,
+          quest: this.context.quest?.() ?? [],
         })
       : null;
     return map && drawn ? (encoder, view) => map.draw(encoder, view, drawn) : undefined;

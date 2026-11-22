@@ -18,6 +18,8 @@ code:
   - crates/room/src/garrison.rs#stand_garrison
   - crates/room/src/garrison.rs#keep_garrison
   - crates/room/src/garrison.rs#gird_of
+  - crates/room/src/dungeon_room.rs#stand_dungeon_garrison
+  - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/garrison.rs#raise_garrison
   - crates/room/src/garrison.rs#walk_beats
   - crates/room/src/beat.rs#Beat
@@ -59,7 +61,7 @@ prologue's wreck every boarder fights on the Grey Tithe's side ([[The Wreck's Bo
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|
-| 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
+| 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane, the Elite Dungeons' 18 Bosses | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
 | 2 | Pirates | at sea | | Skirmisher, Swordsman, Brute, Archer, Captain | Pirate Sloop |
 | 3 | The Lattice | on land | Husk, Flicker, Idol, Ravager, Bulwark, Heart | | |
 
@@ -96,6 +98,24 @@ out among them ([[Foes]]).
 | 18 | High Assessor Corvane | Captain | `flail_iron` | `shield_kite_iron` | Boss |
 | 19 | Crew (the Brig's) | Swordsman | `sword_iron` | | Minor, Major |
 | 20 | Crew (the Brig's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
+| 21 | Wreck-Reeve Oswin Tarr (krakens-grotto's Boss) | Captain | `sword_steel` |  | Boss |
+| 22 | Pearl-Keeper Isolde Varne (pearl-tomb's Boss) | Captain | `mace_iron` | `shield_kite_iron` | Boss |
+| 23 | Forgemaster Garrick Soot (cinder-deep's Boss) | Captain | `warhammer_iron` |  | Boss |
+| 24 | Tithe-Warden Mabry Hollis (hollow-crypt's Boss) | Captain | `mace_iron` | `shield_kite_iron` | Boss |
+| 25 | Wrecker Dunstan Black (black-tide-caverns's Boss) | Captain | `axe_iron` |  | Boss |
+| 26 | Sister-Assessor Aldith (pale-undercroft's Boss) | Captain | `flail_iron` | `shield_kite_iron` | Boss |
+| 27 | Cistern-Steward Corwin Vey (forsaken-cistern's Boss) | Captain | `sword_steel` | `shield_kite_steel` | Boss |
+| 28 | Vaultwarden Hesk Amaro (sandworn-vault's Boss) | Captain | `warhammer_iron` |  | Boss |
+| 29 | Gaoler Renna Crake (smugglers-labyrinth's Boss) | Captain | `sword_iron` | `shield_kite_iron` | Boss |
+| 30 | Barrow-Reeve Tobin Silt (silt-barrows's Boss) | Captain | `mace_iron` |  | Boss |
+| 31 | Treasurer Lucan Deeps (deepwater-vault's Boss) | Captain | `sword_ebony` |  | Boss |
+| 32 | Factor Odile Coralle (coral-halls's Boss) | Captain | `flail_iron` |  | Boss |
+| 33 | Lord-Assessor Edric Barrow (barrow-halls's Boss) | Captain | `sword_ebony` | `shield_kite_steel` | Boss |
+| 34 | Digmaster Ulf Hargreave (saltworm-warrens's Boss) | Captain | `axe_iron` |  | Boss |
+| 35 | Bog-Reeve Hester Mire (mire-hollows's Boss) | Captain | `mace_iron` | `shield_kite_iron` | Boss |
+| 36 | Sluice-Warden Abel Rook (rotwater-sewers's Boss) | Captain | `sword_steel` |  | Boss |
+| 37 | Abbess Ylva Frost (frozen-sepulchre's Boss) | Captain | `flail_iron` | `shield_kite_steel` | Boss |
+| 38 | Catacomb-Reeve Silas Brine (brine-catacombs's Boss) | Captain | `warhammer_iron` |  | Boss |
 | 39 | Husk (Lattice) | Swordsman | `sword_iron` | | Minor, Major |
 | 40 | Flicker (Lattice) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
 | 41 | Idol (Lattice) | Archer | `bow_short_iron` | | Major, Elite |
@@ -104,10 +124,13 @@ out among them ([[Foes]]).
 | 44 | Heart (Lattice) | Captain | `flail_iron` | | Boss, with no phases of its own yet |
 | 45 | Tithe-Taker | Captain | `mace_iron` | | Elite |
 
-Numbers 21 to 38 are kept for the Bosses still to come. The Lattice's hands are those of the forge's weapons of the
-same reach: the [[Lattice]]'s own blades, emitter, maul and anchor are drawn and dressed over them. A foe may stand
-under a name of its own in place of its type's, sent with it: a public event's Warden and Marrow, and the Fissure's
-crystal growth.
+Types 21 to 38 are the Elite Dungeons' Bosses, one each ([[Activities]]): each a Grey Tithe land Captain, the faction
+of the dungeon garrison it ends, at Boss rank, fighting in Corvane's three phases under a name of its own over its
+bar, dressed as Corvane is.
+
+The Lattice's hands are those of the forge's weapons of the same reach: the [[Lattice]]'s own blades, emitter, maul and
+anchor are drawn and dressed over them. A foe may stand under a name of its own in place of its type's, sent with it: a
+public event's Warden and Marrow, and the Fissure's crystal growth.
 
 The roles as a Major: Skirmisher 45 health, 18 poise; Swordsman 70, 35; Brute 130, 70; Archer 50, 18; Captain 160,
 60 (with [[Foes]]' other numbers for each).
@@ -201,6 +224,13 @@ WebAssembly, so names, factions and weapons are read in one place.
   its post and round again. It halts while any of its foes is stirred, fights or walks back to its place, and waits
   for one more than 4 m from its place. A group that holds its post stands 2.5 m round it, each foe facing outward,
   a leader in the middle facing the nearest spawn.
+- **A forged dungeon's garrison** ([[Dungeons]], "In the rooms") stands where the Forge puts foes rather than on the
+  lattice: the Reeve, a Miniboss, alone in the end room, facing the way in; in each other room past the way in's, a
+  band drawn from the dungeon's foes above, one for each ten of the room's cells, rounded, two to four, each on one of
+  the room's free cells nearest its middle, those its props leave, its quiet cells first, facing out from the middle.
+  When the bands and the Reeve would pass the room's 24, the rooms that stand one are the most that fit, spread evenly
+  along the walk from the way in to the end. A dungeon has no lattice to draw beats from, so its bands hold their
+  posts. Its levels, shields, leash and standing again are any garrison's, at its patrol's island band.
 - **The leash**: a garrison foe, Corvane and his escort too, gives its fight up once its target stands 50 m from its
   place in its group or off the room's navmesh, and walks back there, healing as it goes, to stand idle again; one
   whose search finds no one walks back the same way ([[Foes]]). Its group halts where its fight began, so it walks
@@ -243,7 +273,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   where the floor round them has room: each is tried round three rings of twelve, 2.5 m apart, and in a pocket too small
   for them all the last go on their ring regardless.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
-  its beat begun again from there, 120 s later, once
+  its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
+  farmed: [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
@@ -251,7 +282,7 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 ## On screen
 
-- **Over each foe**, just over its head (1.9 m over its feet, under where the parry ring closes), its plate in the
+- **Over each foe**, just over its head (1.9 m over its feet, over its parry ring round the head), its plate in the
   [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
   above a thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before

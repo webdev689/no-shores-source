@@ -9,8 +9,10 @@ import {
   blowFrame,
   blowWay,
   type Doing,
+  FULL_RUN,
   FULL_WALK,
   likelyMoves,
+  steadyMoves,
   Loop,
   onTheMove,
   PlacedLoop,
@@ -212,6 +214,13 @@ test('the likeliest moves are the kit’s, the strokes of a weapon held alone, a
   const paired = likelyMoves('sword_iron', 'dagger_iron_l', classic);
   assert.ok(paired.includes('twinslash') && !paired.includes('chop'));
   assert.equal(new Set(paired).size, paired.length);
+});
+
+test('a run slower than a full run, as a foe’s, strides as much slower; never faster', () => {
+  const run = (speed: number) => shownMove({ ...doing, moving: true, running: true, speed }, frames, classic);
+  assert.deepEqual(run(FULL_RUN), { anim: 'run', frame: null, frameSeconds: 0.125 });
+  assert.ok(Math.abs(run(FULL_RUN * 0.75).frameSeconds - 0.125 / 0.75) < 1e-12, 'a foe’s run, at three quarters');
+  assert.equal(run(FULL_RUN * 1.3).frameSeconds, 0.125, 'a Hasted run at the full run’s pace');
 });
 
 test('running with a gun or a crossbow drawn plays its own run; put away, the plain run', () => {
@@ -428,4 +437,16 @@ test('moving, a blow, a shot, a reload, an aim and the cast play their own on th
   assert.equal(shownMove({ ...doing, cast: 0.5 }, frames, everything, walking).anim, 'cast');
   assert.equal(shownMove({ ...moving, cast: 0.5 }, frames, everything, () => null).anim, 'cast');
   assert.equal(blowWay('side1hwalk'), blowWay('side1h'), 'a blow on the move goes its standing way');
+});
+
+test("the moves a figure shows standing and moving are a few of its likely ones, its kit's own and the plain", () => {
+  const steady = steadyMoves('sword_iron', null, classic);
+  const likely = likelyMoves('sword_iron', null, classic);
+  for (const anim of ['idle', 'walk', 'run']) assert.ok(steady.includes(anim), anim);
+  assert.ok(
+    steady.every((anim) => likely.includes(anim)),
+    'all of them likely',
+  );
+  assert.ok(steady.length < likely.length / 2, 'and few: no blow, guard, roll or hurt');
+  assert.equal(new Set(steady).size, steady.length);
 });

@@ -50,11 +50,12 @@ jobs:
           # (tools/numbered.json), the content they read, the toolchain, the locks and the scripts that deploy, and this
           # workflow.
           ROOMS_CODE: >-
-            crates/bake crates/city crates/combat crates/foes crates/gear crates/isle crates/land crates/layout crates/movement
-            crates/naval crates/navmesh crates/protocol crates/reach crates/room crates/room-wasm crates/sailing crates/sky
-            crates/world server tools/schema.mjs tools/numbered.json content/world content/islands/kits.json
-            content/testground content/gear content/arts content/modules content/ships/ships.json
-            client/src/game/worldData.ts client/src/game/nodes.ts client/src/ruinedName.ts
+            crates/bake crates/city crates/combat crates/dungeon crates/foes crates/gear crates/isle crates/land
+            crates/layout crates/movement crates/naval crates/navmesh crates/protocol crates/reach crates/room
+            crates/room-wasm crates/sailing crates/sky crates/world server tools/schema.mjs tools/numbered.json
+            content/world content/islands/kits.json content/testground content/gear content/arts content/modules
+            content/dungeon content/quests content/story/cast.json content/ships/ships.json client/src/game/worldData.ts
+            client/src/game/nodes.ts client/src/ruinedName.ts client/src/player/binds.ts
             Cargo.toml Cargo.lock rust-toolchain.toml package.json package-lock.json .github/workflows/rooms.yml
         run: |
           repo="${{ github.repository }}"

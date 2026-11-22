@@ -1,6 +1,7 @@
 use super::*;
 use crate::gear_door::{NodeCounter, counter_of};
 use combat::Fighter;
+use combat::sight::apart;
 use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};
 use protocol::wire::overlook::wire as messages;
 use room::sea::Ship;
@@ -345,6 +346,10 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     patrol["continent"] = json!("continent-1");
     patrol["ring"] = json!([[-400.0, -400.0], [400.0, -400.0], [400.0, 400.0], [-400.0, 400.0]]);
     patrol["bounds"] = json!([-500.0, -500.0, 500.0, 500.0]);
+    // Its layout's twelve resource places, as the bake writes them.
+    let places: Vec<[f64; 2]> =
+        (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect();
+    patrol["resources"] = json!(places);
     assert!(open_node(patrol.to_string().as_bytes()));
     assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
@@ -360,7 +365,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
-    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve spots, four numbers each");
+    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
 }
 
@@ -412,6 +417,120 @@ fn a_browser_predicts_a_fighter_on_a_nodes_ground_as_its_room_steps_it() {
     assert_eq!(stepped(), expected, "on the node's window, the same step as its room's");
     let land = movement::Terrain::height_at(&floor, expected.body.x, expected.body.y);
     assert!(land > 1.0 && (expected.body.z - land).abs() < 1e-6, "walking on the land, well above 0 m");
+}
+
+#[test]
+fn a_patrols_dungeon_opens_from_its_node_file_with_its_cache_shut_and_a_player_at_its_way_in() {
+    let patrol = node_file().to_string();
+    let mut mission = node_file();
+    mission["kind"] = json!("mission");
+    assert!(!open_dungeon(mission.to_string().as_bytes(), 0), "a mission has no dungeons");
+    assert!(!open_dungeon(patrol.as_bytes(), 3), "a patrol has three");
+    assert!(!open_dungeon(b"not a node", 0));
+    for number in 0..3 {
+        assert!(open_dungeon(patrol.as_bytes(), number));
+        let player = room_join();
+        room_tick();
+        let bytes = snapshot(player);
+        let message = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        let cache: Vec<f64> = message.cache().expect("a dungeon's cache").iter().collect();
+        assert_eq!((cache.len(), cache[4]), (5, 0.0), "shut while the Reeve stands");
+        let (seed, style) = dungeon::of_patrol("glade", number);
+        let ([x, y], _) = dungeon::Dungeon::forge(seed, style).arrival();
+        let body = players_in(&bytes).into_iter().find(|(id, ..)| *id == player).expect("in").2;
+        assert_eq!([body.x, body.y], [x, y], "at the way in");
+        assert_eq!(dungeon_door::room_join_at(0), 0, "a dungeon has no entrances");
+    }
+    let mut locked = node_file();
+    locked["locked"] = json!(true);
+    assert!(open_dungeon(locked.to_string().as_bytes(), 0));
+    assert_eq!(room_join(), 0, "a locked patrol's dungeon takes no player");
+    assert_eq!(refusal().as_deref(), Some("The Glade is locked"));
+    assert!(open_node(locked.to_string().as_bytes()));
+    assert_eq!(dungeon_door::room_join_at(0), 0, "nor does its entrance");
+}
+
+#[test]
+fn a_patrols_room_is_joined_before_an_entrance_and_sends_its_entrances() {
+    let mut patrol = node_file();
+    patrol["continent"] = json!("continent-1");
+    patrol["ring"] = json!([[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]]);
+    patrol["bounds"] = json!([-900.0, -900.0, 900.0, 900.0]);
+    assert!(open_node(patrol.to_string().as_bytes()));
+    let player = dungeon_door::room_join_at(1);
+    assert_ne!(player, 0);
+    assert_eq!(dungeon_door::room_join_at(3), 0, "no such entrance");
+    room_tick();
+    let sent = gear(player);
+    let entrances: Vec<f64> =
+        messages::root_as_from_room(&sent).unwrap().gear().unwrap().dungeons().expect("its entrances").iter().collect();
+    assert_eq!(entrances.len(), 15, "three entrances, five numbers each");
+    let body = players_in(&snapshot(player)).into_iter().find(|(id, ..)| *id == player).expect("in").2;
+    assert!(apart([body.x, body.y], [entrances[5], entrances[6]]) < 15.0, "by the second entrance: {body:?}");
+    let mut mission = node_file();
+    mission["kind"] = json!("mission");
+    assert!(open_node(mission.to_string().as_bytes()));
+    assert_eq!(dungeon_door::room_join_at(0), 0, "a mission has no entrances");
+}
+
+#[test]
+fn a_node_says_why_its_gate_shuts_to_a_kept_character_or_a_new_one() {
+    assert!(open_node(node_file().to_string().as_bytes()));
+    assert!(set_difficulty(1));
+    assert_eq!(shut(0, b""), "This place opens after the prologue.");
+    let mut past = gear::Character::starting();
+    past.story.prologue = true;
+    assert_eq!(shut(0, past.to_json().as_bytes()), "Elite seas open at level 10.");
+    assert_eq!(shut(0, b"not a character"), "", "left for the restore to refuse");
+    let mut social = node_file();
+    social["kind"] = json!("social");
+    assert!(open_node(social.to_string().as_bytes()));
+    assert_eq!(shut(0, b""), "");
+}
+
+#[test]
+fn an_elite_dungeon_is_laid_for_a_browser_by_its_place_and_its_node_sends_its_one_entrance() {
+    let ask = br#"{"place":"krakens-grotto","name":"Kraken's Grotto"}"#;
+    let laid: Value = serde_json::from_str(&dungeon_door::dungeon_json(ask)).unwrap();
+    assert_eq!((laid["name"].as_str(), laid["style"].as_str()), (Some("Kraken's Grotto"), Some("caverns")));
+    let (seed, style) = room::elite_laid("krakens-grotto").unwrap();
+    let native = dungeon::Dungeon::forge_within(seed, style, dungeon::ELITE_BLOCKS);
+    assert_eq!(
+        (laid["columns"].as_u64(), laid["rows"].as_u64()),
+        (Some(native.columns as u64), Some(native.rows as u64))
+    );
+    assert_eq!(dungeon_door::dungeon_json(br#"{"place":"saltgrass-downs","name":"x"}"#), "null");
+    assert!(fighter_door::set_dungeon(ask));
+    let mut node = node_file();
+    node["id"] = json!("krakens-grotto");
+    node["kind"] = json!("dungeon");
+    node["continent"] = json!("continent-1");
+    node["ring"] = json!([[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]]);
+    node["bounds"] = json!([-900.0, -900.0, 900.0, 900.0]);
+    assert!(open_node(node.to_string().as_bytes()));
+    let player = dungeon_door::room_join_at(0);
+    assert_ne!(player, 0);
+    assert_eq!(dungeon_door::room_join_at(1), 0, "one entrance");
+}
+
+#[test]
+fn a_social_space_with_the_bounty_board_serves_its_asks_at_its_counter_and_one_without_has_none() {
+    let boards = || {
+        with_open(|opened| match opened {
+            Opened::Land { room, .. } => {
+                room.counters.iter().flatten().filter(|counter| counter.kind == CounterKind::Board).count()
+            }
+            Opened::Sea(_) | Opened::Fleet(_) => 0,
+        })
+    };
+    let mut social = node_file();
+    social["kind"] = json!("social");
+    social["board"] = json!([5.0, 0.0]);
+    assert!(open_node(social.to_string().as_bytes()));
+    assert_eq!(boards(), Some(1));
+    social.as_object_mut().expect("an object").remove("board");
+    assert!(open_node(social.to_string().as_bytes()), "every other city's file, which holds no board");
+    assert_eq!(boards(), Some(0));
 }
 
 #[test]
@@ -523,13 +642,45 @@ fn at_sea_a_players_gear_is_sent_from_the_character_the_sea_keeps_once_it_change
     assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
     room_tick();
     assert!(gear_door::gear(player).is_empty(), "no character held yet");
+    // A Friday's 09:00 UTC, the sea's minute: a bounty held that day is counted on it.
+    let minute = 20_778 * 1_440 + 540;
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            sea.minute = minute;
+        }
+    });
     let mut character = gear::Character::starting();
     character.materials.add_aurem(777);
+    character.activity.today.day = gear::clock::day_of(minute);
+    character.activity.today.bounties.insert(2, 1);
     assert!(gear_door::restore_character(player, character.to_json().as_bytes()));
     let bytes = gear_door::gear(player);
     let gear = messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear");
     assert_eq!(gear.aurem(), character.materials.aurem, "the character given back");
+    assert_eq!(u64::from(gear.day()), gear::clock::day_of(minute), "the sea's day");
+    let held = gear.bounties().expect("the board").get(2);
+    assert_eq!((held.held(), held.count()), (true, 1), "the bounty counted at sea, today's");
     assert!(gear_door::gear(player).is_empty(), "sent once until it changes again");
+}
+
+#[test]
+fn at_sea_each_sailors_gear_carries_their_own_characters_story_alone() {
+    small_sea();
+    let (done, new) = (room_join(), room_join());
+    for player in [done, new] {
+        assert_eq!(input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), TAKEN);
+    }
+    room_tick();
+    let mut past = gear::Character::starting();
+    past.story.prologue = true;
+    assert!(gear_door::restore_character(done, past.to_json().as_bytes()));
+    assert!(gear_door::restore_character(new, gear::Character::starting().to_json().as_bytes()));
+    let prologue = |player| {
+        let bytes = gear_door::gear(player);
+        messages::root_as_from_room(&bytes).unwrap().gear().expect("their gear").prologue_done()
+    };
+    // Written one after the other, as the sea writes each sailor's.
+    assert_eq!((prologue(done), prologue(new)), (true, false), "one's prologue is not another's");
 }
 
 #[test]
@@ -555,4 +706,58 @@ fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_t
     assert_eq!(seen_at_sea(one), (vec![one, near], vec![1]));
     assert_eq!(seen_at_sea(near), (vec![one, near], vec![2]), "40 km off, within the page's farthest view");
     assert_eq!(seen_at_sea(far), (vec![far], vec![]), "250 km off, they see no one");
+}
+
+#[test]
+fn each_player_at_sea_is_sent_only_those_walking_the_decks_of_the_ships_they_are_sent() {
+    small_sea();
+    let (one, near, far) = (room_join(), room_join(), room_join());
+    for (player, at) in [(one, [50_000.0, 50_000.0]), (near, [50_000.0, 90_000.0]), (far, [300_000.0, 50_000.0])] {
+        assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
+    }
+    room_tick();
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            for player in [one, near, far] {
+                assert_eq!(sea.leave_helm(player), Ok(()));
+            }
+        }
+    });
+    room_tick();
+    snapshot_door::prepare();
+    let walking = |player: PlayerId| {
+        let bytes = snapshot_door::snapshot_for(player);
+        let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        snapshot.players().map_or(Vec::new(), |seen| seen.iter().map(|each| each.player()).collect::<Vec<_>>())
+    };
+    assert_eq!(walking(one), vec![one, near]);
+    assert_eq!(walking(far), vec![far], "250 km off, no one else's deck");
+}
+
+#[test]
+fn the_sea_says_why_its_tier_shuts_to_a_kept_character_or_a_new_one() {
+    small_sea();
+    assert_eq!(shut(0, b""), "", "the Normal sea is open to anyone");
+    assert!(set_difficulty(2));
+    assert_eq!(shut(0, b""), "Abyss seas open at level 20.");
+    let mut seasoned = gear::Character::starting();
+    seasoned.xp = gear::power::xp_for_level(20);
+    assert_eq!(shut(0, seasoned.to_json().as_bytes()), "", "a character of level 20 sails it");
+}
+
+#[test]
+fn a_leaving_players_vestige_still_lying_is_in_their_character_before_the_room_lets_them_go() {
+    assert!(open(&bytes_of(&[0.0, 0.0])));
+    let player = room_join();
+    let vestige = gear::Vestige::new(0, gear::Rarity::Rare, gear::Slot::Legs, 5);
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.lay_drop(player, room::Dropped::Vestige(vestige), [3.0, 0.0, 0.0]),
+        Opened::Sea(_) | Opened::Fleet(_) => unreachable!("a course is on land"),
+    });
+    gear_door::room_mail_lying(player);
+    let kept = String::from_utf8(gear_door::character(player)).expect("text");
+    let character = gear::Character::from_json(&kept).expect("a character");
+    assert_eq!(character.mail.len(), 1, "read for the last save with the Vestige in the mail");
+    assert_eq!(character.mail[0].vestige.as_ref().map(|kept| kept.rarity), Some(gear::Rarity::Rare));
+    room_leave(player);
 }

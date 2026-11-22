@@ -84,9 +84,33 @@ fn is_entry_point(target: &str) -> bool {
     ENTRY_POINTS.iter().any(|entry| named == *entry || entry.strip_suffix(".ts") == Some(named))
 }
 
-/// Node's modules: the game runs in the browser, so only tests and build config may reach them.
-const NODE_MODULES: [&str; 12] =
-    ["fs", "path", "os", "child_process", "crypto", "url", "util", "stream", "http", "https", "net", "worker_threads"];
+/// Node's modules, by the name before any subpath (`fs/promises` is `fs`'s): the game runs in the browser, so only
+/// tests and build config may reach them. Names npm's browser stand-ins share (`buffer`, `events`) are left to `node:`.
+const NODE_MODULES: [&str; 23] = [
+    "fs",
+    "path",
+    "os",
+    "child_process",
+    "crypto",
+    "url",
+    "util",
+    "stream",
+    "http",
+    "https",
+    "http2",
+    "net",
+    "worker_threads",
+    "zlib",
+    "dns",
+    "tls",
+    "dgram",
+    "cluster",
+    "readline",
+    "vm",
+    "v8",
+    "perf_hooks",
+    "async_hooks",
+];
 
 /// What a client file may not use, whatever its layer: Overlook draws with WebGPU only. Any lowercase `webgl` on a
 /// line catches every context name, `experimental-webgl` included, in any quote.
@@ -153,7 +177,8 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
         }
         for (specifier, line) in imports_of(text) {
             let bare = specifier.strip_prefix("node:").unwrap_or(&specifier);
-            let is_node = specifier.starts_with("node:") || NODE_MODULES.contains(&bare);
+            let module = bare.split('/').next().unwrap_or(bare);
+            let is_node = specifier.starts_with("node:") || NODE_MODULES.contains(&module);
             if is_node && !is_test {
                 let message = format!("client code runs in the browser: \"{specifier}\" is Node's");
                 problems.push(Problem::new("layers", path, Some(line), message));
@@ -289,6 +314,11 @@ mod tests {
     #[test]
     fn node_modules_belong_to_tests_only() {
         assert_eq!(run("client/src/main.ts", "import fs from 'node:fs';\n").len(), 1);
+        for named in ["fs/promises", "node:fs/promises", "zlib", "path/posix"] {
+            let text = format!("import x from '{named}';\n");
+            assert_eq!(run("client/src/game/a.mjs", &text).len(), 1, "{named}");
+        }
+        assert!(run("client/src/game/a.ts", "import x from 'flatbuffers/js/builder';\n").is_empty());
         assert_eq!(run("client/src/main.ts", "import path from 'path';\n").len(), 1);
         assert!(run("client/src/main.test.ts", "import { test } from 'node:test';\n").is_empty());
     }

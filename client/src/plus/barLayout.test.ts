@@ -101,6 +101,16 @@ test('a plate over a figure high on the screen, or lifted over another, stands u
   assertApart(high, new BarLayout().lay(high, Infinity));
 });
 
+test('a plate sent under another by the compass comes to rest, whatever pixel the other stands on', () => {
+  // A foot where (foot + GAP + height) - height rounds short of foot + GAP: the push under the nearer plate ends here too.
+  const foot = 102.39246158445737;
+  assert.ok(foot + 2 + 26 - 26 < foot + 2, 'the rounding the push must not be caught by');
+  const high = [bar(1, 400, 10, foot), bar(2, 400, 20, foot + 1)];
+  const laid = new BarLayout().lay(high, Infinity);
+  for (const [, top] of boxes(high, laid)) assert.ok(top >= UNDER_COMPASS, `a plate's top at ${top} px`);
+  assertApart(high, laid);
+});
+
 test("while the sea fight's card stands under the compass, a plate high on the screen stands under the card", () => {
   const high = [bar(1, 400, 10, 40), bar(2, 410, 20, 60)];
   const layout = new BarLayout();

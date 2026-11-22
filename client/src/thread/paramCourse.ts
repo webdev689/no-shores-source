@@ -70,13 +70,17 @@ export class ParamCourse {
   private forget(now: number): void {
     const past = this.changes.filter((change) => change.time <= now);
     const last = past.at(-1);
-    // An easing toward a target keeps going after its start, so it is kept until a later change holds.
-    if (!last || last.kind === 'target' || past.length < 2) return;
+    if (!last || past.length < 2) return;
+    const coming = this.changes.filter((change) => change.time > now);
+    // An easing toward a target keeps going after its start, so it is kept, and all before it is where it starts
+    // from: a parameter eased every frame otherwise keeps every frame's change.
+    if (last.kind === 'target') {
+      this.start = this.valueAt(last.time);
+      this.changes = [{ kind: 'set', time: last.time, value: this.start }, last, ...coming];
+      return;
+    }
     this.start = this.valueAt(now);
-    this.changes = [
-      { kind: 'set', time: now, value: this.start },
-      ...this.changes.filter((change) => change.time > now),
-    ];
+    this.changes = [{ kind: 'set', time: now, value: this.start }, ...coming];
   }
 }
 

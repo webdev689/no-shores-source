@@ -1,4 +1,5 @@
 import ships from '../../../content/ships/ships.json' with { type: 'json' };
+import { contentBytes } from '../contentCache.ts';
 import type { SailCorners } from './sails.ts';
 
 /** Bytes a vertex: its position (3 × float32, metres), normal (4 × snorm8), UV (2 × float32, metres) and part (4 ×
@@ -83,7 +84,5 @@ export function shipWaterline(name: string): Waterline {
 export async function loadShip(name: string): Promise<ShipMesh> {
   const entry = (ships.ships as Readonly<Record<string, { readonly mesh: string }>>)[name];
   if (!entry) throw new Error(`no ship is published as "${name}"`);
-  const answer = await fetch(ships.base + entry.mesh);
-  if (!answer.ok) throw new Error(`the ${name}'s mesh did not come (${answer.status})`);
-  return readShipMesh(await answer.arrayBuffer());
+  return readShipMesh((await contentBytes(ships.base + entry.mesh)).bytes);
 }

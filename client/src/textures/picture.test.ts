@@ -41,10 +41,10 @@ function changed(from: Picture, to: Picture): { share: number; lift: number } {
   return { share: n / (from.rgba.length / 4), lift: n ? lift / n : 0 };
 }
 
-test('the catalog holds 6,713 records, each with its size and frames', () => {
+test("the catalog holds Daggerfall's 6,713 records and the dressing's 24, each with its size and frames", () => {
   let records = 0;
   for (const archive of catalogArchives()) records += catalogRecords(archive)?.length ?? 0;
-  assert.equal(records, 6713);
+  assert.equal(records, 6713 + 24);
   assert.deepEqual(pictureSize(302, 0), { width: 64, height: 64, frames: 1 });
   assert.deepEqual(pictureSize(87, 0), { width: 64, height: 40, frames: 4 });
   assert.equal(pictureSize(99999, 0), null);

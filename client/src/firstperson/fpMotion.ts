@@ -82,6 +82,44 @@ export class Bob {
   }
 }
 
+/** The weapon's sway in design pixels: how far it lags a radian a second of turning or tilting, at most, and how
+ *  quickly it catches up (a time constant, seconds); and how far aside it swings once each two steps, at a walk and at
+ *  a run. */
+const SWAY = { lag: 4, most: 12, ease: 0.1, walk: 2, run: 4 } as const;
+
+/** The weapon's sway as it is held: it lags behind the look as it turns or tilts and settles as the look does, and
+ *  swings aside with the steps, wider at a run, easing out when they stop. */
+export class Sway {
+  private x = 0;
+  private y = 0;
+  private depth = 0;
+  private last: { readonly yaw: number; readonly pitch: number } | null = null;
+
+  /** The sway (design pixels across and down) after `seconds`, the look's bearing rising to the right and its tilt
+   *  down (`look`, null while nothing sways), at `stride` metres walked. */
+  step(
+    seconds: number,
+    look: { readonly yaw: number; readonly pitch: number } | null,
+    stride: number,
+    moving: boolean,
+    running: boolean,
+  ): readonly [number, number] {
+    const time = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
+    const was = this.last;
+    this.last = look;
+    const rate = (now: number, then: number) =>
+      time > 0 ? Math.atan2(Math.sin(now - then), Math.cos(now - then)) / time : 0;
+    const [turn, tilt] = look && was ? [rate(look.yaw, was.yaw), rate(look.pitch, was.pitch)] : [0, 0];
+    const lag = (speed: number) => Math.max(-SWAY.most, Math.min(SWAY.most, -speed * SWAY.lag));
+    const ease = 1 - Math.exp(-time / SWAY.ease);
+    this.x += (lag(turn) - this.x) * ease;
+    this.y += (lag(tilt) - this.y) * ease;
+    const target = !look || !moving ? 0 : running ? SWAY.run : SWAY.walk;
+    this.depth += (target - this.depth) * (1 - Math.exp(-time / BOB_EASE));
+    return [this.x + this.depth * Math.sin((Math.PI * stride) / STEP_M), this.y];
+  }
+}
+
 /** How quickly the weapon goes down for a climb and comes back after, in seconds a time constant, and how far down it
  *  is out of sight. */
 const LOWER_DOWN = 0.07;

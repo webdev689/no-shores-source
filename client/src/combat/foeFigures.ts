@@ -282,6 +282,7 @@ export class FoeFigures {
           ...(own && { crystal: true }),
         });
     }
+    for (const [id, placed] of this.figures) if (!fight.foes.has(id)) forge.forget(placed.id);
     const keptBy = [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over, this.lattice];
     for (const kept of [...keptBy, this.changes, this.dying])
       for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);

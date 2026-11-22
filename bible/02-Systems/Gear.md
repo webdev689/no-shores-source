@@ -8,7 +8,6 @@ code:
   - crates/gear/src/cosmetics.rs#sold_on
   - crates/gear/src/shape.rs#present
   - crates/gear/src/shape.rs#wares
-  - crates/gear/src/shape.rs#found
   - content/gear/cosmetics.json
   - crates/gear/src/shown.rs#Shown
   - crates/room/src/asks.rs#counter_for
@@ -32,9 +31,15 @@ code:
   - crates/gear/src/character.rs#has_drawn_trait
   - crates/gear/src/asks.rs#Ask
   - crates/gear/src/vestige.rs#dropped
+  - crates/room/src/dungeon_room.rs#keep_cache
   - crates/gear/src/vestige.rs#opens_to
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
+  - crates/gear/src/rewards.rs#loot_kill
+  - crates/gear/src/rewards.rs#keep_found
+  - crates/gear/src/rewards.rs#Clear
+  - crates/gear/src/vestige.rs#found_items
+  - crates/room/src/clears.rs#pay_garrison_clear
   - crates/gear/src/catalogue.rs#catalogue
   - crates/gear/src/world.rs#island_levels
   - crates/gear/src/vendor.rs#wares
@@ -46,6 +51,11 @@ code:
   - crates/room/src/power.rs#empower
   - crates/room/src/power.rs#pay_kill
   - crates/room/src/drops.rs#drop_spoils
+  - client/src/combat/drops.ts#motionAt
+  - client/src/combat/vestigeCrystal.ts#crystalFrame
+  - crates/room/src/drops.rs#mail_lying
+  - crates/gear/src/mail.rs#Letter
+  - crates/gear/src/mail.rs#carry_or_post
   - crates/gear/src/ammo.rs#capacity
   - crates/gear/src/ammo.rs#box_chance
   - crates/room/src/asks.rs#answer
@@ -72,12 +82,19 @@ number is one of [[Gear as Claude Shapes It]].
   browser agree. Its content is authored in `content/gear/` and built into it: the traits, the named items, the
   islands' resources and rolled items' names. The catalogue is checked whole by a test: every trait a named item
   offers exists, sits in the right kind of column and fits the item; no item offers a trait twice; each signature
-  belongs to one Atheric; every kind of loadout has a Legendary; every slot has a Legendary and an Atheric a Vestige
+  and each intrinsic belongs to one Atheric, and every Atheric weapon has an intrinsic; every kind of loadout has a Legendary; every slot has a Legendary and an Atheric a Vestige
   can open to; every rolled pool holds enough traits.
 - **An item** is a kind (a Melee or a Ranged loadout, four armour pieces, the cloak, or one of a ship's four modules,
   [[Ship Power]]), a rarity, a level (1 to 20; a
-  Legendary or Atheric is 20), its XP and the nodes bought and chosen. A named item copies its traits from the
-  catalogue when it is made, so it stays what it was.
+  Legendary or Atheric is 20), its XP and the nodes bought and chosen. A named item follows its catalogue entry: in
+  a kept one's column whose traits changed, a node bought moves with its perk to where the perk stands now, else to the
+  perk it merged into, else stays where it was if a plain perk stands there (a reworked one, as an Atheric's own);
+  one where only a perk that gives and takes stands, or a place another took, is given back for what it cost, so no
+  cost is pressed on a player who never chose it. Each choice follows its node. A rolled one offering a trait the
+  catalogue no longer holds, or holds in another column (Double Shotted, a perk become a finish), offers in its place
+  the perk it merged into where that fits it, else the first plain perk of its column's pool it lacks, bought and
+  chosen as it was; with none left but perks that give and take, the first of those, its node given back
+  (`old_hands::unfit`). A named item of another rarity than its entry keeps its traits and takes no intrinsic.
 - **Where it is worn.** Each kind in its one slot: a Melee loadout for Melee, a Ranged one for Ranged, each armour
   piece and the cloak its own ("Loadouts", below). A player wears an item only at its level or above, and one Atheric
   in the loadouts and one in the armour at a time.
@@ -88,7 +105,13 @@ number is one of [[Gear as Claude Shapes It]].
   Aurem, and more as the rarity rises: a Magic's upgrades a fragment, a Rare's nodes one and its upgrades three; a
   Legendary's or Atheric's handling, finish and perks 2 fragments and 5 of its island's resource, a weapon's upgrades
   before its last three 5 fragments and 10 of the resource, and its last three upgrades (every upgrade of an armour
-  piece) 6 Essence each; an Atheric's own, 1 Essence ([[Gear as Claude Shapes It]]).
+  piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]). A resource is
+  gathered at its island's nodes, each drawn as the resource itself
+  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
+- **A kill's pay.** XP and Aurem are the foe's kind's as a Major at level 5 (Skirmisher 80 and 7, Archer 85 and 7,
+  Swordsman 95 and 7, Brute 110 and 8, Captain 120 and 8), times its rank's health against a Major's (Minor 0.6,
+  Elite 2.2, Miniboss 4, Boss 7; `rewards::RANK_PAY`), times (5 + its level) ÷ 10, times the voyage's tier. The kinds
+  span less than one rank's step, so a higher rank always pays more, whatever the kinds, at every level and tier.
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
   each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
@@ -100,19 +123,36 @@ number is one of [[Gear as Claude Shapes It]].
   times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
   below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
   arms 0.2625, legs 0.2375.
-- **Vestiges.** A kill may leave a Vestige for each player who struck the foe, seen by them alone: by the foe's
-  chance (a boss's is sure), its colour weighted by the foe (Legendary from level 18, Atheric from 20), for one slot,
-  its item at the foe's level. A player carries ten. Identified in a social space, it opens to a colour at, below or
-  now and then above its own, never above what its level could drop (Legendary from 18, Atheric from 20), and to a
-  named item of its slot (a Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled,
-  never a trait twice.
+- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). A kill may leave a Vestige for each player who
+  struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always;
+  `vestige::chance`), raised by the voyage's tier, a chance past one leaving one sure and another by what is over; its
+  colour weighted by its rank, for one slot, its item at the foe's level. At every rank each colour is half or less of
+  the one below it, and each colour or better likelier the higher the rank (`vestige::colours`, in 1,000: Minor 750,
+  188, 47, 12, 3; Major 716, 204, 58, 17, 5; Elite 670, 223, 74, 25, 8; Miniboss 606, 242, 97, 39, 16; Boss 517, 258,
+  129, 64, 32); a colour too good for the foe's level (Legendary below 18, Atheric below 20) is struck out, the rest
+  keeping their order. A player carries ten. Identified in a social space, it opens to its
+  own colour three times in four, one colour below one time in five and one above one time in twenty (a Normal opens
+  Normal 95 in 100, an Atheric Atheric 80), never above what its level could drop, and to a named item of its slot (a
+  Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled, never a trait twice.
+- **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
+  35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
+  (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
+  slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
+  its colour and slot (`keep_found`).
+- **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
+  once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
+  player still in the room who shared a kill of it since its last clear is paid, at the garrison's highest level as a
+  kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
+  (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
+  Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
+  dungeon's room pays the same clear as its cache opens ([[Dungeons]], "The cache").
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
   a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. A slot read past nine from a kept character
   carries what it holds, and takes no more until it is down to nine. Dismantling returns Aurem, fragments and, from a
-  Legendary or Atheric, Essence with a third of what was spent on it.
+  Legendary (2, or 3 one time in two) or an Atheric (3), Essence, with a third of what was spent on it.
 - **Chance** comes from a hash of the room's seed, its tick, a count of the rolls the room has made, the player and
   what the roll is for. A deployed room's seed is its host's own, random and never sent, so no player can foresee a
   roll; a room in the game's worker keeps one fixed seed, so it gives the same loot for the same play. A kept character is
@@ -129,21 +169,33 @@ number is one of [[Gear as Claude Shapes It]].
 - **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout its
   came from (a shot the Ranged one's, as it was when the shot was loosed; a swing Melee's, or Ranged's while it is
   drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. On top, at every
-  level, a player's blow on a foe strikes twice (`PLAYER_HARM`) and a foe's on a player half (`FOE_HARM`), from
-  [[The Whole Game Gets a Balance Pass]]. A foe of level 0 fights by combat's own numbers and those two alone.
+  level, a player's blow on a foe strikes half again (`PLAYER_HARM`) and a foe's on a player three quarters
+  (`FOE_HARM`), from [[The Whole Game Gets a Balance Pass]] and
+  [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]. A foe of level 0 fights by combat's own
+  numbers and those two alone.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
-  for two minutes ("Drops", below).
+  for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
+  them a quarter more of its XP, rounded down, to them and to the weapon that earned it, and as much more reputation
+  as the kill's own goes ([[Factions]]) (`boon_xp`).
+- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens,
+  and every player then in the dungeon's room finds a Vestige lying before it, theirs alone, whoever struck it: sure,
+  at the end foe's level, in the colours a boss's kill leaves, and lying for them as a kill's drop does ("Drops",
+  below; [[Dungeons]], "In the rooms"). A run's first clear in its period lays a second, further out: the dungeon of
+  the day's, or the week's two's ([[Activities]], "What it pays, once").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the
-  stamina a kill, a parry or a block gives back, with Last Light's reload, and the verbs ("Verbs", below). A player's
+  stamina a kill, a parry or a block gives back, with Last Light's reload, the verbs ("Verbs", below) and the
+  Atherics' own ("Atherics", below). A player's
   perks are the armour's and the drawn loadout's alone: the other loadout's wait until it is drawn, and drawing its
   sends the new trim to them at once. A shot takes the Ranged loadout's, a swing the drawn one's. No weapon's perk
   touches a spell or its kill.
 - **Asks** ride the player's inputs and are answered in turn. A city's social space serves each at its own counter: a
-  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]); the [[Test Ground]]
-  serves them all within reach of its stall. The Test Ground alone hands out gear.
+  Vestige opened at the Mage's, the vault at a vault's, a ware at its vendor's ([[Interface]]), a bounty taken
+  or turned in at the bounty board's (`CounterKind::Board`, [[Activities]]), and a letter taken at the mail's
+  (`CounterKind::Mail`); the [[Test Ground]] serves them all within reach of its stall. The Test Ground alone hands
+  out gear.
 
 ## Loadouts
 
@@ -161,15 +213,21 @@ number is one of [[Gear as Claude Shapes It]].
 - **Drawn.** Melee is drawn first; `1` draws Melee and `2` Ranged ([[Interface]]). The room takes up the arms of
   either worn loadout, and a swap between them holds off blows and shots for 0.4 s.
 - **Perks.** A trait fits `melee`, `ranged`, `weapon` (either loadout), `armour` or `shield`. A shield's block perks
-  fit only the loadouts with a shield: Bulwark is rolled onto no other piece, and Coral Guard is The Reefwall's own. A
-  worn piece gives a trait only where a roll could offer it (`gear::catalogue::trait_fits`). A node bought on a kept
+  fit only the loadouts with a shield: Bulwark is rolled onto no other piece, and Coral Guard is The Reefwall's
+  intrinsic. A worn piece gives a trait only where a roll could offer it (`gear::catalogue::trait_fits`). A node bought on a kept
   piece whose trait does not fit it, such as armour with Bulwark, is given back once as the character is read, for the
   Aurem and materials it cost, and a choice of it cleared (`gear::old_hands::unfit`).
 - **Named pieces.** One Legendary for each kind, in the harbour town's voice: Seawall the Sword & Shield, Tidegate the
   Dagger & Shield, Brinewhisper the Double Daggers, Harbourwarden the Sword, Crosscurrent the Double Swords,
   Beaconstaff, Anchorhead the Mace, The Bollards the Double Mace, Keeper's Watch the Mace & Shield, Wreckbreaker the
   Great Axe, Longshore the Greatsword, Mooring Chain, Breakwater, Stormpetrel, Harpooner, Quarterdeck, Signal Pair the
-  double pistolet and Broadside. The Reefwall is an Atheric Sword & Shield.
+  double pistolet and Broadside. Ten Atherics, one or more for each family ("Atherics", below).
+- **Perks that give and take**, as Destiny 1's rolls traded one strength for another, offered among their column's
+  others and trimmed as any perk is: Heavy Head (Melee handling) strikes 12% harder for a swing 20% dearer; Feather
+  Edge (Melee handling) swings for 25% less stamina and fills a foe's poise 15% less; Overdrawn (Ranged handling) aims
+  20% harder and reloads 20% slower; Hair Trigger (Ranged handling) reloads 25% faster and aims 10% softer; Reckless
+  (finish) strikes 10% harder while blows fill the player's poise 20% more with it drawn; Guarded (finish) the
+  other way, 20% less poise for 5% softer.
 - **A character kept with two hands** is read once into the loadouts (`gear::old_hands`), losing nothing. The main
   hand's piece takes its slot by its kind: a sword, dagger or mace with a shield beside it becomes its "& Shield",
   beside its twin their pair; a lone dagger becomes Double Daggers, an axe a Great Axe. A named weapon takes its named
@@ -196,37 +254,141 @@ player while they are in it (`room::perks`). A blow lands when it strikes, is bl
 - **Either loadout.** Keen Eye (perk) gives Crit for 4 s on a kill. Attuned (finish) makes a blow or shot 10% harder
   while its element is the worn Art's. Spellfeed (finish) takes 3% off both Tenets' cooldowns on a kill. Each counts
   only its own loadout's blows and kills, never a spell's.
-- **The pools.** Each column's pool grows by about half with them: a Melee loadout is offered among 4 handling traits,
-  5 finishes and 8 perks (9 with a shield), a Ranged one among 4, 5 and 6; armour among its 6 perks.
+- **The pools.** With the verbs and the perks that give and take, a Melee loadout is offered among 6 handling traits,
+  7 finishes and 8 perks (9 with a shield), a Ranged one among 6, 7 and 6; armour among its 6 perks.
+
+## Atherics
+
+[[Atheric Gear Plays Like Destiny's Exotics, and Every Model Is Worn]], in [[The Perk Pass as Claude Shapes It]]'s
+shape.
+
+- **Two perks of its own.** An Atheric weapon has an intrinsic, on whenever it is worn, and its own node, bought for 1,000
+  Aurem and 1 Essence in the column the Atheric has for it. Its other columns offer what a Legendary's do. Its page shows the
+  intrinsic at its head, apart from the nodes ([[Interface]]).
+- **The ten.**
+  - Gullwing, a bow. Storm Gull: an aimed shot (one loosed from the draw, which strikes harder than a quick one) that
+    lands leaps as lightning to up to 3 more foes, each the nearest within 8 m of the foe struck before it that none
+    has struck, each for half the shot in Volt; a dodged leap still leaps on. Squall Line: each foe a leap lands on is
+    Charged.
+  - The Drowned Oath, a sword. Undertow: blows on a foe below half its health strike 30% harder. Pulled Under: a kill
+    strikes the foes within 4 m of the slain for a third of the blow, in Cosmic, and Exposes each it lands on.
+  - Lanternfall, a thunderlock. Last Light: a kill reloads it at once and gives back 25 stamina. Lantern's Wake: a
+    kill bursts in Blaze, half the shot on the foes within 4 m of the slain.
+  - The Last Bell, a warhammer. Tolling: a foe it staggers by poise stays staggered half again as long. Knell: a blow
+    that staggers a foe by poise strikes the foes within 5 m of it for a quarter of the blow, in Volt.
+  - The Reefwall, a Sword & Shield. Coral Guard: a blow it blocks gives back 15 stamina and bites its striker for a
+    fifth of the blow. Riptide: a riposte strikes 50% harder and Exposes its foe.
+  - Saltfang, Double Daggers. Thousand Cuts: each swing in a row landed on one foe strikes 10% harder than the last,
+    to 50%, its row counted as Exposing Strikes' is ("Verbs"). Bleed the Tide: a kill gives Haste for 4 s.
+  - Widow's Walk, a crossbow. Vigil: a shot that covered 20 m or more to its foe is a crit. Long Wait: a kill gives
+    Veiled for 3 s.
+  - Brass Chorus, a double pistolet. Call and Answer: every second shot to land strikes 40% harder; one that does not
+    land counts for nothing. Encore: a kill gives back two shots.
+  - Deepwatch, a staff. Conduit: each blow of it that lands takes 2% off both Tenets' cooldowns. Undercurrent: a kill
+    gives Linked for 3 s.
+  - The Ninth Wave, a greatsword. Swell: each kill makes its blows strike 10% harder for 10 s, to 50%; a kill starts
+    the time again, and one after it has run out starts the count again. The Ninth: every ninth swing to land (a sweep
+    counts once) strikes the foes within 4 m of the foe struck for half the blow, in Volt.
+- **Leaps, bursts and bites** are the player's blows, made with the Attack of the loadout the Atheric is worn in
+  against each foe's level, from the blow they came from, and judged as a spell's are: never parried or guarded, a
+  dodge passes one whole, a foe's shield takes it by its element. A leap or a burst carries its perk's element, a
+  bite the weapon's. Each rides a spell's blow with a number no spell has (`room::atheric::CHAIN`), so it sets off no
+  perk of the weapon's: nothing chains from it, and it leaves its striker's soft lock alone. A burst passes by the
+  foes its own sweep strikes, so one blow strikes a foe once. Its kill charges the Anima as any kill does, counts for
+  the worn Art by the element it carries (Recharge, Zeal, Dread: [[Arts]]), and pays and shares as a kill of that
+  loadout's; the Crit status crits it as it does any blow.
+- **Where they play.** What a trim can hold is in the trim, which the browser predicts: Undertow, Last Light, Tolling,
+  Coral Guard's stamina and Riptide's 50%. The rest is the room's alone, as the verbs are (`room::atheric`); what it
+  counts (Call and Answer's shot, Swell's kills and their time, The Ninth's swings, and the rows Thousand Cuts shares
+  with Exposing Strikes) is kept for each player while they are in the room.
+- **Told and drawn.** The room tells each leap, burst and bite as a blow of its own kind, a leap's and a burst's with
+  the foe it came from ([[Combat]], "Weighing a blow"). The browser draws a leap as a bolt in its element from the one
+  foe's chest to the other's, a burst as a ring round the foe it came from, an impact on each foe either lands on,
+  and a bite as a blow's flash on the foe bitten; each says its damage as a blow does.
 
 ## Drops
 
 [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]], in [[Arts and Loadouts as Claude Shapes Them]]'s shape, after
 DFO's spoils ([[Pick - Loot Drops]]).
 
-- **What drops.** For each player who earned a kill: their Vestige, if one dropped; an Ammo box by the foe's rank
-  (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
-  Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
-- **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
-  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, what
-  they have no room for lost with it (`room::flotsam`).
+- **What drops.** For each player who earned a kill: their Vestiges, if any dropped (by its rank, "Vestiges" above);
+  an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
+  and from a Miniboss or a Boss an Ammo crate, straight into their crates while they carry fewer than five, else
+  lying with the rest (`room::drops`).
+- **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: a
+  ship drops as one foe of its rank and level does, its Vestige, Ammo box and crate in the first piece laid for each
+  player, and a boarded hold as one foe a rank higher, items from a Miniboss or a Boss kept as on land; every piece
+  holds the ship's salvage ([[Ship Power]]). A kill on a boarded deck leaves no Vestige or item: the hold is the
+  boarding's loot. Each piece is kept for its player, gathered by their ship within 25 m, what they have no room for
+  lost with it, but a Vestige they have no room for sent to the mail (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
-  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once its
-  rests.
+  section's ring, so a piece never rests out of its player's reach. A piece is taken only once it has had time to
+  settle, the longest it can bounce: a Vestige 94 ticks (about 1.6 s) after it is thrown, ammunition 60 (1 s).
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
-  the room sends the player's gear again without it, so their page stops showing it.
+  the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
+  to the mail. A Vestige still lying as its player leaves the room goes there too ("The mail").
 - **Ammo full.** A box walked onto at full ammunition stays where it lies. The share kept is the character's own, worn
   Ranged weapon or not: one with only Melee worn and a full share leaves the box, and one whose share is short takes it.
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
   says "Ammo full" on the player, once each time they step within reach of such a box at rest, never again while they
   stand there ([[Interface]], "A blow's words"; `DropsShown`).
-- **Seen.** Each piece arcs out of the body and bounces twice to rest, then stands upright as its own picture, the
-  Vestige glyph in its rarity's colours, an Ammo box or an Ammo crate. A thin line rises from its top as it rests:
-  Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs
-  it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it comes to rest ([[Interface]]).
+- **Seen** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
+  [[Pick - project-final Drops]]). Each piece pops up out of the body, falls, and bounces until it lands slower than it
+  settles, coming down on the room's spot; one thrown up to a spot over the body pops at least high enough to land
+  there. Settled, it rises to hover, bobbing and turning:
+
+  | | A Vestige | Ammunition |
+  |---|---|---|
+  | Leaves the body, its middle over the feet | 1.15 m | 1.01 m |
+  | Pops up at | 4.4 to 5.4 m/s | 2.8 to 3.4 m/s |
+  | Falls under | 16 m/s² | 16 m/s² |
+  | Keeps of each bounce's speed, and of its way along the ground | 0.4, 0.55 | 0.3, 0.55 |
+  | Settles once it lands slower than | 1.1 m/s | 1.6 m/s |
+  | Its middle over the ground bouncing, then hovering | 0.23 m, then 0.42 m | 0.31 m, then 0.5 m |
+  | Rises to hover over | 0.35 s | 0.28 s |
+  | Bobs | 5 cm | 6 cm |
+  | Turns in the air, then at rest | 7, then 2.4 radians a second | 5, then 2.4 radians a second |
+  | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m | its Blender model, 12 frames of 0.038 m a pixel |
+
+  The heights keep every frame's lowest pixel over the ground. A Vestige's crystal is a faceted gem crusted with
+  shards, in its rarity's white, green, yellow, red or cyan blue, each frame baked as its turn first reaches it,
+  cel-shaded in five bands, its outline darkened and a halo of its glow round it, added light. An Ammo box or crate is
+  its model ([[Item Pictures]]). A thin line rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m,
+  Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs it, a Legendary's and an Atheric's
+  pulse, and a Rare or finer chimes as it settles ([[Interface]]).
+
+## The mail
+
+[[A Mail Vendor Keeps Lost Items and the Game's Mail]], in [[Factions and Vendors as Claude Shapes Them]]'s shape
+("The mail"), after Destiny's Postmaster.
+
+- **Letters.** Each character keeps a mailbox (`Character.mail`, `gear::mail`): letters only the game writes, oldest
+  first, each its number, which no item, Vestige or officer of theirs shares, where what it holds came from (a
+  `mail::Source`, kept as its number, which the page words), whether it tells of a letter a full mailbox let go, and
+  what it holds, a Vestige or an item, or neither. A letter keeps any key a later build wrote on it, as items and
+  Vestiges do; taken, one holding such a key gives what this build knows of it and stays, so a rollback loses nothing.
+- **What goes there.** What a player owned and would lose: a Vestige drop that lay its two minutes out, or still lay
+  as they left the room ("Drops"); a first clear's Vestige while the carried ten and the vault were full
+  ([[Activities]], "Where it is paid"); a Vestige in flotsam gathered while the ten were full; a module salvaged while
+  its slot carried nine ([[Ship Power]]). Each letter says in plain words where its piece came from. Ammo boxes, Ammo crates and materials
+  past their most are not items, and stay as they were.
+- **Fifty letters.** A mailbox keeps 50 (`MAIL_MOST`). One more lets go the letter holding the least (by rarity, a
+  letter holding what this build does not know above all), the oldest of those and the new one among them, and the
+  newest letter kept says so: the new one, or the one before it when the new one held the least and went. So nothing
+  leaves the mail unsaid. A post makes room for its own letter only, so a mailbox a later build kept fuller loses no
+  more than one letter a post. 50 is more than the carried ten and the vault's twenty Vestiges together, and keeps a
+  save far under what the [[Accounts]] keep.
+- **Taking.** At the mail counter in Overlook's plaza only ([[Interface]], "The social space's counters"), free: 71
+  takes one letter by its number in `item`, its Vestige into the carried ten or its item into its slot's nine, each
+  numbered anew; refused while there is no room ("You already carry ten Vestiges.", "That slot already carries
+  nine."), and a letter not there is refused as "There is no such letter." 72 takes every letter there is room for,
+  oldest first, leaving the rest, and is refused only when it can take none.
+- **Sent.** The gear message carries the letters, oldest first (`GearLetter`): each its number, its source, whether it
+  tells of a letter a full mailbox let go, and its Vestige or its item with every column of its nodes, as a carried
+  piece's.
 
 ## Ammo
 
@@ -253,24 +415,28 @@ the factions' counters are in [[Factions]].
   Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
   slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only at its smith's counter, and carried with
-  its slot's nine. Legendary and Atheric gear is never sold for Aurem: it is earned, or had from Shape.
+  its slot's nine. The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
+  bought at its counter by rank ([[Factions]]).
 - **The Mage** identifies Vestiges, free.
 - **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
   ("Cosmetics").
+- A day runs from 09:00 UTC to 09:00 UTC (`gear::clock`): the smiths' wares, the Tailor's and the Tack's turn then.
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
-  the week's (`gear::shape`, weeks counted from Monday 00:00 UTC). He sells six pieces for the week, four Legendary
-  and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold from level
-  20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
-  only from kills at Elite and Abyss difficulty: one in 33 kills at Elite, one in 17 at Abyss, and
-  2 or 4 from a Boss or Miniboss; a player holds 200 at most.
+  the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
+  Legendary and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold
+  from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come only from the
+  week's Abyss content ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]): the
+  week's Abyss Dungeon's first clear pays 15 (`gear::clears`, [[Activities]]), and no kill gives any. A player holds
+  200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
-  room steps, playing alone), whose day sets the wares and whose week sets Shape. It
-  sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
+  room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
+  Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
   wares (none twice in a week) with a player's gear while they stand in a social space, sends them again as the
   day turns or Shape comes, goes or moves, and a purchase is an ask like any other: 12 a smith's ware (its place in
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
   "It is not sold here today"), 16 an Ammo crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its
-  place in `node`).
+  place in `node` and the piece shown there, its place in the catalogue's items, in `item`, so a page shown another
+  piece than his week now draws there is told it is not sold here).
 
 ## Emblems
 
@@ -284,9 +450,9 @@ and its art (`gear::emblems`).
   keep wears the starting one.
 - **Where each comes from**: Overlook's own at the start; one at each of levels 5, 10, 15, 20, 25 and 30; deeds
   (a piece fully upgraded, a Vestige opened to a Legendary or an Atheric, a foe's shield broken, a foe slain at Abyss
-  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of twelve,
-  the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks and a
-  piece fully upgraded are earned as they happen.
+  difficulty, a resource gathered); each faction's first rank ([[Factions]]); and the Tailor, who sells six a day of
+  twelve, the same for everyone that day, at 500 Aurem for Magic and 2,500 for Rare, some from a level. Levels, ranks
+  and a piece fully upgraded are earned as they happen.
 - **Asks**: wearing one kept, anywhere; buying one of the day's at the Tailor's counter. A kept character carries what
   others see of it beside it (`shown`): level, Defense, the Melee loadout's Attack (the Ranged one's without one),
   the emblem worn, and each piece worn.
@@ -329,8 +495,9 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
 - **Each island** has a band of foe levels (`gear::world`), rising with the voyage away from Overlook as Destiny 1's
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
 - **The difficulty** a voyage sets out at raises them: Normal as they are, Elite two levels higher, Abyss three,
-  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
-  The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
+  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige,
+  on land, on a boarded deck (whose room takes the sea's tier) and at sea, where a ship's sinking pays its XP and its
+  drop the same way. The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
 - **A garrison's foes** ([[Garrisons Take the Gear Loop's Levels and Shields]], [[Enemies]]) each stand at a level
   drawn evenly from their island's band, from the node's id, raised by the room's difficulty; a Boss's called foes at its
   level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might
@@ -341,18 +508,35 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
 The figure wears its gear (`gearOutfit`), redressed whenever what it wears changes, and the room passes the dress on
 to every other player. Every garment is armour ([[Clothing Is Armour, With a Wardrobe Later]]):
 
-- **Normal and Magic** pieces are clothes: a shirt (Magic, with a tunic or vest over it), breeches, trousers or a
-  skirt, and shoes (Magic, tall boots), dyed in the rarity's plain or brighter dyes. A Magic head or arms piece is
-  leather; a Normal one shows nothing.
-- **Rare and finer** pieces are armour sets of the forge: Rare in chain, steel or iron, Legendary in silver, elven,
-  dwarven or the knights' set, Atheric in daedric, ebony, adamantium or mithril, the first the forge draws for every
-  piece of the slot (the torso's cuirass and pauldrons, the legs' greaves and boots). Daedric's armour and weapons
-  are to give way to the Lattice's own, on hold for now ([[The Lattice's Armour and Weapons Take Daedric's Place]]). A
-  faction's armour is its guild's set instead, in the faction's own colour over any dye ([[Factions]], "Its own
-  colour").
+- **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
+  a Normal head or arms piece shows nothing.
+- **Magic** pieces are light armour or clothes by the item's own number (its name while it has none, a smith's ware
+  before it is bought): the head and arms leather or the thieves' set, the torso and legs clothes (a shirt with a tunic
+  or vest over it, breeches, trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the thieves'
+  set.
+- **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece climbs the sets' ladder (leather, the
+  thieves', chain, iron, steel, the knights', silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric) from
+  chain, nine rungs over levels 1 to 20 and up to two more by its name: chain, iron or steel at level 1, adamantium,
+  ebony or daedric at 20. A named piece wears the set written on it in `content/gear/items.json` (`look`). Daedric's
+  armour and weapons are to give way to the Lattice's own, on hold for now
+  ([[The Lattice's Armour and Weapons Take Daedric's Place]]). A faction's armour is its guild's set instead, in the
+  faction's own colour over any dye ([[Factions]], "Its own colour"). A torso wears its set's cuirass, with its
+  pauldrons where the forge draws them (chain has none); the legs wear its greaves and boots. A set the forge does not
+  draw for a body falls to the nearest on the ladder.
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
-  cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is. The hands hold the loadout drawn, in the rarity's metal; a faction's
-  weapon in its faction's metal and colour.
+  cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is.
+- **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled weapon climbs the metals' ladder (iron,
+  steel, silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric) with its level, from 1 to 20, and its
+  name: Normal iron to level 10 and steel past it; Magic steel, silver or elven at level 1, elven, dwarven or orcish
+  at 20; Rare elven, dwarven or orcish at level 1, adamantium, ebony or daedric at 20 (`rung`: a rarity's start, its
+  climb over the levels rounded, and up to two more rungs by its name). Its make is chosen by its own number: a Sword
+  & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's round, kite
+  or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's metal
+  past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain. A named weapon
+  wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's, `short` for a short sword)
+  written on it; a faction's weapon its faction's metal and colour, its shield and bow their make by its name. A
+  metal the forge does not draw for a kind (a crossbow past mithril) falls to the nearest it does on the ladder. The
+  figure, the other players, first person and the item pictures all draw the same layers.
 - **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them. A
   dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) and snapped once to the
   game's palette where it is made, so the figure, first person, the Appearance tiles and the keepers' swatches draw the
@@ -374,7 +558,9 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   in every mounted move, drawn over the hide unless it lies more than 0.15 m behind it, so its far side and inside stay
   hidden, and in the riding view its own published strip. Own Colours, Bay and Bare change nothing. The room puts the
   worn dye, coat and barding into each dress it relays, so others see only what a player keeps and wears; another
-  player's dress naming one that is not of its kind is refused as any broken dress is. Of the colours a dress lays by
+  player's dress naming one that is not of its kind is refused as any broken dress is. A dress's armour and the things
+  in its hands keep only the pieces of the slots worn, by the same layer names (`layers_of`), and a light in the left
+  hand. Of the colours a dress lays by
   layer, the room keeps a faction's only on the layers of that faction's pieces worn (a helm's, a cuirass's, its
   pauldrons' and padding, gauntlets', greaves', boots' and padding, a weapon's own), a faction's dye only on its cape
   worn, and a dye the player keeps on any (`colours_shown`, `dressed`); a page test holds the room's layer names to
@@ -412,13 +598,19 @@ Officers ashore fight beside their player, as DFO's crew companions did
 
 - A loadout's traits work whichever of its hands strikes, and every trait worn counts once however many pieces give
   it. Until a drawn loadout's new trim reaches the browser, the player's own screen predicts them by the old one.
-- A kill's stamina and Last Light's reload come from the loadout drawn as the kill lands: an arrow that kills after a
-  swap to Melee gives Melee's.
+- A swing's kill gives the stamina of the loadout drawn as it lands. A shot keeps what it was loosed with: its Attack,
+  element and trim (a kill's stamina, Last Light's reload), and the perks of the item it left, wherever that item is
+  as it lands (`Room::shot_loosed`), so Gullwing's arrow leaps though Gullwing is put away as it flies.
+- A leap, a burst or a bite is a share of its blow as it struck: a blow on a foe four or more levels above its player
+  does nothing ([[Gear]], "Kills"), so it sets off none.
 - The menu ([[Interface]], "The menu") shows gear on foot in a room; offline, no room keeps
   gear, so it says so. The Test Ground keeps its own panel, with the grants.
 - Gear is kept between visits only in the game's node rooms, for a page with a session ([[Accounts]]).
-- A look is chosen by rarity and the item's own name, not drawn for each item: a named item has no look of its own
-  but a faction's piece, and a Normal head or arms piece shows nothing over the figure.
+- A look is chosen, not drawn for each item: by a rolled item's rarity, level, name and number, a named item's
+  written look, or a faction's. A test wears every item a player can hold, at every level, on the man's body and the
+  woman's, and fails on any weapon or armour layer of the forge no item wears but a class's own (the class sword, axe,
+  bow and staff, the archer's dark helm, the woman's horned one) and the laced boots, a garment. A gilded double
+  pistolet's left gun is worn only by a named gilded double pistolet, Brass Chorus.
 - No Breach items exist yet. The factions' pieces (each one's cape, armour and two weapons) are the only named items a
   Vestige never opens to ([[Factions]]).
 - The Wraith Mist barding's ride strips on R2 are blank, so it shows in third person only until the forge draws them

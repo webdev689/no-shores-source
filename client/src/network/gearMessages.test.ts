@@ -3,7 +3,9 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { Gear, GearColumn, GearOfficer, GearShip, Input } from '../../../generated/messages/ts/overlook/wire.ts';
+import { earnedOf } from './artMessages.ts';
 import { ASKS, DROPPED, gearOf } from './gearMessages.ts';
+import { FIGURE_STATES } from './questMessages.ts';
 import { inputBytes, readFromRoom } from './messages.ts';
 
 const written = async (name: string) =>
@@ -20,11 +22,35 @@ test('a players own gear the server wrote reads back whole, every column spelled
   const gear = readFromRoom(await written('gear.bin'));
   assert.equal(gear?.kind, 'gear');
   if (gear?.kind !== 'gear') return;
+  assert.equal(gear.prologueDone, false, 'a new character');
+  const nothing = { day: 0, cleared: [], week: 0, elite: false, abyss: false, boon: false };
+  assert.deepEqual(gear.activity, nothing, 'a character that has done nothing yet');
+  assert.equal(gear.bounties?.length, 6, 'the day’s board');
+  assert.equal(
+    gear.bounties?.some((bounty) => bounty.held),
+    false,
+    'a new character holds none',
+  );
+  assert.deepEqual(
+    gear.bounties?.map((bounty) => bounty.pool),
+    [0, 0, 1, 1, 2, 2],
+    'where each counts',
+  );
+  assert.ok(
+    gear.bounties?.every((bounty) => bounty.name !== ''),
+    'each its name',
+  );
+  assert.equal(gear.bountyXp, 2_500, 'at level 20');
+  assert.equal(typeof gear.day, 'number');
   assert.deepEqual([gear.level, gear.answered, gear.answer, gear.atMage, gear.spent], [20, 7, 0, true, [0]]);
   assert.deepEqual([gear.ammo, gear.ammoMost, gear.ammoShare, gear.crates, gear.cratePrice], [0, 0, 0.5, 2, 250]);
   assert.deepEqual(
     gear.drops.map((drop) => [drop.kind, drop.at, drop.from, drop.flying]),
-    [[DROPPED.ammoBox, [1, 2, 0], [1, 2, 0], 36]],
+    [
+      [DROPPED.ammoBox, [1, 2, 0], [1, 2, 0], 60],
+      [DROPPED.vestige, [3, 2, 0], [3, 2, 0], 94],
+    ],
+    "each just laid flies the room's rest for its kind, AMMO_REST_TICKS and VESTIGE_REST_TICKS",
   );
   assert.equal(gear.xp, 190_000n);
   assert.equal(gear.resources[4], 3, 'three of the node’s resource');
@@ -32,6 +58,24 @@ test('a players own gear the server wrote reads back whole, every column spelled
   // order the inventory names them in (STOCK_NAMES).
   assert.deepEqual(gear.stocks, [11, 12, 13, 14, 2]);
   assert.equal(gear.items.length, 10, 'six pieces and the four modules every ship is built with');
+  // Two letters in the mail: a Rare Vestige for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
+  assert.deepEqual(
+    gear.mail?.map(({ vestige, item }) => [vestige?.rarity, vestige?.slot, vestige?.level, item?.kind, item?.level]),
+    [
+      [2, 4, 9, undefined, undefined],
+      [undefined, undefined, undefined, 25, 6],
+    ],
+  );
+  assert.deepEqual(
+    gear.mail?.map((letter) => [letter.from, letter.crowded]),
+    [
+      [0, false],
+      [4, false],
+    ],
+    'left lying, then salvage',
+  );
+  assert.ok(gear.mail?.every((letter) => letter.id > 0 && !letter.vestige?.vaulted));
+  assert.ok((gear.mail?.[1]?.item?.columns.length ?? 0) > 0, 'its nodes spelled out');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);
@@ -82,7 +126,11 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.equal(sold.length, 21, 'seven pieces of each faction’s');
   const hood = sold.find((ware) => ware.named === 'lamplighters_hood');
   assert.deepEqual([hood?.id, hood?.price, hood?.level], [1, 6_000, 20]);
-  assert.equal(here.day, 20_777, 'the day of that Friday, which the smiths’ wares are asked by');
+  assert.equal(
+    here.day,
+    20_778,
+    'the clock’s day that Friday noon, begun at 09:00, which the smiths’ wares are asked by',
+  );
 });
 
 test('an ask crosses into an input with every field it names', () => {
@@ -202,7 +250,7 @@ test("the ship's part of the gear message reads back: its power, materials, hand
   assert.equal(gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array()))).ship, null, 'none sent');
 });
 
-test("the ship's and crew's asks carry the numbers the protocol reads them by", async () => {
+test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
   const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual(
@@ -215,7 +263,124 @@ test("the ship's and crew's asks carry the numbers the protocol reads them by", 
       ASKS.chooseOfficer,
       ASKS.grantOfficers,
       ASKS.scavenge,
+      ASKS.stopGather,
+      ASKS.finishPrologue,
+      ASKS.takeBounty,
+      ASKS.turnInBounty,
+      ASKS.takeLetter,
+      ASKS.takeAllLetters,
     ],
-    ['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'].map(number),
+    [
+      ...['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'],
+      ...['STOP_GATHER', 'FINISH_PROLOGUE', 'TAKE_BOUNTY', 'TURN_IN_BOUNTY', 'TAKE_LETTER', 'TAKE_ALL_LETTERS'],
+    ].map(number),
   );
+  const numbers = Object.values(ASKS);
+  assert.equal(new Set(numbers).size, numbers.length, 'no two asks share a number');
+});
+
+test("the roads' part of the gear message reads back: the quest walked, its counts, what is done, earned and waiting, and where its goal stands", () => {
+  const builder = new flatbuffers.Builder(256);
+  const counts = Gear.createQuestCountsVector(builder, [2, 0]);
+  const done = Gear.createQuestsDoneVector(builder, [1, 0, 0, 0]);
+  const earned = Gear.createArtsEarnedVector(builder, [0b011, 0, 0]);
+  const choices = Gear.createFragmentChoicesVector(builder, [1, 0, 0]);
+  const where = Gear.createQuestAtVector(builder, [120.5, -40, 30]);
+  Gear.startGear(builder);
+  Gear.addQuest(builder, 2);
+  Gear.addQuestTask(builder, 4);
+  Gear.addQuestCounts(builder, counts);
+  Gear.addQuestsDone(builder, done);
+  Gear.addArtsEarned(builder, earned);
+  Gear.addFragmentChoices(builder, choices);
+  Gear.addQuestAt(builder, where);
+  Gear.addClaimed(builder, true);
+  builder.finish(Gear.endGear(builder));
+  const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array())));
+  assert.deepEqual(read.quest, {
+    quest: 2,
+    task: 4,
+    counts: [2, 0],
+    done: [1, 0, 0, 0],
+    choices: [1, 0, 0],
+    at: [120.5, -40, 30],
+    ...{ clock: null, fails: [], points: [], figures: [], ward: null, claimed: true },
+  });
+  assert.deepEqual(read.arts?.earned, [0b011, 0, 0]);
+  assert.deepEqual(
+    [earnedOf(read.arts, 1), earnedOf(read.arts, 2)],
+    [0b011, 0],
+    'Storm and Quicken; nothing of Divine',
+  );
+  const bare = new flatbuffers.Builder(16);
+  Gear.startGear(bare);
+  bare.finish(Gear.endGear(bare));
+  const none = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array())));
+  assert.deepEqual(
+    none.quest,
+    {
+      quest: 0,
+      task: 0,
+      counts: [],
+      done: [],
+      choices: [],
+      at: null,
+      clock: null,
+      fails: [],
+      points: [],
+      figures: [],
+      ward: null,
+      claimed: false,
+    },
+    "none walked, nor on the player's own character",
+  );
+  assert.equal(earnedOf(none.arts, 3), 0b111, 'a room that says nothing of it locks nothing');
+});
+
+test("a varied step reads back: its clock, each goal's failures, a puzzle's points, the figures walking and the ward", () => {
+  const builder = new flatbuffers.Builder(256);
+  const fails = Gear.createQuestFailsVector(builder, [0, 2]);
+  const points = Gear.createQuestPointsVector(builder, [10, 0, 1, 0, -10, 0, 99]);
+  const figures = Gear.createQuestFiguresVector(builder, [22, 5, 6, 7, 1.5, 4, 107, 1, 2, 3, 0, 1]);
+  const ward = Gear.createQuestWardVector(builder, [40, -2, 0.25]);
+  Gear.startGear(builder);
+  Gear.addQuest(builder, 3);
+  Gear.addQuestClock(builder, 83.5);
+  Gear.addQuestFails(builder, fails);
+  Gear.addQuestPoints(builder, points);
+  Gear.addQuestFigures(builder, figures);
+  Gear.addQuestWard(builder, ward);
+  builder.finish(Gear.endGear(builder));
+  const read = gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(builder.asUint8Array()))).quest;
+  assert.equal(read?.clock, 83.5);
+  assert.deepEqual(read?.fails, [0, 2]);
+  assert.deepEqual(
+    read?.points,
+    [
+      { x: 10, y: 0, lit: true },
+      { x: 0, y: -10, lit: false },
+    ],
+    'whole points only, a stray number left',
+  );
+  assert.deepEqual(read?.figures, [
+    { look: 22, x: 5, y: 6, z: 7, facing: 1.5, state: FIGURE_STATES.ambushed },
+    { look: 107, x: 1, y: 2, z: 3, facing: 0, state: FIGURE_STATES.walking },
+  ]);
+  assert.deepEqual(read?.ward, { x: 40, y: -2, health: 0.25 });
+});
+
+test("the roads' asks carry the numbers the protocol reads them by, with the keeper and the fragment they name", async () => {
+  const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
+  const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
+  assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment], [number('SPEAK'), number('CHOOSE_FRAGMENT')]);
+  assert.deepEqual([ASKS.speakWith, ASKS.chooseFragment, ASKS.usePoint], [64, 65, 66]);
+  const bytes = inputBytes(6, {
+    intent: new Float64Array(17),
+    look: { anim: 'idle', frame: 0, facing: 0 },
+    arms: 0,
+    seen: 0n,
+    ask: { kind: ASKS.chooseFragment, column: 2, node: 5 },
+  });
+  const ask = Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes)).ask();
+  assert.deepEqual([ask?.kind(), ask?.column(), ask?.node()], [65, 2, 5]);
 });

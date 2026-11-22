@@ -61,6 +61,17 @@ pub const SET_CORE: u8 = 41;
 pub const GRANT_OFFICERS: u8 = 43;
 /// A sea island's wreck scavenged, by its place in the island's list in `node`.
 pub const SCAVENGE: u8 = 63;
+/// A gather let go of before it is done: E released.
+pub const STOP_GATHER: u8 = 67;
+/// The prologue played, which the room keeps with the character.
+pub const FINISH_PROLOGUE: u8 = 68;
+/// A bounty taken or turned in: its place on the board in `node`, the day of the board shown in `item`, as the gear's
+/// `day` sends it.
+pub const TAKE_BOUNTY: u8 = 69;
+pub const TURN_IN_BOUNTY: u8 = 70;
+/// A letter taken from the mail, by its number in `item`; and every letter there is room for.
+pub const TAKE_LETTER: u8 = 71;
+pub const TAKE_ALL_LETTERS: u8 = 72;
 /// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
@@ -79,6 +90,12 @@ pub const WEAR_COSMETIC: u8 = 55;
 pub const BUY_COSMETIC: u8 = 56;
 /// One of Shape's wares of the week bought, by its place in `node`.
 pub const BUY_FROM_SHAPE: u8 = 57;
+/// A keeper spoken with, by their number in `column` (`gear::quests::keeper_key`), at their counter.
+pub const SPEAK: u8 = 64;
+/// A fragment chosen for a choice a house's road gave: the Art in `column`, the fragment's place in `node`.
+pub const CHOOSE_FRAGMENT: u8 = 65;
+/// A puzzle's point used, by its place among its goal's points in `column`.
+pub const USE_POINT: u8 = 66;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -122,6 +139,11 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_EMBLEM => Asked::Gear(Ask::BuyEmblem { emblem: u16::try_from(item).ok()? }),
         USE_CRATE => Asked::Gear(Ask::UseCrate),
         BUY_CRATE => Asked::Gear(Ask::BuyCrate),
+        FINISH_PROLOGUE => Asked::Gear(Ask::FinishPrologue),
+        TAKE_BOUNTY => Asked::Gear(Ask::TakeBounty { place: node, day: u64::from(item) }),
+        TURN_IN_BOUNTY => Asked::Gear(Ask::TurnInBounty { place: node, day: u64::from(item) }),
+        TAKE_LETTER => Asked::Gear(Ask::TakeLetter { letter: item }),
+        TAKE_ALL_LETTERS => Asked::Gear(Ask::TakeAllLetters),
         INFUSE => Asked::Gear(Ask::Infuse { item, fed: ask.count() }),
         RECRUIT => Asked::Gear(Ask::Recruit { faction: column, offer: node }),
         STATION => Asked::Gear(Ask::Station { officer: item, duty: duty_of(ask.slot())? }),
@@ -130,6 +152,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         CHOOSE_OFFICER => Asked::Gear(Ask::ChooseOfficer { officer: item, column, node }),
         GATHER => Asked::Gather { node },
         OPEN_CHEST => Asked::OpenChest { chest: item },
+        STOP_GATHER => Asked::StopGather,
         SCAVENGE => Asked::Scavenge { wreck: node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -164,7 +187,10 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         BUY_FRAGMENT => Asked::Gear(Ask::BuyFragment { art: column, fragment: node }),
         WEAR_COSMETIC => Asked::Gear(Ask::WearCosmetic { cosmetic: u16::try_from(item).ok()? }),
         BUY_COSMETIC => Asked::Gear(Ask::BuyCosmetic { cosmetic: u16::try_from(item).ok()? }),
-        BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node }),
+        BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node, shown: item }),
+        SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
+        CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
+        USE_POINT => Asked::UsePoint { point: column },
         _ => return None,
     })
 }
@@ -229,11 +255,30 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyCosmetic { cosmetic } => {
                 args = messages::AskArgs { kind: BUY_COSMETIC, item: u32::from(cosmetic), ..args };
             }
-            Ask::BuyFromShape { ware } => args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, ..args },
+            Ask::BuyFromShape { ware, shown } => {
+                args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, item: shown, ..args };
+            }
+            Ask::Speak { keeper } => args = messages::AskArgs { kind: SPEAK, column: keeper, ..args },
+            Ask::ChooseFragment { art, fragment } => {
+                args = messages::AskArgs { kind: CHOOSE_FRAGMENT, column: art, node: fragment, ..args };
+            }
+            Ask::FinishPrologue => args = messages::AskArgs { kind: FINISH_PROLOGUE, ..args },
+            Ask::TakeLetter { letter } => args = messages::AskArgs { kind: TAKE_LETTER, item: letter, ..args },
+            Ask::TakeAllLetters => args = messages::AskArgs { kind: TAKE_ALL_LETTERS, ..args },
+            Ask::TakeBounty { place, day } => {
+                let item = u32::try_from(day).unwrap_or(u32::MAX);
+                args = messages::AskArgs { kind: TAKE_BOUNTY, item, node: place, ..args };
+            }
+            Ask::TurnInBounty { place, day } => {
+                let item = u32::try_from(day).unwrap_or(u32::MAX);
+                args = messages::AskArgs { kind: TURN_IN_BOUNTY, item, node: place, ..args };
+            }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::OpenChest { chest } => args = messages::AskArgs { kind: OPEN_CHEST, item: *chest, ..args },
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
+        Asked::StopGather => args = messages::AskArgs { kind: STOP_GATHER, ..args },
+        Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -367,6 +412,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let character = &found.character;
     let held = &character.materials;
     let mut builder = FlatBufferBuilder::new();
+    let scavenged = builder.create_vector(&room.scavenged(player));
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
@@ -435,6 +481,24 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let casting = found.casting;
     let ship = Some(crate::ship_wire::ship_offset(&mut builder, character, room.recruiting_at(player)));
     let more = crate::standing_wire::standing_of(&mut builder, room, player, character);
+    // In a patrol, its entrances: x, y, the ground's height, the yaw and the model, each.
+    let dungeons: Vec<f64> = room
+        .entrances()
+        .iter()
+        .flat_map(|entrance| [entrance.at[0], entrance.at[1], entrance.at[2], entrance.yaw, entrance.model as f64])
+        .collect();
+    let dungeons = (!dungeons.is_empty()).then(|| builder.create_vector(&dungeons));
+    let quests = crate::quest_wire::quests_of(&mut builder, room, player, character);
+    let (today, this_week) = (&character.activity.today, &character.activity.this_week);
+    let cleared: Vec<u8> = gear::Difficulty::ALL
+        .into_iter()
+        .enumerate()
+        .filter(|(_, tier)| today.cleared.contains(tier))
+        .filter_map(|(number, _)| u8::try_from(number).ok())
+        .collect();
+    let cleared = Some(builder.create_vector(&cleared));
+    let bounties = crate::bounty_wire::bounties_of(&mut builder, character, room.day());
+    let (bounty_xp, bounty_aurem) = gear::bounties::bounty_pay(character.level());
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -461,8 +525,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         emblems: Some(builder.create_vector(&emblems)),
         emblem: gear::emblems::number_of(&character.emblem).unwrap_or_default(),
         emblems_sold: Some(builder.create_vector(&emblems_sold)),
-        // A room without Arts says none is worn (0 is no Art's number), so the page shows no Art.
-        art: if room.arts_on() { character.art().id } else { 0 },
+        // A room without Arts, or a player with none worn, says none is worn (0 is no Art's number).
+        art: if room.arts_on() { character.worn_art().map_or(0, |art| art.id) } else { 0 },
         cores: Some(builder.create_vector(&cores)),
         anima: if room.arts_on() { casting.anima } else { 0.0 },
         tenets: Some(builder.create_vector(&if room.arts_on() { casting.tenets } else { [0.0; 2] })),
@@ -488,6 +552,32 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         shape_wares: Some(more.shape_wares),
         faction_wares: Some(more.faction_wares),
         day: u32::try_from(room.day()).unwrap_or(u32::MAX),
+        quest: quests.quest,
+        quest_task: quests.task,
+        quest_counts: Some(quests.counts),
+        quests_done: Some(quests.done),
+        arts_earned: Some(quests.earned),
+        fragment_choices: Some(quests.choices),
+        quest_at: Some(quests.at),
+        quest_clock: quests.clock,
+        quest_fails: Some(quests.fails),
+        quest_points: Some(quests.points),
+        quest_figures: Some(quests.figures),
+        quest_ward: Some(quests.ward),
+        claimed: found.claimed,
+        scavenged: Some(scavenged),
+        dungeons,
+        prologue_done: character.story.prologue,
+        activity_day: u32::try_from(today.day).unwrap_or(u32::MAX),
+        cleared,
+        activity_week: u32::try_from(this_week.week).unwrap_or(u32::MAX),
+        week_elite: this_week.elite,
+        week_abyss: this_week.abyss,
+        boon: this_week.boon,
+        bounties: Some(bounties),
+        bounty_xp,
+        bounty_aurem,
+        mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

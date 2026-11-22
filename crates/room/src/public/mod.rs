@@ -328,7 +328,7 @@ impl Room {
 
     /// A tick of the running event: who is taking part, then its own play.
     fn play(&mut self, public: &Public, running: &mut Running) {
-        let (middle, radius) = self.ground_of(public, running.kind);
+        let (middle, radius) = self.event_ground(public, running.kind);
         for (id, player) in &self.players {
             let body = player.fighter.body;
             let part = running.parts.entry(self.who(*id)).or_default();
@@ -354,7 +354,7 @@ impl Room {
     }
 
     /// The middle and radius of the ground an event of `kind` is fought on.
-    pub(crate) fn ground_of(&self, public: &Public, kind: Kind) -> ([f64; 2], f64) {
+    pub(crate) fn event_ground(&self, public: &Public, kind: Kind) -> ([f64; 2], f64) {
         match kind {
             Kind::Fissure => {
                 public.grounds.fissure.as_ref().map_or(([0.0; 2], 0.0), |ground| (ground.at, ground.radius))
@@ -390,7 +390,7 @@ impl Room {
                 (running.kind, tier(running))
             })
         });
-        let owed = owed.map(|(kind, tier)| (self.ground_of(&public, kind).0, tier, self.event_level(public.level)));
+        let owed = owed.map(|(kind, tier)| (self.event_ground(&public, kind).0, tier, self.event_level(public.level)));
         self.public = Some(public);
         if let Some((middle, tier, level)) = owed {
             self.lay_chest(player, tier, middle, level);
@@ -399,7 +399,7 @@ impl Room {
 
     /// The living players on the ground an event of `kind` is fought on.
     pub(crate) fn players_on(&self, public: &Public, kind: Kind) -> usize {
-        let (middle, radius) = self.ground_of(public, kind);
+        let (middle, radius) = self.event_ground(public, kind);
         let on = |player: &&crate::players::Player| {
             player.living() && apart([player.fighter.body.x, player.fighter.body.y], middle) <= radius
         };
@@ -514,7 +514,7 @@ impl Room {
         running.ticks_left = RESULT_TICKS;
         self.tell(EventKind::PublicWon, None, 0, 0, f64::from(running.kind as u8));
         let tier = tier(running);
-        let (middle, _) = self.ground_of(public, running.kind);
+        let (middle, _) = self.event_ground(public, running.kind);
         let took = |player: &PlayerId| running.parts.get(&self.who(*player)).is_some_and(took_part);
         let earned: Vec<PlayerId> = self.players.keys().copied().filter(took).collect();
         let level = self.event_level(public.level);

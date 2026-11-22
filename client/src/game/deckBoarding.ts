@@ -17,15 +17,17 @@ import {
   type StandOnDeck,
 } from './deckFight.ts';
 import type { FootContext, FootFrame } from './foot.ts';
-import type { Hint } from './gearNodes.ts';
+import type { StripHint } from './hints.ts';
 import type { FootView } from './footView.ts';
 import type { Drawer } from './scene.ts';
 
-/** What one frame on its deck gives the sea's frame: the shot and every figure aboard it, in the world. */
+/** What one frame on its deck gives the sea's frame: the shot, every figure aboard it, in the world, and how dark the
+ *  player's view is as they arrive (`FootFrame`). */
 export interface BoardedFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
   readonly firstPerson: boolean;
+  readonly dark: number;
 }
 
 /** What the frame on its deck needs of the sea's: its controls, time and view, and whether a menu holds the world. */
@@ -56,6 +58,8 @@ export class Boarding {
   private starting: number | null = null;
   private refused: number | null = null;
   private shown: Shown | null = null;
+  /** The fight the player last arrived in: boarding stands them on its deck as spawning into a place does. */
+  private arrivedIn: DeckFight | null = null;
 
   /** Boards with the game's `context` on foot, stood on each deck by `stand` (`Foot.onDeck`). */
   constructor(context: FootContext, stand: StandOnDeck) {
@@ -81,6 +85,10 @@ export class Boarding {
       this.shown = null;
       return null;
     }
+    if (this.arrivedIn !== fight) {
+      this.arrivedIn = fight;
+      fight.foot.arrive(input.time);
+    }
     const { width, height } = input.viewport;
     const how = { paused: input.paused, hands: input.controls.locked, aspect: width / Math.max(1, height) };
     const frame = fight.frame(input.controls, input.seconds, input.time, how);
@@ -88,7 +96,8 @@ export class Boarding {
     const { captain, lying } = fight.boarded(view, 1);
     const laid = laidOnDeck(frame, lying);
     this.shown = { fight, frame, captain, lying, shot: laid.shot };
-    return { shot: laid.shot, figures: laid.figures, firstPerson: this.context.walker.inFirstPerson };
+    const { inFirstPerson } = this.context.walker;
+    return { shot: laid.shot, figures: laid.figures, firstPerson: inFirstPerson, dark: frame.dark };
   }
 
   /** Stands up the fight on the deck the sea says the player boarded, and lets it go once they have left it. */
@@ -133,7 +142,7 @@ export class Boarding {
   }
 
   /** What the display says on its deck: where the player is, the line under it, and the keys listed. */
-  get words(): { readonly place: string; readonly line: string; readonly hints: readonly Hint[] } | null {
+  get words(): { readonly place: string; readonly line: string; readonly hints: readonly StripHint[] } | null {
     const shown = this.shown;
     if (!shown) return null;
     const { fight, captain, frame } = shown;
@@ -145,7 +154,7 @@ export class Boarding {
     return {
       place: 'Its deck is yours',
       line,
-      hints: [['E', `Back aboard your ship · ${left} s left`], ...frame.hints],
+      hints: [['use', `Back aboard your ship · ${left} s left`], ...frame.hints],
     };
   }
 
