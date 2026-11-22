@@ -112,8 +112,8 @@ const PARRY_WINDOW = 12;
 
 /** The parry ring over a foe at a blow the player can parry: the share of its wind-up still to come (1 as it begins,
  *  0 as it lands), whether a press now would parry it, and the share at which the parry window opens (its band on the
- *  ring); a press never parries, and there is no window, while `open` is false (the player's guard could open none). An iron blow must be dodged, so it shows no ring to time; a shot is never parried.
- *  Null for none. */
+ *  ring); a press never parries, and there is no window, while `open` is false (the player's guard could open none).
+ *  An iron blow must be dodged, so it shows no ring to time; a shot is never parried. Null for none. */
 export function parryCue(
   view: FighterView,
   player: number,

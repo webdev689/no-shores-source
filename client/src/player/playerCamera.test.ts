@@ -88,6 +88,7 @@ test('first person sees 65° tall where third sees the lens’s 50°, widening a
   const first = cameraOrbit(head, 0, 0, FIRST_PERSON, []);
   assert.ok(Math.abs(fovOf(first.zoom ?? 1) - 65) < 1e-9, `${fovOf(first.zoom ?? 1)}°`);
   assert.equal(cameraOrbit(head, 0, 0, { firstPerson: false, distance: 2, shown: 2 }, []).zoom, 1, 'third, the lens');
+  assert.equal(widened(CAMERA.nearest - CAMERA.notch), 1, 'third person at its nearest keeps the lens');
   const coming = widened(CAMERA.nearest / 2);
   assert.ok(coming > widened(0) && coming < 1, 'between, as it comes in');
   assert.equal(handsZoom(first, FIRST_PERSON), 1, 'the weapon keeps its size');

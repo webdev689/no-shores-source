@@ -255,9 +255,11 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   24 px across exactly as the blow lands, each 4 px wide over a dark edge, with a gold band on the fixed ring out to
   where the parry window opens, gold once a press of the guard would parry it (no band, and never gold, while the
   player's guard could open no window: a ranged weapon in hand, or hard on the heels of a parry missed)
-  ([[Foes Show a Closing Parry Ring]], [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]), and round one winding up an iron blow a red mark with no ring; each kept
-  on the screen, its widest 6 px inside the edge, where the head stands beyond it, as one in a melee seen from the
-  player's own eyes; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the [[Game]] has it; a
+  ([[Foes Show a Closing Parry Ring]], [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]),
+  and round one winding up an iron blow a red mark with no ring; the head as its figure is drawn, 1.5 m off at least
+  in first person; the band faint, edged by a hard 2 px gold line where the window opens; each kept on the screen,
+  its widest 6 px inside the edge, where the head stands beyond it or behind the eye, set at the edge the way it lies
+  as a threat's arrow is and clear of the vitals and the Arts; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the [[Game]] has it; a
   red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
   with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a

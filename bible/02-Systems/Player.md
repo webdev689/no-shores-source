@@ -41,7 +41,8 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   buttons pressed before the step and what the fight holds the player to shown after it (`PlayerFight`), on the Test
   Ground and in the game's nodes alike. A page may set the walker's player: a move played from a panel.
 - **The camera** sits in the head, or behind it and up in third person on a boom (`cameraOrbit`). Through the
-  head it sees 65° tall where third person sees the lens's 50°, widening as the camera comes in over its last 0.8 m;
+  head it sees 65° tall where third person sees the lens's 50°, widening as the camera comes in past third person's
+  nearest, 0.6 m;
   the first person's weapon keeps its size, zoomed by aiming alone (`handsZoom`) ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Where a block
   or the ground stands between the head and the boom's end, the boom comes in to stand 0.25 m short of it, eased in
   fast and let out slowly so it never snaps (`boomFollowed`, `boom.ts`); however it eases it stands no nearer a block

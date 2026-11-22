@@ -61,6 +61,7 @@ import {
   castPlace,
   ducks,
   holds,
+  swayedQuad,
   zoomedOnScreen,
 } from './fpPlaces.ts';
 import type { AttackInput, Pace } from './weaponMachine.ts';
@@ -132,6 +133,8 @@ interface Wanted {
   readonly place: (picture: Picture) => Omit<ScreenQuad, 'texture'>;
   readonly tip?: readonly [number, number];
   readonly hand?: Hand;
+  /** Held still on the screen, never swayed: a hand on a wall's stone, the horse and its reins. */
+  readonly still?: true;
 }
 
 /** A composed picture kept on the GPU: its texture, and its outline's field in each element it has glowed in. */
@@ -439,7 +442,8 @@ export class FirstPerson {
         key: `grip|${frame}|${worn.hands}`,
         ask: () => climbPicture(this.source, frame, worn.hands),
         place: climbPlace('grip', grip.hand, grip.x, grip.y, GRIP.height),
-      };
+        still: true,
+      } as const;
     });
     const { reach } = this.climbShown;
     if (!reach) return wanted;
@@ -448,6 +452,7 @@ export class FirstPerson {
       key: `reach|${frame}|${worn.hands}`,
       ask: () => climbPicture(this.source, frame, worn.hands, 'reach'),
       place: climbPlace('reach', reach.hand, reach.x, reach.y, REACH_HEIGHT),
+      still: true,
     });
     return wanted;
   }
@@ -464,11 +469,13 @@ export class FirstPerson {
       key: `${HORSE_KEY}${shot.key}|${coat}|${barding}`,
       ask: () => horsePicture(this.source, shot, coat, barding),
       place: ridePlace(false),
+      still: true as const,
     };
     const reins = SIDES.filter(([, hand]) => !busy[hand]).map(([side]) => ({
       key: `rein|${shot.key}|${side}|${worn.hands}`,
       ask: () => reinPicture(this.source, shot, side, worn.hands),
       place: ridePlace(side === 'L'),
+      still: true as const,
     }));
     return [horse, ...reins];
   }
@@ -529,14 +536,9 @@ export class FirstPerson {
     if (!sighting?.tip) return null;
     const kept = this.kept.get(sighting.key);
     const quad = kept && sighting.place(kept.picture);
-    const muzzle = quad ? ([quad.x + sighting.tip[0], quad.y + sighting.tip[1]] as const) : this.drawnMuzzle;
-    const [across, down] = this.swayShown;
-    return muzzle && zoomedOnScreen(muzzle[0] + across, muzzle[1] + down, this.zoom);
-  }
-
-  /** The sway as the hands are drawn: none while they are on a wall, so a grip stays on its stone. */
-  private get swayShown(): readonly [number, number] {
-    return this.lower > 0.001 ? [0, 0] : this.swayed;
+    const placed = quad && swayedQuad(quad, this.swayed, sighting.still);
+    const muzzle = placed ? ([placed.x + sighting.tip[0], placed.y + sighting.tip[1]] as const) : this.drawnMuzzle;
+    return muzzle && zoomedOnScreen(muzzle[0], muzzle[1], this.zoom);
   }
 
   /** A kept weapon picture's outline field in `look`, made the first time it glows in it: its blade where a blade is
@@ -575,7 +577,7 @@ export class FirstPerson {
       const kept = this.kept.get(wanted.key);
       if (kept === undefined) ready = false;
       else if (kept) {
-        const quad = wanted.place(kept.picture);
+        const quad = swayedQuad(wanted.place(kept.picture), this.swayed, wanted.still);
         const look = wanted.hand ? this.glow[wanted.hand === 'right' ? 0 : 1] : 0;
         // A plain weapon takes a blow's rim on an outline measured round, as Cosmic's is.
         const lit = !!wanted.hand && (look !== 0 || rim);
@@ -587,9 +589,8 @@ export class FirstPerson {
     if (ready) [this.shown, this.drawnMuzzle] = [quads, muzzle];
     const zoom = this.zoom;
     const jolt = now - this.jolt.at < JOLT.seconds ? this.jolt.pixels : 0;
-    const [across, down] = this.swayShown;
     const zoomed = this.shown.map((quad) => {
-      const [x, y] = zoomedOnScreen(quad.x + across, quad.y + jolt + down, zoom);
+      const [x, y] = zoomedOnScreen(quad.x, quad.y + jolt, zoom);
       return { ...quad, x, y, width: quad.width * zoom, height: quad.height * zoom };
     });
     this.view.draw(encoder, colourView, width, height, zoomed, light);

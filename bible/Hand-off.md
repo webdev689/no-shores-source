@@ -276,7 +276,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]): first person sees 65° tall, foes
   stand at least 1.5 m from its eye, and its weapon sways; the parry ring stands round the attacker's head, kept on the
   screen, bold, with the parry window as a gold band. Pictured headless on the Test Ground in both views; the held
-  sword's size was offered smaller and kept as it is.
+  sword's size was offered smaller and kept as it is. An audit and a design pass followed: the band is faint and edged
+  by a hard gold line; a ring off the screen stands at its edge as a threat's arrow does, behind the eye too, round the
+  head as drawn; the sway never opens a gap at an edge a picture is cut at, and eases out on a wall; the Test Ground
+  holds foes 1.5 m off. Open for the owner: aiming in first person now sees 43° (1.6 times from 65°, where it was
+  32.5°), and the iron blow's small red mark beside the bolder rings.
 
 - **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
   ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map

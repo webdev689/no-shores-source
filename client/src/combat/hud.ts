@@ -18,6 +18,7 @@ import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
+import { CARD_NEAREST_M, cardStand } from '../player/figures.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import { UNABLE } from './casting.ts';
@@ -80,6 +81,9 @@ const ARROW_CLEAR = 22;
  *  inside the screen's edge its widest stays, in CSS pixels, where the head would stand beyond it. */
 const RING_HEIGHT = 1.6;
 const RING_KEPT = 6;
+/** How far a parry ring set at the screen's edge stands clear of the vitals and the Arts: its widest's half and a
+ *  little more. */
+const RING_CLEAR = RING.widest / 2 + RING_KEPT;
 /** How high over a foe's feet its plate's foot stands, in metres: just over its head (a body is 1.8 m tall) and its
  *  parry ring, so the plate reads as the foe's own. */
 const PLATE_OVER_M = 1.9;
@@ -176,6 +180,8 @@ export class Hud {
     readonly span: number;
     readonly window: number;
     readonly kind: 'ring' | 'now' | 'iron';
+    /** Set at the screen's edge, its head beyond it: it stands clear of the vitals and the Arts as an arrow does. */
+    readonly edge: boolean;
   }[] = [];
   private edges: readonly { readonly x: number; readonly y: number; readonly angle: number }[] = [];
 
@@ -234,22 +240,34 @@ export class Hud {
     this.floatWords(frame, seconds);
   }
 
-  /** Round the head of each foe at a blow the player can parry, a ring closing onto a fixed one as the blow lands,
-   *  its parry window a band on the fixed one, gold once a press would parry it; round an iron one's, a red mark with
-   *  no ring. Each is kept on the screen: a head beyond its edge, as one in a melee seen from the player's own eyes,
-   *  has its ring at the edge. */
+  /** Round the head of each foe at a blow the player can parry, as its figure is drawn, a ring closing onto a fixed
+   *  one as the blow lands, its parry window a band on the fixed one, gold once a press would parry it; round an iron
+   *  one's, a red mark with no ring. Each is kept on the screen: a head beyond its edge, behind the eye too, has its
+   *  ring at the edge the way it lies, as a threat's arrow is. */
   private parries(frame: HudFrame): Hud['rings'] {
     const keep = RING.widest / 2 + RING_KEPT;
     const kept = (place: number, size: number) => Math.max(keep, Math.min(size - keep, place));
     const across = (share: number) => RING.closed + (RING.widest - RING.closed) * share;
+    // Its figure's card stands nearer the eye than its body, and in first person no nearer than CARD_NEAREST_M.
+    const eye = cameraOf(frame.matrix)?.eye ?? null;
     return frame.foes.flatMap(({ view }): Hud['rings'] => {
       const cue = parryCue(view, frame.player, frame.parryOpen ?? true);
-      const head = cue && project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
-      if (!cue || !head) return [];
-      const spot = { x: kept(head.x, frame.width), y: kept(head.y, frame.height) };
-      if (cue === 'iron') return [{ ...spot, span: RING.closed, window: 0, kind: 'iron' } as const];
+      if (!cue) return [];
+      const nearest = frame.firstPerson ? CARD_NEAREST_M : 0;
+      const stand = eye ? cardStand(view.x, view.y, eye[0], eye[1], nearest) : view;
+      const clip = clipOf(frame.matrix, [stand.x, stand.y, view.z + RING_HEIGHT]);
+      const edge = edgeArrow(clip, frame.width, frame.height, keep);
+      const [clipX, clipY, clipW] = clip;
+      const spot = edge
+        ? { x: edge.x, y: edge.y }
+        : {
+            x: kept(((clipX / clipW + 1) / 2) * frame.width, frame.width),
+            y: kept(((1 - clipY / clipW) / 2) * frame.height, frame.height),
+          };
+      const ring = { ...spot, edge: edge !== null };
+      if (cue === 'iron') return [{ ...ring, span: RING.closed, window: 0, kind: 'iron' } as const];
       const window = cue.window > 0 ? across(cue.window) : 0;
-      return [{ ...spot, span: across(cue.share), window, kind: cue.now ? 'now' : 'ring' } as const];
+      return [{ ...ring, span: across(cue.share), window, kind: cue.now ? 'now' : 'ring' } as const];
     });
   }
 
@@ -370,6 +388,8 @@ export class Hud {
         this.targetShare > 0 && this.targetNode(room, zoom),
       ],
     };
+    // The page's pieces beside the display are read only while something at the screen's edge keeps clear of them.
+    const clear = this.edges.length > 0 || this.rings.some((ring) => ring.edge) ? this.clearing(ui) : null;
     return {
       width: 'grow',
       height: 'grow',
@@ -380,8 +400,10 @@ export class Hud {
         arms,
         this.lockSpot && lockMarkNode(this.lockSpot),
         ...this.foeBars.overheadNodes(),
-        ...this.rings.map((ring) => parryNode(ring, ring.span, ring.kind, ring.window)),
-        ...this.arrows(ui).map(arrowNode),
+        ...this.rings.map((ring) =>
+          parryNode(ring.edge && clear ? clear(ring, RING_CLEAR) : ring, ring.span, ring.kind, ring.window),
+        ),
+        ...this.edges.map((edge) => (clear ? clear(edge, ARROW_CLEAR) : edge)).map(arrowNode),
         ...this.words.nodes(),
         this.crosshair.node(),
         ammoNode(this.ammo.ammo, this.ammo.most),
@@ -418,10 +440,12 @@ export class Hud {
     };
   }
 
-  /** The arrows to threats off the screen, each standing below the vitals and above the Arts and weapons (and the
-   *  page's pieces beside the display) where it would fall on them. */
-  private arrows(ui: Interface): readonly { readonly x: number; readonly y: number; readonly angle: number }[] {
-    if (this.edges.length === 0) return [];
+  /** How a spot at the screen's edge, an arrow to a threat off it or a parry ring set there, stands below the vitals
+   *  and above the Arts and weapons (and the page's pieces beside the display) where it would fall within `gap` of
+   *  them. */
+  private clearing(
+    ui: Interface,
+  ): <Spot extends { readonly x: number; readonly y: number }>(spot: Spot, gap: number) => Spot {
     const sides = (box: { x: number; y: number; width: number; height: number } | null): Box | null =>
       box && box.width + box.height > 0
         ? { left: box.x, top: box.y, right: box.x + box.width, bottom: box.y + box.height }
@@ -432,10 +456,10 @@ export class Hud {
       box && box.right > box.left && box.bottom > box.top ? [box] : [],
     );
     under.sort((one, other) => other.bottom - one.bottom);
-    return this.edges.map((edge) => {
-      let spot = vitals ? clearOf(edge, vitals, ARROW_CLEAR, true) : edge;
-      for (const box of under) spot = clearOf(spot, box, ARROW_CLEAR);
+    return (edge, gap) => {
+      let spot = vitals ? clearOf(edge, vitals, gap, true) : edge;
+      for (const box of under) spot = clearOf(spot, box, gap);
       return spot;
-    });
+    };
   }
 }

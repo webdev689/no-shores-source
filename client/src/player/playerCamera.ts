@@ -31,11 +31,11 @@ export const aimZoom = (shown: number, aim: number, place: AimPlace = AIM): numb
 /** First person's view is this tall, wider than the lens's 50° that third person keeps. */
 const FIRST_PERSON_FOV = (65 * Math.PI) / 180;
 
-/** How far the view is widened, a zoom under 1, as the camera comes into the head over its last `CAMERA.nearest`
- *  metres (`shown`), to first person's 65° at the head. */
+/** How far the view is widened, a zoom under 1, as the camera comes into the head (`shown` metres behind it) from
+ *  the nearest third person stands, to first person's 65° at the head: third person keeps the lens's 50°. */
 export function widened(shown: number): number {
   const first = Math.tan(FIELD_OF_VIEW / 2) / Math.tan(FIRST_PERSON_FOV / 2);
-  return first + (1 - first) * Math.min(1, Math.max(0, shown) / CAMERA.nearest);
+  return first + (1 - first) * Math.min(1, Math.max(0, shown) / (CAMERA.nearest - CAMERA.notch));
 }
 
 /** How far the first person's hands zoom with `orbit`'s view, `view` as it is shown: by aiming (and any push in),
