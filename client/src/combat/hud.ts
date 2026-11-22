@@ -17,7 +17,7 @@ import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
-import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
+import { cameraOf, landBlocks, PLATE_OVER_M, SIGHT_SKIN_M } from './plateSight.ts';
 import { CARD_NEAREST_M, cardStand } from '../player/figures.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
@@ -89,9 +89,6 @@ const RING_KEPT = 6;
 /** How far a parry ring set at the screen's edge stands clear of the vitals and the Arts: its widest's half and a
  *  little more. */
 const RING_CLEAR = RING.widest / 2 + RING_KEPT;
-/** How high over a foe's feet its plate's foot stands, in metres: just over its head (a body is 1.8 m tall) and its
- *  parry ring, so the plate reads as the foe's own. */
-const PLATE_OVER_M = 1.9;
 /** A word with no striker to meet stands this high over its fighter's feet (metres). */
 const WORD_HIGH_M = 1.2;
 /** What the player is told on stepping onto an Ammo box they cannot take. */

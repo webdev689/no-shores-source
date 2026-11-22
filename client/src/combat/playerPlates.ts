@@ -9,16 +9,13 @@ import { EMBLEM_PIXELS, svgOf } from '../plus/emblems.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { LEVEL_BY_XP } from '../rules/fleetRules.ts';
-import { bodyDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
+import { bodyDegrees, HEAD_M, PLATE_OVER_M, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
 import type { Node } from '../ui/node.ts';
 
 type Point = readonly [number, number, number];
 
 /** How near another player must stand to be interacted with, in metres: DFO's reach for a person. */
 export const SOCIAL_REACH_M = 6.4;
-/** How high over a player's feet their plate's foot stands, and their head, in metres. */
-const PLATE_OVER_M = 1.9;
-const HEAD_M = 1.8;
 /** The square's side over a figure whole, in CSS pixels: a foe's level square's. */
 const SIDE = EMBLEM_PIXELS * 2 + 4;
 /** The interact mark's least and most side, and the steps it grows in, in CSS pixels. */

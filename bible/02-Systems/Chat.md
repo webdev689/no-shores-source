@@ -26,16 +26,19 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
 - **One hall.** The chat is a Durable Object of the [[Accounts]]' Worker, `ChatHall`, one for the whole game, reached at
   `/v1/chat` by WebSocket (`AccountLink.chatAt`). A socket's first message is its session's token, within five
   seconds (`TOKEN_WAIT_MS`), or it is closed with 4003 and "Sign in to chat."; then the hall welcomes it with the
-  player's username. It holds 2,048 sockets signed in and 256 more waiting for a token, and one account holds four at
-  most ("You are chatting in too many tabs."). Each session is asked again once a minute, and a socket whose session
-  has ended is let go. Each message after the token is JSON: `{"say", "channel", "to"}`, a Whisper's `to` a username;
-  anything else, or a message past 2,048 characters, closes the socket.
+  player's username. It holds 2,048 sockets signed in and 256 more waiting for a token, one address eight waiting at
+  most (`SILENT_FROM_ONE`, so no one page fills it), and one account four at most ("You are chatting in too many
+  tabs."). Each session is asked again once a minute, and a socket whose session has ended is let go. Each message after
+  the token is JSON: `{"say", "channel", "to"}`, a Whisper's `to` a username; anything else, or a message past 2,048
+  characters, closes the socket. A socket's messages are taken one after another, so a player's lines go out in the
+  order said.
 - **Who may speak.** A guest hears Local, Region and World but has no name to speak with, and is told "Add a username
   in Settings to chat.".
 - **Where a player is** comes from the accounts' presence: the room their character is in, and at sea the water their
   ship is in, which the room tells the accounts whenever it changes ([[Server]], [[Accounts]]). The hall asks for the
-  speaker's place with each line, and for everyone else's at most every 5 s. One with no place yet is told "You are
-  not in a place to speak in yet.".
+  speaker's place with each line, and for everyone else's at most every 5 s, keeping the last answer when an ask
+  fails. One with no place yet is told "You are not in a place to speak in yet.", and a line the accounts could not
+  answer for "That line could not be sent. Try again." (`UNSENT`).
 - **Local** is for land: it goes to everyone in the same room, and the page keeps a line only from a player whose figure
   stands within 60 m across the ground, as far as a name over a head reads, and its own always. Said at sea, it is
   refused ("Local is heard on land. At sea, say it to your water with /sea.").
@@ -54,15 +57,20 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
   text's direction and halves of a broken pair taken out (the joiner that builds an emoji kept), more than two marks
   stacked on a letter cut to two, runs of space made one, trimmed, and cut at 240 characters, never through a pair's
   halves; a line of nothing but blanks says nothing. The hall stars each word holding a blocked word letter for letter,
-  by the [[Names]] judge, reading Cyrillic and Greek letters that look Latin as the Latin ones, and refuses a line that
-  spells one across its words ("That line is not allowed.").
+  by the [[Names]] judge, reading Cyrillic and Greek letters that look Latin as the Latin ones, and refuses a line whose
+  single letters spell one out ("f u c k": "That line is not allowed."); whole words side by side ("go ok") are read
+  apart.
 - **Two a second.** An account may say two lines a second, two in a burst, however many sockets it holds, guests too;
   past that a line is refused ("You are sending lines too quickly."), and the twentieth refused in a row closes every
-  socket of the account.
+  socket of the account. What an account may still say is kept a second past its last line, so closing a socket and
+  opening another gives no fresh lines.
 - **The page** joins the hall once the game boots, with the session's token, and joins again when it closes or no
   session is there yet, after 2 s and twice as long each time up to 30 s, each wait a fifth longer or shorter at random,
-  or afresh when the account changes; a close the hall gives a reason (4003) is said and not joined again. A page
-  playing alone has no hall: what it types is answered "You are playing alone: no one hears the chat.".
+  or afresh when the account changes; a close the hall gives a reason (4003) is said, and the page joins again only when
+  the player next says a line, kept in the field ("The chat is joining. Say it again in a moment."). An account changed
+  starts the chat afresh: the lines kept, whom `/r` answers and the Whisper's name go. A page playing alone has no hall:
+  what it types is answered "You are playing alone: no one hears the chat.". Who is muted is the Roster's word alone,
+  asked again as a mute or unmute is made.
 
 ## The panel
 
@@ -93,8 +101,7 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
 
 - There is no reporting a line yet.
 - The pad has no button for the chat.
-- A player who adds a username mid-session speaks with it once the page joins the hall again (the account's change
-  starts it afresh); their plate over their head shows it from their next room, and until then the page cannot place
-  their Local lines, so it does not keep them.
+- A mute or unmute reaches the hall's other speakers within 30 s, as it keeps whom each is kept apart from; the page
+  hides or shows the lines at once.
 - Not yet tried live: tested offline (the hall, the law, the hall's queries, the link and the log), and pictured
   headless.

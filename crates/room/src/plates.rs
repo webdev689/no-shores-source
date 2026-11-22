@@ -4,7 +4,7 @@ use crate::players::Player;
 use crate::{PlayerId, Room};
 
 /// The longest name a plate carries: a username's most, as the accounts keep it.
-pub const NAME_MOST: usize = 20;
+const NAME_MOST: usize = 20;
 
 /// One player's plate as others read it. The name is empty for a guest, who has none.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]

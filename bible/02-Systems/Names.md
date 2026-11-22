@@ -28,7 +28,7 @@ None of them may hold a slur, an obscenity or a sexual term. A username, guild n
 the game. A new username or guild name may not look like one already kept.
 
 A chat line is judged by the same blocked words ([[Chat]]): each word holding one is starred letter for letter, and a
-line that spells one across its words is refused. Cyrillic and Greek letters that look Latin are read as the Latin
+line whose single letters spell one out ("f u c k") is refused; whole words side by side are read apart. Cyrillic and Greek letters that look Latin are read as the Latin
 ones first (`folded`), so a look-alike spells the word it looks like.
 
 ## How it is checked

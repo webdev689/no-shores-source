@@ -85,7 +85,7 @@ function guildWhy(roster: Roster, person: Person): string {
 
 /** The menu's presses, by row. */
 export const pressOf = (key: InteractRow['key']): string => `interact-${key}`;
-export const INTERACT_CLOSE = 'interact-close';
+const INTERACT_CLOSE = 'interact-close';
 
 /** The menu over the view: `player`'s plate, the rows (all waiting while `busy`), and what the last ask answered
  *  (`said`). A press of a row that can be done goes to `chosen`; Close or Escape to `close`. */

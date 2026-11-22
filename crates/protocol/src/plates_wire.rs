@@ -22,9 +22,9 @@ pub(crate) fn plates_vector<'built>(
     builder.create_vector(&each)
 }
 
-/// The plates a message holds, as the room wrote them: for tests, and for a reader in Rust.
-#[must_use]
-pub fn plates_of(
+/// The plates a message holds, as the room wrote them.
+#[cfg(test)]
+pub(crate) fn plates_of(
     plates: Option<flatbuffers::Vector<'_, flatbuffers::ForwardsUOffset<messages::Plate<'_>>>>,
 ) -> Vec<(PlayerId, Plate)> {
     plates

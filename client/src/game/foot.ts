@@ -37,7 +37,7 @@ import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } 
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
-import type { GearHere } from './gearScreen.ts';
+import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
 import { type StripHint, keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
@@ -191,7 +191,11 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
+    addEventListener(ACCOUNT_CHANGED, this.renamed);
   }
+
+  /** A username taken while here reaches the room, so the player's plate shows it. */
+  private readonly renamed = () => this.link.named?.();
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
    *  names, keeping how they hold the camera, and joins its room: online the server's at the voyage's `seas`, signed
@@ -576,6 +580,7 @@ export class Foot {
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */
   leave(): void {
+    removeEventListener(ACCOUNT_CHANGED, this.renamed);
     this.link.close?.();
     this.otherPlayers.clear();
     this.arrivals.clear();

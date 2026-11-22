@@ -30,6 +30,8 @@ export interface RoomLink {
   pump(seconds: number): void;
   /** Lets the room go, where the link holds one open: a socket, or a room in a worker. */
   close?(): void;
+  /** Sends the session's token again, so the room names the player by a username taken since they joined. */
+  named?(): void;
   /** The player's trim, from the room's last word on their gear; none until it sends it. */
   readonly trim?: readonly number[] | null;
   /** The arms the room lets the player take up, from its last word on their gear; none until it sends it. */
@@ -221,6 +223,11 @@ export class RoomConnection implements RoomLink {
     [this.plates, this.welcomeUnheard] = [welcome.plates, welcome];
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
     this.measure.clear();
+  }
+
+  named(): void {
+    if (this.session !== null && !this.rejoining && this.socket.readyState === WebSocket.OPEN)
+      this.socket.send(this.session);
   }
 
   /** The room's word on the player's gear: its trim and arms kept, and the whole handed on. */

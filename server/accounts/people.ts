@@ -53,6 +53,27 @@ export async function accountNamed(database: Db, name: unknown): Promise<{ id: s
     .first<{ id: string; username: string }>();
 }
 
+/** The username an account keeps; null for a guest. */
+export async function usernameOf(database: Db, account: string): Promise<string | null> {
+  const row = await database
+    .prepare('SELECT username FROM accounts WHERE id = ?1')
+    .bind(account)
+    .first<{ username: string | null }>();
+  return row?.username ?? null;
+}
+
+/** The accounts `account` blocks or is blocked by. */
+export async function apartFrom(database: Db, account: string): Promise<string[]> {
+  const { results } = await database
+    .prepare(
+      `SELECT blocked_id AS other FROM blocks WHERE blocker_id = ?1
+       UNION SELECT blocker_id AS other FROM blocks WHERE blocked_id = ?1 ORDER BY other`,
+    )
+    .bind(account)
+    .all<{ other: string }>();
+  return results.map((row) => row.other);
+}
+
 /** Whether `blocker` blocks `blocked`. */
 export async function blocks(database: Db, blocker: string, blocked: string): Promise<boolean> {
   const found = await database

@@ -47,12 +47,17 @@ export function folded(text: string): string {
   return text.replace(LOOKALIKE, (letter) => LOOKS[letter.toLowerCase()] ?? letter);
 }
 
+/** Runs of two or more single letters, as a word is spelled out apart: "f u c k". */
+const SPELLED_OUT = /(?<!\S)(?:[\p{L}\p{N}] )+[\p{L}\p{N}](?!\S)/gu;
+
 /** A line's words with each word that holds a blocked root starred letter for letter, so it is never longer; null
- *  where the words still spell one across them. */
+ *  where single letters spell one out. Only single letters are read together: whole words side by side ("go ok") are
+ *  ordinary speech. */
 export function starred(text: string): string | null {
   const shown = text
     .split(' ')
     .map((word) => (blocked(folded(word)) ? word.replace(/[\p{L}\p{N}]/gu, '*') : word))
     .join(' ');
-  return blocked(folded(shown)) ? null : shown;
+  const spelled = [...shown.matchAll(SPELLED_OUT)].some((run) => blocked(folded(run[0].replaceAll(' ', ''))));
+  return spelled ? null : shown;
 }

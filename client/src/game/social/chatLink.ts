@@ -16,7 +16,7 @@ const AGAIN_SPREAD = 0.2;
 const SAID = 4003;
 
 /** Where the link stands: joining (or between tries), welcomed, or refused by the hall for a reason it gave. */
-export type ChatState = 'joining' | 'welcomed' | 'refused';
+type ChatState = 'joining' | 'welcomed' | 'refused';
 
 export class ChatLink {
   private socket: ChatSocket | null = null;

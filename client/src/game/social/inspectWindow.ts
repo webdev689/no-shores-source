@@ -1,6 +1,6 @@
 // Inspect: another player as the Character tab shows the player's own character, from what their room kept for others
-// to see: their nameplate over their figure in the dress they wear here, each piece they wear in its slot with its
-// card, their level and power, and the Art they wear. Nothing on it can be asked or changed.
+// to see, under their emblem's banner: their figure in the dress they wear here, each piece they wear in its slot with
+// its card, their level and power, and the Art they wear. Nothing on it can be asked or changed.
 import type { Details } from '../../network/accounts.ts';
 import type { GearItem } from '../../network/gearMessages.ts';
 import type { Cards } from '../../player/cards.ts';
@@ -35,6 +35,10 @@ export class InspectWindow {
   private readonly holds = new Holds();
   private pictures: ItemPictures | null = null;
   private figure: { key: string; picture: Picture | null } = { key: '', picture: null };
+  private gearOf: { details: Details | string | null; gear: ReturnType<typeof inspectedGear> } = {
+    details: null,
+    gear: null,
+  };
   private readonly forge: () => Cards | null;
 
   /** A window drawing pictures with the forge `forge` gives, once it has one. */
@@ -55,7 +59,10 @@ export class InspectWindow {
     const room = { width: width - 40, height: Math.max(0, height - WINDOW.header - WINDOW.footer - 24) };
     const sizes = sizesOf(view.width, view.height, uiScale(devicePixelRatio));
     const { details } = who;
-    const gear = details !== null && typeof details !== 'string' ? inspectedGear(details) : null;
+    // Built once for each answer, so the item pictures, kept by item, are not drawn again each frame.
+    if (this.gearOf.details !== details)
+      this.gearOf = { details, gear: details !== null && typeof details !== 'string' ? inspectedGear(details) : null };
+    const { gear } = this.gearOf;
     let card: { beside: string; content: () => Node } | null = null;
     const page: Node =
       gear && typeof details !== 'string' && details
@@ -158,8 +165,9 @@ export class InspectWindow {
 
   /** Their figure in `dress`, drawn once for each dress it is asked in. */
   private figureOf(forge: Cards | null, dress: Dress | null): Picture | null {
-    const key = dress ? JSON.stringify(dress) : '';
-    if (forge && dress && key !== this.figure.key) {
+    if (!forge || !dress) return null;
+    const key = JSON.stringify(dress);
+    if (key !== this.figure.key) {
       const figure: { key: string; picture: Picture | null } = { key, picture: null };
       this.figure = figure;
       void forge

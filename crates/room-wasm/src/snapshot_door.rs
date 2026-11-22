@@ -215,8 +215,6 @@ pub fn snapshot(player: PlayerId) -> Vec<u8> {
 fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(PlayerId, Vec<u8>)> {
     let changed = room.take_dress_changes();
     let dressed: Vec<(PlayerId, &str)> = changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-    // A deck draws no plates: the sea names no one.
-    let plates: Vec<(PlayerId, room::Plate)> = Vec::new();
     let (tick, events) = (room.clock(), room.take_events());
     let lines: Vec<(u64, Line)> = room.take_lines().into_iter().map(|line| (tick, line)).collect();
     let players: Vec<Seen> = room.seen().collect();
@@ -238,7 +236,8 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 base_foes: None,
                 players: &players,
                 dressed: &dressed,
-                plates: &plates,
+                // A deck draws no plates: the sea names no one.
+                plates: &[],
                 foes: &foes,
                 events: &events,
                 shots: &shots,

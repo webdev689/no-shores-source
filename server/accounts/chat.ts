@@ -5,6 +5,7 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { hallDeps } from './chatDeps.ts';
+import { addressKey } from './accounts.ts';
 import { Hall } from './chatHall.ts';
 
 /** How often the hall lets go the sockets that sent no token. */
@@ -23,10 +24,11 @@ export class ChatHall extends DurableObject<{ readonly DB: D1Database }> {
     if (!chatAt(request)) return new Response('The chat is reached by WebSocket', { status: 426 });
     this.hall ??= new Hall(hallDeps(this.env.DB, Date.now));
     const hall = this.hall;
-    if (hall.full) return new Response('The chat is full', { status: 503 });
+    const address = addressKey(request.headers.get('CF-Connecting-IP') ?? 'nowhere');
+    if (!hall.admits(address)) return new Response('The chat is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
     server.accept();
-    const socket = hall.opened(server);
+    const socket = hall.opened(server, address);
     server.addEventListener('message', (event) => void hall.heard(socket, event.data));
     server.addEventListener('close', () => this.left(socket));
     server.addEventListener('error', () => this.left(socket));

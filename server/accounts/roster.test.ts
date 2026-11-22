@@ -5,6 +5,7 @@ import { characters } from './characters.ts';
 import { INVITE_MS } from './companies.ts';
 import { foundRun } from './finding.ts';
 import type { Details, Roster } from './roster.ts';
+import { MUTES_MOST } from './social.ts';
 
 /** A world of named players, each one's token, and a way to ask as them. */
 async function world(...names: string[]) {
@@ -415,4 +416,20 @@ test('a player mutes another and unmutes them, kept with the account', async () 
   assert.deepEqual((await ada.roster()).muted, []);
   assert.equal((await ada.ask('mute', { name: 'Nobody' })).status, 404);
   assert.equal((await ada.ask('mute', { name: 'Ada' })).status, 404, 'not oneself');
+});
+
+test('a player mutes so many at most; muting one muted already still answers done', async () => {
+  const { deps, player } = await world('Ada', 'Ben', 'Cal');
+  const ada = player('Ada');
+  assert.equal((await ada.ask('mute', { name: 'Ben' })).status, 200);
+  const own = await deps.database.prepare("SELECT id FROM accounts WHERE username = 'Ada'").first<{ id: string }>();
+  for (let more = 1; more < MUTES_MOST; more++) {
+    await deps.database.prepare('INSERT INTO accounts (id, created_at) VALUES (?1, 0)').bind(`x${more}`).run();
+    await deps.database
+      .prepare('INSERT INTO mutes (muter_id, muted_id, created_at) VALUES (?1, ?2, 0)')
+      .bind(own?.id, `x${more}`)
+      .run();
+  }
+  assert.equal((await ada.ask('mute', { name: 'Cal' })).status, 409);
+  assert.equal((await ada.ask('mute', { name: 'Ben' })).status, 200, 'Ben is muted already');
 });

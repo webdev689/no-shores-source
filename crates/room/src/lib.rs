@@ -61,7 +61,7 @@ pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
 pub use perks::trim_of;
-pub use plates::{NAME_MOST, Plate};
+pub use plates::Plate;
 pub use players::{
     CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,

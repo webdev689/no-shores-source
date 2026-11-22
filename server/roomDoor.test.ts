@@ -103,6 +103,15 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
     protocol,
     epoch: 0,
   });
+  // Shut again before any screen showed it open, the plate goes as it is now, once: its newest change alone.
+  const shut = inputBytes(33, { intent: walk, look: walking, arms: 0, seen: snapshot.tick });
+  assert.equal(room.input(first, shut), 'taken');
+  room.tick();
+  const { plates } = readFromRoom(room.snapshot(second)) as { plates: { player: number }[] };
+  assert.deepEqual(
+    plates.filter((each) => each.player === first),
+    [plate(first, { name: 'Mariner' })],
+  );
 });
 
 test('the roster reads from the rules: every type it drives with its name, faction, ranks and hands', () => {

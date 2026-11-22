@@ -1132,10 +1132,10 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   pointer free and the keys the menu's alone.
 - **Inspect** ([[Inspect Opens the Character Tab]], [[Inspect Shows the Player's Emblem Banner]]) shows the player as
   the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
-  and Defense over it, and under it the Character tab: their plate over their figure in the dress they wear here, each
-  piece they wear in its slot with its card, their level and Prestige, their power and the Art they wear, from what
-  their room kept for others to see. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance.
-  Back or Escape goes back to their menu.
+  and Defense over it, and under it the Character tab: their figure in the dress they wear here, each piece they wear in
+  its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
+  others to see. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
+  back to their menu.
 - **Settings** lists the muted under the blocked, each with Unmute.
 
 ## Emblems

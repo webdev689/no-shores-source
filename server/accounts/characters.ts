@@ -8,7 +8,7 @@
 
 import { companionsOf } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
-import { present } from './people.ts';
+import { present, usernameOf } from './people.ts';
 import { hashOf } from './secrets.ts';
 
 /** How long a hold lasts past its room's last save. */
@@ -65,13 +65,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
           .bind(holder, now() + HOLD_MS, account, now())
     ).first<{ body: string | null; came_from: string | null }>();
   const live = (token: string) => liveAccount(database, token, now());
-  const nameOf = async (account: string) =>
-    (
-      await database
-        .prepare('SELECT username FROM accounts WHERE id = ?1')
-        .bind(account)
-        .first<{ username: string | null }>()
-    )?.username ?? null;
+  const nameOf = (account: string) => usernameOf(database, account);
   return {
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */

@@ -38,6 +38,8 @@ const RUN_LINGER_MS = 60_000;
 
 /** How often the sea says again who is there: half of how long the accounts keep its word. */
 const PRESENT_EVERY_MS = 30_000;
+/** How often a player's token, sent again, names them anew at most. */
+const RENAMED_EVERY_MS = 5_000;
 
 /** How long a sea island's dungeon holds a player for the sea's word that they landed: a token's wait, a claim's own
  *  waits, and the sea's answer. */
@@ -95,8 +97,12 @@ export class RoomHost extends DurableObject<Env> {
       token: string | null;
       /** The entrance a player was joined before, until the room learns whether they came out of its dungeon. */
       door: number | null;
-      /** At sea, the water their ship lay in as the accounts were last told, which the chat's Region is. */
+      /** At sea, the water their ship lay in as the accounts last took it (unset till they do), which the chat's Region
+       *  is; and the word on it in flight, so each is said after the last. */
       water?: string | null;
+      presenting?: Promise<unknown>;
+      /** When their token last came again, naming them anew. */
+      renamed?: number;
     }
   >();
   private keeper: Keeper | null = null;
@@ -355,6 +361,23 @@ export class RoomHost extends DurableObject<Env> {
     else if (socket && dungeon) this.dismiss(socket, AGAIN, 'the sea did not answer');
   }
 
+  /** Tells the accounts a player at sea is here, in `water`: each word after the last, so the last said is the last
+   *  kept; one not taken is said again the next second. */
+  private present(
+    held: { token: string | null; water?: string | null; presenting?: Promise<unknown> },
+    water: string | null,
+  ): void {
+    const token = held.token;
+    if (!token) return;
+    held.water = water;
+    held.presenting = (held.presenting ?? Promise.resolve())
+      .then(() => this.env.ACCOUNTS.present(token, this.name, water))
+      .catch(() => false)
+      .then((took) => {
+        if (!took && held.water === water) delete held.water;
+      });
+  }
+
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
     const held = this.players.get(socket);
     // A flood still arriving when its socket was let go of costs nothing more.
@@ -372,10 +395,10 @@ export class RoomHost extends DurableObject<Env> {
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
           this.outOfDoor(socket);
         });
-      // At sea the room also says who is there, for the Roster.
+      // At sea the room also says who is there, for the Roster; the next second says in which water.
       if (seaRoom(this.name) !== null) {
         held.token = message;
-        void this.env.ACCOUNTS.present(message, this.name, null).catch(() => false);
+        this.present(held, null);
       }
       return;
     }
@@ -387,6 +410,13 @@ export class RoomHost extends DurableObject<Env> {
       this.guarded(() => this.room.noneKept(player), undefined);
     }
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
+    // The token again, from a player who took a username since: they are named anew, once in a while at most.
+    if (typeof message === 'string' && TOKEN.test(message) && held.signed) {
+      if (Date.now() - (held.renamed ?? 0) < RENAMED_EVERY_MS) return;
+      held.renamed = Date.now();
+      void this.keeper?.rename(player, message).catch(() => undefined);
+      return;
+    }
     if (typeof message !== 'string' && message.byteLength > MESSAGE_MOST)
       return this.dismiss(socket, 1009, 'too large');
     const answer =
@@ -409,7 +439,10 @@ export class RoomHost extends DurableObject<Env> {
     if (!held) return;
     this.players.delete(socket);
     this.ashore.delete(held.player);
-    if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
+    const token = held.token;
+    // After any word on the water still in flight, so leaving is the last the accounts hear.
+    if (token)
+      void (held.presenting ?? Promise.resolve()).then(() => this.env.ACCOUNTS.present(token, null)).catch(() => false);
     // What still lies for them goes to their mail, then the character's last save reads it, before the room lets the
     // player go.
     this.guarded(() => this.room.mailLying(held.player), undefined);
@@ -489,9 +522,8 @@ export class RoomHost extends DurableObject<Env> {
         for (const held of this.players.values()) {
           if (!held.token) continue;
           const water = this.guarded(() => this.room.water(held.player), null);
-          if (!again && water === (held.water ?? null)) continue;
-          held.water = water;
-          void this.env.ACCOUNTS.present(held.token, this.name, water).catch(() => false);
+          if (!again && water === held.water) continue;
+          this.present(held, water);
         }
       if (this.island && now - this.island.told >= ASHORE_EVERY_MS) {
         this.island.told = now;

@@ -30,8 +30,8 @@ import type { PlatedPlayer, PlayerPlates } from '../../combat/playerPlates.ts';
 
 /** How long Use is held on a player before their menu opens, in seconds: DFO's hold for a player's menu; and how long
  *  the aim may slip off them without letting the hold go, as a walking body or a bobbing view takes it off a moment. */
-export const HOLD_S = 0.45;
-export const HOLD_SLIP_S = 0.2;
+const HOLD_S = 0.45;
+const HOLD_SLIP_S = 0.2;
 /** What a page with no accounts, or a guest, is told of what needs a username. */
 const NO_ROSTER = 'Add a username in Settings';
 const ALONE = 'You are playing alone: no one hears the chat.';
@@ -44,7 +44,7 @@ const USERNAME = new RegExp(`^\\w{1,${NAME_MOST}}$`);
 type Point = readonly [number, number, number];
 
 class Social {
-  readonly log = new ChatLog();
+  log = new ChatLog();
   readonly panel = new ChatPanel();
   private readonly link: ChatLink | null;
   private readonly accounts: AccountLink | null;
@@ -54,9 +54,6 @@ class Social {
   private standing = new Map<string, { readonly feet: Point; readonly id: number }>();
   private own: Point | null = null;
   private others: OtherPlayers | null = null;
-  /** The players muted and unmuted this session, over the Roster's word, until it says so itself. */
-  private readonly muted = new Set<string>();
-  private readonly unmuted = new Set<string>();
   /** The menu up for a player, its rows once the Roster answers, what the last ask answered, and whether one is out. */
   private menu: { player: PlatedPlayer; rows: readonly InteractRow[] | null; said: string; busy: boolean } | null =
     null;
@@ -79,8 +76,10 @@ class Social {
     const heard = (said: FromHall) => this.heard(said);
     this.link = accounts ? new ChatLink(accounts.chatAt, session, heard) : null;
     void this.link?.start();
+    // Another account's lines, and whom it whispered with, are not this one's to read back or answer.
     addEventListener(ACCOUNT_CHANGED, () => {
-      [this.muted, this.unmuted].forEach((names) => names.clear());
+      this.log = new ChatLog();
+      [this.panel.channel, this.panel.to] = ['local', null];
       this.link?.restart();
     });
     // While a player's menu or Inspect is up, the keys are theirs alone: the interface heard them first, and nothing
@@ -103,10 +102,9 @@ class Social {
     this.log.heard(said.line, now, mine, (name) => this.near(name));
   }
 
-  /** Whether the player mutes `name`: the Roster says so, or they did this session. */
+  /** Whether the player mutes `name`, as the Roster last said; a mute or unmute asks it again at once. */
   private mutes(name: string): boolean {
-    if (this.unmuted.has(name)) return false;
-    return this.muted.has(name) || (rosterNow()?.muted?.includes(name) ?? false);
+    return rosterNow()?.muted?.includes(name) ?? false;
   }
 
   /** Whether a player named `name` stands near enough to be heard. */
@@ -212,7 +210,6 @@ class Social {
     if (!accounts || !row.path) return;
     [menu.said, menu.busy] = ['...', true];
     void accounts.social(row.path, row.body ?? {}).then((refused) => {
-      if (refused === null && row.key === 'mute') this.noteMute(name, row.path === 'mute');
       const said = refused ?? `${row.label}: done.`;
       announce(said);
       dispatchEvent(new Event('overlook:company'));
@@ -221,14 +218,8 @@ class Social {
     });
   }
 
-  /** A mute or unmute the accounts kept, heard at once, before the Roster next says so. */
-  private noteMute(name: string, muted: boolean): void {
-    (muted ? this.muted : this.unmuted).add(name);
-    (muted ? this.unmuted : this.muted).delete(name);
-  }
-
+  /** Inspect over the player's menu, which Back returns to. */
   private inspect(player: PlatedPlayer): void {
-    this.menu = null;
     const name = player.plate.name;
     const dress = this.others?.dressOf(player.id) ?? null;
     const inspected: Inspected = { name, details: null, dress };
@@ -278,7 +269,9 @@ class Social {
     const said = channel === 'whisper' ? { say: read.words, channel, to: to ?? '' } : { say: read.words, channel };
     if (!this.link) return told(ALONE);
     if (this.link.say(said)) return 'shut';
-    return told(this.link.state === 'refused' ? 'The chat let you go. Join a place again to rejoin it.' : JOINING);
+    // One the hall let go joins again as the player speaks: the cause (another tab, a session ended) may be gone.
+    if (this.link.state === 'refused') this.link.restart();
+    return told(JOINING);
   }
 
   /** Mutes or unmutes a player by name, as the Roster does. */
@@ -288,7 +281,7 @@ class Social {
     const accounts = this.accounts;
     if (!accounts) return (this.log.told('Play online to mute a player.', now), 'keep');
     void accounts.social(mute ? 'mute' : 'unmute', { name }).then((refused) => {
-      if (refused === null) this.noteMute(name, mute);
+      if (refused === null) dispatchEvent(new Event('overlook:company'));
       this.log.told(refused ?? `${mute ? 'Muted' : 'Unmuted'} ${name}.`, performance.now());
     });
     return 'clear';
@@ -304,17 +297,17 @@ class Social {
       this.menu = null;
     };
     let over: Node | null = null;
-    if (menu) {
+    if (this.inspected) {
+      over = this.inspectWindow.node(ui, view, this.inspected, () => {
+        [this.inspected, this.focusMenu] = [null, true];
+      });
+    } else if (menu) {
       over = interactNode(ui, menu.player, menu.rows, menu.said, menu.busy, (row) => this.chosen(row), shut);
       const first = menu.rows?.find((row) => !row.why);
       if (this.focusMenu && first) {
         ui.focusOn(pressOf(first.key));
         this.focusMenu = false;
       }
-    } else if (this.inspected) {
-      over = this.inspectWindow.node(ui, view, this.inspected, () => {
-        this.inspected = null;
-      });
     }
     const prompt = this.prompt;
     this.prompt = null;
@@ -326,7 +319,7 @@ class Social {
   }
 }
 
-const JOINING = 'The chat is joining. Try again in a moment.';
+const JOINING = 'The chat is joining. Say it again in a moment.';
 
 let social: Social | null = null;
 

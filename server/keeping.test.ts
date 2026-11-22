@@ -407,3 +407,25 @@ test("a kept player is named in the room by their account's username, and a gues
   assert.equal(await signIn(2), true);
   assert.equal(room.named.get(2), 'Mariner');
 });
+
+test('a player who takes a username while they play is named anew by their token, and no one by another', async () => {
+  const { clock, database, kept, token } = await world();
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const keeper = new Keeper(kept, room, 'node-overlook', () => undefined);
+  assert.equal(
+    await keeper.signIn(
+      1,
+      token,
+      () => clock.now,
+      () => true,
+    ),
+    true,
+  );
+  await keeper.rename(1, '0'.repeat(64));
+  await keeper.rename(2, token);
+  assert.equal(room.named.size, 0, 'a token that is no session, and a player not kept, name no one');
+  await database.prepare("UPDATE accounts SET username = 'Mariner'").run();
+  await keeper.rename(1, token);
+  assert.equal(room.named.get(1), 'Mariner');
+});

@@ -61,15 +61,21 @@ export async function socialAsk(
       await database.prepare('DELETE FROM blocks WHERE blocker_id = ?1 AND blocked_id = ?2').bind(own, them.id).run();
       return done;
     case 'mute': {
-      const kept = await database
-        .prepare('SELECT count(*) AS count FROM mutes WHERE muter_id = ?1')
-        .bind(own)
-        .first<{ count: number }>();
-      if ((kept?.count ?? 0) >= MUTES_MOST) return said(409, `You mute ${MUTES_MOST} players already.`);
-      await database
-        .prepare('INSERT OR IGNORE INTO mutes (muter_id, muted_id, created_at) VALUES (?1, ?2, ?3)')
-        .bind(own, them.id, now)
+      // One statement counts and adds, so two asks at once cannot pass the most; one muted already is done.
+      const added = await database
+        .prepare(
+          `INSERT OR IGNORE INTO mutes (muter_id, muted_id, created_at) SELECT ?1, ?2, ?3
+           WHERE (SELECT count(*) FROM mutes WHERE muter_id = ?1) < ?4`,
+        )
+        .bind(own, them.id, now, MUTES_MOST)
         .run();
+      if (added.meta.changes === 0) {
+        const muted = await database
+          .prepare('SELECT 1 AS yes FROM mutes WHERE muter_id = ?1 AND muted_id = ?2')
+          .bind(own, them.id)
+          .first<{ yes: number }>();
+        if (!muted) return said(409, `You mute ${MUTES_MOST} players already.`);
+      }
       return done;
     }
     case 'unmute':

@@ -215,7 +215,7 @@ never the Abyss Dungeon of the week, whose company forms it.
 The chat's one hall is a Durable Object of this Worker too, `ChatHall`, reached at `/v1/chat` by WebSocket ([[Chat]]):
 it signs a socket in with its session's token, asking again once a minute; places Local by the room in `presence` and
 Region by its water; keeps blocks as the Roster does, and mutes; and holds each account to four sockets and two lines a
-second across them. Its questions of the database are `hallDeps`.
+second across them, and each address to eight sockets waiting to sign in. Its questions of the database are `hallDeps`.
 
 ## Binds
 

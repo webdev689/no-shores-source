@@ -10,7 +10,7 @@ import { type Channel, LINE_MOST } from '../../../../server/accounts/chatLaw.ts'
 import type { ChatLog, Logged } from './chatLog.ts';
 
 /** The chat's field, which takes the keys while it is open. */
-export const CHAT_FIELD = 'chat-field';
+const CHAT_FIELD = 'chat-field';
 /** The band's width at most, and its gap from the screen's left and bottom, in CSS pixels; and how many lines it shows
  *  open at most, as many as an arrow reads back. */
 const WIDTH = 440;
@@ -40,7 +40,7 @@ const BAND = 'rgba(8,10,14,0.76)';
 const RULE = 'rgba(242,239,230,0.55)';
 
 /** A water's name as a line is marked with it: "The Lantern Sea" as "Lantern Sea". */
-export const waterShort = (water: string): string => water.replace(/^The /, '');
+const waterShort = (water: string): string => water.replace(/^The /, '');
 
 /** Words with each run of letters too long for the band broken into pieces it can wrap. */
 const breakable = (words: string): string =>

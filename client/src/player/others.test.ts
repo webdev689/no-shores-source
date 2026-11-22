@@ -67,7 +67,7 @@ test('other players are placed in their own dress, moved as the room saw them, a
     facing: 0,
   });
   const robed = plainDress('felid', 0.4);
-  const named = { player: 7, name: 'Mariner', level: 20, prestige: 84, menu: true };
+  const named = { player: 7, name: 'Mariner', level: 20, menu: true };
   others.take({
     dressed: [
       { player: 7, dress: JSON.stringify(robed) },

@@ -9,7 +9,7 @@ import { type KeptSignIn, PAGE, type Page, SIGN_INS } from '../ui/page.ts';
 import { announce } from '../ui/announce.ts';
 import { fillNode } from './gearHold.ts';
 import { INK, words } from './gearNodes.ts';
-import { ACCOUNT_CHANGED } from './gearScreen.ts';
+import { ACCOUNT_CHANGED, ROSTER_HEARD } from './gearScreen.ts';
 import type { PlainContext } from './menuPage.ts';
 import { PRESS_PADDING, RULE, answerNode, headingNode, hintNode, paragraph } from './menuPages.ts';
 
@@ -68,6 +68,8 @@ export class AccountPanel {
   /** Asks for the players blocked and muted; with `focusAt`, the press there takes the focus once they come. */
   private listBlocked(focusAt: AccountPanel['focusAt'] = null): void {
     void this.link.roster().then((roster) => {
+      // Heard by the rest of the game too, so an unmute shows in the chat at once.
+      dispatchEvent(new CustomEvent(ROSTER_HEARD, { detail: roster }));
       this.blocked = typeof roster === 'string' ? roster : roster.blocked;
       this.muted = typeof roster === 'string' ? roster : (roster.muted ?? []);
       this.focusAt = focusAt;
