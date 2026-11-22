@@ -8,7 +8,7 @@ import type { Node } from '../ui/node.ts';
 import { viewProjection } from '../editor/orbit.ts';
 import type { MarkedFoe } from './foeBars.ts';
 import { EVENT } from './cues.ts';
-import { blockedBy, clearOf, Hud, type HudFrame, veilOf } from './hud.ts';
+import { blockedBy, clearOf, Hud, type HudFrame, type HudKeys, veilOf } from './hud.ts';
 import { vitalsDepth } from './hudLayout.ts';
 import { cameraOf } from './plateSight.ts';
 import { allOf, coloursDrawn, fakeInterface, laidOf, wordsIn } from './nodes.test.ts';
@@ -548,4 +548,19 @@ test('a room left, its foes are forgotten: the next room’s foe of the same num
   hud.forget();
   hud.update(bare({ matrix, foes: [{ ...old, name: 'Wolf' }] }), 1 / 60);
   assert.ok(!wordsIn(drawn(hud)).includes('Wolf'), 'the new room’s foe 5 is no target');
+});
+
+test("the Arts' and the loadouts' keycaps are the keys the game answers each frame, not those it binds at first", () => {
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  let keys: HudKeys = { arts: ['R', 'E', 'G'], loadouts: ['1', '2'] };
+  const hud = new Hud(pictures, null, () => [], { caps: () => keys, face: () => null });
+  const labels = () =>
+    allOf(drawn(hud))
+      .flatMap((node) => node.label ?? [])
+      .join('|');
+  hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] } }), 1 / 60);
+  assert.ok(labels().includes('Quicken (E), ready'), labels());
+  keys = { arts: ['pad:LB+RB', 'pad:LB', 'pad:RB'], loadouts: ['pad:Left', 'pad:Right'] };
+  hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] } }), 1 / 60);
+  assert.ok(labels().includes('Quicken (LB), ready'), 'the pad played last');
 });

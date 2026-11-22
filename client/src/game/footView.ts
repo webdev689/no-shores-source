@@ -3,6 +3,8 @@ import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import { Hud } from '../combat/hud.ts';
 import type { Box as Laid } from '../ui/quads.ts';
 import { abilityPictures } from './artsCards.ts';
+import { hudKeys } from './controls.ts';
+import { capFace } from './hudParts.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
 import type { Gpu } from '../gpu.ts';
 import type { Stack } from '../ui/stack.ts';
@@ -51,13 +53,17 @@ export class FootView {
     this.swings = new SwingView(gpu);
     // Where the game's own pieces stand, as the interface last laid them.
     let laidBy: Interface | null = null;
-    this.hud = new Hud(abilityPictures, forge, () =>
-      (laidBy ? beside(laidBy) : []).map((box) => ({
-        left: box.x,
-        top: box.y,
-        right: box.x + box.width,
-        bottom: box.y + box.height,
-      })),
+    this.hud = new Hud(
+      abilityPictures,
+      forge,
+      () =>
+        (laidBy ? beside(laidBy) : []).map((box) => ({
+          left: box.x,
+          top: box.y,
+          right: box.x + box.width,
+          bottom: box.y + box.height,
+        })),
+      { caps: () => hudKeys(), face: capFace },
     );
     stack.under((ui) => {
       laidBy = ui;

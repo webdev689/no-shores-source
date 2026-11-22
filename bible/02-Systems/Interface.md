@@ -445,8 +445,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   most of its size. A Ranged weapon's shots stand large
   over its capacity ("18 / 24"; at none a large 0 in the loss colour with "No ammo" small beside it); a Melee one's
   name is in its rarity's colour, and a weapon whose picture has not come (still drawing, or none to be had) says its
-  name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key (1 or 2)
-  and its own shots. A weapon with an element bears its glyph just past its picture's top right, in the row's
+  name instead. Under it stands the other loadout's weapon, in an 80 by 22 px box (112 by 32), with its key as bound now
+  (1 or 2 at first; the pad's button, drawn on the cap, while the pad was played last) and its own shots. A weapon with an element bears its glyph just past its picture's top right, in the row's
   margin clear of a blade's point, as a gear tile bears it in its corner, 16 px in hand and 12 under it (22 and 16 at the larger step), and its row's words name the element. The rows
   change weapons as the fight's rules take them up, only at rest: one pressed, or put
   away, during a swing, a guard, a draw or a reload waits with the hands until it ends. A swap trades the two rows over

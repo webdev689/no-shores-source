@@ -54,6 +54,19 @@ test("under a run's Trickle the bar's spoken words count the longer recharge", (
   assert.equal(bar.words()[2], 'Vanish (G), 19 s to recharge');
 });
 
+test("the bar's keycaps and its spoken words name the keys bound now, and the pad's buttons drawn on their caps", () => {
+  const faces: string[] = [];
+  const pictures = () => ({ anima: '<svg></svg>', animaOutline: '', tenets: ['', ''] as const, diamond: '', ring: '' });
+  const bar = new AbilityBar(pictures, (key) => (key.startsWith('pad:') ? (faces.push(key), { width: 1 }) : null));
+  bar.update({ art: STORM, animaShare: 1, tenets: [1, 1] }, 0, false, ['R', 'E', 'G']);
+  assert.equal(bar.words()[1], 'Quicken (E), ready');
+  assert.ok(wordsIn(bar.node(false)).includes('E'), 'E on its keycap');
+  bar.update({ art: STORM, animaShare: 1, tenets: [1, 1] }, 0, false, ['pad:LB+RB', 'pad:LB', 'pad:RB']);
+  assert.equal(bar.words()[1], 'Quicken (LB), ready');
+  bar.node(false);
+  assert.deepEqual(faces, ['pad:LB+RB', 'pad:LB', 'pad:RB'], "each pad button drawn on its cap, as the ship bar's");
+});
+
 test('shares out of range or unknown are held to the bar', () => {
   const shown = abilityBarOf({ art: STORM, animaShare: 1.4, tenets: [-1, Number.NaN] });
   assert.equal(shown.animaRows, ANIMA_ROWS);
