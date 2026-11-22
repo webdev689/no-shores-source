@@ -1,7 +1,7 @@
 name: wreck
 
 # Builds the prologue's wreck in Blender from the Brig, the Frigate and the Sloop, bakes its fires' and the sky's light
-# at full size, and publishes its mesh, its light and its model to R2 with the repository's Cloudflare token, whenever
+# at full size, and publishes its mesh, its light and its model to R2 with the repository's R2 token, whenever
 # the wreck's tools change. R2's objects are named by their hashes, so a run changes nothing already published. The
 # log's last line names the three keys and the level's hash, and the run keeps the content/prologue/wreck.json it wrote
 # (artifact wreck-level): a build on another machine can lay its ground a hair differently, so a commit takes that
@@ -32,10 +32,10 @@ jobs:
       - name: Check the token is set
         id: token
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
-          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+          else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
       - name: Install Blender's module and the TypeScript tools
         if: steps.token.outputs.set == 'true'
         run: pip install bpy==5.3.0 numpy && npm ci
@@ -58,7 +58,7 @@ jobs:
       - name: Export and publish the wreck
         if: steps.token.outputs.set == 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: python -I tools/wreck/export_wreck.py -- "$RUNNER_TEMP/WreckLit.blend" "$RUNNER_TEMP/light.png"
       - name: Keep the level it laid
         if: steps.token.outputs.set == 'true'

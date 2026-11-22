@@ -3,12 +3,14 @@
 //! player's blow on a foe strikes `PLAYER_HARM` times that, and every foe's on a player `FOE_HARM` times; a foe of
 //! level 0 fights by combat's own numbers and those two alone. A player holds only what a loadout they wear puts in
 //! their hands. A foe's kill pays everyone who struck it in its last seconds, each their own XP, Aurem and what it
-//! drops for them alone (`drops.rs`).
+//! drops for them alone (`drops.rs`), and counts toward their bounties (`bounties.rs`).
 
 use crate::{Foe, PlayerId, Room};
+use combat::Shot;
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Fighter, FighterId};
 use combat::judge::{Blow, BlowKind};
+use gear::objectives::Feat;
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot};
 
@@ -95,7 +97,7 @@ pub(crate) fn drawn(character: &Character, fighter: &Fighter) -> Slot {
 }
 
 /// The foe kinds as the gear's rewards know them, by the foes crate's numbers.
-fn worth_of(kind: u8) -> Option<Worth> {
+pub(crate) fn worth_of(kind: u8) -> Option<Worth> {
     Some(match kind {
         1 => Worth::Skirmisher,
         2 => Worth::Swordsman,
@@ -169,7 +171,7 @@ impl Room {
             },
         };
         let element = held.and_then(|held| held.element).map_or(0, |element| element as u8);
-        let blow = Blow { damage: blow.damage * times, element, ..blow };
+        let blow = Blow { damage: blow.damage * times * self.modded_blow(&blow, defender), element, ..blow };
         match held {
             Some(held) => self.sharpened(blow, defender, &held.trim),
             None => blow,
@@ -187,13 +189,16 @@ impl Room {
     }
 
     /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, throwing
-    /// out what it drops for each, and tells each one's quest log; on land its XP pays their officers ashore too. On a
-    /// boarded deck, or from a defence tried again, a kill drops no Vestige or item: the hold, or the first try, is the
-    /// loot. Each player paid has fought the room's garrison, for its clear (`clears.rs`).
+    /// out what it drops for each, and tells each one's quest log; off a ship's deck its XP also pays their officers
+    /// ashore and the Abyss boon's share, and the kill counts toward their bounties. On a boarded deck, or from a
+    /// defence tried again, a kill drops no Vestige or item: the hold, or the first try, is the loot. Each player paid
+    /// has fought the room's garrison, for its clear (`clears.rs`).
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
         let at = [fighter.body.x, fighter.body.y, fighter.body.z];
+        let week = gear::clock::week_of(self.minute);
+        let felled = Feat::Felled { faction: brain.foe_type.faction, rank: brain.rank as u8, island: self.island };
         let deck = matches!(self.floor, crate::Floor::Deck(_));
         // A defence tried again stands foes that drop nothing (`steps.rs`).
         let spoilless = self.quests.spoilless.contains(&defender);
@@ -208,7 +213,9 @@ impl Room {
             let reward = character.reward_kill(worth, rank, level, Some(hand), self.difficulty);
             let looted = deck || spoilless;
             let vestiges = if looted { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, &dice) };
+            // A ship's deck is no island: what is felled there counts toward no land bounty and earns no boon.
             if !deck {
+                character.boon_xp(week, reward.xp, Some(hand));
                 character.earn_officer_xp(reward.xp, false);
             }
             found.gear_changed = true;
@@ -217,8 +224,18 @@ impl Room {
                 self.drop_spoils(player, vestiges, rank, at, &dice);
             }
             self.tell_kill(player, brain.foe_type.name, rank, [at[0], at[1]]);
+            if !deck {
+                self.saw(player, &felled);
+            }
         }
     }
+}
+
+/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage to the bit
+/// (`combat::step`'s quick shot, power 1), and one loosed from the draw at its draw's power and the aimed trim, which
+/// may be more or, with Hair Trigger, less.
+pub(crate) fn aimed(shot: &Shot) -> bool {
+    shot.damage != combat::shots::shot_numbers(shot.ranged).1
 }
 
 /// Wears a level 1 Normal loadout of this kind, as their gear would put it on.

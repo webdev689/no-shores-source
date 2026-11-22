@@ -95,14 +95,16 @@ fn nth_dice(dice: &Dice, nth: u32) -> Dice {
 /// Boss) weights their colour.
 #[must_use]
 pub fn dropped(chance: f64, rank: u8, foe_level: u8, dice: &Dice) -> Vec<(Rarity, Slot, u8)> {
-    (0..how_many(chance, dice))
-        .map(|nth| {
-            let dice = nth_dice(dice, nth);
-            let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &gated(colours(rank), foe_level))];
-            let slot = Slot::VESTIGE[dice.pick(Purpose::Slot, 0, Slot::VESTIGE.len())];
-            (colour, slot, foe_level.clamp(1, NAMED_LEVEL))
-        })
-        .collect()
+    (0..how_many(chance, dice)).map(|nth| of_colours(colours(rank), foe_level, &nth_dice(dice, nth))).collect()
+}
+
+/// A Vestige of these colour weights (Normal to Atheric) for a foe of this level, gated as every drop is: its
+/// colour, its slot and its item's level.
+#[must_use]
+pub fn of_colours(weights: [u32; 5], foe_level: u8, dice: &Dice) -> (Rarity, Slot, u8) {
+    let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &gated(weights, foe_level))];
+    let slot = Slot::VESTIGE[dice.pick(Purpose::Slot, 0, Slot::VESTIGE.len())];
+    (colour, slot, foe_level.clamp(1, NAMED_LEVEL))
 }
 
 /// The items a kill leaves as themselves, not sealed, by `chance` as `dropped` takes it: each coloured by `rank`'s

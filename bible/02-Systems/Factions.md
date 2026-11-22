@@ -42,9 +42,9 @@ keeps a counter in Overlook's plaza ([[Cities]]).
   of its fragments are earned. Reputation with every faction is kept across a
   switch. A saved character from before the factions reads pledged to none, and a broken one is made whole.
 - **Reputation.** Each kill's XP and each clear's ([[Gear]], "A clear"), as the room pays it after the seas' share,
-  goes as reputation to the faction pledged,
-  but only while the player wears that faction's cape (`earn_reputation`). A rank is every 10,000 reputation, without
-  end.
+  goes as reputation to the faction pledged, but only while the player wears that faction's cape (`earn_reputation`),
+  and a kill's a quarter more while they hold the Abyss boon ([[Activities]]). A rank is every 10,000 reputation,
+  without end.
 - **What a rank earns.** Rank 1 keeps the faction's emblem and rank 2 its dye, as a level keeps its emblem
   (`earn_due`). From rank 3, every rank leaves a package: collected at the counter, it gives a Vestige at the player's
   level for a slot of the dice's (Rare, or Legendary one time in four from level 18) and 1,000 Aurem, and is refused

@@ -99,7 +99,7 @@ fn what_floats_for_a_player_waits_for_their_account_though_they_drop_and_rejoin(
 fn everyone_who_fought_it_keeps_their_own_lot_and_its_boarders_take_its_hold_on_top() {
     let (mut sea, one) = met(20.0, Rank::Minor);
     let two = sea.join();
-    sea.course(two, &[[50_010.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(two, &[[50_010.0, 50_000.0]], 10).unwrap();
     sea.tick();
     assert!(sea.fights.fighting(two), "joined");
     strike(&mut sea, one);

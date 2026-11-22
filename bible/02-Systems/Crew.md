@@ -75,7 +75,7 @@ Each post changes how it plays in a fight, its officer's strength times (`ship::
 ## Signing on
 
 - **At the muster**, the counter of the faction a player is pledged to in a social space ([[Factions]];
-  `room::crew::recruiting_at`), that faction offers three officers a day, the same to everyone that day (`recruit::offers`): the first Able, the second
+  `room::crew::recruiting_at`), that faction offers three officers a day, from 09:00 UTC as the clock turns ([[Activities]]), the same to everyone that day (`recruit::offers`): the first Able, the second
   Seasoned from rank 2 with it, the third Veteran from rank 4, at the player's level (to 20). Wages are 1,500,
   4,000 and 9,000 Aurem. An officer already kept is not signed on twice.
 - **The pledge** is read in one place (`room::crew::pledge_of`): the faction pledged to and the rank with it, as the

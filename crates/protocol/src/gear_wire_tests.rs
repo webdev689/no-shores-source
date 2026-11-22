@@ -1,6 +1,7 @@
 use super::*;
 use crate::{input_bytes, read_input};
 use gear::Vestige;
+use gear::mail::{Posted, Source};
 use room::{Input, ResourceNode};
 
 fn asked_input(asked: Asked) -> Input {
@@ -25,6 +26,15 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::BuyEmblem { emblem: 13 }),
         Asked::Gear(Ask::UseCrate),
         Asked::Gear(Ask::BuyCrate),
+        Asked::Gear(Ask::FinishPrologue),
+        Asked::Gear(Ask::TakeBounty { place: 3, day: 20_778 }),
+        Asked::Gear(Ask::TurnInBounty { place: 5, day: 20_778 }),
+        Asked::Gear(Ask::Infuse { item: 4, fed: 9 }),
+        Asked::Gear(Ask::Recruit { faction: 2, offer: 1 }),
+        Asked::Gear(Ask::Station { officer: 3, duty: gear::crew::Duty::Posted }),
+        Asked::Gear(Ask::Dismiss { officer: 3 }),
+        Asked::Gear(Ask::Train { officer: 3, column: 1, node: 2 }),
+        Asked::Gear(Ask::ChooseOfficer { officer: 3, column: 1, node: 2 }),
         Asked::Gather { node: 2 },
         Asked::StopGather,
         Asked::Scavenge { wreck: 3 },
@@ -54,6 +64,8 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Speak { keeper: 12 }),
         Asked::Gear(Ask::ChooseFragment { art: 2, fragment: 4 }),
         Asked::UsePoint { point: 3 },
+        Asked::Gear(Ask::TakeLetter { letter: 41 }),
+        Asked::Gear(Ask::TakeAllLetters),
     ]
 }
 
@@ -163,7 +175,8 @@ fn an_ask_the_room_does_not_know_reads_as_none() {
 }
 
 /// A room whose first player holds a granted Legendary sword worn, a Vestige carried, two Ammo crates and half their
-/// ammunition, with a resource node spent and an Ammo box lying for them.
+/// ammunition, with a resource node spent, an Ammo box lying for them, and two letters in their mail: a Rare Vestige
+/// for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
 fn furnished() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.furnish(Some([0.0, 0.0]), vec![ResourceNode { x: 0.0, y: 1.0, resource: 4 }]);
@@ -195,6 +208,10 @@ fn furnished() -> (Room, PlayerId) {
     ask(&mut room, 6, Asked::Grant(Grant::Crates(2)));
     ask(&mut room, 7, Asked::Grant(Grant::Ammo(gear::ammo::AMMO_FULL / 2)));
     room.lay_drop(player, Dropped::AmmoBox, [1.0, 2.0, 0.0]);
+    let mut kept = gear::Character::from_json(&room.kept_character(player).expect("in")).expect("a character");
+    kept.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Arms, 9)));
+    kept.post(Source::Salvage, Posted::Item(gear::Item::new(0, Kind::Hull, Rarity::Magic, 6, Slot::Hull)));
+    assert!(room.restore_character(player, &kept.to_json()), "the character kept again");
     (room, player)
 }
 
@@ -282,6 +299,53 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
 }
 
+#[test]
+fn a_players_mail_crosses_with_where_each_letters_holding_came_from_and_what_it_holds() {
+    let (room, player) = furnished();
+    let bytes = gear_bytes(&room, player).expect("a player of the room");
+    let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+    let letters: Vec<_> = gear.mail().expect("the mail").iter().collect();
+    let kept = &room.player(player).expect("in").character.mail;
+    assert_eq!(
+        letters.iter().map(|letter| letter.id()).collect::<Vec<_>>(),
+        kept.iter().map(|letter| letter.id).collect::<Vec<_>>()
+    );
+    assert_eq!(
+        letters.iter().map(|letter| (letter.from(), letter.crowded())).collect::<Vec<_>>(),
+        [(Source::LeftLying as u8, false), (Source::Salvage as u8, false)]
+    );
+    let vestige = letters[0].vestige().expect("its Vestige");
+    assert_eq!((vestige.rarity(), vestige.slot(), vestige.level(), vestige.vaulted()), (2, Slot::Arms as u8, 9, false));
+    assert!(letters[0].item().is_none() && letters[1].vestige().is_none());
+    let item = letters[1].item().expect("its item");
+    assert_eq!((item.kind(), item.rarity(), item.level(), item.at()), (Kind::Hull as u8, 1, 6, 0));
+    assert!(item.columns().is_some_and(|columns| !columns.is_empty()), "its nodes spelled out");
+}
+
+#[test]
+fn a_patrols_players_are_sent_its_entrances_and_no_one_else_is() {
+    let ring = vec![[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]];
+    let section = room::Section { ring, spawns: vec![[0.0, 0.0]], falls_kill: false };
+    let mut room = Room::node(room::Floor::Flat, Vec::new(), section);
+    room.start_patrol("saltgrass-downs", 0, &[]);
+    let player = room.join().expect("a room with space");
+    let read = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("a player of the room");
+        let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
+        gear.dungeons().map(|dungeons| dungeons.iter().collect::<Vec<f64>>())
+    };
+    let sent = read(&room).expect("the entrances");
+    let entrances = room.entrances();
+    assert_eq!(sent.len(), entrances.len() * 5);
+    for (numbers, entrance) in sent.chunks_exact(5).zip(entrances) {
+        let [x, y, z] = entrance.at;
+        assert_eq!(numbers, [x, y, z, entrance.yaw, entrance.model as f64]);
+    }
+    let mut course = Room::new(Vec::new(), (0.0, 0.0));
+    assert_eq!(course.join(), Some(player));
+    assert_eq!(read(&course), None);
+}
+
 /// The client's test reads these bytes, to check that the gear the server writes the browser reads to the bit: the
 /// furnished player's away from a social space, and `standing`'s at the stall while Shape is here.
 #[test]
@@ -366,7 +430,7 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
         "the Tailor's, the Tack's"
     );
     assert_eq!(gear.shapes(), 9);
-    let week = gear::shape::week_of(friday);
+    let week = gear::clock::week_of(friday);
     assert_eq!(usize::from(gear.shape_place()), gear::shape::place(week));
     let wares: Vec<_> = gear.shape_wares().expect("his wares").iter().collect();
     assert_eq!(wares.len(), gear::shape::WARES);
@@ -389,6 +453,129 @@ fn where_a_player_stands_with_factions_arts_cosmetics_and_shape_crosses_whole() 
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     assert_eq!(gear.faction_wares().map(|wares| wares.len()), Some(0), "none away from a social space");
+}
+
+#[test]
+fn a_players_gear_says_whether_they_finished_the_prologue() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let done = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("written");
+        messages::root_as_from_room(&bytes).expect("read").gear().expect("gear").prologue_done()
+    };
+    assert!(!done(&room), "a new character has not");
+    room.input(player, Input { sequence: 1, ask: Some(Asked::Gear(Ask::FinishPrologue)), ..Input::default() })
+        .expect("taken");
+    room.tick();
+    assert!(done(&room));
+}
+
+#[test]
+fn a_players_gear_carries_their_days_and_weeks_record_as_kept() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let mut character = room.player(player).expect("in the room").character.clone();
+    let cleared = [gear::Difficulty::Elite, gear::Difficulty::Abyss].into_iter().collect();
+    character.activity.today = gear::activity::Today { day: 20_778, cleared, ..Default::default() };
+    character.activity.this_week =
+        gear::activity::ThisWeek { week: 2_968, elite: true, abyss: false, boon: true, ..Default::default() };
+    assert!(room.restore_character(player, &character.to_json()));
+    let bytes = gear_bytes(&room, player).expect("written");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    assert_eq!((gear.activity_day(), gear.activity_week()), (20_778, 2_968));
+    assert_eq!(gear.cleared().map(|tiers| tiers.iter().collect::<Vec<u8>>()), Some(vec![1, 2]));
+    assert_eq!((gear.week_elite(), gear.week_abyss(), gear.boon()), (true, false, true));
+}
+
+#[test]
+fn a_players_gear_carries_its_day_and_board_and_no_bounty_held_from_another_day() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.furnish(Some([0.0, 0.0]), Vec::new());
+    room.set_minute(29_919_420);
+    let player = room.join().expect("a room with space");
+    for (sequence, ask) in [(1, Ask::FinishPrologue), (2, Ask::TakeBounty { place: 2, day: 20_778 })] {
+        room.input(player, Input { sequence, ask: Some(Asked::Gear(ask)), ..Input::default() }).expect("taken");
+        for _ in 0..room::asks::ASK_EVERY_TICKS {
+            room.tick();
+        }
+    }
+    let read = |room: &Room| {
+        let bytes = gear_bytes(room, player).expect("written");
+        let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+        let rows: Vec<(String, u32, u32, bool, bool)> = gear
+            .bounties()
+            .expect("the board")
+            .iter()
+            .map(|bounty| {
+                let words = bounty.words().unwrap_or_default().to_owned();
+                (words, bounty.target(), bounty.count(), bounty.held(), bounty.paid())
+            })
+            .collect();
+        (gear.day(), rows, gear.bounty_xp(), gear.bounty_aurem())
+    };
+    let (day, rows, xp, aurem) = read(&room);
+    assert_eq!((day, rows.len()), (20_778, 6));
+    assert_eq!(rows[2], ("Sink or take 3 ships.".to_owned(), 3, 0, true, false));
+    assert_eq!(rows.iter().filter(|row| row.3).count(), 1);
+    assert_eq!((xp, aurem), (600, 36));
+    room.set_minute(29_919_420 + 1_440);
+    let (day, next, ..) = read(&room);
+    assert_eq!(day, 20_779);
+    assert!(next.iter().all(|row| !row.3 && row.2 == 0), "yesterday's bounty is held no more");
+}
+
+#[test]
+fn every_daily_list_a_player_is_sent_turns_at_nine_utc_and_not_at_midnight() {
+    use room::asks::{Counter, CounterKind};
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.counters = Some(vec![Counter { kind: CounterKind::Mage, at: [500.0, 500.0] }]);
+    let player = room.join().expect("a room with space");
+    let character = room.player(player).expect("in the room").character.clone();
+    // What the player is sent at a minute, and what the rules sell on a day: the smiths' wares and the Shipwright's
+    // modules, the Tailor's emblems, the Tailor's and the Tack's cosmetics, and the day they are of.
+    let sent = |room: &mut Room, minute: u64| {
+        room.set_minute(minute);
+        let bytes = gear_bytes(room, player).expect("written");
+        let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+        let wares: Vec<(u8, u8)> =
+            gear.wares().expect("wares").iter().map(|ware| (ware.kind(), ware.rarity())).collect();
+        let emblems: Vec<u16> = gear.emblems_sold().expect("emblems").iter().collect();
+        let cosmetics: Vec<u16> = gear.cosmetics_sold().expect("cosmetics").iter().collect();
+        (u64::from(gear.day()), wares, emblems, cosmetics)
+    };
+    let sold = |day: u64| {
+        use gear::cosmetics::{Seller, sold_on};
+        let wares = gear::vendor::Vendor::ALL
+            .into_iter()
+            .flat_map(|vendor| {
+                let level = if vendor.for_ship() { character.ship_level() } else { character.level() };
+                gear::vendor::wares(vendor, day, level)
+            })
+            .map(|ware| (ware.kind as u8, ware.rarity as u8))
+            .collect();
+        let cosmetics = [Seller::Tailor, Seller::Tack].into_iter().flat_map(|seller| sold_on(seller, day)).collect();
+        (day, wares, gear::emblems::sold_on(day), cosmetics)
+    };
+    let friday_nine = 29_919_420;
+    assert_eq!(sent(&mut room, friday_nine - 9 * 60), sold(20_777), "Friday midnight, UTC: Thursday's day still");
+    assert_eq!(sent(&mut room, friday_nine - 1), sold(20_777), "08:59");
+    assert_eq!(sent(&mut room, friday_nine), sold(20_778), "09:00, a new day");
+    assert_ne!(sold(20_777).2, sold(20_778).2, "the Tailor's emblems turn");
+    assert_ne!(sold(20_777).3, sold(20_778).3, "and the dyes, coats and bardings");
+}
+
+#[test]
+fn a_players_gear_carries_each_bountys_pool_and_name() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    room.set_minute(29_919_420);
+    let player = room.join().expect("a room with space");
+    let bytes = gear_bytes(&room, player).expect("written");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    let bounties = gear.bounties().expect("the board");
+    let pools: Vec<u8> = bounties.iter().map(|bounty| bounty.pool()).collect();
+    assert_eq!(pools, [0, 0, 1, 1, 2, 2], "two on land, two at sea, two in dungeons");
+    let names: Vec<&str> = gear::bounties::board(20_778).iter().map(|bounty| bounty.name).collect();
+    assert_eq!(bounties.iter().map(|bounty| bounty.name().unwrap_or_default()).collect::<Vec<_>>(), names);
 }
 
 #[test]

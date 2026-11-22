@@ -33,6 +33,8 @@ pub enum EventKind {
     ShieldBroken = 13,
     /// A player's drink healed them, the amount what it gave back.
     Healed = 14,
+    /// Every player in an Abyss run fell at once: the run starts over. Told to each player.
+    Wiped = 15,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round
@@ -302,10 +304,12 @@ impl Room {
     fn judge_waited(&mut self, pending: &Pending, then: &Fighter, before: Option<&Fighter>) {
         let feet = |fighter: &Fighter| [fighter.body.x, fighter.body.y, fighter.body.z];
         let verdict = match &pending.check {
-            Check::Swing { striker, attack } if !reaches(striker, attack, feet(then), &self.blocks) => None,
-            Check::Shape { telegraph, .. } if !telegraph.strikes(feet(then), &self.blocks) => {
+            Check::Swing { striker, attack } if !reaches(striker, attack, feet(then), &self.blocks, &self.floor) => {
+                None
+            }
+            Check::Shape { telegraph, .. } if !telegraph.strikes(feet(then), &self.blocks, &self.floor) => {
                 // Inside its shape a moment before it landed and out of it as it did: dodged perfectly.
-                let left_late = before.is_some_and(|before| telegraph.strikes(feet(before), &self.blocks));
+                let left_late = before.is_some_and(|before| telegraph.strikes(feet(before), &self.blocks, &self.floor));
                 left_late.then_some(Verdict::Dodged { perfect: true })
             }
             _ => Some(judge(&pending.blow, then)),

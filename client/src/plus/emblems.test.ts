@@ -1,16 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { EMBLEM_FACTIONS, EMBLEM_PIXELS, emblemSvg, markPicture } from './emblems.ts';
+import { pixelsOf } from './pixelsForTests.ts';
 import { TONES } from './tones.ts';
-
-/** A picture's pixels from its SVG: its size and each pixel's colour by place. */
-function pixelsOf(svg: string) {
-  const size = /width='(\d+)' height='(\d+)'/.exec(svg);
-  const pixels = new Map<string, string>();
-  for (const [, x, y, fill] of svg.matchAll(/<rect x='(\d+)' y='(\d+)' width='1' height='1' fill='([^']+)'\/>/g))
-    pixels.set(`${x},${y}`, fill ?? '');
-  return { width: Number(size?.[1]), height: Number(size?.[2]), pixels, svg };
-}
 
 const STONE: readonly string[] = [TONES.stoneHi, TONES.stoneLit, TONES.stoneMid];
 const BRASS: readonly string[] = [TONES.brassHi, TONES.brassLo];

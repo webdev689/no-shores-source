@@ -70,3 +70,5 @@ It builds on [[Overlook Is a Shared World After Destiny 1]] and [[The World Map]
 an open world, and ships go faster in the Overworld. How it is built: [[World Map]].
 
 The owner then handed the world's working to Claude: [[The World Is Claude's to Mold]].
+
+Its dungeon nodes become the Elite Dungeons: [[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]].

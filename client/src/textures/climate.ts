@@ -1,6 +1,7 @@
 // Daggerfall files a texture set once per climate and season: a set's archive is its climate's base plus the set,
 // plus 1 for winter or 2 for rain where the set has them. This moves an archive to a climate and season, as
-// Daggerfall Unity's ClimateSwaps.ApplyClimate does.
+// Daggerfall Unity's ClimateSwaps.ApplyClimate does. Overlook files its own sets the same way 1000 further on, past
+// every archive Daggerfall has: Daggerfall's 121 and 321 are arches, so Overlook's set 21 cannot take their numbers.
 
 export type Climate = 'desert' | 'mountain' | 'temperate' | 'swamp';
 export type Season = 'summer' | 'winter' | 'rain';
@@ -8,7 +9,8 @@ export type Season = 'summer' | 'winter' | 'rain';
 export const CLIMATES: readonly Climate[] = ['desert', 'mountain', 'temperate', 'swamp'];
 export const SEASONS: readonly Season[] = ['summer', 'winter', 'rain'];
 
-const CLIMATE_BASE: Readonly<Record<Climate, number>> = { desert: 0, mountain: 100, temperate: 300, swamp: 400 };
+/** The archive each climate's sets start from. */
+export const CLIMATE_BASE: Readonly<Record<Climate, number>> = { desert: 0, mountain: 100, temperate: 300, swamp: 400 };
 
 /** The texture sets by their number within a climate. */
 const SET = {
@@ -22,6 +24,11 @@ const EXTERIOR_SETS = new Set([7, 9, 12, 14, 17, 26, 29, 35, 38, 42, 58, 61, 64,
 const INTERIOR_SETS = new Set([11, 16, 19, 20, 22, 23, 24, 25, 28, 37, 40, 41, 44, 45, 47, 48, 60, 63, 66, 68]);
 const NATURE_WINTER_SETS = new Set([504, 506, 508, 510]);
 const NATURE_SETS = new Set([500, 501, 502, 503, ...NATURE_WINTER_SETS]);
+const OWN_BASE = 1000;
+const DRESSING_SET = 21;
+
+/** The dressing the dungeons' built pieces wear, in the desert's numbering: six pictures, turned like a dungeon set. */
+export const DRESSING_ARCHIVE = OWN_BASE + DRESSING_SET;
 
 /** The archive's set (-1 for none), and whether the set has winter and rain turns. */
 export interface SetInfo {
@@ -42,6 +49,8 @@ export function setInfo(archive: number): SetInfo {
 
 /** The archive a set takes in `climate` and `season`. */
 export function climateArchive(archive: number, record: number, climate: Climate, season: Season): number {
+  if (archive >= OWN_BASE)
+    return archive % 100 === DRESSING_SET ? OWN_BASE + CLIMATE_BASE[climate] + DRESSING_SET : archive;
   // the door-frame tapestry never swaps
   if (archive % 100 === SET.doors && record === 3) return archive;
   const info = setInfo(archive);

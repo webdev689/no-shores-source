@@ -9,6 +9,7 @@ import { planOfLayouts, plantedOf } from '../layout/layoutPlan.ts';
 import { paintOfLayouts } from './groundPaint.ts';
 import { landSampler } from '../nature/ground.ts';
 import { NatureView } from '../nature/natureView.ts';
+import { worldText } from '../terrain/landTexts.ts';
 import { type Planted, TILE_M } from '../nature/scatter.ts';
 import type { Landmass } from './landmass.ts';
 import type { ShadowMap } from '../shadow.ts';
@@ -82,11 +83,7 @@ function layoutDrawer(
 /** Reads the forged models' tables and the RMB index once, and the modules' meshes, or null where the pages do not
  *  serve them. */
 export async function loadCityAssets(base: string): Promise<CityAssets | null> {
-  const read = async (path: string) => {
-    const answer = await fetch(`${base}world/${path}`);
-    if (!answer.ok) throw new Error(`world/${path}: ${answer.status}`);
-    return answer.text();
-  };
+  const read = (path: string) => worldText(base, path);
   try {
     const [buildings, props, indexText] = await Promise.all([
       read('forged/buildings.json'),
@@ -115,9 +112,7 @@ async function blocksOf(
   const files = blockFiles(assets.indexText, missing);
   await Promise.all(
     files.map(async (file) => {
-      const answer = await fetch(`${base}world/rmb/${file}`);
-      if (!answer.ok) throw new Error(`world/rmb/${file}: ${answer.status}`);
-      for (const block of parseBlockFile(await answer.text())) assets.blocks.set(block.name, block);
+      for (const block of parseBlockFile(await worldText(base, `rmb/${file}`))) assets.blocks.set(block.name, block);
     }),
   );
   return assets.blocks;

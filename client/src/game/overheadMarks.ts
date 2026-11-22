@@ -1,14 +1,17 @@
 // What wears a mark over it on foot (combat/marksOver.ts lays them): over each keeper who deals with a player their
 // sign in its brass diamond, or a faction's emblem in the diamond edged in its Art's colour, as their screen shows them
-// (npc/npcMarks.ts); and over Shape on his week's spot his own. A resource node wears none: its own picture stands on
-// the ground (nodeCards.ts).
+// (npc/npcMarks.ts), the Postmaster's sealed letter beating while letters wait; over the bounty board its gold "!";
+// over Shape on his week's spot his own; and over each dungeon entrance's door a door. A resource node wears none: its
+// own picture stands on the ground (nodeCards.ts).
 
 import type { PixelPicture } from '../combat/dropPictures.ts';
-import { type Marked, OVER_HEAD_M } from '../combat/marksOver.ts';
+import { type Marked, OVER_HEAD_M, WIDTH_M } from '../combat/marksOver.ts';
+import type { PropTable } from '../models/tables.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import { emblemOf, emblemPixels } from './emblemArt.ts';
+import { doorOf, entrancesOf } from './entrances.ts';
 import { keeperOf } from './keepers.ts';
 import { factionOf } from './npc/factionRows.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
@@ -18,6 +21,9 @@ import type { NodeInfo } from './worldData.ts';
 
 type Point = readonly [number, number, number];
 
+/** How high the bounty board's gable stands, metres, as the city crate builds it (`board.rs`): its mark stands over it
+ *  as a keeper's over their crown. */
+const BOARD_TOP_M = 3.7;
 /** Every mark's outline, and the brass of a faction diamond with no Art's colour. */
 const OUTLINE = '#2a1b08';
 const BRASS = '#f3cf86';
@@ -59,6 +65,25 @@ export function factionPicture(faction: number): PixelPicture {
   return { rows, colours: [OUTLINE, ELEMENTS[found?.art.element ?? 0]?.colour ?? BRASS, ...inks] };
 }
 
+/** A dungeon entrance's mark: an arched door of planks banded in iron, its ring brass, 12 × 12 as a resource's. */
+export const DOOR_PICTURE: PixelPicture = {
+  rows: [
+    '...aaaaaa...',
+    '..abbbbbba..',
+    '.abcdcdcdba.',
+    '.abcdcdcdba.',
+    '.aeeeeeeeea.',
+    '.abcdcdcdba.',
+    '.abcdcdffba.',
+    '.abcdcdffba.',
+    '.aeeeeeeeea.',
+    '.abcdcdcdba.',
+    '.abcdcdcdba.',
+    'aaaaaaaaaaaa',
+  ],
+  colours: [OUTLINE, '#3a2a18', '#6e4a22', '#b07a40', '#4a4a52', BRASS],
+};
+
 const faction = new Map<number, PixelPicture>();
 /** The mark of the keeper at a station of `kind`: their sign, else their faction's emblem; none for a kind with none. */
 export function markOfKind(kind: string): PixelPicture | null {
@@ -72,22 +97,36 @@ export function markOfKind(kind: string): PixelPicture | null {
 }
 
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
- *  over its keeper's crown while the keeper stands there, and Shape over his while he is here. */
+ *  over its keeper's crown while the keeper stands there (the bounty board over its gable), Shape over his while he is
+ *  here, and each of a patrol's dungeon entrances (its gear's `dungeons`) over its door's lintel, once `props` gives
+ *  its model's door. */
 export function markedHere(
   gear: GearState | null,
   here: Pick<NodeInfo, 'stations' | 'visitorSpots'>,
   floor: (x: number, y: number) => number,
+  props: PropTable | null = null,
 ): Marked[] {
   const marked: Marked[] = [];
-  const crown = (x: number, y: number): Point => [x, y, floor(x, y) + BODY_HEIGHT + OVER_HEAD_M];
+  const crown = (x: number, y: number, top = BODY_HEIGHT): Point => [x, y, floor(x, y) + top + OVER_HEAD_M];
+  // The Postmaster's mark beats while letters wait for the player, so it is seen from across the plaza.
+  const waiting = (gear?.mail?.length ?? 0) > 0;
   for (const station of here.stations ?? []) {
     // A keeper away from their post (the elder on her welcome) leaves it unmarked until they are back.
     const there = !awayFromCounters.has(station.kind) && offerAt([station], ...station.counter);
     const picture = there ? markOfKind(station.kind) : null;
-    if (picture) marked.push({ picture, at: crown(...station.keeper) });
+    const top = station.kind === 'board' ? BOARD_TOP_M : BODY_HEIGHT;
+    if (picture)
+      marked.push({ picture, at: crown(...station.keeper, top), beating: waiting && station.kind === 'mail' });
   }
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const own = keeperPicture('shape');
   if (shape && own) marked.push({ picture: own, at: crown(...shape) });
+  for (const entrance of entrancesOf(gear?.dungeons ?? [])) {
+    const door = props && doorOf(entrance, props);
+    if (!door) continue;
+    // A mark's width out from the door's face, so it turns clear of the mound round the door.
+    const [[x, y], [outX, outY]] = [door.middle, door.out];
+    marked.push({ picture: DOOR_PICTURE, at: [x + outX * WIDTH_M, y + outY * WIDTH_M, door.top + OVER_HEAD_M] });
+  }
   return marked;
 }

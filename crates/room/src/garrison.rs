@@ -76,15 +76,21 @@ pub(crate) struct Post {
 }
 
 /// A garrison foe's level, drawn evenly from its island's band (0 with none), and its shield's element if it stands
-/// with one, as `gear::element::Shield::rolled` draws for any foe: one in five, of an element drawn evenly. Each is the
-/// `nth` foe's draw from the node's seed, apart from every other draw of the garrison.
-pub(crate) fn gird_of(seed: u64, nth: u32, levels: Option<(u8, u8)>) -> (u8, Option<gear::Element>) {
+/// with one, as `gear::element::Shield::rolled` draws for any foe: at `shield_chance` (one in five but under Ironclad),
+/// of an element drawn evenly. Each is the `nth` foe's draw from the node's seed, apart from every other draw of the
+/// garrison.
+pub(crate) fn gird_of(
+    seed: u64,
+    nth: u32,
+    levels: Option<(u8, u8)>,
+    shield_chance: f64,
+) -> (u8, Option<gear::Element>) {
     let dice = Dice { seed, tick: 0, player: nth };
     let level = levels.map_or(0, |(low, high)| {
         let band = usize::from(high.saturating_sub(low)) + 1;
         low.saturating_add(u8::try_from(dice.pick(Purpose::Patrol, 0, band)).unwrap_or(0))
     });
-    (level, gear::element::Shield::rolled(&dice, 0, 1.0).map(|shield| shield.element))
+    (level, gear::element::Shield::rolled(&dice, 0, 1.0, shield_chance).map(|shield| shield.element))
 }
 
 const PATROL: [(u8, Rank); 6] = [
@@ -95,7 +101,7 @@ const PATROL: [(u8, Rank); 6] = [
     (CROSSBOWMAN, Minor),
     (CROSSBOWMAN, Major),
 ];
-const DUNGEON: [(u8, Rank); 6] = [
+pub(crate) const DUNGEON: [(u8, Rank); 6] = [
     (RUNNER, Major),
     (COLLECTOR, Major),
     (CROSSBOWMAN, Major),
@@ -181,11 +187,15 @@ impl Room {
 
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, among its
 /// layout's boxes inside that square, and never over its whole section, which would cost more time and memory than a
-/// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone.
+/// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone;
+/// a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
     let Some(section) = section else {
         return over(floor, blocks, ground_around(blocks, first, GROUND_AROUND));
     };
+    if let Floor::Dungeon(_) = floor {
+        return crate::dungeon_room::baked(floor, first, section);
+    }
     let (bounds, walked) = square_of(blocks, ground_middle(section, first));
     match floor {
         // A deck's mesh covers its ring alone: its planks and the walls round them.
@@ -289,6 +299,17 @@ fn open_points(section: &Section, middle: (f64, f64)) -> Vec<(f64, f64)> {
     open
 }
 
+/// What the gates know a node of a kind as: an Elite Dungeon's opens after the prologue, a mission's or a boss's by
+/// its seas alone.
+fn place_of(kind: NodeKind) -> gear::gate::Place {
+    match kind {
+        NodeKind::Social => gear::gate::Place::Social,
+        NodeKind::Patrol => gear::gate::Place::Patrol,
+        NodeKind::Dungeon => gear::gate::Place::EliteDungeon,
+        NodeKind::Mission | NodeKind::Boss => gear::gate::Place::Node,
+    }
+}
+
 impl Room {
     /// A node's room of its kind, its chances drawn from its id: as it opens, the garrison its kind holds stands in it,
     /// at its island's band of `levels` (none for a node of no island, whose foes fight by combat's own numbers).
@@ -304,6 +325,7 @@ impl Room {
         (room.quests.node, room.quests.levels) = (Some(id.to_owned()), levels);
         room.world_seed = node_seed(id);
         room.foes_most = NODE_FOES_MOST;
+        room.place = Some(place_of(kind));
         room.stand_garrison(kind, levels);
         room
     }
@@ -329,10 +351,20 @@ impl Room {
                 }
             }
         }
-        let (seed, mut nth) = (self.world_seed, 0_u32);
+        self.gird_and_stand(levels);
+        if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
+            self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
+        }
+        self.clearing = crate::clears::clearing_of(kind);
+    }
+
+    /// Draws each posted foe's level from its island's band and its shield, in the order the posts were laid, and
+    /// stands every post.
+    pub(crate) fn gird_and_stand(&mut self, levels: Option<(u8, u8)>) {
+        let (seed, mut nth, shield_chance) = (self.world_seed, 0_u32, self.shield_chance());
         for post in &mut self.garrison {
             for &(_, rank, _, _) in &post.members {
-                let (level, shield) = gird_of(seed, nth, levels);
+                let (level, shield) = gird_of(seed, nth, levels, shield_chance);
                 // A Boss or a Miniboss never stands shielded, at the owner's word; the draw is still made, so every
                 // other foe's stays as it was.
                 post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));
@@ -342,10 +374,6 @@ impl Room {
         for post in 0..self.garrison.len() {
             self.stand_post(post);
         }
-        if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
-            self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
-        }
-        self.clearing = crate::clears::clearing_of(kind);
     }
 
     /// A group's post at a point, each foe placed on the navmesh: a group that holds its post with a leader in the
@@ -427,9 +455,11 @@ impl Room {
         }
     }
 
-    /// A garrison level raised by the room's seas; 0, none, stays none.
+    /// A garrison level raised by the room's seas, or the week's run's own level whatever the seas; 0, none, stays
+    /// none.
     pub(crate) fn at_seas(&self, level: u8) -> u8 {
-        if level == 0 { 0 } else { self.difficulty.raise(level) }
+        let fixed = self.run.as_ref().and_then(|run| run.foes_at);
+        if level == 0 { 0 } else { fixed.unwrap_or_else(|| self.difficulty.raise(level)) }
     }
 
     /// Raises every garrison foe standing to its level at the room's seas, which a host sets once the room has opened:
@@ -482,7 +512,7 @@ impl Room {
                 self.stand_post(post);
             }
         }
-        self.pay_clear();
+        self.pay_garrison_clear();
     }
 }
 

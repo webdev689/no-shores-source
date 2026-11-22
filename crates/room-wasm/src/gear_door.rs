@@ -45,7 +45,10 @@ pub fn gear(player: PlayerId) -> Vec<u8> {
         Opened::Sea(sea) if sea.on_deck(player) => {
             sea.deck_gear_change(player).and_then(|(room, boarder)| protocol::gear_wire::gear_bytes(room, boarder))
         }
-        Opened::Sea(sea) => sea.take_character_change(player).and_then(sea_gear_bytes),
+        Opened::Sea(sea) => {
+            let minute = sea.minute;
+            sea.take_character_change(player).and_then(|character| sea_gear_bytes(character, minute))
+        }
         Opened::Fleet(_) => None,
     })
     .flatten()
@@ -58,8 +61,9 @@ thread_local! {
 }
 
 /// A player's gear at sea, from the character the sea keeps for them: written by a room that holds them alone, so
-/// with no drops, nodes, wares or casting, none of which the sea has.
-fn sea_gear_bytes(character: &gear::Character) -> Option<Vec<u8>> {
+/// with no drops, nodes, wares or casting, none of which the sea has, at the sea's minute, so its day's bounties are
+/// today's.
+fn sea_gear_bytes(character: &gear::Character, minute: u64) -> Option<Vec<u8>> {
     GEAR_ROOM.with(|held| {
         let mut held = held.borrow_mut();
         if held.is_none() {
@@ -67,6 +71,10 @@ fn sea_gear_bytes(character: &gear::Character) -> Option<Vec<u8>> {
             *held = room.join().map(|player| (room, player));
         }
         let (room, player) = held.as_mut()?;
+        // A player new to the room each time, so no sailor's story is carried into the next one's (`Story::merged`).
+        room.leave(*player);
+        *player = room.join()?;
+        room.set_minute(minute);
         room.restore_character(*player, &character.to_json()).then(|| protocol::gear_wire::gear_bytes(room, *player))?
     })
 }
@@ -122,6 +130,38 @@ pub fn restore_character(player: PlayerId, bytes: &[u8]) -> bool {
     .unwrap_or(false)
 }
 
+/// Why the open room's gate shuts to a player's character kept as JSON's bytes, in its words (`gear::gate`), with the
+/// story they already hold in the room carried forward (`Room::shut_to`), or at sea the sea's tier (`Sea::shut`); empty
+/// bytes are a new character's. Empty when it may enter, in a fleet, or when the bytes are no character, which the
+/// restore refuses.
+#[must_use]
+pub fn shut(player: PlayerId, bytes: &[u8]) -> String {
+    let character = if bytes.is_empty() {
+        Some(gear::Character::starting())
+    } else {
+        std::str::from_utf8(bytes).ok().and_then(gear::Character::from_json)
+    };
+    let Some(character) = character else { return String::new() };
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.shut_to(player, &character).map(gear::gate::Shut::reason),
+        Opened::Sea(sea) => sea.shut(&character).map(gear::gate::Shut::reason),
+        Opened::Fleet(_) => None,
+    })
+    .flatten()
+    .unwrap_or_default()
+}
+
+/// Why the gate shuts to a player's character written at `address` (`shut`), as its words' bytes, packed as
+/// `hand_over` packs.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn room_shut(player: PlayerId, address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    hand_over(shut(player, unsafe { std::slice::from_raw_parts(address, length) }).into_bytes())
+}
+
 /// Notes the account, written in `bytes`, that keeps a player's character (`Room::own`); false if it is not text or
 /// they are not in.
 pub fn own(player: PlayerId, bytes: &[u8]) -> bool {
@@ -132,6 +172,17 @@ pub fn own(player: PlayerId, bytes: &[u8]) -> bool {
         Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
+}
+
+/// Holds a player's inputs (`held` 1) or lets them play (0): held, each is taken in its order and played as standing
+/// still. 1 if the player is in a room on land, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_hold(player: PlayerId, held: u32) -> u32 {
+    let held = with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.hold(player, held != 0),
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    });
+    u32::from(held.unwrap_or(false))
 }
 
 /// Notes the account written at `address` that keeps a player's character; 1 if noted, 0 if not.
@@ -154,6 +205,17 @@ pub extern "C" fn room_gear(player: PlayerId) -> u64 {
 #[unsafe(no_mangle)]
 pub extern "C" fn room_character(player: PlayerId) -> u64 {
     hand_over(character(player))
+}
+
+/// What still lies for a player goes to their mail (`Room::mail_lying`), at sea from the captain's deck they stand on.
+/// A host calls it as the player leaves, before it reads their character for its last save; a fleet keeps none.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_mail_lying(player: PlayerId) {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.mail_lying(player),
+        Opened::Sea(sea) => sea.mail_lying(player),
+        Opened::Fleet(_) => {}
+    });
 }
 
 /// Gives a player the character written at `address` as JSON; 1 if it was one and they are in, 0 if not.

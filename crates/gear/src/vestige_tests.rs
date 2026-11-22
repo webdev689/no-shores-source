@@ -6,7 +6,7 @@ use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::rewards::{Foe, worth};
 use crate::vestige::{
-    ATHERIC_FROM, LEGENDARY_FROM, OPENS, chance, colours, dropped, gated, item_chance, make, opens_to,
+    ATHERIC_FROM, LEGENDARY_FROM, OPENS, chance, colours, dropped, gated, item_chance, make, of_colours, opens_to,
 };
 use crate::world::Difficulty;
 
@@ -287,6 +287,7 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
     assert_eq!(names.map(Difficulty::from_name), Difficulty::ALL.map(Some));
     assert_eq!(Difficulty::default(), Difficulty::Normal);
     assert_eq!(Difficulty::from_name("gale"), None);
+    assert_eq!(Difficulty::from_name("storm"), None, "the old names are gone");
     // Each harder voyage raises a foe more than the one before, and none past the highest level.
     let raised = Difficulty::ALL.map(|difficulty| difficulty.raise(10));
     assert!(raised[0] == 10 && raised[0] < raised[1] && raised[1] < raised[2], "{raised:?}");
@@ -305,4 +306,13 @@ fn a_harder_voyage_raises_foes_and_pays_more() {
         abyss_drops > normal_drops * 3 / 2,
         "Abyss drops about twice as often: {normal_drops} against {abyss_drops}"
     );
+}
+
+#[test]
+fn a_vestige_of_chosen_colours_keeps_the_gate_every_drop_keeps() {
+    let dice = Dice { seed: 3, tick: 0, player: 1 };
+    assert_eq!(of_colours([0, 0, 0, 1, 0], 26, &dice).0, Rarity::Legendary);
+    assert_eq!(of_colours([0, 0, 0, 1, 0], 12, &dice).0, Rarity::Rare, "no Legendary below 18");
+    assert_eq!(of_colours([0, 0, 0, 0, 1], 19, &dice).0, Rarity::Legendary, "no Atheric below 20");
+    assert_eq!(of_colours([0, 0, 0, 1, 0], 26, &dice).2, 20, "its item at the named level");
 }

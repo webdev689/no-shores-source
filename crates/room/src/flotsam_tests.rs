@@ -152,3 +152,23 @@ fn a_piece_holds_the_same_whoever_it_is_owned_by_now_so_a_rejoin_rolls_nothing_a
     };
     assert_eq!(held(1), held(7));
 }
+
+#[test]
+fn a_vestige_in_flotsam_gathered_with_the_carried_ten_full_goes_to_the_mail() {
+    let mut flotsam = Flotsam::new(1);
+    flotsam.lay(&sank(Rank::Boss, vec![1]), 0, (1, 0));
+    let mut full = Character::starting();
+    for _ in 0..gear::character::VESTIGES_MOST {
+        assert!(full.pick_up(Vestige::new(0, gear::Rarity::Normal, gear::Slot::Legs, 1)));
+    }
+    let mut characters = BTreeMap::from([(1, full)]);
+    let mut gathered = Vec::new();
+    for clock in 1..=8 {
+        let at = flotsam.for_player(1).next().map_or([0.0, 0.0], |piece| piece.at);
+        gathered.extend(flotsam.tick(clock, &[(1, at)], &mut characters));
+    }
+    assert!(gathered.iter().all(|(_, _, held)| held.vestige.is_none()), "none carried");
+    assert_eq!(characters[&1].vestiges_held(false), gear::character::VESTIGES_MOST);
+    let posted = characters[&1].mail.iter().filter(|letter| letter.vestige.is_some()).count();
+    assert!(posted >= 1, "a Boss's chest holds a Vestige, and it went to the mail");
+}

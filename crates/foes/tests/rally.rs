@@ -270,7 +270,7 @@ fn a_foe_broken_with_cover_near_falls_back_behind_it_its_guard_up() {
     room.run(240, &mut still(0.0));
     let (foe, player) = (room.fighter(10), room.fighter(PLAYER));
     assert!(
-        !clear_line(&room.blocks, player.chest(), foe.chest()),
+        !clear_line(&room.blocks, &movement::Flat, player.chest(), foe.chest()),
         "the wall between them: {:?}",
         (foe.body.x, foe.body.y)
     );

@@ -58,8 +58,8 @@ the owner.
   Vestige 35% of the time. Elite and Abyss raise each chance as they raise a kill's.
 - A cleared mission, dungeon or world boss pays bonus XP and Aurem, a world boss's the most.
 - A cove's wreck holds less than a Minor ship's whole lot.
-- Shapes come only from the weekly Abyss content (the owner's "Dailies and Weeklies Follow Destiny 1, With One Abyss
-  Dungeon a Week", on the activities pull request, #97); no kill gives any.
+- Shapes come only from the weekly Abyss content ([[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a
+  Week]]); no kill gives any.
 - A fight on foot on a boarded deck takes the land's ×1.5 and ×0.75.
 
 ## Claude's calls
@@ -78,7 +78,13 @@ the owner.
   of it since its last clear and is still in the room, at the garrison's highest level. It pays once until a group
   stands again. At level 5: a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120, times
   (5 + level) ÷ 10 and the tier, as a kill.
-- **Until the activities pull request is on `main`,** no Shapes are paid anywhere, so Shape's wares cannot be bought;
-  that pull request pays them from the Abyss Dungeon of the week.
+- **Shapes from the week's Abyss**: its Abyss Dungeon's first clear each week pays 15, enough for one of Shape's
+  Atheric pieces or two Legendary a week (`clears::ABYSS_SHAPES`). The activities had paid Shapes from kills at the
+  Elite and Abyss seas instead; those are gone.
+- **A dungeon's cache** pays the dungeon's completion: its clear's XP and Aurem, an item and a Vestige one time in
+  three, where the activities' cache gave a sure Vestige in its Reeve's colours. A dungeon's garrison on an island's
+  node, which has no cache, pays the same clear as its groups all fall.
+- **The dungeon of the day** pays a Boss Captain's kill at the run's level, where it paid the Captain's flat 2,000 XP
+  and 120 Aurem, and its sure Vestige takes a Boss's colours, which may be Normal: the order holds there too.
 - **The fight with every rank, measured** (`measure_blows`, an ignored test in `gear_tests.rs`): a Miniboss Captain
   falls in 27 blows (44.8 s) and fells a player who never guards in 15.4 s; Thule in 47 blows (91.8 s) and 12.5 s.

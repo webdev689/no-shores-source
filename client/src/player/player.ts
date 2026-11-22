@@ -166,16 +166,17 @@ function headOf(player: Player, movement: MovementRules): readonly [number, numb
 }
 
 /** The camera the scene draws the player's frame from, its aiming view at `place`, kept off `blocks` and, given its
- *  height, the ground. */
+ *  height, the ground, and under the ceiling `roof` gives. */
 export function playerCamera(
   player: Player,
   movement: MovementRules,
   blocks: readonly Block[],
   place: AimPlace = AIM,
   groundAt: ((x: number, y: number) => number | null) | null = null,
+  roof: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
   const head = headOf(player, movement);
-  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place, groundAt);
+  return cameraOrbit(head, player.yaw, player.pitch, player.view, blocks, player.aim, place, groundAt, roof);
 }
 
 /** The player with the third-person camera's boom eased over `seconds` clear of `blocks` and the ground: called

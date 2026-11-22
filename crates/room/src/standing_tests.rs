@@ -99,7 +99,7 @@ fn shape_stands_on_the_plaza_from_friday_to_sunday_and_sells_there() {
     assert_eq!(room.shape_at(), None, "not on a Thursday");
     room.take_gear_change(player);
     room.set_minute(FRIDAY_NOON);
-    let week = gear::shape::week_of(FRIDAY_NOON);
+    let week = gear::clock::week_of(FRIDAY_NOON);
     let spot = room.shape_spots[gear::shape::place(week)];
     assert_eq!(room.shape_at(), Some(spot));
     assert!(room.players.get(&player).expect("in").gear_changed, "his coming is sent");
@@ -115,6 +115,11 @@ fn shape_stands_on_the_plaza_from_friday_to_sunday_and_sells_there() {
     assert_eq!(room.player(player).expect("in").character.materials.shapes, 13);
     room.counters = None;
     assert_eq!(room.shape_at(), None, "he keeps to a social space");
+    let tuesday_nine = THURSDAY + 5 * 1_440 + 9 * 60;
+    room.set_minute(tuesday_nine - 1);
+    assert_eq!(room.here(player, &Ask::UseCrate).week, week, "his week runs to Tuesday 09:00 UTC, the clock's");
+    room.set_minute(tuesday_nine);
+    assert_eq!(room.here(player, &Ask::UseCrate).week, week + 1);
 }
 
 /// The Shapes a foe of a rank gives its one striker when slain at a sea's difficulty.
@@ -310,7 +315,7 @@ fn shape_sells_nowhere_outside_his_days_and_his_going_is_sent() {
     move_to(&mut room, player, spot);
     room.players.get_mut(&player).expect("in").character.add_shapes(20);
     room.set_minute(THURSDAY);
-    let shown = gear::shape::shown(gear::shape::week_of(FRIDAY_NOON), 0);
+    let shown = gear::shape::shown(gear::clock::week_of(FRIDAY_NOON), 0);
     assert_eq!(ask(&mut room, player, 1, Ask::BuyFromShape { ware: 0, shown }), answer_code(Err(Refusal::NotHere)));
     // Sunday 21:00, the Friday's week: he goes, and every player is told.
     room.set_minute(FRIDAY_NOON);
@@ -442,13 +447,13 @@ fn a_dress_sent_back_within_its_turn_is_the_one_others_see() {
     };
     send(&mut room, 1, "sword_iron");
     room.tick();
-    send(&mut room, 2, "bow_long_iron");
+    send(&mut room, 2, "sword_steel");
     send(&mut room, 3, "sword_iron");
     for _ in 0..200 {
         room.tick();
     }
     let shown = &room.players.get(&player).expect("in").dress;
-    assert!(shown.contains("sword_iron") && !shown.contains("bow_long_iron"), "the sword drawn back is shown: {shown}");
+    assert!(shown.contains("sword_iron") && !shown.contains("sword_steel"), "the sword drawn back is shown: {shown}");
 }
 
 #[test]

@@ -286,7 +286,7 @@ test('a dress too long for the room is never sent: the room takes every input, a
   fight = fighting;
   link.pump(TICK);
   const steps = fighting.steps(movement);
-  for (const dress of ['{"short":1}', 'x'.repeat(5000), 'x'.repeat(5000)]) {
+  for (const dress of ['{"outfit":{"short":1}}', 'x'.repeat(5000), 'x'.repeat(5000)]) {
     fighting.dress = dress;
     for (let count = 0; count < 3; count += 1) {
       steps.step({} as Body, STILL);
@@ -294,7 +294,7 @@ test('a dress too long for the room is never sent: the room takes every input, a
     }
   }
   assert.deepEqual([...answers], ['taken']);
-  assert.deepEqual(dressed, ['{"short":1}']);
+  assert.deepEqual(dressed, ['{"outfit":{"short":1}}']);
 });
 
 test('a swing rolls among the strokes that reach its target, and among all six when none does or none is locked', () => {
@@ -397,6 +397,8 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     base: 0n,
     gonePlayers: [],
     goneFoes: [],
+    cache: [],
+    revives: -1,
     vessels: [],
     balls: [],
     naval: [],
@@ -440,7 +442,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
   const fighting = new Fighting(rules, link);
-  [fight, fighting.dress] = [fighting, '{"short":1}'];
+  [fight, fighting.dress] = [fighting, '{"outfit":{"short":1}}'];
   link.pump();
   const steps = fighting.steps(movement);
   const walk = (ticks: number, controls: Controls) => {
@@ -465,7 +467,7 @@ test('a fight whose link joins its room again numbers its inputs anew, sends its
   link.pump();
   walk(10, STILL);
   assert.deepEqual([...answers], ['taken'], 'every input numbered anew, from 1');
-  assert.deepEqual(dressed, ['{"short":1}'], 'the dress sent again');
+  assert.deepEqual(dressed, ['{"outfit":{"short":1}}'], 'the dress sent again');
   assert.ok(casts.length > 0 && casts.every((cast) => cast === 0), 'the old room’s cast is not sent');
   assert.equal(fighting.joins, 2);
   const [x, y] = [fighting.own?.x ?? 0, fighting.own?.y ?? 0];

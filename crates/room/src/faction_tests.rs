@@ -5,6 +5,7 @@
 
 use super::*;
 use ::foes::Rank;
+use combat::fighter::Action;
 use combat::shapes::{Shape, Telegraph, TelegraphOrder};
 use core::f64::consts::PI;
 

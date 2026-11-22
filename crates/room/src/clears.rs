@@ -38,7 +38,7 @@ impl Room {
     /// Pays the garrison's clear once every group of it is down at once, no wave standing: each player who fought it
     /// and is still here, at the garrison's highest level at the room's seas. What a dungeon's clear leaves is laid
     /// at their feet.
-    pub(crate) fn pay_clear(&mut self) {
+    pub(crate) fn pay_garrison_clear(&mut self) {
         // Only the garrison's own groups standing again ready its clear anew: a quest's wave or ambush, which comes
         // and goes, never does, and no clear is paid while one stands.
         let own = self.garrison.iter().filter(|post| !post.arrival);

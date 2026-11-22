@@ -66,7 +66,13 @@ impl Dice {
     /// A number in [0, 1) for this purpose, and for the `nth` of several rolls with the same purpose.
     #[must_use]
     pub fn roll(&self, purpose: Purpose, nth: u32) -> f64 {
-        let asked = u64::from(self.player) << 32 | u64::from(purpose as u32 + nth) << 8;
+        self.roll_numbered(purpose as u32 + nth)
+    }
+
+    /// A number in [0, 1) for a roll numbered outside the purposes, for dice of a seed no room's dice share.
+    #[must_use]
+    pub fn roll_numbered(&self, number: u32) -> f64 {
+        let asked = u64::from(self.player) << 32 | u64::from(number) << 8;
         let hashed = mix(mix(mix(self.seed) ^ self.tick) ^ asked);
         (hashed >> 11) as f64 / (1_u64 << 53) as f64
     }

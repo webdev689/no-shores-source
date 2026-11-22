@@ -1,9 +1,9 @@
 // The one screen every keeper of a social space opens, after Destiny 1's vendors: the keeper large at the left over a
 // ground lit in their colour, their mark and title above them; at the right their words, the currencies they deal in
 // (and a faction's rank and its meter), the band they speak in, their wares in rows under engraved headings (the
-// vault keeper's two sides of the vault in their place), and at the foot the time to the next stock, or to Shape's
-// leaving. The menu (gearWindow.ts) frames it with its header and footer.
-import type { GearState } from '../../network/gearMessages.ts';
+// vault keeper's two sides of the vault in their place, the Postmaster's letters in theirs), and at the foot the time
+// to the next stock, or to Shape's leaving. The menu (gearWindow.ts) frames it with its header and footer.
+import type { GearAsk, GearState } from '../../network/gearMessages.ts';
 import { ELEMENTS } from '../../player/gear.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import type { Child, Node } from '../../ui/node.ts';
@@ -14,16 +14,17 @@ import type { View } from '../gearScreen.ts';
 import { KEEPERS, KEEPER_KINDS, type KeeperKind } from '../keepers.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { vaultPage } from '../stationPages.ts';
-import { clockWords, secondsToMidnight, shapeSecondsLeft } from './npcClock.ts';
+import { clockWords, countdownsAt } from './npcClock.ts';
 import { factionOf, rankRewards, reputationOf } from './factionRows.ts';
 import { keeperFigure } from './npcFigure.ts';
+import { letterPresses, mailOpened, mailPage } from './mailPage.ts';
 import { keeperMarkSvg } from './npcMarks.ts';
 import { type Asked, answeredWith } from './npcLines.ts';
 import { hush, keeperSays, speechBand } from './npcSpeech.ts';
 import { type KeeperLook, coinGlyph, meter, rowsNode } from './npcTiles.ts';
 import { type Ware, purseOf, rowsOf } from './npcWares.ts';
 
-/** The keepers whose wares change each day at midnight. */
+/** The keepers whose wares change at each daily reset. */
 const DAILY: readonly KeeperKind[] = ['armorsmith', 'weaponsmith', 'tailor', 'tack'];
 /** The menu's brass, the ground of a keeper who serves no Art. */
 const BRASS = '#c08a3e';
@@ -39,6 +40,8 @@ export const npcChoosing = (): boolean => choosing;
 /** The figure's height beside what the screen's body leaves it, and the least it is drawn at. */
 const FIGURE_AROUND = 120;
 const FIGURE_LEAST = 200;
+/** A room narrower than this, in pixels, stands the keeper over the rest. */
+const NARROW = 600;
 /** The rows' own id, which scrolls where a screen is too short for them all. */
 const ROWS = 'npc-rows';
 
@@ -60,6 +63,7 @@ let pressesShown: readonly (readonly string[])[] = [];
 /** The screen opens at `view`: a keeper's greets the player; any other view hushes the last. */
 export function npcOpened(view: View): void {
   [choosing, pending, focusNext, pressesShown] = [false, null, null, []];
+  mailOpened();
   if (isKeeperView(view)) keeperSays(view, 'Hello');
   else hush();
 }
@@ -199,11 +203,11 @@ function purseNode(context: MenuContext, kind: KeeperKind, look: KeeperLook): No
   };
 }
 
-/** The foot's countdown, to the second: to midnight, or to Shape's leaving. */
+/** The foot's countdown, to the second: to the daily reset, or to Shape's leaving, by the rules' clock. */
 function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: number): Node | null {
   const shape = kind === 'shape' ? gear.shape : null;
   if (!DAILY.includes(kind) && !shape) return null;
-  const now = Date.now();
+  const left = countdownsAt(Date.now());
   return {
     role: 'well',
     width,
@@ -212,19 +216,19 @@ function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: nu
     alignY: 'center',
     children: [
       { text: { words: (shape ? 'Leaves in' : 'Stock refresh').toUpperCase(), size: look.text, tracking: 2 } },
-      words(clockWords(shape ? shapeSecondsLeft(now) : secondsToMidnight(now)), look.text, INK.word, { tracking: 2 }),
+      words(left ? clockWords(shape ? left.shape : left.stock) : '', look.text, INK.word, { tracking: 2 }),
     ],
   };
 }
 
-/** The keeper at the left: their mark and title above them, the figure on a floor lit in their colour. */
-function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, width: number): Node {
-  const { room, forge, sizes } = context;
+/** The keeper `width` by `height`: their mark and title above them, the figure on a floor lit in their colour. */
+function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, width: number, height: number): Node {
+  const { forge, sizes } = context;
   const rgb = channels(look.glow);
   const figure = keeperFigure(
     kind,
     forge,
-    Math.max(FIGURE_LEAST, room.height - FIGURE_AROUND),
+    Math.max(Math.min(FIGURE_LEAST, height - 44), height - FIGURE_AROUND),
     sizes.ratio,
     performance.now(),
     motionReduced(),
@@ -232,7 +236,7 @@ function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, wid
   const mark = look.wide ? 63 : 42;
   return {
     width,
-    height: room.height,
+    height,
     clip: true,
     direction: 'column',
     alignX: 'center',
@@ -262,9 +266,9 @@ function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, wid
           glow(across / 2, down * 0.58, across * 0.6, down * 0.55, 0.34, 0.72);
           glow(
             across / 2,
-            down - 11 * (down / room.height) - 22 * (down / room.height),
+            down - 11 * (down / height) - 22 * (down / height),
             across * 0.4,
-            22 * (down / room.height),
+            22 * (down / height),
             0.45,
             0.7,
           );
@@ -311,14 +315,22 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     choosing = !choosing;
     [focusNext, focusWaited] = [choosing ? 'first-rise' : 'npc-rise', 0];
   };
-  // The vault keeper thanks the player for each thing put in or taken out, as a keeper does for a ware.
-  const rows = kind === 'vault' ? [] : rowsOf(kind, gear, choosing);
+  // In a room as narrow as a phone's the keeper stands over the rest, so neither side is too narrow to read.
+  const narrow = room.width < NARROW;
+  const stageWidth = narrow ? room.width : Math.floor((room.width * 2) / 5);
+  const sideWidth = narrow ? room.width : room.width - stageWidth;
+  // The vault keeper thanks the player for each thing put in or taken out, and the Postmaster for each letter taken,
+  // as a keeper does for a ware.
+  const thanked = { ...context, ask: (asked: GearAsk) => (waitFor(), context.ask(asked)) };
+  const rows = kind === 'vault' || kind === 'mail' ? [] : rowsOf(kind, gear, choosing);
   const wares: Child[] =
     kind === 'vault'
-      ? [vaultPage({ ...context, ask: (asked) => (waitFor(), context.ask(asked)) }, look.text)]
-      : rowsNode(context, rows, look, act, open);
-  // The focus on a ware gone (bought, or its row closed) goes to the one beside it.
-  const presses = rows.map((row) => row.wares.map((ware) => `npc-${ware.key}`));
+      ? [vaultPage(thanked, look.text)]
+      : kind === 'mail'
+        ? [mailPage(thanked, look, sideWidth - 44)]
+        : rowsNode(context, rows, look, act, open);
+  // The focus on a ware or a letter gone (bought, taken, or its row closed) goes to the one beside it.
+  const presses = kind === 'mail' ? letterPresses(gear) : rows.map((row) => row.wares.map((ware) => `npc-${ware.key}`));
   const focused = ui.focusedId;
   if (focused && !presses.flat().includes(focused) && pressesShown.flat().includes(focused)) {
     const beside = keyBeside(pressesShown, focused);
@@ -331,15 +343,14 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     if (wanted && presses.flat().includes(wanted)) [focusNext] = [null, ui.focusOn(wanted)];
     else if (++focusWaited > 1) focusNext = null;
   }
-  const stageWidth = Math.floor((room.width * 2) / 5);
-  const sideWidth = room.width - stageWidth;
   const most = Math.min(look.wide ? 880 : 572, sideWidth - 44);
   const foot = footNode(kind, gear, look, most);
   return {
     width: room.width,
     height: room.height,
+    direction: narrow ? 'column' : 'row',
     children: [
-      stageNode(context, kind, look, stageWidth),
+      stageNode(context, kind, look, stageWidth, narrow ? Math.floor(room.height / 3) : room.height),
       {
         width: sideWidth,
         height: 'grow',

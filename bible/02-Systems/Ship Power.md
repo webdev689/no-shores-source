@@ -63,7 +63,7 @@ are in [[Crew]].
   "Vestiges"): a piece its ship's, a chest the rank it is rolled at, a cove's wreckage a Minor's, an isle's an
   Elite's, a Breach's a Boss's; never past what its level could drop. By the whole find, a cove's wreckage holds less
   than a Minor ship's pieces, an isle's about a Major's, and an Elite's far more.
-- **The Shipwright** sells six modules a day, three Rare and three Magic, at the buyer's ship's level, at the
+- **The Shipwright** sells six modules a day (the clock's, from 09:00 UTC: [[Activities]]), three Rare and three Magic, at the buyer's ship's level, at the
   Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
 
 ## At sea

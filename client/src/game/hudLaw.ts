@@ -78,10 +78,17 @@ export function distanceText(metres: number): string {
 /** The islands' names the owner has given, by continent. */
 export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 
-/** The words under a place's name: its kind, and its island's name where it has one. A ruined city's place is no
- *  social space: it says only that it lies in ruins. */
-export function placeWords(node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string }): string {
+/** The words under a place's name: the room of a dungeon the player stands in, the place's kind, its island's name
+ *  where it has one, and in an Abyss run the revives its company has left (-1, none counted, elsewhere). A ruined
+ *  city's place is no social space: it says only that it lies in ruins. */
+export function placeWords(
+  node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string },
+  room?: string | null,
+  revives = -1,
+): string {
   const island = ISLANDS[node.continent];
   const kind = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
-  return island ? `${kind} · ${island}` : kind;
+  const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${kind}` : kind;
+  const left = revives === 0 ? 'No revives left' : `${revives} revive${revives === 1 ? '' : 's'} left`;
+  return [named, ...(island ? [island] : []), ...(revives < 0 ? [] : [left])].join(' · ');
 }

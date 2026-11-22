@@ -2,6 +2,21 @@
 // lowered, and the view of the world on the parchment panned, zoomed and picked. Nothing here draws; the held map's
 // view does.
 
+import type { Difficulty } from './heldMap.ts';
+
+/** The voyage card's difficulties, easiest first. */
+const SEAS_ORDER: readonly Difficulty[] = ['normal', 'elite', 'abyss'];
+
+/** The voyage card's difficulty as the gates leave it: the hardest one open at or below the one picked, and the first
+ *  reason a tier is shut, for the card's line (null when none is). With no word of the character, none is shut. */
+export function seasChoices(
+  picked: Difficulty,
+  shut: readonly (string | null)[],
+): { readonly picked: Difficulty; readonly why: string | null } {
+  const open = SEAS_ORDER.slice(0, SEAS_ORDER.indexOf(picked) + 1).filter((tier, index) => !shut[index]);
+  return { picked: open.at(-1) ?? 'normal', why: shut.find((reason) => reason) ?? null };
+}
+
 /** The forge's held-map painting, pixels: the sheet and each frame of the hands, drawn six times over, are this size. */
 export const SPRITE = { width: 1648, height: 1086 } as const;
 /** The parchment on the painting, as shares of its width and height (the sheet's opaque extent). */

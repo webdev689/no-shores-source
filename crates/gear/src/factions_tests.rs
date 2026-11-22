@@ -33,7 +33,7 @@ fn seasoned() -> Character {
 }
 
 /// Pledges, buys the cape and wears it.
-fn caped(faction: u8) -> Character {
+pub(crate) fn caped(faction: u8) -> Character {
     let mut character = rich();
     assert_eq!(character.ask(Ask::Pledge { faction }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));
     assert_eq!(character.ask(Ask::BuyFactionWare { faction, ware: CAPE }, AT_COUNTER, &DICE).map(|_| ()), Ok(()));

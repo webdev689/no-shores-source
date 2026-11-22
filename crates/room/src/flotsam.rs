@@ -66,8 +66,8 @@ pub struct Floating {
     pub wind: [f64; 2],
 }
 
-/// What a piece held once gathered: a Vestige, an Ammo box and an Ammo crate, each if it held one and there was room,
-/// and the ship's salvage taken (`gear::ship::found`).
+/// What a piece held once gathered: a Vestige, an Ammo box and an Ammo crate, each if it held one and there was room
+/// (a Vestige without room goes to the mail), and the ship's salvage taken (`gear::ship::found`).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Held {
     pub vestige: Option<Vestige>,
@@ -178,9 +178,10 @@ fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &m
     let mut held = Held { salvage: ship_salvage(piece, difficulty, &dice, character), ..Held::default() };
     let Some(drop) = piece.drop else { return held };
     let rank = drop.number();
-    // The best Vestige taken is the one told; the items a Miniboss or a Boss leaves are kept as they are made.
+    // The best Vestige carried is the one told, the rest posted when the ten are full; the items a Miniboss or a Boss
+    // leaves are kept as they are made.
     let mut taken: Vec<Vestige> = character.loot_kill(rank, piece.level, difficulty, &dice);
-    taken.retain(|vestige| character.pick_up(vestige.clone()));
+    taken.retain(|vestige| character.carry_or_post(vestige.clone(), gear::mail::Source::Flotsam));
     held.vestige = taken.into_iter().max_by_key(|vestige| vestige.rarity);
     held.ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();
     held.ammo_crate = gear::ammo::drops_crate(rank) && character.take_crate();

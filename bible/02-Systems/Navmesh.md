@@ -9,6 +9,8 @@ code:
   - crates/navmesh/src/raster.rs#voxelise
   - crates/navmesh/src/compact.rs#build
   - crates/navmesh/src/regions.rs#partition
+  - crates/navmesh/src/lib.rs#bake_anchored
+  - crates/room/src/dungeon_room.rs#baked
   - crates/navmesh/src/contours.rs#build
   - crates/navmesh/src/poly.rs#build
   - crates/navmesh/src/locate.rs#Mesh
@@ -37,9 +39,9 @@ steps and numbers, which were project-final's ([[Pick - project-final AI]]). A c
 course and 30 m of ground about it (a course laid over open sea, its blocks' tops alone); a node's room over a 70 m
 square of its own land by its first spawn, where its garrison stands ([[Enemies]]), and one more 70 m square round each
 place a house's road stands a group at ([[Quests]]), each among the boxes of its layout inside it, which its node file
-holds. Each foe finds its way on the mesh that holds its post, or with none the one whose square holds where it stands,
-and on the node's own otherwise. Its [[Foes]] find their way and their firing spots by it, and climb
-and drop where its links say.
+holds; a dungeon's room over the whole dungeon ([[Dungeons]]). Each foe finds its way on the mesh that holds its post,
+or with none the one whose square holds where it stands, and on the node's own otherwise. Its [[Foes]] find their way
+and their firing spots by it, and climb and drop where its links say.
 
 ## How it works
 
@@ -62,7 +64,11 @@ and drop where its links say.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
    of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk or a link joins is
    kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
-   no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are.
+   no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
+   anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
+   rock stands as walls 10 m tall ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon
+   bakes in cells of 0.4 m, an eighth of its own, so every wall of it lies on a cell's edge and the bake holds a third
+   of the columns 0.25 m would; its jambs and pillars are the bake's colliders.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
