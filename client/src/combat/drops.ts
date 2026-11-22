@@ -400,7 +400,12 @@ export function markLine(
  *  once it settles. */
 export function markDropLine(
   out: number[],
-  { place, rarity, over, share = 1 }: { readonly place: Point; readonly rarity: number; readonly over: number; readonly share?: number },
+  {
+    place,
+    rarity,
+    over,
+    share = 1,
+  }: { readonly place: Point; readonly rarity: number; readonly over: number; readonly share?: number },
   seconds: number,
   eye: Point,
 ): void {

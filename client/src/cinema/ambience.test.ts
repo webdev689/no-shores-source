@@ -123,7 +123,11 @@ test('a bed whose recording has not come makes no new node each frame while it w
   let come = false;
   const play = ((...args: unknown[]) =>
     come ? (fake.play as (...all: unknown[]) => unknown)(...args) : null) as unknown as typeof playSample;
-  const ambience = new Ambience(outputOf(fake, () => true), play, fetched);
+  const ambience = new Ambience(
+    outputOf(fake, () => true),
+    play,
+    fetched,
+  );
   ambience.set({ rain: 1 }, 0);
   ambience.frame(0.016);
   const waiting = fake.made.length;
@@ -196,7 +200,11 @@ test("a scene's first gull flock plays as soon as its recording has come, not a 
     let coming = asksBeforeItComes;
     const play = ((...asked: Parameters<typeof fake.play>) =>
       coming-- > 0 ? null : fake.play(...asked)) as typeof fake.play;
-    const ambience = new Ambience(outputOf(fake, () => true), play, fetched);
+    const ambience = new Ambience(
+      outputOf(fake, () => true),
+      play,
+      fetched,
+    );
     ambience.set({ gulls: 1 }, 0);
     for (let frame = 1; frame <= 600; frame++) {
       fake.audio.currentTime += 1 / 60;
@@ -308,7 +316,11 @@ test("the story's one-shots are fetched as its sound wakes, so one heard once is
   const fake = fakeAudio();
   const asked: string[] = [];
   let answering = false;
-  const ambience = new Ambience(outputOf(fake, () => answering), fake.play, (audio, ids) => asked.push(...ids));
+  const ambience = new Ambience(
+    outputOf(fake, () => answering),
+    fake.play,
+    (audio, ids) => asked.push(...ids),
+  );
   ambience.frame(0.016);
   assert.deepEqual(asked, [], 'nothing before the sound wakes');
   answering = true;

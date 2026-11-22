@@ -185,7 +185,8 @@ test('a lay just taken fans its arcs out as wide as it scatters, and they close 
   assert.ok(fanned && settled);
   const fallOf = (aim: typeof fanned, gun: number) => aim.arcs[gun]?.at(-1) ?? [0, 0, 0];
   // The two falls, settled, lie 15 m and 2 m apart from their middle; fanned twice as far out from it.
-  const gapOf = (aim: typeof fanned) => Math.hypot(fallOf(aim, 1)[0] - fallOf(aim, 0)[0], fallOf(aim, 1)[1] - fallOf(aim, 0)[1]);
+  const gapOf = (aim: typeof fanned) =>
+    Math.hypot(fallOf(aim, 1)[0] - fallOf(aim, 0)[0], fallOf(aim, 1)[1] - fallOf(aim, 0)[1]);
   assert.ok(Math.abs(gapOf(fanned) - 2 * gapOf(settled)) < 1e-9, `${gapOf(fanned)} against ${gapOf(settled)}`);
   assert.deepEqual(fanned.arcs[0]?.[0], settled.arcs[0]?.[0], 'each from its own gun');
   assert.deepEqual(fanned.zone[0]?.slice(0, 2), fallOf(fanned, 1).slice(0, 2), 'its ring under its fanned fall');

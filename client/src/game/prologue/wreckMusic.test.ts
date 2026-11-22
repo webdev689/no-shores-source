@@ -29,7 +29,10 @@ test('a death on the wreck before Thule plays no ending: the player rises and th
 });
 
 test("the fight with Thule lost plays his score's end, and only him of his rank is heard", () => {
-  const heard = heardOnWreck({ ...foot, foes: [boarder, { ...thule, id: 3 }] }, thule, { thuleHeard: true, beaten: false });
+  const heard = heardOnWreck({ ...foot, foes: [boarder, { ...thule, id: 3 }] }, thule, {
+    thuleHeard: true,
+    beaten: false,
+  });
   assert.deepEqual(
     heard.foes.map((foe) => foe.id),
     [1, 2],

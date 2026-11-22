@@ -209,7 +209,10 @@ export function wayAboard(hull: number, from: Point, to: Point, share: number, o
   const side = Math.sign(to[1]) || 1;
   const [, high] = hullBox(hull);
   const past = sweptBoxes(hull)
-    .filter(([low, top]) => to[0] > low[0] && to[0] < top[0] && to[2] > low[2] - ROUND_CLEAR_M && to[2] < top[2] + ROUND_CLEAR_M)
+    .filter(
+      ([low, top]) =>
+        to[0] > low[0] && to[0] < top[0] && to[2] > low[2] - ROUND_CLEAR_M && to[2] < top[2] + ROUND_CLEAR_M,
+    )
     .map(([, top]) => top[1]);
   const abeam: Point = [to[0], side * (Math.max(Math.abs(high[1]), ...past) + ROUND_CLEAR_M), to[2]];
   const [round, last] = [sweepOf(hull, from, abeam).length, Math.abs(abeam[1] - to[1])];

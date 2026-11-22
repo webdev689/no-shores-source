@@ -72,5 +72,8 @@ test('a mark seen through what hides it is laid flat and faded, measured from th
   const across = hidden.filter((unused, index) => index % MARK_FLOATS === 0);
   assert.ok(Math.min(...across) > -1 && Math.max(...across) < 1, 'measured from the eye');
   const far = [...marksHidden(marked, [5, -(REACH_M - 1), 2], 0)].filter((unused, index) => index % MARK_FLOATS === 6);
-  assert.ok(far.every((opacity) => opacity > 0 && opacity < HIDDEN_SHARE), 'fading further at its end');
+  assert.ok(
+    far.every((opacity) => opacity > 0 && opacity < HIDDEN_SHARE),
+    'fading further at its end',
+  );
 });

@@ -186,7 +186,16 @@ test('the panel leaves the ship’s own hurts and guns to the plate and the rose
 });
 
 test('the lay is said on target only while its side can fire', async () => {
-  const lay = { side: 'port', launches: [], elevation: 0, reach: 300, ends: [], radius: 2, spread: 1, on_target: true } as const;
+  const lay = {
+    side: 'port',
+    launches: [],
+    elevation: 0,
+    reach: 300,
+    ends: [],
+    radius: 2,
+    spread: 1,
+    on_target: true,
+  } as const;
   const said = async (left: readonly [number, number]) => {
     const player = { ...vessel, guns: { ...vessel.guns, left } };
     const fighting = await begun(source({ lay, player }).fights);

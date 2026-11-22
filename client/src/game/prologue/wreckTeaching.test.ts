@@ -85,7 +85,10 @@ test('the arms on the deck are the item itself, drawn once, moving as a drop: po
   const popped = arms.figure(body, 10.3);
   assert.ok(popped && popped.z > first.z + 0.3, 'popped up from where it lay');
   const resting = [12, 12.4, 12.8].map((clock) => arms.figure(body, clock)?.z ?? 0);
-  assert.ok(resting.every((z) => z > deck && z < deck + 0.5), 'hovering over the deck');
+  assert.ok(
+    resting.every((z) => z > deck && z < deck + 0.5),
+    'hovering over the deck',
+  );
   assert.ok(Math.max(...resting) - Math.min(...resting) > 0.01, 'bobbing');
   const lit: number[] = [];
   arms.mark(lit, 12.8, eye);

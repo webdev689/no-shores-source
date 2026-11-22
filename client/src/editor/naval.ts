@@ -208,7 +208,15 @@ export class Naval {
   aimCamera(orbit: Orbit, sailing: Aboard, view: Window, shown: number, aiming: boolean, seconds: number): Orbit {
     const answer = this.fight?.view;
     const speaks = aiming && answer?.player.state === 'afloat';
-    const aimed = easedAimOf(this.aimEye, orbit, sailing, view, { shown, aiming: speaks }, answer?.lay ?? null, seconds);
+    const aimed = easedAimOf(
+      this.aimEye,
+      orbit,
+      sailing,
+      view,
+      { shown, aiming: speaks },
+      answer?.lay ?? null,
+      seconds,
+    );
     this.aimed = aimed.look;
     return aimed.orbit;
   }

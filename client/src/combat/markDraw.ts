@@ -249,7 +249,11 @@ export class MarkDraw {
     return {
       layout: device.createPipelineLayout({ bindGroupLayouts: [this.overLayoutOf()] }),
       vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
-      fragment: { module: this.module, entryPoint: entry, targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }] },
+      fragment: {
+        module: this.module,
+        entryPoint: entry,
+        targets: [{ format, blend: { color: BLENDED, alpha: BLENDED } }],
+      },
       primitive: { topology: 'triangle-list' },
     };
   }
