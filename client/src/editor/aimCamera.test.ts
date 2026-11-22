@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { lookReach } from './aim.ts';
 import { AIM_CAM_TAU, type AimAsk, AimCamera, type AimShip, type Laid } from './aimCamera.ts';
 import { aimStation, inItsRig } from './aimStation.ts';
-import { orbitClearance, sweptBoxes } from './shipClear.ts';
+import { orbitClearance } from './shipClear.ts';
 import { hullBox, SLOOP_HULL } from '../ships/hulls.ts';
 
 // Heading north: starboard is east, forward is north (south negative).
