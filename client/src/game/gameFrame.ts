@@ -246,8 +246,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const gated = paused || looking || here.fallen || here.dungeon;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);
     hud.passageOffer(playing.through?.offer ?? null);
-    // N raises the map on foot unless a menu is up or the player has fallen, as `openMap` has it.
-    hud.hints(looking ? HINTS.landMap : paused || here.fallen ? shown.hints : withMapKey(shown.hints));
+    // N raises the map on foot unless a menu is up, the player has fallen or is in a dungeon, as `openMap` has it.
+    const mapless = paused || here.fallen || here.dungeon;
+    hud.hints(looking ? HINTS.landMap : mapless ? shown.hints : withMapKey(shown.hints));
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     hud.tasks.show(quests.tracked);

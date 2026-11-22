@@ -472,11 +472,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** Takes the view down to the ship's helm, where the map is raised; on foot, raises the map of the land there, the
-   *  pointer let go to pan it. */
+   *  pointer let go to pan it; none in a dungeon, under no land. */
   const openMap = () => {
     const { flow, sea, foot } = playing;
     if (flow.mode === 'sea' && !flow.menu && sea) playing.helmMap.open(sea);
-    else if (flow.mode === 'foot' && !flow.menu && !gearScreenOpen() && foot && !foot.fallen) {
+    else if (flow.mode === 'foot' && !flow.menu && !gearScreenOpen() && foot && !foot.fallen && !foot.dungeon) {
       // Read each time it is raised, off the ground as the camera keeps it (an island's, or the land's exact round the
       // player): the ground drawn by then is the truest.
       playing.helmMap.openLand(landSheetOf(foot.node, playing.landmass, groundAt));
