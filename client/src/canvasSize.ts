@@ -1,7 +1,9 @@
-/** A canvas's drawing-buffer size, in device pixels. */
+/** A canvas's drawing-buffer size, in device pixels, and the device pixels a CSS pixel is drawn at: the screen's, or
+ *  fewer where the buffer is shrunk, so what is drawn by the ratio lands under the pointer. */
 export interface CanvasSize {
   readonly width: number;
   readonly height: number;
+  readonly ratio: number;
 }
 
 /** WebGPU's default maxTextureDimension2D, which every device has: a canvas's texture is no wider or taller. */
@@ -19,5 +21,6 @@ export function canvasSize(cssWidth: number, cssHeight: number, pixelRatio: numb
   return {
     width: Math.max(1, Math.round(width * shrink)),
     height: Math.max(1, Math.round(height * shrink)),
+    ratio: ratio * shrink,
   };
 }
