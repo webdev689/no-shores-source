@@ -81,6 +81,11 @@ export class SailAway {
     this.ask = ask;
   }
 
+  /** Ends it at once, the picture open: a fight met cuts it short, whatever it showed. */
+  cut(): void {
+    [this.step, this.answered] = ['done', true];
+  }
+
   /** The room's answer to the travel: taken (null), or why it refused it. */
   answer(refused: string | null): void {
     [this.answered, this.refused] = [true, refused];

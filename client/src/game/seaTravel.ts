@@ -42,9 +42,21 @@ export class SeaTravel {
     this.away = new SailAway(water, () => this.ask());
   }
 
+  /** Asks the room for the travel; a voyage stopped meanwhile (a fight met, the ship hove to) has none to ask. */
   private ask(): void {
+    if (!this.passage.sailing) {
+      this.passage.say('The voyage was stopped.');
+      this.away.answer('The voyage was stopped.');
+      return;
+    }
     [this.asked, this.sentTo] = [0, this.passage.room];
     this.passage.travel();
+  }
+
+  /** Ends the travel at once, `room` told to forget it: the player has the ship again. */
+  cut(room: SeaRoom | null): void {
+    room?.forgetTravel();
+    this.away.cut();
   }
 
   /** `seconds` on in `room`: its answer taken, and the cinematic stepped. */

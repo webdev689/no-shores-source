@@ -397,10 +397,7 @@ export class Sea {
     const watched = view.closeShare > 0 || view.helmView || this.aboard.active || this.travelling !== null;
     if (!this.combat) this.passage.advance(dt, watched);
     this.travelling?.step(dt, this.room);
-    if (this.travelling?.away.control) {
-      this.travelling = null;
-      view.sail();
-    }
+    if (this.travelling?.away.control) this.endTravel();
     view.step(dt);
     if (view.kind === 'sail' && !this.aboard.active) view.turn(input.turn, input.tilt, dt);
     const { ship } = this.passage;
@@ -543,8 +540,16 @@ export class Sea {
     this.aboard.drop();
     this.chase.stop();
     this.passage.stop();
+    this.endTravel();
     if (this.view.helmView) this.view.sail();
     this.combat = new SeaCombat(this.room, first, this.hull.marks, time, this.hull.shown);
+  }
+
+  /** Ends a travel under way at once, the room told to forget it: the view is the player's again. */
+  private endTravel(): void {
+    this.travelling?.cut(this.room);
+    this.travelling = null;
+    if (this.view.kind === 'travel') this.view.sail();
   }
 
   private note(): string {

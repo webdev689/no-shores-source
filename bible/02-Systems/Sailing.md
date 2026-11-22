@@ -320,7 +320,10 @@ travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, pr
 5. The view eases back to the usual one over the ship over 1.5 s, and the player has the ship again, sailing on to
    the course's end.
 
-A refused travel fades back in where the ship is over 1.5 s: it heaves to, its voyage kept to be resumed, and its line
+A fight the room begins at any point of it ends the cinematic at once, the picture open: the page forgets the travel
+(a late answer is no answer) and the view pans down to the fight as ever; if the room had already taken it, the fight
+is where the room put the ship. A voyage stopped before the fade asks nothing and is refused at once ("The voyage was
+stopped."). A refused travel fades back in where the ship is over 1.5 s: it heaves to, its voyage kept to be resumed, and its line
 says why ("No travel while fighting.", "No travel off the helm.", "No travel with a hostile ship giving chase.", "That
 lies in these waters.", "The way there crosses land.", else "The sea would not take that course."). A course set at
 another tier on the map begins the cinematic at once and enters that tier's sea room as setting sail does, the travel

@@ -22,11 +22,12 @@ function travelling() {
     sailAlong: (points: readonly (readonly number[])[]) => asked.push(`along ${points.join(' ')}`),
     stop: () => asked.push('stop'),
     say: (words: string) => asked.push(`say ${words}`),
+    sailing: true,
     room,
   } as unknown as Passage;
   const travel = new SeaTravel('The Elmwater', [550_000, 150_000], passage, () => true);
   const toFade = () => travel.step(SAIL_AWAY.outS + 0.01, room);
-  return { travel, asked, room, toFade, answer: (number: number) => (answer = number) };
+  return { travel, asked, room, passage, toFade, answer: (number: number) => (answer = number) };
 }
 
 test('the travel is asked as the fade begins; taken, the ship is laid where the room put it and sails on', () => {
@@ -92,4 +93,33 @@ test('yes travels to the prompt’s own water, named as it named it, though no w
   sailOrTravel(sea, [600_000, 150_000], water, () => true);
   sailOrTravel(sea, [600_000, 150_000], null, () => true);
   assert.deepEqual(done, ['travel 600000,150000 The Elmwater', 'sail 600000,150000']);
+});
+
+test('a voyage stopped before the fade asks no travel and is answered at once, never waiting out the black', () => {
+  const { travel, asked, room, passage } = travelling();
+  (passage as { sailing: boolean }).sailing = false;
+  travel.step(SAIL_AWAY.outS + 0.01, room);
+  assert.deepEqual(
+    asked.filter((each) => each === 'travel'),
+    [],
+    'nothing sent',
+  );
+  assert.equal(travel.away.refused, 'The voyage was stopped.');
+});
+
+test('a fight met ends the travel at any time: the room forgets it, and the picture is open with control back', () => {
+  for (const when of ['before the ask', 'after the ask', 'after it was taken'] as const) {
+    const { travel, asked, room, toFade, answer } = travelling();
+    if (when !== 'before the ask') toFade();
+    if (when === 'after it was taken') {
+      answer(0);
+      travel.step(SAIL_AWAY.fadeS + SAIL_AWAY.blackLeastS + 0.5, room);
+    }
+    travel.cut(room);
+    assert.equal(asked.includes('forget'), true, `${when}: the room forgets it`);
+    assert.deepEqual([travel.away.dark, travel.away.control], [0, true], `${when}: open, control back`);
+    const sent = asked.length;
+    travel.step(5, room);
+    assert.equal(asked.length, sent, `${when}: nothing more is asked`);
+  }
 });
