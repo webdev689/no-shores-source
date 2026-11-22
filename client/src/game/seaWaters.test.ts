@@ -38,7 +38,7 @@ test('the water the ship is in is named on the page, its band and holder from th
   const west = outline.reduce((most, point) => (point[0] < most[0] ? point : most));
   const water = named([west[0] - 3_000, west[1]]);
   assert.ok(water, 'sea there');
-  assert.match(waterWords(water), /^The Fen Deeps, levels 22-26, (Grey Tithe|Contested)$/);
+  assert.equal(waterWords(water), 'The Fen Deeps, levels 22-26, The Lattice', 'a ruined city’s water, the Lattice’s');
   assert.equal(named([west[0] + 20_000, west[1]]), null, 'on land, none');
 });
 
