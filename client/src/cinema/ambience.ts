@@ -242,8 +242,10 @@ export class Ambience {
     if (gulls > 0 && gullsGain && now >= this.gullEndsAt) {
       let countdown = (this.gullCountdownS ?? nextGapS(GULL_GAP_S, this.random())) - step * gulls;
       if (countdown <= 0) {
-        this.gullEndsAt = now + this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain);
-        countdown = nextGapS(GULL_GAP_S, this.random());
+        const flockS = this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain);
+        this.gullEndsAt = now + flockS;
+        // A recording not yet come is asked for again next frame, as a bed's is, so a scene's first flock is not lost.
+        countdown = flockS > 0 ? nextGapS(GULL_GAP_S, this.random()) : 0;
       }
       this.gullCountdownS = countdown;
     }

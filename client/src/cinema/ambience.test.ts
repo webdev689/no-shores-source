@@ -191,6 +191,27 @@ test('the gulls cry on a seeded clock while their level is up, one flock at a ti
   assert.ok(cries(0.2, 0).crying < cries(1, 0).crying);
 });
 
+test("a scene's first gull flock plays as soon as its recording has come, not a whole gap later", () => {
+  const firstFlockFrame = (asksBeforeItComes: number) => {
+    const fake = fakeAudio();
+    let coming = asksBeforeItComes;
+    const play = ((...asked: Parameters<typeof fake.play>) =>
+      coming-- > 0 ? null : fake.play(...asked)) as typeof fake.play;
+    const ambience = new Ambience(
+      outputOf(fake, () => true),
+      play,
+    );
+    ambience.set({ gulls: 1 }, 0);
+    for (let frame = 1; frame <= 600; frame++) {
+      fake.audio.currentTime += 1 / 60;
+      ambience.frame(1 / 60);
+      if (cues(fake).includes('amb.sea.gull')) return frame;
+    }
+    return Infinity;
+  };
+  assert.equal(firstFlockFrame(3), firstFlockFrame(0) + 3, 'three frames on, as the recording comes');
+});
+
 test('nonsense numbers are taken as nothing, and thunder too far away is not heard', () => {
   const fake = fakeAudio();
   const ambience = ambienceOn(fake);
