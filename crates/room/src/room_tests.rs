@@ -183,3 +183,27 @@ fn a_held_players_inputs_are_taken_in_order_and_stand_still_until_they_are_let_p
     assert_ne!(at(&room), start, "let play, the player walks");
     assert!(!room.hold(99, true), "no such player");
 }
+
+#[test]
+fn a_plate_carries_its_players_name_level_and_menu_and_goes_once_each_time_it_changes() {
+    let mut room = room();
+    let (first, second) = (room.join().expect("a room with space"), room.join().expect("a room with space"));
+    let plate = |name: &str, menu| Plate { name: name.to_owned(), level: 1, menu };
+    assert_eq!(room.take_plate_changes(), vec![(first, plate("", false)), (second, plate("", false))]);
+    assert_eq!(room.take_plate_changes(), vec![], "a plate goes once");
+    assert!(room.name_player(first, "Wooden_Osprey"));
+    // A name no username could be names no one.
+    assert!(!room.name_player(second, "Two words"));
+    assert!(!room.name_player(second, "A_name_longer_than_twenty"));
+    room.input(second, Input { menu: true, ..input(1, WALK) }).unwrap();
+    assert_eq!(room.take_plate_changes(), vec![(first, plate("Wooden_Osprey", false)), (second, plate("", true))]);
+    assert_eq!(
+        room.plates().collect::<Vec<_>>(),
+        vec![(first, plate("Wooden_Osprey", false)), (second, plate("", true))]
+    );
+    room.input(second, input(2, WALK)).unwrap();
+    assert_eq!(room.take_plate_changes(), vec![(second, plate("", false))], "a menu closed shows at once");
+    room.players.get_mut(&first).unwrap().character.xp = 190_000;
+    let raised = room.take_plate_changes();
+    assert_eq!(raised.iter().map(|(player, plate)| (*player, plate.level)).collect::<Vec<_>>(), vec![(first, 20)]);
+}

@@ -1,5 +1,6 @@
 import { FEEL } from '../combat/attackFeel.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
+import type { PlayerPlates } from '../combat/playerPlates.ts';
 import { Hud } from '../combat/hud.ts';
 import type { BannerTone } from '../combat/publicBanner.ts';
 import type { Box as Laid } from '../ui/quads.ts';
@@ -165,6 +166,11 @@ export class FootView {
         ...(lit ? { lightInto } : {}),
       },
     };
+  }
+
+  /** The plates over other players, and the one the crosshair rests on within reach. */
+  get playerPlates(): PlayerPlates {
+    return this.hud.playerPlates;
   }
 
   /** Hides the fight's display for this frame alone, its drawing kept: as while the held map is up. */
