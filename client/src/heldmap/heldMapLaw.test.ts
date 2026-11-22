@@ -7,6 +7,7 @@ import {
   raised,
   routeOf,
   SCALE_MOST,
+  seasChoices,
   SHEET,
   stageOf,
   toInk,
@@ -112,4 +113,15 @@ test('a long route is thinned to the most the map inks, keeping its end, each po
     assert.equal(route[(count - 1) * 4], (length - 1) * 10, `${length}: the destination kept`);
     assert.equal(route[(count - 1) * 4 + 2], (length - 1) * 10, `${length}: its distance along`);
   }
+});
+
+test('the voyage card shuts a difficulty the player’s level shuts, says why, and never keeps it picked', () => {
+  const young = [null, 'Elite seas open at level 10.', 'Abyss seas open at level 20.'];
+  assert.deepEqual(seasChoices('abyss', young), { picked: 'normal', why: 'Elite seas open at level 10.' });
+  assert.deepEqual(seasChoices('abyss', [null, null, 'Abyss seas open at level 20.']), {
+    picked: 'elite',
+    why: 'Abyss seas open at level 20.',
+  });
+  assert.deepEqual(seasChoices('abyss', [null, null, null]), { picked: 'abyss', why: null });
+  assert.deepEqual(seasChoices('elite', []), { picked: 'elite', why: null }, 'no word of the character: nothing shut');
 });

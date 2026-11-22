@@ -40,3 +40,13 @@ test('a bitmap that comes after the atlas was laid afresh is closed and not copi
   assert.deepEqual(copied, []);
   assert.ok(drawn.closed);
 });
+
+test('a picture laid at no size is neither drawn nor copied', () => {
+  const copied: unknown[] = [];
+  const pictures = picturesWith(copied);
+  let drawn = 0;
+  const ground = { key: 'ground', source: { draw: () => void drawn++ } };
+  assert.equal(pictures.texels(ground, 0, 0), null);
+  assert.equal(pictures.texels(ground, 12, 0), null);
+  assert.deepEqual([drawn, copied], [0, []]);
+});

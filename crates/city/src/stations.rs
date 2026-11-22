@@ -31,6 +31,8 @@ pub enum StationKind {
     /// The harbour and the ships.
     Harbourmaster,
     Chandler,
+    /// The game's mail, in Overlook's plaza alone, its counter standing free (`mail.rs`).
+    Mail,
 }
 
 /// A station: what it is, where its keeper stands and which way they face (radians clockwise from north), and its
@@ -163,6 +165,8 @@ fn goods(frame: &Frame, kind: StationKind, front: f64, across: f64) -> Vec<Solid
             }
             solids.push(frame.round(counter, across, top, [0.35, 0.4, 0.6], Material::Glow));
         }
+        // The mail's counter stands free on the plaza and lays its own (`mail.rs`).
+        StationKind::Mail => {}
     }
     solids
 }

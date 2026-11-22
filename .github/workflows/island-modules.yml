@@ -1,7 +1,7 @@
 name: island-modules
 
 # Builds every island kit's modules in Blender, checks each against its envelope, and publishes the packs and the
-# model to R2 with the repository's Cloudflare token, whenever the modules' tools or contract change. R2's objects
+# model to R2 with the repository's R2 token, whenever the modules' tools or contract change. R2's objects
 # are named by their hashes, so a pack already published is not sent again, and the model is kept while every pack
 # is the one the manifest names. The log ends with the manifest on one line, which a commit then takes into
 # content/islands/modules.json; the run warns while the committed one is behind. The contact sheets are kept as the
@@ -77,14 +77,14 @@ jobs:
       - name: Check the token is set
         id: token
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
-          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+          else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
       - name: Publish the packs and the model
         if: steps.token.outputs.set == 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: python -I tools/islands/publish.py "$RUNNER_TEMP/modules"
       # The manifest publish.py writes goes with the run's machine: until a commit takes it, the page draws old packs.
       - name: Say whether the committed manifest is behind

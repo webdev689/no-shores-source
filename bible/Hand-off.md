@@ -58,6 +58,13 @@ each part works is in its system note.
 - **The houses' roads**: after the intro the player pledges to a house, whose road of eleven tasks gives its Art, its
   Tenets and three fragments, with six step kinds any mission can use: escort, tail, defend, puzzle, unseen and race
   ([[Each House Has Its Own Road to Its Art]], [[Missions Are Varied, Not Only Simple Tasks]], [[Quests]]).
+- **Dungeons and the days after Destiny 1**: DFO's Dungeons 2.0 in the patrol areas, six styles each with its own
+  Blender pieces ([[Dungeons]], [[Dungeon Modules]]); the clock, gates, the dungeon of the day, Elite and Abyss, the
+  week's two, private runs and Find a Company, bounties and the Journal drawn by the game ([[Activities]]); the server
+  the authority over where a player arrives, where a ship sets out and what a room opens
+  ([[The Server Is the Authority Over Everything]]); the Postmaster's mailbox for what a player would lose
+  ([[A Mail Vendor Keeps Lost Items and the Game's Mail]]); areas loaded in chunks and kept by the browser
+  ([[Areas Load in Chunks With Proper Caching]]).
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
@@ -82,16 +89,16 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
 - **Open pull requests.** For the owner's yes once their checks pass: #143 (Vestiges as project-final's crystals),
-  #141 (the balance pass halfway back), #139 (areas in chunks), #124 (public events on Saltmere). Drafts: #72 and #88
-  (dungeons), #77 (lore), #82 (the owner's loop), #97 (activities), #122 (server authority), #123 (the Postmaster);
-  #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127 holds.
+  #141 (the balance pass halfway back), #125 (main's screens: the Harbourmaster's rows, the menu under 600 px), #124
+  (public events on Saltmere). Drafts: #77 (lore), #82 (the owner's loop); #93 and #114 sit on the merged
+  `claude/waters-from-islands`. Whether to close #112, which #127 holds.
 - **The combat notes' open points** (#135): whether the one-second reset of the swings' chain and the foes' pace feel
   right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge of reach
   every swing thrusts), or the chain kept strictly and a short stroke left to miss, asked and not yet answered.
-- **The dungeons-to-mail stack** (#72, #88, #97, #122, #123): each layer passes the full check on its head, but it
-  conflicts with `main` and needs a catch-up before it merges, with the owner's yes; #122's move of the asset
-  workflows to `R2_TOKEN` waits on the owner's named yes. Meeting the marks, the Postmaster's letter mark should beat
-  while mail waits, the board wear a gold "!", an entrance a door.
+- **The dungeons' and activities' questions**: whether the dungeons' taking DFO's moods, dressing and landmarks as
+  law, which the Pick List had left behind, stands (#72, [[Dungeons as Claude Builds Them]]); #97's three, in its
+  description: dungeon interiors and #102's encounters, the timers' borrowed row layout, and the fight director's heat
+  with a run's modifiers.
 - **The Thunderlock's hold** (#119). After the owner's "fix the thunderlock idle hold. Currently its held backwards",
   the forge holds it trigger to the front (`gunplay.PORT`), but its rest, walk and sprint are not drawn again ("Blades
   only for now"), so the game holds it as before. Drawing them is about 27,000 frames a body for every set and both
@@ -155,10 +162,11 @@ The decisions in [[Open Questions]] are not repeated here.
   over the deploy jobs; the Discord app's redirect (`/v1/discord/callback` on `overlook-accounts`) and its secrets
   `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`; the Cloudflare token's leave to edit D1; whether the page plays
   online by default (without `?room=` it has no accounts).
-- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the repository reads the Actions
-  secret `CLOUDFLARE_TOKEN`); add `tools/install-flatc.sh` to `ROOMS_CODE` in `.github/workflows/rooms.yml`;
-  setting R2's `Cache-Control` on files already there writes to R2 (#139). A cloud session cannot deploy the rooms
-  itself: its proxy writes the stored token over the upload token Cloudflare hands back.
+- **Keys and workflows**: rotate the Cloudflare token the owner gave in the chat (the `rooms` workflow alone reads
+  the Actions secret `CLOUDFLARE_TOKEN`; the workflows that publish to R2 read `R2_TOKEN`,
+  [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
+  `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
+  over the upload token Cloudflare hands back.
 - **The cloud environment**: two environments named Default are listed and no `overlook-source` one; which one
   sessions should run on, and which holds the SkillsMP key, is unchecked. A Context7 key, if wanted, goes on it the
   same way.
@@ -176,9 +184,18 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **Areas in chunks**, after #139 ([[Areas Load in Chunks With Proper Caching]]): the hitch risks it found (playing
-  alone, a room opens on the game's thread; a city is built in one go after each landmass switch and every 1.5 km); a
-  landmass readied before it opens; the hitching measured on a real GPU. Memory to measure: the figure cards'
+- **Played live, once deployed**: a dungeon of each style (a band's fight, the Reeve's fall, the cache's Vestige and
+  the portal out); the Journal and the board (take a bounty, count it, turn it in, the timers off with T; a sea bounty
+  counted at sea); an arrival of each kind (a landing, a gate, a dungeon and back out at its entrance, a company join,
+  one refused); a Vestige left lying and taken from the Postmaster, his counter and figure pictured. Known, small:
+  before any gear has come a tier's seas show open, the server still refusing them.
+- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is
+  opened on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
+  difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
+  `cityView.ts`); flora is decoded and its mips made again on every switch; a landmass cannot be prepared before it
+  opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
+  R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,
+  so every deploy waits on R2 answering. Memory to measure: the figure cards'
   4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
   (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
 - **Browser QA**: `tools/claude-toolkit/webgpu-shot.cjs` reads the page's canvas, so it pictures the Test Ground and
@@ -200,9 +217,10 @@ The decisions in [[Open Questions]] are not repeated here.
   walked against the hub's boxes, kept posts' people not booked against walkers, routines' maths rounding by engine,
   puddles on lawn as on flat stone); pictures of the Harbour Stair, the road, the fall and the townsfolk at work. #97
   reads `Social.board` from `hub::BOARD_LANDING_M` and counts bounties in the sea room through `Sea.minute`.
-- **The islands** ([[Islands]]): the door's trip into its dungeon once the dungeons' work (#72, #88) brings its
-  `sea-dungeon-…` room (until then E at the door says the way down is not open); pictures of the landfall offer, E's
-  prompts and washing up, in the game itself.
+- **The islands** ([[Islands]]): coming out of a door's dungeon back onto its island, before the door, rather than at
+  the ship (the trip takes the door's point already, `SeaBack`); pictures of the landfall offer, E's prompts and
+  washing up, in the game itself. Picturing a dungeon headless: `tools/claude-toolkit/dungeon-qa-build.sh` and
+  `dungeon-plan.ts`, once `webgpu-shot` can picture the game's worker.
 - **The sea**: the fleet room has no burst (`crates/protocol/src/fleet.rs` sends `boost: false`); no ship opens its
   cabin yet, and the Tithe Ram has no ram bow ([[Hulls]]); merchantmen, bounties, public events and fleets
   ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]), which #82's loop overlaps (flotsam stays the gear loop's

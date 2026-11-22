@@ -1,7 +1,7 @@
 // A social space's life on foot: its keepers and townsfolk (`townsfolk.ts`) placed among the figures drawn, set each
 // frame where the world clock has them, standing on the plaza's floor at their moves; and the station a player stands
-// at, whose counter offers what it deals in. A ruin's plaza keeps no station (the city crate's `ruins`), and no one
-// lives there.
+// at, whose counter offers what it deals in, the bounty board's among them. A ruin's plaza keeps no station (the city
+// crate's `ruins`), and no one lives there.
 
 import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
@@ -21,8 +21,9 @@ export interface Offer {
   readonly opens: Opening;
 }
 
-/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title, and the
- *  Harbourmaster's. Shape keeps no station; his prompt is the plaza's own. */
+/** What each station that deals with a player offers: its keeper's screen, named by its keeper's title, the
+ *  Harbourmaster's, and the bounty board's, which no keeper keeps. Shape keeps no station; his prompt is the plaza's
+ *  own. */
 const OFFERS: Readonly<Record<string, Offer>> = {
   ...Object.fromEntries(
     KEEPER_KINDS.filter((kind) => kind !== 'shape').map((kind) => [
@@ -31,7 +32,18 @@ const OFFERS: Readonly<Record<string, Offer>> = {
     ]),
   ),
   harbourmaster: { words: HARBOURMASTER, opens: { view: 'harbourmaster' } },
+  board: { words: 'The Bounty Board: bounties for XP and Aurem', opens: { view: 'board' } },
 };
+
+/** Where a social space serves a player, as its marks and E read it: each station's counter with the bounty board
+ *  where it is read, which no keeper keeps, its mark over the board itself where its node says where that stands; and
+ *  where Shape may stand. */
+export function countersOf(
+  node: Pick<NodeInfo, 'stations' | 'board' | 'boardAt' | 'visitorSpots'>,
+): Pick<NodeInfo, 'stations' | 'visitorSpots'> {
+  const board = node.board ? [{ kind: 'board', keeper: node.boardAt ?? node.board, counter: node.board }] : [];
+  return { stations: [...(node.stations ?? []), ...board], visitorSpots: node.visitorSpots ?? [] };
+}
 
 /** What a station's keeper is called, as their counter offers them; null for a station that deals with no one. */
 export const stationWords = (kind: string): string | null => OFFERS[kind]?.words ?? null;

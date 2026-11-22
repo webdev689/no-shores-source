@@ -3,7 +3,7 @@ import { type TestContext, test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
 import { FromRoom, Joined, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
-import { RoomConnection, type Snapshot as RoomSnapshot, rejoinWait } from './roomConnection.ts';
+import { ELSEWHERE, RoomConnection, SHUT, type Snapshot as RoomSnapshot, rejoinWait } from './roomConnection.ts';
 
 /** A room's message as its bytes: a welcome for `player`, or a snapshot at `tick`. */
 function fromRoom(message: { readonly player: number } | { readonly tick: bigint }): ArrayBuffer {
@@ -37,6 +37,8 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
           0,
           0,
           0,
+          0,
+          -1,
         );
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);
@@ -172,13 +174,41 @@ test('a rejoin sends the session token again once welcomed, before any input', a
   assert.deepEqual(sockets[1]?.sent, ['token', new Uint8Array([1])]);
 });
 
-test('a player whose character joined another room is let go, not joined again to take it back', async (context: TestContext) => {
+test('a room whose gate shuts is never joined again, and says why', async (context: TestContext) => {
   context.mock.timers.enable({ apis: ['setTimeout'] });
-  const { connection, sockets } = await joined(3);
-  sockets[0]?.closed(4001, 'your character joined another room');
+  const shut = await joined(5);
+  shut.sockets[0]?.closed(SHUT, 'Abyss seas open at level 20.');
   context.mock.timers.tick(waitMs(9));
-  const { rejoining, lost } = connection;
-  assert.deepEqual([sockets.length, rejoining, lost], [1, false, 'your character joined another room']);
+  assert.deepEqual(
+    [shut.sockets.length, shut.connection.rejoining, shut.connection.shut, shut.connection.lost],
+    [1, false, 'Abyss seas open at level 20.', 'Abyss seas open at level 20.'],
+  );
+});
+
+test('a character taken by another tab or room is never joined again, and says so', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const taken = await joined(6);
+  taken.sockets[0]?.closed(ELSEWHERE, 'your character joined another room');
+  context.mock.timers.tick(waitMs(9));
+  assert.deepEqual(
+    [taken.sockets.length, taken.connection.rejoining, taken.connection.lost, taken.connection.shut],
+    [1, false, 'your character joined another room', null],
+  );
+});
+
+test('a rejoin sending its own old socket away carries on', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { connection, sockets } = await joined(7);
+  sockets[0]?.closed(1006);
+  context.mock.timers.tick(waitMs(0));
+  sockets[1]?.says({ player: 8 });
+  // The room saw the old socket close only now, as the new one took the character from it.
+  sockets[0]?.dispatchEvent(Object.assign(new Event('close'), { code: ELSEWHERE, reason: 'joined another room' }));
+  context.mock.timers.tick(waitMs(9));
+  assert.deepEqual(
+    [sockets.length, connection.player, connection.rejoining, connection.lost, connection.open],
+    [2, 8, false, null, true],
+  );
 });
 
 test('a locked node’s room turns the player away saying why: a join fails with its words, and no rejoin is tried', async (context: TestContext) => {

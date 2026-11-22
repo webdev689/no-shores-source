@@ -86,7 +86,7 @@ fn measure(way: Way) {
             // A course refused still waits out the next, so each bearing is tried by a player of its own.
             let mut tried = |course: &Vec<[f64; 2]>| {
                 let player = sea.join();
-                let taken = sea.course(player, course, 60).is_ok();
+                let taken = sea.course_anywhere(player, course, 60).is_ok();
                 if !taken {
                     sea.leave(player);
                 }

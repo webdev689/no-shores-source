@@ -1,11 +1,14 @@
 //! What a kill lays on the ground for each player who earned it, seen by them alone for two minutes: their Vestige, an
 //! Ammo box by the foe's rank, and a Miniboss's or a Boss's Ammo crate when they carry five already. Each is thrown out
 //! of the fallen foe in a fan toward the player, comes to rest where the fan puts it, and is taken by walking within
-//! reach once it rests. And the shots a player spends, kept with their gear.
+//! reach once it rests. A Vestige not taken goes to its player's mail as its time runs out or as they leave. And the
+//! shots a player spends, kept with their gear.
 
 use crate::{PlayerId, Room};
 use gear::Vestige;
+use gear::activities::Modifier;
 use gear::dice::{Dice, Purpose};
+use gear::mail::{Posted, Source};
 use movement::TUNING;
 use movement::blocks::ground_at;
 
@@ -53,12 +56,14 @@ impl Room {
         from: [f64; 3],
         dice: &Dice,
     ) {
+        // Juggler leaves no ammunition: no box, and no crate, kept or thrown.
+        let juggling = self.modded(Modifier::Juggler);
         let Some(found) = self.players.get_mut(&player) else { return };
         let mut spoils: Vec<Dropped> = vestige.map(Dropped::Vestige).into_iter().collect();
-        if dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) {
+        if !juggling && dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) {
             spoils.push(Dropped::AmmoBox);
         }
-        if gear::ammo::drops_crate(rank) && !found.character.take_crate() {
+        if !juggling && gear::ammo::drops_crate(rank) && !found.character.take_crate() {
             spoils.push(Dropped::Crate);
         }
         let body = found.fighter.body;
@@ -72,15 +77,18 @@ impl Room {
     }
 
     /// Where a drop thrown from `from` along `angle` rests: on the ground or a block's top there; or where it was
-    /// thrown from when a block more than a step high stands anywhere in the throw's way, the ground there lies more
-    /// than a step below, or there is past the section's ring, so a drop is never out of its player's reach.
+    /// thrown from when a block more than a step high or a wall of the floor stands anywhere in the throw's way, the
+    /// ground there lies more than a step below, there is past the section's ring, or it lies so deep in a solid no
+    /// body may stand on (a dungeon's lake, dais or pool) that no body standing off it can reach it, so a drop is
+    /// never out of its player's reach.
     fn rest_at(&self, from: [f64; 3], angle: f64) -> [f64; 3] {
         let (x, y) = (from[0] + libm::sin(angle) * THROW_M, from[1] - libm::cos(angle) * THROW_M);
         let high = from[2] + TUNING.step;
-        let walled = !combat::sight::clear_line(&self.blocks, [from[0], from[1], high], [x, y, high]);
+        let walled = !combat::sight::clear_line(&self.blocks, &self.floor, [from[0], from[1], high], [x, y, high]);
         let outside = self.section.as_ref().is_some_and(|section| !reach::inside(&section.ring, x, y));
+        let buried = self.floor.depth_in_solid(x, y) > PICK_UP_REACH - TUNING.radius;
         let ground = ground_at(&self.blocks, &self.floor, x, y, from[2]);
-        if walled || outside || ground < from[2] - TUNING.step { from } else { [x, y, ground] }
+        if walled || outside || buried || ground < from[2] - TUNING.step { from } else { [x, y, ground] }
     }
 
     /// Lays a drop for a player where it lies already, thrown from nowhere: for tests and the Test Ground.
@@ -89,7 +97,7 @@ impl Room {
     }
 
     /// Lays a drop for a player, numbered as their own: a Vestige by its number, anything else a fresh one.
-    fn lay(&mut self, player: PlayerId, what: Dropped, at: [f64; 3], from: [f64; 3]) {
+    pub(crate) fn lay(&mut self, player: PlayerId, what: Dropped, at: [f64; 3], from: [f64; 3]) {
         let Some(found) = self.players.get_mut(&player) else { return };
         let id = match &what {
             Dropped::Vestige(vestige) => vestige.id,
@@ -101,7 +109,7 @@ impl Room {
     }
 
     /// Takes every drop at rest a player has walked over and has room for, and lets go of those that have lain their
-    /// time, telling their player so their page stops showing them.
+    /// time, a Vestige to their mail, telling their player so their page stops showing them.
     pub(crate) fn pick_up_drops(&mut self) {
         let clock = self.clock;
         let mut kept = Vec::with_capacity(self.drops.len());
@@ -109,6 +117,9 @@ impl Room {
             let Some(found) = self.players.get_mut(&drop.player) else { continue };
             if clock >= drop.until {
                 found.gear_changed = true;
+                if let Dropped::Vestige(vestige) = drop.what {
+                    found.character.post(Source::LeftLying, Posted::Vestige(vestige));
+                }
                 continue;
             }
             let body = found.fighter.body;
@@ -130,6 +141,20 @@ impl Room {
             }
         }
         self.drops = kept;
+    }
+
+    /// Sends every Vestige still lying for a player to their mail and takes all their drops off the ground. Their host
+    /// calls it as they leave, before it reads their character for its last save, so the save keeps the Vestiges.
+    pub fn mail_lying(&mut self, player: PlayerId) {
+        let Some(found) = self.players.get_mut(&player) else { return };
+        let (theirs, others) = std::mem::take(&mut self.drops).into_iter().partition(|drop| drop.player == player);
+        self.drops = others;
+        for drop in theirs {
+            found.gear_changed = true;
+            if let Dropped::Vestige(vestige) = drop.what {
+                found.character.post(Source::LeftBehind, Posted::Vestige(vestige));
+            }
+        }
     }
 
     /// The drops lying for a player.

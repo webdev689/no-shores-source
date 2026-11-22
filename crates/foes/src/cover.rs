@@ -23,7 +23,7 @@ use combat::sight::{apart, bearing, clear_line, off};
 use combat::tuning::CHEST;
 use combat::{FighterId, Ranged};
 use core::f64::consts::{FRAC_PI_2, PI, TAU};
-use movement::{Block, TUNING};
+use movement::{Block, TUNING, Terrain};
 
 /// Near enough to where it means to stand.
 const THERE: f64 = 0.15;
@@ -50,20 +50,20 @@ fn chest(feet: [f64; 3]) -> [f64; 3] {
 }
 
 /// How a target's chest sees a body standing at `feet`: whether its chest's line is clear, and its eye's.
-fn lines(blocks: &[Block], feet: [f64; 3], target: [f64; 3]) -> (bool, bool) {
+fn lines(blocks: &[Block], terrain: &dyn Terrain, feet: [f64; 3], target: [f64; 3]) -> (bool, bool) {
     let eye = [feet[0], feet[1], feet[2] + EYE];
-    (clear_line(blocks, chest(feet), target), clear_line(blocks, eye, target))
+    (clear_line(blocks, terrain, chest(feet), target), clear_line(blocks, terrain, eye, target))
 }
 
 /// Seen at all: either line clear.
-fn exposed(blocks: &[Block], feet: [f64; 3], target: [f64; 3]) -> bool {
-    let (chest, eye) = lines(blocks, feet, target);
+fn exposed(blocks: &[Block], terrain: &dyn Terrain, feet: [f64; 3], target: [f64; 3]) -> bool {
+    let (chest, eye) = lines(blocks, terrain, feet, target);
     chest || eye
 }
 
 /// Free to fire: both lines clear, the shot's from its chest and the look's from its eye.
-fn fires(blocks: &[Block], feet: [f64; 3], target: [f64; 3]) -> bool {
-    let (chest, eye) = lines(blocks, feet, target);
+fn fires(blocks: &[Block], terrain: &dyn Terrain, feet: [f64; 3], target: [f64; 3]) -> bool {
+    let (chest, eye) = lines(blocks, terrain, feet, target);
     chest && eye
 }
 
@@ -86,19 +86,26 @@ fn alignment(cover: u16, toward: f64) -> f64 {
         .fold(0.0, f64::max)
 }
 
-/// Whether a body walks from one point to another a step aside: nothing above a step in the way, nor where it stops.
-fn free(blocks: &[Block], from: [f64; 3], to: [f64; 3]) -> bool {
+/// Whether a body walks from one point to another a step aside: nothing above a step in the way, nor where it stops,
+/// and no wall of the terrain between.
+fn free(blocks: &[Block], terrain: &dyn Terrain, from: [f64; 3], to: [f64; 3]) -> bool {
     let knee = |point: [f64; 3]| [point[0], point[1], point[2] + TUNING.step];
     // A body's room where it stops, as the moves judge it, so a floor overhead is not in the way.
-    clear_line(blocks, knee(from), knee(to)) && movement::blocks::room_at(blocks, to[0], to[1], to[2], TUNING.height)
+    clear_line(blocks, terrain, knee(from), knee(to))
+        && movement::blocks::room_at(blocks, to[0], to[1], to[2], TUNING.height)
 }
 
 /// Where at a spot it hides from a target's chest and where it fires at it: the spot hidden and the shortest step
 /// aside, either way, that fires; or the spot firing and the shortest step aside that hides. A step counts only when a
 /// stride short of it does too, so a body that stops a little short still stands as it means to. None without both.
-pub(crate) fn stances(blocks: &[Block], spot: [f64; 3], target: [f64; 3]) -> Option<([f64; 3], [f64; 3])> {
-    let open = fires(blocks, spot, target);
-    if !open && exposed(blocks, spot, target) {
+pub(crate) fn stances(
+    blocks: &[Block],
+    terrain: &dyn Terrain,
+    spot: [f64; 3],
+    target: [f64; 3],
+) -> Option<([f64; 3], [f64; 3])> {
+    let open = fires(blocks, terrain, spot, target);
+    if !open && exposed(blocks, terrain, spot, target) {
         return None;
     }
     let toward = bearing(flat(spot), flat(target));
@@ -106,7 +113,8 @@ pub(crate) fn stances(blocks: &[Block], spot: [f64; 3], target: [f64; 3]) -> Opt
         let way = toward + side * FRAC_PI_2;
         [spot[0] + libm::sin(way) * step, spot[1] - libm::cos(way) * step, spot[2]]
     };
-    let turned = |point| if open { !exposed(blocks, point, target) } else { fires(blocks, point, target) };
+    let turned =
+        |point| if open { !exposed(blocks, terrain, point, target) } else { fires(blocks, terrain, point, target) };
     // A side whose longest step does not turn it is not searched.
     let sides: Vec<f64> = [1.0, -1.0].into_iter().filter(|side| turned(aside(STEP_ASIDE.1, *side))).collect();
     let strides = libm::round((STEP_ASIDE.1 - STEP_ASIDE.0) / ASIDE_STRIDE) as u32;
@@ -114,7 +122,7 @@ pub(crate) fn stances(blocks: &[Block], spot: [f64; 3], target: [f64; 3]) -> Opt
     steps.into_iter().find_map(|(stride, side)| {
         let step = STEP_ASIDE.0 + f64::from(stride) * ASIDE_STRIDE;
         let point = aside(step, side);
-        let stands = turned(point) && turned(aside(step - ASIDE_STRIDE, side)) && free(blocks, spot, point);
+        let stands = turned(point) && turned(aside(step - ASIDE_STRIDE, side)) && free(blocks, terrain, spot, point);
         stands.then_some(if open { (point, spot) } else { (spot, point) })
     })
 }
@@ -154,7 +162,7 @@ fn pick(here: &Here<'_, '_>, board: &Board, sight: &Sight, except: Option<[f64; 
         if best.is_some_and(|(lowest, _)| lowest <= cost) || routed == ROUTE_TRIES {
             break;
         }
-        let Some((hide, fire)) = stances(here.world.blocks, spot.point, target) else { continue };
+        let Some((hide, fire)) = stances(here.world.blocks, here.world.terrain, spot.point, target) else { continue };
         routed += 1;
         let Some(walk) = here.world.routes.length(here.feet(), spot.point) else { continue };
         let cost = cost + NEAR_WEIGHT * (walk - straight).max(0.0) + ASIDE_WEIGHT * apart(flat(hide), flat(fire));
@@ -178,12 +186,12 @@ enum Held {
 /// whole; else picked again, with its target in sight and none sought in vain just now; or, looking out with its
 /// target not there, picked once more against where it believes it is, away from the post that failed.
 fn post(brain: &Brain, here: &Here<'_, '_>, board: &mut Board, sight: &Sight) -> Held {
-    let (blocks, target) = (here.world.blocks, chest(sight.spot));
+    let (blocks, terrain, target) = (here.world.blocks, here.world.terrain, chest(sight.spot));
     let whole = |post: &Post| {
         post.target == sight.id
             && apart(flat(post.against), flat(sight.spot)) <= REPICK
-            && fires(blocks, post.fire, target)
-            && !exposed(blocks, post.hide, target)
+            && fires(blocks, terrain, post.fire, target)
+            && !exposed(blocks, terrain, post.hide, target)
     };
     let kept = brain.bow.post.filter(whole);
     let looking = |post: &Post| brain.bow.peeking && apart(here.at(), flat(post.fire)) <= THERE;
@@ -228,7 +236,7 @@ pub(crate) fn cover_from(here: &Here<'_, '_>, board: &Board, sight: &Sight) -> O
         .map(|spot| spot.point)
         .filter(|point| apart(flat(*point), flat(sight.spot)) >= from_target)
         .filter(|point| taken.iter().all(|other| apart(flat(*point), flat(*other)) >= POST_GAP))
-        .filter(|point| !exposed(here.world.blocks, *point, target))
+        .filter(|point| !exposed(here.world.blocks, here.world.terrain, *point, target))
         .min_by(|one, two| near(one).total_cmp(&near(two)))
 }
 
@@ -285,7 +293,7 @@ pub fn hold(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, sight: &S
     let goal = if brain.bow.peeking { post.fire } else { post.hide };
     let distance = apart(here.at(), flat(goal));
     // Near its goal it steps straight there, unless its cover stands between: then it goes round by its routes.
-    if distance > POST_LEAVE || !free(here.world.blocks, here.feet(), goal) {
+    if distance > POST_LEAVE || !free(here.world.blocks, here.world.terrain, here.feet(), goal) {
         let walk = |way: f64| Ask::walking(way, 1.0, distance > RUN_FROM);
         return Some(way_to(here, goal).map_or_else(|| Ask::facing(sight.toward), walk));
     }

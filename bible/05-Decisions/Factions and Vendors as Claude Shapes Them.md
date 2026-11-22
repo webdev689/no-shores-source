@@ -83,12 +83,34 @@ look. The owner said yes to gear of each faction's own, "with its own unique col
 | The Tack | The last alcove on that side | Four horse pieces a day of the ten coats and bardings sold |
 | The three factions | The other side, past the vault: the Stormcallers, the Lamplighters (Elder Maren Hale) between, the Veiled | Pledge, cape, packages, the Art's rise and fragments |
 | Shape | One of eight places on the plaza, by the week | Four Legendary and two Atheric pieces a week, named items at level 20, 7 Shapes for a Legendary and 15 for an Atheric |
+| The Postmaster | A counter of his own in Overlook's plaza (see "The mail") | The game's letters, each a lost Vestige or module, taken free |
 
 The Harbourmaster keeps her alcove, and a chandler's stall stands last on the factions' side, for life; no other stall
 stands in the arcades.
 
 A smith's ware is asked by its place and the day it was shown, so one asked as the day turns is refused ("It is not
 sold here today"), as a cosmetic of another day is, and none buys the next day's ware at that place.
+
+Replaced in part by Claude's call under [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]: a
+keeper's day is the game's, from 09:00 UTC to 09:00 UTC, so every daily ware turns then ([[Activities]], "The clock").
+
+## The mail
+
+The owner's word is [[A Mail Vendor Keeps Lost Items and the Game's Mail]]: a mailbox for lost items and the game's
+mail, which only the game writes. Destiny's Postmaster in the Tower held a player's lost items, twenty at most, the
+oldest giving way unsaid as more came. Everything below is Claude's.
+
+| Call | Choice |
+|---|---|
+| The keeper | The Postmaster, after Destiny's; his mark a sealed letter in the keepers' brass diamond |
+| His voice | Dry and tidy, a sorter of what others drop: "Nothing posted here goes missing. I would know." No line for being short, as he sells nothing |
+| His counter | One station standing free in the Watch Court of Overlook's hub, on its west side between the bounty board's landing and the west vault house, his keeper facing the court: more than 8 m from every counter, Shape's spots, the arrivals and where the board is read, and clear of the townsfolk's ways. A timber counter with two parcels, the keeper behind it, a rack of pigeonholes with letters under a lamp behind him. Overlook's alone, as the board is |
+| What goes to the mail | What a player owned and would lose: a Vestige that lay out its two minutes, or still lay as they left (sent before their last save); a first clear's Vestige with the carried ten and the vault full; a Vestige in flotsam gathered with the ten full; a module salvaged with its slot's nine full. Ammo boxes, Ammo crates and materials past their most are not items and stay as before |
+| A letter | Where what it holds came from, which the page says in words with why it came by mail, and the Vestige or the item; a module keeps its item, nodes and all |
+| How many | 50 letters, more than the carried ten and the vault's twenty Vestiges together, few enough that a save stays far under the accounts' million characters. A 51st lets go the letter holding the least, the oldest of those, and the newest letter kept says so ("Your mailbox was full, so the oldest letter holding the least was let go."), the one before the 51st when the 51st held the least and went; a letter kept comes with its row in the Acquired feed |
+| Taking | At his counter only, free: Take moves a letter's Vestige into the carried ten or its item into its slot's nine, numbered anew; refused with the game's own words while there is no room. Take all takes, oldest first, every letter there is room for and leaves the rest |
+| His screen | Drawn by the game: LETTERS with how many of the 50 wait at its right, Take all, then each letter: the tile of what it holds with its card, its name in its rarity's colour, its words, and Take; in one column on a phone |
+| The mark | His sealed letter over him beats while letters wait, as the owner chose in place of his ring ([[What a Player Can Use Wears Its Mark Over It]]); a letter coming is a row "Sent to the mail" under his mark in the Acquired feed |
 
 ## Shape and Shapes
 
@@ -100,6 +122,10 @@ sold here today"), as a cosmetic of another day is, and none buys the next day's
 | Weeks | Counted from Monday 00:00 UTC |
 | Shapes | At most 200 held. A kill at Elite (Rough) seas gives one 3 times in 100, at Abyss (Storm) 6 in 100; a Boss or Miniboss 2 and 4. None at Normal (Calm) |
 | His level | His named pieces are made at level 20 and sold from level 20, as a faction's are; below it his screen dims them "From level 20", so no keeper sells a piece the buyer could not wear yet |
+
+Replaced in part by Claude's call under [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]: his
+weeks are the game's, from Tuesday 09:00 UTC, so his place and wares turn then; he still comes Friday 09:00 and goes
+Sunday 21:00 UTC ([[Activities]], "The clock").
 
 ## Cosmetics
 
@@ -126,6 +152,7 @@ sold here today"), as a cosmetic of another day is, and none buys the next day's
 | Elder Maren Hale | An old human woman, white-haired, in yellow robes and a white formal cloak |
 | The Veiled | A grey-haired felid woman in a hooded grey robe |
 | Shape | An anole in a hooded grey robe, spoken of as he |
+| The Postmaster | A grey-haired felid man in a white shirt, a blue vest, grey breeches and shoes |
 
 ## Locked social spaces
 
@@ -148,6 +175,9 @@ mark and never open. Shape visits Overlook alone (its `shapeVisits`).
 | A short ware | Stays held to buy, red with "Not enough"; the room refuses it and the keeper answers |
 | Shape away | "Shape is away. He comes on Fridays." |
 | Back | The menu's Back press steps back as Escape does on every page: a page with a step of its own (a choice, a panel) takes it first |
+
+Replaced in part by Claude's call under [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]: "Stock
+refresh" counts to the daily reset, 09:00 UTC, as the rules count it ([[Interface]]).
 
 ## Elder Maren Hale's welcome
 

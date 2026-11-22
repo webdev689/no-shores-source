@@ -1,10 +1,10 @@
 name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
-# weapons drawn large and the material nodes), and publishes them to R2 with the repository's Cloudflare token,
-# whenever their tools change on main or a run is asked for on a branch; a run asked for may also draw figure strips
-# for both bodies (`figures`). R2's objects are named by their hashes, so a run changes nothing already published; the
-# log ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
+# weapons drawn large and the material nodes), and publishes them to R2 with the repository's R2 token, whenever
+# their tools change on main or a run is asked for on a branch; a run asked for may also draw figure strips for both
+# bodies (`figures`). R2's objects are named by their hashes, so a run changes nothing already published; the log
+# ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
 on:
   push:
     branches: [main]
@@ -51,10 +51,10 @@ jobs:
       - name: Check the token is set
         id: token
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
-          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+          else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
       - name: Install Blender's module
         if: steps.token.outputs.set == 'true'
         run: |
@@ -92,7 +92,7 @@ jobs:
       - name: Publish them
         if: steps.token.outputs.set == 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
           FIGURES: ${{ inputs.figures }}
         run: |
           [ -n "$FIGURES" ] || python -I tools/forge_publish.py pull

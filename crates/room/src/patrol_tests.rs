@@ -16,7 +16,7 @@ fn places() -> Vec<[f64; 2]> {
 fn patrol(difficulty: Difficulty) -> (Room, PlayerId) {
     let ring = vec![[-300.0, -300.0], [300.0, -300.0], [300.0, 300.0], [-300.0, 300.0]];
     let mut room = Room::node(Floor::Flat, Vec::new(), Section { ring, spawns: vec![SPAWN], falls_kill: false });
-    room.start_patrol(0, &places());
+    room.start_patrol("saltgrass-downs", 0, &places());
     room.set_difficulty(difficulty);
     let player = room.join().expect("a room with space");
     (room, player)

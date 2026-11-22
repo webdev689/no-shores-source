@@ -18,6 +18,10 @@ use sailing::{HullKind, TICK_SECONDS};
 
 /// A look meets a ship within this far past the laid gun's longest throw (metres): DFO's `LOOK_REACH_PAD`.
 pub const LOOK_REACH_PAD_M: f64 = 60.0;
+/// The farthest a look's eye stands from its ship's middle, metres: the sea fight's camera, 75 m out from a point 6 m
+/// over the ship (client/src/game/seaCombat.ts `ORBIT`), and the way the ship makes before the room hears the look. A
+/// ray from farther lays nothing: no player looks from beside the ship they aim at.
+pub const LOOK_EYE_M: f64 = 100.0;
 
 /// A ship as a lay sees it: its number and flag, its hull, its helm's numbers, how it lies, and whether it floats.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -70,12 +74,14 @@ pub fn lay_for(shooter: &Sighted, load: Shot, aim: &Aim, ships: &[Sighted]) -> O
 }
 
 /// The point to lay on where the look's ray first meets a ship of another flag, its hull or its canvas, within the
-/// square lay's longest throw and `LOOK_REACH_PAD_M` (DFO's `lookOnShip`). A look on its canvas lays chain for that
-/// very point and every other load for its hull's middle: a ball laid for a sail flies on through it. The point is
-/// led along the fire by its way over the ball's flight there; across the fire the timing is the helm's.
+/// square lay's longest throw and `LOOK_REACH_PAD_M` (DFO's `lookOnShip`); none from an eye past `LOOK_EYE_M`. A look
+/// on its canvas lays chain for that very point and every other load for its hull's middle: a ball laid for a sail
+/// flies on through it. The point is led along the fire by its way over the ball's flight there; across the fire the
+/// timing is the helm's.
 fn look_on(shooter: &Sighted, square: &Lay, [eye, look]: [[f64; 3]; 2], ships: &[Sighted]) -> Option<[f64; 3]> {
     let length = (look[0] * look[0] + look[1] * look[1] + look[2] * look[2]).sqrt();
-    if length <= 0.0 {
+    let off = [eye[0] - shooter.ship.x, eye[1] - shooter.ship.y, eye[2] - shooter.pose.heave];
+    if length <= 0.0 || (off[0] * off[0] + off[1] * off[1] + off[2] * off[2]).sqrt() > LOOK_EYE_M {
         return None;
     }
     let far = [0, 1, 2].map(|axis| eye[axis] + look[axis] / length * (square.reach + LOOK_REACH_PAD_M));

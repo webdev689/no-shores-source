@@ -1,7 +1,7 @@
-// The menu's pages that need no gear, drawn by the game: Journal and Guild, still to come and saying so; the Sloop's
-// papers as Manage shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the
-// account and the volumes of the interface and the world. And the parts they share with the Roster: a heading over
-// its rule, a faint hint and an answer.
+// The menu's pages that need no gear, drawn by the game: Guild, still to come and saying so; the Sloop's papers as
+// Manage shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the account and the
+// volumes of the interface and the world. And the parts they share with the Roster: a heading over its rule, a faint
+// hint and an answer.
 
 import type { Child, Node } from '../ui/node.ts';
 import { PAGE, type Page } from '../ui/page.ts';

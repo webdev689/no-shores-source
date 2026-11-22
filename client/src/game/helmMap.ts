@@ -23,6 +23,8 @@ export interface HelmMapContext {
   readonly store: ForgeStore;
   readonly stack: Stack;
   readonly sea: () => Sea | null;
+  /** Why each difficulty's seas are shut to the player by their level, by tier (null where open). */
+  readonly shut: () => readonly (string | null)[];
   readonly sail: (to: Point2, seas: Difficulty) => void;
   readonly made: (map: HeldMap) => void;
   readonly quest?: () => readonly string[];
@@ -144,7 +146,7 @@ export class HelmMap {
   ): MapDraw | undefined {
     if (this.wanted && here.view.atHelm && helm.free) {
       this.wanted = false;
-      this.made.open(helm.viewport, here.position, helm.hands, discovered.discovery.charted);
+      this.made.open(helm.viewport, here.position, helm.hands, discovered.discovery.charted, this.context.shut());
     }
     // The map's scene is gathered only while the map is up.
     const map = this.map;

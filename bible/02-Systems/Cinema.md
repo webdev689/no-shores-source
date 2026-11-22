@@ -74,6 +74,7 @@ it is gone the levels keep gliding, so the sound picks up where they stand.
   gulls and creaking timbers. A scene sets each from 0 to 1 and it glides there, eased at both ends. Each play of a
   bed's recording fades into the next at equal power. A bed is built only once it is first heard.
 - **Gulls.** The sea's gull cries at random gaps that shorten as the gulls' level grows and stop when it falls silent.
+  The recording is a whole flock, so each gap begins only once the last flock has ended: never two over each other.
 - **One-shots.** Thunder arrives a second for every 0.343 km, quieter the farther it is: within 2.5 km the weather's
   crack, past it its roll. Then the crash of two hulls, a splash from a plank to a body, a body hitting the deck, the
   ears ringing, a heartbeat, the deep's bright flash and the rush of a fast camera move. Each lets go of its nodes once

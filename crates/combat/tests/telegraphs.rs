@@ -10,7 +10,7 @@ use combat::shapes::{IRON_EXTRA, Shape, Telegraph, TelegraphOrder};
 use combat::{CombatInput, Happening, Intent, ticks};
 use common::{foe_at, run};
 use core::f64::consts::{FRAC_PI_2, PI};
-use movement::Controls;
+use movement::{Controls, Flat};
 
 fn order(shape: Shape, windup: u32, bearing: f64, ahead: f64) -> TelegraphOrder {
     TelegraphOrder { shape, windup, iron: false, feint_at: None, bearing, ahead }
@@ -120,10 +120,10 @@ fn a_quick_charge_runs_its_lane_and_no_further() {
 #[test]
 fn a_shapes_blow_stops_at_a_wall_and_does_not_reach_a_body_high_above() {
     let ring = Telegraph::begin(&order(Shape::Ring, 40, 0.0, 0.0), [0.0, 0.0, 0.0]);
-    assert!(ring.strikes([0.0, -3.0, 0.0], &[]));
+    assert!(ring.strikes([0.0, -3.0, 0.0], &[], &Flat));
     let wall = [movement::Block { min_x: -1.0, min_y: -2.2, max_x: 1.0, max_y: -2.0, top: 3.0, bottom: 0.0 }];
-    assert!(!ring.strikes([0.0, -3.0, 0.0], &wall), "behind a wall");
-    assert!(!ring.strikes([0.0, -3.0, 3.0], &[]), "up on a block three metres high");
+    assert!(!ring.strikes([0.0, -3.0, 0.0], &wall, &Flat), "behind a wall");
+    assert!(!ring.strikes([0.0, -3.0, 3.0], &[], &Flat), "up on a block three metres high");
 }
 
 #[test]
@@ -160,7 +160,7 @@ fn a_leap_off_a_block_strikes_from_where_it_lands_not_from_where_it_set_off() {
     let landed = landed.expect("it landed");
     let [x, y] = landed.landing().expect("a leap lands");
     assert!(landed.landed_z.is_some_and(|z| z.abs() < 1e-9), "it came down on the ground: {landed:?}");
-    assert!(landed.strikes([x, y, 0.0], &[platform]), "a body on the ground where it lands is struck");
+    assert!(landed.strikes([x, y, 0.0], &[platform], &Flat), "a body on the ground where it lands is struck");
 }
 
 #[test]
@@ -176,8 +176,8 @@ fn a_charge_off_a_block_strikes_a_body_below_at_the_height_it_ends_and_never_one
     });
     let landed = landed.expect("it landed");
     assert!(landed.landed_z.is_some_and(|z| z.abs() < 1e-9), "it ran off onto the ground: {landed:?}");
-    assert!(landed.strikes([6.0, 0.0, 0.0], &[platform]), "a body on the ground in its lane is struck");
-    assert!(!landed.strikes([1.0, 0.0, platform.top], &[platform]), "one left up on the block is not");
+    assert!(landed.strikes([6.0, 0.0, 0.0], &[platform], &Flat), "a body on the ground in its lane is struck");
+    assert!(!landed.strikes([1.0, 0.0, platform.top], &[platform], &Flat), "one left up on the block is not");
 }
 
 #[test]
@@ -191,6 +191,6 @@ fn a_charge_into_a_wall_still_strikes_the_body_pinned_before_it() {
         _ => None,
     });
     let landed = landed.expect("it landed");
-    assert!(landed.strikes([4.0, 0.0, 0.0], &[wall]), "a body backed against the wall is struck");
-    assert!(!landed.strikes([6.5, 0.0, 0.0], &[wall]), "never one behind the wall");
+    assert!(landed.strikes([4.0, 0.0, 0.0], &[wall], &Flat), "a body backed against the wall is struck");
+    assert!(!landed.strikes([6.5, 0.0, 0.0], &[wall], &Flat), "never one behind the wall");
 }

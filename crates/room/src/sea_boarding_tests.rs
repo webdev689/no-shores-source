@@ -108,7 +108,7 @@ fn a_boarders_deck_inputs_stand_no_foe_replay_nothing_reach_no_other_player_and_
 fn two_boarders_one_beaten_both_take_its_hold_when_its_crew_falls_and_both_step_off_after_it() {
     let (mut sea, one) = met(20.0, Rank::Minor);
     let two = sea.join();
-    sea.course(two, &[[50_010.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(two, &[[50_010.0, 50_000.0]], 10).unwrap();
     sea.tick();
     assert!(sea.fights.fighting(two), "joined");
     strike(&mut sea, one);
@@ -255,7 +255,7 @@ fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
     let mut sea = super::tests::sea();
     let player = sea.join();
     on_road(&mut sea, player, 3, 5);
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
     let standing = crate::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
     sea.pirates.sailing.push(crate::pirates::Pirate { level: 9, ..standing });
@@ -275,4 +275,94 @@ fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
     ticks(&mut sea, HOLD_TICKS as usize + 1);
     assert!(!sea.on_deck(player), "stepped off");
     assert_eq!(road(&sea, player), Some((3, 6)), "the tally ship boarded and taken");
+}
+
+#[test]
+fn a_boarders_vestige_lying_on_the_deck_goes_to_their_mail_as_they_leave_the_sea_or_step_off() {
+    for leaving_the_sea in [true, false] {
+        let (mut sea, player) = met(20.0, Rank::Minor);
+        sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+        strike(&mut sea, player);
+        let ship = sea.fights.of_mut(player).unwrap().1.ship;
+        vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+        sea.board(player).unwrap();
+        let boarder = sea.decks.boarded[0].aboard[&player];
+        let vestige = gear::Vestige::new(0, gear::Rarity::Rare, gear::Slot::Head, 9);
+        sea.decks.boarded[0].room.lay_drop(boarder, crate::Dropped::Vestige(vestige), [900.0, 900.0, 0.0]);
+        let mail = if leaving_the_sea {
+            sea.mail_lying(player);
+            let kept = sea.kept_character(player).expect("their character");
+            gear::Character::from_json(&kept).expect("a character").mail
+        } else {
+            let room = &mut sea.decks.boarded[0].room;
+            let hands = room.ashore.hands.clone();
+            for (id, foe) in &mut room.foes {
+                if !hands.contains_key(id) {
+                    foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+                }
+            }
+            sea.tick();
+            ticks(&mut sea, HOLD_TICKS as usize + 1);
+            assert!(!sea.on_deck(player), "stepped off");
+            sea.harbour.characters[&player].mail.clone()
+        };
+        let posted: Vec<_> = mail.iter().filter_map(|letter| letter.vestige.as_ref().map(|kept| kept.rarity)).collect();
+        assert_eq!(posted, [gear::Rarity::Rare], "leaving the sea: {leaving_the_sea}");
+    }
+}
+
+#[test]
+fn a_ship_sunk_toward_a_bounty_while_its_player_fights_a_deck_is_still_counted_when_they_step_off() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+    sea.board(player).unwrap();
+    // Another of the fight's ships goes down meanwhile: the sea counts it on the character it keeps.
+    let held = sea.harbour.characters.get_mut(&player).unwrap();
+    held.activity.today.bounties.insert(4, 1);
+    let room = &mut sea.decks.boarded[0].room;
+    let hands = room.ashore.hands.clone();
+    for (id, foe) in &mut room.foes {
+        if !hands.contains_key(id) {
+            foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+        }
+    }
+    sea.tick();
+    ticks(&mut sea, HOLD_TICKS as usize + 1);
+    assert!(!sea.on_deck(player), "stepped off");
+    assert_eq!(sea.harbour.characters[&player].activity.today.bounties.get(&4), Some(&1), "the count kept");
+}
+
+#[test]
+fn a_boarders_gear_is_written_on_the_seas_day_and_turns_with_it() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    // A Friday's 09:00 UTC, the sea's minute.
+    let minute = 20_778 * 1_440 + 540;
+    sea.minute = minute;
+    strike(&mut sea, player);
+    sea.board(player).unwrap();
+    let day = |sea: &mut Sea| sea.deck_gear_change(player).map(|(room, _)| room.day());
+    assert_eq!(day(&mut sea), Some(gear::clock::day_of(minute)), "the sea's day, not the epoch's");
+    sea.minute = minute + 1_440;
+    ticks(&mut sea, crate::players::GEAR_EVERY_TICKS as usize);
+    assert_eq!(day(&mut sea), Some(gear::clock::day_of(minute) + 1), "sent again as the sea's day turns");
+}
+
+#[test]
+fn a_boarder_who_steps_off_is_sent_their_gear_from_the_sea_again() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    sea.board(player).unwrap();
+    for foe in sea.decks.boarded[0].room.foes.values_mut() {
+        foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+    }
+    sea.tick();
+    // Whatever the sea held to send them before is sent: only stepping off is left to send.
+    sea.harbour.changed.clear();
+    sea.leave_deck(player).unwrap();
+    assert!(sea.take_character_change(player).is_some(), "the sea's word again, with what the deck won");
 }

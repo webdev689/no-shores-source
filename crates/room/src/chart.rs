@@ -7,10 +7,11 @@ use world::layout::Layout;
 use world::traffic::{Port, Traffic};
 use world::waters::{Holder, Waters};
 
-/// The sea's waters, each continent's band, and the lanes' legs, end to end.
+/// The sea's waters, each continent's id and band, and the lanes' legs, end to end.
 #[derive(Debug)]
 pub struct Charted {
     waters: Waters,
+    ids: Vec<String>,
     bands: Vec<Option<(u8, u8)>>,
     lanes: Vec<[[f64; 2]; 2]>,
 }
@@ -20,7 +21,8 @@ impl Charted {
     #[must_use]
     pub fn new(layout: &Layout, ports: &[Port]) -> Self {
         let waters = Waters::new(layout);
-        let bands = layout.continents.iter().map(|continent| gear::world::island_levels(&continent.id)).collect();
+        let ids: Vec<String> = layout.continents.iter().map(|continent| continent.id.clone()).collect();
+        let bands = ids.iter().map(|id| gear::world::island_levels(id)).collect();
         let lanes = if ports.is_empty() {
             Vec::new()
         } else {
@@ -29,7 +31,7 @@ impl Charted {
             let legs = traffic.routes.iter().flat_map(|route| route.path.windows(2).map(|leg| leg.to_vec()));
             legs.map(|leg| [corner(&leg[0]), corner(&leg[1])]).collect()
         };
-        Charted { waters, bands, lanes }
+        Charted { waters, ids, bands, lanes }
     }
 
     /// How far a point of sea lies from the nearest coast, metres; 0 on land.
@@ -43,6 +45,12 @@ impl Charted {
     pub fn water(&self, at: [f64; 2]) -> Option<(world::waters::Water, Option<(u8, u8)>)> {
         let water = self.waters.water_at(at)?;
         Some((water, self.bands.get(water.continent).copied().flatten()))
+    }
+
+    /// The id of the continent whose water a point of sea lies in, as the bounties name a water; none on land.
+    #[must_use]
+    pub fn water_id(&self, at: [f64; 2]) -> Option<&str> {
+        self.ids.get(self.waters.water_at(at)?.continent).map(String::as_str)
     }
 }
 

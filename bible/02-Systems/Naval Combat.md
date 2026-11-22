@@ -112,7 +112,10 @@ sea's soundscape ([[Ambience]]).
   against the ship's hull's box and its sails' boxes out to the laid gun's longest throw and 60 m, the nearest entry taken.
   The side is laid on that point, its range out along the fire and its own height. A look on the ship's canvas lays chain
   for that very point and every other load for its hull's middle. The point is led along the fire by the ship's way over the
-  ball's flight there. A look that meets no part of the ship lays for the water's range. A release fires that same lay.
+  ball's flight there. A look that meets no part of the ship lays for the water's range, and so does a ray from an eye
+  more than 100 m from the player's own ship (`LOOK_EYE_M`: the fight camera's 75 m out from 6 m over it, and the way
+  the ship makes meanwhile), so no page lays on a ship by looking from beside it ([[The Server Is the Authority Over Everything]]). Whatever the ray meets, the side fires
+  square to the hull, its elevation within its guns' carriage. A release fires that same lay.
 - **The aim shows each gun's end**: its ball, unscattered, flown by the same law a fired ball flies by (in the fight's
   ticks) with the target where its way will have carried it by then, to where it stops. The lay is on target only when one
   of those balls meets the target, canvas or hull. Its landing zone's radius is DFO's: half the width the crew scatters the
@@ -292,8 +295,9 @@ Pass]]) with Claude's numbers:
   boarder's own ship takes no orders or course while they stand on the struck ship's deck. Its deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
   The sea's snapshot carries each deck to its boarders alone: their numbers there, the ship's hull, its deck room's own
-  snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's, sent through the
-  sea's link, and every boarder's dress is sent again as each one comes over its side, who had no welcome to bring it.
+  snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's, at the sea's minute,
+  sent through the sea's link, and the sea's once more as they step off; and every boarder's dress is sent again as
+  each one comes over its side, who had no welcome to bring it.
 - **The fight on a struck deck, on the page** (`deckBoarding.ts`, `deckFight.ts`). Once the sea says the player stands on
   the struck ship's deck, the page plays on foot there exactly as on land: the same `Foot`, controls, first and third person,
   display, bars and marks, its crew drawn as the land's foes and the other boarders as players. Its link is the sea's:

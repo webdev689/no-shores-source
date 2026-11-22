@@ -1,23 +1,33 @@
-// The time a keeper's screen counts down at its foot: to the next midnight by the world clock (UTC), when the daily
-// keepers' wares change, as Destiny's vendors refresh at the daily reset; and to Shape's leaving.
+// The time a keeper's screen counts down at its foot: to the daily reset, when the daily keepers' wares change, as
+// Destiny's vendors refresh then; and to Shape's leaving. The room module's rules count both in whole minutes
+// (`activitiesAt`), so the page only takes off the seconds gone in the minute.
+import { activitiesAt } from '../activities.ts';
 
 const DAY_S = 86_400;
 
-/** The epoch's Thursday stands three days into a week begun on Monday 00:00 UTC; Shape goes on Sunday at 21:00 UTC
- *  (crates/gear/src/shape.rs). */
-const EPOCH_PAST_MONDAY_S = 3 * DAY_S;
-const WEEK_S = 7 * DAY_S;
-const SHAPE_GOES_S = 6 * DAY_S + 21 * 3_600;
+/** The room module the screens count by, once the game has compiled it. */
+let rules: WebAssembly.Module | null = null;
 
-/** Whole seconds from `nowMs` to the next midnight, UTC: none at midnight itself, as the wares turn then. */
-export function secondsToMidnight(nowMs: number): number {
-  return (DAY_S - Math.floor((nowMs % (DAY_S * 1000)) / 1000)) % DAY_S;
+/** The countdowns read the game's room module once it is compiled. */
+export function countBy(module: Promise<WebAssembly.Module>): void {
+  void module.then((read) => (rules = read)).catch(() => undefined);
 }
 
-/** Shape's seconds left by the world clock, as the rules count his minutes; none once he has gone. */
-export function shapeSecondsLeft(nowMs: number): number {
-  const into = (Math.floor(nowMs / 1000) + EPOCH_PAST_MONDAY_S) % WEEK_S;
-  return Math.max(0, SHAPE_GOES_S - into);
+let read: { minute: number; module: WebAssembly.Module; drawn: ReturnType<typeof activitiesAt> } | null = null;
+
+/** Whole seconds from `nowMs` to the next stock and to Shape's leaving (none once he has gone), by `module`'s rules;
+ *  null before the game's is read. */
+export function countdownsAt(
+  nowMs: number,
+  module: WebAssembly.Module | null = rules,
+): { readonly stock: number; readonly shape: number } | null {
+  if (!module) return null;
+  const minute = Math.floor(nowMs / 60_000);
+  // Read once a minute: a keeper's screen asks every frame.
+  if (read?.minute !== minute || read.module !== module) read = { minute, module, drawn: activitiesAt(module, minute) };
+  const { drawn } = read;
+  const gone = Math.floor((nowMs - minute * 60_000) / 1000);
+  return { stock: drawn.untilDay * 60 - gone, shape: Math.max(0, drawn.untilShapeGoes * 60 - gone) };
 }
 
 const two = (value: number) => String(value).padStart(2, '0');

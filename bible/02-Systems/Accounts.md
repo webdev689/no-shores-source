@@ -4,6 +4,7 @@ status: live
 code:
   - server/accounts/accounts.ts#handle
   - server/accounts/characters.ts#characters
+  - server/accounts/companies.ts#companionsOf
   - server/accounts/discord.ts#callback
   - server/accounts/discord.ts#taken
   - server/accounts/secrets.ts#hashPassword
@@ -21,6 +22,10 @@ code:
   - server/accounts/names.ts#refusalOf
   - server/accounts/people.ts#PERSON
   - server/keeping.ts#Keeper
+  - server/accounts/finding.ts#Finder
+  - server/accounts/finder.ts#CompanyFinder
+  - server/accounts/migrations/20261120181039_found_runs.sql
+  - server/accounts/migrations/20261121120000_character_rooms.sql
   - client/src/network/accounts.ts#AccountLink
   - server/accounts/binds.ts#bindsAsk
   - server/accounts/migrations/20261121180000_binds.sql
@@ -89,22 +94,45 @@ they play in holds it while they are there.
 - **One room at a time.** A node's room ([[Server]]) holds each signed-in player's character: the gear crate's
   `Character` as JSON ([[Gear]]). A browser, once welcomed, sends its session's token as its one text message; the
   room claims the character with it through the rooms' service binding (`CharacterKeeper`, which only the rooms can
-  reach) and gives it to the player, trimming their fight by it.
+  reach) and gives it to the player, trimming their fight by it. One account is one player in a room: a second
+  socket of theirs signed in (a rejoin before the room saw the first close, or a second tab) sends the first away
+  as played elsewhere before it is given the character, so a run keeps the first one's body for it, and the rules
+  refuse to note one account for two players (`Room::own`). A rejoin's old socket is one the page let go of already,
+  so it plays on; a second tab's page stops there and joins no more, so two tabs never take the character back and
+  forth.
 - **Saved as it changes.** The room saves a character two seconds after its gear changes, and every twenty seconds
   besides; each save holds the character for the room another minute. Leaving, the player's character is saved last
   and let go; a release the accounts do not answer is asked again, then the last save is made on its own and the
   hold left to lapse.
 - **Moving between rooms.** A claim waits up to three seconds for the room the player left to let go, then takes the
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
-  another learns it from its next save and lets the player go, saying their character joined another room.
+  another learns it from its next save and lets the player go, saying their character joined another room (4001),
+  and that page joins no more ([[Server]], "Joining again"). Each claim keeps the room that claims it (`room`, from
+  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]), and a look answers
+  the room that last held it; a room that lets a character go untouched (its gate shut, or it never gave it) was never
+  where it was, so the room before is its last again. The rooms judge where a character comes from by these alone
+  ([[Server]], "Where a character comes from").
+- **Gated.** Before giving a character, the room asks its gate ([[Activities]]). It judges the character with the
+  story the player already holds in the room carried forward, since the page may tell the room the prologue is done
+  before the accounts answer; the story only moves forward. One the gate shuts, or a new one where the prologue is
+  needed, is let go untouched, and the player is sent away with the reason. At sea and on a sea island the gate is
+  the seas' tier alone.
+- **A run keeps to its company.** A run's room ([[Activities]]) gives a character to the first to come, then only
+  to one it let in before or a companion of someone it let in, for as long as it lives: one of their company's
+  members (`companions(account, room)`, longest there first, or the player alone), or one the run was found for with
+  them by Find a Company (`found_runs`, which admits them for a day after it was found). A group found is no company, and lets its members in together
+  to that one run alone. Any other is let go untouched, and the player sent away saying "This run is another
+  company's.".
 - **At sea.** The sea room claims and keeps the character too, for its ship's hurts (`ship`: its hull, canvas and men
   in ten-thousandths of whole), where the sea last kept it (`ship_at`, a player who leaves mid-fight kept at the
   port city it would wash up at, as the fight has it), and what floats gathered into it; a deck boarded fights with it, and gives it back
   as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
   character whose ship has the hurts it keeps.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
-  that is not kept. The Test Ground's room grants gear to try it, so it keeps no characters, nor does a fleet room;
-  nor does a page with no session, playing alone, or on a local room server with no `?accounts=`.
+  that is not kept, or in a run, which keeps no one unkept, is sent away. A socket with no session, its token none in
+  five seconds or no session at all, is sent away from any room that keeps characters ([[Server]], "The host"). The
+  Test Ground's room grants gear to try it, so it keeps no characters, nor does a fleet room; nor does a page playing
+  alone. A page on a local room server with no `?accounts=` holds no session, so a node's room there sends it away.
 
 ## The Roster
 
@@ -121,7 +149,7 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
   for one that never asked.
-- **The company**, sized as Destiny's fireteam: three at most, one its leader; a player alone leads their own. A player is
+- **The company**: four at most, as an Elite Dungeon's run is for, one its leader; a player alone leads their own. A player is
   invited (the invite stands ten minutes, then is let go), or joins as the leader's privacy allows: Public, anyone;
   Friends Only (each player's first setting), the leader's friends; Invite Only, those invited; Closed, no one, though
   an invite still stands. The Roster shows the leader's privacy, the one that applies; a member's own applies once they
@@ -145,6 +173,36 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   only counted. Another player's details show what they wear always, and where they are only to their friends, company
   and guild. A friend ask still waiting and a guild's invite show no one where the player asked is.
 - **Limits**: 60 an hour of the asks that reach another player (a friend ask, an invite, founding a guild).
+
+## Find a Company
+
+Find a Company ([[Activities]]) matches players for an Elite Dungeon at Normal or the Elite Dungeon of the week,
+never the Abyss Dungeon of the week, whose company forms it.
+
+- **The queue** is a Durable Object of the accounts' Worker, one for each run's base (`CompanyFinder`, `finder.ts`),
+  reached at `/v1/find/<base>` by WebSocket: `node-<id>` for an Elite Dungeon at Normal, `node-<id>--elite` for the
+  week's. A socket's first message is its session's token; one that is no session, or that sends none within five
+  seconds (`TOKEN_WAIT_MS`, as a run's room waits), is closed with 4003 and "Sign in to find a company.". At most 64
+  sockets with a token wait in one, and 128 sockets in all, silent ones too; its clock stops once it holds none. It
+  checks a base's shape alone, not that a rule lays it: the accounts' Worker does not load the rules, and the room
+  judges the run.
+- **Bands.** A seeker is matched by the level their room last kept (`shown.level`, 1 for none yet), in bands of ten:
+  1 to 10, 11 to 20 and 21 to 30 (`bandOf`).
+- **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
+  none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as
+  many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a
+  socket.
+- **One search an account.** A second search, in another tab, replaces the first, which is closed with 4003 and
+  "You are finding a company in another tab."; of two looked up at once, the newer socket stays. While an account's run is being started, a second search of theirs
+  is closed with those words, so no account is in two groups. Closing the socket leaves the queue.
+- **A run found** is named `<base>--run-<instance>` and kept for those found (`found_runs`: it admits them for a day
+  after it was found, and rows older than that are cleared as later runs are found), so its room lets them in
+  together, for that run alone; no one's company changes. Each is sent `{"run":"<name>"}` and their socket closed.
+  The finder judges no gate and keeps no clock: the room is the authority, and the page offers Find a Company only
+  where the gate is open.
+- **The page's side** (`findCompany`): it opens `AccountLink.finderAt(base)`, the accounts' own address by `ws://`
+  or `wss://`, sends the session's token once open, and takes only a run of the base it asked for. Offline, or with
+  no session, it offers none.
 
 ## Binds
 
@@ -170,7 +228,7 @@ table holds one row an account: what differs from the game's defaults, as JSON, 
 ## Running it here
 
 `npm run accounts` applies the migrations to a local database and runs the accounts on port 8788, beside
-`npm run server`; the rooms' binding finds them. The game takes `?accounts=http://127.0.0.1:8788` with its
+`npm run server`; the rooms' binding finds them, and Find a Company runs there too. The game takes `?accounts=http://127.0.0.1:8788` with its
 `?room=ws://127.0.0.1:8787`.
 
 ## Limits

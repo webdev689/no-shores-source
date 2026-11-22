@@ -172,14 +172,42 @@ pub fn layers_of(slot: crate::kinds::Slot, kind: crate::kinds::Kind) -> &'static
     }
 }
 
-/// A dress as a browser wrote it, with the dye, coat and barding worn put in its outfit, and none of a start piece,
-/// and its own dyes keeping a faction's colour or a cosmetic dye only on a layer `shown` allows it on
-/// (`colours_shown`): the room's word on what others see, not the browser's. A dress that is not an object with an
-/// outfit is given back as sent, for other pages to refuse.
+/// The lights a left hand may carry whatever is worn (`dressing.ts` `LIGHTS`): a light is no piece of gear.
+const LIGHTS: [&str; 2] = ["torch_l", "lantern"];
+
+/// A dress as a browser wrote it, if it reads as one: an object with an outfit that is one.
 #[must_use]
-pub fn dressed(sent: &str, worn: &Cosmetics, shown: &[ShownColour]) -> String {
-    let Ok(serde_json::Value::Object(mut dress)) = serde_json::from_str(sent) else { return sent.to_owned() };
-    let Some(serde_json::Value::Object(outfit)) = dress.get_mut("outfit") else { return sent.to_owned() };
+pub fn read_dress(sent: &str) -> Option<serde_json::Map<String, serde_json::Value>> {
+    match serde_json::from_str(sent) {
+        Ok(serde_json::Value::Object(dress)) if dress.get("outfit").is_some_and(serde_json::Value::is_object) => {
+            Some(dress)
+        }
+        _ => None,
+    }
+}
+
+/// A dress as a browser wrote it, made the room's word on what others see, not the browser's: the dye, coat and
+/// barding worn put in its outfit, and none of a start piece; its armour and the things in its hands only those of
+/// the pieces the character wears (`layers_of`), a light in the left hand kept; and its own dyes keeping a faction's
+/// colour or a cosmetic dye only on a layer the character may show it on (`colours_shown`). None for a dress that
+/// does not read.
+#[must_use]
+pub fn dressed(sent: &str, character: &Character) -> Option<String> {
+    let mut dress = read_dress(sent)?;
+    let serde_json::Value::Object(outfit) = dress.get_mut("outfit")? else { return None };
+    let pieces: Vec<&str> =
+        character.all_worn().flat_map(|(slot, item)| layers_of(slot, item.kind).iter().copied()).collect();
+    let wears = |layer: &str| pieces.iter().any(|piece| layer.starts_with(piece));
+    if let Some(serde_json::Value::Object(armour)) = outfit.get_mut("armour") {
+        armour.retain(|piece, set| set.as_str().is_some_and(|set| wears(&format!("{piece}_{set}"))));
+    }
+    for hand in ["right", "left"] {
+        let held = outfit.get(hand).and_then(serde_json::Value::as_str);
+        if held.is_some_and(|layer| !wears(layer) && !(hand == "left" && LIGHTS.contains(&layer))) {
+            outfit.insert(hand.to_owned(), serde_json::Value::Null);
+        }
+    }
+    let shown = colours_shown(character);
     if let Some(serde_json::Value::Object(dyes)) = outfit.get_mut("dyes") {
         let earned = |layer: &str, colour: &str| {
             let factions = &crate::factions::factions().factions;
@@ -192,14 +220,14 @@ pub fn dressed(sent: &str, worn: &Cosmetics, shown: &[ShownColour]) -> String {
         dyes.retain(|layer, colour| colour.as_str().is_none_or(|colour| earned(layer, colour)));
     }
     for (key, kind) in [("dye", CosmeticKind::Dye), ("coat", CosmeticKind::Coat), ("barding", CosmeticKind::Barding)] {
-        let piece = worn.worn(kind);
+        let piece = character.cosmetics.worn(kind);
         if piece == starting(kind) {
             outfit.remove(key);
         } else {
             outfit.insert(key.to_owned(), serde_json::Value::String(piece.to_owned()));
         }
     }
-    serde_json::Value::Object(dress).to_string()
+    Some(serde_json::Value::Object(dress).to_string())
 }
 
 /// The cosmetics a player keeps, by id, and the one of each kind they wear.

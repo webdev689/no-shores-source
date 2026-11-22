@@ -6,7 +6,7 @@ use crate::sight::clear_line;
 use crate::ticks;
 use crate::tuning::{CHEST, STRIKE_HEIGHT};
 use movement::blocks::{ground_at, pushed_out, slide};
-use movement::{Block, Body, Near};
+use movement::{Block, Body, Near, Terrain};
 
 /// The shapes. A lunge and a charge are lanes ahead; a sweep an arc; a slam a disc just ahead; a ring an annulus about
 /// the foe's feet, safe close in; a leap a disc where its target stood; an aimed shot a line its arrow flies along.
@@ -185,17 +185,17 @@ impl Telegraph {
     }
 
     /// Whether its blow strikes a body standing at `feet`: inside its shape on the ground, within a blow's height of
-    /// its foe where it ends (a charge's or a leap's where it came down), and with no block between the body and where
-    /// the blow comes from (a leap's landing, else its foe as it set off).
+    /// its foe where it ends (a charge's or a leap's where it came down), and with no block nor wall of the terrain
+    /// between the body and where the blow comes from (a leap's landing, else its foe as it set off).
     #[must_use]
-    pub fn strikes(&self, feet: [f64; 3], blocks: &[Block]) -> bool {
+    pub fn strikes(&self, feet: [f64; 3], blocks: &[Block], terrain: &dyn Terrain) -> bool {
         let ends_z = self.landed_z.unwrap_or(self.origin[2]);
         let leap = self.landing().filter(|_| self.shape == Shape::Leap);
         let (from, from_z) = leap.map_or(([self.origin[0], self.origin[1]], self.origin[2]), |at| (at, ends_z));
         let chest = |x: f64, y: f64, z: f64| [x, y, z + CHEST];
         self.holds(feet[0], feet[1])
             && (feet[2] - ends_z).abs() <= STRIKE_HEIGHT
-            && clear_line(blocks, chest(from[0], from[1], from_z), chest(feet[0], feet[1], feet[2]))
+            && clear_line(blocks, terrain, chest(from[0], from[1], from_z), chest(feet[0], feet[1], feet[2]))
     }
 
     /// Where its foe's feet go at the end of a charge or a leap: along its lane, or to its disc.

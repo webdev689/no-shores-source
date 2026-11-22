@@ -141,7 +141,11 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   the player sets sail with it; letting the destination go lets it go too. The node landed at is joined at the
   voyage's difficulty ([[Server]], "The host"). Elite here is the voyage's tier, never a foe's rank; the Roster says
   "Elite difficulty" where a player is, and reads a place kept under the tiers' old names (`--rough`, `--storm`) as
-  Elite and Abyss.
+  Elite and Abyss. The presses stand after a "Seas" label. A difficulty the player's level shuts rests, titled with
+  its gate's reason, and the first reason stands in a line under the row ("Elite seas open at level 10."), read from
+  the rules by the last word of the character a room sent ([[Activities]]); before any word none is shut. A pick the
+  level shuts, kept from an earlier voyage or another character, falls to the hardest difficulty open below it, and
+  Set sail takes that one, so no voyage sails for a sea room whose gate would turn the player away.
 - **Turning back.** Escape on the way down to the helm turns the view back before the map is raised.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation
@@ -152,7 +156,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 The map on land speaks in icon glyphs, with little text, and a table on it says what each glyph is
 ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
-- **Raising.** On foot, N anywhere (with no menu or gear screen up): the view goes into the player's eyes (from third
+- **Raising.** On foot, N anywhere but in a dungeon, under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
   person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
   pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
   waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
