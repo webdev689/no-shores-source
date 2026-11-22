@@ -272,6 +272,11 @@ fn a_resource_gathered_counts_for_its_goal() {
     room.furnish(None, vec![ResourceNode { x: 1.0, y: 0.0, resource: 0 }]);
     let player = joined(&mut room, &on_goal(key), [0.0, 0.0]);
     room.answer(player, Asked::Gather { node: 0 });
+    assert_eq!(now(&room, player).1, counted(key, 0), "begun, not yet gathered");
+    // Held through its two seconds, the player standing still.
+    for _ in 0..=crate::asks::GATHER_TICKS {
+        room.tick();
+    }
     assert_eq!(now(&room, player).1, counted(key, 1));
 }
 
