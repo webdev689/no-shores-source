@@ -33,10 +33,11 @@ export const NO_LORE =
 export const UNFOUND_CHAPTER = 'This chapter has not been found.';
 const UNFOUND_BOOK = 'Undiscovered';
 
-/** A category's tile, its motif, and a cover in the list and chosen, CSS pixels, on a narrow menu and a wide one. */
+/** A category's tile, its motif, and a cover in the list and chosen, CSS pixels, on a narrow menu and a wide one: a
+ *  cover a whole multiple of its pixels, so each stands as square as the next. */
 const TILE = { narrow: [176, 168], wide: [224, 208] } as const;
 const TILE_MOTIF = { narrow: 64, wide: 80 } as const;
-const LIST_COVER = { narrow: 48, wide: 72 } as const;
+const LIST_COVER = { narrow: 48, wide: 96 } as const;
 const BIG_COVER = { narrow: 144, wide: 192 } as const;
 /** How much wider than its cover the book chosen stands, CSS pixels. */
 const CHOSEN_MARGIN = 48;
@@ -169,7 +170,7 @@ export class Compendium {
                 gap: 14,
                 opacity: 0.32,
                 children: ['lighthouse', 'bell', 'key'].map((motif) =>
-                  pixelNode(`lore cover rest ${motif}`, coverSvg(INK.brass, motif, false), COVER, 64, coverHeight(64)),
+                  pixelNode(`lore cover rest ${motif}`, coverSvg(INK.brass, motif, false), COVER, 96, coverHeight(96)),
                 ),
               },
               { maxWidth: 460, text: { words: NO_LORE, colour: INK.faint, align: 'center' } },

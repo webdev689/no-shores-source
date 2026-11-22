@@ -173,6 +173,8 @@ The decisions in [[Open Questions]] are not repeated here.
     named place in a node.
   - The books are set out with bold, italics, documents set in and breaks
     ([[The Lore Is Set Out, Bold and Italic Where It Helps]]); bold and italic work in any of the interface's words.
+  - The covers are redrawn in detail, one binding in each book's cloth and motif
+    ([[The Lore Books' Covers Are Drawn in Detail]]).
   - Its pictures: `tools/uiShot.mjs` with `compendium/compendiumShots.ts`. Finding a chapter in a deployed room
     waits on the first books.
   - #153 and it both touch `Decisions.md` and `overheadMarks.ts`. The second to merge takes `main` first.

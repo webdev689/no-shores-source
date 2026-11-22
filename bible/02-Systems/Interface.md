@@ -858,7 +858,7 @@ never while a press is held. Each press is an ask the room answers.
     found. The lore books you find in the world, on quests and in the story are kept here." under three faint stone
     covers. `compendium/compendiumShots.ts` pictures it over sample lore (`loreForTests.ts`) with `tools/uiShot.mjs`.
   - **A category open**: "‹ LORE" (a press back to the front, as Escape steps), the category's name in capitals and how
-    much of it is found; then, side by side: its books, covers in rows of three (48 px wide, 72 px larger), each found
+    much of it is found; then, side by side: its books, covers in rows of three (48 px wide, 96 px larger), each found
     one a press edged in brass while chosen, one not found a plain stone cover that does nothing; the book chosen, its
     cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
     "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
@@ -869,9 +869,12 @@ never while a press is held. Each press is an ask the room answers.
     one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
     book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found; the
     focus goes to that book, or to "‹ LORE" while nothing of the category is found.
-  - **Covers** are drawn pixel for pixel, 24 by 30: a spine in the cloth's dark with two brass bands, the cloth lit along
-    its top and shaded along its fore-edge and foot, a brass corner at each of the face's corners, and the book's motif
-    tooled in brass in the face's middle (`coverSvg`).
+  - **Covers** are drawn pixel for pixel, 48 by 60, one binding for every book in its cloth and with its motif
+    ([[The Lore Books' Covers Are Drawn in Detail]], `coverSvg`): a rounded spine with brass caps, raised bands,
+    fleurons and a title label; a woven board lit toward the top left; a blind-tooled line, a gilt frame and brass
+    corners; a blank brass title plate; the motif raised in brass in an octagonal medallion; a gilt flourish; and a
+    strap and clasp on the fore-edge. A book not found has the same binding in plain stone, with no motif and no
+    brass.
   - **New**: Destiny's small diamond in lit brass marks each chapter found and unread, its book's cover and its
     category's tile, and goes as the chapter is shown, which keeps it read ([[Lore]], "In the browser").
   - It reads the last word of the character a room sent, as the Journal does, so it reads the same at sea.
