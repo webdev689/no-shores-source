@@ -53,6 +53,7 @@ code:
   - tools/wreck/wreck_level.py
   - client/src/game/prologue/wreckProgress.ts#WreckProgress
   - client/src/game/prologue/wreckRun.ts#WreckRun
+  - client/src/game/prologue/wreckCamera.ts#cameraCourse
   - client/src/game/prologue/wreckCrew.ts#WreckCrew
   - client/src/game/prologue/wreckCrew.ts#crewSpots
   - client/src/game/prologue/wreckScenery.ts#WreckScenery
@@ -344,7 +345,12 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   entered, Thule's health, how the fight ended, the points over every head for barks (by crew), and the
   shot its camera takes of the player standing, where the wake ends: the player stood on the deck's top under
   where they wake, as the room stands them, never on the rim's own ground, the sea below it. A cutscene holds it
-  still; the teaching freezes it (below). Its room is
+  still; the teaching freezes it (below). Its third-person camera keeps clear of what is drawn, not of the course's
+  walls (`cameraCourse`): the course stands anything in a body's room (a rail, the wheel, a gun, a stump) as a wall
+  3.2 m over the deck, so once the mesh has come each such wall is lowered for the camera to the highest timber or
+  iron the mesh stands there (canvas never counts), a mast or spar standing through it kept whole, and the heaps
+  standing added; its boom eases in and out round them as on foot. Where the player wakes, facing as they wake, the
+  boom stands 1.9 m back of its 2.1 m, where the walls held it to 0.8 m and showed only the crown of the head. Its room is
   let go as the wreck's fight ends. The key strip is foot's, without M. The menu's gear pages open on the wreck alone
   in the story (I for Character, O for Inventory), on the player's gear in its room; over them the player's presses
   rest while the room runs on, so what they equip is worn at once.
