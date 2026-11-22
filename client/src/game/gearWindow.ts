@@ -236,9 +236,15 @@ export function startGearWindow(
     for (const tab of TABS) {
       const id = tabId(tab);
       if (frame.clicked(id) && view !== tab) open(tab);
+      // Each arrow steps on from the focused tab, then from the one the last arrow reached; one reaching the tab
+      // shown takes the focus there, as opening it again would shut the menu.
+      let from: Tab = tab;
       for (const key of frame.keysOn(id)) {
-        const next = TABS[(TABS.indexOf(tab) + (key === 'arrowright' ? 1 : -1) + TABS.length) % TABS.length];
-        if (next) open(next);
+        const next = TABS[(TABS.indexOf(from) + (key === 'arrowright' ? 1 : -1) + TABS.length) % TABS.length];
+        if (!next) continue;
+        if (next === view) focusNext = tabId(next);
+        else open(next);
+        from = next;
       }
     }
     if (view !== shown) return [];

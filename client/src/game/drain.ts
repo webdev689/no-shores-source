@@ -116,6 +116,12 @@ export class DrainView {
     pass.end();
   }
 
+  /** Gives back the copy of the picture, made again on the next drain. */
+  release(): void {
+    this.held?.texture.destroy();
+    this.held = null;
+  }
+
   /** The texture the picture is copied into, the target's size. */
   private heldFor(target: GPUTexture) {
     const was = this.held;

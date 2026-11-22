@@ -7,7 +7,9 @@ import { readIslePlan } from '../islands/islePlan.ts';
 import { GROWTH_ROLES } from '../islands/isleView.ts';
 import { castOf } from '../nature/cast.ts';
 import { TILE_M } from '../nature/scatter.ts';
-import { islePlantings } from './isleNature.ts';
+import { countingGpu } from '../gpuForTests.ts';
+import type { IsleShown } from '../islands/islePlan.ts';
+import { IslesNature, islePlantings } from './isleNature.ts';
 
 /** The room's module as `npm run wasm` copies it for the page. */
 const ROOM = 'client/public/room.wasm';
@@ -53,3 +55,19 @@ test(
     assert.deepEqual(islePlantings(isles), plantings, 'the same plants every time');
   },
 );
+
+test("a climate no longer shown gives its plants' view back to the GPU", () => {
+  const counting = countingGpu();
+  const nature = new IslesNature(counting.gpu);
+  const isle = (id: number, climate: string) =>
+    ({ id, at: [0, 0], climate, plan: { placements: [] }, heights: new Float64Array() }) as unknown as IsleShown;
+  nature.show([isle(0, 'tundra')]);
+  const one = counting.live();
+  nature.show([isle(0, 'tundra'), isle(1, 'rainforest')]);
+  const each = counting.live() - one;
+  assert.ok(each > 0, 'a view holds buffers of its own');
+  nature.show([isle(1, 'rainforest')]);
+  assert.equal(counting.live(), one, "the tundra's view went as it left");
+  nature.show([]);
+  assert.equal(counting.live(), one - each, "none shown, none kept but the sky's, which every view shares");
+});
