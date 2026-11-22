@@ -720,7 +720,8 @@ never while a press is held. Each press is an ask the room answers.
 - **Character.** The player's figure large in the middle, under two plaques side by side
   ([[Prestige Stands Beside Level on the Character Tab]]): the level in brass, "of 30" under it, and Prestige in pale
   steel, each armour piece's share under it (head, torso, arms, legs), and under both the meter to the next level and
-  what it takes; under the figure the Melee and Ranged loadouts' Attack, Defense and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
+  what it takes; under the figure the Melee and Ranged loadouts' Attack and Defense
+  ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and Ranged loadouts, the cloak and the
   Appearance button stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
   names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's across from
   it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
@@ -1133,7 +1134,7 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   and Defense over it, and under it the Character tab: their plate over their figure in the dress they wear here, each
   piece they wear in its slot with its card, their level and Prestige (Prestige whole, as their room keeps no piece's
   share), their power and the Art they wear, from what their room kept for others to see. Nothing on it can be asked or
-  changed: no hints, no XP meter, no Fruit and no Appearance. Back or Escape goes back to their menu.
+  changed: no hints, no XP meter and no Appearance. Back or Escape goes back to their menu.
 - **Settings** lists the muted under the blocked, each with Unmute.
 
 ## Emblems

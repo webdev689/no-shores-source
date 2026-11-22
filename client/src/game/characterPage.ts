@@ -453,7 +453,6 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
     ['Melee', shown(melee)],
     ['Ranged', shown(ranged)],
     ['Defense', String(character.defense)],
-    ...(context.inspected ? [] : [['Fruit of Dagon', String(character.fruit)] as [string, string]]),
   ];
   const tall = sizes.label > 1;
   return {
