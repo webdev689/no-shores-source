@@ -35,7 +35,7 @@ The [[Test Ground]] shows them.
   drawn again with the walk's hips and legs under the action's chest, which keeps the action's turn and half its lean
   (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk` and so on). The sprint's fists close thumb up, the
   wrist straight.
-- **The dodge roll**: drawn by DFO for Overlook, outside its own studio, on both adult bodies and what they wear, but
+- **The dodge roll**: drawn by DFO for No Shores, outside its own studio, on both adult bodies and what they wear, but
   no weapon, held or worn: a weapon is not seen through a roll
   ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
 - **Views**: five, from the front round to the back. The other three are drawn mirrored.

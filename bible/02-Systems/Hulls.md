@@ -15,7 +15,7 @@ code:
 ---
 # Hulls
 
-The ships Overlook sails beyond the Sloop, chosen in the Sloop's style for each rank of ship, the player's own hulls and the
+The ships No Shores sails beyond the Sloop, chosen in the Sloop's style for each rank of ship, the player's own hulls and the
 merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
 [[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]).
 The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]): each captain sails its rank's

@@ -14,7 +14,7 @@ import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
 import { lidDrop, lidOf, lidShut } from './eyelids.ts';
 
 /** The title as the screen shows it. */
-export const TITLE = 'Overlook';
+export const TITLE = 'No Shores';
 
 /** Whether the page is played by touch, so its prompts say tap and hold rather than name keys. */
 export const playedByTouch = (): boolean => globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;

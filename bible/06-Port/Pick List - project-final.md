@@ -15,7 +15,7 @@ samples with no per-file licence are not. Read it with [[Port]] for the verdicts
 Scope: every file on `main` at `b0ac719`. Rows come from file headers, import lists and name searches. Section sizes
 are `wc -l` lines for code and notes, and bytes for maps, public and art. The tests were not run. **Cut** with "Destiny's
 names" means the logic is ours, but the code or note uses Destiny's or another game's names and terms (engram,
-Warlock, Titan, strike, Halo, Doom): the logic comes, the names stay. Whether a system belongs in Overlook is the
+Warlock, Titan, strike, Halo, Doom): the logic comes, the names stay. Whether a system belongs in No Shores is the
 owner's call; this list only says what can come.
 
 | Area | Rows | Clean | Cut | Can't |
@@ -161,12 +161,12 @@ owner's call; this list only says what can come.
 | `maps/into-the-deep.json` | The first mission's hand-made map: blocks, zones, spawns | Content | Clean | Content rebuild | Our map, in project-final's map JSON. | S | maps/into-the-deep.json |
 | `maps/laos-atoll.json` | Laos Atoll: island heightfield, paint, sea and boats (978 KB) | Content | Clean | Content rebuild | The owner's Raum region, compiled by tools/build-laos-atoll.mjs. | M | maps/laos-atoll.json |
 | **public/ (480 files, 35.3 MB)** | | | | | | | |
-| `public/music/` (4 tracks, 16 MB) | The Raum theme and three combat and boss tracks | Content | Clean | Content rebuild | The owner's music. Overlook's assets check keeps media out of git outside `bible/Attachments/`. | S | public/music/Raum.mp3 |
+| `public/music/` (4 tracks, 16 MB) | The Raum theme and three combat and boss tracks | Content | Clean | Content rebuild | The owner's music. The game's assets check keeps media out of git outside `bible/Attachments/`. | S | public/music/Raum.mp3 |
 | `public/audio/` (325 files, 9 MB) | Enemy, weapon, reload, foley, relic and impact samples | Content | Cut | Content rebuild | Described as CC0 from Freesound, with no per-file licence or credit. Cut until each file's licence is listed. | M | public/audio/enemy/death.mp3 |
 | `public/sprites/` (73 files) | Baked enemy, loot, ammo, projectile, gun and silhouette sprites | Content | Clean | Content rebuild | Baked by our tools from our geometry. Exception: `gun-silhouettes/requiem.png` renders the Requiem (Can't). | S | public/sprites/loot.json |
 | `public/sprites-stargrim/` | Enemy sprites re-baked for Stargrim's top-down view | Content | Clean | Content rebuild | The owner's Stargrim bake, made by tools/stargrim-spritebake.mjs. | S | public/sprites-stargrim/stargrim-sprites.json |
 | `public/fpgun/rifle.json` | Manifest for a painted rifle sheet whose image is absent | Content | Cut | Content rebuild | Its note calls the sheet generated. The PNG is not in the repository; origin unchecked. | S | public/fpgun/rifle.json |
-| `public/visual-changes/` (72 files) | Before-and-after screenshots with a note per visual change | Tooling | Clean | Practice | Records of changes, which Overlook keeps in pull requests. The habit of a picture per visual change is the part that carries. | S | public/visual-changes/movement/sprint-gait/README.md |
+| `public/visual-changes/` (72 files) | Before-and-after screenshots with a note per visual change | Tooling | Clean | Practice | Records of changes, which No Shores keeps in pull requests. The habit of a picture per visual change is the part that carries. | S | public/visual-changes/movement/sprint-gait/README.md |
 | **art/ (16 files, 201 KB)** | | | | | | | |
 | `art/fpgun/README.md, pistol.mjs` | Brief for painted gun sheets; a hand-made pixel pistol | Content | Clean | Practice | Ours. The README includes a prompt for generating sheets with an image model. | S | art/fpgun/pistol.mjs |
 | `art/fpgun/refs/` (13 PNGs) | Reference images of each gun, side view and close-up | Content | Cut | Content rebuild | Origin unchecked. They may be renders of our own guns; nothing in the repository says. | S | art/fpgun/refs/ref-rifle.png |
@@ -183,7 +183,7 @@ owner's call; this list only says what can come.
 | `06-Technical/Map-Synthesis-Arc, Module-Foundry-Arc, Procedural-Dungeon-*` | Map synthesis, the room library, one-shot dungeon composition | Content | Clean | Practice | No other game's names. The assembler follows Stargrim's, the owner's. | S | bible/06-Technical/Map-Synthesis-Arc.md |
 | `06-Technical/Block-Grid-Arc.md` | Daggerfall's dungeon layout format and the laws drawn from it | Content | Can't | — | Describes Daggerfall's block format and figures from its data. Ours inside: the generator slices, which blockSynth.js holds. | — | bible/06-Technical/Block-Grid-Arc.md |
 | `07-Enemies/Enemies.md, Heart-Boss-Arc.md` | Enemy roster, stages and archetypes; the Heart boss design | Content | Cut | Practice | Our crystal faction. Enemies.md (1,200 lines) names Destiny six times; Heart-Boss-Arc has no other game's names. | M | bible/07-Enemies/Heart-Boss-Arc.md |
-| `08-Multiplayer/Multiplayer.md` | Peer-to-peer sessions: social space, fireteams, patrol zones | Content | Cut | Practice | Names Destiny and Warframe as models. A host peer decides, where Overlook's server is the sole authority. Nothing built. | S | bible/08-Multiplayer/Multiplayer.md |
+| `08-Multiplayer/Multiplayer.md` | Peer-to-peer sessions: social space, fireteams, patrol zones | Content | Cut | Practice | Names Destiny and Warframe as models. A host peer decides, where the game's server is the sole authority. Nothing built. | S | bible/08-Multiplayer/Multiplayer.md |
 | `09-Testing/Testing.md` | Test doctrine: pure sims, goldens, headless probes, guards | Content | Clean | Practice | 696 lines; no other game's names. | S | bible/09-Testing/Testing.md |
 | `10-UI/` (UI, Character-Hub, Inspect-Menu, Settings-Tab-Arc) | HUD spec, character hub, inspect screen, settings tab | Content | Cut | Practice | The screens are called Destiny-shaped. Settings-Tab-Arc has no other game's names. | S | bible/10-UI/Character-Hub.md |
 | `11-Missions/Missions.md, Into-the-Deep.md` | The first mission's design: enclosure, steps, the Warden | Content | Cut | Practice | Titled Strike 01, Destiny's term. | S | bible/11-Missions/Into-the-Deep.md |

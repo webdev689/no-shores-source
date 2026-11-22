@@ -26,7 +26,7 @@ to come over, over what a player can use, each wearing its keeper's own mark
 ## What stays behind
 
 DFO's three pictures (a quest's "!", a merchant's coin, a guild's gem), as each keeper wears their own; the route a
-click takes, which Overlook's counters answer themselves; its own GL pass, as Overlook lays the marks as it lays its
+click takes, which Overlook's counters answer themselves; its own GL pass, as No Shores lays the marks as it lays its
 drops' pictures; and the switch on DFO's Features page.
 
 Ported in [[Game]] ("Over what a player can use").

@@ -266,6 +266,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
 - [[What a Player Can Use Wears Its Mark Over It]]
+- [[The Game Is Named No Shores]]
 
 ## Replaced
 

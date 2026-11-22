@@ -1,14 +1,14 @@
 ---
 type: index
 ---
-# Overlook
+# No Shores
 
-This vault is the bible: how Overlook works now, the rules we hold the code to, and the owner's decisions. Open the
+This vault is the bible: how No Shores works now, the rules we hold the code to, and the owner's decisions. Open the
 `bible/` folder as a vault in Obsidian. History lives in git and pull requests, not here.
 
 ## Start here
 
-- [[Overlook]]: what the game is, in the owner's words. Only the owner writes what the game is.
+- [[No Shores]]: what the game is, in the owner's words. Only the owner writes what the game is.
 - [[Rules]]: the few rules every change follows, and why each exists.
 - [[Lessons from DFO]]: what DFO Online taught us, with the evidence. The rules come from it.
 - [[Making a Change]]: the procedure, from branch to merge.
@@ -19,7 +19,7 @@ This vault is the bible: how Overlook works now, the rules we hold the code to, 
 | Folder | What it holds |
 |---|---|
 | `00-Rules` | [[Rules]] and [[Lessons from DFO]] |
-| `01-Game` | [[Overlook]]: the owner's words on what the game is |
+| `01-Game` | [[No Shores]]: the owner's words on what the game is |
 | `02-Systems` | One note per system, how it works now. Listed in [[Systems]] |
 | `03-Code` | [[Code Map]], [[Toolchain]], [[Toolkit]], [[Checks]], [[Testing]], [[Platform Research]], [[RMB Blocks]] |
 | `04-Procedures` | [[Making a Change]], [[Branches and Merging]], [[Porting from DFO]], [[Writing Notes]], [[Recording a Decision]] |

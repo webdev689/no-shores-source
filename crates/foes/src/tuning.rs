@@ -1,4 +1,4 @@
-//! Every number a foe's brain turns on, in one place: DFO's tactics and TELL tables, and the reactions Overlook's own
+//! Every number a foe's brain turns on, in one place: DFO's tactics and TELL tables, and the reactions the game's own
 //! fight adds. Distances in metres, times in seconds (the brain counts them in ticks of 1/60 s), angles in radians.
 
 const DEGREES: f64 = core::f64::consts::PI / 180.0;
