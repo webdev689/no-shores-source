@@ -273,6 +273,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Sea Has the Chat, Each Water a Region Channel]]
 - [[A Player May Mute Another]]
 - [[Inspect Opens the Character Tab]]
+- [[Inspect Shows the Player's Emblem Banner]]
 
 ## Replaced
 

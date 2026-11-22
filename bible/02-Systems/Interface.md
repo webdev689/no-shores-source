@@ -1126,8 +1126,9 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   under the rows. Whisper opens the chat's field to them ([[Chat]]); Mute hides their chat lines
   ([[A Player May Mute Another]]); Close or Escape shuts the menu. While it is up the player stands as in a menu, the
   pointer free and the keys the menu's alone.
-- **Inspect** ([[Inspect Opens the Character Tab]]) shows the player as the Character tab shows the player's own: their
-  plate over their figure in the dress they wear here, each piece they wear in its slot with its card, their level,
+- **Inspect** ([[Inspect Opens the Character Tab]], [[Inspect Shows the Player's Emblem Banner]]) shows the player as
+  the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
+  and Defense over it, and under it the Character tab: their plate over their figure in the dress they wear here, each piece they wear in its slot with its card, their level,
   power and the Art they wear, from what their room kept for others to see. Nothing on it can be asked or changed: no
   hints, no XP meter, no Fruit and no Appearance. Back or Escape goes back to their menu.
 - **Settings** lists the muted under the blocked, each with Unmute.
@@ -1139,7 +1140,7 @@ as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is d
 and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the
-Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Appearance
+Roster's rows, the menu's banner and Inspect's, another player's details, the company on the heads-up display, the Appearance
 button's corner and screen, and the Tailor's wares.
 
 ## Limits

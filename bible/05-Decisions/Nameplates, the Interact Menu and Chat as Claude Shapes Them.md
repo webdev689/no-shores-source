@@ -36,10 +36,12 @@ Claude's, with its reason. The owner can change any.
 | Region's reach | Every ship in the same water of the same sea room, each line marked with the water's name; Local refused at sea, Region on land | The sea's waters are its regions ([[World Map]]); no figures stand at sea to be heard near |
 | Region's colour | `#8fe28f` | DFO's Region green |
 | How a mute works | One way, hiding only their chat lines and Whispers, a Whisper to a muter answered as sent; from the menu's Mute row, `/mute` and `/unmute`, and Settings' list of the muted; 200 at most | DFO's `/mute` was a moderator's, so a player's own mute is new: it hides less than a block, which stays the way to keep a player away; what is hidden follows the Roster's block law |
+| Inspect's banner | The menu's own banner, the emblem's pattern carried across the window, their name and guild's tag, level, Prestige and Defense over it | The Character tab stands under that banner for the player's own character |
 | What Inspect leaves out | Hints, the XP meter, Fruit and Appearance; Back returns to their menu | What only the player's own character can do |
 
 Links: [[Interface]], [[Chat]], [[Accounts]], [[Server]].
 
 Replaced in part by [[Inspect Opens the Character Tab]]: Inspect shows the player as the Character tab does. By
 [[The Sea Has the Chat, Each Water a Region Channel]]: T opens the chat, on foot, at the helm and in a sea fight. By
-[[A Player May Mute Another]]: the menu has a sixth row, Mute.
+[[A Player May Mute Another]]: the menu has a sixth row, Mute. Added to by
+[[Inspect Shows the Player's Emblem Banner]].

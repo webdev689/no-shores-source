@@ -16,3 +16,5 @@ the Roster's details, the owner wrote:
 
 It changes [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]], whose Inspect was the Roster's details.
 Links: [[Holding Use on a Player Opens Their Interact Menu]], [[Interface]], [[Gear]].
+
+Added to by [[Inspect Shows the Player's Emblem Banner]].

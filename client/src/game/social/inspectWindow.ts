@@ -13,7 +13,8 @@ import { uiScale } from '../../ui/uiRenderer.ts';
 import { characterPage } from '../characterPage.ts';
 import { emblemOf } from '../emblemArt.ts';
 import { Holds } from '../gearHold.ts';
-import { INK, plateNode, pressNode, sizesOf, words } from '../gearNodes.ts';
+import { INK, pressNode, sizesOf, words } from '../gearNodes.ts';
+import { bannerNode } from '../gearShell.ts';
 import { cardFloat } from '../gearWindow.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { inspectedGear } from './inspectGear.ts';
@@ -21,7 +22,7 @@ import { inspectedGear } from './inspectGear.ts';
 /** Inspect's Back press. */
 export const INSPECT_BACK = 'inspect-back';
 /** The window's most, and the room its header and footer take, in CSS pixels. */
-const WINDOW = { width: 1240, height: 860, around: 32, header: 96, footer: 56 } as const;
+const WINDOW = { width: 1240, height: 860, around: 32, header: 72, footer: 56 } as const;
 
 /** Who is inspected: their name, their details once the accounts answer (or why not), and the dress they wear here. */
 export interface Inspected {
@@ -90,7 +91,7 @@ export class InspectWindow {
           direction: 'column',
           padding: [2, 2, 12, 2],
           children: [
-            this.header(who.name, found),
+            this.header(ui, who.name, found, gear, sizes),
             { width: 'grow', height: 'grow', padding: [12, 20], clip: true, children: [page] },
             { padding: [0, 18], children: [pressNode(INSPECT_BACK, 'Back', 'button', 'Esc', 1, { padding: [6, 14] })] },
           ],
@@ -100,22 +101,18 @@ export class InspectWindow {
     };
   }
 
-  /** The nameplate at the window's head: their emblem's band, their name and guild's tag, and their level. */
-  private header(name: string, found: Details | null): Node {
+  /** The window's head, as the menu heads the player's own: their emblem's banner across it, their name and guild's
+   *  tag, and their level, Prestige and Defense once their details come. */
+  private header(
+    ui: Interface,
+    name: string,
+    found: Details | null,
+    gear: ReturnType<typeof inspectedGear>,
+    sizes: ReturnType<typeof sizesOf>,
+  ): Node {
     const emblem = emblemOf(found?.shown?.emblem ?? found?.emblem ?? null);
-    const level = found?.shown?.level ?? found?.level ?? null;
-    const shadow = { edge: 'shadow' as const, edgeColour: '#000' };
-    return plateNode(emblem, WINDOW.header, 110, [
-      {
-        gap: 10,
-        alignY: 'end',
-        children: [
-          words(name, 3, INK.word, shadow),
-          found?.tag ? words(`[${found.tag}]`, 3, 'rgba(242,239,230,0.7)', shadow) : null,
-        ],
-      },
-      words(level === null ? emblem.name : `Level ${level} · ${emblem.name}`, 1, INK.word, shadow),
-    ]);
+    const named = found?.tag ? `${name} [${found.tag}]` : name;
+    return { width: 'grow', children: [bannerNode(ui, emblem, named, gear, gear, false, sizes)] };
   }
 
   /** What the window says in the page's place: waiting on the accounts, why they could not say, or that the player

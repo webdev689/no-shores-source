@@ -139,7 +139,7 @@ const piece = (slot: number, gilded: boolean) => ({
 const inspected: Details = {
   name: 'ChiefKabr',
   tag: 'SWK',
-  emblem: 'overlook',
+  emblem: 'stormborn',
   level: 24,
   place: null,
   playing: true,
@@ -148,7 +148,7 @@ const inspected: Details = {
     level: 24,
     defense: 60,
     attack: 310,
-    emblem: 'overlook',
+    emblem: 'stormborn',
     worn: [piece(0, true), piece(3, false)],
     prestige: 84,
     art: 1,
