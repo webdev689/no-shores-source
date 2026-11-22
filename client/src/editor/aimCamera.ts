@@ -183,7 +183,7 @@ export class AimCamera {
     const [yaw, pitch] = [Math.atan2(east, -south), Math.atan2(-up, flat)];
     const length = Math.hypot(flat, up) || 1;
     const k = this.share * this.share * (3 - 2 * this.share);
-    const drawn = toWorld(ship, wayAboard(ship.hull, toLocal(ship, home.eye), local, k, station.onDeck));
+    const drawn = toWorld(ship, wayAboard(ship.hull, toLocal(ship, home.eye), local, k, side, station.onDeck));
     const laying = wanted === side;
     const look = laying
       ? { bearing: 90 * side, range, ray: [...eye, east / length, south / length, up / length] }
@@ -201,12 +201,12 @@ export class AimCamera {
   }
 }
 
-/** The point `share` of the way from `from` to an eye `to` (both in a ship's frame): round the ship as `roundShip`
- *  goes to a point abeam of `to` clear of its hull and every sail's swing, then straight in over its rail, square to
- *  its side, to the eye aboard; an eye out past its side, round to it alone. */
-export function wayAboard(hull: number, from: Point, to: Point, share: number, onDeck: boolean): Point {
+/** The point `share` of the way from `from` to an eye `to` (both in a ship's frame) laying `side` (1 starboard, -1
+ *  port): round the ship as `roundShip` goes to a point abeam of `to` on that side clear of its hull and every sail's
+ *  swing, then straight in over its rail, square to its side, to the eye aboard; an eye out past its side, round to it
+ *  alone. */
+export function wayAboard(hull: number, from: Point, to: Point, share: number, side: 1 | -1, onDeck: boolean): Point {
   if (!onDeck) return roundShip(hull, from, to, share);
-  const side = Math.sign(to[1]) || 1;
   const [, high] = hullBox(hull);
   const past = sweptBoxes(hull)
     .filter(

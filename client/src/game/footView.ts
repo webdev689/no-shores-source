@@ -51,7 +51,7 @@ export class FootView {
   constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: (ui: Interface) => readonly Laid[] = () => []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
-    this.hidden = new MarkDraw(gpu, SAMPLES);
+    this.hidden = new MarkDraw(gpu, SAMPLES, 'hidden_fragment');
     this.swings = new SwingView(gpu);
     // Where the game's own pieces stand, as the interface last laid them.
     let laidBy: Interface | null = null;

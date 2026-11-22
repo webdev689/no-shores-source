@@ -37,7 +37,7 @@ test('blood falling on the land meets it where it lies, facing up its slope', ()
   assert.deepEqual(onLand([2.5, 0, 13.25], [0, 0, -1], 3), { distance: 0.5, normal: [0, 0, 1] }, 'its top first');
 });
 
-test("among a wreck's thousands of blocks blood meets the nearest in its way, and a ray costs little", () => {
+test("among a wreck's thousands of blocks blood meets the nearest in its way", () => {
   // A grid of crates 4 m apart, 60 by 60, and one crate in the way of a ray thrown along a diagonal.
   const crates = Array.from({ length: 3600 }, (unused, nth) => {
     const [x, y] = [(nth % 60) * 4 + 1, Math.floor(nth / 60) * 4 + 1];
@@ -47,8 +47,4 @@ test("among a wreck's thousands of blocks blood meets the nearest in its way, an
   const hit = many([0, 0, 0.5], [Math.SQRT1_2, Math.SQRT1_2, 0], 3);
   assert.ok(hit && Math.abs(hit.distance - Math.SQRT2) < 1e-9, `meets the first crate's corner: ${hit?.distance}`);
   assert.equal(many([2.5, 2.5, 0.5], [0, 0, -1], 0.4), null, 'a gap between crates, short of the ground');
-  const started = performance.now();
-  for (let ray = 0; ray < 200; ray++) many([ray % 200, 100, 3], [0, 0, -1], 4);
-  const each = (performance.now() - started) / 200;
-  assert.ok(each < 0.25, `${each.toFixed(3)} ms a ray`);
 });

@@ -105,7 +105,9 @@ function deckEye(hull: number, battery: readonly number[], nearestM: number): Po
   let best: { readonly eye: Point; readonly score: number } | null = null;
   for (let along = first; along <= last; along += SEARCH_STEP_M) {
     const rail = railAt(deck, along);
-    for (let share = -0.5; share <= 0.75; share += 0.05) {
+    // In whole steps, so its centreline is out 0 exactly and not a hair to port.
+    for (let step = -10; step <= 15; step++) {
+      const share = step / 20;
       const out = share * halfBeam;
       const under = cellHeight(deck, out, -along);
       if (under === null) continue;

@@ -21,6 +21,9 @@ struct View { from_origin: mat4x4f, origin: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Out { @builtin(position) position: vec4f, @location(0) colour: vec4f, @location(1) world: vec2f }
 
+// What hides a mark stands at least 2% of the mark's distance nearer (reversed depth grows as distance shrinks):
+// 0.6 m at 30 m, 0.1 m at 5 m.
+const HIDDEN_NEARER = 1.02;
 const ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
 const CELL = ${DITHER_M};
 
@@ -62,9 +65,10 @@ fn see_through(colour: vec4f) -> vec4f {
   return see_through(in.colour);
 }
 
-// Over the finished picture, only where the scene stands nearer: a mark seen through what hides it.
+// Over the finished picture, only where the scene stands clearly nearer: a mark seen through what hides it. Its own
+// whole mark, drawn a bias nearer, never counts, so its faded copy never lies over it where it is seen.
 @fragment fn hidden_fragment(in: Out) -> @location(0) vec4f {
-  if (in.position.z >= textureLoad(depths, vec2i(in.position.xy), 0).r) { discard; }
+  if (textureLoad(depths, vec2i(in.position.xy), 0).r <= in.position.z * HIDDEN_NEARER) { discard; }
   return see_through(in.colour);
 }
 
@@ -86,8 +90,7 @@ const VERTEX_LAYOUT: GPUVertexBufferLayout = {
 };
 const BLENDED = { srcFactor: 'one', dstFactor: 'one-minus-src-alpha', operation: 'add' } as const;
 /** The over-the-picture fragments: the see-through marks where nothing hides them, or marks only where something does. */
-type OverEntry = 'over_fragment' | 'hidden_fragment';
-const OVER_ENTRIES: readonly OverEntry[] = ['over_fragment', 'hidden_fragment'];
+export type OverEntry = 'over_fragment' | 'hidden_fragment';
 
 /** Where `origin` (world metres) lies in the ground's dither, wrapped to its period. */
 export function ditherOrigin(origin: Point): [number, number, number, number] {
@@ -113,7 +116,9 @@ export class MarkDraw {
   private origin: [number, number, number, number] = [0, 0, 0, 0];
   private readonly values = new Float32Array(20);
 
-  constructor(gpu: Gpu, samples: number) {
+  /** `over` names the over-the-picture pass it draws with, made off the frame as it is made: the see-through marks
+   *  (`drawClearOver`) or the hidden ones (`drawHiddenOver`). */
+  constructor(gpu: Gpu, samples: number, over: OverEntry = 'over_fragment') {
     this.gpu = gpu;
     const { device } = gpu;
     this.module = device.createShaderModule({ code: MARK_WGSL });
@@ -149,7 +154,7 @@ export class MarkDraw {
     });
     this.view = device.createBuffer({ size: 80, usage: BUFFER_USAGE.uniform | BUFFER_USAGE.copyDestination });
     this.group = device.createBindGroup({ layout, entries: [{ binding: 0, resource: { buffer: this.view } }] });
-    this.warmOvers();
+    this.warmOver(over);
   }
 
   /** The marks the next frame draws, measured from a point `origin` in the world (where a mark at 0 lies), seen from
@@ -258,16 +263,15 @@ export class MarkDraw {
     };
   }
 
-  /** Both over-the-picture pipelines, made off the frame as the marks are made, so the first mark over the water or
-   *  through a wall never waits on one. */
-  private warmOvers(): void {
-    for (const entry of OVER_ENTRIES)
-      void this.gpu.device
-        .createRenderPipelineAsync(this.overMade(entry))
-        .then((pipeline) => {
-          if (!this.overs.has(entry)) this.overs.set(entry, pipeline);
-        })
-        .catch(() => undefined);
+  /** The over-the-picture pipeline for `entry`, made off the frame, so the first mark over the water or through a
+   *  wall never waits on it. */
+  private warmOver(entry: OverEntry): void {
+    void this.gpu.device
+      .createRenderPipelineAsync(this.overMade(entry))
+      .then((pipeline) => {
+        if (!this.overs.has(entry)) this.overs.set(entry, pipeline);
+      })
+      .catch(() => undefined);
   }
 
   /** The over-the-picture pipeline for `entry` (made at once should it not have come yet), and its bind group for
