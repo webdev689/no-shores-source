@@ -274,7 +274,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[The Fight Music Varies, Recombined From Takes]];
   [[The Prologue Is Passed Over, Its Camera and Footing Clear]] (the wreck's camera clear of what is drawn, its dead
   ends and the sea off its ground, the wake, creation, lookout, calm, arena and overboard shots, silent skips, the
-  pad's Start). Tested offline (the full check); the HUD pictured headless with `tools/uiShot.mjs`. Not yet: played
+  pad's Start); and, asked after, [[The Broadside Warning Is Written Over the Sea, Not a Panel]] (who, where from the
+  bow, the shot, the tell as a fuse, the brace; the firing ship lit on the compass). Tested offline (the full check); the HUD pictured headless with `tools/uiShot.mjs`. Not yet: played
   live, the fight music heard by a person, anything seen on a real GPU. Open: a Boss closing on the player's Sloop
   still wins every headless fight; whether one ball in two at Elite and above meets the owner's "insane accuracy";
   the crew re-laid when a fight starts ([[Game]], limits).
