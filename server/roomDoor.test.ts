@@ -369,7 +369,7 @@ test('a fleet room sails the ships a browser orders, and the browser predicts it
   assert.deepEqual([last?.acknowledged, read().vessels.length], [150, 2]);
   const rules = startFleetRules(compiled);
   const helms = Array.from({ length: 149 }, (unused, index) => helmAt(index + 2));
-  const hurts = { wrecked: false, sail: last?.hurts.sail ?? 0, maxSail: last?.hurts.maxSail ?? 0 };
+  const hurts = { sail: last?.hurts.sail ?? 0, maxSail: last?.hurts.maxSail ?? 0 };
   const predicted = rules.predict(put?.ship ?? [], hurts, 151 / 60, 0, helms);
   assert.deepEqual(Array.from(predicted?.ship ?? []), Array.from(last?.ship ?? []), 'their ship, to the bit');
   assert.equal(room.input(first, orders(151, { call: 'captain' })), 'taken');

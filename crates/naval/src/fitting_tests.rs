@@ -136,3 +136,20 @@ fn a_fitted_ship_with_no_bosun_keeps_its_torn_canvas_way_to_the_bit_as_its_predi
         assert_eq!(stepped.way_share.to_bits(), predicted.way_share.to_bits(), "sail {sail} of {whole}");
     }
 }
+
+#[test]
+fn a_loaded_side_drawn_for_a_new_load_in_a_fight_waits_on_the_hands_left_and_the_trims_reload() {
+    use crate::arms::Side;
+    use crate::gunnery::{RELOAD_SINGLEHANDED, reload_seconds};
+    use crate::guns::Shot;
+    let mut fight = abeam(80.0);
+    fight.fit(PLAYER, fitted(Trim { reload: 0.9, ..Trim::default() }, 1.0, 1.0));
+    let player = fight.ships.get_mut(&PLAYER).expect("the player's ship");
+    player.damage.crew = 0.0;
+    let heated = Orders { load: Some(Shot::Heated), ..IDLE };
+    fight.step(&[(PLAYER, heated)], &Open, &|_| [1.5, 0.0], 0.0);
+    let guns = &fight.ships[&PLAYER].guns;
+    let whole = 0.5 * reload_seconds(&guns.gun(), 0.0, true) * RELOAD_SINGLEHANDED * 0.9;
+    let left = guns.left(Side::Port);
+    assert!(left <= whole && left > whole - 0.05, "{left} s left of {whole}");
+}

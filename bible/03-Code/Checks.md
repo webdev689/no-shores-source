@@ -24,8 +24,8 @@ order a failure is cheapest to read:
    shader that fails to compile only as a warning, so this is where a broken one is caught. A shader's code is the
    constant `createShaderModule({ code: … })` names, exported where it is made: a string, or a record of strings
    picked by a key; a call naming anything else fails. `cargo xtask shaders` runs this step alone.
-6. **tests**: `cargo test`, then the world rules, the land, movement and the rooms built as WebAssembly (`npm run wasm`), then
-   `node --test`, whose bridge tests load them.
+6. **tests**: `cargo test`, then the world rules, the land, movement and the rooms built as WebAssembly
+   (`npm run wasm`), then `node --test`, whose bridge tests load them.
 7. **build**: the client, with Vite; then the bake cuts every node's window of the land (`npm run bake`), and the
    server's Cloudflare Worker is bundled with them as a deploy would, without deploying.
 8. **repo checks**, each a pure function with tests beside it:

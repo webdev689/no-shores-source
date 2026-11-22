@@ -90,7 +90,7 @@ has sunk, or lies past every ship they may fight and is not fighting, leaves the
 is one pure function (`sail_hurt`), which a browser predicting it runs too.
 
 Its guns, the balls striking and falling in the sea, and a ship breaking up are heard where each happens, through the
-sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
+sea's soundscape ([[Ambience]]).
 
 ## How it works
 
@@ -148,11 +148,12 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   and it swings twice as fast and answers its helm twice as soon (`FIGHT_TURN`): the Sloop makes about 4.8 m/s with
   the usual breeze on its quarter, swings at up to about 28 degrees a second under sail and 40 on its oars, and from
   slow its rudder takes hold twice as fast. A captain reckons its own swing at a fight's (`swing_rate`).
-- **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
-  burst is over it recharges for 12 s, so it may burst again 16 s after the tap. A tap while it bursts or recharges
-  does nothing, nor does one on a ship going down (its burst is kept). Captains never burst. The fight's view carries
-  each ship's burst, the share still to run and the share of its recharge done, which the Sloop's plate shows as a
-  ring ("How it looks", "The readout"). Sailing between ports has no burst: only a fight's helm has one.
+- **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift
+  drives a player's ship's sails and oars half again for 4 s; once the burst is over it recharges for 12 s, so it may
+  burst again 16 s after the tap. A tap while it bursts or recharges does nothing, nor does one on a ship going down
+  (its burst is kept). Captains never burst. The fight's view carries each ship's burst, the share still to run and the
+  share of its recharge done, which the Sloop's plate shows as a ring ("How it looks", "The readout"). Sailing between
+  ports has no burst: only a fight's helm has one, and a fleet room's fight has none.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
@@ -195,10 +196,11 @@ so they never tack.
   It fires no sooner than 1.3 s on, within their gunners' window, long or short by the gunners' want of skill. One run out too
   long unfired, or that loses its mark, is run in.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
-  ship that outguns them. A chase that gains nothing in 150 s is given up. They leave the fight when they have sunk,
-  or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of another
+  ship that outguns them. A chase that gains nothing in 150 s is given up. They leave the fight when they have sunk, or,
+  not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of another
   faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as long as they give a chase:
-  so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The editor's fight ends when its one captain leaves.
+  so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The editor's
+  fight ends when its one captain leaves.
 
 ## Ranks and factions
 

@@ -5,11 +5,11 @@ code:
 ---
 # RMB Blocks
 
-`content/world/rmb/` holds Daggerfall's RMB town blocks as data ([[Pick - RMB Blocks]]): all 920 blocks of the freeware `BLOCKS.BSA`, each a
-102.4 m square of buildings, props, ground tiles and counts of its flats. The patrol areas' and instances' [[Layouts]]
-stand them in villages, ruins and outposts, building by building on the land. A town plan fills its 102.4 m blocks with
-them, and the forged models stand on the placements: `content/forged/buildings.json` and `props.json` are keyed by the
-same Daggerfall model ids.
+`content/world/rmb/` holds Daggerfall's RMB town blocks as data ([[Pick - RMB Blocks]]): all 920 blocks of the freeware
+`BLOCKS.BSA`, each a 102.4 m square of buildings, props, ground tiles and counts of its flats. The patrol areas' and
+instances' [[Layouts]] stand them in villages, ruins and outposts, building by building on the land. A town plan fills
+its 102.4 m blocks with them, and the forged models stand on the placements: `content/forged/buildings.json` and
+`props.json` are keyed by the same Daggerfall model ids.
 
 The table comes from the freeware data, read once with DFO's readers outside the repository, under the owner's
 exception to [[Own Work]] ([[Every Island Is Seen Whole and Reached by Nodes]]). Overlook holds no reader of

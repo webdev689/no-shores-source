@@ -62,7 +62,10 @@ each part works is in its system note.
     the held map on an island, or a fall while it is up; a sea fight in the deployed rooms; two players seeing each
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
-    Vestige opened at the Reader's.
+    Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
+  - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
+    dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels
+    run the room while the pointer is free (#68).
 
 ## Waiting on the owner
 
@@ -130,6 +133,8 @@ The decisions in [[Open Questions]] are not repeated here.
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
 - **The lore** (#77): nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name.
+  Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision recorded only on
+  #77's branch ("The Grey Tithe Take a Tenth, and Overlook Does Not Pay").
 - **Accounts and hosting** ([[The Audit's Calls Are Claude's]]): the Workers plan (a password sign-in takes about
   50 ms of CPU; the Free plan allows 10); a domain of the game's own, since every Pages project of
   `lattymoy.github.io` shares one origin and its storage; rate-limiting rules over the accounts; required reviewers
@@ -182,7 +187,7 @@ The decisions in [[Open Questions]] are not repeated here.
   drops, the seas chosen bring their own weather). Unexplained: one voyage in contested water held a ship in sight
   89 s; under a player's fire a Frigate lasts about 5% longer than a Sloop of its rank. Quays wait, and the land a
   fight is fought over; [[Pick - Sailing and Naval Combat]]'s step 3 still lists boarding and crew as waiting.
-- **The ships' manifest** (388 KB) is imported by the client and embedded whole by the room: load each deck on its
+- **The ships' manifest** (660 KB) is imported by the client and embedded whole by the room: load each deck on its
   own before more ships join. A change to the shared builder is checked by rebuilding each published ship and
   comparing its dry-run mesh hash with the manifest's.
 - **The wreck**: the step up to where the player wakes is too high for foes, so a player who stays there is not
@@ -234,6 +239,8 @@ The decisions in [[Open Questions]] are not repeated here.
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
     a rebound Details or Character. The clash finder sees neither.
   - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`, which #135 changes).
+  - A charge run off a drop judges a body's height from where it set off, as a leap did before this audit: whether a
+    charge, too, strikes from where it ends is the owner's to say ([[Combat]], "a leap's from where it lands").
   - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
     scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
     (`server/worker.ts`) has no test.

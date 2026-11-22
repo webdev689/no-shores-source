@@ -19,11 +19,12 @@ code:
 ---
 # Forged Models
 
-The town buildings, props and room kit that Overlook's towns are built from, each made in code from a measured
-table under its classic model id. They are DFO's Building Forge, Prop Forge and Room Kit ([[Pick - Forged Models]]), brought over whole with the
-Daggerfall measures and texture archives their plans are built on ([[Every Island Is Seen Whole and Reached by Nodes]],
-an exception to [[Own Work]]). Each builds DFO's shape to the bit, but one: the well house (props 43202 and
-43204), whose posts run up to carry its ridge where DFO's stop at the eaves ([[The Well House's Roof Is Fixed]]).
+The town buildings, props and room kit that Overlook's towns are built from, each made in code from a measured table
+under its classic model id. They are DFO's Building Forge, Prop Forge and Room Kit ([[Pick - Forged Models]]), brought
+over whole with the Daggerfall measures and texture archives their plans are built on
+([[Every Island Is Seen Whole and Reached by Nodes]], an exception to [[Own Work]]). Each builds DFO's shape to the bit,
+but one: the well house (props 43202 and 43204), whose posts run up to carry its ridge where DFO's stop at the eaves
+([[The Well House's Roof Is Fixed]]).
 
 ## The tables
 
