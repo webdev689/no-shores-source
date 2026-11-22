@@ -1,13 +1,12 @@
-// What a player's gear lays on foot: over each resource node they may still gather a beam of light seen across the
-// patrol, so a route can be planned through them, standing clear over the node's mark; a quest's puzzle points ringed
-// under beams, gold once lit, and a named ward it defends. The marks over what they can use are `combat/marksOver.ts`'s,
-// the drops lying for them their own pictures (`combat/drops.ts`). And what E does where they stand: a station's or
-// Shape's offer opened (or its keeper spoken with, while a quest asks it), a puzzle's point used, or a node within reach
-// gathered. The room judges every use; the rings and beams only show where.
+// What a player's gear lays on foot: a quest's puzzle points ringed under beams, gold once lit, and a named ward it
+// defends. The marks over what they can use are `combat/marksOver.ts`'s, the drops lying for them their own pictures
+// (`combat/drops.ts`), and each resource node the forge's picture of its resource standing on the ground with no mark
+// or beam (`nodeCards.ts`). And what E does where they stand: a station's or Shape's offer opened (or its keeper spoken
+// with, while a quest asks it), a puzzle's point used, or a node within reach gathered while E is held. The room judges
+// every use; the rings and beams only show where.
 
 import type { DropsShown } from '../combat/drops.ts';
 import { markRing } from '../combat/marks.ts';
-import { type Marked, TALLEST_M } from '../combat/marksOver.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { resourceName } from '../player/gear.ts';
 import { openGearWindow } from './gearScreen.ts';
@@ -18,18 +17,21 @@ import { shapeSpot } from './townsfolk.ts';
 import { chime } from './uiSounds.ts';
 import type { NodeInfo } from './worldData.ts';
 
-/** How near a resource node a player stands to gather it, and a puzzle's point to use it, as the room has them. */
+/** How near a resource node a player stands to gather it, and a puzzle's point to use it; how long E is held to gather
+ *  a node, and how far the body may stir meanwhile: as the room has them (`asks.rs`). The most of a resource a player
+ *  carries, as the gear crate has it (`character.rs`): a node of one they are full of is not offered. */
 export const NODE_REACH_M = 2.5;
 export const POINT_REACH_M = 3;
+export const GATHER_S = 2;
+export const GATHER_STIR_M = 0.3;
+export const STOCK_MOST = 200;
 /** A puzzle's point unlit and lit, and a ward a quest defends, in the players' green. */
 const UNLIT = [0.62, 0.72, 0.9] as const;
 const LIT = [0.98, 0.84, 0.45] as const;
 const WARD = [0.42, 0.86, 0.42] as const;
-/** A resource node's beam in sea green, beating slowly so it is seen across the ground. */
-const NODE = [0.35, 0.85, 0.7] as const;
-/** How tall a node's beam stands, and half of how wide it is, metres: it is seen across the patrol, hundreds of metres
+/** How tall a puzzle point's or a ward's beam stands, and half of how wide it is, metres: it is seen hundreds of metres
  *  off. */
-const NODE_BEAM = { height: 40, half: 0.5 } as const;
+const BEAM = { height: 40, half: 0.5 } as const;
 /** How much of its opacity a beam keeps at its top. */
 const BEAM_TOP = 0.2;
 
@@ -39,10 +41,11 @@ const SHAPE_OFFER = { words: KEEPERS.shape.title, opens: { view: 'shape' } } as 
 /** The stations of the place a player stands in, and where Shape may stand there. */
 type Here = Pick<NodeInfo, 'stations' | 'visitorSpots'>;
 
-/** What E does where a player stands: its deed in words, and the doing. */
+/** What E does where a player stands: its deed in words, and the doing; and for a node, which, as E is held there. */
 export interface Use {
   readonly words: string;
   readonly run: () => void;
+  readonly gather?: number;
 }
 
 /** What E does at a counter of a kind (its offer's view) besides opening it: speaking with its keeper, while a quest
@@ -50,7 +53,8 @@ export interface Use {
 export type Speak = (counter: string, ask: (asked: GearAsk) => void) => Use | null;
 
 /** The use within reach of a player at (x, y): a station's offer (its keeper spoken with where `speak` says so), then
- *  Shape's, before a node, so a counter is never lost to one. */
+ *  Shape's, before a node, so a counter is never lost to one. A node is not offered on horseback (`mounted`), nor one
+ *  whose resource the player is full of. */
 export function useAt(
   x: number,
   y: number,
@@ -58,6 +62,7 @@ export function useAt(
   gear: GearState | null,
   ask: (asked: GearAsk) => void,
   speak: Speak = () => null,
+  mounted = false,
 ): Use | null {
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const near = shape && Math.hypot(shape[0] - x, shape[1] - y) <= SERVED_M;
@@ -71,8 +76,12 @@ export function useAt(
     return { words: `Use ${named}`, run: () => ask({ kind: ASKS.usePoint, column: point.index }) };
   }
   const node = gear?.nodes.find((each) => Math.hypot(each.x - x, each.y - y) <= NODE_REACH_M);
-  if (!node) return null;
-  return { words: `Gather ${resourceName(node.resource)}`, run: () => ask({ kind: ASKS.gather, node: node.index }) };
+  if (!node || mounted || (gear?.resources[node.resource] ?? 0) >= STOCK_MOST) return null;
+  return {
+    words: `Hold to gather ${resourceName(node.resource)}`,
+    run: () => ask({ kind: ASKS.gather, node: node.index }),
+    gather: node.index,
+  };
 }
 
 /** A beam of light standing `height` over `base`, in two crossed planes so it is seen from every side, fading upward. */
@@ -100,16 +109,6 @@ function markBeam(
   }
 }
 
-/** The beams over the marks that stand under one (the nodes') at `seconds` of the page's clock, each standing over
- *  the tallest its mark is drawn, so the mark reads clear of it. */
-export function nodeBeams(marked: readonly Marked[], seconds: number): number[] {
-  const out: number[] = [];
-  const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
-  for (const { at, beam } of marked)
-    if (beam) markBeam(out, [at[0], at[1], at[2] + TALLEST_M], NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
-  return out;
-}
-
 /** A quest's puzzle points and the ward it defends by name at `seconds` of the page's clock, each a ring on `floor`'s
  *  height where it stands under a beam. */
 export function questRings(gear: GearState | null, floor: (x: number, y: number) => number, seconds: number): number[] {
@@ -120,14 +119,14 @@ export function questRings(gear: GearState | null, floor: (x: number, y: number)
     const colour = lit ? LIT : UNLIT;
     markRing(out, base, POINT_REACH_M - 0.1, POINT_REACH_M, [...colour, 0.5]);
     markRing(out, base, 0.3, 0.6, [...colour, lit ? 1 : beat]);
-    markBeam(out, base, NODE_BEAM, [...colour, lit ? 1 : Math.min(1, beat + 0.25)]);
+    markBeam(out, base, BEAM, [...colour, lit ? 1 : Math.min(1, beat + 0.25)]);
   }
   // A ward a figure stands for is drawn as that figure (quests/quests.ts); a named one is marked here.
   const ward = gear?.quest?.claimed === false ? null : gear?.quest?.ward;
   if (ward && !goalOf(gear?.quest, 'defend')?.who) {
     const base = [ward.x, ward.y, floor(ward.x, ward.y)] as const;
     markRing(out, base, 1.4, 1.6, [...WARD, 0.7]);
-    markBeam(out, base, NODE_BEAM, [...WARD, Math.min(1, beat + 0.25)]);
+    markBeam(out, base, BEAM, [...WARD, Math.min(1, beat + 0.25)]);
   }
   return out;
 }

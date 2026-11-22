@@ -12,8 +12,9 @@ The pictures (`--set pictures`): every other picture of a thing the forge render
 named for the texture it replaces under the forge's studio folder, so the studio wears it (07-Rendering/Studio-Art.md).
 Their rows are tools/sprite-forge/specs/pictures/<family>.json, keyed by the picture's path under the folder. A row names its
 model, words and `px` as an item's does, or takes them `from` an item's row; and may name a `spoil` stage (kit.SPOIL),
-an eye's `elevation` (degrees; a billboard is seen from level), a `seed`, and a `canvas` [w, h] the picture is set in,
-`anchor`ed by its `foot` (a billboard stands on its canvas's bottom row) or its `centre`.
+an eye's `elevation` (degrees; a billboard is seen from level), a `seed`, a `span` (the metres its `px` hold, so the
+pictures of one thing share a scale), and a `canvas` [w, h] the picture is set in, `anchor`ed by its `foot` (a
+billboard stands on its canvas's bottom row) or its `centre`.
 
     python -I tools/sprite-forge/itempics.py --set pictures --out public/art/studio/forge [--only survival/538_2-0]"""
 import argparse
@@ -95,7 +96,7 @@ def picture(index, row, samples):
         words.pop('seed', None)
         item = kit.Item(sc, spoil=row.get('spoil'), seed=seed)
         fn(item, words, seed)
-        pic = item.render(row['px'], samples)
+        pic = item.render(row['px'], samples, row.get('span'))
     finally:
         kit.ELEVATION = elevation
     return set_in(pic, row['canvas'], row.get('anchor', 'centre')) if row.get('canvas') else pic

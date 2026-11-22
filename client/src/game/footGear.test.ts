@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
-import { resourcePicture } from '../combat/dropPictures.ts';
 import { MARK_FLOATS } from '../combat/marks.ts';
-import { OVER_NODE_M, REACH_M, marksSeen } from '../combat/marksOver.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
-import { NODE_REACH_M, POINT_REACH_M, nodeBeams, questRings, useAt } from './footGear.ts';
+import { GATHER_S, GATHER_STIR_M, NODE_REACH_M, POINT_REACH_M, STOCK_MOST, questRings, useAt } from './footGear.ts';
 import { markedHere } from './overheadMarks.ts';
 import { QUESTS } from './quests/questBook.ts';
 import { OPEN_AT } from './gearScreen.ts';
@@ -17,6 +16,7 @@ const WEAPONSMITH: StationInfo = { kind: 'weaponsmith', keeper: [0, -2], counter
 const CHANDLER: StationInfo = { kind: 'chandler', keeper: [20, -2], counter: [20, 0] };
 const lying = {
   nodes: [{ index: 3, x: 10, y: 0, resource: 0 }],
+  resources: [0],
   drops: [{ id: 1, rarity: 3, slot: 0, at: [5, 5, 1] }],
 } as unknown as GearState;
 
@@ -25,7 +25,8 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
   const ask = (each: GearAsk) => asked.push(each);
   assert.match(useAt(0.5, 0.5, { stations: [WEAPONSMITH] }, lying, ask)?.words ?? '', /^The Weaponsmith/);
   const gather = useAt(10 + NODE_REACH_M - 0.1, 0, { stations: [WEAPONSMITH] }, lying, ask);
-  assert.match(gather?.words ?? '', /^Gather /);
+  assert.match(gather?.words ?? '', /^Hold to gather /);
+  assert.equal(gather?.gather, 3, 'held there, it gathers that node');
   gather?.run();
   assert.deepEqual(asked, [{ kind: ASKS.gather, node: 3 }]);
   assert.equal(
@@ -57,46 +58,24 @@ test('a counter whose keeper is away still opens, which calls her back to it, an
   assert.equal(markedHere(null, here, () => 0).length, 1, 'marked again once she is back');
 });
 
-/** The heights of marks' vertices. */
-const heights = (vertices: readonly number[]) => vertices.filter((unused, index) => index % MARK_FLOATS === 2);
+test('a node is not offered on horseback, nor while its resource is full', () => {
+  const ask = () => undefined;
+  const near = 10 + NODE_REACH_M - 0.1;
+  const gear = { ...lying, resources: [STOCK_MOST - 1] } as GearState;
+  assert.ok(useAt(near, 0, {}, gear, ask)?.gather === 3);
+  assert.equal(useAt(near, 0, {}, gear, ask, undefined, true), null, 'mounted');
+  assert.equal(useAt(near, 0, {}, { ...gear, resources: [STOCK_MOST] }, ask), null, 'full');
+});
 
-test('each node still to gather wears its mark under a beam standing clear over it, its floor read once', () => {
-  const nodes = Array.from({ length: 12 }, (unused, resource) => ({ index: resource, x: 10, y: 0, resource }));
-  let reads = 0;
-  const floor = () => {
-    reads += 1;
-    return 2;
-  };
-  const marked = markedHere({ ...lying, nodes: nodes.filter((node) => resourcePicture(node.resource)) }, {}, floor);
-  assert.equal(reads, marked.length, 'its floor read once');
-  for (const mark of marked) {
-    const beams = nodeBeams([mark], 0);
-    // A beam is two crossed planes of two triangles each.
-    assert.equal(beams.length, 12 * MARK_FLOATS);
-    const foot = Math.min(...heights(beams));
-    for (let far = 1; far < REACH_M; far += 0.5)
-      for (const [seconds, eyeHigh] of [
-        [0, 1.6],
-        [0.25, 1.6],
-        [0.75, 1.6],
-        [0.25, 12],
-      ] as const) {
-        // The eye `far` from the mark's foot, `eyeHigh` over the floor.
-        const across = Math.sqrt(Math.max(0, far ** 2 - (eyeHigh - OVER_NODE_M) ** 2));
-        const seen = marksSeen([mark], [10 + across, 0, 2 + eyeHigh], seconds, false);
-        assert.ok(seen.length > 0, `seen ${far} m off`);
-        assert.ok(Math.max(...heights(seen)) < foot, `the mark clear under its beam ${far} m off`);
-      }
-  }
-  assert.equal(reads, marked.length, 'the beams read no floor');
-  assert.deepEqual(
-    nodeBeams(
-      markedHere(null, {}, () => 0),
-      0,
-    ),
-    [],
-    'no gear, no nodes',
-  );
+test("the page's reach, hold and stock are the room's", async () => {
+  const read = (path: string) => readFile(new URL(`../../../${path}`, import.meta.url), 'utf8');
+  const [asks, character] = await Promise.all([read('crates/room/src/asks.rs'), read('crates/gear/src/character.rs')]);
+  const number = (text: string, name: string) =>
+    Number(new RegExp(`pub const ${name}: \\w+ = ([\\d.]+);`).exec(text)?.[1]);
+  assert.equal(number(asks, 'NODE_REACH'), NODE_REACH_M);
+  assert.equal(number(asks, 'GATHER_TICKS') / 60, GATHER_S);
+  assert.equal(number(asks, 'GATHER_STIR_M'), GATHER_STIR_M);
+  assert.equal(number(character, 'STOCK_MOST'), STOCK_MOST);
 });
 
 test("Shape's offer is within a counter's reach of his week's spot, marked there, and gone with him", () => {

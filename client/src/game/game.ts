@@ -271,13 +271,21 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   let switching = Promise.resolve();
   const enterSea = async (seas: Difficulty) => {
     seaSeas = seas;
-    const level = (['normal', 'elite', 'abyss'] as const).indexOf(seas);
+    const [level, ports] = [(['normal', 'elite', 'abyss'] as const).indexOf(seas), portsOf(world.cities)];
     await playing.sea?.enterRoom(
       rooms
-        ? async (snapshot) =>
-            RoomConnection.open(rooms(seaRoomName(seas)), snapshot, (gear) => quests.hear(gear), await session())
-        : async (snapshot) =>
-            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
+        ? async (snapshot, gear) =>
+            RoomConnection.open(
+              rooms(seaRoomName(seas)),
+              snapshot,
+              (said) => {
+                gear(said);
+                quests.hear(said);
+              },
+              await session(),
+            )
+        : async (snapshot, gear) =>
+            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, ports, level, gear),
     );
   };
 
@@ -526,7 +534,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
   const fighting = () => footView.shown.fight;
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, () => storyMode() && !story?.gear));
+  const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, () => storyMode() && !story?.gear, fed));
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry: () => retry, change, respawn, goAshore, stopOrResume, openMap },

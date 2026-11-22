@@ -17,7 +17,15 @@ test("a landing that fails closes the island room's socket rather than leaving i
   });
   const held = {
     seen: { id: 3, at: [1000, 2000], seed: 255n, kind: 'cove', name: 'A cove' },
-    plan: { ring: [[0, 0]], spawns: [[1, 1]], blocks: [], heights: new Float32Array(4), facing: 0, wrecks: [] },
+    plan: {
+      ring: [[0, 0]],
+      spawns: [[1, 1]],
+      blocks: [],
+      heights: new Float32Array(4),
+      facing: 0,
+      wrecks: [],
+      nodes: [],
+    },
     heights: new Float32Array(4),
   } as unknown as IsleHeld;
   const rooms = (name: string) => `wss://rooms.test/${name}`;

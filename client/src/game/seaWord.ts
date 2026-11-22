@@ -4,7 +4,7 @@
 // player's asks.
 import type { NavalEvent } from '../network/seaFight.ts';
 import { TOLD } from '../network/seaHarbour.ts';
-import { RARITIES, capital } from '../player/gear.ts';
+import { capital } from '../player/gear.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
 import { shipName } from '../ships/shipBars.ts';
 import { boundWord } from './controls.ts';
@@ -44,19 +44,6 @@ export function deckKey(
   return true;
 }
 
-/** A word with its article: "an" before a vowel. */
-const withArticle = (word: string): string => `${/^[AEIOU]/i.test(word) ? 'an' : 'a'} ${word}`;
-
-/** What a gathered piece held, in words. */
-function heldWords(rarity: number, ammoBox: number, ammoCrate: number): string {
-  const parts = [
-    rarity > 0 ? withArticle(`${RARITIES[rarity - 1]?.name ?? 'Normal'} Vestige`) : null,
-    ammoBox === 1 ? 'an Ammo box' : null,
-    ammoCrate === 1 ? 'an Ammo crate' : null,
-  ].filter((part) => part !== null);
-  return parts.length > 0 ? parts.join(', ') : 'nothing you had room for';
-}
-
 /** Washing up at `port`, or at an island the player found (`isle`), said one way wherever it is said. */
 export function washedUpWords(port: string, isle = false): string {
   if (isle) return `You washed up at ${port}; your ship lies off it, unrepaired.`;
@@ -86,15 +73,16 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
     if (event.kind === 'Boarding') lines.push(`Boarders away: ${whose(event.ship)} crew stands to meet them.`);
   }
   for (const numbers of told) {
-    const [code, , first = 0, second = 0, third = 0, fourth = 0] = numbers;
+    const [code, , first = 0, second = 0, , fourth = 0] = numbers;
     if (code === TOLD.WASHED_UP) {
       const why = second === 1 ? 'Your ship went down' : 'Beaten aboard the ship';
       // An island they found is told by its number after the rest; a port city by its place among the ports.
       const isle = (numbers[4] ?? 0) > 0;
       const place = isle ? 'an island you found' : (words.ports[first] ?? 'the nearest port city');
       lines.push(`${why}: ${washedUpWords(place, isle).replace(/^You/, 'you')}`);
-    } else if (code === TOLD.HELD) {
-      lines.push(`Gathered a ${words.kinds.get(first) ?? 'crate'}: ${heldWords(second, third, fourth)}.`);
+    } else if (code === TOLD.HELD && numbers.slice(3).every((held) => held === 0)) {
+      // What a piece held the feed tells, from the gear; one that gave nothing is said here.
+      lines.push(`Gathered a ${words.kinds.get(first) ?? 'crate'}: nothing you had room for.`);
     } else if (code === TOLD.JOINED) {
       lines.push(first > 0 ? `Player ${first} joined the fight.` : `The ${shipName(second, fourth)} joined the fight.`);
     }

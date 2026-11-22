@@ -259,7 +259,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
-  rolled among those that reach the locked foe. Alone, Escape pauses the fight.
+  the chain's next that reaches the locked foe ([[Combat]], "Swings"). Alone, Escape pauses the fight.
 - **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
   pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
   takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
@@ -278,8 +278,9 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   once. A refusal says why.
 - **The stall** stands south-east of the start, a sealed Vestige's mark over it as over a keeper ([[Game]], "Over
   what a player can use"): within 4 m of it a Vestige opens and the vault is reached, as in a social space.
-- **Resource nodes** stand west of the start, each with its resource's mark over it, two of Saltmere's Brineglass and
-  one of Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and its mark goes once it is spent.
+- **Resource nodes** stand west of the start, each with its resource's mark over it as the course's marker (the
+  game's nodes wear none), two of Saltmere's Brineglass and one of Cairnwatch's Cairn Iron; within 2.5 m one is
+  gathered two seconds after its panel's press, the player standing still, and its mark goes once it is spent.
 - **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
   pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
 - **The hands** hold what the gear wears: the room takes no other arms. So the player's own hands in the dress
@@ -358,17 +359,17 @@ weapon keeps its own moves and the left hand's thing is worn.
 
 In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
-Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep
-to the ground; never shorter. Running frames last 0.125 s and crouching 0.5 s. Each figure plays its loops on from
-the frame it shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s,
-so a tick the rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge
-the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
-the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
-it faces where it runs, and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It
-Sprints]]). Swinging, casting or aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the
-Figure Faces Straight Ahead]]). Dodging, a figure (the player's, another player's or a foe's) faces the way its hop
-goes, so its roll is drawn going that way, though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls
-the Way It Goes]]).
+Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep to
+the ground; never shorter. Running frames last 0.125 s at a full run, 7.59 m/s, and as much longer as a run is slower,
+so a foe's run keeps to the ground too; crouching frames last 0.5 s. Each figure plays its loops on from the frame it
+shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s, so a tick the
+rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge the weapon is worn,
+since both hands hold on. The figure faces where it moves and keeps that facing when still. While the soft lock holds a
+foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting, it faces where it runs,
+and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It Sprints]]). Swinging, casting or
+aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the Figure Faces Straight Ahead]]). Dodging,
+a figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
+though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
 
 ## Dressing
 

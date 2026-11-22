@@ -59,6 +59,8 @@ pub const SET_CORE: u8 = 41;
 pub const GRANT_OFFICERS: u8 = 43;
 /// A sea island's wreck scavenged, by its place in the island's list in `node`.
 pub const SCAVENGE: u8 = 63;
+/// A gather let go of before it is done: E released.
+pub const STOP_GATHER: u8 = 67;
 /// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
@@ -133,6 +135,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         TRAIN => Asked::Gear(Ask::Train { officer: item, column, node }),
         CHOOSE_OFFICER => Asked::Gear(Ask::ChooseOfficer { officer: item, column, node }),
         GATHER => Asked::Gather { node },
+        STOP_GATHER => Asked::StopGather,
         SCAVENGE => Asked::Scavenge { wreck: node },
         GRANT_VESTIGE => Asked::Grant(Grant::Vestige {
             rarity: Rarity::from_number(ask.rarity())?,
@@ -245,6 +248,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
+        Asked::StopGather => args = messages::AskArgs { kind: STOP_GATHER, ..args },
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
@@ -379,6 +383,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let character = &found.character;
     let held = &character.materials;
     let mut builder = FlatBufferBuilder::new();
+    let scavenged = builder.create_vector(&room.scavenged(player));
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
@@ -513,6 +518,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         quest_figures: Some(quests.figures),
         quest_ward: Some(quests.ward),
         claimed: found.claimed,
+        scavenged: Some(scavenged),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

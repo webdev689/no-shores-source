@@ -166,6 +166,7 @@ export type Glyph =
   | 'vestige'
   | 'ammo-box'
   | 'ammo-crate'
+  | 'xp'
   | 'empty'
   | ShipGlyph
   | 'item';
