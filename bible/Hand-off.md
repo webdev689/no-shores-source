@@ -94,7 +94,8 @@ each part works is in its system note.
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
     Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
-  - The third audit's, played by hand: the pad fighting with the pointer free on land, on a deck and in the wreck;
+  - The third audit's, played by hand: the pad fighting with the pointer free on land, on a deck and in the wreck,
+    and the Arts bar's keycaps following the binds and the pad;
     Overlook's townsfolk, Shape and Elder Maren on the pier, the quay and the portico; arriving at an instance through
     its gate; a sea fight whose room is lost; a hang at a seam of stacked blocks.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
@@ -116,15 +117,17 @@ The decisions in [[Open Questions]] are not repeated here.
   whether the battery rose's red outline on the side a blow came from comes back on the ship's bar; creation's turn
   keys turning the figure on the spot; a Boss closing on the player's Sloop still wins every headless fight; the crew
   laid out again when a fight starts ([[Game]], limits).
-- **The third codebase audit** (#155, branch `ccr-06efd4d0-ffd79v`), for the owner's yes to merge, which deploys the
-  page and the rooms. Claude's calls, each the owner's to change: a boarder's own ship furls its sails while they
-  fight on the deck; a rounds' sweeper waits at its first post until its loop is a whole number of the walkers' 600 s;
-  Shape's four hub places moved the least that clears the townsfolk's ways. Its questions: whether the healing drink
-  is "a heal" that Exposure halves (doing it so the page predicts it widens the fighter's trim, which repins every
-  fight); what a posted foe does about a player it sees past its leash (it now takes no target but searches toward
-  them); whether a lip caught off square is hung square; whether a player in home waters may join a running fight
-  nearby; a fight whose sea room is lost ends with "The <captain> is gone." as a rejoin's does. Tested offline, not
-  played.
+- **The third codebase audit** (#155, branch `ccr-06efd4d0-ffd79v`), and an audit of it, for the owner's yes to merge,
+  which deploys the page and the rooms. Claude's calls, each the owner's to change: a boarder's own ship furls its
+  sails while they fight on the deck and sets them again as they left them once back aboard; "home waters hold no
+  hostile ship" read as nothing meeting, holding, slowing or drawing in a ship there; a rounds' sweeper waits at its
+  first post until its loop is a whole number of the walkers' 600 s; Shape's four hub places moved the least that
+  clears the townsfolk's ways. Its questions: whether the healing drink is "a heal" that Exposure halves (doing it so
+  the page predicts it widens the fighter's trim, which repins every fight); what a posted foe does about a player it
+  sees past its leash (it now takes no target but searches toward them); whether a lip caught off square is hung
+  square; whether a pirate just outside home waters should still slow a voyage inside them; whether control waits a
+  moment for a run that opens in the wake's last instant; a fight whose sea room is lost ends with "The <captain> is
+  gone." as a rejoin's does. Tested offline, not played.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px), #124 (public events on Saltmere). Drafts: #77 (lore), #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
@@ -314,6 +317,12 @@ The decisions in [[Open Questions]] are not repeated here.
   - An action begun on foot carries on when the body catches a lip (a guard, a drawn shot, a swing under way); only a
     new one is refused there. A hand that falls on a deck on the very tick its player leaves the sea is kept.
   - The city painter keeps every painting for the page's life (bounded by the catalogue, about 22 MB a city).
+  - Every keeping room judges a character on the last copy saved before it claims it: one who levelled seconds before
+    leaving can be refused by a level gate, and a slow accounts Worker makes a join wait for two calls.
+  - Not measured: per-frame allocations in the scene's lamps, the dungeon's lights, the figures, ships and city; the
+    island plants fetched again when an island flickers in and out of view; a company member's long name past its
+    plate. Two duplications: `reward_sinking` beside `rewards::at_level`, and the prologue's `standing.ts` beside
+    `standingDrawers.ts`. The pad's Anima chord (LB+RB) has no picture, so the bar writes it in words.
   - Workflows, left because four publish to R2 when their own file is pushed on any branch: `forge.yml` should take
     every `tools/forge/tools/sprite-forge/*.py`, `tools/forge_publish.py` and `tools/r2.py`; `flora.yml`,
     `modules.yml`, `freesound.yml` and `dungeon-modules.yml` should take `tools/r2.py`. Checks, which need the owner's
