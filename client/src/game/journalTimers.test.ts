@@ -20,23 +20,25 @@ const FRIDAY_AT = FRIDAY_NINE * 60_000;
 const named = { dungeon: (patrol: string, number: number) => `${patrol} ${number}`, place: (id: string) => id };
 const SIZES = sizesOf(1280, 900, 1);
 
-/** The timers drawn for `week`, frame by frame: the last tree built, and a step of frames hearing `events`. */
-function timers(week: () => ThisWeek | null, now: () => number) {
+/** The timers drawn for `week`, at most `most` wide, frame by frame: the last tree built, and a step of frames hearing
+ *  `events`. */
+function timers(week: () => ThisWeek | null, now: () => number, most = 720) {
   const { ui, step } = fakeInterface(1280, 900);
   let built: Node = {};
-  const panel = () => timersNode(ui, week(), now(), SIZES, 720);
+  const panel = () => timersNode(ui, week(), now(), SIZES, most, 740);
   const frame = (events: UiEvent[] = []) => step(() => (built = { width: 'grow', children: [panel()] }), events);
   frame();
   frame();
   return { ui, frame, tree: () => built };
 }
 
-async function opened() {
+async function opened(most = 720) {
   const record = { day: 20_778, cleared: [1], week: 2_968, elite: false, abyss: false, boon: true };
   const week = thisWeekOf(activitiesAt(await module, FRIDAY_NINE), gatesAt(await module, 26, true), record, named);
   return timers(
     () => week,
     () => FRIDAY_AT + 1_000,
+    most,
   );
 }
 
@@ -50,7 +52,7 @@ const middleOf = (ui: Interface, id: string): { x: number; y: number } => {
 test('Today and This week each carry their reset’s icon and its one countdown; every row its icon and its name', async () => {
   const { tree } = await opened();
   const said = wordsIn(tree());
-  for (const words of ['Timers', 'TODAY', 'THIS WEEK', 'LATER', 'Dungeon of the day', 'Bounties'])
+  for (const words of ['TIMERS', 'TODAY', 'THIS WEEK', 'LATER', 'Dungeon of the day', 'Bounties'])
     assert.ok(said.includes(words), words);
   for (const words of ['forsaken-cistern', 'saltworm-warrens', 'Abyss boon', 'Breaches'])
     assert.ok(said.includes(words), words);
@@ -150,4 +152,23 @@ test('the island of the character’s level says so, and stands lit among the da
   frame([{ kind: 'pointer', ...middleOf(ui, `isle-${yours}`) }]);
   frame();
   assert.match(wordsIn(byId(tree(), 'timers-said')).join(''), /Your level is in its band\.$/);
+});
+
+test('the day’s islands read down three columns, one on a phone, and each head’s countdown stays in the panel', async () => {
+  const wide = await opened();
+  const boxOf = (ui: Interface, id: string) => ui.boxOf(id) ?? { x: -1, y: -1, width: 0, height: 0 };
+  const count = nodesOf(wide.tree()).filter((node) => node.id?.startsWith('isle-')).length;
+  const tall = Math.ceil(count / 3);
+  assert.ok(count >= 3);
+  assert.equal(boxOf(wide.ui, 'isle-1').x, boxOf(wide.ui, 'isle-0').x, 'the next under it');
+  assert.ok(boxOf(wide.ui, 'isle-1').y > boxOf(wide.ui, 'isle-0').y);
+  assert.equal(boxOf(wide.ui, `isle-${tall}`).y, boxOf(wide.ui, 'isle-0').y, 'the next column beside it');
+  assert.ok(boxOf(wide.ui, `isle-${tall}`).x > boxOf(wide.ui, 'isle-0').x);
+  const phone = await opened(300);
+  const panel = boxOf(phone.ui, 'journal-timers');
+  assert.equal(boxOf(phone.ui, `isle-${count - 1}`).x, boxOf(phone.ui, 'isle-0').x, 'one column');
+  for (const id of ['timer-day-reset', 'timer-week-reset', `isle-${count - 1}`]) {
+    const box = boxOf(phone.ui, id);
+    assert.ok(box.x + box.width <= panel.x + panel.width, `${id} within the panel`);
+  }
 });

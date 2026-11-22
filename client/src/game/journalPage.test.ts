@@ -41,15 +41,25 @@ const weekEnding = (endsAt: number, day = 20_778): ThisWeek => ({
   week: { endsAt: endsAt + 3 * 86_400_000, dungeons: [], boon: null },
 });
 
-/** The Journal drawn frame by frame as the menu frames it: its hourglass over its page, the last tree built, a step of
- *  frames hearing `events`, and a click on what an id names. */
-function journalOf(source: JournalSource, now = () => FRIDAY_AT, width = 1280) {
+/** The Journal drawn frame by frame as the menu frames it: its hourglass over its page in a solid window floated over
+ *  the world, the page given `tall` pixels of room; the last tree built, a step of frames hearing `events`, and a
+ *  click on what an id names. */
+function journalOf(source: JournalSource, now = () => FRIDAY_AT, width = 1280, tall = 700) {
   const { ui, step } = fakeInterface(width, 900);
   const journal = new Journal(source, now);
   const sizes = sizesOf(width, 900, 1);
   let built: Node = {};
-  const page = () => journal.page({ ui, sizes, room: { width: width - 120, height: 700 }, holds: null as never });
-  const tree = (): Node => ({ width: 'grow', direction: 'column', children: [journal.hourglass(ui), page()] });
+  const page = () => journal.page({ ui, sizes, room: { width: width - 120, height: tall }, holds: null as never });
+  const window: () => Node = () => ({
+    role: 'window',
+    solid: true,
+    width,
+    height: 900,
+    direction: 'column',
+    float: { to: 'screen', z: 20 },
+    children: [journal.hourglass(ui), page()],
+  });
+  const tree = (): Node => ({ width: 'grow', height: 'grow', children: [window()] });
   const frame = (events: UiEvent[] = []) => step(() => (built = tree()), events);
   const click = (id: string) => {
     const box = ui.boxOf(id);
@@ -184,4 +194,18 @@ test('two columns of cards where the page is wide, one where it is not', () => {
   const [first, second] = [`quest-${QUESTS[0]?.id}`, `quest-${QUESTS[1]?.id}`];
   assert.equal(wide.ui.boxOf(first)?.y, wide.ui.boxOf(second)?.y, 'side by side');
   assert.ok((narrow.ui.boxOf(first)?.y ?? 0) < (narrow.ui.boxOf(second)?.y ?? 0), 'one over the other');
+});
+
+test('the timers stand within the room the menu gives the page, however many rows they hold', () => {
+  const { ui, journal, frame } = journalOf(
+    { week: () => weekEnding(FRIDAY_AT), kept: () => null },
+    () => FRIDAY_AT,
+    1280,
+    240,
+  );
+  journal.toggle();
+  frame();
+  const [page, timers] = [ui.boxOf('journal'), ui.boxOf('journal-timers')];
+  assert.ok(page && timers);
+  assert.ok(timers.y + timers.height <= page.y + 240, 'no lower than the page’s room');
 });

@@ -29,6 +29,8 @@ const GLASS: readonly [number, number] = [9, 12];
 const MARK_PX = 48;
 /** A banner's pixels. */
 const BANNER: readonly [number, number] = [16, 24];
+/** How high the timers stand: over the menu's window (`gearShell.ts`), as an item's page does. */
+const TIMERS_Z = 25;
 /** What the page says with no card: before any room's word, or with none of the roads walked or done. */
 const NO_QUESTS = 'No quests held. Quests you take up are kept here.';
 
@@ -153,17 +155,28 @@ export class Journal {
       children: [this.quests(ui, cards, room.width >= 900, wide), this.bounties(ui, gear, week, sizes)],
     };
     if (!this.down) return page;
+    // The page dimmed over the whole of its room, and no further than the body shows it.
     return {
       width: 'grow',
+      minHeight: room.height,
       direction: 'column',
       children: [
         { ...page, opacity: 0.35 },
-        { width: 'grow', height: 'grow', fill: 'rgba(8,10,15,0.72)', solid: true, float: { to: 'parent' } },
+        {
+          width: 'grow',
+          height: 'grow',
+          fill: 'rgba(8,10,15,0.72)',
+          solid: true,
+          float: { to: 'parent', clipped: true },
+        },
         {
           width: 'grow',
           alignX: 'end',
-          float: { to: 'parent', anchor: [1, 0], at: [1, 0], z: 1 },
-          children: [timersNode(ui, week, this.now(), sizes, Math.min(720, room.width))],
+          // Over the menu's window, as an item's page stands over its page; never past the body's foot.
+          float: { to: 'parent', anchor: [1, 0], at: [1, 0], z: TIMERS_Z },
+          children: [
+            timersNode(ui, week, this.now(), sizes, Math.min(360 * (sizes.label + 1), room.width), room.height),
+          ],
         },
       ],
     };

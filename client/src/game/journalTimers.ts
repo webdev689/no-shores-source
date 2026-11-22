@@ -74,10 +74,17 @@ function rewardMark(reward: Reward): Mark {
   return { drawn: [drawn], words: `Pays once: ${REWARD_WORDS[reward]}.` };
 }
 
-/** A modifier's icon, Burn's flame in its Art's colours. */
-function modifierNode(modifier: KeyedModifier): Node {
+/** A modifier's icon `side` pixels square, Burn's flame in its Art's colours. */
+export function modifierNode(modifier: KeyedModifier, side = MARK_ICON): Node {
   const drawn = modifierIcon(modifier.key);
-  return icon(drawn?.name ?? 'breach', drawn?.tones);
+  return iconNode(drawn?.name ?? 'breach', side, drawn?.tones);
+}
+
+/** A mark's part grown with the words beside it: an icon drawn at the marks' size `side` pixels square, words at
+ *  `size`. */
+function sized(node: Node, side: number, size: number): Node {
+  if (node.width === MARK_ICON) return { ...node, width: side, height: side };
+  return node.text ? { ...node, text: { ...node.text, size } } : node;
 }
 
 /** A modifier: its icon alone; its name and what it does are its words. */
@@ -216,30 +223,64 @@ function pointedAt(ui: Interface, id: string): boolean {
   );
 }
 
-/** The timers panel at `now`, kept within `most` pixels wide: its head with Close (T), its groups' heads each with its
- *  reset's countdown and when it comes, each group's rows, and at its foot the words of whatever is pointed at or
- *  focused. */
-export function timersNode(ui: Interface, week: ThisWeek | null, now: number, sizes: Sizes, most: number): Node {
+/** The timers panel at `now`, kept within `most` pixels wide and `tallest` high: its head with Close (T), its groups'
+ *  heads each with its reset's countdown and when it comes, each group's rows, and at its foot the words of whatever
+ *  is pointed at or focused. */
+export function timersNode(
+  ui: Interface,
+  week: ThisWeek | null,
+  now: number,
+  sizes: Sizes,
+  most: number,
+  tallest: number,
+): Node {
   const said = new Map<string, string>();
   const say = (id: string, words: string) => (said.set(id, words), id);
+  const size = sizes.label;
+  const side = MARK_ICON + (size - 1) * 12;
+  // Too narrow for a head's countdown beside its name, or the isles' three columns, as on a phone.
+  const narrow = most < 480;
   const markNode = (mark: Mark, id: string): Node => ({
     id: say(id, mark.words),
     gap: 4,
     alignY: 'center',
-    minHeight: 28,
+    minHeight: side + 4,
     ...(mark.boxed && { padding: [1, 6, 1, 2], fill: 'rgba(6,7,9,0.55)' }),
-    children: [...mark.drawn, mark.short !== undefined && words(mark.short, 1, mark.boxed ? INK.brassLit : INK.faint)],
+    children: [
+      ...mark.drawn.map((part) => sized(part, side, size)),
+      mark.short !== undefined && words(mark.short, size, mark.boxed ? INK.brassLit : INK.faint),
+    ],
   });
   const isleNode = (row: WeekRow, id: string): Node => ({
     id: say(id, `${row.name}: ${row.about}${row.yours ? ' Your level is in its band.' : ''}`),
+    width: 'grow',
     gap: 6,
-    padding: [1, 6],
+    padding: [2, 6],
     ...(row.yours && { fill: 'rgba(243,207,134,0.08)' }),
     children: [
-      words(row.name, 1, row.yours ? INK.brassLit : INK.word),
-      row.band && words(`${row.band[0]}–${row.band[1]}`, 1, INK.faint),
+      { width: 'grow', ...words(row.name, size, row.yours ? INK.brassLit : INK.word, { ellipsis: true }) },
+      row.band && words(`${row.band[0]}–${row.band[1]}`, size, INK.faint),
     ],
   });
+  /** The isles in columns read down, each row ruled under, as DFO's timers list them. */
+  const islesNode = (isles: readonly WeekRow[]): Node => {
+    const columns = narrow ? 1 : 3;
+    const tall = Math.ceil(isles.length / columns);
+    return {
+      width: 'grow',
+      children: Array.from({ length: columns }, (_unused, column): Node => ({
+        width: `${Math.floor(100 / columns)}%`,
+        padding: [0, column < columns - 1 ? 12 : 0, 0, 0],
+        direction: 'column',
+        children: isles
+          .slice(column * tall, (column + 1) * tall)
+          .flatMap((row, nth): Child[] => [
+            isleNode(row, `isle-${column * tall + nth}`),
+            { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.12)' },
+          ]),
+      })),
+    };
+  };
   const rowNode = (timer: Timer): Node => {
     const id = say(`timer-row-${timer.id}`, `${timer.name}. ${timer.words}`);
     const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
@@ -276,14 +317,9 @@ export function timersNode(ui: Interface, week: ThisWeek | null, now: number, si
           gap: 8,
           padding: [3, 0, 0, 0],
           children: [
-            words(timer.name, sizes.label + 1, INK.word),
+            { width: 'grow', ...words(timer.name, size, INK.word, { ellipsis: true }) },
             ...lines,
-            isles.length > 0 && {
-              width: 'grow',
-              gap: 4,
-              wrap: true,
-              children: isles.map((row, place) => isleNode(row, `isle-${place}`)),
-            },
+            isles.length > 0 && islesNode(isles),
           ],
         },
       ],
@@ -291,24 +327,32 @@ export function timersNode(ui: Interface, week: ThisWeek | null, now: number, si
   };
   const headNode = (group: Group): Node => {
     const reset = group.reset;
-    return {
+    const name: Node = {
       width: 'grow',
       gap: 8,
       alignY: 'center',
-      padding: [6, 0],
       children: [
-        reset && icon(reset.icon),
-        { width: 'grow', ...words(group.name.toUpperCase(), 1, INK.brass, { tracking: 3 }) },
-        reset && {
-          id: say(`timer-${group.id}-reset`, reset.words),
-          gap: 10,
-          alignY: 'center',
-          children: [
-            words(countdownWords(reset.endsAt - now), 2, INK.gain),
-            words(whenWords(reset.endsAt, now), 1, INK.faint),
-          ],
-        },
+        reset && iconNode(reset.icon, side),
+        { width: 'grow', ...words(group.name.toUpperCase(), size, INK.brass, { tracking: 3 }) },
       ],
+    };
+    const clock: Child = reset && {
+      id: say(`timer-${group.id}-reset`, reset.words),
+      gap: 10,
+      alignY: 'center',
+      children: [
+        words(countdownWords(reset.endsAt - now), size + 1, INK.gain),
+        words(whenWords(reset.endsAt, now), size, INK.faint),
+      ],
+    };
+    // Narrow, the countdown stands under its head's name rather than past the panel's edge.
+    return {
+      width: 'grow',
+      direction: narrow ? 'column' : 'row',
+      gap: 8,
+      alignY: 'center',
+      padding: [6, 0],
+      children: [name, clock],
     };
   };
   const list: Child[] = week
@@ -335,7 +379,7 @@ export function timersNode(ui: Interface, week: ThisWeek | null, now: number, si
     modal: true,
     width: 'grow',
     maxWidth: most,
-    maxHeight: Math.max(0, ui.size.height - 160),
+    maxHeight: Math.max(0, tallest),
     direction: 'column',
     padding: [14, 20, 0, 20],
     fill: PANEL_GROUND,
@@ -348,7 +392,7 @@ export function timersNode(ui: Interface, week: ThisWeek | null, now: number, si
         alignY: 'center',
         padding: [0, 0, 6, 0],
         children: [
-          { width: 'grow', ...words('Timers', 2, INK.word) },
+          { width: 'grow', ...words('TIMERS', 2, INK.word, { tracking: 3 }) },
           pressNode('timers-close', 'Close', 'button', 'T', sizes.label, { label: 'Close the timers' }),
         ],
       },
