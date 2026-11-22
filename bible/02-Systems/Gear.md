@@ -582,8 +582,8 @@ Officers ashore fight beside their player, as DFO's crew companions did
   10% more harm, Steady Nerve 20% more poise.
 - **Never killed.** No player harms them. A blow that would leave one at 1 health or less holds them at 1: they leave
   the fight and rest eight minutes, kept with the officer so a return to this room or another keeps it
-  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), then come ashore again while still on duty ashore. One stationed
-  aboard or at their post, or whose player leaves, goes.
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), then come ashore again while still on duty ashore. One
+  stationed aboard or at their post, or whose player leaves, goes.
 - **Kills.** A kill a companion had a hand in their leader shares as though they had struck it. On land, every kill a
   player shares pays its XP to each of their officers ashore too.
 - **Heat.** What a companion deals, kills and takes moves the fight's heat as a player's would ([[Foes]], "The
