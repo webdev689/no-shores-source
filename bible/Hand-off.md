@@ -264,6 +264,20 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **The owner's bugs and polish** (branch `claude/prologue-bugs-polish-lphicj`, its pull request open), the owner's
+  six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's calls:
+  [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
+  station clear of hull, gun mouths and every sail's swing, the sight centred; the eye swings round the ship on a
+  swap); [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]] (reload and the burst in a ring bar);
+  [[Ships Show Their People, and Captains' Gunners Misjudge]] (crew and captain on every other ship; captains strike
+  a Sloop's hull one ball in seven to one in two by rank, from 58 to 85%);
+  [[The Fight Music Varies, Recombined From Takes]];
+  [[The Prologue Is Passed Over, Its Camera and Footing Clear]] (the wreck's camera clear of what is drawn, its dead
+  ends and the sea off its ground, the wake, creation, lookout, calm, arena and overboard shots, silent skips, the
+  pad's Start). Tested offline (the full check); the HUD pictured headless with `tools/uiShot.mjs`. Not yet: played
+  live, the fight music heard by a person, anything seen on a real GPU. Open: a Boss closing on the player's Sloop
+  still wins every headless fight; whether one ball in two at Elite and above meets the owner's "insane accuracy";
+  the crew re-laid when a fight starts ([[Game]], limits).
 - **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), merged with the owner's yes ("Lets go ahead and queue up
   the deploy"), which deploys the page and the rooms; audited (an independent read-only audit and a ponytail review,
   their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a death),
@@ -634,9 +648,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
 - **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
   140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
-- **`tools/uiShot.mjs` writes blank pictures**: the interface lays its quads, but the shot's read-back is only the
-  ground under SwiftShader. The game's own frame read back from its worker shows the interface whole, so check
-  pictures that way meanwhile.
+- **`tools/uiShot.mjs` pictures the interface headless**: the sea fight's HUD was drawn whole with it at 1280 by
+  720, 1920 by 1080 and 480 by 800 (a module exporting a build function). The game's 3D still cannot be pictured
+  headless (`webgpu-shot.cjs` cannot reach the worker), so 3D fixes are measured against the real meshes in Node.
 - **After the four points**: the game's frame time on a real GPU, in and out of the worker; a sound heard by a person
   from the worker's cues; holding a press with the pad's A, which waits on an "A held" signal from the interface (main
   had no pad holds either).
