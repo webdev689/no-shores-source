@@ -2,11 +2,11 @@
 // it, at one texel a pixel, cut round the bare horse's ears, so every barding frames the same head whatever rises
 // above them (Wraith Mist's wisps, Dawnfire's flame).
 
-import { make } from '../../editor/dom.ts';
 import type { Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { Picture } from '../../player/picture.ts';
-import { horseOf } from './appearanceDisplay.ts';
+import type { Picture as NodePicture } from '../../ui/node.ts';
+import { horseOf, pictureName } from './appearanceDisplay.ts';
 
 /** A tile's picture, in pixels: the menu's cell's. */
 const TILE_PX = 48;
@@ -35,25 +35,30 @@ export function earsCut(bare: Picture, worn: Picture, size = TILE_PX): readonly 
   return [left, Math.max(0, row)];
 }
 
-/** The tile of the horse `dress` rides in `barding` (by its id; the bare horse for its start piece or none). */
-export function bardingTile(
-  forge: Cards | null,
-  dress: Dress | null,
-  barding: string | null,
-  className = 'appearance-mark',
-): HTMLCanvasElement {
-  const canvas = make('canvas', '', className);
-  [canvas.width, canvas.height] = [TILE_PX, TILE_PX];
-  if (!forge || !dress) return canvas;
-  const bare = { ...dress, outfit: { ...dress.outfit, barding: null } };
-  const worn = { ...dress, outfit: { ...dress.outfit, barding } };
-  void Promise.all([horseOf(forge, bare), horseOf(forge, worn)]).then(([ears, picture]) => {
-    const cut = ears && picture && earsCut(ears, picture);
-    if (!picture || !cut) return;
-    const own = document.createElement('canvas');
-    [own.width, own.height] = [picture.width, picture.height];
-    own.getContext('2d')?.putImageData(new ImageData(new Uint8ClampedArray(picture.pixels), picture.width), 0, 0);
-    canvas.getContext('2d')?.drawImage(own, cut[0], cut[1], TILE_PX, TILE_PX, 0, 0, TILE_PX, TILE_PX);
-  });
-  return canvas;
+/** Each barding's tile once cut, by what it draws. */
+const cut = new Map<string, Uint8Array>();
+
+/** The tile of the horse `dress` rides in `barding` (by its id; the bare horse for its start piece or none), 48
+ *  texels a side kept whole; null while it is drawn, or with no forge or dress. */
+export function bardingPicture(forge: Cards | null, dress: Dress | null, barding: string | null): NodePicture | null {
+  if (!forge || !dress) return null;
+  const bare = horseOf(forge, { ...dress, outfit: { ...dress.outfit, barding: null } });
+  const worn = horseOf(forge, { ...dress, outfit: { ...dress.outfit, barding } });
+  if (!bare || !worn) return null;
+  const key = `barding ${pictureName(worn)} ${pictureName(bare)}`;
+  let pixels = cut.get(key);
+  if (!pixels) {
+    const place = earsCut(bare, worn);
+    if (!place) return null;
+    pixels = new Uint8Array(TILE_PX * TILE_PX * 4);
+    // A horse narrower or shorter than the tile leaves the rest of it clear, as a canvas drawn past its edge does.
+    const across = Math.min(TILE_PX, worn.width - place[0]) * 4;
+    for (let row = 0; row < TILE_PX && place[1] + row < worn.height; row++) {
+      const from = ((place[1] + row) * worn.width + place[0]) * 4;
+      pixels.set(worn.pixels.subarray(from, from + across), row * TILE_PX * 4);
+    }
+    cut.set(key, pixels);
+  }
+  const shown = pixels;
+  return { key, source: { pixels: () => shown }, pixel: { width: TILE_PX, height: TILE_PX } };
 }

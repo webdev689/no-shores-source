@@ -1,4 +1,13 @@
-import type { FoeAsk, Look, FightEvent, FlyingShot, SeenFoe, SeenPlayer, Standing } from '../network/messages.ts';
+import type {
+  FoeAsk,
+  FightEvent,
+  FlyingShot,
+  InputParts,
+  Look,
+  SeenFoe,
+  SeenPlayer,
+  Standing,
+} from '../network/messages.ts';
 import type { ArtState, CastAsk } from '../network/artMessages.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
 import { inputBytes } from '../network/messages.ts';
@@ -12,7 +21,7 @@ import { type AimRing, abilitiesAt } from './casting.ts';
 import { SpellEffects } from './spellEffects.ts';
 
 /** Where the combat crate keeps, in a fighter's whole numbers, its arms, its swings so far (a swing begun moves it on)
- *  and its action's kind (0 at rest, 12 for the dead). */
+ *  and its action's kind (0 at rest, 1 swinging, 12 for the dead), a swing's stroke the first of its numbers. */
 const ARMS_AT = 22 + 1;
 const BLOWS_AT = 22 + 21;
 const ACTION_AT = 22 + 23;
@@ -21,6 +30,7 @@ const ACTION_AT = 22 + 23;
 const MISSED_PARRY_AT = 22 + 19;
 const RANGED_SHIFT = 8;
 const IDLE = 0;
+const ATTACK = 1;
 /** A ranged weapon raised to aim (a bow's draw), as the combat crate numbers the action. */
 const DRAW = 10;
 /** The most bytes of dress the room takes (room's DRESS_LIMIT); a longer one is refused as no input at all. */
@@ -28,6 +38,22 @@ const DRESS_LIMIT = 4096;
 /** The most shots and events kept for the next frame to show. */
 const QUEUED_MOST = 256;
 const STROKES = [1, 2, 3, 4, 5, 6] as const;
+/** The player's strokes in the order their swings chain, at the owner's word, each drawn differently: the side cut,
+ *  the overhead and the thrust (the combat crate's left, down and up). */
+export const CHAIN = [3, 1, 6] as const;
+/** Ticks without a swing (a second, at the room's 60 a second) after which the chain starts over at its first. */
+const CHAIN_RESTS = 60;
+
+/** The stroke a swing takes in the chain after `last` (from the chain's first with none): the next that reaches the
+ *  soft lock's target (`reaching`), passing over those that do not; else the first that reaches. */
+export function chained(last: number | null, reaching: readonly number[]): number {
+  const from = CHAIN.findIndex((stroke) => stroke === last);
+  for (let step = 1; step <= CHAIN.length; step++) {
+    const stroke = CHAIN[(from + step) % CHAIN.length] ?? CHAIN[0];
+    if (reaching.includes(stroke)) return stroke;
+  }
+  return reaching[0] ?? CHAIN[0];
+}
 
 /** The strokes, 1 to 6, whose reach (`reach`, feet to a body's middle) takes in a target `apart` metres away; all six
  *  with no target, or when none reaches it. */
@@ -45,14 +71,15 @@ export interface KeptFoe extends Omit<SeenFoe, 'glance'> {
 }
 
 /** The fight's buttons for the ticks of a frame: a swing held (and the stroke the next one takes, 1 to 6), a shot's
- *  trigger held, the guard held, a dodge pressed, the look's pitch, a ranged weapon held up to aim and the point an
- *  aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or the guard
- *  was pressed since the last frame (even let go again). */
+ *  trigger held, the guard held, a dodge pressed, a drink pressed, the look's pitch, a ranged weapon held up to aim and
+ *  the point an aimed shot is laid on (the crosshair's; along the look if none), and whether the swing, the trigger or
+ *  the guard was pressed since the last frame (even let go again). */
 export interface FightButtons {
   readonly swing: boolean;
   readonly shoot: boolean;
   readonly guard: boolean;
   readonly dodge: boolean;
+  readonly heal?: boolean;
   readonly pitch: number;
   readonly aim?: boolean;
   readonly mark?: readonly [number, number, number] | null;
@@ -107,17 +134,24 @@ interface Asked {
 export class Fighting {
   private readonly rules: CombatRules;
   private readonly link: RoomLink;
-  private readonly random: () => number;
   private prediction = new Prediction<Asked>();
   /** The link's welcomes the page has followed: one more means the player joined the room again. */
   private joined: number;
   private fighter: Float64Array | null = null;
+  /** The last inputs sent, which go again with the next on a link that may lose one (`RoomLink.resend`). */
+  private sentLately: { readonly sequence: number; readonly parts: InputParts }[] = [];
   /** The trim last laid on the fighter from the room's word on the player's gear. */
   private trimTaken: readonly number[] | null = null;
   private seen = 0n;
   private view: Glanced[] = [];
   private buttons: FightButtons = NO_BUTTONS;
-  private readonly latches = { swing: new Latch(), shoot: new Latch(), guard: new Latch(), dodge: new Latch() };
+  private readonly latches = {
+    swing: new Latch(),
+    shoot: new Latch(),
+    guard: new Latch(),
+    dodge: new Latch(),
+    heal: new Latch(),
+  };
   private readonly spawnsQueued: { readonly foe: FoeAsk; readonly level: number }[] = [];
   private readonly gearQueued: GearAsk[] = [];
   /** A cast waiting for the next tick's input, and the room's word on the Arts with the room tick it came by. */
@@ -129,9 +163,12 @@ export class Fighting {
   /** Where the player stands with a node's section, as the room last said: dead, by a fall or past its edge, the room
    *  takes their inputs without steering them, and their body falls under its own weight to lie where it lands. */
   standing: Standing = { kind: 'inside' };
-  /** The stroke the next swing takes, 1 to 6: chosen at random among those that reach the soft lock's target, as
-   *  Daggerfall Unity's click chooses among all six, and again once used. */
-  stroke: number;
+  /** The stroke the next swing takes, 1 to 6: the chain's next after the last swing's (`chained`), or its first once
+   *  the player has rested from swinging. */
+  stroke: number = CHAIN[0];
+  /** The last swing's stroke, and the ticks since the player's fighter last swung. */
+  private struck: number | null = null;
+  private rested = CHAIN_RESTS;
   /** Swings the player's fighter has begun since the page last asked. */
   swingsBegun = 0;
   /** Times the player's fighter lowered an aimed weapon unfired, since the page last asked. */
@@ -157,12 +194,10 @@ export class Fighting {
   castSent: { readonly spell: number; readonly tick: number } | null = null;
   private shotsReceived: FlyingShot[] = [];
 
-  constructor(rules: CombatRules, link: RoomLink, random: () => number = Math.random) {
+  constructor(rules: CombatRules, link: RoomLink) {
     this.rules = rules;
     this.link = link;
-    this.random = random;
     this.joined = link.joins;
-    this.stroke = this.roll();
   }
 
   /** Follows the link into the room it joined again: a new player there, standing where the room puts them, with
@@ -172,10 +207,12 @@ export class Fighting {
     if (this.link.joins === this.joined) return;
     this.joined = this.link.joins;
     [this.prediction, this.fighter, this.seen, this.view, this.sentDress] = [new Prediction(), null, 0n, [], ''];
+    this.sentLately = [];
     [this.castQueued, this.castSent, this.artsTaken, this.artsAt] = [null, null, null, 0];
     this.foes.clear();
     this.others.clear();
     this.spells.clear();
+    this.struck = null;
   }
 
   get player(): number {
@@ -204,6 +241,7 @@ export class Fighting {
     if (buttons.shootPressed) this.latches.shoot.press();
     if (buttons.guardPressed) this.latches.guard.press();
     if (buttons.dodge) this.latches.dodge.press();
+    if (buttons.heal) this.latches.heal.press();
   }
 
   /** Asks the room to stand a foe of a type and a rank before the player, at a level (0, a foe of none), or to send
@@ -278,9 +316,9 @@ export class Fighting {
     return strokesReaching(apart, (stroke) => this.rules.strokeReach(this.arms, stroke, true));
   }
 
-  private roll(): number {
-    const strokes = this.reaching();
-    return strokes[Math.floor(this.random() * strokes.length)] ?? 1;
+  /** The stroke the chain takes next from where the player stands now: its first after a rest. */
+  private next(): number {
+    return chained(this.rested >= CHAIN_RESTS ? null : this.struck, this.reaching());
   }
 
   /** The dress to send with this tick's input: a changed one that fits the room; one too long is never sent, and the
@@ -301,8 +339,8 @@ export class Fighting {
     }
     const { pitch } = this.buttons;
     const swing = this.latches.swing.tick(this.buttons.swing);
-    // The stroke rolled is kept while it reaches; once it does not and another would, it is rolled again.
-    if (swing && !this.reaching().includes(this.stroke)) this.stroke = this.roll();
+    // A swing asked takes the chain's next stroke that reaches from here, its first after a rest.
+    if (swing) this.stroke = this.next();
     const intent = new Float64Array([
       ...floatsOfControls(controls),
       swing ? this.stroke : 0,
@@ -312,6 +350,7 @@ export class Fighting {
       pitch,
       this.buttons.aim ? 1 : 0,
       ...(this.buttons.mark ?? [Number.NaN, Number.NaN, Number.NaN]),
+      this.latches.heal.tick(false) ? 1 : 0,
     ]);
     const dress = this.dressToSend();
     const view = this.view;
@@ -336,9 +375,15 @@ export class Fighting {
       ...(cast === null ? {} : { cast }),
     };
     this.respawnAsked = false;
-    this.link.send(inputBytes(sequence, dress === undefined ? parts : { ...parts, dress }));
+    const sent = { sequence, parts: dress === undefined ? parts : { ...parts, dress } };
+    this.link.send(inputBytes(sent.sequence, sent.parts, this.sentLately));
+    this.link.inputSent?.(sequence);
+    // Kept to go again with the next, on a link that may lose one; a WebSocket keeps none.
+    const resend = this.link.resend ?? 0;
+    this.sentLately = resend > 0 ? [...this.sentLately, sent].slice(-resend) : [];
     // Dead, the room steps the fighter as it lies, whatever is asked: nothing is swung or shot, and it falls on.
     if (this.standing.kind === 'dead') {
+      this.struck = null;
       this.fighter = this.lying(this.fighter, view);
       return bodyOf(Array.from(this.fighter.subarray(0, 22)));
     }
@@ -352,10 +397,11 @@ export class Fighting {
       this.shotsLoosed += 1;
     }
     if (drawing && this.fighter[ACTION_AT] === IDLE) this.drawsDropped += 1;
-    if ((this.fighter[BLOWS_AT] ?? 0) !== before) {
-      this.swingsBegun += 1;
-      this.stroke = this.roll();
-    }
+    if ((this.fighter[BLOWS_AT] ?? 0) !== before) this.swingsBegun += 1;
+    // The swing under way, the page's or one the room's word began, is the chain's last.
+    const swinging = this.fighter[ACTION_AT] === ATTACK;
+    if (swinging) this.struck = this.fighter[ACTION_AT + 1] ?? this.struck;
+    this.rested = swinging ? 0 : this.rested + 1;
     return bodyOf(Array.from(this.fighter.subarray(0, 22)));
   }
 

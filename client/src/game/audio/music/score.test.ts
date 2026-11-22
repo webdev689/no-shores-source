@@ -4,12 +4,14 @@ import { boardingScore } from './boardingScore.ts';
 import { coldScore } from './coldScore.ts';
 import { MOOD_ROLES } from './directorLaw.ts';
 import { dryScore } from './dryScore.ts';
-import { PERCUSSION_CHANNEL } from './fmBank.ts';
+import { PERCUSSION_CHANNEL, RINGING_HZ, RINGING_S, drumOf } from './fmBank.ts';
 import { greenScore } from './greenScore.ts';
 import { reckoningScore } from './reckoningScore.ts';
-import { saltmereScore } from './saltmereScore.ts';
-import { ROLES, type Song, TICKS_PER_BEAT, lay, makeSong, midiNote, songSeconds, tune } from './score.ts';
+import { overlookScores } from './director.ts';
+import { CEILING_NOTE, ROLES, type Song, TICKS_PER_BEAT, lay, makeSong, midiNote, songSeconds, tune } from './score.ts';
+import { islandPieces } from './islandPieces.ts';
 import { seaSongs } from './seaScore.ts';
+import { socialPieces } from './socialPieces.ts';
 import { storyScores } from './storyScore.ts';
 import { wetScore } from './wetScore.ts';
 import { wrathScore } from './wrathScore.ts';
@@ -21,17 +23,18 @@ const boarding = boardingScore();
 const families = { green: greenScore(), dry: dryScore(), wet: wetScore(), cold: coldScore() };
 const familySongs = Object.values(families).map((score) => score.song);
 const stings = Object.values(families).flatMap(({ cadence, victory, defeat }) => [cadence, victory, defeat]);
-const saltmere = saltmereScore();
+const { open, calm, night, ...band } = sea;
+/** The calm pieces out of danger: the social space's, the islands', the sea's. */
+const calmPieces: readonly Song[] = [...socialPieces(), ...Object.values(islandPieces()).flat(), open, calm, night];
 const { ram, ...storyLooped } = storyScores();
 const looped: readonly Song[] = [
-  ...Object.values(sea),
+  ...Object.values(band),
   ...wrath.phases,
   ...reckoning.phases,
   reckoning.last,
   ...boarding.phases,
   boarding.last,
   ...familySongs,
-  saltmere,
   ...Object.values(storyLooped),
 ];
 const once: readonly Song[] = [
@@ -42,6 +45,7 @@ const once: readonly Song[] = [
   boarding.end,
   ...stings,
   ram,
+  ...calmPieces,
 ];
 /** The songs the director plays as danger nears and in a fight: each must grow from its tension to its peak. */
 const fights: readonly Song[] = [
@@ -133,13 +137,12 @@ test('no note lies outside what its instrument plays well: pitched notes C1 to C
 
 test('every layer a score names plays somewhere in it, and each fight song grows from its tension to its peak', () => {
   for (const score of [
-    Object.values(sea),
+    Object.values(band),
     [...wrath.phases, wrath.fallen],
     [...reckoning.phases, reckoning.last, reckoning.fallen],
     [...boarding.phases, boarding.last, boarding.wake, boarding.fallen, boarding.end],
     ...Object.values(families).map(({ song, cadence, victory, defeat }) => [song, cadence, victory, defeat]),
-    [saltmere],
-    ...[...Object.values(storyLooped), ram].map((song) => [song]),
+    ...[...calmPieces, ...Object.values(storyLooped), ram].map((song) => [song]),
   ]) {
     const named = new Set(score.flatMap((song) => song.tracks.map((track) => track.role)));
     for (const role of named)
@@ -168,7 +171,7 @@ test('the scores keep their tempos and lengths: phases drive harder, the sea in 
   assert.deepEqual(bpm(wrath.phases), [132, 138, 150]);
   assert.deepEqual(bpm(reckoning.phases), [136, 142, 152]);
   assert.deepEqual(bpm(boarding.phases), [138, 144, 152]);
-  assert.equal(sea.calm.ticksPerBar, 3 * TICKS_PER_BEAT);
+  assert.equal(sea.open.ticksPerBar, 3 * TICKS_PER_BEAT);
   assert.equal(sea.fight.ticksPerBar, 4 * TICKS_PER_BEAT);
   // The wake is two bars: the first phase begins as it ends.
   assert.equal(boarding.wake.durationTicks, 2 * boarding.wake.ticksPerBar);
@@ -176,6 +179,7 @@ test('the scores keep their tempos and lengths: phases drive harder, the sea in 
 
 /** Where each program the family scores and Saltmere's theme play is at home, its lowest and highest key. */
 const RANGES: Readonly<Record<number, readonly [number, number]>> = {
+  0: [21, 108], // piano
   8: [60, 96], // celesta
   12: [41, 96], // marimba
   14: [60, 77], // tubular bells
@@ -203,14 +207,14 @@ const RANGES: Readonly<Record<number, readonly [number, number]>> = {
   71: [50, 94], // clarinet
   73: [60, 96], // flute
   75: [60, 96], // pan flute
-  78: [74, 96], // whistle
+  78: [62, 96], // whistle: the low whistle's D4 and up, the high whistle's octave over it never played (CEILING_NOTE)
   89: [36, 96], // warm pad
   108: [60, 96], // kalimba
   119: [24, 96], // reverse cymbal
 };
 
 test("every note of the family scores, Saltmere's theme and the story's songs lies where its instrument plays", () => {
-  for (const song of [...familySongs, ...stings, saltmere, ...Object.values(storyLooped), ram]) {
+  for (const song of [...familySongs, ...stings, ...calmPieces, ...Object.values(storyLooped), ram]) {
     const programs = new Map(song.tracks.map((track) => [track.channel, track.program]));
     for (const note of song.notes) {
       if (note.channel === PERCUSSION_CHANNEL) continue;
@@ -248,11 +252,112 @@ test("each family's cadence, victory and defeat is two to eight bars of its figh
     }
 });
 
-test("Saltmere's theme runs three minutes before it comes round, and every instrument has its turn", () => {
-  assert.ok(songSeconds(saltmere) >= 180, `${songSeconds(saltmere)} s`);
-  for (const track of saltmere.tracks)
-    assert.ok(
-      saltmere.notes.some((note) => note.channel === track.channel),
-      `program ${track.program} plays`,
+test("each calm piece runs a minute and a half to two and a half, every instrument has its turn, and it ends on the world's leitmotif", () => {
+  for (const piece of calmPieces) {
+    const seconds = songSeconds(piece);
+    assert.ok(seconds >= 85 && seconds <= 150, `${piece.name}: ${seconds} s`);
+    for (const track of piece.tracks)
+      assert.ok(
+        piece.notes.some((note) => note.channel === track.channel),
+        `${piece.name}: program ${track.program} plays`,
+      );
+    // The tune's last five notes: the root, a rise of a fifth, the minor sixth, the fifth, and home.
+    const lead = piece.notes.filter((note) => note.channel === 3).slice(-5);
+    const root = lead[0]?.note ?? 0;
+    assert.deepEqual(
+      lead.map((note) => note.note - root),
+      [0, 7, 8, 7, 0],
+      `${piece.name} closes on the leitmotif`,
     );
+  }
+});
+
+test('nothing pitched sounds over B5: a high line drops an octave whole, a wide one only its top, the drums untouched', () => {
+  const song = makeSong(
+    {
+      name: 'ceiling',
+      bpm: 120,
+      bars: 1,
+      tracks: {
+        whistle: { program: 78, volume: 100, pan: 64, role: 'lead' },
+        fiddle: { program: 40, volume: 100, pan: 64, role: 'lead' },
+      },
+      kit: { volume: 100, role: 'combat', keys: { hat: 42 } },
+    },
+    (w) => {
+      ['D5', 'A6', 'E6'].forEach((pitch, beat) => w.note('whistle', 0, beat, 1, pitch, 90));
+      ['G3', 'E6', 'D5'].forEach((pitch, beat) => w.note('fiddle', 0, beat, 1, pitch, 90));
+      w.note('fiddle', 0, 3, 1, 'D6', 60);
+      w.note('fiddle', 0, 3, 1, 'D5', 90);
+      w.hit('hat', 0, 0, 90);
+    },
+  );
+  const heardOn = (channel: number) => song.notes.filter((note) => note.channel === channel).map((note) => note.note);
+  assert.deepEqual(
+    heardOn(0),
+    [midiNote('D4'), midiNote('A5'), midiNote('E5')],
+    'the whistle an octave down, its line kept',
+  );
+  assert.deepEqual(
+    heardOn(1),
+    [midiNote('G3'), midiNote('E5'), midiNote('D5'), midiNote('D5')],
+    'the fiddle folds its top',
+  );
+  assert.equal(
+    song.notes.filter((note) => note.channel === 1 && note.tick === 180).length,
+    1,
+    'a fold onto a note merges',
+  );
+  assert.ok(song.notes.every((note) => note.channel === 9 || note.note <= CEILING_NOTE));
+  assert.deepEqual(heardOn(9), [42], 'drums are keys, never moved');
+});
+
+test('every score the game plays sounds nothing over the ceiling', () => {
+  const scores = overlookScores();
+  const all = [
+    ...Object.values(scores.families).flatMap((family) => (family ? Object.values(family) : [])),
+    ...scores.social,
+    ...Object.values(scores.roaming).flat(),
+    ...Object.values(scores.sea),
+    ...Object.values(scores.bosses).flatMap((boss) => [...boss.phases, boss.wake, boss.last, boss.fallen, boss.defeat]),
+    ...Object.values(scores.story),
+  ].filter((song): song is Song => !!song);
+  for (const song of all)
+    assert.ok(
+      song.notes.every((note) => note.channel === 9 || note.note <= CEILING_NOTE),
+      `${song.name} under B5`,
+    );
+});
+
+test('no drum rings: a struck tone over 1.5 kHz dies within a tenth of a second, in the bank and in every score', () => {
+  for (let key = 35; key <= 87; key++) {
+    const drum = drumOf(key);
+    assert.ok(drum.kind === 'noise' || drum.hz < RINGING_HZ || drum.decay <= RINGING_S, `key ${key}`);
+  }
+  const scores = overlookScores();
+  const songs = [
+    ...Object.values(scores.families).flatMap((family) => (family ? Object.values(family) : [])),
+    ...scores.social,
+    ...Object.values(scores.roaming).flat(),
+    ...Object.values(scores.sea),
+    ...Object.values(scores.bosses).flatMap((boss) => [...boss.phases, boss.wake, boss.last, boss.fallen, boss.defeat]),
+    ...Object.values(scores.story),
+  ].filter((song): song is Song => !!song);
+  for (const song of songs)
+    for (const note of song.notes.filter((each) => each.channel === PERCUSSION_CHANNEL)) {
+      const drum = { ...drumOf(note.note), ...song.kit.drums.get(note.note) };
+      assert.ok(
+        drum.kind === 'noise' || drum.hz < RINGING_HZ || drum.decay <= RINGING_S,
+        `${song.name}: key ${note.note}`,
+      );
+    }
+});
+
+test('no family fight sweeps a pitched swell: its risers and gusts are noise', () => {
+  for (const family of Object.values(families))
+    for (const song of Object.values(family))
+      assert.ok(
+        song.tracks.every((track) => track.program !== 119),
+        `${song.name} has no reverse-cymbal sweep`,
+      );
 });

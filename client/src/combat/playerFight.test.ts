@@ -8,7 +8,7 @@ import type { GearMessage, Snapshot } from '../network/roomConnection.ts';
 import type { Cards } from '../player/cards.ts';
 import { type Dress, plainDress } from '../player/dressing.ts';
 import { KINDS } from '../player/gear.ts';
-import type { Action, InputFrame } from '../player/input.ts';
+import { type Action, BINDS, type InputFrame } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { Walker } from '../player/walker.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
@@ -43,17 +43,28 @@ function controls(held: Action[] = [], pressed: Action[] = []): InputFrame {
  *  what the forge warms, and the room's last word on the gear. */
 function fightingPlayer(right = 'sword_iron', start: { readonly x: number; readonly y: number } = course.start) {
   type State = { right?: string | null; pose?: unknown; pace?: unknown; spare?: unknown };
-  const shown: { attackPressed: boolean; right: unknown; pose: unknown; pace: unknown; spare: unknown }[] = [];
+  type Shown = {
+    attackPressed: boolean;
+    right: unknown;
+    pose: unknown;
+    pace: unknown;
+    spare: unknown;
+    way: number | null;
+  };
+  const shown: Shown[] = [];
   const said: { gear: GearMessage | null } = { gear: null };
   const loads = { count: 0 };
   const hands = {
+    strokes: () => 0,
     swing: null,
     muzzle: null,
     cancel: () => undefined,
     loaded: () => (loads.count += 1),
     update: (_seconds: number, button: { attackPressed: boolean }, state: State) => {
       const { right = null, pose = null, pace = null, spare = null } = state;
-      shown.push({ attackPressed: button.attackPressed, right, pose, pace, spare });
+      // The way, 1 to 6, the hands draw a swing begun now: their share of DFO's six, as the walker sets it.
+      const way = button.attackPressed ? Math.floor(hands.strokes() * 6) + 1 : null;
+      shown.push({ attackPressed: button.attackPressed, right, pose, pace, spare, way });
     },
   } as unknown as ConstructorParameters<typeof Walker>[2];
   const warmed: { right: string | null; glow: unknown; owner: unknown }[] = [];
@@ -174,6 +185,16 @@ test('the sights follow the weapon in hand: a gun chosen mid-swing brings them u
   assert.equal(seen.at(-1)?.sights, true, "the gun's sights once the rules take it up");
 });
 
+test("a ranged weapon in hand turns the pad's triggers round, whichever page the player fights on", () => {
+  const { walker, frame } = fightingPlayer();
+  frame(controls());
+  assert.equal(BINDS.ranged, false, 'a sword: RT swings');
+  walker.you.dress = { ...walker.you.dress, outfit: { ...walker.you.dress.outfit, right: 'pistolet' } };
+  for (let tick = 0; tick < 60; tick++) frame(controls());
+  assert.equal(BINDS.ranged, true, 'a gun: RT fires');
+  BINDS.ranged = false;
+});
+
 test('a climb begun while the rules reload puts the held weapon away, though the rules still hold it', () => {
   // Facing the course's tall wall from just short of its near face: a reload lets the body walk into it and climb.
   const { fighting, walker, frame, said } = fightingPlayer('pistolet', { x: 11, y: -0.6 });
@@ -268,7 +289,16 @@ test('a swing clicked early in a weapon swap plays in the first person on the ve
   );
   assert.equal(shown.filter((each) => each.attackPressed).length, 1, 'once');
   const action = fighting.own?.action;
-  assert.ok(action?.kind === 'attack' && action.stroke === stroke, 'with the stroke the click rolled');
+  assert.ok(action?.kind === 'attack' && action.stroke === stroke, 'with the stroke the click chose');
+});
+
+test('in the first person each swing is drawn the way the chain strikes it: side cut, overhead, thrust', () => {
+  const { shown, frame } = fightingPlayer();
+  frame(controls());
+  frame(controls(['swing'], ['swing']));
+  for (let tick = 0; tick < 150; tick++) frame(controls(['swing']));
+  const ways = shown.flatMap((each) => (each.way === null ? [] : [each.way]));
+  assert.deepEqual(ways.slice(0, 4), [3, 1, 6, 3]);
 });
 
 test('locked on, a dodge is drawn rolling the way it goes, while the rules keep the fighter facing its foe', () => {

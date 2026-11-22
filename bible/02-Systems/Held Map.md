@@ -24,12 +24,18 @@ code:
   - client/src/game/discovered.ts#Discovered
   - client/src/overworld/discovery.ts#chartAround
   - client/src/overworld/discovery.ts#sightIslands
+  - client/src/game/landMap.ts#landSheetOf
+  - client/src/heldmap/landSheet.ts#relief
+  - client/src/heldmap/landLetters.ts#paintLand
+  - client/src/heldmap/landGlyphs.ts#paintGlyph
+  - client/src/heldmap/landTable.ts#tablePlace
 ---
 # Held Map
 
 The map the player navigates the sea by, held in their own gauntlets at the ship's helm
 ([[The Sea Is Navigated From the Helm With the Held Map]], [[Pick - Held Map]]). It shows the whole world under fog of
-war, and a click on it sets the ship's destination.
+war, and a click on it sets the ship's destination. On land it is raised anywhere, and shows the land the player stands
+on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 
 ## How it works
 
@@ -52,7 +58,7 @@ war, and a click on it sets the ship's destination.
   third of a second, behind the veil on first going to sea): each cell's exact distance to the nearest coast within 60 km, negative on land, and whose coast
   it is. A discovered island's coast is drawn as a pen does, a soft wash on the sea's side and then the line, with
   engraved lines following it out to sea and fading; the charted sea carries a faint wash, its edge soft.
-- **The waters** ([[The Waters Come From the Islands]]). The page opens the waters once, just after its first frame
+- **The waters** ([[The Waters Come From the Islands]]). The game opens the waters once, just after its first frame
   (about 0.6 s in WebAssembly, `pageWaters.ts`), and takes their grid at the coast field's own 4.8 km cell
   ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
   at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the pirates red `#d95c5c`,
@@ -84,7 +90,7 @@ war, and a click on it sets the ship's destination.
   names, round which the other names laid again lose least: a water's name lost counts ten, land under the key five,
   any other name lost one. So it moves only when it must, and never back and forth while the map stands still
   (`keyPlace`). It is never laid on the
-  parchment's margin, where the page's hints stand under the map.
+  parchment's margin, where the game's hints stand under the map.
 - **Places.** Each discovered port is named at its city, and each discovered node at its middle. A city that is not
   a port (the waters' table names the three, [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]])
   is drawn with a ruin's glyph, a dashed diamond, and named "Ruins of <name>" (`ruinedPlaces`); until the waters are
@@ -94,11 +100,11 @@ war, and a click on it sets the ship's destination.
 - **Lettering.** Every name, mark, the ship's arrow and the key is part of the parchment: painted, whenever they
   change, onto a picture of the parchment (`paintLettering`), which the ink's pass lays down over the ink, before the
   gauntlets are drawn. So the hands cover them as they cover the parchment. Only the card that offers Set sail stands
-  over the picture as a page element. They are laid out again only when something the layout reads has changed
+  over the picture, a node of the game's interface. They are laid out again only when something the layout reads has changed
   (`layoutKey`: the map's view, the ink and the hands' place, the face's loading, the charted sea, the ship's point
   and heading, the places and islands known, the place chosen); a still frame lays out nothing (at 1920 × 1080,
   0.02 ms against 8 ms). How it reads:
-  - *Sizes.* In the page's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
+  - *Sizes.* In the game's face, every word at least 13 px at a 1280 × 720 screen, a port's name 15 px; every size,
     mark and line grows with the map on a larger screen (`letterScale`: the map's height over its height at
     1280 × 720, never below 1), so at 1920 × 1080 the words are 20 px and 23 px.
   - *Hierarchy.* Ports strongest: the larger size, the darkest ink and a filled ring. Waters' names in their rings in
@@ -128,7 +134,7 @@ war, and a click on it sets the ship's destination.
   fill. A press that moves more than 6 px is a pan, not a click.
 - **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
-  sail (Enter), or says why no way leads there. Escape lets the choice go, then lowers the map.
+  sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once
@@ -140,6 +146,47 @@ war, and a click on it sets the ship's destination.
 - **Lowering.** Over 0.36 s, from wherever the painting is; then the view flies back up to the sea's, and a
   destination set, the ship sets sail for it as it does. The voyage can be stopped and resumed from the navigation
   panel.
+
+## On land
+
+The map on land speaks in icon glyphs, with little text, and a table on it says what each glyph is
+([[The Held Map Comes to the Social Spaces and Every Land Area]]).
+
+- **Raising.** On foot, N anywhere but in a dungeon, under no land (with no menu or gear screen up): the view goes into the player's eyes (from third
+  person too), and there the same painting rises in their gauntlets as it does at the helm. The pointer is let go to
+  pan it. The world goes on: the player stands still and hears it, and a fall lowers the map. While it rises every key
+  waits; N or Escape turns back. Up, N or Escape (the pad's B) lowers it, and the view goes back as it was. The fight's crosshair,
+  plates and compass, and a gate's offer, give way while it is up.
+- **The view** opens centred on the player, 400 m across, held to the land's sheet: its ring and 40 m past it. A drag
+  pans and the wheel zooms, to 8 px a metre at most. A click does nothing: the map is only to look at.
+- **What it shows**, painted on the parchment in the map's inks and washes as a surveyor colours a plan, read afresh
+  each time it is raised, off the ground as the camera keeps it (exact within 1 km of the player, an island's its
+  own):
+  - **The ground**: the sea washed blue-grey and the shore inked; the relief every 10 m and a bolder line every 50 m,
+    read about 160 times across; rivers as wide as their flow; the edge of the ground walked, dashed.
+  - **A social space's plan**, from its own solids, the city's landmark and the city's works within its ring (the
+    harbour way), each module by its parts, each piece by how it stands over the ground under it: paving faint, lawn
+    green, trodden earth ochre, still water blue, walks a shade darker; walls, stalls and buildings 1.8 m and taller
+    near solid with a shadow; benches, counters and low walls light; what is walked under (a roof, a lintel, an arch's
+    head) only outlined, dashed, so a passage through a range reads open. Its trees and bushes are green crowns.
+  - **A patrol area's plan**: its layout's tracks cased and footpaths dashed, at their widths (4.5 m and 2.6 m), its
+    buildings and pieces as a social space's, its plantings' trees and shrubs.
+  - **Places by name**, a glyph's width under their middles, else over them, else twice as far, where clear of the
+    glyphs, the names before them and the gauntlets (the hub's: the Seaward Walk, the Watch Court, the West Court, the Forge Yard, the Beacon Walk, the Hall of
+    the Arts, the Stair Yard and the Quay).
+  - **The glyphs.** Each keeper is a coin in their sign's board colour carrying their sign's device: a star for the
+    Mage, a key for the vaults, an anvil for the Weaponsmith, a helm for the Armorsmith, open shears for the Tailor, a
+    horseshoe for the Tack, a ship's wheel for the Harbourmaster, candles for the chandler; each faction's coin in its
+    cloth with its banner's emblem (the Stormcallers' bolt, the Lamplighters' flame over a lamp, the Veiled's crescent
+    and star). Each site: a landing's chevrons, a public event's red-brown diamond, a gate's open arch and a sealed
+    door's barred one, an objective's target, foes' crossed blades, a beacon's tower, and a resource node's small ring with
+    a cut stone, named in the table for the island's resource ("Brineglass"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]). The player's red-brown arrow points
+    where they look.
+  - **The table**, framed as the sea's key is, in the corner clear of the gauntlets over the fewest glyphs and names
+    (keeping its corner while it can): the land's name at its head; then each glyph the land holds, once, beside what
+    it is ("The Mage", "Public event"), in columns of at most seven, and the player's arrow, "You"; under them a bar
+    of the ground's length at the map's zoom ("25 m").
+  - **Other land** (an island's): its ground, edge and landing.
 
 ## Fog of war
 
@@ -169,3 +216,8 @@ The player starts with the island they arrive on, its port, the place they arriv
 - A place's mark under a gauntlet's thumb stays there, under it; only its name keeps clear.
 - With every corner and edge place taken by marks, ports' names or the hands the key is left off, as on a screen as
   narrow as a phone's with the whole world in view.
+- On land a glyph under a gauntlet's thumb stays there, under it, as at sea; a place's name with no clear room is left
+  off until the map is zoomed or panned.
+- On land the relief is exact within the 2 km of ground the camera keeps round the player and the land's 1 km grid's
+  past it, so a patrol area's far side may read softer.
+- On land the sheet is the land's own, with no fog of war: all of it shows from the first time the map is raised.

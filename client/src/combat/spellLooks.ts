@@ -10,6 +10,7 @@ import type { FightEvent } from '../network/messages.ts';
 import { Glides } from '../player/glide.ts';
 import { statusesOf } from '../rules/fighters.ts';
 import { AnimaMoments, type AnimaScreen, QUIET, animaOf } from './animaMoment.ts';
+import { chainMarks, chainVerdict } from './chainLooks.ts';
 import { EVENT, HOW } from './cues.ts';
 import type { Fighting } from './fighting.ts';
 import type { Sparks } from './sparks.ts';
@@ -149,6 +150,7 @@ export class SpellLooks {
   private readonly lands = new Lands();
   private readonly anima = new AnimaMoments();
   private readonly hits: FightEvent[] = [];
+  private readonly chains: FightEvent[] = [];
   /** The room tick of the last snapshot drawn from, and the seconds since it came. */
   private tick = Number.NaN;
   private since = 0;
@@ -166,10 +168,13 @@ export class SpellLooks {
     return this.since > STALE_S ? QUIET : this.anima.screen;
   }
 
-  /** Takes a frame's fight events: each spell that lands on a foe marks where it lands, the next frame drawn. */
+  /** Takes a frame's fight events: each spell that lands on a foe marks where it lands, and each Atheric's leap or
+   *  burst where it went, the next frame drawn. */
   struck(events: readonly FightEvent[]): void {
-    for (const event of events)
+    for (const event of events) {
       if (event.how === HOW.spell && event.kind === EVENT.hit && this.hits.length < 64) this.hits.push(event);
+      if (chainVerdict(event) && this.chains.length < 64) this.chains.push(event);
+    }
   }
 
   /** The marks of every spell in `fight`, and of the statuses that show, seen from `eye`: `seconds` the frame's (none
@@ -184,6 +189,7 @@ export class SpellLooks {
     if (this.since > STALE_S) {
       this.lands.clear();
       this.hits.length = 0;
+      this.chains.length = 0;
       return ground.laid();
     }
     const [players, foes] = [playersOf(fight, drawn), foesOf(fight, drawn)];
@@ -260,6 +266,8 @@ export class SpellLooks {
       if (foe && look) landed(frame, kinds.get(hit.striker) ?? new Set(), foe.feet, look, lands);
     }
     this.hits.length = 0;
+    chainMarks(frame, this.chains, lands);
+    this.chains.length = 0;
   }
 
   /** The jobs of the statuses that show on the world: streaks behind the Hasted, motes off the Linked, a Charged

@@ -41,6 +41,33 @@ pub struct NodeFile {
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
     /// space still locked (`city::social_open`).
     pub locked: bool,
+    /// In a patrol area, its layout's resource places, where its room's nodes stand, in the layout's order.
+    pub resources: Vec<[f64; 2]>,
+    /// The places the houses' roads name: each of its layout's areas, and each run at its mouth.
+    pub places: Vec<Place>,
+    /// Its layout's paths, each its points, that a road's figure walks between places.
+    pub paths: Vec<Vec<[f64; 2]>>,
+}
+
+/// A place of a node: its name, middle and reach, metres.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct Place {
+    pub name: String,
+    pub at: [f64; 2],
+    pub radius: f64,
+}
+
+/// How far a run's place reaches round its mouth, metres.
+pub const RUN_REACH_M: f64 = 25.0;
+
+/// A layout's places: its areas, then its runs at their mouths, but a run named as one of its areas is, whose name
+/// names that area alone.
+#[must_use]
+pub fn places_of(layout: &layout::Layout) -> Vec<Place> {
+    let areas = layout.areas.iter().map(|area| Place { name: area.name.clone(), at: area.at, radius: area.radius });
+    let named = |name: &str| layout.areas.iter().any(|area| area.name == name);
+    let runs = layout.runs.iter().filter(|run| !named(&run.name));
+    areas.chain(runs.map(|run| Place { name: run.name.clone(), at: run.mouth, radius: RUN_REACH_M })).collect()
 }
 
 /// A counter of a social space: its station, and its middle.
@@ -140,7 +167,7 @@ pub fn nodes_of(
         let mut boxes = plan.as_ref().map(|plan| city::collision::boxes_within(plan, bounds)).unwrap_or_default();
         boxes.extend(layouts.iter().flat_map(|layout| layout::collide::within(&layout.boxes, bounds)));
         let continent = continent.id.clone();
-        let (counters, shape_spots) = (Vec::new(), Vec::new());
+        let (counters, shape_spots, places, paths) = (Vec::new(), Vec::new(), Vec::new(), Vec::new());
         NodeFile {
             id,
             kind,
@@ -154,6 +181,9 @@ pub fn nodes_of(
             counters,
             shape_spots,
             locked: false,
+            resources: Vec::new(),
+            places,
+            paths,
         }
     };
     let whole =
@@ -164,7 +194,14 @@ pub fn nodes_of(
             || (whole(&node.ring), whole(&node.spawns)),
             |layout| (layout.ring.clone(), layout.spawns.clone()),
         );
-        cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns)
+        let resources = laid.map_or_else(Vec::new, |layout| {
+            let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource);
+            places.filter_map(|site| site.node).collect()
+        });
+        let places = laid.map(places_of).unwrap_or_default();
+        let paths =
+            laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
+        NodeFile { resources, places, paths, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -266,10 +303,50 @@ mod tests {
                 && south <= 361_100.0 + 100.0
         );
         let mut whole = generate(&layout.continents[0], land::edits::parse(GLADE).unwrap()).unwrap();
-        let _ = layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
+        let laid =
+            layout::settle::settle(&mut whole, &layout::book::Book::default(), &layout::brief::Briefs::default());
         for (x, y) in [(260_500.25, 360_500.75), (259_950.5, 361_050.5)] {
             assert_eq!(node.ground.height_at(x, y).to_bits(), whole.surface.height_at(x, y).to_bits());
         }
+        // Its room's nodes stand at its layout's resource places, in their order.
+        let glade = laid.iter().find(|each| each.id == "glade").expect("laid");
+        let resource = |site: &&layout::sites::Site| site.kind == layout::sites::SiteKind::Resource;
+        let nodes: Vec<_> = glade.sites.iter().filter(resource).filter_map(|site| site.node).collect();
+        assert!(!nodes.is_empty(), "the glade lays resources");
+        for site in glade.sites.iter().filter(resource).filter(|site| site.node.is_some()) {
+            let [x, y] = site.node.expect("a resource's node");
+            let (east, south) = (x - site.at[0], y - site.at[1]);
+            let off = (east * east + south * south).sqrt();
+            assert!((off - layout::sites::NODE_FRONT_M).abs() < 1e-6, "before its dressing: {off}");
+        }
+        assert_eq!(node.resources, nodes, "each where its node stands, before its dressing");
+    }
+
+    #[test]
+    fn a_laid_node_names_its_areas_and_its_runs_as_places_for_the_houses_roads() {
+        let layout = world::layout::parse(SQUARE).unwrap();
+        let brief = r#"{ "glade": { "theme": "", "areas": [{ "kind": "camp", "name": "The Camp" }] } }"#;
+        let builders = Builders { briefs: Briefs::parse(brief).unwrap(), ..Builders::default() };
+        let edits = land::edits::parse(GLADE).unwrap();
+        let node = nodes_of(&layout.continents[0], edits, &Blocks::default(), &builders).unwrap().remove(0);
+        let camp = node.places.iter().find(|place| place.name == "The Camp").expect("the camp is a place");
+        assert_eq!(camp.radius, layout::areas::radius_of(layout::brief::AreaKind::Camp, 0));
+        let [west, north, east, south] = node.bounds;
+        assert!((west..east).contains(&camp.at[0]) && (north..south).contains(&camp.at[1]), "within its window");
+        assert!(serde_json::to_string(&node).unwrap().contains(r#""places":[{"name":"The Camp","at":["#));
+        assert!(!node.paths.is_empty() && node.paths.iter().all(|path| path.len() >= 2), "its paths, each a way");
+    }
+
+    #[test]
+    fn a_run_named_as_an_area_is_no_place_of_its_own() {
+        let layout = world::layout::parse(SQUARE).unwrap();
+        let brief = r#"{ "glade": { "theme": "", "areas": [{ "kind": "keep", "name": "The Keep" }],
+            "runs": [{ "name": "The Keep", "kind": "gorge", "place": "rock" }, { "name": "The Cut", "kind": "gorge", "place": "rock" }] } }"#;
+        let builders = Builders { briefs: Briefs::parse(brief).unwrap(), ..Builders::default() };
+        let edits = land::edits::parse(GLADE).unwrap();
+        let node = nodes_of(&layout.continents[0], edits, &Blocks::default(), &builders).unwrap().remove(0);
+        let named = |name: &str| node.places.iter().filter(|place| place.name == name).count();
+        assert_eq!((named("The Keep"), named("The Cut")), (1, 1), "the area alone, and the run of its own name");
     }
 
     #[test]

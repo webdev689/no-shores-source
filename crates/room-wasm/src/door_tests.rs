@@ -33,8 +33,15 @@ fn players_in(bytes: &[u8]) -> Vec<(PlayerId, u32, movement::Body)> {
     players
         .iter()
         .map(|seen| {
-            let numbers: Vec<f64> = seen.fighter().unwrap().iter().take(22).collect();
-            (seen.player(), seen.acknowledged(), protocol::body_of(&numbers).unwrap())
+            // The player the snapshot is for has their fighter whole; everyone else's is packed.
+            let numbers: Vec<f64> = seen.fighter().map_or_else(
+                || {
+                    protocol::pack::unpack(seen.packed().unwrap().bytes(), protocol::UNTRIMMED_FLOATS, [0.0; 2])
+                        .unwrap()
+                },
+                |fighter| fighter.iter().collect(),
+            );
+            (seen.player(), seen.acknowledged(), protocol::body_of(&numbers[..22]).unwrap())
         })
         .collect()
 }
@@ -65,7 +72,12 @@ fn players_join_send_inputs_and_are_seen_as_the_movement_rules_step_them() {
     room_tick();
     let course = [Block::from_floats(&ledge)];
     let walked = step_body(&standing(0.0, 2.0), &Controls::from_floats(&walk), &course, &Flat, TICK_SECONDS);
-    assert_eq!(players_in(&snapshot()), vec![(first, 1, walked), (second, 0, standing(0.0, 2.0))]);
+    let seen = players_in(&snapshot(first));
+    assert_eq!(seen[0], (first, 1, walked), "the player the snapshot is for, whole");
+    // Everyone else crosses packed, within half a thousandth: a standing body faces π as 3.142.
+    let (other, stood) = (seen[1].2, standing(0.0, 2.0));
+    assert_eq!((seen[1].0, seen[1].1, other.x, other.y, other.z), (second, 0, stood.x, stood.y, stood.z));
+    assert!((other.facing - stood.facing).abs() <= 0.0005);
     let welcome = joined(first);
     assert_eq!(messages::root_as_from_room(&welcome).unwrap().joined().unwrap().node(), None, "a course is no node");
 }
@@ -79,14 +91,14 @@ fn a_node_opens_on_its_ground_and_welcomes_with_its_id_and_rect() {
     assert_eq!(joined.node(), Some("glade"));
     assert_eq!(joined.bounds().unwrap().iter().collect::<Vec<_>>(), [-150.0, -150.0, 150.0, 150.0]);
     room_tick();
-    let bodies = players_in(&snapshot());
+    let bodies = players_in(&snapshot(player));
     assert_eq!(bodies[0].2.z, 12.0, "on the terrace at the spawn");
     let walk = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
     for sequence in 1..=300 {
         assert_eq!(input(player, &walk_input(sequence, &walk)), TAKEN);
         room_tick();
     }
-    let blocked = players_in(&snapshot())[0].2;
+    let blocked = players_in(&snapshot(player))[0].2;
     assert!(blocked.y > -7.0, "the box on the terrace stops the body walking north, at {}", blocked.y);
 }
 
@@ -126,7 +138,7 @@ fn every_open_node_file_the_bake_writes_opens_a_room_on_its_window_and_boxes() {
         let blocks: Vec<Block> = node.boxes.iter().map(Block::from_floats).collect();
         let [x, y] = node.spawns[0];
         let floor = Floor::Land(Box::new(node.ground));
-        assert_eq!(players_in(&snapshot())[0].2, room::standing_on(&floor, &blocks, x, y), "{} stands", node.id);
+        assert_eq!(players_in(&snapshot(player))[0].2, room::standing_on(&floor, &blocks, x, y), "{} stands", node.id);
     }
 }
 
@@ -179,7 +191,7 @@ fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
         room_tick();
     }
     assert_eq!(input(second, &off_the_steps), REFUSED);
-    let bytes = snapshot();
+    let bytes = snapshot(first);
     let ships: Vec<(u32, Ship)> = messages::root_as_from_room(&bytes)
         .unwrap()
         .snapshot()
@@ -243,7 +255,9 @@ fn a_sea_where_rivals_clash_and_a_player_joins_them_snapshots_to_its_pinned_fing
             }
         });
         if tick % 60 == 0 {
-            hash = snapshot().iter().fold(hash, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x0100_0000_01b3));
+            hash = snapshot(player)
+                .iter()
+                .fold(hash, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x0100_0000_01b3));
         }
     }
     assert!(clashed && three, "rivals clashed, and the player joined them");
@@ -331,20 +345,26 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     patrol["continent"] = json!("continent-1");
     patrol["ring"] = json!([[-400.0, -400.0], [400.0, -400.0], [400.0, 400.0], [-400.0, 400.0]]);
     patrol["bounds"] = json!([-500.0, -500.0, 500.0, 500.0]);
+    // Its layout's twelve resource places, as the bake writes them.
+    let places: Vec<[f64; 2]> =
+        (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect();
+    patrol["resources"] = json!(places);
     assert!(open_node(patrol.to_string().as_bytes()));
     assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
     let player = room_join();
     room_tick();
-    let bytes = snapshot();
+    let bytes = snapshot(player);
     let foes = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap().foes().unwrap();
     assert!(foes.len() >= 2, "its camps stand at once");
     for foe in foes {
-        assert!((4..=7).contains(&foe.level()), "the island's 1 to 4, three higher at Abyss: {}", foe.level());
+        let numbers = protocol::pack::unpack(foe.packed().unwrap().bytes(), protocol::land::FOE_NUMBERS, [0.0; 2]);
+        let level = numbers.unwrap()[combat::floats::GLANCE_FLOATS + 6];
+        assert!((4.0..=7.0).contains(&level), "the island's 1 to 4, three higher at Abyss: {level}");
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
-    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve spots, four numbers each");
+    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
 }
 
@@ -410,7 +430,7 @@ fn a_patrols_dungeon_opens_from_its_node_file_with_its_cache_shut_and_a_player_a
         assert!(open_dungeon(patrol.as_bytes(), number));
         let player = room_join();
         room_tick();
-        let bytes = snapshot();
+        let bytes = snapshot(player);
         let message = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
         let cache: Vec<f64> = message.cache().expect("a dungeon's cache").iter().collect();
         assert_eq!((cache.len(), cache[4]), (5, 0.0), "shut while the Reeve stands");
@@ -444,7 +464,7 @@ fn a_patrols_room_is_joined_before_an_entrance_and_sends_its_entrances() {
     let entrances: Vec<f64> =
         messages::root_as_from_room(&sent).unwrap().gear().unwrap().dungeons().expect("its entrances").iter().collect();
     assert_eq!(entrances.len(), 15, "three entrances, five numbers each");
-    let body = players_in(&snapshot()).into_iter().find(|(id, ..)| *id == player).expect("in").2;
+    let body = players_in(&snapshot(player)).into_iter().find(|(id, ..)| *id == player).expect("in").2;
     assert!(apart([body.x, body.y], [entrances[5], entrances[6]]) < 15.0, "by the second entrance: {body:?}");
     let mut mission = node_file();
     mission["kind"] = json!("mission");
@@ -518,6 +538,9 @@ fn the_sea_takes_a_boarding_and_the_boarder_fights_on_its_deck() {
     let room = messages::root_as_from_room(deck.snapshot().unwrap().bytes()).unwrap().snapshot().unwrap();
     let seen = room.players().unwrap().iter().find(|seen| seen.player() == boarder).expect("the boarder stands there");
     assert_eq!(seen.acknowledged(), 1, "its deck room took the boarder's step");
+    assert!(seen.fighter().is_some() && seen.packed().is_none(), "the boarder's own fighter whole, to predict from");
+    let foe = room.foes().unwrap().get(0);
+    assert!(foe.packed().is_some() && foe.changed().is_none(), "its crew packed, each whole");
     assert_eq!(room.foes().map_or(0, |foes| foes.len()), 3, "a Minor's three hands stand to meet them");
 }
 

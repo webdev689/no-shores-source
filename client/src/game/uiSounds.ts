@@ -1,9 +1,10 @@
 // The interface's sounds: a tick as the pointer or the keys reach a control, a press, a tab turned, the menu opened and
 // shut, a hold's build-up until it acts, an item dismantled or fed, a gain's chime by its rarity, and a refusal.
-// The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), or one the browser's own
-// synthesiser makes here, which also stands in while a recording loads. One listener hears every press, as DFO's
-// click does, and plays the press only where no sound of its own already played. The volume is the player's, kept in
-// this browser, as are the world's, the music's and the ambience's, each playing through a bus of this engine's.
+// The owner picked each on the sound sheet: a recording from Freesound (soundSamples.ts), silent while it loads, or,
+// for the refusal, the chimes and the hold, one the browser's own synthesiser makes here. One listener hears every
+// press, as DFO's click does, and plays the press only where no sound of its own already played. The volume is the
+// player's, kept in this browser, as are the world's, the music's and the ambience's, each playing through a bus of
+// this engine's.
 
 import { loadSamples, playSample } from '../soundSamples.ts';
 
@@ -33,11 +34,9 @@ const RECORDED: Partial<Record<Cue, string>> = {
   open: 'ui.open',
   dismantle: 'hold.dismantle',
   feed: 'hold.feed',
+  tab: 'ui.tab',
+  close: 'ui.close',
 };
-/** What a press is: buttons and what acts like them. */
-const PRESSABLE = 'button, a[href], summary, select, [role="button"], [role="tab"], input[type="checkbox"]';
-/** What a tick is heard on, reached by the pointer. */
-const TICKED = `${PRESSABLE}, .gear-cell`;
 
 let context: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -46,7 +45,6 @@ let music: GainNode | null = null;
 let ambience: GainNode | null = null;
 /** The ambience's duck, under its volume: the music lowers it as a fight swells, and lets it back after. */
 let duck: GainNode | null = null;
-let noise: AudioBuffer | null = null;
 /** Two seconds of pink noise, softer at the top than white, the stuff of a hold's air. */
 let air: AudioBuffer | null = null;
 /** When the last sound played, so a press that already sounded sounds once. */
@@ -164,10 +162,6 @@ function wake(): void {
   duck = context.createGain();
   duck.connect(ambience);
   loadSamples(context);
-  // A second of white noise, the stuff of every crunch and swish.
-  noise = context.createBuffer(1, context.sampleRate, context.sampleRate);
-  const samples = noise.getChannelData(0);
-  for (let index = 0; index < samples.length; index++) samples[index] = Math.random() * 2 - 1;
   air = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
   const airy = air.getChannelData(0);
   // White noise filtered to fall away by its pitch, as pink noise does.
@@ -212,23 +206,6 @@ function tone(type: OscillatorType, [from, to]: readonly [number, number], peak:
   voice.stop(when + length + 0.02);
 }
 
-/** Noise through a band that slides from one pitch to another: a swish, or a crunch when low and loud. */
-function rush([from, to]: readonly [number, number], peak: number, length: number, width = 1.2, delay = 0) {
-  const now = live();
-  if (!now || !noise) return;
-  const when = now.when + delay;
-  const source = now.audio.createBufferSource();
-  source.buffer = noise;
-  const band = now.audio.createBiquadFilter();
-  band.type = 'bandpass';
-  band.Q.value = width;
-  band.frequency.setValueAtTime(from, when);
-  band.frequency.exponentialRampToValueAtTime(to, when + length);
-  source.connect(band).connect(envelope(now.audio, now.out, when, peak, length));
-  source.start(when, Math.random() * 0.5);
-  source.stop(when + length + 0.02);
-}
-
 /** Plays a cue of the interface. */
 export function play(cue: Cue): void {
   lastCueAt = performance.now();
@@ -237,35 +214,13 @@ export function play(cue: Cue): void {
   const now = live();
   const recorded = RECORDED[cue];
   const often = cue === 'hover' || cue === 'press' || cue === 'back';
-  if (now && recorded && playSample(now.audio, now.out, recorded, often ? stray : 1)) return;
-  switch (cue) {
-    case 'hover':
-      return tone('sine', [2100 * stray, 1700 * stray], 0.05, 0.03);
-    case 'press':
-      tone('triangle', [950 * stray, 620 * stray], 0.22, 0.06);
-      return rush([3000, 1800], 0.08, 0.025, 2);
-    case 'back':
-      return tone('triangle', [700 * stray, 430 * stray], 0.2, 0.07);
-    case 'tab':
-      rush([700, 2600], 0.16, 0.12, 1.4);
-      return tone('sine', [1300, 1100], 0.06, 0.05, 0.05);
-    case 'open':
-      tone('sine', [330, 660], 0.16, 0.2);
-      return rush([400, 2000], 0.07, 0.22, 0.8);
-    case 'close':
-      tone('sine', [620, 310], 0.14, 0.18);
-      return rush([1800, 400], 0.06, 0.18, 0.8);
-    case 'dismantle':
-      rush([1600, 220], 0.7, 0.28, 0.9);
-      rush([4200, 2400], 0.2, 0.12, 3, 0.02);
-      return tone('sine', [140, 45], 0.5, 0.2);
-    case 'feed':
-      tone('sine', [523, 523], 0.18, 0.5);
-      return tone('sine', [784, 784], 0.14, 0.6, 0.07);
-    case 'refused':
-      tone('square', [118, 112], 0.08, 0.09);
-      return tone('square', [118, 112], 0.08, 0.09, 0.12);
+  if (recorded) {
+    if (now) playSample(now.audio, now.out, recorded, often ? stray : 1);
+    return;
   }
+  // The refusal is the synthesiser's: a low double buzz.
+  tone('square', [118, 112], 0.08, 0.09);
+  tone('square', [118, 112], 0.08, 0.09, 0.12);
 }
 
 /** A brass bell: a sine rung by another at 1.4 times its pitch, the ring fading faster than the note, over a soft
@@ -377,38 +332,26 @@ export function charge(holdMs: number): () => void {
 }
 
 /** Hears every press and every control reached in `root`, and plays its tick or its press. */
-export function installInterfaceSounds(root: HTMLElement): void {
-  let gestureAt = -Infinity;
-  let keyed = false;
-  let over: Element | null = null;
-  addEventListener('pointerdown', () => ((gestureAt = performance.now()), (keyed = false), wake()), true);
-  addEventListener('keydown', () => ((keyed = true), wake()), true);
-  // After the press's own handlers, so a press that made its own sound makes no other.
-  addEventListener(
-    'click',
-    (event) => {
-      const target = event.target instanceof Element ? event.target.closest(PRESSABLE) : null;
-      if (!target || !root.contains(target) || target.matches(':disabled, [aria-disabled="true"]')) return;
-      const when = event.detail > 0 ? gestureAt : performance.now();
-      window.setTimeout(() => lastCueAt < when && play(target.getAttribute('role') === 'tab' ? 'tab' : 'press'), 0);
-    },
-    true,
-  );
-  // A control reached by a press or key that already sounded (a tab opened, a tab moved to) ticks no more.
-  const tick = (target: Element | null) => {
-    if (target === over) return;
-    over = target;
-    if (!target) return;
-    const now = performance.now();
-    if (now - Math.max(lastTickAt, lastCueAt) < TICK_MS || target.matches('.gear-vacant')) return;
-    lastTickAt = now;
-    play('hover');
-  };
-  root.addEventListener('pointerover', (event) => {
-    if (event.pointerType !== 'mouse') return;
-    tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
-  });
-  root.addEventListener('focusin', (event) => {
-    if (keyed) tick(event.target instanceof Element ? event.target.closest(TICKED) : null);
-  });
+/** A drawn press let go that makes no press's sound: a hold, whose own charge is its sound. */
+export function quietPress(): void {
+  lastCueAt = performance.now();
+}
+
+/** A press the game draws, let go at `when` (`performance.now()`): it sounds, unless a sound of its own played since. */
+export function drawnPress(when: number): void {
+  if (lastCueAt < when) play('press');
+}
+
+/** A control the game draws, reached by the pointer or the keys: a tick, no oftener than a patter. */
+export function drawnReach(): void {
+  const now = performance.now();
+  if (now - Math.max(lastTickAt, lastCueAt) < TICK_MS) return;
+  lastTickAt = now;
+  play('hover');
+}
+
+/** Wakes the sounds at the player's every press or key (`wake`). */
+export function wakeOnGesture(): void {
+  addEventListener('pointerdown', () => wake(), true);
+  addEventListener('keydown', () => wake(), true);
 }

@@ -33,6 +33,7 @@ const TRIGGER: CombatInput = CombatInput {
     pitch: 0.0,
     aim: false,
     mark: None,
+    heal: false,
     telegraph: None,
 };
 const AIMING: CombatInput = CombatInput { shoot: false, aim: true, ..TRIGGER };
@@ -300,9 +301,13 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
         run(player_at(1.25, -3.5), common::swinging(0.3, Stroke::DownLeft), 7, Some([2.0, -5.0, 1.1]));
     fighter.target = Some(9);
     fighter.riposte = Some((4, 11));
+    (fighter.charges, fighter.meter, fighter.kept.heal, fighter.held.heal) = (2, 0.625, 5, true);
     let floats = fighter.to_floats();
     assert_eq!(floats.len(), FIGHTER_FLOATS);
     assert_eq!(Fighter::from_floats(&floats), fighter);
+    let drinking = Fighter { action: Action::Drink { elapsed: 17 }, ..fighter };
+    assert_eq!(Fighter::from_floats(&drinking.to_floats()), drinking);
+    assert_eq!(Fighter::from_glance(&drinking.glance()).action, drinking.action, "others see the drink");
     let telegraphing = Fighter {
         action: Action::Telegraph(combat::Telegraph::begin(
             &combat::TelegraphOrder {
@@ -333,6 +338,7 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
             pitch: -0.25,
             aim: true,
             mark: Some([3.0, -4.0, 1.5]),
+            heal: true,
             telegraph: None,
         },
     };
@@ -340,6 +346,7 @@ fn a_fighter_and_an_intent_cross_as_numbers_with_every_bit_and_nonsense_reads_as
     assert_eq!(Intent::from_floats(&intent.to_floats()), intent);
     let nonsense = Fighter::from_floats(&[f64::NAN; FIGHTER_FLOATS]);
     assert!(matches!(nonsense.action, Action::Idle) && nonsense.target.is_none());
+    assert_eq!((nonsense.charges, nonsense.meter), (0, 0.0), "no charges and an empty meter");
 }
 
 #[test]

@@ -12,5 +12,8 @@ test('Shape’s pieces made at level 20 rest dim “From level 20” below it, a
     ['From level 20', true, null, false],
   );
   const [ready] = rowsOf('shape', state({ level: 20, shapes: 10, shape: { place: 2, wares } }));
-  assert.deepEqual([ready?.wares[0]?.dim, ready?.wares[0]?.ask], [undefined, { kind: ASKS.buyFromShape, node: 0 }]);
+  assert.deepEqual(
+    [ready?.wares[0]?.dim, ready?.wares[0]?.ask],
+    [undefined, { kind: ASKS.buyFromShape, node: 0, item: -1 }],
+  );
 });

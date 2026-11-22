@@ -73,9 +73,18 @@ export function otherCards(
   return [...cards, ...folkCards(folk.folk, folk.folkLoops, forge, [eyeX, eyeY], clock, seconds)];
 }
 
-/** Dresses the player's figure in their gear, its hands the loadout drawn, its weapons glowing in their element. */
-export function dressInGear(walker: Walker, forge: Cards, gear: GearState): void {
+/** What the player's figure was last dressed in: their gear and the loadout drawn. */
+export interface Dressed {
+  gear: GearState | null;
+  loadout: number;
+}
+
+/** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
+ *  changes from what it was `dressed` in, its weapons glowing in their element. */
+export function dressInGear(walker: Walker, forge: Cards, gear: GearState | null, dressed: Dressed): void {
   const { loadout } = walker.player;
+  if (!gear || (gear === dressed.gear && loadout === dressed.loadout)) return;
+  [dressed.gear, dressed.loadout] = [gear, loadout];
   const wardrobe = forge.wardrobe(walker.you.dress.body);
   if (wardrobe) {
     const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);

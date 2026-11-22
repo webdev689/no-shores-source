@@ -19,6 +19,12 @@ code:
   - crates/combat/src/status.rs#Statuses
   - crates/room/src/statuses.rs#give
   - crates/room/src/perks.rs#verbs_after
+  - crates/combat/src/drink.rs#can_drink
+  - crates/combat/src/drink.rs#drink
+  - crates/combat/src/drink.rs#recharged
+  - crates/combat/src/tuning.rs#DRINK_HEALS
+  - crates/room/src/recharge.rs#kill_share
+  - crates/room/src/recharge.rs#DEALT_SHARE
 ---
 # Combat
 
@@ -63,8 +69,10 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
 - **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
   frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
   the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
-  struck the fighter moves at a third of its pace. A click picks the stroke at random, as Daggerfall Unity's click to
-  attack does, among the strokes that reach the locked foe when some do (the page rolls it): up thrusts half a metre
+  struck the fighter moves at a third of its pace. The player's swings chain the side cut (left), the overhead (down)
+  and the thrust (up) in turn, starting over at the side cut after a second without a swing; a stroke that does not
+  reach the locked foe gives way to the next in the chain that does (the page chooses it,
+  [[The Player's Swings Chain Side Cut, Overhead and Thrust]]). A foe's strokes come by chance. Up thrusts half a metre
   further, in a narrow arc; down chops, heavier on poise and half again on a guard; left and right sweep the widest arc;
   the diagonals slash between. A blow strikes every fighter of another side within its reach and arc (close in, almost
   any way it faces), near the striker's height, with no block between them, each taking the whole blow; the soft lock's
@@ -99,17 +107,17 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   stands through a blow until its poise breaks. A blow on a player already flinching does not start the flinch again,
   and a blow in a swing's follow-through or a reload does not flinch at all (that would end it sooner). While no
   poise stagger can begin, blows do not fill the meter; an overreached foe staggers at the first blow whatever.
-- **Presses kept.** A press of the attack, the guard or the dodge is kept 8 ticks: one made while the fighter is busy
-  (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as soon as it can
-  be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press wins over a
-  button only held: a click of the attack swings out of a held guard, and a riposte is struck through one. The guard,
-  held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
+- **Presses kept.** A press of the attack, the guard, the dodge or the drink is kept 8 ticks: one made while the
+  fighter is busy (a dodge on a blow's own tick, a guard late in a wind-up, a swing in a dodge's air) is acted on as
+  soon as it can be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press
+  wins over a button only held: a click of the attack swings out of a held guard, and a riposte is struck through
+  one. The guard, held or pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
   at once, but a swap begun as another was put away runs on. A click made in a swap is kept until it ends, however
-  early, and its swing starts on the tick the swap ends, once, with the stroke the click rolled for the new weapon
+  early, and its swing starts on the tick the swap ends, once, with the stroke the chain gives the new weapon
   ([[A Click During a Weapon Swap Swings as It Ends]]); the page predicts it by the same rules, so the first person
   and the figure swing on that tick. A trigger pulled in a swap to a ranged weapon fires then if it is loaded, as a
   pull at rest does, and does nothing if not. The newest press wins: a guard, a dodge or another swap pressed after
@@ -225,13 +233,16 @@ gives every one through one door, `Room::give`, for the status's own time unless
   striker's Linked (as the striker stands then) and its defender's Expose, each multiplying the others, before a foe's
   shield takes its share. Only a swing makes a Veiled backstab. The event it tells says whether the blow was a crit
   (for a hit, a block or a guard broken) and the element it carried: a weapon's own, a spell's Art's, none for a fist;
-  a kill's event carries the killing blow's ([[Server]]).
+  a kill's event carries the killing blow's ([[Server]]). It says how the blow was struck: a swing, a riposte, a
+  counter, a telegraphed or iron blow, a shot, a spell, or an Atheric's leap, burst or bite ([[Gear]], "Atherics"); a
+  leap's and a burst's say too which fighter they came from.
 - **Haste in the movement rules.** The movement rules step a body at a share of its pace on the ground; a Hasted
   fighter's share is 1.3, everyone else's 1, so a browser predicting its player moves them as the room does.
 - **A foe walking home** sheds its Expose and its Charge, with the Charge's stagger and the immunity after one, as it
   turns home, so its next fight is fresh ([[Foes]], "The leash").
 - **The Arts** give statuses through the same door: Quicken's Haste, Arc Lash's Charge, the Sunwell's Linked,
-  Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]).
+  Expose from the Duskraven, Dusk Daggers and Overload, Crit from Momentum and Resolve, Vanish's veil ([[Arts]]). So do
+  the weapons' verbs and the Atherics' perks ([[Gear]], "Verbs" and "Atherics").
 - **The weapons' perks** give them through it too, as a player's blow lands on a foe or the foe falls ([[Gear]],
   "Verbs"): Expose from Exposing Strikes and Marked Shot, Charge from Thunderclap and Shocking Rounds, Crit from Keen
   Eye; Exploit marks a swing on an Exposed foe a crit. Each is the perk of the loadout the blow came from, never of a
@@ -240,6 +251,42 @@ gives every one through one door, `Room::give`, for the status's own time unless
   its own from them, and another browser reads a player's veil there. A foe's Expose, its Charge and the immunity after
   it cross with the foe ([[Server]]). Foes' plates and the player's vitals show them ([[Interface]]), and the
   [[Test Ground]] gives each one to try.
+
+## Healing charges
+
+A player holds three healing charges, and drinks one with `3` ([[Three Healing Charges, Refilled by Blows and Kills]]).
+A foe never drinks.
+
+- **The drink.** A press begins it only at rest, standing on the ground and on foot, out of a loadout swap, with a
+  charge held and health short of its most; it is kept 8 ticks as any press, so one made in a swing's or a dodge's
+  last 8 ticks begins as it ends. It lasts a second (60 ticks), in which the player walks, never running, jumping or
+  crouching (Haste still quickens the walk), facing the look, the weapon put away, and casts no Art ([[Arts]]). As it
+  ends it spends its charge and gives back 40% of the player's most health, never past the most, and the room tells
+  the heal. A blow that lands cuts it short with its charge kept, as it flinches the drinker; a stagger, a fall and a
+  Charge's hold cut it too. Leaving the ground (a climb begun, a fall) or taking the saddle puts it down, and one
+  ending at full health (a spell topped the player up) or with no charge left heals nothing: each keeps what it
+  holds. A dodge does not leave a drink: one pressed in its last 8 ticks hops as it ends, and a drink pressed in a
+  dodge never frees it early. Foes take no notice of a drink.
+- **The meter.** Each blow a player lands on a foe, to its health or its shield, by a swing, a shot or a spell, fills
+  their meter toward the next charge by the share it took of the foe's most health and most shield together, times
+  half the share its rank's kill gives; a companion's or a boarding hand's blow fills its leader's, as its XP is
+  theirs. A kill adds the kill's share whole to every player whose blow, or whose companion's, landed on the foe in
+  its last 10 s while it fought, as its XP and drops are shared: a third of a charge for a Minor or a Major, two thirds for
+  an Elite or a Miniboss, a whole one for a Boss. So a Minor fought whole gives half a charge, an Elite a whole one,
+  and a Boss half a charge over its health and a whole one at its end, besides its adds'. A full meter is a charge;
+  none come past three, and the meter stands empty while all three are full, but while a drink is under way the
+  charge it drinks counts as spent: the meter fills to one whole and becomes a charge as the drink spends one. As a
+  share of the foe's own health it is the same at every level and difficulty. A blow on a foe walking home to its
+  post, its fight given up, fills nothing and counts toward no kill. A cast under way holds off a drink press.
+- **Full again.** A player comes into every room, Overlook and the town included, with all three, and stands again
+  after death with all three. The charges are never saved ([[Server]]).
+- **On the wire.** The charges, the meter and the drink's press kept and held cross in the fighter's numbers after its
+  ammunition; the drink is an action of its own, so another browser sees it, and the intent's last number asks for
+  one. The room fills the meter as it settles each blow; the browser predicts the drink, and takes the charges and the
+  meter with its fighter. The vitals show them ([[Interface]]). The page fetches `room.wasm` at an address naming the
+  protocol version, which hashes these layouts ([[Server]]), and refuses rules that count a fighter's, an intent's or
+  a glance's numbers otherwise than it does; another player's figure puts its weapon away as their snapshot shows the
+  drink.
 
 ## Why these numbers
 

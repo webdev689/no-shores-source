@@ -69,6 +69,13 @@ test('a blow that does no harm, or harms another, flashes no one', () => {
   assert.equal(flashes.flashOf(2)?.stage, FLASH.whole);
 });
 
+test('a drink’s heal flashes no one, the drinker least of all', () => {
+  const flashes = new Flashes();
+  flashes.update([blow(EVENT.healed, 9, 40, { striker: 9, how: 0 })], 0, { player: 9, look: 0, healthMax: 100 });
+  assert.equal(flashes.flashOf(9), undefined);
+  assert.deepEqual(flashes.knockOf(9, true), [0, 0], 'nor knocks them');
+});
+
 test('a struck figure slides out along the blow in whole pixels and settles back exactly; a kill stays out', () => {
   for (const kind of ['hit', 'staggered', 'killed'] as const) {
     assert.equal(knockAt(kind, 0), 0);
@@ -88,6 +95,22 @@ test('a struck figure slides out along the blow in whole pixels and settles back
   const [east, south] = flashes.knockOf(1, false);
   assert.ok(Math.abs(east - KNOCK.killed) < 1 / PX_PER_M && south === 0, 'the kill’s, away from its striker');
   assert.deepEqual(flashes.knockOf(1, true), [0, 0], 'let go once it stands again');
+});
+
+test('a burst pushes the foes it strikes away from the foe it came from; a bite leaves a block a block', () => {
+  const flashes = new Flashes();
+  const places: Record<number, readonly [number, number, number]> = { 40: [0, 0, 0], 5: [10, 0, 0], 6: [10, 2, 0] };
+  const where = (id: number) => places[id] ?? null;
+  flashes.update([blow(EVENT.hit, 6, 5, { how: HOW.burst, from: 5 })], 0, { player: 40, look: 0, where });
+  flashes.update([], KNOCK.out * FRAME);
+  const [east, south] = flashes.knockOf(6, true);
+  assert.ok(Math.abs(east) < 1e-9 && south > 0, `out from the ring's foe, not the player: ${east}, ${south}`);
+  // The Reefwall's block and its bite back, told in one tick: the player's contact stays the block's.
+  const guard = new Flashes();
+  const block = blow(EVENT.blocked, 40, 0, { striker: 7 });
+  const bite = blow(EVENT.hit, 7, 4, { how: HOW.bite, from: 40 });
+  guard.update([block, bite], 0, { player: 40, look: 0, where });
+  assert.equal(guard.ownOf(null).contact, 'blocked');
 });
 
 test('a stagger shakes its figure a pixel either way for six frames', () => {

@@ -1,10 +1,12 @@
 import { BarLayout, PLATES } from '../plus/barLayout.ts';
 import { motionReduced } from '../plus/kit.ts';
+import { TONES } from '../plus/tones.ts';
+import type { Child, Node } from '../ui/node.ts';
+import { baselineRise } from './barDraw.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import { BOSS_RANK } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
 import type { Box } from './hitWords.ts';
-import { element, setStyle, showNode } from '../plus/meter.ts';
 import {
   aimedFoe,
   bodyDegrees,
@@ -71,12 +73,21 @@ export interface PlateViewing {
 /** How high a foe's head stands over its feet, in metres: where its plate's sight and angle are read. */
 const HEAD_M = 1.8;
 
+/** A plate over a figure as this frame draws it: where its foot stands (CSS pixels), how much the cone shows of it,
+ *  how large it stands and how far in front of the others. */
+interface Overhead {
+  readonly plate: FoePlate;
+  readonly x: number;
+  readonly y: number;
+  readonly cone: number;
+  readonly scale: number;
+  readonly front: number;
+}
+
 /** Over a living foe its plate, shown for the one nearest the crosshair, the one locked and those fought lately, laid
  *  so none covers another, and under the compass the boss bar of the Boss in the fight, who shows none over its head. */
 export class FoeBars {
-  readonly boss: FoePlate;
-  private readonly hud: HTMLElement;
-  private readonly over: HTMLElement;
+  readonly boss = new FoePlate({ poise: true, remembers: 'found' });
   private readonly overheads = new Map<number, FoePlate>();
   /** Where each plate was last laid, kept for one fading out of the cone, which lays out nothing new. */
   private readonly places = new Map<number, { readonly lift: number; readonly front: number }>();
@@ -91,19 +102,13 @@ export class FoeBars {
   /** The columns the plates over figures stand in this frame, each as wide as its plate from its foot up, which the
    *  blows' words keep clear of. */
   columns: readonly Box[] = [];
+  /** The plates over figures this frame, and the Boss on the boss bar. */
+  drawn: readonly Overhead[] = [];
+  bossShown: MarkedFoe | null = null;
   /** Each foe's alert state as last seen, and the seconds since it last turned alert. */
   private readonly alerts = new Map<number, { alert: number; since: number }>();
 
-  /** Over figures in `over`, the boss bar in `column`; `hud` is marked while a Boss fights. */
-  constructor(hud: HTMLElement, over: HTMLElement, column: HTMLElement) {
-    this.hud = hud;
-    this.over = over;
-    this.boss = new FoePlate(column, 'boss', { words: ['faction', 'phase'], poise: true, remembers: 'found' });
-    this.boss.root.hidden = true;
-    for (const share of PHASE_MARKS) element('i', 'phase-mark', this.boss.health.root).style.left = `${share * 100}%`;
-  }
-
-  /** Draws the foes' bars, each over the point `spotOf` puts above its head (null off the screen) with how far that is
+  /** Lays the foes' bars, each over the point `spotOf` puts above its head (null off the screen) with how far that is
    *  from the eye, as `viewing` sees them, `seconds` on. Answers the Boss on the boss bar. */
   update(
     foes: readonly MarkedFoe[],
@@ -140,7 +145,8 @@ export class FoeBars {
       }
       // With no camera no angle is known, so the cone shows none.
       const off = camera ? bodyDegrees(camera, feet, HEAD_M) : Number.NaN;
-      const held = foe.rank === BOSS_RANK ? 0 : Math.max(viewing.fought(foe.id), viewing.locked === foe.id ? 1 : 0);
+      const kept = foe.held || viewing.locked === foe.id ? 1 : 0;
+      const held = foe.rank === BOSS_RANK ? 0 : Math.max(viewing.fought(foe.id), kept);
       if (!(off < edge) && held <= 0 && !(this.cones.get(foe.id) ?? 0)) {
         this.cones.set(foe.id, 0);
         continue;
@@ -196,32 +202,22 @@ export class FoeBars {
       const width = OVERHEAD_SIZES[plateTier(foe.rank)].width * scale;
       return { left: x - width / 2, right: x + width / 2, top: -Infinity, bottom: y };
     });
-    for (const { foe, x, y, since, cone, scale } of shown) {
-      const plate = this.overheads.get(foe.id) ?? new FoePlate(this.over, 'overhead');
+    this.drawn = shown.map(({ foe, x, y, since, cone, scale }) => {
+      const plate = this.overheads.get(foe.id) ?? new FoePlate();
       this.overheads.set(foe.id, plate);
-      showNode(plate.root, true);
       // An ally's alertness is the boarders' business, not the player's to read.
       plate.show(foe, seconds, foe.view.side === 'players' ? '' : alertMark(foe.alert, since));
       const place = laid.get(foe.id) ?? this.places.get(foe.id) ?? { lift: 0, front: 0 };
       this.places.set(foe.id, place);
-      const moved = `translate(${x.toFixed(1)}px, ${(y - place.lift).toFixed(1)}px)`;
-      setStyle(plate.root, 'transform', scale < 1 ? `${moved} scale(${scale.toFixed(3)})` : moved);
-      plate.scaled(scale);
-      setStyle(plate.root, 'opacity', cone < 1 ? cone.toFixed(2) : '');
-      setStyle(plate.root, 'z-index', String(shown.length - place.front));
-    }
-    // A plate out of the cone is hidden, kept for its foe's next showing; one whose foe has gone or fallen is let go.
+      return { plate, x, y: y - place.lift, cone, scale, front: place.front };
+    });
+    // A plate out of the cone is kept for its foe's next showing; one whose foe has gone or fallen is let go.
     const drawn = new Set(shown.map(({ foe }) => foe.id));
     const standing = new Set(foes.filter((foe) => foe.view.action.kind !== 'dead').map((foe) => foe.id));
-    for (const [id, plate] of this.overheads) {
+    for (const id of this.overheads.keys()) {
       if (drawn.has(id)) continue;
       this.places.delete(id);
-      if (standing.has(id)) {
-        showNode(plate.root, false);
-        continue;
-      }
-      plate.root.remove();
-      this.overheads.delete(id);
+      if (!standing.has(id)) this.overheads.delete(id);
     }
     const present = new Set(foes.map((foe) => foe.id));
     for (const id of this.alerts.keys()) if (!present.has(id)) this.alerts.delete(id);
@@ -229,18 +225,44 @@ export class FoeBars {
     this.sight.keep(tried);
     this.boss.keep(present);
     const boss = bossInFight(foes, own);
-    this.showBoss(boss, seconds);
+    this.bossShown = boss;
+    if (boss) this.boss.show(boss, seconds);
     return boss;
   }
 
-  private showBoss(boss: MarkedFoe | null, seconds: number): void {
-    showNode(this.boss.root, !!boss);
-    this.hud.classList.toggle('bossed', !!boss);
-    if (!boss) return;
+  /** The plates over figures, each with its foot just over its foe's head, the nearest drawn over the farther. */
+  overheadNodes(): Node[] {
+    const order = [...this.drawn].sort((one, two) => two.front - one.front);
+    return order.flatMap(({ plate, x, y, cone, scale }) => {
+      const made = plate.node({ kind: 'overhead', width: 0, scale });
+      return made
+        ? [
+            {
+              ...made,
+              ...(cone < 1 ? { opacity: cone } : {}),
+              float: { to: 'screen', anchor: [0.5, 1], x, y: y - 4, z: 1 },
+            } satisfies Node,
+          ]
+        : [];
+    });
+  }
+
+  /** The boss bar, `width` CSS pixels wide at `zoom`: the Boss's name, faction and phase over its health, marked where
+   *  its phases change. */
+  bossNode(width: number, zoom: number): Child {
+    const boss = this.bossShown;
+    if (!boss) return null;
     const shown = bossBarOf(boss);
-    this.boss.show(boss, seconds);
-    const { faction, phase } = this.boss.words;
-    if (faction && faction.textContent !== shown.faction) faction.textContent = shown.faction;
-    if (phase && phase.textContent !== shown.phase) phase.textContent = shown.phase;
+    const small = (words: string): Node => ({
+      text: { words: words.toUpperCase(), size: zoom, colour: TONES.wordDim, edge: 'halo', wrap: false },
+      offset: [0, -baselineRise(zoom, 2 * zoom)],
+    });
+    return this.boss.node({
+      kind: 'boss',
+      width,
+      zoom,
+      words: [small(shown.faction), { width: 'grow' }, small(shown.phase)],
+      marks: PHASE_MARKS,
+    });
   }
 }

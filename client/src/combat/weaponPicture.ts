@@ -96,52 +96,59 @@ export function weaponScale(
   return { scale: crisp ? whole : scale, crisp };
 }
 
-/** The picture drawn into a canvas `boxWidth` by `boxHeight` CSS pixels at most, laid level, at the screen's ratio. */
-export function weaponCanvas(
+/** How a picture lies along a box `boxWidth` by `boxHeight` CSS pixels at most, at `ratio` device pixels a CSS pixel:
+ *  its size laid level (CSS pixels), and how to draw it into that size's device pixels; null with nothing drawn. */
+export function weaponFit(
   picture: Picture,
   boxWidth: number,
   boxHeight: number,
-  screen = devicePixelRatio,
-): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  canvas.className = 'weapon-picture';
-  canvas.ariaHidden = 'true';
+  ratio: number,
+): {
+  readonly width: number;
+  readonly height: number;
+  readonly draw: (context: OffscreenCanvasRenderingContext2D, width: number, height: number) => void;
+} | null {
   const bounds = drawnBounds(picture.width, picture.height, picture.pixels);
-  if (!bounds) return canvas;
+  if (!bounds) return null;
   const [west, north, width, height] = bounds;
-  const own = document.createElement('canvas');
-  [own.width, own.height] = [width, height];
-  const image = new ImageData(new Uint8ClampedArray(picture.pixels), picture.width);
-  own.getContext('2d')?.putImageData(image, -west, -north, west, north, width, height);
+  const trimmed = new Uint8ClampedArray(width * height * 4);
+  for (let row = 0; row < height; row++) {
+    const from = ((north + row) * picture.width + west) * 4;
+    trimmed.set(picture.pixels.slice(from, from + width * 4), row * width * 4);
+  }
   const turn = picture.level ? 0 : lengthwise(picture.width, picture.height, picture.pixels);
-  const ratio = screen > 0 ? screen : 1;
-  const trimmed = own.getContext('2d')?.getImageData(0, 0, width, height).data ?? [];
+  const screen = ratio > 0 ? ratio : 1;
   const [leastU, leastV, across, down] = turnedBounds(width, height, trimmed, turn);
-  const { scale, crisp } = weaponScale(across, down, boxWidth * ratio, boxHeight * ratio, ratio, square(turn));
-  // Grown by whole pixels first, so a smooth step after never blurs a pixel into its neighbour; shrunk, it is drawn
-  // as the area average leaves it.
+  const { scale, crisp } = weaponScale(across, down, boxWidth * screen, boxHeight * screen, screen, square(turn));
+  const [deviceWidth, deviceHeight] = [Math.max(1, Math.ceil(across * scale)), Math.max(1, Math.ceil(down * scale))];
   const shrinks = scale < 1;
-  const grownBy = Math.max(1, crisp ? scale : Math.ceil(scale));
-  const [grownWidth, grownHeight] = shrinks
-    ? [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]
-    : [width * grownBy, height * grownBy];
-  const grown = shrinks ? shrunkCanvas(own, grownWidth, grownHeight, picture.snap) : document.createElement('canvas');
-  const growing = shrinks ? null : grown.getContext('2d');
-  if (growing) {
-    [grown.width, grown.height] = [grownWidth, grownHeight];
-    growing.imageSmoothingEnabled = false;
-    growing.drawImage(own, 0, 0, grown.width, grown.height);
-  }
-  [canvas.width, canvas.height] = [Math.max(1, Math.ceil(across * scale)), Math.max(1, Math.ceil(down * scale))];
-  const drawing = canvas.getContext('2d');
-  if (drawing) {
-    drawing.imageSmoothingEnabled = !crisp && !(shrinks && square(turn));
-    drawing.imageSmoothingQuality = 'high';
-    drawing.translate(Math.round(-leastU * scale), Math.round(-leastV * scale));
-    drawing.rotate(turn);
-    drawing.drawImage(grown, 0, 0, shrinks ? grownWidth : width * scale, shrinks ? grownHeight : height * scale);
-  }
-  canvas.style.width = `${canvas.width / ratio}px`;
-  canvas.style.height = `${canvas.height / ratio}px`;
-  return canvas;
+  return {
+    width: deviceWidth / screen,
+    height: deviceHeight / screen,
+    draw: (context, drawnWidth, drawnHeight) => {
+      const own = new OffscreenCanvas(width, height);
+      own.getContext('2d')?.putImageData(new ImageData(trimmed, width), 0, 0);
+      // Grown by whole pixels first, so a smooth step after never blurs a pixel into its neighbour; shrunk, it is
+      // drawn as the area average leaves it.
+      const grownBy = Math.max(1, crisp ? scale : Math.ceil(scale));
+      const [grownWidth, grownHeight] = shrinks
+        ? [Math.max(1, Math.round(width * scale)), Math.max(1, Math.round(height * scale))]
+        : [width * grownBy, height * grownBy];
+      const grown = shrinks
+        ? shrunkCanvas(own, grownWidth, grownHeight, picture.snap)
+        : new OffscreenCanvas(grownWidth, grownHeight);
+      const growing = shrinks ? null : grown.getContext('2d');
+      if (growing) {
+        growing.imageSmoothingEnabled = false;
+        growing.drawImage(own, 0, 0, grown.width, grown.height);
+      }
+      const fit = Math.min(drawnWidth / deviceWidth, drawnHeight / deviceHeight);
+      context.imageSmoothingEnabled = !crisp && !(shrinks && square(turn));
+      context.imageSmoothingQuality = 'high';
+      context.scale(fit, fit);
+      context.translate(Math.round(-leastU * scale), Math.round(-leastV * scale));
+      context.rotate(turn);
+      context.drawImage(grown, 0, 0, shrinks ? grownWidth : width * scale, shrinks ? grownHeight : height * scale);
+    },
+  };
 }

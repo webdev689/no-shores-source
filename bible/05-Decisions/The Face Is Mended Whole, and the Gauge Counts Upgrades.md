@@ -37,7 +37,7 @@ After the third audit the owner was asked ten questions. Their answers to nine o
 | The Z | Stepped in cells, a diagonal one cell wide | Pixelify's own diagonals step; the 2's two-cell steps and round top still tell it from the Z |
 | The weight | 500, one weight | The mended glyphs and every size were drawn on its strokes; 400 thins them to less than a cell |
 | The counters | The room serves each ask only at its own counter: a Vestige at the Reader's, the vault at a vault's, a ware at its vendor's | The server is the sole authority; a page could otherwise buy or open from anywhere in the plaza |
-| The drawn glyphs | Drawn in code and made into a font in the page; nothing generated is kept in git | [[Generated Files Stay Out of Git]] holds as it is, and no new check is needed |
+| The drawn glyphs | Drawn in code: the interface draws their cells in place of the face's own, and they are made into a font where the face is read for the held map's lettering, which a 2D canvas writes; nothing generated is kept in git | [[Generated Files Stay Out of Git]] holds as it is, and no new check is needed |
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: the Reader is the Mage, so a Vestige opens at the
 Mage's counter.

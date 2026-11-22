@@ -163,7 +163,7 @@ export interface HeldMapFrame {
   readonly route: Float32Array;
   /** The parchment where it is in its rise, and its picture of words, marks and key, as large. */
   readonly parchment: Rect;
-  readonly lettering: HTMLCanvasElement;
+  readonly lettering: OffscreenCanvas;
   /** Whether the picture changed since it was last sent to the device. */
   readonly letteringChanged: boolean;
 }
@@ -304,7 +304,7 @@ export class HeldMapView {
   }
 
   /** The parchment's picture copied to the device, its texture made again only when its size changes. */
-  private lettersOf(picture: HTMLCanvasElement, changed: boolean): { texture: GPUTexture; group: GPUBindGroup } {
+  private lettersOf(picture: OffscreenCanvas, changed: boolean): { texture: GPUTexture; group: GPUBindGroup } {
     const { device } = this.gpu;
     const size: [number, number] = [Math.max(1, picture.width), Math.max(1, picture.height)];
     let letters = this.letters;

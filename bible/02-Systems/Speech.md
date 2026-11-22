@@ -10,7 +10,7 @@ code:
   - client/src/speech/dialogue.ts#DialogueBox
   - client/src/speech/overheads.ts#Overheads
   - client/src/speech/place.ts#overheadPlace
-  - client/src/speech/sheet.ts#wearSpeech
+  - client/src/speech/dialogue.ts#dialogueNode
   - content/story/cast.json
 ---
 # Speech
@@ -41,8 +41,11 @@ types each line as it is heard, and short barks over a speaker's head, their wor
 - **The dialogue box** stands bottom centre, clear of the vitals and over the sea bar, in the Enhanced Plus window
   with the speaker's name in its header band, both at 22 px. A press finishes the typing, then moves on; a cutscene
   moves on by itself 1.6 s after a line is typed. A speaker whose name is empty is a voice from nowhere: no box, the
-  words alone in the middle of the screen, faint. The box is laid first in the HUD, so the HUD's own layers (the
-  menu, a window, the veil) stand over it, and the barks over heads stand under every layer, the box among them.
+  words alone in the middle of the screen, faint. The game draws the box itself, as a layer put under every other of
+  its interface, so the HUD's own layers (the menu, a window, the veil) stand over it, and the barks over heads stand
+  under every layer, the box among them. Words still to be typed are laid unseen, so the typed never reflow. A screen
+  reader hears each line once, whole, with its speaker's name, once it is typed; while a named speaker's words are up
+  the HUD gives way to the box.
 - **Barks** stand over the speaker's head, typed and voiced as the box's lines are, held a second once typed, then
   faded. A new bark over a head replaces the last.
 

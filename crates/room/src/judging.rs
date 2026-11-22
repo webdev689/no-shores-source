@@ -14,7 +14,7 @@ use combat::{Blow, BlowKind, Fighter, Stroke, Verdict, judge, ticks};
 use gear::Slot;
 
 /// What a client is told of the fight: a blow and what it came to, a stagger, a death, a player standing again, a
-/// foe's feint, a foe arriving.
+/// foe's feint, a foe arriving, a player's drink healing them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EventKind {
     Hit = 1,
@@ -31,9 +31,12 @@ pub enum EventKind {
     /// A foe's shield took a blow, the amount what it took; and broke under one.
     Shielded = 12,
     ShieldBroken = 13,
+    /// A player's drink healed them, the amount what it gave back.
+    Healed = 14,
 }
 
-/// How a blow was struck, for the words a client shows.
+/// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round
+/// a foe, and its guard's bite on a foe that struck it are their own (`atheric.rs`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum How {
     Swing = 1,
@@ -43,6 +46,9 @@ pub enum How {
     Iron = 5,
     Shot = 6,
     Spell = 7,
+    Leap = 8,
+    Burst = 9,
+    Bite = 10,
 }
 
 /// One thing that happened in the fight, at a tick.
@@ -60,6 +66,9 @@ pub struct Event {
     /// screen can mark the one and burn the other.
     pub crit: bool,
     pub element: u8,
+    /// The fighter a chain blow came from: the foe a leap leapt from or a burst burst from, the player a bite came
+    /// from, on every event of that blow (its hit, kill, stagger or shield); none for any other blow.
+    pub from: Option<FighterId>,
 }
 
 /// What a waiting blow must still ask of its defender when it is judged: a swing whether it reaches them, a
@@ -138,17 +147,17 @@ impl Room {
         // whatever the foe's level, and both before the balance's ease (`PLAYER_HARM`, `FOE_HARM`), so the heat paces
         // a fight as it always has. A companion's health is a player's, unraised by level, so what they take counts
         // as a player's.
-        let lost = before.health - after.health;
+        let (lost, took) = (before.health - after.health, shielded.map_or(0.0, |(took, _)| took));
         if self.on_players_side(defender) {
             self.director.taken(lost / crate::power::FOE_HARM);
         } else if self.on_players_side(blow.striker) {
             let level = self.foes.get(&defender).map_or(0, |foe| foe.level);
-            let took = shielded.map_or(0.0, |(took, _)| took);
             self.director.dealt((lost + took) / gear::power::foe_health_times(level) / crate::power::PLAYER_HARM);
             if after.dead() {
                 self.director.killed();
             }
         }
+        self.recharge(blow.striker, defender, lost + took);
         // A blow too far below its foe's level to harm it shares nothing of its kill; a companion's is their leader's.
         if let Some((sharer, hand)) = self.credited(blow.striker, hand)
             && blow.damage > 0.0
@@ -163,6 +172,7 @@ impl Room {
         self.verbs_after(blow, defender, &verdict, after.dead());
         self.arts_after(blow, &before, &verdict, after.dead() && self.foes.contains_key(&defender));
         if after.dead() && self.foes.contains_key(&defender) {
+            self.recharge_kill(defender);
             self.pay_kill(defender);
         }
         // A spell leaves its caster's soft lock alone: it is not their blade's.
@@ -193,6 +203,7 @@ impl Room {
                 stroke,
                 crit,
                 element: blow.element,
+                from: self.chain_from,
             });
         };
         if let Some((took, broke)) = shielded {
@@ -212,6 +223,7 @@ impl Room {
             tell(EventKind::Staggered, 0.0);
         }
         self.verdicts.push((blow.striker, defender, verdict));
+        self.atheric_after(blow, defender, &before, &verdict, &after);
     }
 
     /// The verdict as a foe's shield leaves it: the shield takes the blow's damage first, weighed by the blow's element
@@ -249,8 +261,18 @@ impl Room {
         defender: FighterId,
         amount: f64,
     ) {
-        let event =
-            Event { tick: self.clock, kind, how, striker, defender, amount, stroke: None, crit: false, element: 0 };
+        let event = Event {
+            tick: self.clock,
+            kind,
+            how,
+            striker,
+            defender,
+            amount,
+            stroke: None,
+            crit: false,
+            element: 0,
+            from: None,
+        };
         self.events.push(event);
     }
 
@@ -346,6 +368,7 @@ impl Room {
             match flight {
                 Flight::Flying(next) => self.shots.push((next, loosed)),
                 Flight::Stopped { struck: Some(defender), at } => {
+                    self.shot_loosed = loosed;
                     let blow = combat::judge::shot_blow(&shot, [shot.at[0], shot.at[1]]);
                     let blow = self.empower_as(blow, defender, loosed);
                     // An arrow or a bolt covered its speed for each whole tick it flew, and in its last only as far as
@@ -356,7 +379,14 @@ impl Room {
                         combat::shots::shot_numbers(shot.ranged).0 * f64::from(shot.age) * movement::TICK_SECONDS
                             + last;
                     let blow = loosed.map_or(blow, |loosed| Self::at_range(blow, covered, &loosed.trim));
-                    self.blow_lands(&blow, How::Shot, defender, Check::Shot);
+                    let blow = self.vigil(blow, covered);
+                    // An arrow on a foe slain earlier this tick strikes no one alive: no lightning leaps from it.
+                    let alive = self.fighter(defender).is_some_and(|foe| !foe.dead());
+                    let verdict = self.blow_lands(&blow, How::Shot, defender, Check::Shot);
+                    if let Some(verdict) = verdict.filter(|_| alive && loosed.is_some_and(|loosed| loosed.aimed)) {
+                        self.storm_gull(&blow, defender, &verdict);
+                    }
+                    self.shot_loosed = None;
                 }
                 Flight::Stopped { struck: None, .. } => {}
             }
@@ -384,17 +414,21 @@ impl Room {
             let [east, south, up] = [stop[0] - shot.at[0], stop[1] - shot.at[1], stop[2] - shot.at[2]];
             let covered = libm::sqrt(east * east + south * south + up * up);
             let blow = held.map_or(blow, |held| Self::at_range(blow, covered, &held.trim));
+            let blow = self.vigil(blow, covered);
             self.judge_now(&blow, How::Shot, defender, &then, Some(Slot::Ranged));
         }
         stop
     }
 
-    /// A blow reaching a defender: a foe is judged at once as it stands, a player waits for their view.
-    pub(crate) fn blow_lands(&mut self, blow: &Blow, how: How, defender: FighterId, check: Check) {
+    /// A blow reaching a defender: a foe is judged at once as it stands, answering its verdict; a player waits for
+    /// their view.
+    pub(crate) fn blow_lands(&mut self, blow: &Blow, how: How, defender: FighterId, check: Check) -> Option<Verdict> {
         if self.players.contains_key(&defender) {
             self.pending.push(Pending { blow: *blow, how, defender, tick: self.clock, check });
-        } else if let Some(then) = self.fighter(defender).copied() {
-            self.judge_now(blow, how, defender, &then, Some(Slot::Ranged));
+            None
+        } else {
+            let then = self.fighter(defender).copied()?;
+            Some(self.judge_now(blow, how, defender, &then, Some(Slot::Ranged)))
         }
     }
 }

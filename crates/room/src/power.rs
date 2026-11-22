@@ -6,6 +6,7 @@
 //! drops for them alone (`drops.rs`).
 
 use crate::{Foe, PlayerId, Room};
+use combat::Shot;
 use combat::arms::{Arms, BARE_HANDS, OffHand, Ranged, WeaponClass};
 use combat::fighter::{Fighter, FighterId};
 use combat::judge::{Blow, BlowKind};
@@ -20,12 +21,16 @@ pub const PLAYER_HARM: f64 = 2.0;
 pub const FOE_HARM: f64 = 0.5;
 
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
-/// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it.
+/// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it, whether it
+/// was aimed (loosed from the draw, striking harder than a quick shot), for Storm Gull, and the item it was loosed
+/// from, whose perks it takes wherever that item is when it lands.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Loosed {
     pub attack: u32,
     pub element: Option<gear::Element>,
     pub trim: combat::Trim,
+    pub aimed: bool,
+    pub item: Option<u32>,
 }
 
 /// What a loadout puts in a player's hands, drawn: a pair's second blade or mace and an "& Shield"'s shield in the
@@ -123,14 +128,21 @@ impl Room {
     }
 
     /// Whether a player's blow takes a perk: one the armour or the loadout it came from gives, a shot's the Ranged
-    /// one, a swing's the one drawn. A spell takes no weapon's perk.
+    /// one, or the item it was loosed from while it is judged (`Room::shot_loosed`), a swing's the one drawn. A spell
+    /// takes no weapon's perk.
     pub(crate) fn perk_on(&self, blow: &Blow, id: &str) -> bool {
         let loadout = match blow.kind {
             BlowKind::Shot(_) => Slot::Ranged,
             BlowKind::Spell(_) => return false,
             _ => self.striking(blow.striker),
         };
-        self.players.get(&blow.striker).is_some_and(|found| found.character.has_drawn_trait(id, loadout))
+        let Some(found) = self.players.get(&blow.striker) else { return false };
+        let character = &found.character;
+        let loosed = self.shot_loosed.filter(|_| matches!(blow.kind, BlowKind::Shot(_)));
+        match loosed.map(|loosed| loosed.item.and_then(|item| character.item(item))) {
+            Some(from) => character.has_trait(id) || from.is_some_and(|item| item.active_traits().any(|own| own == id)),
+            None => character.has_drawn_trait(id, loadout),
+        }
     }
 
     /// What a player strikes with now from a loadout; nothing for a foe.
@@ -138,7 +150,9 @@ impl Room {
         let player = self.players.get(&striker)?;
         let character = &player.character;
         let element = character.worn(loadout).and_then(|item| item.element);
-        Some(Loosed { attack: character.attack(loadout).unwrap_or(0), element, trim: player.fighter.trim })
+        let attack = character.attack(loadout).unwrap_or(0);
+        let item = character.worn(loadout).map(|item| item.id);
+        Some(Loosed { attack, element, trim: player.fighter.trim, aimed: false, item })
     }
 
     /// A blow as `empower` makes it, a player's by the Attack and trim `held` gives.
@@ -174,8 +188,8 @@ impl Room {
     }
 
     /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, with the
-    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each; on land its XP pays their officers
-    /// ashore too.
+    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each, and tells each one's quest log; on
+    /// land its XP pays their officers ashore too.
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
@@ -194,9 +208,20 @@ impl Room {
             let great = brain.rank as u8 >= foes::Rank::Miniboss as u8;
             found.character.add_shapes(gear::shape::found(great, self.difficulty, &dice));
             found.gear_changed = true;
-            self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            // A defence tried again stands foes that drop nothing (`steps.rs`).
+            if !self.quests.spoilless.contains(&defender) {
+                self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            }
+            self.tell_kill(player, brain.foe_type.name, brain.rank as u8, [at[0], at[1]]);
         }
     }
+}
+
+/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage to the bit
+/// (`combat::step`'s quick shot, power 1), and one loosed from the draw at its draw's power and the aimed trim, which
+/// may be more or, with Hair Trigger, less.
+pub(crate) fn aimed(shot: &Shot) -> bool {
+    shot.damage != combat::shots::shot_numbers(shot.ranged).1
 }
 
 /// Wears a level 1 Normal loadout of this kind, as their gear would put it on.

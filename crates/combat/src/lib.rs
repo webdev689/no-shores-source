@@ -1,11 +1,12 @@
 //! How fighters fight, the same on the server and in every browser: swings struck in DFO's six directions, a guard
 //! held and a parry pressed just as a blow lands, a dodge's hop that blows pass through, stamina, poise and the
 //! stagger, the riposte and the counter, a soft lock that steers a fighter's blows at the foe it fights, the shapes of
-//! foes' telegraphed blows, shots in flight, and the statuses a fighter is given (Crit, Expose, Charge, Haste, Linked,
-//! Veiled). A fighter steps by whole ticks of the movement rules, so a server and a browser predicting its own player
-//! step it alike. Who a blow reaches and what it does is the host's to ask, here.
+//! foes' telegraphed blows, shots in flight, the statuses a fighter is given (Crit, Expose, Charge, Haste, Linked,
+//! Veiled), and a player's healing charges. A fighter steps by whole ticks of the movement rules, so a server and a
+//! browser predicting its own player step it alike. Who a blow reaches and what it does is the host's to ask, here.
 
 pub mod arms;
+pub mod drink;
 pub mod fighter;
 pub mod floats;
 pub mod judge;

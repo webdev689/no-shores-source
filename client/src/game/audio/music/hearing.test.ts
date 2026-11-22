@@ -52,6 +52,11 @@ test('on foot: a blow between two others is no fight of the player, and the play
   assert.equal(heard.dead, true);
 });
 
+test('on foot: a drink or a stand again names only the player, and is no fight', () => {
+  const heard = hearFoot(PLACE, fight({ events: [event(14, 1, 1), event(9, 1, 1)] }));
+  assert.equal(heard.struck, false);
+});
+
 test("on foot: one fighting on the players' side is no foe of theirs, however alert and near", () => {
   const ally = { id: 8, name: 'Crewman', rank: 1, alert: 2, view: view(2, 0, { side: 'players', target: 5 }) };
   const boarder = { id: 5, name: 'Reeve', rank: 1, alert: 2, view: view(3, 4, { side: 'foes', target: 8 }) };

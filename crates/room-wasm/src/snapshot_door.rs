@@ -1,16 +1,19 @@
 //! The room's snapshot after its tick: every player and foe on land, every ship at sea, a fleet's ships. Taken once
-//! a tick (`prepare`), then sent to each player as theirs (`snapshot_for`): at sea what floats, each ship's kept hurts,
-//! what the sea tells and each deck boarded go only to the player they are for, and a deck's own snapshot only to its
-//! boarders; and each player is sent only the ships near them: the hostile ships their ship keeps at sea (within
-//! `KEEP_SHARE` times its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in
-//! their fight.
+//! a tick (`prepare`), then sent to each player as theirs (`snapshot_for`): on land what changed since the snapshot
+//! their screen last showed (`sent.rs`); at sea what floats, each ship's kept hurts, what the sea tells and each deck
+//! boarded go only to the player they are for, and a deck's own snapshot only to its boarders, each their own; and
+//! each player is sent only the ships near them: the hostile ships their ship keeps at sea (within `KEEP_SHARE` times
+//! its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in their fight.
 
 use crate::{Opened, with_open};
+use combat::shots::Line;
 use room::{FoeSeen, PlayerId, Room, Seen};
 use std::cell::RefCell;
 
-/// A snapshot taken: a room's bytes for everyone, or the sea's parts, to be cut for each player.
+/// A snapshot taken: a room on land's, cut for each player by what their screen showed; a fleet's bytes for
+/// everyone; or the sea's parts, to be cut for each player.
 enum Prepared {
+    Land,
     Everyone(Vec<u8>),
     Sea(Box<SeaParts>),
 }
@@ -27,7 +30,10 @@ struct SeaParts {
     /// The players in each fight.
     crews: Vec<Vec<PlayerId>>,
     aboard: Vec<(PlayerId, u32, movement::Body)>,
+    /// Its decks boarded, each with no snapshot of its own: each boarder's is in `deck_views`.
     harbour: protocol::SeaHarbour,
+    /// Each deck's own snapshot as each of its boarders is sent it, by their number at sea, in `harbour`'s order.
+    deck_views: Vec<Vec<(PlayerId, Vec<u8>)>>,
     /// Every standing island, each with the players who have found it.
     islands: Vec<(protocol::IsleSeen, Vec<PlayerId>)>,
     /// How much farther each player's Lookout sights ships, 1 for none.
@@ -88,7 +94,10 @@ pub fn prepare() {
     // One that fails to take leaves none, never the last tick's again.
     PREPARED.with(|kept| *kept.borrow_mut() = None);
     let prepared = with_open(|opened| match opened {
-        Opened::Land { room, .. } => Prepared::Everyone(land_snapshot(room)),
+        Opened::Land { room, sent, .. } => {
+            sent.take(room);
+            Prepared::Land
+        }
         Opened::Sea(sea) => {
             let fights = sea.fight_views();
             let aboard = sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
@@ -97,15 +106,16 @@ pub fn prepare() {
             let kept = sea.ships().filter_map(|(player, _)| sea.kept(player).map(|(kept, left)| (player, kept, left)));
             let (flotsam, kept, told) = (flotsam.collect(), kept.collect(), sea.take_told());
             let holds: Vec<Option<u64>> = sea.decks().iter().map(|deck| sea.hold_left(deck)).collect();
-            let decks = sea
+            let (decks, deck_views) = sea
                 .decks_mut()
                 .iter_mut()
                 .zip(holds)
                 .map(|(deck, hold)| {
-                    let aboard = deck.aboard.iter().map(|(player, boarder)| (*player, *boarder)).collect();
-                    (aboard, deck.pirate.commission.hull().number(), land_snapshot(&mut deck.room), hold)
+                    let aboard: Vec<_> = deck.aboard.iter().map(|(player, boarder)| (*player, *boarder)).collect();
+                    let views = whole_for_each(&mut deck.room, &aboard);
+                    ((aboard, deck.pirate.commission.hull().number(), Vec::new(), hold), views)
                 })
-                .collect();
+                .unzip();
             let crews = sea.fights().map(|(_, fought)| fought.crews.keys().copied().collect()).collect();
             let players: Vec<PlayerId> = sea.ships().map(|(player, _)| player).collect();
             let islands = sea
@@ -132,6 +142,7 @@ pub fn prepare() {
                 crews,
                 aboard,
                 harbour: protocol::SeaHarbour { flotsam, kept, told, decks, islands: Vec::new() },
+                deck_views,
                 islands,
                 lookouts: sea.ships().map(|(player, _)| (player, sea.lookout(player))).collect(),
             }))
@@ -151,6 +162,11 @@ pub fn prepare() {
 pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
     PREPARED.with(|kept| match kept.borrow().as_ref() {
         None => Vec::new(),
+        Some(Prepared::Land) => with_open(|opened| match opened {
+            Opened::Land { room, sent, .. } => sent.snapshot_for(room, player),
+            Opened::Sea(_) | Opened::Fleet(_) => Vec::new(),
+        })
+        .unwrap_or_default(),
         Some(Prepared::Everyone(bytes)) => bytes.clone(),
         Some(Prepared::Sea(parts)) => {
             let all = &parts.harbour;
@@ -161,8 +177,11 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                 decks: all
                     .decks
                     .iter()
-                    .filter(|deck| deck.0.iter().any(|(at_sea, _)| *at_sea == player))
-                    .cloned()
+                    .zip(&parts.deck_views)
+                    .filter_map(|((aboard, hull, _, hold), views)| {
+                        let (_, bytes) = views.iter().find(|(at_sea, _)| *at_sea == player)?;
+                        Some((aboard.clone(), *hull, bytes.clone(), *hold))
+                    })
                     .collect(),
                 islands: parts.islands(player),
             };
@@ -174,42 +193,49 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
     })
 }
 
-/// Every player and foe after the room's last tick, the dresses changed and what happened in the fight since the last
-/// snapshot, and the shots in flight with the balls just fired, as a snapshot's bytes; at sea, every ship, with every
-/// player's part of the sea's own. Empty with no room open.
+/// The snapshot after the room's last tick as `player` is sent it (`prepare`, then `snapshot_for`). Empty with no
+/// room open.
 #[must_use]
-pub fn snapshot() -> Vec<u8> {
+pub fn snapshot(player: PlayerId) -> Vec<u8> {
     prepare();
-    PREPARED.with(|kept| match kept.borrow().as_ref() {
-        None => Vec::new(),
-        Some(Prepared::Everyone(bytes)) => bytes.clone(),
-        Some(Prepared::Sea(parts)) => parts.bytes((&parts.ships, &parts.pirates), &parts.fights, &parts.harbour),
-    })
+    snapshot_for(player)
 }
 
-/// A room on land's snapshot after its last tick, taking the dresses changed, what happened and its lines since the
-/// last: a deck boarded at sea sends its own the same way.
-pub(crate) fn land_snapshot(room: &mut Room) -> Vec<u8> {
+/// A room on land's snapshot after its last tick for each boarder, by their number at sea, each whole (built on none)
+/// with their own fighter whole and the rest packed, taking the dresses changed, what happened and its lines since the
+/// last: a deck boarded at sea, whose snapshot rides in the sea's own, so each goes once.
+fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(PlayerId, Vec<u8>)> {
     let changed = room.take_dress_changes();
-    let events = room.take_events();
     let dressed: Vec<(PlayerId, &str)> = changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
+    let (tick, events) = (room.clock(), room.take_events());
+    let lines: Vec<(u64, Line)> = room.take_lines().into_iter().map(|line| (tick, line)).collect();
     let players: Vec<Seen> = room.seen().collect();
     let foes: Vec<FoeSeen> = room.foes_seen().collect();
-    let tick = room.clock();
-    let lines = room.take_lines();
     let shots: Vec<combat::Shot> = room.shots().copied().collect();
     let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
-    let cache = room.cache();
-    let snapshot = protocol::Snapshot {
-        tick,
-        players: &players,
-        dressed: &dressed,
-        foes: &foes,
-        events: &events,
-        shots: &shots,
-        lines: &lines,
-        spells: &spells,
-        cache: cache.as_ref().map_or(&[], |cache| cache.as_slice()),
-    };
-    protocol::snapshot_bytes(&snapshot)
+    aboard
+        .iter()
+        .map(|&(at_sea, viewer)| {
+            let snapshot = protocol::Snapshot {
+                tick,
+                viewer,
+                middle: [0.0, 0.0],
+                base: 0,
+                gone_players: &[],
+                gone_foes: &[],
+                own_base: None,
+                base_players: None,
+                base_foes: None,
+                players: &players,
+                dressed: &dressed,
+                foes: &foes,
+                events: &events,
+                shots: &shots,
+                lines: &lines,
+                spells: &spells,
+                cache: &[],
+            };
+            (at_sea, protocol::snapshot_bytes(&snapshot))
+        })
+        .collect()
 }

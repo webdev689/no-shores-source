@@ -11,7 +11,7 @@ import type { Hud } from './hud.ts';
 import type { Sea } from './sea.ts';
 import type { SeaFrame } from './seaFrame.ts';
 import type { SeaRoom } from './seaRoom.ts';
-import { aimLineOf, SeaSight } from './seaSight.ts';
+import { aimLineOf } from './seaSight.ts';
 import { seaFightQuest } from './seaPanel.ts';
 import { shipPanelOf, type SloopBuild } from './shipPanel.ts';
 
@@ -31,6 +31,8 @@ export interface SeaHudState {
   readonly friendly: readonly ShipMark[];
   /** What the sea's word says now, DFO's toasts: a ship sighted, who joins, colours struck, what floats gathered. */
   readonly notices: readonly string[];
+  /** Whether the mouse is free, for a click on the deck to take it. */
+  readonly free: boolean;
 }
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
@@ -57,17 +59,11 @@ export function seaShipMarks(
   ];
 }
 
-/** The sight over the display, made the first time the guns are laid. */
-let sight: SeaSight | null = null;
-
 /** The sight while the player lays their guns in a fight: the crosshair and the aim line. */
-function showSight(here: Sea, onDeck: boolean): void {
+function showSight(hud: Hud, here: Sea, onDeck: boolean): void {
   const fight = here.fight;
   const aiming = fight !== null && fight.aimingNow && !onDeck;
-  if (!aiming && !sight) return;
-  const parent = document.querySelector<HTMLElement>('.hud');
-  if (!sight && parent) sight = new SeaSight(parent);
-  sight?.show(aiming, fight ? aimLineOf(fight.view.lay, fight.view.player) : null);
+  hud.sight(aiming, fight ? aimLineOf(fight.view.lay, fight.view.player) : null);
 }
 
 /** The place line at sea: the deck's fight's words on a struck ship's deck, the coast while landings are chosen, else
@@ -101,7 +97,16 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // In a fight the hints are its keys alone, as on foot; the sea's word and the fight's messages stand as DFO's
   // notices, and what the card, the plates, the sight and its warning show is not said again.
   hud.hints(
-    deck ? deck.hints : seaHints({ fighting: fight !== null, landing: state.landing, atHelm, ...aboard.where }),
+    deck
+      ? deck.hints
+      : seaHints({
+          fighting: fight !== null,
+          aiming: fight?.aimingNow ?? false,
+          landing: state.landing,
+          atHelm,
+          ...aboard.where,
+          free: state.free,
+        }),
   );
   hud.notices([...state.notices, ...(fight && !deck ? fight.messages(state.clock) : [])]);
   // shortcut: at sea the tracker shows only a fight's task, so a quest's would be hidden; share it once quests sail.
@@ -122,7 +127,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // In a fight the sea bar goes: its map, pace, Manage and Leave wait for the fight's end, as its keys do.
   const ship = { canLeave: here.inRoom, canManage: true };
   hud.seaBar(onSea && !atHelm && !aboard.active && !deck && !here.fight ? { ...shown, ...ship } : null);
-  showSight(here, deck !== null);
+  showSight(hud, here, deck !== null);
   const build = aboard.managing ? state.build() : null;
   hud.shipPanel(onSea && aboard.managing && build ? shipPanelOf(build, state.waterline, here) : null);
   hud.wheelOffer(onSea && aboard.atWheel);
@@ -130,14 +135,13 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
 }
 
 /** Takes down what the sea alone shows, once the player is on land: the ships' plates and the sight, the fight's
- *  readout and its task, the sea bar, Manage's panel and the wheel's offer. */
+ *  readout, the sea bar, Manage's panel and the wheel's offer. The tracker is the land's own to show. */
 export function hideSeaHud(hud: Hud): void {
   // With no plate to place, the pose is never read.
   hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: forwardOf(0, 0) }, 1));
   hud.seaFight(null);
-  hud.tasks.show(null);
   hud.seaBar(null);
   hud.shipPanel(null);
   hud.wheelOffer(false);
-  sight?.show(false, null);
+  hud.sight(false, null);
 }

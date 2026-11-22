@@ -38,7 +38,7 @@ function wreckRoom(
 ): { room: LocalRoom; last: () => Snapshot } {
   let last: Snapshot | null = null;
   const room = LocalRoom.openOverSea(compiled, { x: spawnX, y: spawnY }, blocks, (snapshot) => (last = snapshot));
-  // As the wreck plays it: the story's sword and shield, and the boarders as one side.
+  // As the wreck plays it: the player waking hurt and bare-handed, and the boarders as one side.
   room.storyWreck();
   room.pump(ONE_TICK);
   return {
@@ -125,18 +125,21 @@ function watched(placed: WreckLayout, spot: readonly [number, number], stand: (r
   const { room, last } = wreckRoom(courseOf(placed), spot);
   stand(room);
   let player = Infinity;
+  // The health the player wakes with on the wreck, short of its most: struck is under it.
+  let woke: number | null = null;
   const foes = new Map<number, { lowest: number; most: number }>();
   for (let tick = 0; tick < WATCHED_S * 60; tick++) {
     room.pump(1 / 60);
     const mine = last().players.find((seen) => seen.player === room.player)?.fighter;
-    if (mine) player = Math.min(player, glanceView(glanceFrom(mine)).health);
+    const health = mine ? glanceView(glanceFrom(mine)).health : null;
+    if (health !== null) [player, woke] = [Math.min(player, health), woke ?? health];
     for (const foe of last().foes) {
       const { health, healthMax } = glanceView(foe.glance);
       const lowest = Math.min(foes.get(foe.id)?.lowest ?? Infinity, health);
       foes.set(foe.id, { lowest, most: healthMax });
     }
   }
-  return { player, foes: [...foes.values()] };
+  return { struck: player < (woke ?? 0) - 1e-9, player, foes: [...foes.values()] };
 }
 
 /** A spot `apart` metres from (x, y) toward `toward`. */
@@ -157,7 +160,7 @@ test('each wave fights the player standing by it as one side, never each other, 
       for (const other of placed.zones) if (other.gate && other !== zone) room.standBlock(other.gate);
       for (const foe of zone.wave) room.standFoe(foe.type, foe.rank, foe.at[0], foe.at[1], foe.facing, 1);
     });
-    assert.ok(fought.player < 100, `${zone.name}: the player standing by is struck (${index})`);
+    assert.ok(fought.struck, `${zone.name}: the player standing by is struck (${index})`);
     // The player never strikes: a foe struck would have been struck by another.
     assert.ok(
       fought.foes.every((foe) => foe.lowest === foe.most),
@@ -170,5 +173,5 @@ test('Thule strikes a player who stands before him in the arena', () => {
   const placed = layoutAt(layout, FAR_OUT[2] ?? [0, 0]);
   const [x, y] = placed.arena.thule;
   const fought = watched(placed, [x, y - 2.7], (room) => room.standFoe(THULE.type, THULE.rank, x, y, 0, THULE.level));
-  assert.ok(fought.player < 100, `the player is struck: ${fought.player}`);
+  assert.ok(fought.struck, `the player is struck: ${fought.player}`);
 });

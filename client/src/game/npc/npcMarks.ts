@@ -1,7 +1,10 @@
 // The keepers' marks, drawn pixel by pixel as the Arts' emblems are: each keeper's sign in brass in a diamond, as
 // Destiny marks a vendor beside their name (an eye for the Mage, a shield for the Armorsmith, a sword for the
-// Weaponsmith, a needle and thread for the Tailor, a horseshoe for the Tack, and for Shape a shape that is no shape);
-// and the glyph of Shapes, the currency only he takes. A faction's mark is its emblem (npcScreen.ts).
+// Weaponsmith, a needle and thread for the Tailor, a horseshoe for the Tack, an anchor for the Harbourmaster, and for
+// Shape a shape that is no shape); and the glyph of Shapes, the currency only he takes. A faction's mark is its emblem
+// (npcScreen.ts). The same marks bob over the keepers in the world (overheadMarks.ts).
+
+import type { PixelPicture } from '../../combat/dropPictures.ts';
 
 /** A map's colours in order of its letters: outline, ground, body, light. */
 const LETTERS = 'abcd';
@@ -88,6 +91,20 @@ const SIGNS: Readonly<Record<string, readonly string[]>> = {
     '...........',
     '...........',
   ],
+  // The Harbourmaster's anchor: its ring and stock, its shank, its flukes.
+  harbourmaster: [
+    '.....d.....',
+    '....d.d....',
+    '.....d.....',
+    '..ddddddd..',
+    '.....c.....',
+    '.....c.....',
+    '.....c.....',
+    '.d...c...d.',
+    '.dc..c..cd.',
+    '..ccccccc..',
+    '....ccc....',
+  ],
   shape: [
     '...........',
     '....dd.....',
@@ -171,6 +188,18 @@ export function keeperMap(kind: string): readonly string[] | null {
   );
 }
 
+/** A keeper's sign in its brass diamond as a picture to lay in the world, kept so each is laid from one; none for a
+ *  keeper with no sign. */
+export function keeperPicture(kind: string): PixelPicture | null {
+  const kept = pictures.get(kind);
+  if (kept !== undefined) return kept;
+  const map = keeperMap(kind);
+  const picture = map ? { rows: map, colours: BRASS } : null;
+  pictures.set(kind, picture);
+  return picture;
+}
+const pictures = new Map<string, PixelPicture | null>();
+
 export const keeperMarkSvg = (kind: string): string => {
   const map = keeperMap(kind);
   return map ? markSvg(map, BRASS) : '';
@@ -178,4 +207,3 @@ export const keeperMarkSvg = (kind: string): string => {
 export const shapesSvg = (): string => markSvg(SHAPES_GLYPH, SHAPES);
 /** A barding's mark, for a row that names the barding beside it: the gains feed's. */
 export const bardingSvg = (): string => markSvg(BARDING, BRASS);
-export const svgUrl = (svg: string): string => `data:image/svg+xml,${encodeURIComponent(svg)}`;
