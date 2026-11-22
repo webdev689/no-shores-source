@@ -41,8 +41,10 @@ fn asking(sequence: u32, room: &Room, combat: CombatInput) -> Input {
 }
 
 /// The player chops once and waits for it to land; the events it set off.
+/// One swing and its 30 ticks, the chain's first each time, the side cut (`chain.rs`).
 fn chop(room: &mut Room, player: PlayerId, from: u32) -> Vec<Event> {
-    let chop = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
+    room.players.get_mut(&player).expect("in").chain = crate::chain::Chain::default();
+    let chop = CombatInput { attack: Some(Stroke::Left), ..CombatInput::default() };
     for sequence in from..from + 30 {
         let held = if sequence == from { chop } else { CombatInput::default() };
         room.input(player, asking(sequence, room, held)).unwrap();
@@ -86,7 +88,7 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
         events.iter().find(|event| event.kind == EventKind::Hit && event.striker == player).expect("the chop lands");
     // A level 1 player's Normal sword of level 1 has 10 Attack: two thirds of a level's rise.
     let times = gear::power::by_player(10, 1, 1) * crate::power::PLAYER_HARM;
-    assert!((hit.amount - 14.0 * 1.15 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 1.15 * times);
+    assert!((hit.amount - 14.0 * 0.85 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 0.85 * times);
     assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::Melee));
     let level_five = stand(&mut room, ::foes::Role::Brute, 5, -40.0);
     let striker = *room.fighter(player).expect("in");
@@ -589,4 +591,61 @@ fn a_ware_shown_before_nine_utc_sells_till_then_and_is_refused_once_the_day_turn
     room.set_minute(29_919_420);
     assert_eq!(ask(&mut room, player, 2, vend(20_777)), answer_code(Err(Refusal::NotSold)), "shown before 09:00");
     assert_eq!(ask(&mut room, player, 3, vend(20_778)), 0, "the new day's");
+}
+
+#[test]
+fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while_fallen() {
+    use crate::asks::{Asked, FALLEN, FIGHTING, TO_SHIP};
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let mut sequence = 0;
+    let mut to_ship = |room: &mut Room| {
+        for _ in 0..crate::asks::ASK_EVERY_TICKS {
+            room.tick();
+        }
+        sequence += 1;
+        let input = crate::Input { sequence, ask: Some(Asked::ToShip), seen: room.clock(), ..crate::Input::default() };
+        room.input(player, input).unwrap();
+        room.tick();
+        room.player(player).expect("in").answer
+    };
+    assert_eq!(to_ship(&mut room), TO_SHIP, "at peace, a yes no other ask gives");
+    let foe = stand_type(&mut room, ::foes::foe_type(14).expect("a type"), ::foes::Rank::Minor, 1, -1.5);
+    let whole = room.fighter(player).expect("in").health;
+    while room.fighter(player).expect("in").health >= whole {
+        room.tick();
+        assert!(room.clock() < 60 * 60, "the foe strikes within a minute");
+    }
+    room.foes.remove(&foe);
+    let struck = room.clock();
+    let kept = room.player(player).expect("in").struck_at;
+    assert!(kept.is_some_and(|tick| tick + 1 >= struck && tick <= struck), "the blow's tick kept: {kept:?}");
+    assert_eq!(to_ship(&mut room), FIGHTING, "struck a moment ago");
+    while room.clock() <= room.player(player).expect("in").struck_at.unwrap() + 600 {
+        room.tick();
+    }
+    assert_eq!(to_ship(&mut room), TO_SHIP, "ten seconds past the blow");
+    let mut fallen = *room.fighter(player).expect("in");
+    fallen.action = combat::Action::Dead { elapsed: 0 };
+    room.set_fighter(player, fallen);
+    assert_eq!(to_ship(&mut room), FALLEN, "fallen, they wait to stand again");
+}
+
+#[test]
+fn a_page_saying_its_player_is_mounted_rides_only_with_a_horse_and_never_on_a_boarded_deck() {
+    let ask_mounted = |room: &mut Room, player: PlayerId, sequence: u32| {
+        let mut input = asking(sequence, room, CombatInput::default());
+        input.intent.controls.mounted = true;
+        room.input(player, input).unwrap();
+        room.tick();
+        room.player(player).expect("in").mounted
+    };
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    assert!(ask_mounted(&mut room, player, 1), "on the horse every rider starts with");
+    room.players.get_mut(&player).expect("in").character.cosmetics.coat.clear();
+    assert!(!ask_mounted(&mut room, player, 2), "without one, on foot");
+    let mut deck = Room::deck(&crate::deck::test_deck(), 1, ::foes::Rank::Minor, 1);
+    let boarder = deck.join().expect("a deck with space");
+    assert!(!ask_mounted(&mut deck, boarder, 1), "no horse comes aboard");
 }

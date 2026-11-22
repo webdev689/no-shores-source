@@ -295,7 +295,7 @@ export function startGearWindow(
       const opened = gear.items.find((each) => each.id === gear.identified);
       const fresh = gear.answered !== heard;
       // A refusal is heard once, when it comes.
-      if (fresh && gear.answer !== 0 && gear.answered !== refusedAt) play('refused');
+      if (fresh && answerSaid(gear.answer) !== '' && gear.answered !== refusedAt) play('refused');
       if (fresh) refusedAt = gear.answered;
       answer = !fresh ? '' : opened ? `The Vestige opened: ${itemName(opened)}.` : answerSaid(gear.answer);
       colour = opened ? (RARITIES[opened.rarity]?.colour ?? INK.answer) : INK.answer;

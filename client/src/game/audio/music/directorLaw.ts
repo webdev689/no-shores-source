@@ -301,7 +301,7 @@ export function bossPart(health: number): BossPart {
   return health > 2 / 3 ? 1 : health > 1 / 3 ? 2 : 3;
 }
 
-/** The sea's song for an encounter, the sea score's own law on Overlook's waters: its storm, its gravest arm, for two
+/** The sea's song for an encounter, the sea score's own law on the game's waters: its storm, its gravest arm, for two
  *  hostile ships or one of Elite rank or over; else its fight. Held for the whole encounter. */
 export function seaSongFor(sea: HeardSea): SeaSong {
   return sea.captains >= 2 || sea.hostilesNear >= 2 || sea.strongest >= ELITE ? 'storm' : 'fight';

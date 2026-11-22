@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { LOGO_CELLS } from '../../cinema/logo.ts';
 import { Screen, SCREEN_Z, TITLE } from '../../cinema/screen.ts';
 import { Stack } from '../../ui/stack.ts';
 import { fakeInterface, laidOf, wordsOf } from '../../ui/uiForTests.ts';
@@ -75,7 +76,13 @@ test('a fade eases over its seconds, a flash is whole first and then fades, and 
   assert.equal(white(), 0);
   screen.showTitle(true);
   clock.now = 3.2;
-  assert.ok(wordsOf(laid()).includes(TITLE.toUpperCase()));
+  const logo = laid().find((each) => each.node.picture?.key === 'logo');
+  assert.ok(logo, 'the title is the logo');
+  assert.equal(logo.box.width % LOGO_CELLS.width, 0, 'at a whole multiple of its cells');
+  assert.ok(
+    laid().some((each) => each.node.label === TITLE),
+    'and says the name',
+  );
 });
 
 test('the bars slide in from the edges, and the lids close from them', () => {

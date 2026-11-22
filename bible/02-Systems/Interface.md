@@ -975,9 +975,10 @@ Recordings come as they are wanted, as the owner decided areas load ([[Areas Loa
 the short sounds of play (every cue but the ambience's and the story's) once the page's sound wakes, the ambience's and
 the story's the first time each is asked for, silent until it has come (`soundSamples.ts`, `Samples`). A recording
 longer than a chunk (1 MB, about a minute) is fetched a chunk at a time, a stretch of its bytes that decodes on its
-own, its last part shorter than a chunk among them; as one plays, another not held is fetched at random, and each
-play takes a chunk other than the one played last, so every chunk fetched is heard and a bed's minutes are never held
-at once, two chunks at most. A file or chunk that fails to come is asked for again only after 30 s. The page
+own, its last part shorter than a chunk among them; as one plays, the next is fetched, and the chunks play in order,
+the last part too, then from the first again ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A chunk late
+to come leaves another held to play meanwhile, never the one played last, so a bed's minutes are never held at once,
+two chunks at most. A file or chunk that fails to come is asked for again only after 30 s. The page
 decodes each and keeps it; the worker holds only its shape and how it measures, its level and its loudness over each
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
 played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
@@ -1190,7 +1191,7 @@ button's corner and screen, and the Tailor's wares.
   720's sizes rather than twice them. A tile's soft glow and a card's drop shadow are drawn as hard light and no
   shadow; a charging picture quivers but does not brighten.
 - A boss's name strikes in by fading alone: the page grew it from 1.6 times its size, which the face's whole steps
-  cannot. The tap's and the title's soft dark glows are not drawn, only their hard shadows. What each of the held
+  cannot. The tap's soft dark glow is not drawn, only its hard shadow. What each of the held
   map's seas does, a tooltip on the page, is told only to a screen reader, in the press's label.
 - The creation's windows wear the kit's window, wells and presses, where the page's sheet had cleared the kit's frames
   to plain light borders.

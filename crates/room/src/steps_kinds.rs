@@ -231,7 +231,7 @@ impl Room {
         let Some(Step { key, fails, kind: Stepping::Defence(defence), .. }) = self.quests.steps.get(&player) else {
             return Stood::Nobody;
         };
-        let (Some(ward), wave, ward_at, fails) = (defence.ward, defence.wave, defence.at, *fails) else {
+        let (Some(ward), wave, ward_at, fails, key) = (defence.ward, defence.wave, defence.at, *fails, *key) else {
             return Stood::Nobody;
         };
         let Some(members) = defend.waves.get(wave).map(|list| foes_of(list.iter())) else { return Stood::Nobody };
@@ -254,12 +254,18 @@ impl Room {
         if stood.is_empty() {
             return Stood::Nobody;
         }
+        // A wave the character stood before in this task, before a rejoin or a return, drops nothing again.
+        let quest = gear::quests::quests().quests.get(key[0]).map(|quest| quest.id.as_str());
+        let fought = self.players.get_mut(&player).zip(quest).is_some_and(|(found, quest)| {
+            found.gear_changed = true;
+            found.character.quests.fought_wave(quest, key[2], wave)
+        });
         let clock = self.clock;
         for id in &stood {
             if let Some(found) = self.foes.get_mut(id) {
                 found.brain.hunt(ward, ward_at, clock);
             }
-            if fails > 0 {
+            if fails > 0 || fought {
                 self.quests.spoilless.insert(*id);
             }
         }

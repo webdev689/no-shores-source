@@ -71,7 +71,7 @@ on foot to a boss who cannot be beaten, the deep, and waking on Saltmere's shore
 
 ## How it works
 
-**The way in.** The page shows black, the game's name and "Click or press any key to start" ("Tap to start" on a
+**The way in.** The page shows black, the game's logo and "Click or press any key to start" ("Tap to start" on a
 touch screen) at once, and loads the world behind it. The tap wakes the browser's sound. Once both are done the intro
 begins. With `?at=<node>` the page goes straight to that node, as before, and plays no story.
 
@@ -85,7 +85,7 @@ beat that fails is left for the next with what it said stopped and the view clea
 beat that fails ends the story with its screen kept, so the black lifts only once the game's veil is up under it.
 The intro offers no skip once it has reached Saltmere. Each beat sets its own weather, sound and lightning at
 its start, so under `npm run dev` `?prologue=<beat>` starts at that beat as the story would reach it. A player who
-has played the story to its end (kept in the browser, `overlook.prologue`) sees the intro and the title, and Begin
+has played the story to its end (kept in the browser, `noshores.prologue`) sees the intro and the title, and Begin
 takes them straight to Overlook's social space. Every way onto foot comes after the story, played through or passed
 over (Begin, `?at=`, a story that could not start or go on), so on foot the page tells each room on land whose word
 on the gear says the prologue is not kept that it is done (`Ask::FinishPrologue`), and the room keeps it with the
@@ -155,7 +155,7 @@ cutscene. What she says (`content/story/welcome.json`) is the state of the world
 the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying the Tithe nothing, three ports
 standing and ruins no one agrees about ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]), and
 the town's memory (three people name four builders of the beacon). It is due from the story's end until its last scene
-is said: the browser keeps the scenes said (`overlook.welcome.said`), so a reload or a leaving takes it up from there on
+is said: the browser keeps the scenes said (`noshores.welcome.said`), so a reload or a leaving takes it up from there on
 the next arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it. A
 browser that has played the story and holds no mark of the welcome is welcomed on its next arrival there. A player more
 than 40 m from her for a minute ends the walk: she goes home, and it stays due. While the menu or a keeper's screen is
@@ -230,7 +230,7 @@ the accounts leave unanswered for 10 s is given up as out of reach, so the way o
 came back is said once, with that offer ("You are signed in with Discord.", or "Discord is linked." before "You are
 signed in as" the username); one that did not go through is said under the form, as a refusal is. Offline (no
 `?room=`) it says "Accounts are kept when you play online." and offers "Go on". A player who leaves for Discord comes
-back to the helm at the account step, not the story's start: the tab marks it (`overlook.story.helm`), read once and
+back to the helm at the account step, not the story's start: the tab marks it (`noshores.story.helm`), read once and
 cleared at the next load, and never heeded once the story has been played through. The rooms read the session as each
 connects, and the step's end tells the page the account changed, so the menu's mark and banner and the company HUD
 follow the account signed in to at the helm.
@@ -248,7 +248,7 @@ and never higher than 2.5 m over the deck, under the spanker's boom; it rides th
 slung on the back (`armouredDress`; [[The Player's Sword and Shield Are Holstered]]): they stand at the helm with
 their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`), and
 once they equip the story's there they hold the item as their gear has it and the Character page shows it, a Normal
-Sword & Shield drawn in iron (`holdingArms`), for the rest of the story; a swing draws them, as the game's does. Their look is kept in the browser (`overlook.look`) and dresses them in the game afterwards.
+Sword & Shield drawn in iron (`holdingArms`), for the rest of the story; a swing draws them, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -282,10 +282,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   close a way for good are walls no body stands on. Sails and lines are neither. The ground is laid in squares 0.3 m
   across, runs of one height joined into blocks; ground not joined to where the player wakes (flotsam afloat) is
   left out. Over 2,000 m2 of it is walked, across some 75 m by 55 m.
-- **Built in CI.** The wreck workflow builds and lights the wreck whenever its tools change, publishes the mesh, the
-  light and the model to R2, and keeps the layout it wrote (artifact `wreck-level`), which a commit takes whole: a
-  build on another machine can lay the ground a hair differently, and the game walks the ground the mesh was built
-  with.
+- **Built in CI.** The wreck workflow builds and lights the wreck whenever its tools change, in a job that holds no
+  secret, and publishes the mesh, the light and the model to R2 from a second job that only uploads them
+  ([[Toolchain]]). It keeps the layout it wrote (artifact `wreck-level`), which a commit takes whole once the run has
+  published: a build on another machine can lay the ground a hair differently, and the game walks the ground the mesh
+  was built with.
 - **The layout** is `content/prologue/wreck.json`, written by the export: the mesh's and the light's keys on R2, the
   ground's blocks, each heap's block, the fires, where the sea is not drawn (`dry`), where the player wakes, the
   path, the zones with their waves and the Brig's crew, the arena and Thule's place. Figures stand at the middle of

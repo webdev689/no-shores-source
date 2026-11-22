@@ -14,6 +14,7 @@ import struct
 import sys
 import tempfile
 import unittest
+import urllib.error
 from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -229,6 +230,43 @@ class Publishing(unittest.TestCase):
                 mock.patch.object(r2.time, 'sleep') as slept:
             self.assertTrue(r2.put(b'data', 'islands', 'modules', 'application/octet-stream').startswith('islands/'))
         self.assertEqual([call.args[0] for call in slept.call_args_list], [5, 20])
+
+    def test_a_staged_put_writes_the_stage_and_reads_back_from_it_with_no_upload(self):
+        offline = mock.patch('urllib.request.urlopen', side_effect=urllib.error.URLError('offline'))
+        with tempfile.TemporaryDirectory() as stage, mock.patch.dict(os.environ, {'R2_STAGE': stage}), offline as sent:
+            key = r2.put(b'data', 'flora', 'png', 'image/png')
+            self.assertEqual(key, f'flora/{hashlib.sha256(b"data").hexdigest()}.png')
+            with open(os.path.join(stage, key), 'rb') as file:
+                self.assertEqual(file.read(), b'data')
+            self.assertEqual(r2.fetch('HEAD', r2.PUBLIC + key), (200, b''))
+            self.assertEqual(r2.published({'base': r2.PUBLIC}, key), b'data')
+        # The one request is the check that R2 does not already serve it.
+        self.assertEqual([call.args[0].get_method() for call in sent.call_args_list], ['HEAD'])
+
+    def test_an_upload_sends_a_stage_only_when_each_file_is_named_by_its_hash_in_a_publishers_folder(self):
+        digest = hashlib.sha256(b'sound').hexdigest()
+        other = hashlib.sha256(b'other').hexdigest()
+        good = f'sounds/{digest}.mp3'
+
+        def staged(stage, *keys):
+            for key in keys:
+                os.makedirs(os.path.dirname(os.path.join(stage, key)), exist_ok=True)
+                with open(os.path.join(stage, key), 'wb') as file:
+                    file.write(b'sound')
+
+        for bad in (f'sounds/{other}.mp3', f'islands/{digest}.modules', f'sounds/{digest}.png', f'{digest}.mp3',
+                    f'sounds/deeper/{digest}.mp3'):
+            with tempfile.TemporaryDirectory() as stage, mock.patch.object(r2, 'put') as put:
+                staged(stage, good, bad)
+                with self.assertRaises(SystemExit):
+                    r2.upload(stage)
+                put.assert_not_called()
+        with tempfile.TemporaryDirectory() as stage, mock.patch.object(r2, 'put') as put, \
+                mock.patch.object(r2, 'fetch', return_value=(200, b'')) as fetched:
+            staged(stage, good)
+            r2.upload(stage)
+        put.assert_called_once_with(b'sound', 'sounds', 'mp3', 'audio/mpeg')
+        fetched.assert_called_once_with('HEAD', r2.PUBLIC + good)
 
 
 class Shapes(unittest.TestCase):

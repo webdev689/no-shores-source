@@ -152,6 +152,9 @@ impl Room {
             return;
         }
         let harms = matches!(verdict, Verdict::Hit { .. } | Verdict::Blocked { .. } | Verdict::GuardBroken { .. });
+        if let Some(found) = self.players.get_mut(&defender).filter(|_| harms) {
+            found.struck_at = Some(self.clock);
+        }
         let crit = harms && crits(blow, self.fighter(blow.striker), &before);
         let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);

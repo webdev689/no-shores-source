@@ -29,7 +29,7 @@ test('the link keeps the account the accounts last said the page is, for what th
   assert.equal(said(), 'wayfarer', 'signed in');
   await link.logout();
   assert.equal(said(), null, 'signed out');
-  storage.setItem('overlook.session@https://accounts.test', TOKEN);
+  storage.setItem('noshores.session@https://accounts.test', TOKEN);
   const again = new AccountLink('https://accounts.test', storage, ask);
   await again.session();
   assert.equal(again.account?.id, 'guest-1', 'a page loaded again, its session held');

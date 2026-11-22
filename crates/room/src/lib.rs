@@ -10,6 +10,7 @@ mod atheric;
 pub mod battle;
 pub mod boarding_hands;
 mod bounties;
+mod chain;
 pub mod chart;
 pub mod clash;
 mod clears;
@@ -30,6 +31,7 @@ mod garrison;
 pub mod harbour;
 pub mod island;
 mod judging;
+mod left;
 pub mod lore;
 pub mod patrol;
 mod perks;
@@ -428,7 +430,10 @@ impl Room {
             while taken < CATCH_UP {
                 let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
+                // The room says who rides: a player with a horse, never aboard a ship's deck, whatever the page says.
+                let on_deck = matches!(self.floor, Floor::Deck(_));
                 if let Some(found) = self.players.get_mut(&id) {
+                    input.intent.controls.mounted &= found.character.may_ride() && !on_deck;
                     found.mounted = input.intent.controls.mounted;
                 }
                 if let Some(asked) = input.ask.take() {
@@ -450,6 +455,7 @@ impl Room {
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
                 if let Standing::Dead { .. } = found.standing {
+                    found.chain = chain::Chain::default();
                     found.shown = input.shown;
                     found.remember(seen);
                     let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
@@ -470,8 +476,10 @@ impl Room {
                 }
                 let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
                 let fighter = found.armed(held);
+                let asked = &mut input.intent.combat.attack;
+                *asked = asked.map(|asked| chain::stroke(found.chain, asked, &fighter, &view));
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
-                found.fighter = next;
+                (found.fighter, found.chain) = (next, found.chain.after(&next));
                 found.shown = input.shown;
                 found.remember(seen);
                 if let Some(ask) = input.spawn.filter(|_| self.takes_foe_asks) {

@@ -5,7 +5,7 @@ source: DFO Online, branch ccr-aff93cb4-gw1nto-audit plus infra-to-server, pve-f
 # Pick List
 
 Everything DFO Online holds, on `main` and its unmerged branches, sorted by what can come over and how. Read it with
-[[Port]], which explains the verdicts and the "Lands as" column. Whether a system belongs in Overlook is the owner's
+[[Port]], which explains the verdicts and the "Lands as" column. Whether a system belongs in No Shores is the owner's
 call; this list only says what can come.
 
 | Part | Rows | Clean | Cut | Can't |
@@ -51,7 +51,7 @@ Most "Cut" rows are ours apart from one of these. Replacing each once frees many
 
 - **`infra-to-server`** (734 commits): the closest DFO came to server authority, with a fixed 20-step-a-second server,
   movement checked by replaying the player's inputs, levels built on the server and a server-side home per character,
-  run off Cloudflare and measured. Its design is the reference for Overlook's server; its code runs DFO's client and
+  run off Cloudflare and measured. Its design is the reference for the game's server; its code runs DFO's client and
   Daggerfall Unity rules, so it stays ([[The Server Gets Its Own Rules]]).
 - **`pve-fixed-levels`**: the raid roster, on Daggerfall's regions and bestiary.
 - **The ship refit and seabed branch**: inside Come Sail Away's structure.

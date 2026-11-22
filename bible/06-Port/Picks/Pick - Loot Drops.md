@@ -28,7 +28,7 @@ on the [[Pick List]] were marked Cut and Clean, and this is their approval.
 ## What stays behind
 
 Physical Items (demifiend000's mod), the clatter from the Handheld Torches mod, Daggerfall's sounds and loot tables,
-the quick-loot list and the press to take: Overlook's drops are taken by walking over them, as its Vestiges already
+the quick-loot list and the press to take: the game's drops are taken by walking over them, as its Vestiges already
 are.
 
 ## Our version

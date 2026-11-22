@@ -15,7 +15,7 @@ import {
   WORD_PX,
 } from './mapLayout.ts';
 
-/** The map's face, Overlook's own (face.css): a port's name a step larger than every other word. */
+/** The map's face, the game's own (face.css): a port's name a step larger than every other word. */
 export const fontOf = (kind: string) => `500 ${kind === 'port' ? PORT_PX : WORD_PX}px ${FACE}`;
 /** The inks besides the key's iron-gall (mapKey.ts): a lighter brown for ruins and nodes, the route's red-brown for
  *  the place chosen and the ring round a place the quest names, and the parchment's own colour, which rings every word

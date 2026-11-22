@@ -8,7 +8,7 @@ import type { WorldData } from './worldData.ts';
 
 /** Where this browser keeps what the player has discovered, and how often it is kept once it changes, seconds: the
  *  whole chart is written each time, so not often, and as the page is hidden or goes. */
-const DISCOVERY_KEY = 'overlook-discovery';
+const DISCOVERY_KEY = 'noshores-discovery';
 const KEEP_EVERY_S = 30;
 
 /** What the player discovers as they play: kept by `keptDiscovered`, read by the held map. */

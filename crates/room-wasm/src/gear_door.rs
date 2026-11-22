@@ -285,16 +285,21 @@ pub fn set_minute(minute: u32) -> bool {
     .unwrap_or(false)
 }
 
-/// Draws a room on land's chances from the host's own secret seeds, the loot's and the world's, each from its two
-/// halves; false with no room on land.
+/// Draws a room's chances from the host's own secret seeds, the loot's and the world's, each from its two halves: a
+/// room on land's, or the sea's flotsam and boarded decks; false with a fleet.
 pub fn reseed(seeds: [u32; 4]) -> bool {
     let whole = |low: u32, high: u32| u64::from(high) << 32 | u64::from(low);
+    let (loot, world) = (whole(seeds[0], seeds[1]), whole(seeds[2], seeds[3]));
     with_open(|opened| match opened {
         Opened::Land { room, .. } => {
-            room.reseed(whole(seeds[0], seeds[1]), whole(seeds[2], seeds[3]));
+            room.reseed(loot, world);
             true
         }
-        Opened::Sea(_) | Opened::Fleet(_) => false,
+        Opened::Sea(sea) => {
+            sea.reseed(loot, world);
+            true
+        }
+        Opened::Fleet(_) => false,
     })
     .unwrap_or(false)
 }

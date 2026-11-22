@@ -98,4 +98,4 @@ jobs:
         if: steps.token.outputs.set == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
-        run: python -I tools/modules/publish.py "$RUNNER_TEMP/modules"
+        run: python3 -I tools/r2.py upload "$RUNNER_TEMP/stage"

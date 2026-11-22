@@ -138,6 +138,27 @@ test("a long recording's last part, shorter than a chunk, is fetched and played 
   assert.deepEqual(asked, ['breeze.mp3 0', `breeze.mp3 ${CHUNK_BYTES}`]);
 });
 
+test('a long recording plays its chunks in order, its last part included, then from the first again', async (t) => {
+  t.mock.method(Math, 'random', () => 0.999);
+  const { asked, read } = reading({ 'breeze.mp3': Math.round(CHUNK_BYTES * 3.5) });
+  const samples = new Samples(sounds, read);
+  const audio = fakeAudio();
+  const out = {} as AudioNode;
+  const played: number[] = [];
+  for (let play = 0; play < 9; play++) {
+    audio.currentTime += 60;
+    const source = samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+    if (source) played.push(Math.round(((source.buffer?.length ?? 0) / CHUNK_BYTES) * 10));
+    await settled();
+  }
+  const chunks = [0, 1, 2, 3, 0, 1, 2, 3];
+  assert.deepEqual(
+    asked.slice(0, 5),
+    [...chunks.slice(0, 5)].map((chunk) => `breeze.mp3 ${chunk * CHUNK_BYTES}`),
+  );
+  assert.deepEqual(played, [10, 10, 10, 5, 10, 10, 10, 5], 'in order, the short last part fourth, then again');
+});
+
 test('a recording that failed to come is asked for again only after a wait, not every tick', async () => {
   let reads = 0;
   const read = (): Promise<Fetched> => {

@@ -207,6 +207,9 @@ pub struct Character {
     /// The lore's chapters found, by their keys (`lore.rs`), in the order found; one the file no longer holds kept.
     #[serde(default)]
     pub lore: Vec<String>,
+    /// The body as it last left a room, given back on a return (`left.rs`); none before it first leaves one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub left: Option<crate::left::Left>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -273,6 +276,7 @@ impl Character {
             quests: crate::quests::QuestLog::default().kept(),
             mail: Vec::new(),
             lore: Vec::new(),
+            left: None,
             unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [

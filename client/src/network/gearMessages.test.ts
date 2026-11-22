@@ -251,7 +251,8 @@ test("the ship's part of the gear message reads back: its power, materials, hand
 });
 
 test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
-  const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
+  const read = (file: string) => readFile(new URL(`../../../crates/protocol/src/${file}`, import.meta.url), 'utf8');
+  const wire = (await read('gear_wire.rs')) + (await read('lore_wire.rs'));
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual(
     [

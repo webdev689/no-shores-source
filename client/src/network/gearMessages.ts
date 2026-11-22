@@ -1,5 +1,3 @@
-import type * as flatbuffers from 'flatbuffers';
-import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
 import type { GearItem as GearItemTable } from '../../../generated/messages/ts/overlook/wire/gear-item.ts';
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
@@ -98,6 +96,9 @@ export const ASKS = {
   takeLetter: 71,
   takeAllLetters: 72,
   ...LORE_ASKS,
+  /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
+   *  seconds) before the page leaves for the sea. */
+  toShip: 73,
 } as const;
 
 /** Shape's place while he is away. */
@@ -580,21 +581,4 @@ function nodesOf(numbers: readonly number[]): GearNode[] {
     nodes.push({ index, x, y, resource });
   }
   return nodes;
-}
-
-/** An ask written into an input being built. */
-export function askOffset(builder: flatbuffers.Builder, ask: GearAsk): flatbuffers.Offset {
-  const named = ask.named === undefined ? 0 : builder.createString(ask.named);
-  Ask.startAsk(builder);
-  Ask.addKind(builder, ask.kind);
-  Ask.addItem(builder, ask.item ?? 0);
-  Ask.addSlot(builder, ask.slot ?? 0);
-  Ask.addColumn(builder, ask.column ?? 0);
-  Ask.addNode(builder, ask.node ?? 0);
-  Ask.addRarity(builder, ask.rarity ?? 0);
-  Ask.addLevel(builder, ask.level ?? 0);
-  Ask.addCount(builder, ask.count ?? 0);
-  Ask.addItemKind(builder, ask.itemKind ?? 0);
-  if (named) Ask.addNamed(builder, named);
-  return Ask.endAsk(builder);
 }

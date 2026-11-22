@@ -59,7 +59,7 @@ italic is closed, a document's every line set in and a break alone, or a check f
   gives to the story or a task later reaches those who passed it.
 - **Lying in the world.** A node's room lays each chapter its file places there, at the bearing and distance from its
   place's middle; one at a place the node does not hold lies nowhere. Each player who has not found it is shown it.
-  A player alive within 2.5 m of it finds it (ask 73); out of reach, dead, already found or in another node, it is
+  A player alive within 2.5 m of it finds it (ask 74); out of reach, dead, already found or in another node, it is
   refused. It is shown and found only while the room holds the player's own character: never on a page playing
   alone, nor before a signed-in player's kept character has come. A chapter the room gave before then (the story's)
   is carried into it, as the story is.
@@ -72,7 +72,7 @@ italic is closed, a document's every line set in and a break alone, or a check f
 ## On the wire
 
 The gear message carries the chapters found by their numbers (each its place in the file, book by book) and, in a
-node, those lying there not yet found, each its number and its x and y. Ask 73 finds a chapter lying there, its
+node, those lying there not yet found, each its number and its x and y. Ask 74 finds a chapter lying there, its
 number in `item`.
 
 ## In the browser

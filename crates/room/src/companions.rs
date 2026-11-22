@@ -24,8 +24,10 @@ const HEELS: [f64; ASHORE_MOST] = [2.5, 3.7];
 /// their place: they have strayed or fallen where no walk brings them back.
 const STRAYED: f64 = 40.0;
 const FALLEN: f64 = 6.0;
-/// How long one knocked out rests before coming ashore again: eight minutes of room time, in ticks.
+/// How long one knocked out rests before coming ashore again: eight minutes of room time, in ticks, and of the clock,
+/// kept with the officer so a return to any room keeps it.
 pub(crate) const KNOCKED_OUT_TICKS: u64 = 8 * 60 * 60;
+pub(crate) const KNOCKED_OUT_MINUTES: u64 = 8;
 /// The deck roster's type a hand who boards fights as: a swordsman.
 pub(crate) const HAND_TYPE: u8 = 14;
 /// What their perks add: Weathered to their health, Brawler to their blows' harm, Steady Nerve to their poise.
@@ -109,6 +111,13 @@ impl Room {
             self.ashore.standing.remove(&id);
             if companion.out {
                 self.ashore.resting.insert((companion.leader, companion.officer), clock + KNOCKED_OUT_TICKS);
+                let until = self.minute + KNOCKED_OUT_MINUTES;
+                if let Some(found) = self.players.get_mut(&companion.leader)
+                    && let Some(officer) = found.character.crew.officers.get_mut(&companion.officer)
+                {
+                    officer.resting_until = until;
+                    found.gear_changed = true;
+                }
             }
             self.foes.remove(&id);
             self.board.forget(id);
@@ -127,7 +136,8 @@ impl Room {
             let count = officers.len();
             for (place, officer) in officers.iter().enumerate() {
                 let id = self.companion_of(leader, officer.id);
-                if id.is_none() && standing && !self.ashore.resting.contains_key(&(leader, officer.id)) {
+                let rested = officer.resting_until <= self.minute;
+                if id.is_none() && standing && rested && !self.ashore.resting.contains_key(&(leader, officer.id)) {
                     self.stand_companion(leader, place, count, officer);
                 } else if let Some(id) = id {
                     self.heel(id, leader, place, count, officer.level());

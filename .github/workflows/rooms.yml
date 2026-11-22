@@ -5,8 +5,9 @@ name: rooms
 # the repository has them), then the rooms (built first without the token, then deployed with it alone), whose
 # service binding reaches the accounts. ci.yml calls it from main once the same commit has passed the check, before it
 # publishes the page, and it deploys only when what the rooms are built from has changed since their last deploy; it
-# also runs by hand from main, deploying whether anything changed or not. It tells ci.yml whether the rooms had nothing
-# to deploy, deployed, or could not, so the page is published only in the first two cases.
+# also runs by hand from main, deploying whether anything changed or not, but only a commit whose own CI check passed:
+# a run on one that has not ends red and deploys nothing. It tells ci.yml whether the rooms had nothing to deploy,
+# deployed, or could not, so the page is published only in the first two cases.
 on:
   workflow_call:
     outputs:
@@ -31,6 +32,7 @@ jobs:
     permissions:
       contents: read
       deployments: read
+      checks: read
     outputs:
       deploy: ${{ steps.ready.outputs.deploy }}
     steps:
@@ -70,9 +72,17 @@ jobs:
             state=$(gh api "repos/$repo/deployments/$id/statuses" --jq '.[0].state') || state=""
             if [ "$state" = success ]; then deployed=$sha; break; fi
           done <<< "$list"
+          # Whether this commit passed main's CI check: a check run named `check`, of GitHub Actions, that succeeded.
+          passed() {
+            gh api "repos/$repo/commits/${{ github.sha }}/check-runs?check_name=check" \
+              --jq 'any(.check_runs[]; .app.slug == "github-actions" and .conclusion == "success")'
+          }
           if [ "$head" != "${{ github.sha }}" ]; then
             echo "main has moved past this commit; its own run deploys the rooms"
             echo "deploy=no" >> "$GITHUB_OUTPUT"
+          elif [ "$BY_HAND" = "true" ] && [ "$(passed)" != true ]; then
+            echo "::error::by hand the rooms deploy only a commit that passed the CI check, and this one has not"
+            exit 1
           elif [ "$BY_HAND" != "true" ] && [ -n "$deployed" ] &&
             git diff --quiet --no-renames "$deployed" HEAD -- $ROOMS_CODE; then
             echo "the rooms' code is as deployed from $deployed: nothing to deploy"

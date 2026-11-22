@@ -176,6 +176,13 @@ fn an_open_sea_holds_the_unix_minute_it_is_set_to() {
 }
 
 #[test]
+fn an_open_sea_takes_the_hosts_own_loot_and_world_seeds() {
+    let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(open_sea(layout.as_bytes(), 7));
+    assert!(crate::gear_door::reseed([1, 2, 3, 4]), "a sea is reseeded as a room on land is");
+}
+
+#[test]
 fn the_sea_takes_a_course_refuses_one_across_land_and_shows_each_ship() {
     let layout = r#"{ "continents": [{ "id": "square", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     assert!(!open_sea(b"not a layout", 7));

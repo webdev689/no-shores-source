@@ -15,7 +15,7 @@ code:
 ---
 # Hulls
 
-The ships Overlook sails beyond the Sloop, chosen in the Sloop's style for each rank of ship, the player's own hulls and the
+The ships No Shores sails beyond the Sloop, chosen in the Sloop's style for each rank of ship, the player's own hulls and the
 merchantmen ([[Enemies Come in Five Ranks, After Destiny]], [[The Ships as Claude Shapes Them]],
 [[The Sea Is a Patrol Zone, and the Ship Is Gear]], [[The Waters Come From the Islands]], [[The Sea as Claude Shapes It]]).
 The Sloop, the Schooner, the Brig and the Frigate are built and sail ([[Sailing]]): each captain sails its rank's
@@ -83,7 +83,9 @@ where a player stands on coming down, and `Cabin.Exit` the foot of the stairs, w
 3. `paint_ship.py` sorts its faces into the five parts and lays its UVs; `export_ship.py` measures its waterline,
    guns, boxes, sails and deck, its helm where the model's empty named `Helm` stands, and publishes it to R2 with its
    entry in `content/ships/ships.json`. The `ships` workflow does this for every ship built, from any branch
-   ([[Model Packs Upload From Any Branch]]). A square sail is measured by its four corners, each named by its side.
+   ([[Model Packs Upload From Any Branch]]), in a job that holds no secret and stages what it makes; a second job
+   uploads it with the repository's `R2_TOKEN` ([[Toolchain]]).
+   A square sail is measured by its four corners, each named by its side.
 
 ## What the code needs
 

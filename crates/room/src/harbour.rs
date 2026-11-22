@@ -158,7 +158,14 @@ pub struct Harbour {
     pub gear_sent: BTreeMap<PlayerId, u64>,
     /// The account that keeps each player's character, kept after they leave: what floats for them waits for it.
     pub accounts: BTreeMap<PlayerId, String>,
+    /// Where each owner's ship lay as they left the sea unkept (a kept character keeps its own), its heading and the
+    /// tick too: the sea's last word on it, where it comes back however far the page puts it, as a ship sails nowhere
+    /// while its player is away. The LEFT_MOST latest at most.
+    pub left: BTreeMap<String, [f64; 4]>,
 }
+
+/// How many owners' ships the sea remembers where they were left.
+pub const LEFT_MOST: usize = 1_024;
 
 impl Harbour {
     /// Forgets all it keeps for a player who left the sea.
