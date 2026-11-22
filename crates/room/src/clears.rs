@@ -39,12 +39,15 @@ impl Room {
     /// and is still here, at the garrison's highest level at the room's seas. What a dungeon's clear leaves is laid
     /// at their feet.
     pub(crate) fn pay_clear(&mut self) {
-        let down =
-            !self.garrison.is_empty() && self.garrison.iter().all(|post| !post.arrival && post.cleared_at.is_some());
-        let level = self.garrison.iter().flat_map(|post| &post.girds).map(|(level, _)| self.at_seas(*level)).max();
+        // Only the garrison's own groups standing again ready its clear anew: a quest's wave or ambush, which comes
+        // and goes, never does, and no clear is paid while one stands.
+        let own = self.garrison.iter().filter(|post| !post.arrival);
+        let down = own.clone().next().is_some() && own.clone().all(|post| post.cleared_at.is_some());
+        let wave = self.garrison.iter().any(|post| post.arrival);
+        let level = own.flat_map(|post| &post.girds).map(|(level, _)| self.at_seas(*level)).max();
         let Some(clearing) = self.clearing.as_mut() else { return };
-        if !down || clearing.paid {
-            clearing.paid &= down;
+        clearing.paid &= down;
+        if !down || wave || clearing.paid {
             return;
         }
         clearing.paid = true;

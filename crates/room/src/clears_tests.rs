@@ -74,3 +74,35 @@ fn a_minibosss_or_a_bosss_group_stands_again_after_ten_minutes_and_the_rest_afte
     );
     assert!(room.garrison.iter().filter(|post| !great(post)).all(|post| post.cleared_at.is_none()), "the rest stand");
 }
+
+#[test]
+fn a_wave_that_stands_and_falls_after_a_clear_pays_no_clear_again() {
+    let (mut room, player) = cleared_room(NodeKind::Dungeon);
+    fell_all(&mut room, player);
+    room.tick();
+    let cleared = room.players[&player].character.xp;
+    // A quest's wave, an arriving post, stands at the cleared garrison and falls.
+    let at = room.garrison[0].at;
+    let foe_type = ::foes::foe_type(14).expect("the pirates' swordsman");
+    let wave = room.stand_foe(foe_type, ::foes::Rank::Minor, at, 0.0, None);
+    room.garrison.push(Post {
+        at,
+        members: vec![(14, ::foes::Rank::Minor, at, 0.0)],
+        girds: vec![(0, None)],
+        beat: None,
+        standing: vec![wave],
+        cleared_at: None,
+        leader: None,
+        broken: false,
+        defending: false,
+        fallback: at,
+        anchor: None,
+        arrival: true,
+    });
+    room.tick();
+    land(&mut room, player, wave, 1e9);
+    room.tick();
+    room.tick();
+    let gained = room.players[&player].character.xp - cleared;
+    assert!(gained < 1_000, "the wave's kill alone, not the dungeon's clear again: {gained}");
+}
