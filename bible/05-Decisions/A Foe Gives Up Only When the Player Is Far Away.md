@@ -17,5 +17,7 @@ fix the close case only; a foe gives up only when the player is well past its ra
   wherever the target stands: never for ground its routes do not reach, so it no longer walks home, heals and turns
   away from a player close by. A foe that cannot reach a close player fights from as near as its routes take it
   ([[Foes]]).
+- A public event's foes too: its raiders fight a player within their reach wherever the player stands, so players
+  standing off the room's mesh draw them as players on it do.
 - It replaces "or off the room's navmesh" in [[Foes Leash to Their Posts and Fall With Their Boss]], and the two
   rows of [[Public Events as Claude Builds Them]] that judged a player by the room's mesh.
