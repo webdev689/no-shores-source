@@ -75,6 +75,13 @@ each part works is in its system note.
   band edged by a gold line ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Open for
   the owner: aiming in first person sees 43° (1.6 times from 65°, was 32.5°), and the iron blow's small red mark.
   Impeccable's design hook is on in every session, at v4.10.0 ([[Toolkit]]).
+- **The balance pass halfway back, loot in Destiny 1's order, and a whole-codebase audit** (#141, with the owner's
+  yes): on land a player's blow ×1.5 and a foe's ×0.75; Vestiges by rank, Minor 2 in 100 to a Boss always, each
+  colour half or less of the one below; items from Bosses, Minibosses and a dungeon's clear; clears that pay; Shapes
+  from the week's Abyss Dungeon alone; eleven bugs the audit found, each with a test that fails without its fix
+  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
+  [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Tested offline, the full
+  check passing on `main` with it merged (117fa21e); not yet played by hand or in a deployed room.
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
@@ -98,15 +105,12 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
-- **#141, the balance pass halfway back, loot in Destiny 1's order and a whole-codebase audit** (branch
-  `ccr-1e1aa6da-yox2v1`), with the owner's yes to merge, which deploys the page and the rooms
-  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
-  [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Claude's calls in bringing
-  #97 under the owner's loot rules: a dungeon's cache pays a dungeon's clear (an item, a Vestige one time in three,
-  XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, the only Shapes, and the dungeon of the day a Boss
-  Captain's kill. What its audit left for the owner (keys and deploys, exploits needing a rule, a failed trip's
-  return) is in #141's description and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD). Not yet played
-  by hand or in a deployed room.
+- **#141's calls and what its audit left.** Claude's calls in bringing #97 under the owner's loot rules: a dungeon's
+  cache pays a dungeon's clear (an item, a Vestige one time in three, XP and Aurem), the week's Abyss Dungeon pays 15
+  Shapes, and the dungeon of the day a Boss Captain's kill. The audit's keys and deploys (`R2_TOKEN` in jobs that run
+  untrusted or unpinned code, `rooms.yml` run by hand skipping the check, guest accounts uncapped past a /64,
+  `sloop.blend` fetched unhashed), its exploits needing a rule and a failed trip's return are in #141's description
+  and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD).
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px), #124 (public events on Saltmere). Drafts: #77 (lore), #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
