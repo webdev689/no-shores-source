@@ -92,6 +92,7 @@ fn an_escort_walks_while_the_player_keeps_within_its_reach_holds_for_its_ambush_
         }
         let (_, at, _) = figure(&room, player);
         stand_at(&mut room, player, [at[0], at[1] + 10.0]);
+        let told = room.take_gear_change(player);
         run(&mut room, 1);
         if figure_or_none(&room, player) == Some(HELD) {
             held += 1;
@@ -103,6 +104,7 @@ fn an_escort_walks_while_the_player_keeps_within_its_reach_holds_for_its_ambush_
                     "its ambush stands halfway"
                 );
                 assert!(at[1] < 1.0 && at[1] > -1.0, "halfway: {at:?}");
+                assert!(!told && room.take_gear_change(player), "the page is told it stands");
             }
             if held == 120 {
                 for id in &ambush {

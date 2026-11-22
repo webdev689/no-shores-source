@@ -53,6 +53,8 @@ pub enum Joined {
 pub struct Crew {
     pub ship: ShipId,
     pub orders: Orders,
+    /// The rung its sails stood at as its player boarded a struck deck, set again as they come back aboard.
+    pub furled_from: Option<i8>,
 }
 
 /// A fight with players in it: the fight, each player's place in it, what happened in its last tick, each captain's
@@ -74,6 +76,8 @@ pub struct SeaFight {
     pub given: Option<ShipId>,
     /// The players whose last stand this fight is spent (Hard to Kill), kept should they leave and come back.
     pub stood: Vec<PlayerId>,
+    /// Whether a snapshot has carried it ended: if none has by the tick it lets its players go, its last view is kept.
+    pub over_sent: bool,
 }
 
 /// What became of a player in a fight this tick: still in it, where their ship lies; out of it afloat, where it left
@@ -144,6 +148,7 @@ impl SeaFight {
             pending: Vec::new(),
             given: None,
             stood: Vec::new(),
+            over_sent: false,
         }
     }
 
@@ -161,7 +166,7 @@ impl SeaFight {
         let ship = self.given.map_or(PLAYER, |given| given.max(PLAYERS_FROM - 1) + 1);
         self.given = Some(ship);
         self.fight.put_to_sea_kept(ship, own, kept, &waters, time);
-        self.crews.insert(player, Crew { ship, orders: QUIET });
+        self.crews.insert(player, Crew { ship, orders: QUIET, furled_from: None });
         if !self.fought.contains(&player) {
             self.fought.push(player);
         }
@@ -189,6 +194,8 @@ pub struct Fights {
     pub list: Vec<SeaFight>,
     /// Each captain going down in a fight its last player left, sunk all the same, told with the next tick's.
     pub(crate) lost: Vec<Sank>,
+    /// The last view of each fight that ended unseen, a tick of catching up having run past it: sent with the next.
+    pub(crate) ended: Vec<FightSeen>,
 }
 
 impl Fights {
@@ -229,11 +236,22 @@ impl Fights {
     /// go and its sails furled.
     pub fn stand_down(&mut self, player: PlayerId) {
         let Some((fought, crew)) = self.of_mut(player) else { return };
+        let Some(own) = fought.fight.ships.get_mut(&crew.ship) else { return };
+        let rung = core::mem::replace(&mut own.ship.rung, 0);
         if let Some(own) = fought.crews.get_mut(&player) {
-            own.orders = QUIET;
+            (own.orders, own.furled_from) = (QUIET, Some(rung));
         }
+    }
+
+    /// A boarder back aboard their own ship: its sails set again at the rung they stood at as they boarded.
+    pub fn stand_up(&mut self, player: PlayerId) {
+        let Some((fought, crew)) = self.of_mut(player) else { return };
+        let Some(rung) = crew.furled_from else { return };
         if let Some(own) = fought.fight.ships.get_mut(&crew.ship) {
-            own.ship.rung = 0;
+            own.ship.rung = rung;
+        }
+        if let Some(own) = fought.crews.get_mut(&player) {
+            own.furled_from = None;
         }
     }
 
@@ -431,8 +449,8 @@ impl Fights {
         for met in pirates.meet_rivals() {
             clashes.push(Clash::begin(met, weather.at([met[0].x, met[0].y], time), coasts, time));
         }
-        for &Voyager { player, at, .. } in ships {
-            if self.fighting(player) {
+        for &Voyager { player, at, home, .. } in ships {
+            if home || self.fighting(player) {
                 continue;
             }
             let near = self.list.iter().any(|fought| fought.near(at));
@@ -477,6 +495,10 @@ impl Fights {
     /// player left ends. Answers what became of each player, and each captain's ship that sank.
     pub(crate) fn step(&mut self, coasts: &[Coast], time: f64) -> (Vec<Outcome>, Vec<Sank>) {
         let mut outcomes = Vec::new();
+        let unseen = self.list.iter().filter(|fought| fought.fight.over().is_some() && !fought.over_sent);
+        let unseen: Vec<FightSeen> = unseen.flat_map(|fought| self.seen(fought, coasts, time)).collect();
+        self.ended.retain(|old| unseen.iter().all(|new| new.player != old.player));
+        self.ended.extend(unseen.into_iter().map(|seen| FightSeen { may_board: false, ..seen }));
         for fought in self.list.iter().filter(|fought| fought.fight.over().is_some()) {
             for (player, crew) in &fought.crews {
                 let Some(vessel) = fought.fight.vessel(crew.ship) else { continue };
@@ -535,21 +557,40 @@ impl Fights {
     }
 
     /// Each fighting player's view of their fight (the naval crate's numbers, their ship as its player's), its lay
-    /// over the fight's waters now, its first captain's commission, and whether they may board (`alongside`).
+    /// over the fight's waters now, its first captain's commission, and whether they may board (`alongside`); then
+    /// the kept last views of fights that ended unseen.
     pub(crate) fn views<'fights>(
         &'fights self,
         coasts: &'fights [Coast],
         time: f64,
     ) -> impl Iterator<Item = FightSeen> + 'fights {
-        self.list.iter().flat_map(move |fought| {
-            fought.crews.iter().map(move |(player, crew)| {
-                let aim = crew.orders.aim;
-                let waters = CoastWaters { coasts, swell: &fought.swell };
-                let numbers = view_numbers(&fought.fight, crew.ship, &fought.events, aim.as_ref(), &waters, time);
-                let may_board = self.alongside(*player).is_ok();
-                FightSeen { player: *player, numbers, captain: fought.first_captain(), may_board }
-            })
+        let live = self.list.iter().flat_map(move |fought| self.seen(fought, coasts, time));
+        live.chain(self.ended.iter().cloned())
+    }
+
+    /// Each of a fight's players' view of it.
+    fn seen<'fights>(
+        &'fights self,
+        fought: &'fights SeaFight,
+        coasts: &'fights [Coast],
+        time: f64,
+    ) -> impl Iterator<Item = FightSeen> + 'fights {
+        fought.crews.iter().map(move |(player, crew)| {
+            let aim = crew.orders.aim;
+            let waters = CoastWaters { coasts, swell: &fought.swell };
+            let numbers = view_numbers(&fought.fight, crew.ship, &fought.events, aim.as_ref(), &waters, time);
+            let may_board = self.alongside(*player).is_ok();
+            FightSeen { player: *player, numbers, captain: fought.first_captain(), may_board }
         })
+    }
+
+    /// The views were taken into a snapshot: each fight ended by now was seen ended, and the unseen ones' kept views
+    /// are let go.
+    pub fn sent(&mut self) {
+        for fought in &mut self.list {
+            fought.over_sent = fought.fight.over().is_some();
+        }
+        self.ended.clear();
     }
 }
 

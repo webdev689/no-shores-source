@@ -122,3 +122,50 @@ fn a_taller_block_beside_a_wall_is_not_taken_for_a_block_stacked_on_it() {
     let climbing = clear_for(start, Controls { forward: 1.0, ..Controls::default() }, &blocks, 0.5);
     assert_eq!((climbing.mode, climbing.lip), (Mode::Climb, 2.3));
 }
+
+#[test]
+fn a_block_set_back_from_a_walls_face_is_not_taken_for_a_block_stacked_on_it() {
+    let wall = block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3);
+    let set_back = block(-5.0, -4.0, 5.0, -1.4, 2.3, 8.0);
+    let blocks = [wall, set_back];
+    let climbing = clear_for(standing(0.0, 0.0), Controls { forward: 1.0, ..Controls::default() }, &blocks, 0.5);
+    assert_eq!((climbing.mode, climbing.lip), (Mode::Climb, 2.3));
+}
+
+#[test]
+fn a_hang_shimmied_past_a_post_set_back_on_the_parapet_stays_a_hang() {
+    let wall = block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3);
+    let post = block(1.0, -1.3, 1.2, -1.1, 2.3, 4.0);
+    let blocks = [wall, post];
+    let hanging = caught(&blocks, 0.0);
+    let ticks = (2.0 / TICK_SECONDS).round() as usize;
+    let held = Controls { sideways: 1.0, ..Controls::default() };
+    let past = (0..ticks).fold(hanging, |body, tick| {
+        let next = step_body(&body, &held, &blocks, &Flat, TICK_SECONDS);
+        assert_eq!((next.mode, next.lip), (Mode::Hang, 2.3), "tick {tick} at x {}", next.x);
+        next
+    });
+    assert!(past.x > 1.6, "past the post: x {}", past.x);
+}
+
+#[test]
+fn a_hang_shimmied_toward_a_post_flush_on_the_parapet_stays_a_hang_until_it_holds_the_post() {
+    let wall = block(-5.0, -4.0, 5.0, -1.0, 0.0, 2.3);
+    let post = block(1.0, -1.2, 1.2, -1.0, 2.3, 4.0);
+    let blocks = [wall, post];
+    let mut body = caught(&blocks, 0.0);
+    let held = Controls { sideways: 1.0, ..Controls::default() };
+    while body.x < 0.95 {
+        body = step_body(&body, &held, &blocks, &Flat, TICK_SECONDS);
+        assert_eq!((body.mode, body.lip), (Mode::Hang, 2.3), "beside the post at x {}", body.x);
+    }
+}
+
+#[test]
+fn a_face_stacked_flush_is_climbed_past_the_seam_by_its_very_end_too() {
+    let lower = block(-5.0, -4.0, 5.0, -1.0, 0.0, 4.0);
+    let upper = block(-5.0, -4.0, 5.0, -1.0, 4.0, 8.0);
+    let blocks = [lower, upper];
+    let climbing = clear_for(standing(5.2, 0.0), Controls { forward: 1.0, ..Controls::default() }, &blocks, 0.5);
+    assert_eq!((climbing.mode, climbing.lip), (Mode::Climb, 8.0), "at x {}", climbing.x);
+}

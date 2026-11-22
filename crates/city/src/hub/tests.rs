@@ -368,3 +368,22 @@ fn a_pair_at_posts_side_by_side_face_each_other() {
     }
     assert!(away.is_empty(), "{}", away.join("\n"));
 }
+
+#[test]
+fn shape_stands_on_the_switchback_landing_aside_of_the_walkers_line_away_from_the_flights() {
+    use crate::ramps::Piece;
+    let (_, plan) = planned();
+    let middle = |ramp: &crate::ramps::Ramp| {
+        let [west, north, east, south] = ramp.pad.bounds;
+        [f64::midpoint(west, east), f64::midpoint(north, south)]
+    };
+    let apart = |one: [f64; 2], two: [f64; 2]| libm::hypot(one[0] - two[0], one[1] - two[1]);
+    let landed = plan.ramps.iter().filter(|ramp| ramp.piece == Piece::Landing).find_map(|landing| {
+        let at = middle(landing);
+        plan.social.visitor_spots.iter().find(|&&spot| (apart(spot, at) - 2.0).abs() < 1e-6).map(|&spot| (at, spot))
+    });
+    let (at, spot) = landed.expect("Shape's place on a landing");
+    let legs: Vec<[f64; 2]> = plan.ramps.iter().filter(|ramp| ramp.piece == Piece::Leg).map(middle).collect();
+    let nearest = |point: [f64; 2]| legs.iter().map(|&leg| apart(point, leg)).fold(f64::INFINITY, f64::min);
+    assert!(nearest(spot) > nearest(at), "away from the flights: {spot:?} by the landing at {at:?}");
+}

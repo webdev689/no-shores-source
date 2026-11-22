@@ -111,6 +111,21 @@ impl Sea {
         self.decks.boarded.iter().any(|deck| deck.aboard.contains_key(&player))
     }
 
+    /// Each fighting player's fight as their browser shows it (the naval crate's numbers), its lay over the fight's
+    /// waters now, and its first captain's commission; then the last view of each fight that ended unseen.
+    pub fn fight_views(&self) -> Vec<crate::battle::FightSeen> {
+        let time = self.clock as f64 * movement::TICK_SECONDS;
+        // One on a deck boards no other.
+        let seen = self.fights.views(&self.coasts, time);
+        seen.map(|seen| crate::battle::FightSeen { may_board: seen.may_board && !self.on_deck(seen.player), ..seen })
+            .collect()
+    }
+
+    /// The fights' views were taken into a snapshot: an ended fight's last view is sent once.
+    pub fn fights_sent(&mut self) {
+        self.fights.sent();
+    }
+
     /// A boarder's input on the captain's deck, taken by its deck room as a land room takes it.
     pub fn deck_input(&mut self, player: PlayerId, input: Input) -> Result<(), Refused> {
         let deck = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player));
@@ -141,6 +156,7 @@ impl Sea {
         deck.room.keep_hands();
         let fallen = deck.room.fallen_hands(boarder);
         deck.room.leave(boarder);
+        self.fights.stand_up(player);
         self.fights.lose_men(player, f64::from(fallen) / naval::arms::LARGE_BOAT.crew);
         if let (Some(character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             let mut character = with_sea_kept(character, held);

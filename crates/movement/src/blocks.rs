@@ -132,10 +132,22 @@ fn probe(body: &Body, bearing: f64) -> (f64, f64) {
 /// it, standing from lower down, is not part of it.
 pub(crate) fn wall_top<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64, ahead: WallAhead) -> WallAhead {
     let (x, y) = probe(body, bearing);
+    let (east, south) = (libm::sin(bearing), -libm::cos(bearing));
+    // Its underside within a hair of the top, whatever the sums' last bits; its face as near the body as the wall's
+    // below; and along the wall, it holds the probe, or the wall's end where the probe lies past it, so a block set
+    // back on the top or beside the hold is no part of it.
+    let stacked = |block: &Block, under: &Block| {
+        let flush = if east.abs() > south.abs() {
+            (if east > 0.0 { under.min_x - block.min_x } else { block.max_x - under.max_x }) >= -1e-6
+                && (block.min_y..=block.max_y).contains(&y.clamp(under.min_y, under.max_y))
+        } else {
+            (if south > 0.0 { under.min_y - block.min_y } else { block.max_y - under.max_y }) >= -1e-6
+                && (block.min_x..=block.max_x).contains(&x.clamp(under.min_x, under.max_x))
+        };
+        flush && (block.bottom - under.top).abs() <= 1e-6 && block.top > under.top
+    };
     let mut top = ahead;
-    // Its underside within a hair of the top, whatever the sums' last bits.
-    let stacked = |block: &&Block, top: f64| block.holds(x, y, TUNING.radius) && (block.bottom - top).abs() <= 1e-6;
-    while let Some(above) = blocks.near(x, y).find(|block| stacked(block, top.block.top) && block.top > top.block.top) {
+    while let Some(above) = blocks.near(x, y).find(|block| stacked(block, &top.block)) {
         top = WallAhead { block: *above, depth: depth_along(above, bearing) };
     }
     top

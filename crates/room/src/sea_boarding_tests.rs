@@ -436,3 +436,18 @@ fn a_boarder_who_leaves_the_sea_from_the_deck_keeps_the_hands_who_fell_there_los
     let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
     assert!(crew(&sea) + man <= before + 1, "the hand who fell is lost: {before} to {}", crew(&sea));
 }
+
+#[test]
+fn a_boarder_back_aboard_finds_their_sails_set_as_they_left_them() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    strike(&mut sea, player);
+    vessel_mut(&mut sea, player, PLAYER).ship.rung = 2;
+    sea.board(player).unwrap();
+    assert_eq!(vessel_mut(&mut sea, player, PLAYER).ship.rung, 0, "furled while they stand on its deck");
+    for foe in sea.decks.boarded[0].room.foes.values_mut() {
+        foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+    }
+    sea.tick();
+    sea.leave_deck(player).unwrap();
+    assert_eq!(vessel_mut(&mut sea, player, PLAYER).ship.rung, 2, "set again as they come back aboard");
+}

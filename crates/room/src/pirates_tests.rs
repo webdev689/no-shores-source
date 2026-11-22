@@ -33,7 +33,7 @@ impl Chart for OneWater {
 
 /// A player's ship at `at`, heading north at `pace`, fighting or not; its waters run at its pace.
 fn voyager(player: PlayerId, at: [f64; 2], pace: u16, fighting: bool) -> Voyager {
-    Voyager { player, at, heading: 0.0, pace, fighting, clock: f64::from(pace.max(1)), hull: 1.0 }
+    Voyager { player, at, heading: 0.0, pace, fighting, home: false, clock: f64::from(pace.max(1)), hull: 1.0 }
 }
 
 fn standing(id: u32, at: [f64; 2], heading: f64, bold: bool) -> Pirate {
@@ -370,7 +370,8 @@ fn a_harder_seas_ships_come_at_the_levels_its_tier_raises_foes_to_on_land_and_of
 fn a_bold_ship_by_the_edge_of_home_waters_meets_no_player_inside_them() {
     let home = OneWater { holder: Holder::Home, open: |_, _| false, ..PIRATE_WATER };
     let mut pirates = Pirates { sailing: vec![standing(1, [700.0, 0.0], 0.0, true)], ..Pirates::default() };
-    assert!(pirates.tick(1.0, &[voyager(5, [0.0, 0.0], 0, false)], &home).is_empty(), "home waters hold no hostile");
+    let inside = Voyager { home: true, ..voyager(5, [0.0, 0.0], 0, false) };
+    assert!(pirates.tick(1.0, &[inside], &home).is_empty(), "home waters hold no hostile");
     pirates.chase(5, Some(1));
-    assert!(pirates.tick(1.0, &[voyager(5, [0.0, 0.0], 0, false)], &home).is_empty(), "nor one it chases");
+    assert!(pirates.tick(1.0, &[inside], &home).is_empty(), "nor one it chases");
 }

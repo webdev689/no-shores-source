@@ -312,7 +312,8 @@ Pass]]) with Claude's numbers:
   every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its
   crew has fallen, and a minute after it fell every boarder still aboard is sent back; it is scuttled when the last one
   has left it. A boarder's own ship takes no orders or course while they stand on the struck ship's deck: as they board,
-  its helm, brace and lay let go and its sails are furled, so it drifts to a stop beside the struck ship. Its deck room
+  its helm, brace and lay let go and its sails are furled, so it drifts to a stop beside the struck ship; as they come back aboard, its sails are set again
+  at the rung they stood at when they boarded. Its deck room
   fights with the boarder's character, the real one even when the accounts answer after boarding, and gives it back with
   what was won aboard. The sea's snapshot carries each deck to its boarders alone: their numbers there, the ship's hull,
   its deck room's own snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's,
@@ -366,7 +367,7 @@ Pass]]) with Claude's numbers:
   where and when it began (`sea_weather.rs`, sheltered by the coasts and calm by the port cities' roadsteads) and
   keeps them while it lasts; a player joining it fights in its weather, a fight among captains a player came on keeps
   its own, and what floats drifts down the wind of the fight it came from.
-- **Many in a fight** (`battle.rs`). Any player not fighting who comes within 750 m of a ship of a fight joins it, a
+- **Many in a fight** (`battle.rs`). Any player not fighting and not in Overlook's home waters who comes within 750 m of a ship of a fight joins it, a
   fight with players in it too, their Sloop hove to under a number of their own; every player in it fights every
   captain, and players never harm one another (a ball passes through a ship of its own flag). A hostile ship at sea
   within 750 m of a fight joins it on its own side, under sail where it lay: it fights players and captains of other
@@ -376,7 +377,8 @@ Pass]]) with Claude's numbers:
 - **Wary captains** fall on a ship they outgun, by DFO's `takesPrize` (`navalAI.js`: "a wary one only a prize she
   outguns WARY_ODDS to one, or one crippled or holed under GRAPPLE_HULL", `WARY_ODDS = 1.25`, `GRAPPLE_HULL = 0.35`):
   in a fight by their own mind, and at sea a wary ship steers for a player not fighting in its sight whose Sloop it
-  would take as the Sloop's kept hull leaves it (`come_for`), and meets them within 750 m (`wary_takes`).
+  would take as the Sloop's kept hull leaves it (`come_for`), and meets them within 750 m (`wary_takes`), never in
+  Overlook's home waters.
 - **What a player is told** goes to that player alone: the sea's snapshot is cut for each player, what floats, kept
   hurts, the sea's own messages and a deck's own snapshot reaching only those they are for.
 
@@ -593,7 +595,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   sail through that tick at their own pace, so no turn of a course slips past it. Within 700 m of a hostile ship that
   would engage this player (bold, chased by them, one `wary_takes` would fall on their Sloop, or one in a fight among
   captains, which a player in sight joins), it is held to ×1, the world's own time (`threat.rs`, `holds`); a wary ship
-  that will not engage caps the pace by the ladder alone. The room sails
+  that will not engage caps the pace by the ladder alone. A ship in Overlook's home waters is neither held nor slowed
+  by any hostile ship, as none meets it there. The room sails
   each ship at that pace and sends it as the ship's pace; the page sails its own at the room's pace, drawn to where the room
   has it, and the voyage's line says it is held.
 - **Rivals meet** (`clash.rs`). A bold ship within 750 m of a ship of another faction, neither in a fight, meets the
@@ -602,14 +605,15 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   lasts while one of them fights on; then one who struck, sank or runs leaves the sea, and the rest sail on from where
   it left them. Two that sailed on meet again only once out of each other's sight. A fight with no ship a player keeps at
   sea (within 1.1 times its sight) leaves the sea, as a ship does. Ships of one faction never meet.
-- **Joining.** A player not fighting who comes within 750 m of any ship of such a fight, or of a fight with players in
+- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
   it, joins it: their Sloop heaves to there and is put into it with the hurts it keeps, and its captains choose whom
   to fight by their own law, the one each fights reckoned nearer ("How a fight ends").
 - **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
   them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's Sloop hove to
   (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
   may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
-  captain has sunk or gone; its last view is shown once, and the players sail on from where it left them, keeping their
+  captain has sunk or gone; its last view is shown once, in the next snapshot however many ticks the room caught up before it (`Fights::sent`),
+  and the players sail on from where it left them, keeping their
   hurts.
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is

@@ -369,8 +369,8 @@ impl Sea {
     /// it comes to it, and comes to rest at its course's end; each player off the helm takes the steps due; each fight
     /// steps, its player's ship where the fight has it, and each clash; the pirates sail, come and go, a bold one that
     /// meets a player begins their fight, calling them to the helm, one that meets a rival begins a clash, and a player
-    /// who comes within sight of a clash joins it. A fight that ended is shown for one tick, then gone, its player at
-    /// rest where it left them.
+    /// who comes within sight of a clash joins it. A fight that ended lets its player go the next tick, at rest where it
+    /// left them; its last view waits for the next snapshot (`fights_sent`).
     pub fn tick(&mut self) {
         self.clock += 1;
         for aboard in self.aboard.values_mut() {
@@ -381,9 +381,12 @@ impl Sea {
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
+            // Overlook's home waters hold no hostile ship, so no pirate holds or slows a ship inside them.
+            let home = self.chart.home([ship.x, ship.y]);
             // A ship in a clash is joined by a player who comes in sight of it, so it holds as a bold one does.
             let (chased, hull) = (self.pirates.chased(*player), berth.kept[0]);
             let pirates: Vec<([f64; 2], bool)> = (pirates.iter().enumerate())
+                .filter(|_| !home)
                 .map(|(at, hostile)| {
                     ([hostile.x, hostile.y], at >= sailing_count || holds(hostile, [ship.x, ship.y], chased, hull))
                 })
@@ -416,6 +419,7 @@ impl Sea {
                 heading: ship.heading,
                 pace: ship.pace,
                 fighting: self.fights.fighting(player),
+                home: self.chart.home([ship.x, ship.y]),
                 clock: f64::from(ship.rate.max(1)),
                 hull: self.berths.get(&player).map_or(1.0, |berth| berth.kept[0]),
             })
@@ -464,16 +468,6 @@ impl Sea {
     /// Each player in a fight with their fight, in the order the fights began and then of their number.
     pub fn fights(&self) -> impl Iterator<Item = (PlayerId, &SeaFight)> + '_ {
         self.fights.each()
-    }
-
-    /// Each fighting player's fight as their browser shows it (the naval crate's numbers), its lay over the fight's
-    /// waters now, and its first captain's commission.
-    pub fn fight_views(&self) -> Vec<crate::battle::FightSeen> {
-        let time = self.clock as f64 * TICK_SECONDS;
-        // One on a deck boards no other.
-        let seen = self.fights.views(&self.coasts, time);
-        seen.map(|seen| crate::battle::FightSeen { may_board: seen.may_board && !self.on_deck(seen.player), ..seen })
-            .collect()
     }
 }
 

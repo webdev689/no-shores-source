@@ -108,6 +108,7 @@ pub fn prepare() {
         }
         Opened::Sea(sea) => {
             let fights = sea.fight_views();
+            sea.fights_sent();
             let aboard = sea.aboard().map(|(player, walking)| (player, walking.acknowledged, walking.body)).collect();
             let kind = |piece: naval::fight::Piece| piece as u8;
             let flotsam = sea.flotsam().iter().map(|piece| (piece.player, piece.id, piece.at, kind(piece.kind)));
