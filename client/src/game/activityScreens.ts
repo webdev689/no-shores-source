@@ -3,6 +3,7 @@
 // keeps the last word of the character any room sent, so the screens read the same at sea as ashore, and builds their
 // words from the rules (`activityWords.ts`), never judging a rule itself.
 import type { Layer } from '../ui/stack.ts';
+import { enterAskedRun } from './runAsked.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { activitiesAt, gatesAt } from './activities.ts';
 import {
@@ -233,6 +234,7 @@ export function startActivities(
   const screens = startActivityScreens(game.module, nodes, game.foot, trips, link, PAGE_CLOCK, game.atSea);
   // The keepers' countdowns turn on the same clock, so they read the same rules.
   countBy(game.module);
+  if (import.meta.env.DEV) enterAskedRun(location.search, nodes, () => game.foot() !== null, trips.intoRun);
   return {
     trips,
     screens,
