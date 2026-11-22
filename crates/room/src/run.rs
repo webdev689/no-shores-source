@@ -27,6 +27,8 @@ pub enum Pays {
     Day { day: u64 },
     /// The week's Elite or Abyss Dungeon's, in the week the run was opened for.
     Week { weekly: Weekly, week: u64 },
+    /// A playlist's, by the day and the week its run was opened in (`playlist_run`).
+    Playlist { playlist: gear::playlist::Playlist, day: u64, week: u64 },
 }
 
 /// A dungeon's run: what it pays, its modifiers, the revives left at Abyss, and the level every foe stands at in the
@@ -45,6 +47,8 @@ pub struct Run {
     pub won: bool,
     /// The day it last counted a clear on, and the accounts it counted one for then (`count_clear`).
     pub cleared_for: (u64, std::collections::BTreeSet<String>),
+    /// The accounts a playlist's clear was counted for in this run: once a run each (`pay_playlist`).
+    pub playlist_counted: std::collections::BTreeSet<String>,
 }
 
 impl Run {
@@ -136,3 +140,6 @@ pub use run_room::{RunOf, elite_laid};
 
 #[path = "abyss.rs"]
 mod abyss;
+
+#[path = "playlist_run.rs"]
+mod playlist_run;

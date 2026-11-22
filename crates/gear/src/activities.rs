@@ -144,7 +144,7 @@ impl Modifier {
     }
 
     /// The modifier of a kind (`kind`), Burn naming the Art `art`.
-    fn of_kind(kind: usize, art: u8) -> Self {
+    pub(crate) fn of_kind(kind: usize, art: u8) -> Self {
         match kind {
             0 => Modifier::Burn(art),
             1 => Modifier::Brawler,
@@ -278,7 +278,7 @@ pub(crate) fn drawn(period: u64, kind: u64, nth: u32, count: usize) -> usize {
 }
 
 /// The Art a Burn drawn at `nth` names.
-fn burning(period: u64, kind: u64, nth: u32) -> u8 {
+pub(crate) fn burning(period: u64, kind: u64, nth: u32) -> u8 {
     let every = &arts().arts;
     every.get(drawn(period, kind, nth, every.len())).map_or(0, |art| art.id)
 }

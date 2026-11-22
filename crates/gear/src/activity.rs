@@ -41,6 +41,11 @@ pub struct Today {
     /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub gathered: Vec<(u64, Vec<u8>)>,
+    /// Whether the Elite and the Abyss Playlist's daily rewards are taken today (`crate::playlist`).
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub elite_playlist: bool,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    pub abyss_playlist: bool,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
@@ -55,9 +60,20 @@ pub struct ThisWeek {
     pub elite: bool,
     pub abyss: bool,
     pub boon: bool,
+    /// The Elite and the Abyss Playlist's clears counted this week, to three: the third pays the weekly reward
+    /// (`crate::playlist`), so three means it is paid.
+    #[serde(skip_serializing_if = "is_zero")]
+    pub elite_playlist: u8,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub abyss_playlist: u8,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref, reason = "serde hands a reference")]
+fn is_zero(count: &u8) -> bool {
+    *count == 0
 }
 
 /// The tiers cleared as read: one this build does not know (a later build's) is left out rather than failing the

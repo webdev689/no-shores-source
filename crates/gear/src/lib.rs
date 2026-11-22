@@ -31,6 +31,7 @@ pub mod kinds;
 pub mod left;
 pub mod mail;
 pub mod objectives;
+pub mod playlist;
 mod old_hands;
 pub mod power;
 mod quest_defs;
@@ -87,6 +88,8 @@ mod keep_tests;
 mod mail_tests;
 #[cfg(test)]
 mod objectives_tests;
+#[cfg(test)]
+mod playlist_tests;
 #[cfg(test)]
 mod old_hands_tests;
 #[cfg(test)]
