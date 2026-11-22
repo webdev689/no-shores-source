@@ -26,7 +26,7 @@ pub const PLAYERS_SEEN_M: f64 = 60_000.0;
 struct SeaParts {
     tick: u64,
     ships: Vec<(PlayerId, room::sea::Ship)>,
-    pirates: Vec<room::pirates::Pirate>,
+    hostiles: Vec<room::hostiles::Hostile>,
     fights: Vec<room::battle::FightSeen>,
     /// The players in each fight.
     crews: Vec<Vec<PlayerId>>,
@@ -44,7 +44,7 @@ struct SeaParts {
 impl SeaParts {
     fn bytes(
         &self,
-        (ships, pirates): (&[(PlayerId, room::sea::Ship)], &[room::pirates::Pirate]),
+        (ships, hostiles): (&[(PlayerId, room::sea::Ship)], &[room::hostiles::Hostile]),
         fights: &[room::battle::FightSeen],
         harbour: &protocol::SeaHarbour,
     ) -> Vec<u8> {
@@ -55,11 +55,11 @@ impl SeaParts {
             .filter(|(walker, _, _)| ships.iter().any(|(owner, _)| owner == walker))
             .copied()
             .collect();
-        protocol::sea_snapshot_bytes(self.tick, ships, pirates, fights, &aboard, harbour)
+        protocol::sea_snapshot_bytes(self.tick, ships, hostiles, fights, &aboard, harbour)
     }
 
     /// The ships and hostile ships `player` is sent: none but their own before their ship is at sea.
-    fn near(&self, player: PlayerId) -> (Vec<(PlayerId, room::sea::Ship)>, Vec<room::pirates::Pirate>) {
+    fn near(&self, player: PlayerId) -> (Vec<(PlayerId, room::sea::Ship)>, Vec<room::hostiles::Hostile>) {
         let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
         let crew = self.crews.iter().find(|crew| crew.contains(&player));
         let seen = |(other, ship): &&(PlayerId, room::sea::Ship)| {
@@ -73,10 +73,12 @@ impl SeaParts {
         let ships = self.ships.iter().filter(seen).copied().collect();
         // A Lookout sights each ship from farther off: its sight, as this player is sent it, is that much longer.
         let lookout = self.lookouts.iter().find(|(each, _)| *each == player).map_or(1.0, |(_, times)| *times);
-        let sighted =
-            self.pirates.iter().map(|pirate| room::pirates::Pirate { sight_m: pirate.sight_m * lookout, ..*pirate });
-        let pirates = sighted.filter(|pirate| own.is_some_and(|at| pirate.kept_by(at))).collect();
-        (ships, pirates)
+        let sighted = self
+            .hostiles
+            .iter()
+            .map(|hostile| room::hostiles::Hostile { sight_m: hostile.sight_m * lookout, ..*hostile });
+        let hostiles = sighted.filter(|hostile| own.is_some_and(|at| hostile.kept_by(at))).collect();
+        (ships, hostiles)
     }
 
     /// The islands `player` is told of: those in sight of their ship, and those they have found, wherever they lie.
@@ -122,7 +124,7 @@ pub fn prepare() {
                 .map(|(deck, hold)| {
                     let aboard: Vec<_> = deck.aboard.iter().map(|(player, boarder)| (*player, *boarder)).collect();
                     let views = whole_for_each(&mut deck.room, &aboard);
-                    ((aboard, deck.pirate.commission.hull().number(), Vec::new(), hold), views)
+                    ((aboard, deck.hostile.commission.hull().number(), Vec::new(), hold), views)
                 })
                 .unzip();
             let crews = sea.fights().map(|(_, fought)| fought.crews.keys().copied().collect()).collect();
@@ -146,11 +148,19 @@ pub fn prepare() {
             Prepared::Sea(Box::new(SeaParts {
                 tick: sea.clock(),
                 ships: sea.ships().collect(),
-                pirates: sea.pirates(),
+                hostiles: sea.hostiles(),
                 fights,
                 crews,
                 aboard,
-                harbour: protocol::SeaHarbour { flotsam, kept, told, decks, islands: Vec::new() },
+                harbour: protocol::SeaHarbour {
+                    flotsam,
+                    kept,
+                    told,
+                    decks,
+                    islands: Vec::new(),
+                    taken: sea.taken(),
+                    friendlies: sea.friendlies(),
+                },
                 deck_views,
                 islands,
                 lookouts: sea.ships().map(|(player, _)| (player, sea.lookout(player))).collect(),
@@ -193,11 +203,13 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                     })
                     .collect(),
                 islands: parts.islands(player),
+                taken: all.taken.clone(),
+                friendlies: all.friendlies.clone(),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();
-            let (ships, pirates) = parts.near(player);
-            parts.bytes((&ships, &pirates), &fights, &harbour)
+            let (ships, hostiles) = parts.near(player);
+            parts.bytes((&ships, &hostiles), &fights, &harbour)
         }
     })
 }

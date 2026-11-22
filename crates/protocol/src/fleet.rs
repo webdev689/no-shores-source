@@ -7,7 +7,7 @@ use naval::captain::Mode;
 use naval::damage::{State, Zone};
 use naval::fight::{Aim, End, Event, Fight, Orders, Refusal};
 use naval::guns::Shot;
-use naval::ranks::{Commission, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use naval::shots::{ShipId, ShotEvent};
 use room::fleet::{Call, Input, Levels};
 use sailing::ship::Helm;
@@ -29,12 +29,12 @@ fn load_of(code: u8) -> Result<Option<Shot>, String> {
 pub const CALL_CAPTAIN: u8 = 1;
 pub const CALL_SEND_OFF: u8 = 255;
 
-/// The faction and rank a call names: 0 for either is a Major of the pirates' part of it; any other number must name
+/// The faction and rank a call names: 0 for either is a Major of the hostiles' part of it; any other number must name
 /// a faction whose captains sail, or a rank.
 fn commission_of(faction: u8, rank: u8) -> Result<Commission, String> {
     let rank =
         if rank == 0 { Rank::Major } else { Rank::numbered(rank).ok_or(format!("no rank is numbered {rank}"))? };
-    let faction = if faction == 0 { PIRATES } else { faction };
+    let faction = if faction == 0 { GREY_TITHE } else { faction };
     Commission::of(faction, rank).ok_or(format!("no captain sails for faction {faction}"))
 }
 

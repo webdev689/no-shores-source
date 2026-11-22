@@ -612,7 +612,7 @@ test('a wounded player’s drink through the room heals them, and the page reads
   };
   const joined = step();
   assert.equal(chargesOf(joined.fighter).charges, CHARGES_MOST, 'a player joins holding as many as the page shows');
-  // A pirate swordsman beside the player strikes once, then is sent away.
+  // A hostile swordsman beside the player strikes once, then is sent away.
   const { x, y } = course.start;
   assert.ok(room.standFoe(14, 2, x, y - 1.5, Math.PI, 0) > 0);
   let wounded = joined;
