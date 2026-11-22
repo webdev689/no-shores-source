@@ -1,12 +1,11 @@
 //! The prologue's wreck, played in a page's own room laid over the sea (`Room::over_sea`): the player has no Art yet,
 //! wakes hurt from the ram with no weapon, and takes the story's sword and shield from the deck into their pack to
-//! equip; every boarder fights on one side against them and the Brig's crew, none but Thule harder to bring down than
-//! a Major.
+//! equip; every boarder is the Grey Tithe's, fighting them and the Brig's crew, none but Thule harder to bring down
+//! than a Major.
 
 use crate::{PlayerId, Room};
-use ::foes::factions::GREY_TITHE;
-use ::foes::{Rank, faction};
-use combat::fighter::{FighterId, Side};
+use ::foes::Rank;
+use combat::fighter::FighterId;
 use gear::{At, Item, Kind, Rarity, Slot};
 
 /// How much of their health a player wakes on the wreck with, the ram's harm: short enough for a drink to heal.
@@ -73,15 +72,11 @@ impl Room {
         found.map(|found| found.brain.keep_to([x, y, top.z], facing, false)).is_some()
     }
 
-    /// A foe the page stood in the story's wreck: on the boarders' one side, the Grey Tithe's, whatever its crew, and
-    /// below a Boss held to a Major's health, poise and defence, its own rank's look and blows kept. The Brig's crew,
-    /// on the players' side, are left as they are.
+    /// A foe the page stood in the story's wreck: below a Boss held to a Major's health, poise and defence, its own
+    /// rank's look and blows kept. The Brig's crew, on the players' side, are left as they are.
     pub(crate) fn as_boarder(&mut self, id: FighterId) {
         let story = self.story;
         let Some(foe) = self.foes.get_mut(&id).filter(|foe| story && !foe.fighter.side.is_players()) else { return };
-        let side = faction(GREY_TITHE).map_or(Side::from_number(GREY_TITHE), |tithe| tithe.side());
-        foe.fighter.side = side;
-        foe.brain.fights_for(side);
         if foe.brain.rank < Rank::Boss {
             foe.brain.held_to(Rank::Major);
         }
