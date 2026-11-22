@@ -36,7 +36,8 @@ export type FromRooms =
   | { readonly kind: 'failed'; readonly id: number; readonly error: string }
   | { readonly kind: 'snapshot'; readonly id: number; readonly snapshot: Snapshot }
   | { readonly kind: 'gear'; readonly id: number; readonly gear: GearMessage }
-  | { readonly kind: 'word'; readonly id: number; readonly word: string };
+  | { readonly kind: 'word'; readonly id: number; readonly word: string }
+  | { readonly kind: 'lost'; readonly id: number; readonly error: string };
 
 /** The rooms' side: each room opened, told and ticked as the game's thread says, what it sends said back by `say`. */
 export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => void {
@@ -67,10 +68,20 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
       return;
     }
     const room = rooms.get(told.id);
-    if (!room) return;
-    if (told.kind === 'input') room.send(told.bytes);
-    else if (told.kind === 'word') say({ kind: 'word', id: told.id, word: room.isleWord(told.isle) });
-    else if (told.kind === 'close') rooms.delete(told.id);
-    else room.pump(told.seconds);
+    // A word asked of a room let go or lost is answered all the same: no island stands in it.
+    if (!room) {
+      if (told.kind === 'word') say({ kind: 'word', id: told.id, word: '' });
+      return;
+    }
+    try {
+      if (told.kind === 'input') room.send(told.bytes);
+      else if (told.kind === 'word') say({ kind: 'word', id: told.id, word: room.isleWord(told.isle) });
+      else if (told.kind === 'close') rooms.delete(told.id);
+      else room.pump(told.seconds);
+    } catch (error) {
+      // A room that fails is lost, as a server's room can be: let go, and the game told why.
+      rooms.delete(told.id);
+      say({ kind: 'lost', id: told.id, error: error instanceof Error ? error.message : String(error) });
+    }
   };
 }

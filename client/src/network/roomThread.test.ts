@@ -23,6 +23,7 @@ function joinedPort(): void {
   roomPort({
     post: (told: ToRooms) => setTimeout(() => serve(told.kind === 'open' ? told : structuredClone(told))),
     hear: (heard) => (toGame = heard),
+    fail: () => undefined,
   });
 }
 const settled = () => new Promise((done) => setTimeout(done, 5));
@@ -112,4 +113,32 @@ test('a room that cannot open says why, and the game hears it as a failed openin
     RoomThread.openNode(compiled, '{"not":"a node"}', () => undefined),
     /not one a room can stand on/,
   );
+});
+
+test('a word asked of a room let go before it answers is answered with none, never left waiting', async () => {
+  joinedPort();
+  const sea = await RoomThread.openSea(compiled, layoutText, () => undefined, 42);
+  const asked = sea.isleWord(1);
+  sea.close();
+  assert.equal(await asked, '');
+});
+
+test('a room that fails in the worker is lost, why said, and what it was asked is answered', async () => {
+  joinedPort();
+  const node = await RoomThread.openNode(compiled, glade(), () => undefined);
+  const asked = node.isleWord(1);
+  // Bytes no input can be read from: the room's door throws on them in the worker.
+  node.send(undefined as unknown as Uint8Array<ArrayBuffer>);
+  await settled();
+  assert.ok(node.lost, 'the room is lost');
+  assert.equal(await asked, '');
+  assert.equal(await node.isleWord(1), '', 'and asked again, answers none');
+});
+
+test('a rooms worker that fails loses every room and refuses every opening still waiting', async () => {
+  let fail: (reason: string) => void = () => undefined;
+  roomPort({ post: () => undefined, hear: () => undefined, fail: (failed) => (fail = failed) });
+  const opening = RoomThread.openNode(compiled, glade(), () => undefined);
+  fail('the worker could not start');
+  await assert.rejects(opening, /the worker could not start/);
 });

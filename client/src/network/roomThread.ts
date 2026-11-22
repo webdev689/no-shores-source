@@ -10,6 +10,8 @@ import type { PortInfo } from '../rules/watersRules.ts';
 export interface RoomPort {
   post(told: ToRooms): void;
   hear(heard: (said: FromRooms) => void): void;
+  /** `failed` is told why if the worker itself fails: it did not start, or an error escaped it. */
+  fail(failed: (reason: string) => void): void;
 }
 
 const workerPort = (): RoomPort => {
@@ -17,6 +19,7 @@ const workerPort = (): RoomPort => {
   return {
     post: (told) => worker.postMessage(told),
     hear: (heard) => worker.addEventListener('message', (event: MessageEvent<FromRooms>) => heard(event.data)),
+    fail: (failed) => worker.addEventListener('error', (event) => failed(event.message || 'the rooms’ worker failed')),
   };
 };
 
@@ -31,8 +34,28 @@ export function roomPort(given?: RoomPort): RoomPort {
   if (given || !port) {
     port = given ?? workerPort();
     port.hear(heard);
+    port.fail(workerFailed);
   }
   return port;
+}
+
+/** Every word still waited for from room `id` answered: none. */
+function unasked(id: number): void {
+  for (const answer of words.get(id) ?? []) answer('');
+  words.delete(id);
+}
+
+/** The worker failed: every opening still waiting is refused and every room is lost, each told why. */
+function workerFailed(reason: string): void {
+  console.error(`the rooms for playing alone failed: ${reason}`);
+  for (const [id, waiting] of opening) {
+    opening.delete(id);
+    waiting.reject(new Error(reason));
+  }
+  for (const [id, room] of rooms) {
+    room.lost = reason;
+    unasked(id);
+  }
 }
 
 function heard(said: FromRooms): void {
@@ -48,18 +71,24 @@ function heard(said: FromRooms): void {
     return;
   }
   const room = rooms.get(said.id);
+  if (said.kind === 'lost') {
+    console.error(`a room for playing alone was lost: ${said.error}`);
+    if (room) room.lost = said.error;
+    unasked(said.id);
+    return;
+  }
   if (said.kind === 'snapshot') room?.told(said.snapshot);
   else room?.geared(said.gear);
 }
 
-/** A room for playing alone, in the rooms' worker: a link as a server's room is, joined once and never lost. */
+/** A room for playing alone, in the rooms' worker: a link as a server's room is, joined once, lost only if it fails. */
 export class RoomThread implements RoomLink {
   readonly player: number;
   readonly epoch: number;
   readonly dressed = [];
   readonly joins = 1;
   readonly rejoining = false;
-  readonly lost = null;
+  lost: string | null = null;
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
@@ -167,7 +196,7 @@ export class RoomThread implements RoomLink {
   /** Lets the room go in the worker: nothing more of it is heard. */
   close(): void {
     rooms.delete(this.id);
-    words.delete(this.id);
+    unasked(this.id);
     roomPort().post({ kind: 'close', id: this.id });
   }
 }
