@@ -226,10 +226,11 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the ways;
   the walk's frames go at the pace they stroll, each in a step of its own. Each walker stands on the ground, or on the
   highest top under them whose underside is within a step of the floor so far, climbed in turn (`floorOver`): a pier's
-  deck, a podium or a landing, never a roof over them; it is found again only once they have walked a step. A round's
-  sweeper keeps a whole number of the walkers' 600 s loops, staying at the round's first post until it is up, and the
-  walkers are drawn clear of the sweeper's walks, so none walks in another however long the clock runs. The fight never
-  takes them for targets.
+  deck, a podium or a landing, never a roof over them; it is found again only once they have walked a step. Shape, the
+  keepers' marks, Elder Maren Hale and a quest's rings stand on the same floor in a social space. A round's sweeper
+  keeps a whole number of the walkers' 600 s loops, staying at the round's first post until it is up, and the walkers
+  are drawn clear of the sweeper's walks, so none walks in another however long the clock runs. The fight never takes
+  them for targets.
 - **Over what a player can use** (`overheadMarks`, `marksOver`; [[What a Player Can Use Wears Its Mark Over It]]),
   drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
   the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)

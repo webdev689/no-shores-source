@@ -7,7 +7,7 @@ import { Cues } from '../../cinema/cues.ts';
 import { EVENT } from '../../combat/cues.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
-import type { InputFrame } from '../../player/input.ts';
+import { handsFree, type InputFrame } from '../../player/input.ts';
 import { askedKey } from '../controls.ts';
 import type { FootFight } from '../foot.ts';
 import { gearScreenOpen, type GearHere } from '../gearScreen.ts';
@@ -244,9 +244,10 @@ export class WreckFight implements Beat {
     const held = !!coming || this.ending !== null;
     const aspect = tick.size.width / Math.max(1, tick.size.height);
     // Over the menu the player's presses rest, though the room runs on, so what they equip is worn at once.
+    const paused = held || gearScreenOpen();
     const shown = run.frame(tick.controls, tick.seconds, this.playClock, {
-      paused: held || gearScreenOpen(),
-      hands: tick.controls.locked && !held,
+      paused,
+      hands: handsFree(tick.controls, paused) && !held,
       aspect,
       held,
       frozen,

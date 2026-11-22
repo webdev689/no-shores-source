@@ -201,9 +201,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   The interface lays itself in pixels of its own, each drawn as the screen's ratio rounded to whole device pixels
   (`uiScale`), so at a ratio of 1.5 each is 2 device pixels.
 - **The pointer and the ratio.** The page hears the pointer and the wheel in its CSS pixels. Each frame is told the
-  screen's ratio (the game, the World Editor and the Test Ground pass `devicePixelRatio`; in the game's worker that is
-  the ratio its canvas is drawn at, less than the screen's where the canvas is shrunk to the GPU's largest texture,
-  [[Game]]), and the interface turns each
+  screen's ratio (the Test Ground passes `devicePixelRatio`; the game and the World Editor the ratio their canvas is
+  drawn at, less than the screen's where the canvas is shrunk to the GPU's largest texture, [[Game]]), and the
+  interface turns each
   position into its own pixels, the ratio over `uiScale`; `takes`, which a page's handler asks with CSS pixels, does
   the same. The box of the field being typed in goes back to the page in CSS pixels, for the browser's typing to place
   its composition by. At a whole ratio the two are the same. The World Editor's view starts at the panel's drawn edge
