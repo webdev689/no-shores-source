@@ -91,5 +91,5 @@ The numbers (500 an hour, 30 days, 2 minutes, 10 seconds, 1 GB) were Claude's, i
 - **18.** A chunk late to come leaves another held to play meanwhile, never the one played last.
 - **19.** Already so since [[Areas Load in Chunks With Proper Caching]]: oldest means first kept.
 - **20.** CI reads the packs from R2's public address, each checked by the hash in its name.
-- **22.** The quests' spoken lines are already scenes in `content/story/`, which the check reads; it now also holds every
-  scene, speaker and shown word a quest names.
+- **22.** The quests' spoken lines are already scenes in `content/story/`, which the check reads; it now also holds
+  every scene, speaker and shown word a quest names.

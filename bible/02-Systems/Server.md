@@ -224,8 +224,9 @@ or 1, the world's own time, which the page sails it at while its view is close o
 A ship not yet at sea puts in only by a port city, its course's first point within 3 km of the roadstead, and then at
 that roadstead itself, never the page's own point, the page told so (`Sea::puts_in`; a sea opened with no port cities
 puts it to sea where the page asks); a ship its owner sailed before comes back where the sea last had it, however far
-the page puts it, as a ship sails nowhere while its player is away ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); one at sea starts the course from where it is, to the nearest metre, so the legs it sails are the legs
-judged. A course with no points brings a ship to rest, turned to its
+the page puts it, as a ship sails nowhere while its player is away
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]); one at sea starts the course from where it is, to the nearest
+metre, so the legs it sails are the legs judged. A course with no points brings a ship to rest, turned to its
 facing when it holds one: the helm turned while it lies still. A player sets one course, facings among them, each half
 second, and one sooner is dropped: judging a course against the coasts takes up to a few
 milliseconds, which no player may ask for every tick. The browser keeps its latest course and sends it once the sea
@@ -346,8 +347,8 @@ rank each, fight whom they choose, all in one fight ([[Naval Combat]]).
   A room on land the servers host is given two seeds of its own, random and never sent: one its loot is drawn from,
   and one its foes' choices are, so what a player sees of the foes tells them nothing of the loot. The sea is given
   the same two: what floats and what each boarded deck drops roll on them, a deck's mixed by its ship, never on the
-  sea's own seed, which its islands' seeds show ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A node's garrison
-  is drawn, as the room opens, from its id alone, so it stands the same on every machine.
+  sea's own seed, which its islands' seeds show ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A node's
+  garrison is drawn, as the room opens, from its id alone, so it stands the same on every machine.
 
 ## The bake
 

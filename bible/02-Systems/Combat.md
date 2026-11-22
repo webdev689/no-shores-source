@@ -286,7 +286,8 @@ A foe never drinks.
   post, its fight given up, fills nothing and counts toward no kill. A cast under way holds off a drink press.
 - **Full again.** A player comes into every room, Overlook and the town included, with all three, and stands again
   after death with all three; but one whose character left a room within two minutes comes back with the charges and
-  health it left with, so leaving and coming back heals nothing ([[Server]], [[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+  health it left with, so leaving and coming back heals nothing
+  ([[Server]], [[The Audit's Leftovers Are Fixed as Claude Suggested]]).
 - **On the wire.** The charges, the meter and the drink's press kept and held cross in the fighter's numbers after its
   ammunition; the drink is an action of its own, so another browser sees it, and the intent's last number asks for
   one. The room fills the meter as it settles each blow; the browser predicts the drink, and takes the charges and the
