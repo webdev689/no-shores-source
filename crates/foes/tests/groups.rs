@@ -284,3 +284,14 @@ fn a_foe_with_no_shield_flanks_though_it_blocks_with_its_blade() {
     assert!(wide(11) > 300, "the captain stands out on the flank: {} samples", wide(11));
     assert!(wide(10) + wide(12) < wide(11) / 10, "the shields hold the line: {} samples off it", wide(10) + wide(12));
 }
+
+#[test]
+fn a_foe_struck_from_idle_and_picked_to_rage_keeps_its_rage_as_it_thinks() {
+    let mut room = Room::new(1).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -6.0, PI);
+    // A blow stirs it fully and gives it its target, though it has not yet thought itself alert.
+    room.tell(10, foes::Seen::Struck { by: PLAYER, verdict: combat::Verdict::Hit { damage: 1.0, poise: 0.0 } });
+    let tick = room.tick;
+    room.brains[0].1.breaks(tick, true);
+    room.run(1, &mut still(0.0));
+    assert_eq!(room.brain(10).mood(room.tick), foes::Mood::Raging);
+}

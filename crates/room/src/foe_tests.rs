@@ -530,3 +530,21 @@ fn a_shooter_caught_by_a_target_that_follows_it_fights_close_a_while_rather_than
         assert!(shakes <= 4, "at {pace}: its aim turned back and forth {shakes} times in a second");
     }
 }
+
+#[test]
+fn a_ward_beside_a_running_player_keeps_no_noise_it_never_thinks_about() {
+    let mut room = room();
+    let player = room.join().unwrap();
+    let swordsman = ::foes::foe_type(SWORDSMAN).unwrap();
+    let ward = room.stand_foe(swordsman, ::foes::Rank::Major, [0.0, -4.0, 0.0], 0.0, None);
+    room.quests.wards.insert(ward);
+    for sequence in 1..=600 {
+        // The player runs a ring about the ward, every step a noise.
+        let controls = Controls { forward: 1.0, run: true, yaw: f64::from(sequence) * 0.05, ..Controls::default() };
+        room.input(player, asking(&room, sequence, None, controls)).unwrap();
+        room.tick();
+    }
+    // At most what it was told this tick, before its next (empty) thought.
+    let heard = format!("{:?}", room.foes[&ward].brain).matches("Heard(").count();
+    assert!(heard <= 1, "{heard} noises kept");
+}

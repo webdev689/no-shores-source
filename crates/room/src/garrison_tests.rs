@@ -9,11 +9,15 @@ const KINDS: [NodeKind; 4] = [NodeKind::Patrol, NodeKind::Mission, NodeKind::Dun
 
 /// Land rising 300 m a kilometre east and south, over 4 km square round the origin.
 pub(super) fn sloped() -> Floor {
+    land((0..16).map(|cell| f64::from(cell % 4 + cell / 4) * 300.0).collect())
+}
+
+/// Land over 4 km square round the origin, its heights at the corners of a kilometre grid (`rising`, row by row).
+pub(super) fn land(rising: Vec<f64>) -> Floor {
     let grid = |data: Vec<f64>| {
         json!({ "width": 4, "height": 4, "left_m": -2000.0, "top_m": -2000.0, "cell_m": 1000.0,
             "first_column": 0, "first_row": 0, "data": data })
     };
-    let rising: Vec<f64> = (0..16).map(|cell| f64::from(cell % 4 + cell / 4) * 300.0).collect();
     let ground = json!({ "land": grid(rising), "lake_level": vec![0.0; 16], "rivers": [], "roads": [], "towns": [],
         "coast": grid(vec![5000.0; 16]), "across": grid(vec![-50.0; 16]), "pads": [], "seed": 7 });
     Floor::Land(Box::new(serde_json::from_value(ground).unwrap()))

@@ -107,7 +107,8 @@ the mesh's epoch, so a foe knows its path may be stale.
 
 **What a walk reaches** floods the polys joined to a start once, across shared edges and along links, then answers for
 any point: on one of them, and
-within 1 m of its surface. **The nearest point** answers where a path to a body off the mesh should end: the point
+within 1 m of its surface. No room asks it yet, so it too is held by the crate's own tests alone.
+**The nearest point** answers where a path to a body off the mesh should end: the point
 itself on the mesh, else the nearest point of a poly on its level within 1.5 m, else within 4 m. It reads only the
 polys filed near the point.
 

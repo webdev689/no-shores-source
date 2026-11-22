@@ -62,7 +62,10 @@ impl Room {
             let Some(foe) = self.foes.get(&id) else { continue };
             // A ward thinks nothing: it stands where it was stood.
             if self.quests.wards.contains(&id) {
-                intents.push((id, (foe.brain.clone(), combat::Intent::default())));
+                // Nor keeps what it was told to think about.
+                let mut brain = foe.brain.clone();
+                brain.forget_heard();
+                intents.push((id, (brain, combat::Intent::default())));
                 continue;
             }
             let world = World {
