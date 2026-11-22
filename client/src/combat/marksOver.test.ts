@@ -29,6 +29,12 @@ test('a mark is WIDTH_M across near, never narrower on the screen than MIN_RAD f
   assert.deepEqual(seen(REACH_M + 1), [], 'none past it');
 });
 
+test('a picture with a pixel of its own is laid as wide as any other', () => {
+  const own = { rows: ['aa', 'aa'], colours: ['#ff0000'], pixelM: 0.05 };
+  const width = widthOf(marksSeen([{ picture: own, at: [0, 0, 2] }], [0, -3, 2], 0, true));
+  assert.ok(Math.abs(width - WIDTH_M) < 0.05, `WIDTH_M across, near: ${width}`);
+});
+
 test('a mark bobs on a phase of its own, holds still under reduced motion, and only the nearest are laid', () => {
   const picture = AMMO_BOX;
   const one = [{ picture, at: [0, 0, 2] as const }];

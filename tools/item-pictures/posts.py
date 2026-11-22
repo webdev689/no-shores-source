@@ -2,9 +2,9 @@
 
 import math
 
-from pix import Canvas, dither, lit, ramp
+from pix import Canvas, lit, ramp
+from pixels import OUTLINE
 
-OUTLINE = '#120e0a'
 
 
 def first_mate():
@@ -42,7 +42,8 @@ def gunner():
         t = step / 199
         cx, cy = centre(t)
         r = 4.2 * (1 - t) + 1.0 * t
-        tone = lambda x, y, cx=cx, cy=cy, r=r, t=t: (4 if t > 0.86 else ramp(lit(x, y, cx, cy, max(r, 1.5)) * 0.95, [1, 2, 3]))
+        tone = lambda x, y, cx=cx, cy=cy, r=r, t=t: (
+            4 if t > 0.86 else ramp(lit(x, y, cx, cy, max(r, 1.5)) * 0.95, [1, 2, 3]))
         c.ellipse(cx, cy, r, r, tone)
     # The butt's brass cap and the spout's.
     c.ellipse(4, 8, 1.6, 4.2, lambda x, y: ramp((y - 4) / 9, [5, 6]))

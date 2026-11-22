@@ -100,8 +100,8 @@ export function svgNode(key: string, svg: string, size: number, height = size): 
   return { width: size, height, picture: { key, source: { svg } } };
 }
 
-/** A glyph of the menu's, `size` pixels a side: unless said, a gear glyph's 12 cells at three times and a ship
- *  glyph's 24 at twice, whole pixels either way. */
+/** A glyph of the menu's, `size` pixels a side: unless said, a gear glyph's 12 cells at three times, a baked one's 18
+ *  and a Vestige's 18 at twice, and a ship glyph's 24 at twice, whole pixels each way. */
 export function glyphNode(
   glyph: Exclude<Glyph, 'item'>,
   size = fineGlyph(glyph) ? 48 : 36,

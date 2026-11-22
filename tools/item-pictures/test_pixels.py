@@ -43,6 +43,13 @@ class Glyph(unittest.TestCase):
         self.assertEqual(brightness, sorted(brightness, reverse=True))
         self.assertTrue(set(''.join(rows)) <= set('.' + LETTERS[:5]))
 
+    def test_two_colours_that_write_the_same_are_one_letter(self):
+        # Grey at 0.5 and at 0.5014 both write as the same hex colour, 808080.
+        close = rendered(4, lambda y, x: (0.5014 if x < 16 else 0.5, 0.5014 if x < 16 else 0.5, 0.5, 1)
+                         if 8 <= y < 24 and 8 <= x < 24 else None)
+        rows, palette = glyph(close, 4)
+        self.assertEqual(palette, [OUTLINE, '#808080'])
+
     def test_an_empty_render_is_an_empty_glyph(self):
         rows, palette = glyph(np.zeros((8 * SCALE, 8 * SCALE, 4)), 8)
         self.assertEqual(rows, ['........'] * 8)

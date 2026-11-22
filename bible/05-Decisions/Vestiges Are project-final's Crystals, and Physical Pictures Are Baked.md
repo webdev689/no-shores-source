@@ -38,7 +38,7 @@ says, the owner chose the first: "#1, also should we stop using R2 or keep using
 - **The rarity line stays**, rising over the crystal's glow.
 - **The crystals' colours**, Normal to Atheric: white, green, yellow, red, cyan blue.
 - **The rarities are recoloured to match**: Magic green and Legendary red everywhere, in frames, cards, pips and lines;
-  Normal, Rare and Atheric keep theirs ([[Gear and Power Follow Destiny 1 Vanilla]]).
+  Normal, Rare and Atheric keep theirs ([[Gear and Power Follow Destiny 1 Vanilla]], [[Interface]], "Rarity").
 - **The island resources, the Ammo box and crate, and the ship's modules and materials become Blender models baked
   to sprites.** The officers' posts stay drawn in code ([[Item Pictures]]).
 - **The bakes are written into the client as rows of pixel letters**, kept in git as the ship's glyphs are: an

@@ -21,8 +21,9 @@ export const RISE_S = 0.4;
 /** How a drop moves: its middle's height over the body as it leaves, its pop upward and the most more it may have,
  *  the pull, the share of a bounce's speed it keeps and of its way along the ground, the speed under which it settles,
  *  its middle's height over the ground as it bounces and as it hovers, how long it takes to rise there, its bob's
- *  height and rate (radians a second), and its turn in the air and at rest (radians a second): project-final's. And how
- *  long the room waits before it may be taken, the longest it can bounce (crates/room/src/drops.rs, its REST_TICKS). */
+ *  height and rate (radians a second), and its turn in the air and at rest (radians a second): project-final's, but
+ *  for the heights, raised so no frame dips into the ground. And how long the room waits before it may be taken, the
+ *  longest it can bounce (crates/room/src/drops.rs, VESTIGE_REST_TICKS and AMMO_REST_TICKS). */
 export interface Feel {
   readonly leaves: number;
   readonly pop: number;
@@ -42,14 +43,14 @@ export interface Feel {
 }
 
 export const CRYSTAL_FEEL: Feel = {
-  leaves: 1.1,
+  leaves: 1.15,
   pop: 4.4,
   popMore: 1,
   pull: 16,
   keeps: 0.4,
   grip: 0.55,
   settles: 1.1,
-  low: 0.18,
+  low: 0.23,
   hover: 0.42,
   riseS: 0.35,
   bob: 0.05,
@@ -61,14 +62,14 @@ export const CRYSTAL_FEEL: Feel = {
 
 /** Ammunition pops lower and settles sooner. */
 export const AMMO_FEEL: Feel = {
-  leaves: 0.9,
+  leaves: 1.01,
   pop: 2.8,
   popMore: 0.6,
   pull: 16,
   keeps: 0.3,
   grip: 0.55,
   settles: 1.6,
-  low: 0.2,
+  low: 0.31,
   hover: 0.5,
   riseS: 0.28,
   bob: 0.06,
@@ -139,7 +140,7 @@ export function motionAt(feel: Feel, from: Point, rest: Point, seed: number, sec
 export const LINE_M = [0.7, 1, 1.4, 1.9, 2.5] as const;
 const AMMO_LINE_M = LINE_M[0];
 const WHITE = [1, 1, 1] as const;
-/** An ammunition picture's pixel on the ground, metres, and how far over the ground a line stands. */
+/** A picture's pixel in the world when it has none of its own, metres, and how far over the ground a line stands. */
 export const PIXEL_M = 0.035;
 const LIFT_M = 0.01;
 /** A line's width, and the least it keeps of the eye's view, radians, so one across the ground still shows; how many
@@ -152,6 +153,21 @@ const PULSE_HZ = 1;
 /** A mark's opacity below none: the marks' sign for light added to what stands behind it. */
 const ADDED = -1;
 
+/** How far ammunition's drawn top stands over its middle at the most through its turn, metres, so its line rises from
+ *  one height as it turns. */
+const topOf = (frames: readonly PixelPicture[]): number =>
+  Math.max(
+    ...frames.map((frame) => {
+      const first = Math.max(
+        0,
+        frame.rows.findIndex((row) => /[^.]/.test(row)),
+      );
+      return (frame.rows.length / 2 - first) * (frame.pixelM ?? PIXEL_M);
+    }),
+  );
+const BOX_TOP_M = topOf(AMMO_BOX_TURN);
+const CRATE_TOP_M = topOf(AMMO_CRATE_TURN);
+
 /** How a drop moves: a Vestige as a crystal, ammunition as ammunition. */
 const feelOf = (drop: Pick<GearDrop, 'kind'>): Feel => (drop.kind === DROPPED.vestige ? CRYSTAL_FEEL : AMMO_FEEL);
 
@@ -161,10 +177,14 @@ export function pictureOf(
   drop: Pick<GearDrop, 'kind' | 'rarity'>,
   turn = 0,
 ): { readonly body: PixelPicture; readonly halo: PixelPicture | null } {
-  const frame = ((Math.floor((turn / (2 * Math.PI)) * SPIN_FRAMES) % SPIN_FRAMES) + SPIN_FRAMES) % SPIN_FRAMES;
-  if (drop.kind === DROPPED.vestige) return crystalFrame(drop.rarity, frame);
+  if (drop.kind === DROPPED.vestige) return crystalFrame(drop.rarity, frameOf(turn, SPIN_FRAMES));
   const turning = drop.kind === DROPPED.crate ? AMMO_CRATE_TURN : AMMO_BOX_TURN;
-  return { body: turning[frame] ?? AMMO_BOX, halo: null };
+  return { body: turning[frameOf(turn, turning.length)] ?? AMMO_BOX, halo: null };
+}
+
+/** Which of `frames` frames of a whole turn shows `turn` radians round. */
+function frameOf(turn: number, frames: number): number {
+  return ((Math.floor((turn / (2 * Math.PI)) * frames) % frames) + frames) % frames;
 }
 
 /** A colour written `#rrggbb` as red, green and blue from 0 to 1. */
@@ -455,11 +475,8 @@ export class DropsShown {
       const colour = ammo ? WHITE : (LINE_COLOURS[drop.rarity] ?? WHITE);
       const tall = (ammo ? AMMO_LINE_M : (LINE_M[drop.rarity] ?? AMMO_LINE_M)) * rise;
       const pulse = !ammo && drop.rarity >= 3 ? 1 + 0.35 * Math.sin(seconds * 2 * Math.PI * PULSE_HZ) : 1;
-      const crown: Point = [
-        motion.middle[0],
-        motion.middle[1],
-        motion.middle[2] + (ammo ? tallM / 2 : CROWN_M) + LIFT_M,
-      ];
+      const top = drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M;
+      const crown: Point = [motion.middle[0], motion.middle[1], motion.middle[2] + top + LIFT_M];
       markLine(marks, crown, tall, colour, rise * pulse, seconds, eye);
     }
     for (const key of this.began.keys())

@@ -31,11 +31,11 @@ AMMO_PIXEL_M = 0.038
 # What each ship glyph shows, written over its map.
 NOTES = {
     'timber': 'Three sawn planks stacked two and one, their end grain to the left, a rope lashed round them.',
-    'canvas': 'A bolt of sailcloth on its side, its rolled end to us, tied with red twine, a fold of it unrolled below.',
+    'canvas': 'A bolt of sailcloth on its side, its rolled end to us, tied with red twine, a fold of it below.',
     'iron': 'Three cast ingots stacked two and one, a mark cast in each.',
     'heartwood': 'An old keel sawn across: bark, growth rings and its red heart, the log running back behind it.',
-    'guns': 'A gun on its carriage: an iron barrel with its rings and cascabel, the wooden bracket and trucks, shot by it.',
-    'hull': 'Its hull from the side: planks, the wale, gunports with red lids, lit stern windows, copper, the bowsprit.',
+    'guns': 'A gun on its carriage: an iron barrel, its rings and cascabel, the bracket and trucks, shot by it.',
+    'hull': 'Its hull: planks, the wale, gunports with red lids, lit stern windows, copper, the bowsprit.',
     'sails': 'A square sail on its yard, full of wind, the mast behind it and the pennant at the masthead.',
     'rigging': 'Shrouds rising from their deadeyes to the masthead, the ratlines rigged across them.',
     'first_mate': "The First Mate's tricorne, its brim bound in gold braid, a cockade on its side.",
@@ -64,8 +64,8 @@ def picture(rows, palette, indent, pixel=None):
 def baked_file(what, body):
     """A file of baked pictures: its head, saying where they come from, then `body`."""
     head = [
-        f"// {what}, baked from the Blender models in `tools/item-pictures/models.py` by its `write.py`, which writes",
-        "// this file: 18 cells a side, each in its own colours, the outline first, then light to dark. Write it again",
+        f"// {what}: baked from the Blender models in `tools/item-pictures/models.py` and written here by its",
+        "// `write.py`, 18 cells a side, each in its own colours, the outline first, then light to dark. Write it again",
         "// rather than editing it.",
         '',
         "import type { PixelPicture } from './dropPictures.ts';",
@@ -75,7 +75,8 @@ def baked_file(what, body):
 
 
 def resources_file(resources):
-    lines = ["/** Each island's resource, in the catalogue's order. */", 'export const RESOURCE_PICTURES: readonly PixelPicture[] = [']
+    lines = ["/** Each island's resource, in the catalogue's order. */",
+             'export const RESOURCE_PICTURES: readonly PixelPicture[] = [']
     for (name, _, _), (rows, palette) in zip(RESOURCES, resources):
         lines.append(f'  // {name}.')
         lines += picture(rows, palette, 2)
@@ -96,10 +97,11 @@ def ammunition_file(name, still, frames):
 def glyphs_file(glyphs):
     names = list(glyphs)
     lines = [
-        "// The ship's glyphs at 24 x 24 as the Arts' emblems are (`player/artGlyphs.ts`), twice the gear's 12 so they hold",
-        "// a picture's detail: its four materials and its four modules, baked from Blender models, the modules standing",
-        "// for a module's picture since the forge draws only what a figure wears; and the five posts its officers hold,",
-        "// drawn by hand. Each map is rows of letters, a letter a colour of its palette (outline first) and a dot none.",
+        "// The ship's glyphs at 24 x 24 as the Arts' emblems are (`player/artGlyphs.ts`), twice the gear's 12 so",
+        "// they hold a picture's detail: its four materials and its four modules, baked from Blender models, the",
+        "// modules standing for a module's picture since the forge draws only what a figure wears; and the five posts",
+        "// its officers hold, drawn by hand. Each map is rows of letters, a letter a colour of its palette (outline",
+        "// first) and a dot none.",
         "// `tools/item-pictures/write.py` writes this file: write it again rather than editing it.",
         '',
         'export const SHIP_GLYPHS = [',
@@ -155,6 +157,6 @@ if __name__ == '__main__':
     GLYPHS.write_text(glyphs_file(glyphs))
     # In the repository's own layout, so writing it again changes nothing that did not change.
     written = [RESOURCE_FILE, *AMMUNITION_FILES, GLYPHS]
-    subprocess.run(['npx', 'prettier', '--write', *map(str, written)], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run([str(ROOT / 'node_modules/.bin/prettier'), '--write', *map(str, written)], cwd=ROOT, check=True)
     if len(sys.argv) > 1:
         sheet(resources + stills + ammunition[1][:3] + list(glyphs.values()), sys.argv[1])

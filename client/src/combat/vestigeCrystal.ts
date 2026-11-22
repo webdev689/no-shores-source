@@ -286,7 +286,7 @@ export interface CrystalFrame {
 
 const toneOf = (rarity: number): Tones => TONES[rarity] ?? (TONES[0] as Tones);
 const frames = new Map<string, CrystalFrame>();
-const stills = new Map<number, PixelPicture>();
+const stills = new Map<string, PixelPicture>();
 
 /** A frame of a rarity's turn, baked the first time it is shown: one at a time, so a crystal first seen costs a frame
  *  of baking, not its whole turn. */
@@ -306,17 +306,19 @@ export function crystalFrame(rarity: number, frame: number): CrystalFrame {
   return made;
 }
 
-/** A rarity's crystal for the screens: still, its halo see-through. */
-export function crystalStill(rarity: number): PixelPicture {
-  const kept = stills.get(rarity);
+/** A rarity's crystal still, for the screens: its halo see-through, its colours then `#rrggbbaa`, which only an SVG
+ *  reads; or without its halo, solid, for a mark in the world. */
+export function crystalStill(rarity: number, halo = true): PixelPicture {
+  const key = `${rarity}:${halo}`;
+  const kept = stills.get(key);
   if (kept) return kept;
   const baked = bake(toneOf(rarity), STILL_TURN, STILL_PIXELS, STILL_FILL);
   const still = pictured(baked, (pixel) => {
     const alpha = baked.shown[pixel] ?? 0;
     const colour = colourHex(baked.colours[pixel] ?? [0, 0, 0]);
-    if (alpha <= 0) return null;
-    return alpha >= 1 ? colour : `${colour}${hex(alpha * 255)}`;
+    if (alpha >= 1) return colour;
+    return alpha > 0 && halo ? `${colour}${hex(alpha * 255)}` : null;
   });
-  stills.set(rarity, still);
+  stills.set(key, still);
   return still;
 }

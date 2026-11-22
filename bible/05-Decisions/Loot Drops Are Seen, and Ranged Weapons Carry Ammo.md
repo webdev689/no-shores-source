@@ -21,3 +21,6 @@ This came within the round the owner handed over in full ("Build it all to 100%.
 
 How the drops look and are picked up, the capacities and how ammo is found, kept and used are Claude's, in [[Arts and
 Loadouts as Claude Shapes Them]]; DFO's drops come over as [[Pick - Loot Drops]].
+
+Replaced in part by [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]: a Vestige is
+project-final's crystal and drops move as its loot does; DFO's line stays.

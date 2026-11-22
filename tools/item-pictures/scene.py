@@ -12,6 +12,10 @@ import numpy as np
 
 from pixels import SCALE, glyph
 
+# How far round the camera stands unless a view says otherwise, degrees; the models that lay parts across the view read
+# it too.
+AZIMUTH = -35
+
 
 def reset():
     """An empty scene for Cycles on the CPU, the same each run: a soft grey sky and a sun set by `look`."""
@@ -115,6 +119,8 @@ def look(azimuth, elevation, cells, spin=0.0, roll=0.0, steady=False):
     round for the outline (`steady`: to its silhouette at every spin, so a turn holds its size); the sun comes from
     the camera's upper left."""
     scene = bpy.context.scene
+    # A shape's scale is set after it is added, so the last one's matrix waits on this to hold it.
+    bpy.context.view_layer.update()
     solids = [each for each in scene.objects if each.type == 'MESH']
     across, up = math.radians(azimuth), math.radians(elevation)
     toward = mathutils.Vector((math.sin(across) * math.cos(up), -math.cos(across) * math.cos(up), math.sin(up)))
@@ -148,18 +154,18 @@ def look(azimuth, elevation, cells, spin=0.0, roll=0.0, steady=False):
 
 def render():
     """The scene rendered, as rows of RGBA from the top, each from 0 to 1 as written (sRGB)."""
-    path = os.path.join(tempfile.mkdtemp(), 'render.png')
-    bpy.context.scene.render.filepath = path
-    bpy.ops.render.render(write_still=True)
-    image = bpy.data.images.load(path)
-    size = image.size[0]
-    pixels = np.array(image.pixels[:], dtype=np.float64).reshape(size, size, 4)[::-1]
-    bpy.data.images.remove(image)
-    os.remove(path)
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder, 'render.png')
+        bpy.context.scene.render.filepath = path
+        bpy.ops.render.render(write_still=True)
+        image = bpy.data.images.load(path)
+        size = image.size[0]
+        pixels = np.array(image.pixels[:], dtype=np.float64).reshape(size, size, 4)[::-1]
+        bpy.data.images.remove(image)
     return pixels
 
 
-def bake(build, cells, azimuth=-35, elevation=25, spin=0.0, roll=0.0, steady=False, most=11):
+def bake(build, cells, azimuth=AZIMUTH, elevation=25, spin=0.0, roll=0.0, steady=False, most=11):
     """`build` made in an empty scene and rendered as a glyph of `cells` a side."""
     reset()
     build()

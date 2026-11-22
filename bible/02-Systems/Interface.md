@@ -674,11 +674,12 @@ never while a press is held. Each press is an ask the room answers.
   cells, each resource mostly in its island's colour ([[Item Pictures]]). Currencies, nodes and elements are small
   pixel glyphs drawn by hand. The ship's glyphs are 24 by 24, as the Arts' emblems are, so a module shows a picture
   where a piece shows the forge's: its materials and modules baked as the resources are, its officers' posts drawn
-  by hand, all lit from the top left. A glyph shows only at whole multiples of its cells (36 for 18; 24, 48, 96 and
-  264 for 24).
-- **Rarity.** Normal white, Magic green, Rare yellow, Legendary red, Atheric cyan blue; a Normal piece's frame is the
-  kit's plain stone. A tile is Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a
-  card or page takes its rarity's band; pips mark it.
+  by hand, all lit from the top left. A baked or ship glyph shows only at whole multiples of its cells (36 for 18; 24,
+  48, 96 and 264 for 24).
+- **Rarity** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]). Normal white, Magic green,
+  Rare yellow, Legendary red, Atheric cyan blue; a Normal piece's frame is the kit's plain stone. A tile is Enhanced
+  Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a card or page takes its rarity's band;
+  pips mark it.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.

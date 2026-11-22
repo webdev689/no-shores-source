@@ -26,8 +26,11 @@ test('a players own gear the server wrote reads back whole, every column spelled
   assert.deepEqual([gear.ammo, gear.ammoMost, gear.ammoShare, gear.crates, gear.cratePrice], [0, 0, 0.5, 2, 250]);
   assert.deepEqual(
     gear.drops.map((drop) => [drop.kind, drop.at, drop.from, drop.flying]),
-    [[DROPPED.ammoBox, [1, 2, 0], [1, 2, 0], 60]],
-    "an Ammo box just laid flies the room's AMMO_REST_TICKS",
+    [
+      [DROPPED.ammoBox, [1, 2, 0], [1, 2, 0], 60],
+      [DROPPED.vestige, [3, 2, 0], [3, 2, 0], 94],
+    ],
+    "each just laid flies the room's rest for its kind, AMMO_REST_TICKS and VESTIGE_REST_TICKS",
   );
   assert.equal(gear.xp, 190_000n);
   assert.equal(gear.resources[4], 3, 'three of the node’s resource');

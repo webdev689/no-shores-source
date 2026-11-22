@@ -40,8 +40,3 @@ test('a ship glyph draws as an SVG as large as its map, every run of a tone in i
   assert.equal(cells, SHIP_MAPS.hull.join('').replaceAll('.', '').length, 'every drawn cell, once');
   for (const [, , , , fill] of runs) assert.ok(SHIP_PALETTES.hull.includes(fill ?? ''), fill);
 });
-
-test('the rigging is shrouds with ratlines across them, not a ring: rows crossed by a run of one tone', () => {
-  const rungs = SHIP_MAPS.rigging.filter((row) => /([b-l])\1{4,}/.test(row)).length;
-  assert.ok(rungs >= 3, `ratlines rigged across: ${rungs}`);
-});

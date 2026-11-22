@@ -11,7 +11,8 @@ hand-made model lives on R2 beside its mesh ([[Ship Models Live on R2]]). No fil
 [[Sprite Forge]], kept as DFO shipped it. Its renders are on R2, named in `content/forge/renders.json`.
 
 The exception is the small pixel pictures a tool writes into the client as rows of letters: the [[Item Pictures]]
-baked in Blender, and the ship's glyphs beside them
+baked in Blender, and `shipGlyphs.ts`, where the ship's baked materials and modules stand beside the officers' posts
+its writer draws by hand, as that file was kept before
 ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]).
 
 **Why.** DFO Online kept forge renders in 251 branches of their own, and its deploy needed size guards at 900 MB and

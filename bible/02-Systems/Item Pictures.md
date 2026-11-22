@@ -22,7 +22,7 @@ the page ([[Gear]], "Drops").
 ## How it works
 
 - **The models** (`models.py`): each item is a few shapes (boxes, spheres, rods, rings, and a loft for the hull and
-  the sail) in the colours its hand-drawn glyph had. With each comes its view: how far round, how high up, and how far
+  the sail) in its island's or material's colours. With each comes its view: how far round, how high up, and how far
   it is rolled on the view, so a long, thin one lies on the diagonal.
 - **The render** (`scene.py`): Cycles on the CPU at 24 samples, under a grey sky and a sun from the camera's upper
   left, as the kit's bevels are lit. The orthographic camera is fitted round the model with a cell spare all round,
@@ -37,8 +37,8 @@ the page ([[Gear]], "Drops").
     `posts.py` on `pix.py`'s canvas.
   - Prettier then lays them out, so writing them again changes nothing that did not change.
   - These rows are kept in git, as the owner chose ([[Generated Files Stay Out of Git]]).
-- **Drawn.** The screens draw a glyph at a whole multiple of its cells: an 18-cell one at 36, a 24-cell one at 48, 96
-  or 264 ([[Interface]], "Pictures"). A resource's picture is the resource as it is carried; its node in the world is
+- **Drawn.** The screens draw a glyph at a whole multiple of its cells: an 18-cell one at 36, a 24-cell one at 24, 48,
+  96 or 264 ([[Interface]], "Pictures"). A resource's picture is the resource as it is carried; its node in the world is
   the forge's picture of the place it is gathered from ([[Game]]). Ammunition turns as it hovers ([[Gear]], "Drops").
 
 | Command | Does |

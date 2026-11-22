@@ -1,17 +1,19 @@
-"""The models the item pictures are baked from, each built in an empty Blender scene of a few shapes, in the colours
-its hand-drawn glyph had: each island's resource, the Ammo box and crate, and the ship's materials and modules. Each
-entry is the model and how it is seen: from how far round and how high up, and how far it is rolled on the view.
+"""The models the item pictures are baked from, each built in an empty Blender scene of a few shapes, in its island's
+or material's colours: each island's resource, the Ammo box and crate, and the ship's materials and
+modules. Each entry is the model and how it is seen: from how far round and how high up, and how far it is rolled on
+the view.
 """
 import math
 
-from scene import ball, box, mesh, ring, rod
+from scene import AZIMUTH, ball, box, mesh, ring, rod
 
 
 def brineglass():
     # Salt grown into clear cubes.
-    for size, at, turn in (((0.8,) * 3, (0, 0, 0.4), (0, 0, 20)), ((0.55,) * 3, (0.62, 0.3, 0.28), (8, 0, -15)),
-                           ((0.45,) * 3, (-0.58, 0.12, 0.22), (0, 8, 40)), ((0.42,) * 3, (0.1, -0.05, 0.98), (25, 15, 35))):
-        box(size, at, '#bfe8ff', turn, rough=0.12)
+    cubes = [(0.8, (0, 0, 0.4), (0, 0, 20)), (0.55, (0.62, 0.3, 0.28), (8, 0, -15)),
+             (0.45, (-0.58, 0.12, 0.22), (0, 8, 40)), (0.42, (0.1, -0.05, 0.98), (25, 15, 35))]
+    for side, at, turn in cubes:
+        box((side,) * 3, at, '#bfe8ff', turn, rough=0.12)
 
 
 def cairn_iron():
@@ -26,7 +28,7 @@ def heartwood_resin():
     rod((0, 0, 0.75), (0, 0, 1.75), 0.5, '#d9973e', tip=0.0, sides=24, rough=0.2, glow=0.35)
 
 
-def sunstone(azimuth=-35):
+def sunstone(azimuth=AZIMUTH):
     # A stone giving off the day's heat, its rays round it across the view.
     ball(0.6, (0, 0, 0), '#f0b545', stretch=(1.1, 0.95, 0.85), rings=6, glow=0.7)
     right = (math.cos(math.radians(azimuth)), math.sin(math.radians(azimuth)))
@@ -55,7 +57,7 @@ def mistbloom():
     rod((0, 0, -1.3), (0, 0, -0.05), 0.06, '#5d8a56')
 
 
-def windthistle(azimuth=-35):
+def windthistle(azimuth=AZIMUTH):
     # A thistle's head, its down like wire, on its stem.
     ball(0.5, (0, 0, 0.5), '#4f8a72', stretch=(1, 1, 1.1), rings=8)
     right = (math.cos(math.radians(azimuth)), math.sin(math.radians(azimuth)))
@@ -112,7 +114,7 @@ def timber():
     for at in ((0, -0.3, 0.13), (0, 0.3, 0.13), (0, 0, 0.39)):
         box((2.2, 0.56, 0.26), at, '#b07a44', rough=0.8)
         box((0.03, 0.5, 0.2), (at[0] - 1.11, at[1], at[2]), '#f0d39c', rough=0.9)
-    ring(0.5, 0.045, (0.45, 0, 0.27), '#e2cb94', turn=(0, 90, 0))
+    ring(0.66, 0.045, (0.45, 0, 0.27), '#e2cb94', turn=(0, 90, 0))
 
 
 def canvas():
@@ -219,7 +221,8 @@ RESOURCES = [('Brineglass', brineglass, {}), ('Cairn Iron', cairn_iron, {'azimut
 AMMUNITION = [('Ammo box', ammo_box), ('Ammo crate', ammo_crate)]
 SHIP = {
     'timber': (timber, {'azimuth': -55}), 'canvas': (canvas, {'azimuth': -55}),
-    'iron': (iron, {'azimuth': -40, 'elevation': 38}), 'heartwood': (heartwood, {'azimuth': -60}), 'guns': (guns, {'azimuth': -30, 'elevation': 20}),
+    'iron': (iron, {'azimuth': -40, 'elevation': 38}), 'heartwood': (heartwood, {'azimuth': -60}),
+    'guns': (guns, {'azimuth': -30, 'elevation': 20}),
     'hull': (hull, {'azimuth': -30, 'elevation': 18}), 'sails': (sails, {'azimuth': -15, 'elevation': 8}),
     'rigging': (rigging, {'azimuth': -12, 'elevation': 6}),
 }

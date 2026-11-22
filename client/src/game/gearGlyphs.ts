@@ -1,14 +1,15 @@
-// The gear screens' glyphs, drawn pixel by pixel to sit with the forge's pixel figures and Enhanced Plus's carved
-// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a Vestige's crystal, an Ammo
-// box and an Ammo crate (the pictures drops stand as on the ground), and an empty place. Enhanced Plus has no icons of
-// its own for these, and the classic item art stays behind, so they are ours.
+// The gear screens' glyphs, pixel pictures to sit with the forge's pixel figures and Enhanced Plus's carved frames:
+// drawn by hand, Aurem, the fragments and Essence, the Fruit of Dagon and an empty place; baked, each island's
+// resource, a Vestige's crystal, an Ammo box and an Ammo crate (the pictures drops stand as on the ground). Enhanced
+// Plus has no icons of its own for these, and the classic item art stays behind, so they are ours.
 
 import { AMMO_BOX, AMMO_CRATE, OUTLINE, resourcePicture } from '../combat/dropPictures.ts';
 import { crystalStill } from '../combat/vestigeCrystal.ts';
 import type { Glyph } from './gearCards.ts';
 import { SHIP_MAPS, SHIP_PALETTES } from './shipGlyphs.ts';
 
-/** Each glyph as rows of letters, each letter a colour of its palette and a dot none. 12 × 12. */
+/** Each glyph as rows of letters, each letter a colour of its palette and a dot none: 12 × 12 drawn by hand, 18 × 18
+ *  an Ammo box's or crate's, 24 × 24 a ship's. */
 const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource' | 'vestige'>, readonly string[]>> = {
   ...SHIP_MAPS,
   // XP: a four-pointed spark, lit at its heart.

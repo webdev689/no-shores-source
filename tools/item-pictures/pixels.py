@@ -39,7 +39,7 @@ def quantised(colours, most):
     """At most `most` colours standing for `colours`: k-means from colours spread evenly by brightness."""
     if len(colours) == 0:
         return np.zeros((1, 3))
-    unique = np.unique(np.round(colours, 3), axis=0)
+    unique = on_bytes(colours)
     if len(unique) <= most:
         return unique
     bright = colours @ np.array([0.2126, 0.7152, 0.0722])
@@ -50,7 +50,12 @@ def quantised(colours, most):
         for index in range(most):
             if np.any(nearest == index):
                 centres[index] = colours[nearest == index].mean(axis=0)
-    return np.unique(np.round(centres, 4), axis=0)
+    return on_bytes(centres)
+
+
+def on_bytes(colours):
+    """The colours as they are written, each channel to 1/255, and each once: two that write the same are one."""
+    return np.unique(np.round(colours * 255) / 255, axis=0)
 
 
 def hexed(colour):

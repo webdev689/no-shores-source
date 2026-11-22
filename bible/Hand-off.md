@@ -267,12 +267,14 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **#143, Vestiges as project-final's crystals, and the item pictures baked in Blender** (`ccr-e806aa9f-fngvgz`),
   tested offline, waiting for the owner's yes to merge
   ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]], [[Pick - project-final Drops]],
-  [[Item Pictures]]): the crystal baked in the page in the owner's white,
-  green, yellow, red and cyan blue; every drop popped, bounced, settled and hovering as project-final's loot; the line
-  kept over the halo; the room's rest 94 ticks for a Vestige and 60 for ammunition; Magic green and Legendary red
-  everywhere; the island resources, the Ammo box and crate (turning on the ground) and the ship's materials and
-  modules baked from Blender models by `tools/item-pictures/`, kept as rows in the client as the owner chose. Not yet
-  seen in a live fight or on a real GPU; the bakes are a first pass for the owner to judge.
+  [[Item Pictures]]): the crystal baked in the page in the owner's white, green, yellow, red and cyan blue; every drop
+  popped, bounced, settled and hovering as project-final's loot; the line kept over the halo; the room's rest 94 ticks
+  for a Vestige and 60 for ammunition; Magic green and Legendary red everywhere; the island resources, the Ammo box
+  and crate (turning on the ground) and the ship's materials and modules baked from Blender models by
+  `tools/item-pictures/`, kept as rows in the client as the owner chose. A comprehensive audit (three independent
+  auditors and a ponytail review) found the bake's stale-scale shapes, drops dipping into the ground and untested
+  rests, all fixed with tests. Not yet seen in a live fight or on a real GPU; the bakes are a first pass for the owner
+  to judge.
 - **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), merged with the owner's yes ("Lets go ahead and queue up
   the deploy"), which deploys the page and the rooms; audited (an independent read-only audit and a ponytail review,
   their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a death),

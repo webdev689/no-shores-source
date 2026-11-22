@@ -10,6 +10,7 @@ import {
   AMMO_FEEL,
   CRYSTAL_FEEL,
   DropsShown,
+  type Feel,
   LINE_M,
   PIXEL_M,
   RISE_S,
@@ -58,7 +59,7 @@ function covered(marks: readonly number[]): number {
 
 test('a drop pops out of the body, bounces until it settles where the room threw it, then hovers, bobbing', () => {
   const thrown = (seconds: number) => motionAt(CRYSTAL_FEEL, FROM, REST, 3, seconds);
-  assert.ok(Math.abs(thrown(0).middle[2] - 1.1) < 1e-9 && !thrown(0).settled, 'it leaves the body 1.1 m up');
+  assert.ok(Math.abs(thrown(0).middle[2] - CRYSTAL_FEEL.leaves) < 1e-9 && !thrown(0).settled, 'it leaves the body');
   const flight = arcsOf(CRYSTAL_FEEL, CRYSTAL_FEEL.pop, 1).length;
   assert.ok(flight >= 3, 'it comes down and bounces at least twice');
   const steps = Array.from({ length: 200 }, (unused, step) => thrown((step / 200) * CRYSTAL_FEEL.restS));
@@ -67,7 +68,7 @@ test('a drop pops out of the body, bounces until it settles where the room threw
   assert.ok(settled > 0, 'it settles within the time the room gives it');
   const landed = steps[settled]?.middle ?? [0, 0, 0];
   assert.ok(Math.hypot(landed[0] - REST[0], landed[1] - REST[1]) < 1e-9, "on the room's spot");
-  assert.ok(Math.abs(landed[2] - (REST[2] + 0.18)) < 0.01, 'low over the ground');
+  assert.ok(Math.abs(landed[2] - (REST[2] + CRYSTAL_FEEL.low)) < 0.01, 'low over the ground');
   let last = -Infinity;
   for (const each of steps) {
     assert.ok(each.middle[1] >= last - 1e-9, 'it never flies back toward the body');
@@ -91,12 +92,31 @@ test('the room waits for the longest each drop can bounce, and no longer', () =>
   }
 });
 
-test('the page waits on an Ammo box as long as the room does: a box it has just laid flies its whole rest', async () => {
-  // crates/protocol/src/gear_wire_tests.rs writes it, an Ammo box just laid among its gear.
+test('the page waits on each drop as long as the room does: one it has just laid flies its whole rest', async () => {
+  // crates/protocol/src/gear_wire_tests.rs writes it, an Ammo box and a Vestige just laid among its gear.
   const bytes = await readFile(new URL('../../../target/protocol/gear.bin', import.meta.url));
   const gear = readFromRoom(new Uint8Array(bytes));
-  const box = gear?.kind === 'gear' ? gear.drops.find((each) => each.kind === DROPPED.ammoBox) : undefined;
-  assert.equal(box?.flying, Math.round(AMMO_FEEL.restS * 60));
+  const lying = gear?.kind === 'gear' ? gear.drops : [];
+  const flying = (kind: number) => lying.find((each) => each.kind === kind)?.flying;
+  assert.equal(flying(DROPPED.ammoBox), Math.round(AMMO_FEEL.restS * 60));
+  assert.equal(flying(DROPPED.vestige), Math.round(CRYSTAL_FEEL.restS * 60));
+});
+
+test('at the foot of every bounce, no frame of any drop dips into the ground', () => {
+  const crystals = Array.from({ length: 5 * SPIN_FRAMES }, (unused, frame) =>
+    pictureOf(drop({ rarity: Math.floor(frame / SPIN_FRAMES) }), (frame % SPIN_FRAMES) * ((2 * Math.PI) / SPIN_FRAMES)),
+  );
+  const sets: [Feel, readonly PixelPicture[]][] = [
+    [CRYSTAL_FEEL, crystals.map((frame) => frame.body)],
+    [AMMO_FEEL, AMMO_BOX_TURN],
+    [AMMO_FEEL, AMMO_CRATE_TURN],
+  ];
+  for (const [feel, frames] of sets)
+    for (const frame of frames) {
+      const lowest = frame.rows.reduce((found, row, line) => (/[^.]/.test(row) ? line : found), 0);
+      const foot = feel.low - (lowest + 1 - frame.rows.length / 2) * (frame.pixelM ?? PIXEL_M);
+      assert.ok(foot >= 0, `its lowest pixel ${foot.toFixed(3)} m over the ground`);
+    }
 });
 
 test('thrown up to a spot over the body, a drop pops high enough to land there, never jumping', () => {

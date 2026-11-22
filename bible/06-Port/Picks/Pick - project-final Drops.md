@@ -39,14 +39,15 @@ a halo, popped out of a body to bounce, settle and hover. The owner approved it 
 - The smooth glow over the gem: it and the halo are both cut into 8 steps, so a frame keeps to a few dozen colours,
   and colours are rounded where project-final truncates them.
 - The halo blended over what stands behind: it is added light, as the line is.
-- One wait for every drop: a Vestige may be taken after 94 ticks and ammunition after 60, the longest each bounces.
+- Taking a drop at any time: a drop is taken only once it can have settled, a Vestige after 94 ticks and ammunition
+  after 60, the longest each bounces.
+- The heights as they were: a drop leaves and bounces a little higher, so no frame dips into the ground.
 - The engram name.
 
 ## Our version
 
-The crystal is baked in the page a frame at a time, the first time its turn reaches each, so no picture is kept as
-a file and no frame waits on a whole turn (`client/src/combat/vestigeCrystal.ts`). It is drawn as the drops' marks
-are, laid flat in one plane since its colours are many, its halo as added light. Thrown up to a spot over the body,
-a drop pops at least high enough to land there. The motion is
-worked out from the flight's arcs rather than stepped, so the same drop is in the same place on every frame
-(`client/src/combat/drops.ts#motionAt`). See [[Gear]], "Drops".
+The crystal is baked in the page a frame at a time, the first time its turn reaches each, so no picture is kept as a
+file and no frame waits on a whole turn (`client/src/combat/vestigeCrystal.ts`). It is drawn as the drops' marks are,
+laid flat in one plane since its colours are many, its halo as added light. Thrown up to a spot over the body, a drop
+pops at least high enough to land there. The motion is worked out from the flight's arcs rather than stepped, so the
+same drop is in the same place on every frame (`client/src/combat/drops.ts#motionAt`). See [[Gear]], "Drops".
