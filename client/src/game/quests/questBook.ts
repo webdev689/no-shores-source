@@ -94,8 +94,9 @@ const CLOCKED: ReadonlySet<string> = new Set(['race', 'defend', 'tail', 'unseen'
 
 /** What the tracker shows of the quest walked: its name, its task, and each goal's words with what is left of its
  *  count, ticked once met; the clock running beside the first unmet goal that runs it, a ward's health beside its
- *  defence while it stands, and a puzzle's points lit of all of them. None while no quest is walked. */
-export function trackedOf(state: QuestState | null | undefined): Tracked | null {
+ *  defence while it stands, and a puzzle's points lit of all of them. None while no quest is walked. The clock runs
+ *  down `ran` seconds from the room's last word on it, never below none. */
+export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracked | null {
   const now = walked(state);
   if (!state || !now) return null;
   const clocked = now.task.goals.findIndex(
@@ -106,7 +107,7 @@ export function trackedOf(state: QuestState | null | undefined): Tracked | null 
     const left = Math.max(0, most(goal) - (now.counts[index] ?? 0));
     const shown = { text: goal.text, done: left === 0 };
     if (left === 0) return shown;
-    if (index === clocked && clock !== undefined && clock !== null) return { ...shown, clock };
+    if (index === clocked && clock !== undefined && clock !== null) return { ...shown, clock: Math.max(0, clock - ran) };
     if (goal.kind === 'defend' && ward) return { ...shown, share: ward.health };
     if (goal.kind === 'puzzle' && points.length > 0)
       return { ...shown, count: `${points.filter((point) => point.lit).length}/${points.length}` };

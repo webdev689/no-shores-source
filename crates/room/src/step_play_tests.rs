@@ -137,12 +137,14 @@ fn gear_goal([quest, task, goal]: [usize; 3]) -> &'static GoalDef {
 #[test]
 fn a_ward_and_its_wave_and_an_ambush_stand_only_within_the_rooms_cap_on_foes() {
     let (mut room, _, _, defend) = defence([0.0, 20.0]);
-    room.foes_most = foes_of(defend.waves[0].iter()).len();
+    let first = foes_of(defend.waves[0].iter()).len();
+    room.foes_most = first - 1;
     run(&mut room, 60);
     assert!(room.quests.wards.is_empty() && room.foes.is_empty(), "no room for its first wave: nothing stands");
-    room.foes_most = crate::NODE_FOES_MOST;
+    room.foes_most = first;
     run(&mut room, 1);
-    assert_eq!(room.quests.wards.len(), 1, "room: it stands");
+    assert_eq!(room.quests.wards.len(), 1, "room for its first wave exactly: it stands");
+    assert_eq!(room.living_foes(), first, "with that wave");
     let (key, goal) =
         step_of(GoalKind::Escort, |goal| matches!(goal, Goal::Escort(escort) if !escort.ambush.is_empty()));
     let Goal::Escort(escort) = &goal.goal else { unreachable!("an escort") };
@@ -152,10 +154,14 @@ fn a_ward_and_its_wave_and_an_ambush_stand_only_within_the_rooms_cap_on_foes() {
     room.foes_most = 1;
     run(&mut room, 600);
     let state = room.step_seen(player).figures[5] as u8;
-    assert!(state == HELD && room.foes.is_empty(), "held halfway, its ambush waiting room");
+    assert!(state != HELD && room.foes.is_empty(), "waiting halfway for room, never ambushed with none standing");
+    let at = room.step_seen(player).figures[1..3].to_vec();
+    run(&mut room, 60);
+    assert_eq!(room.step_seen(player).figures[1..3], at, "and not walking on");
     room.foes_most = crate::NODE_FOES_MOST;
     run(&mut room, 1);
     assert_eq!(living(&room).len(), foes_of(escort.ambush.iter()).len(), "room: it stands");
+    assert_eq!(room.step_seen(player).figures[5] as u8, HELD, "and holds its figure");
 }
 
 #[test]

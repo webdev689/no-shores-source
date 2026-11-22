@@ -286,3 +286,20 @@ test("a step's ward stands in the room the player is in, its plate held in view"
     null,
   );
 });
+
+test('the tracker runs a step’s clock down between the room’s words, and each word sets it again', async () => {
+  const { quests, frame, clock } = roads();
+  const { task, goal } = stepOf(STORM, 'race');
+  const index = QUESTS[STORM - 1]?.tasks[task]?.goals.findIndex((each) => each === goal) ?? -1;
+  const shown = () => quests.tracked?.steps[index]?.clock;
+  clock(1_000);
+  quests.hear(gear(STORM, task, { pledge: STORM, clock: 270 }));
+  await frame();
+  assert.equal(shown(), 270);
+  clock(61_000);
+  assert.equal(shown(), 210, 'a minute on, a minute less, with no word between');
+  quests.hear(gear(STORM, task, { pledge: STORM, clock: 205 }));
+  assert.equal(shown(), 205, 'the room’s word sets it');
+  clock(1_000_000);
+  assert.equal(shown(), 0, 'never below none');
+});

@@ -137,7 +137,7 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   escort's or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they
   happen, once while one waits or is said, and not at all while the story or the welcome holds the screen. Everything
   else waits for the welcome to pass. The tracker runs the clock as m:ss for a race, a defence, a tail and an unseen
-  step, shows a defended ward's health as a percentage, and is read aloud as a clock starts, at each half minute and in
+  step (down from the room's last word on it, which sets it afresh), shows a defended ward's health as a percentage, and is read aloud as a clock starts, at each half minute and in
   its last 10 s, and as a ward's health passes each quarter. The HUD's mark is named for the task's first unmet goal in
   the player's node. Figures glide between the room's words, a quarry walking back when it noticed and one arrived
   standing where it is; the ward's plate stays in view as a fought foe's; a lit point offers no Use. With no Art worn
