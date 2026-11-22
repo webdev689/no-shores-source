@@ -42,9 +42,9 @@ test("a ruined city's crystal stays within the city's budgets: few triangles far
   const ruin = buildCity(plan, climate, blocks, tables as Parameters<typeof buildCity>[3]);
   const triangles = (data: typeof ruin, key: 'solids' | 'detail') =>
     data.chunks.reduce((sum, chunk) => sum + chunk[key].count / 3, 0);
-  // Drawn at every distance: the solids, a ruin's great spires among them (Mistfall's are 156 194 triangles; the same
-  // plan drawn as a port city's, its buildings whole, 52 166).
-  assert.ok(triangles(ruin, 'solids') < 200_000, `${triangles(ruin, 'solids')} far`);
+  // Drawn at every distance: the solids, a ruin's great spires among them (Mistfall's are 142 608 triangles; the same
+  // plan drawn with its buildings whole, 52 166).
+  assert.ok(triangles(ruin, 'solids') < 170_000, `${triangles(ruin, 'solids')} far`);
   // Drawn near only: the small solids, a chunk's at most a few thousand.
   assert.ok(Math.max(...ruin.chunks.map((chunk) => chunk.detail.count / 3)) < 4000);
   // The formations: one model each, instanced in the near cells, a cell's crystal a few thousand triangles.
@@ -57,9 +57,9 @@ test("a ruined city's crystal stays within the city's budgets: few triangles far
     cells++;
   }
   assert.ok(
-    formationTriangles.every((count) => count < 150),
+    formationTriangles.every((count) => count < 200),
     `${formationTriangles}`,
   );
   assert.ok(most < 12_000 && cells > 0, `a cell's crystal ${most} triangles`);
-  assert.ok(ruin.lamps.length < 2000, `${ruin.lamps.length} lamps`);
+  assert.ok(ruin.lamps.length < 1000, `${ruin.lamps.length} lamps`);
 });

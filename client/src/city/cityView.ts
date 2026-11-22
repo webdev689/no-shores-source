@@ -265,8 +265,9 @@ export class CityView implements CityDrawer {
   }
 
   /** Draws into the cascade being drawn what may cast there: the solids into both; into the near one the near cells'
-   *  models and the crystal's small detail, and into the far one each building's masses, or its hull past where the masses are drawn. A mass is a
-   *  few boxes where a model is hundreds of triangles, and at the far map's 1.2 m texels the two throw one shadow. */
+   *  models and the crystal's small detail, and into the far one each building's masses, or its hull past where the
+   *  masses are drawn. A mass is a few boxes where a model is hundreds of triangles, and at the far map's 1.2 m texels
+   *  the two throw one shadow. */
   castInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow: ShadowMap): void {
     const drawn = this.drawn;
     const seen = this.select(fromEye, shot, time, shadow);

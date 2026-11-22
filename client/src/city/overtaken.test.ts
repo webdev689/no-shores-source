@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { MassShape } from './cityMasses.ts';
 import {
   buildingGrowth,
+  clearOfPlaza,
   type CrystalPlace,
   crystalLamps,
   formationMeshes,
@@ -136,6 +137,27 @@ test('the great formations light a few lamps of the crystal at night, the talles
   assert.equal(lamps.length, 1);
   assert.ok(lamps[0].at[0] === 0 && lamps[0].at[2] > 0, 'at the tallest');
   assert.equal(crystalLamps([], 3).length, 0);
+});
+
+test('a heavily overtaken building, however low it stands, has a spire standing well over its break', () => {
+  const low = { ...HOUSE, wall: 2.5 };
+  const grown = Array.from({ length: 300 }, (_unused, k) => buildingGrowth(low, [0, 0], [k * 41.3, k * 9.1]));
+  const spired = grown.filter((growth) => growth.great.length + growth.detail.length > 0);
+  assert.ok(Math.abs(spired.length / 300 - OVERTAKEN.heavy) < 0.07, `${spired.length} of 300`);
+  for (const growth of spired) {
+    const spire = [...growth.great, ...growth.detail];
+    assert.ok(Math.max(...spire.map(top)) >= low.base + low.wall + 4, 'over its break');
+    // only the tallest are drawn at every distance
+    assert.equal(growth.great.length > 0, spire[0].size[2] / 0.75 >= GREAT_M);
+  }
+});
+
+test("a spire by the plaza's window is kept or left out whole, its body and tip together", () => {
+  const plan = { social: { bounds: [0, 0, 100, 50] } } as unknown as CityPlan;
+  // leaning toward the window: its tip reaches in where its body does not
+  const leaning = spire([-116, 25, 0], 12, 2, [Math.atan2(-1, 0), 0.5, 0]);
+  const upright = spire([-116, 25, 0], 12, 2, [0, 0, 0]);
+  assert.deepEqual(clearOfPlaza([...leaning, ...upright], plan), upright);
 });
 
 test("the plaza's window holds no crystal the page lays", () => {

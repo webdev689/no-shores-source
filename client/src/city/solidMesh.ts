@@ -172,9 +172,8 @@ function column(
     const [uFrom, uTo] = [(k / count) * perimeter * scaleU, ((k + 1) / count) * perimeter * scaleU];
     const vTop = -height * scaleV;
     if (faceted) {
-      const facing = normalised(cross(minus(lowNext, low), minus(high, low)));
       const corners = top > 0 ? [low, lowNext, highNext, high] : [low, lowNext, high];
-      faces.push({ corners, normals: [facing], uvs: planarUvs(corners, facing, surface), facing });
+      faces.push(flat(corners, normalised(cross(minus(lowNext, low), minus(high, low))), surface));
     } else if (top > 0)
       faces.push(
         curved(
@@ -201,10 +200,9 @@ function column(
         ),
       );
   }
-  // A facetted column is the crystal's: its foot is sunk in what it grows from and a spire's body is capped by its tip.
-  if (faceted) return faces;
   faces.push(flat(bottom, [0, 0, -1], surface));
-  if (top > 0) faces.push(flat(cap, [0, 0, 1], surface));
+  // A facetted column is the crystal's: a spire's body is capped by its tip, so its own top is never seen.
+  if (top > 0 && !faceted) faces.push(flat(cap, [0, 0, 1], surface));
   return faces;
 }
 

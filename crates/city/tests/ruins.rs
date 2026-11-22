@@ -127,7 +127,7 @@ fn a_ruin_keeps_its_site_and_breaks_what_stands_on_it() {
     // The same every time, and pinned, so every machine lays the same ruin.
     assert_eq!(ruin, plan_as(&city, &landmass.surface, &blocks, true).expect("the ruin plans again"));
     assert_eq!(fingerprint(&ruin), "41427f4134e6ac32");
-    // Without its crystal the ruin is as it was before the Lattice overtook it: the crystal alone moved its pin.
+    // Less its crystal, the ruin's plan is pinned apart: the crystal is all the Lattice adds to it.
     let mut bare = ruin.clone();
     bare.landmark.retain(|solid| solid.material != Material::Crystal);
     bare.works.retain(|solid| solid.material != Material::Crystal);

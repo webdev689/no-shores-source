@@ -25,6 +25,7 @@ import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidR
 import type { LampPlace } from '../sky/lamps.ts';
 import {
   buildingGrowth,
+  clearOfPlaza,
   type CrystalPlace,
   crystalLamps,
   FORMATION_REACH,
@@ -250,9 +251,10 @@ export function buildCity(
     -Infinity,
     -Infinity,
   ]);
-  // The crate's crystal on the rubble is small, drawn near; its crown on the landmark is great, drawn at every distance.
-  const crust = plan.works.filter((solid) => solid.material === 'crystal');
-  const works = plan.works.filter((solid) => solid.material !== 'crystal');
+  // The crate's crystal on a ruin's rubble is small, drawn near; its crown on the landmark is drawn at every distance.
+  const crusting = (solid: Solid) => plan.ruined === true && solid.material === 'crystal' && solid.shape === 'column';
+  const crust = plan.works.filter(crusting);
+  const works = plan.works.filter((solid) => !crusting(solid));
   const solids: Solid[] = [...plan.landmark, ...works, ...plan.social.solids, ...heaps, ...growth.great];
   const wrecks = plan.ruined ? (plan.wrecks ?? []) : [];
   const detail = [...crust, ...growth.detail, ...wrecks.flatMap(wreckCrust)];
@@ -357,7 +359,7 @@ export function buildCity(
     side,
     book,
     cells,
-    models: modelBuffers(models, book.layerOf, formationMeshes(book.materials.crystal)),
+    models: modelBuffers(models, book.layerOf, plan.ruined ? formationMeshes(book.materials.crystal) : []),
     near,
     masses,
     chunks,
@@ -460,11 +462,10 @@ function buildingMassesOf(
   const growth: Growth = { great: [], detail: [], placed: [] };
   const formations: { cell: number; place: CrystalPlace }[] = [];
   const lamps: LampPlace[] = [];
-  const clear = (solid: Solid) => !inPlazaWindow(solid.at, solidReach(solid), plan);
   const overtake = (grown: Growth, cell: number) => {
-    const great = grown.great.filter(clear);
+    const great = clearOfPlaza(grown.great, plan);
     growth.great.push(...great);
-    growth.detail.push(...grown.detail.filter(clear));
+    growth.detail.push(...clearOfPlaza(grown.detail, plan));
     for (const place of grown.placed)
       if (!inPlazaWindow(place.at, FORMATION_REACH[place.formation], plan)) formations.push({ cell, place });
     lamps.push(...crystalLamps(great, 1));
@@ -498,8 +499,11 @@ function buildingMassesOf(
       const hull = brokenMass(shapes.hull, cut);
       if (hull) {
         byChunk[piece.chunk].hulls.push([hull, piece]);
-        const grown = buildingGrowth(massShape(hull, place, plan.centre), plan.centre, [place.east, place.south]);
-        if (building) overtake(grown, piece.cell);
+        if (building)
+          overtake(
+            buildingGrowth(massShape(hull, place, plan.centre), plan.centre, [place.east, place.south]),
+            piece.cell,
+          );
       }
       continue;
     }

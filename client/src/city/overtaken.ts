@@ -20,8 +20,10 @@ import { meshSolid, solidTurn } from './solidMesh.ts';
 const SPIRE_SIDES = 6;
 const BODY_SHARE = 0.75;
 const BODY_TOP = 0.8;
-/** A spire at least this tall, metres, is a great one: drawn at every distance. */
-export const GREAT_M = 5;
+/** A spire at least this tall, metres, is a great one: drawn at every distance and lighting the night. */
+export const GREAT_M = 8;
+/** A heavily overtaken building's spire is never lower than this, metres, however low the building stands. */
+const HEAVY_SPIRE_LEAST_M = 5.5;
 /** The share of buildings the crystal leaves untouched, and the share it overtakes heavily (the rest lightly). */
 export const OVERTAKEN = { untouched: 0.12, heavy: 0.33 } as const;
 /** The window round the plaza no crystal of the page's lies in (crates/city/src/ruins.rs PLAZA_CLEAR_M). */
@@ -225,7 +227,8 @@ export function buildingGrowth(hull: MassShape, origin: readonly number[], place
     const foot = onSide(which, between(draw, -0.85, 0.85), base + wall - 0.2);
     lay(heavy && wall >= 3.5 ? 'breakHeavy' : 'breakLight', foot, sides[which].out);
     if (heavy && cluster === 0) {
-      const height = Math.min(16, between(draw, 0.9, 1.6) * wall);
+      // never under a great spire's height, so even a low ruin reads as overtaken from afar
+      const height = Math.min(16, Math.max(HEAVY_SPIRE_LEAST_M, between(draw, 1.2, 2.2) * wall));
       const great = spire(
         foot,
         height,
@@ -329,6 +332,20 @@ export function inPlazaWindow(point: readonly number[], reach: number, plan: Cit
     point[1] + reach > north - PLAZA_CLEAR_M &&
     point[1] - reach < south + PLAZA_CLEAR_M
   );
+}
+
+/** The solids of a growth clear of the plaza's window: a spire's body (a column with a top) and the tip after it are
+ *  kept or left out together, so no body is left open at its top. */
+export function clearOfPlaza(solids: readonly Solid[], plan: CityPlan): Solid[] {
+  const kept: Solid[] = [];
+  for (let index = 0; index < solids.length; index++) {
+    const solid = solids[index];
+    const body = solid.shape === 'column' && solid.top > 0 && index + 1 < solids.length;
+    const piece = body ? [solid, solids[index + 1]] : [solid];
+    if (body) index++;
+    if (piece.every((each) => !inPlazaWindow(each.at, solidReach(each), plan))) kept.push(...piece);
+  }
+  return kept;
 }
 
 /** How far a formation reaches from its foot across the ground, metres. */

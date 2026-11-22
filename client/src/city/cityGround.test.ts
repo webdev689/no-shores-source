@@ -288,7 +288,7 @@ test("a ruin's buildings are overtaken by the crystal, its great spires drawn fa
   const everything = (data: typeof ruin) => data.chunks.flatMap((chunk) => [chunk.solids, chunk.detail]);
   /** The near instances of the crystal's formations, laid after the forged models. */
   const formations = (data: typeof ruin) => {
-    const first = data.models.entries.length - FORMATIONS.length;
+    const first = data.models.entries.length - (data.ruined ? FORMATIONS.length : 0);
     return [...data.near.values()].flat().filter((each) => each.model >= first);
   };
   assert.equal(crystalCorners(port, everything(port)).length, 0, 'a port city is untouched');

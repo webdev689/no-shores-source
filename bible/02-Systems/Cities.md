@@ -364,8 +364,8 @@ building's place to the centimetre in the page, the same on every machine.
   leaning every way; and a heap's heart, 3 to 5 spires 1.5 to 4.5 m and 4 to 7 shards round them.
 - **A broken building** (`buildingGrowth`, standing buildings only, not props): 12 % are untouched, 33 % heavily
   overtaken, the rest lightly. Out of its break grow clusters leaning out from the wall tops, 2 to 3 heavily, 1 to 2
-  lightly; heavily, a great spire stands among the first, 0.9 to 1.6 times the standing wall's height (at most 16
-  m), well over the break. Veins climb from the ground toward the break, a formation every 2.2 m, one in five
+  lightly; heavily, a spire stands among the first, 1.2 to 2.2 times the standing wall's height but never under 5.5
+  m nor over 16 m, well over the break. Veins climb from the ground toward the break, a formation every 2.2 m, one in five
   missing: at every corner and at a seam of each long side heavily, at about half its corners lightly. A doorway's
   formation chokes the foot of a long side, and heavily, a window's stands at 1.8 m on each long side and 1 to 2
   patches break through the paving 1.5 to 4 m out from its walls.
@@ -376,18 +376,18 @@ building's place to the centimetre in the page, the same on every machine.
   inside it.
 - **The plaza stays clear:** nothing the page lays reaches into the 110 m window round the plaza, as no rubble lies
   there; only the crown on the landmark stands within it.
-- **Near and far.** A spire 5 m or taller is a great one, drawn at every distance with the city's solids, so a ruin
-  reads as the Lattice's from the sea and the Overworld: the crown and the heavy buildings' great spires. A heavy
-  building's spire under 5 m, the rubble's crust and the wrecks' are drawn only in the chunks within the near tier's
-  reach (`detailRuns`) and cast only into the near shadow; the formations only in the near cells. A crystal column
-  has no foot or body's top meshed: they are sunk in what it grows from or under its tip.
-- **Its cost**, Mistfall's, measured (`ruinBudget.test.ts`): 156 194 triangles of solids at every distance (the same
-  plan drawn with its buildings whole, 52 166; Overlook's 117 894); the near-only solids at most 1 266 a chunk;
-  115 730 formations, each under 150 triangles, one instanced draw a formation; 1 169 lamps; the city built in 3.9 s
-  where its buildings whole take 0.8 s, most of it the solids' meshing and its garbage.
-- **At night** each heavy building's great spire of 5 m or more lights a lamp of the crystal's light (`CRYSTAL_LAMP`)
-  halfway up it, reaching 6 m more than the spire is tall, at most 30 m; with the landmark's three, the sky's nearest
-  lamps are chosen from them as from any city's.
+- **Near and far.** A heavy building's spire 8 m or taller is a great one, drawn at every distance with the city's
+  solids, so a ruin reads as the Lattice's from the sea and the Overworld, with the crown. A lower one, the rubble's
+  crust and the wrecks' are drawn only in the chunks within the near tier's reach (`detailRuns`) and cast only into
+  the near shadow; the formations only in the near cells. A spire's body has no top meshed: its tip stands on it.
+- **Its cost**, Mistfall's (`ruinBudget.test.ts` holds it under its limits): 142 608 triangles of solids at every
+  distance (the same plan drawn with its buildings whole, 52 166; Overlook's 117 894); the near-only solids at most
+  2 038 a chunk; formations of under 200 triangles each, one instanced draw a formation, placed in the near cells
+  with the forged models; 280 lamps; the city built in about 5 s where its buildings whole take under 1 s, most of
+  it the solids' meshing and its garbage.
+- **At night** each great spire of a building lights a lamp of the crystal's light (`CRYSTAL_LAMP`) at the middle of
+  its body, reaching 6 m more than its body is tall, at most 30 m; with the landmark's three, the sky's nearest lamps
+  are chosen from them as from any city's.
 
 ## Limits
 
