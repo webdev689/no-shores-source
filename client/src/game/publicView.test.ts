@@ -61,13 +61,33 @@ test('a carried shard is held at its carrier’s off hand: theirs as drawn, the 
   const shards = (frame: ReturnType<PublicView['frame']>) =>
     frame.props.filter((prop) => prop.module === 'lattice-shard').map((prop) => prop.at);
   const [own, theirs] = shards(view.frame(event, [], [], bodies(), 0, [], () => 0));
-  // Facing north, the off (left) hand is to the west; the other faces east, so theirs is to the north.
-  assert.ok(own && own[0] < 0 && Math.abs(own[1] + 0.16) < 1e-9, `own: ${own}`);
-  assert.ok(theirs && theirs[1] < 10 && Math.abs(theirs[0] - 10.16) < 1e-9, `theirs: ${theirs}`);
+  // Facing north from an eye behind them, the off (left) hand shows to the west, before the card toward the eye.
+  assert.ok(own && own[0] < 0 && own[1] > 0, `own: ${own}`);
+  // The other faces east, seen from the south-west: its off hand shows on the eye's left, nearer the eye.
+  const near = (at: readonly number[]) => Math.hypot(at[0] - 0, at[1] - 4);
+  assert.ok(theirs && near(theirs) < near([10, 10]), `theirs: ${theirs}`);
   const first = bodies({ shot: { eye: [0, 0, 1.6], yaw: 0, pitch: 0 }, firstPerson: true });
   const [held] = shards(view.frame(event, [], [], first, 0, [], () => 0));
   // Drawn just under the eye, ahead and to the left.
   assert.ok(held && held[1] < -0.5 && held[0] < 0 && held[2] < 1.6 && held[2] > 1, `held: ${held}`);
+});
+
+test('a carried shard is held in front of its carrier’s card, on the side the off hand shows on', () => {
+  const view = new PublicView('saltgrass-downs');
+  const event = { ...raid([{ kind: MARK.carried, id: 2, at: [99, 99, 99] as const, health: 1, state: 0 }]), kind: 1 };
+  const theirs = (facing: number) => {
+    // The eye stands 6 m east of the carrier, looking west at it.
+    const seen = bodies({
+      shot: { eye: [16, 10, 2.6], yaw: -Math.PI / 2, pitch: 0 },
+      others: new Map([[2, { x: 10, y: 10, z: 1, facing }]]),
+    });
+    return view.frame(event, [], [], seen, 0, [], () => 0).props.find((prop) => prop.module === 'lattice-shard')?.at;
+  };
+  // Faced away (west), the off hand shows on the eye's left (south); faced at the eye (east), on its right (north).
+  const away = theirs(-Math.PI / 2);
+  const toward = theirs(Math.PI / 2);
+  assert.ok(away && away[0] > 10.2 && away[1] > 10.2, `faced away: ${away}`);
+  assert.ok(toward && toward[0] > 10.2 && toward[1] < 9.8, `faced toward: ${toward}`);
 });
 
 test('a raid’s stores carry their bars while it runs; a plundered store is heard where it stands', () => {

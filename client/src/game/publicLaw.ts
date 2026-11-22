@@ -35,14 +35,10 @@ const HEROIC_TASK: Readonly<Record<number, string>> = {
   [PUBLIC_KIND.fissure]: 'Break the growth',
   [PUBLIC_KIND.raid]: 'Kill the tithe-taker',
 };
+/** The bonus, in the banner and the tracker alike, its deadline on the countdown where it has one. */
 const BONUS: Readonly<Record<number, string>> = {
-  [PUBLIC_KIND.fissure]: 'Bonus: seal it with half the time left',
-  [PUBLIC_KIND.raid]: 'Bonus: lose no store',
-};
-/** The bonus while the event runs, its deadline on the countdown where it has one. */
-const BONUS_RUNNING: Readonly<Record<number, string>> = {
-  ...BONUS,
   [PUBLIC_KIND.fissure]: `Bonus: seal it before ${clockOf(COUNTDOWN_TICKS / 2)}`,
+  [PUBLIC_KIND.raid]: 'Bonus: lose no store',
 };
 
 /** `ticks` as minutes and seconds, the seconds rounded up: 7:42. */
@@ -157,7 +153,7 @@ export function bannerOf(
     // The Warden's stage has no shards left to set: the bar is full.
     bar: { share: Math.min(1, Math.max(0, share)), label },
     heroic,
-    bonus: { text: BONUS_RUNNING[event.kind] ?? '', state: event.bonus ? 'holds' : 'lost' },
+    bonus: { text: BONUS[event.kind] ?? '', state: event.bonus ? 'holds' : 'lost' },
   };
 }
 

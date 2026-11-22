@@ -161,17 +161,35 @@ async function main() {
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
   // R2 answers CORS for port 5173 alone; with "anyPort" the page's cross-origin reads are fetched by the driver and
-  // handed back open to any origin, so a worktree's Vite can serve on another port while 5173 is taken.
-  if (plan.anyPort) {
-    const own = new URL(plan.url).origin;
-    await page.route(
-      (url) => url.origin !== own && url.protocol.startsWith('http'),
-      async (route) => {
-        const response = await route.fetch({ headers: { ...route.request().headers(), origin: 'http://localhost:5173' } });
-        await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } });
-      },
-    );
-  }
+  // handed back open to any origin, so a worktree's Vite can serve on another port while 5173 is taken. Either way
+  // the driver fetches R2's own reads, asking again on a 429 or a 5xx: a burst of them through the proxy is
+  // throttled or answered 500 now and then, and the game stops at the first table it cannot read.
+  const own = new URL(plan.url).origin;
+  // At most this many at once, asked again after a growing pause.
+  const MOST_FETCHING = 8;
+  const waiting = [];
+  let fetching = 0;
+  await page.route(
+    (url) => url.origin !== own && url.protocol.startsWith('http') && (plan.anyPort || url.hostname.endsWith('.r2.dev')),
+    async (route) => {
+      const headers = plan.anyPort ? { ...route.request().headers(), origin: 'http://localhost:5173' } : undefined;
+      while (fetching >= MOST_FETCHING) await new Promise((wake) => waiting.push(wake));
+      fetching += 1;
+      let response;
+      try {
+        response = await route.fetch({ headers });
+        for (let again = 0; again < 8 && (response.status() === 429 || response.status() >= 500); again++) {
+          await new Promise((wake) => setTimeout(wake, Math.min(8000, 500 * 2 ** again)));
+          response = await route.fetch({ headers });
+        }
+      } finally {
+        fetching -= 1;
+        waiting.shift()?.();
+      }
+      const open = plan.anyPort ? { 'access-control-allow-origin': '*' } : {};
+      await route.fulfill({ response, headers: { ...response.headers(), ...open } });
+    },
+  );
   await page.addInitScript(OWN_TEXTURE);
   await page.addInitScript(SHADER_ERRORS);
   if (plan.init) await page.addInitScript({ content: plan.init });
@@ -186,7 +204,9 @@ async function main() {
     if (!worker.url().includes('gameWorker')) return;
     game = worker;
     // The page ends the worker when the game stops, and says why in its body.
-    worker.on('close', async () => console.log('game stopped:', await page.evaluate(() => document.body.innerText)));
+    worker.on('close', () =>
+      page.evaluate(() => document.body.innerText).then((why) => console.log('game stopped:', why), () => undefined),
+    );
   });
   const on = () => game ?? page;
   const framesOn = async (count) => {

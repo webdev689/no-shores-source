@@ -111,7 +111,7 @@ test('the tracker: the steps of the task now, each counting what is left', () =>
     [
       ['Carry shards to the fissure', 9, false],
       ['Heroic: break the growth', undefined, false],
-      ['Bonus: seal it with half the time left', undefined, false],
+      ['Bonus: seal it before 4:00', undefined, false],
     ],
   );
   const stores = [1, 2, 1].map((state, id) => ({ kind: MARK.store, id, at: [0, 0, 0] as const, health: 1, state }));
