@@ -74,7 +74,10 @@ test('the banner’s rows run its whole width: its clocks at the right, its bar 
     ['the heroic window', window],
     ['the bar’s label', label],
   ] as const)
-    assert.ok(Math.abs(box.x + box.width - right) <= 1, `${name} ends at the right, at ${box.x + box.width} of ${right}`);
+    assert.ok(
+      Math.abs(box.x + box.width - right) <= 1,
+      `${name} ends at the right, at ${box.x + box.width} of ${right}`,
+    );
   const bar = laid.find((each) => each.node.draw && each.node.label === '3 / 12 shards')?.box;
   assert.ok(bar && bar.width > band.width / 2, `the bar runs over half the banner, ${bar?.width}`);
 });
