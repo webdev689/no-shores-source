@@ -406,9 +406,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
 - **#97, the activities**, stacked on #88 (and #88 on #72), waits on the owner's yes, which deploys the page and the
   rooms: the clock, the gates, the dungeon of the day, Elite Dungeons and their Bosses, the week's two, modifiers,
-  Abyss's revives and wipes, private runs, companies of four and Find a Company, quests and bounties on one engine, the
-  bounty board in the plaza, and the Journal ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at
-  Its Top]]): the quests as cards under twelve banners, the bounties as tiles beside them, each bounty its own glyph,
+  Abyss's revives and wipes, private runs, companies of four and Find a Company, the bounties on their own engine, the
+  bounty board in the plaza under its gold "!", and the Journal, drawn by the game ([[The Journal Holds the Quests, the
+  Bounties at Its Side and the Timers at Its Top]]): the houses' roads as story missions' cards, the bounties as tiles beside them, each bounty its own glyph,
   the timers dropping from DFO's hourglass, led by icons drawn for them ("more icons and less text"), each clock once in
   its group's head and each mark's words said at the panel's foot; and the board's screen as tiles after Destiny's
   Bounty Tracker, each bounty named. Claude's calls are in its description. Three questions wait there: should dungeon
