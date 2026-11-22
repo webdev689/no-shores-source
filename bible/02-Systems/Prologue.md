@@ -320,7 +320,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, its gun deck and
   the Sloop's side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
-  itself. The HUD shows no death panel and no Respawn; a toast says "You will rise at the last checkpoint."
+  itself, where they arrive as a respawn on foot does ([[Game]]). The HUD shows no death panel and no Respawn; a toast says "You will rise at the last checkpoint."
 - **The arena** is the Frigate's quarterdeck, 9.8 m across between its rails' inner faces and 8.5 m from its
   quarterdeck's broken front to its taffrail, open but for its wheel (its binnacle and skylight swept away), no wave in
   it. Its heap stands below its front, on the way up out of its gun deck. When the boss fight begins, its heap closes

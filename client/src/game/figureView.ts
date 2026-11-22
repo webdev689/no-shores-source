@@ -361,8 +361,8 @@ export class FigureView implements CardMaker {
       pass.setBindGroup(2, group);
       pass.draw(6);
     }
-    // A Veiled figure's weapon shows no outline: it is all but unseen.
-    const glowing = figures.filter(({ card, veiled }) => card.glow && !veiled);
+    // A Veiled figure's weapon shows no outline, as it is all but unseen; nor does one still arriving.
+    const glowing = figures.filter(({ card, veiled, arrival }) => card.glow && !veiled && !arrival);
     this.glows.draw(
       pass,
       fromEye,

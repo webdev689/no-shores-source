@@ -261,8 +261,8 @@ export class GameScene {
    *  finished picture (the first person's hands) before it is shown, `hulls` are the ships on the water (world
    *  metres), which it keeps out of and foams round, and the water's ripples follow `focus` (world metres; the eye
    *  unless said). The sky is the weather's over the eye, in the open sea's air `atSea`, else the landmass's. Last,
-   *  the whole picture blurs by a deviation of `blur` device pixels and drains toward grey by `drain` (0 to 1), under
-   *  whatever the interface draws over it. */
+   *  the whole picture blurs by a deviation of `blur` device pixels, drains toward grey by `drain` and darkens by
+   *  `dark` (each 0 to 1), under whatever the interface draws over it. */
   draw(
     shot: Shot,
     size: { width: number; height: number },
@@ -281,6 +281,7 @@ export class GameScene {
       readonly carried?: { readonly left: string | null; readonly feet: readonly [number, number, number] };
       readonly blur?: number;
       readonly drain?: number;
+      readonly dark?: number;
     } = {},
   ): void {
     const terrain = this.terrain;
@@ -407,7 +408,7 @@ export class GameScene {
       });
     more.after?.(encoder, target, { width: size.width, height: size.height, light: SKY_NOW.current.held });
     this.blur.encode(encoder, canvas, more.blur ?? 0);
-    this.drain.encode(encoder, canvas, more.drain ?? 0);
+    this.drain.encode(encoder, canvas, more.drain ?? 0, more.dark ?? 0);
     this.gpu.device.queue.submit([encoder.finish()]);
   }
 

@@ -1,4 +1,5 @@
 import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
@@ -6,7 +7,7 @@ import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import type { HudFrame } from '../combat/hud.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
-import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
+import { veiledIn } from '../combat/spellLooks.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
@@ -19,7 +20,7 @@ import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomCon
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
-import { CARD_NEAREST_M, cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
+import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
@@ -48,7 +49,7 @@ import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
 import { chime, worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
-import { OTHERS_FPS, folkCards, hearing, nextOtherId, rulesOf } from './footRoom.ts';
+import { folkCards, hearing, nextOtherId, otherCards, rulesOf } from './footRoom.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
@@ -107,6 +108,8 @@ export interface FootFrame {
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly StripHint[];
+  /** How dark the player's own view is as they arrive, 1 dark to 0 open. */
+  readonly dark: number;
 }
 
 /**
@@ -136,6 +139,9 @@ export class Foot {
   private readonly sounds = new WorldSounds(worldOutput);
   /** The player's fall in a social space, once the room says they fell: the held shot, the tumble, its sounds. */
   private readonly falling = new FallWatch();
+  /** Players arriving: the player once the veil lifts and on each respawn, every other on respawning or joining after
+   *  the player arrived. */
+  private readonly arrivals = new Arrivals();
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
   /** The player's gear as the room last sent it, and the gear the figure was last dressed in. */
@@ -351,6 +357,7 @@ export class Foot {
     walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
+    this.arrivals.told(events, clock);
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
     feel.frame(events, fight.own, fight.player, seconds, new Set(fight.others.keys()));
@@ -383,12 +390,23 @@ export class Foot {
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
-      const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) };
+      const looks = {
+        ...{ veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) },
+        arrival: this.arrivals.shareOf(fight.player, clock),
+      };
       figures.push({ ...own, ...looks, facesEye: walker.fall !== null });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
-    figures.push(...this.otherCards(eyeX, eyeY, clock, frameTicks, { shift, drawnAt, otherViews, nearest }));
+    const room = {
+      ...{ fight, forge, flashes: effects.flashes },
+      players: this.otherPlayers,
+      glides: this.otherGlides,
+    };
+    const others = { ...room, arrivals: this.arrivals, eye: [eyeX, eyeY] as const, clock, frameTicks };
+    figures.push(...otherCards(others, { shift, drawnAt, otherViews, nearest }));
+    const folkSeconds = frameTicks * movement.tickSeconds;
+    figures.push(...folkCards(this.folk, this.folkLoops, forge, [eyeX, eyeY], clock, folkSeconds));
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
     const { tickSeconds } = movement;
     figures.push(
@@ -505,7 +523,13 @@ export class Foot {
     };
     const edge = this.standing;
     const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
+    const dark = this.arrivals.darkOf(fight.player, clock);
+    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, dark };
+  }
+
+  /** The player arrives, as the veil lifts on the place: their figure builds and their view blinks open. */
+  arrive(clock: number): void {
+    this.arrivals.arriveHere(this.fight.player, clock);
   }
 
   /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
@@ -515,54 +539,6 @@ export class Foot {
     const rarest = Math.max(-1, ...shown.rested);
     if (rarest >= 2) chime(rarest);
     return shown;
-  }
-
-  /** Every other player's figure, gliding toward where the room last saw them, drawn off it by the attack `feel` (and
-   *  kept as drawn there), flashing as it is struck, faint while Veiled, and its cast's spark in its Art's colour. */
-  private otherCards(
-    eyeX: number,
-    eyeY: number,
-    clock: number,
-    frameTicks: number,
-    feel: {
-      shift: (id: number, view: FighterView | null) => Vector;
-      drawnAt: Map<number, DrawnFigure>;
-      otherViews: ReadonlyMap<number, FighterView>;
-      nearest: number;
-    },
-  ): CardAt[] {
-    const { forge } = this.context;
-    const { fight, effects, otherGlides } = this;
-    const cards: CardAt[] = [];
-    for (const [number, placed] of this.otherPlayers.placed) {
-      const seen = fight.others.get(number)?.body;
-      if (seen)
-        [placed.x, placed.y, placed.z] = otherGlides.follow(
-          number,
-          [seen.x, seen.y, seen.z],
-          fight.roomTick,
-          frameTicks,
-        );
-      const { view, flip } = viewOf(placed.facing, placed.x, placed.y, eyeX, eyeY);
-      const frames = forge.frames(placed.dress.body, placed.anim);
-      const frame = placed.frame === null ? frameAt(clock, frames, OTHERS_FPS) : Math.min(placed.frame, frames - 1);
-      // A cast's spark glows in the caster's Art, as the player's own does.
-      const glow = placed.anim === 'cast' ? castLookOf(fight, number) : 0;
-      const card = forge.card(placed.id, placed.dress, placed.anim, view, frame, flip, glow);
-      const flash = effects.flashes.flashOf(number);
-      const veiled = veiledIn(fight, number);
-      const moved = feel.shift(number, feel.otherViews.get(number) ?? null);
-      const atFeet: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
-      feel.drawnAt.set(number, { feet: atFeet, anim: placed.anim, flip });
-      // One dead of a fall leans to face the eye, so it shows whole seen from the ledge above.
-      const theirs = fight.others.get(number)?.standing;
-      const facesEye = theirs?.kind === 'dead' && theirs.fell;
-      const stand = cardStand(atFeet[0], atFeet[1], eyeX, eyeY, feel.nearest);
-      if (card) cards.push({ card, ...stand, z: atFeet[2], flip, flash, veiled, facesEye });
-    }
-    otherGlides.keep(new Set(this.otherPlayers.placed.keys()));
-    const seconds = frameTicks * this.context.movement.tickSeconds;
-    return [...cards, ...folkCards(this.folk, this.folkLoops, forge, [eyeX, eyeY], clock, seconds)];
   }
 
   /** Where the player stands with the section's edge, as the room said. */
@@ -583,6 +559,7 @@ export class Foot {
   leave(): void {
     if (this.link instanceof RoomConnection) this.link.close();
     this.otherPlayers.clear();
+    this.arrivals.clear();
     this.plaza?.close();
     this.prompt.show(null);
     this.falling.close();

@@ -208,6 +208,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS),
       carried,
       drain: drain.share,
+      dark: shown.dark,
     };
     const ships = [...moored.ships, ...fleet.ships];
     scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);
@@ -373,6 +374,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (settled || playing.waited > GROUND_WAIT_S) {
         playing.flow = next(playing.flow, { kind: 'loaded' });
         hud.veil(null);
+        // The player arrives on foot as the veil lifts, so their arrival is seen.
+        if (playing.flow.mode === 'foot') playing.foot?.arrive(clock);
         parts.syncMenu();
       }
     }

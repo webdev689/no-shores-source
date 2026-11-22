@@ -227,7 +227,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]
 - [[Areas Load in Chunks With Proper Caching]]
 - [[The Crew Still Standing Regroup Ahead]]
-- [[A Respawn Echoes the Wake, Unexplained]]
+- [[Players Arrive as Destiny's Transmat Does, Unexplained]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

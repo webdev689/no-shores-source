@@ -1,4 +1,5 @@
 import { QUIET, pushedIn, showAnimaEdge } from '../../combat/animaMoment.ts';
+import { Arrivals } from '../../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../../combat/attackFeel.ts';
 import { FightEffects } from '../../combat/fightEffects.ts';
 import { Fighting } from '../../combat/fighting.ts';
@@ -83,6 +84,8 @@ export class WreckRun {
   readonly boxes: readonly Block[];
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
+  /** The player raised at a checkpoint arrives there as one respawning does on foot. */
+  private readonly arrivals = new Arrivals();
   private readonly feel: AttackFeel;
   private readonly sounds = new WorldSounds(louder(worldOutput, STORY_FIGHT_GAIN));
   private readonly scenery: WreckScenery;
@@ -390,6 +393,7 @@ export class WreckRun {
     });
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
+    this.arrivals.told(events, clock);
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
     feel.frame(events, fight.own, fight.player, seconds, new Set());
@@ -410,7 +414,9 @@ export class WreckRun {
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
-      figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) });
+      const arrival = this.arrivals.shareOf(fight.player, clock);
+      const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player), arrival };
+      figures.push({ ...own, ...looks });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
@@ -501,6 +507,7 @@ export class WreckRun {
       swings,
       fight: fought,
       hints,
+      dark: this.arrivals.darkOf(fight.player, clock),
     };
   }
 

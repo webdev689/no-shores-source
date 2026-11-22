@@ -291,6 +291,7 @@ export class WreckFight implements Beat {
       focus: [shown.shot.eye[0], shown.shot.eye[1]],
       heard: { at: 'sea', deck: true, sailing: false },
       drain: this.drained,
+      dark: shown.dark,
     };
   }
 
