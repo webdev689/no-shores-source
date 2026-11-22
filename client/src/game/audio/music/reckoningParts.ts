@@ -223,15 +223,17 @@ export function escapement(w: Write, bar: number, name: ChordName, { fast = fals
     );
 }
 
-/** The chord's floor for a bar in a feel: its bass struck, its pad, and if asked its strings and its choir. */
+/** The chord's floor for a bar in a feel: its bass struck, its pad, and if asked its strings (in the voicing of the
+ *  feel `voicingShift` on from its own) and its choir. */
 export function floorBar(
   w: Write,
   bar: number,
   name: ChordName,
-  { strings = false, choir = false, organ = 1, vel = 1, feel = 0 } = {},
+  { strings = false, choir = false, organ = 1, vel = 1, feel = 0, voicingShift = 0 } = {},
 ) {
   const tones = CHORDS[name];
-  const { bass, voicing } = feelOf(feel);
+  const { bass } = feelOf(feel);
+  const { voicing } = feelOf((feel + voicingShift) % FEELS.length);
   for (const [beat, beats] of bass) w.note('bass', bar, beat, beats, tones.bass, (beat ? 96 : 104) * vel);
   if (organ > 0) for (const n of tones.pad) w.note('organ', bar, 0, 4, n, 80 * organ);
   const [low = 0, middle = 0, top = 0] = tones.str.map(midiNote);
