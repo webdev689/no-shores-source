@@ -6,7 +6,7 @@
 use super::{Berth, Sea, Ship};
 use crate::PlayerId;
 use crate::battle::{Outcome, Sank};
-use crate::harbour::{HELD, JOINED, MOORED, REPAIR_REACH_M, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
+use crate::harbour::{HELD, JOINED, MOORED, Repair, RepairRefused, SUNK_KEPT, WASHED_UP};
 use crate::players::GEAR_EVERY_TICKS;
 use gear::quests::Event as QuestEvent;
 use gear::ship::materials::ShipMaterial;
@@ -374,12 +374,7 @@ impl Sea {
         let held = self.harbour.awaiting.as_mut().and_then(|awaiting| awaiting.remove(&player)).flatten();
         let at = character.ship_at.map(|[x, y]| [x as f64, y as f64]).and_then(|at| crate::sea::whole(&at).map(|_| at));
         let start = self.harbour.harbours.starting();
-        let sailing = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref());
-        let first = sailing.map(|sailing| [sailing.ship.x, sailing.ship.y]);
-        let first = first.or(held.as_ref().and_then(|(points, _)| points.first().copied()));
-        let by_start =
-            |[x, y]: [f64; 2]| start.is_some_and(|port| libm::hypot(port[0] - x, port[1] - y) <= REPAIR_REACH_M);
-        let at = at.or(start.filter(|_| !first.is_some_and(by_start)));
+        let at = at.or(start);
         if at.is_some() && self.fights.fighting(player) {
             self.leave_decks(player);
             self.fights.leave(player);

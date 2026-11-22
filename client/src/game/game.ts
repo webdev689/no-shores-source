@@ -52,6 +52,7 @@ import { shipPanelOnceBuilt } from './shipPanel.ts';
 import { firstAnchorage, landfallWords } from './seaLaw.ts';
 import { type NodeInfo, portsOf } from './worldData.ts';
 import { Drain } from './drain.ts';
+import { returnToShip } from './toShip.ts';
 import { speaking } from '../speech/dialogue.ts';
 
 /**
@@ -360,10 +361,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     return null;
   };
 
+  const toSea = () => travel({ kind: 'return-to-ship' }, goSea);
   const syncMenu = () => {
     const resume = { label: 'Resume', run: () => change({ kind: 'back' }) };
     if (playing.flow.mode === 'foot' && playing.flow.menu && playing.foot) {
-      const home = { label: 'Return to ship', run: () => travel({ kind: 'return-to-ship' }, goSea) };
+      const home = { label: 'Return to ship', run: () => returnToShip(playing.foot, toSea, (why) => hud.note(why)) };
       hud.menu({ title: playing.foot.node.name, choices: [resume, home] });
     } else if (playing.flow.mode === 'sea' && playing.flow.menu) {
       const landfall = playing.sea?.landfall;

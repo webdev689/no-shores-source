@@ -64,6 +64,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Speak { keeper: 12 }),
         Asked::Gear(Ask::ChooseFragment { art: 2, fragment: 4 }),
         Asked::UsePoint { point: 3 },
+        Asked::ToShip,
         Asked::Gear(Ask::TakeLetter { letter: 41 }),
         Asked::Gear(Ask::TakeAllLetters),
     ]

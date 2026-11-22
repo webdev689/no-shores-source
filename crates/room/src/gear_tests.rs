@@ -590,3 +590,41 @@ fn a_ware_shown_before_nine_utc_sells_till_then_and_is_refused_once_the_day_turn
     assert_eq!(ask(&mut room, player, 2, vend(20_777)), answer_code(Err(Refusal::NotSold)), "shown before 09:00");
     assert_eq!(ask(&mut room, player, 3, vend(20_778)), 0, "the new day's");
 }
+
+#[test]
+fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while_fallen() {
+    use crate::asks::{Asked, FALLEN, FIGHTING};
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let mut sequence = 0;
+    let mut to_ship = |room: &mut Room| {
+        for _ in 0..crate::asks::ASK_EVERY_TICKS {
+            room.tick();
+        }
+        sequence += 1;
+        let input = crate::Input { sequence, ask: Some(Asked::ToShip), seen: room.clock(), ..crate::Input::default() };
+        room.input(player, input).unwrap();
+        room.tick();
+        room.player(player).expect("in").answer
+    };
+    assert_eq!(to_ship(&mut room), 0, "at peace");
+    let foe = stand_type(&mut room, ::foes::foe_type(14).expect("a type"), ::foes::Rank::Minor, 1, -1.5);
+    let whole = room.fighter(player).expect("in").health;
+    while room.fighter(player).expect("in").health >= whole {
+        room.tick();
+        assert!(room.clock() < 60 * 60, "the foe strikes within a minute");
+    }
+    room.foes.remove(&foe);
+    let struck = room.clock();
+    let kept = room.player(player).expect("in").struck_at;
+    assert!(kept.is_some_and(|tick| tick + 1 >= struck && tick <= struck), "the blow's tick kept: {kept:?}");
+    assert_eq!(to_ship(&mut room), FIGHTING, "struck a moment ago");
+    while room.clock() <= room.player(player).expect("in").struck_at.unwrap() + 600 {
+        room.tick();
+    }
+    assert_eq!(to_ship(&mut room), 0, "ten seconds past the blow");
+    let mut fallen = *room.fighter(player).expect("in");
+    fallen.action = combat::Action::Dead { elapsed: 0 };
+    room.set_fighter(player, fallen);
+    assert_eq!(to_ship(&mut room), FALLEN, "fallen, they wait to stand again");
+}
