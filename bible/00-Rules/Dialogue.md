@@ -21,4 +21,6 @@ line; dialogue holds to more, because a player hears it while they play.
 **Why.** The owner set it, with the first story mission ([[The Game Opens With a Story Mission at Sea]]): "Ensure
 dialouge is not overbearing, bloated, has em dashes, and develop a rule standard for current and future dialouge."
 
-**Checked by.** The dialogue check, on every scene in `content/story/` (rules 1 to 4 and 6); review for the rest.
+**Checked by.** The dialogue check, on every scene in `content/story/` (rules 1 to 4 and 6), and on the quests'
+(`content/quests/quests.json`: each scene they name is the story's, each speaker the cast's, and what they show on the
+screen holds no dash or ellipsis, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); review for the rest.

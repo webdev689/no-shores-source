@@ -33,9 +33,33 @@ fn walked(floor: &Floor, blocks: &Blocks, from: [f64; 2], waypoints: &[[f64; 2]]
     [body.x, body.y]
 }
 
-#[test]
-#[ignore = "about two minutes in release; and on the savanna, steppe, tundra and woodland a body still walks round some ledges' and ramparts' doors across their faces, and at highwater-glen a ledge's way meets a face a body would climb, which wait on the owner's call on the runs there"]
-fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_other_floor() {
+/// What a run may fail by.
+const FLOOR_RAISED: &str = "its floor raised by another's sculpt";
+const BEAT_IN_WATER: &str = "a beat stands in water";
+const WING_ON_WATER: &str = "its wing stands on water";
+const STOPS_SHORT: &str = "stops short of its door";
+const PAST_ITS_DOOR: &str = "a body gets past its door";
+
+/// Where a body walks round the door across its face: the runs there wait on the owner's call, and only Saltmere's
+/// zones have runs of their own yet.
+const WALKS_ROUND: &str = "a body walks round the door across its face";
+/// The failures known, each run with what it fails by and why, so a new one fails the test and one mended must be
+/// taken off this list (`cargo test --release -p room --test runs_everywhere -- --nocapture` names them).
+const KNOWN: [(&str, &str, &str); 10] = [
+    ("continent-2: highwater-glen Test Ledge", STOPS_SHORT, "its way meets a face a body would climb"),
+    ("continent-3: elder-thicket Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-3: elder-thicket Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-3: hollow-dells Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-5: lion-grasslands Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-5: lion-grasslands Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-7: horsehead-mounds Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-7: greywind-steppe Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-8: sunken-fen Test Rampart", PAST_ITS_DOOR, WALKS_ROUND),
+    ("continent-9: whitewind-tundra Test Ledge", PAST_ITS_DOOR, WALKS_ROUND),
+];
+
+/// Every patrol zone of one continent given every run, and what fails: each run by name, what it fails by, and how far.
+fn fails_on(only: &str) -> Vec<(String, &'static str, String)> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let read = |path: &str| std::fs::read_to_string(root.join(path)).expect("the world's files are in the repository");
     let world = world::layout::parse(&read("content/world/layout.json")).expect("the layout parses");
@@ -48,10 +72,7 @@ fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_othe
     ]
     .map(|(name, kind, place)| RunBrief { name: name.into(), kind, place });
     let mut failed = Vec::new();
-    // RUNS_CONTINENT=<id> lays out only that continent, to look into one.
-    let only = std::env::var("RUNS_CONTINENT").ok();
-    for continent in world.continents.into_iter().filter(|continent| only.as_ref().is_none_or(|id| *id == continent.id))
-    {
+    for continent in world.continents.into_iter().filter(|continent| continent.id == only) {
         let Ok(text) = std::fs::read_to_string(root.join(format!("content/world/land/{}.json", continent.id))) else {
             continue;
         };
@@ -80,7 +101,7 @@ fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_othe
                 }
             }
             if worst > 0.05 {
-                failed.push(format!("{}: {}'s floor raised {worst:.1} m by another's sculpt", continent.id, layout.id));
+                failed.push((format!("{}: {}", continent.id, layout.id), FLOOR_RAISED, format!("{worst:.1} m")));
             }
         }
         let floor = Floor::Land(Box::new(ground.clone()));
@@ -100,7 +121,7 @@ fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_othe
                             ground.water_at(beat.at[0] + f64::from(east), beat.at[1] + f64::from(south)) != WaterAt::Dry
                         });
                     if wet {
-                        failed.push(format!("{name}: a beat stands in water"));
+                        failed.push((name.clone(), BEAT_IN_WATER, String::new()));
                     }
                 }
                 // Its wing, the rock carried past the claim round it, on dry land too.
@@ -113,13 +134,13 @@ fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_othe
                         ground.water_at(at[0], at[1]) != WaterAt::Dry
                     });
                     if wet {
-                        failed.push(format!("{name}: its wing stands on water"));
+                        failed.push((name.clone(), WING_ON_WATER, String::new()));
                     }
                 }
                 let way: Vec<[f64; 2]> = run.way().into_iter().skip(1).collect();
                 let end = walked(&floor, &blocks, run.mouth, &way, 600.0);
                 if distance(end, run.door) > AT_DOOR_M {
-                    failed.push(format!("{name}: stops {:.1} m from its door", distance(end, run.door)));
+                    failed.push((name.clone(), STOPS_SHORT, format!("{:.1} m from its door", distance(end, run.door))));
                     continue;
                 }
                 let across = [-run.facing[1], run.facing[0]];
@@ -136,10 +157,49 @@ fn every_zone_given_every_run_walks_each_to_its_door_on_dry_land_raising_no_othe
                     .fold(f64::NEG_INFINITY, f64::max);
                 // A body pressed at the door's face may slide a few metres along it.
                 if worst > 6.0 {
-                    failed.push(format!("{name}: a body gets {worst:.0} m past its door"));
+                    failed.push((name.clone(), PAST_ITS_DOOR, format!("{worst:.0} m")));
                 }
             }
         }
     }
-    assert!(failed.is_empty(), "{} problems: {failed:#?}", failed.len());
+    failed
 }
+
+/// One continent's runs fail by nothing but what `KNOWN` holds for it, and all of that still.
+fn holds(continent: &str) {
+    let failed = fails_on(continent);
+    let unknown: Vec<_> = failed
+        .iter()
+        .filter(|(name, what, _)| !KNOWN.iter().any(|known| (known.0, known.1) == (name.as_str(), *what)))
+        .collect();
+    assert!(unknown.is_empty(), "{} failures not known: {unknown:#?}", unknown.len());
+    let mended: Vec<_> = KNOWN
+        .iter()
+        .filter(|(name, _, _)| name.starts_with(&format!("{continent}: ")))
+        .filter(|(name, what, _)| !failed.iter().any(|(each, its, _)| (each.as_str(), *its) == (*name, *what)))
+        .collect();
+    assert!(mended.is_empty(), "known failures mended, to be taken off KNOWN: {mended:#?}");
+}
+
+macro_rules! every_run_on {
+    ($($test:ident: $continent:literal),* $(,)?) => {$(
+        /// Every patrol zone of the continent given every run walks each to its door on dry land, raising no other
+        /// floor, but for the failures `KNOWN` holds.
+        #[test]
+        fn $test() {
+            holds($continent);
+        }
+    )*};
+}
+
+every_run_on!(
+    runs_on_continent_1: "continent-1",
+    runs_on_continent_2: "continent-2",
+    runs_on_continent_3: "continent-3",
+    runs_on_continent_4: "continent-4",
+    runs_on_continent_5: "continent-5",
+    runs_on_continent_6: "continent-6",
+    runs_on_continent_7: "continent-7",
+    runs_on_continent_8: "continent-8",
+    runs_on_continent_9: "continent-9",
+);

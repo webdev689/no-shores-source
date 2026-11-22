@@ -4,7 +4,8 @@ name: freesound
 # changes: each cue's first few CC0 or Attribution sounds of its length, their previews and who made them, kept as
 # the run's download for the audio test sheet. It needs no key: it reads Freesound's public pages, as a person
 # browsing would. Freesound refuses Claude's cloud machines, so the search runs here, and so does the publish of the
-# owner's picks to R2, with the repository's R2 token.
+# owner's picks to R2. The job that searches and cuts holds no secret: it stages the picks, and a second job, which
+# only uploads them, holds the repository's R2 token.
 on:
   push:
     paths: [content/audio/freesound.json, tools/freesound/**, .github/workflows/freesound.yml]
@@ -19,10 +20,14 @@ permissions:
   contents: read
 
 jobs:
+  # Reads strangers' pages and cuts their audio with ffmpeg, so it holds no secret: what it stages for R2 goes on as an
+  # artifact.
   candidates:
     runs-on: ubuntu-latest
     # Long beds' previews are megabytes each, read at one person's browsing pace: a full list takes hours.
     timeout-minutes: 180
+    outputs:
+      staged: ${{ steps.staged.outputs.staged }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -36,24 +41,27 @@ jobs:
         env:
           ONLY: ${{ github.event.inputs.only }}
         run: node tools/freesound/candidates.mjs freesound-candidates
-      # A long pick is cut with ffmpeg, which decodes a stranger's audio: in steps that hold no key.
       - name: Install ffmpeg
         run: sudo apt-get install -y -q ffmpeg > /dev/null
       - name: Cut the long picks
         run: python3 -I tools/freesound/publish.py --cut freesound-candidates
-      # The owner's picks go to R2 with the repository's R2 token, each named by its hash, so a run changes
-      # nothing already there; this step runs no ffmpeg. The game's list of them is kept with the download
-      # (sounds.json) for a commit to take in. Without the token the run says so and publishes nothing.
-      - name: Publish the picks to R2
+      # The owner's picks, each named by its hash, staged for the publish job: one R2 already serves is not. The
+      # game's list of them is kept with the download (sounds.json) for a commit to take in once they are published.
+      - name: Stage the picks for R2
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
+          R2_STAGE: ${{ runner.temp }}/stage
         run: |
-          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
-            echo "::warning::the repository has no R2_TOKEN secret: no pick is published"
-            exit 0
-          fi
           python3 -I tools/freesound/publish.py freesound-candidates
           cp content/audio/sounds.json freesound-candidates/sounds.json
+      - name: Say whether anything is staged
+        id: staged
+        run: if [ -d "$RUNNER_TEMP/stage" ]; then echo "staged=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.staged.outputs.staged == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: r2-stage
+          path: ${{ runner.temp }}/stage
+          retention-days: 1
       # Kept even when the search stops partway, with the pages it read, so a refusal or a changed page can be read.
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
@@ -62,3 +70,30 @@ jobs:
           path: freesound-candidates
           if-no-files-found: warn
           retention-days: 30
+
+  # A fresh machine with nothing installed, and the only job that holds the token: tools/r2.py uploads the stage's
+  # files, each only if it is named by its own hash under a folder a publisher writes.
+  publish:
+    needs: candidates
+    if: needs.candidates.outputs.staged == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: r2-stage
+          path: ${{ runner.temp }}/stage
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing.
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
+      - name: Upload what the build staged
+        if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
+        run: python3 -I tools/r2.py upload "$RUNNER_TEMP/stage"

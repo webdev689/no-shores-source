@@ -363,6 +363,23 @@ fn a_boarders_gear_is_written_on_the_seas_day_and_turns_with_it() {
 }
 
 #[test]
+fn a_boarded_decks_loot_rolls_on_the_hosts_own_seed_mixed_by_its_ship() {
+    let seed_aboard = |reseeded: bool| {
+        let (mut sea, player) = met(20.0, Rank::Minor);
+        if reseeded {
+            sea.reseed(0x1234_5678_9abc_def0, 0x0fed_cba9_8765_4321);
+        }
+        strike(&mut sea, player);
+        sea.board(player).unwrap();
+        (sea.decks.boarded[0].room.seed, sea.decks.boarded[0].pirate.id)
+    };
+    let (unseeded, _) = seed_aboard(false);
+    let (seed, ship) = seed_aboard(true);
+    assert_ne!(seed, unseeded, "never the room's constant, which anyone with the code knows");
+    assert_eq!(seed, 0x1234_5678_9abc_def0 ^ u64::from(ship).wrapping_mul(0x9E37_79B9_7F4A_7C15));
+}
+
+#[test]
 fn a_boarder_who_steps_off_is_sent_their_gear_from_the_sea_again() {
     let (mut sea, player) = met(20.0, Rank::Minor);
     sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);

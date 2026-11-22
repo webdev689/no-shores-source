@@ -159,3 +159,18 @@ fn the_abyss_boon_earns_a_quarter_more_reputation_for_the_faction_pledged_with_i
     assert_eq!(without, xp, "a kill's reputation is its XP");
     assert_eq!(reputation(true).1, xp + xp / 4, "and a quarter more, rounded down, with the boon");
 }
+
+#[test]
+fn an_islands_nodes_gathered_today_are_kept_while_it_is_among_the_latest_sixteen_touched() {
+    let mut activity = crate::activity::Activity::default();
+    activity.gather_on(20_778, 1, 0);
+    for isle in 2..=16 {
+        activity.gather_on(20_778, isle, 0);
+    }
+    activity.gather_on(20_778, 1, 1);
+    activity.gather_on(20_778, 17, 0);
+    activity.gather_on(20_778, 18, 0);
+    assert_eq!(activity.gathered_on(20_778, 1), [0, 1], "touched again, kept");
+    assert_eq!(activity.gathered_on(20_778, 2), [] as [u8; 0], "the least lately touched let go");
+    assert_eq!(activity.gathered_on(20_779, 1), [] as [u8; 0], "nothing the next day");
+}

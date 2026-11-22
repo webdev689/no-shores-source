@@ -96,6 +96,8 @@ pub const SPEAK: u8 = 64;
 pub const CHOOSE_FRAGMENT: u8 = 65;
 /// A puzzle's point used, by its place among its goal's points in `column`.
 pub const USE_POINT: u8 = 66;
+/// A return to the player's ship asked, which the room answers before the page leaves for the sea.
+pub const TO_SHIP: u8 = 73;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -191,6 +193,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
+        TO_SHIP => Asked::ToShip,
         _ => return None,
     })
 }
@@ -279,6 +282,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
         Asked::StopGather => args = messages::AskArgs { kind: STOP_GATHER, ..args },
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
+        Asked::ToShip => args = messages::AskArgs { kind: TO_SHIP, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,

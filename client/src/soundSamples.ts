@@ -137,12 +137,14 @@ export class Samples {
     }
     const last = this.lastPlayed.get(id);
     const lastAt = last ? variants.indexOf(last) : -1;
-    const sound = variants[variantOf(variants.length, lastAt < 0 ? undefined : lastAt)];
+    // A long recording plays its chunks in order, then from the first again; one late, another held plays meanwhile.
+    const following = last ? this.following(variants, last) : -1;
+    const sound = variants[following >= 0 ? following : variantOf(variants.length, lastAt < 0 ? undefined : lastAt)];
     if (!sound) return null;
     this.lastPlayed.set(id, sound);
     sound.playedAt = audio.currentTime;
     // A long recording's next chunk is fetched as one of its chunks plays, so the next play has it.
-    if (sound.chunk !== null) this.nextChunk(id, sound.file);
+    if (sound.chunk !== null) this.nextChunk(id, sound.file, sound.chunk);
     const source = audio.createBufferSource();
     source.buffer = sound.buffer;
     source.playbackRate.value = rate;
@@ -156,14 +158,23 @@ export class Samples {
     return source;
   }
 
-  private nextChunk(id: string, file: string): void {
-    const size = this.sizes.get(file);
-    if (!size || [...this.coming].some((each) => each.startsWith(`${file} `))) return;
-    const count = Math.max(1, Math.ceil(size / CHUNK_BYTES));
-    const held = new Set((this.held.get(id) ?? []).filter((each) => each.file === file).map((each) => each.chunk));
-    const free = Array.from({ length: count }, (unused, chunk) => chunk).filter((chunk) => !held.has(chunk));
-    const chunk = free[Math.floor(Math.random() * free.length)];
-    if (chunk !== undefined) this.fetch(id, file, chunk);
+  /** How many chunks a long recording is taken in, its last part one too. */
+  private chunksOf(file: string): number {
+    return Math.max(1, Math.ceil((this.sizes.get(file) ?? 0) / CHUNK_BYTES));
+  }
+
+  /** Where the chunk after `last` is held, -1 where it is not or `last` is no chunk. */
+  private following(variants: readonly Held[], last: Held): number {
+    if (last.chunk === null) return -1;
+    const next = (last.chunk + 1) % this.chunksOf(last.file);
+    return variants.findIndex((each) => each.file === last.file && each.chunk === next);
+  }
+
+  private nextChunk(id: string, file: string, playing: number): void {
+    if (!this.sizes.has(file) || [...this.coming].some((each) => each.startsWith(`${file} `))) return;
+    const next = (playing + 1) % this.chunksOf(file);
+    const held = (this.held.get(id) ?? []).some((each) => each.file === file && each.chunk === next);
+    if (!held) this.fetch(id, file, next);
   }
 
   /** Fetches chunk `chunk` of `file` (all of it, where it is no longer than a chunk), decodes and holds it. */

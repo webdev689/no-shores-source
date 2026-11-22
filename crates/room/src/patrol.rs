@@ -65,6 +65,7 @@ impl Room {
     pub(crate) fn keep_gathering(&mut self) {
         let under_way: Vec<PlayerId> =
             self.players.iter().filter(|(_, found)| found.gathering.is_some()).map(|(&id, _)| id).collect();
+        let (isle, day) = (self.isle.as_ref().map(|isle| isle.seed), self.day());
         for player in under_way {
             let Some(gathering) = self.players.get(&player).and_then(|found| found.gathering) else { continue };
             let Some(fighter) = self.fighter(player).copied() else { continue };
@@ -83,6 +84,10 @@ impl Room {
             found.gear_changed = true;
             let Some(node) = self.resource_nodes.get(usize::from(gathering.node)).filter(|_| done) else { continue };
             found.spent.push(gathering.node);
+            // On a sea island the node stays spent for the character until the day turns, in any room of it.
+            if let Some(seed) = isle {
+                found.character.activity.gather_on(day, seed, gathering.node);
+            }
             if let Some(owner) = &found.owner {
                 self.gathered.entry(owner.clone()).or_default().push(gathering.node);
             }

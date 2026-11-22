@@ -139,10 +139,10 @@ test('two scripted players seal a heroic Fissure to the same fingerprint through
   assert.equal(hash, FISSURE_HASH);
 });
 
-test('two scripted players meet a raid’s heroic task but run out its clock, to the same fingerprint in WebAssembly as natively', async () => {
+test('two scripted players meet a raid’s heroic task but lose its stores, to the same fingerprint in WebAssembly as natively', async () => {
   const { hash, ended, at } = await play(RAID_MINUTE);
   assert.deepEqual(ended, [2, 3, 2], 'the raid failed, its heroic task met');
-  assert.deepEqual(at, doorNumbers('RAID_ENDED'), 'the tick its clock ran out at, its wave and the stores left');
+  assert.deepEqual(at, doorNumbers('RAID_ENDED'), 'the tick its stores fell at, its wave and the stores left');
   assert.equal(hash, RAID_HASH);
 });
 

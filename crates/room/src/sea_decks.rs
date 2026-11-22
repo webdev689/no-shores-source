@@ -33,6 +33,9 @@ pub const HOLD_TICKS: u64 = 3_600;
 pub struct Decks {
     pub hulls: Vec<Deck>,
     pub boarded: Vec<Boarded>,
+    /// The host's own loot and world seeds (`Sea::reseed`), each deck's mixed from them by its ship; none in a sea no
+    /// host reseeded.
+    pub seeds: Option<(u64, u64)>,
 }
 
 /// Why a player's leaving a deck was refused.
@@ -69,6 +72,10 @@ impl Sea {
                 // Its crew stand at the level the sea's tier raised its ship to; their kills pay by that tier too.
                 room.difficulty = self.pirates.difficulty;
                 room.set_minute(self.minute);
+                if let Some((loot, world)) = self.decks.seeds {
+                    let mix = |seed: u64| seed ^ u64::from(pirate.id).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+                    room.reseed(mix(loot), mix(world));
+                }
                 self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won_at: None });
                 self.decks.boarded.len() - 1
             }

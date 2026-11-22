@@ -85,6 +85,11 @@ pub struct Road {
     pub task: String,
     pub counts: Vec<u16>,
     pub done: bool,
+    /// How many of each goal's waves the character has stood in this task: the waves of a defence come again on a
+    /// rejoin or a return, and those already fought drop nothing ([[The Audit's Leftovers Are Fixed as Claude
+    /// Suggested]]).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub fought: Vec<u16>,
     /// Keys this room does not know, from a later room's save, written back as read.
     #[serde(flatten)]
     pub unknown: UnknownKeys,
@@ -118,6 +123,17 @@ pub fn lenient<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Ques
 }
 
 impl QuestLog {
+    /// Whether the character has stood wave `wave` of goal `goal` of a quest's task before, noting that it has now.
+    pub fn fought_wave(&mut self, quest: &str, goal: usize, wave: usize) -> bool {
+        let Some(road) = self.roads.get_mut(quest) else { return false };
+        if road.fought.len() <= goal {
+            road.fought.resize(goal + 1, 0);
+        }
+        let stood = usize::from(road.fought[goal]);
+        road.fought[goal] = u16::try_from(stood.max(wave + 1)).unwrap_or(u16::MAX);
+        wave < stood
+    }
+
     /// As kept, made whole: a place in every quest (unbegun for one never walked), its task one of its quest's (one
     /// kept by an id the task had before read as it; the first for a task the file no longer holds), a count for each
     /// of that task's goals within the goal's own, and a choice count for every Art.
@@ -133,11 +149,12 @@ impl QuestLog {
             let road = self.roads.entry(quest.id.clone()).or_default();
             // A task kept by an old id starts afresh: its goals need not be the old task's.
             if let Some(now) = quest.tasks.iter().find(|task| task.was.contains(&road.task)) {
-                (road.task, road.counts) = (now.id.clone(), Vec::new());
+                (road.task, road.counts, road.fought) = (now.id.clone(), Vec::new(), Vec::new());
             }
             if !quest.tasks.iter().any(|task| task.id == road.task) {
                 road.task = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
                 road.counts.clear();
+                road.fought.clear();
             }
             let task = quest.tasks.iter().find(|task| task.id == road.task);
             let goals = task.map_or(&[][..], |task| task.goals.as_slice());
@@ -164,7 +181,7 @@ impl QuestLog {
             }
         }
         let road = self.roads.entry(def.id.clone()).or_default();
-        (road.task, road.counts, road.done) = (at.id.clone(), vec![0; at.goals.len()], false);
+        (road.task, road.counts, road.done, road.fought) = (at.id.clone(), vec![0; at.goals.len()], false, Vec::new());
     }
 
     /// A quest's place, by the quest's place in the file.
@@ -242,7 +259,9 @@ impl Character {
             return counted;
         }
         match def.tasks.get(task + 1) {
-            Some(next) => (road.task, road.counts) = (next.id.clone(), vec![0; next.goals.len()]),
+            Some(next) => {
+                (road.task, road.counts, road.fought) = (next.id.clone(), vec![0; next.goals.len()], Vec::new())
+            }
             None => road.done = true,
         }
         self.reward(def.faction, def.tasks[task].reward);

@@ -75,6 +75,13 @@ each part works is in its system note.
   band edged by a gold line ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Open for
   the owner: aiming in first person sees 43° (1.6 times from 65°, was 32.5°), and the iron blow's small red mark.
   Impeccable's design hook is on in every session, at v4.10.0 ([[Toolkit]]).
+- **The balance pass halfway back, loot in Destiny 1's order, and a whole-codebase audit** (#141, with the owner's
+  yes): on land a player's blow ×1.5 and a foe's ×0.75; Vestiges by rank, Minor 2 in 100 to a Boss always, each
+  colour half or less of the one below; items from Bosses, Minibosses and a dungeon's clear; clears that pay; Shapes
+  from the week's Abyss Dungeon alone; eleven bugs the audit found, each with a test that fails without its fix
+  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
+  [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Tested offline, the full
+  check passing on `main` with it merged (117fa21e); not yet played by hand or in a deployed room.
 - The world's lore and its first crystal faction, #77, merged with #124 on the owner's "Merge and deploy". The owner's
   decisions: Raum's lore adapted into one mystery ([[Raum's Lore Is Adapted Into One Mystery]]), shown and hardly told
   ([[The Game Shows the Mystery and Explains Almost None of It]]); an ageless world with quiet nods to DFO and
@@ -172,15 +179,20 @@ The decisions in [[Open Questions]] are not repeated here.
   their parts, and the rest wait on where its corrupted areas lie.
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
-- **#141, the balance pass halfway back, loot in Destiny 1's order and a whole-codebase audit** (branch
-  `ccr-1e1aa6da-yox2v1`), with the owner's yes to merge, which deploys the page and the rooms
-  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
-  [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Claude's calls in bringing
-  #97 under the owner's loot rules: a dungeon's cache pays a dungeon's clear (an item, a Vestige one time in three,
-  XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, the only Shapes, and the dungeon of the day a Boss
-  Captain's kill. What its audit left for the owner (keys and deploys, exploits needing a rule, a failed trip's
-  return) is in #141's description and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD). Not yet played
-  by hand or in a deployed room.
+- **#141's calls.** Claude's calls in bringing #97 under the owner's loot rules: a dungeon's cache pays a dungeon's
+  clear (an item, a Vestige one time in three, XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, and the dungeon
+  of the day a Boss Captain's kill.
+- **The audit's leftovers, all fixed as the owner took them** (#152, branch `ccr-1e1aa6da-yox2v1`), for the owner's
+  yes to merge, which deploys the page and the rooms ([[The Audit's Leftovers Are Fixed as Claude Suggested]], its
+  Claude's calls there): the asset workflows' token held only by jobs that upload; a hand run of the rooms' deploy
+  refused without main's check; the Sloop checked by its hash; guests capped at 500 an hour and deleted unused 30
+  days; riding on the room's word; health, charges and the Arts' charge kept with the character through a return;
+  the swings' chain kept by the room; a new ship put in at a roadstead and one sailed before back where it left;
+  the sea's loot on the host's own seeds; a leashed Boss's calls dropping nothing; an island's nodes spent until the
+  day turns; quest waves fought once paying once; a failed trip back where the player stood; the return to the ship
+  refused while fallen or just struck; long recordings in order; the island packs, `runs_everywhere` and the quests'
+  lines checked in CI. Tested offline; the split asset workflows are first tested live on their next run, and nothing
+  is yet played by hand or in a deployed room.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127

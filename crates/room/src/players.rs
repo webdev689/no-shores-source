@@ -198,6 +198,10 @@ pub struct Player {
     /// The foes their own blows landed on in the last ten seconds, with the tick of each one's last: each shares its
     /// kill's healing charge with them (`recharge.rs`).
     pub(crate) struck: std::collections::BTreeMap<FighterId, u64>,
+    /// The tick a foe's blow last landed on them: they return to their ship only ten seconds past it (`Asked::ToShip`).
+    pub(crate) struck_at: Option<u64>,
+    /// Where their swings' chain stands (`chain.rs`).
+    pub(crate) chain: crate::chain::Chain,
 }
 
 impl Player {
@@ -250,6 +254,8 @@ impl Player {
             counts: crate::perks::PerkCounts::default(),
             atheric: crate::atheric::AthericCounts::default(),
             struck: std::collections::BTreeMap::new(),
+            struck_at: None,
+            chain: crate::chain::Chain::default(),
         }
     }
 
@@ -363,6 +369,7 @@ impl Room {
             .collect();
         for id in gone {
             self.foes.remove(&id);
+            self.quests.spoilless.remove(&id);
             self.board.forget(id);
             self.names.remove(&id);
         }
@@ -422,12 +429,6 @@ impl Room {
         true
     }
 
-    /// A player's character as it is kept between sessions.
-    #[must_use]
-    pub fn kept_character(&self, player: PlayerId) -> Option<String> {
-        self.players.get(&player).map(|found| found.character.to_json())
-    }
-
     /// Why the room's gate shuts to a character (`gear::gate`), or none when it may enter.
     #[must_use]
     pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {
@@ -474,6 +475,7 @@ impl Room {
         if let Some(found) = self.players.get_mut(&player) {
             found.fighter = found.armed(found.fighter);
         }
+        self.given_back(player);
         true
     }
 
