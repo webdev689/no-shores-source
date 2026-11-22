@@ -119,4 +119,5 @@ test("a run played alone opens on the minute by the rooms' clock, not a page clo
   // A minute may turn between two readings.
   assert.ok(Math.abs(minute - Math.floor(roomNow() / 60_000)) <= 1, `${minute} by the rooms`);
   assert.ok(Math.abs(minute - Math.floor(Date.now() / 60_000)) >= 1000, 'not by the page');
+  WORLD_CLOCK.heard(WORLD_CLOCK.seconds() - 86_400 - 900);
 });

@@ -10,6 +10,8 @@ import type { MarkedFoe } from './foeBars.ts';
 import { EVENT } from './cues.ts';
 import { blockedBy, clearOf, Hud, type HudFrame, type HudKeys, veilOf } from './hud.ts';
 import { vitalsDepth } from './hudLayout.ts';
+import type { GearState } from '../network/gearMessages.ts';
+import { KINDS, WORN } from '../player/gear.ts';
 import { cameraOf } from './plateSight.ts';
 import { allOf, coloursDrawn, fakeInterface, laidOf, wordsIn } from './nodes.test.ts';
 
@@ -561,6 +563,16 @@ test("the Arts' and the loadouts' keycaps are the keys the game answers each fra
   hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] } }), 1 / 60);
   assert.ok(labels().includes('Quicken (E), ready'), labels());
   keys = { arts: ['pad:LB+RB', 'pad:LB', 'pad:RB'], loadouts: ['pad:Left', 'pad:Right'] };
-  hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] } }), 1 / 60);
+  // A sword in hand, a crossbow in the other loadout, its row naming the key that draws it.
+  const worn = (kind: string, slot: number) => ({ kind: KINDS.indexOf(kind as never), at: WORN + slot, rarity: 0 });
+  const items = [worn('sword', 0), worn('crossbow', 1)];
+  const arms = {
+    gear: { items, ammo: 18, ammoMost: 24 } as unknown as GearState,
+    loadout: 0,
+    drawn: true,
+    dress: null,
+  };
+  hud.update(bare({ abilities: { art: 1, animaShare: 1, tenets: [1, 1] }, arms }), 1 / 60);
   assert.ok(labels().includes('Quicken (LB), ready'), 'the pad played last');
+  assert.ok(labels().includes('Press Right to draw'), labels());
 });

@@ -177,7 +177,9 @@ test("the week's Elite Dungeon is the week's by the rooms' clock, not a page clo
   const rules = await module;
   const minute = (moment: number) => Math.floor(moment / 60_000);
   // The rooms say it is a week (or more) later than the page thinks, so the week's Elite Dungeon differs.
-  for (let weeks = 1; weeks < 20; weeks++) {
+  let weeks = 0;
+  while (weeks < 20) {
+    weeks++;
     WORLD_CLOCK.heard(WORLD_CLOCK.seconds() + 7 * 86_400);
     const [rooms, page] = [activitiesAt(rules, minute(roomNow())), activitiesAt(rules, minute(Date.now()))];
     if (rooms.weekElite.place !== page.weekElite.place) break;
@@ -187,6 +189,7 @@ test("the week's Elite Dungeon is the week's by the rooms' clock, not a page clo
   const run = recorded({ foot: standing(elite(place, 'The Week’s'), 'elite') }, [], false);
   run.trips.enter(0, 'The Week’s');
   await run.settled();
+  WORLD_CLOCK.heard(WORLD_CLOCK.seconds() - weeks * 7 * 86_400);
   assert.equal(run.ways[0]?.[4], 'elite', "entered as the rooms' week's Elite Dungeon");
 });
 
