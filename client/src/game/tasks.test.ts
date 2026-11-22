@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { glyphDrawn } from '../ui/glyphs.ts';
 import { layout } from '../ui/layout.ts';
 import type { Node } from '../ui/node.ts';
-import { justMet, type Quest, TaskTracker, toldChange } from './tasks.ts';
+import { justMet, type Quest, sameQuest, TaskTracker, toldChange } from './tasks.ts';
 
 const face = { glyph: () => glyphDrawn({ rows: ['#'], advance: 600 }) };
 const quest: Quest = {
@@ -75,6 +75,48 @@ test('each change to a task is told aloud, as the page’s status region told it
   );
   delete page['document'];
   assert.deepEqual(said, ['The Wreck: Find the captain', 'Move, done', 'Foes 2']);
+});
+
+const carry = (count: number, done = false): Quest => ({
+  name: 'The Fissure',
+  task: 'The High Downs',
+  steps: [{ text: 'Carry shards to the fissure', count, done, keys: ['E'] }],
+});
+
+test('two quests read alike only when every word, count, key and tick is the same', () => {
+  assert.ok(sameQuest(carry(3), carry(3)), 'alike, though not the same object');
+  assert.ok(sameQuest(null, null));
+  assert.ok(!sameQuest(carry(3), null));
+  assert.ok(!sameQuest(carry(3), carry(2)), 'a count changed');
+  assert.ok(!sameQuest(carry(3), carry(3, true)), 'a step met');
+  assert.ok(!sameQuest(carry(3), { ...carry(3), steps: [] }), 'a step gone');
+  assert.ok(
+    !sameQuest(carry(3), { ...carry(3), steps: [{ text: 'Carry shards to the fissure', count: 3 }] }),
+    'a key gone',
+  );
+});
+
+test('a chest’s ticking clock is drawn afresh each second, and said only at the seconds a clock is told', () => {
+  const said: string[] = [];
+  const page = globalThis as unknown as Record<string, unknown>;
+  const chest = (clock: number): Quest => ({
+    name: 'The Fissure',
+    task: 'The High Downs',
+    steps: [{ text: 'Open your chest', clock }],
+  });
+  try {
+    page['document'] = { ariaNotify: (words: string) => said.push(words) };
+    const tracker = new TaskTracker();
+    tracker.show(chest(109), 0);
+    tracker.show(chest(108), 1);
+    tracker.show(chest(107), 2);
+    assert.deepEqual(said, ['The Fissure: The High Downs']);
+    assert.ok(!sameQuest(chest(109), chest(108)), 'redrawn as it ticks');
+    const words = JSON.stringify(tracker.node({ width: 1280, height: 720 }, 3, true));
+    assert.ok(words.includes('Open your chest') && words.includes('1:47'), words);
+  } finally {
+    delete page['document'];
+  }
 });
 
 test('a clock is told as it starts, each 30 s, and each of its last 10 s; a ward’s health at each quarter', () => {

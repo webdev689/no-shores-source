@@ -15,6 +15,7 @@ pub mod asks;
 pub mod bounties;
 pub mod catalogue;
 pub mod character;
+pub mod chests;
 pub mod clears;
 pub mod clock;
 pub mod cosmetics;

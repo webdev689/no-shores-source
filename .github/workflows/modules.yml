@@ -2,63 +2,86 @@ name: modules
 
 # Builds every handcrafted module in Blender, checks the bake makes exactly the manifest committed in
 # content/modules/modules.json (the meshes' keys are their hashes, so a commit's manifest names what this bake
-# uploads), and publishes the meshes to R2 whenever the module tools change: the job that bakes holds no secret and
-# stages them, and a second job, which only uploads them, holds the repository's R2 token.
+# uploads), and publishes the meshes to R2 with the repository's R2 token whenever the module tools change.
+# The bake takes in the Lattice's props and the sprite forge's bodies and materials (tools/modules/latticekit.py), so
+# their files start it too.
 on:
   push:
-    paths: [tools/modules/**, content/modules/**, .github/workflows/modules.yml]
+    paths:
+      - tools/modules/**
+      - tools/lattice/props.py
+      - tools/lattice/growth.py
+      - tools/forge/tools/sprite-forge/**
+      - tools/r2.py
+      - content/modules/**
+      - .github/workflows/modules.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  # Installs others' code (pip), so it holds no secret: what it stages for R2 goes on as an artifact.
-  build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    outputs:
-      staged: ${{ steps.staged.outputs.staged }}
+  # Installs others' code (pip), so it holds no secret: what it bakes goes on as an artifact. The packages are the
+  # exact wheels tools/modules/requirements.txt names by their hashes.
+  bake:
+    # The machine and the Python the wheels were tested with: a mesh is named by its bytes' hash.
+    runs-on: ubuntu-24.04
+    # Two whole bakes, about 21 minutes each on a runner.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
-          python-version: '3.13'
+          python-version: '3.13.18'
       - name: Install Blender's module
-        run: pip install bpy==5.3.0
+        run: |
+          pip install --require-hashes --only-binary=:all: -r tools/modules/requirements.txt
+      - name: Check the steady normals
+        run: python -I tools/modules/test_kit.py
       # A bake that does not make the committed manifest prints the difference: commit the manifest it made.
       - name: Bake and check the manifest is the bake's
         run: |
           python -I tools/modules/bake.py "$RUNNER_TEMP/modules"
           git diff --exit-code content/modules/modules.json || { cat content/modules/modules.json; exit 1; }
-      - name: Stage the meshes
-        env:
-          R2_STAGE: ${{ runner.temp }}/stage
-        run: python -I tools/modules/publish.py "$RUNNER_TEMP/modules"
-      - name: Say whether anything is staged
-        id: staged
-        run: if [ -d "$RUNNER_TEMP/stage" ]; then echo "staged=true" >> "$GITHUB_OUTPUT"; fi
-      - if: steps.staged.outputs.staged == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      # A mesh is named by its hash, so a bake that changes its bytes from run to run would publish a new mesh and
+      # leave the manifest and every machine's own bake disagreeing.
+      - name: Bake again and check every mesh is the same bytes
+        run: |
+          python -I tools/modules/bake.py "$RUNNER_TEMP/again"
+          diff -r "$RUNNER_TEMP/modules" "$RUNNER_TEMP/again"
+          git diff --exit-code content/modules/modules.json
+      # A bake that differs from the manifest or from the other bake is kept for a week, both bakes as far as they
+      # went, so their meshes can be set beside each other and another machine's.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: failure()
         with:
-          name: r2-stage
-          path: ${{ runner.temp }}/stage
-          retention-days: 1
+          name: modules-differed
+          path: |
+            ${{ runner.temp }}/modules
+            ${{ runner.temp }}/again
+          retention-days: 7
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: modules
+          path: ${{ runner.temp }}/modules
+          if-no-files-found: error
+          retention-days: 7
 
-  # A fresh machine with nothing installed, and the only job that holds the token: tools/r2.py uploads the stage's
-  # files, each only if it is named by its own hash under a folder a publisher writes.
+  # A fresh machine with nothing installed: the publisher needs Python's own library and the repository alone.
   publish:
-    needs: build
-    if: needs.build.outputs.staged == 'true'
+    needs: bake
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
-          name: r2-stage
-          path: ${{ runner.temp }}/stage
-      # Without the token there is nothing to publish with: the run says so and stops, rather than failing.
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.13'
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
       - name: Check the token is set
         id: token
         env:
@@ -66,7 +89,12 @@ jobs:
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
           else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
-      - name: Upload what the build staged
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: steps.token.outputs.set == 'true'
+        with:
+          name: modules
+          path: ${{ runner.temp }}/modules
+      - name: Publish the meshes
         if: steps.token.outputs.set == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}

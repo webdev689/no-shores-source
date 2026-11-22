@@ -221,6 +221,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
     let foes: Vec<FoeSeen> = room.foes_seen().collect();
     let shots: Vec<combat::Shot> = room.shots().copied().collect();
     let spells: Vec<room::SpellSeen> = room.spells_seen().collect();
+    let public = room.public_seen();
     aboard
         .iter()
         .map(|&(at_sea, viewer)| {
@@ -243,6 +244,7 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
                 spells: &spells,
                 cache: &[],
                 revives: None,
+                public: public.as_ref(),
             };
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })

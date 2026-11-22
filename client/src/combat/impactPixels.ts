@@ -52,7 +52,7 @@ function shaded(
 
 const madeSprites = new Map<string, Sprite>();
 /** The sprite kept under `key`, made by `make` the first time it is asked for. */
-function cached(key: string, make: () => Sprite): Sprite {
+export function cached(key: string, make: () => Sprite): Sprite {
   let made = madeSprites.get(key);
   if (!made) {
     made = make();

@@ -5,7 +5,7 @@ import type { FighterView } from '../rules/fighters.ts';
 import { EVENT } from './cues.ts';
 import type { KeptFoe } from './fighting.ts';
 import { SpellEffects } from './spellEffects.ts';
-import { type HeardFight, type WorldFrame, WorldSounds, voiceToDrop } from './worldSounds.ts';
+import { HEARD_MOST_S, type HeardFight, type WorldFrame, WorldSounds, voiceToDrop } from './worldSounds.ts';
 import { listen } from '../listener.ts';
 
 const SWORD = 2;
@@ -83,19 +83,37 @@ function fakeSound() {
   const place = () => ({ positionX: param(), positionY: param(), positionZ: param() });
   const listener = { ...place(), forwardX: param(), forwardY: param(), forwardZ: param(), ...place() };
   Object.assign(listener, { upX: param(), upY: param(), upZ: param() });
+  const faded: { at: number; to: number }[] = [];
   const audio = {
     listener,
+    currentTime: 10,
     createPanner: () => ({ ...place(), connect: () => undefined, disconnect: () => undefined }),
+    createGain: () => {
+      const gain = {
+        to: null as unknown,
+        gain: {
+          setValueAtTime: (to: number, when: number) => void faded.push({ at: when, to }),
+          linearRampToValueAtTime: (to: number, when: number) => void faded.push({ at: when, to }),
+        },
+        connect: (to: unknown) => void (gain.to = to),
+        disconnect: () => undefined,
+      };
+      return gain;
+    },
   } as unknown as AudioContext;
-  const played: { id: string; rate: number; at: readonly number[] }[] = [];
+  const played: { id: string; rate: number; at: readonly number[]; until: number | null }[] = [];
   const stopped: string[] = [];
   const play = (_audio: AudioContext, out: AudioNode, id: string, rate: number) => {
-    const panner = out as unknown as ReturnType<typeof place>;
-    played.push({ id, rate, at: [panner.positionX.value, panner.positionY.value, panner.positionZ.value] });
-    const source = { stop: () => stopped.push(id), addEventListener: () => undefined };
+    const panner = ((out as unknown as { to?: unknown }).to ?? out) as ReturnType<typeof place>;
+    const one = { id, rate, at: [panner.positionX.value, panner.positionY.value, panner.positionZ.value], until: null };
+    played.push(one);
+    const source = {
+      stop: (when?: number) => (when === undefined ? stopped.push(id) : void (one.until = when as never)),
+      addEventListener: () => undefined,
+    };
     return source as unknown as AudioBufferSourceNode;
   };
-  return { output: { audio, out: {} as AudioNode }, play, played, stopped, listener };
+  return { output: { audio, out: {} as AudioNode }, play, played, stopped, listener, faded };
 }
 
 const hit = (over: Partial<FightEvent> = {}): FightEvent => ({
@@ -216,4 +234,20 @@ test('at most sixteen sounds at once: the farthest gives way to a nearer one, a 
   assert.equal(voiceToDrop([1, 9, 4], 5, 3), 1);
   assert.equal(voiceToDrop([1, 9, 4], 10, 3), 'new');
   assert.equal(voiceToDrop([1, 9], 10, 3), null);
+});
+
+test("a public event's cue holds its voice a few seconds at most, fading out; a fight's plays out", () => {
+  const { output, play, played, faded } = fakeSound();
+  const sounds = new WorldSounds(() => output, play);
+  sounds.frame({ ...frameOf({ events: [hit()] }), heard: [{ cue: 'story.crash', at: [1, 3, 2] }] });
+  const heard = played.find((one) => one.id === 'story.crash');
+  assert.equal(heard?.until, 10 + HEARD_MOST_S, 'stopped once its most is up');
+  assert.deepEqual(faded, [
+    { at: 10 + HEARD_MOST_S - 0.5, to: 1 },
+    { at: 10 + HEARD_MOST_S, to: 0 },
+  ]);
+  assert.ok(
+    played.some((one) => one.id !== 'story.crash' && one.until === null),
+    "the blow's own is not cut",
+  );
 });

@@ -4,8 +4,9 @@ type: reference
 # Platform Research
 
 What the browsers and Cloudflare offer for the game's interface, its threads and its network, as researched on
-2026-11-20, with the sources each finding rests on. The decisions built on it: [[The Interface Uses No HTML, Now or
-Later]], [[Work Leaves the Main Thread Where It Can]], [[The Network Is Made Smaller and Readied for WebTransport]].
+2026-11-20, with the sources each finding rests on. The decisions built on it:
+[[The Interface Uses No HTML, Now or Later]], [[Work Leaves the Main Thread Where It Can]],
+[[The Network Is Made Smaller and Readied for WebTransport]].
 
 ## The interface
 

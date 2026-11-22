@@ -319,6 +319,11 @@ impl Player {
         }
         changed
     }
+
+    /// Whether the player stands alive: neither fallen in a fight nor killed by the section (a fall, the sea).
+    pub(crate) fn living(&self) -> bool {
+        !self.fighter.dead() && !matches!(self.standing, Standing::Dead { .. })
+    }
 }
 
 impl Room {
@@ -366,6 +371,7 @@ impl Room {
             self.foes.remove(&id);
             self.quests.spoilless.remove(&id);
             self.board.forget(id);
+            self.names.remove(&id);
         }
     }
 
@@ -527,6 +533,7 @@ impl Room {
         self.give_casting_back(player, owner);
         self.give_body_back(player, owner);
         self.tell_landed(player);
+        self.own_part(player);
         true
     }
 

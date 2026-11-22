@@ -119,3 +119,50 @@ test('a foe sent as what changed is laid over the numbers held, a companion stil
   assert.deepEqual([whole?.foes[0]?.alert, whole?.foes[0]?.level], [3, 4]);
   assert.deepEqual(whole?.foes[0]?.companion, { leader: 9, given: 2, family: 5, post: 4 });
 });
+
+test('a foe sent as what changed keeps the name it stands under, which crosses each time it does', () => {
+  const kept = new SnapshotKeeper();
+  const numbers = new Float64Array(GLANCE_FLOATS + 17);
+  kept.whole(snapshot(10n, { foes: [{ ...foeOf(6, numbers), name: 'The Warden of the Fissure' }] }));
+  const bits = new Uint8Array(Math.ceil(numbers.length / 8));
+  bits[0] = 1;
+  const changes = { bits, numbers: Float64Array.from([3]) };
+  const sent = { ...foeOf(6, new Float64Array(numbers.length)), changes, name: 'The Warden of the Fissure' };
+  const whole = kept.whole(snapshot(11n, { base: 10n, foes: [sent] }));
+  assert.equal(whole?.foes[0]?.name, 'The Warden of the Fissure');
+  const still = kept.whole(snapshot(12n, { base: 11n }));
+  assert.equal(still?.foes[0]?.name, 'The Warden of the Fissure', 'and one not sent stands as it stood');
+});
+
+test("a snapshot that leaves out the zone's events has them as its base had them, counted on", () => {
+  const kept = new SnapshotKeeper();
+  const raid = {
+    kind: 2,
+    phase: 1,
+    ground: [100, 0, 10],
+    radius: 30,
+    ticksLeft: 600,
+    nextKind: 1,
+    nextGround: [0, -100, 10],
+    nextTicks: 7200,
+    stage: 1,
+    stages: 3,
+    progress: 1000,
+    needed: 1000,
+    heroic: 1,
+    heroicTicks: 5,
+    bonus: true,
+    marks: [{ kind: 3, id: 1, at: [92, -4, 10], health: 1, state: 1 }],
+    nextWaveTicks: 0,
+  } as const;
+  kept.whole(snapshot(10n, { public: raid }));
+  const whole = kept.whole(snapshot(20n, { base: 10n, public: null }));
+  assert.deepEqual(
+    whole?.public,
+    { ...raid, ticksLeft: 590, heroicTicks: 0 },
+    'its countdowns run down, the rest held',
+  );
+  const sent = { ...raid, phase: 2 };
+  assert.deepEqual(kept.whole(snapshot(21n, { base: 20n, public: sent }))?.public, sent, 'sent: as sent');
+  assert.equal(kept.whole(snapshot(22n, { public: null }))?.public, null, 'built on none: none');
+});

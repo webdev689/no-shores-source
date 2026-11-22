@@ -9,6 +9,7 @@ import type { Interface } from '../ui/ui.ts';
 import { boundWord, withKey } from './controls.ts';
 import type { Hint } from './gearNodes.ts';
 import { edged } from '../combat/barDraw.ts';
+import type { BannerTone } from '../combat/publicBanner.ts';
 import type { Reach } from '../combat/seaReadout.ts';
 import { footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
@@ -24,6 +25,7 @@ export interface HudView {
   readonly doubled: boolean;
   readonly fight: boolean;
   readonly bossed: boolean;
+  readonly banner?: BannerTone | null;
   readonly plates: boolean;
   readonly seaFight: boolean;
   readonly speaking: boolean;
@@ -41,11 +43,13 @@ export interface Choice {
 }
 
 /** The place's name and kind at the top left, clear of the compass; at the top right while the fight's display holds
- *  the left, and gone while a boss's bar, the ships' plates or the sea fight's readout hold the top. While the held
+ *  the left, and gone while a boss's bar, the ships' plates or the sea fight's readout hold the top, or a public
+ *  event's banner does at a phone's width. While the held
  *  map is up its kind is set as the map's own words are: as written, a pixel apart, at the map's larger size where
  *  the words take their larger step. */
 export function placeNode(view: HudView, title: string, kind: string): Node | null {
-  if (view.bossed || view.plates || view.seaFight || (title === '' && kind === '')) return null;
+  const bannered = view.width <= 600 && !!view.banner && view.banner !== 'next';
+  if (view.bossed || bannered || view.plates || view.seaFight || (title === '' && kind === '')) return null;
   const zoom = view.doubled ? 2 : 1;
   // The kind's words at the view's zoom, and a step larger on the map at the larger view.
   const kindSize = view.map && view.big && !view.doubled ? 2 : zoom;

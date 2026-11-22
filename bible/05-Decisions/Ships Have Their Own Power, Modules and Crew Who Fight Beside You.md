@@ -24,5 +24,5 @@ status: in force
 - Every ship has crew to manage. Named crew fight beside the player as companions, with their own nodes, perks and
   experience. They are recruited in port cities through the player's faction, or taken rarely from vessels.
 - It builds the ship as gear and crew as companions of [[The Sea Is a Patrol Zone, and the Ship Is Gear]], and brings
-  back the ship's parts the owner had set aside. How it is built is Claude's ([[The Ship's Power, Crew and Islands as
-  Claude Shapes Them]]).
+  back the ship's parts the owner had set aside. How it is built is Claude's
+  ([[The Ship's Power, Crew and Islands as Claude Shapes Them]]).

@@ -7,6 +7,7 @@ import { buildCity, retaining, runs } from './cityBuild.ts';
 import { clearedGround, groundPlates, PAVED_TILE, plateSkirts, sideOf } from './cityGround.ts';
 import { MASS_FLOATS, MASS_RUIN } from './cityMasses.ts';
 import { emptyMesh } from './mesh.ts';
+import { PICTURE_LAYERS } from './pictures.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
 
 const content = (path: string): string => readFileSync(new URL(`../../../content/${path}`, import.meta.url), 'utf8');
@@ -173,7 +174,7 @@ test('a made-up city is built: every piece of its blocks placed near, its masses
   for (const list of data.near.values())
     for (const instance of list)
       assert.ok(Math.abs(instance.at[0]) < 3 * CELL_M && Math.abs(instance.at[1]) < 3 * CELL_M);
-  assert.ok(data.book.pictures.length > 10 && data.book.pictures.length <= 252);
+  assert.ok(data.book.pictures.length > 10 && data.book.pictures.length <= PICTURE_LAYERS);
 });
 
 test('ranges laid end to end join into one draw', () => {

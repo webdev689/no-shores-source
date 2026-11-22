@@ -380,13 +380,16 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   - the World Editor's fight: the same readout and plates over its picture, its lines in the editor's own panel.
 - **Nothing covers another.** The place's name keeps left of the compass, its words wrapping before they reach it.
   A boss's bar under the compass, and ships' plates in a sea fight, take the top from the place's name, which gives
-  way while they show. On foot the vitals hold the top left, so the place's name and the status line under it stand
-  at the top right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
+  way while they show; so does a public event's banner at a phone's width (600 px or less), but for the next event's
+  line. On foot the vitals hold the top left, so the place's name and the status line under it stand at the top
+  right, the line under a boss's bar while one shows; at sea the status line stands under the compass,
   and in a sea fight in the top right corner, off the sky the aim looks at. On foot the company stands under the
   vitals, and the prompt for E stands over the Arts and weapons. The key strip stands at the bottom right, under the
   dialogue box's foot and wrapping short of the Arts and weapons; at sea it rises above the sea bar and the offer to
-  dock or go ashore, and in a sea fight it keeps clear of the ship's bar at the bottom left. The task tracker stands at the right under the place's name, above the Acquired feed, and under
-  the compass's column in a view 900 px wide or less; the toasts in the middle over the dialogue box's top. The key
+  dock or go ashore, and in a sea fight it keeps clear of the ship's bar at the bottom left. The task tracker stands
+  at the right under the place's name, above the Acquired feed, and under the compass's column in a view 900 px wide
+  or less, and gives way to a public event's banner in a view under 1024 px wide; the toasts in the middle over the
+  dialogue box's top. The key
   strip gives way while someone speaks in the dialogue box. The edge's warning stands under the compass's column.
   Where the hints grow to 22 px on a wide screen, the place line's small words grow with them ([[Game]]), so the
   water's name and holder are never the smallest words on the screen.
@@ -403,16 +406,21 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   px rule, showing a quarter of the circle. Its eight points (N, NE, E, SE, S, SW, W, NW, the four cardinals at 22 px
   and the others at 11, on the face's grid) stand by the bearing the view looks at, the shortest way round; one off the
   strip is hidden, never held at an end. A brass needle marks its middle. Its column stands what comes under it 10 px
-  under its rule, 56 px down: a boss's bar, then the target's plate. A view too narrow for health's bar to stand 150 px
-  long beside the compass stands the whole column under the vitals instead. On foot past 1440p the whole column (the
-  compass, the boss bar and the target's plate) stands at twice its size, as the corners do. At sea it marks each hostile
+  under its rule, 56 px down: a public event's banner ([[Public Events]]), then a boss's bar, then the target's plate.
+  A view too narrow for health's bar to stand 150 px long beside the compass stands the whole column under the vitals
+  instead. On foot past 1440p the whole column (the compass, the banner, the boss bar and the target's plate) stands
+  at twice its size, as the corners do. At sea it marks each hostile
   ship within its own sight (5 km at the helm, farther with the voyage's pace, [[Naval Combat]], "At sea") and every
   other ship within 900 m on its top edge, a bow pointing up, at its bearing on the same quarter turn, so one
   north-east stands under NE; one off the strip is held at the end on the side to turn toward. A mark is red while its
   ship would take the player (a hostile ship, or a hostile captain in the fight), lit pale red (`#ffc2b8`) while a
   captain has a battery run out at the player, as the broadside warning names it, bone for another player's or a
   captain who is not hostile, Overlook's blue (`#2f5d9a`) for a friendly ship of the traffic, and grey once its colours
-  are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
+  are down; one going down has no mark. On foot in a zone that holds public events it marks the event's ground on its
+  foot with a gold diamond (the next one's between events), held at the nearer end while off the strip as a ship is,
+  and the growth or the tithe-taker with an orange one, blinking, while the heroic window is open; a chest of the
+  player's waiting there with a smaller gold one, and a store under attack with a red one, blinking faster. The compass hides
+  with the view while the held map is up at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
   over stamina over poise, each in a fine stone frame whose ends come to a point at a brass tip (`plus/barFrame.ts`),
   drawn pixel for pixel and never scaled. Health is 12 px tall, stamina 10 and poise 8, 4 px apart (16, 14 and 10, 5
@@ -427,8 +435,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   whole pixel rows in a pale health red as the player's blows fill its meter. A diamond brightens in two steps over
   0.4 s, near white and then pale red, as a charge is gained or drunk (not under reduced motion). A screen reader
   reads them as a meter, "Healing charges", with how many of the three are held and how far the next has filled,
-  to a whole percent while the diamond fills in whole pixel rows ([[Three Healing Charges, Refilled by Blows and
-  Kills]]). Whole and untouched for 4 s (health
+  to a whole percent while the diamond fills in whole pixel rows
+  ([[Three Healing Charges, Refilled by Blows and Kills]]). Whole and untouched for 4 s (health
   and stamina short of no whole point, no poise taken, all three charges held), with no buff and no foe on the target
   plate or the boss bar, the vitals rest out of sight in six steps over 1.2 s; the first point lost or spent brings
   them back in two.
@@ -482,26 +490,26 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   of the foe's whole health it holds still, lit along its top and dark along its foot in its element's colours, Blaze
   orange, Volt blue, Cosmic violet (`wardOf`). It is gone once broken. What it takes from the player's own blows is
   said in its element's colour; a blow it holds whole fills no poise, so the poise track says nothing of it.
-- **Plates over figures are never overbearing**, and few show at once, after Destiny's ([[Fewer Plates Show, Sized by
-  Rank, After Destiny]]; Claude's calls in [[Plates as Claude Shows Them]]). The cone round the crosshair shows one
-  plate (`aimedFoe`): the foe whose body the crosshair is on, the nearest of them if several, so a foe behind another on
-  the line never takes it; else the foe in sight nearest the crosshair, measured to the nearest point of its body, feet
-  to head and its breadth round (`bodyDegrees`), whole within 4 degrees and none past 6, easing in and out over 0.25 s.
-  Another foe takes the cone only once the crosshair is on it, or it stands a degree nearer, or the cone would show a
-  quarter more of it, so two side by side, or a view wobbling between them, do not trade it. When the foe at the
-  crosshair is already fought or locked, the cone shows no other foe's plate; a Boss there takes the cone too, and shows
-  none over its head. The foe the soft lock holds shows wherever it is, and so does a foe the player traded a blow with,
-  for as long as the target plate would stand from that blow, fading as it fades (`foughtShare`); being the target
-  alone, a foe winding up at the player or one the lock let go, holds no plate. A plate new on the screen starts at what
-  it should show, without easing in: past the cone it starts hidden, at the cone's edge or in a fought plate's fade it
-  starts at that share, and otherwise whole. A plate fading out of the cone holds its place and lifts none over it, so
-  the one taking the cone stands where it will stay; for that quarter second the two may overlap. The words of blows
-  keep clear of the plates drawn, never of a foe with none, and a word pushed down clear of a plate stays down as the
-  plate goes. A plate shows for no foe farther than 60 m across the ground, nor one whose head the place's blocks or its
-  land hide (`landBlocks`, the line tried every 2 m, only for a foe that could show a plate or take the cone): a plate
-  showing goes once its line has stayed blocked 0.15 s, one not showing stays hidden from the moment it is; seen again
-  it comes back at once. It is whole as near as 12 m through a 60 degree lens and shrinks as its figure does farther
-  off, never growing, its name never under 9 px.
+- **Plates over figures are never overbearing**, and few show at once, after Destiny's
+  ([[Fewer Plates Show, Sized by Rank, After Destiny]]; Claude's calls in [[Plates as Claude Shows Them]]). The cone
+  round the crosshair shows one plate (`aimedFoe`): the foe whose body the crosshair is on, the nearest of them if
+  several, so a foe behind another on the line never takes it; else the foe in sight nearest the crosshair, measured to
+  the nearest point of its body, feet to head and its breadth round (`bodyDegrees`), whole within 4 degrees and none
+  past 6, easing in and out over 0.25 s. Another foe takes the cone only once the crosshair is on it, or it stands a
+  degree nearer, or the cone would show a quarter more of it, so two side by side, or a view wobbling between them, do
+  not trade it. When the foe at the crosshair is already fought or locked, the cone shows no other foe's plate; a Boss
+  there takes the cone too, and shows none over its head. The foe the soft lock holds shows wherever it is, and so does
+  a foe the player traded a blow with, for as long as the target plate would stand from that blow, fading as it fades
+  (`foughtShare`); being the target alone, a foe winding up at the player or one the lock let go, holds no plate. A
+  plate new on the screen starts at what it should show, without easing in: past the cone it starts hidden, at the
+  cone's edge or in a fought plate's fade it starts at that share, and otherwise whole. A plate fading out of the cone
+  holds its place and lifts none over it, so the one taking the cone stands where it will stay; for that quarter second
+  the two may overlap. The words of blows keep clear of the plates drawn, never of a foe with none, and a word pushed
+  down clear of a plate stays down as the plate goes. A plate shows for no foe farther than 60 m across the ground, nor
+  one whose head the place's blocks or its land hide (`landBlocks`, the line tried every 2 m, only for a foe that could
+  show a plate or take the cone): a plate showing goes once its line has stayed blocked 0.15 s, one not showing stays
+  hidden from the moment it is; seen again it comes back at once. It is whole as near as 12 m through a 60 degree lens
+  and shrinks as its figure does farther off, never growing, its name never under 9 px.
 - **A blow's words** stand where the blow met the body, in the face at 22 px with no box and a hard 2 px outline,
   thrown the way the stroke's blade went, its near edge 28 px from the blow (a crit's and a kill's 56; a number with
   no stroke one side and the other in turn), and kept on the screen. Each pops
@@ -869,14 +877,15 @@ never while a press is held. Each press is an ask the room answers.
 
 ## World sounds
 
-`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the [[Test
-Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the owner has
-picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
+`WorldSounds` (`combat/worldSounds.ts`) watches the fight and the walkers each frame, on foot and on the
+[[Test Ground]], and plays each world cue of `content/audio/freesound.json` where it happens. A cue plays once the owner
+has picked its recording on the sound sheet ([[The World Sounds From the Sound Picker]]) and it is in
 `content/audio/sounds.json`; until then it is silent, with no synthesised sound in its place. A pick is Freesound's,
 put in by `tools/freesound/publish.py` through the `freesound` workflow ([[Code Map]]), or one of DFO's own, by
 `tools/freesound/own.py` ([[DFO's Own Sounds Join the Sound Sheet]]); a cue with several files, as the steps have,
-plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it ([[The Duskraven
-Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules (`combat/worldCues.ts`):
+plays any but the one it played last. The Duskraven plays its raven with a fire of its own under it
+([[The Duskraven Sounds With Fire Under Its Raven]]). Which cue a moment calls for is chosen by pure rules
+(`combat/worldCues.ts`):
 
 - **Blows.** A swing as its blade sweeps to its blow, started so its recording's loudest 20 ms meet the tick the blow
   lands (never before the swing begins, and not once a dodge or a flinch has cut it short), or as a foe's wound-up blow

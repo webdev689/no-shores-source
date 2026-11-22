@@ -66,6 +66,10 @@ pub enum Asked {
     /// Asks to return to their ship: refused while fallen or within ten seconds of a foe's blow, as the owner chose
     /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); the page leaves for the sea only on the room's word.
     ToShip,
+    /// Opens one's chest from a public event, by its number among one's drops, within `public::CHEST_REACH`.
+    OpenChest {
+        chest: u32,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -351,6 +355,7 @@ impl Room {
             Asked::Art(ask) => self.ask_art(player, ask),
             Asked::UsePoint { point } => self.use_point(player, point),
             Asked::ToShip => self.to_ship(player),
+            Asked::OpenChest { chest } => self.open_chest(player, chest),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

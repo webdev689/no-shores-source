@@ -19,6 +19,16 @@ export const EVENT = {
   healed: 14,
   /** Every player in an Abyss run fell at once: told to each, the run starting over. */
   wiped: 15,
+  publicBegun: 16,
+  publicStage: 17,
+  shardTaken: 18,
+  shardSet: 19,
+  heroicMet: 20,
+  heroicMissed: 21,
+  publicWon: 22,
+  publicFailed: 23,
+  storePlundered: 24,
+  chestOpened: 25,
 } as const;
 export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 

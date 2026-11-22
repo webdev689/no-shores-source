@@ -37,6 +37,9 @@ export type SolidMaterial =
   | 'water'
   | 'rubble'
   | 'chalk'
+  | 'turf'
+  | 'canvas'
+  | 'crystal'
   | ClothMaterial;
 
 /** Cloth's plain dyed colours (the city crate's `Material`): linen, crimson, verdant, black, straw, and each

@@ -19,6 +19,13 @@ code:
   - tools/modules/dress.py#DRESSING
   - crates/layout/src/pieces_land.rs#stone_bridge
   - client/src/city/modules.ts#loadModules
+  - tools/modules/latticekit.py#taken
+  - tools/modules/fissure.py#fissure
+  - tools/modules/tithe.py#stores_a
+  - tools/modules/chest.py#lid
+  - client/src/city/crystal.ts#CRYSTAL_WGSL
+  - client/src/city/eventProps.ts#eventProps
+  - client/src/game/eventPropsDraw.ts#EventPropsDraw
 ---
 # Modules
 
@@ -40,6 +47,19 @@ middle of its foot:
   noise, cut flat where a body stands on it, then decimated to a triangle budget. Every natural form is made this
   way: a cave's shelf, a column of dripstone, a boulder.
 - **Arches**: a round bar cut out of a wall.
+- **Carpentry and cloth** (`timbers.py`): weathered boards and posts, iron plates, crates battened and braced, barrels
+  of bellied staves bound with hoops, sacks of creased canvas tied at the neck, and cloth: a tarp laid over a stack's
+  tops, falling off their edges and pegged out by cords, or a banner hung from a bar.
+- **The Lattice's own props** (`latticekit.py`): its shards, clusters, crusts and boulders built by its own code
+  (`tools/lattice/props.py`, `growth.py`), each of its Blender materials read as one of the kit's, its crystal glowing
+  as its strain's light says: bright toward a shard's point, dark at its root, alight at its heart.
+
+Each surface wears one of the game's materials: stone, trim, rubble, chalk, turf, timber, canvas, iron, plaster,
+roof, gold, crystal, bone, glow, the cloths, paving, lawn and water (`kit.MATERIALS`, the order its groups are
+written in). An object may wear one a face (a torn slab's turf top over its soil and its chalk). Crystal, the
+Lattice's, is drawn by code, not a picture: red where the sun reaches it, graded to purple in its shadows, a glint off
+each flat facet the sun catches, and its core glowing as much as each vertex says, more seen straight on and more at
+night.
 
 `exported` turns a module into the game's frame (x east, y south, z up: Blender's y turned round): its surfaces
 grouped by material, its parts, its sockets, its pads and its size, the box round its surfaces. The surface groups
@@ -83,28 +103,69 @@ are written with paving last, since the first group carries the parts and paving
   raised ring bed, a lawn bed, a table with benches (`seat-1` to `seat-4`), a parasol table, a woodpile, a stack of
   barrels, a flower cart and a stack of hay bales, each stood by `front`.
 
+- **The public events' props**, drawn by the page where an event stands, never placed by a layout:
+  - The Fissure (`lattice-fissure`, 12 m long): a crack nearly 3 m deep and 4 across at its widest, its walls the
+    Lattice's crystal from the lip down, brightening to its alight heart, so from eye height the far wall reads as a
+    glowing slit; slabs of turf over a band of dark soil over chalk lying low and few along both lips, turf and roots
+    hanging off their edges, a row tipped up further back; chalk broken out across the turf; crystal teeth leaning in
+    low over it, clusters grown out of its walls under the lip, four spires standing a metre or two over the ground out
+    of its heart, its floor wide and lit by seven lights so the crack is seen into from a height, veins of light crept
+    out through the grass and crusts of crystal at its ends. Its mouth, the outline of the crack at the ground, is in the
+    manifest (`mouth`), so the page opens the land there.
+  - Its scar (`lattice-fissure-sealed`): a low ridge of dark soil heaved up along where the crack was, grey-white
+    chalk broken and heaped on it, dull stubs of dark crystal standing out of it, their glow dying with the crack; the
+    slabs settled back nearly flat, the teeth broken off and lying in the grass, and the crusts at its ends dulled.
+  - The growth (`lattice-growth`, 5 m): a spire of crystal out of a heave of chalk, five lesser spires leaning out from
+    its root, shards crowding its foot, the turf it broke through tipped up round it and crusted.
+  - The shard (`lattice-shard`, half a metre): a hand's length of crystal, two lesser points off its root, alight.
+  - The Grey Tithe's three stores (`tithe-stores-a`, `-b`, `-c`): crates of weathered boards bound with iron at their
+    corners, barrels, sacks of canvas (on store c's pallet laid flat, their tied necks out) and a pallet, each
+    stack under a tarp pegged close at its corners; the plundered store (`tithe-stores-plundered`): a crate broken
+    open, one tipped on its side, boards strewn, sacks slit with their grain spilt in heaps, a barrel stove in and
+    rolled away with its staves and a hoop by it, the tarp dragged off. Each stack is compact and square-edged, its
+    part the box round it: store a 2.6 by 1.85 m, b 2.2 by 2.2, c 2.6 by 1.3, the plundered store 2.5 by 2.0.
+  - The Tithe's banner (`tithe-banner`): a heavy cloth, unmarked, 3.4 m long, lashed along its sleeve to a
+    crossbar on a 5.4 m pole, a weighted rod in its hem so it hangs straight and bellies only between; three guy ropes
+    pegged out behind it and to either side, an iron spike and collar at its head, stones packed round its foot.
+  - The chests (`event-chest`, iron-bound; `event-chest-heroic`, gilded and set with crystal at its corners) and their
+    lids (`event-chest-lid`, `event-chest-heroic-lid`, the heroic one crowned with crystal): each lid a module of its
+    own, its hinge at its origin, and the chest's `hinge` socket where that hinge sits on it.
+
 ## Baking and publishing
 
-bpy is Blender as a Python module: `pip install bpy==5.3.0` on Python 3.13, as for the [[Flora]].
+bpy is Blender as a Python module, on Python 3.13: `pip install --require-hashes --only-binary=:all: -r
+tools/modules/requirements.txt` installs bpy 5.3.0 and what it needs, each wheel by its hash; the hashes are of the
+wheels for x86-64 Linux and Python 3.13, so it installs only there (CI bakes on `ubuntu-24.04` with Python 3.13.18). The
+bake takes in the Lattice's own builders (`tools/lattice/props.py` and `growth.py`) and through them the
+[[Sprite Forge]]'s bodies, rig and materials (`tools/forge/tools/sprite-forge/`), which need nothing more.
 
 | Command | What it does |
 |---|---|
 | `python -I tools/modules/bake.py <folder>` | Builds every module, writes each surface group's mesh to the folder under its hash and the manifest to `content/modules/modules.json`; a few seconds a module |
 | `python -I tools/modules/publish.py <folder>` | Uploads the meshes the manifest names to R2, unless R2 already serves them, and checks each answers |
-| `python -I tools/modules/render.py <module> <picture.png> [--parts]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked |
+| `python -I tools/modules/render.py <module> <picture.png> [--parts] [--eye x,y,z]` | A picture of a module as Blender built it, its parts drawn as wire boxes when asked, from a given eye when asked |
 
-A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats) and normal (3 signed
-bytes), then each triangle's three vertex numbers. A module has at most 32,000 triangles. The bake is made to give
-the same bytes from the same scripts on any machine: each group's vertices and triangles are written sorted, since an
-exact boolean's threads hand its faces back in a different order each run; positions are written to a tenth of a
-millimetre and normals to a thousandth, and the manifest's sockets, parts and pads to the millimetre, each zero
-without its sign, since a coordinate one machine leaves a hair under zero another leaves a hair over. A piece turned
-through an angle (a slanted rod, a turned slab) is still placed by trigonometry another machine's library may round a
-last bit differently, and a coordinate landing on a rounding's edge would then bake other bytes: a thin piece that
-need not slant (a flower's stem) stands upright. A module's random draws are seeded by its place in the
-catalogue, so a new module goes at the catalogue's end. The `modules` workflow bakes on every change to the module
-tools and fails if the bake does not make the committed manifest. The bake stages the meshes in a job that holds no
-secret, and a second job uploads them with the repository's `R2_TOKEN` ([[Toolchain]]).
+A mesh file is a vertex count and a triangle count, then each vertex's position (3 floats), normal (3 signed bytes) and
+glow (a byte to 127, only crystal's more than none), then each triangle's three vertex numbers. A module has at most
+32,000 triangles. The bake is made to give the same bytes from the same scripts on any machine: each group's vertices
+and triangles are written sorted, since an exact boolean's threads hand its faces back in a different order each run;
+positions are written to a tenth of a millimetre and normals to a thousandth, and the manifest's sockets, parts, pads
+and mouths to the millimetre, each zero without its sign, since a coordinate one machine leaves a hair under zero
+another leaves a hair over. A piece turned through an angle (a slanted rod, a turned slab) is still placed by
+trigonometry another machine's library may round a last bit differently, and a coordinate landing on a rounding's edge
+would then bake other bytes: a thin piece that need not slant (a flower's stem) stands upright. The event props also
+work each corner's normal out from the rounded positions in doubles (the area-weighted faces it smooths with), since
+Blender's own single-float normals differ between CPUs in their last bits (`_steady_normals`; a corner whose faces have
+no area takes every face at its point, and a point with none of any area points up; the other modules keep Blender's).
+Their rock (`organic`) is likewise roughed out along normals worked out once in doubles from the remeshed surface
+(`_double_normals`), where the other modules' rock keeps Blender's, read as each point moves. `python -I
+tools/modules/test_kit.py` checks both on small meshes, and the workflow runs it before it bakes. A module's random
+draws are seeded by its place in the catalogue, so a new module goes at the catalogue's end; the event props, after the
+hub's, keep seeds of their own. The `modules` workflow bakes on every change to the module tools, to the Lattice's
+builders and the forge files they take in, or to `tools/r2.py`; it fails if the bake does not make the committed
+manifest or if a second bake does not make the same bytes, keeping both bakes of a failed run, as far as each went, for
+a week (`modules-differed`) to set beside each other and another machine's, and a second job, which installs nothing,
+publishes the first bake's meshes with the repository's `R2_TOKEN`.
 
 ## In the game
 
@@ -129,6 +190,17 @@ secret, and a second job uploads them with the repository's `R2_TOKEN` ([[Toolch
   (timber where none is), its deck where the timber's would be, turned along the way, and moving with the land as
   a bridge does. A turned part's boxes are cut in slices no longer than the part is thick, so a parapet's keep off
   the way they line.
+- **The public events' props** are drawn by the page's event-props drawer (`EventPropsDraw`, among the scene's drawers
+  after the layouts and before the nature) from a list it is handed (`eventProps` makes it from the room's event
+  marks and the player's chests): each prop at its place, turn and scale, risen out of the ground as far as it has
+  come (the growth rising and sinking, a banner driven in; what is under the ground is not drawn), the fissure opening
+  from a line as it widens and deepens, a lid swung about its hinge, its crystal glowing as strongly as it is asked.
+  Each material is its own colour worked by code over the module's own frame (canvas oiled tan, the Tithe's banner
+  its unmarked grey, as its sails are); the crystal is lit as above, its
+  brightest cores light the light layer, and its glow lights lamps round it at night (`EVENT_LAMPS`). A module that
+  opens draws each point of its chasm under the ground at the depth where the eye's line to it crosses the land at
+  its foot, 2 to 4% of that distance nearer (`chasm_depth`), so the land round the mouth gives way and anything nearer
+  keeps its place; a point whose crossing falls outside the mouth is not drawn.
 - **The browser** fetches every module's meshes from R2 once, with the forged models' tables, before it builds a city
   (`loadModules`), and draws each triangle in its material's picture, laid from the axis it faces most, as natural
   rock is.
@@ -142,6 +214,12 @@ stand on the ground at every edge, and no cliff stair stands taller than it was 
 
 ## Limits
 
+- The city draws a module's crystal half alight everywhere: its glow by vertex reaches only the event props' drawer,
+  and only that drawer gives crystal's light into the light layer.
+- The fissure's chasm is drawn 2 to 4% of its distance nearer the eye than the land at its mouth: land rising more
+  than that over the mouth's foot hides part of it, and anything standing that close in front of the mouth is drawn
+  behind it; the events stand on clear ground. Grass drawn after it can stand over the chasm.
+- Every city's load fetches the event props' meshes with the rest.
 - A module's surfaces carry no ambient occlusion of their own, and their pictures are laid flat by axis, not
   unwrapped.
 - A module stands square to the world, so a way may arrive at a side with no socket: the citadel's ways arrive at

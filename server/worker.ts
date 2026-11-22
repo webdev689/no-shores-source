@@ -5,7 +5,7 @@ import roomModule from '../target/wasm32-unknown-unknown/release/room_wasm.wasm'
 import type { CharacterKeeper } from './accounts/worker.ts';
 import { type Listed, arrives, cameOutOf, reachOf, shipOf } from './arrival.ts';
 import { type Count, counted } from './budget.ts';
-import { Keeper, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
+import { Keeper, partFrom, TOKEN, TOKEN_WAIT_MS } from './keeping.ts';
 import {
   canonicalRoom,
   isleRoom,
@@ -423,11 +423,7 @@ export class RoomHost extends DurableObject<Env> {
     this.players.delete(socket);
     this.ashore.delete(held.player);
     if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
-    // What still lies for them goes to their mail, then the character's last save reads it, before the room lets the
-    // player go.
-    this.guarded(() => this.room.mailLying(held.player), undefined);
-    void this.keeper?.leave(held.player);
-    this.guarded(() => this.room.leave(held.player), undefined);
+    partFrom(this.room, this.keeper, held.player, (call) => this.guarded(call, undefined));
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
       clearInterval(this.ticking);
