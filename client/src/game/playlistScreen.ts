@@ -1,6 +1,7 @@
-// The Playlist screen a Playlist's mark beside a port opens, drawn by the game in a window of the menu's kit as the
-// entrance's card is: its four entries in a row of tiles, each with its level, rules, modifiers, rewards and why it is
-// shut, and for the chosen one Launch, Find a Company or Stop finding, and Close.
+// The Playlist screen a Playlist's mark beside a port opens, after the owner's reference, Destiny's Vanguard screen:
+// the four entries as crests on a dark chart (`playlistMap.ts`), the chosen one's card beside them with its level,
+// modifiers, rules and rewards (the daily as taken or not, the weekly as a bar and marks filling), and a footer bar with
+// Launch, Find a Company or Stop finding, and Close.
 import { motionReduced } from '../plus/kit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
@@ -10,6 +11,7 @@ import { INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import { iconNode } from './journalIcons.ts';
 import { modifierNode } from './journalTimers.ts';
+import { drawChart, drawCrest, drawWaiting, spotShare } from './playlistMap.ts';
 import type { PlaylistEntry, PlaylistReward, PlaylistScreenState } from './playlistWords.ts';
 import { play } from './uiSounds.ts';
 
@@ -21,106 +23,198 @@ export interface PlaylistPresses {
 }
 
 const NO_SEARCH: CardSearch = { canFind: false, finding: null, said: null };
-/** The presses' ids, which the keys and the pointer press alike; each tile is `playlist-tile-<its place>`. */
+/** The presses' ids, which the keys and the pointer press alike; each crest is `playlist-tile-<its place>`. */
 const LAUNCH = 'playlist-launch';
 const FIND = 'playlist-find';
 const STOP = 'playlist-stop';
 const CLOSE = 'playlist-close';
 const TILE = 'playlist-tile-';
-/** How narrow a tile may stand, a step of its words' size, the widest the window stands, and the room its head and
- *  foot take of the screen's height. */
-const TILE_LEAST = 110;
-const WINDOW_MOST = 1500;
-const HEAD_AND_FOOT = 200;
+/** The narrowest screen the chart and the card stand side by side on, the card's widest, and a crest's side at a
+ *  screen 900 pixels tall (a week's dungeon's a fifth smaller). */
+const SIDE_BY_SIDE = 1000;
+const CARD_MOST = 560;
+const CREST = 104;
 
-/** A reward's line: its words, then how this character stands with it, as marks filling for a week's clears, and the
- *  time to its reset. */
+/** A small heading over a part of the card, in capitals. */
+const heading = (said: string, size: number): Node => words(said.toUpperCase(), size, INK.brass, { tracking: 2 });
+
+/** A reward on the card: its words; then how this character stands with it (a weekly's clears as a bar and marks
+ *  filling, else taken or not) with the time to its reset at the right. */
 function rewardNode(reward: PlaylistReward, size: number): Node {
+  const small = Math.max(1, size - 1);
+  const cleared = reward.clears?.filter(Boolean).length ?? 0;
+  const of = reward.clears?.length ?? 0;
   const marks: Child[] = (reward.clears ?? []).map((filled) => ({
-    width: 10 * (size + 1),
-    height: 10 * (size + 1),
+    width: 14 * size,
+    height: 6 * size,
     fill: filled ? INK.brassLit : INK.well,
     outline: { width: 1, colour: INK.brass },
   }));
-  const cleared = reward.clears?.filter(Boolean).length ?? 0;
   const standing =
     reward.taken === null
-      ? null
+      ? ''
       : reward.clears !== null
         ? reward.taken
           ? 'Paid'
-          : `${cleared} of ${reward.clears.length}`
+          : `${cleared} of ${of}`
         : reward.taken
           ? 'Taken'
           : 'Not taken';
+  const bar: Node | false = reward.clears !== null && {
+    width: 'grow',
+    height: 6,
+    fill: INK.well,
+    outline: { width: 1, colour: 'rgba(192,138,62,0.5)' },
+    children: [{ width: `${of === 0 ? 0 : Math.round((cleared / of) * 100)}%`, height: 'grow', fill: INK.brassLit }],
+  };
   return {
     width: 'grow',
     direction: 'column',
-    gap: 4,
+    gap: 6,
     children: [
-      { width: 'grow', text: { words: reward.words, size, colour: INK.word } },
+      { width: 'grow', text: { words: reward.words, size: small, colour: INK.word } },
+      bar,
       {
         width: 'grow',
         gap: 6,
         alignY: 'center',
-        wrap: true,
         children: [
-          reward.taken === true && iconNode('taken', 12 * (size + 1)),
+          reward.taken === true && iconNode('taken', 12 * (small + 1)),
           ...marks,
-          standing !== null && words(standing, size, reward.taken ? INK.gain : INK.word),
+          words(standing, small, reward.taken ? INK.gain : INK.word),
+          { width: 'grow' },
+          words(reward.resets, small, INK.faint),
         ],
       },
-      { width: 'grow', text: { words: reward.resets, size, colour: INK.faint } },
     ],
   };
 }
 
-/** One entry's tile: its name, level, rules, modifiers with their words, rewards, and why it is shut; its details a
- *  step smaller than its name and level, so four stand on one screen. */
-function tileOf(entry: PlaylistEntry, place: number, chosen: boolean, size: number, wide: number): Node {
+/** The chosen entry's card: its name over a brass rule, what it is, its rules, its modifiers with their words, its
+ *  rewards, why it is shut, and what every clear pays. */
+function cardOf(entry: PlaylistEntry, note: string, size: number, wide: number): Node {
   const small = Math.max(1, size - 1);
-  const line = (said: string, colour: string = INK.word, sized = small): Node => ({
+  const line = (said: string, colour: string = INK.faint): Node => ({
     width: 'grow',
-    text: { words: said, size: sized, colour },
+    text: { words: said, size: small, colour },
   });
+  const part = (name: string, children: readonly Child[]): Child =>
+    children.some(Boolean) && {
+      width: 'grow',
+      direction: 'column',
+      gap: 6,
+      children: [heading(name, small), ...children],
+    };
+  return {
+    id: 'playlist-card',
+    direction: 'column',
+    width: wide,
+    gap: 14,
+    padding: [0, 0, 16, 0],
+    fill: 'rgba(12,14,18,0.94)',
+    outline: { width: 1, colour: 'rgba(192,138,62,0.55)' },
+    children: [
+      {
+        width: 'grow',
+        direction: 'column',
+        gap: 4,
+        padding: [12, 16],
+        fill: 'rgba(192,138,62,0.16)',
+        children: [
+          {
+            width: 'grow',
+            text: { words: entry.name.toUpperCase(), size: size + 1, colour: INK.brassLit, tracking: 2 },
+          },
+          line(entry.about, INK.word),
+        ],
+      },
+      {
+        width: 'grow',
+        direction: 'column',
+        gap: 14,
+        padding: [0, 16],
+        children: [
+          part(
+            'Rules',
+            entry.rules.map((rule) => line(rule)),
+          ),
+          part(
+            'Modifiers',
+            entry.modifiers.map((modifier): Node => ({
+              width: 'grow',
+              gap: 8,
+              alignY: 'center',
+              children: [
+                modifierNode(modifier, 12 * (small + 1)),
+                {
+                  width: 'grow',
+                  direction: 'column',
+                  children: [words(modifier.name, small, INK.word), line(modifier.words)],
+                },
+              ],
+            })),
+          ),
+          part(
+            'Rewards',
+            entry.rewards.map((reward) => rewardNode(reward, size)),
+          ),
+          entry.shut !== null && line(entry.shut, INK.loss),
+          line(note),
+        ],
+      },
+    ],
+  };
+}
+
+/** An entry's crest on the chart, where `spotShare` stands it: its shield, a dot while a reward of it waits, its name
+ *  and what it is beneath; the chosen one's name lit over a brass rule. */
+function crestOf(entry: PlaylistEntry, place: number, chosen: boolean, size: number, side: number): Node {
+  const waiting = entry.shut === null && entry.rewards.some((reward) => reward.taken === false);
+  const [across, down] = spotShare(entry.kind);
+  const dot = Math.round(side / 9);
   return {
     id: `${TILE}${place}`,
     press: true,
     label: `${entry.name}. ${entry.about}${entry.shut ? `. ${entry.shut}` : ''}`,
     direction: 'column',
-    width: wide,
-    gap: 8,
-    padding: 12,
-    fill: chosen ? INK.wellLit : INK.well,
-    outline: { width: chosen ? 2 : 1, colour: chosen ? INK.brassLit : INK.brass },
-    opacity: entry.shut === null ? 1 : 0.75,
+    alignX: 'center',
+    gap: 6,
+    padding: 6,
+    float: { to: 'parent', anchor: [0.5, 0.35], at: [across, down] },
     children: [
-      { width: 'grow', text: { words: entry.name.toUpperCase(), size, colour: INK.brassLit, tracking: 2 } },
-      line(entry.about, INK.brassLit, size),
-      ...entry.rules.map((rule) => line(rule, INK.faint)),
-      ...entry.modifiers.map((modifier): Node => ({
-        width: 'grow',
-        gap: 8,
-        alignY: 'center',
+      {
+        width: side,
+        height: side,
+        picture: {
+          key: `playlist crest ${entry.kind} ${entry.shut !== null} ${side}`,
+          source: { draw: drawCrest(entry.kind, entry.shut !== null) },
+        },
         children: [
-          modifierNode(modifier, 12 * (small + 1)),
-          {
-            width: 'grow',
-            direction: 'column',
-            children: [words(modifier.name, small, INK.word), line(modifier.words, INK.faint)],
+          waiting && {
+            width: dot,
+            height: dot,
+            // As Destiny marks a node with a reward still to earn.
+            picture: { key: `playlist waiting ${dot}`, source: { draw: drawWaiting } },
+            float: { to: 'parent', anchor: [0.5, 0.5], at: [0.9, 0.16] },
           },
         ],
-      })),
-      ...entry.rewards.map((reward) => rewardNode(reward, small)),
-      entry.shut !== null && line(entry.shut, INK.loss),
+      },
+      words(entry.name.toUpperCase(), size, chosen ? INK.brassLit : INK.word, { tracking: 2 }),
+      { width: chosen ? 'grow' : 0, height: 2, fill: INK.brass },
+      words(
+        entry.shut === null ? entry.about : entry.shut,
+        Math.max(1, size - 1),
+        entry.shut === null ? INK.faint : INK.loss,
+      ),
     ],
   };
 }
 
-/** The Playlist screen over the dimmed world: "Playlist" and the port it was opened beside at its head, the four
- *  entries in a row of tiles, the wait while Find a Company finds, and Launch (E), Find a Company or Stop finding (F)
- *  and Close (Esc) for the chosen entry on its footer. Arrows choose another. While it stands the pointer is free and
- *  the game's keys rest, as under the entrance's card. */
+/** The Playlist screen over the world: "Playlist" and the port it was opened beside at its head, the four entries as
+ *  crests on the chart and the chosen one's card, the wait while Find a Company finds, and Launch (E), Find a Company
+ *  or Stop finding (F) and Close (Esc) on its footer. The arrows, a click or the pointer over a crest choose another;
+ *  up and down go between a playlist and its week's dungeon. While it stands the pointer is free and the game's keys
+ *  rest, as under the entrance's card. */
 export class PlaylistView {
   private screen: PlaylistScreenState | null = null;
   private search: CardSearch = NO_SEARCH;
@@ -137,12 +231,13 @@ export class PlaylistView {
         if (!this.screen) return;
         event.stopImmediatePropagation();
         const key = event.key.toLowerCase();
-        const keys = ['e', 'f', 'escape', 'arrowleft', 'arrowright'];
+        const keys = ['e', 'f', 'escape', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'];
         if (event.repeat || !keys.includes(key)) return;
         event.preventDefault();
         const entry = this.entry;
         if (key === 'escape') presses.close();
         else if (key === 'arrowleft' || key === 'arrowright') this.choose(this.chosen + (key === 'arrowleft' ? -1 : 1));
+        else if (key === 'arrowup' || key === 'arrowdown') this.choose(this.chosen ^ 2);
         else if (key === 'f' && this.search.finding !== null) presses.stop();
         else if (key === 'f' && entry && this.findable(entry)) presses.find(entry);
         else if (key === 'e' && entry && entry.shut === null) presses.launch(entry);
@@ -191,12 +286,15 @@ export class PlaylistView {
     return entry.launch.finds !== null && this.search.canFind;
   }
 
-  /** The screen this frame over the dimmed world, its presses heard; nothing while it is shut. */
+  /** The screen this frame over the world, its presses heard; nothing while it is shut. */
   readonly layer: Layer = (ui: Interface) => {
     const heard = this.screen;
     if (!heard) return null;
     heard.entries.forEach((_entry, place) => {
-      if (ui.clicked(`${TILE}${place}`)) this.choose(place);
+      const id = `${TILE}${place}`;
+      if (ui.clicked(id) || (ui.hovered(id) && place !== this.chosen && this.search.finding === null)) {
+        this.choose(place);
+      }
     });
     const entry = this.entry;
     if (ui.clicked(CLOSE)) this.presses.close();
@@ -209,18 +307,13 @@ export class PlaylistView {
     const view = ui.size;
     const size = sizesOf(view.width, view.height, 1).label;
     const finding = search.finding !== null;
-    // As many tiles across as fit, four at most, the rest on lines below, scrolled where they stand taller than the
-    // screen.
-    const wide = Math.min(view.width - 32, WINDOW_MOST);
-    const inside = wide - 48;
-    const across = Math.max(
-      1,
-      Math.min(screen.entries.length, Math.floor((inside + 12) / (TILE_LEAST * (size + 1) + 12))),
-    );
-    // Three across would leave one alone below: two rows of two read as one board.
-    const rows = across === 3 && screen.entries.length === 4 ? 2 : across;
-    const tileWide = Math.floor((inside - 12 * (rows - 1)) / rows);
-    const said = (words: string, colour: string): Node => ({ width: 'grow', text: { words, size, colour } });
+    const besides = view.width >= SIDE_BY_SIDE;
+    const scale = Math.min(1.4, Math.max(0.7, view.height / 900));
+    const cardWide = besides ? Math.min(CARD_MOST, Math.round(view.width * 0.34)) : view.width - 40;
+    // The chart takes what the card, the head and the footer leave.
+    const chartWide = besides ? view.width - cardWide - 80 : view.width - 40;
+    const chartTall = besides ? view.height - 170 : Math.round(view.height * 0.45);
+    const status = finding ? search.finding : search.said;
     return {
       width: 'grow',
       height: 'grow',
@@ -230,65 +323,69 @@ export class PlaylistView {
           width: view.width,
           height: view.height,
           solid: true,
-          fill: 'rgba(5,7,10,0.6)',
+          fill: 'rgba(5,7,10,0.92)',
           float: { to: 'screen', z: 19 },
         },
         {
           id: 'playlist-screen',
-          role: 'window',
           label: `${screen.title}, ${screen.port}`,
           solid: true,
           modal: true,
           direction: 'column',
-          width: wide,
-          padding: 2,
+          width: view.width,
+          height: view.height,
           opacity: motionReduced() ? 1 : Math.min(1, 0.25 + ui.age('playlist-screen') * 4),
-          float: { to: 'screen', anchor: [0.5, 0.5], at: [0.5, 0.5], z: 20 },
+          float: { to: 'screen', z: 20 },
           children: [
             {
               width: 'grow',
               direction: 'column',
-              padding: [12, 20, 4, 20],
-              alignX: 'center',
+              gap: 2,
+              padding: [20, 32, 8, 32],
               children: [
-                words(screen.title.toUpperCase(), size + 1, INK.brassLit, { tracking: 3 }),
+                words(screen.title.toUpperCase(), size + 1, INK.brassLit, { tracking: 4 }),
                 words(screen.port, size, INK.faint),
+                { width: 220, height: 1, fill: INK.brass },
               ],
             },
             {
-              id: 'playlist-entries',
               width: 'grow',
-              maxHeight: Math.max(120, view.height - HEAD_AND_FOOT),
-              scroll: true,
-              gap: 12,
-              padding: [10, 20, 14, 20],
-              wrap: true,
-              alignX: 'center',
-              children: screen.entries.map((one, place) => tileOf(one, place, place === this.chosen, size, tileWide)),
-            },
-            {
-              width: 'grow',
-              padding: [0, 20, 8, 20],
+              height: 'grow',
+              direction: besides ? 'row' : 'column',
+              gap: 20,
+              padding: [0, 20],
+              scroll: !besides,
               children: [
-                { width: 'grow', text: { words: screen.note, size: Math.max(1, size - 1), colour: INK.faint } },
+                {
+                  id: 'playlist-chart',
+                  width: chartWide,
+                  height: chartTall,
+                  picture: { key: `playlist chart ${chartWide} ${chartTall}`, source: { draw: drawChart } },
+                  children: screen.entries.map((one, place) => {
+                    const weekly = one.kind === 'week-elite' || one.kind === 'week-abyss';
+                    const side = Math.round(CREST * scale * (weekly ? 0.8 : 1));
+                    return crestOf(one, place, place === this.chosen, size, side);
+                  }),
+                },
+                {
+                  width: 'fit',
+                  direction: 'column',
+                  padding: [8, 0],
+                  children: [cardOf(entry, screen.note, size, cardWide)],
+                },
               ],
             },
-            finding && { width: 'grow', padding: [0, 20], children: [said(search.finding ?? '', INK.gain)] },
-            finding && {
-              width: 'grow',
-              padding: [0, 20, 8, 20],
-              children: [said('A run starts with four, or with fewer after a minute.', INK.faint)],
-            },
-            !finding &&
-              search.said !== null && { width: 'grow', padding: [0, 20], children: [said(search.said, INK.loss)] },
-            { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
             {
               width: 'grow',
-              padding: [8, 16],
-              gap: 8,
-              alignX: 'end',
-              wrap: true,
+              padding: [10, 24],
+              gap: 10,
+              alignY: 'center',
+              fill: 'rgba(10,12,16,0.9)',
               children: [
+                status !== null && words(status, size, finding ? INK.gain : INK.loss),
+                finding &&
+                  words('A run starts with four, or with fewer after a minute.', Math.max(1, size - 1), INK.faint),
+                { width: 'grow' },
                 pressNode(LAUNCH, 'Launch', 'primary', 'E', size, { disabled: entry.shut !== null || finding }),
                 finding
                   ? pressNode(STOP, 'Stop finding', 'button', 'F', size)

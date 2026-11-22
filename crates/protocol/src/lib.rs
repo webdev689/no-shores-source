@@ -36,6 +36,7 @@ pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../g
 mod bounty_wire;
 pub mod fleet;
 pub mod gear_wire;
+mod item_wire;
 pub mod land;
 mod mail_wire;
 pub mod pack;
