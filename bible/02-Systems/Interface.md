@@ -46,7 +46,7 @@ code:
   - client/src/game/bountyTiles.ts#bountyTileNode
   - client/src/game/journalIcons.ts#iconSvg
   - client/src/game/compendium/compendiumPage.ts#Compendium
-  - client/src/game/compendium/loreArt.ts#coverSvg
+  - client/src/game/compendium/loreArt.ts#coverPixels
   - client/src/game/entranceCard.ts#EntranceCardView
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
@@ -859,7 +859,7 @@ never while a press is held. Each press is an ask the room answers.
     covers. `compendium/compendiumShots.ts` pictures it over sample lore (`loreForTests.ts`) with `tools/uiShot.mjs`.
   - **A category open**: "‹ LORE" (a press back to the front, as Escape steps), the category's name in capitals and how
     much of it is found; then, side by side: its books, covers in rows of three (48 px wide, 96 px larger), each found
-    one a press edged in brass while chosen, one not found a plain stone cover that does nothing; the book chosen, its
+    one a press edged in brass while chosen, one not found an empty slot outlined in dots that does nothing; the book chosen, its
     cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
     "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
     instead, so everything stays in view); and the chapter chosen in a panel as tall as the book beside it, its title in
@@ -869,12 +869,12 @@ never while a press is held. Each press is an ask the room answers.
     one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
     book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found; the
     focus goes to that book, or to "‹ LORE" while nothing of the category is found.
-  - **Covers** are drawn pixel for pixel, 48 by 60, one binding for every book in its cloth and with its motif
-    ([[The Lore Books' Covers Are Drawn in Detail]], `coverSvg`): a rounded spine with brass caps, raised bands,
-    fleurons and a title label; a woven board lit toward the top left; a blind-tooled line, a gilt frame and brass
-    corners; a blank brass title plate; the motif raised in brass in an octagonal medallion; a gilt flourish; and a
-    strap and clasp on the fore-edge. A book not found has the same binding in plain stone, with no motif and no
-    brass.
+  - **Covers** are printed as posters and bound, one design for every book in its cloth and with its motif
+    ([[The Lore Books' Covers Are Drawn in Detail]], `coverPixels`), drawn from shapes at the size each stands, a pixel a
+    CSS pixel under 96 and two from there: a spine and the pages' edge under the board; a face banded light to dark
+    with a sunburst and a print's grain; a thin brass frame with corner brackets, diamonds, a chevron and studs; rings
+    about a dark disc rimmed in brass, the motif raised large in its middle. A book whose every chapter is found turns
+    down a gold corner; one not yet found is an empty slot outlined in dots (`slotPixels`).
   - **New**: Destiny's small diamond in lit brass marks each chapter found and unread, its book's cover and its
     category's tile, and goes as the chapter is shown, which keeps it read ([[Lore]], "In the browser").
   - It reads the last word of the character a room sent, as the Journal does, so it reads the same at sea.

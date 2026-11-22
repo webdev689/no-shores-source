@@ -82,6 +82,10 @@ test('a category opens at its first book with a chapter unread, at that chapter,
   assert.ok(said.includes('Then the sea came in,\nslow and grey.'), 'its second paragraph, its lines kept');
   assert.ok(pressable(tree(), bookId('bell')), 'a book found is pressed');
   assert.ok(!pressable(tree(), bookId('keeper')), 'one not found is not');
+  assert.ok(
+    nodesOf(byId(tree(), bookId('keeper'))).some((node) => node.picture?.key.startsWith('lore slot ')),
+    'an empty slot, outlined in dots',
+  );
   assert.ok(read.isRead('bell/first'), 'read as it shows');
   frame();
   assert.ok(
@@ -133,7 +137,7 @@ test('on a narrow menu the book chosen is named over its chapter rather than dra
   assert.ok(numbers.y + numbers.height <= 900, 'its chapters’ numbers in view');
   const said = wordsIn(tree());
   assert.ok(said.includes('The Drowned Bell') && said.includes('It Rang Once'));
-  const covers = nodesOf(tree()).filter((node) => node.picture?.key === 'lore cover bell true');
+  const covers = nodesOf(tree()).filter((node) => node.picture?.key.startsWith('lore cover bell '));
   assert.equal(covers.length, 1, 'its cover in the list alone');
 });
 

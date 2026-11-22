@@ -41,4 +41,5 @@ Under "Youre on point", the owner's to change:
 - What is read is kept in the browser for the account, as the roads' opening lines said are; Destiny's small diamond
   marks a chapter found and unread, its book, its category's tile and the Compendium's tab. A chapter found is toasted
   ("Lore found: the book, the chapter").
-- Books and chapters not yet found show as plain stone covers and dim numbers, with nothing of their names or words.
+- Books and chapters not yet found show as empty slots outlined in dots ([[The Lore Books' Covers Are Drawn in Detail]])
+  and dim numbers, with nothing of their names or words.

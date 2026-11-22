@@ -10,7 +10,7 @@ code:
   - client/src/game/compendium/loreBook.ts#shelfOf
   - client/src/game/compendium/lore.ts#Lore
   - client/src/game/compendium/compendiumPage.ts#Compendium
-  - client/src/game/compendium/loreArt.ts#coverSvg
+  - client/src/game/compendium/loreArt.ts#coverPixels
 ---
 # Lore
 

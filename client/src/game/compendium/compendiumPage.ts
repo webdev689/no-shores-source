@@ -10,7 +10,7 @@ import { FOCUS, INK, type Sizes, words } from '../gearNodes.ts';
 import { pixelNode } from '../journalIcons.ts';
 import type { PlainContext } from '../menuPage.ts';
 import type { Lore } from './lore.ts';
-import { COVER, MOTIF_PIXELS, NEW_PIXELS, NEW_SVG, coverSvg, motifSvg } from './loreArt.ts';
+import { COVER, MOTIF_PIXELS, NEW_PIXELS, NEW_SVG, coverGrid, coverPixels, motifSvg, slotPixels } from './loreArt.ts';
 import {
   type Block,
   type BookShown,
@@ -52,6 +52,30 @@ export const LORE_BACK = 'lore-back';
 
 /** A cover's height for its width, as its pixels stand. */
 const coverHeight = (width: number) => Math.round((width * COVER[1]) / COVER[0]);
+
+/** A cover's picture `width` CSS pixels wide, its RGBA pixels made for its grid once under its key. */
+function artNode(key: string, width: number, pixels: (grid: readonly [number, number]) => Uint8Array): Node {
+  const grid = coverGrid(width);
+  const [across, down] = grid;
+  return {
+    width,
+    height: coverHeight(width),
+    picture: {
+      key: `${key} ${across}`,
+      source: { pixels: () => pixels(grid) },
+      pixel: { width: across, height: down },
+    },
+  };
+}
+
+/** A book's cover: its art once a chapter of it is found, a gold corner turned down once all are; an empty slot
+ *  outlined in dots before. */
+function coverNode(book: BookShown, width: number): Node {
+  const { colour, motif } = book.def.cover;
+  const complete = book.found === book.def.chapters.length;
+  if (book.found === 0) return artNode('lore slot', width, slotPixels);
+  return artNode(`lore cover ${book.def.id} ${complete}`, width, (grid) => coverPixels(grid, colour, motif, complete));
+}
 
 /** Destiny's new diamond, floated at the top right of what it marks. */
 function newMark(size: number): Node {
@@ -169,9 +193,7 @@ export class Compendium {
               {
                 gap: 14,
                 opacity: 0.32,
-                children: ['lighthouse', 'bell', 'key'].map((motif) =>
-                  pixelNode(`lore cover rest ${motif}`, coverSvg(INK.brass, motif, false), COVER, 96, coverHeight(96)),
-                ),
+                children: [0, 1, 2].map(() => artNode('lore slot', 96, slotPixels)),
               },
               { maxWidth: 460, text: { words: NO_LORE, colour: INK.faint, align: 'center' } },
             ],
@@ -313,16 +335,7 @@ export class Compendium {
         width,
         height: coverHeight(width),
         ...(found ? edge(ui, id, book === chosen) : {}),
-        children: [
-          pixelNode(
-            `lore cover ${book.def.id} ${found}`,
-            coverSvg(book.def.cover.colour, book.def.cover.motif, found),
-            COVER,
-            width,
-            coverHeight(width),
-          ),
-          book.unread && newMark(10),
-        ],
+        children: [coverNode(book, width), book.unread && newMark(10)],
       };
     });
     const rows: Child[] = [];
@@ -342,13 +355,7 @@ export class Compendium {
       alignX: 'center',
       gap: 8,
       children: [
-        pixelNode(
-          `lore cover ${book.def.id} ${found}`,
-          coverSvg(book.def.cover.colour, book.def.cover.motif, found),
-          COVER,
-          width,
-          coverHeight(width),
-        ),
+        coverNode(book, width),
         // Its name whole, on as many lines as it takes.
         {
           width: 'grow',

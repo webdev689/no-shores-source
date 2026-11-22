@@ -167,6 +167,13 @@ impl Character {
         true
     }
 
+    /// Keeps every chapter `other` holds that this does not, in the order `other` found them.
+    pub fn keep_all_lore(&mut self, other: &Self) {
+        for key in &other.lore {
+            self.keep_lore(key);
+        }
+    }
+
     /// Keeps every chapter of `defs` the player has come to without lying in the world: the story's once it is
     /// played, and each quest task's once it is done. So a chapter given to a task or the story after a player passed
     /// it is theirs as their character is next read.
