@@ -235,7 +235,9 @@ from the sea, fresh water and the claim's edge), then:
    shells, and Rimecrystal's frozen rock grown with spikes of frost.
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, no cell of it touching
     the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
-    the landing or the way in.
+    the landing or the way in, on it and six metres either side, each on walkable ground in the section and clear of
+    everything a body runs into (a gate's arch stands on its way in); one that is not moves to the nearest that is,
+    in rings two metres apart (`spawns::round`).
 11. **The plantings** (`plantings`), last, from the kinds the climate's nature already grows
     (`content/nature/flora.json`): its orchard tree and its shrub, the oak and the gorse on a temperate coast (no apple
     or pear grows anywhere). A farm with "orchard" as a whole word of its name is planted with the tree in rows along
