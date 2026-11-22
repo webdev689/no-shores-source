@@ -13,12 +13,12 @@ const roster = rosterOf(
     }),
   ),
 );
-const [TITHE, HOSTILES] = [1, 2];
+const [FRIENDLY, TITHE] = [0, 1];
 const [MINOR, MAJOR, ELITE, MINIBOSS, BOSS] = [1, 2, 3, 4, 5];
 const named = (types: readonly { readonly name: string }[]) => types.map((type) => type.name);
 
 test("a captain's deck crew is the one its boarders meet: each rank's size, all its faction's deck types", () => {
-  for (const faction of [TITHE, HOSTILES]) {
+  for (const faction of [TITHE]) {
     const sizes = [MINOR, MAJOR, ELITE, MINIBOSS].map((rank) => deckCrew(roster, faction, rank).length);
     assert.deepEqual(sizes, [3, 4, 5, 6]);
     for (const rank of [MINOR, MAJOR, ELITE, MINIBOSS, BOSS])
@@ -27,13 +27,12 @@ test("a captain's deck crew is the one its boarders meet: each rank's size, all 
       }
   }
   assert.deepEqual(named(deckCrew(roster, TITHE, MINOR)), ['Deckhand', 'Hookman', 'Pistoleer']);
-  assert.deepEqual(named(deckCrew(roster, HOSTILES, MAJOR)), ['Brute', 'Skirmisher', 'Swordsman', 'Archer']);
   assert.equal(deckCrew(roster, TITHE, ELITE)[0]?.name, 'Bosun');
   assert.equal(deckCrew(roster, TITHE, MINIBOSS)[0]?.name, 'Tithe-Mate');
-  assert.equal(deckCrew(roster, HOSTILES, MINIBOSS)[0]?.name, 'Captain');
   const thule = deckCrew(roster, TITHE, BOSS);
   assert.deepEqual([thule.length, thule[0]?.name], [7, 'Captain Brannoc Thule']);
-  assert.deepEqual(deckCrew(roster, HOSTILES, BOSS), [], 'the hostiles have no deck Boss');
+  for (const faction of [FRIENDLY, 2, 3])
+    assert.deepEqual(deckCrew(roster, faction, MAJOR), [], `faction ${faction}: only the Tithe's decks are met`);
 });
 
 test('a captain stands at the wheel as their faction mate, and a Grey Tithe Boss as Captain Brannoc Thule', () => {
@@ -41,11 +40,7 @@ test('a captain stands at the wheel as their faction mate, and a Grey Tithe Boss
     [MINOR, MAJOR, ELITE, MINIBOSS, BOSS].map((rank) => captainType(roster, TITHE, rank)?.name),
     ['Tithe-Mate', 'Tithe-Mate', 'Tithe-Mate', 'Tithe-Mate', 'Captain Brannoc Thule'],
   );
-  assert.deepEqual(
-    [MINOR, BOSS].map((rank) => captainType(roster, HOSTILES, rank)?.name),
-    ['Captain', 'Captain'],
-    'a hostile Boss, with none of their own, as their Captain',
-  );
+  assert.equal(captainType(roster, FRIENDLY, 2), null, 'a friendly ship has a plain master');
   assert.equal(captainType(roster, 0, 0), null, 'a plain crew has no faction captain');
 });
 
@@ -61,9 +56,9 @@ test('its hands wear its deck crew dress but its captain, and everyone aboard ha
   const boss = companyOf(roster, TITHE, BOSS);
   assert.deepEqual(boss.captain, looks('Captain Brannoc Thule'));
   assert.equal(boss.hands.length, 6, 'his six hands, and not him again');
-  const hostileBoss = companyOf(roster, HOSTILES, BOSS);
-  assert.equal(hostileBoss.hands.length, 3, 'a hostile Boss, with no deck crew of its own, carries its plain hands');
-  for (const company of [miniboss, boss, hostileBoss])
+  const friendly = companyOf(roster, FRIENDLY, MAJOR);
+  assert.equal(friendly.hands.length, 3, 'a friendly ship, with no deck crew, carries its plain hands');
+  for (const company of [miniboss, boss, friendly])
     for (const dress of [company.captain, ...company.hands]) assert.equal(dress?.outfit.drawn, false);
   const plain = companyOf(roster, 0, 0);
   assert.equal(plain.hands.length, 3, "plain hands, as the player's own stand-ins");

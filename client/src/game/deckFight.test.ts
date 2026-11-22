@@ -182,9 +182,9 @@ test('the page predicts its boarder on its deck exactly as its deck room steps t
   const schooner = HULL_DECKS[1];
   assert.ok(schooner);
   const door = startRoomDoor(compiled);
-  assert.ok(door.openDeck(1, 2, 1, 5), 'a Minor hostile Schooner’s deck');
-  assert.equal(door.openDeck(9, 2, 1, 5), false, 'no such hull');
-  door.openDeck(1, 2, 1, 5);
+  assert.ok(door.openDeck(1, 1, 1, 5), 'a Minor Tithe Schooner’s deck');
+  assert.equal(door.openDeck(9, 1, 1, 5), false, 'no such hull');
+  door.openDeck(1, 1, 1, 5);
   let fight: Fighting | null = null;
   const kept = new SnapshotKeeper();
   const link: RoomLink = {

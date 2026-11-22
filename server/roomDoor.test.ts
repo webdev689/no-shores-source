@@ -627,13 +627,13 @@ test('a wounded player’s drink through the room heals them, and the page reads
   };
   const joined = step();
   assert.equal(chargesOf(joined.fighter).charges, CHARGES_MOST, 'a player joins holding as many as the page shows');
-  // A hostile swordsman beside the player strikes once, then is sent away.
+  // A Tithe Collector beside the player strikes once, then is sent away.
   const { x, y } = course.start;
-  assert.ok(room.standFoe(14, 2, x, y - 1.5, Math.PI, 0) > 0);
+  assert.ok(room.standFoe(2, 2, x, y - 1.5, Math.PI, 0) > 0);
   let wounded = joined;
   while (fighterView(wounded.fighter).health >= fighterView(wounded.fighter).healthMax) {
     wounded = step();
-    assert.ok(sequence < 900, 'the swordsman struck');
+    assert.ok(sequence < 900, 'the Collector struck');
   }
   assert.equal(room.clearFoes(), true);
   for (let tick = 0; tick < 60; tick++) wounded = step();
