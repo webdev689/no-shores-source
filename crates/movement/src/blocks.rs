@@ -110,11 +110,15 @@ pub struct WallAhead {
 /// The block ahead of the body along a bearing, a short reach past its radius, and how deep it runs that way.
 #[must_use]
 pub fn wall_ahead<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64) -> Option<WallAhead> {
-    let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
     let (x, y) = probe(body, bearing);
     let block = *blocking_at(blocks, x, y, body.z, body.height())?;
-    let depth = if dir_x.abs() > dir_y.abs() { block.max_x - block.min_x } else { block.max_y - block.min_y };
-    Some(WallAhead { block, depth })
+    Some(WallAhead { block, depth: depth_along(&block, bearing) })
+}
+
+/// How deep a block runs along a bearing: across it east to west or north to south, whichever the bearing is nearer.
+fn depth_along(block: &Block, bearing: f64) -> f64 {
+    let (dir_x, dir_y) = (libm::sin(bearing), -libm::cos(bearing));
+    if dir_x.abs() > dir_y.abs() { block.max_x - block.min_x } else { block.max_y - block.min_y }
 }
 
 /// The point a short reach past the body's radius along a bearing, where the wall ahead of it is looked for.
@@ -123,16 +127,16 @@ fn probe(body: &Body, bearing: f64) -> (f64, f64) {
     (body.x + libm::sin(bearing) * reach, body.y - libm::cos(bearing) * reach)
 }
 
-/// The top of the wall ahead of a body along a bearing: the top of the block ahead, or of the blocks stacked flush on
-/// it there, so a face built of blocks one on another is climbed as one wall. A taller block beside it, standing from
-/// lower down, is not part of it.
-pub(crate) fn wall_top<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64, ahead: &WallAhead) -> f64 {
+/// The wall ahead of a body along a bearing as it holds it: the block ahead, or the top one of the blocks stacked flush
+/// on it there, so a face built of blocks one on another is climbed and hung from as one wall. A taller block beside
+/// it, standing from lower down, is not part of it.
+pub(crate) fn wall_top<B: Near + ?Sized>(blocks: &B, body: &Body, bearing: f64, ahead: WallAhead) -> WallAhead {
     let (x, y) = probe(body, bearing);
-    let mut top = ahead.block.top;
+    let mut top = ahead;
     // Its underside within a hair of the top, whatever the sums' last bits.
     let stacked = |block: &&Block, top: f64| block.holds(x, y, TUNING.radius) && (block.bottom - top).abs() <= 1e-6;
-    while let Some(above) = blocks.near(x, y).find(|block| stacked(block, top) && block.top > top) {
-        top = above.top;
+    while let Some(above) = blocks.near(x, y).find(|block| stacked(block, top.block.top) && block.top > top.block.top) {
+        top = WallAhead { block: *above, depth: depth_along(above, bearing) };
     }
     top
 }

@@ -55,6 +55,15 @@ pub(crate) struct Foe {
     pub shield: Option<gear::element::Shield>,
 }
 
+impl Foe {
+    /// Its health and its most `times` what they were, as a level makes them, its hurt counted afresh from there.
+    pub(crate) fn grow(&mut self, times: f64) {
+        self.fighter.health *= times;
+        self.fighter.health_max *= times;
+        self.brain.heal_window(self.fighter.health);
+    }
+}
+
 /// A foe as the room last stepped it: its number, its role's, its type's, its rank's, its faction's, its phase and how
 /// alert it is (0 idle, 1 suspicious, 2 alert, 3 searching), its fighter, its level and its shield; and the companion
 /// it is, if one, whose faction is the players' (0).
@@ -259,10 +268,7 @@ impl Room {
     /// `element`, if one.
     pub(crate) fn gird(&mut self, id: FighterId, level: u8, element: Option<gear::Element>) {
         let Some(foe) = self.foes.get_mut(&id) else { return };
-        let times = gear::power::foe_health_times(level);
-        foe.fighter.health *= times;
-        foe.fighter.health_max *= times;
-        foe.brain.heal_window(foe.fighter.health);
+        foe.grow(gear::power::foe_health_times(level));
         foe.level = level;
         foe.shield = element.map(|element| gear::element::Shield::whole(element, foe.fighter.health_max));
     }

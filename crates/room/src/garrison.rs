@@ -472,8 +472,7 @@ impl Room {
                 let Some(foe) = self.foes.get_mut(&id) else { continue };
                 let times = gear::power::foe_health_times(level) / gear::power::foe_health_times(foe.level);
                 foe.level = level;
-                foe.fighter.health *= times;
-                foe.fighter.health_max *= times;
+                foe.grow(times);
                 if let Some(shield) = foe.shield.as_mut() {
                     shield.left *= times;
                     shield.most *= times;

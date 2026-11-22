@@ -92,6 +92,28 @@ fn a_face_of_two_blocks_stacked_flush_is_climbed_past_the_seam_to_the_top() {
 }
 
 #[test]
+fn a_short_block_stacked_flush_on_a_wall_is_climbed_onto_from_the_hang_whichever_is_listed_first() {
+    let lower = block(-5.0, -4.0, 5.0, -1.0, 0.0, 4.0);
+    let upper = block(-5.0, -4.0, 5.0, -1.0, 4.0, 5.0);
+    for blocks in [[lower, upper], [upper, lower]] {
+        // Pressed on until it goes over the top, then let be.
+        let climbing = clear_for(standing(0.0, 0.0), Controls { forward: 1.0, ..Controls::default() }, &blocks, 4.0);
+        let climbed = clear_for(climbing, Controls::default(), &blocks, 1.5);
+        assert_eq!((climbed.mode, climbed.z), (Mode::Ground, 5.0));
+    }
+}
+
+#[test]
+fn a_hold_caught_at_a_seam_climbs_on_to_the_walls_top_and_never_jumps_up_it() {
+    let lower = block(-5.0, -4.0, 5.0, -1.0, 0.0, 4.0);
+    let upper = block(-5.0, -4.0, 5.0, -1.0, 4.0, 8.0);
+    let blocks = [lower, upper];
+    let seam = Body { mode: Mode::Hang, z: 2.2, lip: 4.0, facing: 0.0, ..standing(0.0, -0.6) };
+    let held = step_body(&seam, &Controls::default(), &blocks, &Flat, TICK_SECONDS);
+    assert_eq!((held.mode, held.z), (Mode::Climb, 2.2));
+}
+
+#[test]
 fn a_taller_block_beside_a_wall_is_not_taken_for_a_block_stacked_on_it() {
     let wall = block(-5.0, -4.0, 1.0, -1.0, 0.0, 2.3);
     let tower = block(1.0, -4.0, 2.0, -1.0, 0.0, 8.0);

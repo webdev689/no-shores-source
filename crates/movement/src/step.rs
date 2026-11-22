@@ -179,6 +179,7 @@ fn on_wall<B: Near + ?Sized>(
     let Some(ahead) = wall_ahead(blocks, body, body.facing) else {
         return Body { mode: Mode::Air, moving: false, ..*body };
     };
+    let ahead = wall_top(blocks, body, body.facing, ahead);
     let lip_above = ahead.block.top - body.z;
     let climbing = body.mode == Mode::Climb;
     if controls.jump && climbing {
@@ -206,8 +207,13 @@ fn on_wall<B: Near + ?Sized>(
         let climbed = (z + controls.forward * TUNING.climb * seconds).max(ground_at(blocks, terrain, x, y, z));
         z = under_ceiling(blocks, x, y, z, climbed, body.height());
     }
-    let lip = if climbing { wall_top(blocks, body, body.facing, &ahead) } else { ahead.block.top };
-    let mode = if climbing && lip - z <= TUNING.hang { Mode::Hang } else { body.mode };
+    let lip = ahead.block.top;
+    // A hold taken below the wall's top, at a seam between blocks stacked on it, climbs on to the top.
+    let mode = match body.mode {
+        Mode::Climb if lip - z <= TUNING.hang => Mode::Hang,
+        Mode::Hang if lip - z > TUNING.hang + 0.01 => Mode::Climb,
+        mode => mode,
+    };
     if mode == Mode::Hang {
         z = lip - TUNING.hang;
     }
