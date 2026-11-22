@@ -77,20 +77,27 @@ type Point = readonly [number, number, number];
 
 /** How far along a ray it first meets a block, as a share of its length (1 where it meets none). */
 export function rayHit(from: Point, to: Point, blocks: readonly Block[]): number {
+  // Asked for each foe's sight and the camera's boom every frame, over every block: a block whose box misses the
+  // ray's own box is passed over, and each axis is cut in place.
+  const [westmost, eastmost] = [Math.min(from[0], to[0]), Math.max(from[0], to[0])];
+  const [northmost, southmost] = [Math.min(from[1], to[1]), Math.max(from[1], to[1])];
+  const [lowest, highest] = [Math.min(from[2], to[2]), Math.max(from[2], to[2])];
   let nearest = 1;
   for (const block of blocks) {
-    const low = [block.minX, block.minY, block.bottom];
-    const high = [block.maxX, block.maxY, block.top];
+    if (block.maxX < westmost || block.minX > eastmost || block.maxY < northmost || block.minY > southmost) continue;
+    if (block.top < lowest || block.bottom > highest) continue;
     let enter = 0;
     let leave = 1;
-    for (const axis of [0, 1, 2] as const) {
-      const delta = to[axis] - from[axis];
-      const [lowAxis, highAxis] = [low[axis] ?? 0, high[axis] ?? 0];
+    for (let axis = 0; axis < 3; axis++) {
+      const delta = (to[axis] ?? 0) - (from[axis] ?? 0);
+      const lowAxis = axis === 0 ? block.minX : axis === 1 ? block.minY : block.bottom;
+      const highAxis = axis === 0 ? block.maxX : axis === 1 ? block.maxY : block.top;
       if (Math.abs(delta) < 1e-9) {
-        if (from[axis] < lowAxis || from[axis] > highAxis) leave = -1;
+        if ((from[axis] ?? 0) < lowAxis || (from[axis] ?? 0) > highAxis) leave = -1;
         continue;
       }
-      const [first, second] = [(lowAxis - from[axis]) / delta, (highAxis - from[axis]) / delta];
+      const first = (lowAxis - (from[axis] ?? 0)) / delta;
+      const second = (highAxis - (from[axis] ?? 0)) / delta;
       enter = Math.max(enter, Math.min(first, second));
       leave = Math.min(leave, Math.max(first, second));
     }
