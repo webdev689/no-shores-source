@@ -1,6 +1,7 @@
 //! Vestiges, the sealed drops: whether a kill leaves one for a player, the colour it shows and the slot it holds an
 //! item for; and, once identified in a social space, the colour it opens to (at, above or below its own) and the item
-//! that comes out: a named Legendary or Atheric of its slot, or a lesser item of its kind with rolled traits.
+//! that comes out: a named Legendary or Atheric of its slot, or a lesser item of its kind with rolled traits. A
+//! Miniboss's or a Boss's kill may also leave an item as itself, made as an opened Vestige's is.
 
 use crate::catalogue::{NamedDef, catalogue};
 use crate::dice::{Dice, Purpose};
@@ -12,22 +13,27 @@ use crate::rarity::Rarity;
 /// The foe level from which a Legendary may drop, and an Atheric.
 pub const LEGENDARY_FROM: u8 = 18;
 pub const ATHERIC_FROM: u8 = 20;
+/// The stream a kill's found items are rolled on, apart from its Vestiges'.
+const ITEM_STREAM: u64 = 0x6974_656d;
 /// A kill's chance of a Vestige for each player who struck it, by the foe's rank, Minor to Boss: a Boss always leaves
 /// one, as Destiny 1's bosses did, and every rank more often than the one below.
 const CHANCE: [f64; 5] = [0.02, 0.04, 0.10, 0.35, 1.0];
-/// A Vestige's colour by the foe's rank, Minor to Boss, in 1,000, Normal to Atheric: at every rank each colour is
-/// rarer than the one below it, and each colour or better likelier the higher the rank, as Destiny 1's majors and
-/// ultras dropped the better engrams.
+/// A kill's chance of leaving an item as itself, by the foe's rank: a Miniboss's as often as its Vestige, a Boss's
+/// always, apart from its Vestige.
+const ITEM_CHANCE: [f64; 5] = [0.0, 0.0, 0.0, 0.35, 1.0];
+/// A Vestige's colour by the foe's rank, Minor to Boss, in 1,000, Normal to Atheric: at every rank each colour is half
+/// or less of the one below it, so each is far rarer, and each colour or better likelier the higher the rank, as
+/// Destiny 1's majors and ultras dropped the better engrams.
 const COLOURS: [[u32; 5]; 5] = [
-    [720, 230, 45, 4, 1],
-    [640, 280, 68, 10, 2],
-    [520, 320, 130, 27, 3],
-    [400, 330, 200, 60, 10],
-    [300, 280, 250, 135, 35],
+    [750, 188, 47, 12, 3],
+    [716, 204, 58, 17, 5],
+    [670, 223, 74, 25, 8],
+    [606, 242, 97, 39, 16],
+    [517, 258, 129, 64, 32],
 ];
-/// What a Vestige of each colour opens to, in 100: its own colour most often, below it now and then, and above it
-/// rarely.
-const OPENS: [[u32; 5]; 5] =
+/// What a Vestige of each colour opens to, in 100: its own colour most often, since its colour is what a player chases,
+/// and, as the owner chose, below it now and then and above it rarely.
+pub(crate) const OPENS: [[u32; 5]; 5] =
     [[95, 5, 0, 0, 0], [20, 75, 5, 0, 0], [0, 20, 75, 5, 0], [0, 0, 20, 75, 5], [0, 0, 0, 20, 80]];
 
 /// The place of a rank (the foes' numbers, 1 Minor to 5 Boss) in the tables; a number past them reads as the nearest.
@@ -66,17 +72,53 @@ pub(crate) fn gated(weights: [u32; 5], level: u8) -> [u32; 5] {
     allowed
 }
 
-/// What a kill leaves for one player: a Vestige of this colour, for this slot, its item of this level. `chance` is the
-/// kill's chance of leaving one (its rank's, raised by a harder voyage); `rank` (1 Minor to 5 Boss) weights its
-/// colour.
+/// A kill's chance of leaving an item as itself from a foe of this rank (1 Minor to 5 Boss), on a Normal voyage.
 #[must_use]
-pub fn dropped(chance: f64, rank: u8, foe_level: u8, dice: &Dice) -> Option<(Rarity, Slot, u8)> {
-    if dice.roll(Purpose::Drops, 0) >= chance {
-        return None;
-    }
-    let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &gated(colours(rank), foe_level))];
-    let slot = Slot::VESTIGE[dice.pick(Purpose::Slot, 0, Slot::VESTIGE.len())];
-    Some((colour, slot, foe_level.clamp(1, NAMED_LEVEL)))
+pub fn item_chance(rank: u8) -> f64 {
+    ITEM_CHANCE[rank_index(rank)]
+}
+
+/// How many drops `chance` gives: one for each whole one in it, and one more by its fraction, so a harder voyage that
+/// raises a sure drop past one still gives more.
+fn how_many(chance: f64, dice: &Dice) -> u32 {
+    let whole = libm::floor(chance.max(0.0));
+    whole as u32 + u32::from(dice.roll(Purpose::Drops, 0) < chance - whole)
+}
+
+/// The dice for a kill's `nth` drop, each rolled apart from the others; the first is the kill's own.
+fn nth_dice(dice: &Dice, nth: u32) -> Dice {
+    Dice { seed: dice.seed ^ u64::from(nth).wrapping_mul(0x9E37_79B9_7F4A_7C15), ..*dice }
+}
+
+/// What a kill leaves for one player: Vestiges, each of a colour, for a slot, its item of this level. `chance` is the
+/// kill's chance of leaving one (its rank's, raised by a harder voyage, past one for a second); `rank` (1 Minor to 5
+/// Boss) weights their colour.
+#[must_use]
+pub fn dropped(chance: f64, rank: u8, foe_level: u8, dice: &Dice) -> Vec<(Rarity, Slot, u8)> {
+    (0..how_many(chance, dice))
+        .map(|nth| {
+            let dice = nth_dice(dice, nth);
+            let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &gated(colours(rank), foe_level))];
+            let slot = Slot::VESTIGE[dice.pick(Purpose::Slot, 0, Slot::VESTIGE.len())];
+            (colour, slot, foe_level.clamp(1, NAMED_LEVEL))
+        })
+        .collect()
+}
+
+/// The items a kill leaves as themselves, not sealed, by `chance` as `dropped` takes it: each coloured by `rank`'s
+/// row and opened as a Vestige of that colour would be, for any slot, at the foe's level, numbered 0 until kept. Rolled
+/// on dice apart from the kill's Vestiges, so the two never move together.
+#[must_use]
+pub fn found_items(chance: f64, rank: u8, foe_level: u8, dice: &Dice) -> Vec<Item> {
+    let dice = Dice { seed: dice.seed ^ ITEM_STREAM, ..*dice };
+    dropped(chance, rank, foe_level, &dice)
+        .into_iter()
+        .zip(0..)
+        .filter_map(|((colour, slot, level), nth)| {
+            let dice = nth_dice(&dice, nth);
+            make(0, opens_to(colour, level, &dice), slot, level, &dice)
+        })
+        .collect()
 }
 
 /// The colour a Vestige of this level opens to: above its own colour only as far as its level allows a drop, so a

@@ -136,7 +136,7 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let events = chop(&mut room, player, 1);
     assert!(events.iter().any(|event| event.kind == EventKind::Killed && event.defender == brute));
     let paid = &room.player(player).expect("in").character;
-    assert_eq!((paid.xp, paid.materials.aurem), (55, 4), "a Major brute's worth at level 0: 110 and 9, halved");
+    assert_eq!((paid.xp, paid.materials.aurem), (55, 4), "a Major brute's worth at level 0: 110 and 8, halved");
     assert_eq!(room.player(onlooker).expect("in").character.xp, 0, "striking nothing earns nothing");
     let sword = paid.worn(Slot::Melee).expect("the sword");
     assert_eq!(sword.xp, 55, "the weapon that struck earns it");
@@ -446,4 +446,65 @@ fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wear
     assert_eq!((worn.kind, worn.rarity), (Kind::Bow, Rarity::Normal), "a Normal one handed out");
     assert_eq!(found.character.at(bow), Some(At::Carried), "the Atheric one still carried");
     assert_eq!(found.character.at(mace), Some(At::Worn(Slot::Melee)), "the Atheric mace carried was worn");
+}
+
+#[test]
+fn a_kills_pay_by_rank_is_its_ranks_health_against_a_majors() {
+    let foe_type = ::foes::foe_type(14).expect("the pirates' swordsman");
+    let major = foe_type.numbers(::foes::Rank::Major, 1).health;
+    for (rank, pay) in ::foes::Rank::ALL.into_iter().zip(gear::rewards::RANK_PAY) {
+        assert!((foe_type.numbers(rank, 1).health / major - pay).abs() < 1e-12, "{rank:?}");
+    }
+}
+
+/// The fight measured for the balance's record: a level 1 player with the starting sword, swinging and never
+/// guarding, against one level 1 foe of each rank; felling it with the player's health held whole, and being felled
+/// by it standing still. Run by hand to print the table:
+/// `cargo test -p room --release measure_blows -- --ignored --nocapture`.
+#[test]
+#[ignore = "a measurement, printed by hand in release"]
+fn measure_blows() {
+    use ::foes::Rank;
+    let rows = [
+        ("Minor Swordsman", 14, Rank::Minor),
+        ("Major Hookman", 8, Rank::Major),
+        ("Major Brute", 15, Rank::Major),
+        ("Elite Captain", 17, Rank::Elite),
+        ("Miniboss Captain", 17, Rank::Miniboss),
+        ("Boss (Thule)", 12, Rank::Boss),
+    ];
+    eprintln!("| Foe | Felled in | Fells the player in |");
+    for (name, number, rank) in rows {
+        let foe_type = ::foes::foe_type(number).expect("a type");
+        let mut arena = room();
+        let player = arena.join().expect("a room with space");
+        let foe = stand_type(&mut arena, foe_type, rank, 1, -1.5);
+        let (mut landed, mut ticks) = (0, 0_u32);
+        while ticks < 60 * 600 {
+            let (me, them) = (*arena.fighter(player).expect("in"), arena.fighter(foe).copied());
+            let Some(them) = them.filter(|found| !found.dead()) else { break };
+            arena.set_fighter(player, combat::fighter::Fighter { health: me.health_max, ..me });
+            let attack = (ticks % 30 == 0).then_some(Stroke::Down);
+            let mut input = asking(ticks + 1, &arena, CombatInput { attack, ..CombatInput::default() });
+            input.intent.controls.yaw = combat::sight::bearing([me.body.x, me.body.y], [them.body.x, them.body.y]);
+            let near = libm::hypot(me.body.x - them.body.x, me.body.y - them.body.y);
+            input.intent.controls.forward = if near > 1.6 { 1.0 } else { 0.0 };
+            arena.input(player, input).unwrap();
+            arena.tick();
+            ticks += 1;
+            let hits = arena.take_events();
+            landed += hits.iter().filter(|hit| hit.kind == EventKind::Hit && hit.striker == player).count();
+        }
+        let mut arena = room();
+        let player = arena.join().expect("a room with space");
+        stand_type(&mut arena, foe_type, rank, 1, -1.5);
+        let mut felled = 0_u32;
+        while felled < 60 * 600 && !arena.fighter(player).expect("in").dead() {
+            arena.input(player, asking(felled + 1, &arena, CombatInput::default())).unwrap();
+            arena.tick();
+            felled += 1;
+        }
+        let seconds = |ticks: u32| f64::from(ticks) / 60.0;
+        eprintln!("| {name} | {landed} blows, {:.1} s | {:.1} s |", seconds(ticks), seconds(felled));
+    }
 }

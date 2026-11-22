@@ -190,7 +190,8 @@ impl Sea {
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
                 let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind };
                 self.lay_flotsam(&sank, (2, 1));
-                let joined = crate::ship_power::officers_join(&sank, self.clock, &mut self.harbour.characters);
+                let when = (self.clock, self.pirates.difficulty);
+                let joined = crate::ship_power::officers_join(&sank, when, &mut self.harbour.characters);
                 self.harbour.changed.extend(joined);
             }
             let deck = &self.decks.boarded[index];

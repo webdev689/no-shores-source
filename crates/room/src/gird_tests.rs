@@ -38,7 +38,7 @@ fn blow(striker: PlayerId, damage: f64) -> Blow {
 }
 
 /// Lands `damage` of `striker`'s main hand on `foe`, as the room settles a blow it judged a hit.
-fn land(room: &mut Room, striker: PlayerId, foe: FighterId, damage: f64) {
+pub(super) fn land(room: &mut Room, striker: PlayerId, foe: FighterId, damage: f64) {
     let hit = Verdict::Hit { damage, poise: 10.0 };
     room.settle(&blow(striker, damage), How::Swing, foe, hit, Some(Slot::Melee));
 }

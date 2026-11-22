@@ -2,8 +2,8 @@
 //! least SPAWN_CLEAR from every spawn. Each group walks a beat from its post (`beat.rs`), but for a Boss's or a
 //! Miniboss's, which holds its post. The room's world seed, mixed from the node's id, draws who stands where, each
 //! foe's level from its island's band and its shield, and each beat, so every machine stands the same; the seas raise
-//! the levels once the host sets them. A cleared group stands again STAND_AGAIN later, once no player is within
-//! CLEAR_AROUND of its post and the living foes leave it room; each foe is leashed to its place in its group.
+//! the levels once the host sets them. A cleared group stands again STAND_AGAIN later (a Miniboss's or a Boss's,
+//! GREAT_STAND_AGAIN), once no player is within CLEAR_AROUND of its post and the living foes leave it room.
 //! The baked square reaches inland from the spawn rather than round it, so it holds the garrison past the spawn's
 //! clear ground without growing: a bake's cost grows far faster than its area.
 
@@ -31,6 +31,9 @@ pub(crate) const SPAWN_CLEAR: f64 = 25.0;
 /// A cleared group stands again this many ticks (120 s) after its last foe fell, once no player stands within
 /// CLEAR_AROUND metres of its post.
 pub(crate) const STAND_AGAIN: u64 = 120 * 60;
+/// A group with a Miniboss or a Boss in it stands again only this long (10 minutes) after it fell, so neither is
+/// farmed: the owner's choice.
+pub(crate) const GREAT_STAND_AGAIN: u64 = 600 * 60;
 pub(crate) const CLEAR_AROUND: f64 = 40.0;
 /// Posts are chosen on a lattice this many metres apart, this far inside the section's edge and the baked square's,
 /// and this far from each other; a group stands this far round its post.
@@ -327,6 +330,7 @@ impl Room {
         if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
             self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
         }
+        self.clearing = crate::clears::clearing_of(kind);
     }
 
     /// A group's post at a point, each foe placed on the navmesh: a group that holds its post with a leader in the
@@ -409,7 +413,7 @@ impl Room {
     }
 
     /// A garrison level raised by the room's seas; 0, none, stays none.
-    fn at_seas(&self, level: u8) -> u8 {
+    pub(crate) fn at_seas(&self, level: u8) -> u8 {
         if level == 0 { 0 } else { self.difficulty.raise(level) }
     }
 
@@ -457,10 +461,13 @@ impl Room {
                 apart([player.fighter.body.x, player.fighter.body.y], [found.at[0], found.at[1]]) <= CLEAR_AROUND
             });
             let room_for = self.living_foes() + found.members.len() <= self.foes_most;
-            if self.clock >= cleared + STAND_AGAIN && !near && room_for {
+            let great = found.members.iter().any(|(_, rank, _, _)| matches!(rank, Rank::Miniboss | Rank::Boss));
+            let again = if great { GREAT_STAND_AGAIN } else { STAND_AGAIN };
+            if self.clock >= cleared + again && !near && room_for {
                 self.stand_post(post);
             }
         }
+        self.pay_clear();
     }
 }
 
@@ -543,3 +550,7 @@ mod crowd_tests;
 #[cfg(test)]
 #[path = "beat_tests.rs"]
 mod beat_tests;
+
+#[cfg(test)]
+#[path = "clears_tests.rs"]
+mod clears_tests;

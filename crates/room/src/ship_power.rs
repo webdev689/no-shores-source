@@ -104,14 +104,18 @@ pub fn pay_sinking(
 }
 
 /// A won deck's captain's officer, now and then, joining a boarder who won it: each boarder rolls their own, at its
-/// level, more often the higher its rank (`gear::crew::recruit::taken`). Answers who gained one.
-pub fn officers_join(won: &Sank, tick: u64, characters: &mut BTreeMap<PlayerId, Character>) -> Vec<PlayerId> {
+/// level, more often the higher its rank and the sea's tier (`gear::crew::recruit::taken`). Answers who gained one.
+pub fn officers_join(
+    won: &Sank,
+    (tick, difficulty): (u64, gear::Difficulty),
+    characters: &mut BTreeMap<PlayerId, Character>,
+) -> Vec<PlayerId> {
     let mut joined = Vec::new();
     for player in &won.players {
         let Some(character) = characters.get_mut(player) else { continue };
         let dice = gear::dice::Dice { seed: u64::from(won.pirate.seed), tick, player: *player };
         let rank = won.pirate.commission.rank.number();
-        let officer = gear::crew::recruit::taken(rank, won.pirate.level, &dice);
+        let officer = gear::crew::recruit::taken(rank, won.pirate.level, difficulty.reward(), &dice);
         if officer.and_then(|officer| character.sign_on(officer)).is_some() {
             joined.push(*player);
         }

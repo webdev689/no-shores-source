@@ -146,7 +146,9 @@ fn a_sinking_pays_its_and_its_officers_aboard_and_a_won_deck_now_and_then_gives_
     assert!(paid.crew.officers[&id.expect("signed on")].trained > 0);
     let boss = Pirate { commission: Commission { rank: Rank::Boss, ..pirate.commission }, ..pirate };
     let won = Sank { pirate: boss, players: vec![4], ..sank };
-    let joined = (0..60).filter(|tick| !officers_join(&won, *tick, &mut characters).is_empty()).count();
+    let joined = (0..60)
+        .filter(|tick| !officers_join(&won, (*tick, gear::Difficulty::Normal), &mut characters).is_empty())
+        .count();
     assert!((5..40).contains(&joined), "a Boss's deck gives an officer about one time in three: {joined}");
     assert_eq!(characters[&4].crew.officers.len(), joined.min(gear::crew::OFFICERS_MOST));
 }

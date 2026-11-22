@@ -145,7 +145,7 @@ fn dismantling_gives_back_fragments_essence_and_a_third_of_what_was_spent() {
     }
     assert_eq!(item.essence_spent(), 18);
     assert_eq!(character.ask(Ask::Dismantle { item: atheric }, AFIELD, &DICE), Ok(Done::Done));
-    assert_eq!(character.materials.armor_essence, 3 + 6, "three, more than a Legendary's, and a third of the 18 spent");
+    assert_eq!(character.materials.armor_essence, 3 + 6, "three, never less than a Legendary's, and a third of the 18 spent");
     assert_eq!(character.materials.armor_fragments, 5);
 }
 

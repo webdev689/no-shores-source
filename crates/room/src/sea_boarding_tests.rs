@@ -219,7 +219,7 @@ fn an_officer_who_joins_at_sea_while_its_player_fights_a_deck_never_shares_an_id
 }
 
 #[test]
-fn a_boarded_deck_takes_the_seas_tier_so_its_crews_kills_pay_as_a_harder_voyages() {
+fn a_boarded_deck_room_takes_the_seas_tier() {
     for difficulty in gear::Difficulty::ALL {
         let (mut sea, player) = met(20.0, Rank::Major);
         sea.set_difficulty(difficulty);

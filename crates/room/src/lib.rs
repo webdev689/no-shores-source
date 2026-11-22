@@ -11,6 +11,7 @@ pub mod battle;
 pub mod boarding_hands;
 pub mod chart;
 pub mod clash;
+mod clears;
 mod companions;
 mod course;
 pub mod crew;
@@ -166,6 +167,8 @@ pub struct Room {
     pub(crate) patrol: Option<patrol::Patrol>,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
+    /// A mission's, a dungeon's or a world boss's garrison's clear (`clears.rs`).
+    pub(crate) clearing: Option<clears::Clearing>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
@@ -228,6 +231,7 @@ impl Room {
             patrol: None,
             ashore: companions::Ashore::default(),
             isle: None,
+            clearing: None,
             minute: 0,
             shape_spots: Vec::new(),
         }

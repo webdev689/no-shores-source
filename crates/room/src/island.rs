@@ -187,6 +187,7 @@ impl Room {
         let found = salvage(
             Source::Wreckage { isle: isle.kind.is_some_and(Kind::is_isle) },
             self.difficulty.raise(level),
+            self.difficulty.reward(),
             &dice,
         );
         let Some(scavenger) = self.players.get_mut(&player) else { return crate::asks::OUT_OF_REACH };

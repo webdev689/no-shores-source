@@ -15,8 +15,8 @@ use gear::{Character, Kind, Slot};
 /// What a player's blow on a foe strikes times, at every level: half again, so a new player fells any Major one on
 /// one with health to spare, while an Elite still asks for guarding and dodging.
 pub const PLAYER_HARM: f64 = 1.5;
-/// What a foe's blow on a player strikes times, at every level: three quarters, so a fight leaves time to learn the
-/// keys without letting a player stand in a Major's blows.
+/// What a foe's blow on a player strikes times, at every level: three quarters, so a Major Brute takes about 13 s to
+/// fell a new player who never guards (`measure_blows`), time to learn the keys.
 pub const FOE_HARM: f64 = 0.75;
 
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
@@ -186,29 +186,31 @@ impl Room {
         }
     }
 
-    /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, with the
-    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each; on land its XP pays their officers
-    /// ashore too.
+    /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, throwing
+    /// out what it drops for each; on land its XP pays their officers ashore too. On a boarded deck a kill drops no
+    /// Vestige or item: the ship's hold is the boarding's loot. Each player paid has fought the room's garrison, for its
+    /// clear (`clears.rs`).
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
         let at = [fighter.body.x, fighter.body.y, fighter.body.z];
         let deck = matches!(self.floor, crate::Floor::Deck(_));
+        let rank = brain.rank as u8;
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
             }
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
-            let reward =
-                found.character.reward_kill(worth, brain.rank as u8, level, Some(hand), self.difficulty, &dice);
+            let character = &mut found.character;
+            let reward = character.reward_kill(worth, rank, level, Some(hand), self.difficulty);
+            let vestiges = if deck { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, &dice) };
             if !deck {
-                found.character.earn_officer_xp(reward.xp, false);
+                character.earn_officer_xp(reward.xp, false);
             }
-            let great = brain.rank as u8 >= foes::Rank::Miniboss as u8;
-            found.character.add_shapes(gear::shape::found(great, self.difficulty, &dice));
             found.gear_changed = true;
-            self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            self.fought_garrison(player);
+            self.drop_spoils(player, vestiges, rank, at, &dice);
         }
     }
 }

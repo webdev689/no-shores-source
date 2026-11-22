@@ -242,10 +242,13 @@ fn officers_earn_where_they_serve() {
 
 #[test]
 fn a_won_deck_rarely_gives_an_officer_more_often_and_better_from_a_higher_rank() {
-    let joins = |rank: u8| (0..2_000).filter_map(|tick| taken(rank, 14, &dice(tick))).collect::<Vec<_>>();
-    let (minor, boss) = (joins(1), joins(5));
+    let joins =
+        |rank: u8, raised: f64| (0..2_000).filter_map(|tick| taken(rank, 14, raised, &dice(tick))).collect::<Vec<_>>();
+    let (minor, boss) = (joins(1, 1.0), joins(5, 1.0));
     assert!((30..100).contains(&minor.len()), "a Minor's about one deck in 33: {}", minor.len());
     assert!((500..700).contains(&boss.len()), "a Boss's about one in 3: {}", boss.len());
+    let abyss = joins(5, 2.0).len();
+    assert!((1_100..1_300).contains(&abyss), "an Abyss sea's Boss deck twice as often: {abyss}");
     assert!(minor.iter().all(|officer| officer.grade == Rarity::Magic));
     assert!(boss.iter().all(|officer| officer.grade == Rarity::Legendary));
 }

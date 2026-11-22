@@ -173,12 +173,13 @@ pub fn vestige_chance(rank: Rank, difficulty: gear::Difficulty) -> f64 {
 /// and its level drops, each part taken where there is room.
 fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &mut Character) -> Held {
     let dice = Dice { seed, tick: u64::from(piece.id), player: piece.player };
-    let mut held = Held { salvage: ship_salvage(piece, &dice, character), ..Held::default() };
+    let mut held = Held { salvage: ship_salvage(piece, difficulty, &dice, character), ..Held::default() };
     let Some(drop) = piece.drop else { return held };
     let rank = drop.number();
-    held.vestige = gear::vestige::dropped(vestige_chance(drop, difficulty), rank, piece.level, &dice)
-        .map(|(rarity, slot, level)| Vestige::new(0, rarity, slot, level))
-        .filter(|vestige| character.pick_up(vestige.clone()));
+    // The best Vestige taken is the one told; the items a Miniboss or a Boss leaves are kept as they are made.
+    let mut taken: Vec<Vestige> = character.loot_kill(rank, piece.level, difficulty, &dice);
+    taken.retain(|vestige| character.pick_up(vestige.clone()));
+    held.vestige = taken.into_iter().max_by_key(|vestige| vestige.rarity);
     held.ammo_box = dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) && character.take_ammo_box();
     held.ammo_crate = gear::ammo::drops_crate(rank) && character.take_crate();
     held
@@ -186,9 +187,14 @@ fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &m
 
 /// A piece's ship salvage, its own roll: ship materials and now and then a module, as the ship's rules hold them for
 /// a piece of a ship of its rank (`gear::ship::found`), taken where there is room.
-fn ship_salvage(piece: &Floating, dice: &Dice, character: &mut Character) -> gear::ship::found::Taken {
+fn ship_salvage(
+    piece: &Floating,
+    difficulty: gear::Difficulty,
+    dice: &Dice,
+    character: &mut Character,
+) -> gear::ship::found::Taken {
     let source = Source::Flotsam { rank: piece.rank.number(), chest: piece.kind == Piece::Chest };
-    character.take_salvage(salvage(source, piece.level, dice))
+    character.take_salvage(salvage(source, piece.level, difficulty.reward(), dice))
 }
 
 #[cfg(test)]

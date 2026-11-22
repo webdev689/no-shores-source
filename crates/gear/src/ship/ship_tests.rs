@@ -121,26 +121,50 @@ fn a_module_dismantled_gives_back_its_own_material_and_no_fruit_feeds_one() {
 #[test]
 fn salvage_gives_ship_materials_and_its_modules_never_past_what_its_level_could_drop() {
     let mut legendary = 0;
-    for tick in 0..400 {
-        let low = salvage(Source::Breach, 10, &dice(tick));
+    for tick in 0..2_000 {
+        let low = salvage(Source::Breach, 10, 1.0, &dice(tick));
         let module = low.module.expect("a Breach always holds a module");
         assert!(module.kind.module() && module.rarity <= Rarity::Rare && module.level == 10);
         assert!(low.materials.heartwood == 2 && low.materials.timber + low.materials.canvas + low.materials.iron >= 12);
-        let high = salvage(Source::Breach, 20, &dice(tick));
+        let high = salvage(Source::Breach, 20, 1.0, &dice(tick));
         legendary += usize::from(high.module.is_some_and(|module| module.rarity.named()));
     }
-    assert!(legendary > 60, "a Breach at level 20 holds Legendary or Atheric modules: {legendary}");
-    let found =
-        (0..1_000).filter(|tick| salvage(Source::Flotsam { rank: 1, chest: false }, 5, &dice(*tick)).module.is_some());
-    let share = found.count();
-    assert!((20..70).contains(&share), "a Minor's piece holds a module about one time in 25: {share}");
+    assert!((140..250).contains(&legendary), "a Breach, coloured as a Boss's drop, about 96 in 1,000: {legendary}");
+    let found = |raised: f64| {
+        (0..2_000)
+            .filter(|tick| salvage(Source::Flotsam { rank: 1, chest: false }, 5, raised, &dice(*tick)).module.is_some())
+            .count()
+    };
+    assert!((50..120).contains(&found(1.0)), "a Minor's piece holds a module about one time in 25: {}", found(1.0));
+    assert!((130..200).contains(&found(2.0)), "twice as often at Abyss: {}", found(2.0));
+}
+
+#[test]
+fn a_coves_wreckage_holds_less_than_a_minor_ships_whole_lot_and_an_isles_more_and_better() {
+    let lot = |source: Source, pieces: u64| {
+        let (mut commons, mut modules, mut better) = (0_u32, 0_u32, 0_u32);
+        for tick in 0..2_000 {
+            for piece in 0..pieces {
+                let found = salvage(source, 20, 1.0, &dice(tick * 8 + piece));
+                commons += u32::from(found.materials.timber + found.materials.canvas + found.materials.iron);
+                modules += u32::from(found.module.is_some());
+                better += u32::from(found.module.is_some_and(|module| module.rarity >= Rarity::Rare));
+            }
+        }
+        (commons, modules, better)
+    };
+    let cove = lot(Source::Wreckage { isle: false }, 1);
+    let minor_ship = lot(Source::Flotsam { rank: 1, chest: false }, 3);
+    let isle = lot(Source::Wreckage { isle: true }, 1);
+    assert!(cove.0 < minor_ship.0 && cove.1 < minor_ship.1, "{cove:?} under {minor_ship:?}");
+    assert!(isle.0 > cove.0 && isle.1 > cove.1 && isle.2 > cove.2, "{isle:?} over {cove:?}");
 }
 
 #[test]
 fn salvage_taken_fills_its_stocks_to_their_most_and_carries_its_module() {
     let mut character = Character::starting();
     character.materials.ship = ShipStock { timber: 199, ..ShipStock::default() };
-    let found = salvage(Source::Breach, 20, &dice(3));
+    let found = salvage(Source::Breach, 20, 1.0, &dice(3));
     let taken = character.take_salvage(found.clone());
     assert!(taken.materials.timber <= 1 && character.materials.ship.timber <= 200);
     let id = taken.module.expect("carried");
