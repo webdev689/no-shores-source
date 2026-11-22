@@ -57,7 +57,7 @@ code:
   - crates/naval/src/rigging.rs#Rigging
   - crates/naval/src/rigging.rs#masts_of
   - crates/naval/src/fight_events.rs#Event
-  - crates/naval/src/captain/mod.rs#wary_takes
+  - crates/naval/src/captain/odds.rs#wary_takes
   - crates/room/src/battle.rs#Fights
   - crates/room/src/flotsam.rs#Flotsam
   - crates/room/src/harbour.rs#Harbours

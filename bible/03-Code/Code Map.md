@@ -151,18 +151,18 @@ Node's modules (tests may) and never uses WebGL. As the code arrives, the layers
 - **The network** speaks to the server and knows nothing of drawing.
 - **The entry points** wire them together. They wire; they do not implement ([[Small Files]]).
 
-Declared so far: `rules`, `forge`, `textures`, `models` and `overworld` (each imports nothing), `network` and `water`
-(each imports `rules`), `terrain` (imports `rules` and `water`), `nature` (imports `rules` and `water`), `ships`
-(imports `rules`, the water's sun and samples, `textures` and `plus`), `editor` (imports `rules`, `water`, `terrain`,
-`ships`, `islands`, `city`, `layout` and `ui`, which draws its panel and the names over its views),
-`combat` (imports `rules`, `network`, `plus`, `player`, the editor's camera and `ui`, whose nodes its display builds),
-`player` (imports `rules`, `network`, `forge`, `firstperson` and the editor's camera), `testground` (imports what
-`player` does, `player` itself, `combat`, the editor's panel helpers and `ui`, which draws the fight's display there),
-`firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules` and `water`), `heldmap` (imports
-`forge`, `overworld`, `plus`, the first person's picture drawer and `ui`),
-`plus` (imports nothing), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`,
-`textures`, `models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus` and
-`ui`) and `game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
+Declared so far: `rules`, `sky`, `forge`, `textures`, `models`, `overworld` and `plus` (each imports nothing),
+`network` and `water` (each imports `rules` and `sky`), `terrain` and `nature` (each imports `rules`, `water` and
+`sky`), `ships` (imports `rules`, the water's sun and samples, `textures`, `plus` and `sky`), `editor` (imports
+`rules`, `water`, `terrain`, `ships`, `islands`, `city`, `layout`, `sky` and `ui`, which draws its panel and the names
+over its views), `combat` (imports `rules`, `network`, `plus`, `player`, the editor's camera, `sky` and `ui`, whose
+nodes its display builds), `player` (imports `rules`, `network`, `forge`, `firstperson` and the editor's camera),
+`testground` (imports what `player` does, `player` itself, `combat`, the editor's panel helpers and `ui`, which draws
+the fight's display there), `firstperson` (imports `forge`), `city` (imports `models`, `textures`, `rules`, `water`
+and `sky`), `layout` (imports `city`), `heldmap` (imports `forge`, `overworld`, `plus`, the first person's picture
+drawer and `ui`), `ui` (imports `plus`), `thread` (imports `ui`), `islands` (imports `rules`, `water`, `textures`,
+`models` and `sky`), `speech` (imports `plus` and `ui`), `cinema` (imports `water`, `combat`, `plus` and `ui`) and
+`game` (imports the layers it wires, `combat`, `cinema` and `speech` among them;
 [[The Bars and the Fight Wear the Plus Kit]]). The code `flatc` makes, in `generated/`, is groundwork any layer may
 import.
 

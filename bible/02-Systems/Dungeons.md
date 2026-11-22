@@ -25,10 +25,9 @@ code:
   - crates/room-wasm/src/fighter_door.rs#set_dungeon
   - client/src/rules/dungeonRules.test.ts
   - crates/room/src/dungeon_room.rs#dungeon
-  - crates/room/src/dungeon_room.rs#dungeon_of
+  - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/dungeon_room.rs#keep_cache
-  - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/floor.rs#Floor
   - crates/room/src/entrances.rs#laid
   - crates/room/src/entrances.rs#model_of
@@ -40,7 +39,6 @@ code:
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
   - server/roomNames.ts#nodeRoom
   - client/src/game/dungeonLayout.ts#askDungeon
-  - client/src/game/dungeonLayout.ts#askDungeonOf
   - client/src/game/dungeonLayout.ts#askLayout
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
@@ -72,8 +70,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   three take three different styles of the six, shuffled by the patrol's id. `name` names one for its first style
   and its patrol: The Crypt of the Saltgrass Downs, The Caverns of the Sunken Fen.
 - **Laid where no patrol is.** A place that is no patrol, as a sea island, lays its dungeon by its own seed and a
-  style by its key (`style_of`): `Room::dungeon_of` stands its room, the room module answers its layout to an ask by
-  seed and style, and the page reads it with `askDungeonOf`. A patrol's dungeon is the same laid by `of_patrol`'s.
+  style by its key (`style_of`): `Room::dungeon_run` stands its room as a run of its own (`RunOf::Sea`), the room
+  module answers its layout to an ask by seed and style, and the page reads it with `askLayout`. A patrol's dungeon is
+  the same laid by `of_patrol`'s.
 - **The styles**, each with its two dungeon picture sets ([[Procedural Textures]]). The first four are the Forge's
   crypt, hall, cells and temple; the Caverns and the Mines are its cave and mine. Each style also names the style
   below it, which its last block may break into, and its entrances, the forged mounds or cave mouths with a door:
@@ -285,9 +284,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 ## In the Game
 
 The page reads a dungeon from the room module's own `room_dungeon` by one ask (`askLayout`, a `DungeonAsk`: a
-patrol's by its number, `askDungeon`; an Elite Dungeon by its place, named as it is; or a seed and a style,
-`askDungeonOf`) and plays it as [[Game]] says ("A dungeon"). A module older than the landmarks answers no landmarks
-or glows, and is read as standing none (`readDungeon`).
+patrol's by its number, `askDungeon`; an Elite Dungeon by its place, named as it is; or a seed and a style) and
+plays it as [[Game]] says ("A dungeon"). A module older than the landmarks answers no landmarks or glows, and is read
+as standing none (`readDungeon`).
 
 - **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above
   it, the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it

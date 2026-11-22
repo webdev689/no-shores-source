@@ -322,11 +322,3 @@ export const BANNER_KEYS: readonly string[] = [...BANNERS.keys()];
 export function bannerSvg(key: string): string {
   return BANNERS.get(key) ?? BANNERS.get('side') ?? '';
 }
-
-/** The banner a quest wears when it names none: one of its kind's (a side quest's for a kind to come), chosen by its
- *  id so each quest keeps its own and quests side by side differ. */
-export function bannerFor(kind: string, id: string): string {
-  const family = BANNER_KEYS.filter((key) => key.split('-')[0] === (kind === 'story' ? 'story' : 'side'));
-  const sum = [...id].reduce((total, letter) => total + (letter.codePointAt(0) ?? 0), 0);
-  return family[sum % family.length] ?? 'side';
-}

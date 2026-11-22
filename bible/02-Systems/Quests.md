@@ -4,7 +4,7 @@ status: live
 code:
   - content/quests/quests.json
   - content/story/houses.json
-  - crates/gear/src/quests.rs#QuestsDef
+  - crates/gear/src/quest_defs.rs#QuestsDef
   - crates/gear/src/quests.rs#QuestLog
   - crates/gear/src/quests.rs#Event
   - crates/gear/src/arts.rs#WornArts
@@ -12,7 +12,7 @@ code:
   - crates/room/src/quests.rs#set_places
   - crates/room/src/quests.rs#ground_of
   - crates/room/src/quests.rs#held_near
-  - crates/gear/src/quest_defs.rs#GoalDef
+  - crates/gear/src/quest_goals.rs#GoalDef
   - crates/gear/src/quest_defs.rs#speaker_place
   - crates/room/src/steps.rs#Step
   - crates/room/src/steps.rs#way_between

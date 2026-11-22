@@ -178,11 +178,13 @@ number is one of [[Gear as Claude Shapes It]].
   for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
   them a quarter more of its XP, rounded down, to them and to the weapon that earned it, and as much more reputation
   as the kill's own goes ([[Factions]]) (`boon_xp`).
-- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens,
-  and every player then in the dungeon's room finds a Vestige lying before it, theirs alone, whoever struck it: sure,
-  at the end foe's level, in the colours a boss's kill leaves, and lying for them as a kill's drop does ("Drops",
-  below; [[Dungeons]], "In the rooms"). A run's first clear in its period lays a second, further out: the dungeon of
-  the day's, or the week's two's ([[Activities]], "What it pays, once").
+- **A dungeon's cache.** When a dungeon's end foe falls (its Reeve, or an Elite Dungeon's Boss), its cache opens
+  and pays every player then in the dungeon's room a dungeon's clear at the end foe's level, whoever struck it
+  (`pay_cache`; "A clear", above): its XP and Aurem, an item coloured as its Miniboss's, and a Vestige as often as its
+  Miniboss leaves one, thrown out of the cache to lie before it for them as a kill's drop does ("Drops", below;
+  [[Dungeons]], "In the rooms"). A run's first clear in its period pays as well, the dungeon of the day's or the
+  week's two's, its Vestige kept straight into the carried ten, else the vault, else the mail ([[Activities]], "What it
+  pays, once").
 - **Perks.** The traits a player's worn gear gives make a trim of combat's numbers, which their fighter carries, so
   their browser predicts it to the bit ([[Combat]]). The room adds what only it knows the moment of: Honed, Executioner,
   Undertow, Exploit and Attuned as a blow is struck, Point Blank and Long Shot by the ground a shot covered, the

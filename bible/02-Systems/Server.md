@@ -63,7 +63,7 @@ code:
   - client/src/network/roomConnection.ts#RoomConnection
   - client/src/network/prediction.ts#Prediction
   - client/src/combat/fleetSession.ts#FleetSession
-  - client/src/rules/nodeGround.ts#standOnNode
+  - client/src/game/footGround.ts#standOn
 ---
 # Server
 
@@ -565,9 +565,9 @@ so every decision is Rust and the shell only carries bytes and time.
   that shows it taken, smoothed as TCP smooths its round trip, how much it strays, and the share of snapshots passed
   over.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
-  with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOnNode` cuts the
-  rect the welcome names from the landmass open in the land's door and stands the movement rules on it, with the
-  city's boxes ([[Land]], [[Movement]]). While the room agrees, that is the body already shown, to the bit; where it
+  with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOn` cuts the
+  rect the welcome names from the landmass open in the land's worker and stands the movement rules and the fight's on
+  it, with the city's boxes ([[Land]], [[Movement]]). While the room agrees, that is the body already shown, to the bit; where it
   knows better, the body moves to it. A body the room says is dead stays where the room saw it.
 - The [[Test Ground]] joins its room, `test-<name>`, when its address carries `?room=`, and shows every other player
   where the room last saw them.

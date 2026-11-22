@@ -5,7 +5,6 @@ import { dressingOf } from './dungeonDressing.ts';
 import { placedLandmarks } from './dungeonLandmarks.ts';
 import {
   askDungeon,
-  askDungeonOf,
   askLayout,
   ceilingAt,
   courseOf,
@@ -81,11 +80,11 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   );
   assert.notEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 1), laid);
   // A sea island's: laid by a seed and a style where no patrol lays it, the same as a patrol's laid by them.
-  const cove = askDungeonOf(module, 4242, 'caverns', 'The Gull Cove');
+  const cove = askLayout(module, { seed: 4242, style: 'caverns', name: 'The Gull Cove' });
   assert.equal(cove.style, 'caverns');
   assert.match(cove.name, / of the Gull Cove$/);
-  assert.equal(askDungeonOf(module, 4242, 'caverns', 'The Gull Cove'), cove, 'laid once, kept');
-  assert.throws(() => askDungeonOf(module, 4242, 'grotto' as never, 'The Gull Cove'), /no dungeon is laid/);
+  assert.equal(askLayout(module, { seed: 4242, style: 'caverns', name: 'The Gull Cove' }), cove, 'laid once, kept');
+  assert.throws(() => askLayout(module, { seed: 4242, style: 'grotto' as never, name: 'The Gull Cove' }), /no dungeon is laid/);
 });
 
 test('an older room module that answers no landmarks or glows is read as standing none', async (context) => {

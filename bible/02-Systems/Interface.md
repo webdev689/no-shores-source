@@ -41,7 +41,6 @@ code:
   - client/src/game/journalTimers.ts#timersNode
   - client/src/game/journalWords.ts#questCardsOf
   - client/src/plus/journalArt.ts#bannerSvg
-  - client/src/plus/journalArt.ts#bannerFor
   - client/src/game/bountyGlyphs.ts#bountyGlyphSvg
   - client/src/game/bountyTiles.ts#bountyTileNode
   - client/src/game/journalIcons.ts#iconSvg

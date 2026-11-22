@@ -94,8 +94,9 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   it leaves alone memory too short for a step.
 - **Predicting on the land.** The door also keeps a window of the land, handed over as the JSON the land's door cuts
   (`setGround`): every later step stands on it, the same ground to the bit as the node's room, and a body asked to
-  stand does so on its ground. Anything that is not a window is open ground at 0 m again. `standOnNode` sets a
-  node's window and its city's boxes together, for the browser that predicts a node's room ([[Server]]).
+  stand does so on its ground. Anything that is not a window is open ground at 0 m again. The game's `standOn`
+  (`game/footGround.ts`) sets a node's window and its city's boxes together, for the browser that predicts a node's
+  room ([[Server]]).
 
 ## How the body is held
 
