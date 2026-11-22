@@ -263,12 +263,14 @@ Where the work stands now, for the next session. Each session rewrites this note
   pass": five read-only audits (the rules and server, the page, the assets and pipelines, the bible's truth, the
   design's detail), whose rules, page, assets and bible fixes are merged into #124's branch. Then the owner's third
   ask, "Do one more comprehensive audit. Ensure this is perfect": six read-only audits (the rules, the page, the
-  assets, the bible, regressions outside the events, the tests), whose rules, page and assets fixes are merged; still
-  to come, its tests and bible fixes and a picture pass of every beat on a quiet machine. Tested offline:
-  `cargo xtask check` passes at 41f08483, native and WebAssembly agreeing; both events played through on the built page
-  and pictured before the six audits' fixes; not tested live. The `modules` workflow's run on a2c51a17 baked and
-  published the 13 event modules: all 42 of their groups answer on R2 but one, the sealed scar's rubble, which the
-  assets fixes (3e1bf535) re-keyed and which waits on the workflow's run of that commit. `main` is merged in again
+  assets, the bible, regressions outside the events, the tests), every fix merged; the tests found and fixed two bugs
+  (the next event's line said "in 1 min" for one starting that minute; the tithe-taker stuck on a navmesh corner).
+  Then a picture pass on the real page, which stopped at its time limit; the owner chose to merge what it fixed (a
+  carried shard seen on another player, one bonus wording, the banner's rows full width, the picture driver reaching
+  the game in its worker) and leave the rest of the pictures for later (see "Next"). Tested offline: `cargo xtask
+  check` passes at the head of #124's branch, native and WebAssembly agreeing; the raid and the heroic Fissure
+  pictured on the built page in part; not tested live. The `modules` workflow published the 13 event modules, and
+  all their groups answer on R2, the sealed scar's rubble since its run on 3e1bf535. `main` is merged in again
   after the hub, the healing charges and the ship's burst: the events' banner, store bars and compass marks are drawn
   as nodes of the game's own interface, the events' fight events moved up to 15 to 24 past main's heal (14), and
   their wire fields appended after main's packed, delta snapshots.
@@ -378,10 +380,10 @@ Where the work stands now, for the next session. Each session rewrites this note
   scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Needs the owner's yes:
   the `html` check by name (a new check), and the merge. Playing alone at sea is now sent the per-player cut of the
   snapshot, as with others.
-- **The co-dev's `webgpu-shot` cannot picture the game now**: it reads the page's WebGPU canvas, and the game draws
-  from its worker. Its picture runs work for the Test Ground and the World Editor, which stay on the page; for the
-  game, a worker-aware measure is in the session's notes (it times the worker's frames through Playwright's worker
-  handle). The kit is kept as shipped, so its fix is the co-dev's (observation 0068 logs the port lesson).
+- **`webgpu-shot` and the game in its worker**: on `main` the driver reads the page's WebGPU canvas, and the game
+  draws from its worker, so it pictures the Test Ground and the World Editor but not the game. #124's branch fixes it
+  (the hooks and the plan's `init` at the head of the game worker's script, each picture from the worker's own
+  texture, R2 read by the driver 8 at a time); it reaches `main` with #124 (observation 0068 logs the port lesson).
 - **#98's open points**, merged, in its description: the crew's bars under the fewer plates; when the HUD is drawn
   without HTML; whether the welcome's "Follow" moves onto the tracker, and whether the keepers' marks come back as
   something else; the wreck's rebuilt look and its zones' size; whether a fire burns half again; and Thule's fight now
@@ -536,9 +538,12 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The public events' last pictures** (#124): the beats built and tested but not pictured are listed in
-  [[Public Events]], "Limits"; headless frames took 10 to 20 s here. The scripts are the showcase worker's (dev play:
-  `&public=`, `&speed=`, `&bots=`), best run on a quiet machine or a real GPU.
+- **The public events' last pictures** (#124), left for later by the owner: the raid's waves marching, a store
+  plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
+  the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
+  390x844 and 844x390. Pictured and still wrong: a store's bar shows through a house's wall (the bars are interface
+  marks with no depth), and the banner reads "Stores 100%" with a store at 99% (the sum rounds up). Headless frames
+  took 11 to 30 s, so a pass needs several runs under the 2-hour limit (observation 0095). Dev play: `&public=`, `&speed=`, `&bots=`.
 - **The Lattice's armour and weapons in Daedric's place**, on hold by the owner's word for the Lattice's foes
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]). The armour is built after the owner's reference and
   the owner likes it (`tools/lattice/armoury.py`, drawn standing still on the man's and the woman's bodies). Still to
