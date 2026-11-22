@@ -55,7 +55,7 @@ impl Room {
         found.gear_changed = true;
         let character = &mut found.character;
         // A leaver's chest is paid as they go, so the vault keeps what the ten cannot, over its limit if it must: the
-        // ground would lose it, and the gear crate holds nothing else waiting for a player.
+        // ground they leave would lose it.
         let vaulted = leaving || character.vestiges_held(true) < gear::character::VAULT_MOST;
         if !character.pick_up(paid.vestige.clone()) {
             if vaulted {

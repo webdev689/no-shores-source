@@ -262,7 +262,7 @@ export class Foot {
         held.cache = cacheOf(snapshot.cache);
         heardRun(held, snapshot, hearer.fight?.player ?? null);
       },
-      // Offline the room's word on the gear tells only of the patrol's entrances; the figure keeps its own dress.
+      // Offline the room's word on the gear tells of the patrol's entrances and the chests; the figure keeps its dress.
       gear: (sent: GearState) => {
         if (online) held.gear = sent;
         else held.alone = sent;

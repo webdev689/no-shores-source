@@ -28,13 +28,14 @@ pub const EVENTS_NODE: &str = r#"{ "id": "saltgrass-downs", "kind": "social", "n
             "first_row": 0, "data": [-50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50, -50,
             -50] } } }"#;
 
-/// The minutes a Fissure and a raid begin at in Saltgrass Downs, and the most ticks each is played.
+/// The minutes a Fissure and a raid begin at in Saltgrass Downs, and the most ticks each is played: past an event's
+/// whole countdown, so one that runs out its clock still shows its result.
 pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
-const MOST_TICKS: u32 = 8 * 3_600;
+const MOST_TICKS: u32 = 9 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
 pub const FISSURE_HASH: &str = "e5e605ee";
-pub const RAID_HASH: &str = "89e7d99b";
+pub const RAID_HASH: &str = "6e6e8358";
 /// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
 /// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille).
 pub const FISSURE_ENDED: [u32; 3] = [18_598, 2, 28];
@@ -236,11 +237,11 @@ fn two_scripted_players_seal_a_heroic_fissure_to_the_same_fingerprint_natively_a
 }
 
 #[test]
-fn two_scripted_players_meet_a_raids_heroic_task_and_lose_its_stores_to_the_same_fingerprint_natively_as_in_webassembly()
+fn two_scripted_players_meet_a_raids_heroic_task_but_run_out_its_clock_to_the_same_fingerprint_natively_as_in_webassembly()
  {
     let (hash, event, at) = play(RAID_MINUTE);
     assert_eq!(event, (2, 3, 2), "the raid failed, its heroic task met");
-    assert_eq!(at, RAID_ENDED, "the tick it failed at, its wave and the stores left");
+    assert_eq!(at, RAID_ENDED, "the tick its clock ran out at, its wave and the stores left");
     assert_eq!(hash, RAID_HASH);
 }
 
