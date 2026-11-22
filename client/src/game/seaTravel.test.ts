@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import { SAIL_AWAY } from '../cinema/sailAway.ts';
 import type { Passage } from './passage.ts';
 import type { SeaRoom } from './seaRoom.ts';
-import { SeaTravel } from './seaTravel.ts';
+import type { Sea } from './sea.ts';
+import { sailOrTravel, SeaTravel } from './seaTravel.ts';
 
 /** A travel for a point east, its passage and room standing in: what the passage was asked, and the room's answer
  *  and its word on the ship. */
@@ -72,4 +73,23 @@ test('no answer is taken before the travel is asked', () => {
   travel.step(1, room);
   assert.deepEqual(asked, [], 'the stale answer is left alone');
   assert.equal(travel.away.answered, false);
+});
+
+test('yes travels to the prompt’s own water, named as it named it, though no water lies at the place sailed for', () => {
+  const done: string[] = [];
+  const sea = {
+    waterAt: () => null,
+    travelTo: (to: readonly number[], water: string) => done.push(`travel ${to.join(',')} ${water}`) > 0,
+    sailTo: (to: readonly number[]) => done.push(`sail ${to.join(',')}`),
+  } as unknown as Sea;
+  const water = {
+    continent: 2,
+    id: 'continent-3',
+    name: 'The Elmwater',
+    holder: 'grey-tithe',
+    levels: [8, 14],
+  } as const;
+  sailOrTravel(sea, [600_000, 150_000], water, () => true);
+  sailOrTravel(sea, [600_000, 150_000], null, () => true);
+  assert.deepEqual(done, ['travel 600000,150000 The Elmwater', 'sail 600000,150000']);
 });

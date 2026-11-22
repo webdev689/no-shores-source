@@ -6,6 +6,7 @@ code:
   - client/src/heldmap/heldMap.ts#layoutKey
   - client/src/heldmap/heldMapAsk.ts#MapAsk
   - client/src/heldmap/heldMapAsk.ts#litCells
+  - client/src/heldmap/heldMapAsk.ts#WaterJudge
   - client/src/game/helmMap.ts#HelmMap
   - client/src/heldmap/heldMapLaw.ts#stageOf
   - client/src/heldmap/heldMapLaw.ts#clampView
@@ -140,12 +141,15 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
   pointer (the pad's cursor too), when it is not the one the ship is in, is lit: its sea brightened a little with the
   parchment's light and its edge with the other waters softly lined in the ink, where its cells' share crosses a half
-  (`litCells`, on the page's grid of the waters, the world crate's rule judged once). Its name, holder and level band
-  are written small by the pointer ("The Elmwater · Grey Tithe · levels 8-14"). The ship's own water and land light
-  nothing. A course chosen whose end lies in another water asks, on a card of parchment ringed in ink a quarter of the
+  (`litCells`, on the page's grid of the waters, the world crate's rule judged once a 4.8 km cell). Its name, holder
+  and level band are written small by the pointer ("The Elmwater · Grey Tithe · levels 8-14"). The ship's own water
+  and land light nothing. Which water the ship and a course's end lie in is the exact rule's, the room's own
+  (`WaterJudge`), never the grid's, which reads a coast's sea as land a cell from it. A course chosen whose planned end
+  lies in another water than the ship asks, and one whose end or ship's water is unknown asks nothing: on a card of parchment ringed in ink a quarter of the
   way down the map and in its letters: "Travel to <water>?", its holder and level band, and "Yes <key> No Escape"
   (`MapAsk`). Yes (the confirm key, the pad's A, or the card's press, which reads Travel while it asks) lowers the map
-  and the ship travels there ([[Sailing]], "Travel by the held map"); No (Escape, the pad's B) lets the prompt go and
+  and the ship travels to the water the prompt named, for the place chosen (a port or a node sailed for at its own
+  point) ([[Sailing]], "Travel by the held map"); No (Escape, the pad's B) lets the prompt go and
   keeps the course inked, to be sailed the long way with Set sail. A course within the ship's own water asks nothing.
 - **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three

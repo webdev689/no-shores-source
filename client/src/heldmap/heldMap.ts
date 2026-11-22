@@ -35,7 +35,7 @@ import { HeldMapWaters, onOwnSea, ruinedPlaces } from './heldMapWaters.ts';
 import { type KeyPlace, keySize, landUnder } from './mapKey.ts';
 import { handsCover, layOut, type Lettering, letterScale } from './mapLayout.ts';
 import { fontOf, type IsleInk, ISLE_HALF, paintLettering } from './mapLetters.ts';
-import type { MapWaters } from './watersWash.ts';
+import type { MapWater, MapWaters } from './watersWash.ts';
 import type { Child } from '../ui/node.ts';
 import type { Stack } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
@@ -97,7 +97,7 @@ type Phase =
       readonly t: number;
       readonly from: number;
       readonly sail: Point2 | null;
-      readonly travel: boolean;
+      readonly travel: MapWater | null;
     };
 
 type Choice = { readonly at: Point2; readonly name: string; readonly course: Course; readonly place: string | null };
@@ -143,7 +143,7 @@ export class HeldMap {
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
-  private lowered: (sail: Point2 | null, travel: boolean) => void = () => undefined;
+  private lowered: (sail: Point2 | null, travel: MapWater | null) => void = () => undefined;
   /** The water lit under the pointer, and the prompt a course into another water raises; and where the ship lay. */
   private readonly ask = new MapAsk();
   private shipAt: Point2 = [0, 0];
@@ -166,9 +166,13 @@ export class HeldMap {
     this.painter = painter;
   }
 
-  /** The waters, opened once a page: the map tints, letters and keys them from now on, and marks the ruins. */
-  setWaters(waters: MapWaters): void {
-    this.waters = new HeldMapWaters(waters);
+  /** The waters, opened once a page: the map tints, letters and keys them from now on, and marks the ruins; the
+   *  water a point lies in is judged by their rules, the room's. */
+  setWaters(open: {
+    readonly map: MapWaters;
+    readonly rules: { waterAt(point: Point2): { readonly continent: number } | null };
+  }): void {
+    this.waters = new HeldMapWaters(open.map, (point) => open.rules.waterAt(point)?.continent ?? null);
     this.chartings++;
     if (this.charted) this.view.setWash(this.waters.chart(this.charted));
   }
@@ -183,9 +187,9 @@ export class HeldMap {
     return this.phase.kind !== 'closed';
   }
 
-  /** What happens once the map is lowered: the ship sets sail for its destination, travels there (`travel`, the
-   *  prompt answered yes), or none was chosen. */
-  onLowered(then: (sail: Point2 | null, travel: boolean) => void): void {
+  /** What happens once the map is lowered: the ship sets sail for its destination, travels to the water `travel`
+   *  (the prompt's, answered yes), or none was chosen. */
+  onLowered(then: (sail: Point2 | null, travel: MapWater | null) => void): void {
     this.lowered = then;
   }
 
@@ -236,9 +240,9 @@ export class HeldMap {
     this.phase = { kind: 'opening', t: 0 };
   }
 
-  /** Lowers the map from wherever it is in its rise; `sail` is the destination set, or null, travelled to with
-   *  `travel`. */
-  close(sail: Point2 | null = null, travel = false): void {
+  /** Lowers the map from wherever it is in its rise; `sail` is the destination set, or null, travelled to in the
+   *  water `travel` the prompt asked of. */
+  close(sail: Point2 | null = null, travel: MapWater | null = null): void {
     const phase = this.phase;
     if (phase.kind === 'closed' || phase.kind === 'closing') return;
     const from = phase.kind === 'opening' ? raised(phase.t / OPEN_S) : 1;
@@ -310,7 +314,7 @@ export class HeldMap {
       course: this.plan(point),
       place: mark?.place.id ?? null,
     };
-    if (this.waters) this.ask.choose(this.waters.waters, this.choice.course, this.shipAt);
+    if (this.waters) this.ask.choose(this.waters.waters, this.waters.judge, this.choice.course, this.shipAt);
   }
 
   /** The wheel at a point on the screen: the map zooms about it. */
@@ -325,7 +329,7 @@ export class HeldMap {
   setSail(): void {
     if (!this.choice?.course.ok) return;
     this.difficulty = seasChoices(this.picked, this.shut).picked;
-    this.close(this.choice.at, this.ask.asking !== null);
+    this.close(this.choice.at, this.ask.asking);
   }
 
   /** Escape: the prompt answered no first, its course kept; then the choice let go, with the seas picked on its
@@ -358,8 +362,8 @@ export class HeldMap {
     const drop = (1 - lift) * stage.sprite.height;
     this.ink = stage.ink;
     this.shipAt = scene.ship;
-    const waters = this.land || this.press?.panning ? null : (this.waters?.waters ?? null);
-    const hovered = waters && this.ask.hover(waters, this.mapView, this.ink, scene.ship);
+    const waters = this.land || this.press?.panning ? null : this.waters;
+    const hovered = waters && this.ask.hover(waters.waters, waters.judge, this.mapView, this.ink, scene.ship);
     if (hovered?.cells) this.view.setLit(hovered.cells);
     const scaled = (rect: Rect, down: number): Rect => ({
       x: rect.x * dpr,

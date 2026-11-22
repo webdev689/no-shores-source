@@ -1,5 +1,6 @@
 import type { Gpu } from '../gpu.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import type { MapWater } from '../heldmap/watersWash.ts';
 import { warmFlora } from '../nature/flora.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Placed } from '../player/figures.ts';
@@ -134,7 +135,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       sail: (to, seas, travel) => sailFor(to, seas, travel),
       shut: () => screens.seasShut(),
       made: (map) => {
-        if (opened) map.setWaters(opened.map);
+        if (opened) map.setWaters(opened);
       },
       quest: () => quests.nodes,
     }),
@@ -157,7 +158,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   waters.then(
     (open) => {
       opened = open;
-      playing.helmMap.held?.setWaters(open.map);
+      playing.helmMap.held?.setWaters(open);
     },
     (error: unknown) => console.error('the waters could not be opened:', error),
   );
@@ -458,7 +459,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   /** A destination set on the map: the ship sails for it, or travels there. A voyage set at another difficulty sails
    *  in that difficulty's sea room; mid-fight the ship stays in the room it fights in; one switch at a time, each
    *  waiting for the last. A travel's cinematic begins at once, and asks whichever room the ship is in by its fade. */
-  const sailFor = (sail: Point2, seas: Difficulty, travel: boolean) => {
+  const sailFor = (sail: Point2, seas: Difficulty, travel: MapWater | null) => {
     const sea = playing.sea;
     if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));
     if (!sea || sea.fight || seas === seaSeas) return;

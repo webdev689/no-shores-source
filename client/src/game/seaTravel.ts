@@ -2,6 +2,7 @@
 // asked as the picture fades; taken, the ship is laid where the room put it, short of the course's end, and sails on
 // to it; refused, it heaves to, its voyage kept, and its line says why.
 import { SailAway } from '../cinema/sailAway.ts';
+import type { MapWater } from '../heldmap/watersWash.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Passage } from './passage.ts';
 import type { Sea } from './sea.ts';
@@ -74,9 +75,9 @@ export class SeaTravel {
   }
 }
 
-/** Sails `sea` for `to`; with `travel` (the held map's prompt answered yes), travels there when its water is known,
- *  `ready` saying when the waters round the ship have loaded. */
-export function sailOrTravel(sea: Sea, to: Point2, travel: boolean, ready: () => boolean): void {
-  const water = travel ? sea.waterAt?.(to)?.name : null;
-  if (!water || !sea.travelTo(to, water, ready)) sea.sailTo(to);
+/** Sails `sea` for `to`; with `travel`, the water the held map's prompt asked of and was answered yes, travels there
+ *  (named as the prompt named it, never judged again at `to`), `ready` saying when the waters round the ship have
+ *  loaded. */
+export function sailOrTravel(sea: Sea, to: Point2, travel: MapWater | null, ready: () => boolean): void {
+  if (!travel || !sea.travelTo(to, travel.name ?? travel.id, ready)) sea.sailTo(to);
 }
