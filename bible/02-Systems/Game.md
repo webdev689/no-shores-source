@@ -23,7 +23,7 @@ code:
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
-  - client/src/game/footGear.ts#nodeBeams
+  - client/src/game/footGear.ts#questRings
   - client/src/game/overheadMarks.ts#markedHere
   - client/src/combat/marksOver.ts#marksSeen
   - client/src/game/footGround.ts#standOn
