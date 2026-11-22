@@ -121,7 +121,8 @@ phases) is [[Enemies]].
   sight a foe fights as it always did; turns, the beat, the line, the flanker, the chase and the leash stay each
   target's own.
 - **Moving.** A foe walks and runs at three quarters of a player's pace, 3.3 and 5.7 m/s
-  ([[Foes Walk and Run at Three Quarters of a Player's Pace]]). It asks no more of itself (`FOE_PACE`): its slower moves
+  ([[Foes Walk and Run at Three Quarters of a Player's Pace]]). It asks no more of itself (`FOE_PACE`), crossing a
+  climb or a drop too: its slower moves
   keep their speeds, and steering apart from its allies may push it a little faster for a moment, but never on along its
   way past its own run, so a player running away gets away. It faces a bearing of its own and turns at 320 degrees a
   second; walking somewhere it turns first and steps only within 45 degrees of its way, so no foe walks backwards. It
@@ -164,7 +165,7 @@ phases) is [[Enemies]].
   Miniboss back to its first phase, and the foes it called fall ([[Enemies]]). With nothing stirring it, a garrison
   foe keeps to its place: one a stir drew off, or an ally walking past moved, walks back to it once idle. While its
   group walks its beat it keeps up with its place, walking at the share of a walk that its distance behind is of 2 m,
-  a full walk at most, and faces its way.
+  its own walk at most, and faces its way.
 - **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";
   [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]; the numbers are Claude's,
   [[Foe Groups as Claude Builds Them]]):
