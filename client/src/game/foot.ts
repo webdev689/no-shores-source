@@ -87,7 +87,7 @@ export interface FootFrame {
  * in the page on the same ground; online, the server's. It judges the edge and the fight, and the page predicts the
  * player by its own rules and takes its word; every other player and foe is shown where it last saw them. Online, the
  * room keeps the player's gear, which their figure wears; a mark stands over what E uses within reach: a station's
- * keeper, Shape or a resource node. A social space's keepers and townsfolk walk it. In a patrol, E at an entrance's
+ * keeper, Shape or a dungeon's entrance. A social space's keepers and townsfolk walk it. In a patrol, E at an entrance's
  * door goes into its dungeon; in a dungeon, its floor is the ground, and E at its exit door goes out.
  */
 export class Foot {
@@ -443,7 +443,7 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
-    const marked = markedHere(gearNow, this.node, floor);
+    const marked = markedHere(gearNow, this.node, floor, this.context.trips.props());
     const dropped = dropsLaid(this.drops, gearNow?.drops ?? [], clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),

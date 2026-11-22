@@ -208,7 +208,9 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
   the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)
   or a faction's emblem in the diamond edged in its Art's colour, and none while the keeper is away from the counter
-  (the elder on her welcome); over Shape on his spot his own. As DFO's, a mark's foot stands 0.2 m over the crown,
+  (the elder on her welcome); over Shape on his spot his own; and, as the room's word on the gear names them online,
+  over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
+  over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
   still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. A whole mark
@@ -241,7 +243,8 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   where the page's room tells nothing else of the gear). Each is drawn among the patrol's drawers as its forged
   entrance model (`EntranceView`), lifted by the height its Daggerfall dungeon block stands it at and turned as an RMB
   block's yaw turns a model, in the island's climate's pictures through the city's own pipelines, so the sun lights
-  it and it casts its shadow. Its door is its door quad's middle, turned and lifted.
+  it and it casts its shadow. Its door is its door quad's middle, turned and lifted, and wears a door's mark over it
+  (above, "Over what a player can use").
 - **Going in.** Within 2.5 m of a door E offers "Enter" and the dungeon's name, the room module's own `room_dungeon`
   asked with the patrol's id, its name and the entrance's number. Taken, the veil says "Entering" the dungeon; the page
   leaves the patrol's room and joins the dungeon's: online `node-<patrol id>--dungeon-<number>` (`--elite--` or
