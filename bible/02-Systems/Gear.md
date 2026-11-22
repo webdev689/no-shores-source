@@ -39,7 +39,7 @@ code:
   - crates/gear/src/rewards.rs#keep_found
   - crates/gear/src/rewards.rs#Clear
   - crates/gear/src/vestige.rs#found_items
-  - crates/room/src/clears.rs#pay_clear
+  - crates/room/src/clears.rs#pay_garrison_clear
   - crates/gear/src/catalogue.rs#catalogue
   - crates/gear/src/world.rs#island_levels
   - crates/gear/src/vendor.rs#wares
