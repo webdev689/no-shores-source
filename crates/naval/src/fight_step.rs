@@ -98,9 +98,9 @@ impl Fight {
         }
     }
 
-    /// Each player's orders in turn, while their ship is afloat: their brace and load, their burst, their sails refused
-    /// bare yards, and their step held back by their hurts. A player with no orders this tick rides the swell where they
-    /// lie.
+    /// Each player's orders in turn, while their ship is afloat: their brace and load, their burst, their sails
+    /// refused bare yards, and their step held back by their hurts. A player with no orders this tick rides the swell
+    /// where they lie.
     fn sail_players(
         &mut self,
         orders: &[(ShipId, Orders)],

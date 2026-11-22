@@ -187,6 +187,14 @@ test('a sign is named by its key, Shift or not, and is let go under the name it 
     ],
     [',', '2', 'a'],
   );
+  // A key that types a letter is that letter on any layout: AZERTY's M, German's ö, Dvorak's W sit where signs do.
+  const elsewhere = [
+    { code: 'Semicolon', key: 'm' },
+    { code: 'Semicolon', key: 'ö' },
+    { code: 'Comma', key: 'w' },
+    { code: 'Quote', key: 'ù' },
+  ];
+  assert.deepEqual(elsewhere.map(keyNameOf), ['m', 'ö', 'w', 'ù']);
   const { frame, key, done } = padPage();
   key(',', 'Comma');
   assert.equal(frame().pressed('mount'), true);
