@@ -1,5 +1,5 @@
 ---
-id: 139
+id: 140
 title: "A progress line announced a code change as made before the edit was written, and the change rested on a subagent's ranking the owner had not confirmed"
 status: open
 type: open-source
