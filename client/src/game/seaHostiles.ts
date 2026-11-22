@@ -2,7 +2,7 @@
 // sight of the player's ship, by its faction's emblem, its rank's colour, its name as its plate gives it, its level and
 // its distance; the words on the voyage's line when one is first sighted or the ship sails into other waters; and
 // the water's name, band and holder for the sea's status line.
-import type { SeenPirate } from '../network/messages.ts';
+import type { SeenHostile } from '../network/messages.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Mark } from '../overworld/overworldMarks.ts';
 import { HOLDER_WORDS as MAP_HOLDER_WORDS } from '../heldmap/watersWash.ts';
@@ -21,20 +21,20 @@ const HOSTILE_RISE_M = 20;
 export const HOSTILE_PREFIX = 'hostile-';
 
 /** The distance a ship is sighted from. */
-export function sightOf(pirate: Pick<SeenPirate, 'sight'>): number {
-  return pirate.sight !== undefined && pirate.sight > 0 ? pirate.sight : SIGHT_LEAST_M;
+export function sightOf(hostile: Pick<SeenHostile, 'sight'>): number {
+  return hostile.sight !== undefined && hostile.sight > 0 ? hostile.sight : SIGHT_LEAST_M;
 }
 
-const apart = (pirate: SeenPirate, ship: Point2) => Math.hypot(pirate.x - ship[0], pirate.y - ship[1]);
+const apart = (hostile: SeenHostile, ship: Point2) => Math.hypot(hostile.x - ship[0], hostile.y - ship[1]);
 
 /** The hostile ships within their own sight of the player's ship at `ship`. */
-export function sightedHostiles(pirates: readonly SeenPirate[], ship: Point2): SeenPirate[] {
-  return pirates.filter((pirate) => apart(pirate, ship) <= sightOf(pirate));
+export function sightedHostiles(hostiles: readonly SeenHostile[], ship: Point2): SeenHostile[] {
+  return hostiles.filter((hostile) => apart(hostile, ship) <= sightOf(hostile));
 }
 
 /** Its name as its plate gives it: its faction's, on its hull. */
-export function hostileName(pirate: SeenPirate): string {
-  return shipName(pirate.faction, pirate.hull ?? 0);
+export function hostileName(hostile: SeenHostile): string {
+  return shipName(hostile.faction, hostile.hull ?? 0);
 }
 
 /** How its mark looks: its faction's emblem, its rank's colour, and the plates' mark of a Miniboss. */
@@ -44,34 +44,34 @@ export interface HostileLook {
   readonly badge: string | null;
 }
 
-export function hostileLook(pirate: SeenPirate): HostileLook {
-  const mark = rankMark(pirate.rank);
+export function hostileLook(hostile: SeenHostile): HostileLook {
+  const mark = rankMark(hostile.rank);
   return {
-    emblem: emblemSvg(pirate.faction),
-    colour: rankColour(pirate.rank),
+    emblem: emblemSvg(hostile.faction),
+    colour: rankColour(hostile.rank),
     badge: mark === 'miniboss' ? markPicture(mark).svg : null,
   };
 }
 
 /** Its mark's note: its level, where the room sends one, and its distance. */
-export function hostileNote(pirate: SeenPirate, metres: number): string {
-  const level = pirate.level ?? 0;
+export function hostileNote(hostile: SeenHostile, metres: number): string {
+  const level = hostile.level ?? 0;
   return level > 0 ? `Level ${level} · ${distanceText(metres)}` : distanceText(metres);
 }
 
 /** Each sighted ship as a mark to lay, held at the picture's edge when off it. */
-export function hostileMarks(pirates: readonly SeenPirate[], ship: Point2): Mark[] {
+export function hostileMarks(hostiles: readonly SeenHostile[], ship: Point2): Mark[] {
   // The marks are laid as a port's are; the hostile kind is the display's own.
-  return sightedHostiles(pirates, ship).map((pirate) => ({
-    id: `${HOSTILE_PREFIX}${pirate.id}`,
+  return sightedHostiles(hostiles, ship).map((hostile) => ({
+    id: `${HOSTILE_PREFIX}${hostile.id}`,
     kind: 'port',
-    name: hostileName(pirate),
-    at: [pirate.x, pirate.y, HOSTILE_RISE_M],
+    name: hostileName(hostile),
+    at: [hostile.x, hostile.y, HOSTILE_RISE_M],
     edge: true,
   }));
 }
 
-/** The water the ship is in, as the page names it: its name, its holder (contested on the seam) and its band. */
+/** The water the ship is in, as the page names it: its name, its holder and its band. */
 export interface WaterNamed {
   readonly name: string | null;
   readonly holder: WaterHolder;
@@ -109,14 +109,14 @@ export class SeaWatch {
   private water: string | null = null;
   private said: { readonly words: string; age: number } | null = null;
 
-  /** Steps `seconds` on: `pirates` round the ship at `ship`, in `water`. */
-  step(seconds: number, pirates: readonly SeenPirate[], ship: Point2, water: WaterNamed | null): void {
+  /** Steps `seconds` on: `hostiles` round the ship at `ship`, in `water`. */
+  step(seconds: number, hostiles: readonly SeenHostile[], ship: Point2, water: WaterNamed | null): void {
     if (this.said) this.said.age += seconds;
-    const sighted = sightedHostiles(pirates, ship);
-    const present = new Set(pirates.map((pirate) => pirate.id));
+    const sighted = sightedHostiles(hostiles, ship);
+    const present = new Set(hostiles.map((hostile) => hostile.id));
     for (const id of this.seen) if (!present.has(id)) this.seen.delete(id);
-    const fresh = sighted.filter((pirate) => !this.seen.has(pirate.id));
-    fresh.forEach((pirate) => this.seen.add(pirate.id));
+    const fresh = sighted.filter((hostile) => !this.seen.has(hostile.id));
+    fresh.forEach((hostile) => this.seen.add(hostile.id));
     const nearest = fresh.sort((one, other) => apart(one, ship) - apart(other, ship))[0];
     const words = water && waterWords(water);
     const entered = words !== null && this.water !== null && words !== this.water;

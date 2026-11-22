@@ -83,7 +83,7 @@ fn a_wave_that_stands_and_falls_after_a_clear_pays_no_clear_again() {
     let cleared = room.players[&player].character.xp;
     // A quest's wave, an arriving post, stands at the cleared garrison and falls.
     let at = room.garrison[0].at;
-    let foe_type = ::foes::foe_type(14).expect("the pirates' swordsman");
+    let foe_type = ::foes::foe_type(14).expect("the hostiles' swordsman");
     let wave = room.stand_foe(foe_type, ::foes::Rank::Minor, at, 0.0, None);
     room.garrison.push(Post {
         at,

@@ -1,10 +1,10 @@
 use super::*;
 use crate::deck::test_deck;
 use crate::deck_fight::rail_spot;
-use ::foes::factions::PIRATES;
+use ::foes::factions::GREY_TITHE;
 
 fn boarded(hands: u8, level: u8) -> (Room, PlayerId) {
-    let mut room = Room::deck(&test_deck(), PIRATES, Rank::Major, 6);
+    let mut room = Room::deck(&test_deck(), GREY_TITHE, Rank::Major, 6);
     let player = room.board_at(rail_spot(&test_deck(), 1.0)).expect("room aboard");
     room.board_hands(player, hands, level);
     (room, player)

@@ -167,7 +167,7 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
-   *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default, and the
+   *  joined, their ship not yet at sea; its hostiles come as `seed` draws them, a new sea each time by default, and the
    *  Grey Tithe patrols the lanes between those of `ports` that are port cities (none with none); its ships come at
    *  the difficulty `seas` raises them to (0 Normal, 1 Elite, 2 Abyss); the player's own gear, as the sea keeps it, goes
    *  to `gear`. */

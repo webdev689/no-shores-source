@@ -8,14 +8,14 @@ use combat::{Blow, BlowKind, Fighter, Ranged, Status, Stroke, Trim, Verdict};
 use gear::{At, Element, Item, Kind, Rarity, Slot};
 use std::collections::BTreeMap;
 
-const SWORDSMAN: u8 = 14;
+const SWORDSMAN: u8 = ::foes::roster::COLLECTOR;
 const SWING: BlowKind = BlowKind::Swing(Stroke::Down);
 const HIT: Verdict = Verdict::Hit { damage: 10.0, poise: 0.0 };
 /// The item `room_wearing` puts on the player.
 const WORN: u32 = 99;
 
 /// A room with a player wearing a Legendary of `kind` whose first column offers `perk`, bought and chosen, holding
-/// it drawn, and two pirate swordsmen before them.
+/// it drawn, and two hostile swordsmen before them.
 fn room_wearing(kind: Kind, perk: &str) -> (Room, PlayerId, [FighterId; 2]) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
@@ -42,7 +42,7 @@ fn wear(room: &mut Room, player: PlayerId, id: u32, kind: Kind, perk: &str) {
 
 fn stand(room: &mut Room, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
-    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the pirates' swordsman");
+    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the hostiles' swordsman");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, 0.0);
     let fighter = Fighter { health: 1000.0, health_max: 1000.0, ..fighter };
     room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });

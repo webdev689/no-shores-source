@@ -106,14 +106,14 @@ export type Commissioned = Pick<FightCaptain, 'name' | 'faction' | 'rank'>;
 
 /** The first captain's number in a fight (crates/naval CAPTAIN); every other carries its own on the wire. */
 const CAPTAIN_SHIP = 1;
-/** A captain the room has not named: a Major of the pirates. */
-const PIRATE_MAJOR: Commissioned = { name: 'Pirate Sloop', faction: 2, rank: 2 };
+/** A captain the room has not named: a Major of the Grey Tithe. */
+const TITHE_MAJOR: Commissioned = { name: 'Tithe Sloop', faction: 1, rank: 2 };
 
-/** The fight a sea room's numbers show, its captain `who` (a Major of the pirates unless told) and each other captain
+/** The fight a sea room's numbers show, its captain `who` (a Major of the Grey Tithe unless told) and each other captain
  *  named by its faction (`nameOf`); throws where the numbers run short or name nothing. */
 export function fightViewOf(
   numbers: ArrayLike<number>,
-  who: Commissioned = PIRATE_MAJOR,
+  who: Commissioned = TITHE_MAJOR,
   nameOf: (faction: number, hull: number) => string = () => 'Sloop',
 ): SeaFightView {
   let read = 0;

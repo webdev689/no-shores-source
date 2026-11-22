@@ -1,13 +1,13 @@
 use super::*;
 use crate::deck::test_deck;
-use ::foes::factions::{GREY_TITHE, PIRATES};
+use ::foes::factions::GREY_TITHE;
 use movement::Terrain;
 
 #[test]
 fn a_captains_deck_room_stands_its_rank_and_factions_crew_at_its_level_on_its_planks() {
     let deck = test_deck();
     for (faction, rank, count) in
-        [(PIRATES, Rank::Major, 4), (GREY_TITHE, Rank::Miniboss, 6), (PIRATES, Rank::Minor, 3)]
+        [(GREY_TITHE, Rank::Major, 4), (GREY_TITHE, Rank::Miniboss, 6), (GREY_TITHE, Rank::Minor, 3)]
     {
         let room = Room::deck(&deck, faction, rank, 14);
         assert_eq!(room.foes.len(), count, "{rank:?}");
@@ -25,7 +25,7 @@ fn a_captains_deck_room_stands_its_rank_and_factions_crew_at_its_level_on_its_pl
 fn a_boarder_comes_over_the_rail_on_their_ships_side_clear_of_its_middle_and_its_room_tells_when_crew_or_boarders_are_down()
  {
     let deck = test_deck();
-    let mut room = Room::deck(&deck, PIRATES, Rank::Minor, 3);
+    let mut room = Room::deck(&deck, GREY_TITHE, Rank::Minor, 3);
     // Its rails amidships, half a metre in from its outermost planks (the test deck's are at 1 m either side).
     let [starboard, port] = [rail_spot(&deck, 1.0), rail_spot(&deck, -1.0)];
     assert!((starboard[0] - 0.45).abs() < 0.06 && starboard[1] == 0.0, "{starboard:?}");
@@ -60,7 +60,7 @@ fn a_boarder_comes_over_the_rail_on_their_ships_side_clear_of_its_middle_and_its
 #[test]
 fn a_kill_on_a_deck_pays_by_the_seas_tier_but_drops_no_vestige_or_item_as_the_hold_is_the_boardings_loot() {
     let paid = |difficulty: gear::Difficulty| {
-        let mut room = Room::deck(&test_deck(), PIRATES, Rank::Miniboss, 20);
+        let mut room = Room::deck(&test_deck(), GREY_TITHE, Rank::Miniboss, 20);
         room.difficulty = difficulty;
         let player = room.board_at(rail_spot(&test_deck(), 1.0)).expect("aboard");
         let items = room.players[&player].character.items.len();

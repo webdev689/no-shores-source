@@ -13,14 +13,14 @@ use combat::status::{CRIT_TIMES, EXPOSE_TIMES, LINKED_TIMES, charge_ticks};
 use combat::{BlowKind, Status, Stroke, Verdict};
 use std::collections::BTreeMap;
 
-const SWORDSMAN: u8 = 14;
+const SWORDSMAN: u8 = ::foes::roster::COLLECTOR;
 
-/// A room with a player at the origin and a pirate swordsman of `rank` 1.5 m north of it, facing north, away.
+/// A room with a player at the origin and a hostile swordsman of `rank` 1.5 m north of it, facing north, away.
 fn room_with_foe(rank: Rank) -> (Room, PlayerId, FighterId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
     let id = room.next_id();
-    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the pirates' swordsman");
+    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the hostiles' swordsman");
     let (fighter, mut brain) = ::foes::spawn(foe_type, rank, 0.0, -1.5, 0.0);
     brain.rank = rank;
     let fighter = Fighter { health: 1000.0, health_max: 1000.0, ..fighter };

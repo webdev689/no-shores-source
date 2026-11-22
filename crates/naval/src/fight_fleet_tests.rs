@@ -18,7 +18,7 @@ const WIND: [f64; 2] = [1.5, 0.0];
 const IDLE: Orders =
     Orders { helm: Helm { steer: 0.0, climb: 0 }, aim: None, fire: false, brace: false, load: None, boost: false };
 const SECOND: u32 = 7;
-const PIRATE: ShipId = 10;
+const TITHE: ShipId = 10;
 
 fn sloop_at(x: f64, y: f64) -> Ship {
     Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
@@ -30,9 +30,9 @@ fn fleet(first: f64, second: f64, temper: Temper) -> Fight {
     fight.put_to_sea(PLAYER, sloop_at(first, 0.0), &Open, 0.0);
     fight.put_to_sea(SECOND, sloop_at(second, 0.0), &Open, 0.0);
     fight
-        .call_captain(PIRATE, &sloop_at(0.0, 0.0), Commission::default(), &Open, 0.0)
+        .call_captain(TITHE, &sloop_at(0.0, 0.0), Commission::default(), &Open, 0.0)
         .unwrap_or_else(|error| panic!("{error}"));
-    let captain = fight.ships.get_mut(&PIRATE).unwrap_or_else(|| panic!("the captain"));
+    let captain = fight.ships.get_mut(&TITHE).unwrap_or_else(|| panic!("the captain"));
     captain.ship = sloop_at(0.0, 0.0);
     if let Sailor::Captain(command) = &mut captain.sailor {
         (command.mind.temper, command.mind.cruise) = (temper, 0.0);
@@ -41,7 +41,7 @@ fn fleet(first: f64, second: f64, temper: Temper) -> Fight {
 }
 
 fn mind(fight: &Fight) -> &Captain {
-    match fight.vessel(PIRATE).map(|vessel| &vessel.sailor) {
+    match fight.vessel(TITHE).map(|vessel| &vessel.sailor) {
         Some(Sailor::Captain(command)) => &command.mind,
         _ => panic!("a captain sails it"),
     }
@@ -97,7 +97,7 @@ fn both_players_balls_strike_it_and_neither_strikes_the_other() {
         .collect();
     assert!(struck.iter().any(|(shooter, _)| *shooter == PLAYER), "{struck:?}");
     assert!(struck.iter().any(|(shooter, _)| *shooter == SECOND), "{struck:?}");
-    assert!(struck.iter().all(|(_, target)| *target == PIRATE), "a player's ball strikes only it: {struck:?}");
+    assert!(struck.iter().all(|(_, target)| *target == TITHE), "a player's ball strikes only it: {struck:?}");
 }
 
 #[test]
@@ -118,11 +118,11 @@ fn a_captain_leaves_only_once_past_every_players_ship() {
     assert_eq!(fight.over(), None, "one player is near");
     fight.ships.get_mut(&SECOND).unwrap_or_else(|| panic!("second")).ship = sloop_at(-1950.0, 0.0);
     let events = run(&mut fight, &idle_both(), 1);
-    assert!(events.contains(&Event::Gone { ship: PIRATE, end: End::Gone }));
+    assert!(events.contains(&Event::Gone { ship: TITHE, end: End::Gone }));
     assert_eq!(fight.over(), Some(End::Gone));
-    let lay = fight.vessel(PIRATE).map(|vessel| vessel.ship);
+    let lay = fight.vessel(TITHE).map(|vessel| vessel.ship);
     run(&mut fight, &idle_both(), 60);
-    assert_eq!(fight.vessel(PIRATE).map(|vessel| vessel.ship), lay, "gone, it is stepped no more");
+    assert_eq!(fight.vessel(TITHE).map(|vessel| vessel.ship), lay, "gone, it is stepped no more");
 }
 
 #[test]
@@ -145,7 +145,7 @@ fn a_hurt_ship_mends_unless_a_captain_who_would_take_it_lies_near_it() {
     }
     run(&mut fight, &idle_both(), 60 * 20);
     let hull = |id: ShipId| fight.vessel(id).map_or(-1.0, |vessel| vessel.damage.hull);
-    assert_eq!(hull(PLAYER), 40.0, "it lies within 700 m of a bold pirate");
+    assert_eq!(hull(PLAYER), 40.0, "it lies within 700 m of a bold Tithe ship");
     assert!(hull(SECOND) > 40.0, "far off, its hands mend it");
 }
 
@@ -170,9 +170,9 @@ fn a_captain_is_called_onto_the_ring_round_the_ship_it_is_called_to() {
     let mut fight = Fight::new(9);
     fight.put_to_sea(PLAYER, sloop_at(5000.0, -300.0), &Open, 0.0);
     fight
-        .call_captain(PIRATE, &sloop_at(5000.0, -300.0), Commission::default(), &Open, 0.0)
+        .call_captain(TITHE, &sloop_at(5000.0, -300.0), Commission::default(), &Open, 0.0)
         .unwrap_or_else(|error| panic!("{error}"));
-    let off = fight.vessel(PIRATE).map_or([0.0; 2], |vessel| [vessel.ship.x - 5000.0, vessel.ship.y + 300.0]);
+    let off = fight.vessel(TITHE).map_or([0.0; 2], |vessel| [vessel.ship.x - 5000.0, vessel.ship.y + 300.0]);
     assert!((SPAWN_RING[0]..=SPAWN_RING[1]).contains(&(off[0] * off[0] + off[1] * off[1]).sqrt()));
     assert_eq!(fight.over(), None, "it is in the fight");
     assert_eq!(Fight::new(9).over(), None, "a fight with no captain has not ended");
@@ -183,20 +183,20 @@ fn two_captains_balls_pass_each_other_by() {
     let mut fight = fleet(0.0, 4000.0, Temper::Bold);
     fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("first")).ship = sloop_at(120.0, 0.0);
     fight
-        .call_captain(PIRATE + 1, &sloop_at(60.0, 0.0), Commission::default(), &Open, 0.0)
+        .call_captain(TITHE + 1, &sloop_at(60.0, 0.0), Commission::default(), &Open, 0.0)
         .unwrap_or_else(|error| panic!("{error}"));
-    fight.ships.get_mut(&(PIRATE + 1)).unwrap_or_else(|| panic!("second captain")).ship = sloop_at(60.0, 0.0);
+    fight.ships.get_mut(&(TITHE + 1)).unwrap_or_else(|| panic!("second captain")).ship = sloop_at(60.0, 0.0);
     let events = run(&mut fight, &idle_both(), 60 * 40);
-    let struck_pirates = events.iter().any(|event| {
-        matches!(event, Event::Shot(ShotEvent::Hit { target, .. }) if *target == PIRATE || *target == PIRATE + 1)
-    });
-    assert!(!struck_pirates, "a pirate's ball strikes no pirate");
+    let struck_tithe = events.iter().any(
+        |event| matches!(event, Event::Shot(ShotEvent::Hit { target, .. }) if *target == TITHE || *target == TITHE + 1),
+    );
+    assert!(!struck_tithe, "a Tithe ball strikes no Tithe ship");
 }
 
 #[test]
 fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_on_her() {
-    let pirate = |x: f64, y: f64| (Ship { heading: 1.0, ..sloop_at(x, y) }, Commission::default(), 0);
-    let captains = [pirate(380.0, 0.0), pirate(-300.0, 200.0), pirate(0.0, -400.0)];
+    let tithe = |x: f64, y: f64| (Ship { heading: 1.0, ..sloop_at(x, y) }, Commission::default(), 0);
+    let captains = [tithe(380.0, 0.0), tithe(-300.0, 200.0), tithe(0.0, -400.0)];
     let mut fight =
         Fight::ambush(sloop_at(0.0, 0.0), &captains, 9, &Open, 0.0).unwrap_or_else(|error| panic!("{error}"));
     let ids: Vec<ShipId> = (CAPTAIN..).take(3).collect();

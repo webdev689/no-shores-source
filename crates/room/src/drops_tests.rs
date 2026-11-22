@@ -3,7 +3,7 @@
 //! refusing to fire at none.
 
 use super::*;
-use crate::foes::{Foe, pirate_in};
+use crate::foes::{Foe, hostile_in};
 use crate::power::{hold, loadout_arms};
 use crate::{AMMO_REST_TICKS, Input, VESTIGE_REST_TICKS};
 use combat::{CombatInput, Intent};
@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 /// A brute standing as a foe of a rank at (0, y), struck by the player in the last moment, and paid.
 fn kill(room: &mut Room, player: PlayerId, rank: ::foes::Rank, y: f64) {
     let id = room.next_id();
-    let (foe_type, _) = pirate_in(::foes::Role::Brute).expect("the pirates' brute");
+    let (foe_type, _) = hostile_in(::foes::Role::Brute).expect("the hostiles' brute");
     let (fighter, mut brain) = ::foes::spawn(foe_type, rank, 0.0, y, 0.0);
     // Its type may not come in every rank: what it drops is the rank's alone.
     brain.rank = rank;

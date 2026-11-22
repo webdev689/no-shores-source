@@ -12,7 +12,7 @@ use gear::grid::Column;
 use gear::{At, Element, Item, Kind, Rarity, Slot};
 use std::collections::BTreeMap;
 
-const SWORDSMAN: u8 = 14;
+const SWORDSMAN: u8 = ::foes::roster::COLLECTOR;
 const SWING: BlowKind = BlowKind::Swing(Stroke::Down);
 const HIT: Verdict = Verdict::Hit { damage: 10.0, poise: 0.0 };
 const KILL: Verdict = Verdict::Hit { damage: 5_000.0, poise: 0.0 };
@@ -46,7 +46,7 @@ fn room_with(named: &str, own: bool, at: &[f64]) -> (Room, PlayerId, Vec<Fighter
 
 fn stand(room: &mut Room, east: f64) -> FighterId {
     let id = room.next_id();
-    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the pirates' swordsman");
+    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the hostiles' swordsman");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, east, -1.5, 0.0);
     let fighter = Fighter { health: HEALTH, health_max: HEALTH, ..fighter };
     room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });

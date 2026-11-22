@@ -7,7 +7,7 @@ use gear::{Item, Rarity};
 use naval::captain::{Temper, temper_for};
 use naval::damage::State;
 use naval::fight::{CAPTAIN, Fight, PLAYER, Sailor};
-use naval::ranks::{Commission, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use sailing::ship::Ship;
 use sailing::waters::{Spot, Waters};
 
@@ -42,18 +42,18 @@ fn sailor(ship_level: u8) -> Character {
     character
 }
 
-/// A bold Major of the pirates at `LEVEL`, 600 m off.
-fn hostile() -> (Pirate, Commission) {
+/// A bold Major of the hostiles at `LEVEL`, 600 m off.
+fn hostile() -> (Hostile, Commission) {
     hostile_of(Rank::Major, LEVEL, 0)
 }
 
-/// The `nth` bold captain of the pirates of `rank` at `level`, 600 m off.
-fn hostile_of(rank: Rank, level: u8, nth: usize) -> (Pirate, Commission) {
-    let commission = Commission { faction: PIRATES, rank };
+/// The `nth` bold captain of the hostiles of `rank` at `level`, 600 m off.
+fn hostile_of(rank: Rank, level: u8, nth: usize) -> (Hostile, Commission) {
+    let commission = Commission { faction: GREY_TITHE, rank };
     let mut bold = (1..).filter(|seed| matches!(temper_for(commission, *seed), Temper::Bold));
     let seed = bold.nth(nth).unwrap_or(1);
-    let pirate = Pirate { level, ..Pirate::standing(CAPTAIN, seed, commission, [0.0, -600.0], 0.0, true) };
-    (pirate, commission)
+    let hostile = Hostile { level, ..Hostile::standing(CAPTAIN, seed, commission, [0.0, -600.0], 0.0, true) };
+    (hostile, commission)
 }
 
 /// Whether the captain struck or went down, whether the player's ship did, and the share of its hull the captain lost,
@@ -62,11 +62,11 @@ fn fought(character: &Character) -> (bool, bool, f64) {
     fought_with(character, hostile())
 }
 
-fn fought_with(character: &Character, (pirate, commission): (Pirate, Commission)) -> (bool, bool, f64) {
+fn fought_with(character: &Character, (hostile, commission): (Hostile, Commission)) -> (bool, bool, f64) {
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let mut fight = Fight::begin(ship, commission, pirate.seed, &Open, 0.0).expect("a fight");
-    fight.raise(CAPTAIN, pirate.strength());
-    let hostiles = [(CAPTAIN, pirate)].into();
+    let mut fight = Fight::begin(ship, commission, hostile.seed, &Open, 0.0).expect("a fight");
+    fight.raise(CAPTAIN, hostile.strength());
+    let hostiles = [(CAPTAIN, hostile)].into();
     let mut sunk = false;
     for tick in 1..LONGEST_TICKS {
         fight.fit(PLAYER, fitting(character, &hostiles));
@@ -93,12 +93,12 @@ fn a_ships_level_decides_a_fight_with_a_ship_of_that_level_as_a_players_does_a_f
 #[test]
 fn its_fitting_reads_its_power_and_trim_and_an_officer_at_their_post_shapes_it() {
     let mut character = sailor(LEVEL);
-    let (pirate, _) = hostile();
-    let hostiles = [(CAPTAIN, pirate)].into();
+    let (hostile, _) = hostile();
+    let hostiles = [(CAPTAIN, hostile)].into();
     let plain = fitting(&character, &hostiles);
     let power = character.ship_power();
     assert!((plain.dealt[&CAPTAIN] - power.harm_dealt(LEVEL)).abs() < 1e-12);
-    assert!((plain.taken[&CAPTAIN] * pirate.strength() - power.harm_taken(LEVEL)).abs() < 1e-9);
+    assert!((plain.taken[&CAPTAIN] * hostile.strength() - power.harm_taken(LEVEL)).abs() < 1e-9);
     assert_eq!(plain.trim.gunner, 0.0);
     let gunner = character.sign_on(Officer::new(0, Post::Gunner, Rarity::Rare, LEVEL)).expect("signed on");
     character.ask(Ask::Station { officer: gunner, duty: Duty::Posted }, Here::default(), &dice()).expect("posted");
@@ -131,11 +131,11 @@ fn an_atheric_modules_intrinsic_fits_it_and_its_own_once_bought_and_chosen() {
 
 #[test]
 fn a_sinking_pays_its_and_its_officers_aboard_and_a_won_deck_now_and_then_gives_an_officer() {
-    let (pirate, _) = hostile();
+    let (hostile, _) = hostile();
     let mut characters: BTreeMap<PlayerId, Character> = [(3, Character::starting()), (4, Character::starting())].into();
     let id =
         characters.get_mut(&3).and_then(|character| character.sign_on(Officer::new(0, Post::Bosun, Rarity::Magic, 1)));
-    let sank = Sank { pirate, at: [0.0, 0.0], players: vec![3, 9], wind: [0.0, 0.0], struck: false };
+    let sank = Sank { hostile, at: [0.0, 0.0], players: vec![3, 9], wind: [0.0, 0.0], struck: false };
     let paid = pay_sinking(&sank, gear::Difficulty::Normal, &mut characters);
     assert_eq!(paid, vec![3], "a player the sea holds no character for is passed by");
     let paid = &characters[&3];
@@ -144,8 +144,8 @@ fn a_sinking_pays_its_and_its_officers_aboard_and_a_won_deck_now_and_then_gives_
     pay_sinking(&sank, gear::Difficulty::Abyss, &mut abyss);
     assert_eq!(abyss[&3].ship_xp, paid.ship_xp * 2, "an Abyss sea pays a sinking twice, as it pays a kill");
     assert!(paid.crew.officers[&id.expect("signed on")].trained > 0);
-    let boss = Pirate { commission: Commission { rank: Rank::Boss, ..pirate.commission }, ..pirate };
-    let won = Sank { pirate: boss, players: vec![4], ..sank };
+    let boss = Hostile { commission: Commission { rank: Rank::Boss, ..hostile.commission }, ..hostile };
+    let won = Sank { hostile: boss, players: vec![4], ..sank };
     let joined = (0..60)
         .filter(|tick| !officers_join(&won, (*tick, gear::Difficulty::Normal), &mut characters).is_empty())
         .count();
@@ -159,10 +159,10 @@ fn dice() -> gear::dice::Dice {
 
 #[test]
 fn a_captain_sails_its_own_way_whatever_the_players_fitting() {
-    let (pirate, commission) = hostile();
+    let (hostile, commission) = hostile();
     let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let mut fight = Fight::begin(ship, commission, pirate.seed, &Open, 0.0).expect("a fight");
-    fight.fit(PLAYER, fitting(&sailor(LEVEL), &[(CAPTAIN, pirate)].into()));
+    let mut fight = Fight::begin(ship, commission, hostile.seed, &Open, 0.0).expect("a fight");
+    fight.fit(PLAYER, fitting(&sailor(LEVEL), &[(CAPTAIN, hostile)].into()));
     assert!(matches!(fight.vessel(CAPTAIN).map(|other_ship| &other_ship.sailor), Some(Sailor::Captain(_))));
     assert!(fight.fitting(CAPTAIN).is_none());
 }

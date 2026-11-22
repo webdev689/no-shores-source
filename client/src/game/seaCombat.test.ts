@@ -31,8 +31,8 @@ const captain: FightCaptain = {
   ...vessel,
   id: 1,
   ship: [5400, 5500, 2, 0, 0, 0, 0, 2],
-  name: 'Pirate Sloop',
-  faction: 2,
+  name: 'Tithe Sloop',
+  faction: 1,
   rank: 2,
   mode: 'engage',
   hostile: true,
@@ -72,9 +72,9 @@ test('a fight draws every ship, its footprint, everyone aboard and each bar at t
     ships.map(({ hull, look }) => [hull, look.side]),
     [
       [0, 'player'],
-      [0, 'pirate'],
+      [0, 'tithe'],
     ],
-    "the player's Sloop as it is, the pirate's in the pirates' colours",
+    "the player's Sloop as it is, the hostile's in the Grey Tithe's colours",
   );
   assert.equal(fight.ownAt(3)?.scale, 3);
   assert.deepEqual(fight.bars(3)[0]?.over, [5400, 5500, (0.2 + BAR_OVER_M) * 3]);
@@ -385,7 +385,7 @@ test("the fight's readout: its plate and its abilities' bar, the card on the nea
   assert.ok(model, 'a fight on shows it');
   assert.equal(model.ship?.name, 'Your Sloop');
   assert.equal(model.ship?.abilities.find((ability) => ability.id === 'port')?.state, 'ready');
-  assert.equal(model.card?.name, 'Pirate Sloop');
+  assert.equal(model.card?.name, 'Tithe Sloop');
   assert.match(model.card?.sub ?? '', / - 640 m$/);
   const struck = { ...captain, ship: [5010, 6000, 2, 0, 0, 0, 0, 0], state: 'struck' } as const;
   assert.equal(display({ ...FIRST, captain: struck }, true)?.card?.boardKey, 'E', 'the room would take it');
@@ -428,7 +428,7 @@ async function roomInFight() {
     tick: 1n,
     players: [],
     ships: [],
-    pirates: [],
+    hostiles: [],
     fights: [],
     flotsam: [],
     kept: [],
@@ -469,7 +469,7 @@ test("each captain's ship carries its people as the fight leaves its men; the pl
   assert.equal(own?.crew, undefined);
   assert.deepEqual(theirs?.crew, {
     key: 'fight-1',
-    faction: 2,
+    faction: 1,
     rank: 2,
     share: 0.5,
     state: 'struck',

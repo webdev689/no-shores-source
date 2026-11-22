@@ -107,15 +107,9 @@ pub fn dungeon_room(seed: u64, continent: &str) -> String {
     format!("sea-dungeon-{continent}-{}-{folded:08x}", Kind::of(seed).dungeon())
 }
 
-/// Whose guards stand on an isle in a water: its holder's, a contested water's drawn by its seed; none at home.
-fn guards_of(holder: Holder, seed: u64) -> Option<u8> {
-    match holder {
-        Holder::Home => None,
-        Holder::GreyTithe => Some(::foes::factions::GREY_TITHE),
-        Holder::Pirates => Some(::foes::factions::PIRATES),
-        Holder::Contested if seed & 1 == 0 => Some(::foes::factions::GREY_TITHE),
-        Holder::Contested => Some(::foes::factions::PIRATES),
-    }
+/// Whose guards stand on an isle in a water: the Grey Tithe's in every water but home, where none stand.
+fn guards_of(holder: Holder) -> Option<u8> {
+    (holder != Holder::Home).then_some(::foes::factions::GREY_TITHE)
 }
 
 /// A continent's climate, and its resource's place in the gear's catalogue, which its water's islands carry.
@@ -153,7 +147,7 @@ impl Islands {
         let [x, y] = shape.anchorage();
         let id = self.next_id;
         self.next_id += 1;
-        let (kind, guards) = (Kind::of(seed), guards_of(holder, seed));
+        let (kind, guards) = (Kind::of(seed), guards_of(holder));
         Some(SeaIsland {
             id,
             seed,
@@ -259,7 +253,7 @@ impl Islands {
     }
 
     /// An island rolled round a ship at `at`, in the first of eight places drawn that is hostile open sea, clear of the
-    /// coasts, the islands, every ship and pirate, and every course.
+    /// coasts, the islands, every ship and hostile, and every course.
     fn roll(
         &mut self,
         at: [f64; 2],
@@ -345,7 +339,7 @@ impl Sea {
             })
             .collect();
         let others: Vec<[f64; 2]> =
-            if rolls { self.pirates().iter().map(|pirate| [pirate.x, pirate.y]).collect() } else { Vec::new() };
+            if rolls { self.hostiles().iter().map(|hostile| [hostile.x, hostile.y]).collect() } else { Vec::new() };
         self.islands.tick(self.clock, &ships, &others, (&self.chart, &self.coasts));
         // A ship at rest at an island's anchorage lands its account there; under way or elsewhere at sea, it is landed
         // nowhere. An account gone ashore keeps its landing, until its island fades.

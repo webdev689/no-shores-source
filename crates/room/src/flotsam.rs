@@ -102,11 +102,11 @@ impl Flotsam {
     /// ranks higher besides, and the first piece holding a kill's drop `chest_up` ranks higher than the ship's (a
     /// hold's one higher); answers each piece laid.
     pub fn lay(&mut self, sank: &Sank, clock: u64, (times, chest_up): (usize, u8)) -> Vec<Event> {
-        let rank = sank.pirate.commission.rank;
-        let level = sank.pirate.level.max(1);
+        let rank = sank.hostile.commission.rank;
+        let level = sank.hostile.level.max(1);
         let mut laid = Vec::new();
         for &player in &sank.players {
-            let mut draws = Mulberry32::new(sank.pirate.seed ^ player.wrapping_mul(0x9E37_79B9));
+            let mut draws = Mulberry32::new(sank.hostile.seed ^ player.wrapping_mul(0x9E37_79B9));
             for nth in 0..pieces_of(rank) * times {
                 let (bearing, out) = (draws.draw() * TAU, SPREAD_M * draws.draw().sqrt());
                 let at = [sank.at[0] + libm::sin(bearing) * out, sank.at[1] - libm::cos(bearing) * out];

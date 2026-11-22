@@ -16,7 +16,7 @@ fn room() -> Room {
 }
 
 fn stand(room: &mut Room, role: ::foes::Role, level: u8, y: f64) -> FighterId {
-    let (foe_type, rank) = foes::pirate_in(role).expect("a role the pirates fill");
+    let (foe_type, rank) = foes::hostile_in(role).expect("a role the hostiles fill");
     stand_type(room, foe_type, rank, level, y)
 }
 
@@ -501,7 +501,7 @@ fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wear
 
 #[test]
 fn a_kills_pay_by_rank_is_its_ranks_health_against_a_majors() {
-    let foe_type = ::foes::foe_type(14).expect("the pirates' swordsman");
+    let foe_type = ::foes::foe_type(14).expect("the hostiles' swordsman");
     let major = foe_type.numbers(::foes::Rank::Major, 1).health;
     for (rank, pay) in ::foes::Rank::ALL.into_iter().zip(gear::rewards::RANK_PAY) {
         assert!((foe_type.numbers(rank, 1).health / major - pay).abs() < 1e-12, "{rank:?}");
@@ -517,11 +517,11 @@ fn a_kills_pay_by_rank_is_its_ranks_health_against_a_majors() {
 fn measure_blows() {
     use ::foes::Rank;
     let rows = [
-        ("Minor Swordsman", 14, Rank::Minor),
+        ("Minor Collector", 2, Rank::Minor),
         ("Major Hookman", 8, Rank::Major),
-        ("Major Brute", 15, Rank::Major),
-        ("Elite Captain", 17, Rank::Elite),
-        ("Miniboss Captain", 17, Rank::Miniboss),
+        ("Major Enforcer", 4, Rank::Major),
+        ("Elite Reeve", 6, Rank::Elite),
+        ("Miniboss Tithe-Mate", 11, Rank::Miniboss),
         ("Boss (Thule)", 12, Rank::Boss),
     ];
     eprintln!("| Foe | Felled in | Fells the player in |");
@@ -610,7 +610,13 @@ fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while
         room.player(player).expect("in").answer
     };
     assert_eq!(to_ship(&mut room), TO_SHIP, "at peace, a yes no other ask gives");
-    let foe = stand_type(&mut room, ::foes::foe_type(14).expect("a type"), ::foes::Rank::Minor, 1, -1.5);
+    let foe = stand_type(
+        &mut room,
+        ::foes::foe_type(::foes::roster::COLLECTOR).expect("a type"),
+        ::foes::Rank::Minor,
+        1,
+        -1.5,
+    );
     let whole = room.fighter(player).expect("in").health;
     while room.fighter(player).expect("in").health >= whole {
         room.tick();

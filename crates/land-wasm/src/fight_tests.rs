@@ -46,8 +46,8 @@ fn a_fight_begins_with_a_captain_on_the_ring_round_the_sloop() {
     let captain = &begun["captain"]["ship"];
     let (x, y) = (captain[0].as_f64().unwrap_or(0.0) - 180_000.0, captain[1].as_f64().unwrap_or(0.0) - 360_000.0);
     assert!((650.0..=1000.0).contains(&(x * x + y * y).sqrt()));
-    assert_eq!(begun["captain"]["name"], "Pirate Sloop");
-    assert_eq!(begun["captain"]["faction"], 2, "the pirates");
+    assert_eq!(begun["captain"]["name"], "Tithe Sloop");
+    assert_eq!(begun["captain"]["faction"], 2, "the hostiles");
     assert_eq!(begun["captain"]["rank"], 2, "a Major");
     assert_eq!(begun["player"]["max_hull"], 240.0);
     assert_eq!(begun["over"], Value::Null);
@@ -187,7 +187,7 @@ fn a_look_whose_ray_is_not_six_finite_numbers_is_refused() {
     }
 }
 
-/// The fight `FIGHT_LEGS` fights against a pirate captain of `rank`, in its rank's hull: each leg's fingerprint.
+/// The fight `FIGHT_LEGS` fights against a hostile captain of `rank`, in its rank's hull: each leg's fingerprint.
 fn fought_with(rank: u8) -> Vec<String> {
     opened();
     let begin = format!(r#"{{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 7, "time": 1000, "rank": {rank} }}"#);
@@ -334,7 +334,7 @@ impl Waters for Deep {
 #[test]
 fn an_ambush_whose_captains_have_all_struck_or_sunk_is_over_beaten() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("hostiles sail Majors"));
     let mut fight = Fight::ambush(at(0.0), &[(at(500.0), major, 1), (at(-500.0), major, 2)], 3, &Deep, 0.0)
         .unwrap_or_else(|error| panic!("{error}"));
     assert_eq!(over_name(&fight), None);
@@ -347,7 +347,7 @@ fn an_ambush_whose_captains_have_all_struck_or_sunk_is_over_beaten() {
 #[test]
 fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("hostiles sail Majors"));
     let mut fight =
         Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
     let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain")).damage;
@@ -365,7 +365,7 @@ fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
 #[test]
 fn a_captain_going_down_shows_how_it_will_lie_once_sunk_and_how_soon() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("hostiles sail Majors"));
     let mut fight =
         Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
     assert!(view(&fight, &[], None, &Deep, 0.0)["captain"].get("sunk_founder").is_none(), "afloat, it is not going");

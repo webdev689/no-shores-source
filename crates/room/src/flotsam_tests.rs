@@ -1,12 +1,13 @@
 use super::*;
 use crate::clash::tests::at_sea;
 use gear::Difficulty;
-use naval::ranks::{Commission, PIRATES};
+use naval::ranks::{Commission, GREY_TITHE};
 use std::collections::BTreeMap;
 
 fn sank(rank: Rank, players: Vec<PlayerId>) -> Sank {
-    let pirate = crate::pirates::Pirate { level: 12, ..at_sea(4, Commission { faction: PIRATES, rank }, 0.0, true) };
-    Sank { pirate, at: [1_000.0, 2_000.0], players, wind: [3.0, 4.0], struck: false }
+    let hostile =
+        crate::hostiles::Hostile { level: 12, ..at_sea(4, Commission { faction: GREY_TITHE, rank }, 0.0, true) };
+    Sank { hostile, at: [1_000.0, 2_000.0], players, wind: [3.0, 4.0], struck: false }
 }
 
 /// Each piece floating for `player`.
@@ -22,7 +23,7 @@ fn miniboss_vestiges(difficulty: Difficulty, ships: u32) -> usize {
         characters.insert(1, Character::starting());
         let mut flotsam = Flotsam { difficulty, ..Flotsam::new(seed) };
         let sunk = Sank {
-            pirate: crate::pirates::Pirate { seed, ..sank(Rank::Miniboss, vec![1]).pirate },
+            hostile: crate::hostiles::Hostile { seed, ..sank(Rank::Miniboss, vec![1]).hostile },
             ..sank(Rank::Miniboss, vec![1])
         };
         flotsam.lay(&sunk, 0, (1, 0));

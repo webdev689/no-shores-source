@@ -160,7 +160,7 @@ test('the sea room hands each snapshot of the deck the player stands on, decoded
       tick: 5n,
       players: [],
       ships: [],
-      pirates: [],
+      hostiles: [],
       fights: [],
       flotsam: [],
       kept: [],
@@ -182,7 +182,7 @@ test('the page predicts its boarder on its deck exactly as its deck room steps t
   const schooner = HULL_DECKS[1];
   assert.ok(schooner);
   const door = startRoomDoor(compiled);
-  assert.ok(door.openDeck(1, 2, 1, 5), 'a Minor pirate Schooner’s deck');
+  assert.ok(door.openDeck(1, 2, 1, 5), 'a Minor hostile Schooner’s deck');
   assert.equal(door.openDeck(9, 2, 1, 5), false, 'no such hull');
   door.openDeck(1, 2, 1, 5);
   let fight: Fighting | null = null;

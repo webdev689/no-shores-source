@@ -5,9 +5,7 @@
 
 use crate::garrison::{Group, draws_of, gird_of, index};
 use crate::{Floor, PlayerId, Room, SEED, Section, Standing};
-use ::foes::Rank;
 use ::foes::Rank::{Elite, Major, Minor};
-use ::foes::factions::PIRATES;
 use ::foes::roster::{COLLECTOR, CROSSBOWMAN, ENFORCER, REEVE, RUNNER};
 use gear::ship::found::{Source, Taken, salvage};
 use isle::{Kind, Plan};
@@ -17,13 +15,6 @@ use std::collections::BTreeMap;
 pub const WRECK_REACH: f64 = 4.0;
 /// How far round the guards' posts their navmesh is baked, metres.
 const POSTS_AROUND: f64 = 16.0;
-
-/// The pirates' own on foot, by their numbers in the roster: Skirmisher, Swordsman, Brute, Archer and Captain.
-const SKIRMISHER: u8 = 13;
-const SWORDSMAN: u8 = 14;
-const BRUTE: u8 = 15;
-const ARCHER: u8 = 16;
-const CAPTAIN: u8 = 17;
 
 /// The island's own: its seed (which each character's scavenged wrecks are kept by), its kind, its water's levels,
 /// its wrecks' heaps and its door, the accounts the sea says have landed on it where the server checks (`land`), and
@@ -41,25 +32,12 @@ pub struct Isle {
     pub hauls: Vec<(PlayerId, u8, Taken)>,
 }
 
-/// A group's foes by type and rank.
-type Band<const COUNT: usize> = [(u8, Rank); COUNT];
-
-/// The groups an isle's guards stand in, by the faction that holds its water: one led at the landmark, one at the
-/// door and one at the camp.
-fn guards(faction: u8, draws: &mut naval::random::Mulberry32) -> [Group; 3] {
-    let (leader, band, camp): (Band<4>, Band<3>, Band<4>) = if faction == PIRATES {
-        (
-            [(CAPTAIN, Elite), (BRUTE, Major), (ARCHER, Major), (SWORDSMAN, Major)],
-            [(SWORDSMAN, Major), (SKIRMISHER, Major), (ARCHER, Minor)],
-            [(SKIRMISHER, Minor), (SWORDSMAN, Minor), (ARCHER, Minor), (BRUTE, Major)],
-        )
-    } else {
-        (
-            [(REEVE, Elite), (ENFORCER, Major), (CROSSBOWMAN, Major), (COLLECTOR, Major)],
-            [(COLLECTOR, Major), (RUNNER, Major), (CROSSBOWMAN, Minor)],
-            [(RUNNER, Minor), (COLLECTOR, Minor), (CROSSBOWMAN, Minor), (ENFORCER, Major)],
-        )
-    };
+/// The groups an isle's guards stand in, the Grey Tithe's: one led at the landmark, one at the door and one at the
+/// camp.
+fn guards(draws: &mut naval::random::Mulberry32) -> [Group; 3] {
+    let leader = [(REEVE, Elite), (ENFORCER, Major), (CROSSBOWMAN, Major), (COLLECTOR, Major)];
+    let band = [(COLLECTOR, Major), (RUNNER, Major), (CROSSBOWMAN, Minor)];
+    let camp = [(RUNNER, Minor), (COLLECTOR, Minor), (CROSSBOWMAN, Minor), (ENFORCER, Major)];
     let at_camp = 2 + index(draws, 3);
     [
         Group { members: leader.to_vec(), leads: true, farthest: false },
@@ -91,7 +69,7 @@ fn posts_navmesh(blocks: &[movement::Block], floor: &Floor, posts: &[[f64; 2]]) 
 
 impl Room {
     /// A sea island's room from its plan, its middle at `at` in the world, where every body, block and post of it
-    /// stands, as a node's do. An isle's guards are of `guards`' faction (the Grey Tithe's or the pirates') at its
+    /// stands, as a node's do. An isle's guards are the Grey Tithe's, standing where `guards` names a faction, at its
     /// water's `levels`; with none, or on a cove, none stand. Its nodes are of `resource`, the island's whose water it
     /// lies in, all standing, each gathered once by each account while the room is open; with none, none stand.
     #[must_use]
@@ -127,8 +105,8 @@ impl Room {
             door: isle::placed(plan.sites.door.at, at),
             ..Isle::default()
         });
-        if let Some(faction) = guarded {
-            room.stand_guards(&posts, faction, levels);
+        if guarded.is_some() {
+            room.stand_guards(&posts, levels);
         }
         if let Some(resource) = resource {
             let nodes = place(&plan.sites.nodes).into_iter().map(|[x, y]| crate::ResourceNode { x, y, resource });
@@ -138,12 +116,12 @@ impl Room {
     }
 
     /// Stands each group of an isle's guards at its post in turn, on the navmesh baked over them.
-    fn stand_guards(&mut self, posts: &[[f64; 2]], faction: u8, levels: Option<(u8, u8)>) {
+    fn stand_guards(&mut self, posts: &[[f64; 2]], levels: Option<(u8, u8)>) {
         let Some(section) = self.section.clone() else { return };
         let mut draws = draws_of(self.world_seed);
         // An isle's guards hold their posts: with no lattice to draw a beat from, none walks one.
         let mut beats = draws_of(self.world_seed);
-        for (group, post) in guards(faction, &mut draws).iter().zip(posts) {
+        for (group, post) in guards(&mut draws).iter().zip(posts) {
             if let Some(found) = self.post_at(group, (post[0], post[1]), (&section, &[]), (&mut draws, &mut beats)) {
                 self.garrison.push(found);
             }

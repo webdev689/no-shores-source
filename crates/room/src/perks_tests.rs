@@ -39,7 +39,7 @@ fn room_with_brute() -> (Room, PlayerId, FighterId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
     let id = room.next_id();
-    let (foe_type, rank) = foes::pirate_in(::foes::Role::Brute).expect("the pirates' Brute");
+    let (foe_type, rank) = foes::hostile_in(::foes::Role::Brute).expect("the hostiles' Brute");
     let (fighter, brain) = ::foes::spawn(foe_type, rank, 0.0, -1.5, core::f64::consts::PI);
     room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });
     (room, player, id)

@@ -189,7 +189,7 @@ test('a ship arrived lies at anchor where it is: reckoned nowhere, no way on it'
 test('the compass marks friendly ships within 900 m in Overlook’s blue', () => {
   assert.equal(SHIP_MARK_COLOURS.friendly, '#2f5d9a');
   const marks = [
-    ...seaShipMarks(null, { others: [], pirates: [] }),
+    ...seaShipMarks(null, { others: [], hostiles: [] }),
     ...friendlyMarks([
       { id: 1, hull: 0, x: 0, y: -500, heading: 0 },
       { id: 2, hull: 0, x: 0, y: -2_000, heading: 0 },

@@ -55,7 +55,7 @@ export interface FightVessel {
   readonly boost: FightBoost;
 }
 
-/** A captain's ship in a fight: its name, its faction (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss),
+/** A captain's ship in a fight: its name, its faction (1 the Grey Tithe) and rank (1 Minor to 5 Boss),
  *  its mode, whether it is hostile to the player, its sides run out, and, from the land worker's fight, what its
  *  hurts and its going down do to its pose (metres settled, trim and list in radians). */
 export interface FightCaptain extends FightVessel {
@@ -134,7 +134,7 @@ export interface FightView {
 }
 
 /** A captain a fight begins with, where it is given (crates/land-wasm/src/fight.rs `captains_of`): world metres
- *  east and south, its heading (radians clockwise from north), its faction (1 the Grey Tithe, 2 pirates) and rank
+ *  east and south, its heading (radians clockwise from north), its faction (1 the Grey Tithe) and rank
  *  (1 Minor to 5 Boss), and its way (m/s) if it comes on under sail. */
 export interface CaptainAt {
   readonly x: number;
@@ -146,7 +146,7 @@ export interface CaptainAt {
 }
 
 /** What a fight begins with besides the player's ship: `captains`, each set upon it where given; without, one called
- *  onto the ring, a pirate in its rank's hull (a Major's unless `rank` names one). */
+ *  onto the ring, a Grey Tithe captain in its rank's hull (a Major's unless `rank` names one). */
 export interface FightBegun {
   readonly rank?: number;
   readonly captains?: readonly CaptainAt[];

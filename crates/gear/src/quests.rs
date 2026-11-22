@@ -59,7 +59,7 @@ pub enum Event<'told> {
     Gather,
     /// A spell cast, by its name.
     Cast(&'told str),
-    /// A hostile ship beaten: its side (`tithe` or `pirates`) and how (`sink`, `strike` or `board`).
+    /// A hostile ship beaten: its side (`tithe`, the Grey Tithe's) and how (`sink`, `strike` or `board`).
     Sea {
         side: &'told str,
         how: &'told str,

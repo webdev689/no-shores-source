@@ -4,7 +4,7 @@ use crate::PlayerId;
 use crate::harbour::{Harbours, SUNK_KEPT, WASHED_UP};
 
 /// A square continent 100 km a side, its north-west corner 100 km from the frame's. Of `id` and `climate`: the
-/// fourth, a desert, sets the sea round it the pirates'; the first, Overlook's, makes it home waters.
+/// fourth, a desert, sets the sea round it the hostiles'; the first, Overlook's, makes it home waters.
 fn sea_round(id: &str, climate: &str) -> Sea {
     let text = format!(
         r#"{{ "continents": [{{ "id": "{id}", "climate": "{climate}", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }}], "isles": [] }}"#
@@ -51,7 +51,7 @@ fn islands_are_rolled_near_a_ship_in_hostile_waters_clear_of_it() {
         let off = apart(island.at, [50_000.0, 50_000.0]);
         assert!((3_000.0..=7_000.0).contains(&off), "an island {off} m off the ship");
         assert_eq!(island.climate, "desert");
-        assert_eq!(island.guards, Some(::foes::factions::PIRATES));
+        assert_eq!(island.guards, Some(::foes::factions::GREY_TITHE));
         assert!(island.anchorage != island.at);
     }
     let near = islands.iter().filter(|island| apart(island.at, [50_000.0, 50_000.0]) <= NEAR_M).count();

@@ -212,7 +212,7 @@ export class Passage {
     if (!this.voyage) return;
     const settled = this.room?.settledShip ?? null;
     // A step the room refused is asked again, once its word on the last has come, until the two agree.
-    if (paceToAskAgain(this.sailed, settled, this.room?.pirates ?? [], this.holdReachM)) this.sendVoyage();
+    if (paceToAskAgain(this.sailed, settled, this.room?.hostiles ?? [], this.holdReachM)) this.sendVoyage();
     if (settled?.pace === 0) {
       this.restWhereTheRoomHasIt(this.voyage, settled);
       return;

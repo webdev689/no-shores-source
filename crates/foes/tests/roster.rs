@@ -51,19 +51,19 @@ fn every_type_spawns_at_each_of_its_ranks_on_its_factions_side_with_its_numbers_
 #[test]
 fn spot_checks_of_the_ranks_multipliers_and_caps() {
     let numbers = |number: u8, rank: Rank| foe_type(number).unwrap().numbers(rank, 1);
-    // A pirate swordsman as a Minor: lighter, slower to answer, half as sure.
+    // The crew's swordsman as a Minor: lighter, slower to answer, half as sure.
     let minor = numbers(14, Rank::Minor);
     assert!((minor.health - 42.0).abs() < CLOSE && (minor.poise - 24.5).abs() < CLOSE);
     assert!((minor.might - 0.9).abs() < CLOSE && minor.reaction == 20);
     assert!((minor.parry - 0.075).abs() < CLOSE && (minor.block - 0.175).abs() < CLOSE);
     assert!((minor.dodge - 0.05).abs() < CLOSE && !minor.elite && !minor.feints);
-    // A pirate captain as an Elite: its shares, 0.875 together, scaled down evenly to 0.85; its reaction floored.
+    // The crew's captain as an Elite: its shares, 0.875 together, scaled down evenly to 0.85; its reaction floored.
     let elite = numbers(17, Rank::Elite);
     assert!((elite.health - 352.0).abs() < CLOSE && (elite.poise - 96.0).abs() < CLOSE);
     assert!((elite.might - 1.38).abs() < CLOSE && elite.reaction == 13);
     assert!((elite.parry - 0.25 * 1.25 * 0.85 / 0.875).abs() < CLOSE);
     assert!((elite.parry + elite.block + elite.dodge - 0.85).abs() < CLOSE && elite.elite && !elite.feints);
-    // The Reeve is a captain of the Grey Tithe, as a pirate captain is; the Boss seven captains, its shares capped.
+    // The Reeve is a captain of the Grey Tithe, as the crew's captain is; the Boss seven captains, its shares capped.
     assert_eq!(numbers(6, Rank::Elite), foes::roles::Numbers { right: "mace_iron", left: "shield_kite_iron", ..elite });
     let boss = numbers(12, Rank::Boss);
     assert!((boss.health - 1120.0).abs() < CLOSE && boss.reaction == 13 && boss.feints && boss.phases == 3);
@@ -179,14 +179,15 @@ fn roles_ranks_types_and_factions_read_back_by_number() {
     let after = wardens.chain(["Tithe-Taker"]);
     assert_eq!(land, tithe_land.into_iter().chain(after).collect::<Vec<_>>(), "the Elite Dungeons' Bosses after");
     assert_eq!(tithe.types(Domain::Deck).last().unwrap().name, "Captain Brannoc Thule");
-    let pirates = faction(2).unwrap();
-    assert_eq!(pirates.types(Domain::Land).count(), 0, "pirates are met at sea only");
-    assert_eq!(pirates.types(Domain::Deck).count(), 5);
+    assert_eq!(faction(2), None, "no faction of that number");
+    let crew: Vec<(u8, Side)> =
+        (13..=17).map(|number| foe_type(number).unwrap()).map(|foe| (foe.faction, foe.side())).collect();
+    assert_eq!(crew, [(foes::factions::CREW, Side::Players); 5], "the crew's own types, on the players' side");
     let lattice = faction(3).unwrap();
     let crystal: Vec<&str> = lattice.types(Domain::Land).map(|foe| foe.name).collect();
     assert_eq!(crystal, ["Husk", "Flicker", "Idol", "Ravager", "Bulwark", "Heart"]);
     assert_eq!((lattice.types(Domain::Deck).count(), lattice.screens), (0, false), "on land only, never screened");
-    assert_eq!(FACTIONS.len(), 3);
+    assert_eq!(FACTIONS.len(), 2);
     assert_eq!(spawn(foe_type(14).unwrap(), Rank::Major, 0.0, 0.0, 0.0).0.weight, Weight::Medium);
 }
 

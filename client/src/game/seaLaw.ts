@@ -200,7 +200,7 @@ export function timeText(seconds: number): string {
  *  looks for that place either side of its own, metres. */
 const FOLLOW = { perSecond: 4, windowM: 3_000 } as const;
 
-/** The room's word on the player's ship: where it has it and the pace it sailed it at, held down near a pirate. */
+/** The room's word on the player's ship: where it has it and the pace it sailed it at, held down near a hostile ship. */
 export interface RoomWord {
   readonly x: number;
   readonly y: number;
@@ -229,9 +229,9 @@ export function followed(
   return there === null ? ahead : ahead + (there - ahead) * Math.min(1, seconds * FOLLOW.perSecond);
 }
 
-/** What the voyage's line adds while the room holds it under the pace it is sailed at: a pirate near. */
+/** What the voyage's line adds while the room holds it under the pace it is sailed at: a hostile ship near. */
 export const heldNote = (sailed: SailedPace, room: RoomWord | null): string =>
-  room && room.pace > 0 && room.pace < sailed ? ` · Held to ×${room.pace}: a pirate near` : '';
+  room && room.pace > 0 && room.pace < sailed ? ` · Held to ×${room.pace}: a hostile ship near` : '';
 
 /** The world's own time, a pace of 1 (crates/room/src/sea.rs `WORLD_PACE`): a ship is sailed at it while watched close,
  *  so it is seen at its true speed. */

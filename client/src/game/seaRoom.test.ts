@@ -31,7 +31,7 @@ async function joined() {
       tick: BigInt(tick),
       players: [],
       ships,
-      pirates: [],
+      hostiles: [],
       fights: [],
       flotsam: [],
       kept: [],

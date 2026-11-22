@@ -1,10 +1,10 @@
 use super::tests::{sea, ticks, vessel_mut};
 use super::*;
 use crate::harbour::Harbours;
-use crate::pirates::Pirate;
+use crate::hostiles::Hostile;
 use crate::sea::CourseRefused;
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
-use naval::ranks::{Commission, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 
 const WIDTH: f64 = FRAME_WIDTH_M as f64;
@@ -31,9 +31,9 @@ fn a_fight_that_carries_a_ship_past_any_edge_of_the_world_leaves_it_within_the_w
         let mut sea = sea();
         let player = sea.join();
         sea.course_anywhere(player, &[fights_at], 10).unwrap();
-        let commission = Commission { faction: PIRATES, rank: Rank::Major };
+        let commission = Commission { faction: GREY_TITHE, rank: Rank::Major };
         let near = [fights_at[0], fights_at[1] + 600.0];
-        sea.pirates.sailing.push(Pirate::standing(1, 7, commission, near, 0.0, true));
+        sea.hostiles.sailing.push(Hostile::standing(1, 7, commission, near, 0.0, true));
         sea.tick();
         assert!(sea.fights.fighting(player), "{fights_at:?}");
         let ship = &mut vessel_mut(&mut sea, player, PLAYER).ship;

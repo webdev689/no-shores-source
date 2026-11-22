@@ -34,7 +34,7 @@ fn a_return_within_two_minutes_gets_back_the_health_and_charges_it_left_with_and
 }
 
 #[test]
-fn a_boarder_comes_onto_a_pirate_deck_whole_whatever_body_their_character_last_left_a_room_with() {
+fn a_boarder_comes_onto_a_hostile_deck_whole_whatever_body_their_character_last_left_a_room_with() {
     let mut left = room();
     left.set_minute(1_000);
     let player = left.join().expect("a room with space");

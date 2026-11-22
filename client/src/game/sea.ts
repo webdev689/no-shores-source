@@ -294,7 +294,7 @@ export class Sea {
   /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a sighted hostile ship's, the ship
    *  chases it, the mark kept chosen while it does. True for a mark it sails for. */
   sailToMark(id: string): boolean {
-    const toward = this.chase.begin(id, this.room?.pirates ?? [], this.position);
+    const toward = this.chase.begin(id, this.room?.hostiles ?? [], this.position);
     if (toward) {
       this.view.chosen = id;
       this.passage.sailTo(toward);
@@ -438,7 +438,7 @@ export class Sea {
       if (moored) this.passage.placeAt(moored);
     }
     const others = this.room?.others ?? [];
-    const pirates = this.room?.pirates ?? [];
+    const hostiles = this.room?.hostiles ?? [];
     const aboard = combat ? combat.ownAt(scale) : lying;
     const kind = view.kind === 'sail' || view.kind === 'landing' ? view.kind : 'other';
     const marks = seaMarks(
@@ -449,10 +449,10 @@ export class Sea {
       pose,
       viewport,
       view.chosen,
-      pirates,
+      hostiles,
     );
-    this.watch.step(dt, combat ? [] : pirates, this.position, this.waterAt?.(this.position) ?? null);
-    const toward = combat || view.kind !== 'sail' ? null : this.chase.step(dt, pirates, this.position);
+    this.watch.step(dt, combat ? [] : hostiles, this.position, this.waterAt?.(this.position) ?? null);
+    const toward = combat || view.kind !== 'sail' ? null : this.chase.step(dt, hostiles, this.position);
     if (toward) this.passage.sailTo(toward);
     // A hostile ship's mark stays chosen only while it is chased.
     if (this.chase.chasing === null && view.chosen?.startsWith(HOSTILE_PREFIX)) view.chosen = null;
@@ -461,9 +461,9 @@ export class Sea {
       shot: shown,
       ships: combat
         ? combat.ships(dt, time, windBearing, scale, this.boarding.boardedCaptain)
-        : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, pirates, scale, this.water),
+        : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, hostiles, scale, this.water),
       shipScale: scale,
-      hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, pirates, scale),
+      hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, hostiles, scale),
       bars: combat?.bars(scale) ?? [],
       marks: marks.shown,
       figures: boarded

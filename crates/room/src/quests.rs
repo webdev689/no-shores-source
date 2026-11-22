@@ -56,7 +56,6 @@ pub(crate) struct QuestGround {
 pub(crate) fn side_of(faction: u8) -> Option<&'static str> {
     match faction {
         ::foes::factions::GREY_TITHE => Some("tithe"),
-        ::foes::factions::PIRATES => Some("pirates"),
         _ => None,
     }
 }

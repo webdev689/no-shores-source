@@ -1,5 +1,5 @@
 // The sea room as the ship sails in it, a server's or, playing alone, one in the rooms' worker: its course sent when
-// set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, pirate and fight the room
+// set, its orders in a fight, and off the helm each step of the walk on deck; and every ship, hostile and fight the room
 // last showed, with its word on the player's body on deck.
 import {
   askBytes,
@@ -9,7 +9,7 @@ import {
   helmBytes,
   ordersBytes,
   readFromRoom,
-  type SeenPirate,
+  type SeenHostile,
   type SeenShip,
   walkBytes,
 } from '../network/messages.ts';
@@ -44,7 +44,7 @@ export class SeaRoom {
   private fresh = false;
   private ships: readonly SeenShip[] = [];
   /** The hostile ships at sea: each sailing, and each in a fight among captains alone where the room has it. */
-  pirates: readonly SeenPirate[] = [];
+  hostiles: readonly SeenHostile[] = [];
   /** The room's last word on the player's body on deck, off the helm (the number of their last step it took), or
    *  null while they hold it; and how many words it has sent, so each is taken once. */
   onDeck: { readonly acknowledged: number; readonly body: Body } | null = null;
@@ -129,7 +129,7 @@ export class SeaRoom {
     this.tick = Number(snapshot.tick);
     this.sendCourse();
     this.ships = snapshot.ships;
-    this.pirates = snapshot.pirates;
+    this.hostiles = snapshot.hostiles;
     const walking = snapshot.players.find((seen) => seen.player === this.own);
     this.onDeck = walking ? { acknowledged: walking.acknowledged, body: walking.body } : null;
     this.words += 1;
@@ -305,7 +305,7 @@ export class SeaRoom {
    *  the room's word is gone with it: no ship of its is shown, and a fight in it is over, the ship having left it. */
   pump(seconds: number): void {
     if (this.link.rejoining) {
-      [this.ships, this.pirates, this.onDeck] = [[], [], null];
+      [this.ships, this.hostiles, this.onDeck] = [[], [], null];
       this.leaveFight();
     }
     this.link.pump(seconds);

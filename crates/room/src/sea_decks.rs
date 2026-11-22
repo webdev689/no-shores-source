@@ -7,7 +7,7 @@
 use super::Sea;
 use crate::battle::Sank;
 use crate::deck::Deck;
-use crate::pirates::Pirate;
+use crate::hostiles::Hostile;
 use crate::players::Input;
 use crate::{PlayerId, Refused, Room};
 use std::collections::BTreeMap;
@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 /// whether its crew has fallen, and its fight's wind.
 #[derive(Debug)]
 pub struct Boarded {
-    pub pirate: Pirate,
+    pub hostile: Hostile,
     pub at: [f64; 2],
     pub wind: [f64; 2],
     pub room: Room,
@@ -58,25 +58,25 @@ impl Sea {
         if self.on_deck(player) {
             return Err(crate::battle::BoardRefused::NotFighting);
         }
-        let (ship, pirate) = self.fights.board(player)?;
+        let (ship, hostile) = self.fights.board(player)?;
         let side = self.side_of(player, ship);
-        let (at, wind) = self.fights.position_of(pirate.id).unwrap_or(([pirate.x, pirate.y], [0.0; 2]));
-        let hull = usize::from(pirate.commission.hull().number());
+        let (at, wind) = self.fights.position_of(hostile.id).unwrap_or(([hostile.x, hostile.y], [0.0; 2]));
+        let hull = usize::from(hostile.commission.hull().number());
         let spot = crate::deck_fight::rail_spot(self.decks.hulls.get(hull).unwrap_or(&self.deck), side);
-        let index = match self.decks.boarded.iter().position(|deck| deck.pirate.id == pirate.id) {
+        let index = match self.decks.boarded.iter().position(|deck| deck.hostile.id == hostile.id) {
             Some(index) => index,
             None => {
                 let deck = self.decks.hulls.get(hull).unwrap_or(&self.deck);
-                let (faction, rank) = (pirate.commission.faction, foe_rank(pirate.commission.rank));
-                let mut room = Room::deck(deck, faction, rank, pirate.level.max(1));
+                let (faction, rank) = (hostile.commission.faction, foe_rank(hostile.commission.rank));
+                let mut room = Room::deck(deck, faction, rank, hostile.level.max(1));
                 // Its crew stand at the level the sea's tier raised its ship to; their kills pay by that tier too.
-                room.difficulty = self.pirates.difficulty;
+                room.difficulty = self.hostiles.difficulty;
                 room.set_minute(self.minute);
                 if let Some((loot, world)) = self.decks.seeds {
-                    let mix = |seed: u64| seed ^ u64::from(pirate.id).wrapping_mul(0x9E37_79B9_7F4A_7C15);
+                    let mix = |seed: u64| seed ^ u64::from(hostile.id).wrapping_mul(0x9E37_79B9_7F4A_7C15);
                     room.reseed(mix(loot), mix(world));
                 }
-                self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won_at: None });
+                self.decks.boarded.push(Boarded { hostile, at, wind, room, aboard: BTreeMap::new(), won_at: None });
                 self.decks.boarded.len() - 1
             }
         };
@@ -175,8 +175,8 @@ impl Sea {
             self.harbour.changed.insert(player);
         }
         if deck.aboard.is_empty() {
-            let pirate = self.decks.boarded.remove(index).pirate;
-            self.fights.scuttle_by(pirate.id);
+            let hostile = self.decks.boarded.remove(index).hostile;
+            self.fights.scuttle_by(hostile.id);
         }
     }
 
@@ -188,8 +188,8 @@ impl Sea {
             let deck = &mut self.decks.boarded[index];
             // One no boarder came aboard (its room was full) is scuttled as an empty one is.
             if deck.aboard.is_empty() {
-                let pirate = self.decks.boarded.remove(index).pirate;
-                self.fights.scuttle_by(pirate.id);
+                let hostile = self.decks.boarded.remove(index).hostile;
+                self.fights.scuttle_by(hostile.id);
                 continue;
             }
             // Its day is the sea's, so a boarder's gear carries the day's bounties and is sent again as it turns.
@@ -199,14 +199,14 @@ impl Sea {
                 deck.won_at = Some(self.clock);
                 // Its hold is its boarders', on top of the lot each who fought it takes when it goes down.
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
-                let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind, struck: true };
-                if let Some(side) = crate::quests::side_of(deck.pirate.commission.faction) {
+                let sank = Sank { hostile: deck.hostile, at: deck.at, players, wind: deck.wind, struck: true };
+                if let Some(side) = crate::quests::side_of(deck.hostile.commission.faction) {
                     for boarder in deck.aboard.values() {
                         deck.room.tell_quest(*boarder, &gear::quests::Event::Sea { side, how: "board" });
                     }
                 }
                 self.lay_flotsam(&sank, (2, 1));
-                let when = (self.clock, self.pirates.difficulty);
+                let when = (self.clock, self.hostiles.difficulty);
                 let joined = crate::ship_power::officers_join(&sank, when, &mut self.harbour.characters);
                 self.harbour.changed.extend(joined);
             }
@@ -246,8 +246,8 @@ impl Sea {
     }
 
     /// A deck whose ship went down under its boarders: each goes back to their own ship.
-    pub(super) fn end_deck(&mut self, pirate: u32) {
-        let Some(index) = self.decks.boarded.iter().position(|deck| deck.pirate.id == pirate) else { return };
+    pub(super) fn end_deck(&mut self, hostile: u32) {
+        let Some(index) = self.decks.boarded.iter().position(|deck| deck.hostile.id == hostile) else { return };
         let boarders: Vec<PlayerId> = self.decks.boarded[index].aboard.keys().copied().collect();
         for player in boarders {
             self.step_off(index, player);
@@ -285,8 +285,8 @@ impl Sea {
     }
 
     /// Puts a captain to sea where it stands, as a test of the room's door meets one.
-    pub fn put_to_sea(&mut self, pirate: Pirate) {
-        self.pirates.sailing.push(pirate);
+    pub fn put_to_sea(&mut self, hostile: Hostile) {
+        self.hostiles.sailing.push(hostile);
     }
 
     /// The fight a player fights, as a test of the room's door sets a captain's colours down in it.

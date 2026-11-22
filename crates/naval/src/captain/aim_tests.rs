@@ -1,5 +1,5 @@
 use super::*;
-use crate::arms::{Build, PIRATE_SLOOP, SLOOP_ARMS, Side};
+use crate::arms::{Build, SLOOP_ARMS, Side, TITHE_SLOOP};
 use crate::gunnery::Guns;
 use crate::random::Mulberry32;
 use sailing::pose::Pose;
@@ -41,7 +41,7 @@ impl Deck {
             pose: &LEVEL,
             arms: &SLOOP_ARMS,
             guns: &self.guns,
-            build: &PIRATE_SLOOP,
+            build: &TITHE_SLOOP,
             aim_error: 1.0,
         };
         captain_guns(&mut self.run, &at, mark, clock, &mut self.draws)
@@ -108,9 +108,9 @@ fn its_lay_is_long_or_short_by_its_crews_error() {
             [60.0 * share, 0.0, SLOOP_ARMS.hull[1][2] * AIM_FREEBOARD],
         )
     };
-    let most = 0.45 * (1.0 - PIRATE_SLOOP.skill);
+    let most = 0.45 * (1.0 - TITHE_SLOOP.skill);
     // Laid long or short by up to `most` of the range, then misjudged up or down by up to its elevation's error.
-    let tilt = JUDGE_ELEVATION_DEG * DEG * (1.0 - PIRATE_SLOOP.skill);
+    let tilt = JUDGE_ELEVATION_DEG * DEG * (1.0 - TITHE_SLOOP.skill);
     for seed in 1..40 {
         let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
         deck.step(0.0, &target_east(60.0));
@@ -157,7 +157,7 @@ fn its_gunners_lead_a_mark_by_its_way_as_they_last_saw_it() {
     // way would carry it, farther than it will be. Gunners of whole skill misjudge nothing else.
     let mark = Mark { velocity: [-5.0, 0.0], smoothed: [5.0, 0.0], ..target_east(60.0) };
     let ship = heading_north();
-    let sure = Build { skill: 1.0, ..PIRATE_SLOOP };
+    let sure = Build { skill: 1.0, ..TITHE_SLOOP };
     let mut run = RunOut::new();
     let guns = Guns::new();
     let mut draws = Mulberry32::new(3);

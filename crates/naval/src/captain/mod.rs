@@ -47,11 +47,11 @@ pub const CHASE_GAIN: f64 = 0.1;
 pub const CLOSE_FROM: f64 = 1.8;
 /// A captain of an ordinary rank runs under this share of its hull (`ranks::SCALES`); a wary one takes a prize
 /// under this share, or at these odds.
-pub const PIRATE_RUNS_AT: f64 = 0.3;
+pub const RUNS_AT: f64 = 0.3;
 pub const GRAPPLE_HULL: f64 = 0.35;
 
 pub const WARY_ODDS: f64 = 1.25;
-/// The share of pirates who are bold, by their seed's own draw.
+/// The share of captains who are bold, by their seed's own draw.
 pub const BOLD_SHARE: f64 = 0.25;
 const TEMPER_SALT: u32 = 0x7e3a_9e1d;
 /// Its mark's velocity is smoothed over this; its wanted heading's rate over this, reset by a jump of this many
@@ -85,16 +85,17 @@ pub enum Temper {
     Wary,
 }
 
-/// A pirate's temper by its seed.
+/// A captain's temper by its seed.
 #[must_use]
 pub fn temper_of(seed: u32) -> Temper {
     if Mulberry32::new(seed ^ TEMPER_SALT).draw() < BOLD_SHARE { Temper::Bold } else { Temper::Wary }
 }
 
-/// A captain's temper: bold if its rank makes it so, else as its seed says.
+/// A captain's temper: bold if its rank makes it so or it sails on the players' side, else as its seed says.
 #[must_use]
 pub fn temper_for(commission: Commission, seed: u32) -> Temper {
-    if commission.rank.scale().always_bold { Temper::Bold } else { temper_of(seed) }
+    let friendly = commission.faction == crate::ranks::PLAYERS;
+    if friendly || commission.rank.scale().always_bold { Temper::Bold } else { temper_of(seed) }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -159,6 +160,8 @@ struct Plan {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Captain {
     pub commission: Commission,
+    /// The hull it sails: its rank's, but for a friendly ship's own (`in_hull`).
+    pub hull: HullKind,
     pub build: Build,
     pub strength: f64,
     pub temper: Temper,
@@ -207,6 +210,7 @@ impl Captain {
     pub fn new(commission: Commission, seed: u32, cruise: f64, arms: &Arms) -> Self {
         Self {
             commission,
+            hull: commission.hull(),
             build: commission.build(),
             strength: 1.0,
             temper: temper_for(commission, seed),
@@ -233,7 +237,14 @@ impl Captain {
     /// Its strength raised to `strength`: its hull and men, and its guns' harm, that many times its class's.
     #[must_use]
     pub fn raised(self, strength: f64) -> Self {
-        Self { build: self.commission.build_at(strength), strength, ..self }
+        Self { build: self.commission.build_in(self.hull, strength), strength, ..self }
+    }
+
+    /// It sails `kind` rather than its rank's hull, its class and its dead zone that hull's.
+    #[must_use]
+    pub fn in_hull(self, kind: HullKind) -> Self {
+        let dead_zone = aim::dead_zone(arms_of(kind));
+        Self { hull: kind, build: self.commission.build_in(kind, self.strength), dead_zone, ..self }
     }
 
     /// The ship it has as its enemy, if any.

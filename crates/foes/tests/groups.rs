@@ -275,7 +275,7 @@ fn a_shooter_holds_its_draw_only_while_it_holds_its_turn() {
 
 #[test]
 fn a_foe_with_no_shield_flanks_though_it_blocks_with_its_blade() {
-    // The pirates' captain guards with its sword alone; their swordsmen carry shields.
+    // The crew's captain guards with its sword alone; their swordsmen carry shields.
     let ids = [10, 11, 12];
     let foes = [(SWORDSMAN, -15.0), (CAPTAIN, 0.0), (SWORDSMAN, 15.0)];
     let mut room = group(6, 0.1, &foes);

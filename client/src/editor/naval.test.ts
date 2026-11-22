@@ -28,8 +28,8 @@ const captain: FightCaptain = {
   ...vessel,
   id: 1,
   ship: [600, 800, 0, 0, 0, 0, 0, 2],
-  name: 'Pirate Sloop',
-  faction: 2,
+  name: 'Tithe Sloop',
+  faction: 1,
   rank: 2,
   mode: 'engage',
   hostile: true,
@@ -117,7 +117,7 @@ test('a captain sent off before it comes is never taken up, nor one called befor
   await letGo();
   assert.equal(naval.fighting, true, 'the second call stands');
   assert.equal(asked.begins, 1, 'only the call that stands reaches the door');
-  assert.ok(naval.lines(0).includes('A Pirate Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
+  assert.ok(naval.lines(0).includes('A Tithe Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
 });
 
 test("it takes each answer's numbers for the Sloop, and none from a fight since ended", async () => {
