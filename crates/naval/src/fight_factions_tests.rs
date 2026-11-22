@@ -336,3 +336,20 @@ fn a_friendly_captain_that_strikes_leaves_the_fight_at_once_and_is_never_held_or
         assert!(!events.iter().any(|event| matches!(event, Event::Gone { ship: FIRST, .. })), "never scuttled");
     }
 }
+
+#[test]
+fn a_friendly_captain_beside_a_hurt_players_ship_never_stops_its_hands_mending_it() {
+    let mut fight = Fight::new(5);
+    fight.put_to_sea(PLAYER, Ship { rung: 0, ..sloop_at(0.0, 0.0) }, &Open, 0.0);
+    fight.enlist(FIRST, sloop_at(300.0, 0.0), Commission { faction: PLAYERS, rank: Rank::Major }, 11, &Open, 0.0);
+    // A Tithe ship 1.5 km off keeps the friendly captain in the fight, too far to stop the mending itself.
+    fight.enlist(SECOND, sloop_at(0.0, 1_500.0), Commission { faction: GREY_TITHE, rank: Rank::Major }, 12, &Open, 0.0);
+    let Some(player) = fight.ships.get_mut(&PLAYER) else { panic!("the player's ship") };
+    player.damage.apply(Hurt { hull: 200.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
+    let hurt = player.damage.hull;
+    for _ in 0..60 * 20 {
+        tick(&mut fight);
+    }
+    assert!(fight.vessel(FIRST).is_some_and(Vessel::in_fight), "the friendly captain still fights");
+    assert!(fight.vessel(PLAYER).is_some_and(|vessel| vessel.damage.hull > hurt), "its hands mend it");
+}

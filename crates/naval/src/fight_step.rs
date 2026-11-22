@@ -325,13 +325,16 @@ impl Fight {
         self.struck_by(shooter, target, (zone, rigged), state);
     }
 
-    /// Each player's hands mend their ship if nothing hurt it lately and no captain who would take it lies near.
+    /// Each player's hands mend their ship if nothing hurt it lately and no hostile captain who would take it lies near.
     fn mend(&mut self, wind_at: &impl Fn([f64; 2]) -> [f64; 2]) {
         let captains = self.ids(true);
         for id in self.ids(false) {
             let Some(sighting) = self.ships.get(&id).map(|player| sighting_of(id, player)) else { continue };
             let hostile_near = captains.iter().any(|captain| {
-                let Some(vessel) = self.ships.get(captain) else { return false };
+                // A friendly captain, under the players' flag, takes no player's ship.
+                let Some(vessel) = self.ships.get(captain).filter(|vessel| vessel.flag() != Flag::Player) else {
+                    return false;
+                };
                 let Some(command) = vessel.command() else { return false };
                 let wind = wind_at([vessel.ship.x, vessel.ship.y]);
                 let own = own_of(vessel.hull, (&vessel.ship, &vessel.pose), (&vessel.damage, &vessel.guns), wind);
