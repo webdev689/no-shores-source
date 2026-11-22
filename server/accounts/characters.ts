@@ -19,12 +19,14 @@ const LOOK_MS = 250;
 /** The longest character kept: far past any the gear's limits allow. */
 const BODY_MOST = 1_000_000;
 
-/** A claim answered: the account, its character as last kept (null before a room first keeps one), and the room
- *  that held it before (null before any did). */
+/** A claim answered: the account, its character as last kept (null before a room first keeps one), the room that
+ *  held it before (null before any did), and its username, which others read over the player's head (null for a
+ *  guest). */
 export interface Claimed {
   readonly account: string;
   readonly body: string | null;
   readonly from: string | null;
+  readonly name: string | null;
 }
 
 /** The account a session's token is for, seen at `now`; null when the token is no session, or one that lapsed. */
@@ -63,6 +65,13 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
           .bind(holder, now() + HOLD_MS, account, now())
     ).first<{ body: string | null; came_from: string | null }>();
   const live = (token: string) => liveAccount(database, token, now());
+  const nameOf = async (account: string) =>
+    (
+      await database
+        .prepare('SELECT username FROM accounts WHERE id = ?1')
+        .bind(account)
+        .first<{ username: string | null }>()
+    )?.username ?? null;
   return {
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */
@@ -84,7 +93,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
         .prepare('SELECT body, room FROM characters WHERE account_id = ?1')
         .bind(account)
         .first<{ body: string | null; room: string | null }>();
-      return { account, body: kept?.body ?? null, from: kept?.room ?? null };
+      return { account, body: kept?.body ?? null, from: kept?.room ?? null, name: await nameOf(account) };
     },
     /** The account a session's token is for, its character held for `holder`; null when the token is no session, or
      *  one that lapsed. */
@@ -94,7 +103,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
       await database.prepare('INSERT OR IGNORE INTO characters (account_id) VALUES (?1)').bind(account).run();
       for (let waited = 0; ; waited += LOOK_MS) {
         const held = await take(account, holder, waited >= WAIT_MS);
-        if (held) return { account, body: held.body, from: held.came_from };
+        if (held) return { account, body: held.body, from: held.came_from, name: await nameOf(account) };
         await wait(LOOK_MS);
       }
     },

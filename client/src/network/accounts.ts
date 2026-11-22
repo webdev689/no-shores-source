@@ -131,6 +131,11 @@ export class AccountLink {
     return `${this.base.replace(/^http/, 'ws')}/v1/find/${base}`;
   }
 
+  /** Where the chat's hall is, by WebSocket, at these accounts. */
+  get chatAt(): string {
+    return `${this.base.replace(/^http/, 'ws')}/v1/chat`;
+  }
+
   /** The account the accounts last said the page plays as, none until they have. */
   get account(): Account | null {
     return this.known;

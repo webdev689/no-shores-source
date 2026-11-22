@@ -51,6 +51,7 @@ import { mooredShips } from './moorings.ts';
 import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { HULLS } from '../water/hullMask.ts';
+import { holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -169,7 +170,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
     const { flow, helmMap } = playing;
-    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
+    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen() || socialUp();
+    here.fight.menuOpen = paused;
     const aspect = size.width / Math.max(1, size.height);
     // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
     const looking = helmMap.looking;
@@ -210,8 +212,12 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt } };
+    const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
+    // Use held on another player opens their menu, where it does nothing else and no menu or map is up.
+    const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing;
+    holdOnPlayer(footView.playerPlates, offered, controls.held('use'), clock);
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
@@ -394,10 +400,16 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const windowUp = menuUp || gearTakesKeys() || creationOpen();
+    const windowUp = menuUp || gearTakesKeys() || creationOpen() || socialUp();
     // The sheet takes the keys and the pad but while it waits for one to bind.
     const tookWheel = ui.hear(seconds, !input.locked, windowUp || hud.controls.takesKeys);
-    const top = hud.controls.open ? 'sheet' : gearTakesKeys() ? 'gear' : creationOpen() ? 'creation' : menuUp && 'menu';
+    const top = hud.controls.open
+      ? 'sheet'
+      : gearTakesKeys()
+        ? 'gear'
+        : creationOpen()
+          ? 'creation'
+          : (menuUp || socialUp()) && 'menu';
     input.window(top || null);
     input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
     const heard = input.frame();

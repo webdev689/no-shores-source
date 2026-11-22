@@ -11,6 +11,7 @@ import { gearScreenOpen } from './gearWindow.ts';
 import type { Hud } from './hud.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { deckKey, fightAsk } from './seaWord.ts';
+import { openChat } from './social/social.ts';
 
 /** What the controls reach: the game as it plays, its input, interface and display, the story, and its deeds. */
 export interface Controlled {
@@ -59,6 +60,7 @@ export function listenForControls(game: Controlled): void {
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
     else if (acts('menu')) change({ kind: 'menu' });
+    else if (acts('chat')) openChat();
     else if (escape && flow.mode === 'landing') {
       sea?.view.backToSea();
       change({ kind: 'back' });

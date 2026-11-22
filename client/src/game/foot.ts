@@ -119,7 +119,7 @@ export class Foot {
   readonly fight: Fighting;
   private readonly player: PlayerFight;
   private readonly steps: MovementRules;
-  private readonly otherPlayers: OtherPlayers;
+  readonly otherPlayers: OtherPlayers;
   private readonly otherGlides = new Glides();
   private readonly folkLoops = new WeakMap<Placed, PlacedLoop>();
   private readonly foes: FoeFigures;
@@ -290,7 +290,7 @@ export class Foot {
     if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
     // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
     // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
-    players.takeDresses(opened.link.dressed);
+    players.take(opened.link);
     return new Foot(
       context,
       node,
@@ -328,7 +328,7 @@ export class Foot {
     const link = open(received);
     const fight = new Fighting(rules.combat, link);
     heard.fight = fight;
-    players.takeDresses(link.dressed);
+    players.take(link);
     // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
     const held: Held = Object.assign(place.gear ?? { gear: null }, unheard());
     const opened: Opened = { link, boxes, text: '', dungeon: null, seas: 'normal' };
@@ -405,7 +405,7 @@ export class Foot {
     if (this.link.joins !== this.joined) {
       // A link that joined its room again brings every dress there with its welcome.
       this.joined = this.link.joins;
-      this.otherPlayers.takeDresses(this.link.dressed);
+      this.otherPlayers.take(this.link);
     }
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);

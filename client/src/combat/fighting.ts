@@ -160,6 +160,8 @@ export class Fighting {
   private artsAt = 0;
   private sentDress = '';
   private respawnAsked = false;
+  /** Whether a menu is open on the player's screen, sent with each input for others to see over their head. */
+  menuOpen = false;
   /** Where the player stands with a node's section, as the room last said: dead, by a fall or past its edge, the room
    *  takes their inputs without steering them, and their body falls under its own weight to lie where it lands. */
   standing: Standing = { kind: 'inside' };
@@ -371,6 +373,7 @@ export class Fighting {
       spawn: spawned?.foe,
       spawnLevel: spawned?.level ?? 0,
       respawn: this.respawnAsked,
+      menu: this.menuOpen,
       ...(gear === undefined ? {} : { ask: gear }),
       ...(cast === null ? {} : { cast }),
     };

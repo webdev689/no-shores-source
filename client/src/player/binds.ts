@@ -85,6 +85,8 @@ export const CONTROLS = {
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),
   controls: control(['k'], ['View'], EVERYWHERE),
+  // The chat's field opens on Enter, as DFO's did; on foot alone, where Enter does nothing else.
+  chat: control(['enter'], [], FOOT),
   steerLeft: control(['a'], ['LS left'], HELM),
   steerRight: control(['d'], ['LS right'], HELM),
   sailOn: control(['w'], ['LS up'], HELM),
@@ -131,7 +133,7 @@ export const DEFAULTS: Binds = Object.fromEntries(
  *  mouse button. */
 const KEYS_ONLY: ReadonlySet<BindId> = new Set<BindId>([
   ...(['use', 'menu', 'landMap', 'map', 'respawn', 'confirm', 'voyage', 'manage', 'leaveHelm', 'repair'] as const),
-  ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'controls'] as const),
+  ...(['ashore', 'slower', 'faster', 'character', 'inventory', 'details', 'controls', 'chat'] as const),
   ...(['steerLeft', 'steerRight', 'sailOn', 'heaveTo'] as const),
 ]);
 /** Whether a mouse button bound to `id` is heard. */

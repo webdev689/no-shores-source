@@ -41,4 +41,7 @@ is kept; where Overlook must choose, the choice is Claude's, with its reason. Th
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: emblems are also had at a faction's first rank; the Appearance button stands where the Emblem slot was, and they show in its corner and on its screen ([[The Character Page Opens Appearance From an Icon Button]]).
 
+Replaced in part by [[Chat Comes From DFO With Local, World and Whisper]]: Overlook has text chat, Local, World and
+Whisper; a mute still waits on the owner.
+
 Links: [[Accounts]], [[Interface]], [[Gear]], [[Gear as Claude Shapes It]].

@@ -29,6 +29,7 @@ import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
 import { Stack } from '../ui/stack.ts';
 import { DrawnInterface } from './drawnInterface.ts';
+import { startSocial } from './social/social.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -56,6 +57,8 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
   if (link) void keepBinds(link);
+  // The chat, and the menu and Inspect holding Use on another player opens, over the HUD.
+  startSocial(stack, link, session);
   // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
   const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
   const land = startLandWorker();

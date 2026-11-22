@@ -26,6 +26,7 @@ import { CORNER } from '../plus/barFrame.ts';
 import { type HudLayout, hudLayout } from './hudLayout.ts';
 import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
+import { type PlatedPlayer, PlayerPlates } from './playerPlates.ts';
 import { type ArmsShown, WeaponRows } from './weapons.ts';
 
 /** What the display is drawn from each frame: the player's fighter, the foes, every fighter's place by number, how the
@@ -67,6 +68,8 @@ export interface HudFrame {
   readonly arms?: ArmsShown | null;
   /** Where the houses' roads' next goal stands in the room (x, y), which the compass marks; none for none. */
   readonly questAt?: readonly [number, number] | null;
+  /** Every other player as their plate over their head is drawn; none for none. */
+  readonly players?: readonly PlatedPlayer[];
 }
 
 /** A foe winding up an iron blow this near is told to be dodged. */
@@ -155,6 +158,8 @@ export class Hud {
   private readonly vitals = new Vitals();
   private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
   private readonly foeBars = new FoeBars();
+  /** The plates over other players, and the one the crosshair rests on within reach. */
+  readonly playerPlates = new PlayerPlates();
   private readonly crosshair = new Crosshair();
   private readonly foeTarget = new FoeTarget();
   private readonly words = new Words();
@@ -216,11 +221,11 @@ export class Hud {
     this.flash(frame, seconds);
     this.veil = veilOf(frame);
     this.ammo = { ammo: frame.ammo, most: frame.ammoMost ?? null };
-    const overHead = (view: FighterView) => {
-      const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
-      const spot = project(frame.matrix, point, frame.width, frame.height);
-      return spot && { ...spot, depth: clipOf(frame.matrix, point)[2] };
+    const spot = (point: readonly [number, number, number]) => {
+      const onScreen = project(frame.matrix, point, frame.width, frame.height);
+      return onScreen && { ...onScreen, depth: clipOf(frame.matrix, point)[2] };
     };
+    const overHead = (view: FighterView) => spot([view.x, view.y, view.z + PLATE_OVER_M]);
     const lock = own?.target ?? null;
     const chosen = this.foeTarget.step({ player: frame.player, lock, foes: frame.foes, events: frame.events }, seconds);
     const { blocks = [], groundAt } = frame;
@@ -233,6 +238,8 @@ export class Hud {
     this.heading = viewing.camera ? headingOf(viewing.camera.forward) : this.heading;
     this.quest = frame.questAt && own ? { at: frame.questAt, from: [own.x, own.y] } : null;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
+    const feet = own && ([own.x, own.y, own.z] as const);
+    this.playerPlates.update(frame.players ?? [], { ...viewing, spot, own: feet }, seconds);
     const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
     this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
     this.markTarget(frame, chosen, boss, seconds);
@@ -412,6 +419,7 @@ export class Hud {
         this.vitals.node(zoom),
         arms,
         this.lockSpot && lockMarkNode(this.lockSpot),
+        ...this.playerPlates.nodes(),
         ...this.foeBars.overheadNodes(),
         ...this.rings.map((ring) =>
           parryNode(ring.edge && clear ? clear(ring, RING_CLEAR) : ring, ring.span, ring.kind, ring.window),

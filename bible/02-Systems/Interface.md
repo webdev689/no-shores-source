@@ -182,6 +182,11 @@ code:
   - client/src/face.ts#useMendedFace
   - client/src/face.ts#CANVAS_FACE
   - client/src/trueType.ts#trueType
+  - client/src/combat/playerPlates.ts#PlayerPlates
+  - client/src/combat/playerPlates.ts#aimedPlayer
+  - client/src/combat/playerPlates.ts#squareNumber
+  - client/src/game/social/interactMenu.ts#interactRows
+  - client/src/game/social/social.ts#holdOnPlayer
 ---
 # Interface
 
@@ -1089,6 +1094,34 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   click takes or turns one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the
   padlock and "The bounty board opens after the prologue."
 
+## Players
+
+- **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]]):
+  a square and their username beside it, after the owner's pictures of Destiny's. The square shows their level, 1 to
+  19, and from level 20, the most XP gives, the Prestige total of the armour they wear (`squareNumber`); while a menu
+  is open on their screen (the pause menu, the menu's window, a player's menu or Inspect) a speech bubble's three dots
+  stand in its place. Square and name are the company's green (`FILLS.green`, `TONES.company`) for a member of the
+  viewer's company, by the Roster the company's display last heard, and the players' blue (`FILLS.ally`,
+  `TONES.ally`) for anyone else; a guest shows the square alone. The room sends each plate once as it changes
+  ([[Server]], "Messages").
+- **Which show**: as DFO showed names over players, every other player within 60 m across the ground whose head the
+  place's blocks and land do not hide, the line tried as a foe's plate's is (`PlateSight`), shrinking with distance by
+  the foes' plates' law (`plateScale`) and laid so none covers another (`BarLayout`); not the cone the foes' plates
+  keep. They stand under the foes' plates, 1.9 m over the feet.
+- **Interact** ([[Holding Use on a Player Opens Their Interact Menu]]): the named player the crosshair rests on within
+  6.4 m of the player's own feet, the nearest of several (`aimedPlayer`), wears a thin diamond round their body, a
+  chevron in each corner, with Use's key and "Interact" beside it, wherever Use offers nothing else and no menu or the
+  held map is up. Holding Use 0.45 s, its key ringed as it fills and the menus' hold sounding, opens their menu; a tap
+  does nothing.
+- **Their menu** stands over the view with their plate at its head and five rows: Add friend (or Accept friend, or
+  Cancel friend ask, as the Roster would offer it), Invite to company, Invite to guild, Whisper and Inspect. Each asks
+  the Roster as its row in the Social tab does ([[Accounts]], "The Roster"); one that cannot be done now stands greyed
+  with why ("Already friends", "In your company", "Only the leader invites", "You are in no guild", and so on), and
+  without a Roster (a guest, or a page playing alone) only Whisper and Inspect are offered. What an ask answered stands
+  under the rows. Whisper opens the chat's field to them ([[Chat]]); Inspect shows their details as the Roster's
+  Details page does, over the view; Close or Escape shuts either. While either is up the player stands as in a menu,
+  the pointer free.
+
 ## Emblems
 
 An emblem is a sign 24 cells square and the nameplate it heads, 120 by 24, whose left square is the sign's own ground,
@@ -1175,7 +1208,8 @@ button's corner and screen, and the Tailor's wares.
   pictures on the player's own figure, which is not theirs.
 - A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
   or at sea, is not reached, and the Roster says so.
-- No names stand over other players' heads yet.
+- A player's plate shows their username from the room their account last claimed their character in: one added
+  meanwhile shows from their next room.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.

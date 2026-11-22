@@ -209,6 +209,7 @@ export class RoomHost extends DurableObject<Env> {
         return owned;
       },
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
+      name: (player: number, name: string) => this.guarded(() => this.room.name(player, name), false),
     };
     const characters = {
       look: (token: string) => accounts.look(token),

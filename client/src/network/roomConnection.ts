@@ -1,5 +1,6 @@
 import type { ArtState } from './artMessages.ts';
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, readFromRoom } from './messages.ts';
+import type { PlayerPlate } from './plateMessages.ts';
 import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { LinkMeasure, type Measured } from './linkMeasure.ts';
 import { SnapshotKeeper } from './snapshots.ts';
@@ -18,6 +19,8 @@ type Welcome = Extract<FromRoomMessage, { kind: 'joined' }>;
 export interface RoomLink {
   readonly player: number;
   readonly dressed: readonly PlayerDress[];
+  /** Everyone's plate at the last welcome; none from a room in the page, where no one else plays. */
+  readonly plates?: readonly PlayerPlate[];
   readonly joins: number;
   readonly rejoining: boolean;
   readonly lost: string | null;
@@ -102,6 +105,7 @@ export class RoomConnection implements RoomLink {
    *  last welcome. */
   player: number;
   dressed: readonly PlayerDress[];
+  plates: readonly PlayerPlate[];
   node: JoinedNode | null;
   joins = 1;
   rejoining = false;
@@ -134,6 +138,7 @@ export class RoomConnection implements RoomLink {
     [this.url, this.snapshot, this.gear, this.session] = [url, told, heard.gear, heard.session];
     [this.connect, this.socket] = [connect, socket];
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
+    this.plates = welcome.plates;
     this.watch(socket);
   }
 
@@ -207,6 +212,7 @@ export class RoomConnection implements RoomLink {
     }
     if (this.session !== null) socket.send(this.session);
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
+    this.plates = welcome.plates;
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
     this.measure.clear();
   }

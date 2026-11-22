@@ -13,6 +13,10 @@ import { placeWords } from './rosterRows.ts';
 
 /** How often the company is asked for while playing, in milliseconds. */
 const LOOK_MS = 20_000;
+
+/** The Roster as the company's display last heard it, here or by the Social tab; null before it has, or for a guest. */
+let heardRoster: Roster | null = null;
+export const rosterNow = (): Roster | null => heardRoster;
 /** A nameplate's size, its emblem drawn at twice its cells. */
 const PLATE_WIDTH = 240;
 const PLATE_HEIGHT = 48;
@@ -31,6 +35,7 @@ export class CompanyHud {
       // A guest has no Roster: asked again only once the account changes.
       unnamed = typeof roster === 'string' && roster.startsWith('Add a username');
       this.roster = typeof roster === 'string' ? null : roster;
+      heardRoster = this.roster;
     };
     const look = () => {
       if (!document.hidden && !unnamed) void link.roster().then(show);

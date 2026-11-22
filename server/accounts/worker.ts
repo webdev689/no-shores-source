@@ -3,13 +3,17 @@ import { handle } from './accounts.ts';
 import { type Characters, type Claimed, characters } from './characters.ts';
 import type { CompanyFinder } from './finder.ts';
 import { findingAt } from './finding.ts';
+import { type ChatHall, chatAt } from './chat.ts';
 
 export { CompanyFinder } from './finder.ts';
+export { ChatHall } from './chat.ts';
 
 interface Env {
   readonly DB: D1Database;
   /** Find a Company's queues, one for each run's base (`finder.ts`). */
   readonly FINDERS: DurableObjectNamespace<CompanyFinder>;
+  /** The chat's one hall (`chat.ts`). */
+  readonly CHATS: DurableObjectNamespace<ChatHall>;
   /** The pages, by origin and path and space-separated, a Discord sign-in may come back to. */
   readonly PAGES: string;
   /** The Discord app's keys, as the Worker's secrets; without them, Discord sign-in says it is not set up. */
@@ -53,6 +57,7 @@ export default {
   fetch(request: Request, env: Env): Promise<Response> {
     const finding = findingAt(request);
     if (finding !== null) return env.FINDERS.getByName(finding).fetch(request);
+    if (chatAt(request)) return env.CHATS.getByName('hall').fetch(request);
     const discord =
       env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
         ? {

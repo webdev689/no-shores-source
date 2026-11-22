@@ -13,7 +13,7 @@ use movement::floats::CONTROLS_FLOATS;
 use movement::{Body, Controls};
 use naval::fight::Orders;
 use naval::wire::{orders_from, orders_numbers};
-use room::{CLEAR_FOES, Cast, Input, PlayerId, SHIELD_SHIFT, Shown, SpawnAsk, Standing};
+use room::{CLEAR_FOES, Cast, Input, Plate, PlayerId, SHIELD_SHIFT, Shown, SpawnAsk, Standing};
 
 /// The code flatc makes from the schema, into `generated/`, which git leaves out (`npm run schema`).
 #[allow(
@@ -39,6 +39,7 @@ pub mod gear_wire;
 pub mod land;
 mod mail_wire;
 pub mod pack;
+pub mod plates_wire;
 mod quest_wire;
 mod sea_snapshot;
 pub mod ship_wire;
@@ -115,7 +116,8 @@ fn input_of(input: &messages::Input<'_>) -> Result<Input, String> {
     let (sequence, arms, seen, respawn) = (input.sequence(), input.arms(), input.seen(), input.respawn());
     let ask = input.ask().and_then(|ask| gear_wire::asked_of(&ask));
     let spawn_level = input.spawn_level();
-    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn, ask, spawn_level, cast: cast_of(input) })
+    let (cast, menu) = (cast_of(input), input.menu());
+    Ok(Input { sequence, intent, shown, dress, arms, seen, spawn, respawn, ask, spawn_level, cast, menu })
 }
 
 /// The cast an input carries, if it carries one: its aim only when it is three numbers, every one a number.
@@ -188,6 +190,7 @@ fn input_offset<'built>(
         cast: input.cast.map_or(0, |cast| cast.spell),
         cast_aim,
         earlier,
+        menu: input.menu,
     };
     messages::Input::create(builder, &args)
 }
@@ -357,17 +360,25 @@ pub(crate) fn dressed_vector<'builder>(
     builder.create_vector(&each)
 }
 
-/// The welcome to a joining player: their number, every dress in the room so far, in a node's room its id and the
+/// Everyone in a room as a joining player is welcomed with it: each player's dress and plate so far.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct Present<'room> {
+    pub dressed: &'room [(PlayerId, &'room str)],
+    pub plates: &'room [(PlayerId, Plate)],
+}
+
+/// The welcome to a joining player: their number, everyone's dress and plate so far, in a node's room its id and the
 /// rect its ground is cut to (west, north, east, south), and the world time at the room's first tick.
 #[must_use]
-pub fn joined_bytes(player: u32, dressed: &[(PlayerId, &str)], node: Option<(&str, [f64; 4])>, epoch: f64) -> Vec<u8> {
+pub fn joined_bytes(player: u32, present: Present<'_>, node: Option<(&str, [f64; 4])>, epoch: f64) -> Vec<u8> {
     let mut builder = flatbuffers::FlatBufferBuilder::new();
-    let dressed = Some(dressed_vector(&mut builder, dressed));
+    let dressed = Some(dressed_vector(&mut builder, present.dressed));
+    let plates = Some(plates_wire::plates_vector(&mut builder, present.plates));
     let bounds = node.map(|(_, bounds)| builder.create_vector(&bounds));
     let node = node.map(|(id, _)| builder.create_string(id));
     let joined = messages::Joined::create(
         &mut builder,
-        &messages::JoinedArgs { player, dressed, node, bounds, protocol: PROTOCOL, epoch },
+        &messages::JoinedArgs { player, dressed, node, bounds, protocol: PROTOCOL, epoch, plates },
     );
     let message = messages::FromRoom::create(
         &mut builder,

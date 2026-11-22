@@ -27,6 +27,9 @@ kept: usernames, guild names, guild tags and guild mottos. Claude's calls for it
 None of them may hold a slur, an obscenity or a sexual term. A username, guild name or tag may not claim to speak for
 the game. A new username or guild name may not look like one already kept.
 
+A chat line is judged by the same blocked words ([[Chat]]): each word holding one is starred letter for letter, and a
+line that spells one across its words is refused.
+
 ## How it is checked
 
 - **Blocked words.** A list of 79 roots, written for Overlook, kept in ROT13 so the repo never shows them. The text

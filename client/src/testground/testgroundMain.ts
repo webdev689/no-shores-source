@@ -280,9 +280,9 @@ async function start(): Promise<void> {
   const received = (snapshot: Snapshot) => {
     if (link.joins !== joins) {
       joins = link.joins;
-      otherPlayers.takeDresses(link.dressed);
+      otherPlayers.take(link);
     }
-    otherPlayers.takeDresses(snapshot.dressed);
+    otherPlayers.take(snapshot);
     fight?.receive(snapshot);
     otherPlayers.seen(snapshot.players, fight?.player ?? null, forge);
   };
@@ -296,7 +296,7 @@ async function start(): Promise<void> {
   fight = fighting;
   // The room in the page runs one tick at once, so the player's fighter and gear are known before they first play.
   if (!roomUrl) link.pump(movement.tickSeconds);
-  otherPlayers.takeDresses(link.dressed);
+  otherPlayers.take(link);
   const steps = fighting.steps(movement);
   const playerFight = new PlayerFight(fighting, combatRules, player);
   const hud = new Hud(abilityPictures, forge);

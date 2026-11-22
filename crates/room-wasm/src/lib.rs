@@ -29,6 +29,7 @@ mod fighter_door;
 mod fleet_door;
 mod gear_door;
 mod isle_door;
+mod plate_door;
 mod roster_door;
 mod run_door;
 mod sea_door;
@@ -366,15 +367,19 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     answer.unwrap_or(NO_SUCH_PLAYER)
 }
 
-/// The welcome's bytes for a player: their number, every dress in the room so far, and a node's id and rect.
+/// The welcome's bytes for a player: their number, every dress and plate in the room so far, and a node's id and rect.
 #[must_use]
 pub fn joined(player: PlayerId) -> Vec<u8> {
     with_open(|opened| match opened {
         Opened::Land { room, node, .. } => {
             let node = node.as_ref().map(|(id, bounds)| (id.as_str(), *bounds));
-            protocol::joined_bytes(player, &room.dresses().collect::<Vec<_>>(), node, epoch_of(EPOCH_MS.get()))
+            let (dressed, plates): (Vec<_>, Vec<_>) = (room.dresses().collect(), room.plates().collect());
+            let present = protocol::Present { dressed: &dressed, plates: &plates };
+            protocol::joined_bytes(player, present, node, epoch_of(EPOCH_MS.get()))
         }
-        Opened::Sea(_) | Opened::Fleet(_) => protocol::joined_bytes(player, &[], None, epoch_of(EPOCH_MS.get())),
+        Opened::Sea(_) | Opened::Fleet(_) => {
+            protocol::joined_bytes(player, protocol::Present::default(), None, epoch_of(EPOCH_MS.get()))
+        }
     })
     .unwrap_or_default()
 }

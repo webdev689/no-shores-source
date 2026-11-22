@@ -2,11 +2,12 @@
 //! (`pack.rs`), and, building on a snapshot their screen showed, only what changed since it.
 
 use crate::pack::{masked, quantized, varints};
+use crate::plates_wire::plates_vector;
 use crate::{UNTRIMMED_FLOATS, dressed_vector, finish_snapshot, messages, standing_parts};
 use combat::fighter::FighterId;
 use combat::shots::Line;
 use combat::{Shot, Status};
-use room::{Event, FoeSeen, PlayerId, Seen, SpellSeen};
+use room::{Event, FoeSeen, Plate, PlayerId, Seen, SpellSeen};
 use std::collections::BTreeMap;
 
 /// Everything a snapshot carries after a room's tick, for one player.
@@ -30,6 +31,7 @@ pub struct Snapshot<'snapshot> {
     pub base_foes: Option<&'snapshot BTreeMap<FighterId, Vec<u64>>>,
     pub players: &'snapshot [Seen],
     pub dressed: &'snapshot [(PlayerId, &'snapshot str)],
+    pub plates: &'snapshot [(PlayerId, Plate)],
     pub foes: &'snapshot [FoeSeen],
     pub events: &'snapshot [Event],
     pub shots: &'snapshot [Shot],
@@ -134,6 +136,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         .collect();
     let players = Some(builder.create_vector(&seen));
     let dressed = Some(dressed_vector(&mut builder, snapshot.dressed));
+    let plates = (!snapshot.plates.is_empty()).then(|| plates_vector(&mut builder, snapshot.plates));
     let foes: Vec<_> = snapshot
         .foes
         .iter()
@@ -204,6 +207,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         middle: Some(middle),
         cache,
         revives,
+        plates,
         ..messages::SnapshotArgs::default()
     };
     finish_snapshot(builder, &args)

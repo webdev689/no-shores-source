@@ -1,14 +1,14 @@
 //! What a room on land's snapshots held, kept a short while: each tick's players and foes as the others see them,
-//! and what happened (the fight's events, dresses changed, balls stopped) with the tick it happened. A player's
-//! snapshot then holds only the players and foes that changed since the one their screen last showed, and what
-//! happened since; so a snapshot lost on the way costs nothing the next does not carry again.
+//! and what happened (the fight's events, dresses and plates changed, balls stopped) with the tick it happened. A
+//! player's snapshot then holds only the players and foes that changed since the one their screen last showed, and
+//! what happened since; so a snapshot lost on the way costs nothing the next does not carry again.
 
 use combat::fighter::FighterId;
 use combat::shots::Line;
 use protocol::land::foe_numbers;
 use protocol::pack::quantized;
 use protocol::{Snapshot, UNTRIMMED_FLOATS, snapshot_bytes, standing_parts};
-use room::{Event, FoeSeen, PlayerId, Room, Seen, SpellSeen};
+use room::{Event, FoeSeen, Plate, PlayerId, Room, Seen, SpellSeen};
 use std::collections::{BTreeMap, VecDeque};
 
 /// How many ticks of snapshots are kept to build on: two seconds; a screen further behind is sent everything.
@@ -45,6 +45,7 @@ pub struct Sent {
     now: Option<Now>,
     events: VecDeque<Event>,
     dresses: VecDeque<(u64, PlayerId, String)>,
+    plates: VecDeque<(u64, PlayerId, Plate)>,
     lines: VecDeque<(u64, Line)>,
 }
 
@@ -76,6 +77,7 @@ impl Sent {
         // showed that tick still hears it.
         self.events.extend(room.take_events().into_iter().map(|event| Event { tick: event.tick.max(tick), ..event }));
         self.dresses.extend(room.take_dress_changes().into_iter().map(|(player, dress)| (tick, player, dress)));
+        self.plates.extend(room.take_plate_changes().into_iter().map(|(player, plate)| (tick, player, plate)));
         self.lines.extend(room.take_lines().into_iter().map(|line| (tick, line)));
         let now = Now {
             tick,
@@ -101,6 +103,7 @@ impl Sent {
         let oldest = self.held.front().map_or(tick, |held| held.tick);
         self.events.retain(|event| event.tick >= oldest);
         self.dresses.retain(|(at, ..)| *at >= oldest);
+        self.plates.retain(|(at, ..)| *at >= oldest);
         self.lines.retain(|(at, _)| *at >= oldest);
         self.now = Some(now);
     }
@@ -146,6 +149,12 @@ impl Sent {
             .filter(|(at, ..)| *at > since)
             .map(|(_, player, dress)| (*player, dress.as_str()))
             .collect();
+        let plates: Vec<(PlayerId, Plate)> = self
+            .plates
+            .iter()
+            .filter(|(at, ..)| *at > since)
+            .map(|(_, player, plate)| (*player, plate.clone()))
+            .collect();
         let lines: Vec<(u64, Line)> = self.lines.iter().filter(|(at, _)| *at > since).copied().collect();
         snapshot_bytes(&Snapshot {
             tick: now.tick,
@@ -159,6 +168,7 @@ impl Sent {
             base_foes: base.map(|held| &held.foes),
             players: &players,
             dressed: &dressed,
+            plates: &plates,
             foes: &foes,
             events: &events,
             shots: &now.shots,

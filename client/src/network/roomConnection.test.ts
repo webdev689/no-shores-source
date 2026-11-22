@@ -10,7 +10,7 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
   const builder = new flatbuffers.Builder(64);
   const part =
     'player' in message
-      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL, 0)
+      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL, 0, 0)
       : Snapshot.createSnapshot(
           builder,
           message.tick,
@@ -39,6 +39,7 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
           0,
           0,
           -1,
+          0,
         );
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);

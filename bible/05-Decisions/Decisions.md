@@ -266,6 +266,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
 - [[What a Player Can Use Wears Its Mark Over It]]
+- [[Other Players Wear a Nameplate, Their Level or Prestige in a Square]]
+- [[Holding Use on a Player Opens Their Interact Menu]]
+- [[Chat Comes From DFO With Local, World and Whisper]]
+- [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]
 
 ## Replaced
 

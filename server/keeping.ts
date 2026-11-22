@@ -30,6 +30,8 @@ export interface KeptRoom {
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
+  /** Names a player by their account's username, which others read over their head. */
+  name(player: number, name: string): boolean;
   /** Why the room's gate shuts to a player's kept character, or to a new one (null), with the story the player already
    *  holds in the room carried forward; empty when it may enter. */
   shut(player: number, kept: string | null): string;
@@ -176,6 +178,7 @@ export class Keeper {
         this.lost(other);
       }
     this.room.own(player, claimed.account);
+    if (claimed.name !== null) this.room.name(player, claimed.name);
     if (this.company) this.admitted.add(claimed.account);
     this.held.set(player, {
       account: claimed.account,

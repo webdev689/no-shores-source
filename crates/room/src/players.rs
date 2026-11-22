@@ -68,7 +68,7 @@ pub struct Shown {
 /// hands hold (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand
 /// before them, or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it
 /// fights by combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear;
-/// and a spell they cast.
+/// a spell they cast; and whether a menu is open on their screen.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -82,6 +82,7 @@ pub struct Input {
     pub ask: Option<Asked>,
     pub spawn_level: u8,
     pub cast: Option<crate::arts::Cast>,
+    pub menu: bool,
 }
 
 /// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
@@ -198,6 +199,8 @@ pub struct Player {
     /// The foes their own blows landed on in the last ten seconds, with the tick of each one's last: each shares its
     /// kill's healing charge with them (`recharge.rs`).
     pub(crate) struck: std::collections::BTreeMap<FighterId, u64>,
+    /// What others read over their head (`plates.rs`).
+    pub(crate) plate: crate::plates::Plated,
 }
 
 impl Player {
@@ -250,6 +253,7 @@ impl Player {
             counts: crate::perks::PerkCounts::default(),
             atheric: crate::atheric::AthericCounts::default(),
             struck: std::collections::BTreeMap::new(),
+            plate: crate::plates::Plated::default(),
         }
     }
 
