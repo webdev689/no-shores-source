@@ -103,7 +103,7 @@ through an angle (a slanted rod, a turned slab) is still placed by trigonometry 
 last bit differently, and a coordinate landing on a rounding's edge would then bake other bytes: a thin piece that
 need not slant (a flower's stem) stands upright. A module's random draws are seeded by its place in the
 catalogue, so a new module goes at the catalogue's end. The `modules` workflow bakes on every change to the module
-tools, fails if the bake does not make the committed manifest, and publishes with the repository's Cloudflare token.
+tools, fails if the bake does not make the committed manifest, and publishes with the repository's `R2_TOKEN`.
 
 ## In the game
 

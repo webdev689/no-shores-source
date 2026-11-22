@@ -308,11 +308,11 @@ export function crystalFrame(rarity: number, frame: number): CrystalFrame {
 
 /** A rarity's crystal still, for the screens: its halo see-through, its colours then `#rrggbbaa`, which only an SVG
  *  reads; or without its halo, solid, for a mark in the world. */
-export function crystalStill(rarity: number, halo = true): PixelPicture {
-  const key = `${rarity}:${halo}`;
+export function crystalStill(rarity: number, halo = true, pixels = STILL_PIXELS): PixelPicture {
+  const key = `${rarity}:${halo}:${pixels}`;
   const kept = stills.get(key);
   if (kept) return kept;
-  const baked = bake(toneOf(rarity), STILL_TURN, STILL_PIXELS, STILL_FILL);
+  const baked = bake(toneOf(rarity), STILL_TURN, pixels, STILL_FILL);
   const still = pictured(baked, (pixel) => {
     const alpha = baked.shown[pixel] ?? 0;
     const colour = colourHex(baked.colours[pixel] ?? [0, 0, 0]);

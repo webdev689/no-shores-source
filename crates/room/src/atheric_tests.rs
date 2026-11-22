@@ -165,7 +165,7 @@ fn an_arrow_loosed_from_the_draw_is_aimed_and_a_quick_one_is_not() {
     // A quick shot, one drawn, and one drawn a moment with Hair Trigger's softer aim.
     for (power, leaps) in [(1.0, false), (1.2, true), (0.9, true)] {
         let shot = combat::shots::loose(player, Ranged::Bow, [0.0, 0.0, 1.0], 0.0, 0.0, power);
-        room.shots.push((shot, Some(crate::power::Loosed { aimed: crate::aimed(&shot), ..held })));
+        room.shots.push((shot, Some(crate::power::Loosed { aimed: crate::power::aimed(&shot), ..held })));
         let before = taken(&room, foes[1]);
         for _ in 0..10 {
             room.fly_shots();

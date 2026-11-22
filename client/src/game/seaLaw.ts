@@ -3,10 +3,25 @@ import { coastDistance } from '../overworld/islandView.ts';
 import { alongNear, PACE_STEPS, type Pace, SHIP_SPEED, type Voyage } from '../overworld/voyage.ts';
 import { cellHeight, deckToWorld, type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import type { Shot } from './camera.ts';
+import type { Landmass } from './landmass.ts';
+import { bearingTo } from './nodes.ts';
 
 /** Where a ship lies off a harbour: out from the city's middle through its harbour in steps of `stepM`, past the
  *  shore to water `depthM` deep, then `clearM` on, within `farthestM` of the harbour. */
 export const OFFSHORE = { stepM: 50, depthM: 4, clearM: 600, farthestM: 20_000 } as const;
+
+/** Where a ship first lies off a landmass, and the way she faces: off its city's harbour, out from its middle, or off
+ *  its first node; facing the city, so the view over her looks at the island. */
+export function firstAnchorage(landmass: Pick<Landmass, 'plan' | 'nodes' | 'heightAt'>): {
+  anchorage: Point2;
+  heading: number;
+} {
+  const { plan } = landmass;
+  const social = landmass.nodes[0]?.centre ?? [0, 0];
+  const [from, through] = plan ? [plan.centre, plan.harbour ?? social] : [social, social];
+  const anchorage = offshore(landmass.heightAt, from, through);
+  return { anchorage, heading: bearingTo(anchorage, from) };
+}
 
 /** A ship's place off a harbour (`through`), out along the way from `from` to it; the harbour itself where no water
  *  that deep lies that way. */

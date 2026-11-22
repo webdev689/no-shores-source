@@ -44,3 +44,16 @@ test('a mark bobs on a phase of its own, holds still under reduced motion, and o
   const many = Array.from({ length: MOST + 4 }, (unused, place) => ({ picture, at: [place * 0.5, 0, 2] as const }));
   assert.equal(marksSeen(many, [0, -5, 2], 0, true).length, MOST * each, `the nearest ${MOST}`);
 });
+
+test('a beating mark swells and eases back, a mark that does not beat keeps its width, and both hold under reduced motion', () => {
+  const picture = AMMO_BOX;
+  const widths = (beating: boolean, holding: boolean) =>
+    [0, 0.2, 0.4, 0.6, 0.8, 1].map((seconds) =>
+      widthOf(marksSeen([{ picture, at: [0, 0, 2], beating }], [0, -3, 2], seconds, holding)),
+    );
+  const swelling = widths(true, false);
+  assert.ok(Math.max(...swelling) > Math.min(...swelling) * 1.1, 'it swells');
+  assert.ok(Math.min(...swelling) > WIDTH_M * 0.95, 'never narrower than at rest');
+  for (const still of [widths(false, false), widths(true, true)])
+    assert.ok(Math.max(...still) - Math.min(...still) < 1e-9, 'still');
+});

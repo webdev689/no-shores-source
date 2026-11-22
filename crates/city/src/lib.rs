@@ -4,6 +4,7 @@
 //! is seen. A city that is not a port is planned the same way and then laid in ruins (`ruins`).
 
 pub mod articulation;
+pub mod board;
 pub mod collision;
 pub mod courtyard;
 pub mod districts;
@@ -13,6 +14,7 @@ pub mod hub;
 pub mod landmarks;
 pub mod landmarks_inland;
 pub mod life;
+pub mod mail;
 pub mod modules;
 pub mod ramps;
 pub mod rmb;

@@ -553,7 +553,8 @@ impl Room {
         {
             let Some(foe_type) = foe_type(number) else { continue };
             let id = self.stand_foe(foe_type, rank, place, facing, None);
-            let (level, shield) = gird_of(self.world_seed ^ WAVE_STREAM, called * 16 + nth as u32, levels);
+            let (level, shield) =
+                gird_of(self.world_seed ^ WAVE_STREAM, called * 16 + nth as u32, levels, self.shield_chance());
             self.gird(id, self.at_seas(level), shield);
             let clock = self.clock;
             if let Some(foe) = self.foes.get_mut(&id) {

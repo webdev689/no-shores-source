@@ -22,6 +22,26 @@ test('a players own gear the server wrote reads back whole, every column spelled
   const gear = readFromRoom(await written('gear.bin'));
   assert.equal(gear?.kind, 'gear');
   if (gear?.kind !== 'gear') return;
+  assert.equal(gear.prologueDone, false, 'a new character');
+  const nothing = { day: 0, cleared: [], week: 0, elite: false, abyss: false, boon: false };
+  assert.deepEqual(gear.activity, nothing, 'a character that has done nothing yet');
+  assert.equal(gear.bounties?.length, 6, 'the day’s board');
+  assert.equal(
+    gear.bounties?.some((bounty) => bounty.held),
+    false,
+    'a new character holds none',
+  );
+  assert.deepEqual(
+    gear.bounties?.map((bounty) => bounty.pool),
+    [0, 0, 1, 1, 2, 2],
+    'where each counts',
+  );
+  assert.ok(
+    gear.bounties?.every((bounty) => bounty.name !== ''),
+    'each its name',
+  );
+  assert.equal(gear.bountyXp, 2_500, 'at level 20');
+  assert.equal(typeof gear.day, 'number');
   assert.deepEqual([gear.level, gear.answered, gear.answer, gear.atMage, gear.spent], [20, 7, 0, true, [0]]);
   assert.deepEqual([gear.ammo, gear.ammoMost, gear.ammoShare, gear.crates, gear.cratePrice], [0, 0, 0.5, 2, 250]);
   assert.deepEqual(
@@ -38,6 +58,24 @@ test('a players own gear the server wrote reads back whole, every column spelled
   // order the inventory names them in (STOCK_NAMES).
   assert.deepEqual(gear.stocks, [11, 12, 13, 14, 2]);
   assert.equal(gear.items.length, 10, 'six pieces and the four modules every ship is built with');
+  // Two letters in the mail: a Rare Vestige for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
+  assert.deepEqual(
+    gear.mail?.map(({ vestige, item }) => [vestige?.rarity, vestige?.slot, vestige?.level, item?.kind, item?.level]),
+    [
+      [2, 4, 9, undefined, undefined],
+      [undefined, undefined, undefined, 25, 6],
+    ],
+  );
+  assert.deepEqual(
+    gear.mail?.map((letter) => [letter.from, letter.crowded]),
+    [
+      [0, false],
+      [4, false],
+    ],
+    'left lying, then salvage',
+  );
+  assert.ok(gear.mail?.every((letter) => letter.id > 0 && !letter.vestige?.vaulted));
+  assert.ok((gear.mail?.[1]?.item?.columns.length ?? 0) > 0, 'its nodes spelled out');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);
@@ -88,7 +126,11 @@ test('where a player stands crosses as the server wrote it, away from Shape and 
   assert.equal(sold.length, 21, 'seven pieces of each faction’s');
   const hood = sold.find((ware) => ware.named === 'lamplighters_hood');
   assert.deepEqual([hood?.id, hood?.price, hood?.level], [1, 6_000, 20]);
-  assert.equal(here.day, 20_777, 'the day of that Friday, which the smiths’ wares are asked by');
+  assert.equal(
+    here.day,
+    20_778,
+    'the clock’s day that Friday noon, begun at 09:00, which the smiths’ wares are asked by',
+  );
 });
 
 test('an ask crosses into an input with every field it names', () => {
@@ -208,7 +250,7 @@ test("the ship's part of the gear message reads back: its power, materials, hand
   assert.equal(gearOf(Gear.getRootAsGear(new flatbuffers.ByteBuffer(bare.asUint8Array()))).ship, null, 'none sent');
 });
 
-test("the ship's and crew's asks carry the numbers the protocol reads them by", async () => {
+test("the ship's, crew's, story's and bounties' asks carry the numbers the protocol reads them by", async () => {
   const wire = await readFile(new URL('../../../crates/protocol/src/gear_wire.rs', import.meta.url), 'utf8');
   const number = (name: string) => Number(new RegExp(`pub const ${name}: u8 = (\\d+);`).exec(wire)?.[1]);
   assert.deepEqual(
@@ -222,19 +264,19 @@ test("the ship's and crew's asks carry the numbers the protocol reads them by", 
       ASKS.grantOfficers,
       ASKS.scavenge,
       ASKS.stopGather,
+      ASKS.finishPrologue,
+      ASKS.takeBounty,
+      ASKS.turnInBounty,
+      ASKS.takeLetter,
+      ASKS.takeAllLetters,
     ],
     [
-      'INFUSE',
-      'RECRUIT',
-      'STATION',
-      'DISMISS',
-      'TRAIN',
-      'CHOOSE_OFFICER',
-      'GRANT_OFFICERS',
-      'SCAVENGE',
-      'STOP_GATHER',
+      ...['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'],
+      ...['STOP_GATHER', 'FINISH_PROLOGUE', 'TAKE_BOUNTY', 'TURN_IN_BOUNTY', 'TAKE_LETTER', 'TAKE_ALL_LETTERS'],
     ].map(number),
   );
+  const numbers = Object.values(ASKS);
+  assert.equal(new Set(numbers).size, numbers.length, 'no two asks share a number');
 });
 
 test("the roads' part of the gear message reads back: the quest walked, its counts, what is done, earned and waiting, and where its goal stands", () => {

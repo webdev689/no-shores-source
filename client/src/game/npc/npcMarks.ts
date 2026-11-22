@@ -1,18 +1,35 @@
 // The keepers' marks, drawn pixel by pixel as the Arts' emblems are: each keeper's sign in brass in a diamond, as
 // Destiny marks a vendor beside their name (an eye for the Mage, a shield for the Armorsmith, a sword for the
-// Weaponsmith, a needle and thread for the Tailor, a horseshoe for the Tack, an anchor for the Harbourmaster, and for
-// Shape a shape that is no shape); and the glyph of Shapes, the currency only he takes. A faction's mark is its emblem
-// (npcScreen.ts). The same marks bob over the keepers in the world (overheadMarks.ts).
+// Weaponsmith, a needle and thread for the Tailor, a horseshoe for the Tack, an anchor for the Harbourmaster, a sealed
+// letter for the Postmaster, and for Shape a shape that is no shape); the bounty board's gold "!", as Destiny marks a
+// bounty; and the glyph of Shapes, the currency only he takes. A faction's mark is its emblem (npcScreen.ts). The same
+// marks bob over the keepers and the board in the world (overheadMarks.ts).
 
 import type { PixelPicture } from '../../combat/dropPictures.ts';
 
 /** A map's colours in order of its letters: outline, ground, body, light. */
 const LETTERS = 'abcd';
 const BRASS = ['#2a1b08', '#16110a', '#c08a3e', '#f3cf86'];
+const GOLD = ['#2a1b08', '#16110a', '#e0a526', '#ffe27a'];
+/** A sign's colours: the board's gold, every keeper's brass. */
+const coloursOf = (kind: string) => (kind === 'board' ? GOLD : BRASS);
 const SHAPES = ['#15121c', '#4a4258', '#9a8fb0', '#e9e2f7'];
 
 /** Each keeper's sign, 11 × 11, laid in the middle of the diamond. */
 const SIGNS: Readonly<Record<string, readonly string[]>> = {
+  mail: [
+    '...........',
+    '.ddddddddd.',
+    '.dd.....dd.',
+    '.d.d...d.d.',
+    '.d..d.d..d.',
+    '.d...c...d.',
+    '.d..ccc..d.',
+    '.d...c...d.',
+    '.d.......d.',
+    '.ddddddddd.',
+    '...........',
+  ],
   vault: [
     '...........',
     '..ddddddd..',
@@ -105,6 +122,19 @@ const SIGNS: Readonly<Record<string, readonly string[]>> = {
     '..ccccccc..',
     '....ccc....',
   ],
+  board: [
+    '...........',
+    '....ddc....',
+    '....ddc....',
+    '....ddc....',
+    '....ddc....',
+    '....ddc....',
+    '.....d.....',
+    '...........',
+    '....ddc....',
+    '....ddc....',
+    '...........',
+  ],
   shape: [
     '...........',
     '....dd.....',
@@ -194,7 +224,7 @@ export function keeperPicture(kind: string): PixelPicture | null {
   const kept = pictures.get(kind);
   if (kept !== undefined) return kept;
   const map = keeperMap(kind);
-  const picture = map ? { rows: map, colours: BRASS } : null;
+  const picture = map ? { rows: map, colours: coloursOf(kind) } : null;
   pictures.set(kind, picture);
   return picture;
 }
@@ -202,7 +232,7 @@ const pictures = new Map<string, PixelPicture | null>();
 
 export const keeperMarkSvg = (kind: string): string => {
   const map = keeperMap(kind);
-  return map ? markSvg(map, BRASS) : '';
+  return map ? markSvg(map, coloursOf(kind)) : '';
 };
 export const shapesSvg = (): string => markSvg(SHAPES_GLYPH, SHAPES);
 /** A barding's mark, for a row that names the barding beside it: the gains feed's. */

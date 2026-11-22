@@ -1,6 +1,6 @@
-// Every texture archive's records, each its size and frame count, as Daggerfall files them: `WxH` a record, `fN` its
-// frames when more than one, `*N` for N alike in a row. A painted picture keeps its record's size, so every model's
-// mapping holds.
+// Every texture archive's records, each its size and frame count, as Daggerfall files them, and from 1000 Overlook's
+// own: `WxH` a record, `fN` its frames when more than one, `*N` for N alike in a row. A painted picture keeps its
+// record's size, so every model's mapping holds.
 
 // prettier-ignore
 const CATALOG: Readonly<Record<number, string>> = {
@@ -473,6 +473,10 @@ const CATALOG: Readonly<Record<number, string>> = {
   509: '2x2 35x41 18x25 43x47 56x60 30x49 27x41 36x28 30x38 34x59 46x59 72x33 32x42 96x131 33x24 142x185 42x117 41x51 75x96 44x51 66x51 15x32 32x29 23x39 39x98 66x77 43x26 42x37 79x56 33x24 82x128 130x60',
   510: '2x2 30x49 17x15 48x78 51x79 27x75 27x41 16x15 30x38 18x26 48x60 46x108 35x113 77x147 40x99 83x107 70x84 43x46 54x60 49x55 66x57 33x69 15x11 18x36 39x97 67x134 31x26 33x40 21x59 35x20 81x149 44x53',
   511: '2x2 30x49 82x124 49x78 53x80 19x77 27x41 20x18 36x28 17x15 46x59 46x110 38x58 77x150 40x101 142x185 66x77 43x47 56x60 44x51 66x51 34x66 18x9 43x48 39x98 67x131 20x34 35x41 21x59 33x24 27x25 41x51',
+  1021: '64x64*6',
+  1121: '64x64*6',
+  1321: '64x64*6',
+  1421: '64x64*6',
 };
 
 /** A record's size in texels and its frames (an animated record has more than one). */

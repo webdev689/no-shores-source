@@ -144,13 +144,14 @@ const PALETTES: Readonly<Record<string, readonly string[]>> = {
   empty: ['#6b665c'],
 };
 /** A glyph as an SVG picture; a material past the catalogue's end shows an empty place. */
-export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): string {
+export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0, drawnAt = 36): string {
   if (glyph === 'resource') {
     const material = resourcePicture(tint);
     return material ? pictureSvg(material.rows, material.colours) : glyphSvg('empty');
   }
   if (glyph === 'vestige') {
-    const crystal = crystalStill(rarity);
+    // At a size 18 cells would not fill in whole pixels (a mark's 24), a crystal of 12.
+    const crystal = crystalStill(rarity, true, drawnAt % 18 !== 0 && drawnAt % 12 === 0 ? 12 : 18);
     return pictureSvg(crystal.rows, crystal.colours);
   }
   return pictureSvg(MAPS[glyph], PALETTES[glyph] ?? [OUTLINE]);

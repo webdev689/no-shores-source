@@ -65,7 +65,8 @@ impl Sea {
             None => {
                 let deck = self.decks.hulls.get(hull).unwrap_or(&self.deck);
                 let (faction, rank) = (pirate.commission.faction, foe_rank(pirate.commission.rank));
-                let room = Room::deck(deck, faction, rank, pirate.level.max(1));
+                let mut room = Room::deck(deck, faction, rank, pirate.level.max(1));
+                room.set_minute(self.minute);
                 self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won_at: None });
                 self.decks.boarded.len() - 1
             }
@@ -131,6 +132,7 @@ impl Sea {
     pub(super) fn step_off(&mut self, index: usize, player: PlayerId) {
         let Some(deck) = self.decks.boarded.get_mut(index) else { return };
         let Some(boarder) = deck.aboard.remove(&player) else { return };
+        deck.room.mail_lying(boarder);
         let kept = deck.room.kept_character(boarder).and_then(|text| gear::Character::from_json(&text));
         // A hand who fell this very tick is counted before their player leaves.
         deck.room.keep_hands();
@@ -139,8 +141,10 @@ impl Sea {
         self.fights.lose_men(player, f64::from(fallen) / naval::arms::LARGE_BOAT.crew);
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             (character.ship, character.ship_at) = (held.ship, held.ship_at);
-            // What only the sea changes while they fight on foot: their ship's experience, materials and crew.
+            // What only the sea changes while they fight on foot: their ship's experience, materials and crew, and
+            // the ships sunk in a fight they sailed in, counted toward their bounties (a deck counts none).
             (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
+            character.activity.clone_from(&held.activity);
             // An officer who joined at sea while they fought here took the sea's next id, which an item picked up on
             // the deck may hold too: they sign on again here, under an id of this character's.
             let joined: Vec<_> = held
@@ -162,6 +166,8 @@ impl Sea {
             let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
             character.ship[2] = character.ship[2].saturating_sub(man.saturating_mul(u16::from(fallen)));
             self.harbour.characters.insert(player, character);
+            // Off the deck their gear is the sea's again, sent them once more.
+            self.harbour.changed.insert(player);
         }
         if deck.aboard.is_empty() {
             let pirate = self.decks.boarded.remove(index).pirate;
@@ -181,6 +187,8 @@ impl Sea {
                 self.fights.scuttle_by(pirate.id);
                 continue;
             }
+            // Its day is the sea's, so a boarder's gear carries the day's bounties and is sent again as it turns.
+            deck.room.set_minute(self.minute);
             deck.room.tick();
             if deck.won_at.is_none() && deck.room.cleared() {
                 deck.won_at = Some(self.clock);
@@ -231,6 +239,15 @@ impl Sea {
         let boarders: Vec<PlayerId> = self.decks.boarded[index].aboard.keys().copied().collect();
         for player in boarders {
             self.step_off(index, player);
+        }
+    }
+
+    /// What still lies for a boarder on the captain's deck goes to their mail, as they leave the sea: before their
+    /// character's last save is read from the deck (`kept_character`).
+    pub fn mail_lying(&mut self, player: PlayerId) {
+        if let Some(deck) = self.decks.boarded.iter_mut().find(|deck| deck.aboard.contains_key(&player)) {
+            let boarder = deck.aboard[&player];
+            deck.room.mail_lying(boarder);
         }
     }
 

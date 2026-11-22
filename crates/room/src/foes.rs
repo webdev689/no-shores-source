@@ -6,6 +6,7 @@
 //! with it.
 
 use crate::judging::{Check, Group, How, Pending};
+use crate::spells::feet_of;
 use crate::{EventKind, Room, SpawnAsk};
 use ::foes::noises::{Noise, landed, running, shot, swing};
 use ::foes::{Brain, Call, FoeType, Place, Rank, Seen, aimed_shot, foe_type, notice, spawn};
@@ -182,10 +183,6 @@ impl foes::Spots for MeshSpots<'_> {
     }
 }
 
-fn feet(fighter: &Fighter) -> [f64; 3] {
-    [fighter.body.x, fighter.body.y, fighter.body.z]
-}
-
 /// How far a telegraphed blow's shape reaches from its foe's feet.
 fn shape_reach(telegraph: &Telegraph) -> f64 {
     let shape = combat::shapes::numbers(telegraph.shape);
@@ -306,7 +303,7 @@ impl Room {
         let caller_alive = self.fighter(caller).copied().filter(|at| !at.dead());
         let (Some(at), Some(called_type)) = (caller_alive, foe_type(call.foe_type)) else { return };
         let foe = self.foes.get(&caller).and_then(|found| found.brain.target()).and_then(|foe| self.fighter(foe));
-        let called = foe.map(|foe| Seen::Shouted { from: feet(&at), at: feet(foe) });
+        let called = foe.map(|foe| Seen::Shouted { from: feet_of(&at), at: feet_of(foe) });
         let (back_sin, back_cos) = (libm::sin(at.aim + PI), libm::cos(at.aim + PI));
         let behind = if call.place == Place::Behind { CALLED_BEHIND } else { 0.0 };
         let (from_x, from_y) = (at.body.x + back_sin * behind, at.body.y - back_cos * behind);
@@ -389,7 +386,7 @@ impl Room {
                 crews.push((id, call));
             }
             if let Some(at) = calls.shout {
-                shouts.push((id, feet(&fighter), at));
+                shouts.push((id, feet_of(&fighter), at));
             }
             let (next, happening) = step_fighter(
                 &fighter,
@@ -442,7 +439,7 @@ impl Room {
             .filter(|(_, other)| other.fighter.side != foe.side && !other.fighter.dead())
             .filter(|(_, other)| {
                 let body = other.fighter.body;
-                telegraph.strikes([body.x, body.y, body.z], &self.blocks)
+                telegraph.strikes([body.x, body.y, body.z], &self.blocks, &self.floor)
             })
             .map(|(other, found)| (*other, found.fighter))
             .collect();

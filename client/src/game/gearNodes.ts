@@ -108,7 +108,7 @@ export function glyphNode(
   rarity = 0,
   tint = 0,
 ): Node {
-  return svgNode(`glyph ${glyph} ${rarity} ${tint}`, glyphSvg(glyph, rarity, tint), size);
+  return svgNode(`glyph ${glyph} ${rarity} ${tint} ${size}`, glyphSvg(glyph, rarity, tint, size), size);
 }
 
 /** An element's glyph; nothing for none. */
@@ -460,13 +460,16 @@ export function plateNode(
   };
 }
 
+/** The keys' focus: white. */
+export const FOCUS = '#f2efe6';
+
 /** The keys' focus round a press `width` by `height`: a white ring 2 px out, clear of the press's own edges. */
 export function focusRing(width: number, height: number): Node {
   return {
     width: width + 8,
     height: height + 8,
     float: { to: 'parent', clipped: true, x: -4, y: -4 },
-    outline: { width: 2, colour: '#f2efe6' },
+    outline: { width: 2, colour: FOCUS },
   };
 }
 

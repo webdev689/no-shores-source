@@ -27,6 +27,7 @@ test('each drawn glyph is twelve pixels square, a Vestige its crystal, 18, in it
     return [1, 3, 5].map((start) => Number.parseInt(top.slice(start, start + 2), 16));
   };
   assert.match(glyphSvg('vestige', 4), /viewBox="0 0 18 18"/);
+  assert.match(glyphSvg('vestige', 4, 0, 24), /viewBox="0 0 12 12"/, "at a mark's 24, a crystal of 12, twice over");
   const [red = 0, green = 0, blue = 0] = mostly(4);
   assert.ok(blue > red && green > red, 'an Atheric Vestige is cyan blue');
   const [magicRed = 0, magicGreen = 0, magicBlue = 0] = mostly(1);

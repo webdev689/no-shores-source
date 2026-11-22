@@ -188,7 +188,8 @@ A bow, a crossbow or a gun raises no guard: the guard's button fires it ([[Range
   power at none to half again at a full second; a foe's drawn shot strikes as a quick one, times its might. Letting
   the aim go lowers the weapon unfired.
 - **In flight.** An arrow flies at 45 m/s and a bolt at 55, each falling 6 m/s² as it flies, until a block, the
-  ground the room stands bodies on (a node's land, its hills included) or a body stops it; a pistolet's or
+  ground the room stands bodies on (a node's land, its hills included), a dungeon's wall where it first enters one,
+  or a body stops it; a pistolet's or
   thunderlock's ball reaches 60 m along its line at once from a player's gun, and flies from a foe's, at 70 m/s and
   110 m/s, so it can be dodged. A body is an upright cylinder
   0.35 m across its middle (0.7 m wide) and 1.8 m tall; a shot strikes only what lies ahead of where it flew from, and

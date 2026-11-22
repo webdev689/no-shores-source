@@ -58,13 +58,53 @@ export function seaRoomName(difficulty: Difficulty): string {
   return difficulty === 'normal' ? 'sea' : `sea--${difficulty}`;
 }
 
+/** A patrol's dungeon's room's name before any run: `node-<id>--dungeon-<number>`, the one shared room at Normal, or
+ *  `node-<id>--elite--dungeon-<number>`, whose runs (`runOf`) are its rooms at Elite and Abyss. */
+export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficulty, number: number): string {
+  const seas = difficulty === 'normal' ? '' : `--${difficulty}`;
+  return `node-${patrol.id}${seas}--dungeon-${number}`;
+}
+
 /** Other names for Elite and Abyss, which a place the accounts kept may still carry. */
 const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
 
-/** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`); null for any other room. */
-export function nodeOfRoom(room: string): { readonly id: string; readonly seas: Difficulty } | null {
-  const found = /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?$/.exec(room);
+/** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`), the patrol's dungeon it is
+ *  (`--dungeon-<number>` after those, never a node's own name), and its run's instance (`--run-<instance>` last);
+ *  null for any other room. */
+export function nodeOfRoom(room: string): {
+  readonly id: string;
+  readonly seas: Difficulty;
+  readonly dungeon: number | null;
+  readonly run: string | null;
+} | null {
+  const found =
+    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--run-([a-z0-9]{8}))?$/.exec(room);
   if (!found?.[1]) return null;
   const named = found[2];
-  return { id: found[1], seas: named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty)) };
+  const dungeon = found[3] === undefined ? null : Number(found[3]);
+  const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
+  return { id: found[1], seas, dungeon, run: found[4] ?? null };
+}
+
+// A run's instance is drawn as the server's Find a Company draws one, by one rule.
+export { runInstance } from '../../../server/roomNames.ts';
+
+/** A run's room: the dungeon's room's name, then its instance. */
+export function runOf(base: string, instance: string): string {
+  return `${base}--run-${instance}`;
+}
+
+/** The run of `base` a company member is in, of the places the company's members play in; null for none. */
+export function sharedRun(base: string, places: readonly (string | null)[]): string | null {
+  const ofBase = (place: string | null): place is string =>
+    place !== null && place.startsWith(`${base}--run-`) && /^[a-z0-9]{8}$/.test(place.slice(`${base}--run-`.length));
+  return places.find(ofBase) ?? null;
+}
+
+/** Where the page's company's members play, from a fresh Roster: none alone, offline, or when the accounts do not
+ *  answer. */
+export async function companyPlaces(link: AccountLink | null): Promise<string[]> {
+  const roster = await link?.roster().catch(() => null);
+  if (!roster || typeof roster === 'string') return [];
+  return (roster.company?.members ?? []).flatMap((member) => (member.place === null ? [] : [member.place]));
 }

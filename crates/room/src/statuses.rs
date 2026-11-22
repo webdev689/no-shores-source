@@ -56,12 +56,15 @@ impl Room {
             return;
         }
         let shares = std::mem::take(&mut self.spells.linked);
-        let players = self.players.iter_mut().map(|(id, found)| (*id, &mut found.fighter));
-        let foes = self.foes.iter_mut().map(|(id, foe)| (*id, &mut foe.fighter));
-        for (id, fighter) in players.chain(foes).filter(|(_, fighter)| fighter.statuses.has(Status::Linked)) {
+        // Exposure slows what returns to the players alone; a foe heals as it always has.
+        let slowed = self.heal_times();
+        let players = self.players.iter_mut().map(|(id, found)| (*id, &mut found.fighter, slowed));
+        let foes = self.foes.iter_mut().map(|(id, foe)| (*id, &mut foe.fighter, 1.0));
+        for (id, fighter, times) in players.chain(foes).filter(|(_, fighter, _)| fighter.statuses.has(Status::Linked)) {
             let share = shares.get(&id).copied();
             if !fighter.dead() {
-                fighter.health = (fighter.health + LINKED_HEAL * share.unwrap_or(1.0)).min(fighter.health_max);
+                let heal = LINKED_HEAL * share.unwrap_or(1.0) * times;
+                fighter.health = (fighter.health + heal).min(fighter.health_max);
             }
             if let Some(share) = share {
                 self.spells.linked.insert(id, share);

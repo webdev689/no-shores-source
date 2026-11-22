@@ -253,6 +253,10 @@ export type FromRoomMessage =
       readonly base: bigint;
       readonly gonePlayers: readonly number[];
       readonly goneFoes: readonly number[];
+      /** In a dungeon's room, its cache: x, y, z, the way it faces and 1 open or 0 shut; empty in any other. */
+      readonly cache: readonly number[];
+      /** In an Abyss run, the revives its company has left; -1 in any other room. */
+      readonly revives: number;
     } & FleetPart &
       HarbourPart)
   | ({ readonly kind: 'gear' } & GearState);
@@ -532,6 +536,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       base: snapshot.base(),
       gonePlayers: Array.from(snapshot.gonePlayersArray() ?? []),
       goneFoes: Array.from(snapshot.goneFoesArray() ?? []),
+      cache: Array.from(snapshot.cacheArray() ?? []),
+      revives: snapshot.revives(),
       ...fleetOf(snapshot),
       ...harbourOf(snapshot),
     };

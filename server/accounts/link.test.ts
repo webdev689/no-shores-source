@@ -103,3 +103,9 @@ test('a session asked for twice at once makes one guest, kept by both', async ()
   assert.equal(second?.id, first.id);
   assert.equal((await link.session())?.id, first.id, 'and the next visit is the same guest');
 });
+
+test('Find a Company is reached by WebSocket at the accounts the page keeps its session with', () => {
+  assert.equal(browser().link.finderAt('node-krakens-grotto'), 'wss://accounts.test/v1/find/node-krakens-grotto');
+  const local = new AccountLink('http://127.0.0.1:8788', browser().storage);
+  assert.equal(local.finderAt('node-x--elite'), 'ws://127.0.0.1:8788/v1/find/node-x--elite');
+});

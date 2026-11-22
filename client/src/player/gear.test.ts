@@ -90,6 +90,9 @@ test('an item is named as the catalogue names it', () => {
   assert.ok(!answerText(103).startsWith('Refused'), 'a puzzle used again too soon has words');
   for (let code = 110; code <= 115; code++)
     assert.ok(!answerText(code).startsWith('Refused'), `the Arts' refusal ${code} has words`);
+  for (let code = 81; code <= 85; code++)
+    assert.ok(!answerText(code).startsWith('Refused'), `the board's refusal ${code} has words`);
+  assert.equal(answerText(82), 'That bounty is no longer on the board.');
   // A keeper the asks name, nothing to say, and no fragment choice waiting: the gear crate's 135 to 137, sent plus one.
   for (let code = 136; code <= 138; code++)
     assert.ok(!answerText(code).startsWith('Refused'), `the roads' refusal ${code} has words`);

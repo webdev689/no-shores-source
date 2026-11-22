@@ -1,6 +1,7 @@
 //! A patrol's land: its island's resource at its layout's resource places (each a pile of that resource), a third of
 //! them holding a node at once and the next third after a while, so a player can plan a route through them. Each
-//! player may gather each node once while it stands, holding E. Its fights are its garrison's (`garrison.rs`).
+//! player may gather each node once while it stands, holding E. Its fights are its garrison's (`garrison.rs`), and
+//! its dungeons lie behind its entrances (`entrances.rs`).
 
 use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, GATHER_TICKS};
 use crate::{PlayerId, ResourceNode, Room};
@@ -12,10 +13,17 @@ pub const ROTATE_TICKS: u64 = 60 * 180;
 
 impl Room {
     /// Makes this node's room a patrol: `resource`'s nodes where its layout stands them (`places`, each on its
-    /// section's floor), numbered in the layout's order as the page numbers them.
-    pub fn start_patrol(&mut self, resource: u8, places: &[[f64; 2]]) {
+    /// section's floor), numbered in the layout's order as the page numbers them; and its dungeons' entrances, laid
+    /// out from the node's id apart from them.
+    pub fn start_patrol(&mut self, node: &str, resource: u8, places: &[[f64; 2]]) {
         self.resource_nodes = places.iter().map(|&[x, y]| ResourceNode { x, y, resource }).collect();
         self.patrol = true;
+        let Some(section) = &self.section else { return };
+        let dry = |x: f64, y: f64| crate::entrances::dry(&self.floor, x, y);
+        let dungeons: Vec<(u32, dungeon::Style)> =
+            (0..dungeon::PER_PATROL).map(|number| dungeon::of_patrol(node, number)).collect();
+        let (ring, spawns) = (&section.ring, &section.spawns);
+        self.entrances = crate::entrances::laid(node, &dungeons, &self.floor, &dry, ring, spawns, places);
     }
 
     /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it.
@@ -78,8 +86,10 @@ impl Room {
             if let Some(owner) = &found.owner {
                 self.gathered.entry(owner.clone()).or_default().push(gathering.node);
             }
-            found.character.gather(usize::from(node.resource));
+            let resource = node.resource;
+            found.character.gather(usize::from(resource));
             found.character.tell(&gear::quests::Event::Gather);
+            self.saw(player, &gear::objectives::Feat::Gathered { resource });
         }
     }
 }

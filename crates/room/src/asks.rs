@@ -124,7 +124,8 @@ pub struct Gathering {
 
 /// A social space's counter that serves a player's gear: the Mage's identifies Vestiges, a vault's keeps gear, a
 /// smith's sells its own wares, the Tailor's emblems and dyes, the Tack's the horse's pieces, a faction's its pledge,
-/// cape, packages and Art, and Shape's, wherever he stands that week, his wares.
+/// cape, packages and Art, Shape's, wherever he stands that week, his wares, and the mail's hands over its letters;
+/// and the bounty board takes and turns in bounties.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CounterKind {
     Mage,
@@ -135,6 +136,9 @@ pub enum CounterKind {
     /// A faction's, by its number.
     Faction(u8),
     Shape,
+    Mail,
+    /// The bounty board, which takes and turns in bounties: no keeper stands at it.
+    Board,
 }
 
 /// A counter and its middle.
@@ -170,6 +174,8 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         Ask::RiseArt { art, .. } | Ask::BuyFragment { art, .. } => art_faction(*art),
         Ask::BuyFromShape { .. } => Some(CounterKind::Shape),
         Ask::Speak { keeper } => keeper_counter(*keeper),
+        Ask::TakeBounty { .. } | Ask::TurnInBounty { .. } => Some(CounterKind::Board),
+        Ask::TakeLetter { .. } | Ask::TakeAllLetters => Some(CounterKind::Mail),
         _ => None,
     }
 }
@@ -216,13 +222,13 @@ impl Room {
         });
         let social = at_counter || self.stall.is_some_and(|stall| near(stall, STALL_REACH));
         let (pledge, rank) = self.player(player).map_or((0, 0), |found| crate::crew::pledge_of(&found.character));
-        Here { social, day: self.day(), pledge, rank, week: gear::shape::week_of(self.minute) }
+        Here { social, day: self.day(), pledge, rank, week: gear::clock::week_of(self.minute) }
     }
 
     /// Where Shape stands, while he is in this social space: his place of the week among its spots.
     #[must_use]
     pub fn shape_at(&self) -> Option<[f64; 2]> {
-        let week = gear::shape::week_of(self.minute);
+        let week = gear::clock::week_of(self.minute);
         let present = self.counters.is_some() && gear::shape::present(self.minute);
         present.then(|| self.shape_spots.get(gear::shape::place(week)).copied()).flatten()
     }

@@ -45,7 +45,7 @@ pub fn worth(foe: Foe) -> Worth {
 }
 
 /// A worth at the foe's level: times (5 + its level) ÷ 10.
-fn at_level(amount: u32, foe_level: u8) -> u32 {
+pub(crate) fn at_level(amount: u32, foe_level: u8) -> u32 {
     amount * (5 + u32::from(foe_level)) / 10
 }
 

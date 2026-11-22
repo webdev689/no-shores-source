@@ -249,6 +249,8 @@ fn snapshot<'snapshot>(
         shots,
         lines,
         spells: &SPELLS,
+        cache: &[],
+        revives: None,
     }
 }
 
@@ -580,4 +582,29 @@ fn an_input_pointing_at_one_earlier_input_again_and_again_is_refused_before_it_i
     // As many as an input may carry, written once each, still read.
     let earlier: Vec<Input> = (1..=8).map(|sequence| input(sequence, Controls::default())).collect();
     assert_eq!(read_inputs(&inputs_bytes(&input(9, Controls::default()), &earlier)).expect("read").len(), 9);
+}
+
+#[test]
+fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
+    let plain = snapshot(&[], &[], &[], &[]);
+    let cache = [12.5, 30.0, 0.0, 1.25, 1.0];
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        let message = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message");
+        message.snapshot().expect("a snapshot").cache().map(|cache| cache.iter().collect::<Vec<f64>>())
+    };
+    assert_eq!(read(&plain), None);
+    assert_eq!(read(&Snapshot { cache: &cache, ..plain }), Some(cache.to_vec()));
+}
+
+#[test]
+fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none() {
+    let plain = snapshot(&[], &[], &[], &[]);
+    let read = |snapshot: &Snapshot<'_>| {
+        let bytes = snapshot_bytes(snapshot);
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot").revives()
+    };
+    assert_eq!(read(&plain), -1);
+    assert_eq!(read(&Snapshot { revives: Some(5), ..plain }), 5);
+    assert_eq!(read(&Snapshot { revives: Some(0), ..plain }), 0);
 }

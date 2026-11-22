@@ -75,11 +75,12 @@ pub struct Shield {
 }
 
 impl Shield {
-    /// The shield the `nth` foe a roll stands is given, if it is given one: of an element chosen evenly, holding
-    /// `SHIELD_SHARE` of a foe with `health`.
+    /// The shield the `nth` foe a roll stands is given, if it is given one at `chance` (`SHIELD_CHANCE` for most):
+    /// of an element chosen evenly, holding `SHIELD_SHARE` of a foe with `health`. The same roll at a higher chance
+    /// shields every foe it shielded at a lower one, with the same element.
     #[must_use]
-    pub fn rolled(dice: &Dice, nth: u32, health: f64) -> Option<Self> {
-        if dice.roll(Purpose::Shield, nth * 2) >= SHIELD_CHANCE {
+    pub fn rolled(dice: &Dice, nth: u32, health: f64, chance: f64) -> Option<Self> {
+        if dice.roll(Purpose::Shield, nth * 2) >= chance {
             return None;
         }
         let element = *Element::ALL.get(dice.pick(Purpose::Shield, nth * 2 + 1, Element::ALL.len()))?;
@@ -174,7 +175,7 @@ mod tests {
     #[test]
     fn about_one_foe_in_five_stands_with_a_shield() {
         let shielded = (0..2_000_u32)
-            .filter(|nth| Shield::rolled(&Dice { seed: 11, tick: 4, player: 0 }, *nth, 100.0).is_some())
+            .filter(|nth| Shield::rolled(&Dice { seed: 11, tick: 4, player: 0 }, *nth, 100.0, SHIELD_CHANCE).is_some())
             .count();
         assert!((300..500).contains(&shielded), "{shielded}");
     }
