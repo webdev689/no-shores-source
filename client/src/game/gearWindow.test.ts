@@ -34,12 +34,17 @@ function renderer(): UiRenderer {
 
 /** The menu on a fake page, its gear `gear` (null for none), resting while `resting` says; with a step of frames and
  *  the keys pressed on the page, and every ask it made. */
-function menu(gear: GearState | null = sampleGear(), resting = () => false, papers: ShipPanel | null = null) {
+function menu(
+  gear: GearState | null = sampleGear(),
+  resting = () => false,
+  papers: ShipPanel | null = null,
+  view = VIEW,
+) {
   const { window } = fakePage();
   Object.assign(globalThis, {
     devicePixelRatio: 1,
-    innerWidth: VIEW.width,
-    innerHeight: VIEW.height,
+    innerWidth: view.width,
+    innerHeight: view.height,
     setInterval: () => 0,
     requestAnimationFrame: () => 0,
   });
@@ -64,7 +69,7 @@ function menu(gear: GearState | null = sampleGear(), resting = () => false, pape
   const ui = new Interface(renderer());
   ui.speak = () => undefined;
   const frame = (events: UiEvent[] = []) => {
-    ui.frame(VIEW, events, 1 / 60);
+    ui.frame(view, events, 1 / 60);
     ui.draw(stack.node(ui));
   };
   /** A key as the page sends it: to the window's listeners, and a key going down to the interface's next frame. */
@@ -234,6 +239,22 @@ test('a hover card shows beside a slot under the pointer, kept on the screen', (
   assert.ok(card, 'the card is laid');
   assert.ok(card.x + card.width <= VIEW.width, 'within the screen');
   assert.ok(card.x + card.width <= slot.x || card.x >= slot.x + slot.width, 'beside the slot, not over it');
+});
+
+test('the hover card lets the pointer through, so where it must cover its tile, as on a phone, it holds still', () => {
+  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
+  const mail = [{ id: 31, from: 0, crowded: false, vestige, item: null }];
+  const { ui, open, frame } = menu({ ...sampleGear(), mail }, () => false, null, { width: 390, height: 844, scale: 1 });
+  open('mail');
+  const tile = ui.boxOf('letter-31');
+  assert.ok(tile);
+  frame([{ kind: 'pointer', x: tile.x + 4, y: tile.y + 4 }]);
+  const shown = Array.from({ length: 4 }, () => (frame(), [ui.hovered('letter-31'), ui.boxOf('gear-card') !== null]));
+  assert.deepEqual(shown.slice(1), [
+    [true, true],
+    [true, true],
+    [true, true],
+  ]);
 });
 
 test('without a room keeping gear the menu says where gear shows, and the inventory none of its shelves', () => {

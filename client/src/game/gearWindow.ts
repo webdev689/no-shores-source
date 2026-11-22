@@ -532,6 +532,8 @@ function cardFloat(
     id: 'gear-card',
     // Measured once laid, it shows from the next frame, where it fits.
     opacity: height > 0 ? 1 : 0,
+    // Where it must cover what it describes, the pointer stays on that, or the card would go and come each frame.
+    through: true,
     float: { to: 'screen', x: Math.max(gap, left), y: Math.max(gap, top), z: 40 },
     children: [card.content()],
   };
