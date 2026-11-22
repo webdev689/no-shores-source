@@ -22,8 +22,7 @@ import { startActivities } from './activityScreens.ts';
 import { HelmMap } from './helmMap.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
-import { rosterFor } from './footRoom.ts';
-import { ShipPeople } from './shipPeople.ts';
+import { shipPeopleOf } from './shipPeople.ts';
 import { Isles } from './isles.ts';
 import { islePlanWorker } from '../network/islePlans.ts';
 import { ISLE_MANIFEST, islePacksPrefix } from '../islands/isleManifest.ts';
@@ -160,7 +159,6 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     (error: unknown) => console.error('the waters could not be opened:', error),
   );
   const traffic = new FriendlyTraffic(waters, SEA_SHIPS);
-  const crews = new ShipPeople(rosterFor(roomModule), forge);
   /** The sea's islands the room tells of, and a landing at one under way. */
   const isles = new Isles(
     islePlanWorker(roomModule),
@@ -590,7 +588,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   startFrames(
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
-      ...{ ui, stack, drain, crews },
+      ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
       isles: islesDrawer,

@@ -264,21 +264,24 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **The owner's bugs and polish** (branch `claude/prologue-bugs-polish-lphicj`, its pull request open), the owner's
-  six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's calls:
-  [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
-  station clear of hull, gun mouths and every sail's swing, the sight centred; the eye swings round the ship on a
-  swap); [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]] (reload and the burst in a ring bar);
-  [[Ships Show Their People, and Captains' Gunners Misjudge]] (crew and captain on every other ship; captains strike
-  a Sloop's hull one ball in seven to one in two by rank, from 58 to 85%);
-  [[The Fight Music Varies, Recombined From Takes]];
-  [[The Prologue Is Passed Over, Its Camera and Footing Clear]] (the wreck's camera clear of what is drawn, its dead
-  ends and the sea off its ground, the wake, creation, lookout, calm, arena and overboard shots, silent skips, the
-  pad's Start); and, asked after, [[The Broadside Warning Is Written Over the Sea, Not a Panel]] (BROADSIDE, the tell as
-  a fuse and the brace, large; the firing ship lit on the compass). Tested offline (the full check); the HUD pictured headless with `tools/uiShot.mjs`. Not yet: played
-  live, the fight music heard by a person, anything seen on a real GPU. Open: a Boss closing on the player's Sloop
-  still wins every headless fight; whether one ball in two at Elite and above meets the owner's "insane accuracy";
-  the crew re-laid when a fight starts ([[Game]], limits).
+- **The owner's bugs and polish** (branch `claude/prologue-bugs-polish-lphicj`, its pull request open, `main` merged
+  in), the owner's six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's
+  calls: [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
+  station clear of hull, gun mouths and every sail's swing, the sight centred; the eye swings out and round at one
+  clear distance); [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]] (reload and the burst in a ring
+  bar); [[Ships Show Their People, and Captains' Gunners Misjudge]] (crew and captain on every other ship; captains'
+  misjudged volleys held within 13° of the beam);
+  [[The Fight Music Varies, Recombined From Takes]] (no two takes alike, even in the danger's layers);
+  [[The Prologue Is Passed Over, Its Camera and Footing Clear]] (the wreck's camera, footing and sea; every shot of
+  the Brig clear of its rig; creation's turn keys turn the figure); and, asked after,
+  [[The Broadside Warning Is Written Over the Sea, Not a Panel]] (BROADSIDE, the tell as a fuse and the brace, large).
+  The owner then asked for "a comprehensive audit": seven read-only auditors by area, every finding fixed or written
+  down as a limit, with tests. Tested offline (the full check); the HUD pictured headless with `tools/uiShot.mjs`.
+  Not yet: played live, the music heard by a person, anything seen on a real GPU. Open for the owner: whether a
+  Major's and higher's balls striking about half the time meets "insane accuracy"; whether the battery rose's red
+  outline on the side a blow came from comes back on the ship's bar; creation's turn keys turning the figure on the
+  spot; a Boss closing on the player's Sloop still wins every headless fight; the crew re-laid when a fight starts
+  ([[Game]], limits).
 - **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), merged with the owner's yes ("Lets go ahead and queue up
   the deploy"), which deploys the page and the rooms; audited (an independent read-only audit and a ponytail review,
   their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a death),

@@ -14,6 +14,7 @@ import { captainStands, HANDS_BY_HULL, handsShown, type ShipCrew } from '../ship
 import type { ShipPlace } from '../ships/shipView.ts';
 import type { Shot } from './camera.ts';
 import { clearLeg, Crew, type Post } from './crew.ts';
+import { rosterFor } from './footRoom.ts';
 import { type Company, companyOf } from './shipCompany.ts';
 
 /** A figure stands about this tall, metres; it is drawn only while it stands this many pixels tall on the picture. */
@@ -148,6 +149,10 @@ interface Kept {
   readonly company: Company;
   readonly dressedFor: string;
 }
+
+/** Every other ship's people, dressed from the rules in `module` and drawn by `forge`. */
+export const shipPeopleOf = (module: Promise<WebAssembly.Module>, forge: Pick<Cards, 'card' | 'frames' | 'forget'>) =>
+  new ShipPeople(rosterFor(module), forge);
 
 /** Every other ship's people, kept from frame to frame so its hands walk on. */
 export class ShipPeople {
