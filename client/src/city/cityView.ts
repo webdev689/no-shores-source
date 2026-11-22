@@ -9,6 +9,7 @@ import type { RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData, type CityTables, type Range, runs } from './cityBuild.ts';
 import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import { MODEL_FLOATS } from './cityModels.ts';
+import type { MeshData } from './mesh.ts';
 import { CityPainter, type PaintProgress } from './painter.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
 import { type CityClimate, type CityPlan, glowLamps } from './plan.ts';
@@ -115,14 +116,7 @@ export class CityView implements CityDrawer {
     };
     const sizes = new Float32Array(PICTURE_LAYERS * 4).fill(64);
     data.book.pictures.forEach((picture, layer) => sizes.set([picture.width, picture.height], layer * 4));
-    const solidVertices = new ArrayBuffer((data.solids.positions.length / 3) * MODEL_FLOATS * 4);
-    const [floats, whole] = [new Float32Array(solidVertices), new Uint32Array(solidVertices)];
-    for (let k = 0; k < data.solids.positions.length / 3; k++) {
-      floats.set(data.solids.positions.slice(k * 3, k * 3 + 3), k * MODEL_FLOATS);
-      floats.set(data.solids.normals.slice(k * 3, k * 3 + 3), k * MODEL_FLOATS + 3);
-      floats.set(data.solids.uvs.slice(k * 2, k * 2 + 2), k * MODEL_FLOATS + 6);
-      whole[k * MODEL_FLOATS + 8] = data.solids.layers[k];
-    }
+    const solidVertices = interleaved(data.solids);
     const tiles = device.createTexture({
       size: [data.plates.width, data.plates.width],
       format: 'rg8uint',
@@ -396,4 +390,24 @@ export class CityView implements CityDrawer {
     }
     return drew;
   }
+}
+
+/** A mesh's vertices as the GPU reads them, MODEL_FLOATS each: position, normal, UV, then the layer as a whole number.
+ *  Copied a number at a time: a city has hundreds of thousands, and slicing each would make as many arrays a rebuild. */
+export function interleaved(solids: MeshData): ArrayBuffer {
+  const count = solids.positions.length / 3;
+  const bytes = new ArrayBuffer(count * MODEL_FLOATS * 4);
+  const [floats, whole] = [new Float32Array(bytes), new Uint32Array(bytes)];
+  const { positions, normals, uvs, layers } = solids;
+  for (let vertex = 0; vertex < count; vertex++) {
+    const [laid, three, two] = [vertex * MODEL_FLOATS, vertex * 3, vertex * 2];
+    for (let axis = 0; axis < 3; axis++) {
+      floats[laid + axis] = positions[three + axis] ?? 0;
+      floats[laid + 3 + axis] = normals[three + axis] ?? 0;
+    }
+    floats[laid + 6] = uvs[two] ?? 0;
+    floats[laid + 7] = uvs[two + 1] ?? 0;
+    whole[laid + 8] = layers[vertex] ?? 0;
+  }
+  return bytes;
 }
