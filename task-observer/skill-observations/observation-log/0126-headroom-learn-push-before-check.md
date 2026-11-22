@@ -23,3 +23,14 @@
   `top_active`, so a dashed marker cannot break the floor write.
 - The Stop hook: it asks for a push at every turn's end, including while a required check runs; it could skip its
   demand while a `cargo xtask check` process is alive.
+
+## Again, 2026-11-22 (No Shores, the owner's six prologue points, #161)
+
+`headroom learn --project . --apply` wrote the same rule once more to `MEMORY.md` (Git Workflow): "A Stop hook requires
+every commit to be pushed. Push to the session branch right after each commit". The session had held four pushes for
+the check, as CLAUDE.md asks; the check failed three times (Prettier, a lint, test fixtures the plain `tsc -p` skips),
+so pushing on the hook's word would have pushed three broken heads. Fixed by hand again. This is the fifth time the same
+lesson has been learnt (0026, 0067, 0097, 0126, now): per the second-violation rule the fix is a barrier, not a
+rewording, e.g. the end-of-session step filtering headroom's output for a push rule that does not name the check, or
+the Stop hook itself saying "push once `cargo xtask check` passes" so the transcripts headroom learns from stop teaching
+the bare push.

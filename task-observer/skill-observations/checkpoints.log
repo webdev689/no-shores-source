@@ -54,3 +54,5 @@
 2026-11-22T20:57:08Z overlook second audit: logged 137
 2026-11-22 21:00 [overlook-source] session-start scan: files=110 parsed=102 principles=0
 2026-11-22 20:33 [overlook-source] session-start scan: files=110 parsed=102 principles=0
+2026-11-22 22:33 [overlook-source] session-start scan: files=112 parsed=104 principles=0
+2026-11-22 no-shores prologue points: checkpoint after six tasks; one observation logged (0139)
