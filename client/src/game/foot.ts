@@ -2,7 +2,8 @@ import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
-import { marksSeen } from '../combat/marksOver.ts';
+import { marksMesh } from '../combat/marks.ts';
+import { litMarksSeen, marksSeen } from '../combat/marksOver.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
@@ -78,12 +79,14 @@ export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
  *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
- *  and the nodes' beams; the arcs of its blows, in world metres; and what its display shows), and the keys listed. */
+ *  and the nodes' beams; the lit keepers' marks, measured alike, drawn over everything; the arcs of its blows, in
+ *  world metres; and what its display shows), and the keys listed. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
   readonly standing: Standing;
   readonly marks: Float32Array;
+  readonly lit: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly StripHint[];
@@ -466,7 +469,8 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
-    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props());
+    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props(), this.context.waits);
+    const lit = marksMesh([], [], [], litMarksSeen(marked, shot.eye, clock), shot.eye);
     const dropped = dropsLaid(this.drops, gearNow?.drops ?? [], clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
@@ -565,7 +569,7 @@ export class Foot {
     const edge = this.standing;
     const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
     const dark = arrivals.darkOf(fight.player, clock);
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, dark };
+    return { shot, figures, standing: edge, marks, lit, swings, fight: fought, hints, dark };
   }
 
   /** Where the player stands with the section's edge, as the room said. */

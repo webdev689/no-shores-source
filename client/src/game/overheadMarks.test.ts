@@ -32,14 +32,31 @@ test('each keeper who deals with a player wears their own mark over their crown;
   assert.ok(keeperPicture('harbourmaster'), 'the Harbourmaster has a sign of his own');
 });
 
-test("the Postmaster's sealed letter beats over him while letters wait for the player, and stands still while none does", () => {
+test("the Postmaster's sealed letter is lit over him while letters wait for the player, and unlit while none does", () => {
   const here = { stations: [station('mail', [0, 0]), station('weaponsmith', [10, 0])] };
   const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
-  const beating = (mail: readonly unknown[]) =>
-    markedHere({ mail } as unknown as GearState, here, () => 0).map((mark) => mark.beating);
+  const lit = (mail: readonly unknown[]) =>
+    markedHere({ mail } as unknown as GearState, here, () => 0).map((mark) => mark.lit);
   assert.equal(markedHere(null, here, () => 0)[0]?.picture, keeperPicture('mail'), 'his own sign');
-  assert.deepEqual(beating([letter]), [true, false], 'his alone, while a letter waits');
-  assert.deepEqual(beating([]), [false, false]);
+  assert.deepEqual(lit([letter]), [true, false], 'his alone, while a letter waits');
+  assert.deepEqual(lit([]), [false, false]);
+});
+
+test('a keeper a quest step asks the player to speak with is lit; the others are not', () => {
+  const here = { stations: [station('stormcallers', [0, 0]), station('lamplighters', [10, 0])] };
+  const lit = markedHere(
+    null,
+    here,
+    () => 0,
+    null,
+    (counter) => counter === 'lamplighters',
+  ).map((mark) => mark.lit);
+  assert.deepEqual(lit, [false, true]);
+  assert.deepEqual(
+    markedHere(null, here, () => 0).map((mark) => mark.lit),
+    [false, false],
+    'none, asked by no quest',
+  );
 });
 
 test('the bounty board wears a gold "!" over its gable, a sign of its own in the keepers\' diamond; no other plaza one', () => {

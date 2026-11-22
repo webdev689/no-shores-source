@@ -1,6 +1,7 @@
 // What wears a mark over it on foot (combat/marksOver.ts lays them): over each keeper who deals with a player their
 // sign in its brass diamond, or a faction's emblem in the diamond edged in its Art's colour, as their screen shows them
-// (npc/npcMarks.ts), the Postmaster's sealed letter beating while letters wait; over the bounty board its gold "!";
+// (npc/npcMarks.ts), lit while the keeper has something for the player (a quest step to speak with them, or the
+// Postmaster's letters waiting), so it pulses and is seen from everywhere; over the bounty board its gold "!";
 // over Shape on his week's spot his own; and over each dungeon entrance's door a door. A resource node wears none: its
 // own picture stands on the ground (nodeCards.ts).
 
@@ -96,27 +97,31 @@ export function markOfKind(kind: string): PixelPicture | null {
   return kept;
 }
 
+/** Whether the keeper at a counter of `kind` has something for the player, so their mark is lit: a quest step asks
+ *  to speak with them (`waits`), or, the Postmaster's, letters wait in `gear`. The held map lights their coin alike. */
+export const keeperLit = (gear: GearState | null, kind: string, waits: (counter: string) => boolean): boolean =>
+  (kind === 'mail' && (gear?.mail?.length ?? 0) > 0) || waits(kind);
+
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
- *  over its keeper's crown while the keeper stands there (the bounty board over its gable), Shape over his while he is
- *  here, and each of a patrol's dungeon entrances (its gear's `dungeons`) over its door's lintel, once `props` gives
- *  its model's door. */
+ *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `waits` says a
+ *  quest step asks to speak with its keeper or, the Postmaster's, while letters wait; Shape over his while he is here;
+ *  and each of a patrol's dungeon entrances (its gear's `dungeons`) over its door's lintel, once `props` gives its
+ *  model's door. */
 export function markedHere(
   gear: GearState | null,
   here: Pick<NodeInfo, 'stations' | 'visitorSpots'>,
   floor: (x: number, y: number) => number,
   props: PropTable | null = null,
+  waits: (counter: string) => boolean = () => false,
 ): Marked[] {
   const marked: Marked[] = [];
   const crown = (x: number, y: number, top = BODY_HEIGHT): Point => [x, y, floor(x, y) + top + OVER_HEAD_M];
-  // The Postmaster's mark beats while letters wait for the player, so it is seen from across the plaza.
-  const waiting = (gear?.mail?.length ?? 0) > 0;
   for (const station of here.stations ?? []) {
     // A keeper away from their post (the elder on her welcome) leaves it unmarked until they are back.
     const there = !awayFromCounters.has(station.kind) && offerAt([station], ...station.counter);
     const picture = there ? markOfKind(station.kind) : null;
     const top = station.kind === 'board' ? BOARD_TOP_M : BODY_HEIGHT;
-    if (picture)
-      marked.push({ picture, at: crown(...station.keeper, top), beating: waiting && station.kind === 'mail' });
+    if (picture) marked.push({ picture, at: crown(...station.keeper, top), lit: keeperLit(gear, station.kind, waits) });
   }
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const own = keeperPicture('shape');

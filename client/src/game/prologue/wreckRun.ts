@@ -517,6 +517,7 @@ export class WreckRun {
       figures,
       standing: { kind: 'inside' },
       marks,
+      lit: new Float32Array(),
       swings,
       fight: fought,
       hints,

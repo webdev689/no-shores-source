@@ -37,6 +37,8 @@ const OVER_THE_LAND_M = 0.12;
 export class FootView {
   private readonly gpu: Gpu;
   private readonly marks: MarkDraw;
+  /** The lit keepers' marks, drawn over everything. */
+  private readonly lit: MarkDraw;
   private readonly swings: SwingView;
   private readonly hud: Hud;
   /** Whether the fight's display shows: on foot only. */
@@ -48,6 +50,7 @@ export class FootView {
   constructor(gpu: Gpu, stack: Stack, forge: Cards, beside: (ui: Interface) => readonly Laid[] = () => []) {
     this.gpu = gpu;
     this.marks = new MarkDraw(gpu, SAMPLES);
+    this.lit = new MarkDraw(gpu, SAMPLES);
     this.swings = new SwingView(gpu);
     // Where the game's own pieces stand, as the interface last laid them.
     let laidBy: Interface | null = null;
@@ -124,6 +127,7 @@ export class FootView {
     });
     // The marks are measured from the eye: it stands at their origin.
     this.marks.set(shown.marks, [0, 0, 0], shot.eye);
+    this.lit.set(shown.lit, [0, 0, 0], shot.eye);
     this.swings.set(shown.swings);
     const matrix = shiftedExactly(fromEye, [-eyeX, -eyeY, -eyeZ]);
     this.hud.update(
@@ -150,12 +154,13 @@ export class FootView {
     return {
       under: { drawInto: (pass) => drawn.draw(pass) },
       // The solid marks with the figures; the blows' arcs and the see-through marks over the water, so its sky and
-      // surface never cover them.
+      // surface never cover them; and the lit keepers' marks over all of it, seen from everywhere.
       over: {
         drawInto: (pass, eyeMatrix) => marks.drawSolid(pass, raised(eyeMatrix)),
         overWater: (encoder, target, eyeMatrix, depth) => {
           this.swings.drawOver(encoder, target, depth, own(eyeMatrix));
           marks.drawClearOver(encoder, target, depth, raised(eyeMatrix));
+          this.lit.drawAbove(encoder, target, raised(eyeMatrix));
         },
         ...(lit ? { lightInto } : {}),
       },

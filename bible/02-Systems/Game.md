@@ -230,9 +230,15 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
-  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. The Postmaster's
-  sealed letter beats while letters wait for the player, swelling a fifth wider and easing back every 1.3 s, so it is
-  seen from across the plaza; it stands still while none waits, and under reduced motion. A whole mark
+  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. A keeper's mark
+  is lit while the keeper has something for the player (`keeperLit`;
+  [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them, once the story and the welcome are
+  past (`Quests.wants`), or, the Postmaster's sealed letter, letters wait. A lit mark is laid apart (`litMarksSeen`):
+  at any distance, every one of them, whole, beating (a fifth wider and back every 1.3 s), farthest first, and drawn
+  last of all over the finished picture with no depth (`MarkDraw.drawAbove`), so it is seen from everywhere in the
+  space, through walls and crowds; never narrower than 0.017 radians, it keeps its size on the screen however far.
+  It holds still under reduced motion, and goes out once the player has spoken with the keeper or taken their
+  letters. A whole mark
   gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
   layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
   is laid flat, so no layer shows through another.

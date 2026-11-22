@@ -1,7 +1,8 @@
 // The fight's marks on the GPU, for the Test Ground's scene and the game's alike. Solid marks write depth and are
 // drawn with the figures; the see-through ones are blended after them, far to near, tested against what is drawn.
 // The game draws its see-through marks after the water, testing them against the scene's depth by hand, so the water
-// laid over the land near a coast never covers a mark that stands above it.
+// laid over the land near a coast never covers a mark that stands above it; and a lit keeper's mark last of all, over
+// everything, so it is seen from everywhere (`drawAbove`).
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { LIGHT_DEPTH, LIGHT_TARGET, LIGHT_WGSL } from './lightLayer.ts';
@@ -99,6 +100,8 @@ export class MarkDraw {
     depth: GPUTexture | null;
     group: GPUBindGroup | null;
   } | null = null;
+  private above: GPURenderPipeline | null = null;
+  private readonly viewLayout: GPUBindGroupLayout;
   private readonly view: GPUBuffer;
   private readonly group: GPUBindGroup;
   private readonly order = new MarkOrder();
@@ -114,6 +117,7 @@ export class MarkDraw {
     const layout = device.createBindGroupLayout({
       entries: [{ binding: 0, visibility: SHADER_STAGE.vertex, buffer: {} }],
     });
+    this.viewLayout = layout;
     const pipeline = (fragment: string, depthWrite: boolean) =>
       device.createRenderPipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [layout] }),
@@ -191,6 +195,30 @@ export class MarkDraw {
     pass.setBindGroup(0, over.group);
     pass.setVertexBuffer(0, this.buffer);
     pass.draw(this.counts.clear, 1, this.counts.solid);
+    pass.end();
+  }
+
+  /** Every mark over a finished single-sampled picture `target`, in the order laid and hidden by nothing: a lit
+   *  keeper's mark, seen from everywhere (`litMarksSeen` lays them far to near, so a nearer one stands over it). */
+  drawAbove(encoder: GPUCommandEncoder, target: GPUTextureView, matrix: Float32Array): void {
+    const count = this.counts.solid + this.counts.clear;
+    if (!this.buffer || count === 0) return;
+    this.above ??= this.gpu.device.createRenderPipeline({
+      layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.viewLayout] }),
+      vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
+      fragment: {
+        module: this.module,
+        entryPoint: 'clear_fragment',
+        targets: [{ format: this.gpu.format, blend: { color: BLENDED, alpha: BLENDED } }],
+      },
+      primitive: { topology: 'triangle-list' },
+    });
+    this.writeView(matrix);
+    const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
+    pass.setPipeline(this.above);
+    pass.setBindGroup(0, this.group);
+    pass.setVertexBuffer(0, this.buffer);
+    pass.draw(count);
     pass.end();
   }
 

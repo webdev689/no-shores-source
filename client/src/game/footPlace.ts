@@ -34,6 +34,9 @@ export interface FootContext {
   readonly usePrompt: UsePrompt;
   /** What E does at a counter a quest names: speaks with its keeper. */
   readonly speak?: Speak;
+  /** Whether the keeper at a counter (a station's kind) has something for the player: a quest step asks to speak with
+   *  them. Their mark pulses and is seen from everywhere. */
+  readonly waits?: (counter: string) => boolean;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }

@@ -49,6 +49,7 @@ import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
 import { nodeCardsAt } from './nodeCards.ts';
+import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
 
 /** The region every island lies in. */
@@ -193,6 +194,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyes: walker.inFirstPerson,
       at: [body.x, body.y],
       heading: walker.player.yaw,
+      lit: (glyph) => keeperLit(here.gear?.gear ?? null, glyph, (counter) => playing.quests.wants(counter)),
     });
     // The held map, or the player's own hands in first person, over the finished picture.
     const hands =
