@@ -223,7 +223,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   atlas grows a layer at a time, up to 8 of 2048 square; full, it is laid afresh once the frame is
   drawn, each picture laid again as it is next wanted. A quad can turn about its middle, as an arrow does. One larger
   than a layer (2047 device pixels a side) is laid scaled down to fit and stretched back over its box; one whose own
-  texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn.
+  texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn. One laid at no
+  size, as a page's is on its first frame before its room is known, is not drawn.
 - **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the
   pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
   way, or by the pad's cross, whose up and down always move focus and whose left and right step a slider; A presses,
@@ -281,7 +282,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **A page of the menu** is a function of what the menu gives it (`MenuContext`) answering its nodes each frame: the
   gear and the way to ask of it, the pictures, the room its body leaves, the menu's sizes on this screen, the holds,
   the one hover card (shown beside a press while the pointer is over it or the keys gave it the focus, floated over
-  everything on the screen and kept above the footer; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
+  everything on the screen and kept above the footer, the pointer passing through it to what it describes where
+  there is no room beside it; a keeper's coins and the account's mark are named in it too), what X opens, and the Art's and Appearance screens' doors. It
   reads what was done to it through the interface; the menu chooses the footer's hints and presses by the view, and
   Escape's steps. The worn Art's screen, Appearance and the keepers' screens with the vault are drawn pages too; the
   Art's and Appearance stand to the body's edges, the Art's scene a live picture the game paints a step at a time, and
@@ -316,7 +318,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
   each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
-  the Journal, its timers down, the bounty board and a dungeon's entrance card. A shot may hear its events on a later
+  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card. A shot may hear its events on a later
   frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
 
@@ -989,7 +991,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone.
   The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
   (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
-  back, and the focus goes back where it came from.
+  back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone, the keeper stands
+  over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
