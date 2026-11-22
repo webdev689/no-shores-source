@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { askLines, hoverLine, litCells, MapAsk, otherWater, paintTravelAsk, travelAsked } from './heldMapAsk.ts';
+import {
+  askLines,
+  hoverLine,
+  litCells,
+  MapAsk,
+  otherWater,
+  paintHover,
+  paintTravelAsk,
+  travelAsked,
+} from './heldMapAsk.ts';
 import { recorder } from './painterForTests.ts';
 import type { MapWaters } from './watersWash.ts';
 
@@ -81,4 +90,16 @@ test('the map’s ask asks for a course into another water; no lets it go, a new
   assert.equal(ask.asking, null, 'within the ship’s own water');
   ask.choose(waters, { ok: false, why: 'No water leads there.' }, WEST);
   assert.equal(ask.asking, null, 'a course refused');
+});
+
+test('the pointer’s words stand to its right, drawn back where they would run off the map', () => {
+  const placed = (x: number) => {
+    const { painter, calls } = recorder();
+    paintHover(painter, 'The Elmwater · Grey Tithe · levels 8-14', x, 100, { width: 400, height: 300 }, 1);
+    const moved = calls.find((call) => call.name === 'translate')?.args as number[];
+    return moved[0]!;
+  };
+  assert.equal(placed(50), 64, 'right of the pointer');
+  const width = 'The Elmwater · Grey Tithe · levels 8-14'.length * 6;
+  assert.equal(placed(380), 400 - 6 - width, 'ending at the map’s edge, near it');
 });

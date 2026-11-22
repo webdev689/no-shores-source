@@ -7,9 +7,10 @@ import { FACE, INK } from './mapKey.ts';
 import { fontOf, type Painter, PARCHMENT, word } from './mapLetters.ts';
 import { HOLDER_WORDS, type MapWater, type MapWaters } from './watersWash.ts';
 
-/** The prompt's lines' heights and its padding, ink units; and how far right of and above the pointer its words stand. */
+/** The prompt's lines' heights and its padding, ink units; and how far right of and above the pointer its words stand,
+ *  and how far in from the map's edge at least. */
 const ASK = { title: 22, line: 18, padding: 10 } as const;
-const HOVER_OFFSET = { x: 14, y: -12 } as const;
+const HOVER_OFFSET = { x: 14, y: -12, margin: 6 } as const;
 
 /** The water at a world point, none on land or off the frame. */
 export function waterAt(waters: MapWaters, [x, y]: Point2): MapWater | null {
@@ -70,12 +71,22 @@ export function askLines(water: MapWater, yes: string): readonly string[] {
 }
 
 /** Paints the pointer's words beside it at `x`, `y`, ink units, in the painter's ink transform (`paintLettering`'s),
- *  `scale` the lettering's. */
-export function paintHover(painter: Painter, line: string, x: number, y: number, scale: number): void {
-  painter.save();
-  painter.translate(x + HOVER_OFFSET.x * scale, y + HOVER_OFFSET.y * scale);
-  painter.scale(scale, scale);
+ *  `scale` the lettering's: to its right, drawn back toward it where they would run off the map `ink` wide. */
+export function paintHover(
+  painter: Painter,
+  line: string,
+  x: number,
+  y: number,
+  ink: { readonly width: number; readonly height: number },
+  scale: number,
+): void {
   painter.font = fontOf('node');
+  const width = painter.measureText(line).width * scale;
+  const right = x + HOVER_OFFSET.x * scale;
+  const left = Math.min(right, ink.width - width - HOVER_OFFSET.margin * scale);
+  painter.save();
+  painter.translate(Math.max(0, left), Math.max(HOVER_OFFSET.x * scale, y + HOVER_OFFSET.y * scale));
+  painter.scale(scale, scale);
   painter.textAlign = 'left';
   word(painter, line, 0, 0, INK);
   painter.restore();

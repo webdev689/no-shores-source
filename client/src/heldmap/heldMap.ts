@@ -426,7 +426,8 @@ export class HeldMap {
     this.letteredShape = shape;
     if (lettering) {
       paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
-      if (said) paintHover(this.painter, said.line, said.x, said.y, lettering.scale);
+      // While the prompt asks, it says what the pointer's words would.
+      if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
       if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
     } else if (land) {
       const player = {
