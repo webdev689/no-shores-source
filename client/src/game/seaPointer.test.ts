@@ -14,9 +14,11 @@ function pointed(pointing: Omit<SeaPointing, 'atSea'>) {
   const listen = (kind: string, run: (event: unknown) => void) =>
     listeners.set(kind, [...(listeners.get(kind) ?? []), run]);
   page['addEventListener'] = () => undefined;
+  page['document'] = { addEventListener: () => undefined };
   const canvas = { addEventListener: listen, setPointerCapture: () => undefined, clientHeight: 720 };
   seaPointer(canvas as unknown as HTMLCanvasElement, { locked: false }, { atSea: () => true, ...pointing });
   delete page['addEventListener'];
+  delete page['document'];
   const spot = { offsetX: 10, offsetY: 10, pointerId: 1, deltaY: 100, deltaMode: 0 };
   return (...kinds: string[]) => {
     for (const kind of kinds) for (const run of listeners.get(kind) ?? []) run(spot);
@@ -79,4 +81,15 @@ test('the fight hears a key by the name it is bound by: a digit by its place on 
   window.dispatchEvent(new FakeEvent('keydown', { key: '@', code: 'Digit2' }));
   window.dispatchEvent(new FakeEvent('keydown', { key: 'W', code: 'KeyW' }));
   assert.deepEqual(heard, ['2', 'w']);
+});
+
+test('a key held in a fight is let go as the window loses focus or the page is hidden, never left held', () => {
+  const { window } = fakePage();
+  let letGo = 0;
+  const combat = { key: () => true, letGo: () => letGo++ } as unknown as SeaCombat;
+  fightControls({ addEventListener: () => undefined } as unknown as HTMLCanvasElement, () => combat);
+  window.dispatchEvent(new FakeEvent('keydown', { key: 'a', code: 'KeyA' }));
+  window.dispatchEvent(new FakeEvent('blur', {}));
+  (globalThis as unknown as { document: EventTarget }).document.dispatchEvent(new FakeEvent('visibilitychange', {}));
+  assert.equal(letGo, 2, 'let go on each');
 });
