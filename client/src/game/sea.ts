@@ -256,6 +256,8 @@ export class Sea {
 
   /** Stops the ship where it is; the voyage's destination is kept, to be resumed. */
   stop(): void {
+    // A travel under way is the cinematic's to end: no press stops it.
+    if (this.travelling) return;
     this.chase.stop();
     this.passage.stop();
   }
@@ -302,7 +304,7 @@ export class Sea {
   /** One step of the pace dial: -1 slower, +1 faster. */
   stepPace(direction: number): void {
     // Off the helm the room takes no new course, so the dial waits for the player's return to it.
-    if (!this.aboard.walking) this.passage.stepPace(direction);
+    if (!this.aboard.walking && !this.travelling) this.passage.stepPace(direction);
   }
 
   /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a sighted hostile ship's, the ship
@@ -342,8 +344,16 @@ export class Sea {
     return true;
   }
 
-  /** The player is back aboard: the view stands over the ship, whatever it showed when they landed. */
+  /** Whether the ship holds the player: down aboard it, or sailing away to other waters. Nothing takes them elsewhere
+   *  meanwhile. */
+  get busy(): boolean {
+    return this.aboard.active || this.travelling !== null;
+  }
+
+  /** The player is back aboard: the view stands over the ship, whatever it showed when they landed, and a travel left
+   *  under way is over. */
   cameAboard(): void {
+    this.endTravel();
     this.view.sail();
     this.view.chosen = null;
     this.press = null;
@@ -397,10 +407,7 @@ export class Sea {
     const watched = view.closeShare > 0 || view.helmView || this.aboard.active || this.travelling !== null;
     if (!this.combat) this.passage.advance(dt, watched);
     this.travelling?.step(dt, this.room);
-    if (this.travelling?.away.control) {
-      this.travelling = null;
-      view.sail();
-    }
+    if (this.travelling?.away.control) this.endTravel();
     view.step(dt);
     if (view.kind === 'sail' && !this.aboard.active) view.turn(input.turn, input.tilt, dt);
     const { ship } = this.passage;
@@ -543,8 +550,16 @@ export class Sea {
     this.aboard.drop();
     this.chase.stop();
     this.passage.stop();
+    this.endTravel();
     if (this.view.helmView) this.view.sail();
     this.combat = new SeaCombat(this.room, first, this.hull.marks, time, this.hull.shown);
+  }
+
+  /** Ends a travel under way at once, the room told to forget it: the view is the player's again. */
+  private endTravel(): void {
+    this.travelling?.cut(this.room);
+    this.travelling = null;
+    if (this.view.kind === 'travel') this.view.sail();
   }
 
   private note(): string {

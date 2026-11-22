@@ -3,9 +3,11 @@ import type { Gpu } from '../gpu.ts';
 import { coastField } from '../heldmap/coastField.ts';
 import { type Difficulty, HeldMap } from '../heldmap/heldMap.ts';
 import type { LandSheet } from '../heldmap/landSheet.ts';
+import type { MapWater } from '../heldmap/watersWash.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
+import { BINDS } from '../player/input.ts';
 import { boundWord } from './controls.ts';
 import type { Discovered } from './discovered.ts';
 import type { Sea } from './sea.ts';
@@ -25,7 +27,7 @@ export interface HelmMapContext {
   readonly sea: () => Sea | null;
   /** Why each difficulty's seas are shut to the player by their level, by tier (null where open). */
   readonly shut: () => readonly (string | null)[];
-  readonly sail: (to: Point2, seas: Difficulty, travel: boolean) => void;
+  readonly sail: (to: Point2, seas: Difficulty, travel: MapWater | null) => void;
   readonly made: (map: HeldMap) => void;
   readonly quest?: () => readonly string[];
 }
@@ -67,6 +69,7 @@ export class HelmMap {
       stack,
     );
     made.sailKey = () => boundWord('confirm');
+    made.noKey = () => (BINDS.device === 'pad' ? 'B' : 'Escape');
     made.onLowered((sail, travel) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();

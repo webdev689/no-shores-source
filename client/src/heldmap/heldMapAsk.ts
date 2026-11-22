@@ -1,7 +1,8 @@
 // What the held map says of another water at sea: the water under the pointer, lit over its own cells and named by the
 // pointer, and the prompt a course into it raises, asking whether to travel there
-// ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). The waters are the page's grid of them, the
-// world crate's rule judged once (`MapWaters`); what is said is painted in the map's own letters (mapLetters.ts).
+// ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). Which water the ship and a course's end lie in
+// is the world crate's exact rule, the room's (`WaterJudge`); the page's grid of the waters, judged once a 4.8 km cell
+// (`MapWaters`), only lights the water under the pointer. What is said is painted in the map's own letters.
 import type { Point2 } from '../overworld/ground.ts';
 import { FACE, INK } from './mapKey.ts';
 import { fontOf, type Painter, PARCHMENT, word } from './mapLetters.ts';
@@ -20,17 +21,13 @@ export function waterAt(waters: MapWaters, [x, y]: Point2): MapWater | null {
   return waters.waters.find((water) => water.continent === continent) ?? null;
 }
 
-/** The water at `at` when it is not the one the ship lies in (`ship`); none over land. */
-export function otherWater(waters: MapWaters, point: Point2, ship: Point2): MapWater | null {
-  const there = waterAt(waters, point);
-  return there && there.continent !== waterAt(waters, ship)?.continent ? there : null;
-}
+/** The water a point of sea lies in by the exact rule, by its continent's index; none on land. */
+export type WaterJudge = (point: Point2) => number | null;
 
-/** The water a course (`points`, from the ship at `ship`) asks to travel to: its end's, when that is another than
- *  the ship's; none within its own. */
-export function travelAsked(waters: MapWaters, points: readonly Point2[], ship: Point2): MapWater | null {
-  const end = points.at(-1);
-  return end ? otherWater(waters, end, ship) : null;
+/** The water on the grid at `point` when it is not the ship's own (`own`, its continent's index); none over land. */
+export function otherWater(waters: MapWaters, point: Point2, own: number | null): MapWater | null {
+  const there = waterAt(waters, point);
+  return there && there.continent !== own ? there : null;
 }
 
 /** A byte a cell, 255 over the water `continent` and the land beside it, so its lit edge is drawn only where it meets
@@ -64,10 +61,10 @@ export function hoverLine(water: MapWater): string {
   return `${water.name ?? water.id} · ${aboutOf(water)}`;
 }
 
-/** The prompt's lines: whether to travel to the water, its holder and level band, and its answers, `yes` the key
- *  that answers yes. */
-export function askLines(water: MapWater, yes: string): readonly string[] {
-  return [`Travel to ${water.name ?? water.id}?`, aboutOf(water), `Yes  ${yes}      No  Escape`];
+/** The prompt's lines: whether to travel to the water, its holder and level band, and its answers, `yes` and `refuse`
+ *  the keys or buttons that answer them. */
+export function askLines(water: MapWater, yes: string, refuse = 'Escape'): readonly string[] {
+  return [`Travel to ${water.name ?? water.id}?`, aboutOf(water), `Yes  ${yes}      No  ${refuse}`];
 }
 
 /** Paints the pointer's words beside it at `x`, `y`, ink units, in the painter's ink transform (`paintLettering`'s),
@@ -138,11 +135,16 @@ export class MapAsk {
   pointer: { readonly x: number; readonly y: number } | null = null;
   asking: MapWater | null = null;
   private lit: number | null = null;
+  /** The pointer's words as they stand: where the pointer came into the water lit, until another is. */
+  private said: HoverSaid | null = null;
+  /** The map's view and place the words were stood by: once it moves, they stand anew by the pointer. */
+  private seenOn = '';
 
   /** The water under the pointer on the map `ink` (screen pixels) showing `view`, the ship at `ship`: the cells to
-   *  light when the water lit changes (null when it has not), and the pointer's words. */
+   *  light when the water lit changes (null when it has not), and the pointer's words, standing where it came in. */
   hover(
     waters: MapWaters,
+    judge: WaterJudge,
     view: { readonly left: number; readonly top: number; readonly scale: number },
     ink: { readonly x: number; readonly y: number; readonly width: number; readonly height: number },
     ship: Point2,
@@ -150,20 +152,29 @@ export class MapAsk {
     const inked = this.pointer && { x: this.pointer.x - ink.x, y: this.pointer.y - ink.y };
     const onMap = inked && inked.x >= 0 && inked.y >= 0 && inked.x <= ink.width && inked.y <= ink.height;
     const world: Point2 | null = onMap ? [view.left + inked.x / view.scale, view.top + inked.y / view.scale] : null;
-    const water = world && otherWater(waters, world, ship);
+    const water = world && otherWater(waters, world, judge(ship));
     const lit = water?.continent ?? null;
+    const seenOn = JSON.stringify([view, ink]);
+    if (lit === this.lit && seenOn === this.seenOn) return { cells: null, said: this.said };
     const cells = lit === this.lit ? null : litCells(waters, lit);
-    this.lit = lit;
-    return { cells, said: water && inked ? { line: hoverLine(water), x: inked.x, y: inked.y } : null };
+    [this.lit, this.seenOn] = [lit, seenOn];
+    // Painted once as the pointer comes into a water, not again at each move within it.
+    this.said = water && inked ? { line: hoverLine(water), x: inked.x, y: inked.y } : null;
+    return { cells, said: this.said };
   }
 
-  /** A course chosen (`course`, from the ship at `ship`): it asks to travel when it ends in another water. */
+  /** A course chosen (`course`, from the ship at `ship`): it asks to travel when its end lies in another water than
+   *  the ship, each by the exact rule; nothing when either is unknown. */
   choose(
     waters: MapWaters,
+    judge: WaterJudge,
     course: { readonly ok: true; readonly points: readonly Point2[] } | { readonly ok: false; readonly why: string },
     ship: Point2,
   ): void {
-    this.asking = course.ok ? travelAsked(waters, course.points, ship) : null;
+    const end = course.ok ? course.points.at(-1) : undefined;
+    const [there, own] = [end ? judge(end) : null, judge(ship)];
+    const other = there !== null && own !== null && there !== own;
+    this.asking = other ? (waters.waters.find((water) => water.continent === there) ?? null) : null;
   }
 
   /** No: the ask is let go, its course kept; answers whether one was asked. */

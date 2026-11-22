@@ -2,6 +2,7 @@
 // asked as the picture fades; taken, the ship is laid where the room put it, short of the course's end, and sails on
 // to it; refused, it heaves to, its voyage kept, and its line says why.
 import { SailAway } from '../cinema/sailAway.ts';
+import type { MapWater } from '../heldmap/watersWash.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Passage } from './passage.ts';
 import type { Sea } from './sea.ts';
@@ -28,22 +29,43 @@ export function travelRefusal(refused: number): string {
 
 export class SeaTravel {
   readonly away: SailAway;
-  private readonly end: Point2;
   private readonly passage: Passage;
   private readonly ready: () => boolean;
-  /** Seconds since the travel was asked, and the sea room it was sent to: one joined since is asked again. */
+  /** Seconds since the travel was asked, and the sea room it was sent to and its joins then: a room joined since, or
+   *  the same joined again (which drops what was sent), is asked again. */
   private asked: number | null = null;
   private sentTo: SeaRoom | null = null;
+  private sentJoins: number | undefined;
+  /** The end of the course sent, which the room sails the ship on to once it has taken the travel. */
+  private sentEnd: Point2;
 
-  /** Travels for `end`, in the water named `water`: `ready` says when the new waters round the ship have loaded. */
+  /** Travels for `end` (until a course is sent, whose own end it then is), in the water named `water`: `ready` says
+   *  when the new waters round the ship have loaded. */
   constructor(water: string, end: Point2, passage: Passage, ready: () => boolean) {
-    [this.end, this.passage, this.ready] = [end, passage, ready];
+    [this.sentEnd, this.passage, this.ready] = [end, passage, ready];
     this.away = new SailAway(water, () => this.ask());
   }
 
+  /** Asks the room for the travel; a voyage stopped meanwhile (a fight met, the ship hove to) has none to ask. The
+   *  wait for its answer runs from the first ask. */
   private ask(): void {
-    [this.asked, this.sentTo] = [0, this.passage.room];
-    this.passage.travel();
+    if (!this.passage.sailing) {
+      this.passage.say('The voyage was stopped.');
+      this.away.answer('The voyage was stopped.');
+      return;
+    }
+    this.asked ??= 0;
+    // A room that has no ship of the player's yet (a tier's, just joined, before its keeper put it to sea) would take
+    // it for a course with nowhere to start: it is asked once the room has it.
+    const room = this.passage.room;
+    [this.sentTo, this.sentJoins] = [room?.ownShip ? room : null, room?.joins];
+    if (this.sentTo) this.sentEnd = this.passage.travel().at(-1) ?? this.sentEnd;
+  }
+
+  /** Ends the travel at once, `room` told to forget it: the player has the ship again. */
+  cut(room: SeaRoom | null): void {
+    room?.forgetTravel();
+    this.away.cut();
   }
 
   /** `seconds` on in `room`: its answer taken, and the cinematic stepped. */
@@ -58,13 +80,16 @@ export class SeaTravel {
     this.asked += seconds;
     const answer = room?.takeTravelled() ?? null;
     const moved = room?.ownShip;
-    if (answer === TOO_SOON || (room && room !== this.sentTo)) this.ask();
+    const joined = room && (room !== this.sentTo || room.joins !== this.sentJoins);
+    // The wait runs over every asking again: a room that never shows the ship is given up, never left black.
+    const waiting = this.asked <= ANSWER_WITHIN_S;
+    if (waiting && (answer === TOO_SOON || joined)) this.ask();
     else if (answer === TAKEN && moved) {
       // Laid where the room has it, with no easing across the way it did not sail.
       this.passage.placeAt({ x: moved.x, y: moved.y, heading: moved.heading });
-      this.passage.sailAlong([this.end]);
+      this.passage.sailAlong([this.sentEnd]);
       this.away.answer(null);
-    } else if (answer !== null || this.asked > ANSWER_WITHIN_S) {
+    } else if (answer !== null || !waiting) {
       const why = answer !== null && answer !== TAKEN ? travelRefusal(answer) : 'The sea did not answer.';
       room?.forgetTravel();
       this.passage.stop();
@@ -74,9 +99,9 @@ export class SeaTravel {
   }
 }
 
-/** Sails `sea` for `to`; with `travel` (the held map's prompt answered yes), travels there when its water is known,
- *  `ready` saying when the waters round the ship have loaded. */
-export function sailOrTravel(sea: Sea, to: Point2, travel: boolean, ready: () => boolean): void {
-  const water = travel ? sea.waterAt?.(to)?.name : null;
-  if (!water || !sea.travelTo(to, water, ready)) sea.sailTo(to);
+/** Sails `sea` for `to`; with `travel`, the water the held map's prompt asked of and was answered yes, travels there
+ *  (named as the prompt named it, never judged again at `to`), `ready` saying when the waters round the ship have
+ *  loaded. */
+export function sailOrTravel(sea: Sea, to: Point2, travel: MapWater | null, ready: () => boolean): void {
+  if (!travel || !sea.travelTo(to, travel.name ?? travel.id, ready)) sea.sailTo(to);
 }

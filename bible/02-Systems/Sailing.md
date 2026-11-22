@@ -300,7 +300,9 @@ A body walks its deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 The [[Held Map]] takes the ship to other waters, seen sailing away
 ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). A course chosen into another water asks whether to
-travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks:
+travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar goes
+while it runs, Stop and the pace dial do nothing however they are asked, the menu does not open, and nothing takes the
+player elsewhere (the company's Go to them waits); a travel left behind any other way ends when they come aboard:
 
 1. The map lowers and the camera leaves the helm on an eased rail out to the ship's aft starboard quarter, 70 m off and
    28 m up, carried along with the ship as it gets under way on the course at the world's own pace, 3 s.
@@ -308,19 +310,23 @@ travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, pr
    words, "Sailing for <water>", come up in its last 0.7 s. The travel is asked of the sea room as the fade begins
    ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
    other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
-   since is asked again; one that gives no answer in 10 s is given up, and courses are sent again. A yes in a fight
+   since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
+   answered); one that gives no answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
    sails the course as Set sail does.
 3. Black for at least 1.5 s, and longer until the room has answered and no continent near the ship's new place is
    still to open (`Charting.waiting`), the land waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.
    Taken, the ship is laid where the room put it, 400 m short of the course's end on its last leg, with no easing
-   across the jump, and sails on to the end; the view over it snaps there too, and the old waters' islands, flotsam
+   across the jump, and sails on to the end of the course the room was sent; the view over it snaps there too, and the old waters' islands, flotsam
    and marks go with the room's next word.
 4. The black lifts over 1.5 s on a low wide shot off the ship's starboard bow, 110 m out and 5 m up, that pans round
    its beam to a view from its stern, 60 m back and 16 m up, as it sails in, 4 s.
 5. The view eases back to the usual one over the ship over 1.5 s, and the player has the ship again, sailing on to
    the course's end.
 
-A refused travel fades back in where the ship is over 1.5 s: it heaves to, its voyage kept to be resumed, and its line
+A fight the room begins at any point of it ends the cinematic at once, the picture open: the page forgets the travel
+(a late answer is no answer) and the view pans down to the fight as ever; if the room had already taken it, the fight
+is where the room put the ship. A voyage stopped before the fade asks nothing and is refused at once ("The voyage was
+stopped."). A refused travel fades back in where the ship is over 1.5 s: it heaves to, its voyage kept to be resumed, and its line
 says why ("No travel while fighting.", "No travel off the helm.", "No travel with a hostile ship giving chase.", "That
 lies in these waters.", "The way there crosses land.", else "The sea would not take that course."). A course set at
 another tier on the map begins the cinematic at once and enters that tier's sea room as setting sail does, the travel

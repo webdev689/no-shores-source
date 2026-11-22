@@ -4,7 +4,7 @@
 //! course that ends in the water the ship is in. Taken, the ship lies on the course's last leg short of its end,
 //! heading along it, and sails the rest; the player's next roll for a hostile ship waits its first wait again.
 
-use super::{CourseRefused, Sea};
+use super::{Coast, CourseRefused, Sea, leg_meets_land, on_land};
 use crate::PlayerId;
 
 /// What the sea tells a player of their travel: the code, the tick, and its outcome (0 taken, else
@@ -70,6 +70,18 @@ impl Sea {
         if self.chart.water_id(asked) == self.chart.water_id([ship.x, ship.y]) {
             return Err(TravelRefused::OwnWater);
         }
+        // The last leg lies in waters the player was never told of: it is judged against every standing island, and
+        // the place the ship would lie on it, before anything is set.
+        if let Some([start, end]) = last_leg(points, [ship.x, ship.y]) {
+            let (placed, _) = placed_on(start, end);
+            let islands: Vec<&Coast> = self.islands.coasts().collect();
+            let whole = |at: [f64; 2]| super::whole(&at);
+            let lies_on = whole(placed).is_some_and(|at| on_land(islands.iter().copied(), at));
+            let meets = whole(start).zip(whole(end));
+            if lies_on || meets.is_some_and(|(from, to)| leg_meets_land(islands.iter().copied(), from, to)) {
+                return Err(TravelRefused::Course(CourseRefused::CrossesLand));
+            }
+        }
         self.course(player, points, pace).map_err(TravelRefused::Course)?;
         // The course as the room took it, to the whole metre, from where the ship lay.
         let sailing = self.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut());
@@ -77,15 +89,34 @@ impl Sea {
         let held = &sailing.course;
         let &end = held.back().ok_or(TravelRefused::Course(CourseRefused::BadCourse))?;
         let start = held.len().checked_sub(2).map_or([sailing.ship.x, sailing.ship.y], |before| held[before]);
-        let (east, south) = (end[0] - start[0], end[1] - start[1]);
-        let length = (east * east + south * south).sqrt();
-        let short = if length > SHORT_OF_END_M { SHORT_OF_END_M / length } else { 1.0 };
-        (sailing.ship.x, sailing.ship.y) = (end[0] - east * short, end[1] - south * short);
-        sailing.ship.heading = libm::atan2(east, -south).rem_euclid(core::f64::consts::TAU);
+        let (placed, heading) = placed_on(start, end);
+        (sailing.ship.x, sailing.ship.y, sailing.ship.heading) = (placed[0], placed[1], heading);
         sailing.course.drain(..sailing.course.len() - 1);
         self.pirates.wait_first(player);
         Ok(())
     }
+}
+
+/// A course's last leg as the room will take it, to the whole metre: from its last point but one, or for a course of
+/// one point from where the ship lies; none for a course with no point or one off the world's frame.
+fn last_leg(points: &[[f64; 2]], ship: [f64; 2]) -> Option<[[f64; 2]; 2]> {
+    let metres = |at: &[f64; 2]| super::whole(at).map(|point| [point.x as f64, point.y as f64]);
+    let end = metres(points.last()?)?;
+    let start = match points.len().checked_sub(2) {
+        Some(before) => metres(&points[before])?,
+        None => metres(&super::ports::in_frame(ship))?,
+    };
+    Some([start, end])
+}
+
+/// Where a travel lays the ship on the leg from `start` to `end`: `SHORT_OF_END_M` short of its end, or at its start
+/// on a shorter leg; and its heading along it, radians clockwise from north.
+fn placed_on(start: [f64; 2], end: [f64; 2]) -> ([f64; 2], f64) {
+    let (east, south) = (end[0] - start[0], end[1] - start[1]);
+    let length = (east * east + south * south).sqrt();
+    let short = if length > SHORT_OF_END_M { SHORT_OF_END_M / length } else { 1.0 };
+    let heading = libm::atan2(east, -south).rem_euclid(core::f64::consts::TAU);
+    ([end[0] - east * short, end[1] - south * short], heading)
 }
 
 #[cfg(test)]

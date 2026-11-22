@@ -68,8 +68,8 @@ const ofGear = (view: View) => view === 'character' || view === 'inventory' || v
  * Journal, Ship, Social, Guild, Settings), a station's screen in their place at its counter, and an item's page over
  * either. While open the world is dimmed and the pointer, keys and pad are its; Escape or the pad's B steps back: the
  * item's page, then a slot's flyout, then the menu. Gear shows as the room last sent it, each press an ask; while
- * `resting` (the story, all but the wreck) it never opens. The Journal and the bounty board read `source`. Answers the
- * layer that draws it, with the company and what the player gains, shown in play too.
+ * `resting` (the story, all but the wreck, and a travel's cinematic) it never opens. The Journal and the bounty board
+ * read `source`. Answers the layer that draws it, with the company and what the player gains, shown in play too.
  */
 export function startGearWindow(
   fighting: () => boolean,

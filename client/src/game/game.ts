@@ -1,5 +1,6 @@
 import type { Gpu } from '../gpu.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import type { MapWater } from '../heldmap/watersWash.ts';
 import { warmFlora } from '../nature/flora.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Placed } from '../player/figures.ts';
@@ -134,7 +135,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       sail: (to, seas, travel) => sailFor(to, seas, travel),
       shut: () => screens.seasShut(),
       made: (map) => {
-        if (opened) map.setWaters(opened.map);
+        if (opened) map.setWaters(opened);
       },
       quest: () => quests.nodes,
     }),
@@ -157,7 +158,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   waters.then(
     (open) => {
       opened = open;
-      playing.helmMap.held?.setWaters(open.map);
+      playing.helmMap.held?.setWaters(open);
     },
     (error: unknown) => console.error('the waters could not be opened:', error),
   );
@@ -334,12 +335,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** Whether the player may be taken elsewhere: on foot or on deck with nothing else under way, never under the map,
-   *  on the way to the helm, walking the deck, landing, or while another landmass opens. */
+   *  on the way to the helm, walking the deck, sailing away to other waters, landing, or while another landmass opens. */
   const free = () =>
     (playing.flow.mode === 'foot' || playing.flow.mode === 'sea') &&
     !playing.flow.menu &&
     !playing.helmMap.busy &&
-    !playing.sea?.aboard.active &&
+    !playing.sea?.busy &&
     !charting.busy;
 
   /** Joins a company member where they play, a node of this landmass or its dungeon, at their seas; the ship stays. */
@@ -458,7 +459,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   /** A destination set on the map: the ship sails for it, or travels there. A voyage set at another difficulty sails
    *  in that difficulty's sea room; mid-fight the ship stays in the room it fights in; one switch at a time, each
    *  waiting for the last. A travel's cinematic begins at once, and asks whichever room the ship is in by its fade. */
-  const sailFor = (sail: Point2, seas: Difficulty, travel: boolean) => {
+  const sailFor = (sail: Point2, seas: Difficulty, travel: MapWater | null) => {
     const sea = playing.sea;
     if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));
     if (!sea || sea.fight || seas === seaSeas) return;
@@ -549,7 +550,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
   const fighting = () => footView.shown.fight;
   const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
-  const resting = () => storyMode() && !story?.gear;
+  const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
   stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens));
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));

@@ -119,10 +119,11 @@ function asking() {
   const up = mapUp();
   const ask = new MapAsk();
   ask.asking = { continent: 2, id: 'continent-3', name: 'The Elmwater', holder: 'grey-tithe', levels: [8, 14] };
-  const lowered: [readonly number[] | null, boolean][] = [];
+  const lowered: [readonly number[] | null, string | null][] = [];
   Object.assign(up.map, {
     ask,
-    lowered: (sail: readonly number[] | null, travel: boolean) => lowered.push([sail, travel]),
+    lowered: (sail: readonly number[] | null, water: { name: string } | null) =>
+      lowered.push([sail, water?.name ?? null]),
   });
   const lower = () => (up.map as unknown as { advance(dt: number): number | null }).advance(10);
   return { ...up, ask, lowered, lower };
@@ -132,7 +133,7 @@ test('yes to the prompt lowers the map to travel to the course’s end', () => {
   const { map, lowered, lower } = asking();
   map.setSail();
   lower();
-  assert.deepEqual(lowered, [[[90, 90], true]]);
+  assert.deepEqual(lowered, [[[90, 90], 'The Elmwater']], 'the prompt’s own water is carried, not judged again');
 });
 
 test('no to the prompt keeps the course inked, to be sailed the long way, and the map up', () => {
@@ -143,5 +144,5 @@ test('no to the prompt keeps the course inked, to be sailed the long way, and th
   assert.deepEqual([map.shown, lowered], [true, []], 'the map stays up');
   map.setSail();
   lower();
-  assert.deepEqual(lowered, [[[90, 90], false]], 'set sail, the long way');
+  assert.deepEqual(lowered, [[[90, 90], null]], 'set sail, the long way');
 });

@@ -106,7 +106,8 @@ export function listenForControls(game: Controlled): void {
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
     else if (playing.flow.mode !== 'story' && !covered) act((id) => !escape && pressed.has(id), escape);
     // As the key does, in the story too: the menu itself refuses where the story keeps no gear.
-    if (pressed.has('character') && !hud.controls.open) openGearWindow({ view: 'character', toggle: true });
+    if (pressed.has('character') && !hud.controls.open && !playing.sea?.travelling)
+      openGearWindow({ view: 'character', toggle: true });
     if (pressed.has('controls') && (hud.controls.open || hud.keysOffered) && !gearScreenOpen()) {
       hud.controls.toggle();
       if (hud.controls.open) document.exitPointerLock();
