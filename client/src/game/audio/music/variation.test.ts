@@ -104,6 +104,18 @@ test('no fight plays the same sixteen bars twice in its first four minutes, in a
   }
 });
 
+test("no two takes of a fight song are the same in their danger's layers", () => {
+  for (const song of FIGHTS) {
+    const prints = bars(song, 'tension');
+    const dangers = (song.form?.takes ?? []).map(({ first, bars: count }) =>
+      prints.slice(first, first + count).join(','),
+    );
+    dangers.forEach((danger, take) =>
+      assert.equal(dangers.indexOf(danger), take, `${song.name}: take ${take} as take ${dangers.indexOf(danger)}`),
+    );
+  }
+});
+
 test('over ten minutes a fight hears every take it has, and never one take twice running', () => {
   for (const song of FIGHTS)
     for (const seed of SEEDS) {

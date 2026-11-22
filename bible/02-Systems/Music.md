@@ -118,7 +118,8 @@ const song = makeForm(
   played: each family's and each boss's takes come in three feels (the drums' groove and fills, the bass's figure,
   the pulse's figure, the strings' voicing, and the danger's own figures, a gate, a heartbeat, a rub, drips or the
   clock's woods). Two takes of a section differ in every bar, even in the tension's layers alone: they are in
-  different feels, or a turned take's chords and its voicing set it apart. Some takes answer the tune (one instrument
+  different feels, or a turned take's chords and its voicing set it apart; and no two takes of a song are the same in
+  the tension's layers. Some takes answer the tune (one instrument
   states it, another takes its second half) or set it over turned chords, and every song but the last stands has a
   breakdown where the drums thin and the tune's head comes back alone.
 - **The arranger** (`Arranger`, one for every player of the director, its die the director's) chooses each take at
@@ -221,7 +222,8 @@ on, and the sky over it.
 - **The Wrath**: D minor on low brass, organ, choir, a tolled bell and low drums; three phases at 132, 138 and 150,
   the third on the Neapolitan; its fall turns to D major. Each phase is twelve takes: the march of stabs, the theme
   (its own, or the one it recalls with the strings over it), the theme answered by the strings, in full, over turned chords,
-  and the drums stopped to the ostinato and the surdo under the theme's head.
+  and the drums stopped to the ostinato and the surdo under the theme's head; the march and the stopped drums voice
+  the strings as the next feel does.
 - **The Reckoning**: C minor and a clock: a broken quarter chime, a harpsichord's escapement, wood blocks ticking;
   three phases at 136, 142 and 152 (the second a canon), a last stand at 160 counting on the bell, and the chime
   mended in C major as the boss falls. Each phase is twelve takes: the clock alone, the theme, the theme answered (or
@@ -305,7 +307,8 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
   audio core.
 - The takes are written, not made up as the game plays: the arranger only recombines them. A test plays every fight
   song for ten minutes on six seeded dice and finds no sixteen bars heard twice in its first four minutes, in the
-  tension's layers, the fight's or the peak's, and every take heard; past that a long fight hears its pairings again.
+  tension's layers, the fight's or the peak's, and every take heard, no two alike in the tension's layers; past that
+  a long fight hears its pairings again.
 - The arranger's memory lasts while the game runs; a new session's first fight may open as the last session's did.
 - The loudness above is not yet measured across every take: a breakdown, or a take in another feel, may sit some
   decibels under it. No take has been heard by the owner on the sound sheet.
