@@ -628,3 +628,22 @@ fn returning_to_the_ship_waits_ten_seconds_past_a_foes_blow_and_is_refused_while
     room.set_fighter(player, fallen);
     assert_eq!(to_ship(&mut room), FALLEN, "fallen, they wait to stand again");
 }
+
+#[test]
+fn a_page_saying_its_player_is_mounted_rides_only_with_a_horse_and_never_on_a_boarded_deck() {
+    let ask_mounted = |room: &mut Room, player: PlayerId, sequence: u32| {
+        let mut input = asking(sequence, room, CombatInput::default());
+        input.intent.controls.mounted = true;
+        room.input(player, input).unwrap();
+        room.tick();
+        room.player(player).expect("in").mounted
+    };
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    assert!(ask_mounted(&mut room, player, 1), "on the horse every rider starts with");
+    room.players.get_mut(&player).expect("in").character.cosmetics.coat.clear();
+    assert!(!ask_mounted(&mut room, player, 2), "without one, on foot");
+    let mut deck = Room::deck(&crate::deck::test_deck(), 1, ::foes::Rank::Minor, 1);
+    let boarder = deck.join().expect("a deck with space");
+    assert!(!ask_mounted(&mut deck, boarder, 1), "no horse comes aboard");
+}

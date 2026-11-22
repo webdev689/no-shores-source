@@ -98,8 +98,10 @@ on Cloudflare.
   exactly as the browser that predicted it did, so a prediction can only differ where the server knows more
   ([[Clients Predict With the Shared Rules]]). What the hands hold is taken up only at rest, never in the middle of a
   swing, a guard, a draw or a reload.
-- **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, as the page lets
-  them; on a deck the room walks every body on foot, as the page does. Nothing is fought from the saddle, as the page
+- **Riding:** a player rides wherever they walk, in a node's room, a dungeon, a run or on an island, on the room's
+  word: it takes a page's mounted input only from a character with a horse, a coat worn, which every rider starts with
+  (`may_ride`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); on a deck, the ship's own or one boarded, the
+  room walks every body on foot. Nothing is fought from the saddle, as the page
   asks nothing there: a mounted input's swing, guard, shot and aim are dropped, and its cast refused.
 - **Foes:** on a course, a player may ask for a foe by its type and rank, at a level and with a shield (the
   [[Test Ground]]'s panel), one with each input; the room stands it 5 m along the player's aim, which follows their
