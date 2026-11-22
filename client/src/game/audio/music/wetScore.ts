@@ -1,167 +1,53 @@
 // Wet: the fight in the rainforest and the swamp. F sharp Aeolian in 4/4 at 104, its beat split three, three, three,
-// three and four: everything leans across the bar. A low clarinet's tune over a marimba's ostinato in that grouping, a
-// second clarinet's counter-line under it, congas, log drums and a deep drum. The danger near is drips and a pulse: a
-// kalimba falling in dotted eighths against the beat, a log drum's heartbeat, insects in the shaker and a bassoon
-// creeping a half step. The peak sets the strings an octave over the tune, the choir's oohs, the horns swelling on each
-// chord, and noise swelling into each section, as a reverse cymbal does. The plan: a vamp, the tune, the second
-// clarinet's tune under the first's long notes, a break, the tune again. The cadence turns G, C sharp, F sharp minor;
-// the victory rises D, E into F sharp major; the defeat lets the clarinet sink to the low F sharp.
+// three and four: everything leans across the bar. A low clarinet's tune over a marimba in that grouping, a second
+// clarinet's counter-line under it, congas, log drums and a deep drum; the danger near is a kalimba dripping, a log
+// drum's heartbeat, insects in the shaker and a bassoon creeping a half step; the peak sets the strings over the tune,
+// the choir's oohs and the horns swelling. It is written in takes of eight bars (form.ts): vamps, the tune's halves,
+// the second clarinet's tune, a break and a breakdown, each in a feel of its own (a groove, fills, the marimba's
+// figure, a bass, a voicing, the drips, the heart, the insects and the croak), the tune answered or turned in some.
+// The cadence turns G, C sharp, F sharp minor; the victory rises into F sharp major; the defeat sinks low.
 
-import { chordAt, type Held, keys, measured, plan, progression, runsOf } from './craft.ts';
-import { type Edge, type Song, type Writer, lay, makeSong } from './score.ts';
+import { chordAt, type Held, keys, runsOf } from './craft.ts';
+import { type TakeSpec, makeForm } from './form.ts';
+import { type Song, lay, makeSong, midiNote } from './score.ts';
+import {
+  BEATS,
+  BPM,
+  CHORDS,
+  type Chord,
+  type Drum,
+  GROUPS,
+  LEVEL,
+  ONCE,
+  SONG,
+  type Track,
+  type Write,
+  harmony,
+  stingBed,
+  tune,
+} from './wetParts.ts';
 
-const TRACKS = {
-  bass: {
-    program: 35,
-    volume: 68,
-    pan: 64,
-    role: 'bed',
-    voice: { attack: 0.02, decay: 0.4, sustain: 0.6, release: 0.25, index: 1.2, sub: 0.25 },
+type Section = 'vamp' | 'a1' | 'a2' | 'b' | 'break' | 'down';
+/** Each section's harmony, and a second under the same tune where a take turns it; the sections that may follow it,
+ *  and whether a fight may open on it: on the vamp, or straight on the clarinet's call. */
+const SECTIONS: Readonly<
+  Record<Section, { harmony: string; turn?: string; next: readonly Section[]; opens?: boolean }>
+> = {
+  vamp: { harmony: 'F#m | F#m | G | C# | F#m | F#m | G | C#', next: ['a1', 'b'], opens: true },
+  a1: {
+    harmony: 'F#m | F#m | D | E | F#m | D | Bm | C#',
+    turn: 'F#m | D | Bm | E | F#m | Bm | D | C#',
+    next: ['a2'],
   },
-  pad: {
-    program: 89,
-    volume: 92,
-    pan: 70,
-    role: 'bed',
-    voice: { attack: 0.5, release: 0.8, index: 0.9, unison: 2, cents: 12, spread: 0.5 },
+  a2: {
+    harmony: 'D | E | C#m | F#m | D | Bm | G | C#',
+    turn: 'F#m | C#m | E | D | Bm | G | G | C#',
+    next: ['b', 'break', 'down', 'a1'],
   },
-  drip: {
-    program: 108,
-    volume: 108,
-    pan: 90,
-    role: 'tension',
-    voice: { index: 1.8, idxDecay: 0.06, decay: 0.5, sustain: 0.02, release: 0.3 },
-  },
-  croak: {
-    program: 70,
-    volume: 113,
-    pan: 40,
-    role: 'tension',
-    voice: { attack: 0.02, decay: 0.12, sustain: 0.5, release: 0.08, index: 2.6, idxDecay: 0.2 },
-  },
-  marimba: {
-    program: 12,
-    volume: 112,
-    pan: 36,
-    role: 'pulse',
-    voice: { mod: 4, index: 1.4, idxDecay: 0.04, decay: 0.32, sustain: 0.02, release: 0.18, gain: 0.8 },
-  },
-  reed: {
-    program: 71,
-    volume: 118,
-    pan: 58,
-    role: 'lead',
-    voice: { attack: 0.04, index: 1.7, idxDecay: 0.6, unison: 2, cents: 5, spread: 0.12 },
-  },
-  clarinet: { program: 71, volume: 119, pan: 76, role: 'lead', voice: { attack: 0.04, index: 1.9, idxDecay: 0.6 } },
-  strings: {
-    program: 48,
-    volume: 125,
-    pan: 84,
-    role: 'peak',
-    voice: { attack: 0.12, release: 0.5, index: 1.2, idxDecay: 1.2, unison: 2, cents: 9, spread: 0.4 },
-  },
-  choir: {
-    program: 53,
-    volume: 92,
-    pan: 66,
-    role: 'peak',
-    voice: { mod: 1, index: 0.9, idxDecay: 2, attack: 0.4, release: 0.7, unison: 2, cents: 12, spread: 0.45 },
-  },
-  horn: {
-    program: 60,
-    volume: 81,
-    pan: 44,
-    role: 'peak',
-    voice: { attack: 0.35, decay: 0.3, sustain: 0.9, release: 0.5, index: 2.2, idxDecay: 0.8 },
-  },
-} as const;
-type Track = keyof typeof TRACKS;
-
-/** A deep drum, three congas (open, muted and low), two log drums, a shaker and a crash; the danger near is a log
- *  drum's heartbeat and the insects in a second shaker. */
-const KIT = {
-  volume: 109,
-  role: 'combat',
-  roles: { heart: 'tension', insects: 'tension', riser: 'peak' },
-  keys: {
-    kick: 36,
-    deep: 86,
-    conga: 63,
-    muted: 62,
-    low: 64,
-    logHigh: 48,
-    logLow: 45,
-    shaker: 70,
-    crash: 49,
-    heart: 41,
-    insects: 82,
-    riser: 55,
-  },
-  drums: {
-    kick: { hz: 52, decay: 0.3, gain: 1, click: 0.35 },
-    deep: { hz: 60, decay: 0.62, gain: 1.15, drop: 0.7, click: 0.3 },
-    conga: { hz: 290, decay: 0.2, gain: 0.75, drop: 0.85, click: 0.35 },
-    muted: { hz: 350, decay: 0.07, gain: 0.6, drop: 0.9, click: 0.4 },
-    low: { hz: 205, decay: 0.24, gain: 0.8, drop: 0.85, click: 0.3 },
-    logHigh: { hz: 230, decay: 0.16, gain: 0.7, drop: 0.95, click: 0.3 },
-    logLow: { hz: 152, decay: 0.2, gain: 0.75, drop: 0.95, click: 0.3 },
-    shaker: { hz: 6800, q: 1.5, decay: 0.05, gain: 0.26 },
-    crash: { decay: 1.6, q: 0.55, gain: 0.55 },
-    heart: { hz: 92, decay: 0.3, gain: 1, drop: 0.85, click: 0.2 },
-    insects: { hz: 7400, q: 2, decay: 0.04, gain: 0.2 },
-    // A swell of noise rising into the bar line, a reverse cymbal: noise, so it never whines as a pitched sweep does.
-    riser: { hz: 2600, q: 0.6, attack: 1.6, decay: 0.12, gain: 0.6 },
-  },
-} as const;
-type Drum = keyof typeof KIT.keys;
-type Write = Writer<Track, Drum>;
-
-const BPM = 104;
-const BEATS = 4;
-const PRESS = { threshold: -20, knee: 12, ratio: 3, attack: 0.012, release: 0.25, out: 2.35, ceiling: -3 } as const;
-const LEVEL = 1.4;
-const ONCE: Edge = { wrap: false, clip: true, hold: true, restrike: true };
-/** The bar's sixteenths grouped three, three, three, three and four: where each group begins, in beats. */
-const GROUPS = [0, 0.75, 1.5, 2.25, 3] as const;
-
-/** Each chord's bass, pad, choir, the horns' pair, the kalimba's three notes and the marimba's four. */
-const chord = (bass: string, pad: string, choir: string, horn: string, drip: string, marimba: string) => ({
-  bass,
-  pad: keys(pad),
-  choir: keys(choir),
-  horn: keys(horn),
-  drip: keys(drip),
-  marimba: keys(marimba),
-});
-const CHORDS = {
-  'F#m': chord('F#2', 'A3 C#4 F#4', 'C#4 A4', 'F#3 C#4', 'F#5 C#6 A5', 'F#3 C#4 F#4 A4'),
-  'D': chord('D2', 'A3 D4 F#4', 'D4 A4', 'D3 A3', 'F#5 D6 A5', 'D3 A3 D4 F#4'),
-  'E': chord('E2', 'G#3 B3 E4', 'B3 G#4', 'E3 B3', 'G#5 E6 B5', 'E3 B3 E4 G#4'),
-  'Bm': chord('B1', 'B3 D4 F#4', 'D4 B4', 'B2 F#3', 'F#5 D6 B5', 'B2 F#3 B3 D4'),
-  'C#m': chord('C#2', 'G#3 C#4 E4', 'C#4 G#4', 'C#3 G#3', 'G#5 E6 C#6', 'C#3 G#3 C#4 E4'),
-  'G': chord('G1', 'G3 B3 D4', 'B3 G4', 'G2 D3', 'G5 D6 B5', 'G2 D3 G3 B3'),
-  'C#': chord('C#2', 'G#3 C#4 F4', 'C#4 G#4', 'C#3 G#3', 'G#5 F5 C#6', 'C#3 G#3 C#4 F4'),
-  'F#': chord('F#2', 'A#3 C#4 F#4', 'C#4 A#4', 'F#3 C#4', 'F#5 C#6 A#5', 'F#3 C#4 F#4 A#4'),
+  b: { harmony: 'D | E | C#m | F#m | D | E | Bm/C#m | C#', next: ['a1', 'break', 'down'] },
+  break: { harmony: 'F#m | G | F#m | C# | F#m | G | F#m | C#', next: ['a1', 'b', 'vamp'], opens: true },
+  down: { harmony: 'F#m | F#m | D | D | Bm | Bm | G | C#', next: ['a1', 'b', 'break', 'vamp'] },
 };
-type Chord = keyof typeof CHORDS;
-const harmony = (text: string): Held<Chord>[][] => progression(text, CHORDS, BEATS, { 2: [0, 2] });
-const tune = (text: string) => measured(text, BEATS);
-
-type Section = 'vamp' | 'a' | 'b' | 'break';
-const HARMONY: Readonly<Record<Section, Held<Chord>[][]>> = {
-  vamp: harmony('F#m | F#m | G | C#'),
-  a: harmony('F#m | F#m | D | E | F#m | D | Bm | C# | D | E | C#m | F#m | D | Bm | G | C#'),
-  b: harmony('D | E | C#m | F#m | D | E | Bm/C#m | C#'),
-  break: harmony('F#m | G | F#m | C#'),
-};
-const PLAN = plan<Section>([
-  ['vamp', 4],
-  ['a', 16],
-  ['b', 8],
-  ['break', 4],
-  ['a', 16],
-]);
 
 /** The tune: a fifth up from F sharp and a step back, in dotted eighths across the beat, the same shape on D, its
  *  second half climbing to the high A and falling through the G of the flat second to the dominant. */
@@ -185,108 +71,313 @@ const CLARINET_TUNE = tune(
 );
 const FLUTE_OVER = tune('A5:4 | G#5:4 | G#5:2 E5:2 | F#5:4 | A5:4 | B5:2 G#5:2 | F#5:2 E5:2 | F5:4');
 const BREAK_CALL = tune('F#4:.75 C#5:.75 B4:.5 C#5:2 | r:4 | F#4:.75 C#5:.75 B4:.5 C#5:1 E5:1 | F5:4');
+/** A vamp's line, the clarinet readying the tune; and the breakdown's call, slowed, alone over the marimba. */
+const VAMP_LINE = tune('C#4:4 | A3:4 | B3:2 D4:2 | C#4:4');
+const DOWN_LINE = tune('F#4:3 C#5:1 | C#5:2 B4:1 A4:1 | A4:2 F#4:2 | r:4 | D4:2 F#4:2 | B4:4 | r:4 | r:4');
 
-/** The marimba's sixteenths: which of the chord's four notes each strikes, the groups' first loudest. */
-const MARIMBA = [0, 2, 1, 3, 1, 2, 0, 2, 3, 1, 3, 2, 0, 1, 2, 3] as const;
+/** A feel: the kalimba's drips (beat, which of its three), the heart, the insects (beat, velocity), the bassoon's
+ *  croak (the bars it creeps in, and its notes: beat and half steps over the root), the marimba's sixteenths (which of
+ *  the chord's four each strikes), the bass's figure and the pad's voicing. The drums' groove is the feel's too. */
+interface Feel {
+  readonly drips: readonly (readonly [number, number])[];
+  readonly heart: readonly (readonly [number, number])[];
+  readonly insects: readonly (readonly [number, number])[];
+  readonly croak: { readonly odd: boolean; readonly notes: readonly (readonly [number, number])[] };
+  readonly marimba: readonly number[];
+  readonly bass: 'held' | 'groups' | 'push';
+  readonly voicing: 0 | 1 | 2;
+}
+const sixteenths = (velocity: (beat: number, i: number) => number) =>
+  Array.from({ length: 16 }, (unused, i) => [i * 0.25, velocity(i * 0.25, i)] as const);
+const FEELS: readonly Feel[] = [
+  {
+    drips: GROUPS.map((beat, i) => [beat, i % 3] as const),
+    heart: [
+      [0, 92],
+      [0.75, 70],
+    ],
+    insects: sixteenths((beat, i) => (i % 4 === 2 ? 46 : 30)),
+    croak: {
+      odd: true,
+      notes: [
+        [3, 0],
+        [3.5, 1],
+      ],
+    },
+    marimba: [0, 2, 1, 3, 1, 2, 0, 2, 3, 1, 3, 2, 0, 1, 2, 3],
+    bass: 'held',
+    voicing: 0,
+  },
+  {
+    drips: [
+      [0.75, 0],
+      [1.5, 2],
+      [2.25, 1],
+      [3.75, 2],
+    ],
+    heart: [
+      [0, 92],
+      [2, 74],
+    ],
+    insects: Array.from({ length: 8 }, (unused, i) => [i * 0.5, i % 2 ? 40 : 30] as const),
+    croak: {
+      odd: false,
+      notes: [
+        [1.5, 0],
+        [2, 1],
+        [2.5, 0],
+      ],
+    },
+    marimba: [0, 1, 2, 0, 1, 2, 0, 1, 2, 0, 1, 2, 3, 2, 1, 0],
+    bass: 'groups',
+    voicing: 1,
+  },
+  {
+    drips: [
+      [0, 2],
+      [1, 1],
+      [1.75, 0],
+      [3, 1],
+      [3.5, 2],
+    ],
+    heart: [
+      [0, 90],
+      [0.75, 66],
+      [2.25, 78],
+    ],
+    insects: sixteenths((beat) => (GROUPS.includes(beat) ? 46 : 28)),
+    croak: {
+      odd: true,
+      notes: [
+        [2.25, 0],
+        [2.75, 1],
+        [3.25, 0],
+      ],
+    },
+    marimba: [0, 3, 2, 1, 3, 2, 0, 3, 2, 1, 2, 3, 0, 2, 1, 2],
+    bass: 'push',
+    voicing: 2,
+  },
+];
 
-function drums(w: Write, bar: number, drive: number, fill: boolean): void {
-  const hit = (drum: Drum, beat: number, velocity: number) => w.hit(drum, bar, beat, velocity);
-  hit('deep', 0, 112);
-  hit('deep', 2.5, 92);
-  hit('logHigh', 0.75, 82);
-  hit('logLow', 1.5, 86);
-  hit('logHigh', 2.25, 78);
-  hit('logLow', 3, 84);
-  if (drive >= 2) {
-    hit('deep', 1.75, 76);
-    hit('conga', 1, 86);
-    hit('conga', 3.75, 72);
-    hit('low', 2, 84);
-    hit('low', 3.5, 70);
-    for (const beat of [0.5, 1.25, 2.75, 3.25]) hit('muted', beat, 58);
-    for (let i = 0; i < 16; i++) hit('shaker', i * 0.25, (GROUPS as readonly number[]).includes(i * 0.25) ? 58 : 38);
+/** Each feel's groove: [drum, beat, velocity, the least drive it plays at]. */
+const GROOVES: readonly (readonly (readonly [Drum, number, number, number])[])[] = [
+  [
+    ['deep', 0, 112, 1],
+    ['deep', 2.5, 92, 1],
+    ['logHigh', 0.75, 82, 1],
+    ['logLow', 1.5, 86, 1],
+    ['logHigh', 2.25, 78, 1],
+    ['logLow', 3, 84, 1],
+    ['deep', 1.75, 76, 2],
+    ['conga', 1, 86, 2],
+    ['conga', 3.75, 72, 2],
+    ['low', 2, 84, 2],
+    ['low', 3.5, 70, 2],
+    ...[0.5, 1.25, 2.75, 3.25].map((beat) => ['muted', beat, 58, 2] as const),
+    ...sixteenths((beat) => (GROUPS.includes(beat) ? 58 : 38)).map(
+      ([beat, loud]) => ['shaker', beat, loud, 2] as const,
+    ),
+    ['kick', 0, 104, 3],
+    ['kick', 2, 90, 3],
+    ['deep', 3.5, 84, 3],
+  ],
+  [
+    ['deep', 0, 112, 1],
+    ['deep', 1.5, 90, 1],
+    ['logHigh', 0.75, 80, 1],
+    ['logLow', 2.25, 84, 1],
+    ['logHigh', 3, 78, 1],
+    ['logLow', 3.75, 70, 1],
+    ['conga', 0.5, 80, 2],
+    ['conga', 2.5, 84, 2],
+    ['low', 1, 80, 2],
+    ['low', 3, 76, 2],
+    ...[0.25, 1.75, 2.75, 3.5].map((beat) => ['muted', beat, 56, 2] as const),
+    ...Array.from({ length: 8 }, (unused, i) => ['shaker', i * 0.5, i % 2 ? 36 : 50, 2] as const),
+    ['kick', 0, 104, 3],
+    ['kick', 2.25, 88, 3],
+    ['deep', 3.25, 82, 3],
+  ],
+  [
+    ['deep', 0, 112, 1],
+    ['deep', 2.25, 94, 1],
+    ['logLow', 0.75, 84, 1],
+    ['logHigh', 1.5, 80, 1],
+    ['logLow', 3, 86, 1],
+    ['conga', 0.75, 84, 2],
+    ['conga', 2.25, 80, 2],
+    ['low', 1.5, 82, 2],
+    ['low', 3.75, 72, 2],
+    ...[0.5, 1, 2.5, 3.25].map((beat) => ['muted', beat, 56, 2] as const),
+    ...sixteenths((beat) => (beat % 1 === 0 ? 54 : 34)).map(([beat, loud]) => ['shaker', beat, loud, 2] as const),
+    ['kick', 0, 106, 3],
+    ['kick', 1.5, 86, 3],
+    ['kick', 3, 92, 3],
+  ],
+];
+/** The fills over a bar's second half: down the logs to the deep drum, the congas, the logs trading into it. */
+const FILLS: readonly (readonly (readonly [Drum, number, number])[])[] = [
+  (['logHigh', 'logHigh', 'logLow', 'logLow', 'low', 'low', 'deep', 'deep'] as const).map((drum, i) => [
+    drum,
+    2 + i * 0.25,
+    76 + i * 4,
+  ]),
+  (['conga', 'conga', 'low', 'low', 'conga', 'low', 'deep', 'deep'] as const).map((drum, i) => [
+    drum,
+    2 + i * 0.25,
+    74 + i * 5,
+  ]),
+  (['logLow', 'logHigh', 'logLow', 'logHigh', 'deep', 'deep'] as const).map((drum, i) => [
+    drum,
+    2.5 + i * 0.25,
+    78 + i * 5,
+  ]),
+];
+
+/** A bar of drums in groove `groove` at `drive` (0 the breakdown's logs alone), and fill `fill` if one closes it. */
+function drums(w: Write, bar: number, groove: number, drive: number, fill: number | null): void {
+  if (drive === 0) {
+    w.hit('logLow', bar, 0, 62);
+    w.hit('logHigh', bar, 2.25, 52);
   }
-  if (drive >= 3) {
-    hit('kick', 0, 104);
-    hit('kick', 2, 90);
-    hit('deep', 3.5, 84);
-  }
-  if (fill)
-    (['logHigh', 'logHigh', 'logLow', 'logLow', 'low', 'low', 'deep', 'deep'] as const).forEach((drum, i) =>
-      hit(drum, 2 + i * 0.25, 76 + i * 4),
-    );
+  for (const [drum, beat, velocity, least] of GROOVES[groove] ?? [])
+    if (drive >= least) w.hit(drum, bar, beat, velocity);
+  if (fill !== null) for (const [drum, beat, velocity] of FILLS[fill] ?? []) w.hit(drum, bar, beat, velocity);
 }
 
-/** The bars under the tunes: the bed, the drips, the heartbeat, the insects and the croak, the marimba, the drums,
- *  and the peak's choir, horns and swells. */
-function underneath(w: Write): void {
-  const bars = PLAN.map(({ section, inBar }) => HARMONY[section][inBar] ?? []);
+/** A chord's pad in a voicing: close, its top an octave down, or its root an octave up. */
+const voiced = (pad: readonly number[], voicing: number): readonly number[] => {
+  const [root = 0, middle = 0, top = 0] = pad;
+  return voicing === 1 ? [top - 12, root, middle] : voicing === 2 ? [middle, top, root + 12] : pad;
+};
+
+/** A take as the fight plays it: its section, its feel, which of its section's leads, how hard it drives (0 the
+ *  breakdown's), and whether its harmony is turned. */
+interface Line {
+  readonly section: Section;
+  readonly feel: number;
+  readonly lead: number;
+  readonly drive: number;
+  readonly turn?: boolean;
+}
+
+/** The bars under the tunes: the bed in the feel's bass and voicing, the drips, the heartbeat, the insects and the
+ *  croak, the marimba, the drums, and the peak's choir, horns and the swell into the next take. */
+function underneath(w: Write, bars: readonly Held<Chord>[][], { section, feel, drive }: Line): void {
+  const { drips, heart, insects, croak, marimba, bass, voicing } = FEELS[feel] ?? FEELS[0]!;
   for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
     const tones = CHORDS[name];
-    w.note('bass', bar, beat, beats, tones.bass, 92);
-    for (const n of tones.pad) w.note('pad', bar, beat, beats, n, 58);
+    if (bass === 'held') w.note('bass', bar, beat, beats, tones.bass, 92);
+    for (const n of voiced(tones.pad, voicing)) w.note('pad', bar, beat, beats, n, 58);
     for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 66);
     for (const n of tones.horn) w.note('horn', bar, beat, Math.min(beats, 4), n, 74);
   }
-  PLAN.forEach(({ section, inBar, pass }, bar) => {
-    const held = bars[bar] ?? [];
-    const drive = section === 'vamp' || section === 'break' ? 1 : pass > 0 ? 3 : 2;
-    // Under the tune the drips thin to the end of the bar, where the flute breathes.
-    const drips = section === 'a' ? [2.25, 3] : GROUPS;
-    drips.forEach((beat, i) => w.note('drip', bar, beat, 0.6, CHORDS[chordAt(held, beat)].drip[i % 3] ?? 0, 80));
-    w.hit('heart', bar, 0, 92);
-    w.hit('heart', bar, 0.75, 70);
-    for (let i = 0; i < 16; i++) w.hit('insects', bar, i * 0.25, i % 4 === 2 ? 46 : 30);
-    if (inBar % 2 === 1) {
-      const root = CHORDS[chordAt(held, 3)].marimba[0] ?? 42;
-      w.note('croak', bar, 3, 0.3, root, 100);
-      w.note('croak', bar, 3.5, 0.3, root + 1, 92);
+  bars.forEach((held, bar) => {
+    const chordOn = (beat: number) => CHORDS[chordAt(held, beat)];
+    const driven = section === 'break' && bar < 4 ? 1 : drive;
+    if (bass === 'groups') GROUPS.forEach((beat) => w.note('bass', bar, beat, 0.7, chordOn(beat).bass, beat ? 82 : 94));
+    if (bass === 'push')
+      for (const [beat, beats, lift, velocity] of [
+        [0, 1.4, 0, 94],
+        [1.5, 0.7, 0, 80],
+        [2.25, 0.7, 12, 72],
+        [3, 1, 0, 86],
+      ] as const)
+        w.note('bass', bar, beat, beats, midiNote(chordOn(beat).bass) + lift, velocity);
+    // Under the tune the drips thin to the end of the bar, where the clarinet breathes.
+    const underTune = section === 'a1' || section === 'a2';
+    for (const [beat, index] of drips)
+      if (!underTune || beat >= 2.25) w.note('drip', bar, beat, 0.6, chordOn(beat).drip[index] ?? 0, 80);
+    for (const [beat, velocity] of heart) w.hit('heart', bar, beat, velocity);
+    for (const [beat, velocity] of insects) w.hit('insects', bar, beat, velocity);
+    if (bar % 2 === (croak.odd ? 1 : 0)) {
+      const root = chordOn(3).marimba[0] ?? 42;
+      croak.notes.forEach(([beat, lift], i) => w.note('croak', bar, beat, 0.3, root + lift, 100 - i * 8));
     }
-    MARIMBA.forEach((index, i) => {
+    marimba.forEach((index, i) => {
       const beat = i * 0.25;
-      const loud = (GROUPS as readonly number[]).includes(beat) ? 92 : 64;
-      w.note('marimba', bar, beat, 0.24, CHORDS[chordAt(held, beat)].marimba[index] ?? 0, loud);
+      const loud = (GROUPS.includes(beat) ? 92 : 64) * (driven ? 1 : 0.82);
+      w.note('marimba', bar, beat, 0.24, chordOn(beat).marimba[index] ?? 0, loud);
     });
-    drums(w, bar, drive, inBar % 4 === 3);
-    if (inBar === 0) w.hit('crash', bar, 0, 96);
-    if ((PLAN[bar + 1]?.inBar ?? 0) === 0) w.hit('riser', bar + 1, -(1.6 * BPM) / 60, 84);
+    const fills = bar % 4 === 3 && (driven > 0 || bar === 7);
+    drums(w, bar, feel, driven, fills ? (feel + (bar >> 2)) % FILLS.length : null);
+    if (bar === 0 && driven > 0) w.hit('crash', bar, 0, 96);
+    if (bar === bars.length - 1) w.hit('riser', bars.length, -(1.6 * BPM) / 60, 84);
   });
 }
 
-/** The tunes: the flute's over the clarinet's counter-line and, at the peak, the strings an octave over it; the
- *  clarinet's under the flute's long notes; the break's call. */
-function tunes(w: Write): void {
-  PLAN.forEach(({ section, inBar, pass }, bar) => {
-    if (inBar !== 0) return;
-    if (section === 'a') {
-      lay(w, 'reed', bar, THEME, 100 + pass * 4, { octave: -1, legato: 0.94 });
-      lay(w, 'clarinet', bar, COUNTER, 80, { legato: 0.96, accent: 4 });
-      lay(w, 'strings', pass ? bar : bar + 8, THEME, 70, { legato: 0.96, accent: 4, from: pass ? 0 : 8 });
-    } else if (section === 'b') {
-      lay(w, 'clarinet', bar, CLARINET_TUNE, 98, { legato: 0.95 });
-      lay(w, 'reed', bar, FLUTE_OVER, 82, { octave: -1, legato: 0.97, accent: 4 });
-      lay(w, 'strings', bar, CLARINET_TUNE, 66, { legato: 0.96, accent: 4 });
-    } else if (section === 'break') lay(w, 'reed', bar, BREAK_CALL, 96, { octave: -1, legato: 0.94 });
-  });
+/** The tunes over a take. The tune's halves: the low clarinet's over the second's counter-line, the strings over it
+ *  at the peak; or answered, the second clarinet taking its second four bars while the first takes the counter-line;
+ *  or in octaves on the turned chords. The second clarinet's tune under the first's long notes, or the two swapped, or
+ *  both an octave down. The break's call, low or high; the breakdown's call alone; a vamp's entry. */
+function tunes(w: Write, { section, lead }: Line): void {
+  const half = section === 'a2' ? 8 : 0;
+  const part = { from: half, to: half + 8 };
+  if (section === 'vamp') {
+    if (lead === 1) lay(w, 'reed', 4, BREAK_CALL, 92, { octave: -1, to: 1 });
+    if (lead === 2) lay(w, 'clarinet', 4, VAMP_LINE, 76, { legato: 0.97, accent: 4 });
+  } else if (section === 'a1' || section === 'a2') {
+    if (lead === 1) {
+      lay(w, 'reed', 0, THEME, 100, { from: half, to: half + 4, octave: -1, legato: 0.94 });
+      lay(w, 'clarinet', 0, COUNTER, 80, { from: half, to: half + 4, legato: 0.96, accent: 4 });
+      lay(w, 'clarinet', 4, THEME, 98, { from: half + 4, to: half + 8, octave: -1, legato: 0.94 });
+      lay(w, 'reed', 4, COUNTER, 78, { from: half + 4, to: half + 8, legato: 0.96, accent: 4 });
+    } else {
+      lay(w, 'reed', 0, THEME, 100 + lead * 2, { ...part, octave: -1, legato: 0.94 });
+      lay(w, 'clarinet', 0, lead === 2 ? THEME : COUNTER, lead === 2 ? 84 : 80, { ...part, legato: 0.96, accent: 4 });
+    }
+    if (half || lead) lay(w, 'strings', 0, THEME, 70, { ...part, legato: 0.96, accent: 4 });
+  } else if (section === 'b') {
+    const [carrier, over] = lead === 1 ? (['reed', 'clarinet'] as const) : (['clarinet', 'reed'] as const);
+    lay(w, carrier, 0, CLARINET_TUNE, 98, { octave: lead === 2 ? -1 : 0, legato: 0.95 });
+    lay(w, over, 0, FLUTE_OVER, 82, { octave: lead === 2 ? -2 : -1, legato: 0.97, accent: 4 });
+    lay(w, 'strings', 0, lead === 1 ? FLUTE_OVER : CLARINET_TUNE, 66, { legato: 0.96, accent: 4 });
+  } else if (section === 'break') {
+    lay(w, lead ? 'clarinet' : 'reed', 0, BREAK_CALL, 96, { octave: lead ? 0 : -1, legato: 0.94 });
+    lay(w, 'reed', 4, BREAK_CALL, 92, { octave: -1, legato: 0.94 });
+  } else lay(w, lead ? 'reed' : 'clarinet', 0, DOWN_LINE, 80, { octave: -lead, legato: 0.97, accent: 4 });
 }
 
-const SONG = { tracks: TRACKS, kit: KIT, beatsPerBar: BEATS, bpm: BPM, press: PRESS } as const;
+/** The takes, each section in two or three feels: no two takes of a section share a feel. */
+const TAKES: readonly Line[] = [
+  { section: 'vamp', feel: 0, lead: 0, drive: 1 },
+  { section: 'vamp', feel: 1, lead: 1, drive: 1 },
+  { section: 'vamp', feel: 2, lead: 2, drive: 2 },
+  { section: 'a1', feel: 1, lead: 0, drive: 2 },
+  { section: 'a1', feel: 2, lead: 1, drive: 3 },
+  { section: 'a1', feel: 0, lead: 2, drive: 2, turn: true },
+  { section: 'a2', feel: 2, lead: 0, drive: 3 },
+  { section: 'a2', feel: 0, lead: 1, drive: 2 },
+  { section: 'a2', feel: 1, lead: 2, drive: 3, turn: true },
+  { section: 'b', feel: 0, lead: 0, drive: 2 },
+  { section: 'b', feel: 1, lead: 1, drive: 3 },
+  { section: 'b', feel: 2, lead: 2, drive: 3 },
+  { section: 'break', feel: 1, lead: 0, drive: 2 },
+  { section: 'break', feel: 2, lead: 1, drive: 3 },
+  { section: 'down', feel: 0, lead: 0, drive: 0 },
+  { section: 'down', feel: 1, lead: 1, drive: 0 },
+];
 
+/** The fight: every take, every layer in its role. */
 const fight = (): Song =>
-  makeSong({ ...SONG, name: 'wet-fight', bars: PLAN.length, level: LEVEL }, (w) => {
-    underneath(w);
-    tunes(w);
-  });
-
-/** A sting's bed: each chord on the bass, the pad and the choir, `loud` its velocity's share. */
-function stingBed(w: Write, bars: readonly Held<Chord>[][], loud: number): void {
-  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
-    const tones = CHORDS[name];
-    w.note('bass', bar, beat, beats, tones.bass, 90 * loud);
-    for (const n of tones.pad) w.note('pad', bar, beat, beats, n, 62 * loud);
-    for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 60 * loud);
-  }
-}
+  makeForm(
+    { ...SONG, name: 'wet-fight', level: LEVEL },
+    TAKES.map((line): TakeSpec<Track, Drum> => {
+      const { harmony: text, turn, next, opens } = SECTIONS[line.section];
+      const bars = harmony(line.turn && turn ? turn : text);
+      return {
+        section: line.section,
+        bars: bars.length,
+        next,
+        opens,
+        write: (w) => {
+          underneath(w, bars, line);
+          tunes(w, line);
+        },
+      };
+    }),
+  );
 
 /** The cadence: the tune's last two bars over G and C sharp, home to F sharp minor. */
 const cadence = (): Song =>
@@ -308,7 +399,7 @@ const victory = (): Song =>
     const rise = tune('D5:.75 F#5:.75 A5:.5 F#5:2 | E5:.75 G#5:.75 B5:.5 G#5:2 | F#5:.75 A#5:.75 C#6:.5 A#5:2 | F#5:4');
     lay(w, 'reed', 0, rise, 104, { octave: -1 });
     lay(w, 'strings', 0, rise, 80, { octave: -1 });
-    for (let bar = 0; bar < 2; bar++) drums(w, bar, 2, bar === 1);
+    for (let bar = 0; bar < 2; bar++) drums(w, bar, 0, 2, bar === 1 ? 0 : null);
     for (const n of keys('F#3 C#4 A#4')) w.note('horn', 2, 0, 7, n, 92);
     w.hit('deep', 2, 0, 116);
     w.hit('kick', 2, 0, 110);

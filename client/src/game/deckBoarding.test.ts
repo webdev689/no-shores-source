@@ -48,7 +48,7 @@ const FRAME = {
   figures: [{ card: {}, x: 0, y: -2, z: 0.9, flip: false }],
   standing: { kind: 'inside' },
   marks: new Float32Array(),
-  lit: new Float32Array(),
+  lit: [],
   swings: new Float32Array(),
   fight: {},
   hints: [['Mouse', 'Swing']],

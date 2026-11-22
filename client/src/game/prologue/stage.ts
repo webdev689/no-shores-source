@@ -12,6 +12,7 @@ import type { Gpu } from '../../gpu.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Swell } from '../../rules/landRules.ts';
 import type { FoeType } from '../../rules/roster.ts';
+import { HULL_NAMES } from '../../ships/hulls.ts';
 import type { ShipCamera, ShipView } from '../../ships/shipView.ts';
 import type { Cast, Line } from '../../speech/cast.ts';
 import type { DialogueBox } from '../../speech/dialogue.ts';
@@ -28,6 +29,7 @@ import { STRIKE_KEPT_S } from '../../sky/skyDriver.ts';
 import type { Strike } from '../../sky/skyLaw.ts';
 import type { MusicDirector } from '../audio/music/director.ts';
 import type { Drawer, GameScene, Overlay } from '../scene.ts';
+import { ShipPeople } from '../shipPeople.ts';
 import { standingDrawers } from '../standing.ts';
 import type { Stack } from '../../ui/stack.ts';
 import { type Actor, actorCards } from './actors.ts';
@@ -139,8 +141,12 @@ export class Stage {
   /** Whether the world's own soundscape was heard last frame: a strike's thunder is then its. */
   hearsTheWorld = false;
 
+  /** The people aboard every ship the story draws but the Brig, whose crew it places itself. */
+  private readonly crews: ShipPeople;
+
   constructor(parts: StageParts) {
     this.parts = parts;
+    this.crews = new ShipPeople(parts.roster, parts.forge);
   }
 
   /** The scenes' own time: a bark's gap is counted in it, as each beat's moments are, never on the wall's clock. */
@@ -193,6 +199,7 @@ export class Stage {
     flames.clear();
     hud.tasks.show(null);
     hud.seaFight(null);
+    hud.sight(false, null);
     hud.toast();
     hud.reach({ kind: 'inside' });
     hud.hints([]);
@@ -271,8 +278,10 @@ export class Stage {
     const { scene, figures, forge, hulls, birds, flames, overheads, dialogue, canvas, screen } = this.parts;
     const shot = frame.shot;
     const land = frame.land === false ? null : this.parts.landDrawers();
-    const cards = [...actorCards(frame.actors ?? [], forge, shot.eye, clock), ...(frame.cards ?? [])];
     const ships = frame.ships ?? [];
+    const manned = ships.map((ship) => ({ hull: HULL_NAMES.indexOf(ship.hull), place: ship.place, crew: ship.crew }));
+    const aboard = this.crews.cards(manned, shot, canvas.clientHeight, seconds, clock);
+    const cards = [...actorCards(frame.actors ?? [], forge, shot.eye, clock), ...(frame.cards ?? []), ...aboard];
     const sailed = (pass: GPURenderPassEncoder, camera: ShipCamera) => {
       const slots: Record<Hull, number> = { brig: 0, sloop: 0, frigate: 0 };
       for (const ship of ships) {

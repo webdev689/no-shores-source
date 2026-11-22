@@ -2,6 +2,9 @@
 //! them alone, and their character as it is kept between sessions, given back to them when they return.
 
 use crate::{Opened, PlayerId, floats_of, hand_over, with_open};
+use gear::vendor::Vendor;
+use room::asks::{Counter, CounterKind};
+use serde::Deserialize;
 
 /// Lays out a course's stall and resource nodes: the stall's x and y (not numbers for none), then each node's x, y
 /// and resource, little-endian floats. Answers whether a room on land is open and the numbers made a layout.
@@ -306,4 +309,28 @@ pub extern "C" fn room_reseed(loot_low: u32, loot_high: u32, world_low: u32, wor
 #[unsafe(no_mangle)]
 pub extern "C" fn room_minute(minute: u32) -> u32 {
     u32::from(set_minute(minute))
+}
+
+/// A social space's counter as the bake writes it: its station, and its middle.
+#[derive(Debug, Deserialize)]
+pub(crate) struct NodeCounter {
+    kind: String,
+    at: [f64; 2],
+}
+
+/// A counter that serves a player's gear, from its station's name: a faction's by the faction's key.
+pub(crate) fn counter_of(found: &NodeCounter) -> Option<Counter> {
+    let faction = || gear::factions::factions().factions.iter().find(|faction| faction.key == found.kind);
+    let kind = match found.kind.as_str() {
+        "mage" => CounterKind::Mage,
+        "vault" => CounterKind::Vault,
+        "armorsmith" => CounterKind::Vendor(Vendor::Armorsmith),
+        "weaponsmith" => CounterKind::Vendor(Vendor::Weaponsmith),
+        "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
+        "tailor" => CounterKind::Tailor,
+        "tack" => CounterKind::Tack,
+        "mail" => CounterKind::Mail,
+        _ => CounterKind::Faction(faction()?.id),
+    };
+    Some(Counter { kind, at: found.at })
 }

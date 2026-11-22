@@ -56,6 +56,11 @@ code:
   - client/src/game/seaHelm.ts#clearAhead
   - client/src/game/seaClose.ts#CloseZoom
   - client/src/game/aboard.ts#Aboard
+  - client/src/game/crew.ts#Crew
+  - client/src/game/shipPeople.ts#ShipPeople
+  - client/src/game/shipPeople.ts#figureReach
+  - client/src/game/shipCompany.ts#companyOf
+  - client/src/ships/shipCrew.ts#handsShown
   - client/src/game/shipPanel.ts#shipPanelOf
   - client/src/game/hints.ts#seaHints
   - client/src/game/hints.ts#footHints
@@ -453,6 +458,20 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   about its deck. The player stands at its wheel, but at the helm, where the eye is theirs. Off the helm the player
   walks its deck, with its helmsman at the wheel under way. In a fight they all stand on it as the fight lies it.
   Each figure stands where its deck lies on the swell, drawn as large as the Sloop is.
+- **Every other ship's people** (`shipPeople.ts`, `shipCompany.ts`, `ships/shipCrew.ts`;
+  [[Ships Show Their People, and Captains' Gunners Misjudge]]). Every other ship drawn
+  carries its people on its deck as the Sloop does, each standing where its deck lies on the swell and drawn as large as
+  the ship is: its captain behind its wheel (the spot its hull's export measures), facing its bow, and its hands
+  walking and pausing about its deck as the Sloop's do, clear of the wheel. A hull carries its own number of hands:
+  the Sloop 3, the Schooner 4, the Brig 5, the Frigate 6. On a pirate's or a Grey Tithe ship its faction's mate
+  stands at the wheel in the roster's dress (the Tithe-Mate, the pirates' Captain), and on a Grey Tithe Boss's
+  Captain Brannoc Thule; its hands wear the dress of the deck crew its boarders meet ([[Naval Combat]], "Its deck"),
+  its lead first unless the lead is at the wheel, then its plain hands in turn. Everyone aboard keeps their weapons
+  sheathed. Another player's Sloop and a friendly ship carry a plain master and plain hands, as the player's own
+  stand-ins look; seen from land, the friendly ships passing carry theirs too. A figure is drawn only while it would
+  stand 4 pixels tall or more on the picture (`figureReach`): about 250 m off on a 720-pixel picture through the sea's
+  field, as many times farther as its ship is drawn larger. The nearest are drawn first, 40 at most a frame across
+  every other ship. In a fight they follow the fight ([[Naval Combat]], "How it looks").
 - **No nodes are marked at sea.** A port has an icon, over its harbour, with its name and distance, once the ship is
   within 60 km of it; only a port city's harbour is a port, so a ruin's has none (`portOf`). Every hostile ship within
   its own sight of the ship has a mark (`seaHostiles.ts`): its faction's emblem in a ring of its rank's colour, its name
@@ -658,6 +677,11 @@ blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, op
 - The land is drawn a little off the ground bodies stand on, so the fight's marks and blood are drawn 0.12 m over
   where they lie. A telegraphed blow's mark is flat: on a slope, part of it lies under the land.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
+- The people seen aboard another ship are drawn, not the room's: another player's Sloop shows plain people, not that
+  player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships moored by a
+  social space's pier carry no one. A captain's ship met at sea is known by its sea number and in its fight by its
+  fight's, which the fight's view does not tie together: its hands are laid out afresh as its fight begins and ends,
+  each starting from a spot of its own.
 - A figure's shadow is its card as the eye sees it, turned to the sun: the outline of the side facing the eye, not
   of the side facing the sun.
 - In a dungeon nothing casts a shadow, and a light lights through a wall a room on its other side within its reach.

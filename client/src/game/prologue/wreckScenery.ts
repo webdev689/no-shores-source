@@ -68,6 +68,8 @@ export class WreckScenery {
    *  that draws the wreck hands them to the water. */
   readonly hulls: readonly HullMask[];
   private view: WreckView | null = null;
+  /** Its mesh once it has come, which the camera on its decks keeps clear of. */
+  mesh: WreckMesh | null = null;
   private state: 'coming' | 'drawn' | 'failed' = 'coming';
   private left = false;
   private readonly origin: readonly [number, number];
@@ -82,6 +84,7 @@ export class WreckScenery {
       ({ mesh, light }) => {
         if (this.left) return;
         this.view = new WreckView(gpu, mesh, light);
+        this.mesh = mesh;
         this.state = 'drawn';
       },
       (error: unknown) => {
@@ -113,5 +116,6 @@ export class WreckScenery {
     this.left = true;
     this.view?.destroy();
     this.view = null;
+    this.mesh = null;
   }
 }

@@ -1,6 +1,6 @@
 // The owner's third beat, at the Brig's helm in the storm: the player creates their account, then makes themselves
-// (body, race, skin, hair), watching their whole figure in armour with sword and shield change as they choose, the
-// camera turning round them at a press. The storm goes on round them, set at the beat's start as the storm before
+// (body, race, skin, hair), watching their whole figure in armour with sword and shield change as they choose, turning
+// on the spot at a press. The storm goes on round them, set at the beat's start as the storm before
 // leaves it, so a page started here plays as the story does.
 import type { Tick, Beat } from './beat.ts';
 import { accountStep, lookStep } from './creation.ts';
@@ -12,7 +12,7 @@ import { STORM } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
-/** A turn of the camera round the player at a press, radians, and how fast it eases there (a share a second). */
+/** A turn of the figure at a press, radians, and how fast it eases there (a share a second). */
 const TURN_STEP = Math.PI / 4;
 const TURN_EASE = 6;
 
@@ -28,11 +28,13 @@ export class Making implements Beat {
   private readonly story: Story;
   private turn = 0;
   private turnTo = 0;
+  /** Whether the look is chosen: the figure turns back to the bow, and the helm is done once it faces it, as the
+   *  player stands at the helm in the beats after. */
+  private chosen = false;
   /** What could not be done (a window that could not be made), thrown from the next frame. */
   private failure: { readonly error: unknown } | null = null;
   /** Ends the helm's windows when the story moves on from it, so none stays over the beats after or acts there. */
   private readonly left = new AbortController();
-  done = false;
 
   constructor(story: Story, steps: MakingSteps = { account: accountStep, look: lookStep }) {
     this.story = story;
@@ -60,8 +62,13 @@ export class Making implements Beat {
     if (signal.aborted) return;
     this.dressAs(chosen);
     keepLook(localStorage, chosen);
+    this.turn = Math.atan2(Math.sin(this.turn), Math.cos(this.turn));
     this.turnTo = 0;
-    this.done = true;
+    this.chosen = true;
+  }
+
+  get done(): boolean {
+    return this.chosen && Math.abs(this.turn) < 0.01;
   }
 
   /** The story moves on from the helm: its windows go, and nothing pressed after redresses the player. */
@@ -92,11 +99,13 @@ export class Making implements Beat {
     if (!own) throw new Error('the Brig is not sailing');
     this.turn += (this.turnTo - this.turn) * Math.min(1, tick.seconds * TURN_EASE);
     const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
-    const shot = creationShot(helmDeck(own), this.turn, aspect);
+    const shot = creationShot(helmDeck(own), aspect);
+    // Turned left at a press, the figure faces to port of the bow, as a turn to its own left.
+    const you = { ...youAtHelm(story, own, 'idle'), facing: own.heading + this.turn };
     return {
       shot,
       ships,
-      actors: [...brig.crew(own, tick.clock), youAtHelm(story, own, 'idle')],
+      actors: [...brig.crew(own, tick.clock), you],
       land: false,
       heard: { at: 'sea', deck: true, sailing: true },
       focus: [shot.eye[0], shot.eye[1]],

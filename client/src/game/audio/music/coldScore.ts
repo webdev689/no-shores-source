@@ -1,160 +1,52 @@
 // Cold: the fight on the tundra. B Aeolian, its C natural (the flat second) borrowed for the bleakest bar, in 5/4,
-// three and two, at 120: a march through deep snow. A horn calls the tune over the low strings' ostinato and the
-// taiko, a fiddle above it with a counter-line, the harmony spaced wide: a low bass, open fifths high, little between.
-// The danger near is the wind and a slow heart: the strings shivering in open fifths, gusts of noise as wind,
-// the strings' wood ticking and the taiko on the bar's two strong beats. The peak doubles the horn with the brass
-// and sets the choir high. The plan: a vamp, the tune, the fiddle's tune over the horns, a break, the tune's first
-// half again. The cadence closes on the low B, the victory rises G, A into B major, the defeat falls through C.
+// three and two, at 120: a march through deep snow. A horn calls the tune over the low strings' ostinato and a taiko, a
+// fiddle above it with a counter-line; the danger near is the wind and a slow heart (the strings shivering in fifths,
+// gusts of noise, the strings' wood ticking, the taiko's slow beat); the peak doubles the horn with the brass and sets
+// the choir high. It is written in takes of eight bars (form.ts): vamps, the tune's halves, the fiddle's tune, a break
+// and a breakdown, each in a feel of its own (a groove, fills, the ostinato, a bass, a voicing, the shiver, the gusts,
+// the ticks and the heart), the tune answered or turned to new chords in some. The cadence closes on the low B, the
+// victory rises G, A into B major, the defeat falls through C.
 
-import { chordAt, type Held, keys, measured, plan, progression, roll, runsOf } from './craft.ts';
-import { type Edge, type Song, type Writer, lay, makeSong } from './score.ts';
+import { chordAt, type Held, roll, runsOf } from './craft.ts';
+import {
+  BEATS,
+  BPM,
+  CHORDS,
+  type Chord,
+  type Drum,
+  LEVEL,
+  ONCE,
+  SONG,
+  type Track,
+  type Write,
+  harmony,
+  stingBed,
+  tune,
+} from './coldParts.ts';
+import { type TakeSpec, makeForm } from './form.ts';
+import { type Song, lay, makeSong, midiNote } from './score.ts';
 
-const TRACKS = {
-  bass: { program: 43, volume: 80, pan: 64, role: 'bed', voice: { attack: 0.08, release: 0.5, index: 1.5, sub: 0.2 } },
-  air: {
-    program: 49,
-    volume: 90,
-    pan: 76,
-    role: 'bed',
-    voice: { attack: 0.6, release: 1, index: 1, idxDecay: 2.5, unison: 2, cents: 8, spread: 0.6 },
+type Section = 'vamp' | 'a1' | 'a2' | 'b' | 'break' | 'down';
+/** Each section's harmony, and a second under the same tune where a take turns it; the sections that may follow it,
+ *  and whether a fight may open on it: on the vamp, or straight on the horn's call. */
+const SECTIONS: Readonly<
+  Record<Section, { harmony: string; turn?: string; next: readonly Section[]; opens?: boolean }>
+> = {
+  vamp: { harmony: 'Bm | Bm | G | F#m | Bm | Bm | G | F#m', next: ['a1', 'b'], opens: true },
+  a1: {
+    harmony: 'Bm | Bm | G | A | Bm | Bm | Em | F#m',
+    turn: 'Bm | D | G | F#m | Bm | D | C | F#m',
+    next: ['a2', 'b'],
   },
-  shiver: {
-    program: 44,
-    volume: 76,
-    pan: 96,
-    role: 'tension',
-    voice: { attack: 0.9, decay: 0.3, sustain: 0.9, release: 1, index: 1.3, unison: 2, cents: 14, spread: 0.4 },
+  a2: {
+    harmony: 'G | A | Bm | C | G | Em | C/F#m | Bm',
+    turn: 'Em | F#m | D | C | Em | G | C/F#m | Bm',
+    next: ['b', 'break', 'down', 'a1'],
   },
-  tick: {
-    program: 45,
-    volume: 114,
-    pan: 30,
-    role: 'tension',
-    voice: { attack: 0.002, decay: 0.08, sustain: 0.01, release: 0.05, index: 3.2, idxDecay: 0.03 },
-  },
-  ostinato: {
-    program: 42,
-    volume: 116,
-    pan: 56,
-    role: 'pulse',
-    voice: { attack: 0.006, decay: 0.12, sustain: 0.5, release: 0.08, index: 2.2, idxDecay: 0.12, unison: 2, cents: 7 },
-  },
-  timpani: { program: 47, volume: 98, pan: 64, role: 'combat', voice: { decay: 1, release: 0.6 } },
-  horn: {
-    program: 60,
-    volume: 116,
-    pan: 46,
-    role: 'lead',
-    voice: { attack: 0.07, index: 2.6, idxDecay: 0.7, unison: 2, cents: 7, spread: 0.2 },
-  },
-  fiddle: {
-    program: 40,
-    volume: 117,
-    pan: 72,
-    role: 'lead',
-    voice: { attack: 0.04, decay: 0.3, sustain: 0.85, release: 0.3, index: 2, idxDecay: 0.9, unison: 2, cents: 8 },
-  },
-  brass: {
-    program: 61,
-    volume: 96,
-    pan: 36,
-    role: 'peak',
-    voice: { attack: 0.06, index: 3, idxDecay: 0.7, unison: 2, cents: 8, spread: 0.3 },
-  },
-  choir: {
-    program: 52,
-    volume: 92,
-    pan: 68,
-    role: 'peak',
-    voice: { mod: 1, index: 1.1, idxDecay: 2, attack: 0.45, release: 0.9, unison: 2, cents: 12, spread: 0.5 },
-  },
-} as const;
-type Track = keyof typeof TRACKS;
-
-/** A taiko, long and falling with its beater's click, three toms, a frame drum, a field snare, a kick and the
- *  cymbals; the slow heart is a softer, deeper drum. */
-const KIT = {
-  volume: 86,
-  role: 'combat',
-  roles: { heart: 'tension', gust: 'tension', riser: 'peak' },
-  keys: {
-    kick: 36,
-    taiko: 87,
-    lowTom: 41,
-    midTom: 45,
-    highTom: 48,
-    frame: 43,
-    snare: 38,
-    crash: 49,
-    china: 52,
-    heart: 35,
-    gust: 54,
-    riser: 55,
-  },
-  drums: {
-    kick: { hz: 50, decay: 0.34, gain: 1.05, click: 0.4 },
-    taiko: { hz: 58, decay: 0.9, gain: 1.2, drop: 0.7, click: 0.45 },
-    lowTom: { hz: 82, decay: 0.5, click: 0.35 },
-    midTom: { hz: 106, decay: 0.45, click: 0.35 },
-    highTom: { hz: 136, decay: 0.4, click: 0.35 },
-    frame: { hz: 74, decay: 0.3, gain: 0.8, drop: 0.8, click: 0.3 },
-    snare: { hz: 1500, q: 0.7, decay: 0.2, gain: 0.8, body: 170 },
-    crash: { decay: 2.2, q: 0.45, gain: 0.7 },
-    china: { decay: 1.4, q: 0.55, gain: 0.6 },
-    heart: { hz: 50, decay: 0.75, gain: 1.1, drop: 0.7, click: 0.15 },
-    // A swell of noise rising into the bar line, a reverse cymbal: noise, so it never whines as a pitched sweep does.
-    riser: { hz: 2600, q: 0.6, attack: 1.6, decay: 0.12, gain: 0.6 },
-    // A gust: noise swelling and dying round 700 Hz, wind, never the pitched sweep that whined.
-    gust: { hz: 700, q: 0.7, attack: 2.4, decay: 1.6, gain: 0.5 },
-  },
-} as const;
-type Drum = keyof typeof KIT.keys;
-type Write = Writer<Track, Drum>;
-
-const BPM = 120;
-const BEATS = 5;
-const PRESS = { threshold: -20, knee: 12, ratio: 3, attack: 0.012, release: 0.25, out: 2.35, ceiling: -3 } as const;
-const LEVEL = 1.4;
-const ONCE: Edge = { wrap: false, clip: true, hold: true, restrike: true };
-
-/** Each chord's bass, timpani, the high fifths of the air and of the shiver, the choir, and the low strings' ten
- *  eighths. */
-const chord = (bass: string, timp: string, air: string, shiver: string, choir: string, ostinato: string) => ({
-  bass,
-  timp,
-  air: keys(air),
-  shiver: keys(shiver),
-  choir: keys(choir),
-  ostinato: keys(ostinato),
-});
-const CHORDS = {
-  'Bm': chord('B1', 'B2', 'F#4 B4 D5', 'B5 F#6', 'D5 B5', 'B2 B2 F#3 B2 B2 F#3 B3 A3 F#3 D3'),
-  'G': chord('G1', 'G2', 'G4 B4 D5', 'B5 D6', 'D5 B5', 'G2 G2 D3 G2 G2 D3 G3 F#3 D3 B2'),
-  'A': chord('A1', 'A2', 'E4 A4 C#5', 'A5 E6', 'C#5 A5', 'A2 A2 E3 A2 A2 E3 A3 G3 E3 C#3'),
-  'Em': chord('E2', 'E2', 'E4 G4 B4', 'B5 E6', 'B4 G5', 'E2 E2 B2 E2 E2 B2 E3 D3 B2 G2'),
-  'F#m': chord('F#1', 'F#2', 'F#4 A4 C#5', 'C#6 F#6', 'C#5 A5', 'F#2 F#2 C#3 F#2 F#2 C#3 F#3 E3 C#3 A2'),
-  'C': chord('C2', 'C2', 'E4 G4 C5', 'G5 C6', 'C5 G5', 'C2 C2 G2 C2 C2 G2 C3 B2 G2 E2'),
-  'D': chord('D2', 'D2', 'F#4 A4 D5', 'A5 D6', 'D5 A5', 'D2 D2 A2 D2 D2 A2 D3 C#3 A2 F#2'),
-  'B': chord('B1', 'B2', 'F#4 B4 D#5', 'B5 F#6', 'D#5 B5', 'B2 B2 F#3 B2 B2 F#3 B3 A3 F#3 D#3'),
+  b: { harmony: 'G | D | A | Em | G | D | C | F#m', next: ['a1', 'break', 'down'] },
+  break: { harmony: 'Bm | C | Bm | F#m | Bm | C | Bm | F#m', next: ['a1', 'b', 'vamp'], opens: true },
+  down: { harmony: 'Bm | Bm | G | G | Em | Em | C | F#m', next: ['a1', 'b', 'break', 'vamp'] },
 };
-type Chord = keyof typeof CHORDS;
-const harmony = (text: string): Held<Chord>[][] => progression(text, CHORDS, BEATS, { 2: [0, 3] });
-const tune = (text: string) => measured(text, BEATS);
-
-type Section = 'vamp' | 'a' | 'b' | 'break';
-const HARMONY: Readonly<Record<Section, Held<Chord>[][]>> = {
-  vamp: harmony('Bm | Bm | G | F#m'),
-  a: harmony('Bm | Bm | G | A | Bm | Bm | Em | F#m | G | A | Bm | C | G | Em | C/F#m | Bm'),
-  b: harmony('G | D | A | Em | G | D | C | F#m'),
-  break: harmony('Bm | C | Bm | F#m'),
-};
-const PLAN = plan<Section>([
-  ['vamp', 4],
-  ['a', 16],
-  ['b', 8],
-  ['break', 4],
-  ['a', 8],
-]);
 
 /** The horn's call: up a fifth from B and falling back, again to the high B, and, in its second half, up to D and
  *  down through the C of the flat second to the low B. */
@@ -180,126 +72,289 @@ const HORN_UNDER = tune(
   'G3:3 B3:2 | A3:3 D4:2 | C#4:3 E4:2 | E4:3 B3:2 | B3:3 D4:2 | D4:3 A3:2 | C4:3 G3:2 | A3:3 C#4:2',
 );
 const BREAK_CALL = tune('B3:1 F#4:2 E4:1 D4:1 | r:5 | B3:1 F#4:2 A4:1 B4:1 | F#4:5');
+/** A vamp's line, the fiddle readying the tune; and the breakdown's call, slowed, alone over the low strings. */
+const VAMP_LINE = tune('F#5:5 | D5:3 B4:2 | D5:3 B4:2 | C#5:5');
+const DOWN_LINE = tune('B3:1 F#4:4 | E4:2 D4:3 | D4:5 | r:5 | E4:3 G4:2 | B4:5 | r:5 | r:5');
 
-/** The low strings' accents over the bar's ten eighths, grouped three, three, two and two. */
-const OSTINATO_VELOCITY = [100, 62, 70, 92, 62, 70, 90, 66, 86, 64] as const;
-/** The wood's ticks: on the groups' first eighths, softer between. */
-const TICKS = [0, 1, 1.5, 2.5, 3, 4] as const;
+/** A feel: how the strings shiver (held, bowed again on the bar's two, or the root in octaves), the gusts (the bars
+ *  of four they blow in, and the beat), the wood's ticks, the heart, the low strings' ten eighths (which of the
+ *  chord's ten, velocity), the bass's figure and the air's voicing. The drums' groove is the feel's too. */
+interface Feel {
+  readonly shiver: 'held' | 'bowed' | 'octaves';
+  readonly gusts: readonly (readonly [number, number])[];
+  readonly ticks: readonly number[];
+  readonly heart: readonly (readonly [number, number])[];
+  readonly ostinato: readonly (readonly [number, number])[];
+  readonly bass: 'held' | 'march' | 'pulse';
+  readonly voicing: 0 | 1 | 2;
+}
+const FEELS: readonly Feel[] = [
+  {
+    shiver: 'held',
+    gusts: [[2, 1]],
+    ticks: [0, 1, 1.5, 2.5, 3, 4],
+    heart: [
+      [0, 94],
+      [3, 76],
+    ],
+    ostinato: [100, 62, 70, 92, 62, 70, 90, 66, 86, 64].map((velocity, i) => [i, velocity] as const),
+    bass: 'held',
+    voicing: 0,
+  },
+  {
+    shiver: 'bowed',
+    gusts: [
+      [0, 2.5],
+      [3, 0],
+    ],
+    ticks: [0, 0.5, 1.5, 3, 3.5],
+    heart: [
+      [0, 94],
+      [1.5, 70],
+      [3, 80],
+    ],
+    ostinato: [0, 2, 1, 3, 5, 4, 6, 8, 7, 9].map(
+      (index, i) => [index, [100, 66, 74, 90, 62, 72, 92, 70, 84, 64][i] ?? 64] as const,
+    ),
+    bass: 'march',
+    voicing: 1,
+  },
+  {
+    shiver: 'octaves',
+    gusts: [
+      [1, 3],
+      [3, 3],
+    ],
+    ticks: [0, 1, 2, 3, 4, 4.5],
+    heart: [
+      [0, 92],
+      [3, 74],
+      [4, 60],
+    ],
+    ostinato: [0, 1, 6, 3, 4, 2, 6, 7, 8, 9].map(
+      (index, i) => [index, [100, 60, 82, 92, 60, 74, 90, 64, 86, 70][i] ?? 64] as const,
+    ),
+    bass: 'pulse',
+    voicing: 2,
+  },
+];
 
-function drums(w: Write, bar: number, drive: number, fill: boolean): void {
-  const hit = (drum: Drum, beat: number, velocity: number) => w.hit(drum, bar, beat, velocity);
-  hit('taiko', 0, 116);
-  hit('taiko', 3, 100);
-  hit('kick', 0, 104);
-  for (const [beat, velocity] of [
-    [0.5, 50],
-    [1, 64],
-    [1.5, 70],
-    [2, 52],
-    [3.5, 58],
-    [4.5, 66],
-  ] as const)
-    hit('frame', beat, velocity);
-  if (drive >= 2) {
-    hit('snare', 2, 92);
-    hit('snare', 4, 98);
-    hit('kick', 3, 96);
-    hit('lowTom', 1.5, 74);
+/** Each feel's groove: [drum, beat, velocity, the least drive it plays at]. */
+const GROOVES: readonly (readonly (readonly [Drum, number, number, number])[])[] = [
+  [
+    ['taiko', 0, 116, 1],
+    ['taiko', 3, 100, 1],
+    ['kick', 0, 104, 1],
+    ...[0.5, 1, 1.5, 2, 3.5, 4.5].map((beat, i) => ['frame', beat, [50, 64, 70, 52, 58, 66][i] ?? 60, 1] as const),
+    ['snare', 2, 92, 2],
+    ['snare', 4, 98, 2],
+    ['kick', 3, 96, 2],
+    ['lowTom', 1.5, 74, 2],
+    ['taiko', 1.5, 84, 3],
+    ['taiko', 4.5, 90, 3],
+    ['snare', 4.75, 56, 3],
+  ],
+  [
+    ['taiko', 0, 116, 1],
+    ['taiko', 3, 96, 1],
+    ['kick', 0, 104, 1],
+    ...[1, 1.5, 2, 2.5, 4, 4.5].map((beat, i) => ['frame', beat, [60, 52, 66, 54, 62, 70][i] ?? 60, 1] as const),
+    ['snare', 1.5, 90, 2],
+    ['snare', 4, 96, 2],
+    ['kick', 2.5, 92, 2],
+    ['midTom', 3.5, 72, 2],
+    ['taiko', 2, 84, 3],
+    ['taiko', 4, 88, 3],
+    ['snare', 4.5, 56, 3],
+  ],
+  [
+    ['taiko', 0, 116, 1],
+    ['taiko', 1.5, 90, 1],
+    ['taiko', 3, 100, 1],
+    ['kick', 0, 104, 1],
+    ...[0.5, 2, 2.5, 3.5, 4, 4.5].map((beat, i) => ['frame', beat, [54, 62, 50, 60, 56, 68][i] ?? 60, 1] as const),
+    ['snare', 1, 88, 2],
+    ['snare', 3.5, 92, 2],
+    ['kick', 4, 90, 2],
+    ['highTom', 2.5, 70, 2],
+    ['taiko', 4.5, 92, 3],
+    ['kick', 1.5, 86, 3],
+    ['snare', 4.75, 60, 3],
+  ],
+];
+/** The fills over a bar's two: down the toms rolling, the taiko and the low tom trading, the snare rolling up. */
+const FILLS: readonly (readonly (readonly [Drum, number, number])[])[] = [
+  Array.from({ length: 8 }, (unused, i) => {
+    const beat = 3 + i * 0.25;
+    return [beat < 4 ? 'highTom' : beat < 4.5 ? 'midTom' : 'lowTom', beat, 70 + (38 * i) / 7] as const;
+  }),
+  [
+    ['taiko', 3, 100],
+    ['lowTom', 3.5, 96],
+    ['taiko', 4, 104],
+    ['lowTom', 4.5, 100],
+    ['snare', 4.75, 80],
+  ],
+  Array.from({ length: 6 }, (unused, i) => ['snare', 3.5 + i * 0.25, 62 + i * 9] as const),
+];
+
+/** A bar of drums in groove `groove` at `drive` (0 the breakdown's taiko alone), and fill `fill` if one closes it. */
+function drums(w: Write, bar: number, groove: number, drive: number, fill: number | null): void {
+  if (drive === 0) {
+    w.hit('taiko', bar, 0, 80);
+    w.hit('frame', bar, 3, 50);
   }
-  if (drive >= 3) {
-    hit('taiko', 1.5, 84);
-    hit('taiko', 4.5, 90);
-    hit('snare', 4.75, 56);
-  }
-  if (fill)
-    roll(
-      (beat, velocity) => hit(beat < 4 ? 'highTom' : beat < 4.5 ? 'midTom' : 'lowTom', beat, velocity),
-      3,
-      2,
-      70,
-      108,
-    );
+  for (const [drum, beat, velocity, least] of GROOVES[groove] ?? [])
+    if (drive >= least) w.hit(drum, bar, beat, velocity);
+  if (fill !== null) for (const [drum, beat, velocity] of FILLS[fill] ?? []) w.hit(drum, bar, beat, velocity);
 }
 
-/** The bars under the tunes: the bed, the shiver, the gusts, the ticks and the slow heart, the low strings, the
- *  drums and timpani, and the peak's choir and swells. */
-function underneath(w: Write): void {
-  const bars = PLAN.map(({ section, inBar }) => HARMONY[section][inBar] ?? []);
+/** A chord's air in a voicing: as written, its top an octave down, or its lowest an octave up. */
+const voiced = (air: readonly number[], voicing: number): readonly number[] => {
+  const [low = 0, middle = 0, top = 0] = air;
+  return voicing === 1 ? [top - 12, low, middle] : voicing === 2 ? [middle, top, low + 12] : air;
+};
+
+/** A take as the fight plays it: its section, its feel, which of its section's leads, how hard it drives (0 the
+ *  breakdown's), and whether its harmony is turned. */
+interface Line {
+  readonly section: Section;
+  readonly feel: number;
+  readonly lead: number;
+  readonly drive: number;
+  readonly turn?: boolean;
+}
+
+/** The bars under the tunes: the bed in the feel's bass and voicing, the shiver, the gusts, the ticks and the slow
+ *  heart, the low strings, the drums and timpani, and the peak's choir and the swell into the next take. */
+function underneath(w: Write, bars: readonly Held<Chord>[][], { feel, drive, section }: Line): void {
+  const { shiver, gusts, ticks, heart, ostinato, bass, voicing } = FEELS[feel] ?? FEELS[0]!;
   for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
     const tones = CHORDS[name];
-    w.note('bass', bar, beat, beats, tones.bass, 90);
-    for (const n of tones.air) w.note('air', bar, beat, beats, n, 52);
+    if (bass === 'held') w.note('bass', bar, beat, beats, tones.bass, 90);
+    for (const n of voiced(tones.air, voicing)) w.note('air', bar, beat, beats, n, 52);
     for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 66);
     // Two octaves under their voicing: held high, these strings were a whine.
-    for (const n of tones.shiver) w.note('shiver', bar, beat, beats, n - 24, 64);
+    if (shiver === 'held') for (const n of tones.shiver) w.note('shiver', bar, beat, beats, n - 24, 64);
+    const root = (tones.shiver[0] ?? 59) - 24;
+    if (shiver === 'octaves') for (const n of [root, root + 12]) w.note('shiver', bar, beat, beats, n, 60);
   }
-  PLAN.forEach(({ section, inBar, pass }, bar) => {
-    const held = bars[bar] ?? [];
-    const drive = section === 'vamp' || (section === 'break' && inBar < 2) ? 1 : pass > 0 ? 3 : 2;
-    for (const { chord: name, beat } of held) w.note('timpani', bar, beat, 0.9, CHORDS[name].timp, beat ? 88 : 102);
-    if (inBar % 4 === 2) w.hit('gust', bar, 1, 70);
-    for (const beat of TICKS)
-      w.note('tick', bar, beat, 0.2, CHORDS[chordAt(held, beat)].air[0] ?? 0, beat % 1 ? 76 : 100);
-    w.hit('heart', bar, 0, 94);
-    w.hit('heart', bar, 3, 76);
-    for (let i = 0; i < 10; i++)
-      w.note(
-        'ostinato',
-        bar,
-        i * 0.5,
-        0.44,
-        CHORDS[chordAt(held, i * 0.5)].ostinato[i] ?? 0,
-        OSTINATO_VELOCITY[i] ?? 64,
-      );
-    drums(w, bar, drive, inBar % 4 === 3);
-    if (inBar === 0) w.hit('crash', bar, 0, 100);
-    if (inBar % 8 === 4) w.hit('china', bar, 0, 80);
-    if (inBar % 4 === 3)
-      roll(
-        (beat, velocity) => w.note('timpani', bar, beat, 0.22, CHORDS[chordAt(held, 3)].timp, velocity),
-        3,
-        2,
-        46,
-        96,
-      );
-    if ((PLAN[bar + 1]?.inBar ?? 0) === 0) w.hit('riser', bar + 1, -(1.6 * BPM) / 60, 84);
+  bars.forEach((held, bar) => {
+    const chordOn = (beat: number) => CHORDS[chordAt(held, beat)];
+    const driven = section === 'break' && bar < 2 ? 1 : drive;
+    if (shiver === 'bowed')
+      for (const [beat, beats] of [
+        [0, 3],
+        [3, 2],
+      ] as const)
+        for (const n of chordOn(beat).shiver) w.note('shiver', bar, beat, beats, n - 24, beat ? 58 : 66);
+    if (bass === 'march')
+      for (const beat of [0, 3]) w.note('bass', bar, beat, beat ? 1.8 : 2.8, chordOn(beat).bass, 92);
+    if (bass === 'pulse')
+      for (const [beat, beats, lift] of [
+        [0, 1.4, 0],
+        [1.5, 1.4, 0],
+        [3, 0.9, 12],
+        [4, 0.9, 0],
+      ] as const)
+        w.note('bass', bar, beat, beats, midiNote(chordOn(beat).bass) + lift, beat ? 80 : 94);
+    for (const { chord: name, beat } of held)
+      w.note('timpani', bar, beat, 0.9, CHORDS[name].timp, (beat ? 88 : 102) * (driven ? 1 : 0.7));
+    for (const [inFour, beat] of gusts) if (bar % 4 === inFour) w.hit('gust', bar, beat, 70);
+    for (const beat of ticks) w.note('tick', bar, beat, 0.2, chordOn(beat).air[0] ?? 0, beat % 1 ? 76 : 100);
+    for (const [beat, velocity] of heart) w.hit('heart', bar, beat, velocity);
+    ostinato.forEach(([index, velocity], i) =>
+      w.note('ostinato', bar, i * 0.5, 0.44, chordOn(i * 0.5).ostinato[index] ?? 0, velocity * (driven ? 1 : 0.82)),
+    );
+    const fills = bar % 4 === 3 && (driven > 0 || bar === 7);
+    drums(w, bar, feel, driven, fills ? (feel + (bar >> 2)) % FILLS.length : null);
+    if (bar === 0 && driven > 0) w.hit('crash', bar, 0, 100);
+    if (bar === 4 && driven > 0) w.hit('china', bar, 0, 80);
+    if (bar % 4 === 3)
+      roll((beat, velocity) => w.note('timpani', bar, beat, 0.22, chordOn(3).timp, velocity), 3, 2, 46, 96);
+    if (bar === bars.length - 1) w.hit('riser', bars.length, -(1.6 * BPM) / 60, 84);
   });
 }
 
-/** The tunes: the horn's under the fiddle's counter-line, the brass with the horn at the peak; the fiddle's over the
- *  horns, the brass with them; the break's call. */
-function tunes(w: Write): void {
-  PLAN.forEach(({ section, inBar, pass }, bar) => {
-    if (inBar !== 0) return;
-    if (section === 'a') {
-      lay(w, 'horn', bar, THEME, 100 + pass * 4, { legato: 0.95, to: pass ? 8 : 16 });
-      lay(w, 'fiddle', bar, COUNTER, 82, { legato: 0.95, accent: 4, to: pass ? 8 : 16 });
-      lay(w, 'brass', bar, THEME, 84, { legato: 0.95, accent: 4, to: pass ? 8 : 16 });
-    } else if (section === 'b') {
-      lay(w, 'fiddle', bar, FIDDLE_TUNE, 98, { legato: 0.95 });
-      lay(w, 'horn', bar, HORN_UNDER, 84, { legato: 0.97, accent: 4 });
-      lay(w, 'brass', bar, HORN_UNDER, 76, { legato: 0.97, accent: 4 });
-    } else if (section === 'break') lay(w, 'horn', bar, BREAK_CALL, 98, { legato: 0.95 });
-  });
+/** The tunes over a take. The tune's halves: the horn's under the fiddle's counter-line, the brass with the horn at
+ *  the peak; or answered, the fiddle taking its second four bars an octave up while the horn takes the counter-line
+ *  under; or on the turned chords with the fiddle held high. The fiddle's tune over the horns; or the horn taking it
+ *  under the fiddle; or the two answering. The break's call, the horn's or the fiddle's; the breakdown's call. */
+function tunes(w: Write, bars: readonly Held<Chord>[][], { section, lead }: Line): void {
+  const half = section === 'a2' ? 8 : 0;
+  const part = { from: half, to: half + 8 };
+  if (section === 'vamp') {
+    if (lead === 1) lay(w, 'horn', 4, BREAK_CALL, 92, { to: 1 });
+    if (lead === 2) lay(w, 'fiddle', 4, VAMP_LINE, 76, { legato: 0.97, accent: 4 });
+  } else if (section === 'a1' || section === 'a2') {
+    if (lead === 1) {
+      lay(w, 'horn', 0, THEME, 100, { from: half, to: half + 4, legato: 0.95 });
+      lay(w, 'fiddle', 0, COUNTER, 82, { from: half, to: half + 4, legato: 0.95, accent: 4 });
+      lay(w, 'fiddle', 4, THEME, 96, { from: half + 4, to: half + 8, octave: 1, legato: 0.95 });
+      lay(w, 'horn', 4, COUNTER, 84, { from: half + 4, to: half + 8, octave: -1, legato: 0.95, accent: 4 });
+    } else {
+      lay(w, 'horn', 0, THEME, 100 + lead * 2, { ...part, legato: 0.95 });
+      if (lead === 2)
+        bars.forEach((held, bar) => w.note('fiddle', bar, 0, BEATS * 0.96, CHORDS[chordAt(held, 0)].air[2] ?? 74, 78));
+      else lay(w, 'fiddle', 0, COUNTER, 82, { ...part, legato: 0.95, accent: 4 });
+    }
+    if (half || lead) lay(w, 'brass', 0, THEME, 84, { ...part, legato: 0.95, accent: 4 });
+  } else if (section === 'b') {
+    if (lead === 2) {
+      lay(w, 'fiddle', 0, FIDDLE_TUNE, 98, { to: 4, legato: 0.95 });
+      lay(w, 'horn', 0, HORN_UNDER, 84, { to: 4, legato: 0.97, accent: 4 });
+      lay(w, 'horn', 4, FIDDLE_TUNE, 96, { from: 4, octave: -1, legato: 0.95 });
+      lay(w, 'fiddle', 4, HORN_UNDER, 80, { from: 4, octave: 1, legato: 0.97, accent: 4 });
+    } else {
+      lay(w, lead ? 'horn' : 'fiddle', 0, FIDDLE_TUNE, 98, { octave: -lead, legato: 0.95 });
+      lay(w, lead ? 'fiddle' : 'horn', 0, HORN_UNDER, 84, { octave: lead, legato: 0.97, accent: 4 });
+    }
+    lay(w, 'brass', 0, HORN_UNDER, 76, { legato: 0.97, accent: 4 });
+  } else if (section === 'break') {
+    lay(w, lead ? 'fiddle' : 'horn', 0, BREAK_CALL, 98, { octave: lead, legato: 0.95 });
+    lay(w, 'horn', 4, BREAK_CALL, 96, { legato: 0.95 });
+  } else lay(w, lead ? 'fiddle' : 'horn', 0, DOWN_LINE, lead ? 78 : 84, { octave: lead, legato: 0.97, accent: 4 });
 }
 
-const SONG = { tracks: TRACKS, kit: KIT, beatsPerBar: BEATS, bpm: BPM, press: PRESS } as const;
+/** The takes, each section in two or three feels: no two takes of a section share a feel. */
+const TAKES: readonly Line[] = [
+  { section: 'vamp', feel: 0, lead: 0, drive: 1 },
+  { section: 'vamp', feel: 1, lead: 1, drive: 1 },
+  { section: 'vamp', feel: 2, lead: 2, drive: 2 },
+  { section: 'a1', feel: 1, lead: 0, drive: 2 },
+  { section: 'a1', feel: 2, lead: 1, drive: 3 },
+  { section: 'a1', feel: 0, lead: 2, drive: 2, turn: true },
+  { section: 'a2', feel: 2, lead: 0, drive: 3 },
+  { section: 'a2', feel: 0, lead: 1, drive: 2 },
+  { section: 'a2', feel: 1, lead: 2, drive: 3, turn: true },
+  { section: 'b', feel: 0, lead: 0, drive: 2 },
+  { section: 'b', feel: 1, lead: 1, drive: 3 },
+  { section: 'b', feel: 2, lead: 2, drive: 3 },
+  { section: 'break', feel: 1, lead: 0, drive: 2 },
+  { section: 'break', feel: 2, lead: 1, drive: 3 },
+  { section: 'down', feel: 0, lead: 0, drive: 0 },
+  { section: 'down', feel: 1, lead: 1, drive: 0 },
+];
 
+/** The fight: every take, every layer in its role. */
 const fight = (): Song =>
-  makeSong({ ...SONG, name: 'cold-fight', bars: PLAN.length, level: LEVEL }, (w) => {
-    underneath(w);
-    tunes(w);
-  });
-
-/** A sting's bed: each chord on the bass, the air and the choir, `loud` its velocity's share. */
-function stingBed(w: Write, bars: readonly Held<Chord>[][], loud: number): void {
-  for (const { chord: name, bar, beat, beats } of runsOf(bars, BEATS)) {
-    const tones = CHORDS[name];
-    w.note('bass', bar, beat, beats, tones.bass, 90 * loud);
-    for (const n of tones.air) w.note('air', bar, beat, beats, n, 60 * loud);
-    for (const n of tones.choir) w.note('choir', bar, beat, beats, n, 58 * loud);
-  }
-}
+  makeForm(
+    { ...SONG, name: 'cold-fight', level: LEVEL },
+    TAKES.map((line): TakeSpec<Track, Drum> => {
+      const { harmony: text, turn, next, opens } = SECTIONS[line.section];
+      const bars = harmony(line.turn && turn ? turn : text);
+      return {
+        section: line.section,
+        bars: bars.length,
+        next,
+        opens,
+        write: (w) => {
+          underneath(w, bars, line);
+          tunes(w, bars, line);
+        },
+      };
+    }),
+  );
 
 /** The cadence: the tune's last bars, C to F sharp minor and home to the low B, the fiddle stepping down to it. */
 const cadence = (): Song =>
@@ -320,7 +375,7 @@ const victory = (): Song =>
     lay(w, 'horn', 0, rise, 106);
     lay(w, 'brass', 0, rise, 92);
     lay(w, 'fiddle', 0, rise, 90, { octave: 1 });
-    for (let bar = 0; bar < 2; bar++) drums(w, bar, 2, bar === 1);
+    for (let bar = 0; bar < 2; bar++) drums(w, bar, 0, 2, bar === 1 ? 0 : null);
     w.note('timpani', 2, 0, 0.9, 'B2', 112);
     w.hit('taiko', 2, 0, 120);
     w.hit('crash', 2, 0, 106);

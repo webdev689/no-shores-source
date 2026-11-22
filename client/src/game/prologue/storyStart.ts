@@ -44,7 +44,7 @@ import { stormPlaces } from './places.ts';
 import { Prologue } from './prologue.ts';
 import { Sailing } from './sailing.ts';
 import { Stage } from './stage.ts';
-import { readWreck } from './wreckLayout.ts';
+import { drawnKeys } from './wreckLayout.ts';
 import type { WreckDrawn } from './wreckScenery.ts';
 import { loadWreck } from './wreckView.ts';
 import { takeOrGiveBack } from './takeOrGiveBack.ts';
@@ -91,7 +91,7 @@ export interface Started {
 /** The wreck's mesh and light, fetched once, the first time they are asked for. */
 function onceFetched(): () => Promise<WreckDrawn> {
   let fetched: Promise<WreckDrawn> | null = null;
-  return () => (fetched ??= loadWreck(ships.base, readWreck().drawn));
+  return () => (fetched ??= loadWreck(ships.base, drawnKeys()));
 }
 
 export async function startStory(game: StoryGame, from: BeatName | null): Promise<Started> {

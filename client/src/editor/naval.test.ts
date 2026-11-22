@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { FightCaptain, FightLay, FightVessel, FightView } from '../rules/fightRules.ts';
 import type { LandView } from '../rules/landRules.ts';
-import { aimEye } from './aim.ts';
+import { aimStation } from './aimStation.ts';
 import { type FightSource, Fighting } from './fighting.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import { aimOf, Naval } from './naval.ts';
@@ -148,17 +148,6 @@ test('a fight that is over hands it the last answer, ends, and keeps its lines a
   assert.ok(naval.lines(2).length > 0 && naval.lines(10).length === 0);
 });
 
-test("the look's ray runs from the aim eye along the camera's look", async () => {
-  const naval = new Naval(drawer);
-  const sailing = await sloop();
-  const orbit = { yaw: Math.PI / 2, pitch: 0.2 } as Orbit;
-  const look = naval.look(orbit, sailing, WINDOW);
-  const [x = 0, y = 0, z = 0, east = 0, south = 0, up = 0] = look.ray ?? [];
-  assert.ok(look.bearing > 89 && look.bearing < 91, 'over its starboard side');
-  assert.ok(x > 5 && Math.abs(y - 3) < 1e-9 && z > 5, 'the starboard aim eye');
-  assert.ok(Math.abs(east - Math.cos(0.2)) < 1e-9 && Math.abs(south) < 1e-9 && Math.abs(up + Math.sin(0.2)) < 1e-9);
-});
-
 const LAID: FightLay = {
   side: 'starboard',
   launches: [
@@ -202,7 +191,7 @@ test("the aim's tone: hot on target while the side can fire, laid off it, not re
   assert.equal(aimOf(null, vessel, WINDOW, 1), null);
 });
 
-test("the World Editor's aim eases the eye out to its battery and home again, as the sea's fight does", async () => {
+test("the World Editor's aim eases the eye out to its battery and home again, laying the look its view looks along", async () => {
   const naval = new Naval(drawer);
   const answering: FightSource = {
     fightBegin: async () => VIEW,
@@ -212,10 +201,13 @@ test("the World Editor's aim eases the eye out to its battery and home again, as
   naval.join(Fighting.joined(answering, 'land', VIEW, 0));
   const sailing = await sloop();
   const orbit: Orbit = { targetX: 0, targetY: 0, targetZ: 6, distance: 40, yaw: Math.PI / 2, pitch: 0.2 };
-  const battery = aimEye({ x: 0, y: 0, heading: 0, heave: 0 }, 1);
+  const place = sailing.place(WINDOW, 1);
+  const { eye } = aimStation(0);
+  // Heading north: its starboard battery's station stands east of it and north of its middle.
+  const battery = [place.x + eye[1], place.y - eye[0], place.z + eye[2]];
   const off = (seen: Orbit) => {
     const [x, y, z] = cameraOf(seen).eye;
-    return Math.hypot(x - battery[0], y - battery[1], z - battery[2]);
+    return Math.hypot(x - (battery[0] ?? 0), y - (battery[1] ?? 0), z - (battery[2] ?? 0));
   };
   const home = off(orbit);
   const first = off(naval.aimCamera(orbit, sailing, WINDOW, 1, true, 1 / 60));
@@ -223,6 +215,11 @@ test("the World Editor's aim eases the eye out to its battery and home again, as
   let seen = orbit;
   for (let frame = 0; frame < 120; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, true, 1 / 60);
   assert.ok(off(seen) < 0.05, 'two seconds on it stands at the battery');
+  const look = naval.look();
+  assert.ok(look && look.bearing === 90, 'square off its starboard side');
+  const ray = look.ray ?? [];
+  assert.ok(Math.abs((ray[3] ?? 0) - Math.sin(seen.yaw) * Math.cos(seen.pitch)) < 1e-9, 'along the view');
   for (let frame = 0; frame < 240; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, false, 1 / 60);
   assert.equal(seen, orbit, 'let go, it is home');
+  assert.equal(naval.look(), null);
 });

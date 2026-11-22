@@ -5,6 +5,7 @@ import type { AmbienceLevels } from '../../cinema/ambience.ts';
 import { Cues } from '../../cinema/cues.ts';
 import { type Point3, type RailKey, railShot } from '../../cinema/rail.ts';
 import { FIELD_OF_VIEW } from '../../overworld/overworldCamera.ts';
+import { captainAtSea } from '../../ships/shipCrew.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
 import type { Shot } from '../camera.ts';
 import type { Beat, Tick } from './beat.ts';
@@ -24,6 +25,9 @@ export const INBOUND: readonly { readonly bearing: number; readonly distanceM: n
   { bearing: 0.38, distanceM: 720 },
 ];
 export const INBOUND_WAY_M_S = 5;
+/** Their captains, pirate Majors, as the fight takes them up (`ambushersFrom`). */
+const PIRATES = 2;
+const MAJOR = 2;
 /** When the crew first cry out, the camera turned to look down its deck at them; when it is back where the fight's
  *  own camera stands; and the beat's length. */
 export const CRY_S = 2;
@@ -60,8 +64,8 @@ export function shotOnDeck(shot: Shot, place: ShipPlace): { eye: Point3; look: P
   return { eye: toDeck(shot.eye), look: toDeck(look), fov: shot.fov };
 }
 
-/** The camera's way, in the Brig's frame: from `start` (where the creation left it, turned round the player as it
- *  was, for the screen it was framed for) round behind them at the helm to look down its deck at the crew as they cry
+/** The camera's way, in the Brig's frame: from `start` (where the creation left it, for the screen it was framed
+ *  for) round behind them at the helm to look down its deck at the crew as they cry
  *  out, up and out over its stern to look ahead at the ships with the crew still in the picture, and down to where
  *  the fight's camera stands, through its lens. */
 export function sightedKeys(start: { readonly eye: Point3; readonly look: Point3; readonly fov: number }): RailKey[] {
@@ -81,7 +85,8 @@ export function sightedKeys(start: { readonly eye: Point3; readonly look: Point3
   ];
 }
 
-/** The ships coming for it, as first seen round the Brig where it lies now. */
+/** The ships coming for it, as first seen round the Brig where it lies now, each with its captain and crew aboard,
+ *  named as the fight numbers its captains. */
 export function inboundAt(brig: { readonly x: number; readonly y: number; readonly heading: number }): Sailed[] {
   return INBOUND.map((ship, index) => {
     const bearing = brig.heading + ship.bearing;
@@ -95,6 +100,7 @@ export function inboundAt(brig: { readonly x: number; readonly y: number; readon
       heading: Math.atan2(brig.x - x, y - brig.y),
       underWay: true,
       shade: 0.5,
+      crew: captainAtSea(`pirate-${index + 1}`, PIRATES, MAJOR),
     };
   });
 }
@@ -198,7 +204,7 @@ export class Sighted implements Beat {
   private shot(own: ShipPlace, aspect: number): Shot {
     const steady: ShipPlace = { ...own, pitch: own.pitch * 0.3, roll: own.roll * 0.3 };
     this.keys ??= sightedKeys(
-      this.from ? shotOnDeck(this.from, steady) : { ...creationEye(0, aspect), fov: CREATION_LENS.fov },
+      this.from ? shotOnDeck(this.from, steady) : { ...creationEye(aspect), fov: CREATION_LENS.fov },
     );
     const carried = this.keys.map((key) => ({
       ...key,

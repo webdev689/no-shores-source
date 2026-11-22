@@ -28,6 +28,8 @@ specification ([[Pick - Crew and Ship Power]]).
 
 ## Hands
 
+Other ships show their hands and captain on deck ([[Ships Show Their People, and Captains' Gunners Misjudge]]).
+
 - The player's Sloop carries ten hands (`LARGE_BOAT`). Balls cut them down as they cut a captain's men, at 3.2 blows a
   man, and they load the ship's guns: whole, a side in 5.6 s, the pace one player alone always loaded it; thinned, slower, to
   10.1 s with none left. The ship never strikes for want of them: the player is always aboard.

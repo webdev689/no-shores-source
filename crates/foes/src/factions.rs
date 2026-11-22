@@ -27,10 +27,12 @@ pub struct Faction {
 
 pub const GREY_TITHE: u8 = 1;
 pub const PIRATES: u8 = 2;
+/// The Lattice: the ruined ports' people, overtaken by the crystal; met on land only, and never screened.
+pub const LATTICE: u8 = 3;
 /// The number the Brig's crew carry for a faction: none, as they fight on the players' side.
 pub const CREW: u8 = 0;
 
-pub const FACTIONS: [Faction; 2] = [
+pub const FACTIONS: [Faction; 3] = [
     Faction {
         number: GREY_TITHE,
         name: "The Grey Tithe",
@@ -39,6 +41,7 @@ pub const FACTIONS: [Faction; 2] = [
         screens: true,
     },
     Faction { number: PIRATES, name: "Pirates", presence: Presence::Sea, ships: &["Pirate Sloop"], screens: false },
+    Faction { number: LATTICE, name: "The Lattice", presence: Presence::Land, ships: &[], screens: false },
 ];
 
 /// The faction a number names, or none.

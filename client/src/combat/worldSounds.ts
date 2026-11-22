@@ -69,6 +69,8 @@ export interface WorldFrame {
   readonly ground: StepGround;
   readonly landed: readonly Point[];
   readonly crates: number | null;
+  /** Cues heard where something else happened: a public event's beats (game/publicView.ts). */
+  readonly heard?: readonly { readonly cue: string; readonly at: Point }[];
 }
 
 type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => AudioBufferSourceNode | null;
@@ -76,6 +78,10 @@ type Play = (audio: AudioContext, out: AudioNode, id: string, rate: number) => A
 /** A sound is as loud as it is this close (metres), fading by distance beyond; none is played farther than the most. */
 const NEAR_M = 2;
 const MOST_M = 40;
+/** A cue heard where something else happened (a public event's) holds its voice this long at most (seconds), fading
+ *  out over the last of it, so no long recording keeps a voice from the fight. */
+export const HEARD_MOST_S = 5;
+const HEARD_FADE_S = 0.5;
 /** The most sounds at once: past it, the farthest gives way. */
 const MOST_VOICES = 16;
 /** The same cue from the same fighter is heard once in this long (seconds), so a flurry is not a buzz. */
@@ -158,7 +164,8 @@ export class WorldSounds {
     const hidden = typeof document !== 'undefined' && document.hidden;
     const output = frame.quiet || hidden ? null : this.live();
     if (output) listen(output.audio, frame.eye, frame.yaw);
-    const heard: { readonly cue: string; readonly at: Point; readonly key: number | null }[] = [];
+    const heard: { readonly cue: string; readonly at: Point; readonly key: number | null; readonly short?: true }[] =
+      [];
     const hear = (cue: string | null, place: Point | null, key: number | null) => {
       if (cue && place) heard.push({ cue, at: place, key });
     };
@@ -181,6 +188,7 @@ export class WorldSounds {
     this.shots(frame, hear);
     this.spellsCast(fight, hear);
     for (const place of frame.landed) hear('drop.land', place, null);
+    for (const { cue, at } of frame.heard ?? []) heard.push({ cue, at, key: null, short: true });
     if (this.crates !== null && frame.crates !== null && frame.crates < this.crates)
       hear('ammo.refill', walker.feet, fight.player);
     this.crates = frame.crates;
@@ -193,7 +201,7 @@ export class WorldSounds {
     const down = own?.action.kind === 'dead' || fight.standing.kind === 'dead';
     if (this.down && !down) hear('respawn', walker.feet, fight.player);
     this.down = down;
-    if (output) for (const one of heard) this.sound(output, one.cue, one.at, one.key, frame.eye);
+    if (output) for (const one of heard) this.sound(output, one.cue, one.at, one.key, frame.eye, one.short ?? false);
   }
 
   /** Every fighter this frame: the player at their walker's feet, the others and the foes where they are drawn. */
@@ -307,7 +315,7 @@ export class WorldSounds {
 
   /** Plays one cue at `place` through its own panner, once its fighter has not just made it, within reach of the eye
    *  and room among the voices; an unpicked cue plays nothing. */
-  private sound(output: WorldOutput, cue: string, place: Point, key: number | null, eye: Point): void {
+  private sound(output: WorldOutput, cue: string, place: Point, key: number | null, eye: Point, short = false): void {
     if (key !== null) {
       const heardKey = `${key}|${cue}`;
       if (this.clock - (this.heardAt.get(heardKey) ?? -Infinity) < GAP_S) return;
@@ -332,10 +340,19 @@ export class WorldSounds {
     // Placed in the listener's frame, whose origin the ambience may have moved to the player's ship.
     [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = audioPoint(audio, place);
     panner.connect(out);
-    const source = this.play(audio, panner, cue, STRAYS.test(cue) ? 1 + (Math.random() - 0.5) * STRAY : 1);
+    const fade = short ? audio.createGain() : null;
+    fade?.connect(panner);
+    const source = this.play(audio, fade ?? panner, cue, STRAYS.test(cue) ? 1 + (Math.random() - 0.5) * STRAY : 1);
     if (!source) {
+      fade?.disconnect();
       panner.disconnect();
       return;
+    }
+    if (fade) {
+      const end = audio.currentTime + HEARD_MOST_S;
+      fade.gain.setValueAtTime(1, end - HEARD_FADE_S);
+      fade.gain.linearRampToValueAtTime(0, end);
+      source.stop(end);
     }
     const stopped = drop === null ? null : this.voices[drop];
     if (stopped) {
@@ -346,6 +363,7 @@ export class WorldSounds {
     this.voices.push(voice);
     source.addEventListener('ended', () => {
       this.voices = this.voices.filter((each) => each !== voice);
+      fade?.disconnect();
       panner.disconnect();
     });
   }

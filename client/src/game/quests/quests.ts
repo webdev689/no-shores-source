@@ -165,15 +165,15 @@ export class Quests {
     return where ? [where[0], where[1]] : null;
   }
 
-  /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names
-   *  it: speaks with its keeper, asking the room (ask 64); the goal's scene is said as the room meets it. Null
-   *  otherwise, so the counter opens as before. */
   /** Whether the keeper at the counter `counter` (a station's kind) has something for the player: a step of the
    *  quest walked asks to speak with them, once the story and the welcome are past, as `speak` answers. */
   wants(counter: string): boolean {
-    return this.past && talkAt(this.gear?.quest, counter) !== null;
+    return this.speak(counter, () => undefined) !== null;
   }
 
+  /** What E does at the counter of a station of kind `counter` (its offer's view), while a talk goal of the task names
+   *  it: speaks with its keeper, asking the room (ask 64); the goal's scene is said as the room meets it. Null
+   *  otherwise, so the counter opens as before. */
   speak(counter: string, ask: (asked: GearAsk) => void): Use | null {
     const state = this.gear?.quest;
     const goal = this.past ? talkAt(state, counter) : null;

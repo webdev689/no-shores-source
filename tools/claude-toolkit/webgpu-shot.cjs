@@ -4,11 +4,11 @@
 //
 // Headless SwiftShader has no shared-image backing for a WebGPU canvas, so presenting to one loses the device a few
 // seconds in. The page's canvas context is given a texture of its own instead, and a picture reads that texture back
-// and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. A game
-// that draws from a worker, on a canvas the page handed it, gets the same in the worker: the page marks each worker's
-// address, the driver puts the patches ahead of its script, and the worker sends its frames and pictures to the page
-// over a BroadcastChannel. Init scripts reach no worker, so without this the worker presents and every device in the
-// page is lost: a pipeline still compiling then fails with "A valid external Instance reference no longer exists". The
+// and lays it over the canvas before Playwright's screenshot, so the page's own HTML is in it too. The game draws in
+// a worker of its own (`gameWorker.ts`, on the page's canvas handed over), where the page's init scripts never run:
+// the driver puts the same hooks and the plan's "init" at the head of that worker's script as it is fetched, runs
+// every "eval", "frames" and view step in the worker, and writes a picture straight from the worker's texture, the
+// HUD being drawn in it. A page without that worker (the World Editor) is driven on the page as before. The
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first, or, where another
 // checkout holds 5173, Vite on any port with "anyPort": true, and the driver fetches R2 for the page.
 //
@@ -32,7 +32,7 @@
 // and writes `<into>/<name>.png`, or `<into>/<number>.png` without a name. A view outside the node is said to be
 // refused and skipped.
 const { chromium } = require('playwright');
-const { mkdirSync, readFileSync } = require('node:fs');
+const { mkdirSync, readFileSync, writeFileSync } = require('node:fs');
 
 const SHADER_ERRORS = () => {
   if (typeof GPUAdapter === 'undefined') return;
@@ -55,57 +55,49 @@ const SHADER_ERRORS = () => {
   };
 };
 
+// Runs on the page or, put at the head of the game's worker script, in the worker: `self` is either's global.
 const OWN_TEXTURE = () => {
-  if (typeof GPUCanvasContext === 'undefined') return;
-  const scope = globalThis;
-  const inWorker = typeof WorkerGlobalScope !== 'undefined';
-  const channel = new BroadcastChannel('webgpu-shot');
+  const window = self;
   const kept = new WeakMap();
   // A frame counts once it has given the GPU work: frames before the first draw (loading) do not.
   let done = Promise.resolve();
   let submitted = false;
-  scope.__shotFrames = 0;
+  window.__shotFrames = 0;
   const submit = GPUQueue.prototype.submit;
   GPUQueue.prototype.submit = function (buffers) {
     submit.call(this, buffers);
     submitted = true;
     done = this.onSubmittedWorkDone();
   };
-  const nextFrame = scope.requestAnimationFrame?.bind(scope);
-  if (nextFrame)
-    scope.requestAnimationFrame = (callback) =>
-      nextFrame(() =>
-        done.then(() => {
-          if (submitted) {
-            scope.__shotFrames += 1;
-            if (inWorker) channel.postMessage('frame');
-          }
-          submitted = false;
-          callback(performance.now());
-        }),
-      );
+  const nextFrame = window.requestAnimationFrame.bind(window);
+  window.requestAnimationFrame = (callback) =>
+    nextFrame(() =>
+      done.then(() => {
+        if (submitted) window.__shotFrames += 1;
+        submitted = false;
+        callback(performance.now());
+      }),
+    );
   const proto = GPUCanvasContext.prototype;
   proto.configure = function (config) {
     const usage = (config.usage ?? GPUTextureUsage.RENDER_ATTACHMENT) | GPUTextureUsage.COPY_SRC;
     kept.set(this, { config: { ...config, usage }, texture: null });
-    scope.__shotContext = this;
+    window.__shotContext = this;
   };
   proto.unconfigure = function () {};
   proto.getCurrentTexture = function () {
     const own = kept.get(this);
     const { width, height } = this.canvas;
     if (!own.texture || own.texture.width !== width || own.texture.height !== height) {
-      if (!own.texture && inWorker) channel.postMessage('drawing');
       own.texture?.destroy();
       own.texture = own.config.device.createTexture({ size: [width, height], format: own.config.format, usage: own.config.usage });
     }
     return own.texture;
   };
-  // The canvas's picture as RGBA, read back from its texture, or null before it has drawn.
-  const read = async () => {
-    const context = scope.__shotContext;
+  window.__shotLay = async () => {
+    const context = window.__shotContext;
     const own = context && kept.get(context);
-    if (!own?.texture) return null;
+    if (!own?.texture) return 'no WebGPU canvas has drawn';
     const { device, format } = own.config;
     const { texture } = own;
     const row = Math.ceil((texture.width * 4) / 256) * 256;
@@ -124,60 +116,23 @@ const OWN_TEXTURE = () => {
       }
     buffer.unmap();
     buffer.destroy();
-    return { rgba, width: texture.width, height: texture.height };
-  };
-  if (inWorker) {
-    // Always answered, with null if there is no picture (none drawn, the device lost), so the page never waits on it.
-    channel.onmessage = async ({ data }) => {
-      if (data !== 'read') return;
-      const picture = await read().catch(() => null);
-      channel.postMessage(picture ?? 'none');
-    };
-    return;
-  }
-  // The page: each worker marked for the driver, the canvas handed to one kept, and a worker's frames counted.
-  const Worker = scope.Worker;
-  scope.Worker = class extends Worker {
-    constructor(url, options) {
-      const marked = new URL(url, location.href);
-      if (marked.protocol.startsWith('http')) marked.searchParams.set('__webgpuShot', '');
-      super(marked, options);
+    // The worker has a stand-in `document` of the game's own (`thread/pageAway.ts`), so ask for the worker's scope.
+    if (typeof WorkerGlobalScope !== 'undefined') {
+      // In the worker: the picture itself, as a PNG's bytes in base64, for the driver to write.
+      const laid = new OffscreenCanvas(texture.width, texture.height);
+      laid.getContext('2d').putImageData(new ImageData(rgba, texture.width, texture.height), 0, 0);
+      const png = new Uint8Array(await (await laid.convertToBlob({ type: 'image/png' })).arrayBuffer());
+      let text = '';
+      for (let start = 0; start < png.length; start += 0x8000)
+        text += String.fromCharCode(...png.subarray(start, start + 0x8000));
+      return { png: btoa(text) };
     }
-  };
-  let handed = null;
-  const transfer = HTMLCanvasElement.prototype.transferControlToOffscreen;
-  HTMLCanvasElement.prototype.transferControlToOffscreen = function () {
-    handed = this;
-    return transfer.call(this);
-  };
-  let workerDrew = false;
-  let answer = null;
-  channel.onmessage = ({ data }) => {
-    if (data === 'frame') scope.__shotFrames += 1;
-    else if (data === 'drawing') workerDrew = true;
-    else if (data?.rgba) answer?.(data);
-    else if (data === 'none') answer?.(null);
-  };
-  scope.__shotLay = async () => {
-    let picture = await read();
-    let canvas = scope.__shotContext?.canvas;
-    if (!picture && workerDrew) {
-      picture = await new Promise((resolve) => {
-        answer = resolve;
-        channel.postMessage('read');
-        // A worker gone or stuck answers nothing: the picture is given up after 20 s.
-        setTimeout(() => resolve(null), 20_000);
-      });
-      canvas = handed;
-    }
-    if (!picture) return 'no WebGPU canvas has drawn';
-    const { rgba, width, height } = picture;
     document.getElementById('__shot')?.remove();
     const laid = document.createElement('canvas');
     laid.id = '__shot';
-    [laid.width, laid.height] = [width, height];
-    laid.getContext('2d').putImageData(new ImageData(rgba, width, height), 0, 0);
-    const box = canvas.getBoundingClientRect();
+    [laid.width, laid.height] = [texture.width, texture.height];
+    laid.getContext('2d').putImageData(new ImageData(rgba, texture.width, texture.height), 0, 0);
+    const box = context.canvas.getBoundingClientRect();
     Object.assign(laid.style, {
       position: 'fixed',
       left: `${box.left}px`,
@@ -186,7 +141,7 @@ const OWN_TEXTURE = () => {
       height: `${box.height}px`,
       pointerEvents: 'none',
     });
-    canvas.after(laid);
+    context.canvas.after(laid);
     return '';
   };
 };
@@ -208,36 +163,77 @@ async function main() {
       route.fulfill({ body: readFileSync(file), headers: { 'access-control-allow-origin': '*' } }),
     );
   // R2 answers CORS for port 5173 alone; with "anyPort" the page's cross-origin reads are fetched by the driver and
-  // handed back open to any origin, so a worktree's Vite can serve on another port while 5173 is taken.
-  if (plan.anyPort) {
-    const own = new URL(plan.url).origin;
-    await page.route(
-      (url) => url.origin !== own && url.protocol.startsWith('http'),
-      async (route) => {
-        const response = await route.fetch({ headers: { ...route.request().headers(), origin: 'http://localhost:5173' } });
-        await route.fulfill({ response, headers: { ...response.headers(), 'access-control-allow-origin': '*' } });
-      },
-    );
-  }
-  // A worker the page marked gets the patches ahead of its script, as the page gets them from its init scripts.
+  // handed back open to any origin, so a worktree's Vite can serve on another port while 5173 is taken. Either way
+  // the driver fetches R2's own reads, asking again on a 429 or a 5xx: a burst of them through the proxy is
+  // throttled or answered 500 now and then, and the game stops at the first table it cannot read.
+  const own = new URL(plan.url).origin;
+  // At most this many at once, asked again after a growing pause.
+  const MOST_FETCHING = 8;
+  const waiting = [];
+  let fetching = 0;
   await page.route(
-    (url) => url.searchParams.has('__webgpuShot'),
+    (url) => url.origin !== own && url.protocol.startsWith('http') && (plan.anyPort || url.hostname.endsWith('.r2.dev')),
     async (route) => {
-      const url = new URL(route.request().url());
-      url.searchParams.delete('__webgpuShot');
-      const response = await route.fetch({ url: url.href });
-      const body = `(${OWN_TEXTURE})();\n(${SHADER_ERRORS})();\n${await response.text()}`;
-      // The patched script is longer and already decoded: the original's length and encoding no longer hold.
-      const headers = { ...response.headers() };
-      delete headers['content-length'];
-      delete headers['content-encoding'];
-      await route.fulfill({ response, body, headers });
+      const headers = plan.anyPort ? { ...route.request().headers(), origin: 'http://localhost:5173' } : undefined;
+      while (fetching >= MOST_FETCHING) await new Promise((wake) => waiting.push(wake));
+      fetching += 1;
+      // A read that throws (a timeout) is asked again as a 429 or a 5xx is; one never answered is aborted.
+      const asked = () => route.fetch({ headers }).catch(() => null);
+      const again = (response) => !response || response.status() === 429 || response.status() >= 500;
+      let response;
+      try {
+        response = await asked();
+        for (let time = 0; time < 8 && again(response); time++) {
+          await new Promise((wake) => setTimeout(wake, Math.min(8000, 500 * 2 ** time)));
+          response = await asked();
+        }
+      } finally {
+        fetching -= 1;
+        waiting.shift()?.();
+      }
+      if (!response) return route.abort();
+      const open = plan.anyPort ? { 'access-control-allow-origin': '*' } : {};
+      await route.fulfill({ response, headers: { ...response.headers(), ...open } });
     },
   );
   await page.addInitScript(OWN_TEXTURE);
   await page.addInitScript(SHADER_ERRORS);
   if (plan.init) await page.addInitScript({ content: plan.init });
+  const head = `(${OWN_TEXTURE})();\n(${SHADER_ERRORS})();\n${plan.init ?? ''}\n`;
+  await page.route(/\/gameWorker[^/]*\.[jt]s(\?|$)/, async (route) => {
+    const response = await route.fetch();
+    await route.fulfill({ response, body: head + (await response.text()) });
+  });
+  // The game's worker once it is up: every step that reads or drives the game runs there.
+  let game = null;
+  page.on('worker', (worker) => {
+    if (!worker.url().includes('gameWorker')) return;
+    game = worker;
+    // The page ends the worker when the game stops, and says why in its body.
+    worker.on('close', () =>
+      page.evaluate(() => document.body.innerText).then((why) => console.log('game stopped:', why), () => undefined),
+    );
+  });
+  const driven = () => game ?? page;
+  const framesOn = async (count) => {
+    const from = await driven().evaluate(() => self.__shotFrames);
+    const until = Date.now() + 600_000;
+    while ((await driven().evaluate(() => self.__shotFrames)) < from + count) {
+      if (Date.now() > until) throw new Error(`${count} frames were not drawn in 10 minutes`);
+      await page.waitForTimeout(100);
+    }
+  };
+  // Writes the picture to `path`: from the worker's own texture, or the page laid over and screenshot.
+  const shoot = async (path) => {
+    const laid = await driven().evaluate(() => self.__shotLay());
+    if (laid?.png) return writeFileSync(path, Buffer.from(laid.png, 'base64'));
+    if (laid) console.log('shot:', laid);
+    await page.screenshot({ path });
+    await page.evaluate(() => document.getElementById('__shot')?.remove());
+  };
   await page.goto(plan.url);
+  // The game's page starts its worker at once; a page with none (the World Editor) is driven itself.
+  if (!game) await page.waitForEvent('worker', { predicate: (worker) => worker.url().includes('gameWorker'), timeout: 30_000 }).catch(() => null);
   for (const step of plan.steps) {
     const started = Date.now();
     if (step.wait) await page.waitForTimeout(step.wait * 1000);
@@ -257,10 +253,8 @@ async function main() {
       }
     }
     else if (step.clickText) await page.getByText(step.clickText).first().click();
-    else if (step.frames) {
-      const from = await page.evaluate(() => window.__shotFrames);
-      await page.waitForFunction((until) => window.__shotFrames >= until, from + step.frames, { timeout: 600_000 });
-    } else if (step.eval) console.log('eval:', JSON.stringify(await page.evaluate(step.eval)));
+    else if (step.frames) await framesOn(step.frames);
+    else if (step.eval) console.log('eval:', JSON.stringify(await driven().evaluate(step.eval)));
     else if (step.views) {
       const listed = typeof step.views === 'string' ? JSON.parse(readFileSync(step.views, 'utf8'))[step.zone] : step.views;
       mkdirSync(step.into ?? '.', { recursive: true });
@@ -269,10 +263,10 @@ async function main() {
         // three times, until the body stands within 2 m of its point and is not fallen.
         let where = null;
         for (let attempt = 0; attempt < 3; attempt++) {
-          const stood = await page.evaluate((one) => window.__qaView?.(one.slice(0, 4)), view);
+          const stood = await driven().evaluate((one) => self.__qaView?.(one.slice(0, 4)), view);
           if (!stood) break;
           await page.waitForTimeout((step.settle ?? 10) * 1000);
-          where = await page.evaluate(() => window.__qaWhere());
+          where = await driven().evaluate(() => self.__qaWhere());
           if (!where.dead && Math.hypot(where.x - view[0], where.y - view[1]) <= 2) break;
           console.log(`view ${number} attempt ${attempt}: ${JSON.stringify(where)}`);
         }
@@ -281,20 +275,11 @@ async function main() {
           continue;
         }
         console.log(`view ${number}: body at ${where.x.toFixed(1)}, ${where.y.toFixed(1)}${where.dead ? ' (fallen)' : ''}`);
-        const from = await page.evaluate(() => window.__shotFrames);
-        await page.waitForFunction((until) => window.__shotFrames >= until, from + 2, { timeout: 600_000 });
-        const why = await page.evaluate(() => window.__shotLay());
-        if (why) console.log('shot:', why);
-        await page.screenshot({ path: `${step.into ?? '.'}/${view[4] ?? number}.png` });
-        await page.evaluate(() => document.getElementById('__shot')?.remove());
+        await framesOn(2);
+        await shoot(`${step.into ?? '.'}/${view[4] ?? number}.png`);
       }
     }
-    else if (step.shot) {
-      const why = await page.evaluate(() => window.__shotLay());
-      if (why) console.log('shot:', why);
-      await page.screenshot({ path: step.shot });
-      await page.evaluate(() => document.getElementById('__shot')?.remove());
-    }
+    else if (step.shot) await shoot(step.shot);
     console.log(`${JSON.stringify(step)} ${((Date.now() - started) / 1000).toFixed(1)} s`);
   }
   await browser.close();

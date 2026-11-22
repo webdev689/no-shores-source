@@ -1,11 +1,11 @@
 // The music director: plays what the law asks (directorLaw.ts), on bar lines. A mood's layers come in or go out on
 // the playing song's next bar line; a new song begins on it while the old fades over a bar; a fight that ends fades
 // over two bars, never cut. A sting (a boss waking or falling, a fight won or lost) begins on the bar line and holds
-// the next song until it has played. The ambience is lowered under the music as a fight grows and let back after.
-// A calm piece out of danger (the sea's, the social space's, an island's) plays whole, once through. A place whose
-// score is not written is silent. The story's songs play in the layers of the mood it asks, and its cut stops
-// everything at once. In the social space the plaza's band plays where it stands (band.ts), and a calm piece gives way
-// to it near it.
+// the next song until it has played. The ambience is lowered under the music as a fight grows and let back after. A
+// fight's song plays take by take as one arranger, shared by every player, chooses (form.ts). A calm piece out of
+// danger plays whole, once through. A place whose score is not written is silent. The story's songs play in the layers
+// of the mood it asks, and its cut stops everything at once. In the social space the plaza's band plays where it
+// stands (band.ts), and a calm piece gives way to it near it.
 
 import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import { duckAmbience, musicOutput } from '../../uiSounds.ts';
@@ -15,6 +15,7 @@ import { coldScore } from './coldScore.ts';
 import {
   type Boss,
   type Cue,
+  FAMILY_OF,
   type Family,
   type Hearing,
   MOOD_DUCK,
@@ -28,6 +29,7 @@ import {
 } from './directorLaw.ts';
 import { dryScore } from './dryScore.ts';
 import { greenScore } from './greenScore.ts';
+import { Arranger } from './form.ts';
 import { type FootHeard, type SeaHeard, hearNode, hearSea, heardSky } from './hearing.ts';
 import { islandPieces } from './islandPieces.ts';
 import { reckoningScore } from './reckoningScore.ts';
@@ -39,8 +41,8 @@ import { type StorySong, storyScores } from './storyScore.ts';
 import { wetScore } from './wetScore.ts';
 import { wrathScore } from './wrathScore.ts';
 
-/** A family's fight score: one song in layers for every mood, and its moments: the cadence a fight ends on, a fight
- *  won, a fight lost. */
+/** A family's fight score: one song in layers for every mood, written as takes its players string together, and its
+ *  moments: the cadence a fight ends on, a fight won, a fight lost. */
 export interface FightScore {
   readonly song: Song;
   readonly cadence?: Song;
@@ -169,9 +171,11 @@ export class MusicDirector {
   private readonly timed: boolean;
   private readonly clockOf: (audio: BaseAudioContext) => number;
   private memory: Memory = QUIET;
-  /** Every score, made as the game starts (some 50,000 notes, tens of milliseconds) rather than mid-fight. */
+  /** Every score, made as the game starts (some 120,000 notes, a tenth of a second or two) rather than mid-fight. */
   private readonly scores: Scores;
   private readonly songClock: SongClock;
+  /** Chooses each fight song's takes for every player, remembering what each song played across fights. */
+  private readonly arranger: Arranger;
   private bus: MusicOut | null = null;
   private players: SongPlayer[] = [];
   private stinger: SongPlayer | null = null;
@@ -183,6 +187,8 @@ export class MusicDirector {
   private ducked = 1;
   /** The calm piece last begun once through: one already heard is never begun again over its own cue. */
   private once: Song | null = null;
+  /** A moment the game asks for outside the law's own (a public event begun, won or lost), played next frame. */
+  private asked: 'cadence' | 'victory' | 'defeat' | null = null;
 
   constructor({
     output = musicOutput,
@@ -201,6 +207,7 @@ export class MusicDirector {
     const pieces = (where: Family | 'social') =>
       where === 'social' ? this.scores.social.length : this.scores.roaming[where].length;
     this.songClock = { lengthOf, pieces, random };
+    this.arranger = new Arranger(random);
     // A hidden page's timers are slowed to a wake a second, too few to keep a song whole: it falls silent instead.
     if (typeof document !== 'undefined')
       document.addEventListener('visibilitychange', () => {
@@ -210,6 +217,9 @@ export class MusicDirector {
 
   /** One frame, `seconds` after the last, the plaza's band heard by `band` where it plays. */
   frame(hearing: Hearing, seconds: number, band: BandHeard | null = null): void {
+    // A moment asked while the music is cut is let go, never played late.
+    const wanted = this.asked;
+    this.asked = null;
     const verdict = hear(this.memory, hearing, seconds, this.songClock);
     this.memory = verdict.memory;
     const bus = this.output();
@@ -222,7 +232,13 @@ export class MusicDirector {
     const nearBand = this.band.frame(calmHere ? band : null, seconds, now);
     const { scores } = this;
     if (this.stinger?.song && this.stinger.finished(now)) this.stinger.stop();
-    if (verdict.sting) this.sting(stingOf(scores, verdict.sting), verdict.sting.kind === 'wake', now);
+    // The game's moment is played in the place's own fight score, unless the law has one of its own this frame.
+    const moment: Sting | null =
+      verdict.sting ??
+      (wanted && hearing.place.kind !== 'sea'
+        ? { kind: wanted, cue: { kind: 'family', family: FAMILY_OF[hearing.place.climate] } }
+        : null);
+    if (moment) this.sting(stingOf(scores, moment), moment.kind === 'wake', now);
     const asked = songOf(scores, verdict.cue);
     const { kind } = verdict.cue;
     const calm = kind === 'social' || kind === 'roam' || (kind === 'sea' && verdict.mood === 'silent');
@@ -239,6 +255,12 @@ export class MusicDirector {
     const under = !song ? 1 : whole || story ? SOCIAL_DUCK : MOOD_DUCK[verdict.mood];
     // A sting is music too: the ambience stays lowered under it.
     this.duck(now < this.holdUntil ? Math.min(under, MOOD_DUCK.combat) : under);
+  }
+
+  /** Plays a fight score's moment on the next frame, as a public event begins (its cadence), is won (its victory) or
+   *  is lost (its defeat). */
+  moment(kind: 'cadence' | 'victory' | 'defeat'): void {
+    this.asked = kind;
   }
 
   /** A frame on foot in `node` of `world`, from the fight it showed. */
@@ -269,7 +291,7 @@ export class MusicDirector {
     this.bus = bus;
     const clock = () => this.clockOf(bus.audio);
     const out = ceilingOn(bus.audio, bus.out);
-    const make = () => new SongPlayer(bus.audio, out, { timed: this.timed, clock });
+    const make = () => new SongPlayer(bus.audio, out, { timed: this.timed, clock, arranger: this.arranger });
     this.players = [make(), make(), make()];
     this.stinger = make();
     this.band.wire(bus.audio, out, { timed: this.timed, clock });

@@ -103,7 +103,7 @@ export const keeperLit = (gear: GearState | null, kind: string, waits: (counter:
   (kind === 'mail' && (gear?.mail?.length ?? 0) > 0) || waits(kind);
 
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
- *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `waits` says a
+ *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `speak` offers a
  *  quest step asks to speak with its keeper or, the Postmaster's, while letters wait; Shape over his while he is here;
  *  and each of a patrol's dungeon entrances (its gear's `dungeons`) over its door's lintel, once `props` gives its
  *  model's door. */
@@ -112,8 +112,9 @@ export function markedHere(
   here: Pick<NodeInfo, 'stations' | 'visitorSpots'>,
   floor: (x: number, y: number) => number,
   props: PropTable | null = null,
-  waits: (counter: string) => boolean = () => false,
+  speak: (counter: string, ask: () => void) => unknown = () => null,
 ): Marked[] {
+  const waits = (counter: string) => Boolean(speak(counter, () => undefined));
   const marked: Marked[] = [];
   const crown = (x: number, y: number, top = BODY_HEIGHT): Point => [x, y, floor(x, y) + top + OVER_HEAD_M];
   for (const station of here.stations ?? []) {

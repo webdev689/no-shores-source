@@ -180,14 +180,19 @@ test('a crewman shown fallen and taken away by the room is never counted living 
   assert.equal(ids.length, wanted, 'every zone stood its whole crew');
 });
 
-test("the crew regroup round each zone's checkpoint, on its deck, a step apart, facing its wave", () => {
+test("the crew regroup round each zone's checkpoint, on its deck with room round them, a step apart, facing its wave", () => {
   layout.zones.slice(1, layout.arena.zone).forEach((zone) => {
     const spots = regroupSpots(zone, course, 6);
     assert.ok(spots.length >= 4, `${zone.name}: ${spots.length} places`);
     const [x, y] = zone.checkpoint;
     for (const [index, { at, facing }] of spots.entries()) {
-      assert.ok(Math.hypot(at[0] - x, at[1] - y) < 2, `${zone.name}: by the checkpoint`);
-      assert.ok(Math.abs(topAt(course, ...at) - topAt(course, x, y)) < 0.7, `${zone.name}: on its deck`);
+      assert.ok(Math.hypot(at[0] - x, at[1] - y) < 2.7, `${zone.name}: by the checkpoint`);
+      // A body's room round each, on the same deck: no crewman stands at its edge against the sea's rim.
+      const deck = topAt(course, x, y);
+      for (let way = 0; way < 2 * Math.PI; way += Math.PI / 12) {
+        const top = topAt(course, at[0] + Math.sin(way) * 0.45, at[1] - Math.cos(way) * 0.45);
+        assert.ok(top > 0 && Math.abs(top - deck) < 0.7, `${zone.name}: room round ${at.join(', ')}`);
+      }
       for (const other of spots.slice(0, index))
         assert.ok(Math.hypot(at[0] - other.at[0], at[1] - other.at[1]) >= 1, `${zone.name}: a step apart`);
       const wave = zone.wave.map((foe) => foe.at);

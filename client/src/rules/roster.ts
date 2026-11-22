@@ -31,6 +31,12 @@ export function shownType(
 /** The ranks' names by their numbers, 1 Minor to 5 Boss. */
 export const RANK_NAMES: readonly string[] = ['', 'Minor', 'Major', 'Elite', 'Miniboss', 'Boss'];
 export const BOSS_RANK = 5;
+/** The Minibosses a public event's climax brings out, by the names the room gives them (crates/room/src/public:
+ *  fissure.rs WARDEN_NAME, raid.rs MARROW_NAME): each takes the boss bar and the boss's music while it stands. */
+export const PUBLIC_CLIMAX: ReadonlySet<string> = new Set([
+  'The Warden of the Fissure',
+  "Reeve Ancel Marrow, the Tithe's Hand",
+]);
 
 /** The colour a rank's bar is drawn in, for foes and ships alike: a Minor's red, a Major's orange, an Elite's, a
  *  Miniboss's and a Boss's yellow. */

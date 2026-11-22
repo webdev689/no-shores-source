@@ -2,7 +2,7 @@
 // what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
@@ -14,6 +14,14 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import type { InDungeon } from './footTrips.ts';
 import type { Speak } from './footGear.ts';
 import type { UsePrompt } from './usePrompt.ts';
+import type { EventProp } from '../city/eventProps.ts';
+import type { HudFrame } from '../combat/hud.ts';
+import type { CardAt } from '../player/cards.ts';
+import type { Shot } from './camera.ts';
+import type { Use } from './footGear.ts';
+import type { StripHint } from './hints.ts';
+import type { Standing } from './hudLaw.ts';
+import type { Quest } from './tasks.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -34,9 +42,6 @@ export interface FootContext {
   readonly usePrompt: UsePrompt;
   /** What E does at a counter a quest names: speaks with its keeper. */
   readonly speak?: Speak;
-  /** Whether the keeper at a counter (a station's kind) has something for the player: a quest step asks to speak with
-   *  them. Their mark pulses and is seen from everywhere. */
-  readonly waits?: (counter: string) => boolean;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }
@@ -81,9 +86,39 @@ export interface Opened {
 /** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache. */
 export interface Held {
   gear: GearState | null;
+  /** Alone, the room's word on the player's gear, read only for their public events' chests: the page dresses and
+   *  serves nothing else from a character that is not kept. */
+  alone: GearState | null;
   readonly entrances: Entrances;
   cache: Cache | null;
   /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
   revives: number;
   wiped: boolean;
+}
+
+/** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
+export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
+
+/** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
+ *  tells of that). */
+export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
+
+/** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
+ *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
+ *  and the nodes' beams; the lit keepers' marks, measured alike, drawn over everything; the arcs of its blows, in
+ *  world metres; and what its display shows), the keys listed, and the zone's public event: its props, the tracker's
+ *  quest and the music's moment for a beat this frame. */
+export interface FootFrame {
+  readonly shot: Shot;
+  readonly figures: readonly CardAt[];
+  readonly standing: Standing;
+  readonly marks: Float32Array;
+  readonly lit: readonly number[];
+  readonly swings: Float32Array;
+  readonly fight: FootFight;
+  readonly hints: readonly StripHint[];
+  readonly dark: number;
+  readonly props?: readonly EventProp[];
+  readonly quest?: Quest | null;
+  readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
 }

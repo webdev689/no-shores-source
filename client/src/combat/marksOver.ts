@@ -8,7 +8,7 @@
 
 import type { PixelPicture } from './dropPictures.ts';
 import { markPicture, PIXEL_M } from './drops.ts';
-import { ditherCode } from './marks.ts';
+import { MARK_FLOATS, ditherCode } from './marks.ts';
 import { motionReduced } from '../plus/kit.ts';
 
 type Point = readonly [number, number, number];
@@ -79,9 +79,9 @@ export function marksSeen(marked: readonly Marked[], eye: Point, seconds: number
   return out;
 }
 
-/** The lit marks seen from `eye` at `seconds`, as mark vertices to draw over everything (`MarkDraw.drawAbove`): every
- *  one, at any distance and whole, the farthest first so a nearer one stands over it. Laid at an opacity of 1, which
- *  the drawer shows whole without a ground's dither. */
+/** The lit marks seen from `eye` at `seconds`, as mark vertices measured from the eye, to draw over everything
+ *  (`MarkDraw.drawAbove`): every one, at any distance and whole, the farthest first so a nearer one stands over it.
+ *  Laid at an opacity of 1, which the drawer shows whole without a ground's dither. */
 export function litMarksSeen(
   marked: readonly Marked[],
   eye: Point,
@@ -94,5 +94,7 @@ export function litMarksSeen(
     .map((mark) => ({ mark, far: distance(mark, eye) }))
     .sort((one, other) => other.far - one.far);
   for (const { mark, far } of lit) lay(out, mark, far, eye, seconds, holding, 1);
+  for (let start = 0; start < out.length; start += MARK_FLOATS)
+    for (let axis = 0; axis < 3; axis += 1) out[start + axis] = (out[start + axis] ?? 0) - (eye[axis] ?? 0);
   return out;
 }

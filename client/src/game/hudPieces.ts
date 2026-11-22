@@ -9,6 +9,8 @@ import type { Interface } from '../ui/ui.ts';
 import { boundWord, withKey } from './controls.ts';
 import type { Hint } from './gearNodes.ts';
 import { edged } from '../combat/barDraw.ts';
+import type { BannerTone } from '../combat/publicBanner.ts';
+import type { Reach } from '../combat/seaReadout.ts';
 import { footer, header, hintRow, hudPress, rail, ruleUnder, said } from './hudParts.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
@@ -23,6 +25,7 @@ export interface HudView {
   readonly doubled: boolean;
   readonly fight: boolean;
   readonly bossed: boolean;
+  readonly banner?: BannerTone | null;
   readonly plates: boolean;
   readonly seaFight: boolean;
   readonly speaking: boolean;
@@ -40,11 +43,13 @@ export interface Choice {
 }
 
 /** The place's name and kind at the top left, clear of the compass; at the top right while the fight's display holds
- *  the left, and gone while a boss's bar, the ships' plates or the sea fight's readout hold the top. While the held
+ *  the left, and gone while a boss's bar, the ships' plates or the sea fight's readout hold the top, or a public
+ *  event's banner does at a phone's width. While the held
  *  map is up its kind is set as the map's own words are: as written, a pixel apart, at the map's larger size where
  *  the words take their larger step. */
 export function placeNode(view: HudView, title: string, kind: string): Node | null {
-  if (view.bossed || view.plates || view.seaFight || (title === '' && kind === '')) return null;
+  const bannered = view.width <= 600 && !!view.banner && view.banner !== 'next';
+  if (view.bossed || bannered || view.plates || view.seaFight || (title === '' && kind === '')) return null;
   const zoom = view.doubled ? 2 : 1;
   // The kind's words at the view's zoom, and a step larger on the map at the larger view.
   const kindSize = view.map && view.big && !view.doubled ? 2 : zoom;
@@ -114,13 +119,24 @@ export function deathNode(ui: Interface, why: string, canRespawn: boolean, respa
 }
 
 /** The key strip at the bottom right, under the dialogue box's foot, wrapping short of the Arts and weapons; over the
- *  sea bar and the offer over it while they show, and over the fight's Arts and weapons at the larger step; gone
- *  while someone speaks. */
-export function hintsNode(view: HudView, hints: readonly Hint[], seaBar: boolean, offer: boolean): Node | null {
+ *  sea bar and the offer over it while they show, and over the fight's Arts and weapons at the larger step; over the
+ *  ship's bar in a sea fight where the view is too narrow for the two side by side (`shipBar`, how far that bar
+ *  reaches from the view's bottom left, in its pixels); gone while someone speaks. */
+export function hintsNode(
+  view: HudView,
+  hints: readonly Hint[],
+  seaBar: boolean,
+  offer: boolean,
+  shipBar: Reach | null = null,
+): Node | null {
   if (hints.length === 0 || view.speaking) return null;
   const zoom = view.doubled ? 2 : 1;
   const size = view.big ? 2 : 1;
-  const foot = view.fight && view.big && !view.doubled ? 200 : seaBar ? (offer ? 148 : 96) : 22;
+  // A narrow view, a phone's, still gives the strip room for its widest entry.
+  const most = Math.max(view.width - 480 * zoom, Math.min(view.width - 56 * zoom, 240 * zoom));
+  const overShip = shipBar !== null && view.width - 28 * zoom - most < shipBar.right + 8 * zoom;
+  const footing = view.fight && view.big && !view.doubled ? 200 : seaBar ? (offer ? 148 : 96) : 22;
+  const foot = overShip ? Math.max(footing, shipBar.up / zoom + 8) : footing;
   return {
     id: 'hud:hints',
     through: true,
@@ -128,8 +144,7 @@ export function hintsNode(view: HudView, hints: readonly Hint[], seaBar: boolean
     wrap: true,
     alignX: 'end',
     alignY: 'center',
-    // A narrow view, a phone's, still gives the strip room for its widest entry.
-    maxWidth: Math.max(view.width - 480 * zoom, Math.min(view.width - 56 * zoom, 240 * zoom)),
+    maxWidth: most,
     float: { to: 'screen', at: [1, 1], anchor: [1, 1], x: -28 * zoom, y: -foot * zoom },
     children: hintRow(hints, size),
   };
