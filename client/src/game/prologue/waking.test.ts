@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HEART_BEAT_S } from '../../cinema/ambience.ts';
-import { blurAt, lidsAt, lightAt, OPEN_S, throbAt } from './waking.ts';
+import { blurAt, darkAt, OPEN_S, throbAt } from './waking.ts';
 
 test('the heart throbs at each thump of a beat and is still between them', () => {
   assert.equal(throbAt(0), 1);
@@ -24,14 +24,19 @@ test('the view clears a step at each beat, never ahead of the wake, and is clear
   assert.equal(blurAt(OPEN_S + 1, OPEN_S + 1), 0, 'clear a second after the eyes are open');
 });
 
-test('light comes through the lids with each beat', () => {
-  assert.ok(lightAt(0) > lightAt(0.6));
+test('the view darkens and lightens as the eyes blink open over the first seconds, then stays clear', () => {
+  assert.equal(darkAt(0), 1);
+  assert.ok(darkAt(1.1) < 0.5);
+  assert.ok(darkAt(1.9) > 0.9, 'dark again');
+  assert.equal(darkAt(OPEN_S), 0);
+  assert.equal(darkAt(10), 0);
 });
 
-test('the eyes blink open over the first seconds and stay open', () => {
-  assert.equal(lidsAt(0), 1);
-  assert.ok(lidsAt(1.1) < 0.5);
-  assert.ok(lidsAt(1.9) > 0.9, 'shut again');
-  assert.equal(lidsAt(OPEN_S), 0);
-  assert.equal(lidsAt(10), 0);
+test('each beat of the heart pulses the view darker while the eyes open, less as they do, and none once open', () => {
+  const lifted = (time: number) => darkAt(time, 0) - darkAt(time);
+  assert.ok(lifted(1.1) > 0.1, 'a beat pulses it darker');
+  assert.ok(lifted(5.2) < lifted(1.1), 'less as the eyes open');
+  assert.ok(darkAt(1.1, 0.6) - darkAt(1.1) < 0.02, 'all but still between beats');
+  assert.equal(darkAt(OPEN_S + 1, 0), 0, 'none once open');
+  assert.ok(darkAt(0.05, 0) <= 1, 'never past black');
 });

@@ -6,7 +6,7 @@ import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { foeDress } from '../../player/foeDress.ts';
 import type { Shot } from '../camera.ts';
 import { type Actor, ACTOR_IDS } from './actors.ts';
-import type { Beat, Tick } from './beat.ts';
+import { type Beat, SCENE, type Tick } from './beat.ts';
 import { YOU_ID } from './helm.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
@@ -47,6 +47,7 @@ export function thrownAt(from: Point3, into: number): Point3 {
 export class Overboard implements Beat {
   readonly name = 'overboard';
   readonly skippable = true;
+  readonly fromBlack = true;
   private readonly story: Story;
   private readonly layout: WreckLayout;
   private readonly scenery: WreckScenery;
@@ -69,10 +70,9 @@ export class Overboard implements Beat {
     // The fight has faded out already; begun here, the beat starts as black as the fight left it.
     screen.fade(1, 0);
     this.cues = new Cues([
-      [0.3, () => screen.fade(0, 0.9)],
       [1.1, () => this.skipped || void stage.play('overboard', true, { thule: 'thule', tithe: 'celebrant-1' })],
       [THROW_AT_S + FLIGHT_S, () => this.skipped || ambience.splash(1)],
-      [OVER_S - 1, () => screen.fade(1, 1)],
+      [OVER_S - SCENE.outS, () => screen.fade(1, SCENE.outS)],
       [OVER_S, () => (this.done = true)],
     ]);
   }

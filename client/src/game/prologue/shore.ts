@@ -12,7 +12,7 @@ import { boundWord } from '../controls.ts';
 import type { Landmass } from '../landmass.ts';
 import { type Actor, ACTOR_IDS } from './actors.ts';
 import { type Beach, findBeach } from './beach.ts';
-import type { Beat, Tick } from './beat.ts';
+import { type Beat, SCENE, type Tick } from './beat.ts';
 import { YOU_ID } from './helm.ts';
 import { islandFrame } from './introShots.ts';
 import type { Hearing } from '../audio/music/directorLaw.ts';
@@ -20,7 +20,7 @@ import { sung } from './music.ts';
 import { MORNING } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
-import { lidsAt } from './waking.ts';
+import { darkAt } from './waking.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 export const STRANGER_ID = ACTOR_IDS + 80;
@@ -84,6 +84,7 @@ export const takeHandPrompt = (touched: boolean, pad = BINDS.device === 'pad') =
 export class Shore implements Beat {
   readonly name = 'shore';
   readonly skippable = false;
+  readonly fromBlack = true;
   private readonly story: Story;
   private beach: Beach | null = null;
   private phase: Phase = 'searching';
@@ -99,8 +100,13 @@ export class Shore implements Beat {
     const { stage } = story;
     stage.weatherTowards(MORNING, 0);
     stage.parts.ambience.set({ deep: 0, waves: 0.8, gulls: 0.6, wind: 0.3, rain: 0.12, fire: 0, creak: 0 }, 2);
-    stage.parts.screen.lids(1);
+    stage.parts.screen.darken(1);
     this.search().catch(this.fail);
+  }
+
+  /** Ready once the beach is found, or its search has failed, which the next frame throws. */
+  get ready(): boolean {
+    return this.beach !== null || this.failed !== null;
   }
 
   private readonly fail = (error: unknown) => {
@@ -127,7 +133,6 @@ export class Shore implements Beat {
     story.stage.parts.birds.flock([found.at[0], found.at[1], 22], 9, 60, 21);
     this.phase = 'waking';
     this.since = 0;
-    story.stage.parts.screen.fade(0, 2);
   }
 
   /** The nearest strand to the plaza, searched on the exact ground round it; null where the coast has none. */
@@ -198,7 +203,7 @@ export class Shore implements Beat {
     const { stage } = this.story;
     this.since += tick.seconds;
     stage.stepWeather(tick.seconds);
-    stage.parts.screen.lids(lidsAt(this.since));
+    stage.parts.screen.darken(darkAt(this.since));
     if (this.phase === 'waking' && this.since >= KNEELS_AT_S + SPEAKS_AFTER_S) this.talk();
     if (this.phase === 'rising') {
       this.rose = Math.min(1, this.rose + tick.seconds / RISE_S);
@@ -209,8 +214,8 @@ export class Shore implements Beat {
     }
     if (this.phase === 'walking') {
       this.walked += tick.seconds;
-      if (this.walked > TOGETHER_S - 1.6 && this.walked - tick.seconds <= TOGETHER_S - 1.6)
-        stage.parts.screen.fade(1, 1.6);
+      if (this.walked > TOGETHER_S - SCENE.outS && this.walked - tick.seconds <= TOGETHER_S - SCENE.outS)
+        stage.parts.screen.fade(1, SCENE.outS);
       if (this.walked >= TOGETHER_S) {
         this.phase = 'gone';
         this.done = true;

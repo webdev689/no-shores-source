@@ -6,7 +6,7 @@ import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { type Dress, plainDress, type Race } from '../../player/dressing.ts';
 import type { Shot } from '../camera.ts';
 import { type Actor, ACTOR_IDS } from './actors.ts';
-import type { Beat, Tick } from './beat.ts';
+import { type Beat, SCENE, type Tick } from './beat.ts';
 import { YOU_ID } from './helm.ts';
 import type { Hearing } from '../audio/music/directorLaw.ts';
 import { sung } from './music.ts';
@@ -45,6 +45,7 @@ const FALLEN: readonly {
 export class Deep implements Beat {
   readonly name = 'deep';
   readonly skippable = true;
+  readonly fromBlack = true;
   private readonly story: Story;
   private readonly over: readonly [number, number];
   private readonly scenery: WreckScenery;
@@ -64,14 +65,13 @@ export class Deep implements Beat {
     ambience.set({ deep: 1, rain: 0, wind: 0, waves: 0.15, fire: 0.1, creak: 0, gulls: 0 }, 1);
     ambience.heartbeat(true);
     lightFires(flames, layout);
-    screen.fade(0, 2.5);
     this.cues = new Cues([
       [EYES_S - 0.4, () => screen.fade(0.6, 0.4)],
       [EYES_S, () => screen.fade(0, 0.8)],
       [FLASH_S - 2.5, () => ambience.heartbeat(false)],
       [FLASH_S, () => this.flash()],
       [VOICE_S, () => void stage.play('deep', true)],
-      [DEEP_S - 1.5, () => screen.fade(1, 1.5)],
+      [DEEP_S - SCENE.outS, () => screen.fade(1, SCENE.outS)],
       [DEEP_S, () => (this.done = true)],
     ]);
   }
@@ -80,14 +80,14 @@ export class Deep implements Beat {
     const { stage } = this.story;
     stage.parts.ambience.flash();
     stage.parts.screen.flash(2.2);
-    stage.parts.screen.lids(0);
+    stage.parts.screen.darken(0);
   }
 
   /** Cut short, the deep leaves the world as its end does, black and still, with neither its flash nor its voice. */
   skip(): void {
     const { screen, ambience } = this.story.stage.parts;
     ambience.heartbeat(false);
-    screen.lids(0);
+    screen.darken(0);
     screen.fade(1, 0);
     this.done = true;
   }
@@ -122,7 +122,7 @@ export class Deep implements Beat {
       glow: { colour: [1, 0.5, 0.18], strength: 0.8 * flicker },
     };
     const eyes = !this.done && this.since >= EYES_S && this.since < FLASH_S;
-    if (eyes) stage.parts.screen.lids(Math.min(0.85, (this.since - EYES_S) / (FLASH_S - EYES_S - 0.5)));
+    if (eyes) stage.parts.screen.darken(Math.min(0.85, (this.since - EYES_S) / (FLASH_S - EYES_S - 0.5)));
     const body = this.body();
     const actors: Actor[] = FALLEN.map((one, index) => ({
       id: ACTOR_IDS + 70 + index,

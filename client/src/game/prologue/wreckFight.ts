@@ -14,7 +14,7 @@ import { gearScreenOpen, type GearHere } from '../gearScreen.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import type { Overlay } from '../scene.ts';
 import type { Quest } from '../tasks.ts';
-import type { Beat, Tick } from './beat.ts';
+import { type Beat, SCENE, type Tick } from './beat.ts';
 import { ACTOR_IDS, type Actor } from './actors.ts';
 import type { HeardFoe, Hearing } from '../audio/music/directorLaw.ts';
 import { type FootHeard, hearFoot } from '../audio/music/hearing.ts';
@@ -37,7 +37,7 @@ const BACK_S = 5.6;
 /** The fewest seconds between two of Thule's barks of one kind. */
 const BARK_GAP_S = 9;
 /** How long the screen takes to fade out on the fight's end, seconds. */
-const END_S = 0.6;
+const END_S = SCENE.outS;
 /** What the frozen fight asks of the player, naming the key as bound now on the keys or the pad. */
 const asked = (lesson: 'parry' | 'dodge'): string =>
   lesson === 'parry' ? `Press ${askedKey('guard')} to parry` : `Press ${askedKey('dodge')} to dodge`;

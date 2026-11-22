@@ -85,7 +85,7 @@ test('a fade eases over its seconds, a flash is whole first and then fades, and 
   );
 });
 
-test('the bars slide in from the edges, and the lids close from them', () => {
+test('the bars slide in from the edges, and the view darkens as the story asks', () => {
   const { screen, laid, clock } = made();
   screen.bars(true);
   clock.now = 5;
@@ -97,10 +97,10 @@ test('the bars slide in from the edges, and the lids close from them', () => {
       [641, 79],
     ],
   );
-  screen.lids(1);
-  const lids = laid().filter((each) => each.node.id?.startsWith('cinema-lid'));
-  assert.equal(lids.length, 2);
-  assert.ok(lids[0] && lids[0].box.y + lids[0].box.height > 360, 'the upper lid past the middle');
-  screen.lids(0);
-  assert.equal(laid().filter((each) => each.node.id?.startsWith('cinema-lid')).length, 0, 'open, none');
+  screen.darken(0.6);
+  const dark = laid().find((each) => each.node.id === 'cinema-dark');
+  assert.equal(dark?.node.opacity, 0.6, 'the view darkened as asked');
+  assert.equal(dark?.box.width, 1280, 'over the whole view');
+  screen.darken(0);
+  assert.equal(laid().filter((each) => each.node.id === 'cinema-dark').length, 0, 'clear, none');
 });

@@ -96,6 +96,14 @@ story lets go of what it alone drew with on the GPU (the Brig's and the Frigate'
 wreck still drawn); the Frigate's view is made only once a beat draws it, so a player who sees only the intro never
 makes it.
 
+**Between scenes** ([[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]), the beats that begin
+from black (`fromBlack`: the wake, the throw overboard, the deep and the shore) lay no fade in of their own. The beat
+before ends in a fade out of 2 s (`SCENE`; the ram's crash cuts to black in 1 s), and the director holds the black
+at least 1 s more and until the next beat is `ready` (the wake once the wreck is drawn, the shore once its beach is
+found); past that second the owner's logo stands over the black with a breathing LOADING under it. The beat's
+first three frames are drawn under the black, so their first making is unseen, and it fades in over 2.5 s. A beat
+that does not begin from black, begun while the black still held, fades in at once.
+
 A story that cannot begin at all (its cast or scenes refused, a ship's model not loaded, a part failing as it is made)
 gives back everything it took, the last first: the screen hands the page back its touches, the dialogue box, the
 marks over heads and the nameplate leave the game's interface, the GPU lets go of what was made, and the
@@ -110,13 +118,13 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `battle` | The sea's own fight against the three, every ship taken up under the sail and way it was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as its own, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting the player still afloat and "No need to sink them", until every one is beaten, sunk or struck; the fight's readout, its keys and DFO's messages as toasts | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them (whichever shoulder leaves it the more room from the foremast and its shrouds), then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
-| `wake` | First person on the deck: the eyes blinking open as an almond under shaped lids, the fires' light red through them, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes, their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]) | shown |
+| `wake` | First person on the deck: the view darkening and lightening as the eyes blink slowly open, pulsing darker with each beat of the heart until they are open, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes, their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]) | shown |
 | `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck, turned from the rail most of the way toward the camera; skipped, the screen is black at once, so the deep comes in from black | shown |
-| `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the eyes; a flash; a voice; black | shown |
+| `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the view darkening as the eyes close; a flash; a voice; black | shown |
 | `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
 
-**The shore.** The player wakes lying on the strand, looking up at the sky while the eyes blink open. The stranger
+**The shore.** The player wakes lying on the strand, looking up at the sky while the view darkens and lightens as the eyes blink open. The stranger
 sets off 3 s in, 12 m up the beach, and walks down to a place 1.1 m up from the player and 0.6 m to their side, where
 she kneels (about 11 s in); the head turns to her from 6 s. She wears a townswoman's peasant blouse, long skirt and
 boots, which the forge draws in every move she makes (walk, kneel and idle; her test reads the forge's own tables), and

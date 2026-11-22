@@ -275,6 +275,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
 - [[The Audit's Leftovers Are Fixed as Claude Suggested]]
 - [[The Game Is Named No Shores]]
+- [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]
+- [[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]
+- [[Thule Fights on a Quarterdeck Twice as Long]]
+- [[A Foe Gives Up Only When the Player Is Far Away]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

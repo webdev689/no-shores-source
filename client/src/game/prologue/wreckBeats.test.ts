@@ -103,13 +103,13 @@ test('a wreck run that opens after its beat was left is let go at once, its edge
   assert.equal(fight.playing, false);
 });
 
-test('the throw overboard begins black, as the fight faded out, and only then fades in', () => {
+test('the throw overboard begins black, as the fight faded out, and leaves its fading in to the director', () => {
   const { story, calls } = recorded();
   const beat = new Overboard(story, layout, scenery);
+  assert.ok(beat.fromBlack);
   assert.ok(calls.includes('stage.parts.screen.fade(1, 0)'));
-  assert.ok(!calls.includes('stage.parts.screen.fade(0, 0.9)'), 'not yet');
   const shown = beat.frame(tick(0.4));
-  assert.ok(calls.includes('stage.parts.screen.fade(0, 0.9)'));
+  assert.ok(!calls.some((call) => call.startsWith('stage.parts.screen.fade(0')), 'no fade in of its own');
   assert.ok(shown.drawers?.includes(scenery.drawer), 'the wreck is drawn');
 });
 
@@ -270,8 +270,8 @@ test('the wake cut short leaves the eyes open, though the director frames it onc
   beat.frame(tick(2));
   beat.skip();
   beat.frame(tick(0.016));
-  const lids = calls.filter((call) => call.startsWith('stage.parts.screen.lids')).at(-1);
-  assert.match(lids ?? '', /^stage\.parts\.screen\.lids\(0[,)]/, `${lids}`);
+  const dark = calls.filter((call) => call.startsWith('stage.parts.screen.darken')).at(-1);
+  assert.match(dark ?? '', /^stage\.parts\.screen\.darken\(0\)/, `${dark}`);
 });
 
 /** A run of the wreck that plays nothing: the player alive or dead as `own` says (their health as it holds), in the

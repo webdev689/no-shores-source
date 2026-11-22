@@ -132,7 +132,8 @@ each part works is in its system note.
   the browser's keys move once from `overlook.` to `noshores.` (`keptNames.ts`); No Shores is a reserved name. The
   Workers, the D1 database, the R2 bucket, the code's own names and the download cache keep Overlook's. This
   session's git proxy answers only at `github.com/Lattymoy/overlook-source`, which GitHub redirects: keep that remote.
-  Merged as `c0db6fc7`; its deploy (CI run 45068542964: the check, then the rooms and the page) was running as this was written.
+  Merged as `c0db6fc7` and deployed (CI run 45068542964's second attempt, after the first was cancelled at its last
+  step): the page live at `lattymoy.github.io/no-shores-source/` with the logo, the rooms and the accounts answering.
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,

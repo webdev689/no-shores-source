@@ -15,7 +15,7 @@ import type { Story } from './story.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { setAblaze, type WreckScenery } from './wreckScenery.ts';
-import { blurAt, lidsAt, lightAt, OPEN_S } from './waking.ts';
+import { blurAt, darkAt, OPEN_S } from './waking.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 /** When the eyes are open for good, when the player stands, when the camera leaves the eyes, and when control comes,
@@ -36,6 +36,7 @@ function restingKey(shot: Shot): Pick<RailKey, 'eye' | 'look' | 'fov'> {
 export class Wake implements Beat {
   readonly name = 'wake';
   readonly skippable = true;
+  readonly fromBlack = true;
   private readonly story: Story;
   private readonly layout: WreckLayout;
   private readonly scenery: WreckScenery;
@@ -62,9 +63,8 @@ export class Wake implements Beat {
     setAblaze(story, layout);
     ambience.heartbeat(true);
     screen.bars(false);
-    screen.lids(1, lightAt(0));
+    screen.darken(1);
     screen.blur(blurAt(0, 0));
-    screen.fade(0, 1.4);
     this.back = this.backKeys(null);
     // The camera ends where the run's own takes the player standing, so play begins without a cut: taken as the
     // camera leaves the eyes, once the wreck's mesh has come, as the run's camera keeps clear of what it draws. A run
@@ -104,11 +104,16 @@ export class Wake implements Beat {
     ];
   }
 
+  /** Ready once the wreck the eyes open on is drawn. */
+  get ready(): boolean {
+    return !this.scenery.coming;
+  }
+
   skip(): void {
     this.skipped = true;
     this.cues.finish();
     const { screen } = this.story.stage.parts;
-    screen.lids(0);
+    screen.darken(0);
     screen.blur(0);
     // The director frames a beat once more after its skip: that frame is the wake's last, eyes open.
     this.since = CONTROL_S;
@@ -134,7 +139,7 @@ export class Wake implements Beat {
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
     const { screen } = stage.parts;
-    screen.lids(lidsAt(this.since), lightAt(this.heart));
+    screen.darken(darkAt(this.since, this.heart));
     screen.blur(blurAt(this.since, this.heart));
     if (this.since >= CONTROL_S) this.done = true;
     const shot = this.shotAt(this.since);

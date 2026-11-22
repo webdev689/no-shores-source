@@ -8,7 +8,7 @@ import { boundWord } from '../controls.ts';
 import type { GearHere } from '../gearScreen.ts';
 import { hushed } from './music.ts';
 import { asWreck, Battle, type Wreck } from './battle.ts';
-import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed } from './beat.ts';
+import { type Beat, type BeatName, BEATS, keepProloguePlayed, prologuePlayed, SCENE } from './beat.ts';
 import { Deep } from './deep.ts';
 import { Intro } from './intro.ts';
 import { Making } from './making.ts';
@@ -43,6 +43,10 @@ interface Carried {
 }
 
 /** A shot over the storm's sea for a beat begun with nothing before it (a page started at a later beat). */
+/** How many of a beat's frames are drawn under the black before it fades in: its pictures' and pipelines' first
+ *  making falls there, unseen. */
+const WARM_FRAMES = 3;
+
 function seaShot(story: Story): Shot {
   const { brig } = story;
   return { eye: [brig.x - 80, brig.y + 80, 40], yaw: brig.heading, pitch: 0.2, fov: 0.9, near: 0.3, far: 30_000 };
@@ -67,6 +71,9 @@ export class Prologue {
     run: null,
   };
   private clock = 0;
+  /** The black held before a beat that begins from it: how long it has held, and how many of the beat's frames have
+   *  been drawn under it. */
+  private held: { seconds: number; frames: number } | null = null;
   /** Set once the story hands the player to the game. */
   end: StoryEnd | null = null;
 
@@ -76,6 +83,14 @@ export class Prologue {
     this.wreckContext = wreckContext;
     this.played = prologuePlayed(localStorage);
     this.beat = this.make(from ?? 'intro');
+    this.hold();
+  }
+
+  /** Holds the black before the beat now begun, if it begins from black; one that does not, begun while the black
+   *  still held (the beat before skipped under it), fades in at once. */
+  private hold(): void {
+    if (this.held && !this.beat.fromBlack) this.story.stage.parts.screen.fade(0, SCENE.inS);
+    this.held = this.beat.fromBlack ? { seconds: 0, frames: 0 } : null;
   }
 
   /** The beat named, made from what the beats before it left. */
@@ -159,6 +174,7 @@ export class Prologue {
       before();
       try {
         this.beat = this.make(following);
+        this.hold();
         return;
       } catch (error) {
         console.error(`the story's ${following} could not begin:`, error);
@@ -254,6 +270,18 @@ export class Prologue {
     this.clock += passing;
     const { stage } = this.story;
     stage.step(passing);
+    const { held } = this;
+    if (held) {
+      // Black between scenes, at least SCENE.blackS, and longer while the beat's scene is coming, the logo over it.
+      held.seconds += seconds;
+      const waiting = held.seconds < SCENE.blackS || beat.ready === false;
+      stage.parts.screen.fade(1, 0);
+      stage.parts.screen.showLoading(waiting && held.seconds >= SCENE.blackS);
+      if (waiting) {
+        stage.parts.music.frame(beat.music?.() ?? hushed(), seconds);
+        return;
+      }
+    }
     if (beat.skippable && beat.skip) {
       const holding = controls.held('jump') || this.touching;
       const skipped = this.skipping.step(seconds, holding);
@@ -275,6 +303,10 @@ export class Prologue {
     if (shown) {
       this.carried.shot = shown.shot;
       stage.draw(shown, size, this.clock, passing);
+    }
+    if (held && shown && ++held.frames >= WARM_FRAMES) {
+      stage.parts.screen.fade(0, SCENE.inS);
+      this.held = null;
     }
     if (beat.done) this.next();
   }
