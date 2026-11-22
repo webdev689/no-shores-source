@@ -30,13 +30,16 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+mod quests;
 mod recharge;
+mod routes;
 pub mod sea;
 pub mod sea_weather;
 pub mod ship_power;
 pub mod sighting;
 mod spells;
 mod statuses;
+mod steps;
 mod story;
 pub mod threat;
 pub mod winds;
@@ -55,6 +58,7 @@ pub use players::{
 };
 pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
+pub use steps::{StepSeen, way_between, way_length};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{FighterId, player};
@@ -169,6 +173,8 @@ pub struct Room {
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
+    /// Its node and places, and the groups the houses' roads stood here (`quests.rs`).
+    pub(crate) quests: quests::QuestGround,
 }
 
 impl Room {
@@ -230,6 +236,7 @@ impl Room {
             isle: None,
             minute: 0,
             shape_spots: Vec::new(),
+            quests: quests::QuestGround::default(),
         }
     }
 
@@ -266,11 +273,13 @@ impl Room {
             story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
+        self.arrived(id);
         Some(id)
     }
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
+        self.steps_left(player);
         self.part(player);
         self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
@@ -328,6 +337,8 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_quests();
+        self.keep_steps();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {

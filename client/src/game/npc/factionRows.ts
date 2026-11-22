@@ -11,7 +11,7 @@ import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { ASKS, type GearItem, type GearState, type GearStanding } from '../../network/gearMessages.ts';
 import { CARRIED, SLOTS, itemWords } from '../../player/gear.ts';
 import { fragmentWords } from '../artLevels.ts';
-import { called } from '../factionNames.ts';
+import { called } from '../../player/factionNames.ts';
 import { ARTS } from '../artsCards.ts';
 import { CARRIED_MOST, VESTIGES_MOST } from '../gearCards.ts';
 import { type Row, type Ware, itemWare } from './npcWares.ts';

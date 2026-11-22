@@ -29,3 +29,4 @@ Asked which glyph should bob over each keeper and what a player can use, the own
 | A resource node's mark | Its resource's picture, 1.2 m over its ground, its beam standing clear over it | A node has no keeper; a beam through the mark covered it |
 | A keeper away from the counter | No mark over the empty post until they are back | A mark stands over its keeper |
 | The Test Ground's stall | A sealed Vestige's picture, over it as over a keeper | It has no keeper, and Vestiges are opened there; the keepers' signs are the game's, which the Test Ground does not import |
+| A quest's puzzle points and the ward it defends | Their rings under beams, gold once lit, as the quests draw them; no mark | They came with the quests beside this change; a mark of their own waits on the owner |

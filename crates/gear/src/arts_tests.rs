@@ -30,10 +30,11 @@ fn a_save_from_before_the_arts_wears_storm_with_every_core_empty() {
     assert_eq!((back.arts.worn, back.core_of(1)), (1, [None, Some(1), None]), "made whole");
 }
 
-/// A character who owns every fragment of every Art.
+/// A character who has earned every Art and owns every fragment of each.
 fn owning_all() -> Character {
     let mut character = Character::starting();
     character.arts.owned = Some(vec![0b11_1111; arts().arts.len()]);
+    character.arts.earned = Some(vec![crate::arts::ALL_EARNED; arts().arts.len()]);
     character
 }
 

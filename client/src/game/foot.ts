@@ -39,7 +39,7 @@ import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { type Use, nodeBeams, useAt } from './footGear.ts';
+import { type Speak, type Use, dropsLaid, nodeBeams, questRings, useAt } from './footGear.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
@@ -48,7 +48,7 @@ import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
 import { nodeRoom } from './rooms.ts';
-import { chime, worldOutput } from './uiSounds.ts';
+import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { OTHERS_FPS, folkCards, hearing, nextOtherId, rulesOf } from './footRoom.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -69,6 +69,8 @@ export interface FootContext {
   readonly session: () => Promise<string | null>;
   /** What E does where the player stands, drawn low in the middle of the view. */
   readonly usePrompt: UsePrompt;
+  /** What E does at a counter a quest names: speaks with its keeper. */
+  readonly speak?: Speak;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }
@@ -407,9 +409,11 @@ export class Foot {
     );
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
-    const marked = markedHere(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z);
-    const dropped = this.dropMarks(clock, shot.eye, [
+    const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
+    const marked = markedHere(gearNow, this.node, floor);
+    const dropped = dropsLaid(this.drops, gearNow?.drops ?? [], clock, shot.eye, [
       ...nodeBeams(marked, clock),
+      ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
@@ -473,7 +477,8 @@ export class Foot {
     const gear = this.gear;
     const { x, y } = walker.player.body;
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
-    this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked))) : null;
+    const near = (asked: GearAsk) => gear?.ask(asked);
+    this.using = able ? (placeUse ?? useAt(x, y, this.node, gear?.gear ?? null, near, this.context.speak)) : null;
     this.prompt.show(this.using?.words ?? null);
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
@@ -510,15 +515,6 @@ export class Foot {
     const edge = this.standing;
     const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
     return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
-  }
-
-  /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
-   *  each came to rest this frame; a Rare or finer chimes as it comes to rest. */
-  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]) {
-    const shown = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye, out);
-    const rarest = Math.max(-1, ...shown.rested);
-    if (rarest >= 2) chime(rarest);
-    return shown;
   }
 
   /** Every other player's figure, gliding toward where the room last saw them, drawn off it by the attack `feel` (and
