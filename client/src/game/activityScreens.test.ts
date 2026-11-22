@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { Child } from '../ui/node.ts';
 import type { UiEvent } from '../ui/ui.ts';
-import { fakeInterface, wordsIn } from '../ui/uiForTests.ts';
+import { fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
 import { type ActivityScreens, type ScreensFoot, startActivityScreens } from './activityScreens.ts';
 import type { ActivityRecord, GearState } from '../network/gearMessages.ts';
 import { SEARCH_LOST } from './companyFinder.ts';
@@ -30,16 +30,17 @@ const standing = (gear: GearState, fallen = false): ScreensFoot => ({
   gear: { gear },
 });
 const nowhere = { enter: () => undefined };
-/** The card as the game draws its layer, read as a page is read: whether its words are laid, and its press by its id,
- *  found and clicked. */
-function drawn(screens: ActivityScreens) {
-  const { ui, step } = fakeInterface(1280, 900);
+/** The card as the game draws its layer on a screen `width` by `height`, read as a page is read: whether its words are
+ *  laid, its press by its id, found and clicked, and the tree it was last built as. */
+function drawn(screens: ActivityScreens, width = 1280, height = 900) {
+  const { ui, step } = fakeInterface(width, height);
   let built: Child = null;
   const frame = (events: UiEvent[] = []) =>
     step(() => ({ width: 'grow', height: 'grow', children: [(built = screens.layer(ui))] }), events);
   const settle = () => (frame(), frame());
   return {
     find: (words: string): boolean => (settle(), wordsIn(built).includes(words)),
+    tree: (): Child => (settle(), built),
     press: (id: string) => {
       settle();
       const box = ui.boxOf(id);
@@ -140,6 +141,23 @@ test('E at an entrance opens its card: tier, level, modifiers and pay; Enter goe
   screens.card(1, 'The Mines of the Gullwing Vale');
   window.dispatchEvent(new FakeEvent('keydown', { key: 'e' }));
   assert.deepEqual(entered[1], [1, 'The Mines of the Gullwing Vale'], 'E again goes in');
+});
+
+test('the card leads each modifier with its icon, its words as large as the menu’s on the same screen', async () => {
+  fakePage();
+  const here = standing(gearAt(12, nothing));
+  const screens = startActivityScreens(module, [vale], () => here, nowhere, null, still);
+  await module;
+  screens.card(0, 'The Caverns of the Gullwing Vale');
+  const burn = (tree: Child) =>
+    nodesOf(tree).find((node) => node.children?.some((child) => child && child.text?.words === 'Burn (Shadow)'));
+  const narrow = drawn(screens);
+  assert.ok(
+    nodesOf(burn(narrow.tree())).some((node) => node.picture),
+    'Burn’s flame beside its name',
+  );
+  const sizeOf = (tree: Child) => nodesOf(tree).find((node) => node.text?.words === 'Burn (Shadow)')?.text?.size ?? 1;
+  assert.ok(sizeOf(drawn(screens, 1920, 1080).tree()) > sizeOf(narrow.tree()), 'larger on a wide screen');
 });
 
 test('a shut card says why and does not go in, and before the rules are read E goes straight in', async () => {

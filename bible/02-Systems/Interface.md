@@ -891,11 +891,13 @@ The Test Ground makes its own sound at full volume on the first click into its v
 ## At a dungeon's entrance
 
 E at a dungeon's entrance ([[Game]], "A dungeon") opens a card drawn in a window of the menu's kit, in the middle of
-the view (`EntranceCardView`, a layer of its own over the menu's): the dungeon's name in its header; under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite Dungeon ·
-Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss Dungeon of
-the week's "Never matched. Bring your company."), its modifiers with what each does, and what it pays, "Taken today"
-or "Taken this week" once this character's record holds it; why it is shut, in its gate's words, if it is; and Enter
-(E) and Close (Esc) on its footer, Enter resting while it is shut. It reads as the Journal's timers do ([[Activities]]),
+the view (`EntranceCardView`, a layer of its own over the menu's), its words as large as the menu's on the same
+screen: the dungeon's name in its header; under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite
+Dungeon · Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss
+Dungeon of the week's "Never matched. Bring your company."), its modifiers each led by its icon as the timers draw it,
+with what each does, and what it pays, "Taken today" or "Taken this week" once this character's record holds it; why
+it is shut, in its gate's words, if it is; and Enter (E) and Close (Esc) on its footer, Enter resting while it is
+shut. It reads as the Journal's timers do ([[Activities]]),
 built again as the minute or the character's word changes. While it stands the world is dimmed, the pointer is free
 and no key of the game's or the menu's acts behind it. It goes if the player falls, goes into a dungeon or leaves
 the place.

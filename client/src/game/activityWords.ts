@@ -201,7 +201,7 @@ export interface EntranceCard {
   readonly name: string;
   readonly tier: string;
   readonly rules: readonly string[];
-  readonly modifiers: readonly ModifierShown[];
+  readonly modifiers: readonly KeyedModifier[];
   readonly pays: string;
   readonly shut: string | null;
   /** The run's base Find a Company matches (`nodeRoom`), or null where it matches none or is shut. */
