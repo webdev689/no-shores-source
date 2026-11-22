@@ -107,7 +107,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 | Air | Falls under gravity. Pressed into a wall with the lip within reach (1.95 m in the air), it hangs, or goes over a low lip |
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
 | Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs. The
-lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past, and a hold caught at a seam climbs on |
+lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past, and a hold caught at a seam climbs on. A block on the wall's top is stacked on it only where its face is as near as the wall's and it runs along the wall where the body holds it: one set back on the top, or a post beside the hold, is not |
 | Mantle | Rises first, then goes over onto the lip |
 | Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 
