@@ -593,7 +593,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   sail through that tick at their own pace, so no turn of a course slips past it. Within 700 m of a hostile ship that
   would engage this player (bold, chased by them, one `wary_takes` would fall on their Sloop, or one in a fight among
   captains, which a player in sight joins), it is held to ×1, the world's own time (`threat.rs`, `holds`); a wary ship
-  that will not engage caps the pace by the ladder alone. The room sails
+  that will not engage caps the pace by the ladder alone. A ship in Overlook's home waters is neither held nor slowed
+  by any hostile ship, as none meets it there. The room sails
   each ship at that pace and sends it as the ship's pace; the page sails its own at the room's pace, drawn to where the room
   has it, and the voyage's line says it is held.
 - **Rivals meet** (`clash.rs`). A bold ship within 750 m of a ship of another faction, neither in a fight, meets the

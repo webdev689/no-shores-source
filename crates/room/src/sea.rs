@@ -15,6 +15,7 @@ use crate::clash::{Clash, ship_at, step_clashes};
 use crate::deck::{Aboard, Deck, WalkRefused};
 use crate::pirates::{Pirate, Pirates, Voyager};
 use crate::sea_weather::SeaWeather;
+use crate::sighting::Chart as _;
 use crate::threat::{held_pace, holds};
 use core::f64::consts::{PI, TAU};
 use movement::{Controls, TICK_SECONDS};
@@ -24,6 +25,7 @@ use world::check::{FRAME_HEIGHT_M, FRAME_WIDTH_M};
 use world::geometry::{Point, edges, ring_contains, segments_meet};
 use world::layout::Layout;
 use world::traffic::Port;
+use world::waters::Holder;
 
 /// A ship's speed at a pace of 1, metres a second.
 pub const SHIP_SPEED_M_S: f64 = 12.0;
@@ -378,12 +380,17 @@ impl Sea {
         }
         let time = self.clock as f64 * TICK_SECONDS;
         let (pirates, sailing_count) = (self.pirates(), self.pirates.sailing.len());
+        let islands: Vec<&Coast> = self.islands.coasts().collect();
+        let chart = SeaChart { coasts: &self.coasts, charted: &self.chart, islands: &islands };
         for (player, berth) in &mut self.berths {
             let Some(sailing) = berth.sailing.as_mut() else { continue };
             let ship = sailing.ship;
+            // Overlook's home waters hold no hostile ship, so no pirate holds or slows a ship inside them.
+            let home = chart.water([ship.x, ship.y]).is_some_and(|water| water.holder == Holder::Home);
             // A ship in a clash is joined by a player who comes in sight of it, so it holds as a bold one does.
             let (chased, hull) = (self.pirates.chased(*player), berth.kept[0]);
             let pirates: Vec<([f64; 2], bool)> = (pirates.iter().enumerate())
+                .filter(|_| !home)
                 .map(|(at, hostile)| {
                     ([hostile.x, hostile.y], at >= sailing_count || holds(hostile, [ship.x, ship.y], chased, hull))
                 })
