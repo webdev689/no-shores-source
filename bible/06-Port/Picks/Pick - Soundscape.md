@@ -29,8 +29,8 @@ beds and calls its own synthesiser made off the main thread. The owner chose it 
 
 - The beds' way: seeded noise cut by second-order sections, each run twice over its loop so it has no seam, levelled
   last, and made in a worker one job at a time, with the page's thread as the fallback.
-- The sea's laws: its swell on three long waves, the wash past her hull by her way a beat behind the swell, the wind
-  in her rigging, and gulls only near a coast.
+- The sea's laws: its swell on three long waves, the wash past the hull by the ship's way a beat behind the swell, the wind
+  in its rigging, and gulls only near a coast.
 - The shore's breakers: each wave curling, crashing and running back, a crash heard as its own sound when near.
 - The wild's voices and their clocks: crows, owls, wolves, jackals and frogs at random gaps by the time of day, placed
   round the listener.

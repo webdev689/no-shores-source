@@ -38,7 +38,8 @@ keeps a counter in Overlook's plaza ([[Cities]]).
   file, so both read one set of numbers.
 - **The pledge.** A character keeps the faction pledged (none at first), and for each faction its reputation and the
   packages collected (`Allegiance`). Pledging is an ask served only at that faction's counter: the first is free, a
-  switch costs 2,500 Aurem, the faction already pledged is refused. Reputation with every faction is kept across a
+  switch costs 2,500 Aurem, the faction already pledged is refused. A pledge begins that house's road ([[Quests]]), on which its Art, its two Tenets and three
+  of its fragments are earned. Reputation with every faction is kept across a
   switch. A saved character from before the factions reads pledged to none, and a broken one is made whole.
 - **Reputation.** Each kill's XP, as the room pays it after the seas' share, goes as reputation to the faction pledged,
   but only while the player wears that faction's cape (`earn_reputation`), and a quarter more while they hold the

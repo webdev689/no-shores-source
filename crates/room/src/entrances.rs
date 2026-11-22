@@ -1,8 +1,7 @@
-//! A patrol's dungeon entrances: one for each of its dungeons, laid out from the node's id the same every time, apart
-//! from its resource spots' draw so those stand where they always have; and an Elite Dungeon's node's one, drawn the
-//! same way. Each is one of the six entrances Daggerfall's dungeon blocks stand, drawn from its dungeon's seed,
-//! turned so its door faces the node's middle. A player may join the node's room before an entrance's door, as they
-//! come out of its dungeon.
+//! A patrol's dungeon entrances: one for each of its dungeons, laid out from the node's id the same every time, clear
+//! of its resource places; and an Elite Dungeon's node's one, drawn the same way. Each is one of the six entrances
+//! Daggerfall's dungeon blocks stand, drawn from its dungeon's seed, turned so its door faces the node's middle. A
+//! player may join the node's room before an entrance's door, as they come out of its dungeon.
 
 use crate::{Floor, PlayerId, Room, standing_on};
 use combat::sight::{apart, bearing};
@@ -115,6 +114,11 @@ impl Entrance {
     }
 }
 
+/// A number for a name, the same every time: FNV-1a.
+fn named(name: &str) -> u64 {
+    name.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
+}
+
 /// Whether a point of a room's floor is dry ground: out of the sea, and out of any river or lake the land tells.
 pub(crate) fn dry(floor: &Floor, x: f64, y: f64) -> bool {
     match floor {
@@ -158,7 +162,7 @@ pub(crate) fn laid(
     let (north, south) = ring.iter().fold((f64::MAX, f64::MIN), |(lo, hi), point| (lo.min(point[1]), hi.max(point[1])));
     let corners = ring.len().max(1) as f64;
     let middle = ring.iter().fold([0.0, 0.0], |sum, point| [sum[0] + point[0] / corners, sum[1] + point[1] / corners]);
-    let dice = Dice { seed: crate::patrol::named(&format!("{node}:dungeons")), tick: 0, player: 0 };
+    let dice = Dice { seed: named(&format!("{node}:dungeons")), tick: 0, player: 0 };
     let mut found: Vec<Entrance> = Vec::with_capacity(dungeons.len());
     for nth in 0..TRIES {
         let Some(&(seed, style)) = dungeons.get(found.len()) else { break };
@@ -185,15 +189,14 @@ impl Room {
     /// A patrol's entrances, its dungeons' in their order, or an Elite Dungeon's node's one; none in any other room.
     #[must_use]
     pub fn entrances(&self) -> &[Entrance] {
-        self.patrol.as_ref().map_or(&[], |patrol| patrol.entrances.as_slice())
+        &self.entrances
     }
 
     /// Lays an Elite Dungeon's node's one entrance, drawn as a patrol's are from its id; none for a node that is none.
     pub fn lay_elite_entrance(&mut self, node: &str) {
         let (Some(section), Some(elite)) = (&self.section, crate::elite_laid(node)) else { return };
         let dry = |x: f64, y: f64| dry(&self.floor, x, y);
-        let entrances = laid(node, &[elite], &self.floor, &dry, &section.ring, &section.spawns, &[]);
-        self.patrol = Some(crate::patrol::Patrol { entrances, ..crate::patrol::Patrol::default() });
+        self.entrances = laid(node, &[elite], &self.floor, &dry, &section.ring, &section.spawns, &[]);
     }
 
     /// A new player standing BEFORE_DOOR_M before the door of the entrance numbered `number`, facing away from it, as

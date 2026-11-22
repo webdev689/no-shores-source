@@ -61,7 +61,7 @@ test('every spell in the snapshot the server wrote reads back, a Dawnflare headi
 });
 
 test('a cast crosses in an input with its aim, and an Art’s asks with the fields the room reads', () => {
-  const parts = { intent: new Float64Array(16), look: { anim: 'cast', frame: 0, facing: 0 }, arms: 0, seen: 0n };
+  const parts = { intent: new Float64Array(17), look: { anim: 'cast', frame: 0, facing: 0 }, arms: 0, seen: 0n };
   const read = (bytes: Uint8Array) => Input.getRootAsInput(new flatbuffers.ByteBuffer(bytes));
   const aimed = read(inputBytes(1, { ...parts, cast: { spell: SPELLS.duskDaggers, aim: [3, -12.5, 0.25] } }));
   assert.deepEqual([aimed.cast(), Array.from(aimed.castAimArray() ?? [])], [8, [3, -12.5, 0.25]]);

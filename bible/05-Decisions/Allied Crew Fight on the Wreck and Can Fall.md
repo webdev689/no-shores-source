@@ -15,6 +15,8 @@ boarders when you arrive. They can win or die, so helping them matters."
 
 - On the wreck, the Brig's surviving crew fight the boarders, with green health bars.
 - They can win their fights or fall.
+  Those still standing regroup ahead as the player goes on: replaced in part by
+  [[The Crew Still Standing Regroup Ahead]].
 - The crew and the players cannot harm each other. Asked "Right now you cannot hurt your own crew on the wreck, and
   they cannot hurt you: your swings, shots and spells pass through them. Is that what you want?", the owner chose
   "No friendly fire", the option that read: "Keep it as built: crew and player can't harm each other, so swinging

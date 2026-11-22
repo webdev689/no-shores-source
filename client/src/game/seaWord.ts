@@ -4,9 +4,10 @@
 // player's asks.
 import type { NavalEvent } from '../network/seaFight.ts';
 import { TOLD } from '../network/seaHarbour.ts';
-import { RARITIES } from '../player/gear.ts';
+import { capital } from '../player/gear.ts';
 import type { SeaFacts } from '../rules/watersRules.ts';
 import { shipName } from '../ships/shipBars.ts';
+import { boundWord } from './controls.ts';
 import type { SeaRoom } from './seaRoom.ts';
 import type { Kept } from './shipPanel.ts';
 import type { PortCity } from './worldData.ts';
@@ -26,27 +27,19 @@ export function fightAsk(sea: {
   return ask;
 }
 
-/** A key pressed on a struck ship's deck: E asks the sea (to leave the won deck), Enter respawns, and the menu's keys are the
- *  game's; every other is the fight's on foot, so the sea's own (a voyage, the pace, the map) wait. Answers whether
- *  it was taken here. */
-export function deckKey(key: string, sea: Parameters<typeof fightAsk>[0] | null, respawn: () => void): boolean {
-  if (!sea?.boarding.onDeck || key === 'm' || key === 'escape') return false;
-  if (key === 'e') fightAsk(sea);
-  else if (key === 'enter') respawn();
+/** A control pressed on a struck ship's deck (`pressed` says which; `escape` for Escape): Use asks the sea (to leave the
+ *  won deck), Respawn respawns, and the menu and Escape are the game's; every other is the fight's on foot, so the
+ *  sea's own (a voyage, the pace, the map) wait. Answers whether it was taken here. */
+export function deckKey(
+  pressed: (id: 'use' | 'respawn' | 'menu') => boolean,
+  escape: boolean,
+  sea: Parameters<typeof fightAsk>[0] | null,
+  respawn: () => void,
+): boolean {
+  if (!sea?.boarding.onDeck || pressed('menu') || escape) return false;
+  if (pressed('use')) fightAsk(sea);
+  else if (pressed('respawn')) respawn();
   return true;
-}
-
-/** A word with its article: "an" before a vowel. */
-const withArticle = (word: string): string => `${/^[AEIOU]/i.test(word) ? 'an' : 'a'} ${word}`;
-
-/** What a gathered piece held, in words. */
-function heldWords(rarity: number, ammoBox: number, ammoCrate: number): string {
-  const parts = [
-    rarity > 0 ? withArticle(`${RARITIES[rarity - 1]?.name ?? 'Normal'} Vestige`) : null,
-    ammoBox === 1 ? 'an Ammo box' : null,
-    ammoCrate === 1 ? 'an Ammo crate' : null,
-  ].filter((part) => part !== null);
-  return parts.length > 0 ? parts.join(', ') : 'nothing you had room for';
 }
 
 /** Washing up at `port`, or at an island the player found (`isle`), said one way wherever it is said. */
@@ -70,22 +63,24 @@ export function linesOf(told: readonly (readonly number[])[], naval: readonly Na
     const name = words.nameOf(ship);
     return name ? `the ${name}’s` : 'its';
   };
-  const capital = (line: string) => line.charAt(0).toUpperCase() + line.slice(1);
   for (const event of naval) {
     if (event.kind === 'Struck')
-      lines.push(capital(`${whose(event.ship)} colours are down: come alongside and press E to board it.`));
+      lines.push(
+        capital(`${whose(event.ship)} colours are down: come alongside and press ${boundWord('use')} to board it.`),
+      );
     if (event.kind === 'Boarding') lines.push(`Boarders away: ${whose(event.ship)} crew stands to meet them.`);
   }
   for (const numbers of told) {
-    const [code, , first = 0, second = 0, third = 0, fourth = 0] = numbers;
+    const [code, , first = 0, second = 0, , fourth = 0] = numbers;
     if (code === TOLD.WASHED_UP) {
       const why = second === 1 ? 'Your ship went down' : 'Beaten aboard the ship';
       // An island they found is told by its number after the rest; a port city by its place among the ports.
       const isle = (numbers[4] ?? 0) > 0;
       const place = isle ? 'an island you found' : (words.ports[first] ?? 'the nearest port city');
       lines.push(`${why}: ${washedUpWords(place, isle).replace(/^You/, 'you')}`);
-    } else if (code === TOLD.HELD) {
-      lines.push(`Gathered a ${words.kinds.get(first) ?? 'crate'}: ${heldWords(second, third, fourth)}.`);
+    } else if (code === TOLD.HELD && numbers.slice(3).every((held) => held === 0)) {
+      // What a piece held the feed tells, from the gear; one that gave nothing is said here.
+      lines.push(`Gathered a ${words.kinds.get(first) ?? 'crate'}: nothing you had room for.`);
     } else if (code === TOLD.JOINED) {
       lines.push(first > 0 ? `Player ${first} joined the fight.` : `The ${shipName(second, fourth)} joined the fight.`);
     }

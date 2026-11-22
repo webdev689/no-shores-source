@@ -1,10 +1,10 @@
-// The game's boot: the rooms and the account, the sea room's module, the land's worker, the scene and its views, the
-// world, the movement rules and the forge, then the place the player arrives at and its landmass, opened. `game.ts`
-// keeps the travel and actions on what this has made, and `gameFrame.ts` draws it.
+// The game's boot: the interface's layers and the interface drawn over them, the rooms and the account, the sea room's
+// module, the land's worker, the scene and its views, the world, the movement rules and the forge, then the place the
+// player arrives at and its landmass, opened. `game.ts` keeps the travel and actions on what this has made, and
+// `gameFrame.ts` draws it.
 import type { Gpu } from '../gpu.ts';
 import { castOf } from '../nature/cast.ts';
 import { woodsOf } from '../nature/woods.ts';
-import { sloopBuildText } from '../network/localRoom.ts';
 import { startMovementRules } from '../rules/movementRules.ts';
 import { mainPortsOf } from '../rules/roster.ts';
 import { SLOOP_HULL } from '../ships/hulls.ts';
@@ -14,17 +14,21 @@ import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
 import { keptDiscovered } from './discovered.ts';
 import { FigureView } from './figureView.ts';
+import { gearScreenOpen } from './gearScreen.ts';
 import { arriving, type Flow } from './flow.ts';
 import { StoryHost } from './prologue/host.ts';
-import { installInterfaceSounds } from './uiSounds.ts';
+import { wakeOnGesture } from './uiSounds.ts';
 import { openForge } from './forge.ts';
 import { Hud } from './hud.ts';
 import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { accountOf, roomsFrom } from './rooms.ts';
+import { keepBinds } from './bindsKept.ts';
 import { GameScene } from './scene.ts';
-import { type SloopBuild, sloopBuildOf } from './shipPanel.ts';
+import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
+import { Stack } from '../ui/stack.ts';
+import { DrawnInterface } from './drawnInterface.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -33,30 +37,31 @@ export const FIRST_NODE = 'overlook-social';
 export const SEA_SHIPS = 16;
 
 /** Boots the game behind the first veil, `shipScale` the size ships are drawn at each frame (a ruin's wrecks too). */
-export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTMLElement, shipScale: () => number) {
-  const hud = new Hud(hudRoot);
+export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: () => number) {
+  /** The interface's layers, each part of it drawn over the whole view. */
+  const stack = new Stack();
+  const hud = new Hud();
+  stack.add((ui) => hud.node(ui));
+  // K opens every control wherever the key strip offers it, except over the menu's gear screen, which has the keys.
+  hud.controls.listen(() => hud.keysOffered && !gearScreenOpen());
   // The first tap or key wakes the sound, so the story's intro begins heard.
-  installInterfaceSounds(hudRoot);
+  wakeOnGesture();
   const asked = new URLSearchParams(location.search).get('at');
   // With `?at=` the page goes straight to a node; otherwise the story opens the game behind a tap to start.
   let flow: Flow = asked === null ? { mode: 'story' } : arriving(FIRST_NODE, 'Overlook');
   // The HUD starts veiled for loading; the story's tap to start stands in front of its loading instead.
   hud.veil(flow.mode === 'loading' ? flow.words : null);
-  const story = flow.mode === 'story' ? new StoryHost(hudRoot, canvas) : null;
+  const story = flow.mode === 'story' ? new StoryHost(stack, canvas, () => hud.controls.open) : null;
   const base = import.meta.env.BASE_URL;
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
-  // The sea room's own module, for playing alone; fetched now, compiled once.
-  const roomModule = fetch(`${base}room.wasm`)
-    .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
-    .then((bytes) => WebAssembly.compile(bytes));
-  // The Sloop's build as the naval rules hold it, for Manage's panel: read once when first opened, however it reads.
-  let [compiled, sloopBuild]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
-  void roomModule.then((module) => (compiled = module)).catch(() => undefined);
-  const builtSloop = () =>
-    (compiled && sloopBuild === undefined ? (sloopBuild = sloopBuildOf(sloopBuildText(compiled))) : sloopBuild) ?? null;
+  if (link) void keepBinds(link);
+  // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
+  const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
   const land = startLandWorker();
   const scene = new GameScene(gpu);
+  // The interface the game draws itself, once its face is read, alone until the game's frames begin.
+  const ui = new DrawnInterface(gpu, canvas, stack);
   const figureView = new FigureView(gpu);
   const shipModels = new ShipModels(openHull(gpu, SEA_SHIPS));
   const [world, landTexts, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
@@ -111,6 +116,8 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, hudRoot: HTM
   };
   return {
     hud,
+    stack,
+    ui,
     flow,
     story,
     rooms,

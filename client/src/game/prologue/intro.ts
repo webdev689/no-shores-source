@@ -3,7 +3,9 @@
 // Holding Space goes straight to the title.
 import { railShot } from '../../cinema/rail.ts';
 import { playedByTouch } from '../../cinema/screen.ts';
+import { BINDS } from '../../player/input.ts';
 import type { Shot } from '../camera.ts';
+import { boundWord } from '../controls.ts';
 import type { Hearing } from '../audio/music/directorLaw.ts';
 import type { Beat, Tick } from './beat.ts';
 import { HOME_S, homeRail, type IslandFrame, islandFrame, shipsOff, titleEye } from './introShots.ts';
@@ -26,6 +28,10 @@ const PROMPT_AFTER_S = 2.4;
 const DRIFT_M_S = 3;
 
 type Phase = 'dark' | 'dawn' | 'cloud' | 'skipped' | 'home' | 'title';
+
+/** The title's prompt, by whatever the player plays with: on the pad, its jump's button. */
+export const beginPrompt = (touched: boolean, pad = BINDS.device === 'pad'): string =>
+  touched ? 'Tap to begin' : pad ? `Press ${boundWord('jump', 'pad')} to begin` : 'Press any key to begin';
 
 export class Intro implements Beat {
   readonly name = 'intro';
@@ -187,8 +193,7 @@ export class Intro implements Beat {
       }
       case 'title': {
         // Begun from a key or a tap between frames, the title is drawn once more: it must not ask again.
-        if (this.since > PROMPT_AFTER_S && !this.begun)
-          screen.showPrompt(playedByTouch() ? 'Tap to begin' : 'Press any key to begin');
+        if (this.since > PROMPT_AFTER_S && !this.begun) screen.showPrompt(beginPrompt(playedByTouch()));
         const look = frame.town;
         const eye = titleEye(frame, this.since * DRIFT_M_S);
         const rail = railShot([{ at: 0, eye, look: [look[0], look[1], look[2] + 45] }], 0, LENS.fov);

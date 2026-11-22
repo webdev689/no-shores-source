@@ -222,6 +222,14 @@ export class Cards {
     return { width, height, pixels, level: true, ...(snap ? { snap: (shown) => snap.snap(shown) } : {}) };
   }
 
+  /** A picture as a card the scene draws among the figures, standing on the middle of its foot unless it says where:
+   *  a piece of gear lying in the world. Its texture is the caller's to let go. */
+  cardOf(picture: Picture): Card {
+    const { width, height, pixels, root } = picture;
+    const bytes = new Uint8Array(pixels.buffer, pixels.byteOffset, pixels.byteLength);
+    return this.scene.card(bytes, width, height, root ?? [width / 2, height]);
+  }
+
   /** What a body can wear, as the forge draws it; null for a body it has not. */
   wardrobe(body: string): Wardrobe | null {
     const layers = this.looks.bodies[body]?.layers;

@@ -7,7 +7,7 @@ import type { GearState } from '../../network/gearMessages.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { RARITIES } from '../../player/gear.ts';
 import { EMBLEMS } from '../emblemArt.ts';
-import { owned } from '../factionNames.ts';
+import { owned } from '../../player/factionNames.ts';
 
 /** A row of the screen: the emblems, or one kind of cosmetic. */
 export type AppearanceKind = 'emblem' | CosmeticKind;
@@ -121,11 +121,12 @@ export function previewDress(dress: Dress, tile: AppearanceTile | null): Dress {
   return { ...dress, outfit: { ...dress.outfit, [tile.kind]: start ? null : tile.id } };
 }
 
-/** The preview a tile left by the pointer hands the display: that of the tile the keys hold focused (the one left
+/** The tile the display previews: the one under the pointer, else the one the keys hold focused (the one left
  *  included), else none, for the player as they are; a tile a click focused holds no preview once the pointer goes. */
-export function previewHeld<Preview>(
-  held: Element | null,
-  previews: { get(tile: Element): Preview | undefined },
-): Preview | undefined {
-  return held?.matches(':focus-visible') ? previews.get(held) : undefined;
+export function previewedTile(
+  tiles: readonly AppearanceTile[],
+  hovered: (tile: AppearanceTile) => boolean,
+  keyFocused: (tile: AppearanceTile) => boolean,
+): AppearanceTile | null {
+  return tiles.find(hovered) ?? tiles.find(keyFocused) ?? null;
 }

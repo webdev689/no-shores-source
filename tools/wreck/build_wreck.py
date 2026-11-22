@@ -20,7 +20,7 @@ from paint_ship import paint, picture_materials, read_pictures  # noqa: E402
 from wreck_dress import blockers, gates, ramps, wreckage  # noqa: E402
 from wreck_frames import Frames  # noqa: E402
 from wreck_fields import fields  # noqa: E402
-from wreck_scene import assemble, clear_lane  # noqa: E402
+from wreck_scene import assemble, clear_lane, clear_ways  # noqa: E402
 from wreck_ships import Ground, meshes  # noqa: E402
 
 
@@ -44,6 +44,7 @@ def main():
     clear_lane((groups['Frigate'],), (-1.7, -33.8, 1.7, -30.0), 4.4, 7.0)
     frames = Frames(places, hulls, Ground(groups.values()))
     groups['Ramps'] = ramps(frames, 201)
+    clear_ways([group for name, group in groups.items() if name != 'Ramps'], groups['Ramps'])
     frames = Frames(places, hulls, Ground(groups.values()))
     groups['Blockers'] = blockers(frames, 301)
     groups['Wreckage'] = wreckage(frames, 401)

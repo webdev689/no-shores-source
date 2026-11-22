@@ -41,9 +41,8 @@ export interface Fire {
  * The wreck as the level plays it, in world metres (x east, y south, z up over the sea): the ground a body stands on
  * as blocks, measured from the wreck's model (tools/wreck/export_wreck.py); where the player wakes and the way they
  * face; the path from there to the arena, as points; the zones along it; the arena's zone, the gate that closes its
- * way in, and where Thule stands; the fires; where its masts still stand; the camera's way back to the player after
- * its flight down the wreck (points and heights over the sea); where no sea is drawn, its ships' waterlines and its
- * rafts, which the swell would rise through; and the keys on R2 of its mesh and its baked light.
+ * way in, and where Thule stands; the fires; where no sea is drawn, its ships' waterlines and its rafts, which the
+ * swell would rise through; and the keys on R2 of its mesh and its baked light.
  */
 export interface WreckLayout {
   readonly course: readonly CourseBlock[];
@@ -52,8 +51,6 @@ export interface WreckLayout {
   readonly zones: readonly Zone[];
   readonly arena: { readonly zone: number; readonly gate: CourseBlock; readonly thule: Point };
   readonly fires: readonly Fire[];
-  readonly masts: readonly Point[];
-  readonly flightBack: readonly (readonly [number, number, number])[];
   readonly dry: readonly HullMask[];
   readonly drawn: { readonly mesh: string; readonly light: string };
 }
@@ -97,8 +94,6 @@ export function readWreck(file: WreckFile = wreck): WreckLayout {
       const along = 'along' in fire ? fire.along : null;
       return { at: [x, y, z], size: fire.size, along: along ? [along[0] ?? 0, along[1] ?? 0, along[2] ?? 0] : null };
     }),
-    masts: file.masts.map(pointOf),
-    flightBack: file.flightBack.map(([x = 0, y = 0, z = 0]) => [x, y, z] as const),
     dry: file.dry.map(([x = 0, y = 0, heading = 0, halfLength = 0, halfBeam = 0]) => ({
       x,
       y,
@@ -137,8 +132,6 @@ export function layoutAt(layout: WreckLayout, [east, south]: Point): WreckLayout
     })),
     arena: { ...layout.arena, gate: block(layout.arena.gate), thule: point(layout.arena.thule) },
     fires: layout.fires.map((fire) => ({ ...fire, at: [fire.at[0] + east, fire.at[1] + south, fire.at[2]] })),
-    masts: layout.masts.map(point),
-    flightBack: layout.flightBack.map(([x, y, z]) => [x + east, y + south, z] as const),
     dry: layout.dry.map((mask) => ({ ...mask, x: mask.x + east, y: mask.y + south })),
   };
 }
@@ -159,4 +152,19 @@ export function topAt(blocks: readonly CourseBlock[], x: number, y: number): num
 /** Whether (x, y) lies in an area. */
 export function inArea([minX, minY, maxX, maxY]: Area, x: number, y: number): boolean {
   return x >= minX && x <= maxX && y >= minY && y <= maxY;
+}
+
+/** The point `metres` along `path` from its first, its last past its end. */
+export function pointAlong(path: readonly Point[], metres: number): Point {
+  let left = Math.max(0, metres);
+  for (let index = 1; index < path.length; index++) {
+    const [from, to] = [path[index - 1] ?? [0, 0], path[index] ?? [0, 0]];
+    const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+    if (left <= length && length > 0) {
+      const share = left / length;
+      return [from[0] + (to[0] - from[0]) * share, from[1] + (to[1] - from[1]) * share];
+    }
+    left -= length;
+  }
+  return path.at(-1) ?? [0, 0];
 }

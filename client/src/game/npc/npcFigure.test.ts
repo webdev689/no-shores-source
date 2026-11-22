@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { type FakeElement, onFakePage, withMotionReduced } from '../../combat/page.test.ts';
 import type { Cards } from '../../player/cards.ts';
 import type { Picture } from '../../player/picture.ts';
 import { keeperFigure } from './npcFigure.ts';
 
-const PICTURE: Picture = { width: 2, height: 2, pixels: new Uint8ClampedArray(16).fill(255) };
+/** Two texels drawn in a clear 4 by 4, at (1, 1) and (1, 2). */
+const pixels = new Uint8ClampedArray(64);
+for (const spot of [5, 9]) pixels.fill(255, spot * 4, spot * 4 + 4);
+const PICTURE: Picture = { width: 4, height: 4, pixels };
 
 /** A forge that fails its first `failures` drawings, and counts what it was asked. */
 function forgeFailing(failures: number) {
@@ -17,22 +19,24 @@ function forgeFailing(failures: number) {
 }
 
 const settle = () => new Promise((done) => setTimeout(done));
-const firstChild = (stand: HTMLElement) => (stand as unknown as FakeElement).children[0];
 
-test('a keeper figure whose drawing failed is asked for again, and once drawn its canvases are reused', async () => {
-  (globalThis as { devicePixelRatio?: number }).devicePixelRatio = 1;
+test('a keeper figure whose drawing failed is asked for again a while on, and once drawn is grown by whole pixels', async () => {
   const { forge, asked } = forgeFailing(2);
-  let readied = 0;
-  const build = () =>
-    withMotionReduced(true, () => onFakePage(() => keeperFigure('tailor', forge, 200, () => readied++)));
-  assert.equal(firstChild(build()), undefined, 'nothing while it is drawn');
+  const build = (millis: number, still = false) => keeperFigure('tailor', forge, 200, 2, millis, still);
+  assert.equal(build(0), null, 'nothing while it is drawn');
   await settle();
-  assert.equal(readied, 0, 'a failure does not ask for the page again');
-  build();
+  assert.equal(build(500), null, 'a failure is not kept');
+  assert.equal(asked.count, 2, 'nor asked again at once');
+  assert.equal(build(2000), null, 'asked again a while on');
   await settle();
   assert.equal(asked.count, 4, 'the failed drawing was asked for again');
-  assert.equal(readied, 1);
-  const shown = firstChild(build());
-  assert.ok(shown, 'drawn');
-  assert.equal(firstChild(build()), shown, 'the same canvas, not composed again');
+  const shown = build(2400);
+  assert.ok(shown?.picture, 'drawn');
+  assert.deepEqual(shown.picture.pixel, { width: 1, height: 2 }, 'trimmed to what it draws, texels kept whole');
+  // 200 CSS pixels at 2 device pixels each fit 200 whole steps of the figure's two texels.
+  assert.equal(shown.height, 200);
+  assert.equal(shown.width, 100);
+  assert.notEqual(build(3000)?.picture?.key, shown.picture.key, 'it breathes to its second frame');
+  assert.equal(build(3000, true)?.picture?.key, 'keeper tailor 0', 'still with less motion');
+  assert.equal(asked.count, 4, 'drawn once, then kept');
 });

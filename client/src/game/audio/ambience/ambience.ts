@@ -1,8 +1,8 @@
 // The world's ambience: the sea's, the social space's and each island's by its climate, heard wherever the player is.
 // The game tells it each frame where the player stands and looks (`onFoot`, `atSea`) and steps it once (`frame`); it
 // plays the place's ambience through the Ambience volume, crossfading over a few seconds as the player moves on, and
-// lets every place fade to nothing while the game shows none, behind a loading veil. Its beds and calls are made in a
-// worker as the place is first heard; until they come it is silent. Each frame it reads the sky (SKY_NOW): the sun's
+// lets every place fade to nothing while the game shows none, behind a loading veil. Its beds and calls are the owner's
+// Freesound recordings; until each has come it is silent. Each frame it reads the sky (SKY_NOW): the sun's
 // height gives the hour's phases, the weather the wind, rain, snow and sand, and every strike near its thunder.
 
 import { stepsBetween } from '../../../combat/worldCues.ts';
@@ -13,14 +13,11 @@ import { listen } from '../../../listener.ts';
 import { ambienceOutput } from '../../uiSounds.ts';
 import type { NodeInfo } from '../../worldData.ts';
 import { type Place, placeOf } from '../place.ts';
-import { Bank } from './bank.ts';
 import type { Random } from './dsp.ts';
-import { type AmbienceKey, ambienceOf, fadeGain, nearness, phasesAt, stepLevel, walkedOn, wayOf } from './law.ts';
+import { ambienceOf, fadeGain, nearness, phasesAt, stepLevel, walkedOn, wayOf } from './law.ts';
 import { type Lay, shoreOf } from './places.ts';
-import { type Heard, MOST_CALLS, ScapePlayer, jobsOf } from './player.ts';
-import { SCAPES } from './scapes.ts';
+import { type Heard, MOST_CALLS, ScapePlayer } from './player.ts';
 import { type FightHeard, seaFightCue } from './seaFight.ts';
-import { jobName } from './sounds.ts';
 import { phasesOfSun, rainLevel, shelterOf, thunderOf, weatherOf } from './weatherLaw.ts';
 
 /** The ear's height over its deck at sea, metres. */
@@ -66,7 +63,6 @@ function layOf(land: Landmass): Lay {
 export class Ambience {
   private readonly continents: Parameters<typeof placeOf>[0];
   private readonly output: AmbienceOutput;
-  private readonly bank: Bank;
   private readonly random: Random;
   /** A fixed hour, for the sound sheet and tests; else the sky's. */
   private readonly hour: number | null;
@@ -86,18 +82,15 @@ export class Ambience {
   private way = 0;
   private deck = 1;
   private hidden = false;
-  /** The place whose sounds were last asked for. */
-  private wanted: AmbienceKey | null = null;
   /** The sea fight's events since the last frame, heard where each happens. */
   private fought: FightHeard | null = null;
 
   constructor(
     continents: Parameters<typeof placeOf>[0],
     output: AmbienceOutput = ambienceOutput,
-    options: { readonly hour?: number; readonly random?: Random; readonly bank?: Bank } = {},
+    options: { readonly hour?: number; readonly random?: Random } = {},
   ) {
     [this.continents, this.output] = [continents, output];
-    this.bank = options.bank ?? new Bank();
     this.random = options.random ?? Math.random;
     this.hour = options.hour ?? null;
     // A hidden page hears nothing: its frames stop, so the fade is the page's own event's.
@@ -147,25 +140,11 @@ export class Ambience {
     this.hear({ kind: 'sea' }, [ship[0], ship[1], DECK_EAR_M], ear.yaw, ship, lay, { coast, folk: [] });
   }
 
-  /** Makes every bed and call a place needs ahead of its being heard; resolves once all are made. */
-  prepare(key: AmbienceKey): Promise<void> {
-    const jobs = jobsOf(SCAPES[key]);
-    for (const job of jobs) this.bank.want(job);
-    const pumping = setInterval(() => this.bank.pump(), 5);
-    return this.bank.whenMade(jobs).finally(() => clearInterval(pumping));
-  }
-
   /** Steps the ambience `seconds` on: the place heard this frame, or none, fades in and every other fades out. */
   frame(seconds: number): void {
     this.clock += seconds;
     const heard = this.heard;
     this.heard = null;
-    // A place's sounds are made as soon as it is heard, before the first press wakes the page's sound.
-    if (heard && heard.key !== this.wanted) {
-      this.wanted = heard.key;
-      for (const job of jobsOf(SCAPES[heard.key])) this.bank.want(job);
-    }
-    this.bank.pump();
     const output = this.output();
     if (!output) {
       this.stopAll();
@@ -182,7 +161,7 @@ export class Ambience {
     if (!audio || !master) return;
     for (const player of this.players) player.target = player.key === heard?.key ? 1 : 0;
     if (heard && !this.players.some((player) => player.key === heard.key))
-      this.players.push(new ScapePlayer(audio, master, heard.key, this.bank, this.random, this.calls));
+      this.players.push(new ScapePlayer(audio, master, heard.key, this.random, this.calls));
     if (heard) {
       const [east, south, up] = heard.ear;
       listen(audio, [east, south, up], heard.yaw, heard.origin);
@@ -210,23 +189,20 @@ export class Ambience {
     if (gone.length === 0) return;
     for (const player of gone) player.stop();
     this.players = this.players.filter((player) => !gone.includes(player));
-    this.bank.keepOnly(new Set(this.players.flatMap((player) => jobsOf(player.scape).map(jobName))));
   }
 
-  /** What it is playing: the places sounding, their bed sources, the calls sounding, and the sounds kept. */
+  /** What it is playing: the places sounding, their beds playing recordings, and the calls sounding. */
   get stats(): {
     readonly places: number;
     readonly sources: number;
     readonly calls: number;
     readonly mostCalls: number;
-    readonly kept: { readonly sounds: number; readonly bytes: number };
   } {
     return {
       places: this.players.length,
       sources: this.players.reduce((sum, player) => sum + player.sources, 0),
       calls: this.calls.count,
       mostCalls: MOST_CALLS,
-      kept: this.bank.held,
     };
   }
 

@@ -76,7 +76,7 @@ test('a body in the sea reaches no zone, and the sea brings no one back who lies
   for (let frame = 0; frame < 30; frame++) assert.equal(progress.frame(sea(0, { dead: true }), 0.1).bringBack, null);
 });
 
-test("the wreck's own ground lower than the sea's line, as her gun deck, is never the sea", () => {
+test("the wreck's own ground lower than the sea's line, as its gun deck, is never the sea", () => {
   const progress = new WreckProgress(layout);
   layout.zones.slice(0, 7).forEach((unused, index) => progress.frame(standing(index), 0.016));
   const [x, y] = [-1.6, 27.0];
@@ -198,4 +198,19 @@ test("once the boss fight begins, a player back over the arena's heap is brought
   const over = { ...inArena(), y: gate.minY - 0.5, z: topAt(course, 0, gate.minY - 0.5) };
   assert.deepEqual(atTheBoss().frame(over, 0.016).bringBack, checkpoint, 'over the heap');
   for (const x of [-5.6, 5.6]) assert.equal(topAt(course, x, 34), 0, `outboard of its rail at ${x}, the sea`);
+});
+
+test('while held, a zone reached keeps its wave waiting and its way on shut; let go, the wave stands', () => {
+  const progress = new WreckProgress(layout);
+  progress.held = true;
+  progress.frame(standing(0), 0.016);
+  const alive = layout.zones.map(() => 0);
+  for (let frame = 0; frame < 30; frame++) {
+    const asks = progress.frame(standing(1, { alive }), 0.1);
+    assert.deepEqual([asks.stand, asks.open], [[], []], 'nothing stands, nothing opens');
+  }
+  assert.equal(progress.zone, 1, 'the zone is reached all the same');
+  progress.held = false;
+  const wave = (layout.zones[1]?.wave ?? []).map((foe) => ({ ...foe, zone: 1 }));
+  assert.deepEqual(progress.frame(standing(1, { alive }), 0.016).stand, wave);
 });

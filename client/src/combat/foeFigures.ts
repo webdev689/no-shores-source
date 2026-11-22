@@ -196,6 +196,7 @@ export class FoeFigures {
           smear: feel?.smear?.(kept.id) ?? null,
         });
     }
+    for (const [id, placed] of this.figures) if (!fight.foes.has(id)) forge.forget(placed.id);
     for (const kept of [this.figures, this.loops, this.overs, this.trails, this.dissolves, this.over])
       for (const id of kept.keys()) if (!fight.foes.has(id)) kept.delete(id);
     this.glides.keep(new Set(fight.foes.keys()));

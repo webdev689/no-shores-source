@@ -30,6 +30,9 @@ fn stocked() -> Character {
 fn kills_fill_the_worn_arts_bar_and_stop_when_it_is_full() {
     let mut character = Character::starting();
     assert_eq!((character.art_level(1), character.art_xp(1)), (1, 0));
+    character.reward_kill(Foe::Brute, 5, None, Difficulty::Normal, &DICE);
+    assert_eq!(character.art_xp(1), 0, "no Art worn, none grows");
+    (character.arts.earned, character.arts.worn) = (Some(vec![crate::arts::ALL_EARNED; 3]), 1);
     let reward = character.reward_kill(Foe::Brute, 5, None, Difficulty::Normal, &DICE);
     assert_eq!(character.art_xp(1), reward.xp, "Storm is worn");
     assert_eq!(character.art_xp(2), 0, "only the worn Art grows");

@@ -1,6 +1,7 @@
 // The Brig's surviving crew on the wreck: two or three of them in each zone with boarders, already fighting them when
-// the player comes, dressed as the hands who worked her deck in the storm. They fight on the players' side and can
-// fall; a zone is cleared by its boarders falling, whatever becomes of its crew.
+// the player comes, dressed as the hands who worked its deck in the storm. They fight on the players' side and can
+// fall; a zone is cleared by its boarders falling, whatever becomes of its crew. Those still standing regroup round
+// each zone's checkpoint as the player reaches it and join its fight, all but the arena's.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { HANDS } from './brig.ts';
@@ -19,6 +20,8 @@ export const ROOM_FOES_MOST = 24;
 export const CREW_ALIVE_MOST = ROOM_FOES_MOST - ALIVE_MOST;
 /** How far from the boarder he faces a crewman stands with no spot laid for him, metres. */
 const APART_M = 1.6;
+/** How far round a zone's checkpoint the crew regrouping there stand, metres. */
+const REGROUP_M = 1.8;
 /** A spot this much higher or lower than the boarder's feet is another deck, metres. */
 const SAME_DECK_M = 0.6;
 const TRIES = 8;
@@ -65,11 +68,39 @@ export function crewSpots(zone: Zone, course: readonly CourseBlock[]): CrewSpot[
   return spots;
 }
 
+/** Where `count` of the crew regroup in a zone the player reaches: round its checkpoint on its deck, each a step apart,
+ *  facing the middle of its wave (its area's with none). */
+export function regroupSpots(zone: Zone, course: readonly CourseBlock[], count: number): CrewSpot[] {
+  const [x, y] = zone.checkpoint;
+  const deck = topAt(course, x, y);
+  const [minX, minY, maxX, maxY] = zone.area;
+  const wave =
+    zone.wave.length > 0 ? zone.wave.map((foe) => foe.at) : [[(minX + maxX) / 2, (minY + maxY) / 2] as const];
+  const toward: Point = [
+    wave.reduce((sum, [east]) => sum + east, 0) / wave.length,
+    wave.reduce((sum, [, south]) => sum + south, 0) / wave.length,
+  ];
+  const ahead = facingFrom([x, y], toward);
+  const spots: CrewSpot[] = [];
+  for (let step = 0; step < TRIES * 2 && spots.length < count; step++) {
+    // Round the checkpoint from the side facing on, either way in turn.
+    const way = ahead + Math.ceil(step / 2) * (step % 2 ? 1 : -1) * (Math.PI / TRIES);
+    const spot: Point = [x + Math.sin(way) * REGROUP_M, y - Math.cos(way) * REGROUP_M];
+    const top = topAt(course, ...spot);
+    if (top <= 0 || Math.abs(top - deck) > SAME_DECK_M || spots.some((other) => apart(other.at, spot) < 1)) continue;
+    spots.push({ at: spot, facing: facingFrom(spot, toward) });
+  }
+  return spots;
+}
+
+const apart = (one: Point, other: Point) => Math.hypot(one[0] - other[0], one[1] - other[1]);
+
 /** What standing the crew needs of the wreck's run: its room, its foes' figures, the foes the room last showed, its
  *  layout, and the level the boarders stand at. */
 export interface CrewRun {
   readonly room: {
     standFoe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
+    storyPost(crew: number, x: number, y: number, facing: number): boolean;
   };
   readonly figures: { dressFoe(id: number, type: number, look: Dress): void };
   readonly foes: ReadonlyMap<number, { readonly view: { readonly health: number } }>;
@@ -83,6 +114,8 @@ export class WreckCrew {
   /** Every crewman stood, by the room's number, and those a snapshot has shown. */
   private readonly stood = new Set<number>();
   private readonly seen = new Set<number>();
+  /** The zone each crewman stands in now: stood there, or regrouped to it. */
+  private readonly zoneOf = new Map<number, number>();
 
   /** The crew living: shown standing, or stood and not shown yet. A crewman shown once and gone is no more. */
   private living(foes: CrewRun['foes']): number {
@@ -93,6 +126,23 @@ export class WreckCrew {
       if (kept ? kept.view.health > 0 : !this.seen.has(id)) living++;
     }
     return living;
+  }
+
+  /** As the player reaches zone `zone`, the crew still standing from the zones before it regroup round its
+   *  checkpoint, walking there, and join its fight. */
+  regroup(zone: number, run: CrewRun): void {
+    const found = run.layout.zones[zone];
+    if (!found) return;
+    const living = [...this.stood].filter((id) => {
+      const kept = run.foes.get(id);
+      return (kept ? kept.view.health > 0 : !this.seen.has(id)) && (this.zoneOf.get(id) ?? zone) < zone;
+    });
+    const spots = regroupSpots(found, run.layout.course, living.length);
+    living.forEach((id, index) => {
+      const spot = spots[index];
+      if (!spot || !run.room.storyPost(id, ...spot.at, spot.facing)) return;
+      this.zoneOf.set(id, zone);
+    });
   }
 
   /** Whether the room's foe `id` is one of the crew. */
@@ -116,6 +166,7 @@ export class WreckCrew {
         const id = room.standFoe(type, CREW_RANK, ...at, facing, run.level);
         if (id === 0) return;
         this.stood.add(id);
+        this.zoneOf.set(id, zone);
         const look = HANDS[(this.stood.size - 1) % HANDS.length];
         if (look) figures.dressFoe(id, type, look);
       });

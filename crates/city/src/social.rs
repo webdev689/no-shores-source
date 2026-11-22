@@ -46,6 +46,16 @@ pub struct Social {
     /// The trees and bushes its beds, pots and planters stand, drawn as the world's own plants (`hub::plants`).
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub plants: Vec<crate::hub::plants::Plant>,
+    /// Its places by name, as the held map names them (`hub`): a court, a walk, the quay.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub areas: Vec<NamedPlace>,
+}
+
+/// A place in a social space by name: what it is called and its middle, metres east and south.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct NamedPlace {
+    pub name: String,
+    pub at: [f64; 2],
 }
 
 /// Where the plaza stands beside a landmark reaching `reach` from its middle: its bounds (west, north, east, south),
@@ -141,5 +151,6 @@ pub fn plaza(
         posts,
         moorings: Vec::new(),
         plants: Vec::new(),
+        areas: Vec::new(),
     }
 }

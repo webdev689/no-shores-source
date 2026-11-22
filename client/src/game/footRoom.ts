@@ -30,12 +30,18 @@ export function nextOtherId(): number {
 const fightRules = new WeakMap<WebAssembly.Module, { combat: CombatRules; roster: readonly FoeType[] }>();
 
 /** The fight's rules and roster on the context's room module, made once for it. */
-export async function rulesOf(context: FootContext): Promise<{ combat: CombatRules; roster: readonly FoeType[] }> {
+export async function rulesOf(
+  context: Pick<FootContext, 'roomModule'>,
+): Promise<{ combat: CombatRules; roster: readonly FoeType[] }> {
   const module = await context.roomModule;
   const rules = fightRules.get(module) ?? { combat: startCombatRules(module), roster: rosterOf(module) };
   fightRules.set(module, rules);
   return rules;
 }
+
+/** The rules' roster of foe types, made once a module as the fight's rules are. */
+export const rosterFor = async (module: Promise<WebAssembly.Module>): Promise<readonly FoeType[]> =>
+  (await rulesOf({ roomModule: module })).roster;
 
 /** Every other player's figure in a room, and what each of its snapshots shows of them and of the player's fight
  *  once `heard.fight` stands: before it there is no own number to tell the player from the others. */
@@ -52,7 +58,7 @@ export function hearing(forge: Cards) {
       frame: null,
       spin: false,
     }),
-    remove: () => undefined,
+    remove: (placed) => forge.forget(placed.id),
   });
   const heard: { fight: Fighting | null } = { fight: null };
   const received = (snapshot: Snapshot) => {

@@ -255,12 +255,13 @@ fn landed(next: &mut Fighter, blow: &Blow, damage: f64, poise: f64) {
     }
 }
 
-/// A player flinches out of rest, a swing's wind-up, a guard turned the wrong way or a draw; not out of a swing's
-/// follow-through (that would end it sooner), a reload (that would load it sooner), a flinch already under way (blow
-/// on blow would hold them for good), a dodge's end, or anything else that already holds them.
+/// A player flinches out of rest, a swing's wind-up, a guard turned the wrong way, a draw or a drink (cut short, its
+/// charge kept); not out of a swing's follow-through (that would end it sooner), a reload (that would load it sooner),
+/// a flinch already under way (blow on blow would hold them for good), a dodge's end, or anything else that already
+/// holds them.
 fn flinches(action: &Action) -> bool {
     match action {
-        Action::Idle | Action::Guard { .. } | Action::Draw { .. } => true,
+        Action::Idle | Action::Guard { .. } | Action::Draw { .. } | Action::Drink { .. } => true,
         Action::Attack(attack) => attack.elapsed < attack.strike,
         _ => false,
     }

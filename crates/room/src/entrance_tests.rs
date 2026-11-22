@@ -1,6 +1,6 @@
 //! A patrol's entrances: laid the same every time, keeping their distances, on dry and level ground, their doors
-//! facing the patrol's middle, without moving its resource spots; the models agree with the forged props and the
-//! blocks; a player joins before an entrance's door.
+//! facing the patrol's middle; the models agree with the forged props and the blocks; a player joins before an
+//! entrance's door.
 
 use super::*;
 use crate::Section;
@@ -12,10 +12,25 @@ fn ring() -> Vec<[f64; 2]> {
     vec![[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]]
 }
 const SPAWNS: [[f64; 2]; 2] = [[-700.0, 700.0], [700.0, -700.0]];
+/// Its layout's twelve resource places.
+const PLACES: [[f64; 2]; 12] = [
+    [240.30668825470298, 274.92657407516936],
+    [120.17490382013261, -540.1392550261328],
+    [702.8121399581639, -192.6550051856259],
+    [241.42804877210483, -228.26806202135333],
+    [-476.49823901667503, 796.6503985372174],
+    [737.9196465510677, -20.140786204656365],
+    [-575.5514251030984, -243.22165583070932],
+    [-432.8531060672184, 282.052718111117],
+    [-283.3621831612753, 102.20872336529908],
+    [60.3615366452774, 432.0097115916776],
+    [397.73217268192843, -672.3097744788658],
+    [420.62568000957094, -510.0390770115986],
+];
 
 fn patrol(floor: Floor) -> Room {
     let mut room = Room::node(floor, Vec::new(), Section { ring: ring(), spawns: SPAWNS.to_vec(), falls_kill: false });
-    room.start_patrol("saltgrass-downs", 2);
+    room.start_patrol("saltgrass-downs", 2, &PLACES);
     room
 }
 
@@ -26,7 +41,7 @@ fn keeps_its_distances(room: &Room) {
         let at = [entrance.at[0], entrance.at[1]];
         assert!(reach::inside(&ring(), at[0], at[1]) && distance_to_ring(&ring(), at[0], at[1]) >= 60.0, "{at:?}");
         assert!(SPAWNS.iter().all(|&spawn| apart(spawn, at) >= 60.0), "{at:?} is clear of the spawns");
-        assert!(spots.iter().all(|&spot| apart(spot, at) >= 40.0), "{at:?} is clear of the resource spots");
+        assert!(spots.iter().all(|&spot| apart(spot, at) >= 40.0), "{at:?} is clear of the resource places");
         for other in &room.entrances()[number + 1..] {
             assert!(apart([other.at[0], other.at[1]], at) >= 300.0, "{at:?} and {:?} stand apart", other.at);
         }
@@ -61,28 +76,6 @@ fn a_patrol_lays_its_three_entrances_the_same_every_time_keeping_their_distances
             .entrances()
             .is_empty()
     );
-}
-
-#[test]
-fn the_resource_spots_stand_where_they_stood_before_the_entrances_came() {
-    // The spots this patrol laid before its entrances were drawn.
-    let before = [
-        [240.30668825470298, 274.92657407516936],
-        [120.17490382013261, -540.1392550261328],
-        [702.8121399581639, -192.6550051856259],
-        [241.42804877210483, -228.26806202135333],
-        [-476.49823901667503, 796.6503985372174],
-        [737.9196465510677, -20.140786204656365],
-        [-575.5514251030984, -243.22165583070932],
-        [-432.8531060672184, 282.052718111117],
-        [-283.3621831612753, 102.20872336529908],
-        [60.3615366452774, 432.0097115916776],
-        [397.73217268192843, -672.3097744788658],
-        [420.62568000957094, -510.0390770115986],
-    ];
-    let room = patrol(Floor::Flat);
-    let spots: Vec<[f64; 2]> = room.resource_nodes.iter().map(|node| [node.x, node.y]).collect();
-    assert_eq!(spots, before);
 }
 
 /// The patrol's land in cells of 100 m: sea (below 0 m) over its western half, then ground at 2 m that climbs a cliff

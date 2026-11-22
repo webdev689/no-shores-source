@@ -13,6 +13,8 @@ export function countBy(module: Promise<WebAssembly.Module>): void {
   void module.then((read) => (rules = read)).catch(() => undefined);
 }
 
+let read: { minute: number; module: WebAssembly.Module; drawn: ReturnType<typeof activitiesAt> } | null = null;
+
 /** Whole seconds from `nowMs` to the next stock and to Shape's leaving (none once he has gone), by `module`'s rules;
  *  null before the game's is read. */
 export function countdownsAt(
@@ -21,7 +23,9 @@ export function countdownsAt(
 ): { readonly stock: number; readonly shape: number } | null {
   if (!module) return null;
   const minute = Math.floor(nowMs / 60_000);
-  const drawn = activitiesAt(module, minute);
+  // Read once a minute: a keeper's screen asks every frame.
+  if (read?.minute !== minute || read.module !== module) read = { minute, module, drawn: activitiesAt(module, minute) };
+  const { drawn } = read;
   const gone = Math.floor((nowMs - minute * 60_000) / 1000);
   return { stock: drawn.untilDay * 60 - gone, shape: Math.max(0, drawn.untilShapeGoes * 60 - gone) };
 }

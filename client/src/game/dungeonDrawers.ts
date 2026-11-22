@@ -81,7 +81,8 @@ export class DungeonDrawers {
   }
 
   /** One frame in a dungeon: its floor and cache, the fight's blood under the figures and its marks over them, and
-   *  the figures lit by the torches; `after` may draw over the finished picture, in the light where the eye stands. */
+   *  the figures lit by the torches; `after` may draw over the finished picture, in the light where the eye stands,
+   *  and all of it drains toward grey by `drain`. */
   draw(
     foot: Foot,
     shown: FootFrame,
@@ -89,6 +90,7 @@ export class DungeonDrawers {
     time: number,
     fight: { under: Drawer; over: Drawer },
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => void,
+    drain = 0,
   ): void {
     this.view.setCache(foot.held.cache);
     const { figures } = shown;
@@ -105,6 +107,6 @@ export class DungeonDrawers {
     // What the eye holds is lit as a figure is, held under the sky's 1.2 so a torch beside it does not burn it white.
     const held = light(shown.shot.eye).map((part) => Math.min(1.2, part)) as [number, number, number];
     const over = { width: size.width, height: size.height, light: held };
-    this.scene.draw(shown.shot, size, time, drawers, after && ((encoder, view) => after(encoder, view, over)));
+    this.scene.draw(shown.shot, size, time, drawers, after && ((encoder, view) => after(encoder, view, over)), drain);
   }
 }

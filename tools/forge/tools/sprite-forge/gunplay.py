@@ -55,8 +55,8 @@ FREE_L = {'clav_L': (0, -6, 0), 'uarm_L': (4, -12, 0), 'farm_L': (-12, 0, 8)}   
 HIP_L = {'clav_L': (0, -4, 0), 'uarm_L': (16, -30, -10), 'farm_L': (-70, 0, 10)}   # the duellist's, back off the hip
 
 # the Thunderlock: (the grip, the muzzle's way, the top's way). Port arms: the right fist low before the right hip, the
-# muzzle up past the left shoulder and a little ahead, the top out from the body
-PORT = ((-0.13, -0.24, 1.04), (0.55, -0.22, 0.81), (0.0, -1.0, 0.1))
+# muzzle up past the left shoulder and a little ahead, the top toward the chest: its trigger to the front, as drill's
+PORT = ((-0.13, -0.24, 1.04), (0.55, -0.22, 0.81), (0.0, 1.0, -0.1))
 # the shot: lowered toward the aim, aimed with the butt in the right shoulder's pocket, fired, kicked back and up,
 # steadied and lowered again. An aimed key is (None, how far the muzzle is raised in degrees, how far the gun is
 # thrust back in metres); its grip follows from the pocket

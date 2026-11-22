@@ -148,14 +148,18 @@ pub struct Player {
     /// the tick that input was seeing.
     pub seen: u64,
     pub history: VecDeque<(u64, Fighter)>,
+    /// The latest tick their screen said it showed, as it said it: the snapshot their browser surely holds.
+    pub shown_tick: u64,
     /// The room tick until which the foes leave the player be, having just stood again.
     pub graced: u64,
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
     pub dress_next: Option<String>,
     pub dressed_at: Option<u64>,
-    /// Their gear, and whether it changed since it was last sent to them.
+    /// Their gear, whether it changed since it was last sent to them, and whether it is their own as their account
+    /// keeps it (given back, `restore_character`) rather than the one they joined with.
     pub character: Character,
     pub gear_changed: bool,
+    pub claimed: bool,
     /// Where they stood as their gear was last sent: at the Mage, in a social space, and at the counter that signs their
     /// officers on. All ride the gear
     /// message and change as they walk, so a change sends it again.
@@ -172,8 +176,12 @@ pub struct Player {
     pub answer: u8,
     pub identified: u32,
     pub answered: u32,
-    /// The room's resource nodes they have gathered from this turn, spent for them; on a sea island, the wrecks.
+    /// The room's resource nodes they have gathered from, spent for them: this turn on a patrol, this landing on a sea
+    /// island.
     pub spent: Vec<u8>,
+    /// The node they are gathering, E held, if they are, and whether their last input rode a horse.
+    pub gathering: Option<crate::asks::Gathering>,
+    pub mounted: bool,
     /// The account that keeps their character, if one does: what they gathered this turn follows it across a rejoin.
     pub owner: Option<String>,
     /// What their worn gear trims of the fight's numbers with the loadout drawn; and with each drawn, Melee then
@@ -184,6 +192,11 @@ pub struct Player {
     pub casting: crate::arts::Casting,
     /// What their perks count from blow to blow, kept while they are in the room.
     pub(crate) counts: crate::perks::PerkCounts,
+    /// What their Atheric's perks count, beside them.
+    pub(crate) atheric: crate::atheric::AthericCounts,
+    /// The foes their own blows landed on in the last ten seconds, with the tick of each one's last: each shares its
+    /// kill's healing charge with them (`recharge.rs`).
+    pub(crate) struck: std::collections::BTreeMap<FighterId, u64>,
 }
 
 impl Player {
@@ -211,11 +224,13 @@ impl Player {
             waiting: VecDeque::new(),
             seen: joined,
             history: VecDeque::new(),
+            shown_tick: 0,
             graced: 0,
             dress_next: None,
             dressed_at: None,
             character,
             gear_changed: true,
+            claimed: false,
             placed_sent: (false, false, false),
             gear_sent: None,
             asked_at: None,
@@ -225,11 +240,15 @@ impl Player {
             identified: 0,
             answered: 0,
             spent: Vec::new(),
+            gathering: None,
+            mounted: false,
             owner: None,
             trim: combat::Trim::PLAIN,
             trims: [combat::Trim::PLAIN; 2],
             casting: crate::arts::Casting::default(),
             counts: crate::perks::PerkCounts::default(),
+            atheric: crate::atheric::AthericCounts::default(),
+            struck: std::collections::BTreeMap::new(),
         }
     }
 
@@ -424,8 +443,17 @@ impl Room {
         character
     }
 
-    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear; false if
-    /// they are not in the room, the text is not a character, or the room's gate shuts to it (`shut_to`).
+    /// No character is kept for a player (they play unkept, or their account gave none back): the one the room holds is
+    /// their own from now on, so their page shows its word.
+    pub fn none_kept(&mut self, player: PlayerId) {
+        if let Some(found) = self.players.get_mut(&player) {
+            (found.gear_changed, found.claimed) = (true, true);
+        }
+    }
+
+    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear, its quest
+    /// log told they arrived here; false if they are not in the room, the text is not a character, or the room's gate
+    /// shuts to it (`shut_to`).
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let Some(character) = gear::Character::from_json(text) else { return false };
         let character = self.carried_forward(player, character);
@@ -434,7 +462,8 @@ impl Room {
         }
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.character = character;
-        found.gear_changed = true;
+        (found.gear_changed, found.claimed) = (true, true);
+        self.arrived(player);
         self.retrim(player);
         if let Some(found) = self.players.get_mut(&player) {
             found.fighter = found.armed(found.fighter);
@@ -466,18 +495,17 @@ impl Room {
         self.players.get_mut(&player).map(|found| found.held = held).is_some()
     }
 
-    /// Notes the account that keeps a player's character: in a patrol, the nodes that account gathered this turn are
-    /// spent for them again, however often they rejoin, as on a sea island are the wrecks it scavenged; the Arts' charge
-    /// the room kept for it is theirs again; and in a run that counts revives, the body it left with. False, noting
-    /// nothing, for an account another player in the room already has: one account is one player in a room.
+    /// Notes the account that keeps a player's character: the nodes that account gathered in this room (in a patrol,
+    /// this turn; on a sea island, this landing) are spent for them again, however often they rejoin, and they are told
+    /// they landed if the sea said that account did; the Arts' charge the room kept for it is theirs again; and in a
+    /// run that counts revives, the body it left with. A sea island's wrecks are kept on the character itself. False,
+    /// noting nothing, for an account another player in the room already has: one account is one player in a room.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
         if self.players.iter().any(|(id, found)| *id != player && found.owner.as_deref() == Some(owner)) {
             return false;
         }
-        let mut gathered =
-            self.patrol.as_ref().and_then(|patrol| patrol.gathered.get(owner)).cloned().unwrap_or_default();
+        let gathered = self.gathered.get(owner).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
-        gathered.extend(self.isle.as_ref().map_or(&[][..], |isle| found.character.scavenged_on(isle.seed)));
         found.owner = Some(owner.to_owned());
         for node in gathered {
             if !found.spent.contains(&node) {
@@ -487,6 +515,7 @@ impl Room {
         found.gear_changed = true;
         self.give_casting_back(player, owner);
         self.give_body_back(player, owner);
+        self.tell_landed(player);
         true
     }
 

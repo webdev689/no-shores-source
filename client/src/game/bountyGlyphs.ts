@@ -1,8 +1,8 @@
 // Each bounty's own glyph, sixteen square, in the gear glyphs' style (a dark outline, lit from the top left), as
 // Destiny's bounties each wear their own: a tile shows it on its kind's ground, its card names it.
 import { OUTLINE } from '../combat/dropPictures.ts';
-import { type Pixels, urlOf } from '../plus/emblems.ts';
-import { poolMarkUrl } from './journalIcons.ts';
+import { type Pixels, svgOf } from '../plus/emblems.ts';
+import { poolMarkSvg } from './journalIcons.ts';
 
 /** Every bounty's glyph by its name, as `crates/gear/src/bounties.rs` names it. */
 const GLYPHS: Readonly<Record<string, Pixels>> = {
@@ -295,12 +295,12 @@ const GLYPHS: Readonly<Record<string, Pixels>> = {
   },
 };
 
-const URLS: ReadonlyMap<string, string> = new Map(Object.entries(GLYPHS).map(([name, glyph]) => [name, urlOf(glyph)]));
+const DRAWN: ReadonlyMap<string, string> = new Map(Object.entries(GLYPHS).map(([name, glyph]) => [name, svgOf(glyph)]));
 
 /** The bounties drawn, by name. */
-export const BOUNTY_GLYPH_NAMES: readonly string[] = [...URLS.keys()];
+export const BOUNTY_GLYPH_NAMES: readonly string[] = [...DRAWN.keys()];
 
 /** A bounty's glyph by its name; a bounty not drawn wears the mark of where it counts. */
-export function bountyGlyphUrl(name: string, pool: number): string {
-  return URLS.get(name) ?? poolMarkUrl(pool) ?? '';
+export function bountyGlyphSvg(name: string, pool: number): string {
+  return DRAWN.get(name) ?? poolMarkSvg(pool) ?? '';
 }

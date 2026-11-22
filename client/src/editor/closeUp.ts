@@ -3,6 +3,8 @@ import { type Orbit, viewProjection } from './orbit.ts';
 import { heldSplineAt } from '../water/spline.ts';
 import type { CloseUpData } from '../terrain/terrainView.ts';
 import type { Box } from './screenMarks.ts';
+import type { Ink } from './strokes.ts';
+import type { Label } from './viewMarks.ts';
 
 /** Under this distance from its target, the 3D camera shows the exact ground around the target. */
 export const CLOSE_RANGE_M = 8000;
@@ -86,21 +88,14 @@ export function toScreen(
   return screenProjector(orbit, size)(point);
 }
 
-/** Draws a person's height at the target and a scale bar beside it over the 3D view, so the ground's size reads.
- *  Adds to what the overlay holds, and answers the box it drew in, or null when the target is behind the camera. */
-export function drawScaleCues(
-  svg: SVGSVGElement,
+/** A person's height at the target and a scale bar beside it over the 3D view, so the ground's size reads: their
+ *  inks, the bar's length and the box they take, or null when the target is behind the camera. */
+export function scaleCues(
   orbit: Orbit,
   size: { readonly width: number; readonly height: number },
   feet: readonly [number, number, number],
   exaggeration: number,
-): Box | null {
-  const draw = (name: string, attributes: Record<string, string | number>, text = '') => {
-    const node = document.createElementNS('http://www.w3.org/2000/svg', name);
-    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
-    node.textContent = text;
-    svg.append(node);
-  };
+): { inks: Ink[]; labels: Label[]; box: Box } | null {
   const base = toScreen(orbit, size, feet);
   const head = toScreen(orbit, size, [feet[0], feet[1], feet[2] + FIGURE_M * exaggeration]);
   if (!base || !head) return null;
@@ -110,20 +105,29 @@ export function drawScaleCues(
     right: Math.max(base.x, head.x) + 8,
     bottom: Math.max(base.y, head.y) + 8,
   };
-  draw('line', { x1: base.x, y1: base.y, x2: head.x, y2: head.y, stroke: '#ffe28a', 'stroke-width': 3 });
-  draw('circle', { cx: head.x, cy: head.y, r: Math.max(2, Math.abs(base.y - head.y) / 8), fill: '#ffe28a' });
+  const inks: Ink[] = [
+    { kind: 'stroke', runs: [[base, head]], colour: '#ffe28a', width: 3 },
+    { kind: 'disc', ...head, radius: Math.max(2, Math.abs(base.y - head.y) / 8), colour: '#ffe28a' },
+  ];
+  const labels: Label[] = [];
   const across: readonly [number, number] = [Math.cos(orbit.yaw), Math.sin(orbit.yaw)];
   for (const metres of [1000, 100, 10, 1]) {
     const end = toScreen(orbit, size, [feet[0] + across[0] * metres, feet[1] + across[1] * metres, feet[2]]);
     if (!end || Math.hypot(end.x - base.x, end.y - base.y) > 180) continue;
-    const label = metres >= 1000 ? `${metres / 1000} km` : `${metres} m`;
-    draw('line', { x1: base.x, y1: base.y + 14, x2: end.x, y2: end.y + 14, stroke: '#fff', 'stroke-width': 2 });
-    draw(
-      'text',
-      { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30, fill: '#fff', 'text-anchor': 'middle', 'font-size': 11 },
-      label,
-    );
+    const text = metres >= 1000 ? `${metres / 1000} km` : `${metres} m`;
     const middle = { x: (base.x + end.x) / 2, y: (base.y + end.y) / 2 + 30 };
+    inks.push({
+      kind: 'stroke',
+      runs: [
+        [
+          { x: base.x, y: base.y + 14 },
+          { x: end.x, y: end.y + 14 },
+        ],
+      ],
+      colour: '#ffffff',
+      width: 2,
+    });
+    labels.push({ ...middle, text, colour: '#ffffff', anchor: 'middle', halo: null });
     box = {
       left: Math.min(box.left, end.x, middle.x - 24),
       top: box.top,
@@ -132,5 +136,5 @@ export function drawScaleCues(
     };
     break;
   }
-  return box;
+  return { inks, labels, box };
 }

@@ -69,6 +69,20 @@ export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
 }
 
+/** Whether the figure and the hands hold the weapon out in a fight this frame. While the rules are busy they keep the
+ *  weapon the frame before held (`kept`): they take up another only at rest. The forge has no drinking pose, so it is
+ *  put away while a drink lasts; and the frame after one (`drank`) it comes from the player's own dress (`worn`), as
+ *  the frame before had it put away only for the drink. */
+export function drawnInFight(hands: {
+  readonly holding: boolean;
+  readonly kept: boolean;
+  readonly worn: boolean;
+  readonly drinking: boolean;
+  readonly drank: boolean;
+}): boolean {
+  return hands.holding && !hands.drinking && (hands.drank ? hands.worn : hands.kept);
+}
+
 /** The faction, by its key, whose own colour each part of the first person wears: the gauntlets, the boots and each
  *  hand's weapon, as the outfit names it for the layer it is drawn with (gearLooks.ts). */
 export function ownColours(outfit: Outfit): NonNullable<FirstPersonState['own']> {
@@ -136,13 +150,21 @@ export class Walker {
   private readonly loop = new Loop();
   /** Whether the weapon was out before this frame's step: the click that readies it does not swing. */
   private drawnBefore = false;
+  /** Whether the fight held the player to a drink last frame, which put the shown weapon away. */
+  private drank = false;
   /** The seconds a tick of the rules lasts, as the last step took them. */
   private tickSeconds = 1 / 60;
+  /** The stroke (1 to 6) of the fight's swing under way, which the first person draws its swing with; out of a fight's
+   *  swing, none, and the hands choose their own. */
+  private fightStroke: number | null = null;
 
   constructor(player: Player, you: Placed, firstPerson: FirstPerson, forge: Cards) {
     this.player = player;
     this.you = you;
     this.firstPerson = firstPerson;
+    const own = firstPerson.strokes;
+    // The first person's share of DFO's six ways naming the stroke: the six are the combat crate's strokes in order.
+    firstPerson.strokes = () => (this.fightStroke === null ? own() : (this.fightStroke - 0.5) / 6);
     this.forge = forge;
     this.dress = you.dress;
     this.worn = you.dress;
@@ -239,13 +261,12 @@ export class Walker {
     Object.assign(you, { x: body.x, y: body.y, z: body.z, facing });
     const holding = player.mounted || body.mode === 'ground' || body.mode === 'air';
     const worn = shownDress(you.dress, holding);
-    // The rules take up another weapon only at rest: while they are busy, the figure and the hands keep the one held.
     const kept = this.dress.outfit;
+    const drinking = own?.action.kind === 'drink';
+    const drawn = drawnInFight({ holding, kept: kept.drawn, worn: worn.outfit.drawn, drinking, drank: this.drank });
+    this.drank = drinking;
     const dress = fighting
-      ? {
-          ...worn,
-          outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn: holding && kept.drawn },
-        }
+      ? { ...worn, outfit: { ...worn.outfit, right: kept.right, left: kept.left, grip: kept.grip, drawn } }
       : worn;
     if (!fighting) this.shownGlow = this.glow;
     const { outfit } = dress;
@@ -262,6 +283,7 @@ export class Walker {
     // than the hands' own clock: the next shot they let go plays.
     if (fight && own && shooter && own.action.kind !== 'reload') firstPerson.loaded();
     const free = swings && !(own && HELD.has(own.action.kind));
+    this.fightStroke = own?.action.kind === 'attack' ? own.action.stroke : null;
     firstPerson.glow = outfit.drawn ? this.shownGlow : NO_GLOW;
     firstPerson.update(fight?.handsSeconds ?? seconds, this.button(controls, free, shooter, fight), {
       right: outfit.right,

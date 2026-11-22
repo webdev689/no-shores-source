@@ -57,7 +57,7 @@ pub fn open_run(text: &[u8], patrol: &[u8]) -> bool {
         DungeonAsked::Seed { seed, style, continent } => (RunOf::Sea { seed, style, continent }, None),
     };
     let Some(room) = Room::dungeon_run(&of, tier, asked.minute) else { return false };
-    keep(Opened::Land { room: Box::new(room), node: None, refusal });
+    keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
     true
 }
 
@@ -166,10 +166,11 @@ mod tests {
         json!({ "dungeon": dungeon, "tier": tier, "minute": 29_919_420_u64 }).to_string()
     }
 
-    /// The revives the open room's snapshot carries after a tick.
+    /// The revives the open room's snapshot carries after a tick, as a player who joins it is sent it.
     fn revives() -> i8 {
+        let player = crate::room_join();
         crate::room_tick();
-        let bytes = crate::snapshot();
+        let bytes = crate::snapshot(player);
         protocol::wire::overlook::wire::root_as_from_room(&bytes)
             .expect("read")
             .snapshot()

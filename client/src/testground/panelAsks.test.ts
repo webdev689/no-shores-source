@@ -8,7 +8,7 @@ import { LocalRoom } from '../network/localRoom.ts';
 import type { Snapshot } from '../network/roomConnection.ts';
 import { startCombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
-import { ANSWER_TICKS_MOST, PanelAsks } from './panelAsks.ts';
+import { ANSWER_TICKS_MOST, GATHER_TICKS_MOST, PanelAsks } from './panelAsks.ts';
 
 const MODULE = new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url);
 const compiled = new WebAssembly.Module(
@@ -20,7 +20,7 @@ const TICK = 1 / 60;
 
 /** The Test Ground alone with the pointer free: the room in the page ticked only by `tick`, the player standing still,
  *  as the page carries a panel's ask; `ticks` counts them. */
-function paused() {
+function paused(nodes: readonly { x: number; y: number; resource: number }[] = course.resources) {
   let fight: Fighting | null = null;
   let gear: GearState | null = null;
   const room = LocalRoom.open(
@@ -29,7 +29,7 @@ function paused() {
     course.blocks,
     (snapshot: Snapshot) => fight?.receive(snapshot),
     (message) => (gear = message),
-    { stall: course.stall, nodes: course.resources },
+    { stall: course.stall, nodes },
   );
   const rules = startCombatRules(compiled);
   rules.setCourse(course.blocks);
@@ -78,4 +78,15 @@ test('asks the room let go hold it on for a second at most, and the next ask is 
   asks.carry(fighting, () => gear()?.answered ?? 0, tick);
   assert.equal(gear()?.answered, 6);
   assert.ok(counted.ticks <= 13, `${counted.ticks} ticks`);
+});
+
+test('with the pointer free, a gather from the panel is done: the room runs on through its two seconds', () => {
+  const { fighting, gear, tick, counted } = paused([{ x: course.start.x, y: course.start.y + 1, resource: 0 }]);
+  const asks = new PanelAsks();
+  asks.ask(fighting, { kind: ASKS.gather, node: 0 });
+  asks.carry(fighting, () => gear()?.answered ?? 0, tick);
+  assert.equal(gear()?.answer, 0, 'the gather begun');
+  assert.ok(counted.ticks >= GATHER_TICKS_MOST, `${counted.ticks} ticks`);
+  assert.deepEqual(gear()?.spent, [0], 'the node gathered, spent for the player');
+  assert.ok((gear()?.resources[0] ?? 0) > 0, 'its Brineglass in their stock');
 });

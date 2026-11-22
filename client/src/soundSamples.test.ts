@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import bank from '../../content/audio/sounds.json' with { type: 'json' };
-import { keysOf, levelOf, matchedLevel, measureOf, rushOf, soundCredits, variantOf } from './soundSamples.ts';
+import { levelOf, matchedLevel, measureOf, rushOf } from './soundMeasure.ts';
+import { keysOf, soundCredits, variantOf } from './soundSamples.ts';
 
 test("every recorded sound is kept under its hash; Freesound's carry their whole credit, DFO's say where they came from", () => {
   const sounds = Object.entries(bank.sounds);
