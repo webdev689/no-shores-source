@@ -1,5 +1,5 @@
 //! A garrison foe's walks home to its post. Once its target stands past its leash from its place at its post (LEASH,
-//! or one of its own), or off the ground the room's routes cover, it gives its fight up: its target, the blow it saw
+//! or one of its own), and only then, whatever ground it stands on, it gives its fight up: its target, the blow it saw
 //! coming, its hunt and its search. Once a search finds no one, it lets go. Either way it goes back to its first phase,
 //! and walks back to its place, healing as it goes so it is whole as it arrives, turns to face as it was posted, and
 //! stands idle. Leashed, it heeds nothing it
@@ -35,7 +35,7 @@ pub fn leash(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) -> Optio
             return None;
         }
         let target = brain.target.and_then(|target| here.enemy(target))?;
-        if within(brain, here, target) {
+        if within(brain, target) {
             return None;
         }
         give_up(brain, here, board);
@@ -62,12 +62,9 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
 }
 
 /// Whether a foe may fight a fighter where it stands: a garrison foe only within its leash (LEASH, or its own) of its
-/// place, on ground the room's routes cover from that place.
-pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
-    let feet = [other.body.x, other.body.y, other.body.z];
-    brain.home.is_none_or(|home| {
-        apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= brain.leash && here.world.routes.walkable(home.at, feet)
-    })
+/// place, wherever it stands there: on ground its routes do not reach, the foe fights it from as near as they take it.
+pub fn within(brain: &Brain, other: &combat::Fighter) -> bool {
+    brain.home.is_none_or(|home| apart([home.at[0], home.at[1]], [other.body.x, other.body.y]) <= brain.leash)
 }
 
 /// What a foe with no one to fight asks: a garrison foe whose search has just let go (it was alert before its senses
