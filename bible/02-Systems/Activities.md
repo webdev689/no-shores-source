@@ -130,11 +130,12 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   up: the run keeps each kept player's body as they leave (`keep_body`), so one who left down comes back down and
   one who left wounded comes back at the share of health they left with, until the run starts over.
 - **A wipe ends the run:** when every player in it is down at once, each is told (`Wiped`), the dungeon starts over and
-  its five revives with it (`start_over`): its foes stand again at their posts, its shots, spells and drops are gone,
-  its cache shuts, and its players stand whole at the way in. The page takes them out by the way they came in, the veil
-  saying "Your company fell. Leaving" the dungeon, and the place line shows the revives left ("3 revives left", "No
-  revives left"). A run once won is never wiped, though its end post stands again later and shuts its cache, so a
-  cleared run keeps what it paid; and a room no one is in is never wiped.
+  its five revives with it (`start_over`): its foes stand again at their posts, its shots and spells are gone, its
+  drops are taken up, each Vestige to its player's mail, its cache shuts, and its players stand whole at the way in.
+  The page takes them out by the way they came in, the veil saying "Your company fell. Leaving" the dungeon, and the
+  place line shows the revives left ("3 revives left", "No revives left"). A run once won is never wiped, though its
+  end post stands again later and shuts its cache, so a cleared run keeps what it paid; and a room no one is in is
+  never wiped.
 - **Modifiers** are drawn from a set, each one hook in the rules (`room::run`), read only in a room whose run
   carries it. Each says what it does in a line of its own (`Modifier::words`), which the screens show:
   - Burn: one Art's spells deal twice, and a player wearing it takes twice from foes. "Shadow spells deal double

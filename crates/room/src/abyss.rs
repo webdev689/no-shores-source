@@ -65,8 +65,9 @@ impl Room {
     }
 
     /// Starts an Abyss run over: every player is told Wiped; every foe, its way and the board's memory of it are
-    /// gone; shots, blows waiting, spells and drops are dropped; every post stands again; the cache shuts and the
-    /// revives are back at REVIVES; and every player stands whole at the way in.
+    /// gone; shots, blows waiting and spells are dropped, and drops taken up, a Vestige to its player's mail; every
+    /// post stands again; the cache shuts and the revives are back at REVIVES; and every player stands whole at the
+    /// way in.
     pub(crate) fn start_over(&mut self) {
         let players: Vec<PlayerId> = self.players.keys().copied().collect();
         for &id in &players {
@@ -77,7 +78,7 @@ impl Room {
         self.shots.clear();
         self.pending.clear();
         self.spells.list.clear();
-        self.drops.clear();
+        self.mail_all_lying();
         for post in 0..self.garrison.len() {
             self.stand_post(post);
         }

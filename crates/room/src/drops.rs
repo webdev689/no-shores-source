@@ -159,6 +159,17 @@ impl Room {
         }
     }
 
+    /// Takes every drop off the ground, each Vestige still lying to its player's mail, as a wipe starts a run over.
+    pub(crate) fn mail_all_lying(&mut self) {
+        for drop in std::mem::take(&mut self.drops) {
+            let Some(found) = self.players.get_mut(&drop.player) else { continue };
+            found.gear_changed = true;
+            if let Dropped::Vestige(vestige) = drop.what {
+                found.character.post(Source::LeftLying, Posted::Vestige(vestige));
+            }
+        }
+    }
+
     /// The drops lying for a player.
     pub fn drops_for(&self, player: PlayerId) -> impl Iterator<Item = &Drop> {
         self.drops.iter().filter(move |drop| drop.player == player)
