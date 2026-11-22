@@ -106,7 +106,8 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 | Ground | Walks, runs, crouches or rides where the controls point. A jump, once the feet have stood 0.1 s, lifts it into the air, or goes over a lip within reach (1.8 m). Pressed into a wall too high to grab, stopped across its face however it slides along it and looking within 45° of square, it takes hold square to the wall and climbs. Off an edge higher than a step, it falls |
 | Air | Falls under gravity. Pressed into a wall with the lip within reach (1.95 m in the air), it hangs, or goes over a low lip |
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
-| Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs. The lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past |
+| Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs. The
+lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past |
 | Mantle | Rises first, then goes over onto the lip |
 | Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 

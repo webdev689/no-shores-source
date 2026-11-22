@@ -174,9 +174,10 @@ on Cloudflare.
   with.
 - **The dead** stand again, whole and with all three healing charges, after four seconds, at the spawn nearest where
   they fell (in a dungeon, at its way in, facing into the room), and the foes leave them be for three more unless they
-  strike first (a blow, a shot or a spell); a dead foe is gone after ten. One standing again past a node's section, as they ask, stands with all
-  three too. In an Abyss run each stand takes one of the company's five revives, and the fallen stay down once none
-  is left; when every player in it is down at once and it was never won, the run starts over (`abyss.rs`).
+  strike first (a blow, a shot or a spell); a dead foe is gone after ten. One standing again past a node's section, as
+  they ask, stands with all three too. In an Abyss run each stand takes one of the company's five revives, and the
+  fallen stay down once none is left; when every player in it is down at once and it was never won, the run starts over
+  (`abyss.rs`).
 - **A run's room** opens from a JSON ask (`room_open_run`): its dungeon (a patrol's by its number, an Elite Dungeon
   by its place, or a sea island's by its seed, style and continent), its tier and the Unix minute it opens, as
   `Room::dungeon_run` stands it ([[Dungeons]]); an ask no rule lays opens nothing. A patrol's dungeon's run also takes
@@ -304,14 +305,14 @@ will take it, by the room's own tick.
   within 20 km of their ship and those they found, keeps every course and hostile ship off their coasts, and lets each
   fade ten minutes after nothing holds it ([[Islands]]). An island's room is `isle-<number>-<seed>`: the host opens it
   only on the `sea` room's word that the island stands with that seed (a call between the two Durable Objects), and
-  while players stand ashore it tells the sea each minute, so the island is held under them. As an account joins it,
-  the room asks the sea whether that account is landed on the island (its ship at rest at the island's anchorage) and
-  lets go of one that is not; only landed accounts scavenge. An island's dungeon (`sea-dungeon-...`) opens the same
-  way: only when the sea of its tier holds an island whose door leads there, named from that island's seed, water and
-  style (`room_sea_dungeon`, `dungeon_room`), so no page opens one for a seed or a style it names. It holds that
-  island while players are in it, lets go of an account the sea has not landed there (one the sea did not answer
-  for, or not within 20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then is
-  shown as any other.
+  while players stand ashore it tells the sea each minute, so the island is held under them. As an account joins it, the
+  room asks the sea whether that account is landed on the island (its ship at rest at the island's anchorage) and lets
+  go of one that is not; only landed accounts scavenge. An island's dungeon (`sea-dungeon-...`) opens the same way: only
+  when the sea of its tier holds an island whose door leads there, named from that island's seed, water and style
+  (`room_sea_dungeon`, `dungeon_room`), so no page opens one for a seed or a style it names. It holds that island while
+  players are in it, lets go of an account the sea has not landed there (one the sea did not answer for, or not within
+  20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then
+  is shown as any other.
 
 ## A fleet
 
@@ -498,19 +499,20 @@ so every decision is Rust and the shell only carries bytes and time.
   player leaves, the host first has the room send every Vestige still lying for them to their mail (`mailLying`, at sea
   from the captain's deck they stand on; [[Gear]], "The mail"), then reads their character for its last save, then lets
   the room take them out, so the save keeps what they left lying. Not yet so: a player whose socket a second sign-in
-  replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket
-  there that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no session, is closed with 4003 and "Sign in to
-  play online." (in a run, "Sign in to enter this run."), so sockets that never sign in cannot hold a room's places;
-  every page of the game sends one, a guest's included. While the accounts do not answer a claim, or the look before it, the player plays on
-  unkept, and a look unanswered claims nothing. The Test Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts
-  ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. Every room that keeps
-  characters judges one on a look before it claims it, so one turned away stays with the room that plays it. A save keeps the keys a
-  room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in its day's activity and its story,
-  and in each item and Vestige, so a room that knows fewer fields carries the newer ones through; a room built before
-  this keeping drops them, so a rollback to one loses them. A new value of a kind the room knows (a slot, a rarity)
-  reads as a broken save, which is left untouched, and a list longer than the room's Arts or factions is cut to them. At
-  sea the room also tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster.
-  A second text message, or any other, closes the socket.
+  replaces, and every player of a room a deploy restarts or a fault stops, leave without that last save. A socket there
+  that sends no token within five seconds of the join (a claim's own waits, `TOKEN_WAIT_MS`), or whose token is no
+  session, is closed with 4003 and "Sign in to play online." (in a run, "Sign in to enter this run."), so sockets that
+  never sign in cannot hold a room's places; every page of the game sends one, a guest's included. While the accounts do
+  not answer a claim, or the look before it, the player plays on unkept, and a look unanswered claims nothing. The Test
+  Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts ([[Activities]]) is let
+  go untouched, and the socket closed with 4003 and the gate's reason. Every room that keeps characters judges one on a
+  look before it claims it, so one turned away stays with the room that plays it. A save keeps the keys a room does not
+  know, at its top, in its materials, Arts, allegiance and cosmetics, in its day's activity and its story, and in each
+  item and Vestige, so a room that knows fewer fields carries the newer ones through; a room built before this keeping
+  drops them, so a rollback to one loses them. A new value of a kind the room knows (a slot, a rarity) reads as a broken
+  save, which is left untouched, and a list longer than the room's Arts or factions is cut to them. At sea the room also
+  tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster. A second text
+  message, or any other, closes the socket.
 - **Where a character comes from** ([[The Server Is the Authority Over Everything]]): each claim says which room held
   the character before ([[Accounts]], "Moving between rooms"), and a node's room, its dungeons' and its runs' judge by
   it alone how it arrives (`arrival.ts`), never by the page, on a look before the claim, so a character turned away
@@ -567,9 +569,9 @@ so every decision is Rust and the shell only carries bytes and time.
   that shows it taken, smoothed as TCP smooths its round trip, how much it strays, and the share of snapshots passed
   over.
 - `Prediction` keeps the inputs the room has not taken. On each snapshot the player's body is set to the room's word
-  with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOn` cuts the
-  rect the welcome names from the landmass open in the land's worker and stands the movement rules and the fight's on
-  it, with the city's boxes ([[Land]], [[Movement]]). While the room agrees, that is the body already shown, to the bit; where it
+  with those inputs stepped on top by the same rules, on the same ground: for a node's room, `standOn` cuts the rect the
+  welcome names from the landmass open in the land's worker and stands the movement rules and the fight's on it, with
+  the city's boxes ([[Land]], [[Movement]]). While the room agrees, that is the body already shown, to the bit; where it
   knows better, the body moves to it. A body the room says is dead stays where the room saw it.
 - The [[Test Ground]] joins its room, `test-<name>`, when its address carries `?room=`, and shows every other player
   where the room last saw them.

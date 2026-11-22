@@ -275,17 +275,17 @@ At sea ([[Server]], "The sea"), each a rule the owner chose ([[The Sea's Fights,
 Pass]]) with Claude's numbers:
 
 - **Sinking, and what floats** (`flotsam.rs`). A captain's ship that goes down lays, where it went, 3 pieces for a
-  Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone
-  as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
-  of their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
+  Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone as
+  a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one of
+  their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
   floating are theirs again (`Sea::own`), and so is what a fight they fought still owes them (its flotsam, ship XP and
-  bounties when a captain goes down), once however often they joined it. A ship drops as one foe of its rank at its level does (its water's, raised by
-  the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece laid for each player holds its
-  Vestige by its rank's chance (at Elite or Abyss times the tier's reward, as a harder voyage's kill on land,
-  `loot_kill`), an Ammo box by its rank, and from a Miniboss or a Boss an Ammo crate. Every piece holds the
-  ship's salvage ([[Ship Power]], "Found"); what the player has no room for is lost with the piece. For an Elite or
-  higher one piece of each player's is a chest, its salvage rolled as a ship one rank higher. A piece looks like a
-  crate or a barrel (half each by its draw) or a chest.
+  bounties when a captain goes down), once however often they joined it. A ship drops as one foe of its rank at its
+  level does (its water's, raised by the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece
+  laid for each player holds its Vestige by its rank's chance (at Elite or Abyss times the tier's reward, as a harder
+  voyage's kill on land, `loot_kill`), an Ammo box by its rank, and from a Miniboss or a Boss an Ammo crate. Every piece
+  holds the ship's salvage ([[Ship Power]], "Found"); what the player has no room for is lost with the piece. For an
+  Elite or higher one piece of each player's is a chest, its salvage rolled as a ship one rank higher. A piece looks
+  like a crate or a barrel (half each by its draw) or a chest.
 - **Striking, and boarding.** A captain who strikes lies hove to with their colours down. For 90 s any player in the
   fight may board the captain's ship: their ship within 30 m of it, both under 2 m/s, and its deck holding a crew (the pirates have
   no deck Boss, so their Boss is not boarded). With no one aboard by then it is scuttled
@@ -295,29 +295,29 @@ Pass]]) with Claude's numbers:
   the fight's controls let E through), and the sea's line says "Boarders away: the Tithe Brig's crew stands to meet
   them." as the boarder goes from their helm to its deck.
 - **Its deck** (`deck_fight.rs`, `sea_decks.rs`). The sea room holds the deck fight, so the one authority over the fight
-  knows when the struck ship's deck is won and when the last boarder leaves, and no second room is trusted with it: a room on land
-  built as a node's room is, its floor the deck's grid of heights from the ship's hull's manifest (in the ship's own frame, a wall off
-  its planks), its ring the deck's bounds, its spawns at the ship's rails amidships, half a metre in from its outermost plank
-  (`rail_spot`; at its helm where no plank lies across its middle). A boarder comes over its rail on the side their own
-  ship lies, clear of its masts (which stand on its middle line), facing its bow and its crew; one who falls stands
-  again at the rail nearest. So the land
-  combat runs unchanged on its deck, with each boarder's character. Its crew is its faction's deck types for its rank
-  (`foes::crews`): a Minor three Minors; a Major four, the Bosun (the pirates' Brute) a Major; an Elite five, the Bosun
-  an Elite; a Miniboss six, the Tithe-Mate (the pirates' Captain) the Miniboss; a Boss Captain Brannoc Thule and six.
-  The plain hands are the faction's skirmisher, swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the
-  pirates' Skirmisher, Swordsman and Archer), standing two abreast along its deck from 2 m forward of amidships, 1.6 m
-  apart, facing aft, at its level. Its deck room takes the sea's tier, so its crew's kills pay XP and Aurem as a
-  harder voyage's; they drop no Vestige or item, as the hold is the boarding's loot. Clearing its deck opens its hold:
-  what floats, twice over, for each boarder, every chest's salvage a rank higher still, and its drop what a foe one
-  rank above the ship would leave; on top of the lot every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
-  minute after it fell every boarder still aboard is sent back; it is scuttled when the last one has left it. A
-  boarder's own ship takes no orders or course while they stand on the struck ship's deck: as they board, its helm,
-  brace and lay let go and its sails are furled, so it drifts to a stop beside the struck ship. Its deck room fights with the boarder's
-  character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
-  The sea's snapshot carries each deck to its boarders alone: their numbers there, the ship's hull, its deck room's own
-  snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's, at the sea's minute,
-  sent through the sea's link, and the sea's once more as they step off; and every boarder's dress is sent again as
-  each one comes over its side, who had no welcome to bring it.
+  knows when the struck ship's deck is won and when the last boarder leaves, and no second room is trusted with it: a
+  room on land built as a node's room is, its floor the deck's grid of heights from the ship's hull's manifest (in the
+  ship's own frame, a wall off its planks), its ring the deck's bounds, its spawns at the ship's rails amidships, half a
+  metre in from its outermost plank (`rail_spot`; at its helm where no plank lies across its middle). A boarder comes
+  over its rail on the side their own ship lies, clear of its masts (which stand on its middle line), facing its bow and
+  its crew; one who falls stands again at the rail nearest. So the land combat runs unchanged on its deck, with each
+  boarder's character. Its crew is its faction's deck types for its rank (`foes::crews`): a Minor three Minors; a Major
+  four, the Bosun (the pirates' Brute) a Major; an Elite five, the Bosun an Elite; a Miniboss six, the Tithe-Mate (the
+  pirates' Captain) the Miniboss; a Boss Captain Brannoc Thule and six. The plain hands are the faction's skirmisher,
+  swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the pirates' Skirmisher, Swordsman and Archer),
+  standing two abreast along its deck from 2 m forward of amidships, 1.6 m apart, facing aft, at its level. Its deck
+  room takes the sea's tier, so its crew's kills pay XP and Aurem as a harder voyage's; they drop no Vestige or item, as
+  the hold is the boarding's loot. Clearing its deck opens its hold: what floats, twice over, for each boarder, every
+  chest's salvage a rank higher still, and its drop what a foe one rank above the ship would leave; on top of the lot
+  every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its
+  crew has fallen, and a minute after it fell every boarder still aboard is sent back; it is scuttled when the last one
+  has left it. A boarder's own ship takes no orders or course while they stand on the struck ship's deck: as they board,
+  its helm, brace and lay let go and its sails are furled, so it drifts to a stop beside the struck ship. Its deck room
+  fights with the boarder's character, the real one even when the accounts answer after boarding, and gives it back with
+  what was won aboard. The sea's snapshot carries each deck to its boarders alone: their numbers there, the ship's hull,
+  its deck room's own snapshot, and the ticks its won deck holds them yet; their gear while aboard is its deck room's,
+  at the sea's minute, sent through the sea's link, and the sea's once more as they step off; and every boarder's dress
+  is sent again as each one comes over its side, who had no welcome to bring it.
 - **The fight on a struck deck, on the page** (`deckBoarding.ts`, `deckFight.ts`). Once the sea says the player stands on
   the struck ship's deck, the page plays on foot there exactly as on land: the same `Foot`, controls, first and third person,
   display, bars and marks, its crew drawn as the land's foes and the other boarders as players. Its link is the sea's:
@@ -340,7 +340,8 @@ Pass]]) with Claude's numbers:
   up at the port city nearest by the sea's way round land (`world::traffic::SeaWays`, on the traffic's sea mask: one
   search from every port when the room opens gives each cell of open water its nearest, so asking is a lookup): on foot in its social space, their ship moored at its roadstead at rest, a sunk one with 10% of its hull, 25%
   of its canvas and half its men, a beaten boarder's with the hurts it had (a sunk ship's if it is going down). A
-  player who leaves the sea mid-fight is kept as the fight has them, and at the port city they would wash up at; one who
+  player who leaves the sea mid-fight is kept as the fight has them, less the hands who fell on a deck they leave
+  from, and at the port city they would wash up at; one who
   leaves under a third of their ship's hull is kept as sunk (`LEFT_AS_SUNK`). Every boarder of a deck lost is let go of the
   fight, and the struck ship is scuttled with no one aboard; a captain going down or struck in a fight its last player left (gone,
   or gone down) goes down all the same, laying what floats for those who fought it. The page says washing up one way, in its notice and on the
@@ -580,9 +581,9 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   (11.5 degrees for a Major); lead pursuit cannot widen it. So a bold ship comes there (above, "Where"), and a player
   who holds their course meets it, one who turns away evades it, until it loses them. The voyage's hold keeps its
   own law as it comes near along the way.
-- **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of
-  it begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary one runs as
-  captains run. The room lets go of the chase once it has left the sea.
+- **The chase.** A player who chases a ship (the page tells the room whom, `Sea::chase`) and comes within 750 m of it
+  begins the fight with it whatever its temper (outside home waters), as a bold ship that meets a player does; a wary
+  one runs as captains run. The room lets go of the chase once it has left the sea.
 - **Its clock.** As DFO's sea keeps the world's time, a hostile ship sails on the clock of the player nearest it: their
   voyage's pace as it is held (144 m/s at ×60), the world's own while they lie at rest, and real time where another
   player sails within 1.2 km of that one, a shared sea.
@@ -604,11 +605,12 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 - **Joining.** A player not fighting who comes within 750 m of any ship of such a fight, or of a fight with players in
   it, joins it: their Sloop heaves to there and is put into it with the hurts it keeps, and its captains choose whom
   to fight by their own law, the one each fights reckoned nearer ("How a fight ends").
-- **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets them: it leaves the sea and the fight
-  begins with it where it lay, under sail, and the player's Sloop hove to (`Fight::meet`). The room steps it each tick
-  by the players' orders on the fight of many ships, so the Sloop's stem may ram the captain's, on waters made from the coasts
-  (open sea, the swell on it, dry land on them), until every captain has sunk or gone; its last view is shown once,
-  and the players sail on from where it left them, keeping their hurts.
+- **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
+  them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's Sloop hove to
+  (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
+  may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
+  captain has sunk or gone; its last view is shown once, and the players sail on from where it left them, keeping their
+  hurts.
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is
   the World Editor's (its look and lay, effects and panel), its controls A and D, W and S, the right button to aim and

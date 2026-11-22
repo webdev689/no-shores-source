@@ -84,13 +84,13 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   whole length even if the button is let go at once, so a tap parries. A blow that lands in the window, from within the
   guard's arc, is parried: it does nothing, its striker staggers for 54 ticks, the parrier's lock turns on it, and the
   parrier's next swing at it within that time is a riposte, twice as hard, which no guard stops (it does not also count
-  the stagger's quarter more), struck through the deflect at once if a swing can start then, else the deflect plays
-  on. A press within half a second of a window left unused opens none, so mashing the button
-  does not parry. After the window the guard blocks: a blade's guard covers 60 degrees either side, a shield's 80; a
-  blade lets a fifth of the blow through, a shield a twentieth; the guard pays the blow's weight in stamina (a shield
-  six tenths of it), and a blow it cannot pay for breaks it, staggering the fighter for 48 ticks with half the blow
-  through. Guarding, a fighter moves at under half its pace. Iron blows and shots are never parried, iron blows never
-  blocked, and shots blocked only by a shield.
+  the stagger's quarter more), struck through the deflect at once if a swing can start then, else the deflect plays on.
+  A press within half a second of a window left unused opens none, so mashing the button does not parry. After the
+  window the guard blocks: a blade's guard covers 60 degrees either side, a shield's 80; a blade lets a fifth of the
+  blow through, a shield a twentieth; the guard pays the blow's weight in stamina (a shield six tenths of it), and a
+  blow it cannot pay for breaks it, staggering the fighter for 48 ticks with half the blow through. Guarding, a fighter
+  moves at under half its pace. Iron blows and shots are never parried, iron blows never blocked, and shots blocked only
+  by a shield.
 - **The dodge.** A press dodges: a low, fast hop (3 m/s up, 10 m/s along) the way the keys point, or straight back with
   none, landing about 3 m away. It costs 22 stamina, needs the ground under it, and is not taken on horseback. The
   rules face it to the soft lock's target if there is one, so a fighter hops aside still facing its foe, its guard and

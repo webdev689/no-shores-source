@@ -201,7 +201,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   The interface lays itself in pixels of its own, each drawn as the screen's ratio rounded to whole device pixels
   (`uiScale`), so at a ratio of 1.5 each is 2 device pixels.
 - **The pointer and the ratio.** The page hears the pointer and the wheel in its CSS pixels. Each frame is told the
-  screen's ratio (the game, the World Editor and the Test Ground pass `devicePixelRatio`), and the interface turns each
+  screen's ratio (the game, the World Editor and the Test Ground pass `devicePixelRatio`; in the game's worker that is
+  the ratio its canvas is drawn at, less than the screen's where the canvas is shrunk to the GPU's largest texture,
+  [[Game]]), and the interface turns each
   position into its own pixels, the ratio over `uiScale`; `takes`, which a page's handler asks with CSS pixels, does
   the same. The box of the field being typed in goes back to the page in CSS pixels, for the browser's typing to place
   its composition by. At a whole ratio the two are the same. The World Editor's view starts at the panel's drawn edge
@@ -230,21 +232,24 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   than a layer (2047 device pixels a side) is laid scaled down to fit and stretched back over its box; one whose own
   texels are given (pixel art, raw pixels) cannot be, and is said once in the console and not drawn. One laid at no
   size, as a page's is on its first frame before its room is known, is not drawn.
-- **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the
-  pointer is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that
-  way, or by the pad's cross, whose up and down always move focus and whose left and right step a slider; A presses,
-  and B goes back; the wheel scrolling the list under it, and focus by keys scrolling every list that holds it into
-  sight. A press held as its node goes is let go. A field takes the mouse as a page's does: a drag selects, Shift
-  with a click extends, a double click takes a word. A hidden field is typed through keys and paste only, never handed
-  to the browser's typing, and its words go the frame its field does; what the interface keeps by id (scrolls, a
-  field's words unless asked for that frame) goes with the id. A field takes words through the browser's `EditContext` where it has one (Chromium), so
+- **Pressed, focused, typed.** What the input did is read against the last frame's boxes (`Interface`): what the pointer
+  is over and pressed, held or let go; focus walked by Tab, moved by the arrows to the nearest press that way, or by the
+  pad's cross, whose up and down always move focus and whose left and right step a slider; A presses, and B goes back;
+  the wheel scrolling the list under it, and focus by keys scrolling every list that holds it into sight. A press held
+  as its node goes is let go. A field takes the mouse as a page's does: a drag selects, Shift with a click extends, a
+  double click takes a word. A hidden field is typed through keys and paste only, never handed to the browser's typing,
+  and its words go the frame its field does; what the interface keeps by id (scrolls, a field's words unless asked for
+  that frame) goes with the id. A field takes words through the browser's `EditContext` where it has one (Chromium), so
   composition works on the canvas, and through keys and paste elsewhere; copy and cut take its selection. A field
   reached by a touch or the pad opens the keys the game draws (`screenKeys.ts`): ten across in even columns, the digits
-  over the letters, Shift for one capital, Back, a wide Space and Done (Enter), at the view's foot or its head where the field stands
-  low; the pad's cross walks them, A types the one it stands on and B puts them away, the field keeping the focus.
-  While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
-  field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is `CanvasEvents`, which sends a held Enter or Space once, never its repeats, so it presses once as the pad's A does; the interface hears plain events, and with the game in its worker
-  ([[Game]], "Threads") hears them as the page sends them (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
+  over the letters, Shift for one capital, Back, a wide Space and Done (Enter), at the view's foot or its head where the
+  field stands low; the pad's cross walks them, A types the one it stands on and B puts them away, the field keeping the
+  focus. While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
+  field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is
+  `CanvasEvents`, which sends a held Enter or Space once, never its repeats, so it presses once as the pad's A does; the
+  interface hears plain events, and with the game in its worker ([[Game]], "Threads") hears them as the page sends them
+  (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked
+  to look round presses nothing.
 - **The pad's cursor** (`padCursor.ts`, [[Pick - Pad Cursor and Gauntlet]]). Wherever the interface takes the pad (a
   window, the sheet, the creation, a field being typed in, the Test Ground's panels while a control there has focus), the left stick thrown from rest past its 0.2 lean brings
   out a cursor, the gauntlet drawn over everything: at the focus's middle, else where the mouse last was, else the
@@ -609,30 +614,30 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   look or to sail there, a drag, the wheel), Tab, Escape, the arrows on the menu's tabs, the pad's sticks and their
   ways and the pad's buttons in a window (the cross and left stick, A, B, the bumpers) are written, not bound, and
   never given in a swap. What the player binds is kept with their account ([[Accounts]], "Binds").
-- **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the
-  standard mapping: a stick at rest inside a 0.2 lean is still, and leant past it moves as far as it leans (the walk,
-  the helm, the look); a trigger is pressed past 0.3; a stick's way counts as pressed past half its lean. Its layout is
-  Destiny's as the owner chose it ([[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]): on foot the left
-  stick moves and its click runs until the stick comes to rest, the right stick turns and looks, RT swings and LT
-  guards or parries (a ranged weapon drawn, RT fires and LT aims, in every fight on foot: ashore, on a boarded deck
-  and in the story), A jumps, B tapped dodges and held crouches, X uses,
-  Y draws or sheathes, LB and RB cast the Tenets and both together the Anima, the cross's left and right draw the
-  loadouts, its down drinks and its up mounts, the right stick's click changes the view, Start opens the menu at
-  Character, View the sheet and View held the game's menu; dead, A respawns. The pad last used, its
-  presses fight on foot with the pointer free as with it locked, the menu shut (`handsFree`); a click on a free pointer
-  only locks it. At the helm the left stick steers, sails on
-  and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed, its up
-  opens the map and its down repairs (walking the ship's own deck too), Y manages the ship, B leaves the helm, and at the map or a landing B steps back.
-  In a sea fight the left stick steers and sets the sails, its click bursts, LT aims, RT fires, LT let go unfired holds
-  fire, the cross's left and right change the shot, B braces as it goes down and while it is held, X boards, and the
-  right stick turns the view; a tap presses and lets go in one frame. A button with a hold bound where the player is
-  (on foot, B's crouch) waits to be told a tap from a hold, and one of two bound together waits 0.12 s for the
-  other, so one press never does both. In a window (the menu, the game's menu, the sheet, the story's creation) the
-  pad's buttons are the window's: the cross steps the focus, the left stick moves the pad's cursor, A presses (at
-  the cursor while it is out), B steps back, Y and X press at the cursor, the right stick scrolls, LB and RB turn the
-  menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press that
-  changed it acts on nothing more, and what it held is let go at once, as is a stick let go under the window, so
-  nothing stays held once it closes. The story's tap to start takes any of the pad's buttons, and A takes the stranger's hand.
+- **The pad** (`pad.ts`, `Input`) is read each frame through the browser's Gamepad API, the first pad with the standard
+  mapping: a stick at rest inside a 0.2 lean is still, and leant past it moves as far as it leans (the walk, the helm,
+  the look); a trigger is pressed past 0.3; a stick's way counts as pressed past half its lean. Its layout is Destiny's
+  as the owner chose it ([[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]): on foot the left stick moves
+  and its click runs until the stick comes to rest, the right stick turns and looks, RT swings and LT guards or parries
+  (a ranged weapon drawn, RT fires and LT aims, in every fight on foot: ashore, on a boarded deck and in the story), A
+  jumps, B tapped dodges and held crouches, X uses, Y draws or sheathes, LB and RB cast the Tenets and both together the
+  Anima, the cross's left and right draw the loadouts, its down drinks and its up mounts, the right stick's click
+  changes the view, Start opens the menu at Character, View the sheet and View held the game's menu; dead, A respawns.
+  While the pad was played last and no menu is up, its presses fight on foot whether or not the pointer is locked
+  (`handsFree`), as a pad cannot lock it; a click on a free pointer only locks it. At the helm the left stick steers,
+  sails on and heaves to; A sets sail, lands or docks, X stops or resumes, the cross's left and right slow and speed,
+  its up opens the map and its down repairs (walking the ship's own deck too), Y manages the ship, B leaves the helm,
+  and at the map or a landing B steps back. In a sea fight the left stick steers and sets the sails, its click bursts,
+  LT aims, RT fires, LT let go unfired holds fire, the cross's left and right change the shot, B braces as it goes down
+  and while it is held, X boards, and the right stick turns the view; a tap presses and lets go in one frame. A button
+  with a hold bound where the player is (on foot, B's crouch) waits to be told a tap from a hold, and one of two bound
+  together waits 0.12 s for the other, so one press never does both. In a window (the menu, the game's menu, the sheet,
+  the story's creation) the pad's buttons are the window's: the cross steps the focus, the left stick moves the pad's
+  cursor, A presses (at the cursor while it is out), B steps back, Y and X press at the cursor, the right stick scrolls,
+  LB and RB turn the menu's tabs; a button held as a window opens or closes is stale until it is let go, so the press
+  that changed it acts on nothing more, and what it held is let go at once, as is a stick let go under the window, so
+  nothing stays held once it closes. The story's tap to start takes any of the pad's buttons, and A takes the stranger's
+  hand.
 
 - **Manage's panel** is a window at the right under a header naming the ship. Each part's heading is a rule; Back to
   the sea stands on its footer. It is built again only when what it

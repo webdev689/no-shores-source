@@ -133,15 +133,16 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   with" and the keeper's name; pressed, it asks 64 and the lines are said. Otherwise the counter opens as before.
 - **Marks**: `quest_at` stands a mark at its place, and the held map at sea rings the nodes the task's goals name (the land's map, raised on foot, draws no places). Both give way while the map is up.
 - **What is shown and said**: the page shows, says and marks nothing from a word not on the player's own character
-  (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an
-  escort's or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they
-  happen, once while one waits or is said, and not at all while the story or the welcome holds the screen. Everything
-  else waits for the welcome to pass. The tracker runs the clock as m:ss for a race, a defence, a tail and an unseen
-  step (down from the room's last word on it, which sets it afresh), shows a defended ward's health as a percentage, and is read aloud as a clock starts, at each half minute and in
-  its last 10 s, and as a ward's health passes each quarter. The HUD's mark is named for the task's first unmet goal in
-  the player's node. Figures glide between the room's words, a quarry walking back when it noticed and one arrived
-  standing where it is; the ward's plate stays in view as a fought foe's; a lit point offers no Use. With no Art worn
-  the Character page says "Pledge to a house; its road gives its Art.", and the Arts' screen shows all three locked.
+  (`claimed`). A goal's `scene` is said as the room meets it, a talk goal's included (the press only asks); an escort's
+  or tail's `greet` as its figure first walks, once a task; a goal's failure line and an escort's shout as they happen,
+  once while one waits or is said, and not at all while the story or the welcome holds the screen. Everything else waits
+  for the welcome to pass. The tracker runs the clock as m:ss for a race, a defence, a tail and an unseen step (down
+  from the room's last word on it, which sets it afresh), shows a defended ward's health as a percentage, and is read
+  aloud as a clock starts, at each half minute and in its last 10 s, and as a ward's health passes each quarter. The
+  HUD's mark is named for the task's first unmet goal in the player's node. Figures glide between the room's words, a
+  quarry walking back when it noticed and one arrived standing where it is; the ward's plate stays in view as a fought
+  foe's; a lit point offers no Use. With no Art worn the Character page says "Pledge to a house; its road gives its
+  Art.", and the Arts' screen shows all three locked.
 - **The varied steps**: the page draws the quest figures (`quest_figures`) as the cast's figures or the roster's, the
   ward (`quest_ward`) at its place with its health, and the puzzle's points (`quest_points`), each lit or not, with
   "Use" and its name within reach; the tracker shows the running clock (`quest_clock`); and a goal's line is said as

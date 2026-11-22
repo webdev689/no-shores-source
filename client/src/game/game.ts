@@ -396,8 +396,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** The player walks ashore on an island, the veil saying why: anchored off it, or washed up on its beach. The sea
-   *  is left only once the island's room has opened: one that does not (it faded, or the sea no longer holds it)
-   *  leaves the player aboard, told so. */
+   *  is left once the island's room opens; if it does not, they stay aboard, told so, and join the sea room again. */
   const goIsle = (held: IsleHeld, words: string) => {
     const continent = continents[held.seen.continent]?.id ?? '';
     travel({ kind: 'isle', node: held.seen.id.toString(), words }, async () => {

@@ -220,16 +220,16 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   press or key has woken the interface's sound. A cue not yet picked is silent; nothing new plays while a menu is open.
 - **Foes to try.** Under `npm run dev` only, `?spawn=` asks the room played alone for foes as the player lands: types
   by their numbers, each with a rank after a colon (`?spawn=2:2,4,12`). A server's node room takes no such ask.
-- **A social space's people** (`PlazaLife`, `life/`): its keepers stand behind their counters and at their stalls
-  and work, and its townsfolk walk the plan's ways (the city crate's `life`) from post to post, looking out, browsing,
+- **A social space's people** (`PlazaLife`, `life/`): its keepers stand behind their counters and at their stalls and
+  work, and its townsfolk walk the plan's ways (the city crate's `life`) from post to post, looking out, browsing,
   drinking, talking or carrying, keeping to the right; each keeps a routine laid on the world clock from the plan and a
-  seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the
-  ways; the walk's frames go at the pace they stroll, each in a step of its own. Each stands on the ground, or on the
-  highest top under them whose underside is within a step of the floor so far, climbed in turn (`floorOver`): a
-  pier's deck, a podium or a landing, never a roof over them; it is found again only once they have walked a step. A round's
+  seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the ways;
+  the walk's frames go at the pace they stroll, each in a step of its own. Each walker stands on the ground, or on the
+  highest top under them whose underside is within a step of the floor so far, climbed in turn (`floorOver`): a pier's
+  deck, a podium or a landing, never a roof over them; it is found again only once they have walked a step. A round's
   sweeper keeps a whole number of the walkers' 600 s loops, staying at the round's first post until it is up, and the
-  walkers are drawn clear of the sweeper's walks, so none walks in another however long the clock runs. The fight
-  never takes them for targets.
+  walkers are drawn clear of the sweeper's walks, so none walks in another however long the clock runs. The fight never
+  takes them for targets.
 - **Over what a player can use** (`overheadMarks`, `marksOver`; [[What a Player Can Use Wears Its Mark Over It]]),
   drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
   the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)
@@ -577,16 +577,16 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   Dungeon", "Elite Dungeon of the week" or "Abyss Dungeon of the week".
 - **At sea** the player joins the `sea` room, their ship put to sea where it lies, turned as it lies; each voyage's
   course and pace go to it, and every other player's ship is drawn where the room moved it. The room's word on the ship
-  is taken 60 ticks after its course is sent, a round trip's allowance of a second: until then the game sails it at
-  the pace the room last held it to, then draws it to where the room has it. Where the room has it at rest short
-  of its voyage's end, a course it would not take, the game heaves it to there. Leaving the helm while a course
-  waits its turn sends the course first, then the leave, so the room takes the course from the helm. While the sea
-  room is joined again after its socket closed, the game sails the ship alone and shows none of the room's ships, a fight in it
-  over, and the voyage's line says "Reconnecting…"; joined again, the player is called to the helm and the ship puts to sea
-  where it lies, on its voyage. A sea room that sends the player away is lost: a fight in it is over, its view
-  going back up, and they are called to the helm and sail on alone, the voyage's line saying so. A fight the room no
-  longer lists for the player (joined again with no frame between) is over the same way. While the room is well, the line says nothing of it (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its pirates and
-  fights are the same law.
+  is taken 60 ticks after its course is sent, a round trip's allowance of a second: until then the game sails it at the
+  pace the room last held it to, then draws it to where the room has it. Where the room has it at rest short of its
+  voyage's end, a course it would not take, the game heaves it to there. Leaving the helm while a course waits its turn
+  sends the course first, then the leave, so the room takes the course from the helm. While the sea room is joined again
+  after its socket closed, the game sails the ship alone and shows none of the room's ships, a fight in it over, and the
+  voyage's line says "Reconnecting…"; joined again, the player is called to the helm and the ship puts to sea where it
+  lies, on its voyage. A sea room that sends the player away is lost: a fight in it is over, its view going back up, and
+  they are called to the helm and sail on alone, the voyage's line saying so. A fight the room no longer lists for the
+  player (joined again with no frame between) is over the same way. While the room is well, the line says nothing of it
+  (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its pirates and fights are the same law.
 
 ## Drawing
 

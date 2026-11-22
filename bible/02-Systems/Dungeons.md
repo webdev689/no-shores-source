@@ -288,10 +288,11 @@ patrol's by its number, `askDungeon`; an Elite Dungeon by its place, named as it
 plays it as [[Game]] says ("A dungeon"). A module older than the landmarks answers no landmarks or glows, and is read
 as standing none (`readDungeon`).
 
-- **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above
-  it, the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it
-  is the week's at the node's tier (the week by the rooms' clock, `roomNow`), else its run at Normal; and a sea island's from its door in the sea's room, by
-  its name, laid by its seed and style and named "The <Style> of the Sea", left back to the sea.
+- **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above it,
+  the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it is the
+  week's at the node's tier (the week by the rooms' clock, `roomNow`), else its run at Normal; and a sea island's from
+  its door in the sea's room, by its name, laid by its seed and style and named "The <Style> of the Sea", left back to
+  the sea.
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the

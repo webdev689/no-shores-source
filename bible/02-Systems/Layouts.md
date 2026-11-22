@@ -234,10 +234,12 @@ from the sea, fresh water and the claim's edge), then:
    Mistbloom's low mound of pale flowers, Windthistle's thistles gone to down, Bog Pearl's black pool rimmed with
    shells, and Rimecrystal's frozen rock grown with spikes of frost.
 10. **The section** is the land the carving left as floor, a few metres onto its cliffs' feet, no cell of it touching
-    the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled, traced into a ring: the layout's bounds are its cliffs and walls. Its spawns stand at
-    the landing or the way in, on it and six metres either side, each on walkable ground in the section and clear of
-    everything a body runs into (a gate's arch stands on its way in); one that is not moves to the nearest that is,
-    in rings two metres apart (`spawns::round`).
+    the sea, and the bridges over water a cell wider either side, in the claim, as one piece with its holes filled,
+    traced into a ring: the layout's bounds are its cliffs and walls. Its three spawns stand round the landing or the
+    way in (`spawns::round`), each on walkable ground in the section and clear of everything a body runs into (a
+    gate's arch stands on its way in): the first three points that are, of the anchor itself, six metres east and
+    west of it and three south, then rings round the anchor two metres apart out to 16 m; the anchor alone where none
+    is.
 11. **The plantings** (`plantings`), last, from the kinds the climate's nature already grows
     (`content/nature/flora.json`): its orchard tree and its shrub, the oak and the gorse on a temperate coast (no apple
     or pear grows anywhere). A farm with "orchard" as a whole word of its name is planted with the tree in rows along
