@@ -397,6 +397,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     base: 0n,
     gonePlayers: [],
     goneFoes: [],
+    cache: [],
     vessels: [],
     balls: [],
     naval: [],

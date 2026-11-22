@@ -92,7 +92,7 @@ const PATROL: [(u8, Rank); 6] = [
     (CROSSBOWMAN, Minor),
     (CROSSBOWMAN, Major),
 ];
-const DUNGEON: [(u8, Rank); 6] = [
+pub(crate) const DUNGEON: [(u8, Rank); 6] = [
     (RUNNER, Major),
     (COLLECTOR, Major),
     (CROSSBOWMAN, Major),
@@ -178,11 +178,15 @@ impl Room {
 
 /// A room's navmesh. A node's room bakes it over its land by its first spawn, where its garrison stands, among its
 /// layout's boxes inside that square, and never over its whole section, which would cost more time and memory than a
-/// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone.
+/// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone;
+/// a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
     let Some(section) = section else {
         return over(floor, blocks, ground_around(blocks, first, GROUND_AROUND));
     };
+    if let Floor::Dungeon(_) = floor {
+        return crate::dungeon_room::baked(floor, first, section);
+    }
     let (bounds, walked) = square_of(blocks, ground_middle(section, first));
     match floor {
         // A deck's mesh covers its ring alone: its planks and the walls round them.
@@ -326,6 +330,15 @@ impl Room {
                 }
             }
         }
+        self.gird_and_stand(levels);
+        if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
+            self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
+        }
+    }
+
+    /// Draws each posted foe's level from its island's band and its shield, in the order the posts were laid, and
+    /// stands every post.
+    pub(crate) fn gird_and_stand(&mut self, levels: Option<(u8, u8)>) {
         let (seed, mut nth) = (self.world_seed, 0_u32);
         for post in &mut self.garrison {
             for &(_, rank, _, _) in &post.members {
@@ -338,9 +351,6 @@ impl Room {
         }
         for post in 0..self.garrison.len() {
             self.stand_post(post);
-        }
-        if matches!(kind, NodeKind::Mission | NodeKind::Dungeon) {
-            self.encounter = self.encounter_of(&section, kind == NodeKind::Mission, levels);
         }
     }
 

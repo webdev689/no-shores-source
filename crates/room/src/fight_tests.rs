@@ -1,5 +1,6 @@
 use super::*;
 use combat::arms::{OffHand, Stroke, WeaponClass};
+use combat::fighter::Action;
 use combat::{CombatInput, Intent};
 use judging::{Check, How};
 use movement::Controls;

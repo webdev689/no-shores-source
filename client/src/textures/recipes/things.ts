@@ -1,5 +1,5 @@
 // Everything else the forged world wears: the solid colours, the roofs and doors of every climate, the dungeons'
-// three sets, and the archives that stand alone - tapestries, signs, hedges, ships, gravestones, furniture, the
+// five sets, and the archives that stand alone - tapestries, signs, hedges, ships, gravestones, furniture, the
 // special places' walls. Each is painted by its kind and, where an archive holds many kinds, by the use the forged
 // world names its record for.
 import { barrelTiles, planks, shingles, straw } from '../boards.ts';
@@ -15,6 +15,7 @@ import { blocks, crag, mottle } from '../stone.ts';
 import { Surface } from '../surface.ts';
 import { cracks, grime } from '../weathering.ts';
 import { paintDungeon } from './dungeons.ts';
+import { paintDungeonRock } from './dungeonRock.ts';
 import { paintSurfaceKind } from './rooms.ts';
 import { kitMats } from './thingMats.ts';
 
@@ -263,6 +264,7 @@ export function paintThing(ctx: RecipeContext): Job | Rendered | null {
   if (archive === 0 || archive === 1) return paintSolid(ctx);
   const set = archive % 100;
   if (archive < 500 && (set === 22 || set === 23 || set === 24)) return paintDungeon(ctx);
+  if (archive < 500 && (set === 19 || set === 20)) return paintDungeonRock(ctx);
   const roof = ROOFS[archive]?.[record % 4];
   if (roof) {
     const mats = kitMats(roof[1]);

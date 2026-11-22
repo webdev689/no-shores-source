@@ -4,6 +4,9 @@ status: live
 code:
   - crates/room/src/lib.rs#Room
   - crates/room/src/floor.rs#Floor
+  - crates/room/src/dungeon_room.rs#dungeon
+  - crates/room/src/entrances.rs#laid
+  - crates/room/src/entrances.rs#join_at
   - crates/room/src/judging.rs#Event
   - crates/room/src/players.rs#VIEW_LAG
   - client/src/network/localRoom.ts#LocalRoom
@@ -24,6 +27,7 @@ code:
   - crates/bake/src/lib.rs#MARGIN_M
   - crates/bake/src/lib.rs#lock
   - crates/protocol/messages.fbs
+  - crates/protocol/gear.fbs
   - crates/protocol/src/lib.rs#read_input
   - crates/protocol/src/lib.rs#read_course
   - crates/protocol/src/land.rs#snapshot_bytes
@@ -36,6 +40,9 @@ code:
   - tools/wireSizes.mjs
   - crates/room-wasm/src/lib.rs#room_input
   - crates/room-wasm/src/lib.rs#open_node
+  - crates/room-wasm/src/dungeon_door.rs#open_dungeon
+  - crates/room-wasm/src/dungeon_door.rs#room_join_at
+  - server/roomNames.ts#nodeRoom
   - crates/room-wasm/src/lib.rs#refusal
   - crates/room/src/course.rs#stand_foe_at
   - crates/room-wasm/src/course_door.rs#stand_foe
@@ -63,14 +70,17 @@ on Cloudflare.
   and no clock of its own: its host hands it each player's inputs, ticks it 60 times a second, and sends out what it
   sees.
 - **Its ground:** a node's room stands its bodies on the node's window of the [[Land]], among the boxes of its city a
-  body runs into ([[Movement]]). Any other room stands them on its course of blocks on open ground at 0 m, or, for a
-  course laid over open sea (`room_open_over_sea`, the [[Prologue]]'s wreck), on its blocks over the sea at 0 m.
+  body runs into ([[Movement]]). A dungeon's room stands them on the dungeon's own ground in its own frame, whose
+  rock, doorways' jambs and pillars are walls no body passes or climbs, kept a body's half-width off ([[Dungeons]]).
+  Any other room stands them on its course of blocks on open ground at 0 m, or, for a course laid over open sea
+  (`room_open_over_sea`, the [[Prologue]]'s wreck), on its blocks over the sea at 0 m.
 - **Joining:** a player gets a number no one else in the room has had, and comes in with all three healing charges
   ([[Combat]], "Healing charges"; [[Three Healing Charges, Refilled by Blows and Kills]]), which are never saved. In
   a node's room they stand on the ground at the node's spawns in turn, the first player at the first spawn, the next
   at the next; elsewhere at the room's spawn, on the top of the block under it (or the ground where none stands), and
-  a respawn stands them there too.
-  A room holds 16 players; past that, it turns the next away.
+  a respawn stands them there too. A patrol's room may instead stand a player 1.5 m before one of its entrances'
+  doors, facing away from it, as they come out of that entrance's dungeon. A room holds 16 players; past that, it
+  turns the next away.
 - **Inputs:** each player numbers their inputs 1, 2, 3 and so on, and one out of order is refused, as is one with a
   number in it that is not a number. An input is one tick's intent, the controls ([[Movement]]) and the fight's
   buttons ([[Combat]]), with what the player's hands hold and the room tick their screen last showed. It steps that
@@ -89,15 +99,26 @@ on Cloudflare.
   routing, taking cover, and climbing and dropping where its links say, on a [[Navmesh]] the room bakes when it
   opens: a course's over its blocks and 30 m round them (over open sea, its blocks' tops alone, every part a body
   stands in kept); a node's over a 70 m square of its land and its layout's boxes there, its first spawn
-  15 m inside the square's edge toward the middle of its section's ring, where its garrison stands. The room tells
-  each foe the noises made and its allies' shouts, and keeps the fight's heat, fed where blows are settled.
+  15 m inside the square's edge toward the middle of its section's ring, where its garrison stands; a dungeon's over
+  the whole dungeon, kept to the floor its way in stands on ([[Navmesh]]). The room tells each foe the noises made and
+  its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
-- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands where its layout
-  stands its nodes ([[Layouts]], "The sites"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file (`resources`) and the room
-  numbers in that order, as the page does; a third of them hold a node at once, the next third every three minutes, and each player may gather each node once while it
-  stands. A kill, in any node, pays by
-  the room's seas ([[Gear]], "Where foes stand").
+- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands where its
+  layout stands its nodes ([[Layouts]], "The sites";
+  [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file
+  (`resources`) and the room numbers in that order, as the page does; a third of them hold a node at once, the next
+  third every three minutes, and each player may gather each node once while it stands. Its three dungeons'
+  entrances are laid out from the node's id, the same every time: inside the ring and 60 m inside its edge, 60 m from
+  every spawn, 40 m from every resource place and 300 m from one another, on dry ground (above the sea, out of a river
+  or a lake) whose height varies by 3 m at most across the 12 m round it; fewer when fewer fit. Each is the entrance
+  model its dungeon's seed draws, turned so its door faces the middle of the ring. A kill, in any node, pays by the
+  room's seas ([[Gear]], "Where foes stand").
+- **A patrol's dungeon** has a room of its own ([[Dungeons]], "In the rooms"), opened from its patrol's node file:
+  its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
+  for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
+  the Reeve's post stands its cache, shut while the Reeve stands; when he falls it opens, and every player then in the
+  room finds a Vestige lying before it for them alone ([[Gear]]); it shuts when he stands again.
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
   same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way.
@@ -136,8 +157,9 @@ on Cloudflare.
   browser predicts them by it from that snapshot on. Only the Test Ground's room hands out gear to try the loop
   with.
 - **The dead** stand again, whole and with all three healing charges, after four seconds, at the spawn nearest where
-  they fell, and the foes leave them be for three more unless they strike first; a dead foe is gone after ten. One
-  standing again past a node's section, as they ask, stands with all three too.
+  they fell (in a dungeon, at its way in, facing into the room), and the foes leave them be for three more unless they
+  strike first; a dead foe is gone after ten. One standing again past a node's section, as they ask, stands with all
+  three too.
 - **The clock:** an input waits for the room's next tick. A player's inputs step their body no more often than the
   ticks since they joined, plus a slack of 6 ticks for the network's jitter, and a tick takes at most 3, so no one
   moves faster than real time and one catching up after a stall replays no faster than three times over.
@@ -299,16 +321,17 @@ with its top and its underside; for a social space, the counters that serve a pl
 the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the three factions'), and Shape's eight places
 (`shape_spots`, Overlook's alone); and whether it is locked: each patrol area and mission the open list,
 `content/world/open.json`, does not name ([[World Map]], "Seen whole, reached by nodes"), and each social space but
-Overlook's ([[Only Overlook's Social Space Opens for Now]]). A locked node's room opens but takes no player. The bake
-takes about 17 s for the nine continents' 99 nodes, a few at a time, and writes about 15.2 MB in all, a patrol area's
-file the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and rock's boxes). `server`, `server:bundle` and
-`server:deploy` run it first. It fails, writing nothing, when two nodes of the world share an id, when one is called
-`index`, or when an id is too long for its room's name, `node-<id>`, of at most 40 characters.
+Overlook's ([[Only Overlook's Social Space Opens for Now]]). A locked node's room opens but takes no player, and so does
+each dungeon's room of a locked patrol. The bake takes about 17 s for the nine continents' 99 nodes, a few at a time,
+and writes about 15.2 MB in all, a patrol area's file the largest at about 0.59 MB (the Saltgrass Downs', its rooms' and
+rock's boxes). `server`, `server:bundle` and `server:deploy` run it first. It fails, writing nothing, when two nodes of
+the world share an id, when one is called `index`, or when an id is too long for its rooms' longest name,
+`node-<id>--abyss--dungeon-2`, of at most 64 characters.
 
 ## Messages
 
-Every message is defined once, in `crates/protocol/messages.fbs`, and `flatc` makes the Rust and the TypeScript for
-it ([[Messages Are FlatBuffers]]). A body and controls cross as the movement crate's numbers, in its order: a body's
+Every message is defined once, in `crates/protocol/messages.fbs` and the player's gear in `gear.fbs`, which it
+includes, and `flatc` makes the Rust and the TypeScript for them ([[Messages Are FlatBuffers]]). A body and controls cross as the movement crate's numbers, in its order: a body's
 22 and the controls' 7, the same as through the browser's WebAssembly door. A table gains fields only at its end, so
 an older reader skips them.
 
@@ -317,8 +340,8 @@ an older reader skips them.
 | Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim, the point an aimed shot is laid on and a drink asked), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the pirates' type in that role, a Major), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go) |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
 | Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the pirates' Major) or every one sent off |
-| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window, and the protocol's version: the hash of the schema, of the fight's number layouts (`crates/combat/src/floats.rs`: a fighter, an intent and a glance cross as plain lists of numbers) and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema, other layouts or another order of that content loads again, once |
-| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
+| Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the fight's number layouts (`crates/combat/src/floats.rs`: a fighter, an intent and a glance cross as plain lists of numbers) and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema, other layouts or another order of that content loads again, once |
+| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches |
 
 **Each player's own snapshot.** On land a snapshot is written for each player. Their own fighter crosses whole, as
 they predict from it; everyone else's numbers, and every foe's, cross packed: each in thousandths, a whole number
@@ -370,7 +393,7 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; on a sea island, the wrecks they have scavenged there (`scavenged`); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); and the day the wares are of, which a smith's ware is asked by |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; on a sea island, the wrecks they have scavenged there (`scavenged`); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); the day the wares are of, which a smith's ware is asked by; and in a patrol, its dungeons' entrances, each where it stands, the ground's height there, its model's yaw and which model it is |
 
 ## The host
 
@@ -380,14 +403,17 @@ so every decision is Rust and the shell only carries bytes and time.
 
 - The name says which room it is, opened when the first player joins: `sea` is the sea, round the layout's
   continents, and `sea--elite` or `sea--abyss` the sea at a harder difficulty (`roomNames.ts` `seaRoom`); `node-<id>` is that node's room, from its baked file, and `node-<id>--elite` or `--abyss` the same
-  node at a voyage's harder difficulty, a room of its own; `fleet-<name>` a fleet's place on the open sea;
+  node at a voyage's harder difficulty, a room of its own; `--dungeon-0`, `-1` or `-2` after either is one of a
+  patrol's dungeons at that difficulty, opened from the patrol's baked file; `fleet-<name>` a fleet's place on the
+  open sea;
   any other name is the Test Ground's course,
-  `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404.
+  `content/testground/course.json`, which the client reads too, with its stall and resource nodes laid out. A node with no baked file answers 404, as does a dungeon whose node is no patrol. Any other spelling of a node's room is no room. A name is 64 characters at most.
 - The baked files are the Worker's static assets, bound as `NODES`, so a node's room reads only its own file and the
   Worker's own bundle does not grow with the world. Every request goes to the Worker first, which serves no file to a
   browser.
-- A WebSocket joins the room and is welcomed with the player's number; each binary message is one of their inputs,
-  at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
+- A WebSocket joins the room and is welcomed with the player's number; in a patrol's room, `?entrance=<number>` on
+  its address stands them before that entrance's door, and an entrance it does not have is an ordinary join. Each
+  binary message is one of their inputs, at sea their course, or in a fleet their ship's orders. A course too soon after the last is dropped and a course
   the sea will not sail is refused; any other input refused, a message over 8 KB, or more than 240 messages in a
   second (a browser sends 60), closes the socket, since that browser is not keeping to the messages. Its player
   leaves at once, no snapshot is sent to a socket that is closing, and whatever it had already sent is passed over
@@ -522,6 +548,12 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
 - The [[Test Ground]] joins any room by name, a node's too, but predicts on its own course and never asks to respawn;
   the [[Game]] does both, and fights there. A server's node room takes no ask for a foe; only a room a page plays alone
   is told to (`take_foe_asks`).
+- A dungeon's room bakes its navmesh over the dungeon's whole rectangle, up to three blocks by three. Of the 81
+  dungeons, the slowest opens in 0.16 s of WebAssembly, and the largest takes 32.8 MB of its memory against 18.5 MB
+  for a patrol's own room (tested offline). Each of the 27 patrols lays all three entrances; a dungeon's room opens for its number whether or not its
+  patrol's land found room for its entrance. A patrol's room takes `?entrance=` at the joiner's word,
+  so a player may come back at any of its three entrances, as `?at=` lands a player at any node. Movement has no ceilings; a
+  dungeon's are never reached, as nothing in it can be climbed.
 - **A course a page plays alone** may be asked six things more, which no server ever asks and no message carries
   (`course.rs`, through the door's `room_stand_foe`, `room_clear_foes`, `room_set_spawn`, `room_put_player`,
   `room_stand_block` and `room_take_block`): a foe of the roster stood where the page puts it, on the top of the block

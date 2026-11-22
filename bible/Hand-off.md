@@ -404,6 +404,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
+- **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
+  areas, perfect and insanely varied as the owner asked ([[The Dungeons Are Perfect and Insanely Varied]], Claude's
+  calls in [[Dungeons as Claude Builds Them]], [[Dungeons]]). Six styles, two to five blocks, a deeper last block in
+  about half, rooms shaped, purposed, named, furnished and lit by their style, vaults, domes and caves, cave mouths
+  for the caverns and the mines. Tested offline: `cargo xtask check`, and headless pictures of every room of six
+  dungeons, one of each style. Two reviews' findings are fixed, each with a test; #72 lists them. Not tested live: a
+  deployed dungeon room.
 - **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
   check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
   account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
@@ -590,6 +597,11 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **#72 once the owner says yes**: squash-merge it, which deploys the page and the rooms, then play a dungeon in a
+  deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out.
+- **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
+  `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA), once `webgpu-shot`
+  can picture the game again: since #127 the game draws in its worker, which it cannot read (above).
 - **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that

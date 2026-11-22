@@ -22,6 +22,7 @@ use std::cell::RefCell;
 
 mod course_door;
 mod deck_door;
+mod dungeon_door;
 mod snapshot_door;
 pub use snapshot_door::snapshot;
 mod fighter_door;
@@ -33,6 +34,7 @@ mod sea_door;
 mod sent;
 mod waters_door;
 
+pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute};
 
@@ -180,7 +182,7 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource
     {
-        room.start_patrol(u8::try_from(resource).unwrap_or_default(), &node.resources);
+        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default(), &node.resources);
     }
     let refusal = node.locked.then(|| format!("{} is locked", node.name));
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
@@ -582,19 +584,15 @@ mod climb_door_tests;
 #[cfg(test)]
 #[path = "course_door_tests.rs"]
 mod course_door_tests;
-
 #[cfg(test)]
 #[path = "door_tests.rs"]
 mod door_tests;
-
 #[cfg(test)]
 #[path = "fleet_door_tests.rs"]
 mod fleet_door_tests;
-
 #[cfg(test)]
 #[path = "garrison_door_tests.rs"]
 mod garrison_door_tests;
-
 #[cfg(test)]
 #[path = "load_tests.rs"]
 mod load_tests;

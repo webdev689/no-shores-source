@@ -17,6 +17,9 @@ pub mod crew;
 pub mod deck;
 mod deck_fight;
 mod drops;
+pub mod dungeon_ground;
+mod dungeon_room;
+mod entrances;
 pub mod fleet;
 mod floor;
 pub mod flotsam;
@@ -48,6 +51,7 @@ pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
 pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
+pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
@@ -65,10 +69,7 @@ use combat::fighter::{FighterId, player};
 use combat::judge::swing_blow;
 use combat::shots::Line;
 use combat::strike::struck;
-// The tests reach these through `super::*`, as before the dead were raised in players.rs.
 use combat::{Fighter, Happening, Shot, Verdict, player_tick};
-#[cfg(test)]
-use combat::{fighter::Action, tuning::RESPAWN};
 use foes::Foe;
 use judging::{Check, Group, Pending, how_of_swing};
 pub use land::sites::NodeKind;
@@ -170,8 +171,12 @@ pub struct Room {
     pub(crate) difficulty: gear::Difficulty,
     pub(crate) patrol: bool,
     pub(crate) gathered: std::collections::BTreeMap<String, Vec<u8>>,
+    pub(crate) entrances: Vec<entrances::Entrance>,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
+    /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
+    pub(crate) facing: f64,
+    pub(crate) cache: Option<dungeon_room::Cache>,
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
@@ -235,8 +240,11 @@ impl Room {
             difficulty: gear::Difficulty::Normal,
             patrol: false,
             gathered: std::collections::BTreeMap::new(),
+            entrances: Vec::new(),
             ashore: companions::Ashore::default(),
             isle: None,
+            facing: core::f64::consts::PI,
+            cache: None,
             minute: 0,
             shape_spots: Vec::new(),
             quests: quests::QuestGround::default(),
@@ -251,7 +259,9 @@ impl Room {
 
     /// A body standing at a spawn: on the ground in a node's room, on the top of the block under it on a course.
     fn stand(&self, (x, y): (f64, f64)) -> Body {
-        if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) }
+        let body =
+            if self.section.is_some() { standing_on(&self.floor, &self.blocks, x, y) } else { self.on_top(x, y) };
+        Body { facing: self.facing, ..body }
     }
 
     /// Where a body that fell at (x, y) stands again: the section's spawn nearest it, or the room's spawn.
@@ -266,18 +276,22 @@ impl Room {
         if self.players.len() >= PLAYERS_MOST {
             return None;
         }
-        let id = self.next_id();
         let turn = self.joins % self.spawn_points.len().max(1);
         self.joins += 1;
         let spawn = self.spawn_points.get(turn).copied().unwrap_or((0.0, 0.0));
-        let fighter = player(self.stand(spawn), BARE_HANDS);
-        let mut joined = Player::new(fighter, self.clock, self.is_test_ground());
+        Some(self.join_standing(self.stand(spawn)))
+    }
+
+    /// A new player standing as `body` stands, with nothing drawn; in the prologue's wreck room, armed for the story.
+    pub(crate) fn join_standing(&mut self, body: Body) -> PlayerId {
+        let id = self.next_id();
+        let mut joined = Player::new(player(body, BARE_HANDS), self.clock, self.is_test_ground());
         if self.story {
             story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
         self.arrived(id);
-        Some(id)
+        id
     }
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
@@ -341,6 +355,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_cache();
         self.keep_quests();
         self.keep_steps();
         self.pick_up_drops();
@@ -443,7 +458,7 @@ impl Room {
         match happening {
             Some(Happening::Swung(attack)) => self.swings.push((id, attack)),
             Some(Happening::Struck(attack)) => {
-                self.sweep = struck(id, fighter, &attack, view, &self.blocks);
+                self.sweep = struck(id, fighter, &attack, view, &self.blocks, &self.floor);
                 for defender in self.sweep.clone() {
                     let blow = self.empower(swing_blow(id, fighter, &attack, defender), defender);
                     let how = how_of_swing(&attack, defender);
@@ -466,8 +481,9 @@ impl Room {
                     let stop = self.shoot_seen(&shot, view);
                     self.lines.push(combat::shots::stopped_line(&shot, stop));
                 } else {
-                    let loosed =
-                        self.held(id, gear::Slot::Ranged).map(|held| power::Loosed { aimed: aimed(&shot), ..held });
+                    let loosed = self
+                        .held(id, gear::Slot::Ranged)
+                        .map(|held| power::Loosed { aimed: power::aimed(&shot), ..held });
                     self.shots.push((shot, loosed));
                 }
             }
@@ -580,10 +596,3 @@ mod ring_tests;
 mod room_tests;
 #[cfg(test)]
 mod spread_tests;
-
-/// Whether a player's shot was loosed from the draw: a quick one strikes at its weapon's own damage to the bit
-/// (`combat::step`'s quick shot, power 1), and one loosed from the draw at its draw's power and the aimed trim, which
-/// may be more or, with Hair Trigger, less.
-pub(crate) fn aimed(shot: &Shot) -> bool {
-    shot.damage != combat::shots::shot_numbers(shot.ranged).1
-}

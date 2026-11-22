@@ -1,11 +1,13 @@
 //! Drops and ammunition in the room: a kill's Ammo box by the foe's rank and a Miniboss's or a Boss's crate, each thrown
-//! out in a fan and taken at rest; and a player's shots spent from their gear, the weapon refusing to fire at none.
+//! out in a fan, never through a wall, and taken at rest; and a player's shots spent from their gear, the weapon
+//! refusing to fire at none.
 
 use super::*;
 use crate::foes::{Foe, pirate_in};
 use crate::power::{hold, loadout_arms};
 use crate::{Input, REST_TICKS};
 use combat::{CombatInput, Intent};
+use dungeon::{CELL_M, Cell, Dungeon, Side};
 use gear::ammo::{AMMO_FULL, CRATES_MOST};
 use gear::{Kind, Slot};
 use movement::Controls;
@@ -92,6 +94,56 @@ fn a_drop_stays_where_it_was_thrown_from_behind_a_thin_wall_off_a_drop_or_past_t
         falls_kill: false,
     });
     assert_eq!(room.rest_at(from, north), from, "not past the section's ring");
+}
+
+/// A place half a metre off a dungeon's north wall, and one a cell east of it, both on open floor along that wall.
+fn beside_a_north_wall(room: &Room, dungeon: &Dungeon) -> Option<([f64; 3], [f64; 2])> {
+    let rock = |cell: Option<usize>| cell.is_none_or(|cell| dungeon.cells[cell] == Cell::Rock);
+    let open = |cell: Option<usize>| cell.is_some_and(|cell| dungeon.cells[cell] != Cell::Rock);
+    let floor = |at: [f64; 2]| crate::standing_on(&room.floor, &room.blocks, at[0], at[1]).z == 0.0;
+    (0..dungeon.cells.len()).find_map(|cell| {
+        let east = dungeon.beside(cell, Side::East);
+        let [x, y] = dungeon.centre(cell);
+        let (fallen, slayer) = ([x, y - CELL_M / 2.0 + 0.5], [x + CELL_M, y]);
+        let along = open(Some(cell))
+            && open(east)
+            && rock(dungeon.beside(cell, Side::North))
+            && east.is_some_and(|east| rock(dungeon.beside(east, Side::North)));
+        (along && floor(fallen) && floor(slayer)).then_some(([fallen[0], fallen[1], 0.0], slayer))
+    })
+}
+
+#[test]
+fn a_reeve_felled_beside_a_wall_leaves_his_drops_on_the_floor_where_his_slayer_takes_them() {
+    let (seed, style) = dungeon::of_patrol("saltgrass-downs", 0);
+    let dungeon = Dungeon::forge(seed, style);
+    let mut room = Room::dungeon("saltgrass-downs", 0, Some((10, 14))).expect("a patrol's dungeon");
+    let (fallen, slayer) = beside_a_north_wall(&room, &dungeon).expect("open floor along a north wall");
+    let player = room.join().expect("room for a player");
+    let stand = |room: &mut Room, at: [f64; 2]| {
+        let found = room.players.get_mut(&player).expect("in");
+        found.fighter.body = crate::standing_on(&room.floor, &room.blocks, at[0], at[1]);
+        found.character.ammo = 0;
+    };
+    stand(&mut room, slayer);
+    // The Reeve falls with his slayer a cell east, so his fan opens toward the rock.
+    let reeve = room.garrison[0].standing[0];
+    let body = &mut room.foes.get_mut(&reeve).expect("the Reeve").fighter.body;
+    (body.x, body.y, body.z) = (fallen[0], fallen[1], fallen[2]);
+    room.mark_struck(player, reeve, Slot::Melee);
+    room.pay_kill(reeve);
+    room.foes.remove(&reeve);
+    let drops: Vec<Drop> = room.drops_for(player).filter(|drop| drop.from == fallen).cloned().collect();
+    assert!(drops.iter().any(|drop| matches!(drop.what, Dropped::Vestige(_))), "his sure Vestige: {drops:?}");
+    assert!(drops.len() > 1, "and his Ammo box");
+    for drop in &drops {
+        assert!(drop.at[2].abs() < 1e-9, "on the floor, never on the rock: {drop:?}");
+        for _ in 0..=REST_TICKS {
+            stand(&mut room, [drop.at[0], drop.at[1]]);
+            room.tick();
+        }
+        assert!(room.drops_for(player).all(|lying| lying.id != drop.id || lying.what != drop.what), "taken: {drop:?}");
+    }
 }
 
 #[test]
