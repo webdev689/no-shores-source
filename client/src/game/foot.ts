@@ -6,15 +6,13 @@ import { marksSeen } from '../combat/marksOver.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
-import type { HudFrame } from '../combat/hud.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { EventProp } from '../city/eventProps.ts';
-import { ASKS, DROPPED, type GearAsk, type GearState } from '../network/gearMessages.ts';
+import { ASKS, DROPPED, type GearState } from '../network/gearMessages.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
@@ -31,19 +29,18 @@ import { type FighterView, fighterView } from '../rules/fighters.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
-import { type Shot, shotOfOrbit } from './camera.ts';
+import { shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
 import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
-import { type StripHint, keysShown, onFoot } from './hints.ts';
+import { keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife, countersOf } from './plazaLife.ts';
 import { PublicView } from './publicView.ts';
-import type { Quest } from './tasks.ts';
 import { openNodeAlone } from './footNode.ts';
 import { nodeRoom } from './rooms.ts';
 import {
@@ -61,41 +58,17 @@ import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } fr
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
-import { type AtEntrance, type FootContext, type Heard, type Held, type Opened, stand } from './footPlace.ts';
+import type { AtEntrance, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
+import { stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
-export type { AtEntrance, FootContext } from './footPlace.ts';
+export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** The lens on foot: the Test Ground's field of view, near enough for the first person's eye, far to the haze. */
 const LENS = { fov: FIELD_OF_VIEW, near: 0.1, far: 60_000 } as const;
 /** How far over the ground the third-person camera is held. */
 const CAMERA_CLEARANCE_M = 0.3;
-
-/** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
-export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
-
-/** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
- *  tells of that). */
-export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
-
-/** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
- *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
- *  and the nodes' beams; the arcs of its blows, in world metres; and what its display shows), the keys listed, and the
- *  zone's public event: its props, the tracker's quest and the music's moment for a beat this frame. */
-export interface FootFrame {
-  readonly shot: Shot;
-  readonly figures: readonly CardAt[];
-  readonly standing: Standing;
-  readonly marks: Float32Array;
-  readonly swings: Float32Array;
-  readonly fight: FootFight;
-  readonly hints: readonly StripHint[];
-  readonly dark: number;
-  readonly props?: readonly EventProp[];
-  readonly quest?: Quest | null;
-  readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
-}
 
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
@@ -202,7 +175,10 @@ export class Foot {
       },
     };
     this.plaza = node.kind === 'social' ? new PlazaLife(node, placing, floor) : null;
-    this.publicView = new PublicView(node.id, this.feel, { boxes: opened.boxes, courses: [context.movement, parts.combat] });
+    this.publicView = new PublicView(node.id, this.feel, {
+      boxes: opened.boxes,
+      courses: [context.movement, parts.combat],
+    });
   }
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
@@ -488,8 +464,7 @@ export class Foot {
     const chests = (this.held.gear ?? this.held.alone)?.drops.filter((drop) => drop.kind === DROPPED.chest) ?? [];
     const ownView = fight.own;
     const where = figureWhere(fight, foes.placed, this.otherPlayers.placed);
-    const feet = [body.x, body.y, body.z] as const;
-    const others = this.otherPlayers.placed;
+    const [feet, others] = [[body.x, body.y, body.z] as const, this.otherPlayers.placed];
     const seen = { player: fight.player, shot, firstPerson, feet, yaw: walker.player.facing, where, others };
     const shownPublic = this.publicView.frame(fight.public, publicEvents, chests, seen, clock, dropped.marks, floor, {
       quiet: paused,

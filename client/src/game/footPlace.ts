@@ -2,7 +2,7 @@
 // what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
-import type { GearState } from '../network/gearMessages.ts';
+import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { FoeAsk } from '../network/messages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
@@ -14,6 +14,14 @@ import type { LandWorker } from '../terrain/landClient.ts';
 import type { InDungeon } from './footTrips.ts';
 import type { Speak } from './footGear.ts';
 import type { UsePrompt } from './usePrompt.ts';
+import type { EventProp } from '../city/eventProps.ts';
+import type { HudFrame } from '../combat/hud.ts';
+import type { CardAt } from '../player/cards.ts';
+import type { Shot } from './camera.ts';
+import type { Use } from './footGear.ts';
+import type { StripHint } from './hints.ts';
+import type { Standing } from './hudLaw.ts';
+import type { Quest } from './tasks.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -86,4 +94,29 @@ export interface Held {
   /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
   revives: number;
   wiped: boolean;
+}
+
+/** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */
+export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use | null;
+
+/** What the fight's display is drawn from on foot, but the camera, the canvas and a lost room (the game's own line
+ *  tells of that). */
+export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
+
+/** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
+ *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
+ *  and the nodes' beams; the arcs of its blows, in world metres; and what its display shows), the keys listed, and the
+ *  zone's public event: its props, the tracker's quest and the music's moment for a beat this frame. */
+export interface FootFrame {
+  readonly shot: Shot;
+  readonly figures: readonly CardAt[];
+  readonly standing: Standing;
+  readonly marks: Float32Array;
+  readonly swings: Float32Array;
+  readonly fight: FootFight;
+  readonly hints: readonly StripHint[];
+  readonly dark: number;
+  readonly props?: readonly EventProp[];
+  readonly quest?: Quest | null;
+  readonly sting?: 'cadence' | 'victory' | 'defeat' | null;
 }

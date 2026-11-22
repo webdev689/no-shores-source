@@ -543,25 +543,6 @@ impl Room {
             _ => {}
         }
     }
-
-    /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,
-    /// dodging and staggered as it is now, so a foe's answers count the same whatever the player's lag.
-    pub(crate) fn as_seen(&self, foe: FighterId, view: &[(FighterId, Fighter)]) -> Option<Fighter> {
-        let then = view.iter().find(|(other, _)| *other == foe).map(|(_, then)| then.body)?;
-        self.fighter(foe).map(|now| Fighter { body: then, ..*now })
-    }
-
-    pub(crate) fn fighter(&self, id: FighterId) -> Option<&Fighter> {
-        self.players.get(&id).map(|found| &found.fighter).or_else(|| self.foes.get(&id).map(|foe| &foe.fighter))
-    }
-
-    pub(crate) fn set_fighter(&mut self, id: FighterId, fighter: Fighter) {
-        if let Some(found) = self.players.get_mut(&id) {
-            found.fighter = fighter;
-        } else if let Some(foe) = self.foes.get_mut(&id) {
-            foe.fighter = fighter;
-        }
-    }
 }
 
 /// The seed every course's room draws its chances from, and every node's mixes with its id: one room plays the same

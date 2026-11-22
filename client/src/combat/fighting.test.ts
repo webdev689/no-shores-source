@@ -5,6 +5,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startRoomDoor } from '../../../server/roomDoor.ts';
+import { EVENT } from './cues.ts';
 import { SPELLS } from '../network/artMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { readFromRoom } from '../network/messages.ts';
@@ -521,7 +522,7 @@ test('a public event’s beats are kept apart from the fight’s events, and its
     players: [],
     dressed: [],
     foes: [],
-    events: [event(1), event(24), event(15)],
+    events: [event(1), event(EVENT.chestOpened), event(EVENT.publicBegun)],
     shots: [],
     spells: [],
     public: word,
@@ -533,7 +534,7 @@ test('a public event’s beats are kept apart from the fight’s events, and its
   );
   assert.deepEqual(
     fighting.takePublicEvents().map((each) => each.kind),
-    [24, 15],
+    [EVENT.chestOpened, EVENT.publicBegun],
   );
   assert.equal(fighting.takePublicEvents().length, 0, 'handed over once');
   assert.equal(fighting.public, word);

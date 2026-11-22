@@ -152,8 +152,10 @@ a drop of kind 3 is
 a chest, with its tier. The browser reads it all in `client/src/network/publicMessages.ts`.
 
 **Agreement.** Every path is tested natively in `crates/room/src/public/`. Two scripted players, reading only their
-snapshots, play a whole Fissure and a whole raid through the room's door and win each, heroic
-(`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6; the same script, run through
+snapshots, play a whole Fissure and a whole raid through the room's door
+(`crates/room-wasm/src/public_door_tests.rs`), at level 6 with Rare gear at 6: they win the Fissure, heroic, and
+meet the raid's heroic task but lose its stores at the last wave's end, since the fight's harm is `main`'s ×1.5 and
+×0.75 ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]); the same script, run through
 WebAssembly by `server/public.test.ts`, comes to the same fingerprints ([[Agree to the Bit]]).
 
 ## The page

@@ -139,10 +139,10 @@ test('two scripted players seal a heroic Fissure to the same fingerprint through
   assert.equal(hash, FISSURE_HASH);
 });
 
-test('two scripted players hold a heroic raid to the same fingerprint through WebAssembly as natively', async () => {
+test('two scripted players meet a raid’s heroic task and lose its stores, to the same fingerprint in WebAssembly as natively', async () => {
   const { hash, ended, at } = await play(RAID_MINUTE);
-  assert.deepEqual(ended, [2, 2, 2], 'the raid held, heroic');
-  assert.deepEqual(at, doorNumbers('RAID_ENDED'), "the tick it was held at, Marrow's wave and the stores left");
+  assert.deepEqual(ended, [2, 3, 2], 'the raid failed, its heroic task met');
+  assert.deepEqual(at, doorNumbers('RAID_ENDED'), 'the tick it failed at, its wave and the stores left');
   assert.equal(hash, RAID_HASH);
 });
 
@@ -162,6 +162,7 @@ function playInPage(minute: number, heroic: boolean): readonly number[] {
         const event = snapshot.public;
         if (event && event.phase >= 2) ended ??= [event.kind, event.phase, event.heroic];
       },
+      false,
       { minuteShift: minute - Math.floor(now / 60_000), play: new BotPlay({ speed: 60, bots: 2, heroic }) },
     );
     for (let frame = 0; frame * 60 < MOST_TICKS && !ended; frame++) room.pump(0);
@@ -174,7 +175,7 @@ function playInPage(minute: number, heroic: boolean): readonly number[] {
 test("a dev page's bots play its own room's events through, the heroic task taken or left alone", () => {
   assert.deepEqual(playInPage(FISSURE_MINUTE, true), [1, 2, 2], 'the Fissure won, heroic');
   assert.deepEqual(playInPage(FISSURE_MINUTE, false), [1, 2, 3], 'the Fissure won, its heroic task missed');
-  assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 2, 2], 'the raid held, heroic');
+  assert.deepEqual(playInPage(RAID_MINUTE, true), [2, 3, 2], 'the raid failed, its heroic task met');
   assert.deepEqual(playInPage(RAID_MINUTE, false), [2, 2, 3], 'the raid held, its heroic task missed');
 });
 
