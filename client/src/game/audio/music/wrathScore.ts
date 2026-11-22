@@ -197,15 +197,26 @@ const FEELS = [
 const feelOf = (feel: number) => FEELS[feel] ?? FEELS[0];
 
 /** The ostinato, the bass and the pads under a chord for a bar in a feel: the ostinato in eighths until beat `drive`
- *  (the last beat when `busy`), sixteenths after it, the last two a sigh. */
+ *  (the last beat when `busy`), sixteenths after it, the last two a sigh; the strings in the voicing of the feel
+ *  `voicingShift` on from its own. */
 function underBar(
   w: Write,
   bar: number,
   chord: ChordName,
-  { strings = false, choir = false, organ = 1, busy = false, drive = null as number | null, vel = 1, feel = 0 } = {},
+  {
+    strings = false,
+    choir = false,
+    organ = 1,
+    busy = false,
+    drive = null as number | null,
+    vel = 1,
+    feel = 0,
+    voicingShift = 0,
+  } = {},
 ): void {
   const tones = CHORDS[chord];
-  const { accents, bass, voicing } = feelOf(feel);
+  const { accents, bass } = feelOf(feel);
+  const { voicing } = feelOf((feel + voicingShift) % FEELS.length);
   const from = drive ?? (busy ? 3 : 4);
   tones.ost.forEach((n, i) => {
     if (i * 0.5 < from) w.note('ostinato', bar, i * 0.5, 0.4, n, (accents[i] ? 108 : 80) * vel);
@@ -397,14 +408,26 @@ function phaseTake(w: Write, phase: Phase, section: Section, feel: number, lead:
   const stop = section === 'stop';
   // The organ follows the section: lowest with the drums stopped or the march alone, fullest under the theme in full.
   const swell = { march: 0.85, theme: 1, answer: 0.92, full: 1.12, turn: 1.05, stop: 0.75 }[section];
+  // The march and the stopped drums voice the strings a feel on: in their own feel, their danger's layers would be a
+  // theme's take's.
+  const voicingShift = section === 'march' || stop ? 1 : 0;
   for (let bar = 0; bar < 8; bar++) {
     const chord: ChordName = chords[bar] ?? 'Dm';
     const tones = CHORDS[chord];
     const choir = section !== 'march' && !stop;
-    if (number === 1) underBar(w, bar, chord, { strings: true, choir, busy: bar % 4 === 3, organ: swell, feel });
+    if (number === 1)
+      underBar(w, bar, chord, { strings: true, choir, busy: bar % 4 === 3, organ: swell, feel, voicingShift });
     else if (number === 2)
-      underBar(w, bar, chord, { strings: true, choir, drive: bar % 2 ? 2 : 3, organ: swell, feel });
-    else underBar(w, bar, chord, { strings: true, drive: stop ? 4 : 0, organ: 1.2 * swell, vel: 1.05, feel });
+      underBar(w, bar, chord, { strings: true, choir, drive: bar % 2 ? 2 : 3, organ: swell, feel, voicingShift });
+    else
+      underBar(w, bar, chord, {
+        strings: true,
+        drive: stop ? 4 : 0,
+        organ: 1.2 * swell,
+        vel: 1.05,
+        feel,
+        voicingShift,
+      });
     if (number === 3 && !stop)
       for (let beat = 0; beat < 4; beat++)
         for (const n of tones.choir) w.note('choir', bar, beat, 0.9, n, beat === 0 ? 106 : 92);
