@@ -179,8 +179,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   ([[Third-Person Strikes Run Faster Than DFO's]]), and keeps a drawn sword and its sheath on their own sides in a
   mirrored view where the forge draws their twins. Merged to `main` with the owner's yes, which deploys the page and
   the rooms.
-- The sea as the owner decided it, on pull request #75 (branch `claude/waters-from-islands`, stacked on #71's
-  ships), tested offline and not yet merged ([[The Waters Come From the Islands]],
+- The sea as the owner decided it, pull request #75, merged to `main` ([[The Waters Come From the Islands]],
   [[Three Port Cities Remain, and the Others Are Desolate and Destroyed]],
   [[The Sea's Fights, Waves and Close Views Get a Detailed Pass]],
   [[The Held Map Colours Each Water's Name by Its Difficulty]]). Every call the owner left open is Claude's, in
@@ -264,6 +263,17 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **A whole-codebase audit, on #141's branch**: seven read-only auditors over `main` with #141 merged in. Eleven bugs
+  are fixed, each first shown by a test that fails without it: long ambient beds playing chunks twice and dropping the
+  rest; a dungeon clear repaid by a quest wave; an officer won on a deck lost to a closed tab; foes crossing links at a
+  player's pace; a drink pressed before a cast taking its place; flotsam rerolled by a rejoin; sea keys held after
+  Alt-Tab; a failed change of seas silent; a failed controls save never retried; the nearest smoke dropped; a
+  negative `pow` base in the sky. Ten notes made true. R2's `Content-Range` checked live and clean. What is the
+  owner's to call (keys and deploys, exploits needing a rule, design) and what is left for later are in the audit's
+  page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD) and #141's description: among them the Cloudflare token in jobs that run
+  untrusted code, `rooms.yml` run by hand skipping the check, guest accounts uncapped past a /64, a rejoin refilling
+  health and charges, the page choosing its stroke and claiming a horse, and a failed trip leaving the player on the
+  veil.
 - **The balance pass halfway back, and loot in Destiny 1's order, audited**, pull request #141 (branch
   `ccr-1e1aa6da-yox2v1`), tested offline, waiting on the owner's yes to merge, which deploys the page and the rooms
   ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
@@ -315,7 +325,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
   So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
   (cfd75bba), unmerged; the marks were pictured with it.
-- **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
+- **The intro's freeze and the game's memory, merged to `main`** (#136, #137 and #140)
   ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map
   message they sent is an injected script's, not the game's.
   - #136 (branch `claude/keen-cannon-4nbe4z`): any error thrown in a frame stopped the game's loop for good, the
@@ -406,7 +416,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   deck, the menu over the story, the frozen frame. Open: the owner's "teaching them the inventory" is taught on the
   Character page (I), where gear is worn, which the owner may want otherwise; the step up to where the player wakes is too high for foes, so a player who stays up there is not
   reached until they come down; the game's headless pictures cannot draw the game since it draws in a worker.
-- **The playtest's wreck notes, on branch `claude/beautiful-mendel-rnj0xh`, wait on the owner's yes** to merge: the
+- **The playtest's wreck notes, merged to `main` (#138)**: the
   ramp from the Frigate's gun deck up onto the raft off its port quarter, where that zone's wave fights, was walled by
   splinters (gaps of 0.3 to 0.6 m) since climbing went off, so the wave was never reached, its heap on the last ramp
   never cleared, and the arena could not be reached; every ramp's way is now cleared where it meets a deck
@@ -426,7 +436,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
-- **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
+- **The houses' roads and the varied missions, merged to `main` (#131), tested offline (the full
   check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
   account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
   tasks gives its Art early, then its two Tenets, then three fragments of their choosing
@@ -509,9 +519,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   layer yet"). A touch player can start the story but not play its fights.
 - Without `?room=` the page has no accounts, so creation's account step only says accounts are kept online. The online
   default is the owner's.
-- #68, a draft with the owner's asks, built and audited four times (a deep audit with a design pass, a last audit,
-  then an audit of everything since with a detail pass on the display), with #69 merged in, tested offline, waits on
-  the owner's yes to merge: foes show their level, patrol
+- #68, the owner's asks, built and audited four times (a deep audit with a design pass, a last audit, then an audit
+  of everything since with a detail pass on the display), with #69 merged in, tested offline, merged to `main`: foes
+  show their level, patrol
   beats, climb by the navmesh's links, spread out, answer at the fight's pace, chase a target walking away, fight as
   a group (one blow at a target each 1.2 s beat, one going in, a line on their side, one flanker) and share
   themselves out across players ([[Foes Spread Across the Players They Fight]]); melee swings a quarter faster and
@@ -538,7 +548,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   [[Foes]].
 - **#99, ship power and crew**, is in #75 through the Ship & Seas session; #103 follows it there. Recruiting needs #92's pledge
   (`room::crew::pledge_of`); every call beyond the design note is listed in #99's description, the owner's to change.
-- **#75, the sea, waits on the owner's yes to merge**, after #71, which deploys the page and the rooms. Left open
+- **#75, the sea, merged to `main`**. Left open
   there: the sky and the light do not follow the weather yet; off the helm the room now takes a change of pace (a
   rule of the server's); under a player's fire a Frigate lasts about 5% longer than a Sloop of its rank; one voyage in contested
   water held a ship in sight 89 s, unexplained.
@@ -552,8 +562,8 @@ Where the work stands now, for the next session. Each session rewrites this note
   effects stay, and at what settings, is the owner's to say; each is one line in `combat/attackFeel.ts` (`FEEL`).
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
-- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
-  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
+- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which eight workflows read (the rooms,
+  the page's checks, the ships, the wreck, the flora, the modules, the island modules and the Freesound picks); the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
   writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into
   `main` that changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run
   by hand.
@@ -581,7 +591,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   make the accounts' database.
 - For the elements and shields: whether named weapons keep an element of their own rather than rolling one; whether a
   shield comes back after a while; and which foes beyond the patrols' carry them.
-- **#69, the Arts round, waits on the owner's yes to merge**, which deploys the page and the rooms. Every number and
+- **#69, the Arts round, merged to `main`**. Every number and
   call the owner left open is Claude's, in [[Arts and Loadouts as Claude Shapes Them]], the owner's to change: the
   cooldowns, the fragments, the new perks' columns and rules (Marked Shot an opener, Exploit for the spec's
   Opportunist), the R, Q and G keys, a new Art starting empty, the Sunwell's sun 3.5 m up and 1.5 m along its
@@ -652,8 +662,6 @@ Where the work stands now, for the next session. Each session rewrites this note
   before more ships join. Of the sea the owner approved, #75 builds the waters, the ships sighted and the fights'
   ends; still to come are the opening voyage as the first sea strike, the ship as gear, then merchantmen, bounties,
   public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
-- **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
-  renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
 - **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
   140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
 - **`tools/uiShot.mjs` writes blank pictures**: the interface lays its quads, but the shot's read-back is only the
@@ -858,9 +866,9 @@ Where the work stands now, for the next session. Each session rewrites this note
   the game draws (its worker opens a landmass without the RMB index, and its city would be built again after every
   stroke); flats and lit windows in the cities, which wait on more than code: the RMB table counts each block's flats
   but keeps no places for them, their archives are not paintable, and lit windows want a night.
-- Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` takes its pictures headless ([[Toolkit]]), of a
-  built page under `vite preview`, never the dev server, which reloads on an edit; a frame there takes seconds, so a
-  fight is seen beginning, not fought through.
+- Browser QA of the game: `tools/claude-toolkit/webgpu-shot.cjs` cannot picture the game, which draws from its worker
+  (above, "The picture driver and the game's worker"); it pictures the Test Ground and the World Editor headless
+  ([[Toolkit]]), of a built page under `vite preview`, never the dev server, which reloads on an edit.
 - The held map's open ends ([[Held Map]]): discovery kept by the server for each character, quests tracked on the
   map, the charted sea's wash laid while the map is up; on land, the relief read off the worker's exact ground past the
   2 km the camera keeps (a patrol area's far side reads the 1 km grid), and lakes, which only the 1 km grid holds.
