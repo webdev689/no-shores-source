@@ -3,6 +3,7 @@ type: system
 status: live
 code:
   - client/src/ui/paint.ts#PaintedRole
+  - client/src/game/playlistScreen.ts#PlaylistView
   - client/src/cinema/screen.ts#Screen
   - client/src/speech/dialogue.ts#DialogueBox
   - client/src/speech/overheads.ts#Overheads
@@ -833,7 +834,8 @@ never while a press is held. Each press is an ask the room answers.
     dungeon with its levels, read down its columns, the band this character's level falls in lit; and the bounties (a
     sealed notice), their six a day said at the foot.
     Under This week: the Elite and the Abyss Dungeon of the week (their doors under a brass chevron and with a
-    burning eye), each its level, its tick or padlock, the Abyss's five revives (a heart) and its wipe (a skull), its
+    burning eye), each its level, its tick or padlock, a "Playlist" mark whose words say it is queued from the
+    Playlist beside any port, the Abyss's five revives (a heart) and its wipe (a skull), its
     modifiers each by its icon alone, its name and what it does said at the foot (Burn's flame in its Art's colours,
     Brawler's fist, Marksman's target, Lightswitch's claws, Ironclad's shield, Trickle's drop, Juggler's three balls on
     an arc, Exposure's broken heart) and its pay (the Vestige
@@ -935,6 +937,27 @@ each stopping the search. A search that ended unasked says why on the card ("You
 tab.", or "The search stopped. Try again."). A search for a run the card no longer opens ends, as when the week
 turns while it finds; a run found just as the week turned, for a run the card built again no longer opens, is not
 gone into, and the card says "The week turned. Try again.".
+
+## The Playlist
+
+A Playlist mark beside a port's harbour ([[Overworld]], "Marks") opens the Playlist screen ([[Activities]], "The
+Playlist"), drawn as the entrance's card is, in a window of the menu's kit over the dimmed world (`PlaylistView`, the
+same layer as the card's): "PLAYLIST" at its head and the port it was opened beside ("Beside Overlook"); then its four
+entries as tiles, the Elite Playlist, the Abyss Playlist, the Elite Dungeon of the week and the Abyss Dungeon of the
+week, four across where they fit, else two rows of two, scrolled where they stand taller than the screen. Each tile
+says its name, its tier and level ("Elite · Levels 15 to 19 · Foes at level 17" for the character's band, "From level
+10" before it), its rules, its modifiers each led by its icon with what it does, its rewards and why it is shut, in
+its gate's words; its details a step smaller than its name and level, so four stand on one screen. A reward shows
+"Taken" (with the timers' tick) or "Not taken" and the time to its reset; a playlist's weekly shows three marks filling
+with its clears ("2 of 3", then "Paid"). Under the tiles: "Every clear pays its kills and its cache, as any run
+does." Words come from `playlistScreenOf` (`playlistWords.ts`), built again as the minute or the character's word
+changes.
+
+The chosen tile is lit; arrows or a click choose another. Its footer holds Launch (E), resting while it is shut or a
+search is under way; Find a Company (F) where the entry is matched, open and the page signed in, Stop finding (F)
+while it finds, with the wait and "A run starts with four, or with fewer after a minute."; and Close (Esc). Launch
+and a run found close the screen and go into the run from the sea. While it stands the pointer is free and no key of
+the game's or the menu's acts behind it.
 
 ## How recordings load
 
