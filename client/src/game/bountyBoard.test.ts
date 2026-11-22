@@ -3,8 +3,9 @@ import { test } from 'node:test';
 import { ASKS, type GearState } from '../network/gearMessages.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface, UiEvent } from '../ui/ui.ts';
-import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
+import { byId, fakeInterface, laidOf, nodesOf, wordsIn } from '../ui/uiForTests.ts';
 import { boardPage, bountyRows, bountyWords, payOf } from './bountyBoard.ts';
+import { bountyTileNode } from './bountyTiles.ts';
 import { sizesOf } from './gearNodes.ts';
 import type { MenuContext } from './menuPage.ts';
 
@@ -76,14 +77,18 @@ const sixOnTheBoard = {
   ],
 } as unknown as GearState;
 
-/** The board's screen drawn frame by frame for `shown`, an hour before the next board, with every ask it made. */
-function boardOf(shown: GearState) {
-  const { ui, step } = fakeInterface(1280, 900);
+/** The board's screen drawn frame by frame for `shown` on a screen `width` wide, an hour before the next board, laid
+ *  in the room the menu gives a page there; with every ask it made. */
+function boardOf(shown: GearState, width = 1280) {
+  const { ui, step } = fakeInterface(width, 900);
   const asked: unknown[] = [];
+  // The menu's window stands 32 in from each side, its body's padding 20 inside its own 2.
+  const room = { width: width - 2 * 32 - 2 * 2 - 2 * 20, height: 760 };
   const context = {
     ui,
     gear: shown,
-    sizes: sizesOf(1280, 900, 1),
+    sizes: sizesOf(width, 900, 1),
+    room,
     ask: (ask: unknown) => asked.push(ask),
   } as unknown as MenuContext;
   let built: Node = {};
@@ -93,7 +98,8 @@ function boardOf(shown: GearState) {
       () => FRIDAY_AT + 3_600_000,
       () => FRIDAY_AT,
     );
-  const frame = (events: UiEvent[] = []) => step(() => (built = page()), events);
+  const frame = (events: UiEvent[] = []) =>
+    step(() => (built = { width: room.width, direction: 'column', children: [page()] }), events);
   frame();
   frame();
   return { ui, asked, frame, tree: () => built };
@@ -180,4 +186,27 @@ test('before the prologue the board’s tiles are grey, its card says why, and n
   click(ui, frame, 'bounty-0');
   assert.deepEqual(asked, []);
   assert.equal(byId(tree(), 'board-press'), undefined, 'no press');
+});
+
+test('on a phone the board stands within the room the menu gives it, its card under the tiles', () => {
+  const { ui } = boardOf(sixOnTheBoard, 390);
+  const [board, card, tiles] = [ui.boxOf('board'), ui.boxOf('bounty-card'), ui.boxOf('bounty-4')];
+  assert.ok(board && card && tiles);
+  assert.ok(board.width <= 390 - 2 * 32 - 2 * 2 - 2 * 20, 'no wider than its room');
+  assert.ok(card.y > tiles.y, 'under the tiles');
+});
+
+test('the chosen tile is ringed just outside its edge, over it, so its state’s edge still shows inside', () => {
+  const row = bountyRows(sixOnTheBoard)[2];
+  assert.ok(row);
+  const laid = laidOf({ padding: 20, children: [bountyTileNode(row, 'tile', 80, true)] });
+  const tile = laid.findIndex((each) => each.node.id === 'tile');
+  const ring = laid.findIndex((each) => each.node.outline !== undefined);
+  const [tileBox, ringBox] = [laid[tile]?.box, laid[ring]?.box];
+  assert.ok(tileBox && ringBox && ring > tile, 'drawn over the tile');
+  assert.ok(ringBox.x < tileBox.x && ringBox.y < tileBox.y, 'outside its top left');
+  assert.ok(ringBox.x + ringBox.width > tileBox.x + tileBox.width, 'and its right');
+  assert.ok(laid[tile]?.node.draw, 'its own edge kept');
+  const plain = laidOf({ padding: 20, children: [bountyTileNode(row, 'tile', 80, false)] });
+  assert.ok(!plain.some((each) => each.node.outline), 'no ring on a tile not chosen');
 });
