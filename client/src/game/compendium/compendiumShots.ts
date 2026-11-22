@@ -50,3 +50,10 @@ function compendiumShot(found: readonly number[], lore: LoreFile): (ui: Interfac
 export const compendiumSampleShot = compendiumShot([0, 2, 4], SAMPLE_LORE);
 /** The lore in the repository, none found. */
 export const compendiumRepoShot = compendiumShot([], LORE);
+/** The houses' books, the first four chapters of each road found: the front, and each book as its category opens on it
+ *  (`at` a click on the tile), one house found at a time so the category opens at that house's book. */
+const range = (from: number, count: number) => Array.from({ length: count }, (unused, step) => from + step);
+export const housesShot = compendiumShot([...range(0, 4), ...range(11, 4), ...range(22, 4)], LORE);
+export const stormBookShot = compendiumShot(range(0, 4), LORE);
+export const lampBookShot = compendiumShot(range(11, 11), LORE);
+export const veilBookShot = compendiumShot(range(22, 11), LORE);

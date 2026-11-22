@@ -863,7 +863,7 @@ never while a press is held. Each press is an ask the room answers.
     cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
     "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
     instead, so everything stays in view); and the chapter chosen in a panel as tall as the book beside it, its title in
-    lit brass at the names' larger size and its words paragraph by paragraph, scrolled within the page's room, with the
+    lit brass at the names' larger size and its words paragraph by paragraph at the names' size, scrolled within the page's room, with the
     book's chapters numbered under it (the panel takes the keys' focus, so a screen reader reads the chapter whole), each found one a press (the
     one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
     book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found; the

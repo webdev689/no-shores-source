@@ -402,7 +402,11 @@ export class Compendium {
           scroll: true,
           direction: 'column',
           gap: 10,
-          children: said.map((paragraph): Node => ({ width: 'grow', text: { words: paragraph, colour: INK.word } })),
+          // At the names' size, larger on a large screen, as a page is read and not glanced at.
+          children: said.map((paragraph): Node => ({
+            width: 'grow',
+            text: { words: paragraph, size: sizes.name, colour: INK.word },
+          })),
         },
       ],
     };

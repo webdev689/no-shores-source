@@ -26,6 +26,14 @@ test("the lore's file holds what the page shows: names, covers in a cloth and a 
   }
 });
 
+test("the lore's words are the owner's style: no em or en dash anywhere, and every chapter a few paragraphs long", () => {
+  for (const { book, chapter } of chaptersOf(LORE)) {
+    const all = [book.name, chapter.title, chapter.text].join(' ');
+    assert.ok(!/[\u2013\u2014]|--/.test(all), `${book.id}/${chapter.id} has a dash`);
+    assert.ok(paragraphsOf(chapter.text).length >= 3, `${book.id}/${chapter.id} is more than a line or two`);
+  }
+});
+
 test('chapters are numbered book by book in the file’s order, as the wire numbers them', () => {
   assert.deepEqual(
     chaptersOf(SAMPLE_LORE).map(({ book, chapter }) => `${book.id}/${chapter.id}`),

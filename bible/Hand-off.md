@@ -167,8 +167,10 @@ The decisions in [[Open Questions]] are not repeated here.
 - **#156, the Compendium** (branch `claude/keen-cannon-4nbe4z-audio`), for the owner's yes to merge:
   - The tab, its Collections-style front and its Lore-style book view ([[Lore]],
     [[The Compendium Holds the Lore Books, After Destiny's]]).
-  - The books are the owner's to write in `content/lore/lore.json`. [[Lore]], "The file", says how. Each chapter is
-    found as the story ends, as a named quest's task is done, or lying at a named place in a node.
+  - The houses' three books are written, a chapter for each task of each road
+    ([[Each House's Lore Book Tells Its Art's Origin]]), for the owner to read. More books go in `content/lore/lore.json`;
+    [[Lore]], "The file", says how. A chapter is found as the story ends, as a named quest's task is done, or lying at a
+    named place in a node.
   - Its pictures: `tools/uiShot.mjs` with `compendium/compendiumShots.ts`. Finding a chapter in a deployed room
     waits on the first books.
   - #153 and it both touch `Decisions.md` and `overheadMarks.ts`. The second to merge takes `main` first.

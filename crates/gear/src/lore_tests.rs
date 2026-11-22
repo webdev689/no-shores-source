@@ -115,3 +115,28 @@ fn a_chapter_is_kept_once_and_kept_as_read_even_one_the_file_no_longer_holds() {
     let read = Character::from_json(&character.to_json()).expect("it reads");
     assert_eq!(read.lore, ["first/wake", "gone/chapter"], "kept once, the unknown one too");
 }
+
+#[test]
+fn each_houses_book_gives_a_chapter_for_every_task_of_its_road_in_order_the_last_as_the_road_is_done() {
+    let lore = lore();
+    for faction in crate::factions::factions().factions.iter().map(|faction| faction.id) {
+        let road = crate::quests::quests().quests.iter().find(|quest| quest.faction == faction).expect("a road");
+        let book = lore
+            .books
+            .iter()
+            .find(|book| {
+                book.chapters.iter().any(|it| matches!(&it.found, Found::Quest { quest, .. } if *quest == road.id))
+            })
+            .unwrap_or_else(|| panic!("{}'s road gives no book", road.id));
+        let tasks: Vec<&str> = book
+            .chapters
+            .iter()
+            .map(|chapter| match &chapter.found {
+                Found::Quest { quest, task } if *quest == road.id => task.as_str(),
+                other => panic!("{}: a chapter found as {other:?}", book.id),
+            })
+            .collect();
+        let road_tasks: Vec<&str> = road.tasks.iter().map(|task| task.id.as_str()).collect();
+        assert_eq!(tasks, road_tasks, "{}: a chapter a task, in the road's order", book.id);
+    }
+}

@@ -282,6 +282,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Organised and Tested Without Overburden]]
 - [[What a Player Can Use Wears Its Mark Over It]]
 - [[The Compendium Holds the Lore Books, After Destiny's]]
+- [[Each House's Lore Book Tells Its Art's Origin]]
 
 ## Replaced
 

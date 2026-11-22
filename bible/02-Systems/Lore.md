@@ -33,7 +33,17 @@ what they have read.
   - `place`: lying in the world, at a place of a node as its layout names it (as a quest's goals name them), `at`
     metres from its middle at `bearing` degrees clockwise from north, as a puzzle's point stands.
 
-It starts with none: the books are the owner's to write.
+It holds the houses' three books ([[Each House's Lore Book Tells Its Art's Origin]]), in one category, "The Three
+Houses":
+
+| Book | House | Cover | Found |
+|---|---|---|---|
+| The Old Beacon Rolls | Stormcallers | storm blue, the bolt | a chapter for each task of "The Stolen Storm" |
+| The Keeper's Hours | Lamplighters | dark amber, the lantern | a chapter for each task of "The Keeper's Lamp" |
+| Unwritten | The Veiled | dusk purple, the moon | a chapter for each task of "What the Tithe Writes" |
+
+Each book's eleven chapters come one as each task of its road is done, in the road's order, the last as the road ends.
+Together they tell where each Art came from. Its words keep to the owner's: no em or en dashes.
 
 ## In the rules
 
@@ -49,7 +59,8 @@ It starts with none: the books are the owner's to write.
   refused. It is shown and found only while the room holds the player's own character: never on a page playing
   alone, nor before a signed-in player's kept character has come. A chapter the room gave before then (the story's)
   is carried into it, as the story is.
-- **Checked.** The file's ids are unique and hold no `/`, each category has a book and each book a chapter, each
+- **Checked.** Each house's book gives a chapter for every task of its road, in its order, and walking a road
+  through the rules leaves its character holding exactly the chapters of the tasks done. The file's ids are unique and hold no `/`, each category has a book and each book a chapter, each
   book's category is one of its own, each quest and task named is one, and each chapter laid in the world lies at a
   node the world holds, at a place that node holds, inside its ring, as the bake lays it. The file is hashed into the
   protocol's version (`tools/numbered.json`), as chapters cross the wire by their place in it.
