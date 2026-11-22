@@ -443,3 +443,32 @@ test('the crosshair is drawn at the view’s middle, red while it rests on a foe
   assert.match(reticleKey([foeAt(2, 'Aside', 8, 4)], pistolet) ?? '', /^reticle pistolet plain/);
   assert.equal(reticleKey([], null), null);
 });
+
+test('a parry ring stands round the head of the foe swinging at the player, kept on the screen where the head is not', () => {
+  const { matrix, foeAt, downAt, placeAt } = levelView();
+  const swing = {
+    kind: 'attack',
+    stroke: 1,
+    elapsed: 6,
+    strike: 24,
+    end: 60,
+    swing: 'plain',
+    leftHand: false,
+  } as const;
+  const swinging = (ahead: number, z = 0) => {
+    const foe = foeAt(2, 'Runner', ahead, 0);
+    return { ...foe, view: { ...foe.view, z, target: 1, action: swing } };
+  };
+  const ringOf = (foe: ReturnType<typeof swinging>) => {
+    const hud = new Hud();
+    hud.update(bare({ matrix, foes: [foe] }), 1 / 60);
+    return allOf(drawn(hud)).find((node) => node.picture?.key.startsWith('parry'));
+  };
+  const seen = ringOf(swinging(6));
+  const head = placeAt(6, 0);
+  assert.ok(Math.abs((seen?.float?.y ?? NaN) - downAt([head.x, head.y, 1.6])) < 1, 'round its head, 6 m off');
+  assert.match(seen?.picture?.key ?? '', /^parry ring 74 57$/, 'three quarters to come; its window, half its wind-up');
+  // A foe on a ledge, a metre and a half off: its head far over the top of the view, its ring at the top edge.
+  const over = ringOf(swinging(1.5, 1.5));
+  assert.equal(over?.float?.y, 51, 'its widest kept inside the top edge');
+});

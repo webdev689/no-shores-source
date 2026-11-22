@@ -28,6 +28,7 @@ import {
   lowerDrop,
   lowerStep,
   runFrameAt,
+  Sway,
   swayFrame,
 } from './fpMotion.ts';
 import { type HandView, type HandsEvents, Hands, SWAY_FRAMES, SWAY_RECORD, type Swing, everyView } from './hands.ts';
@@ -166,6 +167,9 @@ export class FirstPerson {
   private dye = '';
   private readonly chain = new ChainSwing();
   private readonly bob = new Bob();
+  /** The weapon's sway as it is held (`Sway`), design pixels across and down; none on a wall or a horse. */
+  private readonly sway = new Sway();
+  private swayed: readonly [number, number] = [0, 0];
   private readonly hands: Hands;
   private readonly ride: RideMotion;
   private plan: HandsPlan | null = null;
@@ -281,6 +285,9 @@ export class FirstPerson {
     this.duck = lowerStep(this.duck, ducks(this.plan?.held) && this.hands.swing ? 1 : 0, seconds);
     const walking = state.moving && !state.mounted;
     const drop = this.bob.step(seconds, state.stride, walking, state.running) + lowerDrop(this.lower);
+    const held = this.lower < 0.001 && !state.mounted;
+    const looked = held ? { yaw: state.yaw ?? 0, pitch: state.pitch ?? 0 } : null;
+    this.swayed = this.sway.step(seconds, looked, state.stride, walking, state.running);
     const sway = this.chain.step(seconds, !walking ? 0 : state.running ? 2 : 1);
     this.flameClock += seconds;
     this.stepShield(seconds, !!state.blocking);
@@ -523,7 +530,13 @@ export class FirstPerson {
     const kept = this.kept.get(sighting.key);
     const quad = kept && sighting.place(kept.picture);
     const muzzle = quad ? ([quad.x + sighting.tip[0], quad.y + sighting.tip[1]] as const) : this.drawnMuzzle;
-    return muzzle && zoomedOnScreen(muzzle[0], muzzle[1], this.zoom);
+    const [across, down] = this.swayShown;
+    return muzzle && zoomedOnScreen(muzzle[0] + across, muzzle[1] + down, this.zoom);
+  }
+
+  /** The sway as the hands are drawn: none while they are on a wall, so a grip stays on its stone. */
+  private get swayShown(): readonly [number, number] {
+    return this.lower > 0.001 ? [0, 0] : this.swayed;
   }
 
   /** A kept weapon picture's outline field in `look`, made the first time it glows in it: its blade where a blade is
@@ -574,8 +587,9 @@ export class FirstPerson {
     if (ready) [this.shown, this.drawnMuzzle] = [quads, muzzle];
     const zoom = this.zoom;
     const jolt = now - this.jolt.at < JOLT.seconds ? this.jolt.pixels : 0;
+    const [across, down] = this.swayShown;
     const zoomed = this.shown.map((quad) => {
-      const [x, y] = zoomedOnScreen(quad.x, quad.y + jolt, zoom);
+      const [x, y] = zoomedOnScreen(quad.x + across, quad.y + jolt + down, zoom);
       return { ...quad, x, y, width: quad.width * zoom, height: quad.height * zoom };
     });
     this.view.draw(encoder, colourView, width, height, zoomed, light);

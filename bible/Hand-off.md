@@ -272,7 +272,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   audit's fixes are in it: the room now tells a respawn after a fall or past the edge, a deck's respawn blinks the view,
   an arriving figure throws no shadow, and the player's own figure begins once their view is first open. Tested
   offline (the full check); not yet seen in a browser. Read "a translator from destiny" as Destiny's transmat: the
-  owner may say otherwise.
+  owner may say otherwise. On the same branch, at the owner's asking
+  ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]): first person sees 65° tall, foes
+  stand at least 1.5 m from its eye, and its weapon sways; the parry ring stands round the attacker's head, kept on the
+  screen, bold, with the parry window as a gold band. Pictured headless on the Test Ground in both views; the held
+  sword's size was offered smaller and kept as it is.
 
 - **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
   ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map

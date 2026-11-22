@@ -11,6 +11,7 @@ code:
   - client/src/firstperson/fpFrames.ts#weaponPicture
   - client/src/firstperson/heldPictures.ts#gunPicture
   - client/src/firstperson/riding.ts#RideMotion
+  - client/src/firstperson/fpMotion.ts#Sway
   - client/src/firstperson/climbHands.ts#ClimbHands
   - client/src/firstperson/climbing.ts#climbPlace
 ---
@@ -163,7 +164,11 @@ dagger's does. A shield is held a frame below raised, and raised whole for a blo
 the weapon strikes, a shield or a torch ducks below the screen, as fast as a climb lowers a weapon, and comes back up
 once the strike ends. A lantern stays up. A light's flame steps every 0.1 s.
 
-While walking, the picture dips a few design pixels each step, more at a run. A flail at rest wears its chain's swing,
+While walking, the picture dips a few design pixels each step, more at a run. The weapon sways as it is held (`Sway`):
+it lags behind the look as it turns or tilts, 4 design pixels a radian a second and at most 12, catching up over about
+a tenth of a second as the look settles, and swings aside once each two steps, 2 pixels at a walk and 4 at a run. It
+does not sway on a wall, where the hands keep their stone, nor on a horse; a ranged weapon's muzzle is placed with its
+sway, so a tracer starts where it is drawn. A flail at rest wears its chain's swing,
 a pendulum the walk sways. Running with empty hands or a sheathed weapon pumps both arms, the left half a stride behind
 the right. A gun, or one crossbow, is carried across the chest at a run, from the forge's own carry frames in the
 gauntlets worn; a pair of crossbows keeps its own frames. A cast shows both casting hands for 0.28 s and hides the
@@ -173,8 +178,9 @@ Divine's fire, Storm's shock and Shadow's magic, recoloured by brightness to its
 pictures are composed ahead and kept on the GPU, and so are the other loadout's weapon's, so a swap shows it at once;
 the figure's are composed ahead in the glow the other weapon will show once drawn.
 
-Another figure is never drawn nearer the eye than a metre in first person, on land and on a struck ship's deck alike
-(`cardStand`): a foe in a melee stands that far off along the same line, so it never fills the view. In third person
+Another figure is never drawn nearer the eye than 1.5 m in first person, on land, on a struck ship's deck and on the
+wreck alike (`cardStand`): a foe in a melee stands that far off along the same line, so it never fills the view
+([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). In third person
 no figure is moved off the eye, so the player's own stays where they stand when the camera pulls in by a wall.
 
 ### Climbing

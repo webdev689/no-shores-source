@@ -47,7 +47,7 @@ import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figure
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { type Player, newPlayer, playerCamera, shownBody } from '../player/player.ts';
-import { AIM, type AimPlace } from '../player/playerCamera.ts';
+import { AIM, type AimPlace, handsZoom } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
 import { AimPanel } from './aimPanel.ts';
@@ -374,7 +374,7 @@ async function start(): Promise<void> {
       running,
       hands: controls.locked,
       markOf: () => crosshairPoint(aimView(player.player), aspect, STOOD, bodies),
-      zoomOf: () => aimView(player.player).zoom ?? 1,
+      zoomOf: () => handsZoom(aimView(player.player), player.player.view),
       handsSeconds: feel.shownSeconds(fighting.player, seconds),
     });
     const own = fighting.own;

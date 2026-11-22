@@ -16,6 +16,8 @@ import type { GearState } from '../../network/gearMessages.ts';
 import { LocalRoom } from '../../network/localRoom.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { crosshairPoint } from '../../player/crosshair.ts';
+import { CARD_NEAREST_M } from '../../player/figures.ts';
+import { handsZoom } from '../../player/playerCamera.ts';
 import type { Dress } from '../../player/dressing.ts';
 import type { InputFrame } from '../../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../../player/player.ts';
@@ -388,7 +390,7 @@ export class WreckRun {
       running: !held && !frozen,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.course, bodies, groundAt),
-      zoomOf: () => camera().zoom ?? 1,
+      zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
     effects.ownLook = walker.glowing[0];
@@ -402,6 +404,8 @@ export class WreckRun {
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
+    // Through the player's own eyes no other figure stands so near that it fills the view.
+    const nearest = firstPerson ? CARD_NEAREST_M : 0;
     const frameTicks = seconds / movement.tickSeconds;
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
     const right = [Math.cos(shot.yaw), Math.sin(shot.yaw)] as const;
@@ -423,7 +427,16 @@ export class WreckRun {
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
     const { tickSeconds } = movement;
     figures.push(
-      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
+      ...foes.cards(
+        fight,
+        forge,
+        { x: eyeX, y: eyeY, nearest },
+        clock,
+        frameTicks,
+        tickSeconds,
+        effects.flashes,
+        foeFeel,
+      ),
     );
     const lying = this.armsLie ? this.lying.figure(walker.you.dress) : null;
     if (lying) figures.push(lying);

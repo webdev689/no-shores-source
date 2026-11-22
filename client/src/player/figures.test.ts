@@ -41,9 +41,9 @@ test('a figure’s card stands a body’s radius toward the eye, never past it, 
   assert.ok(Math.abs(stand.x - 1) < 1e-12 && Math.abs(stand.y - 2.35) < 1e-12);
   assert.deepEqual(cardStand(1, 2, 1, 2.2), { x: 1, y: 2.2 }, 'the player’s own, the eye steeply over it');
   assert.deepEqual(cardStand(1, 2, 1, 2), { x: 1, y: 2 });
-  // A foe in a melee, 0.7 m off through the player's own eyes: its card stands a metre off along the same line.
+  // A foe in a melee, 0.7 m off through the player's own eyes: its card stands 1.5 m off along the same line.
   const melee = cardStand(1, 2, 1, 2.7, CARD_NEAREST_M);
-  assert.ok(Math.abs(melee.x - 1) < 1e-12 && Math.abs(melee.y - 1.7) < 1e-12, `${melee.y}`);
+  assert.ok(Math.abs(melee.x - 1) < 1e-12 && Math.abs(melee.y - 1.2) < 1e-12, `${melee.y}`);
   const far = cardStand(1, 2, 1, 12, CARD_NEAREST_M);
   assert.ok(Math.abs(far.y - 2.35) < 1e-12, 'one farther off stands as ever');
 });

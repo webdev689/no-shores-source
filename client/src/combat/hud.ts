@@ -15,7 +15,7 @@ import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
-import { arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
+import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
@@ -76,13 +76,12 @@ const FLASH_SECONDS = 0.45;
  *  vitals or the Arts and weapons it stands where it would fall on them: half an arrow and a little more. */
 const ARROW_INSET = 28;
 const ARROW_CLEAR = 22;
-/** A parry ring's span as a blow begins and as it lands (its fixed inner ring's), in CSS pixels; and how high over
- *  the foe's feet it stands, in metres, above the foe's plate. */
-const RING_WIDEST = 56;
-const RING_CLOSED = 14;
-const RING_HEIGHT = 2.5;
-/** How high over a foe's feet its plate's foot stands, in metres: just over its head (a body is 1.8 m tall), under
- *  where its parry ring closes, so the plate reads as the foe's own and the ring stays clear above it. */
+/** How high over a foe's feet its parry ring stands, in metres: round its head (a body is 1.8 m tall); and how far
+ *  inside the screen's edge its widest stays, in CSS pixels, where the head would stand beyond it. */
+const RING_HEIGHT = 1.6;
+const RING_KEPT = 6;
+/** How high over a foe's feet its plate's foot stands, in metres: just over its head (a body is 1.8 m tall) and its
+ *  parry ring, so the plate reads as the foe's own. */
 const PLATE_OVER_M = 1.9;
 /** A word with no striker to meet stands this high over its fighter's feet (metres). */
 const WORD_HIGH_M = 1.2;
@@ -175,6 +174,7 @@ export class Hud {
     readonly x: number;
     readonly y: number;
     readonly span: number;
+    readonly window: number;
     readonly kind: 'ring' | 'now' | 'iron';
   }[] = [];
   private edges: readonly { readonly x: number; readonly y: number; readonly angle: number }[] = [];
@@ -234,16 +234,22 @@ export class Hud {
     this.floatWords(frame, seconds);
   }
 
-  /** Over each foe at a blow the player can parry, a ring closing onto a fixed one as the blow lands, gold once a
-   *  press would parry it; over an iron one, a red mark with no ring. */
+  /** Round the head of each foe at a blow the player can parry, a ring closing onto a fixed one as the blow lands,
+   *  its parry window a band on the fixed one, gold once a press would parry it; round an iron one's, a red mark with
+   *  no ring. Each is kept on the screen: a head beyond its edge, as one in a melee seen from the player's own eyes,
+   *  has its ring at the edge. */
   private parries(frame: HudFrame): Hud['rings'] {
-    return frame.foes.flatMap(({ view }) => {
+    const keep = RING.widest / 2 + RING_KEPT;
+    const kept = (place: number, size: number) => Math.max(keep, Math.min(size - keep, place));
+    const across = (share: number) => RING.closed + (RING.widest - RING.closed) * share;
+    return frame.foes.flatMap(({ view }): Hud['rings'] => {
       const cue = parryCue(view, frame.player, frame.parryOpen ?? true);
-      const spot = cue && project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
-      if (!cue || !spot) return [];
-      const iron = cue === 'iron';
-      const span = iron ? RING_CLOSED : RING_CLOSED + (RING_WIDEST - RING_CLOSED) * cue.share;
-      return [{ ...spot, span, kind: iron ? 'iron' : cue.now ? 'now' : 'ring' } as const];
+      const head = cue && project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
+      if (!cue || !head) return [];
+      const spot = { x: kept(head.x, frame.width), y: kept(head.y, frame.height) };
+      if (cue === 'iron') return [{ ...spot, span: RING.closed, window: 0, kind: 'iron' } as const];
+      const window = cue.window > 0 ? across(cue.window) : 0;
+      return [{ ...spot, span: across(cue.share), window, kind: cue.now ? 'now' : 'ring' } as const];
     });
   }
 
@@ -374,7 +380,7 @@ export class Hud {
         arms,
         this.lockSpot && lockMarkNode(this.lockSpot),
         ...this.foeBars.overheadNodes(),
-        ...this.rings.map((ring) => parryNode(ring, ring.span, ring.kind)),
+        ...this.rings.map((ring) => parryNode(ring, ring.span, ring.kind, ring.window)),
         ...this.arrows(ui).map(arrowNode),
         ...this.words.nodes(),
         this.crosshair.node(),

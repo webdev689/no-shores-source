@@ -228,6 +228,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Areas Load in Chunks With Proper Caching]]
 - [[The Crew Still Standing Regroup Ahead]]
 - [[Players Arrive as Destiny's Transmat Does, Unexplained]]
+- [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

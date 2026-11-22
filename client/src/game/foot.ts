@@ -26,7 +26,7 @@ import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { Glides } from '../player/glide.ts';
 import type { InputFrame } from '../player/input.ts';
 import { cameraFollowed, newPlayer, playerCamera, shownBody } from '../player/player.ts';
-import { AIM } from '../player/playerCamera.ts';
+import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
 import type { OtherPlayers, Others } from '../player/others.ts';
 import type { Walker } from '../player/walker.ts';
@@ -351,7 +351,7 @@ export class Foot {
       running: true,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
-      zoomOf: () => camera().zoom ?? 1,
+      zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
     walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
