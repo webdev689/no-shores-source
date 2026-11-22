@@ -315,7 +315,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   words in a span's colour wrapping across a break, at two sizes, with a halo and with a hard shadow, a chip, a field
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
-  each size.
+  each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
+  the Journal, its timers down, the bounty board and a dungeon's entrance card. A shot may hear its events on a later
+  frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
+  to come; the page asks for reduced motion, so a screen stands settled.
 
 ## How it works
 
