@@ -172,7 +172,9 @@ pub fn vestige_chance(rank: Rank, difficulty: gear::Difficulty) -> f64 {
 /// A piece opened into a character: its salvage, and for the piece holding the kill's drop, what a foe of that rank
 /// and its level drops, each part taken where there is room.
 fn open(piece: &Floating, seed: u64, difficulty: gear::Difficulty, character: &mut Character) -> Held {
-    let dice = Dice { seed, tick: u64::from(piece.id), player: piece.player };
+    // Rolled by the piece's own number, unique among all the sea lays, never by its owner's: a rejoin's new number
+    // owns it again (`Sea::own`), and must not roll it again.
+    let dice = Dice { seed, tick: u64::from(piece.id), player: 0 };
     let mut held = Held { salvage: ship_salvage(piece, difficulty, &dice, character), ..Held::default() };
     let Some(drop) = piece.drop else { return held };
     let rank = drop.number();

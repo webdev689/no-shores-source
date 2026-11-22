@@ -130,3 +130,25 @@ fn every_piece_gathered_holds_ship_materials_for_the_ship_and_what_was_taken_is_
         assert!(characters[&1].item(module).is_some_and(|item| item.kind.module()));
     }
 }
+
+#[test]
+fn a_piece_holds_the_same_whoever_it_is_owned_by_now_so_a_rejoin_rolls_nothing_again() {
+    let held = |owner: PlayerId| {
+        let mut flotsam = Flotsam::new(9);
+        flotsam.lay(&sank(Rank::Miniboss, vec![1]), 0, (2, 1));
+        // A rejoin gives the player a new number, and what floats for them is theirs again under it (`Sea::own`).
+        for piece in &mut flotsam.pieces {
+            piece.player = owner;
+        }
+        let mut characters = BTreeMap::from([(owner, Character::starting())]);
+        let spots: Vec<(PlayerId, [f64; 2])> = flotsam.pieces.iter().map(|piece| (owner, piece.at)).collect();
+        let mut opened = Vec::new();
+        for (clock, spot) in spots.into_iter().enumerate() {
+            for (_, _, held) in flotsam.tick(clock as u64 + 1, &[spot], &mut characters) {
+                opened.push((held.vestige.map(|vestige| (vestige.rarity, vestige.slot)), held.salvage.materials));
+            }
+        }
+        opened
+    };
+    assert_eq!(held(1), held(7));
+}
