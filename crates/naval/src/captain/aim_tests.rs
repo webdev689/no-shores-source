@@ -109,12 +109,55 @@ fn its_lay_is_long_or_short_by_its_crews_error() {
         )
     };
     let most = 0.45 * (1.0 - PIRATE_SLOOP.skill);
+    // Laid long or short by up to `most` of the range, then misjudged up or down by up to its elevation's error.
+    let tilt = JUDGE_ELEVATION_DEG * DEG * (1.0 - PIRATE_SLOOP.skill);
     for seed in 1..40 {
         let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
         deck.step(0.0, &target_east(60.0));
         let lay = deck.step(1.4, &target_east(60.0)).fire.map_or(0.0, |lay| lay.elevation);
-        assert!(lay >= true_lay(1.0 - most).elevation - 1e-9 && lay <= true_lay(1.0 + most).elevation + 1e-9, "{seed}");
+        let [low, high] = [true_lay(1.0 - most).elevation - tilt, true_lay(1.0 + most).elevation + tilt];
+        assert!(lay >= low - 1e-9 && lay <= high + 1e-9, "{seed}");
     }
+}
+
+#[test]
+fn a_volley_flies_as_far_across_its_mark_as_its_gunners_misjudge_it() {
+    // Square off its beam is due east; each volley flies off it by as much as its gunners misjudge the mark across
+    // their line, up to their whole error 60 m off: some pass its bow or stern, 10.6 m either side of its middle.
+    let most = JUDGE_ACROSS_M * (1.0 - PIRATE_SLOOP.skill);
+    let mut wide = 0;
+    for seed in 1..60 {
+        let mut deck = Deck { draws: Mulberry32::new(seed), ..Deck::new() };
+        deck.step(0.0, &target_east(60.0));
+        let Some(lay) = deck.step(1.4, &target_east(60.0)).fire else { panic!("seed {seed} fires") };
+        let across = 60.0 * lay.dir[1] / lay.dir[0];
+        assert!(across.abs() <= most + 1e-6, "{seed}: {across} m across");
+        wide += u32::from(across.abs() > 10.6);
+    }
+    assert!((5..40).contains(&wide), "{wide} of 59 volleys pass wide of a Sloop abeam");
+}
+
+#[test]
+fn a_better_crew_and_a_higher_rank_misjudge_less() {
+    let widest = |skill: f64, aim_error: f64| {
+        let mut draws = Mulberry32::new(9);
+        (0..400).map(|_| Judgement::drawn(skill, aim_error, &mut draws).across_m.abs()).fold(0.0, f64::max)
+    };
+    assert!(widest(0.45, 0.6) < widest(0.45, 1.0) && widest(0.75, 1.0) < widest(0.45, 1.0));
+    assert!(widest(0.45, 1.0) <= JUDGE_ACROSS_M * 0.55 + 1e-9 && widest(1.0, 1.0) == 0.0);
+}
+
+#[test]
+fn its_gunners_lead_a_mark_by_its_way_as_they_last_saw_it() {
+    // A mark that has just come about, sailing north now, its way smoothed still southward: laid on where that way
+    // would carry it, so its ball passes astern of it.
+    let mark = Mark { velocity: [0.0, -5.0], smoothed: [0.0, 5.0], ..target_east(60.0) };
+    let mut deck = Deck::new();
+    deck.step(0.0, &mark);
+    let Some(lay) = deck.step(1.4, &mark).fire else { panic!("it fires") };
+    let judged = deck.run.judged[Side::Starboard.index()];
+    let lead = lead_point([0.0, 0.0], mark.place, judged.way(mark.smoothed), lay.gun.speed);
+    assert!(lead[1] > 0.0, "laid south of it, where its old way would take it: {lead:?}");
 }
 
 #[test]
@@ -142,8 +185,9 @@ fn its_dead_zone_alongside_a_sloop_is_a_few_metres() {
 
 #[test]
 fn whether_a_mark_bears_soon_is_read_from_its_smoothed_way() {
-    // 20 degrees forward of its beam and still, but its way smoothed over the last second sweeps it aft fast.
-    let mark = Mark { place: [60.0, -21.84], smoothed: [0.0, 30.0], ..target_east(60.0) };
+    // Still now, but its way smoothed over the last second sweeps it aft fast: led by that way to 20 degrees forward
+    // of its beam, and coming on aft.
+    let mark = Mark { place: [60.0, -57.8], smoothed: [0.0, 30.0], ..target_east(60.0) };
     let mut deck = Deck::new();
     assert_eq!(deck.step(0.0, &mark).run_out, Some(Side::Starboard));
 }

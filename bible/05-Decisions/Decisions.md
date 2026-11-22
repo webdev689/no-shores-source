@@ -231,6 +231,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 - [[The Crew Still Standing Regroup Ahead]]
 - [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]
+- [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]
+- [[Ships Show Their People, and Captains' Gunners Misjudge]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

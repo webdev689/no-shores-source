@@ -331,7 +331,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   about its deck. The player stands at its wheel, but at the helm, where the eye is theirs. Off the helm the player
   walks its deck, with its helmsman at the wheel under way. In a fight they all stand on it as the fight lies it.
   Each figure stands where its deck lies on the swell, drawn as large as the Sloop is.
-- **Every other ship's people** (`shipPeople.ts`, `shipCompany.ts`, `ships/shipCrew.ts`). Every other ship drawn
+- **Every other ship's people** (`shipPeople.ts`, `shipCompany.ts`, `ships/shipCrew.ts`;
+  [[Ships Show Their People, and Captains' Gunners Misjudge]]). Every other ship drawn
   carries its people on its deck as the Sloop does, each standing where its deck lies on the swell and drawn as large as
   the ship is: its captain behind its wheel (the spot its hull's export measures), facing its bow, and its hands
   walking and pausing about its deck as the Sloop's do, clear of the wheel. A hull carries its own number of hands:

@@ -854,7 +854,9 @@ In a sea fight the display shows DFO's helm readout in the Plus kit, drawn by th
 words and model in `plus/seaFight.ts`), laid afresh each frame, never pressed, from the fight's first frame to its
 last, at sea (`Hud.seaFight`) and over the World Editor's fight; on a struck ship's deck it gives way to the fight on
 foot's display ([[Naval Combat]]). While it shows, the place's name gives way and the status line stands at the top
-right. The fight's panel leaves the Sloop's own hurts and guns to it:
+right; the ship's abilities stand at the bottom left as the Arts do
+([[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]). The fight's panel leaves the Sloop's own hurts and
+guns to it:
 
 The plate, the ship's bar and the card are the on-foot HUD's own build, so the sea reads as the same HUD: the plate and
 the card are the vitals' thin bars (`combat/barDraw.ts#thinBarNode`) with the kit's bar (`plus/meter.ts`, with its

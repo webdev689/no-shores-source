@@ -163,14 +163,17 @@ Its rank, by the lowest level of its water's band:
 - **Going down**: drawn in the pose the room sends, trimmed 10 degrees by its end with more holes, listing to the side with more; 80 flecks of foam a
   second over it from halfway down.
 - **What floats**: each piece under a gold mark 2.5 m over it, never under about ten pixels across.
-- **The aim**: the look runs from the eye as drawn, so the sight is where the guns lay. It reaches 0.15 rad over the
-  horizon, past 153 m, and zooms from DFO's nearest, 11.4 m, out to the fight camera's 75 m. A ship alongside blocks
-  the line by its waterline's length and beam, from its draught to 1 m over its guns.
+- **The aim** (in part replaced by [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]: the view looks
+  square off the side at the lay, and a ship alongside blocks by its widest): the look runs from the eye as drawn,
+  so the sight is where the guns lay. It reaches 0.15 rad over the horizon, past 153 m, and zooms from DFO's
+  nearest, 11.4 m, out to the fight camera's 75 m. A ship alongside blocks the line by its waterline's length and
+  beam, from its draught to 1 m over its guns.
 - **The readout**: its plate at the top left, where the vitals stand on foot
   ([[The Sea Fight's Ship Plate Wears the Vitals' Thin Bars]]): Hull over Sails over Crew, the hull at health's height
   and the others at stamina's, each as long as the vitals' health, with no words inside, as the vitals have none; its
   fire and brace chips and its battery rose under them, as the buffs stand under the vitals, the laid side glowing
-  gold. In a fight the place's name gives way to them, as it does to the ships' plates. The card stands under
+  gold (the brace chip and the rose replaced by the ship's bar at the bottom left,
+  [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]). In a fight the place's name gives way to them, as it does to the ships' plates. The card stands under
   the compass on the ship its laid guns fall on, else the nearest. The volley's tally stands under the sight for 4 s,
   the fight's status line at the top right. DFO's lights on nearby hulls are not drawn yet.
 - **The sea's words are notices**, as DFO's toasts are: a ship sighted, other waters entered, who joins a fight,

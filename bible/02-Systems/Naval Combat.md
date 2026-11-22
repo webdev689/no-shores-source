@@ -16,6 +16,7 @@ code:
   - crates/naval/src/captain/mod.rs#Captain
   - crates/naval/src/captain/engage.rs#engage
   - crates/naval/src/captain/aim.rs#captain_guns
+  - crates/naval/src/captain/aim.rs#Judgement
   - crates/naval/src/captain/odds.rs#odds
   - crates/naval/src/fight.rs#Fight
   - crates/naval/src/fight.rs#sail_hurt
@@ -198,8 +199,16 @@ so they never tack.
   Their reach is reckoned centre to centre as a player's balls strike them: their guns' reach, their own half beam out to their
   mouths, and the mark's depth along the line of fire (half its length end-on, half its beam abeam); their lay strikes if
   it passes through the mark's middle or its near side.
-  It fires no sooner than 1.3 s on, within their gunners' window, long or short by the gunners' want of skill. One run out too
-  long unfired, or that loses its mark, is run in. They never fire on a wreck.
+  It fires no sooner than 1.3 s on, within their gunners' window, long or short by the gunners' want of skill. Their
+  gunners lead the mark by its way as they last saw it (smoothed over a second, so a mark that comes about is led
+  where it was going), and each volley they misjudge as its side runs out
+  ([[Ships Show Their People, and Captains' Gunners Misjudge]]): where the mark stands across their line as they fire
+  (up to 80 m at the mark), its speed (up to 80%) and course (up to 40°) as they lead it, and their elevation (up to
+  3°), each at their whole want of skill and a Major's rank, scaled by both, and most often small (the mean of two
+  draws). The volley flies wide by what they misjudge across the mark, so some pass a ship's bow or stern at any
+  range. Against a Sloop sailing on or weaving, a Minor's balls strike about a quarter of the time, a Major's a third,
+  an Elite's to a Boss's about half (`captain_gunnery`). One run out too long unfired, or that loses its mark, is run
+  in. They never fire on a wreck.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
   ship that outguns them. A chase that gains nothing in 150 s is given up, and a wreck left after 30 s. They leave the
   fight when they have sunk, or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each
@@ -232,7 +241,7 @@ they run and strike stay their rank's.
 Their men are as many as their hull makes them (6 to 94, whole men), so hull and men give out in the same proportion at
 every rank: a hull hit takes a man or two, and their men give out at about four fifths of their hull, as a Major's do. Their
 way pulls their canvas and their oars alike, so a higher rank runs down a lower one, and a Boss outlasts a Minor; two of one
-rank keep pace. Aim error scales both their lay's long and short and their volley's scatter. A captain sees every player's
+rank keep pace. Aim error scales their lay's long and short, their gunners' misjudgement and their volley's scatter. A captain sees every player's
 ship and every afloat, unstruck ship of another faction, and chooses, engages and breaks off with them as with a
 player's; they never fight their own faction, and a struck ship is nobody's enemy. Any foe's hit provokes them. Over each
 captain's ship in a fight stands their plate, as a foe's ([[Interface]]): their faction's emblem, and their name, with an
