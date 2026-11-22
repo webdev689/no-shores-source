@@ -34,7 +34,7 @@ fn a_bold_tithe_ship_within_engage_range_of_a_friendly_ship_under_way_attacks_it
     let mut hostiles = Hostiles::default();
     hostiles.sailing.push(tithe_by(&ship, Rank::Minor, true, 0.0));
     let mut friendlies = Friendlies::default();
-    let met = friendlies.meet(&mut hostiles, Some(&traffic), TIME);
+    let met = friendlies.meet(&mut hostiles, (Some(&traffic), &Open), TIME);
     assert_eq!(met.len(), 1, "they met");
     let (tithe, friend) = met[0];
     assert!(hostiles.sailing.is_empty(), "the Tithe ship left the sea for the clash");
@@ -60,14 +60,14 @@ fn a_wary_tithe_ship_a_sea_with_no_traffic_and_a_ship_lying_at_its_roadstead_nev
     let mut friendlies = Friendlies::default();
     let mut hostiles = Hostiles::default();
     hostiles.sailing.push(tithe_by(&ship, Rank::Minor, false, 0.0));
-    assert!(friendlies.meet(&mut hostiles, Some(&traffic), TIME).is_empty(), "wary");
+    assert!(friendlies.meet(&mut hostiles, (Some(&traffic), &Open), TIME).is_empty(), "wary");
     hostiles.sailing.push(tithe_by(&ship, Rank::Elite, true, 0.0));
-    assert!(friendlies.meet(&mut hostiles, None, TIME).is_empty(), "a sea with no traffic");
+    assert!(friendlies.meet(&mut hostiles, (None, &Open), TIME).is_empty(), "a sea with no traffic");
     let later = TIME + (ship.length_m - ship.progress_m) / SPEED_M_S + 60.0;
     let lying = traffic.ship(ship.id, later).expect("arrived, lying at its roadstead");
     let mut hostiles = Hostiles::default();
     hostiles.sailing.push(tithe_by(&lying, Rank::Minor, true, 0.0));
-    let met = friendlies.meet(&mut hostiles, Some(&traffic), later);
+    let met = friendlies.meet(&mut hostiles, (Some(&traffic), &Open), later);
     assert!(met.iter().all(|(_, friend)| friend.traffic != ship.id), "one lying at its roadstead is not attacked");
 }
 
@@ -78,11 +78,11 @@ fn a_friendly_ship_that_parted_from_a_tithe_ship_meets_it_again_only_once_they_w
     hostiles.back_from_clash(vec![tithe]);
     let friend = crate::clash::tests::friend_at(5, HullKind::Sloop, 400.0);
     friendlies.back_from_clash(&[tithe.id], vec![friend]);
-    assert!(friendlies.meet(&mut hostiles, None, TIME).is_empty(), "they parted");
+    assert!(friendlies.meet(&mut hostiles, (None, &Open), TIME).is_empty(), "they parted");
     friendlies.sailing[0].x = 2_000.0;
-    assert!(friendlies.meet(&mut hostiles, None, TIME).is_empty(), "out of range");
+    assert!(friendlies.meet(&mut hostiles, (None, &Open), TIME).is_empty(), "out of range");
     friendlies.sailing[0].x = 400.0;
-    let met = friendlies.meet(&mut hostiles, None, TIME);
+    let met = friendlies.meet(&mut hostiles, (None, &Open), TIME);
     assert_eq!(met.iter().map(|(one, other)| (one.id, other.traffic)).collect::<Vec<_>>(), [(7, 5)], "met again");
     assert!(friendlies.sailing.is_empty() && hostiles.sailing.is_empty(), "both left the sea for it");
 }
@@ -129,4 +129,34 @@ fn a_friendly_ship_sails_on_for_its_far_port_at_the_traffics_speed_kept_while_a_
     friendlies.back_from_clash(&[], vec![Friendly { x: 9_998.0, ..friend }]);
     friendlies.sail(1.0, &[[9_000.0, 0.0]], &Open, TIME);
     assert!(friendlies.sailing.is_empty(), "come to its port, gone");
+}
+
+/// Open water, Overlook's home waters from `x` = 300 m east.
+struct HomeEast;
+
+impl Chart for HomeEast {
+    fn open(&self, _: [f64; 2], _: [f64; 2]) -> bool {
+        true
+    }
+    fn water(&self, at: [f64; 2]) -> Option<crate::sighting::WaterHere> {
+        let holder = if at[0] >= 300.0 { world::waters::Holder::Home } else { world::waters::Holder::GreyTithe };
+        Some(crate::sighting::WaterHere { holder, levels: None })
+    }
+    fn coast(&self, _: [f64; 2]) -> f64 {
+        f64::INFINITY
+    }
+    fn lane(&self, _: [f64; 2]) -> Option<(f64, [f64; 2])> {
+        None
+    }
+}
+
+#[test]
+fn no_tithe_ship_meets_a_friendly_ship_that_lies_in_home_waters() {
+    let tithe = Hostile { y: 0.0, ..at_sea(7, Commission { faction: GREY_TITHE, rank: Rank::Minor }, 0.0, true) };
+    let (mut hostiles, mut friendlies) = (Hostiles::default(), Friendlies::default());
+    hostiles.back_from_clash(vec![tithe]);
+    friendlies.back_from_clash(&[], vec![crate::clash::tests::friend_at(5, HullKind::Sloop, 400.0)]);
+    assert!(friendlies.meet(&mut hostiles, (None, &HomeEast), TIME).is_empty(), "400 m off, inside home waters");
+    friendlies.sailing[0].x = 200.0;
+    assert_eq!(friendlies.meet(&mut hostiles, (None, &HomeEast), TIME).len(), 1, "out of them, it is attacked");
 }

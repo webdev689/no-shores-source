@@ -405,7 +405,8 @@ impl Sea {
         ports::wary_meet(&mut self.hostiles, &self.berths, &ships, &mut met);
         let world_s = self.weather.world_start_s + time;
         self.friendlies.sail(TICK_SECONDS, &players, &chart, world_s);
-        for (tithe, friend) in self.friendlies.meet(&mut self.hostiles, self.chart.traffic.as_ref(), world_s) {
+        let traffic = (self.chart.traffic.as_ref(), &chart);
+        for (tithe, friend) in self.friendlies.meet(&mut self.hostiles, traffic, world_s) {
             let weather = self.weather.at([tithe.x, tithe.y], time);
             self.clashes.push(Clash::begin((tithe, friend), weather, &self.coasts, time));
         }

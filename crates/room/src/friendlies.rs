@@ -13,6 +13,7 @@ use naval::ranks::{Commission, PLAYERS, Rank};
 use sailing::HullKind;
 use std::collections::BTreeMap;
 use world::traffic::{DWELL_S, SPEED_M_S, Traffic, TrafficShip};
+use world::waters::Holder;
 
 /// A friendly ship off its route: its traffic id, its hull, its seed (its sinking's chances), the level of the Tithe
 /// ship it met, the distance it is sighted from, where it is, its heading (radians clockwise from north), and its
@@ -67,13 +68,16 @@ impl Friendlies {
 
     /// Each bold ship in `hostiles` in turn meets the nearest friendly ship within `ENGAGE_RANGE`, neither met already:
     /// one sailing on, or one of `traffic` under way at world time `world_s` and not taken. Both leave the sea for
-    /// their clash, and the traffic ship's id is taken. Two that parted never meet until they have been that far apart.
+    /// their clash, and the traffic ship's id is taken. Two that parted never meet until they have been that far apart,
+    /// and none meets a friendly ship lying in home waters on `chart`, which hold no hostile ship.
     pub fn meet(
         &mut self,
         hostiles: &mut Hostiles,
-        traffic: Option<&Traffic>,
+        (traffic, chart): (Option<&Traffic>, &impl Chart),
         world_s: f64,
     ) -> Vec<(Hostile, Friendly)> {
+        let home =
+            |friend: &Friendly| chart.water([friend.x, friend.y]).is_some_and(|water| water.holder == Holder::Home);
         let hostile_at = |id: u32| hostiles.sailing.iter().find(|ship| ship.id == id).map(|ship| [ship.x, ship.y]);
         let friend_at = |id: u64| self.sailing.iter().find(|ship| ship.traffic == id).map(|ship| [ship.x, ship.y]);
         let near = |(hostile, friend): (u32, u64)| {
@@ -97,7 +101,7 @@ impl Friendlies {
             let nearest = sailing
                 .map(|friend| (friend, None))
                 .chain(routed)
-                .filter(|(friend, _)| apart(here, [friend.x, friend.y]) <= ENGAGE_RANGE)
+                .filter(|(friend, _)| apart(here, [friend.x, friend.y]) <= ENGAGE_RANGE && !home(friend))
                 .min_by(|one, other| apart(here, [one.0.x, one.0.y]).total_cmp(&apart(here, [other.0.x, other.0.y])));
             let Some((friend, routed)) = nearest.filter(|_| tithe.bold) else {
                 at += 1;
