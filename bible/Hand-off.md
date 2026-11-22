@@ -125,6 +125,14 @@ each part works is in its system note.
   merged a third time before the merge: the events' fight events 16 to 25 (main's Wiped is 15), the Tithe-Taker 45 after
   main's wardens (21 to 38), the chest's Vestige drawn on main's rank colours (Major plain, Boss heroic), and the
   Lattice laid into main's forge tables again by `lattice.yml`'s run 45048576675.
+- **The game is No Shores** (#157, merged on the owner's "Merge and deploy"; [[The Game Is Named No Shores]]): the
+  title, the bible and the game's note with the owner's premise; Overlook stays the port city. The owner's logo is
+  the title on the tap to start and the intro, a pixel picture written from the owner's PNG by `tools/logo/write.py`
+  (the PNG stays out of git with its C2PA credentials; [[Cinema]]). The repository and page are `no-shores-source`;
+  the browser's keys move once from `overlook.` to `noshores.` (`keptNames.ts`); No Shores is a reserved name. The
+  Workers, the D1 database, the R2 bucket, the code's own names and the download cache keep Overlook's. This
+  session's git proxy answers only at `github.com/Lattymoy/overlook-source`, which GitHub redirects: keep that remote.
+  Merged as `c0db6fc7`; its deploy (CI run 45068542964: the check, then the rooms and the page) was running as this was written.
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
@@ -258,7 +266,10 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
-- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name.
+- **A timing test**: `roomThread.test.ts`'s "a room that fails in the worker is lost" waits 5 ms for the worker and
+  failed once under the full check's load (passing alone); fixing it is offered as a task of its own.
+- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name. The
+  owner's premise ([[No Shores]]) is for later in the game: "This is for later".
   Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision
   ("The Grey Tithe Take a Tenth, and Overlook Does Not Pay").
 - **Accounts and hosting** ([[The Audit's Calls Are Claude's]]): the Workers plan (a password sign-in takes about
@@ -272,7 +283,7 @@ The decisions in [[Open Questions]] are not repeated here.
   [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]); add `tools/install-flatc.sh` to `ROOMS_CODE` in
   `.github/workflows/rooms.yml`. A cloud session cannot deploy the rooms itself: its proxy writes the stored token
   over the upload token Cloudflare hands back.
-- **The cloud environment**: two environments named Default are listed and no `overlook-source` one; which one
+- **The cloud environment**: two environments named Default are listed and none for this repository; which one
   sessions should run on, and which holds the SkillsMP key, is unchecked. A Context7 key, if wanted, goes on it the
   same way.
 - **The forge's renders** leave `r2.dev`, which limits its rate, once `daggerfalljs.dev`'s DNS moves to Cloudflare
