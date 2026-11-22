@@ -423,7 +423,7 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
     let floor = Floor::of_dungeon(&dungeon).expect("a dungeon's ground");
     let Floor::Dungeon(ground) = &floor else { panic!("a dungeon's ground") };
     let mut room = Room::dungeon_of("isle-test--dungeon", 1, style, LEVELS).expect("an island's dungeon");
-    let player = room.join().expect("room");
+    room.join().expect("a player for the cache to pay");
     room.garrison[0].cleared_at = Some(0);
     let (mut on_post, mut thrown) = (0, 0);
     for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != Cell::Rock) {
