@@ -36,8 +36,23 @@ test('what the game kept under its former name moves to its own, and nothing els
   });
 });
 
-test('a key already kept under the game’s own name stays, and the former one goes', () => {
-  const storage = storageOf({ 'overlook.musicVolume': '0.2', 'noshores.musicVolume': '0.8' });
+test('a former key moves over one already under the game’s own name: a sign-in that could not move before wins', () => {
+  const storage = storageOf({ 'overlook.session': 'account', 'noshores.session': 'guest made since' });
   moveKept(storage);
-  assert.deepEqual(Object.fromEntries(storage.held), { 'noshores.musicVolume': '0.8' });
+  assert.deepEqual(Object.fromEntries(storage.held), { 'noshores.session': 'account' });
+});
+
+test('a key too large to set again stays where it was, and the keys after it still move', () => {
+  const storage = storageOf({ 'overlook.worldEditor.painting': 'x'.repeat(100), 'overlook.session': 'account' });
+  const set = storage.setItem;
+  // Room for 60 characters a key, as a full quota leaves.
+  storage.setItem = (key, value) => {
+    if (value.length > 60 && !key.startsWith('overlook.')) throw new DOMException('full', 'QuotaExceededError');
+    set(key, value);
+  };
+  moveKept(storage);
+  assert.deepEqual(Object.fromEntries(storage.held), {
+    'overlook.worldEditor.painting': 'x'.repeat(100),
+    'noshores.session': 'account',
+  });
 });

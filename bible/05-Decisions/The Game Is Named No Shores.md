@@ -16,15 +16,19 @@ change too, whether a player may take the name, and whether the premise shows in
 
 > "We can keep some like the server and such"
 
-Asked which then change, the owner chose "Repo and page link" and "Browser save keys".
+Asked which then change, the owner chose "Repo and page link" (offered as `overlook-source` → `no-shores-source`,
+the page moving to `lattymoy.github.io/no-shores-source/`) and "Browser save keys". Then, sending the logo:
+
+> "Heres the replacement logo"
 
 ## What it settles
 
-- The game is No Shores: its title on the page and the screen, and its name in the bible.
+- The game is No Shores: its title on the page, its name in the bible, and the owner's logo as the title on its
+  screens ([[Cinema]]).
 - Overlook stays the port city on Saltmere, where the story begins.
-- The repository is `no-shores-source`, still private, and the page is at `https://lattymoy.github.io/no-shores-source/`.
-  It replaces [[Private Repo overlook-source]].
-- What the browser keeps for the game is kept under `noshores.`; a browser's keys under the former name move once.
+- The repository is `no-shores-source`, still private and separate from DFO Online, and the page is at
+  `https://lattymoy.github.io/no-shores-source/`. It replaces [[Private Repo overlook-source]].
+- What the browser keeps for the game moves once to the game's own name (Claude's prefix: `noshores.`).
 - No player's name may claim No Shores, as none may claim Overlook ([[Names]]).
 - The servers, the accounts' database and the R2 bucket keep their names, as do the code's own names.
 - The premise is not shown in the game yet.

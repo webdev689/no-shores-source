@@ -71,7 +71,7 @@ on foot to a boss who cannot be beaten, the deep, and waking on Saltmere's shore
 
 ## How it works
 
-**The way in.** The page shows black, the game's name and "Click or press any key to start" ("Tap to start" on a
+**The way in.** The page shows black, the game's logo and "Click or press any key to start" ("Tap to start" on a
 touch screen) at once, and loads the world behind it. The tap wakes the browser's sound. Once both are done the intro
 begins. With `?at=<node>` the page goes straight to that node, as before, and plays no story.
 

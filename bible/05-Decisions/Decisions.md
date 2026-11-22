@@ -273,6 +273,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Fight Music Varies, Recombined From Takes]]
 - [[The Prologue Is Passed Over, Its Camera and Footing Clear]]
 - [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
+- [[The Game Is Named No Shores]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
@@ -280,11 +281,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
 - [[What a Player Can Use Wears Its Mark Over It]]
-- [[The Game Is Named No Shores]]
 
 ## Replaced
 
-- [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
 - [[Locked On, the Figure Faces Its Foe]], by [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]
@@ -296,3 +295,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Player's Display Takes DFO's Compass and Bar Layout]], by [[The Vitals Keep Their Panel Under DFO's Compass]]
 - [[The Rooms Deploy on Each Merge]], by [[The Rooms Deploy When Their Code Changes]]
 - [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]
+- [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]

@@ -28,7 +28,7 @@ function shelf(): Storage & { readonly held: Map<string, string> } {
 
 const felid: Look = { body: 'female', race: 'felid', tone: 0.3, hair: { style: 'braid', colour: 'auburn' } };
 
-test('a kept look comes back as it was kept, under overlook.look', () => {
+test('a kept look comes back as it was kept, under noshores.look', () => {
   const kept = shelf();
   keepLook(kept, felid);
   assert.ok(kept.held.has('noshores.look'));
