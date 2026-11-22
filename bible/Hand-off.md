@@ -68,6 +68,13 @@ each part works is in its system note.
 - **Vestiges as project-final's crystals**, every drop popping, bouncing, settling and hovering as its loot, and the
   item pictures baked in Blender (`tools/item-pictures/`), a first pass for the owner to judge
   ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]], [[Item Pictures]]).
+- **Arrivals, first person and the parry ring** (#144): every spawn and respawn builds the player's figure from the
+  feet up, white as each cell lands, and blinks the arriving player's view open
+  ([[Players Arrive as Destiny's Transmat Does, Unexplained]]); first person sees 65° tall, foes stand 1.5 m off its
+  eye, its weapon sways; the parry ring stands round the attacker's head, kept on the screen, bold, its window a faint
+  band edged by a gold line ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Open for
+  the owner: aiming in first person sees 43° (1.6 times from 65°, was 32.5°), and the iron blow's small red mark.
+  Impeccable's design hook is on in every session, at v4.10.0 ([[Toolkit]]).
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,

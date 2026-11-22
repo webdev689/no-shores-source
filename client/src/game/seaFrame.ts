@@ -51,6 +51,8 @@ export interface SeaFrame {
    *  eyes on its deck. */
   readonly figures: readonly CardAt[];
   readonly firstPerson: boolean;
+  /** How dark the player's view is as they arrive on a boarded deck, 1 dark to 0 open. */
+  readonly dark: number;
   /** Where the player's feet are walking its deck, world metres, as it is drawn; none off the walk. */
   readonly feet: readonly [number, number, number] | null;
   /** Where its bow and quarters stir the water's ripples this frame, which follow it (`focus`, world metres). */

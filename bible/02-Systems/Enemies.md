@@ -267,7 +267,7 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 ## On screen
 
-- **Over each foe**, just over its head (1.9 m over its feet, under where the parry ring closes), its plate in the
+- **Over each foe**, just over its head (1.9 m over its feet, over its parry ring round the head), its plate in the
   [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
   above a thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before

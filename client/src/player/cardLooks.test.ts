@@ -22,6 +22,12 @@ test('a card’s look is its statuses, its look and its tint, in the order the s
   assert.deepEqual(values, [1, 1, 7, 0.5, 1, 2, -1, FLASH.outline, 1, 0.16, 0.1, 0]);
 });
 
+test('an arriving card is drawn as a dissolve in its own look, still to come, which a death’s overrides', () => {
+  assert.deepEqual(cardLookValues({ ...plain, arrival: 0.75 }, 0).slice(3, 6), [0.75, 0, 4]);
+  const dying: CardAt = { ...plain, arrival: 0.75, dissolve: { share: 0.2, look: 1 } };
+  assert.deepEqual(cardLookValues(dying, 0).slice(3, 6), [0.2, 0, 1]);
+});
+
 test('drawn as its smear, a card takes the smear’s colour and no flash', () => {
   const smeared: CardAt = {
     ...plain,

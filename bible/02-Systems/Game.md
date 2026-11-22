@@ -12,6 +12,7 @@ code:
   - client/src/game/game.ts#startGame
   - client/src/game/drain.ts#Drain
   - client/src/game/drain.ts#DrainView
+  - client/src/combat/arrivals.ts#Arrivals
   - client/src/game/gameBoot.ts#bootGame
   - client/src/game/gameFrame.ts#startFrames
   - client/src/game/pageWaters.ts#watersOnce
@@ -195,6 +196,11 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in an element (the player's own in
   their weapon's glow as their game shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
   from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
+  A player arriving, as they spawn into a place or respawn, is built from the feet up in 2 by 2 cells over 0.6 s, each
+  white as it lands, throwing no shadow until they stand whole, when their weapon glows ([[Players Arrive as Destiny's
+  Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and on each respawn, every other
+  player on respawning or when first seen after the player arrived. The player sees their own figure begin once their
+  view is first open, 0.5 s in. Foes never arrive so.
   A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
   [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
 - **Sounds.** The world sounds on foot ([[Interface]], "World sounds"): the fight's blows, shots, steps and spells,
@@ -621,7 +627,8 @@ ripples follow it.
 In death the world drains to grey once death is told (a fall plays out in colour first, the camera holding and turning
 after the body, no key listed until Respawn is offered), and comes back in colour on respawn or on leaving: over 1.4 s
 each way, eased out, grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last into its own
-picture, so the interface the game draws over the world keeps its colour.
+picture, so the interface the game draws over the world keeps its colour. In the same pass the arriving player's view
+blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, open by 1 s.
 
 ## Limits
 

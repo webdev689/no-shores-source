@@ -449,6 +449,7 @@ impl Room {
                             found.stood = body.z;
                             found.graced = graced;
                         }
+                        self.tell(EventKind::Respawned, None, id, id, 0.0);
                     }
                     continue;
                 }

@@ -1,4 +1,5 @@
 import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
+import { Arrivals } from '../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
 import { marksSeen } from '../combat/marksOver.ts';
@@ -7,7 +8,6 @@ import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
 import type { HudFrame } from '../combat/hud.ts';
 import { PlayerFight } from '../combat/playerFight.ts';
-import { veiledIn } from '../combat/spellLooks.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
@@ -22,7 +22,7 @@ import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
 import { cameraFollowed, playerCamera, shownBody } from '../player/player.ts';
-import { AIM } from '../player/playerCamera.ts';
+import { AIM, handsZoom } from '../player/playerCamera.ts';
 import type { PlacedLoop } from '../player/playerMoves.ts';
 import type { OtherPlayers, Others } from '../player/others.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
@@ -57,7 +57,7 @@ import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
-import { type Dressed, dressInGear, figureWhere, otherCards, strikersOf } from './footFigures.ts';
+import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import { type AtEntrance, type FootContext, type Heard, type Held, type Opened, stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
@@ -87,6 +87,7 @@ export interface FootFrame {
   readonly swings: Float32Array;
   readonly fight: FootFight;
   readonly hints: readonly StripHint[];
+  readonly dark: number;
 }
 
 /**
@@ -128,6 +129,9 @@ export class Foot {
   private readonly sounds = new WorldSounds(worldOutput);
   /** The player's fall in a social space, once the room says they fell: the held shot, the tumble, its sounds. */
   private readonly falling = new FallWatch();
+  private readonly arrivals = new Arrivals();
+  /** The player arrives as the veil lifts on the place: their figure builds and their view blinks open. */
+  readonly arrive = (clock: number): void => this.arrivals.arriveHere(this.fight.player, clock);
   /** The link's welcomes followed: one more means the player joined the room again. */
   private joined = 1;
   /** What the room last said of the player's gear and the place, and the gear the figure was last dressed in. */
@@ -414,12 +418,13 @@ export class Foot {
       running: true,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
-      zoomOf: () => camera().zoom ?? 1,
+      zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
     walker.player = cameraFollowed(walker.player, movement, this.boxes, groundAt, seconds);
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
+    this.arrivals.told(events, clock);
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
     feel.frame(events, fight.own, fight.player, seconds, new Set(fight.others.keys()));
@@ -447,19 +452,12 @@ export class Foot {
     for (const [number, seen] of fight.others) if (seen.fighter) otherViews.set(number, fighterView(seen.fighter));
     const figures: CardAt[] = [];
     const body = shownBody(walker.player);
-    const ownShift = shift(fight.player, fight.own);
-    const own = walker.figure(eyeX, eyeY, effects.flashes.flashOf(fight.player), ownShift);
-    const statuses = fight.own?.statuses;
-    const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
-    if (own) {
-      const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) };
-      figures.push({ ...own, ...looks, facesEye: walker.fall !== null });
-      const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
-      drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
-    }
+    const arrival = this.arrivals.ownShareOf(fight.player, clock);
+    const own = ownCard(walker, fight, effects.flashes, arrival, [eyeX, eyeY], { shift, smear, drawnAt });
+    if (own) figures.push(own);
     const { tickSeconds } = movement;
-    const { otherPlayers, otherGlides, folk, folkLoops } = this;
-    const people = { forge, fight, effects, otherPlayers, otherGlides, folk, folkLoops, tickSeconds };
+    const { otherPlayers, otherGlides, folk, folkLoops, arrivals } = this;
+    const people = { forge, fight, effects, otherPlayers, otherGlides, folk, folkLoops, tickSeconds, arrivals };
     figures.push(...otherCards(people, [eyeX, eyeY], clock, frameTicks, { shift, drawnAt, otherViews, nearest }));
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
     const eye = { x: eyeX, y: eyeY, nearest };
@@ -565,7 +563,8 @@ export class Foot {
     };
     const edge = this.standing;
     const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
-    return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
+    const dark = arrivals.darkOf(fight.player, clock);
+    return { shot, figures, standing: edge, marks, swings, fight: fought, hints, dark };
   }
 
   /** Where the player stands with the section's edge, as the room said. */
@@ -586,6 +585,7 @@ export class Foot {
   leave(): void {
     if (this.link instanceof RoomConnection) this.link.close();
     this.otherPlayers.clear();
+    this.arrivals.clear();
     this.plaza?.close();
     this.prompt.show(null);
     this.falling.close();

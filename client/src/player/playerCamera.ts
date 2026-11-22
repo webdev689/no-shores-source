@@ -1,4 +1,4 @@
-import type { Orbit } from '../editor/orbit.ts';
+import { FIELD_OF_VIEW, type Orbit } from '../editor/orbit.ts';
 import type { Block } from '../rules/movementRules.ts';
 import { BOOM, boomEased, boomReach } from './boom.ts';
 
@@ -27,6 +27,20 @@ export const AIM = { shoulder: 0.8, back: 3, up: 0.25, thirdZoom: 1.3, firstZoom
  *  `shown` 0.01, else in first; the first person's hands zoom with it. */
 export const aimZoom = (shown: number, aim: number, place: AimPlace = AIM): number =>
   1 + ((shown > 0.01 ? place.thirdZoom : AIM.firstZoom) - 1) * aim;
+
+/** First person's view is this tall, wider than the lens's 50° that third person keeps. */
+const FIRST_PERSON_FOV = (65 * Math.PI) / 180;
+
+/** How far the view is widened, a zoom under 1, as the camera comes into the head (`shown` metres behind it) from
+ *  the nearest third person stands, to first person's 65° at the head: third person keeps the lens's 50°. */
+export function widened(shown: number): number {
+  const first = Math.tan(FIELD_OF_VIEW / 2) / Math.tan(FIRST_PERSON_FOV / 2);
+  return first + (1 - first) * Math.min(1, Math.max(0, shown) / (CAMERA.nearest - CAMERA.notch));
+}
+
+/** How far the first person's hands zoom with `orbit`'s view, `view` as it is shown: by aiming (and any push in),
+ *  never by first person's widening, so the weapon keeps its size. */
+export const handsZoom = (orbit: Orbit, view: ViewMode): number => (orbit.zoom ?? 1) / widened(view.shown);
 
 /** Where third person's aiming view stands and how far it zooms, as `AIM` has it unless the Test Ground's panel sets
  *  its own. */
@@ -176,7 +190,7 @@ export function cameraOrbit(
     const [over, rise] = [ceiling - BOOM.clearance, end[2] - head[2]];
     eye = reach[2] > over && rise > 0 ? along(Math.max(0, (over - head[2]) / rise)) : reach;
   }
-  const zoom = aimZoom(view.shown, aim, place);
+  const zoom = aimZoom(view.shown, aim, place) * widened(view.shown);
   return {
     targetX: eye[0] + forward[0],
     targetY: eye[1] + forward[1],
