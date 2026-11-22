@@ -1,9 +1,15 @@
 import { WorkerEntrypoint } from 'cloudflare:workers';
 import { handle } from './accounts.ts';
 import { type Characters, type Claimed, characters } from './characters.ts';
+import type { CompanyFinder } from './finder.ts';
+import { findingAt } from './finding.ts';
+
+export { CompanyFinder } from './finder.ts';
 
 interface Env {
   readonly DB: D1Database;
+  /** Find a Company's queues, one for each run's base (`finder.ts`). */
+  readonly FINDERS: DurableObjectNamespace<CompanyFinder>;
   /** The pages, by origin and path and space-separated, a Discord sign-in may come back to. */
   readonly PAGES: string;
   /** The Discord app's keys, as the Worker's secrets; without them, Discord sign-in says it is not set up. */
@@ -16,6 +22,10 @@ const wait = (millis: number) => new Promise<void>((resolve) => setTimeout(resol
 /** The characters, for the rooms alone: reached only through the rooms' service binding, never from the web. */
 export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters {
   private readonly kept = characters(this.env.DB, Date.now, wait);
+
+  look(token: string): Promise<Claimed | null> {
+    return this.kept.look(token);
+  }
 
   claim(token: string, holder: string): Promise<Claimed | null> {
     return this.kept.claim(token, holder);
@@ -32,11 +42,17 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
   present(token: string, room: string | null): Promise<boolean> {
     return this.kept.present(token, room);
   }
+
+  companions(account: string, room: string): Promise<string[]> {
+    return this.kept.companions(account, room);
+  }
 }
 
 /** The accounts' web API (`accounts.ts`). */
 export default {
   fetch(request: Request, env: Env): Promise<Response> {
+    const finding = findingAt(request);
+    if (finding !== null) return env.FINDERS.getByName(finding).fetch(request);
     const discord =
       env.DISCORD_CLIENT_ID && env.DISCORD_CLIENT_SECRET
         ? {

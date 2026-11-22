@@ -303,6 +303,25 @@ fn a_fresh_number_is_never_one_held() {
 }
 
 #[test]
+fn a_new_character_is_kept_short_of_the_prologue_and_one_kept_before_the_story_past_it() {
+    let new = Character::starting();
+    assert!(!new.story.prologue);
+    let kept = Character::from_json(&new.to_json()).expect("a character");
+    assert!(!kept.story.prologue, "its first save keeps it short of the prologue");
+    let old = Character::from_json(include_str!("old_saves/sword_and_shield.json")).expect("a character");
+    assert!(old.story.prologue, "kept before the story was: past it");
+    assert_eq!(old.activity, crate::activity::Activity::default());
+}
+
+#[test]
+fn a_kept_activity_holds_only_the_boards_bounties() {
+    let mut character = Character::starting();
+    character.activity.today(20_778).bounties.extend([(0, 1), (5, 2), (6, 3), (200, 4)]);
+    let mut read = Character::from_json(&character.to_json()).expect("a character");
+    assert_eq!(read.activity.today(20_778).bounties, std::collections::BTreeMap::from([(0, 1), (5, 2)]));
+}
+
+#[test]
 fn keys_a_room_does_not_know_are_kept_through_a_read_and_a_write() {
     let mut character = Character::starting();
     let id = character.take_id();

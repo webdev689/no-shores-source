@@ -13,6 +13,7 @@ export type Opening =
       readonly entrance: number | undefined;
     }
   | { readonly how: 'dungeon'; readonly patrolText: string; readonly number: number }
+  | { readonly how: 'run'; readonly ask: string; readonly patrolText: string }
   | {
       readonly how: 'sea';
       readonly layoutText: string;
@@ -52,6 +53,7 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
     }
     if (opening.how === 'dungeon')
       return LocalRoom.openDungeon(module, opening.patrolText, opening.number, snapshot, gear);
+    if (opening.how === 'run') return LocalRoom.openRun(module, opening.ask, opening.patrolText, snapshot, gear);
     if (opening.how === 'island') return LocalRoom.openIsland(module, opening.word, snapshot, opening.seas, gear);
     const { layoutText, seed, ports, seas } = opening;
     return LocalRoom.openSea(module, layoutText, snapshot, seed, ports, seas, gear);

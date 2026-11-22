@@ -152,12 +152,13 @@ impl Room {
             return;
         }
         let mut due = Vec::new();
+        let slower = self.recharge_times();
         for (id, found) in &mut self.players {
             let Some(art) = found.character.worn_art() else { continue };
             let casting = &mut found.casting;
-            casting.anima = filled(casting.anima, tick_of(art.anima.recharge_s));
+            casting.anima = filled(casting.anima, tick_of(art.anima.recharge_s * slower));
             for (share, tenet) in casting.tenets.iter_mut().zip(&art.tenets) {
-                *share = filled(*share, tick_of(tenet.recharge_s));
+                *share = filled(*share, tick_of(tenet.recharge_s * slower));
             }
             casting.hunting &= found.fighter.statuses.has(Status::Veiled);
             casting.releasing = match casting.releasing {

@@ -126,6 +126,11 @@ export class AccountLink {
     this.key = this.base === LIVE_ACCOUNTS ? KEY : `${KEY}@${this.base}`;
   }
 
+  /** Where Find a Company is for a run's base, by WebSocket, at these accounts. */
+  finderAt(base: string): string {
+    return `${this.base.replace(/^http/, 'ws')}/v1/find/${base}`;
+  }
+
   /** The account the accounts last said the page plays as, none until they have. */
   get account(): Account | null {
     return this.known;

@@ -63,6 +63,24 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
 }
 
 #[test]
+fn nothing_is_fought_from_the_saddle() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    let held = [
+        CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() },
+        CombatInput { guard: true, ..CombatInput::default() },
+    ];
+    for (sequence, combat) in (1..=30).zip(held.into_iter().cycle()) {
+        let mut riding = asking(sequence, room.clock(), combat);
+        riding.intent.controls.mounted = true;
+        room.input(player, riding).unwrap();
+        room.tick();
+        let action = room.fighter(player).unwrap().action;
+        assert!(!matches!(action, Action::Attack(_) | Action::Guard { .. }), "on horseback: {action:?}");
+    }
+}
+
+#[test]
 fn a_blow_on_a_player_waits_for_their_view_and_is_judged_as_they_stood_then() {
     let mut room = room();
     let player = room.join().expect("a room with space");

@@ -121,6 +121,11 @@ const REFUSALS: Readonly<Record<number, string>> = {
   32: 'You own that fragment already.',
   33: 'There is no such dye or mount piece.',
   34: 'There is no such fragment.',
+  81: 'The bounty board opens after the prologue.',
+  82: 'That bounty is no longer on the board.',
+  83: 'You already hold that bounty.',
+  84: 'That bounty is not done yet.',
+  85: 'That bounty is turned in already.',
   100: 'Out of reach, or already gathered.',
   101: 'Only the Test Ground hands out gear.',
   102: 'You can carry no more of it.',
@@ -136,6 +141,7 @@ const REFUSALS: Readonly<Record<number, string>> = {
   136: 'There is no such keeper.',
   137: 'They have nothing more to say to you now.',
   138: 'No fragment of that Art waits to be chosen.',
+  141: 'There is no such letter.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

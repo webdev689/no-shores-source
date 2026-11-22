@@ -120,7 +120,7 @@ A layer takes its set's or metal's own grades by its name (`layers.set_of`), a p
 sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 The `forge` workflow renders the Arts' birds, the weapons drawn large and the material nodes, and adds them to what is
-published with the repository's Cloudflare token whenever `artbirds.py`, `weaponart.py`, the item forge's models
+published with the repository's `R2_TOKEN` whenever `artbirds.py`, `weaponart.py`, the item forge's models
 (`items/`, which the nodes are laid from), `itempics.py`, the nodes' rows or their pinned packages change on main, or
 when a run is asked for on a branch; its log ends with the manifest, which a commit takes into `content/forge/renders.json`.
 A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,

@@ -143,7 +143,7 @@ fn row(rank: Rank, level: u8, close: f64, fights: usize) -> String {
         let mut sea = Sea::new(&layout, crate::deck::test_deck(), seed, &ports);
         let player = sea.join();
         sea.harbour.characters.insert(player, gear::Character::starting());
-        sea.course(player, &[at], 10).unwrap();
+        sea.course_anywhere(player, &[at], 10).unwrap();
         let standing = Pirate::standing(1, seed, commission, [at[0], at[1] - 700.0], std::f64::consts::PI, true);
         sea.pirates.sailing.push(Pirate { level, ..standing });
         sea.tick();

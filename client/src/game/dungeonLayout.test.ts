@@ -6,6 +6,7 @@ import { placedLandmarks } from './dungeonLandmarks.ts';
 import {
   askDungeon,
   askDungeonOf,
+  askLayout,
   ceilingAt,
   courseOf,
   type DungeonLayout,
@@ -84,7 +85,7 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   assert.equal(cove.style, 'caverns');
   assert.match(cove.name, / of the Gull Cove$/);
   assert.equal(askDungeonOf(module, 4242, 'caverns', 'The Gull Cove'), cove, 'laid once, kept');
-  assert.throws(() => askDungeonOf(module, 4242, 'grotto' as never, 'The Gull Cove'), /no grotto dungeon/);
+  assert.throws(() => askDungeonOf(module, 4242, 'grotto' as never, 'The Gull Cove'), /no dungeon is laid/);
 });
 
 test('an older room module that answers no landmarks or glows is read as standing none', async (context) => {
@@ -123,4 +124,20 @@ test("the ceiling over a point is its open cell's, and none over rock or off the
     [ceilingAt(layout, 1, 1), ceilingAt(layout, 4, 1), ceilingAt(layout, 7, 1), ceilingAt(layout, -1, 1)],
     [3.6, 3.2, null, null],
   );
+});
+
+test('an Elite Dungeon is laid by its place, named as it is, four or five blocks long', async (context) => {
+  let bytes: Buffer;
+  try {
+    bytes = readFileSync('client/public/room.wasm');
+  } catch {
+    context.skip('room.wasm is not built: run `npm run wasm`');
+    return;
+  }
+  const module = await WebAssembly.compile(new Uint8Array(bytes));
+  const layout = askLayout(module, { place: 'krakens-grotto', name: 'Kraken’s Grotto' });
+  assert.deepEqual([layout.name, layout.style], ['Kraken’s Grotto', 'caverns']);
+  assert.ok(layout.columns * layout.rows >= 4 * 16 * 16);
+  const patrol = askLayout(module, { patrol: 'saltgrass-downs', name: 'The Saltgrass Downs', number: 0 });
+  assert.equal(patrol.name, askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0).name);
 });

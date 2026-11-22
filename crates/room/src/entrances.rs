@@ -1,7 +1,7 @@
 //! A patrol's dungeon entrances: one for each of its dungeons, laid out from the node's id the same every time, clear
-//! of its resource places. Each is one of the six entrances Daggerfall's dungeon blocks stand, drawn from its
-//! dungeon's seed, turned so its door faces the patrol's middle. A player may join the patrol's room before an
-//! entrance's door, as they come out of its dungeon.
+//! of its resource places; and an Elite Dungeon's node's one, drawn the same way. Each is one of the six entrances
+//! Daggerfall's dungeon blocks stand, drawn from its dungeon's seed, turned so its door faces the node's middle. A
+//! player may join the node's room before an entrance's door, as they come out of its dungeon.
 
 use crate::{Floor, PlayerId, Room, standing_on};
 use combat::sight::{apart, bearing};
@@ -145,12 +145,13 @@ fn level(floor: &dyn Terrain, x: f64, y: f64) -> bool {
     high - low <= LEVEL_WITHIN_M
 }
 
-/// A patrol's entrances, its dungeons' in their order, from the node's id: places drawn in the ring until each
-/// dungeon has one or the tries run out, each FROM_EDGE_M inside the ring's edge, FROM_SPAWNS_M from every spawn,
-/// FROM_SPOTS_M from every resource spot and APART_M from the others, on dry ground that is level; each turned so its
-/// door faces the ring's middle (its corners' average).
+/// A node's entrances to `dungeons` (each its seed and style), in their order, from the node's id: places drawn in the
+/// ring until each dungeon has one or the tries run out, each FROM_EDGE_M inside the ring's edge, FROM_SPAWNS_M from
+/// every spawn, FROM_SPOTS_M from every resource spot and APART_M from the others, on dry ground that is level; each
+/// turned so its door faces the ring's middle (its corners' average).
 pub(crate) fn laid(
     node: &str,
+    dungeons: &[(u32, dungeon::Style)],
     floor: &dyn Terrain,
     dry: &dyn Fn(f64, f64) -> bool,
     ring: &[[f64; 2]],
@@ -162,11 +163,9 @@ pub(crate) fn laid(
     let corners = ring.len().max(1) as f64;
     let middle = ring.iter().fold([0.0, 0.0], |sum, point| [sum[0] + point[0] / corners, sum[1] + point[1] / corners]);
     let dice = Dice { seed: named(&format!("{node}:dungeons")), tick: 0, player: 0 };
-    let mut found: Vec<Entrance> = Vec::with_capacity(dungeon::PER_PATROL);
+    let mut found: Vec<Entrance> = Vec::with_capacity(dungeons.len());
     for nth in 0..TRIES {
-        if found.len() == dungeon::PER_PATROL {
-            break;
-        }
+        let Some(&(seed, style)) = dungeons.get(found.len()) else { break };
         let x = west + dice.roll(Purpose::Patrol, nth * 2) * (east - west);
         let y = north + dice.roll(Purpose::Patrol, nth * 2 + 1) * (south - north);
         let clear = inside(ring, x, y)
@@ -177,7 +176,6 @@ pub(crate) fn laid(
             && dry(x, y)
             && level(floor, x, y);
         if clear {
-            let (seed, style) = dungeon::of_patrol(node, found.len());
             let model = model_of(&style, seed);
             let Model { normal, .. } = MODELS[model];
             let yaw = bearing([x, y], middle) - libm::atan2(normal[0], normal[2]);
@@ -188,10 +186,17 @@ pub(crate) fn laid(
 }
 
 impl Room {
-    /// A patrol's entrances, its dungeons' in their order; none in any other room.
+    /// A patrol's entrances, its dungeons' in their order, or an Elite Dungeon's node's one; none in any other room.
     #[must_use]
     pub fn entrances(&self) -> &[Entrance] {
         &self.entrances
+    }
+
+    /// Lays an Elite Dungeon's node's one entrance, drawn as a patrol's are from its id; none for a node that is none.
+    pub fn lay_elite_entrance(&mut self, node: &str) {
+        let (Some(section), Some(elite)) = (&self.section, crate::elite_laid(node)) else { return };
+        let dry = |x: f64, y: f64| dry(&self.floor, x, y);
+        self.entrances = laid(node, &[elite], &self.floor, &dry, &section.ring, &section.spawns, &[]);
     }
 
     /// A new player standing BEFORE_DOOR_M before the door of the entrance numbered `number`, facing away from it, as
@@ -205,6 +210,19 @@ impl Room {
         let (x, y) = (x + libm::sin(facing) * BEFORE_DOOR_M, y - libm::cos(facing) * BEFORE_DOOR_M);
         let body = Body { facing, ..standing_on(&self.floor, &self.blocks, x, y) };
         Some(self.join_standing(body))
+    }
+
+    /// Stands a player joined before an entrance at the next spawn instead, as an ordinary join stands them: the
+    /// server learns only once their character is kept whether they came out of its dungeon. False for no such player.
+    pub fn stand_at_spawn(&mut self, player: PlayerId) -> bool {
+        if !self.players.contains_key(&player) {
+            return false;
+        }
+        let body = self.next_spawn();
+        self.players.get_mut(&player).is_some_and(|found| {
+            found.fighter.body = body;
+            true
+        })
     }
 }
 

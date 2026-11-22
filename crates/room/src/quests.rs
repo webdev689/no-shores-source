@@ -294,7 +294,8 @@ impl Room {
             let facing = start + TAU * nth as f64 / members.len() as f64;
             let wanted = [at[0] + libm::sin(facing) * out, at[1] - libm::cos(facing) * out];
             let spot = held_near(mesh, &self.floor, wanted, reach).unwrap_or(at);
-            let (level, shield) = gird_of(seed, u32::try_from(nth).unwrap_or(0), self.quests.levels);
+            let (level, shield) =
+                gird_of(seed, u32::try_from(nth).unwrap_or(0), self.quests.levels, self.shield_chance());
             post.members.push((number, rank, spot, facing));
             post.girds.push((level, shield.filter(|_| !matches!(rank, Rank::Miniboss | Rank::Boss))));
         }

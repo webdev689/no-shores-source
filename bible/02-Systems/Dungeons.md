@@ -28,17 +28,20 @@ code:
   - crates/room/src/dungeon_room.rs#dungeon_of
   - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/dungeon_room.rs#keep_cache
+  - crates/room/src/run_room.rs#dungeon_run
   - crates/room/src/floor.rs#Floor
   - crates/room/src/entrances.rs#laid
   - crates/room/src/entrances.rs#model_of
   - crates/room/src/entrances.rs#MODELS
   - crates/room/src/entrances.rs#join_at
+  - crates/room/src/entrances.rs#lay_elite_entrance
   - crates/navmesh/src/lib.rs#bake_anchored
   - crates/room-wasm/src/dungeon_door.rs#open_dungeon
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
   - server/roomNames.ts#nodeRoom
   - client/src/game/dungeonLayout.ts#askDungeon
   - client/src/game/dungeonLayout.ts#askDungeonOf
+  - client/src/game/dungeonLayout.ts#askLayout
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
   - client/src/game/dungeonLight.ts#lightAt
@@ -88,7 +91,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   way in's block and its first room; a middle, the blocks between; and an end, the last room of the last block, where
   the Reeve and the return portal stand. Its way runs from one to the next, room after room.
 - **Its size.** A dungeon is two to five blocks of 51.2 m, each count as likely, drawn on its own lane
-  (`size:<seed>`). The blocks stand in a chain: the way in's first, each next one beside the one before, drawn from
+  (`size:<seed>`). An Elite Dungeon is four or five (`ELITE_BLOCKS`), each as likely, drawn on the same lane
+  (`Dungeon::forge_within`), so a seed's other draws are as a patrol's dungeon's would be. The blocks stand in a chain: the way in's first, each next one beside the one before, drawn from
   the free squares round it. A block and the next share one doorway, a cell along their edge from the third to the
   fourteenth; two blocks side by side that are not next in the chain share none.
 - **The way down.** On a lane of its own (`deeper:<seed>`), one dungeon in two lays its last block in the style below
@@ -183,25 +187,43 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
   cells of 3.2 m, and as boxes (min x, min y, max x, max y, top) the jambs, then the pillars, then the props' solids,
   then the fixtures', then the landmarks'.
-- **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
-  name and its number, as the page's `DungeonLayout` reads it: its name, first style and pictures; its looks (each a
-  style and its pictures) and each cell's look (-1 for rock); its cells (-2 rock, -1 corridor, or a room's number),
-  ceilings, rooms (each its rectangle, height, walk, role, name, ceiling form and look), end, way in, arrival, exit
-  door, portal, torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
+- **For a browser,** the `room-wasm` door's `room_dungeon` answers a dungeon as JSON, from its patrol's id and name and
+  its number, from an Elite Dungeon's place (laid by `elite_laid` in four or five blocks, and named as the ask names
+  it), or from a seed and a style's key, as the page's `DungeonLayout` reads it: its name, first style and pictures; its
+  looks (each a style and its pictures) and each cell's look (-1 for rock); its cells (-2 rock, -1 corridor, or a room's
+  number), ceilings, rooms (each its rectangle, height, walk, role, name, ceiling form and look), end, way in, arrival,
+  exit door, portal, torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
   lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw), boxes, landmarks (each its
   module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
-  kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number
-  past the patrol's three. The room door's `dungeon` asks it. Five dungeons' answers are pinned by their hash,
-  natively and through WebAssembly, so a dungeon is the same bytes on every machine: four patrols', one of five
-  blocks whose last is a style deeper, and one laid by a seed and a style.
+  kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number past the patrol's three or a
+  place that is no Elite Dungeon. The room door's `dungeon` and `layout` ask it. Five dungeons' answers are pinned by
+  their hash, natively and through WebAssembly, so a dungeon is the same bytes on every machine: four patrols', one of
+  five blocks whose last is a style deeper, and one laid by a seed and a style.
 
 ## In the rooms
 
-- **A room for each at each difficulty.** A patrol's dungeon is the room `node-<patrol id>--dungeon-<number>`, and
-  `node-<patrol id>--elite--dungeon-<number>` or `--abyss--dungeon-<number>` at the harder difficulties ([[Server]]).
-  It opens from its patrol's node file, refused for a node that is no patrol, and its garrison stands at the patrol's
-  island band, raised by its difficulty. While its patrol is locked ([[World Map]], "Seen whole, reached by nodes"), it takes no
-  player, as the patrol's own room takes none, by an entrance or otherwise.
+- **One shared room at Normal, and runs above it.** A patrol's dungeon at Normal is one shared room,
+  `node-<patrol id>--dungeon-<number>` ([[Server]]). It opens from its patrol's node file, refused for a node that is
+  no patrol, and its garrison stands at the patrol's island band. Its first clear pays the day's while it is its
+  island's dungeon of the day; set to a harder tier it would pay none, since it carries no day's modifier. At Elite
+  or Abyss a patrol's dungeon is only a run, `node-<patrol id>--elite--dungeon-<number>--run-<instance>` or
+  `--abyss--`, as every Elite Dungeon is; a sea island's dungeon is shared at Normal and a run above it. A run opens
+  from its name alone (`runAsk`, `open_run`) and lets in one company; a patrol's dungeon's run reads its patrol's node
+  file too. While its patrol is locked ([[World Map]], "Seen whole, reached by nodes"), neither its shared room nor
+  any run of it takes a player, as the patrol's own room takes none, by an entrance or otherwise.
+- **A run's room** (`Room::dungeon_run`) stands any dungeon for a run at a tier, opened at a minute. The run is fixed
+  as it opens; at Abyss it carries five revives the company shares, and a wipe starts it over ([[Activities]]).
+
+| Run of | Its world seeds from | Levels | End foe | First clear pays | Modifiers | Gated as |
+|---|---|---|---|---|---|---|
+| A patrol's dungeon (an island's patrol, numbers 0 to 2) | `<patrol>--dungeon-<n>` | its island's band | the Reeve, a Miniboss | the day's, that day, when it opened as the day's | the day's, at Elite or Abyss when it opened as the day's | a patrol's dungeon |
+| An Elite Dungeon at Normal | `<place>--elite-dungeon` | its island's band | its Boss | nothing more | none | an Elite Dungeon |
+| An Elite Dungeon at Elite or Abyss, only this week's of that tier | the same | every foe at 26 or 30 | its Boss | the week's | the week's | the week's dungeon |
+| A sea island's (its style known, its continent of a band) | `sea-dungeon-<continent>-<style>-<seed 8 hex>` | its continent's band | the Reeve, a Miniboss | nothing more | none | by its tier alone |
+
+- **An Elite Dungeon's room** lays its dungeon from its place (`elite_laid`: the seed `elite:<place>` and the style
+  `gear::activities` names) in four or five blocks, its Boss alone on the end post. The week's two hold every foe
+  at their own level whatever difficulty the host sets after (`at_seas`).
 - **Its world is the dungeon's frame**: x east and y south from the north-west corner, the floor at 0 m. Every point
   its snapshots, its cache and its spawn name is in it. Its section is the dungeon's rectangle, its one spawn the
   arrival, where a body joins and the dead stand again, facing into the room.
@@ -224,21 +246,25 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with every solid as
   its colliders, each a body's height at least, since the ground walls a solid however low, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It
   lays no links: a body climbs nothing in a dungeon, so no foe paths up a solid's side or off its top.
-- **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
+- **Its garrison** ([[Enemies]]): the end foe (the Reeve, a Miniboss, or an Elite Dungeon's Boss) alone on the end
+  room's cell nearest its middle; a band of
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells
   nearest its middle, its quiet cells first, round its props. When the bands and the Reeve would pass the room's 24 foes, the most rooms that
   fit stand one, spread evenly along the walk from the way in to the end.
-- **The cache** stands 1.6 m from the Reeve's post, facing it, the first of the eight ways round it, north first,
+- **The cache** stands 1.6 m from the end foe's post, facing it, the first of the eight ways round it, north first,
   that is open floor with nothing between where the whole chest the page draws keeps clear: 0.9 m wide and reaching
   0.82 m behind its front with its lid thrown open, it keeps off rock and every solid, and out of the portal's cell
   from its wall to its middle within 1.3 m of the arch's middle. Where no way fits, it stands at the post itself, so
   every dungeon has its cache, facing the first way with open floor 0.8 m off and nothing between. Shut while the
-  Reeve stands; when he falls it opens and every player then in the room finds a Vestige 0.8 m before it ([[Gear]]),
-  or on the post where no way has such floor; it shuts when he stands again. Each snapshot carries it.
+  end foe stands; when it falls the cache opens and every player then in the room finds a Vestige 0.8 m before it
+  ([[Gear]]), or on the post where no way has such floor, and, where the run's first clear in its period pays, a
+  second kept at once in their carried ten, else their vault, else sent to their mail (`pay_clear`); it shuts when
+  the end foe stands again. Each snapshot carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
-  the Caverns and the Mines. The six Daggerfall's blocks stand keep their numbers on the wire (0 to 5), raised as
+  the Caverns and the Mines. An Elite Dungeon's node keeps its open-air approach and lays one entrance, to the
+  dungeon `elite_laid` lays, drawn from its id as a patrol's are (`lay_elite_entrance`). The six Daggerfall's blocks stand keep their numbers on the wire (0 to 5), raised as
   those blocks raise them:
 
 | Model | Stood by | Raised (m) |
@@ -257,9 +283,15 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 
 ## In the Game
 
-The page reads a dungeon from the room module's own `room_dungeon` (`askDungeon`) and plays it as [[Game]] says ("A
-dungeon"). A module older than the landmarks answers no landmarks or glows, and is read as standing none
-(`readDungeon`).
+The page reads a dungeon from the room module's own `room_dungeon` by one ask (`askLayout`, a `DungeonAsk`: a
+patrol's by its number, `askDungeon`; an Elite Dungeon by its place, named as it is; or a seed and a style,
+`askDungeonOf`) and plays it as [[Game]] says ("A dungeon"). A module older than the landmarks answers no landmarks
+or glows, and is read as standing none (`readDungeon`).
+
+- **The ways in** (`dungeonTrips`): a patrol's dungeon from its entrance, its shared room at Normal and a run above
+  it, the company's where a member is in one; an Elite Dungeon from its node's entrance, as the week's run where it
+  is the week's at the node's tier, else its run at Normal; and a sea island's from its door in the sea's room, by
+  its name, laid by its seed and style and named "The <Style> of the Sea", left back to the sea.
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the

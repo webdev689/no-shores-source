@@ -1,11 +1,15 @@
 // The figures on foot that are neither the player's nor the foes': other players, gliding to where the room last saw
-// them, and a social space's people (`folkCards`); and the player's own figure dressed in their gear.
-import type { DrawnFigure } from '../combat/attackFeel.ts';
+// them, and a social space's people (`folkCards`); everyone striking blows there, for their arcs; and the player's own
+// figure dressed in their gear.
+import type { DrawnFigure, Striker } from '../combat/attackFeel.ts';
 import type { FightEffects } from '../combat/fightEffects.ts';
 import type { Fighting } from '../combat/fighting.ts';
+import type { FoeFigures } from '../combat/foeFigures.ts';
 import { castLookOf, veiledIn } from '../combat/spellLooks.ts';
 import type { Vector } from '../combat/swingArcs.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
+import type { Dress } from '../player/dressing.ts';
+import type { GlowLook } from '../elementGlow.ts';
 import { heldElements } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { cardStand, frameAt, type Placed, viewOf } from '../player/figures.ts';
@@ -71,6 +75,47 @@ export function otherCards(
   otherGlides.keep(new Set(folk.otherPlayers.placed.keys()));
   const seconds = frameTicks * folk.tickSeconds;
   return [...cards, ...folkCards(folk.folk, folk.folkLoops, forge, [eyeX, eyeY], clock, seconds)];
+}
+
+/** The hands a figure's dress holds. */
+const handsOf = (dress: Dress | null | undefined) => ({
+  right: dress?.outfit.right ?? null,
+  left: dress?.outfit.left ?? null,
+});
+
+/** Everyone who may strike a blow on foot, for the attack feel's arcs: the player in their dress with their weapons'
+ *  looks, each foe in its dress, and each other player seen. */
+export function strikersOf(
+  fight: Fighting,
+  own: { readonly dress: Dress; readonly looks: readonly [GlowLook, GlowLook] },
+  foes: FoeFigures,
+  otherViews: ReadonlyMap<number, FighterView>,
+  others: ReadonlyMap<number, Placed>,
+): Striker[] {
+  return [
+    { id: fight.player, player: true, view: fight.own, ...handsOf(own.dress), looks: own.looks },
+    ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
+    ...[...otherViews].map(([number, view]) => ({
+      id: number,
+      player: true,
+      view,
+      ...handsOf(others.get(number)?.dress),
+    })),
+  ];
+}
+
+/** Where each figure stands, by its fighter's number: the player's as the room last saw them, a foe's or another
+ *  player's as drawn; null for one not there. */
+export function figureWhere(
+  fight: Fighting,
+  ...drawn: readonly ReadonlyMap<number, { readonly x: number; readonly y: number; readonly z: number }>[]
+): (id: number) => readonly [number, number, number] | null {
+  const own = fight.own;
+  return (id) => {
+    if (id === fight.player && own) return [own.x, own.y, own.z];
+    const figure = drawn.map((placed) => placed.get(id)).find((found) => found !== undefined);
+    return figure ? [figure.x, figure.y, figure.z] : null;
+  };
 }
 
 /** What the player's figure was last dressed in: their gear and the loadout drawn. */

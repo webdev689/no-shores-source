@@ -16,7 +16,7 @@ export const TAB_PRESSES: Readonly<
 > = {
   character: { label: 'Character', opens: 'character' },
   inventory: { label: 'Inventory', opens: 'inventory' },
-  journal: { label: 'Journal', later: 'Your quests will be kept here.' },
+  journal: { label: 'Journal' },
   ship: { label: 'Ship' },
   social: { label: 'Social' },
   guild: { label: 'Guild', later: 'Your guild will gather here.' },

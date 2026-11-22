@@ -17,7 +17,6 @@ import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
-import type { Dress } from '../player/dressing.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
 import { CARD_NEAREST_M, type Placed } from '../player/figures.ts';
 import { Glides } from '../player/glide.ts';
@@ -34,7 +33,7 @@ import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { type Use, dropsLaid, questRings, useAt } from './footGear.ts';
+import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
@@ -42,16 +41,25 @@ import type { GearHere } from './gearScreen.ts';
 import { type StripHint, keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
-import { PlazaLife } from './plazaLife.ts';
-import { dungeonRoom, nodeRoom } from './rooms.ts';
-import { dungeonPlace, Entrances, type InDungeon, roomNameAt, standInDungeon, tripAt } from './footTrips.ts';
+import { PlazaLife, countersOf } from './plazaLife.ts';
+import { nodeRoom } from './rooms.ts';
+import {
+  dungeonPlace,
+  heardRun,
+  type InDungeon,
+  openAlone,
+  roomNameAt,
+  standInDungeon,
+  unheard,
+  useOnFoot,
+} from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
-import { ceilingAt, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
+import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
-import { type Dressed, dressInGear, otherCards } from './footFigures.ts';
+import { type Dressed, dressInGear, figureWhere, otherCards, strikersOf } from './footFigures.ts';
 import { type AtEntrance, type FootContext, type Heard, type Held, type Opened, stand } from './footPlace.ts';
-import { hearing, nextOtherId, rulesOf } from './footRoom.ts';
+import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -126,6 +134,8 @@ export class Foot {
   /** What the room last said of the player's gear and the place, and the gear the figure was last dressed in. */
   readonly held: Held;
   private readonly dressed: Dressed = { gear: null, loadout: 0 };
+  /** The last word on the gear the room was told the prologue is done for. */
+  private prologueTold: GearState | null = null;
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
   readonly folk: Placed[];
@@ -219,27 +229,28 @@ export class Foot {
     });
   }
 
-  /** Takes the player into dungeon `number` of the patrol `patrol` (its node and its node file's text, which a room
-   *  alone opens it from), at its way in, and joins its room: online the server's at `seas`, alone the worker's. */
+  /** Takes the player into the dungeon `into` names (its number among the entrances of the place `outside`, whose node
+   *  file's text a room alone opens it from, the ask it is laid by and its room's name), at its way in, and joins its
+   *  room: online the server's, alone one in the rooms' worker. */
   static async enterDungeon(
     context: FootContext,
-    patrol: { readonly node: NodeInfo; readonly text: string },
-    number: number,
+    outside: { readonly node: NodeInfo; readonly text: string },
+    into: { readonly number: number; readonly ask: DungeonAsk; readonly room: string },
     layout: DungeonLayout,
     seas: Difficulty = 'normal',
   ): Promise<Foot> {
     const rules = await rulesOf(context);
     const module = await context.roomModule;
-    standInDungeon(context.movement, rules.combat, patrol.node, number);
+    standInDungeon(context.movement, rules.combat, into.ask);
     stand(context, layout.arrival.x, layout.arrival.y, layout.arrival.bearing, false);
-    const address = context.rooms?.(dungeonRoom(patrol.node, seas, number));
-    const dungeon = { patrol: patrol.node, number, layout };
-    return Foot.start(context, dungeonPlace(patrol.node, layout), rules, async (heard, session) => ({
+    const address = context.rooms?.(into.room);
+    const dungeon = { patrol: outside.node, ...into, layout };
+    return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
       link: address
         ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : await RoomThread.openDungeon(module, patrol.text, number, heard.snapshot, heard.gear),
+        : await openAlone(module, outside.text, into, heard),
       boxes: seenBlocks(layout),
-      text: patrol.text,
+      text: outside.text,
       dungeon,
       seas,
     }));
@@ -253,13 +264,14 @@ export class Foot {
     open: (heard: Heard, session: string | null) => Promise<Opened>,
   ): Promise<Foot> {
     const { players, heard: hearer, received } = hearing(context.forge);
-    const held: Held = { gear: null, entrances: new Entrances(), cache: null };
+    const held: Held = { gear: null, ...unheard() };
     const online = context.rooms !== null;
     const asked = online ? [] : context.foesAsked;
     const heard: Heard = {
       snapshot: (snapshot: Snapshot) => {
         received(snapshot);
         held.cache = cacheOf(snapshot.cache);
+        heardRun(held, snapshot, hearer.fight?.player ?? null);
       },
       // Offline the room's word on the gear tells only of the patrol's entrances; the figure keeps its own dress.
       gear: (sent: GearState) => {
@@ -314,12 +326,20 @@ export class Foot {
     heard.fight = fight;
     players.takeDresses(link.dressed);
     // The place's own holder of the gear, which its room's word fills, is the one the figure is dressed from.
-    const held: Held = Object.assign(place.gear ?? { gear: null }, { entrances: new Entrances(), cache: null });
+    const held: Held = Object.assign(place.gear ?? { gear: null }, unheard());
     const opened: Opened = { link, boxes, text: '', dungeon: null, seas: 'normal' };
     const people = { otherPlayers: players, held, folk: [], module: await context.roomModule };
     const foot = new Foot(context, node, opened, { link, fight, ...rules }, people);
     foot.uses = place.uses ?? null;
     return foot;
+  }
+
+  /** Tells the room the story is behind the player, once for each word on the gear that says it is not kept. */
+  private tellPrologue(): void {
+    const gear = this.held.gear;
+    if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, this.prologueTold)) return;
+    this.prologueTold = gear;
+    this.gear?.ask({ kind: ASKS.finishPrologue });
   }
 
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
@@ -352,11 +372,14 @@ export class Foot {
     return this.link.rejoining;
   }
 
-  /** A line on the room the player plays in: their number in it or word that it was lost; nothing alone. */
+  /** Why the room's gate shut to the player, in its words; null while it is open, and always alone. */
+  get shut(): string | null {
+    return this.link.shut ?? null;
+  }
+
+  /** A line on the room the player plays in (`roomNote`). */
   get roomNote(): string {
-    if (!(this.link instanceof RoomConnection)) return '';
-    if (this.link.rejoining) return 'Reconnecting…';
-    return this.link.open ? `In the room as player ${this.link.player}` : 'The room was lost: playing on alone';
+    return roomNote(this.link);
   }
 
   /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, nor while `looking` at the
@@ -373,6 +396,7 @@ export class Foot {
     const { groundAt } = this;
     const { fight, foes, effects } = this;
     dressInGear(walker, forge, this.held.gear, this.dressed);
+    this.tellPrologue();
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
     if (this.link.joins !== this.joined) {
       // A link that joined its room again brings every dress there with its welcome.
@@ -444,7 +468,7 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
-    const marked = markedHere(gearNow, this.node, floor, this.context.trips.props());
+    const marked = markedHere(gearNow, countersOf(this.node), floor, this.context.trips.props());
     const dropped = dropsLaid(this.drops, gearNow?.drops ?? [], clock, shot.eye, [
       ...questRings(gearNow, floor, clock),
       ...marksSeen(marked, shot.eye, clock),
@@ -488,20 +512,8 @@ export class Foot {
     const heard = { ...playerFall, lying: fall?.tumbling === false };
     this.falling.hear(heard, fight.others, this.otherPlayers.placed, { seconds, eye: shot.eye, quiet: paused });
     // Every blow being struck, its arc following its striker's figure as drawn; none through the eyes.
-    const handsOf = (dress: Dress | null | undefined) => ({
-      right: dress?.outfit.right ?? null,
-      left: dress?.outfit.left ?? null,
-    });
-    const strikers = [
-      { id: fight.player, player: true, view: fight.own, ...handsOf(walker.shownDress), looks: walker.glowing },
-      ...[...fight.foes.values()].map((kept) => ({ id: kept.id, view: kept.view, ...handsOf(foes.dressOf(kept)) })),
-      ...[...otherViews].map(([number, view]) => ({
-        id: number,
-        player: true,
-        view,
-        ...handsOf(this.otherPlayers.placed.get(number)?.dress),
-      })),
-    ];
+    const yours = { dress: walker.shownDress, looks: walker.glowing };
+    const strikers = strikersOf(fight, yours, foes, otherViews, this.otherPlayers.placed);
     // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
     showAnimaEdge(effects.anima);
@@ -518,18 +530,14 @@ export class Foot {
     };
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     const { mounted } = walker.player;
-    const near = (asked: GearAsk) => gear?.ask(asked);
-    const nodeUse = () => useAt(x, y, this.node, gear?.gear ?? null, near, this.context.speak, mounted);
-    this.using = able ? (placeUse ?? nodeUse() ?? tripAt(x, y, here, this.context.trips)) : null;
+    const counters = countersOf(this.node);
+    const { trips, speak } = this.context;
+    this.using = able ? useOnFoot(x, y, placeUse, counters, gear, here, trips, speak, mounted) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();
     this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able && !mounted, gear?.gear ?? null));
     const ownView = fight.own;
-    const where = (id: number): readonly [number, number, number] | null => {
-      if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
-      const figure = foes.placed.get(id) ?? this.otherPlayers.placed.get(id);
-      return figure ? [figure.x, figure.y, figure.z] : null;
-    };
+    const where = figureWhere(fight, foes.placed, this.otherPlayers.placed);
     const held = gear?.gear;
     // The room leaves an Ammo box lying while the ammunition is full, whether a Ranged weapon is worn or not.
     const full = (held?.ammoShare ?? 1) >= 1;

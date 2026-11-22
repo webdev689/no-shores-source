@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import type { DungeonLayout } from './dungeonLayout.ts';
 import type { PropTable } from '../models/tables.ts';
-import { dungeonPlace, Entrances, roomNameAt, tripAt, type Trips } from './footTrips.ts';
+import { EVENT } from '../combat/cues.ts';
+import type { FightEvent } from '../network/messages.ts';
+import { dungeonPlace, Entrances, heardRun, roomNameAt, tripAt, type Trips } from './footTrips.ts';
 import type { NodeInfo } from './worldData.ts';
 
 const patrol: NodeInfo = {
@@ -48,7 +50,9 @@ test("inside, E within 2.5 m of the exit door offers Leave; on a patrol, an entr
   const layout = { exitDoor: { x: 10, y: 0.02 }, portal: { x: 40, y: 6.38 }, cell: 3.2 } as unknown as DungeonLayout;
   const trips = noted();
   const entrances = new Entrances();
-  const inside = { dungeon: { patrol, number: 0, layout }, portalOpen: false, patrol, entrances, module: roomModule };
+  const ask = { patrol: patrol.id, name: patrol.name, number: 0 };
+  const dungeon = { patrol, number: 0, ask, room: 'node-saltgrass-downs--dungeon-0', layout };
+  const inside = { dungeon, portalOpen: false, patrol, entrances, module: roomModule };
   assert.equal(tripAt(10, 2.4, inside, trips)?.words, 'Leave');
   assert.equal(tripAt(10, 2.6, inside, trips), null);
   assert.equal(tripAt(40, 4.5, inside, trips), null, 'the return portal shut while the cache is');
@@ -84,4 +88,14 @@ test("a point is named for the dungeon's room it stands in, and nothing in a cor
   assert.equal(roomNameAt(layout, { x: 4, y: 1 }), null);
   assert.equal(roomNameAt(layout, { x: 8, y: 1 }), 'the Old Ossuary');
   assert.equal(roomNameAt(layout, { x: 12, y: 1 }), null);
+});
+
+test('an Abyss run’s revives are heard from each snapshot, and its wipe once it names this player', () => {
+  const held = { revives: -1, wiped: false };
+  heardRun(held, { revives: 5, events: [] }, 7);
+  assert.deepEqual(held, { revives: 5, wiped: false });
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 8 } as FightEvent] }, 7);
+  assert.equal(held.wiped, false, 'another player’s word');
+  heardRun(held, { revives: 5, events: [{ kind: EVENT.wiped, defender: 7 } as FightEvent] }, 7);
+  assert.equal(held.wiped, true);
 });

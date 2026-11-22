@@ -1,5 +1,5 @@
 /**
- * Where the player is in the game's loop: in the story that opens the game, on foot in a node or a patrol's dungeon,
+ * Where the player is in the game's loop: in the story that opens the game, on foot in a node or a dungeon,
  * back at their ship on the sea, or over an island's side choosing where to land. Travel between them passes through
  * a loading veil. On foot and at sea a menu may be open over the play. Pure: the page feeds it what happened and
  * draws what it answers.
@@ -23,14 +23,22 @@ export type Happening =
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
   | { readonly kind: 'enter'; readonly node: string; readonly name: string }
   | { readonly kind: 'leave'; readonly node: string; readonly name: string }
+  | { readonly kind: 'surface'; readonly name: string; readonly fell: boolean }
+  | { readonly kind: 'wiped'; readonly node: string; readonly name: string }
   | { readonly kind: 'wash-up'; readonly node: string; readonly words: string }
   | { readonly kind: 'isle'; readonly node: string; readonly words: string }
   | { readonly kind: 'back' }
-  | { readonly kind: 'story-ended'; readonly node: string; readonly name: string };
+  | { readonly kind: 'story-ended'; readonly node: string; readonly name: string }
+  | { readonly kind: 'shut'; readonly why: string };
 
 /** The first flow: the player arrives in a node, as they wash up on Overlook's shore. */
 export function arriving(node: string, name: string): Flow {
   return { mode: 'loading', words: `Arriving at ${name}`, then: { mode: 'foot', node, menu: false } };
+}
+
+/** Whether the player is on the sea: sailing, or looking over an island's side to land; never between places. */
+export function onTheSea(flow: Flow): boolean {
+  return flow.mode === 'sea' || flow.mode === 'landing';
 }
 
 /** The flow after something happens. Anything that does not fit the mode leaves it as it was. */
@@ -71,10 +79,25 @@ export function next(flow: Flow, happening: Happening): Flow {
       };
     case 'enter':
     case 'leave': {
-      // Into a patrol's dungeon, or out of one to its patrol, on foot with no menu open.
-      if (flow.mode !== 'foot' || flow.menu) return flow;
+      // Into a dungeon, on foot or from a sea island's door at sea, or out of one to its node, with no menu open.
+      const from = happening.kind === 'enter' && flow.mode === 'sea' ? 'sea' : 'foot';
+      if (flow.mode !== from || flow.menu) return flow;
       const words = `${happening.kind === 'enter' ? 'Entering' : 'Leaving'} ${happening.name}`;
       return { mode: 'loading', words, then: { mode: 'foot', node: happening.node, menu: false } };
+    }
+    case 'wiped':
+      // A company that fell in an Abyss run is taken out to its entrance, even with the menu open.
+      if (flow.mode !== 'foot') return flow;
+      return {
+        mode: 'loading',
+        words: `Your company fell. Leaving ${happening.name}`,
+        then: { mode: 'foot', node: happening.node, menu: false },
+      };
+    case 'surface': {
+      // Out of a sea island's dungeon onto the sea, even with the menu open, as a company that fell is taken out.
+      if (flow.mode !== 'foot') return flow;
+      const words = `${happening.fell ? 'Your company fell. ' : ''}Leaving ${happening.name}`;
+      return { mode: 'loading', words, then: { mode: 'sea', menu: false } };
     }
     case 'wash-up':
     case 'isle':
@@ -85,6 +108,10 @@ export function next(flow: Flow, happening: Happening): Flow {
     case 'story-ended':
       // The story hands the player to the game where it leaves them: Overlook's social space.
       return flow.mode === 'story' ? arriving(happening.node, happening.name) : flow;
+    case 'shut':
+      // A room whose gate shuts to the player sends them back to their ship, the veil saying why.
+      if (flow.mode !== 'foot' && flow.mode !== 'loading') return flow;
+      return { mode: 'loading', words: `${happening.why} Returning to your ship`, then: { mode: 'sea', menu: false } };
     case 'back':
       if (flow.mode === 'landing') return { mode: 'sea', menu: false };
       return (flow.mode === 'foot' || flow.mode === 'sea') && flow.menu ? { ...flow, menu: false } : flow;

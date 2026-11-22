@@ -27,6 +27,7 @@ code:
   - client/src/game/quests/questNews.ts#giftsBetween
   - client/src/game/quests/questFigures.ts#FigureGlides
   - client/src/game/tasks.ts#toldChange
+  - client/src/game/journalWords.ts#questCardsOf
   - client/src/game/characterPage.ts#NO_ART_WORDS
   - crates/protocol/src/quest_wire.rs#quests_of
   - crates/bake/src/lib.rs#places_of
@@ -118,6 +119,10 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
 
 ## In the browser
 
+- **The Journal** shows the roads as story missions ([[Interface]], "Journal";
+  [[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): a card for the quest walked,
+  at its task, and one for each quest done, in the file's order, each its name, the first line its `begin` says, and
+  its task's number and words; nothing from a word not on the player's own character.
 - **The tracker** shows the quest walked on foot, once the story and Maren's welcome are past: its name, its task and
   each goal's words with its count.
 - **The lines** are the speech system's ([[Speech]]): a quest's `begin` as it is first walked, a task's `end` as it is

@@ -426,6 +426,8 @@ table Snapshot {
   // In a dungeon's room, its cache beside the farthest post: x, y, z, the way it faces (radians clockwise from
   // north), and 1 while it stands open or 0 while it is shut. Empty in any other room.
   cache: [double];
+  // In an Abyss run, the revives its company has left; -1 in any other room.
+  revives: byte = -1;
 }
 
 // What a room sends: exactly one of these is present.

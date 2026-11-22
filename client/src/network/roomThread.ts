@@ -141,6 +141,17 @@ export class RoomThread implements RoomLink {
     return RoomThread.open(module, { how: 'dungeon', patrolText, number }, snapshot, gear);
   }
 
+  /** A dungeon's run from its ask, on a patrol's node file's text, as `LocalRoom.openRun`. */
+  static openRun(
+    module: WebAssembly.Module,
+    ask: string,
+    patrolText: string,
+    snapshot: (snapshot: Snapshot) => void,
+    gear?: (gear: GearMessage) => void,
+  ): Promise<RoomThread> {
+    return RoomThread.open(module, { how: 'run', ask, patrolText }, snapshot, gear);
+  }
+
   /** The sea round a layout's continents, as `LocalRoom.openSea`, the player's gear going to `gear`. */
   static openSea(
     module: WebAssembly.Module,

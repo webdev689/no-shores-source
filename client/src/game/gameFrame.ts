@@ -121,6 +121,9 @@ export interface FrameParts {
   readonly ambience: Ambience;
   /** A patrol's dungeon entrances among the land's drawers, and a dungeon drawn as its own scene. */
   readonly dungeons: DungeonDrawers;
+  /** What a frame on foot heeds first (`startActivities`): true when the room's gate sent the player away, and nothing
+   *  more of the place is drawn. */
+  readonly heed: (here: Foot) => boolean;
 }
 
 /** Starts the frames: one each animation frame, at most one waiting on the GPU while the next is drawn. */
@@ -161,6 +164,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
+    if (parts.heed(here)) return true;
     const { flow, helmMap } = playing;
     const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
     const aspect = size.width / Math.max(1, size.height);
@@ -241,7 +245,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
-    hud.place(here.node.name, placeWords(here.node, here.roomName));
+    hud.place(here.node.name, placeWords(here.node, here.roomName, here.held.revives));
     // As E's other use, a gate takes no one while a menu or the held map is up, the player is down or in a dungeon.
     const gated = paused || looking || here.fallen || here.dungeon;
     playing.through = gated ? null : gateWay(playing.landmass, here.node.id, [body.x, body.y]);

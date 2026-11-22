@@ -30,7 +30,7 @@ fn a_fight_that_carries_a_ship_past_any_edge_of_the_world_leaves_it_within_the_w
     for (fights_at, carried, back) in edges {
         let mut sea = sea();
         let player = sea.join();
-        sea.course(player, &[fights_at], 10).unwrap();
+        sea.course_anywhere(player, &[fights_at], 10).unwrap();
         let commission = Commission { faction: PIRATES, rank: Rank::Major };
         let near = [fights_at[0], fights_at[1] + 600.0];
         sea.pirates.sailing.push(Pirate::standing(1, 7, commission, near, 0.0, true));
@@ -66,7 +66,7 @@ fn a_ship_that_washes_up_with_no_port_known_or_sets_a_course_from_past_the_edge_
         let mut sea = sea();
         sea.harbour.harbours = Harbours::default();
         let player = sea.join();
-        sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+        sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
         sea.wash_up(player, out, true);
         let ship = ship_of(&sea, player);
         assert!(inside([ship.x, ship.y]), "washed up from {out:?}: {ship:?}");
@@ -91,11 +91,14 @@ fn a_course_is_refused_when_a_point_is_no_number_past_the_frame_on_land_too_many
     let player = sea.join();
     assert_eq!(sea.course(player, &[[-1.0, 1.0]], 10), Err(CourseRefused::BadCourse));
     let player = sea.join();
-    assert_eq!(sea.course(player, &[[150_000.0, 150_000.0]], 10), Err(CourseRefused::CrossesLand));
+    assert_eq!(
+        sea.course(player, &[[58_000.0, 50_000.0], [150_000.0, 150_000.0]], 10),
+        Err(CourseRefused::CrossesLand)
+    );
     let player = sea.join();
     assert_eq!(sea.course(player, &vec![[50_000.0, 50_000.0]; 65], 10), Err(CourseRefused::BadCourse));
     let player = sea.join();
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     assert_eq!(sea.course(player, &[[50_100.0, 50_000.0]], 10), Err(CourseRefused::TooSoon));
     ticks(&mut sea, 31);
     assert_eq!(sea.course(player, &[[150_000.0, 250_000.0]], 10), Err(CourseRefused::CrossesLand));
