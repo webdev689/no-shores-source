@@ -3,7 +3,8 @@
  * seeker's socket first sends their session's token; the band is read from the level their room last kept. A run
  * starts with four of a band, or fewer once its first has waited a minute, keeping apart any two where one blocks the
  * other. A group found is no company: the accounts keep whom each run was found for (`found_runs`), and that run's
- * room lets them in together, for that run alone. The Abyss Dungeon of the week is never matched.
+ * room lets them in together, for that run alone. The Abyss Dungeon of the week is never matched. The two playlists
+ * have a queue each, banded by five levels, whose runs are drawn as they are found (playlists.ts).
  */
 
 import { RUN_MOST } from '../roomNames.ts';
@@ -11,6 +12,7 @@ import { liveAccount } from './characters.ts';
 import { FOUND_KEPT_MS } from './companies.ts';
 import type { Db } from './database.ts';
 import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
+import { drawnOf, playlistBand, playlistOf, playlistRun, playlistShut } from './playlists.ts';
 
 /** How long the first seeker of a band waits before a run starts with fewer than four: the design's minute. */
 export const FIND_WAIT_MS = 60_000;
@@ -24,8 +26,9 @@ export const FINDING_MOST = 64;
 const ANOTHER_TAB = 'You are finding a company in another tab.';
 /** The longest base a run is found for, so its run's name (`--run-` and eight more) fits a room's 64. */
 const BASE_MOST = 50;
-/** An Elite Dungeon's base at Normal, or the week's at Elite, as Find a Company is asked for it by WebSocket. */
-const FINDING = /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite)?)$/;
+/** An Elite Dungeon's base at Normal, the week's at Elite, or a playlist's, as Find a Company is asked for it by
+ *  WebSocket. */
+const FINDING = /^\/v1\/find\/(node-[a-z0-9]+(?:-[a-z0-9]+)*(?:--elite)?|playlist-(?:elite|abyss))$/;
 
 /** The band a level is matched in: 1 to 10 the first, 11 to 20 the second, 21 to 30 the third. */
 export function bandOf(level: number): number {
@@ -33,7 +36,7 @@ export function bandOf(level: number): number {
 }
 
 /** The run's base a Find a Company request is for, `/v1/find/<base>` by WebSocket: an Elite Dungeon at Normal
- *  (`node-<id>`) or the week's at Elite (`node-<id>--elite`), short enough that its run's name fits 64; never the
+ *  (`node-<id>`), the week's at Elite (`node-<id>--elite`) or a playlist (`playlist-elite`, `playlist-abyss`), short enough that its run's name fits 64; never the
  *  Abyss Dungeon of the week, a patrol's dungeon or a run. Null for any other request. */
 export function findingAt(request: Request): string | null {
   if (request.headers.get('Upgrade') !== 'websocket') return null;
@@ -128,16 +131,19 @@ export interface FinderSocket {
   close(code: number, reason: string): void;
 }
 
-/** What a finder needs: who a token's seeker is, a way to keep whom a run was found for, a clock and an instance. */
+/** What a finder needs: who a token's seeker is, a way to keep whom a run was found for, a clock, an instance, and
+ *  for a playlist a draw of one of a count (the server's randomness when none is given). */
 export interface FinderDeps {
   seeker(token: string): Promise<{ account: string; level: number; apart: readonly string[] } | null>;
   found(run: string, accounts: readonly string[]): Promise<boolean>;
   readonly now: () => number;
   readonly instance: () => string;
+  readonly pick?: (count: number) => number;
 }
 
-/** One dungeon's Find a Company: each socket's first message is its session's token; each run found is told to its
- *  seekers as {"run":"<base>--run-<instance>"} and their sockets closed. */
+/** One dungeon's or playlist's Find a Company: each socket's first message is its session's token; each run found is
+ *  told to its seekers as {"run":"<base>--run-<instance>"}, a playlist's as its drawn run (`playlistRun`), and their
+ *  sockets closed. */
 export class Finder {
   private readonly base: string;
   private readonly deps: FinderDeps;
@@ -176,7 +182,10 @@ export class Finder {
     if (found === null) return this.letGo(socket, 4003, 'Sign in to find a company.');
     const { account, level, apart } = found;
     if (this.starting.has(account)) return this.letGo(socket, 4003, ANOTHER_TAB);
-    const replaced = this.queue.join({ socket, account, band: bandOf(level), since: this.deps.now(), apart });
+    const playlist = playlistOf(this.base);
+    const band = playlist === null ? bandOf(level) : playlistBand(playlist, level);
+    if (playlist !== null && band === null) return this.letGo(socket, 4003, playlistShut(playlist));
+    const replaced = this.queue.join({ socket, account, band: band ?? 0, since: this.deps.now(), apart });
     if (replaced !== null) this.letGo(replaced, 4003, ANOTHER_TAB);
   }
 
@@ -195,7 +204,12 @@ export class Finder {
     for (const one of due.flat()) this.starting.add(one.account);
     for (const group of due) {
       try {
-        const run = `${this.base}--run-${this.deps.instance()}`;
+        const playlist = playlistOf(this.base);
+        const band = group[0]?.band ?? 0;
+        const run =
+          playlist === null
+            ? `${this.base}--run-${this.deps.instance()}`
+            : playlistRun(playlist, band, this.deps.pick ?? drawnOf, this.deps.instance());
         const accounts = group.map((one) => one.account);
         const kept = await this.deps.found(run, accounts).catch(() => false);
         for (const { socket } of group)

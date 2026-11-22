@@ -143,9 +143,13 @@ test('Find a Company is reached by WebSocket for an Elite Dungeon or the week’
     '/v1/find/sea',
     `/v1/find/node-${'a'.repeat(46)}`,
     '/v1/find/node-krakens-grotto/',
+    '/v1/find/playlist-normal',
+    '/v1/find/playlist-elite--run-k3j4h5g6',
   ])
     assert.equal(asked(path), null, path);
   assert.equal(asked('/v1/find/node-krakens-grotto', ''), null, 'only by WebSocket');
+  assert.equal(asked('/v1/find/playlist-elite'), 'playlist-elite');
+  assert.equal(asked('/v1/find/playlist-abyss'), 'playlist-abyss', 'the Abyss Playlist is matched');
 });
 
 test('a run found for each Elite Dungeon, and for each at Elite, is named as its room reads a run', () => {
@@ -341,4 +345,35 @@ test('whom a run was found for admits them for a day after it was found, and no 
   assert.equal(await foundRun(database, run, [ada, ben], made.clock.now), true);
   assert.deepEqual(await companionsOf(database, ada, run, made.clock.now + FOUND_KEPT_MS), [ada, ben]);
   assert.deepEqual(await companionsOf(database, ada, run, made.clock.now + FOUND_KEPT_MS + 1), [ada], 'alone');
+});
+
+test('a playlist’s seekers are banded by five levels and sent into an Elite Dungeon drawn for them at the band’s level', async () => {
+  const { made, tokens, ids, database } = await world(['Ada', 'Ben'], 17);
+  const young = await world(['Cal'], 9);
+  const drawn: number[] = [];
+  const finder = new Finder('playlist-elite', {
+    seeker: (token) => seekerOf(token === young.tokens['Cal'] ? young.database : database, token, made.clock.now),
+    found: (run, found) => foundRun(database, run, found, made.clock.now),
+    now: () => made.clock.now,
+    instance: () => 'k3j4h5g6',
+    pick: (count) => (drawn.push(count), 13),
+  });
+  const cal = await seeking(finder, young.tokens['Cal'] ?? '');
+  assert.deepEqual(cal.closed, [4003, 'The Elite Playlist opens at level 10.']);
+  const both = [await seeking(finder, tokens['Ada'] ?? ''), await seeking(finder, tokens['Ben'] ?? '')];
+  made.clock.now += 60_000;
+  await finder.tick();
+  const run = 'node-saltworm-warrens--elite--playlist-17--run-k3j4h5g6';
+  for (const socket of both) assert.deepEqual(socket.sent, [JSON.stringify({ run })]);
+  assert.deepEqual(drawn, [18], 'one of the 18');
+  assert.deepEqual(
+    (await companionsOf(database, ids['Ada'] ?? '', run, made.clock.now)).sort(),
+    Object.values(ids).sort(),
+  );
+  assert.deepEqual(JSON.parse(runAsk(run, 29_919_420) ?? 'null'), {
+    dungeon: { place: 'saltworm-warrens' },
+    tier: 1,
+    minute: 29_919_420,
+    playlist: 17,
+  });
 });

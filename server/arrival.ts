@@ -75,6 +75,8 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
   if (!room.startsWith('node-') || room === from || room === FIRST_ROOM) return true;
   const [to, was] = [nodeOf(room), nodeOf(from)];
   if (!to) return false;
+  // A playlist's run is launched from the sea, from beside any port.
+  if (to.playlist !== null) return from !== null && seaRoom(from) !== null;
   if (was && was.id === to.id) {
     // Into a dungeon from its node's room at its seas, an Elite Dungeon's run (the week's at its own tier, or at
     // Normal) from its node at any, as its tier is its own whatever the seas; out of the node's own dungeon or run at
@@ -110,6 +112,6 @@ export function toCoast([x, y]: Point, ring: readonly Point[]): number {
  *  room's seas. */
 export function cameOutOf(room: string, from: string | null, number: number): boolean {
   const [to, was] = [nodeOf(room), nodeOf(from)];
-  if (!to || !was || inside(to) || was.id !== to.id || was.seas !== to.seas) return false;
+  if (!to || !was || inside(to) || was.id !== to.id || was.seas !== to.seas || was.playlist !== null) return false;
   return was.dungeon === number || (was.dungeon === null && was.run !== null && number === 0);
 }

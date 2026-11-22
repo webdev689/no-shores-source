@@ -16,9 +16,9 @@ import {
 } from './roomNames.ts';
 
 test('a node has one room at each difficulty, by one spelling each', () => {
-  assert.deepEqual(nodeRoom('tidewall'), { id: 'tidewall', seas: 0, dungeon: null, run: null });
-  assert.deepEqual(nodeRoom('tidewall--elite'), { id: 'tidewall', seas: 1, dungeon: null, run: null });
-  assert.deepEqual(nodeRoom('tidewall--abyss'), { id: 'tidewall', seas: 2, dungeon: null, run: null });
+  assert.deepEqual(nodeRoom('tidewall'), { id: 'tidewall', seas: 0, dungeon: null, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('tidewall--elite'), { id: 'tidewall', seas: 1, dungeon: null, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('tidewall--abyss'), { id: 'tidewall', seas: 2, dungeon: null, run: null, playlist: null });
   assert.equal(nodeRoom('tidewall--normal'), null, 'Normal is the plain name');
   assert.equal(nodeRoom('tidewall--abyss--1'), null, 'no fresh copies');
   assert.equal(nodeRoom('tidewall--squall'), null);
@@ -60,7 +60,7 @@ test('a patrol’s dungeon is one shared room at Normal and a run at each harder
         seas === 0
           ? [`saltgrass-downs--dungeon-${dungeon}`, null]
           : [`saltgrass-downs${spelled}--dungeon-${dungeon}--run-a1b2c3d4`, 'a1b2c3d4'];
-      assert.deepEqual(nodeRoom(name), { id: 'saltgrass-downs', seas, dungeon, run });
+      assert.deepEqual(nodeRoom(name), { id: 'saltgrass-downs', seas, dungeon, run, playlist: null });
     }
   for (const name of [
     'saltgrass-downs--dungeon-3',
@@ -78,10 +78,10 @@ test('a patrol’s dungeon is one shared room at Normal and a run at each harder
 });
 
 test('a node called as a dungeon is named is still its own room, at every difficulty', () => {
-  assert.deepEqual(nodeRoom('dungeon-0'), { id: 'dungeon-0', seas: 0, dungeon: null, run: null });
-  assert.deepEqual(nodeRoom('dungeon-1--elite'), { id: 'dungeon-1', seas: 1, dungeon: null, run: null });
-  assert.deepEqual(nodeRoom('dungeon-2--dungeon-0'), { id: 'dungeon-2', seas: 0, dungeon: 0, run: null });
-  assert.deepEqual(nodeRoom('run-a1b2c3d4'), { id: 'run-a1b2c3d4', seas: 0, dungeon: null, run: null });
+  assert.deepEqual(nodeRoom('dungeon-0'), { id: 'dungeon-0', seas: 0, dungeon: null, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('dungeon-1--elite'), { id: 'dungeon-1', seas: 1, dungeon: null, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('dungeon-2--dungeon-0'), { id: 'dungeon-2', seas: 0, dungeon: 0, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('run-a1b2c3d4'), { id: 'run-a1b2c3d4', seas: 0, dungeon: null, run: null, playlist: null });
 });
 
 test('a page that still names the old tiers finds the room of the new name, and every other name is as it was', () => {
@@ -110,21 +110,24 @@ test('a run is a room of its own: an instance after its dungeon, at Elite and Ab
     seas: 2,
     dungeon: 2,
     run: 'k3j4h5g6',
+    playlist: null,
   });
   assert.deepEqual(nodeRoom('krakens-grotto--run-k3j4h5g6'), {
     id: 'krakens-grotto',
     seas: 0,
     dungeon: null,
     run: 'k3j4h5g6',
+    playlist: null,
   });
   assert.deepEqual(nodeRoom('saltworm-warrens--abyss--run-k3j4h5g6'), {
     id: 'saltworm-warrens',
     seas: 2,
     dungeon: null,
     run: 'k3j4h5g6',
+    playlist: null,
   });
-  assert.deepEqual(nodeRoom('saltgrass-downs--dungeon-1'), { id: 'saltgrass-downs', seas: 0, dungeon: 1, run: null });
-  assert.deepEqual(nodeRoom('tidewall--elite'), { id: 'tidewall', seas: 1, dungeon: null, run: null });
+  assert.deepEqual(nodeRoom('saltgrass-downs--dungeon-1'), { id: 'saltgrass-downs', seas: 0, dungeon: 1, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('tidewall--elite'), { id: 'tidewall', seas: 1, dungeon: null, run: null, playlist: null });
 });
 
 test('no name opens a shared Elite or Abyss dungeon, a private Normal one, or a run without its whole instance', () => {
@@ -207,6 +210,28 @@ test('each run’s name makes the ask its room opens from', () => {
     [privateRun('node-krakens-grotto--run-k3j4h5g6'), privateRun('sea-dungeon-continent-4-caverns-0a1b2c3d')],
     [true, false],
   );
+});
+
+test('a playlist’s run names its Elite Dungeon, its tier and its foes’ level before its instance', () => {
+  const room = 'saltworm-warrens--abyss--playlist-28--run-k3j4h5g6';
+  assert.deepEqual(nodeRoom(room), { id: 'saltworm-warrens', seas: 2, dungeon: null, run: 'k3j4h5g6', playlist: 28 });
+  assert.deepEqual(JSON.parse(runAsk(`node-${room}`, 29_919_420) ?? 'null'), {
+    dungeon: { place: 'saltworm-warrens' },
+    tier: 2,
+    minute: 29_919_420,
+    playlist: 28,
+  });
+  for (const name of [
+    'krakens-grotto--playlist-12--run-k3j4h5g6',
+    'krakens-grotto--elite--playlist-12',
+    'krakens-grotto--elite--playlist-012--run-k3j4h5g6',
+    'krakens-grotto--elite--playlist---run-k3j4h5g6',
+    'krakens-grotto--elite--dungeon-0--playlist-12--run-k3j4h5g6',
+    'krakens-grotto--elite--playlist-12--dungeon-0--run-k3j4h5g6',
+  ])
+    assert.equal(nodeRoom(name), null, name);
+  assert.ok(privateRun(`node-${room}`));
+  assert.ok('node-smugglers-labyrinth--abyss--playlist-32--run-zzzzzzzz'.length <= 64);
 });
 
 test('a run holds four, a company’s most, and only a run is ever full this way', () => {
