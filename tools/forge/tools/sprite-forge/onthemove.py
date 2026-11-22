@@ -9,25 +9,29 @@ standing body's: on the move the legs walk, so the blow is struck from the strid
 
 Each moving animation is its action's name and `walk`: the blows (`over1hwalk`), the bow's shot (`bowshotwalk`, its
 legs the bow's own walk), the rifle's, the pistol's and the braced pistols' shots and the reloads (`gunshotwalk`),
-and the cast (`castwalk`)."""
+and the cast (`castwalk`). A guard is held, not played: its one frame over the walk's whole stride, the shield's block
+over the shield's march (`blockwalk`) and a weapon's parry over the walk (`parrywalk`)."""
 from mathutils import Matrix, Quaternion, Vector
 
 import blows
 import bowhold  # noqa: F401  the bow's walk, registered in poses
 import casting
 import gunplay
+import onehand  # noqa: F401  the shield's block and march, registered in poses
 import poses
 
+# the guards held on the move (playerMoves.ts `fightMove`): the action's first frame through a stride
+GUARDS = {'blockwalk': ('block', 'march'), 'parrywalk': ('parry', 'walk')}
 # each moving animation: the action it plays and the walk its legs take
 WALKS = {**{f'{b}walk': (b, 'walk') for b in blows.BLOWS},
          'bowshotwalk': ('bow', 'bowwalk'), 'castwalk': ('cast', 'walk'),
          'gunshotwalk': ('gunshot', 'gunwalk'), 'gunreloadwalk': ('gunreload', 'gunwalk'),
          'pistolshotwalk': ('pistolshot', 'pistolwalk'), 'pistolreloadwalk': ('pistolreload', 'pistolwalk'),
-         'braceshotwalk': ('braceshot', 'bracewalk')}
+         'braceshotwalk': ('braceshot', 'bracewalk'), **GUARDS}
+STRIDE = 4   # a walk's frames: one stride over the action
 # the actions' frames, each moving animation as many as its action
 FRAMES_OF = {**blows.BLOWS, 'bow': 4, **casting.CAST, **gunplay.RIFLE, **gunplay.PISTOL, **gunplay.BRACE}
-MOVES = {name: FRAMES_OF[act] for name, (act, _) in WALKS.items()}
-STRIDE = 4   # a walk's frames: one stride over the action
+MOVES = {name: STRIDE if name in GUARDS else FRAMES_OF[act] for name, (act, _) in WALKS.items()}
 LEAN = 0.5   # the share of the action's lean the walking chest keeps
 LEGS = tuple(f'{j}_{s}' for s in 'LR' for j in ('thigh', 'shin', 'foot'))
 
@@ -64,8 +68,9 @@ def moving(name):
     frames = MOVES[name]
 
     def frame_of(frame, view, yaw):
-        poses._adj = poses.FIT.get(f'{act}:{view}:{frame}', {})   # the action's own fit (the bow's shot's)
-        p, gear = poses.ANIMS[act](frame, view, yaw)
+        at = 0 if name in GUARDS else frame   # a guard holds its first frame
+        poses._adj = poses.FIT.get(f'{act}:{view}:{at}', {})   # the action's own fit (the bow's shot's)
+        p, gear = poses.ANIMS[act](at, view, yaw)
         poses._adj = {}   # the walk unfitted, as a carried walk is
         w, _ = poses.ANIMS[walk](frame * STRIDE // frames, view, yaw)
         before = p.world()

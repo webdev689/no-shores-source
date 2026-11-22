@@ -209,7 +209,7 @@ export function likelyMoves(
     kit.idle,
     kit.walk,
     ...acts,
-    ...acts.flatMap((act) => walking(act) ?? []),
+    ...[...acts, guard].flatMap((act) => walking(act) ?? []),
     ...(kit.run ? [kit.run] : []),
     'roll',
     guard,
@@ -401,7 +401,8 @@ export function shownMove(
  * down; hurt while staggered or flinching (its bow's or staff's own), played by how far through it is; the roll
  * through a dodge, or where the forge draws none, the jump's frames through the dodge's hop in the air by its rise
  * and fall, or the run where the forge does not draw what it holds in the jump; the parry through a deflect, a
- * shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed blow's stroke raised
+ * shield's block; the guard held as the parry's first frame or a shield's block, walked on the move where the figure
+ * draws it whole (`moved`); a telegraphed blow's stroke raised
  * through its wind-up and held at its end when it overreaches; and a ranged weapon aimed: held on the frame before
  * its shot leaves (`LOOSES`), a bow drawn to it.
  */
@@ -424,6 +425,11 @@ function fightMove(
     frame: Math.min(frame, frames(anim) - 1),
     frameSeconds: 0,
   });
+  // A guard is held still, or walked where the figure draws it on the move.
+  const held = (anim: string): Shown => {
+    const walked = moved(anim);
+    return walked === anim ? still(anim) : loop(walked, walkFrameSeconds(doing.speed));
+  };
   switch (fight.kind) {
     case 'dead':
       return fight.progress >= 1 ? still('fallen') : byProgress('death', fight.progress);
@@ -440,10 +446,10 @@ function fightMove(
       if (!holds('jump')) return loop('run', WALK_FRAME / 2);
       return still('jump', jumpFrame(doing.vz));
     case 'parry':
-      return shield ? still('block') : byProgress(own('parry'), fight.progress);
+      return shield ? held('block') : byProgress(own('parry'), fight.progress);
     case 'guard':
-      if (shield) return still('block');
-      return draws(own('parry'), right) ? still(own('parry')) : still('guard');
+      if (shield) return held('block');
+      return draws(own('parry'), right) ? held(own('parry')) : still('guard');
     case 'windup':
       return still(fight.stroke, fight.progress < 0.8 ? 0 : 1);
     case 'overreach':

@@ -374,12 +374,31 @@ test('a blow struck on the move walks on once its frames have played, rather tha
   assert.deepEqual([blowAt(0.9, false).anim, blowAt(0.9, false).frame], ['over1h', 8], 'standing, it holds its last');
 });
 
+test('a guard held on the move walks where the figure draws it walking, and stands still where it does not', () => {
+  const guarding = (left: string | null, moving: boolean, walking: (action: string) => string | null) =>
+    shownMove(
+      { ...doing, left, moving, speed: 2, fight: { kind: 'guard', progress: 0 } },
+      frames,
+      everything,
+      walking,
+    );
+  const drawn = (action: string) => `${action}walk`;
+  const shield = guarding('shield_kite_iron', true, drawn);
+  assert.deepEqual([shield.anim, shield.frame], ['blockwalk', null], "a shield's block, walked");
+  assert.ok(shield.frameSeconds > 0);
+  assert.equal(guarding(null, true, drawn).anim, 'parrywalk', "a blade's guard, walked");
+  assert.deepEqual(guarding(null, false, drawn), { anim: 'parry', frame: 0, frameSeconds: 0 }, 'standing, held');
+  assert.deepEqual(guarding('shield_kite_iron', true, () => null), { anim: 'block', frame: 0, frameSeconds: 0 });
+});
+
 test('what a fight holds a figure to, and its blows on the move, are composed ahead too', () => {
   const onTheMoveOf = (action: string) => `${action}walk`;
   const likely = likelyMoves('sword_iron', null, everything, null, onTheMoveOf);
-  for (const anim of ['over1hwalk', 'side1hwalk', 'thrust1hwalk', 'parry', 'hurt', 'roll'])
+  for (const anim of ['over1hwalk', 'side1hwalk', 'thrust1hwalk', 'parry', 'parrywalk', 'hurt', 'roll'])
     assert.ok(likely.includes(anim), anim);
   assert.ok(likelyMoves('sword_iron', 'shield_kite_iron', everything).includes('block'), "a shield's block");
+  const shield = likelyMoves('sword_iron', 'shield_kite_iron', everything, null, onTheMoveOf);
+  assert.ok(shield.includes('blockwalk'), "a shield's block on the move");
   const staff = likelyMoves('staff_iron', null, everything);
   assert.ok(staff.includes('hurt_staff') && staff.includes('parry_staff'), "a staff's own");
 });

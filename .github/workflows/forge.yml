@@ -2,8 +2,8 @@ name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
 # weapons drawn large and the material nodes), and publishes them to R2 with the repository's R2 token, whenever
-# their tools change on main or a run is asked for on a branch; a run asked for may also draw figure strips for both
-# bodies (`figures`). R2's objects are named by their hashes, so a run changes nothing already published; the log
+# their tools change on main or a run is asked for on a branch; a run asked for may also draw figure strips, every
+# set's (`figures`). R2's objects are named by their hashes, so a run changes nothing already published; the log
 # ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
 on:
   push:
@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       figures:
-        description: "Figure strips to draw first, both bodies: runs split by ';', each 'anims|layers', empty for all"
+        description: "Figure strips to draw first, every set: runs split by ';', each 'anims|layers|bodies', empty for all, bodies both"
         required: false
         default: ''
 
@@ -74,6 +74,7 @@ jobs:
           nodes=$(python -c "import json; print(','.join(json.load(open('tools/sprite-forge/specs/pictures/nodes.json'))['pictures']))")
           python -I tools/sprite-forge/itempics.py --set pictures --only "$nodes" --out public/art/studio/forge
       # Figure strips over the published tables (layers.py), each whose inputs changed drawn again; no token here.
+      # Every set, the classic first: its bare body sets each animation's cell, which the other sets are laid in.
       - name: Draw the figure strips asked for
         if: steps.token.outputs.set == 'true' && inputs.figures
         env:
@@ -82,10 +83,12 @@ jobs:
           python -I tools/forge_publish.py pull
           IFS=';' read -ra runs <<< "$FIGURES"
           for run in "${runs[@]}"; do
-            anims=${run%%|*}; layers=${run#*|}
-            for body in male female; do
-              (cd tools/forge && python -I tools/sprite-forge/layers.py --body "$body" ${anims:+--anims "$anims"} \
-                ${layers:+--layers "$layers"} --out public/art/studio/forge/layers)
+            IFS='|' read -r anims layers bodies <<< "$run"
+            for body in $(tr ',' ' ' <<< "${bodies:-male,female}"); do
+              for set in classic wardrobe armour beast hair; do
+                (cd tools/forge && python -I tools/sprite-forge/layers.py --body "$body" --set "$set" \
+                  ${anims:+--anims "$anims"} ${layers:+--layers "$layers"} --out public/art/studio/forge/layers)
+              done
             done
           done
       # The published tables first (kept as the figures left them), then the new pictures beside what is published.

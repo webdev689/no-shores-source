@@ -33,8 +33,9 @@ The [[Test Ground]] shows them.
   a pair's left blade holds at guard while the right strikes.
 - **Actions on the move**: each blow, the bow's shot, a gun's and the braced pistols' shots, the reloads and the cast
   drawn again with the walk's hips and legs under the action's chest, which keeps the action's turn and half its lean
-  (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk` and so on). The sprint's fists close thumb up, the
-  wrist straight.
+  (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk` and so on). A guard is held through the stride, its
+  first frame over the walk's four: the shield's block over the shield's march (`blockwalk`) and the parry over the
+  walk (`parrywalk`) ([[Every Guard Walks on the Move]]). The sprint's fists close thumb up, the wrist straight.
 - **The dodge roll**: drawn by DFO for Overlook, outside its own studio, on both adult bodies and what they wear, but
   no weapon, held or worn: a weapon is not seen through a roll
   ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
@@ -123,8 +124,8 @@ The `forge` workflow renders the Arts' birds, the weapons drawn large and the ma
 published with the repository's `R2_TOKEN` whenever `artbirds.py`, `weaponart.py`, the item forge's models
 (`items/`, which the nodes are laid from), `itempics.py`, the nodes' rows or their pinned packages change on main, or
 when a run is asked for on a branch; its log ends with the manifest, which a commit takes into `content/forge/renders.json`.
-A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
-either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
+A run asked for may also draw figure strips first, every set's, the classic first (`figures`: runs split by `;`, each
+`anims|layers|bodies`, the first two empty for all, the bodies both when left out), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
 strip reaches R2 from one. A fresh checkout holds no strips, so every strip of each layer named is drawn.
 It installs only the exact wheels `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git
 credential. The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without

@@ -129,7 +129,8 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   knocked down; hurt while staggered or flinching; the dodge roll through a dodge, on the ground and in the air, no
   weapon seen through it, held or worn, as the forge draws none in the roll (where the forge draws no roll, the jump's
   rising, top and falling frames through the dodge's hop, or the run where it does not draw what is held in the jump);
-  the parry's deflect, or a shield's block; the guard held as the parry's first frame or a shield's block; a telegraphed
+  the parry's deflect, or a shield's block; the guard held as the parry's first frame or a shield's block, walked on
+  the move where every layer is drawn walking ([[Every Guard Walks on the Move]]); a telegraphed
   blow's stroke raised through its wind-up and held at its end when it overreaches. A ranged weapon aimed, standing or
   walking, is held on the frame before the one its shot leaves on, aimed or drawn as it fires but without the flash or
   the slack string: a thunderlock's or a pistolet's second frame, a brace's first (its right pistol aimed), a bow's or a
