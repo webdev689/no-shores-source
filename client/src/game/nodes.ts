@@ -169,8 +169,22 @@ export function bearingTo(from: Point, to: Point): number {
 /** Whether a point stands on ground the city has set (its terraces, plaza and landmark's ground), so nothing wild
  *  grows there. */
 export function clearedBy(pads: readonly Pad[]): (x: number, y: number) => boolean {
+  // Asked for every point nature scatters: a point outside every pad's box at once is outside each, and each pad's
+  // corners are read in place.
+  const [west, north] = [
+    Math.min(...pads.map(({ bounds }) => bounds[0])),
+    Math.min(...pads.map(({ bounds }) => bounds[1])),
+  ];
+  const [east, south] = [
+    Math.max(...pads.map(({ bounds }) => bounds[2])),
+    Math.max(...pads.map(({ bounds }) => bounds[3])),
+  ];
   return (x, y) =>
-    pads.some(({ bounds: [west, north, east, south] }) => x >= west && x <= east && y >= north && y <= south);
+    x >= west &&
+    x <= east &&
+    y >= north &&
+    y <= south &&
+    pads.some(({ bounds }) => x >= bounds[0] && x <= bounds[2] && y >= bounds[1] && y <= bounds[3]);
 }
 
 /** The way a player faces on arriving in a node: in a city's social space, out from its landmark through the middle
