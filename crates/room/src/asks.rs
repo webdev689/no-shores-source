@@ -14,6 +14,12 @@ use gear::{Ask, Here, Item, Kind, Rarity, Refusal, Slot, Vestige};
 pub const STALL_REACH: f64 = 4.0;
 pub const COUNTER_REACH: f64 = 4.0;
 pub const NODE_REACH: f64 = 2.5;
+/// How long a node takes to gather, ticks (two seconds), and how far the body may stir meanwhile, metres.
+pub const GATHER_TICKS: u64 = 120;
+pub const GATHER_STIR_M: f64 = 0.3;
+/// How near its end a gather let go of, or stepped off, is gathered all the same, ticks: the room counts from its
+/// answer and the page from the press, a crossing of the wire apart.
+pub const GATHER_GRACE_TICKS: u64 = 15;
 /// How often, in ticks, one player's asks are answered: five a second, no more often than their gear is sent, so each
 /// answer reaches them before the next is made. How many asks are held for their turn; past those, they are let go.
 pub const ASK_EVERY_TICKS: u64 = crate::players::GEAR_EVERY_TICKS;
@@ -26,15 +32,18 @@ pub const NOT_THE_TEST_GROUND: u8 = 101;
 pub const STOCK_FULL: u8 = 102;
 /// A puzzle takes no use for a while after a wrong one (`steps.rs`).
 pub const NOT_YET: u8 = 103;
+/// A node is not gathered on horseback.
+pub const MOUNTED: u8 = 104;
 
 /// What a player asks of their gear.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Asked {
     Gear(Ask),
-    /// Gathers the room's resource node by its place in the room's list.
+    /// Begins to gather the room's resource node by its place in the room's list, E held; and lets go of it.
     Gather {
         node: u8,
     },
+    StopGather,
     /// Scavenges a sea island's wreck by its place in the island's list.
     Scavenge {
         wreck: u8,
@@ -99,6 +108,18 @@ pub struct ResourceNode {
     pub x: f64,
     pub y: f64,
     pub resource: u8,
+}
+
+/// A gather under way: its node, the tick it began, where the body stood, its health last tick, and whether E was let
+/// go of. Being hurt, falling, mounting or the node's turn passing stops it, as does stirring or letting go before its
+/// last `GATHER_GRACE_TICKS`; `GATHER_TICKS` on, the node is gathered.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Gathering {
+    pub node: u8,
+    pub since: u64,
+    pub at: [f64; 2],
+    pub health: f64,
+    pub let_go: bool,
 }
 
 /// A social space's counter that serves a player's gear: the Mage's identifies Vestiges, a vault's keeps gear, a
@@ -239,6 +260,14 @@ impl Room {
     /// without end has all but its first few let go, and cannot make the room work faster for it.
     pub(crate) fn take_ask(&mut self, player: PlayerId, asked: Asked) {
         let Some(found) = self.players.get_mut(&player) else { return };
+        // E let go of is heard at once, and lets go of every gather asked before it, so none outlives the key.
+        if asked == Asked::StopGather {
+            found.asks.retain(|held| !matches!(held, Asked::Gather { .. }));
+            if let Some(gathering) = found.gathering.as_mut() {
+                gathering.let_go = true;
+            }
+            return;
+        }
         if found.asks.len() < ASKS_HELD {
             found.asks.push_back(asked);
         }
@@ -281,6 +310,12 @@ impl Room {
                 }
             }
             Asked::Gather { node } => self.gather(player, node),
+            Asked::StopGather => {
+                if let Some(gathering) = self.players.get_mut(&player).and_then(|found| found.gathering.as_mut()) {
+                    gathering.let_go = true;
+                }
+                0
+            }
             Asked::Scavenge { wreck } => self.scavenge(player, wreck),
             Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
@@ -301,25 +336,44 @@ impl Room {
     }
 
     fn gather(&mut self, player: PlayerId, node: u8) -> u8 {
-        let Some(spot) = self.resource_nodes.get(usize::from(node)).copied() else { return OUT_OF_REACH };
-        let Some(fighter) = self.fighter(player).copied() else { return OUT_OF_REACH };
-        let standing = self.node_standing(usize::from(node));
-        let Some(found) = self.players.get_mut(&player) else { return OUT_OF_REACH };
-        let far = libm::hypot(fighter.body.x - spot.x, fighter.body.y - spot.y) > NODE_REACH;
-        let dead = fighter.dead() || matches!(found.standing, Standing::Dead { .. });
-        if found.spent.contains(&node) || far || !standing || dead {
+        if let Some(refused) = self.gather_refused(player, node) {
+            return refused;
+        }
+        let (Some(spot), Some(fighter)) = (self.resource_nodes.get(usize::from(node)), self.fighter(player)) else {
+            return OUT_OF_REACH;
+        };
+        if libm::hypot(fighter.body.x - spot.x, fighter.body.y - spot.y) > NODE_REACH {
             return OUT_OF_REACH;
         }
-        if found.character.materials.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
-            return STOCK_FULL;
-        }
-        found.spent.push(node);
-        if let (Some(owner), Some(patrol)) = (&found.owner, self.patrol.as_mut()) {
-            patrol.gathered.entry(owner.clone()).or_default().push(node);
-        }
-        found.character.gather(usize::from(spot.resource));
-        found.character.tell(&gear::quests::Event::Gather);
+        let (since, at, health) = (self.clock, [fighter.body.x, fighter.body.y], fighter.health);
+        let Some(found) = self.players.get_mut(&player) else { return OUT_OF_REACH };
+        found.gathering = Some(Gathering { node, since, at, health, let_go: false });
         0
+    }
+
+    /// Why `player` may not gather `node` now, as its answer's code, wherever they stand: it does not stand for them
+    /// (its turn has not come, or they gathered it), they are down, on horseback, or full of its resource.
+    pub(crate) fn gather_refused(&self, player: PlayerId, node: u8) -> Option<u8> {
+        let spot = self.resource_nodes.get(usize::from(node))?;
+        let (Some(fighter), Some(found)) = (self.fighter(player), self.players.get(&player)) else {
+            return Some(OUT_OF_REACH);
+        };
+        let dead = fighter.dead() || matches!(found.standing, Standing::Dead { .. });
+        // On a sea island, only an account the sea says is landed there gathers, as only one scavenges.
+        let landed = self
+            .isle
+            .as_ref()
+            .and_then(|isle| isle.landed.as_ref())
+            .is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains_key(owner)));
+        if found.spent.contains(&node) || !self.node_standing(usize::from(node)) || dead || !landed {
+            Some(OUT_OF_REACH)
+        } else if found.mounted {
+            Some(MOUNTED)
+        } else if found.character.materials.resource(usize::from(spot.resource)) >= gear::character::STOCK_MOST {
+            Some(STOCK_FULL)
+        } else {
+            None
+        }
     }
 
     fn grant(&mut self, player: PlayerId, grant: Grant) -> u8 {

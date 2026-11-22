@@ -38,7 +38,7 @@ const DOWNS: LayoutMarks = {
   ],
   sites: [
     { kind: 'gate', at: [900, 900], radius: 40, holds: 'burned-mill' },
-    { kind: 'resource', at: [500, 500], radius: 4, holds: 'ore' },
+    { kind: 'resource', at: [500, 500], radius: 4, holds: 'brineglass' },
     { kind: 'event', at: [300, 300], radius: 60 },
     { kind: 'foes', at: [300, 300], radius: 60 },
   ],
@@ -65,11 +65,11 @@ test('close, a layout draws its section ring, its areas, its paths by width and 
   assert.equal(lines.length, 7);
   const widths = lines.flatMap((mark) => (mark.shape === 'line' && mark.casing ? [mark.width] : []));
   assert.deepEqual(widths, [4.5, 2.6], 'a track is drawn wider than a footpath, at their widths in metres');
-  assert.equal(drawn.dots.length, 2, 'the gate and the ore');
+  assert.equal(drawn.dots.length, 2, 'the gate and the resource');
   const names = labels.marks.flatMap((mark) => (mark.shape === 'label' ? [mark.text] : []));
   assert.ok(names.includes('Saltgrass · hamlet'));
   assert.ok(names.includes('Gate to burned-mill'));
-  assert.ok(names.includes('ore'));
+  assert.ok(names.includes('brineglass'));
 });
 
 test('from afar a path keeps a width that is seen, a track wider than a footpath', () => {

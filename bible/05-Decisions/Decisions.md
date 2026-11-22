@@ -137,6 +137,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]
 - [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map Comes to the Social Spaces and Every Land Area]]
+- [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]
 - [[The Sea as Claude Shapes It]]
 - [[The Sea Fight Looks and Aims as DFO's Does]]
 - [[A Ship's Level Raises Its Strength, and the Tiers Reach the Sea]]

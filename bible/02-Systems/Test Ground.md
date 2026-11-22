@@ -278,8 +278,9 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   once. A refusal says why.
 - **The stall** stands south-east of the start, a sealed Vestige's mark over it as over a keeper ([[Game]], "Over
   what a player can use"): within 4 m of it a Vestige opens and the vault is reached, as in a social space.
-- **Resource nodes** stand west of the start, each with its resource's mark over it, two of Saltmere's Brineglass and
-  one of Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and its mark goes once it is spent.
+- **Resource nodes** stand west of the start, each with its resource's mark over it as the course's marker (the
+  game's nodes wear none), two of Saltmere's Brineglass and one of Cairnwatch's Cairn Iron; within 2.5 m one is
+  gathered two seconds after its panel's press, the player standing still, and its mark goes once it is spent.
 - **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
   pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
 - **The hands** hold what the gear wears: the room takes no other arms. So the player's own hands in the dress

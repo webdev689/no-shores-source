@@ -43,8 +43,8 @@ const KEEP_OFF_M: f64 = 20.0;
 pub const LANDING_M: f64 = 40.0;
 
 /// An island at sea: its number, seed and kind, where its middle is, the continent whose water it lies in and that
-/// continent's climate, whose guards hold it, where a ship anchors off it, its coast as land, and the tick it was last
-/// held.
+/// continent's climate and resource (its place in the gear's catalogue), whose guards hold it, where a ship anchors
+/// off it, its coast as land, and the tick it was last held.
 #[derive(Debug)]
 pub struct SeaIsland {
     pub id: u32,
@@ -53,6 +53,7 @@ pub struct SeaIsland {
     pub at: [f64; 2],
     pub continent: usize,
     pub climate: String,
+    pub resource: Option<u8>,
     pub guards: Option<u8>,
     /// Its water's band of levels, its guards' and its dungeon's.
     pub levels: Option<(u8, u8)>,
@@ -71,10 +72,13 @@ pub struct Islands {
     draws: Draws,
     next_id: u32,
     found: BTreeMap<PlayerId, BTreeSet<u32>>,
-    climates: Vec<String>,
-    /// Each account landed on an island, by its number: its ship lay at rest at that island's anchorage when last at
-    /// sea. Its island's room lets only those scavenge.
-    landed: BTreeMap<String, u32>,
+    /// Each continent's climate and resource, in the layout's order.
+    climates: Vec<(String, Option<u8>)>,
+    /// Each account landed on an island, by its number, and the landing's own number: its ship lay at rest at that
+    /// island's anchorage when last at sea. Its island's room lets only those scavenge and gather, and a landing of a
+    /// new number is a new visit, its nodes standing again for it. How many landings there have been.
+    landed: BTreeMap<String, (u32, u32)>,
+    landings: u32,
 }
 
 fn apart(one: [f64; 2], other: [f64; 2]) -> f64 {
@@ -105,16 +109,24 @@ fn guards_of(holder: Holder, seed: u64) -> Option<u8> {
     }
 }
 
+/// A continent's climate, and its resource's place in the gear's catalogue, which its water's islands carry.
+pub(crate) fn climate_and_resource(continent: &world::layout::Continent) -> (String, Option<u8>) {
+    let resources = &gear::catalogue::catalogue().resources;
+    let resource = resources.iter().position(|found| found.continent == continent.id);
+    (continent.climate.clone().unwrap_or_default(), resource.and_then(|place| u8::try_from(place).ok()))
+}
+
 impl Islands {
-    /// No island yet, rolled from `seed`; `climates` each continent's, in the layout's order.
+    /// No island yet, rolled from `seed`; `climates` each continent's climate and resource, in the layout's order.
     #[must_use]
-    pub fn new(seed: u32, climates: Vec<String>) -> Self {
+    pub fn new(seed: u32, climates: Vec<(String, Option<u8>)>) -> Self {
         Islands {
             standing: Vec::new(),
             draws: Draws::of(u64::from(seed), 0x15_1a_4d),
             next_id: 1,
             found: BTreeMap::new(),
             landed: BTreeMap::new(),
+            landings: 0,
             climates,
         }
     }
@@ -123,7 +135,7 @@ impl Islands {
     /// dresses that continent's climate.
     fn island(&mut self, seed: u64, at: [f64; 2], water: (usize, Holder, Option<(u8, u8)>)) -> Option<SeaIsland> {
         let (continent, holder, levels) = water;
-        let climate = self.climates.get(continent)?.clone();
+        let (climate, resource) = self.climates.get(continent)?.clone();
         isle::catalog::catalog().climates.get(&climate)?;
         let shape = isle::shape_of(seed);
         let ring = shape.ring(48, isle::sites::SHALLOWS_M + KEEP_OFF_M);
@@ -140,6 +152,7 @@ impl Islands {
             at,
             continent,
             climate,
+            resource,
             guards,
             levels,
             anchorage: [at[0] + x, at[1] + y],
@@ -168,10 +181,11 @@ impl Islands {
         self.standing.iter().filter(move |island| apart(island.at, at) <= SIGHT_M || self.found(player, island.id))
     }
 
-    /// Whether an account is landed on the standing island `id` of `seed`.
+    /// The number of an account's landing on the standing island `id` of `seed`, if it is landed there.
     #[must_use]
-    pub fn landed(&self, id: u32, seed: u64, account: &str) -> bool {
-        self.landed.get(account) == Some(&id) && self.by_id(id).is_some_and(|island| island.seed == seed)
+    pub fn landed(&self, id: u32, seed: u64, account: &str) -> Option<u32> {
+        let (on, landing) = *self.landed.get(account)?;
+        (on == id && self.by_id(id).is_some_and(|island| island.seed == seed)).then_some(landing)
     }
 
     /// Whether a player has found an island.
@@ -331,11 +345,18 @@ impl Sea {
             let lies =
                 at.and_then(|at| islands.standing.iter().find(|island| apart(island.anchorage, at) <= LANDING_M));
             match lies {
-                Some(island) => islands.landed.insert(account.clone(), island.id),
-                None => islands.landed.remove(account),
-            };
+                // Still lying where it landed, the same landing; at another island, a new one.
+                Some(island) if islands.landed.get(account).is_some_and(|&(on, _)| on == island.id) => {}
+                Some(island) => {
+                    islands.landings = islands.landings.wrapping_add(1).max(1);
+                    islands.landed.insert(account.clone(), (island.id, islands.landings));
+                }
+                None => {
+                    islands.landed.remove(account);
+                }
+            }
         }
-        islands.landed.retain(|_, id| islands.standing.iter().any(|island| island.id == *id));
+        islands.landed.retain(|_, (id, _)| islands.standing.iter().any(|island| island.id == *id));
     }
 
     /// The nearest standing island the player has found to a point: its number and where a ship anchors off it.

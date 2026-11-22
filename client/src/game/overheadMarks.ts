@@ -1,10 +1,10 @@
 // What wears a mark over it on foot (combat/marksOver.ts lays them): over each keeper who deals with a player their
 // sign in its brass diamond, or a faction's emblem in the diamond edged in its Art's colour, as their screen shows them
-// (npc/npcMarks.ts); over Shape on his week's spot his own; over each resource node still to gather its resource's
-// picture, under its beam.
+// (npc/npcMarks.ts); and over Shape on his week's spot his own. A resource node wears none: its own picture stands on
+// the ground (nodeCards.ts).
 
-import { type PixelPicture, resourcePicture } from '../combat/dropPictures.ts';
-import { type Marked, OVER_HEAD_M, OVER_NODE_M } from '../combat/marksOver.ts';
+import type { PixelPicture } from '../combat/dropPictures.ts';
+import { type Marked, OVER_HEAD_M } from '../combat/marksOver.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import { ELEMENTS } from '../player/gear.ts';
@@ -72,8 +72,7 @@ export function markOfKind(kind: string): PixelPicture | null {
 }
 
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
- *  over its keeper's crown while the keeper stands there, Shape over his while he is here, and each node still to
- *  gather over its ground, under its beam. */
+ *  over its keeper's crown while the keeper stands there, and Shape over his while he is here. */
 export function markedHere(
   gear: GearState | null,
   here: Pick<NodeInfo, 'stations' | 'visitorSpots'>,
@@ -90,9 +89,5 @@ export function markedHere(
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const own = keeperPicture('shape');
   if (shape && own) marked.push({ picture: own, at: crown(...shape) });
-  for (const node of gear?.nodes ?? []) {
-    const picture = resourcePicture(node.resource);
-    if (picture) marked.push({ picture, at: [node.x, node.y, floor(node.x, node.y) + OVER_NODE_M], beam: true });
-  }
   return marked;
 }

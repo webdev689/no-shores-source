@@ -734,13 +734,18 @@ never while a press is held. Each press is an ask the room answers.
   piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
   or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
-  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; Shapes gained and every
-  dye, coat or barding newly kept among them. Rows slide in, stay four
+  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye, coat or barding
+  newly kept among them. Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
-  used is spent, not gained.
+  used is spent, not gained. Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
+  lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
+  with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's
+  level, a fragment of its Core, the ship's materials and a module gained are rows. Prestige is not a gain: it is
+  what the armour worn is worth. At sea the feed reads the gear the sea sends (`Sea.gear`), which the menu there does
+  not show: what a piece gathered held, the ship's XP from a sinking, an officer won, and a boarder's kills.
 - **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair whenever
   that shows (aiming, or in first person, the pointer held or not), counted as the fight's rules count them on the
   player's own fighter, so a shot takes one at once: 22 px with the HUD's outline, in brass at a fifth of the capacity
@@ -1009,7 +1014,7 @@ button's corner and screen, and the Tailor's wares.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
-- The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
+- The Acquired feed shows no level of the player's own gained, only an Art's.
 - The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled
   round it, the Anima breathes as a ring, a fragment just set flares as a white ring and wash, and the worn Art's and
   the focused one's outlines are drawn diamonds round their emblems. A fragment not owned and a ware not had stand

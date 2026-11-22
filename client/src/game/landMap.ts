@@ -1,6 +1,7 @@
 // What the held map shows on land (heldmap/landSheet.ts), gathered from the node the player stands in: a social
 // space's plan, its keepers' stalls, its trees, its places by name and where players land; a patrol area's paths,
 // buildings, plantings, areas and sites; and under either the ground's relief.
+import resources from '../../../content/gear/resources.json' with { type: 'json' };
 import { moduleParts } from '../city/modules.ts';
 import type { Solid } from '../city/plan.ts';
 import { insideRing } from '../editor/placeDrawing.ts';
@@ -41,7 +42,7 @@ const SHRUBS: ReadonlySet<string> = new Set([
   'understory',
 ]);
 /** What the table calls each site's glyph, and a stall's whose keeper deals with no one. */
-const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph>, string>> = {
+const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph | 'resource'>, string>> = {
   landing: 'Landing',
   event: 'Public event',
   gate: 'Gate',
@@ -49,10 +50,6 @@ const SITE_WORDS: Readonly<Record<Exclude<LandGlyph, KeeperGlyph>, string>> = {
   objective: 'Objective',
   foes: 'Foes',
   beacon: 'Beacon',
-  ore: 'Ore',
-  herbs: 'Herbs',
-  timber: 'Timber',
-  salvage: 'Salvage',
 };
 const KEEPER_WORDS: Readonly<Record<string, string>> = { chandler: 'Chandler' };
 
@@ -187,9 +184,13 @@ export function landSheetOf(
     ),
     places: layout.areas.map((area) => ({ name: area.name, at: local(area.at) })),
     marks: layout.sites.flatMap((site): LandMark[] => {
-      // A resource's glyph is what it holds: ore, herbs, timber or salvage.
-      const glyph = site.kind === 'resource' ? site.holds : site.kind;
-      return glyph && isGlyph(glyph) && glyph in SITE_WORDS
+      // A resource node is marked where it stands, named for the island's resource it gives.
+      if (site.kind === 'resource') {
+        const resource = resources.resources.find((each) => each.id === site.holds);
+        return resource && site.node ? [{ glyph: 'resource', at: local(site.node), word: resource.name }] : [];
+      }
+      const glyph = site.kind;
+      return isGlyph(glyph) && glyph in SITE_WORDS
         ? [{ glyph, at: local(site.at), word: SITE_WORDS[glyph as keyof typeof SITE_WORDS] }]
         : [];
     }),

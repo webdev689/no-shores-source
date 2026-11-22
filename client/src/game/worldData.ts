@@ -23,6 +23,9 @@ export interface NodeInfo {
   readonly posts?: readonly Post[];
   /** A patrol area or mission no one may enter until a pass is done on it (`sitesOf`). */
   readonly locked?: boolean;
+  /** A patrol area's resource places (where, and the island's resource they hold), where its room's nodes stand, in
+   *  its layout's order. */
+  readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
   readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
 }
