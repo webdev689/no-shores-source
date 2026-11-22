@@ -1,7 +1,8 @@
 // What wears a mark over it on foot (combat/marksOver.ts lays them): over each keeper who deals with a player their
 // sign in its brass diamond, or a faction's emblem in the diamond edged in its Art's colour, as their screen shows them
 // (npc/npcMarks.ts), the Postmaster's sealed letter beating while letters wait; over the bounty board its gold "!";
-// over Shape on his week's spot his own; and over each dungeon entrance's door a door. A resource node wears none: its
+// over Shape on his week's spot his own; over each dungeon entrance's door a door; and over each chapter of the lore
+// lying there for the player a closed book (compendium/loreArt.ts). A resource node wears none: its
 // own picture stands on the ground (nodeCards.ts).
 
 import type { PixelPicture } from '../combat/dropPictures.ts';
@@ -18,12 +19,15 @@ import { keeperPicture } from './npc/npcMarks.ts';
 import { offerAt } from './plazaLife.ts';
 import { awayFromCounters, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
+import { LORE_PICTURE } from './compendium/loreArt.ts';
 
 type Point = readonly [number, number, number];
 
 /** How high the bounty board's gable stands, metres, as the city crate builds it (`board.rs`): its mark stands over it
  *  as a keeper's over their crown. */
 const BOARD_TOP_M = 3.7;
+/** How high over the ground a chapter of the lore lying there floats, metres, under its mark's foot. */
+const LORE_TOP_M = 0.9;
 /** Every mark's outline, and the brass of a faction diamond with no Art's colour. */
 const OUTLINE = '#2a1b08';
 const BRASS = '#f3cf86';
@@ -98,8 +102,9 @@ export function markOfKind(kind: string): PixelPicture | null {
 
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
  *  over its keeper's crown while the keeper stands there (the bounty board over its gable), Shape over his while he is
- *  here, and each of a patrol's dungeon entrances (its gear's `dungeons`) over its door's lintel, once `props` gives
- *  its model's door. */
+ *  here, each chapter of the lore lying here for them (its gear's `loreHere`) as a book floating over where it lies, and
+ *  each of a patrol's dungeon entrances (its gear's `dungeons`) over its door's lintel, once `props` gives its model's
+ *  door. */
 export function markedHere(
   gear: GearState | null,
   here: Pick<NodeInfo, 'stations' | 'visitorSpots'>,
@@ -121,6 +126,8 @@ export function markedHere(
   const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
   const own = keeperPicture('shape');
   if (shape && own) marked.push({ picture: own, at: crown(...shape) });
+  // A chapter lying in the world is the book itself, floating at a crown's height over where it lies.
+  for (const { at } of gear?.loreHere ?? []) marked.push({ picture: LORE_PICTURE, at: crown(...at, LORE_TOP_M) });
   for (const entrance of entrancesOf(gear?.dungeons ?? [])) {
     const door = props && doorOf(entrance, props);
     if (!door) continue;

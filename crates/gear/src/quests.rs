@@ -246,6 +246,7 @@ impl Character {
             None => road.done = true,
         }
         self.reward(def.faction, def.tasks[task].reward);
+        self.find_lore_due(crate::lore::lore());
         true
     }
 

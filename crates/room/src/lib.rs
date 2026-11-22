@@ -30,6 +30,7 @@ mod garrison;
 pub mod harbour;
 pub mod island;
 mod judging;
+pub mod lore;
 pub mod patrol;
 mod perks;
 pub mod pirates;

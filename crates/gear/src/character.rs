@@ -204,6 +204,9 @@ pub struct Character {
     /// The game's letters waiting at the mail counter, oldest first (`mail.rs`).
     #[serde(default)]
     pub mail: Vec<crate::mail::Letter>,
+    /// The lore's chapters found, by their keys (`lore.rs`), in the order found; one the file no longer holds kept.
+    #[serde(default)]
+    pub lore: Vec<String>,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -269,6 +272,7 @@ impl Character {
             cosmetics: crate::cosmetics::Cosmetics::default(),
             quests: crate::quests::QuestLog::default().kept(),
             mail: Vec::new(),
+            lore: Vec::new(),
             unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [
@@ -364,6 +368,8 @@ impl Character {
         character.allegiance = std::mem::take(&mut character.allegiance).kept();
         character.quests = std::mem::take(&mut character.quests).kept();
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
+        let mut seen = std::collections::BTreeSet::new();
+        character.lore.retain(|key| seen.insert(key.clone()));
         character.earn_due();
         Some(character)
     }

@@ -70,6 +70,8 @@ pub const TURN_IN_BOUNTY: u8 = 70;
 /// A letter taken from the mail, by its number in `item`; and every letter there is room for.
 pub const TAKE_LETTER: u8 = 71;
 pub const TAKE_ALL_LETTERS: u8 = 72;
+/// A chapter of the lore lying in the node found, by its number in `item`.
+pub const FIND_LORE: u8 = 73;
 /// An Art, its number in `column`, set at `level` owning all its fragments: the Test Ground's grant.
 pub const GRANT_ART_LEVEL: u8 = 42;
 /// A Core slot with no fragment, as the gear message carries it.
@@ -188,6 +190,7 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
         CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
         USE_POINT => Asked::UsePoint { point: column },
+        FIND_LORE => Asked::FindLore { chapter: u16::try_from(item).ok()? },
         _ => return None,
     })
 }
@@ -275,6 +278,7 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
         Asked::StopGather => args = messages::AskArgs { kind: STOP_GATHER, ..args },
         Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
+        Asked::FindLore { chapter } => args = messages::AskArgs { kind: FIND_LORE, item: u32::from(*chapter), ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -409,6 +413,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let held = &character.materials;
     let mut builder = FlatBufferBuilder::new();
     let scavenged = builder.create_vector(&room.scavenged(player));
+    let lore = builder.create_vector(&room.lore_found(player));
+    let here: Vec<f64> =
+        room.lore_here(player).into_iter().flat_map(|(number, [x, y])| [f64::from(number), x, y]).collect();
+    let lore_here = builder.create_vector(&here);
     let items: Vec<_> = character.items.values().map(|(item, at)| item_offset(&mut builder, item, *at, 0)).collect();
     let emblems: Vec<u16> = character.emblems.iter().filter_map(|id| gear::emblems::number_of(id)).collect();
     // In a social space, the emblems the Tailor sells that day.
@@ -573,6 +581,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         bounty_xp,
         bounty_aurem,
         mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
+        lore: Some(lore),
+        lore_here: Some(lore_here),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -1,0 +1,5 @@
+{
+  "about": "The Compendium's lore (bible/02-Systems/Lore.md): its categories, each a tile on the Compendium's front page with its name and a motif (client/src/game/emblemMotifs.ts), and its books, each in a category, with its name, its cover (a cloth colour and a motif) and its chapters in reading order. A chapter has its title and its text (paragraphs apart by a blank line), and is found once as `found` says: {\"kind\": \"story\"} as the story ends; {\"kind\": \"quest\", \"quest\": id, \"task\": id} as that quest's task is done; {\"kind\": \"place\", \"node\": id, \"place\": name, \"bearing\": degrees, \"at\": metres} lying at a place in a node of the world, the place named as its layout names it, \"at\" metres from its middle at \"bearing\" degrees clockwise from north. Characters keep chapters by their book's id and their own: never change an id once a chapter is played.",
+  "categories": [],
+  "books": []
+}

@@ -7,6 +7,7 @@ import type { GearShip as GearShipTable } from '../../../generated/messages/ts/o
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
+import { type LoreState, loreOf } from './loreMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -94,6 +95,9 @@ export const ASKS = {
   /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
   takeLetter: 71,
   takeAllLetters: 72,
+  /** A chapter of the lore lying in the node found, by its number in `item` (its place in content/lore/lore.json,
+   *  book by book). */
+  findLore: 73,
 } as const;
 
 /** Shape's place while he is away. */
@@ -189,7 +193,7 @@ export interface GearNode {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
-export interface GearState {
+export interface GearState extends LoreState {
   readonly xp: bigint;
   readonly level: number;
   readonly prestige: number;
@@ -513,6 +517,7 @@ export function gearOf(gear: Gear): GearState {
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
+    ...loreOf(gear),
   };
 }
 

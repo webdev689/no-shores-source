@@ -45,6 +45,8 @@ code:
   - client/src/game/bountyGlyphs.ts#bountyGlyphSvg
   - client/src/game/bountyTiles.ts#bountyTileNode
   - client/src/game/journalIcons.ts#iconSvg
+  - client/src/game/compendium/compendiumPage.ts#Compendium
+  - client/src/game/compendium/loreArt.ts#coverSvg
   - client/src/game/entranceCard.ts#EntranceCardView
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
@@ -648,11 +650,13 @@ font made where the face is read (`useMendedFace`, `trueType.ts`), first in its 
 ## The menu
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
-the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
-whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
+the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header, each a
+whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
+its tab at the names' size);
 keys on keycaps where the menu is wide enough; Guild
-marked Later, a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
-between tabs. At the top line's right stands the account's mark, after DFO's
+marked Later, a page saying what it will hold. The chosen tab is a lit brass press; a tab with something new on it
+(the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
+read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
 username or Discord and hollow for a guest's; pressed, it opens Settings. On the Journal its place is DFO's timer
@@ -829,6 +833,30 @@ never while a press is held. Each press is an ask the room answers.
     hourglass, and it goes up as the Journal is left; the page under it rests, dimmed and out of the keys' and the
     pointer's reach.
   - It reads the rules and the last word of the character a room sent, so it reads the same at sea.
+- **Compendium** ([[Lore]], [[The Compendium Holds the Lore Books, After Destiny's]]): the lore books, laid as Destiny's
+  Collections and Lore screens.
+  - **Its front**: "LORE" with how many of its chapters are found of all ("3/6"), then a tile for each category, in rows
+    that fit the menu (176 by 168 px, 224 by 208 where the names are larger): its motif in brass, 48 px (64 px), dim
+    stone while nothing of it is found; its name; how many of its chapters are found, in lit brass once all are; and a
+    bar of that share in brass. Pressed, it opens the category. With no lore in the game it says "No lore has been
+    found. The lore books you find in the world, on quests and in the story are kept here." under three faint stone
+    covers. `compendium/compendiumShots.ts` pictures it over sample lore (`loreForTests.ts`) with `tools/uiShot.mjs`.
+  - **A category open**: "‹ LORE" (a press back to the front, as Escape steps), the category's name in capitals and how
+    much of it is found; then, side by side: its books, covers in rows of three (48 px wide, 72 px larger), each found
+    one a press edged in brass while chosen, one not found a plain stone cover that does nothing; the book chosen, its
+    cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
+    "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
+    instead, so everything stays in view); and the chapter chosen in a panel as tall as the book beside it, its title in
+    lit brass at the names' larger size and its words paragraph by paragraph, scrolled within the page's room, with the
+    book's chapters numbered under it, each found one a press (the
+    one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
+    book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found.
+  - **Covers** are drawn pixel for pixel, 24 by 30: a spine in the cloth's dark with two brass bands, the cloth lit along
+    its top and shaded along its fore-edge and foot, a brass corner at each of the face's corners, and the book's motif
+    tooled in brass in the face's middle (`coverSvg`).
+  - **New**: Destiny's small diamond in lit brass marks each chapter found and unread, its book's cover and its
+    category's tile, and goes as the chapter is shown, which keeps it read ([[Lore]], "In the browser").
+  - It reads the last word of the character a room sent, as the Journal does, so it reads the same at sea.
 - **Ship.** Two parts on the inventory's shelf tabs ([[Ship Power]], [[Crew]]). Manage: the ship's papers as Manage
   shows them at sea (its hull, canvas, guns, loads and measure, its voyage while it is at sea), its materials and its
   hands, beside its power (its level, a meter to the next, its numbers) and its modules fitted and carried, each a

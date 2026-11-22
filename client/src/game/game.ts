@@ -34,6 +34,7 @@ import { FootView } from './footView.ts';
 import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
 import { afterStoryOn } from './welcome/afterStory.ts';
 import { questsOn } from './quests/quests.ts';
+import { Lore } from './compendium/lore.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
 import { askedArrival } from './gates.ts';
 import { installQaViews } from './qaViews.ts';
@@ -124,6 +125,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     sea: null,
     after: afterStoryOn(stack, forge, (x, y) => scene.groundAt(x, y)),
     quests,
+    lore: new Lore(localStorage, () => link?.account?.id ?? null),
     through: null,
     helmMap: new HelmMap({
       ...{ gpu, store, stack, outlines: continents.map((each) => each.outline) },
@@ -547,10 +549,9 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const storyMode = () => playing.flow.mode === 'story';
   const gearHere = () =>
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
-  const fighting = () => footView.shown.fight;
   const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
-  const resting = () => storyMode() && !story?.gear;
-  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens));
+  const [fighting, resting] = [() => footView.shown.fight, () => storyMode() && !story?.gear];
+  stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens, playing.lore));
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
