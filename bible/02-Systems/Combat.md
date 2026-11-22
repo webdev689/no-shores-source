@@ -151,13 +151,13 @@ once. The camera stays its player's.
 ## Foes' telegraphed blows
 
 A foe may wind up a telegraphed blow, as DFO's TELL draws them (which foe, when and which shape is its brain's:
-[[Foes]]): a shape on the ground it stands still through, landing
-on whoever's feet stand in it when the wind-up ends, within a blow's height of the foe and with no block between them
-(a charge's height and a leap's both from where it comes down, a leap's line from there too, a charge's from where it
-set off, so a wall it runs into never shields a body pinned before it). A lunge and a charge are lanes ahead, a sweep an arc, a slam a
-disc just ahead, a ring an annulus safe at the foe's feet, a leap a disc where its target stood, and an aimed shot the
-line its arrow flies. A lunge and a charge turn after their target through the first half of the wind-up, and never once a charge has set
-off. A charge crosses its lane and a leap flies to its disc as the wind-up ends. A feint is cut short. A non-iron blow can be parried
+[[Foes]]): a shape on the ground it stands still through, landing on whoever's feet stand in it when the wind-up ends,
+within a blow's height of the foe and with no block between them (a charge's height and a leap's both from where it
+comes down, a leap's line from there too, a charge's from where it set off, so a wall it runs into never shields a body
+pinned before it). A lunge and a charge are lanes ahead, a sweep an arc, a slam a disc just ahead, a ring an annulus
+safe at the foe's feet, a leap a disc where its target stood, and an aimed shot the line its arrow flies. A lunge and a
+charge turn after their target through the first half of the wind-up, and never once a charge has set off. A charge
+crosses its lane and a leap flies to its disc as the wind-up ends. A feint is cut short. A non-iron blow can be parried
 or blocked by a fighter facing the foe; an iron one, winding up a fifth of a second longer, must be dodged, and an iron
 slam or ring knocks down. A blow that finds no one leaves its foe overreached for its shape's punish (longer for iron,
 half again after a perfect dodge), taking 1.3 times more and staggered by the first blow landed.
