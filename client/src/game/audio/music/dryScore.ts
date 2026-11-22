@@ -215,7 +215,7 @@ const GROOVES: readonly (readonly (readonly [Drum, number, number, number])[])[]
 ];
 /** The fills over a bar's last group: the tek rolling, doum and tek trading into the frame, the frame rolling. */
 const FILLS: readonly (readonly (readonly [Drum, number, number])[])[] = [
-  Array.from({ length: 6 }, (unused, i) => ['tek', 2 + i * 0.25, 60 + i * 9] as const),
+  Array.from({ length: 6 }, (unused, i) => ['tek', 2 + i * 0.25, 60 + (44 * i) / 5] as const),
   [
     ['doum', 2, 90],
     ['tek', 2.25, 70],

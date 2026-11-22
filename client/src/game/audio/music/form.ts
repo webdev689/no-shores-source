@@ -85,7 +85,7 @@ export interface Heard {
   readonly opened: number | null;
 }
 export const UNHEARD: Heard = { takes: [], opened: null };
-/** The takes remembered: some ten minutes of a fight. */
+/** The takes remembered, with the breaks between fights: ten to twenty minutes of a song. */
 const REMEMBERED = 64;
 
 /** When `take` was last heard, as its place in what was heard (-1 never): the lower, the fresher. */

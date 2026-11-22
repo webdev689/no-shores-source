@@ -186,7 +186,7 @@ const GROOVES: readonly (readonly (readonly [Drum, number, number, number])[])[]
 const FILLS: readonly (readonly (readonly [Drum, number, number])[])[] = [
   Array.from({ length: 8 }, (unused, i) => {
     const beat = 3 + i * 0.25;
-    return [beat < 4 ? 'highTom' : beat < 4.5 ? 'midTom' : 'lowTom', beat, 70 + i * 5.4] as const;
+    return [beat < 4 ? 'highTom' : beat < 4.5 ? 'midTom' : 'lowTom', beat, 70 + (38 * i) / 7] as const;
   }),
   [
     ['taiko', 3, 100],

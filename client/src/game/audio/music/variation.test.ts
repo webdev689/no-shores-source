@@ -64,7 +64,7 @@ function bars(song: Song, mood: keyof typeof MOOD_ROLES): number[] {
   for (const note of song.notes)
     if (MOOD_ROLES[mood].has(note.role))
       struck[Math.floor(note.tick / song.ticksPerBar)]?.push(
-        `${note.tick % song.ticksPerBar}:${note.channel}:${note.note}:${note.velocity}:${note.duration}`,
+        `${note.tick % song.ticksPerBar}:${note.channel}:${note.note}:${note.duration}`,
       );
   const named = new Map<string, number>();
   return struck.map((notes) => {

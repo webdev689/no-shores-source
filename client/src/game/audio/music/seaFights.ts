@@ -1,7 +1,7 @@
 // The sea's two fight songs, written in takes of eight bars (form.ts). The sea fight: D minor at 144, a snare's march
 // under the brass's swashbuckling tune and its second strain, an intro of stabs, and a break where the drums thin to
 // the drive. The storm, for the gravest encounters: D Aeolian at 126, the low strings driving in eighths, stabs in open
-// fifths, the horn's theme, a second harmony of high unrest, and a breath of drive and choir alone. Each take plays its
+// fifths, the horn's theme, a second harmony of high unrest, and a breath of drive, choir and bass. Each take plays its
 // section in a feel of its own (the drive's figure, the bass, the timpani, a voicing, a groove and its fills) and
 // gives the tune to a different voice, answers it or turns its chords; a fight may open on the intro or the break.
 
@@ -142,9 +142,9 @@ const FIGHT_FEELS = [
     ],
     strings: 66,
     groove: [
-      ['bodhran', 0, 100],
+      ['tom', 0, 100],
       ['kick', 0, 96],
-      ['bodhran', 2, 92],
+      ['tom', 2, 92],
       ['snare', 0.75, 48],
       ['snare', 1, 92],
       ['snare', 2.75, 52],

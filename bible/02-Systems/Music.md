@@ -125,7 +125,7 @@ const song = makeForm(
   its seam: one of a section the take before may lead to, never the same take twice running; a pairing of takes not
   yet heard before one heard (else the one heard longest ago), and among those a take heard longest ago, by the die.
   A fight opens on one of its opening takes (a vamp, an intro, a break of calls, a breakdown), never the one the last
-  fight on that song opened on. The arranger remembers each song's last 64 takes across its fights, so a run of short
+  fight on that song opened on. The arranger remembers each song's last 64 takes and breaks between fights across its fights, so a run of short
   fights each hears different music.
 - **Layers.** The roles in the order the director brings them in: `bed` (the harmony's floor), `tension` (the colour
   of danger: bells, a swell, high strings, a heartbeat drum), `pulse` (an ostinato, a clock), `combat` (the drums,
@@ -211,7 +211,7 @@ on, and the sky over it.
   strings and horn, the harp rolling each chord, the harbour's bell; [[Landfall Is Kept as Made Again]]; its whistle
   now an octave down, under the ceiling) and the sea fight (D minor). The storm (`seaFights.ts`) is twelve takes: the
   drive growing in, the horn's theme (on the strings, with the brass, or answered over turned chords), the second
-  harmony's unrest (bare, or with a line on the horn or the strings) and the breath of drive and choir alone, each in
+  harmony's unrest (bare, or with a line on the horn or the strings) and the breath of drive, choir and bass, each in
   one of three feels of the drive, the bass, the timpani and the choir's voicing. The sea fight is twelve: an intro of
   stabs or a fiddle's pickup, the brass's tune (on the fiddle and strings, with the horns, or answered over turned
   chords), its second strain, and a break where the drums thin to the drive under the tune's head; each in one of
@@ -301,5 +301,5 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
   song for ten minutes on six seeded dice and finds no sixteen bars heard twice in its first four minutes, in the
   tension's layers, the fight's or the peak's, and every take heard; past that a long fight hears its pairings again.
 - The arranger's memory lasts while the game runs; a new session's first fight may open as the last session's did.
-- The loudness above is not yet measured across every take: a breakdown, or a take in another feel, may sit a
-  decibel or two off it. No take has been heard by the owner on the sound sheet.
+- The loudness above is not yet measured across every take: a breakdown, or a take in another feel, may sit some
+  decibels under it. No take has been heard by the owner on the sound sheet.
