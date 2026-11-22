@@ -31,10 +31,9 @@ pub enum Event {
         ship: ShipId,
         refusal: Refusal,
     },
-    /// A player's sails would not set: its rigging is shot away, or it is a wreck.
+    /// A player's sails would not set: its rigging is shot away.
     NoSail {
         ship: ShipId,
-        wrecked: bool,
     },
     Load {
         ship: ShipId,

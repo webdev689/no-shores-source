@@ -9,6 +9,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { constants, createDeflateRaw } from 'node:zlib';
 import { inputBytes } from '../client/src/network/messages.ts';
+import { INTENT_FLOATS } from '../client/src/rules/fighters.ts';
 import { startRoomDoor } from '../server/roomDoor.ts';
 
 const TICKS = Number(process.argv[2] ?? 300);
@@ -48,9 +49,12 @@ for (const name of (await readdir(folder)).filter((file) => file.endsWith('.json
   const sent = [];
   for (let tick = 1; tick <= TICKS; tick++) {
     const swing = tick % 30 === 0 ? 1 : 0;
-    const intent = new Float64Array([1, 0, tick * 0.01, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN]);
+    // The controls, then the stroke, guard, dodge, shoot, pitch, aim, no mark and no drink (`fighters.ts`).
+    const intent = new Float64Array([1, 0, tick * 0.01, 1, 0, 0, 0, swing, 0, 0, 0, 0, 0, NaN, NaN, NaN, 0]);
+    if (intent.length !== INTENT_FLOATS) throw new Error(`an intent is ${INTENT_FLOATS} numbers`);
     const look = { anim: '', frame: 0, facing: tick * 0.01 };
-    door.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) }));
+    const answer = door.input(player, inputBytes(tick, { intent, look, arms: 0, seen: BigInt(tick - 1) }));
+    if (answer !== 'taken') throw new Error(`${name}: the room refused input ${tick}: ${answer}`);
     door.tick();
     // The player's screen showed the last snapshot, as a browser's next input says: this one builds on it.
     const snapshot = door.snapshot(player);

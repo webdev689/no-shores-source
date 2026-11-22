@@ -140,14 +140,14 @@ fn its_hands_mend_it_only_in_quiet_waters_and_to_half() {
     let mut damage = Damage::new(&LARGE_BOAT, true);
     damage.apply(hurt(200.0, 96.0, 0.0), 0.0, 0.0);
     assert_eq!(damage.state, State::Afloat);
-    assert!(!damage.mend(1.0, 10.0, false, false), "struck 10 s ago");
-    assert!(!damage.mend(1.0, 20.0, true, false), "a hostile ship near");
-    assert!(damage.mend(1.0, 20.0, false, false));
+    assert!(!damage.mend(1.0, 10.0, false), "struck 10 s ago");
+    assert!(!damage.mend(1.0, 20.0, true), "a hostile ship near");
+    assert!(damage.mend(1.0, 20.0, false));
     assert!((damage.hull - (40.0 + 240.0 * 0.002)).abs() < 1e-12, "{}", damage.hull);
     let mut now = 20.0;
     for _ in 0..400 {
         now += 1.0;
-        damage.mend(1.0, now, false, false);
+        damage.mend(1.0, now, false);
     }
     assert_eq!((damage.hull, damage.sail), (120.0, 48.0), "mended to half at most");
 }

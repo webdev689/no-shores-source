@@ -8,11 +8,14 @@ import type { GearItem } from '../network/gearMessages.ts';
 import { ELEMENTS, RARITIES, fullyUpgraded, upgraded } from '../player/gear.ts';
 import { diagonalFit, drawnBounds, fitIcon, shrunkCanvas } from '../player/iconFit.ts';
 import type { Picture as Pixels } from '../player/picture.ts';
+import { type BindId, CONTROLS } from '../player/binds.ts';
+import { BINDS } from '../player/input.ts';
 import type { Child, Node, Text } from '../ui/node.ts';
 import { colourOf } from '../ui/quads.ts';
 import { elementSvg } from '../player/elementGlyphs.ts';
 import { BAND_CELLS, type Emblem, SIGN_CELLS, type Shape, emblemPixels, plateEnd } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
+import { keyName } from './controls.ts';
 import { fineGlyph, glyphSvg, nodeGlyphSvg, ringSvg } from './gearGlyphs.ts';
 
 /** What a press or a key does, as a line of keycaps shows it: the key, then its words. */
@@ -141,7 +144,13 @@ export function keycap(key: string, size = 1): Node {
   };
 }
 
-/** A line of what the presses and keys do, each key on a keycap, keys that do the same joined by a slash. */
+/** A hint's key as the player has it bound: a control's name stands for its first key (the sheet has the rest), so a
+ *  rebound control's hint names its new key; none if it has no key. */
+export const boundKey = (key: string): string =>
+  key in CONTROLS ? keyName(BINDS.now[key as BindId].keys[0] ?? '') : key;
+
+/** A line of what the presses and keys do, each key on a keycap, keys that do the same joined by a slash; a control
+ *  named in a key is shown by the key it is bound to. */
 export function hintsNode(hints: readonly Hint[], size = 1, gap = 14): Node {
   return {
     gap,
@@ -150,7 +159,14 @@ export function hintsNode(hints: readonly Hint[], size = 1, gap = 14): Node {
     children: hints.map(([key, said]) => ({
       gap: 6,
       alignY: 'center',
-      children: [...key.split(' / ').map((one) => keycap(one, size)), words(said, size, INK.faint)],
+      children: [
+        ...key
+          .split(' / ')
+          .map(boundKey)
+          .filter((one) => one !== '')
+          .map((one) => keycap(one, size)),
+        words(said, size, INK.faint),
+      ],
     })),
   };
 }

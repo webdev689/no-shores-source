@@ -1,7 +1,7 @@
 import type { HeldMap } from '../heldmap/heldMap.ts';
 import { wheelNotches } from '../overworld/overworldInput.ts';
 import type { Sea } from './sea.ts';
-import { BINDS, keyNameOf } from '../player/input.ts';
+import { BINDS, keyNameOf, keyUpNameOf } from '../player/input.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { FIGHT_CONTROLS, type SeaCombat } from './seaCombat.ts';
 
@@ -72,7 +72,7 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
     // Under the gear screen the fight takes no key pressed, they are the screen's; a key let go is still the fight's,
     // so nothing it held stays held.
     if (down && gearScreenOpen()) return;
-    if (!fight()?.key(keyNameOf(event), down)) return;
+    if (!fight()?.key(down ? keyNameOf(event) : keyUpNameOf(event), down)) return;
     if (down) taken(event);
     else event.preventDefault();
   };

@@ -993,11 +993,11 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
   room would sell. At the foot "Stock refresh" and the time to the next daily reset, 09:00 UTC, for the smiths, the
   Tailor and the Tack, or "Leaves in" and the time left for Shape, to Sunday 21:00 UTC: both counted in minutes by the
-  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone.
-  The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
-  (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
-  back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone, the keeper stands
-  over the rest, a third of its height, and the rest takes its whole width.
+  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone. The
+  footer: Hold (Buy; Open at the Mage's), the Character key as bound (Open Character), Esc (Dismiss); while a fragment
+  is chosen it says Esc (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter
+  presses, Escape steps back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone,
+  the keeper stands over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
@@ -1128,7 +1128,7 @@ button's corner and screen, and the Tailor's wares.
   or at sea, is not reached, and the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
-- The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
+- The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
 - The Acquired feed shows no level of the player's own gained, only an Art's.
 - The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled

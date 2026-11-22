@@ -29,7 +29,6 @@ pub mod model {
     pub const POST: u32 = 41901;
     pub const SIEGE: u32 = 41402;
     pub const STATUE: u32 = 62324;
-    pub const SHRINE_FRONT: u32 = 43113;
     pub const FENCES: [u32; 2] = [41206, 41207];
 }
 

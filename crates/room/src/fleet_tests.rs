@@ -172,7 +172,7 @@ fn their_ship_is_their_orders_stepped_by_the_rules_to_the_bit() {
     let (swell, wind) = fleet.weather();
     let waters = OpenSea { swell };
     let sail = naval::arms::LARGE_BOAT.sail;
-    let whole = naval::fight::Hurts::from_numbers(false, sail, sail);
+    let whole = naval::fight::Hurts::from_numbers(sail, sail);
     let mut ship =
         Ship { x: AT[0], y: AT[1], heading: AT[2], ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
     for helm in std::iter::once(STANDING.helm).chain(std::iter::once(CLIMB)).chain(std::iter::repeat_n(ROWING, 120)) {

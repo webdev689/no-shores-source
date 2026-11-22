@@ -18,9 +18,9 @@ const ZONES = ['hull', 'holed', 'rig'] as const;
 /** The most of the fight's events kept for its feel until taken. */
 export const MOST_FELT = 512;
 const SIDES = ['port', 'starboard'] as const;
-const STATES = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'] as const;
+const STATES = ['afloat', 'struck', 'sinking', 'sunk'] as const;
 /** A ship whose hurts are not known yet: sound, its canvas whole. */
-const SOUND = { wrecked: false, sail: 1, maxSail: 0 } as const;
+const SOUND = { sail: 1, maxSail: 0 } as const;
 /** The ship numbers the editor's fight words know: the player's 0, a captain's 1, another player's 2. */
 const OWN = 0;
 const CAPTAIN = 1;
@@ -124,10 +124,10 @@ export class FleetSession {
     return this.latest?.vessels.find((vessel) => vessel.id === this.id) ?? null;
   }
 
-  private hurts(): { readonly wrecked: boolean; readonly sail: number; readonly maxSail: number } {
+  private hurts(): { readonly sail: number; readonly maxSail: number } {
     const own = this.own();
     if (!own) return SOUND;
-    return { wrecked: own.state === 'wrecked', sail: own.hurts.sail, maxSail: own.hurts.maxSail };
+    return { sail: own.hurts.sail, maxSail: own.hurts.maxSail };
   }
 
   /** Every other ship in the room as it last showed them. */
@@ -278,7 +278,7 @@ export class FleetSession {
         return mine ? { kind: 'refused', why, side: SIDES[event.side] ?? 'port', left: event.left } : null;
       }
       case 'no-sail':
-        return mine ? { kind: 'no-sail', wrecked: event.detail === 1 } : null;
+        return mine ? { kind: 'no-sail' } : null;
       case 'load':
         return mine ? { kind: 'load', shot: LOADS[event.detail - 1] ?? 'round' } : null;
       case 'run-out':

@@ -404,7 +404,7 @@ the factions' counters are in [[Factions]].
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
   "It is not sold here today"), 16 an Ammo crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its
   place in `node` and the piece shown there, its place in the catalogue's items, in `item`, so a page shown another
-  piece than his week now draws there, as the catalogue grew, is told it is not sold here).
+  piece than his week now draws there is told it is not sold here).
 
 ## Emblems
 
