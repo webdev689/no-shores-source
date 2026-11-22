@@ -5,6 +5,7 @@
 use crate::grid::{Column, columns};
 use crate::kinds::{Kind, Slot};
 use crate::rarity::Rarity;
+use crate::source::Source;
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
@@ -58,6 +59,24 @@ pub struct NamedDef {
     pub faction: Option<String>,
     #[serde(default)]
     pub intrinsic: Option<String>,
+    /// The content it drops from, which its look belongs to: the world's when unwritten. A faction's piece is its
+    /// faction's and a Breach's its Breach's, whatever is written (`source`).
+    #[serde(default, rename = "source")]
+    pub written_source: Source,
+}
+
+impl NamedDef {
+    /// The content it belongs to: a faction's ware the faction's, a Breach's piece the Breach's, any other its own.
+    #[must_use]
+    pub fn source(&self) -> Source {
+        if self.faction.is_some() {
+            Source::Faction
+        } else if self.breach {
+            Source::Breach
+        } else {
+            self.written_source
+        }
+    }
 }
 
 /// An island's resource, gathered in its patrol areas.
@@ -257,6 +276,10 @@ impl Catalogue {
         let known = |key: &str| crate::factions::factions().factions.iter().any(|faction| faction.key == key);
         if item.faction.as_deref().is_some_and(|key| !known(key)) {
             problems.push(format!("{id}: its faction is none the factions' file holds"));
+        }
+        // A faction's or a Breach's own is said by its `faction` or `breach`, never written as its source.
+        if matches!(item.written_source, Source::Faction | Source::Breach) {
+            problems.push(format!("{id}: a faction's or a Breach's piece is said by its faction or breach"));
         }
         if item.kind == Kind::Cloak {
             if !item.layout.is_empty() || item.resource.is_some() || item.intrinsic.is_some() {

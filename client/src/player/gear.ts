@@ -5,6 +5,7 @@ import traits from '../../../content/gear/traits.json' with { type: 'json' };
 import type { GlowLook } from '../elementGlow.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
+import { rolledMetal } from './sourceLooks.ts';
 
 /** The kinds of item, by the gear crate's numbers: the Melee and Ranged loadouts, the armour and the cloak. */
 export const KINDS = [
@@ -288,17 +289,12 @@ export function heldElements(state: GearState | null, loadout: number): readonly
   return [look, KINDS[item?.kind ?? 0]?.startsWith('double_') ? look : 0];
 }
 
-/** The forge's metals by their worth: a rolled weapon climbs it (`rung`), and a metal the forge does not draw for a
+/** The forge's metals by their worth: a Normal weapon climbs it (`rung`), and a metal the forge does not draw for a
  *  kind falls to the nearest one it does. */
 const WORTH = ['iron', 'steel', 'silver', 'elven', 'dwarven', 'orcish', 'mithril', 'adamantium', 'ebony', 'daedric'];
-/** A rolled weapon's place on the metals: where its rarity starts, how far it climbs over levels 1 to 20, and how many
- *  rungs its names spread it over (Normal iron to level 10 and steel past it, Magic steel to orcish, Rare elven to
- *  daedric). A Legendary or Atheric is named, so one without a look of its own climbs as Rare does. */
-const METALS = [
-  { start: 0, climb: 1, spread: 1 },
-  { start: 1, climb: 2, spread: 3 },
-  { start: 3, climb: 4, spread: 3 },
-] as const;
+/** A Normal weapon's place on the metals: iron to level 10 and steel past it, from any content. A finer one is made
+ *  in its content's metals (`rolledMetal`). */
+const NORMAL_METALS = { start: 0, climb: 1, spread: 1 } as const;
 /** A rolled shield's kinds by the weapon it is carried with, one by its number. */
 const SHIELDS: Readonly<Record<string, readonly string[]>> = {
   sword_and_shield: ['kite', 'round', 'tower'],
@@ -331,7 +327,7 @@ export const writtenLook = (item: GearItem): { readonly look?: string; readonly 
 
 /** A weapon's look: its metal (a gun's `gilded` or `plain`), its shield's metal, and its make where the forge draws
  *  more than one (a shield's kind, a bow's, a short sword). A faction's metal (`own`) comes first, then a named item's
- *  own look, then a rolled one's: its metal by its rarity, level and name (`rung`), its make by its number. */
+ *  own look, then a rolled one's: its metal by its rarity, content, level and name, its make by its number. */
 export function weaponLook(
   item: GearItem,
   own?: string,
@@ -341,12 +337,14 @@ export function weaponLook(
   const number = numberOf(item);
   const chosen = (choices: readonly string[]) => choices[number % choices.length] ?? null;
   const gun = kind === 'pistolet' || kind === 'double_pistolet' || kind === 'thunderlock';
-  const ladder = METALS[Math.min(item.rarity, 2)] ?? METALS[0];
+  // A Normal weapon is plain iron or steel from any content, as Normal armour is clothes; a finer one its content's.
   const rolled = gun
     ? item.rarity >= 3
       ? 'gilded'
       : 'plain'
-    : (WORTH[rung(item, ladder.start, ladder.climb, ladder.spread)] ?? 'iron');
+    : item.rarity === 0
+      ? (WORTH[rung(item, NORMAL_METALS.start, NORMAL_METALS.climb, NORMAL_METALS.spread)] ?? 'iron')
+      : rolledMetal(item);
   const metal = own ?? written?.look ?? rolled;
   const shields = SHIELDS[kind];
   const make = written?.make ?? (shields ? chosen(shields) : kind === 'bow' ? chosen(['long', 'short']) : null);

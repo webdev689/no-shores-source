@@ -211,7 +211,7 @@ fn furnished() -> (Room, PlayerId) {
     ask(&mut room, 7, Asked::Grant(Grant::Ammo(gear::ammo::AMMO_FULL / 2)));
     room.lay_drop(player, Dropped::AmmoBox, [1.0, 2.0, 0.0]);
     let mut kept = gear::Character::from_json(&room.kept_character(player).expect("in")).expect("a character");
-    kept.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Arms, 9)));
+    kept.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Arms, 9).from(gear::Source::Sea)));
     kept.post(Source::Salvage, Posted::Item(gear::Item::new(0, Kind::Hull, Rarity::Magic, 6, Slot::Hull)));
     assert!(room.restore_character(player, &kept.to_json()), "the character kept again");
     room.lay_drop(player, Dropped::Vestige(Vestige::new(90, Rarity::Magic, Slot::Head, 20)), [3.0, 2.0, 0.0]);

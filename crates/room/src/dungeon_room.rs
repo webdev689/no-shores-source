@@ -119,6 +119,7 @@ impl Room {
         let (name, laid) = (format!("{patrol}--dungeon-{number}"), Dungeon::forge(seed, style));
         let mut room = Self::laid_dungeon(&name, &laid, levels, (REEVE, Miniboss), Some(Run::today(patrol, number)))?;
         room.place = Some(gear::gate::Place::PatrolDungeon);
+        room.source = gear::Source::Dungeon;
         room.island = gear::activities::island_of(patrol).map(|island| island.continent);
         Some(room)
     }
@@ -128,7 +129,9 @@ impl Room {
     /// where its floor cannot be made.
     #[must_use]
     pub fn dungeon_of(name: &str, seed: u32, style: dungeon::Style, levels: Option<(u8, u8)>) -> Option<Self> {
-        Self::laid_dungeon(name, &Dungeon::forge(seed, style), levels, (REEVE, Miniboss), None)
+        let mut room = Self::laid_dungeon(name, &Dungeon::forge(seed, style), levels, (REEVE, Miniboss), None)?;
+        room.source = gear::Source::Sea;
+        Some(room)
     }
 
     /// The room of a laid dungeon: `name` seeds its world, `levels` is its foes' band, `end` the type and rank that
@@ -259,9 +262,9 @@ impl Room {
     /// A dungeon's clear for a player as its cache opens, at the Reeve's level, as the owner chose for a dungeon's
     /// completion: its XP and Aurem, an item as itself coloured as its Miniboss's, and now and then a Vestige.
     fn pay_cache(&mut self, player: PlayerId, cache: &Cache, level: u8) {
-        let (dice, difficulty) = (self.dice(player), self.difficulty);
+        let (dice, difficulty, source) = (self.dice(player), self.difficulty, self.source);
         let Some(found) = self.players.get_mut(&player) else { return };
-        let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, &dice);
+        let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, source, &dice);
         found.gear_changed = true;
         // Thrown out of the cache onto the floor before it, which `cache_by` keeps clear, as a kill throws its drops.
         for vestige in vestiges {

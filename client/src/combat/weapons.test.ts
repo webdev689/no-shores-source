@@ -32,6 +32,7 @@ const item = (kind: string, slot: number, rarity = 0): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
 });
 const gear = (items: readonly GearItem[], ammo = 18, ammoMost = 24): GearState => ({
   xp: 0n,

@@ -68,6 +68,11 @@ code:
   - crates/room/src/companions.rs#type_of
   - client/src/combat/companions.ts#officerName
   - client/src/player/foeDress.ts#officerDress
+  - crates/gear/src/source.rs#Source
+  - content/gear/looks.json
+  - client/src/player/sourceLooks.ts#rareSet
+  - client/src/player/sourceLooks.ts#rolledMetal
+  - crates/room/src/run_room.rs#dungeon_run
 ---
 # Gear
 
@@ -133,7 +138,9 @@ number is one of [[Gear as Claude Shapes It]].
   keeping their order. A player carries ten. Identified in a social space, it opens to its
   own colour three times in four, one colour below one time in five and one above one time in twenty (a Normal opens
   Normal 95 in 100, an Atheric Atheric 80), never above what its level could drop, and to a named item of its slot (a
-  Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled, never a trait twice.
+  Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled, never a trait twice. Its
+  named item is one of its own content's ("Where it came from", below) where that content has one of its slot and
+  colour, else any content's.
 - **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
   35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
   (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
@@ -503,6 +510,28 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
   level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might
   and defence on top ([[Foes]]). A node with no island stands its foes at level 0.
 
+## Where it came from
+
+Every item and Vestige keeps the content it came from (`gear::Source`), as the owner chose
+([[Armour and Weapon Looks Belong to the Content That Gives Them]]; Claude's calls in
+[[The Playlist and Its Dungeons as Claude Shapes Them]]): the world, a faction, a dungeon, an Elite Dungeon, an Abyss
+Dungeon, a sea dungeon or a Breach. Its looks follow it ("Looks", below), and its card names it ("From").
+
+- **The room's content** (`Room.source`): a patrol's dungeon, shared or a run at any tier, is a dungeon's; an Elite
+  Dungeon's run at Normal or Elite an Elite Dungeon's, and at Abyss an Abyss Dungeon's; a sea island's dungeon a sea
+  dungeon's; every other room the world's, the sea's flotsam among them.
+- **What carries it**: a kill's Vestiges and items, a clear's and a cache's (`loot_kill`, `reward_clear`), from the
+  room's content; the dungeon of the day's first clear a dungeon's, the week's two an Elite's and an Abyss's
+  (`gear::clears`); the smiths' wares, a faction's packages, the public events' chests and the Test Ground's the
+  world's; a faction's ware the faction's; Shape's each its own.
+- **A Vestige opened** makes its item from its own content: a rolled one keeps it; a named one is drawn among its
+  content's named items of its slot and colour (`source` in `content/gear/items.json`, by the content its look
+  belongs to; a faction's piece the faction's, a Breach's the Breach's), else among every content's, and keeps its own
+  (`vestige::make`). An item laid back as a Vestige for want of room keeps its item's content.
+- **Kept with the character**: written only when not the world's, so a save from before reads as the world's.
+- **On the wire**: `source` at the end of `GearItem` and `GearVestige`, by `Source`'s numbers (0 the world to 6 a
+  Breach).
+
 ## Looks
 
 The figure wears its gear (`gearOutfit`), redressed whenever what it wears changes, and the room passes the dress on
@@ -510,33 +539,38 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
   a Normal head or arms piece shows nothing.
+- **Each content's sets and metals** (`content/gear/looks.json`, in `Source`'s order): the world leather, the
+  thieves', chain, iron and steel, in iron and steel; a dungeon the knights' and dwarven, in dwarven; an Elite Dungeon
+  silver and orcish, in silver and orcish; an Abyss Dungeon adamantium and ebony, in adamantium and ebony; a sea
+  dungeon elven and mithril, in elven and mithril; a Breach daedric, in daedric; a faction its guild set. No armour set
+  is two contents'; a faction's weapons share a metal with another content's but wear their faction's colour.
 - **Magic** pieces are light armour or clothes by the item's own number (its name while it has none, a smith's ware
-  before it is bought): the head and arms leather or the thieves' set, the torso and legs clothes (a shirt with a tunic
-  or vest over it, breeches, trousers or a skirt, and tall boots or shoes, in brighter dyes), leather or the thieves'
-  set.
-- **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece climbs the sets' ladder (leather, the
-  thieves', chain, iron, steel, the knights', silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric) from
-  chain, nine rungs over levels 1 to 20 and up to two more by its name: chain, iron or steel at level 1, adamantium,
-  ebony or daedric at 20. A named piece wears the set written on it in `content/gear/items.json` (`look`). Daedric's
+  before it is bought): the head and arms its content's lightest sets (the world's leather or the thieves', another
+  content's first), the torso and legs clothes (a shirt with a tunic or vest over it, breeches, trousers or a skirt,
+  and tall boots or shoes, in brighter dyes) or those sets.
+- **Rare and finer** pieces are armour sets of the forge. A rolled Rare piece climbs its content's sets over levels 1
+  to 20, and one more by its name where one is left (`rareSet`): the world's from chain to steel, another content's
+  from its first to its last. A named piece wears the set written on it in `content/gear/items.json` (`look`), one of
+  its own content's (a test holds every one to it). Daedric's
   armour and weapons are to give way to the Lattice's own, on hold for now
   ([[The Lattice's Armour and Weapons Take Daedric's Place]]). A faction's armour is its guild's set instead, in the
   faction's own colour over any dye ([[Factions]], "Its own colour"). A torso wears its set's cuirass, with its
   pauldrons where the forge draws them (chain has none); the legs wear its greaves and boots. A set the forge does not
-  draw for a body falls to the nearest on the ladder.
+  draw for a body falls to the nearest of its own content's, then to the nearest on the ladder of every set by worth
+  (leather to daedric); a faction's straight to the ladder.
 - **The cloak** is a casual cloak, or a formal one from Rare up, in the rarity's dye; a faction's cape is the formal
   cloak in its faction's rank-2 dye whatever its rarity, laid on its greys as any garment dye is.
-- **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled weapon climbs the metals' ladder (iron,
-  steel, silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric) with its level, from 1 to 20, and its
-  name: Normal iron to level 10 and steel past it; Magic steel, silver or elven at level 1, elven, dwarven or orcish
-  at 20; Rare elven, dwarven or orcish at level 1, adamantium, ebony or daedric at 20 (`rung`: a rarity's start, its
-  climb over the levels rounded, and up to two more rungs by its name). Its make is chosen by its own number: a Sword
-  & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's round, kite
-  or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's metal
-  past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain. A named weapon
-  wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's, `short` for a short sword)
-  written on it; a faction's weapon its faction's metal and colour, its shield and bow their make by its name. A
-  metal the forge does not draw for a kind (a crossbow past mithril) falls to the nearest it does on the ladder. The
-  figure, the other players, first person and the item pictures all draw the same layers.
+- **The hands** hold the loadout drawn in its look (`weaponLook`). A rolled Normal weapon is iron to level 10 and steel
+  past it from any content, as Normal armour is clothes; a Magic or finer one is made in its content's metals, climbing
+  them over levels 1 to 20 and one more by its name where one is left (`rolledMetal`). Its make is chosen by its own
+  number: a Sword & Shield's shield kite, round or tower, a Dagger & Shield's buckler, round or kite, a Mace & Shield's
+  round, kite or tower, a bow long or short. A Normal shield is plain or iron to level 10 by its number and its weapon's
+  metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain. A named
+  weapon wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's, `short` for a short sword)
+  written on it; a faction's weapon its faction's metal and colour, its shield and bow their make by its name. A metal
+  the forge does not draw for a kind (a crossbow past mithril) falls to the nearest it does on the metals by worth
+  (iron, steel, silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric). The figure, the other players,
+  first person and the item pictures all draw the same layers.
 - **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them. A
   dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) and snapped once to the
   game's palette where it is made, so the figure, first person, the Appearance tiles and the keepers' swatches draw the

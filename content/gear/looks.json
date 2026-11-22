@@ -1,0 +1,11 @@
+{
+  "sources": [
+    {"key": "world", "name": "the world", "armour": ["leather", "thieves", "chain", "iron", "steel"], "metals": ["iron", "steel"]},
+    {"key": "faction", "name": "a faction", "armour": ["fighters", "mages", "brotherhood"], "metals": ["elven", "silver", "ebony"]},
+    {"key": "dungeon", "name": "a dungeon", "armour": ["knights", "dwarven"], "metals": ["dwarven"]},
+    {"key": "elite", "name": "an Elite Dungeon", "armour": ["silver", "orcish"], "metals": ["silver", "orcish"]},
+    {"key": "abyss", "name": "an Abyss Dungeon", "armour": ["adamantium", "ebony"], "metals": ["adamantium", "ebony"]},
+    {"key": "sea", "name": "a sea dungeon", "armour": ["elven", "mithril"], "metals": ["elven", "mithril"]},
+    {"key": "breach", "name": "a Breach", "armour": ["daedric"], "metals": ["daedric"]}
+  ]
+}

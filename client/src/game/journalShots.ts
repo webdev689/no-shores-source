@@ -164,7 +164,7 @@ export const boardShot = menuShot('board');
 const LETTERS: GearState = {
   ...GEAR,
   mail: [
-    { id: 31, from: 0, crowded: false, vestige: { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false }, item: null },
+    { id: 31, from: 0, crowded: false, vestige: { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false, source: 0 }, item: null },
     { id: 32, from: 4, crowded: true, vestige: null, item: item({ id: 0, rarity: 3, kind: 25, bucket: 8, level: 6 }) },
     { id: 33, from: 1, crowded: false, vestige: null, item: item({ id: 0, rarity: 1, kind: 2, level: 11 }) },
   ],

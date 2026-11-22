@@ -12,7 +12,7 @@ import { FROM_WORDS, MAIL_MOST, letterRows, letterWords } from './mailPage.ts';
 import { npcOpened, npcPage } from './npcScreen.ts';
 
 test('each letter is offered to take by its number, named by what it holds, and Take all while any waits', () => {
-  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
+  const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false, source: 0 };
   const mail = [
     { id: 31, from: 0, crowded: false, vestige, item: null },
     { id: 32, from: 4, crowded: true, vestige: null, item: item({ id: 0, rarity: 3, kind: 25, bucket: 8 }) },
@@ -68,7 +68,7 @@ test('the page words each source by the number the gear crate gives it', async (
 // The Postmaster's thanks are typed a frame at a time, and no frame comes here.
 globalThis.requestAnimationFrame ??= () => 0;
 
-const VESTIGE = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
+const VESTIGE = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false, source: 0 };
 const LETTERS = [
   { id: 31, from: 0, crowded: false, vestige: VESTIGE, item: null },
   { id: 32, from: 4, crowded: true, vestige: null, item: item({ id: 0, rarity: 3, kind: 2 }) },

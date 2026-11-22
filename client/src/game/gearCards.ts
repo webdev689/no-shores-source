@@ -24,6 +24,7 @@ import {
 import type { Press } from './gearScreen.ts';
 import { gearKindName, gearName } from './shipGear.ts';
 import type { ShipGlyph } from './shipGlyphs.ts';
+import { sourceLooks } from '../player/sourceLooks.ts';
 
 /** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
  *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
@@ -121,6 +122,8 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
       : null;
   const rows: [string, string][] = [['Level', String(item.level)]];
   if (item.prestige) rows.push(['Prestige', String(item.prestige)]);
+  // Where it was earned, which its look says too; a ship's module keeps no look of a content.
+  if (!isModule(item.kind)) rows.push(['From', sourceLooks(item).name]);
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);

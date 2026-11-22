@@ -104,6 +104,11 @@ impl Room {
                 room
             }
         };
+        room.source = match of {
+            RunOf::Patrol { .. } => gear::Source::Dungeon,
+            RunOf::Elite { .. } => gear::Source::elite_at(tier),
+            RunOf::Sea { .. } => gear::Source::Sea,
+        };
         room.set_difficulty(tier);
         room.set_minute(minute);
         Some(room)
@@ -144,3 +149,7 @@ impl Room {
 #[cfg(test)]
 #[path = "run_room_tests.rs"]
 mod run_room_tests;
+
+#[cfg(test)]
+#[path = "run_source_tests.rs"]
+mod run_source_tests;

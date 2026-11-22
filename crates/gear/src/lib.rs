@@ -41,6 +41,7 @@ pub mod rewards;
 pub mod shape;
 pub mod ship;
 pub mod shown;
+pub mod source;
 pub mod story;
 mod vault;
 pub mod vendor;
@@ -53,6 +54,7 @@ pub use element::Element;
 pub use item::Item;
 pub use kinds::{Kind, Slot};
 pub use rarity::Rarity;
+pub use source::Source;
 pub use world::Difficulty;
 
 #[cfg(test)]
@@ -101,5 +103,7 @@ mod refusals_tests;
 mod rewards_tests;
 #[cfg(test)]
 mod shape_tests;
+#[cfg(test)]
+mod source_tests;
 #[cfg(test)]
 mod vestige_tests;

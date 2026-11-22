@@ -10,6 +10,7 @@ import type { GearItem } from '../network/gearMessages.ts';
 import { item, state } from '../network/gearForTests.ts';
 import { wardrobeOf } from './dressing.ts';
 import { KINDS, MELEE, RANGED_SLOT, WORN, slotOf, writtenLook } from './gear.ts';
+import { SOURCES } from './sourceLooks.ts';
 import { gearOutfit } from './gearLooks.ts';
 
 /** Every layer of a fitted body, by the moves it is drawn in, as the page loads a body's layers. */
@@ -49,12 +50,26 @@ function held() {
     id: 1,
     name: 0,
     level: 20,
+    source: Math.max(
+      SOURCES.findIndex((source) => 'source' in each && source.key === each.source),
+      0,
+    ),
   }));
+  // A rolled piece is drawn in its content's looks, so it is rolled in every content.
   const rolls = Object.entries(rolled.names).flatMap(([kind, names]) =>
     RARITIES.flatMap((rarity, number) =>
       (names as Record<string, readonly string[]>)[rarity]!.flatMap((unused, name) =>
         NUMBERS.flatMap((id) =>
-          LEVELS.map((level) => ({ kind: KINDS.indexOf(kind as never), rarity: number, name, id, level })),
+          LEVELS.flatMap((level) =>
+            SOURCES.map((unused, source) => ({
+              kind: KINDS.indexOf(kind as never),
+              rarity: number,
+              name,
+              id,
+              level,
+              source,
+            })),
+          ),
         ),
       ),
     ),

@@ -25,6 +25,7 @@ const item = (id: number, rarity: number, place = 0): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
 });
 
 const state = (fields: Partial<GearState>): GearState => ({
@@ -62,7 +63,7 @@ test('a dismantle gains its Aurem, fragments and essence, and the piece gone is 
 });
 
 test('a new item, a Vestige and a resource are gains; a piece moved or a count spent is not', () => {
-  const vestige = { id: 2, rarity: 2, slot: 0, level: 5, vaulted: false };
+  const vestige = { id: 2, rarity: 2, slot: 0, level: 5, vaulted: false, source: 0 };
   const before = state({ items: [item(4, 1)], resources: [5, 0, 0], stocks: [4, 0, 0, 0, 1] });
   const after = state({
     aurem: 40,

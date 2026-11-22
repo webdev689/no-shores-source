@@ -37,6 +37,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
   ...fields,
 });
 
@@ -103,10 +104,10 @@ test('the hands hold the drawn loadout in its look, or the nearest metal the for
   const shielded = item({ id: 3, kind: 12, rarity: 1, at: 2 });
   const brace = item({ id: 2, kind: 23, at: 3 });
   const worn = state([shielded, brace]);
-  assert.deepEqual(gearHands(worn, WARDROBE), hands('sword_steel', 'shield_kite_steel'), 'Melee, drawn by default');
+  assert.deepEqual(gearHands(worn, WARDROBE), hands('sword_iron', 'shield_kite_steel'), 'Melee, drawn by default');
   assert.deepEqual(gearHands(worn, WARDROBE, 1), hands('pistolet', 'pistolet_l'), 'Ranged, a plain pistolet each');
-  const finest = item({ id: 3, kind: 2, rarity: 2, level: 20, at: 2 });
-  assert.deepEqual(gearHands(state([finest]), WARDROBE), hands('sword_ebony', null), 'adamantium undrawn: ebony');
+  const abyss = item({ id: 3, kind: 2, rarity: 2, level: 1, at: 2, source: 4 });
+  assert.deepEqual(gearHands(state([abyss]), WARDROBE), hands('sword_ebony', null), 'adamantium undrawn: ebony');
   const gilded = item({ id: 4, kind: 23, rarity: 3, at: 3 });
   assert.deepEqual(gearHands(state([gilded]), WARDROBE, 1), hands('pistolet_gilded', 'pistolet_gilded_l'), 'gilded');
   const pair = item({ id: 5, kind: 1, at: 2 });
@@ -173,8 +174,16 @@ test("a weapon's look: a named piece's as written; a rolled one climbs with its 
     [metals(0, 1), metals(0, 10), metals(0, 11)],
     ['iron iron iron', 'iron iron iron', 'steel steel steel'],
   );
-  assert.deepEqual([metals(1, 1), metals(1, 20)], ['steel silver elven', 'elven dwarven orcish']);
-  assert.deepEqual([metals(2, 1), metals(2, 20)], ['elven dwarven orcish', 'adamantium ebony daedric']);
+  // A finer one is made in its content's metals, climbing with its level, one more by its name where one is left.
+  const from = (source: number, rarity: number, level: number) =>
+    [0, 1, 2].map((name) => look({ rarity, level, name, source }).metal).join(' ');
+  assert.deepEqual([from(0, 1, 1), from(0, 1, 20)], ['iron steel iron', 'steel steel steel'], 'the world');
+  assert.deepEqual([from(3, 2, 1), from(3, 2, 20)], ['silver orcish silver', 'orcish orcish orcish'], 'Elite');
+  assert.deepEqual(from(4, 2, 1), 'adamantium ebony adamantium', 'an Abyss Dungeon');
+  assert.deepEqual(
+    [from(2, 2, 1), from(5, 1, 1), from(6, 2, 20)],
+    ['dwarven dwarven dwarven', 'elven mithril elven', 'daedric daedric daedric'],
+  );
   const makes = (kind: number) => [1, 2, 3].map((id) => look({ kind, rarity: 1, id }).make).join(' ');
   assert.deepEqual(
     [makes(12), makes(18), makes(21), makes(8)],

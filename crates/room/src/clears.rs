@@ -55,7 +55,7 @@ impl Room {
         for player in fought {
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
-            let vestiges = found.character.reward_clear(clear, level.unwrap_or(0), self.difficulty, &dice);
+            let vestiges = found.character.reward_clear(clear, level.unwrap_or(0), self.difficulty, self.source, &dice);
             found.gear_changed = true;
             let body = found.fighter.body;
             // Rank 0, none: a clear leaves no ammunition.

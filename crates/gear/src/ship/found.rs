@@ -93,7 +93,7 @@ fn module(source: Source, level: u8, dice: &Dice) -> Option<Item> {
     let weights = vestige::gated(vestige::colours(rank_of(source)), level);
     let rarity = Rarity::ALL[dice.weighted(Purpose::ShipModule, 1, &weights)];
     let slot = Slot::SHIP[dice.pick(Purpose::ShipModule, 2, Slot::SHIP.len())];
-    vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), dice)
+    vestige::make(0, rarity, slot, level.clamp(1, NAMED_LEVEL), crate::Source::World, dice)
 }
 
 /// What a player took of salvage: the materials there was room for, and the module's number if it was carried.

@@ -24,6 +24,7 @@ const item = (fields: Partial<GearItem>): GearItem => ({
   columns: [],
   price: 0,
   element: 0,
+  source: 0,
   ...fields,
 });
 

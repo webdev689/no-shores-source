@@ -405,6 +405,7 @@ pub(crate) fn item_offset<'built>(
         columns,
         price,
         element: item.element.map_or(0, |element| element as u8),
+        source: item.source as u8,
     };
     messages::GearItem::create(builder, &args)
 }
@@ -451,6 +452,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
                 slot: vestige.slot as u8,
                 level: vestige.level,
                 vaulted: *vaulted,
+                source: vestige.source as u8,
             };
             messages::GearVestige::create(&mut builder, &args)
         })

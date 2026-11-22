@@ -187,6 +187,9 @@ pub struct Room {
     pub(crate) run: Option<run::Run>,
     /// The island it stands on, by its continent's id, for the feats it counts (`bounties.rs`); none at sea.
     pub(crate) island: Option<&'static str>,
+    /// The content its drops come from, which their looks follow: a dungeon's, an Elite or Abyss Dungeon's or a sea
+    /// dungeon's, else the world's (`gear::Source`).
+    pub(crate) source: gear::Source,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
     /// A mission's, a dungeon's or a world boss's garrison's clear (`clears.rs`).
@@ -266,6 +269,7 @@ impl Room {
             gathered: std::collections::BTreeMap::new(),
             entrances: Vec::new(),
             place: None,
+            source: gear::Source::World,
             run: None,
             island: None,
             ashore: companions::Ashore::default(),

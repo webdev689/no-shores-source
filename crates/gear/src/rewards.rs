@@ -6,6 +6,7 @@ use crate::character::{At, CARRIED_MOST, Character, Stuff, VAULT_MOST, Vestige};
 use crate::dice::Dice;
 use crate::item::Item;
 use crate::kinds::Slot;
+use crate::source::Source;
 use crate::vestige;
 use crate::world::Difficulty;
 
@@ -111,23 +112,39 @@ impl Character {
     }
 
     /// What a kill of a foe of this rank and level leaves this player: Vestiges by its rank's chance, and from a
-    /// Miniboss or a Boss items as themselves, each chance raised by a harder voyage. The items are kept
-    /// (`keep_found`); the Vestiges, with any item there was no room for, are numbered here and returned to be laid.
-    pub fn loot_kill(&mut self, rank: u8, foe_level: u8, difficulty: Difficulty, dice: &Dice) -> Vec<Vestige> {
+    /// Miniboss or a Boss items as themselves, each chance raised by a harder voyage, all from `source`, the content
+    /// the kill was in. The items are kept (`keep_found`); the Vestiges, with any item there was no room for, are
+    /// numbered here and returned to be laid.
+    pub fn loot_kill(
+        &mut self,
+        rank: u8,
+        foe_level: u8,
+        difficulty: Difficulty,
+        source: Source,
+        dice: &Dice,
+    ) -> Vec<Vestige> {
         let raised = difficulty.reward();
-        self.loot((vestige::chance(rank) * raised, vestige::item_chance(rank) * raised), rank, foe_level, dice)
+        let chances = (vestige::chance(rank) * raised, vestige::item_chance(rank) * raised);
+        self.loot(chances, rank, foe_level, source, dice)
     }
 
     /// Pays a cleared node to a player who fought it: its clear's XP and Aurem at its level, raised by a harder voyage
     /// as a kill's are; and from a dungeon an item as itself, coloured as its Miniboss's, and a Vestige as often as its
-    /// Miniboss leaves one, returned to be laid as `loot_kill`'s are.
-    pub fn reward_clear(&mut self, clear: Clear, level: u8, difficulty: Difficulty, dice: &Dice) -> Vec<Vestige> {
+    /// Miniboss leaves one, returned to be laid as `loot_kill`'s are, both from `source`.
+    pub fn reward_clear(
+        &mut self,
+        clear: Clear,
+        level: u8,
+        difficulty: Difficulty,
+        source: Source,
+        dice: &Dice,
+    ) -> Vec<Vestige> {
         self.pay(clear.worth(), level, None, difficulty);
         if clear != Clear::Dungeon {
             return Vec::new();
         }
         let raised = difficulty.reward();
-        self.loot((vestige::chance(MINIBOSS) * raised, raised), MINIBOSS, level, dice)
+        self.loot((vestige::chance(MINIBOSS) * raised, raised), MINIBOSS, level, source, dice)
     }
 
     /// Pays XP and Aurem worth so much at level 5, at `level` and the voyage's tier: the worn Art and the faction
@@ -145,13 +162,21 @@ impl Character {
         Reward { xp, aurem }
     }
 
-    /// Vestiges and items by their chances, coloured by `rank` at `level`: the items kept, the Vestiges returned.
-    fn loot(&mut self, (vestiges, items): (f64, f64), rank: u8, level: u8, dice: &Dice) -> Vec<Vestige> {
+    /// Vestiges and items by their chances, coloured by `rank` at `level`, from `source`: the items kept, the
+    /// Vestiges returned.
+    fn loot(
+        &mut self,
+        (vestiges, items): (f64, f64),
+        rank: u8,
+        level: u8,
+        source: Source,
+        dice: &Dice,
+    ) -> Vec<Vestige> {
         let mut laid: Vec<Vestige> = vestige::dropped(vestiges, rank, level, dice)
             .into_iter()
-            .map(|(rarity, slot, level)| Vestige::new(self.take_id(), rarity, slot, level))
+            .map(|(rarity, slot, level)| Vestige::new(self.take_id(), rarity, slot, level).from(source))
             .collect();
-        for item in vestige::found_items(items, rank, level, dice) {
+        for item in vestige::found_items(items, rank, level, source, dice) {
             laid.extend(self.keep_found(item));
         }
         laid
@@ -165,7 +190,7 @@ impl Character {
         } else if self.vaulted(item.kind.stock()) < VAULT_MOST {
             At::Vault
         } else {
-            return Some(Vestige::new(self.take_id(), item.rarity, item.bucket, item.level));
+            return Some(Vestige::new(self.take_id(), item.rarity, item.bucket, item.level).from(item.source));
         };
         let id = self.take_id();
         self.items.insert(id, (Item { id, ..item }, at));

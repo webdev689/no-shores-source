@@ -78,6 +78,11 @@ test('a players own gear the server wrote reads back whole, every column spelled
   assert.ok((gear.mail?.[1]?.item?.columns.length ?? 0) > 0, 'its nodes spelled out');
   const sword = gear.items.find((item) => item.named === 'harbourwarden');
   assert.ok(sword);
+  assert.deepEqual(
+    [sword.source, gear.mail?.[0]?.vestige?.source],
+    [5, 5],
+    'each from a sea dungeon, as its look says',
+  );
   assert.deepEqual([sword.at, sword.attack, sword.rarity, sword.level, sword.xpMost], [2, 248, 3, 20, 90_000]);
   assert.deepEqual(
     sword.columns.map((column) => column.kind),

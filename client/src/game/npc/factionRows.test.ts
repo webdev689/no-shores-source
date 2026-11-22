@@ -172,7 +172,7 @@ test('what the ranks keep is read from the emblem’s and the dye’s own source
 });
 
 test('no package is collected while ten Vestiges are carried', () => {
-  const vestiges = Array.from({ length: 10 }, (unused, id) => ({ id, rarity: 1, slot: 0, level: 1, vaulted: false }));
+  const vestiges = Array.from({ length: 10 }, (unused, id) => ({ id, rarity: 1, slot: 0, level: 1, vaulted: false, source: 0 }));
   const full = state({ vestiges, standing: standing({ packages: [1, 0, 0] }) });
   const parcel = row(factionRows(STORM, full, false), 'Reputation')?.wares[0];
   assert.deepEqual([parcel?.note, parcel?.ask], ['Ten Vestiges carried', null]);
