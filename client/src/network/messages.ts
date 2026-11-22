@@ -336,11 +336,17 @@ function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: Inpu
 }
 
 /** A ship's course as its bytes: the world points it sails through in turn, and its pace, one of the steps of a
- *  ship's speed. No points brings it to rest. */
-export function courseBytes(points: readonly (readonly [number, number])[], pace: number): Uint8Array<ArrayBuffer> {
+ *  ship's speed. No points brings it to rest. With `travel`, the held map takes the ship to the other waters it ends
+ *  in. */
+export function courseBytes(
+  points: readonly (readonly [number, number])[],
+  pace: number,
+  travel = false,
+): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(256);
   const numbers = Course.createPointsVector(builder, points.flat());
-  builder.finish(Course.createCourse(builder, numbers, wholeIn(pace, 0, 0xffff, 'the pace'), 0, 0, 0, 0, 0, 0, 0));
+  const paced = wholeIn(pace, 0, 0xffff, 'the pace');
+  builder.finish(Course.createCourse(builder, numbers, paced, 0, 0, 0, 0, 0, 0, 0, travel));
   return builder.asUint8Array().slice();
 }
 
@@ -349,7 +355,7 @@ export function courseBytes(points: readonly (readonly [number, number])[], pace
 export function faceBytes(heading: number): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(64);
   const facing = Course.createFacingVector(builder, [heading]);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, facing, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
@@ -359,21 +365,21 @@ export function walkBytes(sequence: number, controls: readonly number[]): Uint8A
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createWalkVector(builder, [...controls]);
   const numbered = wholeIn(sequence, 0, 0xffff_ffff, "the step's number");
-  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, numbers, numbered, 0, 0, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
 /** A chase of the hostile ship numbered `ship` (null for none), as its bytes, in a course's message. */
 export function chaseBytes(ship: number | null): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 3, 0, ship ?? 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 3, 0, ship ?? 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
 /** Leaving the helm (`leave`), or taking it again at the wheel, as its bytes, in a course's message. */
 export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, leave ? 1 : 2, 0, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 
@@ -382,7 +388,7 @@ export function helmBytes(leave: boolean): Uint8Array<ArrayBuffer> {
 export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(32);
   const number = { repair: 1, board: 2, 'leave-deck': 3 }[ask];
-  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number));
+  builder.finish(Course.createCourse(builder, 0, 0, 0, 0, 0, 0, 0, 0, number, false));
   return builder.asUint8Array().slice();
 }
 
@@ -390,7 +396,7 @@ export function askBytes(ask: 'repair' | 'board' | 'leave-deck'): Uint8Array<Arr
 export function ordersBytes(orders: readonly number[]): Uint8Array<ArrayBuffer> {
   const builder = new flatbuffers.Builder(128);
   const numbers = Course.createOrdersVector(builder, [...orders]);
-  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0, 0));
+  builder.finish(Course.createCourse(builder, 0, 0, numbers, 0, 0, 0, 0, 0, 0, false));
   return builder.asUint8Array().slice();
 }
 

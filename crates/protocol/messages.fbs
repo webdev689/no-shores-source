@@ -65,7 +65,8 @@ table Input {
 // its deck instead: its controls in the movement crate's order and its number, 1, 2, 3 and so on from the helm left. Or
 // the helm left (1), or taken again at the wheel (2), or a chase (3): the hostile ship it chases by that ship's number,
 // `chase`, 0 for none. Or an ask: its repair by a port city (1), to board a captain who struck (2), or to leave the
-// captain's deck once its crew has fallen (3).
+// captain's deck once its crew has fallen (3). A course asked with `travel` takes the ship to other waters by the held
+// map (crates/room/src/sea_travel.rs).
 table Course {
   points: [double];
   pace: ushort;
@@ -76,6 +77,7 @@ table Course {
   facing: [double];
   chase: uint;
   ask: ubyte;
+  travel: bool;
 }
 
 // A piece of what floats at sea, kept for one player: theirs, its number, where it floats (x, y in metres) and what it

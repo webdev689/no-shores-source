@@ -626,3 +626,10 @@ fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none()
     assert_eq!(read(&Snapshot { revives: Some(5), ..plain }), 5);
     assert_eq!(read(&Snapshot { revives: Some(0), ..plain }), 0);
 }
+
+#[test]
+fn a_course_asked_with_the_travel_flag_reads_as_a_travel_and_one_without_as_a_course() {
+    let points = vec![[50_000.0, 150_000.0], [550_000.0, 150_000.0]];
+    assert_eq!(read_sea_input(&travel_bytes(&points, 20)), Ok(SeaInput::Travel(points.clone(), 20)));
+    assert_eq!(read_sea_input(&course_bytes(&points, 20)), Ok(SeaInput::Course(points, 20)));
+}

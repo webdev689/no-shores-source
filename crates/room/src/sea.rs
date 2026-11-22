@@ -584,6 +584,8 @@ pub mod islands;
 mod ports;
 #[path = "sea_puts_in.rs"]
 mod puts_in;
+#[path = "sea_travel.rs"]
+pub mod travel;
 
 #[cfg(test)]
 #[path = "fight_measure_tests.rs"]

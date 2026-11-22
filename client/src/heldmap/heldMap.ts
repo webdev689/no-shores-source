@@ -26,6 +26,7 @@ import {
   wheelFactor,
   zoomAt,
 } from './heldMapLaw.ts';
+import { askLines, MapAsk, paintHover, paintTravelAsk, type HoverSaid } from './heldMapAsk.ts';
 import { heldCardNode } from './heldMapCard.ts';
 import { type HeldMapFrame, HeldMapView, ROUTE_POINTS } from './heldMapView.ts';
 import { paintLand } from './landLetters.ts';
@@ -91,7 +92,13 @@ type Phase =
   | { readonly kind: 'closed' }
   | { readonly kind: 'opening'; readonly t: number }
   | { readonly kind: 'open' }
-  | { readonly kind: 'closing'; readonly t: number; readonly from: number; readonly sail: Point2 | null };
+  | {
+      readonly kind: 'closing';
+      readonly t: number;
+      readonly from: number;
+      readonly sail: Point2 | null;
+      readonly travel: boolean;
+    };
 
 type Choice = { readonly at: Point2; readonly name: string; readonly course: Course; readonly place: string | null };
 
@@ -136,7 +143,10 @@ export class HeldMap {
   private placed: { readonly place: MapPlace; readonly x: number; readonly y: number }[] = [];
   private gauntlets: string | null | undefined = undefined;
   private clock = 0;
-  private lowered: (sail: Point2 | null) => void = () => undefined;
+  private lowered: (sail: Point2 | null, travel: boolean) => void = () => undefined;
+  /** The water lit under the pointer, and the prompt a course into another water raises; and where the ship lay. */
+  private readonly ask = new MapAsk();
+  private shipAt: Point2 = [0, 0];
   /** The waters once they are open: their wash, letters and key, and which cities are ports. */
   private waters: HeldMapWaters | null = null;
   private charted: Uint8Array | null = null;
@@ -173,8 +183,9 @@ export class HeldMap {
     return this.phase.kind !== 'closed';
   }
 
-  /** What happens once the map is lowered: the ship sets sail for its destination, or none was chosen. */
-  onLowered(then: (sail: Point2 | null) => void): void {
+  /** What happens once the map is lowered: the ship sets sail for its destination, travels there (`travel`, the
+   *  prompt answered yes), or none was chosen. */
+  onLowered(then: (sail: Point2 | null, travel: boolean) => void): void {
     this.lowered = then;
   }
 
@@ -221,16 +232,17 @@ export class HeldMap {
     if (gauntlets !== this.gauntlets) this.load(gauntlets);
     this.ink = stageOf(viewport).ink;
     this.mapView = viewed(this.ink);
-    this.choice = null;
+    [this.choice, this.ask.asking] = [null, null];
     this.phase = { kind: 'opening', t: 0 };
   }
 
-  /** Lowers the map from wherever it is in its rise; `sail` is the destination set, or null. */
-  close(sail: Point2 | null = null): void {
+  /** Lowers the map from wherever it is in its rise; `sail` is the destination set, or null, travelled to with
+   *  `travel`. */
+  close(sail: Point2 | null = null, travel = false): void {
     const phase = this.phase;
     if (phase.kind === 'closed' || phase.kind === 'closing') return;
     const from = phase.kind === 'opening' ? raised(phase.t / OPEN_S) : 1;
-    this.phase = { kind: 'closing', t: 0, from, sail };
+    this.phase = { kind: 'closing', t: 0, from, sail, travel };
   }
 
   /** Puts the map away at once, with no destination: where the player is taken from where it was raised. */
@@ -270,6 +282,7 @@ export class HeldMap {
   }
 
   pointerMove(x: number, y: number): void {
+    this.ask.pointer = { x, y };
     const press = this.press;
     if (!press) return;
     if (!press.panning && Math.abs(x - press.x) + Math.abs(y - press.y) <= PAN_PX) return;
@@ -297,6 +310,7 @@ export class HeldMap {
       course: this.plan(point),
       place: mark?.place.id ?? null,
     };
+    if (this.waters) this.ask.choose(this.waters.waters, this.choice.course, this.shipAt);
   }
 
   /** The wheel at a point on the screen: the map zooms about it. */
@@ -307,15 +321,17 @@ export class HeldMap {
   }
 
   /** Sets sail for the destination chosen, if it has a course, at the hardest difficulty open up to the one picked: a
-   *  shut one never sails, as the sea's room would refuse it. */
+   *  shut one never sails, as the sea's room would refuse it. While the prompt asks, travels there: its yes. */
   setSail(): void {
     if (!this.choice?.course.ok) return;
     this.difficulty = seasChoices(this.picked, this.shut).picked;
-    this.close(this.choice.at);
+    this.close(this.choice.at, this.ask.asking !== null);
   }
 
-  /** Escape: the choice is let go first, with the seas picked on its card, then the map lowered. */
+  /** Escape: the prompt answered no first, its course kept; then the choice let go, with the seas picked on its
+   *  card; then the map lowered. */
   escape(): void {
+    if (this.ask.answerNo()) return;
     if (this.choice) {
       this.choice = null;
       this.picked = this.difficulty;
@@ -341,6 +357,10 @@ export class HeldMap {
       this.mapView = zoomAt(this.mapView, 0, 0, 1, stage.ink, this.extent);
     const drop = (1 - lift) * stage.sprite.height;
     this.ink = stage.ink;
+    this.shipAt = scene.ship;
+    const waters = this.land || this.press?.panning ? null : (this.waters?.waters ?? null);
+    const hovered = waters && this.ask.hover(waters, this.mapView, this.ink, scene.ship);
+    if (hovered?.cells) this.view.setLit(hovered.cells);
     const scaled = (rect: Rect, down: number): Rect => ({
       x: rect.x * dpr,
       y: (rect.y + down) * dpr,
@@ -368,7 +388,8 @@ export class HeldMap {
     }
     const reads = layoutKey(this.mapView, stage, fonts, this.chartings, scene, this.choice?.place ?? null);
     // Painted and sent to the device only when what is lettered, where, or its face's loading has changed.
-    const letteringChanged = this.letter(reads, scene, stage.sprite, { width, height, inkAt, dpr });
+    const size = { width, height, inkAt, dpr };
+    const letteringChanged = this.letter(reads, scene, stage.sprite, size, hovered?.said ?? null);
     const land = this.land !== null;
     return {
       parchment: picture,
@@ -392,16 +413,23 @@ export class HeldMap {
     scene: HeldMapScene,
     sprite: Rect,
     size: { width: number; height: number; inkAt: { x: number; y: number }; dpr: number },
+    said: HoverSaid | null,
   ): boolean {
     const { width, height, inkAt, dpr } = size;
     const land = this.land;
     const lettering = land ? null : this.laidOut.made(reads, () => this.layout(scene, sprite));
     const isles = lettering ? this.isleInks(lettering.scale) : [];
-    const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : [this.measuredFonts, lettering, isles]]);
+    const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey());
+    const sea = [this.measuredFonts, lettering, isles, said, asked];
+    const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : sea]);
     if (shape === this.letteredShape) return false;
     this.letteredShape = shape;
-    if (lettering) paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
-    else if (land) {
+    if (lettering) {
+      paintLettering(this.painter, this.lettering, inkAt, dpr, lettering, isles);
+      // While the prompt asks, it says what the pointer's words would.
+      if (said && !asked) paintHover(this.painter, said.line, said.x, said.y, this.ink, lettering.scale);
+      if (asked) paintTravelAsk(this.painter, this.ink, lettering.scale, asked);
+    } else if (land) {
       const player = {
         at: [scene.ship[0] - land.origin[0], scene.ship[1] - land.origin[1]] as const,
         heading: scene.heading,
@@ -431,7 +459,7 @@ export class HeldMap {
     if (t >= CLOSE_S) {
       this.phase = { kind: 'closed' };
       this.press = null;
-      this.lowered(phase.sail);
+      this.lowered(phase.sail, phase.travel);
       return null;
     }
     this.phase = { ...phase, t };
@@ -521,7 +549,11 @@ export class HeldMap {
     const ok = choice.course.ok;
     const card = {
       ...{ words: ok ? `Set a course for ${choice.name}` : choice.course.why, ok, picked: this.picked },
-      ...{ shut: this.shut, lift: shown.lift, sail: ['Set sail', this.sailKey()].filter(Boolean).join('  ') },
+      ...{
+        shut: this.shut,
+        lift: shown.lift,
+        sail: [this.ask.asking ? 'Travel' : 'Set sail', this.sailKey()].filter(Boolean).join('  '),
+      },
       at: [this.ink.x + this.ink.width / 2, this.ink.y + shown.drop - 12] as const,
     };
     return heldCardNode(

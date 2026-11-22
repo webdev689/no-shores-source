@@ -301,6 +301,36 @@ test('the sea sails the course a browser writes, refuses one across land, and sh
   assert.ok(Math.abs((ships[0]?.y ?? 0) - (150_000 - 120)) < 1e-6, 'a second north at 10 × 12 m/s');
 });
 
+test('the sea travels a ship a browser asks to take to other waters, and refuses one within its own', () => {
+  const room = startRoomDoor(compiled);
+  const square = (west: number) => [
+    [west, 100_000],
+    [west + 100_000, 100_000],
+    [west + 100_000, 200_000],
+    [west, 200_000],
+  ];
+  const continents = [
+    { id: 'continent-4', outline: square(100_000) },
+    { id: 'continent-5', outline: square(600_000) },
+  ];
+  assert.equal(room.openSea(JSON.stringify({ continents, isles: [] }), 7), true);
+  const player = room.join();
+  assert.equal(room.input(player, courseBytes([[250_000, 150_000]], 10)), 'taken');
+  for (let tick = 0; tick < 30; tick++) room.tick();
+  assert.equal(room.input(player, courseBytes([[260_000, 150_000]], 10, true)), 'refused', 'within its own water');
+  for (let tick = 0; tick < 30; tick++) room.tick();
+  assert.equal(room.input(player, courseBytes([[550_000, 150_000]], 20, true)), 'taken');
+  const snapshot = readFromRoom(room.snapshot(player));
+  const ship = snapshot?.kind === 'snapshot' ? snapshot.ships[0] : undefined;
+  assert.deepEqual([ship?.x, ship?.y], [549_600, 150_000], '400 m short of its end');
+  const told = snapshot?.kind === 'snapshot' ? snapshot.told.map((each) => [...each.numbers]) : [];
+  assert.deepEqual(
+    told.filter((numbers) => numbers[0] === 24).map((numbers) => numbers[2]),
+    [4, 0],
+    'told its own water first, then taken',
+  );
+});
+
 /** The world time the clash's sea opens at (crates/room-wasm/src/door_tests.rs `CLASH_START_S`). */
 const CLASH_START_S = 1_790_151_200;
 

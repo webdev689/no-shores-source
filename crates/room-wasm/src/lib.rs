@@ -12,6 +12,7 @@ use protocol::SeaInput;
 use room::asks::{Counter, CounterKind};
 use room::deck::WalkRefused;
 use room::fleet::Fleet;
+use room::sea::travel::TravelRefused;
 use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::winds::epoch_of;
 use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
@@ -302,6 +303,13 @@ pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
                 Err(_) => return NOT_AN_INPUT,
                 Ok(SeaInput::Course(points, pace)) => sea.course(player, &points, pace),
                 Ok(SeaInput::Face(heading)) => sea.face(player, heading),
+                Ok(SeaInput::Travel(points, pace)) => {
+                    return match sea.travel(player, &points, pace) {
+                        Ok(()) => TAKEN,
+                        Err(TravelRefused::Course(CourseRefused::TooSoon)) => TOO_SOON,
+                        Err(_) => REFUSED,
+                    };
+                }
                 Ok(SeaInput::Orders(orders)) => sea.orders(player, orders),
                 Ok(SeaInput::Chase(ship)) => {
                     sea.chase(player, ship);
