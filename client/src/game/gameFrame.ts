@@ -221,7 +221,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       clock,
       walker.you,
       flow.mode !== 'foot',
-      here.node,
+      here,
       paused,
     );
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };

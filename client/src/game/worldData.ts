@@ -18,6 +18,8 @@ export interface NodeInfo {
   /** A social space's stations (`nodes.ts`), and where Shape may stand in it, one a week. */
   readonly stations?: readonly StationInfo[];
   readonly visitorSpots?: readonly Point[];
+  /** A social space's plaza (west, north, east, south): its ring reaches past it, a hub's along its ways. */
+  readonly plazaBounds?: readonly [number, number, number, number];
   /** A social space's bounty board, where a player stands to read it, and where the board itself stands (the city
    *  crate's `board`). */
   readonly board?: Point | null;
