@@ -235,8 +235,8 @@ The decisions in [[Open Questions]] are not repeated here.
   opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
   R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,
   so every deploy waits on R2 answering. Memory to measure: the figure cards'
-  4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
-  (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
+  4000-texture budget (`player/cards.ts`) and the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
+  (`scene.ts`).
 - **Browser QA**: `tools/claude-toolkit/webgpu-shot.cjs` reads the page's canvas, so it pictures the Test Ground and
   the World Editor but not the game, which draws in its worker ([[Toolkit]]); the owner: "The headless issue is due to
   us moving away from html. So not really an issue per say." A driver that patches the worker too is on the branch
