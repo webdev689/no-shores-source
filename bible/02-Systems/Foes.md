@@ -83,8 +83,8 @@ phases) is [[Enemies]].
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
   A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
-  are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike twice
-  and its blows on a player half, at every level ([[Gear]], "Blows"). A foe of level 0 has no power, and fights by
+  are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike half
+  again and its blows on a player three quarters, at every level ([[Gear]], "Blows"; [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]). A foe of level 0 has no power, and fights by
   these numbers and those two alone. A garrison's foes stand at their island's levels ([[Enemies]]).
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.

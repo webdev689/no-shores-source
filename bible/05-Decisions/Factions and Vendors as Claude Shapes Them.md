@@ -101,6 +101,8 @@ sold here today"), as a cosmetic of another day is, and none buys the next day's
 | Shapes | At most 200 held. A kill at Elite (Rough) seas gives one 3 times in 100, at Abyss (Storm) 6 in 100; a Boss or Miniboss 2 and 4. None at Normal (Calm) |
 | His level | His named pieces are made at level 20 and sold from level 20, as a faction's are; below it his screen dims them "From level 20", so no keeper sells a piece the buyer could not wear yet |
 
+Replaced in part by [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: no kill gives Shapes; only the week's Abyss content does.
+
 ## Cosmetics
 
 | Call | Choice |

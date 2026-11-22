@@ -8,7 +8,6 @@ code:
   - crates/gear/src/cosmetics.rs#sold_on
   - crates/gear/src/shape.rs#present
   - crates/gear/src/shape.rs#wares
-  - crates/gear/src/shape.rs#found
   - content/gear/cosmetics.json
   - crates/gear/src/shown.rs#Shown
   - crates/room/src/asks.rs#counter_for
@@ -35,6 +34,11 @@ code:
   - crates/gear/src/vestige.rs#opens_to
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
+  - crates/gear/src/rewards.rs#loot_kill
+  - crates/gear/src/rewards.rs#keep_found
+  - crates/gear/src/rewards.rs#Clear
+  - crates/gear/src/vestige.rs#found_items
+  - crates/room/src/clears.rs#pay_clear
   - crates/gear/src/catalogue.rs#catalogue
   - crates/gear/src/world.rs#island_levels
   - crates/gear/src/vendor.rs#wares
@@ -111,15 +115,28 @@ number is one of [[Gear as Claude Shapes It]].
   times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
   below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
   arms 0.2625, legs 0.2375.
-- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]). A
-  kill may leave a Vestige for each player who struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100,
-  Major 4, Elite 10, Miniboss 35, a Boss always; `vestige::chance`), its colour weighted by its rank, for one slot, its
-  item at the foe's level. At every rank each colour is rarer than the one below it, and each colour or better likelier
-  the higher the rank (`vestige::colours`); a colour too good for the foe's level (Legendary below 18, Atheric below
-  20) is struck out, the rest keeping their order. A player carries ten. Identified in a social space, it opens to its
+- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). A kill may leave a Vestige for each player who
+  struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always;
+  `vestige::chance`), raised by the voyage's tier, a chance past one leaving one sure and another by what is over; its
+  colour weighted by its rank, for one slot, its item at the foe's level. At every rank each colour is half or less of
+  the one below it, and each colour or better likelier the higher the rank (`vestige::colours`, in 1,000: Minor 750,
+  188, 47, 12, 3; Major 716, 204, 58, 17, 5; Elite 670, 223, 74, 25, 8; Miniboss 606, 242, 97, 39, 16; Boss 517, 258,
+  129, 64, 32); a colour too good for the foe's level (Legendary below 18, Atheric below 20) is struck out, the rest
+  keeping their order. A player carries ten. Identified in a social space, it opens to its
   own colour three times in four, one colour below one time in five and one above one time in twenty (a Normal opens
   Normal 95 in 100, an Atheric Atheric 80), never above what its level could drop, and to a named item of its slot (a
   Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled, never a trait twice.
+- **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
+  35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
+  (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
+  slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
+  its colour and slot (`keep_found`).
+- **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
+  once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
+  player still in the room who shared a kill of it since its last clear is paid, at the garrison's highest level as a
+  kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
+  (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
+  Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none.
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
   a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).
@@ -276,15 +293,16 @@ shape.
 [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]], in [[Arts and Loadouts as Claude Shapes Them]]'s shape, after
 DFO's spoils ([[Pick - Loot Drops]]).
 
-- **What drops.** For each player who earned a kill: their Vestige, if one dropped (by its rank, "Vestiges" above);
+- **What drops.** For each player who earned a kill: their Vestiges, if any dropped (by its rank, "Vestiges" above);
   an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
   and from a Miniboss or a Boss an Ammo crate, straight into their crates while they carry fewer than five, else
   lying with the rest (`room::drops`).
 - **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: a
   ship drops as one foe of its rank and level does, its Vestige, Ammo box and crate in the first piece laid for each
-  player, and a boarded hold as one foe a rank higher; every piece holds the ship's salvage ([[Ship Power]]). Each is
-  kept for its player, gathered by their ship within 25 m, what they have no room for lost with it
-  (`room::flotsam`).
+  player, and a boarded hold as one foe a rank higher, items from a Miniboss or a Boss kept as on land; every piece
+  holds the ship's salvage ([[Ship Power]]). A kill on a boarded deck leaves no Vestige or item: the hold is the
+  boarding's loot. Each piece is kept for its player, gathered by their ship within 25 m, what they have no room for
+  lost with it (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
@@ -335,9 +353,8 @@ the factions' counters are in [[Factions]].
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, weeks counted from Monday 00:00 UTC). He sells six pieces for the week, four Legendary
   and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold from level
-  20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
-  only from kills at the Elite and Abyss seas (Rough and Storm today): one in 33 kills at Elite, one in 17 at Abyss, and
-  2 or 4 from a Boss or Miniboss; a player holds 200 at most.
+  20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come only from the week's Abyss
+  content ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), which the activities pull request pays; no kill gives any. A player holds 200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
   room steps, playing alone), whose day sets the wares and whose week sets Shape. It
   sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his

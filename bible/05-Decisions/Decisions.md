@@ -226,6 +226,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]
 - [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]
 - [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]
+- [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

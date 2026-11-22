@@ -5,6 +5,9 @@ status: in force
 ---
 # The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order
 
+Replaced in part by [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: the colours' spacing, the deck crew's drops, a Boss's and a Miniboss's standing again,
+items from bosses and dungeons, clears that pay, the cove's wreck and Shapes.
+
 > "1. We recently adjusted balance and I want to tone it back because it was overtuned
 >
 > 2. Vestige drops are WAY too common. And the hierarchy needs to be strictly followed
@@ -28,7 +31,8 @@ status: in force
 > Told that Destiny 1 at launch opened a Legendary engram to Legendary about one time in three, that its patch 1.0.2
 > opened every engram at its own colour or better, and that the owner had decided a Vestige can open below its own
 > colour: "Own colour mostly, can open below (Recommended)", the option that read: "Keeps your earlier decision. A
-> Vestige opens to its own colour about 75% of the time, below it about 20%, and above it about 5%."
+> Vestige opens to its own colour about 75% of the time, below it about 20%, and above it about 5%. A Legendary
+> Vestige would open Legendary about 75% (35% today)."
 
 > Asked whether the pass should follow Destiny 1's whole hierarchy, rank (a higher rank drops more and better), rarity
 > (each colour far rarer than the one below), content (Mission < Dungeon < World boss) and difficulty (Abyss > Elite >
@@ -46,8 +50,10 @@ status: in force
   ship rolls once at its rank, and a boarded hold once a rank up.
 - A Vestige opens to its own colour about three times in four, below it about one time in five, above it about one in
   twenty. It can still open below its colour ([[Gear and Power Follow Destiny 1 Vanilla]]).
-- A kill's XP and Aurem go by its rank, and the Captain's flat 2,000 XP is gone. Where a rarer or higher source paid
-  less than a lower one, it is fixed. What things cost stays.
+- A kill's XP and Aurem go by its rank, and the Captain's flat 2,000 XP is gone. The two inversions named are fixed:
+  a Legendary dismantled gave more Essence than an Atheric, and a cove's wreck beat a piece of flotsam. What things
+  cost stays.
+- It touches [[Gear]], [[Naval Combat]], [[Ship Power]], [[Foes]] and [[Enemies]].
 
 ## Destiny 1 vanilla, as found
 

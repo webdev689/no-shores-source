@@ -82,7 +82,8 @@ Each post changes how it plays in a fight, its officer's strength times (`ship::
   faction rules keep them (`Allegiance`, `Character::rank`); with no pledge no officer is offered, and another
   faction's counter offers none.
 - **Taken**: a boarded deck won, each boarder rolls for its captain's officer to join them (`recruit::taken`): a
-  Minor's 3%, a Major's 5%, an Elite's 10% (Seasoned), a Miniboss's 18% and a Boss's 30% (Veteran), at its level.
+  Minor's 3%, a Major's 5%, an Elite's 10% (Seasoned), a Miniboss's 18% and a Boss's 30% (Veteran), at its level,
+  each times the sea's tier's reward (half again at Elite, twice at Abyss).
 
 ## In the browser
 

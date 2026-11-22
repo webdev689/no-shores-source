@@ -264,18 +264,28 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **The balance pass halfway back, and loot in Destiny 1's order**, on branch `ccr-1e1aa6da-yox2v1` and its pull
-  request, tested offline (the full check), waiting on the owner's yes to merge, which deploys the page and the rooms
-  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]): on land a player's blow ×1.5 and a
-  foe's ×0.75; a Vestige by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always), its
-  colours falling from Normal to Atheric at every rank and each colour or better rising with rank, opening to its own
-  colour three times in four; a sunk ship drops as one foe of its rank, its hold as one a rank higher; XP and Aurem by
-  rank, a higher rank paying more at every level and tier; deck kills and sinkings paid by the sea's tier; an Atheric
-  dismantled to 3 Essence. Claude's calls the owner may want to see: a Boss's sure Vestige is a Normal three times in
-  ten; a chest's or a Breach's module can now be Normal; Corvane pays 840 XP at level 5 where every Captain paid 2,000;
-  any foe may leave an Atheric, about one Minor kill in 50,000 from level 20. Not yet played by hand, nor in a deployed
-  room. This session's environment had no `SKILLSMP_API_KEY` and Context7's anonymous quota was spent, so check-tools
-  failed both.
+- **The balance pass halfway back, and loot in Destiny 1's order, audited**, pull request #141 (branch
+  `ccr-1e1aa6da-yox2v1`), tested offline, waiting on the owner's yes to merge, which deploys the page and the rooms
+  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
+  [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]):
+  - On land a player's blow ×1.5 and a foe's ×0.75, decks included; the fight with every rank is measured by
+    `measure_blows` (ignored, run by hand).
+  - A Vestige by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always), each colour half or
+    less of the one below, each colour or better likelier with rank; opening to its own colour three times in four.
+  - A Boss's kill leaves an item and a Vestige, a Miniboss's each 35 in 100, a dungeon's clear an item; a mission's,
+    a dungeon's and a world boss's clear pay XP and Aurem in that order; a Miniboss's or a Boss's group stands again
+    after 10 minutes.
+  - A ship drops as one foe of its rank, its hold as one a rank up, its deck's crew nothing; salvage and officers rise
+    with the tier; a cove's wreck holds less than a Minor ship.
+  - XP and Aurem by rank, a higher rank paying more at every level and tier; an Atheric dismantled to 3 Essence.
+  - No kill gives Shapes: the activities pull request (#97) must pay them from the Abyss Dungeon of the week, and its
+    dungeon caches still read `worth(Captain)` as 2,000 XP, which this pull request replaced with
+    `worth(kind, rank)`. #143 (Vestiges as crystals) touches `drops.rs` and `Gear.md` too.
+  - Claude's calls the owner may want to see, in the two decision notes: the kinds' own pay narrowed (Skirmisher 80 XP
+    to Captain 120) so a higher rank always pays more; a Boss's sure Vestige is a Normal about half the time; a chest's
+    or a Breach's module can be Normal; Corvane pays 840 XP at level 5 where every Captain paid 2,000; a Minor Swordsman
+    falls in 2 blows where the owner's option said about 3. Not yet played by hand, nor in a deployed room. This
+    session's environment had no `SKILLSMP_API_KEY` and Context7's anonymous quota was spent.
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
   after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
   and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three

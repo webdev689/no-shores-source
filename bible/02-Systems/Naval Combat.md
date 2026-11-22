@@ -284,10 +284,10 @@ Pass]]) with Claude's numbers:
   an Elite; a Miniboss six, the Tithe-Mate (the pirates' Captain) the Miniboss; a Boss Captain Brannoc Thule and six.
   The plain hands are the faction's skirmisher, swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the
   pirates' Skirmisher, Swordsman and Archer), standing two abreast along its deck from 2 m forward of amidships, 1.6 m
-  apart, facing aft, at its level. Its deck room takes the sea's tier, so its crew's kills pay as a harder voyage's.
-  Clearing its deck opens its hold: what floats, twice over, every chest's salvage a rank higher still and its drop
-  one foe's a rank higher than the ship's, for each boarder, on top of the lot every player who fought it takes when
-  it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
+  apart, facing aft, at its level. Its deck room takes the sea's tier, so its crew's kills pay XP and Aurem as a
+  harder voyage's; they drop no Vestige or item, as the hold is the boarding's loot. Clearing its deck opens its hold:
+  what floats, twice over, for each boarder, every chest's salvage a rank higher still, and its drop what a foe one
+  rank above the ship would leave; on top of the lot every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
   minute after it fell every boarder still aboard is sent back; it is scuttled when the last one has left it. A
   boarder's own ship takes no orders or course while they stand on the struck ship's deck. Its deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.

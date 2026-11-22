@@ -57,11 +57,12 @@ are in [[Crew]].
 - **Found** (`ship::found`): each piece of what floats where a ship went down holds one common material (1 to 3), a
   chance of Heartwood (2% a rank) and of a module (3% and 1% a rank); its chest holds three (2 to 4 each), Heartwood
   25% and 5% a rank (a chest is rolled at a Miniboss's or a Boss's) and a module one time in two. An island's wreckage
-  holds two (2 to 5) and a module one time in ten, an isle's three (3 to 6) and one in five. A sea Breach's hold always
-  holds a module, three materials of 4 to 8 and two Heartwood. A module is coloured as a Vestige from a foe of its
-  source's rank ([[Gear]], "Vestiges"): a piece its ship's, a chest the rank it is rolled at, a cove's wreckage a
-  Major's, an isle's an Elite's, a Breach's a Boss's; never past what its level could drop. By the whole find, a
-  cove's wreckage holds about what a Minor ship's pieces do, an isle's about a Major's, and an Elite's far more.
+  holds two (1 to 3), Heartwood 5% and a module 8%, an isle's three (3 to 6) and one in five. A sea Breach's hold always
+  holds a module, three materials of 4 to 8 and two Heartwood. Every Heartwood and module chance is raised by the
+  voyage's tier, as a kill's chances are. A module is coloured as a Vestige from a foe of its source's rank ([[Gear]],
+  "Vestiges"): a piece its ship's, a chest the rank it is rolled at, a cove's wreckage a Minor's, an isle's an
+  Elite's, a Breach's a Boss's; never past what its level could drop. By the whole find, a cove's wreckage holds less
+  than a Minor ship's pieces, an isle's about a Major's, and an Elite's far more.
 - **The Shipwright** sells six modules a day, three Rare and three Magic, at the buyer's ship's level, at the
   Harbourmaster's counter in a social space (`Vendor::Shipwright`, the vendors' third).
 
@@ -112,10 +113,9 @@ are in [[Crew]].
 - **Its hands.** The player's Sloop carries ten men ([[Crew]]): balls cut them down as a captain's are, a thinned crew
   reloads its guns slower (whole, at the pace one player alone always loaded them), and the sea keeps the share left
   until a port city repairs it ([[Naval Combat]], "How a fight ends").
-- **What a fight pays.** A captain it fought going down pays it that captain's rank's foe's experience at its rank
-  and the captain's level, raised by the sea's tier as a kill's is (`reward_sinking`), and every officer aboard the
-  same; the player earns none of it. What floats holds ship salvage beside the ship's one Vestige and ammunition
-  (`flotsam::Held`).
+- **What a fight pays.** A captain going down pays the ship the experience a kill of a foe of its rank would, at its
+  level, raised by the sea's tier (`reward_sinking`), and every officer aboard the same; the player earns none of it.
+  What floats holds ship salvage beside the ship's one kill's drop (`flotsam::Held`).
 
 ## In the browser
 
