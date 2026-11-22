@@ -105,12 +105,20 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
-- **#141's calls and what its audit left.** Claude's calls in bringing #97 under the owner's loot rules: a dungeon's
-  cache pays a dungeon's clear (an item, a Vestige one time in three, XP and Aurem), the week's Abyss Dungeon pays 15
-  Shapes, and the dungeon of the day a Boss Captain's kill. The audit's keys and deploys (`R2_TOKEN` in jobs that run
-  untrusted or unpinned code, `rooms.yml` run by hand skipping the check, guest accounts uncapped past a /64,
-  `sloop.blend` fetched unhashed), its exploits needing a rule and a failed trip's return are in #141's description
-  and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD).
+- **#141's calls.** Claude's calls in bringing #97 under the owner's loot rules: a dungeon's cache pays a dungeon's
+  clear (an item, a Vestige one time in three, XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, and the dungeon
+  of the day a Boss Captain's kill.
+- **The audit's leftovers, all fixed as the owner took them** (#152, branch `ccr-1e1aa6da-yox2v1`), for the owner's
+  yes to merge, which deploys the page and the rooms ([[The Audit's Leftovers Are Fixed as Claude Suggested]], its
+  Claude's calls there): the asset workflows' token held only by jobs that upload; a hand run of the rooms' deploy
+  refused without main's check; the Sloop checked by its hash; guests capped at 500 an hour and deleted unused 30
+  days; riding on the room's word; health, charges and the Arts' charge kept with the character through a return;
+  the swings' chain kept by the room; a new ship put in at a roadstead and one sailed before back where it left;
+  the sea's loot on the host's own seeds; a leashed Boss's calls dropping nothing; an island's nodes spent until the
+  day turns; quest waves fought once paying once; a failed trip back where the player stood; the return to the ship
+  refused while fallen or just struck; long recordings in order; the island packs, `runs_everywhere` and the quests'
+  lines checked in CI. Tested offline; the split asset workflows are first tested live on their next run, and nothing
+  is yet played by hand or in a deployed room.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px), #124 (public events on Saltmere). Drafts: #77 (lore), #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
