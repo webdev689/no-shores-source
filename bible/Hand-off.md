@@ -75,6 +75,12 @@ each part works is in its system note.
   band edged by a gold line ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Open for
   the owner: aiming in first person sees 43° (1.6 times from 65°, was 32.5°), and the iron blow's small red mark.
   Impeccable's design hook is on in every session, at v4.10.0 ([[Toolkit]]).
+- **Three codebase audits** (#141, #142, #155): every module read by an auditor of its own and each finding
+  measured with a test before its fix; dead code read only by tests gone, the notes brought up to the code. What
+  each left for the owner is in its pull request and under Next.
+- **The owner's bugs and polish** (#148): the ship's aim square off its side, the ship's abilities in a ring bar at
+  the bottom left, other ships' people and captains' misjudged gunnery, fight music recombined from takes, the
+  prologue passed over, and the broadside warning written over the sea.
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
@@ -88,47 +94,41 @@ each part works is in its system note.
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
     Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
+  - The third audit's, played by hand: the pad fighting with the pointer free on land, on a deck and in the wreck;
+    Overlook's townsfolk, Shape and Elder Maren on the pier, the quay and the portico; arriving at an instance through
+    its gate; a sea fight whose room is lost; a hang at a seam of stacked blocks.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
     dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels
     run the room while the pointer is free (#68).
 
 ## Waiting on the owner
 
-- **The owner's bugs and polish** (#148, branch `claude/prologue-bugs-polish-lphicj`), merged with the owner's yes ("Merge and deploy"), which
-  deploys the page and the rooms;, the owner's six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's
-  calls: [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
-  station clear of hull, gun mouths and every sail's swing, the sight centred; the eye swings out and round at one
-  clear distance); [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]] (reload and the burst in a ring
-  bar); [[Ships Show Their People, and Captains' Gunners Misjudge]] (crew and captain on every other ship; captains'
-  misjudged volleys held within 13° of the beam);
-  [[The Fight Music Varies, Recombined From Takes]] (no two takes alike, even in the danger's layers);
-  [[The Prologue Is Passed Over, Its Camera and Footing Clear]] (the wreck's camera, footing and sea; every shot of
-  the Brig clear of its rig; creation's turn keys turn the figure); and, asked after,
-  [[The Broadside Warning Is Written Over the Sea, Not a Panel]] (BROADSIDE, the tell as a fuse and the brace, large).
-  The owner then asked for "a comprehensive audit": seven read-only auditors by area, every finding fixed or written
-  down as a limit, with tests. Tested offline (the full check); the HUD pictured headless with `tools/uiShot.mjs`.
-  Not yet: played live, the music heard by a person, anything seen on a real GPU. Open for the owner: whether a
-  Major's and higher's balls striking about half the time meets "insane accuracy"; whether the battery rose's red
-  outline on the side a blow came from comes back on the ship's bar; creation's turn keys turning the figure on the
-  spot; a Boss closing on the player's Sloop still wins every headless fight; the crew re-laid when a fight starts
-  ([[Game]], limits).
 The decisions in [[Open Questions]] are not repeated here.
 
-- **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
-  are in its pull request's description and under Next ("The audit's findings left").
-- **#141, the balance pass halfway back, loot in Destiny 1's order and a whole-codebase audit** (branch
-  `ccr-1e1aa6da-yox2v1`), with the owner's yes to merge, which deploys the page and the rooms
+- **#141's calls**, the balance pass halfway back and loot in Destiny 1's order, merged
   ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
   [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Claude's calls in bringing
   #97 under the owner's loot rules: a dungeon's cache pays a dungeon's clear (an item, a Vestige one time in three,
   XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, the only Shapes, and the dungeon of the day a Boss
   Captain's kill. What its audit left for the owner (keys and deploys, exploits needing a rule, a failed trip's
-  return) is in #141's description and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD). Not yet played
-  by hand or in a deployed room.
+  return) is in #141's description and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD).
+- **#148's open points**: whether a Major's and higher's balls striking about half the time meets "insane accuracy";
+  whether the battery rose's red outline on the side a blow came from comes back on the ship's bar; creation's turn
+  keys turning the figure on the spot; a Boss closing on the player's Sloop still wins every headless fight; the crew
+  laid out again when a fight starts ([[Game]], limits).
+- **The third codebase audit** (#155, branch `ccr-06efd4d0-ffd79v`), for the owner's yes to merge, which deploys the
+  page and the rooms. Claude's calls, each the owner's to change: a boarder's own ship furls its sails while they
+  fight on the deck; a rounds' sweeper waits at its first post until its loop is a whole number of the walkers' 600 s;
+  Shape's four hub places moved the least that clears the townsfolk's ways. Its questions: whether the healing drink
+  is "a heal" that Exposure halves (doing it so the page predicts it widens the fighter's trim, which repins every
+  fight); what a posted foe does about a player it sees past its leash (it now takes no target but searches toward
+  them); whether a lip caught off square is hung square; whether a player in home waters may join a running fight
+  nearby; a fight whose sea room is lost ends with "The <captain> is gone." as a rejoin's does. Tested offline, not
+  played.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px), #124 (public events on Saltmere). Drafts: #77 (lore), #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
-  holds.
+  holds, and #152, whose hand-off #155's holds.
 - **The combat notes' open points** (#135): whether the one-second reset of the swings' chain and the foes' pace feel
   right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge of reach
   every swing thrusts), or the chain kept strictly and a short stroke left to miss, asked and not yet answered.
@@ -307,7 +307,19 @@ The decisions in [[Open Questions]] are not repeated here.
   wash laid while it is up; on land, the relief past the camera's 2 km read off the worker's exact ground, and lakes,
   which only the 1 km grid holds.
 - **Touch**: no touch layer yet, so the sea fight and the wreck's fights need keys or a pad ([[Interface]], "Limits").
-- **The audit's findings left** (the audit's pull request lists each with its evidence), each needing the owner's word
+- **The third audit's findings left** (#155 lists each with its evidence):
+  - A first captain gone from a fight is drawn where it left, as a plain ship; removing it needs a state on the
+    fight's wire. The page predicts a loadout swap with the old trim until the gear word comes (it carries only the
+    current trim).
+  - An action begun on foot carries on when the body catches a lip (a guard, a drawn shot, a swing under way); only a
+    new one is refused there. A hand that falls on a deck on the very tick its player leaves the sea is kept.
+  - The city painter keeps every painting for the page's life (bounded by the catalogue, about 22 MB a city).
+  - Workflows, left because four publish to R2 when their own file is pushed on any branch: `forge.yml` should take
+    every `tools/forge/tools/sprite-forge/*.py`, `tools/forge_publish.py` and `tools/r2.py`; `flora.yml`,
+    `modules.yml`, `freesound.yml` and `dungeon-modules.yml` should take `tools/r2.py`. Checks, which need the owner's
+    word: the vault check passes a `code:` symbol on any mention; the layers check's entry points leave out the Test
+    Ground's page module.
+- **#142's findings left** (its pull request lists each with its evidence), each needing the owner's word
   or more than a fix:
   - A player who opens sockets and never sends fills a room's 16 places (the sea's 64); #122 dismisses unsigned
     ones, but a signed idle player is never let go: whether an idle player is sent away is the owner's call.
