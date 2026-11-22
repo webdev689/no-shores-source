@@ -84,7 +84,10 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   assert.equal(cove.style, 'caverns');
   assert.match(cove.name, / of the Gull Cove$/);
   assert.equal(askLayout(module, { seed: 4242, style: 'caverns', name: 'The Gull Cove' }), cove, 'laid once, kept');
-  assert.throws(() => askLayout(module, { seed: 4242, style: 'grotto' as never, name: 'The Gull Cove' }), /no dungeon is laid/);
+  assert.throws(
+    () => askLayout(module, { seed: 4242, style: 'grotto' as never, name: 'The Gull Cove' }),
+    /no dungeon is laid/,
+  );
 });
 
 test('an older room module that answers no landmarks or glows is read as standing none', async (context) => {

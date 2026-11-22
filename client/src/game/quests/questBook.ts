@@ -107,7 +107,8 @@ export function trackedOf(state: QuestState | null | undefined, ran = 0): Tracke
     const left = Math.max(0, most(goal) - (now.counts[index] ?? 0));
     const shown = { text: goal.text, done: left === 0 };
     if (left === 0) return shown;
-    if (index === clocked && clock !== undefined && clock !== null) return { ...shown, clock: Math.max(0, clock - ran) };
+    if (index === clocked && clock !== undefined && clock !== null)
+      return { ...shown, clock: Math.max(0, clock - ran) };
     if (goal.kind === 'defend' && ward) return { ...shown, share: ward.health };
     if (goal.kind === 'puzzle' && points.length > 0)
       return { ...shown, count: `${points.filter((point) => point.lit).length}/${points.length}` };
