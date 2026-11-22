@@ -49,9 +49,9 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
 class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING;
   binaryType = 'blob';
-  readonly sent: Uint8Array[] = [];
+  readonly sent: (Uint8Array | string)[] = [];
 
-  send(bytes: Uint8Array): void {
+  send(bytes: Uint8Array | string): void {
     this.sent.push(bytes);
   }
 
@@ -78,8 +78,9 @@ class FakeSocket extends EventTarget {
   }
 }
 
-/** A connection joined as player `player` over fake sockets, each socket it opens, and the snapshots it handed on. */
-async function joined(player: number) {
+/** A connection joined as player `player` over fake sockets, each socket it opens, and the snapshots it handed on;
+ *  with `session`, the token it sends once welcomed. */
+async function joined(player: number, session: string | null = null) {
   const sockets: FakeSocket[] = [];
   const ticks: bigint[] = [];
   const connect = () => {
@@ -91,7 +92,7 @@ async function joined(player: number) {
     'ws://test/room/court',
     (snapshot: RoomSnapshot) => ticks.push(snapshot.tick),
     undefined,
-    null,
+    session,
     connect,
   );
   sockets[0]?.says({ player });
@@ -157,6 +158,18 @@ test('a room that sends the player away, or a page that leaves, is never joined 
   left.connection.close();
   context.mock.timers.tick(waitMs(9));
   assert.deepEqual([left.sockets.length, left.connection.lost], [1, null], 'the wait was let go');
+});
+
+test('a rejoin sends the session token again once welcomed, before any input', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { connection, sockets } = await joined(3, 'token');
+  assert.deepEqual(sockets[0]?.sent, ['token']);
+  sockets[0]?.closed(1006);
+  context.mock.timers.tick(waitMs(0));
+  sockets[1]?.opens();
+  sockets[1]?.says({ player: 4 });
+  connection.send(new Uint8Array([1]));
+  assert.deepEqual(sockets[1]?.sent, ['token', new Uint8Array([1])]);
 });
 
 test('a player whose character joined another room is let go, not joined again to take it back', async (context: TestContext) => {

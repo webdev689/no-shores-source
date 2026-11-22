@@ -181,9 +181,10 @@ export class CityView implements CityDrawer {
 
   /** Stops drawing any city and frees its buffers. */
   clear(): void {
+    // Its lamps go even when no city stands: a build that failed lit them first.
+    CITY_LAMPS.set(this, []);
     const drawn = this.drawn;
     if (!drawn) return;
-    CITY_LAMPS.set(this, []);
     drawn.painter.destroy();
     drawn.tiles.destroy();
     for (const buffer of [...drawn.buffers, ...Object.values(drawn.instances).map((held) => held.buffer)])
