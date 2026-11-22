@@ -204,6 +204,7 @@ fn a_player_never_harms_a_companion_and_one_beaten_down_is_knocked_out_rests_eig
     room.tick();
     assert_eq!(room.companion_of(player, ids[0]), None, "they leave the fight");
     room.clock += KNOCKED_OUT_TICKS - 2;
+    room.set_minute(KNOCKED_OUT_MINUTES);
     room.tick();
     assert_eq!(room.companion_of(player, ids[0]), None, "resting yet");
     room.tick();
@@ -366,4 +367,44 @@ fn a_companions_blows_and_kill_fill_their_leaders_healing_meter_as_their_xp_is_s
     let expected = share * crate::recharge::DEALT_SHARE * left / most + share;
     let got = f64::from(fighter.charges) + fighter.meter;
     assert!((got - expected).abs() < 1e-9, "their leader's meter, by the blows and the kill: {got} against {expected}");
+}
+
+#[test]
+fn an_officer_knocked_out_rests_through_a_return_to_another_room_and_comes_ashore_once_rested() {
+    let mut room = room();
+    room.set_minute(1_000);
+    let (player, ids) = with_officers(&mut room, &[Post::Lookout], 2);
+    room.tick();
+    let id = room.companion_of(player, ids[0]).unwrap();
+    let (foe_type, rank) = pirate_in(Role::Brute).unwrap();
+    let foe = room.stand_foe(foe_type, rank, [0.0, -3.0, 0.0], 0.0, None);
+    room.foes.get_mut(&foe).unwrap().fighter.side = Side::Faction(1);
+    let blow = Blow {
+        striker: foe,
+        kind: BlowKind::Swing(Stroke::Down),
+        from: [0.0, 0.0],
+        damage: 500.0,
+        poise: 0.0,
+        guard: 0.0,
+        parryable: true,
+        blockable: true,
+        knocks_down: false,
+        through: 1.0,
+        stagger: 1.0,
+        element: 0,
+        crit: false,
+    };
+    room.settle(&blow, How::Swing, id, Verdict::Hit { damage: 500.0, poise: 0.0 }, None);
+    room.tick();
+    let kept = room.kept_character(player).unwrap();
+    let back_in = |minute: u64| {
+        let mut other = Room::new(Vec::new(), (0.0, 0.0));
+        other.set_minute(minute);
+        let back = other.join().unwrap();
+        assert!(other.restore_character(back, &kept));
+        other.tick();
+        other.companion_of(back, ids[0]).is_some()
+    };
+    assert!(!back_in(1_007), "resting yet, in a room that never saw them fall");
+    assert!(back_in(1_000 + KNOCKED_OUT_MINUTES), "rested, ashore again");
 }

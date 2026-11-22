@@ -1,9 +1,10 @@
 name: flora
 
 # Grows every plant of every biome in Blender, bakes each into a near mesh and impostor sprites, and publishes them
-# to R2 with the repository's R2 token whenever the flora tools change. R2's objects are named by their
-# hashes, so a run changes nothing already published; the log ends with the manifest, which a commit then takes into
-# content/nature/flora.json.
+# to R2 whenever the flora tools change: the job that bakes holds no secret and stages them, and a second job, which
+# only uploads them, holds the repository's R2 token. R2's objects are named by their hashes, so a run changes nothing
+# already published; the bake's log ends with the manifest, which a commit takes into content/nature/flora.json once
+# the run has published.
 on:
   push:
     paths: [tools/flora/**, .github/workflows/flora.yml]
@@ -13,16 +14,51 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  # Installs others' code (pip), so it holds no secret: what it stages for R2 goes on as an artifact.
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 150
-    # The token reaches only the two steps that check it and publish: pip runs others' install scripts.
+    outputs:
+      staged: ${{ steps.staged.outputs.staged }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.13'
-      # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
+      - name: Install Blender's module
+        run: pip install bpy==5.3.0
+      - name: Check the generator grows the same plant from the same seed
+        run: python -I tools/flora/test_flora.py
+      - name: Bake and stage the flora
+        env:
+          R2_STAGE: ${{ runner.temp }}/stage
+        run: |
+          python -I tools/flora/publish.py
+          cat content/nature/flora.json
+      - name: Say whether anything is staged
+        id: staged
+        run: if [ -d "$RUNNER_TEMP/stage" ]; then echo "staged=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.staged.outputs.staged == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: r2-stage
+          path: ${{ runner.temp }}/stage
+          retention-days: 1
+
+  # A fresh machine with nothing installed, and the only job that holds the token: tools/r2.py uploads the stage's
+  # files, each only if it is named by its own hash under a folder a publisher writes.
+  publish:
+    needs: build
+    if: needs.build.outputs.staged == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: r2-stage
+          path: ${{ runner.temp }}/stage
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing.
       - name: Check the token is set
         id: token
         env:
@@ -30,15 +66,8 @@ jobs:
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
           else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
-      # The generator's check runs with or without the token.
-      - name: Install Blender's module
-        run: pip install bpy==5.3.0
-      - name: Check the generator grows the same plant from the same seed
-        run: python -I tools/flora/test_flora.py
-      - name: Bake and publish the flora
+      - name: Upload what the build staged
         if: steps.token.outputs.set == 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
-        run: |
-          python -I tools/flora/publish.py
-          cat content/nature/flora.json
+        run: python3 -I tools/r2.py upload "$RUNNER_TEMP/stage"

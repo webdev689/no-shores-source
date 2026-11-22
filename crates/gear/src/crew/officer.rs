@@ -74,6 +74,16 @@ pub struct Officer {
     pub bought: u32,
     pub chosen: Vec<u8>,
     pub duty: Duty,
+    /// The Unix minute a knockout's rest ends, kept with them so a return to any room keeps it
+    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); 0 when not resting.
+    #[serde(default, skip_serializing_if = "not_resting")]
+    pub resting_until: u64,
+}
+
+/// Whether an officer rests from no knockout, so their save holds no rest.
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn not_resting(until: &u64) -> bool {
+    *until == 0
 }
 
 impl Officer {
@@ -84,7 +94,21 @@ impl Officer {
         let xp = u32::try_from(power::xp_for_level(level)).unwrap_or(u32::MAX);
         let chosen = vec![NONE_CHOSEN; columns(grade, false).len()];
         let duty = Duty::Aboard;
-        Self { id, post, grade, given: 0, family: 0, xp, trained: 0, layout: Vec::new(), bought: 0, chosen, duty }
+        let resting_until = 0;
+        Self {
+            id,
+            post,
+            grade,
+            given: 0,
+            family: 0,
+            xp,
+            trained: 0,
+            layout: Vec::new(),
+            bought: 0,
+            chosen,
+            duty,
+            resting_until,
+        }
     }
 
     /// The officer as a kept character should hold them: their number its key's, a grade one comes in, their

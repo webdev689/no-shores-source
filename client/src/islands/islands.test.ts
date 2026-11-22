@@ -150,7 +150,8 @@ test('a pack is read from the dev prefix, else the manifest, else nowhere', () =
   assert.equal(packUrl('arid', null, null), null);
 });
 
-/** A build's folder of packs (tools/islands/build.py's --out), as tools/islands/test_envelope.py reads it. */
+/** A folder of every kit's pack, `<kit>.modules`: a build's (tools/islands/build.py's --out), or the published packs
+ *  CI fetches. */
 const BUILT = process.env.ISLAND_MODULES;
 
 test("a build's packs read, every kit's", { skip: !BUILT && "set ISLAND_MODULES to a build's --out folder" }, () => {

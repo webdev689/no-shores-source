@@ -129,7 +129,9 @@ test('a room that fails in the worker is lost, why said, and what it was asked i
   const asked = node.isleWord(1);
   // Bytes no input can be read from: the room's door throws on them in the worker.
   node.send(undefined as unknown as Uint8Array<ArrayBuffer>);
-  await settled();
+  // The worker's word comes back by message, later under a full check's load than one wait: wait for it, two seconds
+  // at most.
+  for (let waited = 0; !node.lost && waited < 400; waited++) await settled();
   assert.ok(node.lost, 'the room is lost');
   assert.equal(await asked, '');
   assert.equal(await node.isleWord(1), '', 'and asked again, answers none');

@@ -65,15 +65,19 @@ they play in holds it while they are there.
   `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a redirect. Without the app's keys,
   Discord sign-in says it is not set up.
 - **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
-  guests and register 10 times an hour, try 20 sign-ins in ten minutes, and start Discord 20 times in ten minutes;
+  guests an hour (an IPv6 address by its /48 for guests) and every address together 500
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and one
+  address register 10 times an hour, try 20 sign-ins in ten minutes, and start Discord 20 times in ten minutes;
   one username may be tried 10 times in ten minutes from one address and 100 times from everywhere; one account may
   take 10 Discord tickets in ten minutes. Guessing is held down before a lockout is: a flood of guesses from many
   networks can hold a name's sign-ins for the rest of its ten minutes, while a session already held and Discord still
   sign its owner in. A name no account could hold is refused before it is kept, and a request's body is read only up
   to 2 KB, however it is sent. States, tickets and codes past their time are let go.
-- **Sessions lapse, but never a guest's.** A session of an account with a username or Discord lapses once it has
+- **Sessions lapse, and guests go unused.** A session of an account with a username or Discord lapses once it has
   gone unseen 30 days (each sight, or a room's claim, keeps it a month more); the page then says so and plays on as a
-  guest until its player signs in again. A guest's session never lapses: its token is the only way back to it. An
+  guest until its player signs in again. A guest's session never lapses, its token the only way back to it, but a
+  guest made, seen and saved by nothing for 30 days is deleted with all it holds, its character too, ten at a time as
+  each new guest is made (`accounts.ts`, "POST /v1/guest"); a page whose guest went makes a new one. An
   account with a way back in may sign out everywhere, which ends every session it has; a room already holding its
   character keeps it until that player leaves.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no

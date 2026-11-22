@@ -4,6 +4,14 @@ use serde_json::{Map, Value};
 /// Where the story's lines live: the cast (each speaker's name and voice) and every mission's scenes beside it.
 pub const STORY_ROOT: &str = "content/story/";
 const CAST: &str = "content/story/cast.json";
+/// The quests, whose lines are scenes of the story: every scene they name is checked with the rest, and so is the text
+/// they put on the screen.
+pub const QUESTS: &str = "content/quests/quests.json";
+/// The fields of a quest, a task or a goal that name a scene, a speaker, or words shown on the screen.
+const SCENE_FIELDS: [&str; 11] =
+    ["begin", "start", "end", "scene", "greet", "shout", "lost", "late", "wrong", "noticed", "seen"];
+const SPEAKER_FIELDS: [&str; 1] = ["who"];
+const SHOWN_FIELDS: [&str; 3] = ["name", "task", "text"];
 
 /// The Dialogue rule's numbers: words a line, words a bark, lines one speaker says in a row, lines a scene.
 const LINE_WORDS: usize = 14;
@@ -172,6 +180,7 @@ pub fn check(files: &[(String, String)]) -> Vec<Problem> {
         }
         None => Vec::new(),
     };
+    let mut named = std::collections::BTreeSet::new();
     for (path, value) in &parsed {
         let value = match value {
             Ok(value) => value,
@@ -195,6 +204,50 @@ pub fn check(files: &[(String, String)]) -> Vec<Problem> {
         }
         for (scene, lines) in scenes.iter().filter(|(scene, _)| *scene != PROTOTYPE_KEY) {
             found.extend(check_scene(path, scene, lines, &speakers));
+            named.insert(scene.clone());
+        }
+    }
+    if let Some((_, text)) = files.iter().find(|(path, _)| path == QUESTS) {
+        match serde_json::from_str::<Value>(text) {
+            Ok(quests) => found.extend(check_quests(&quests, &named, &speakers)),
+            Err(why) => found.push(problem(QUESTS, format!("not JSON the check can read: {why}"))),
+        }
+    }
+    found
+}
+
+/// The quests' lines, as the story holds them: every scene a quest, task or goal names is one of the story's, so the
+/// lines it speaks are the lines checked above; every speaker it names is in the cast; and every word it shows on the
+/// screen keeps the rule's marks out.
+fn check_quests(value: &Value, scenes: &std::collections::BTreeSet<String>, speakers: &[String]) -> Vec<Problem> {
+    let mut found = Vec::new();
+    let mut walk = vec![value];
+    while let Some(value) = walk.pop() {
+        match value {
+            Value::Array(items) => walk.extend(items),
+            Value::Object(fields) => {
+                for (key, field) in fields {
+                    let Some(said) = field.as_str() else {
+                        walk.push(field);
+                        continue;
+                    };
+                    if SCENE_FIELDS.contains(&key.as_str()) && !scenes.contains(said) {
+                        found.push(problem(
+                            QUESTS,
+                            format!("\"{key}\" names the scene \"{said}\", which no story holds"),
+                        ));
+                    }
+                    if SPEAKER_FIELDS.contains(&key.as_str()) && !speakers.iter().any(|speaker| speaker == said) {
+                        found.push(problem(QUESTS, format!("\"{key}\" names \"{said}\", who is not in the cast")));
+                    }
+                    if SHOWN_FIELDS.contains(&key.as_str()) {
+                        for (mark, named) in BANNED.iter().filter(|(mark, _)| said.contains(mark)) {
+                            found.push(problem(QUESTS, format!("\"{said}\" shows {named} ({mark})")));
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
     }
     found
@@ -232,11 +285,34 @@ mod tests {
     #[test]
     fn the_story_as_it_stands_passes() {
         let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../../");
-        let files: Vec<(String, String)> = ["content/story/cast.json", "content/story/prologue.json"]
+        let story = ["content/story/cast.json", "content/story/prologue.json", "content/story/houses.json", QUESTS];
+        let files: Vec<(String, String)> = story
             .iter()
             .map(|path| ((*path).to_owned(), std::fs::read_to_string(format!("{root}{path}")).expect(path)))
             .collect();
         assert_eq!(check(&files).into_iter().map(|found| found.message).collect::<Vec<_>>(), Vec::<String>::new());
+    }
+
+    #[test]
+    fn a_quest_naming_a_scene_no_story_holds_a_speaker_not_in_the_cast_or_a_dash_on_the_screen_is_refused() {
+        let quests = "{\"quests\": [{\"begin\": \"deck\", \"tasks\": [{\"task\": \"Hold \u{2014} fast\", \"goals\": \
+                      [{\"kind\": \"talk\", \"scene\": \"nowhere\", \"who\": \"stranger\"}]}]}]}";
+        let story = r#"{"scenes": {"deck": [{"who": "mate", "say": "Ready."}]}}"#;
+        let files = vec![
+            (CAST.to_owned(), cast_text()),
+            ("content/story/one.json".to_owned(), story.to_owned()),
+            (QUESTS.to_owned(), quests.to_owned()),
+        ];
+        let mut found: Vec<String> = check(&files).into_iter().map(|found| found.message).collect();
+        found.sort();
+        assert_eq!(
+            found,
+            [
+                "\"Hold \u{2014} fast\" shows an em dash (\u{2014})",
+                "\"scene\" names the scene \"nowhere\", which no story holds",
+                "\"who\" names \"stranger\", who is not in the cast",
+            ]
+        );
     }
 
     #[test]

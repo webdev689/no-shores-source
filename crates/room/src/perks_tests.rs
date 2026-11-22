@@ -144,7 +144,9 @@ fn a_kept_character_comes_back_into_the_room_trimmed() {
         room.tick();
     }
     assert!(room.take_gear_change(player), "and again once their own comes back");
-    assert_eq!(room.kept_character(player), Some(kept));
+    // As kept, but for the body it would leave with (`left.rs`).
+    let back = room.kept_character(player).and_then(|text| gear::Character::from_json(&text));
+    assert_eq!(back.map(|character| gear::Character { left: None, ..character }.to_json()), Some(kept));
     assert_eq!(room.fighter(player).expect("in").trim.swing_stamina, 0.85);
     assert!(!room.restore_character(player, "not a character"));
     assert!(!room.restore_character(player + 1, &gear::Character::starting().to_json()));

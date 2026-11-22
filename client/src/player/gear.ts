@@ -131,6 +131,8 @@ const REFUSALS: Readonly<Record<number, string>> = {
   102: 'You can carry no more of it.',
   103: 'Wait a moment before you try that again.',
   104: 'Not on horseback.',
+  105: 'You cannot return to your ship while fallen.',
+  106: 'You cannot return to your ship within ten seconds of being struck.',
   110: 'There is no such Art.',
   111: 'An Art’s Core has three slots.',
   112: 'There is no such fragment.',
@@ -146,7 +148,8 @@ const REFUSALS: Readonly<Record<number, string>> = {
 
 /** What a room's answer to an ask says: nothing for done. */
 export function answerText(answer: number): string {
-  return answer === 0 ? '' : (REFUSALS[answer] ?? `Refused (${answer}).`);
+  // 107 is a return to the ship's yes (`toShip.ts`): no refusal either.
+  return answer === 0 || answer === 107 ? '' : (REFUSALS[answer] ?? `Refused (${answer}).`);
 }
 
 /** An item's name: a named item's own, or a rolled one's among its kind's for its rarity. */

@@ -20,3 +20,6 @@ status: in force
 
 Replaced in part by [[The Page Publishes Only After the Rooms Deploy]]: the page publishes on a merge once the rooms
 have deployed or had nothing to.
+
+Narrowed by [[The Audit's Leftovers Are Fixed as Claude Suggested]]: by hand they deploy only a commit whose CI
+check passed.

@@ -51,7 +51,10 @@ compares); that another machine's Blender writes them too is not checked.
 ## Checks and publishing
 
 `test_envelope.py` checks the contract and the envelopes without Blender, and with `ISLAND_MODULES=DIR` every pack a
-build wrote. A build stamps its folder (`built.json`) with the hash of each pack and the `.blend` it wrote, and
+build wrote. `client/src/islands/islands.test.ts` reads every kit's pack from such a folder too: CI fetches the packs
+the committed manifest names into one, each checked against the hash its key is named by, so the game's reader is
+tried on the published packs in every check.
+A build stamps its folder (`built.json`) with the hash of each pack and the `.blend` it wrote, and
 `publish.py DIR` takes only a folder one build wrote every kit of: it puts each pack and the `.blend` on R2 under
 `islands/` through `tools/r2.py`, checks each comes back, writes `content/islands/modules.json` (`base`, `parts`,
 `kits`, `source`) and ends its log with it on one line; `--dry-run` shows the manifest without sending. The

@@ -273,6 +273,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Fight Music Varies, Recombined From Takes]]
 - [[The Prologue Is Passed Over, Its Camera and Footing Clear]]
 - [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
+- [[The Audit's Leftovers Are Fixed as Claude Suggested]]
 - [[The Game Is Named No Shores]]
 
 - [[Overlook Is Our Own Game]]

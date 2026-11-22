@@ -56,6 +56,12 @@ const AGAIN = 1013;
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
 
+/** A session token's SHA-256, in hex: what the sea knows a ship played unkept by, never the token itself. */
+async function sessionHash(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 /** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens, spelled as the room's one
  *  name (`canonicalRoom`). */
 function roomName(request: Request): string | null {
@@ -148,8 +154,13 @@ export class RoomHost extends DurableObject<Env> {
       this.opened = null;
       return new Response('No such room', { status: 404 });
     }
-    if (this.players.size >= socketsMost(this.name)) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
+    // Past its sockets the room still takes one, to say why it closes: a page never reads a refused upgrade's status.
+    if (this.players.size >= socketsMost(this.name)) {
+      server.accept();
+      server.close(1013, 'the room is full');
+      return new Response(null, { status: 101, webSocket: client });
+    }
     // A join at an entrance that is not one is the room's ordinary join; one at an entrance stays there only once the
     // room keeps the player's character as come out of its dungeon (`outOfDoor`).
     const entrance = entranceOf(request);
@@ -234,6 +245,10 @@ export class RoomHost extends DurableObject<Env> {
       const reach = await this.reachOf(reached.id);
       this.keeper.judgingArrivals((from, body) => arrives(name, from, shipOf(body), reach));
     }
+    // Every room on land, and the sea's flotsam and decks, roll their loot from seeds of their own that no player sees:
+    // the sea's own seed shows in its islands'.
+    const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
+    const seeds = [lootLow, lootHigh, worldLow, worldHigh] as const;
     // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept it.
     if (seas !== null)
       return (
@@ -242,6 +257,7 @@ export class RoomHost extends DurableObject<Env> {
           crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
           Date.now() / 1000,
         ) &&
+        this.room.reseed(seeds) &&
         this.room.difficulty(seas) &&
         this.room.keepCharacters()
       );
@@ -249,9 +265,6 @@ export class RoomHost extends DurableObject<Env> {
     const isle = /^isle-(.+)$/.exec(name)?.[1];
     if (isle !== undefined) return this.openIsland(isle);
     const node = /^node-(.+)$/.exec(name)?.[1];
-    // Every room on land rolls its loot from a seed of its own that no player sees.
-    const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
-    const seeds = [lootLow, lootHigh, worldLow, worldHigh] as const;
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-') && !(await this.behindDoor(name))) return false;
@@ -365,7 +378,10 @@ export class RoomHost extends DurableObject<Env> {
       // Whatever the keeper answers, the sea then sails the course it held: from where it kept the ship, if it did.
       void (this.keeper?.signIn(player, message, Date.now, here) ?? Promise.resolve(false))
         .catch(() => false)
-        .then(() => {
+        .then(async (kept) => {
+          // At sea a ship played unkept is its session's, so a rejoin brings it back where the sea last had it.
+          const owner = !kept && seaRoom(this.name) !== null ? `unkept:${await sessionHash(message)}` : null;
+          if (here() && owner !== null) this.guarded(() => this.room.own(player, owner), undefined);
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
           this.outOfDoor(socket);
         });
