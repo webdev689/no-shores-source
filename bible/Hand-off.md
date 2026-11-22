@@ -82,9 +82,9 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
 - **Open pull requests.** For the owner's yes once their checks pass: #143 (Vestiges as project-final's crystals),
-  #141 (the balance pass halfway back), #139 (areas in chunks), #124 (public events on Saltmere). Drafts: #72 and #88 (dungeons),
-  #77 (lore), #82 (the owner's loop), #97 (activities), #122 (server authority), #123 (the Postmaster); #93 and #114
-  sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127 holds.
+  #141 (the balance pass halfway back), #139 (areas in chunks), #124 (public events on Saltmere). Drafts: #72 and #88
+  (dungeons), #77 (lore), #82 (the owner's loop), #97 (activities), #122 (server authority), #123 (the Postmaster);
+  #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127 holds.
 - **The combat notes' open points** (#135): whether the one-second reset of the swings' chain and the foes' pace feel
   right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge of reach
   every swing thrusts), or the chain kept strictly and a short stroke left to miss, asked and not yet answered.
