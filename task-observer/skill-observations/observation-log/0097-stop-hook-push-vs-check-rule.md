@@ -35,3 +35,8 @@ refusing; a run that is never finished could not be told apart from one the agen
 covered (`.git/overlook-check`), and have the stop hook stay quiet while the head's verdict is "running" or "failed",
 asking for a push only once the head has passed. Proposing this needs the owner's agreement (a change to the hook).
 
+
+2026-11-22, the codebase audit session: the Stop hook asked for a push four times while a full check ran (twice
+mid-check, twice with commits a later check was to cover); each time the push waited for the check, as CLAUDE.md
+says. `headroom learn --apply` then wrote a rule from those four firings: push once "ready and checked", which keeps
+the check first. The hook still cannot tell a checked head from an unchecked one.

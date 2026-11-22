@@ -26,3 +26,6 @@
 2026-11-21 21:32 [overlook-source] session-start scan: files=71 parsed=69 principles=0
 2026-11-21 20:42 [overlook-source] session-start scan: files=70 parsed=68 principles=0
 2026-11-21 22:50 [overlook-source] session-start scan: files=76 parsed=74 principles=0
+2026-11-21 22:47 [overlook-source] session-start scan: files=76 parsed=74 principles=0
+2026-11-21 22:48 [overlook-source] session-start scan: files=76 parsed=74 principles=0
+2026-11-21 overlook audit session: 3 todos done (baseline, scans, audits); no observations pending
