@@ -31,13 +31,15 @@ export const USED_SECONDS = 0.5;
 const EPSILON = 1e-9;
 
 /** What the bar is shown from: the Art worn (its id in the Arts' file, 0 for none), how far the Anima has charged,
- *  and how far each Tenet has recharged, each a share from 0 (just cast) to 1 (ready); and what its road has earned
- *  (1 the Art, 2 its first Tenet, 4 its second), every bit where none is said. */
+ *  and how far each Tenet has recharged, each a share from 0 (just cast) to 1 (ready); what its road has earned
+ *  (1 the Art, 2 its first Tenet, 4 its second), every bit where none is said; and how many times as long a
+ *  recharge takes in the run (a run's Trickle), once where none is said. */
 export interface AbilityState {
   readonly art: number;
   readonly animaShare: number;
   readonly tenets: readonly [number, number];
   readonly earned?: number;
+  readonly recharge?: number;
 }
 
 /** A Tenet as the bar shows it: how many degrees of its wedge are still dark, clockwise from the top, the seconds
@@ -93,8 +95,8 @@ export function abilityBarOf(state: AbilityState): AbilityShown {
     animaRows: Math.floor(charged * ANIMA_ROWS + EPSILON),
     animaFull: charged >= 1,
     tenets: [
-      tenetShown(state.tenets[0], tenets[0]?.rechargeS ?? 0),
-      tenetShown(state.tenets[1], tenets[1]?.rechargeS ?? 0),
+      tenetShown(state.tenets[0], (tenets[0]?.rechargeS ?? 0) * (state.recharge ?? 1)),
+      tenetShown(state.tenets[1], (tenets[1]?.rechargeS ?? 0) * (state.recharge ?? 1)),
     ],
     locked: [lockedOf(1), lockedOf(2), lockedOf(4)],
   };
@@ -199,7 +201,8 @@ export class AbilityBar {
       `${art.anima.name} (${ABILITY_KEYS[0]}), ${lock(0, unable ? 'cannot be cast now' : animaWords)}`,
       ...shown.tenets.map((tenet, index) => {
         const name = art.tenets[index]?.name ?? '';
-        const left = Math.ceil((1 - share(this.state?.tenets[index] ?? 0)) * (art.tenets[index]?.rechargeS ?? 0));
+        const rechargeS = (art.tenets[index]?.rechargeS ?? 0) * (this.state?.recharge ?? 1);
+        const left = Math.ceil((1 - share(this.state?.tenets[index] ?? 0)) * rechargeS);
         const how = unable ? 'cannot be cast now' : tenet.ready ? 'ready' : `${left} s to recharge`;
         return `${name} (${ABILITY_KEYS[index + 1]}), ${lock(index + 1, how)}`;
       }),

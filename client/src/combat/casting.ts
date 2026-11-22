@@ -60,6 +60,7 @@ export function abilitiesAt(taken: ArtState | null | undefined, takenAt: number,
     animaShare: runOn(taken.anima, art.anima.rechargeS),
     tenets: [runOn(taken.tenets[0], first?.rechargeS), runOn(taken.tenets[1], second?.rechargeS)],
     earned: earnedOf(taken, taken.art),
+    recharge: taken.recharge ?? 1,
   };
 }
 

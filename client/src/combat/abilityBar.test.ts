@@ -45,6 +45,9 @@ test('a Tenet counts its last seconds, rounded up so it never reads 0 before it 
   const vanish = abilityBarOf({ art: SHADOW, animaShare: 0, tenets: [0, 0.9] }).tenets[1];
   assert.deepEqual(vanish, { sweep: 36, seconds: '4', ready: false });
   assert.equal(tenetShown(0.75, 38).seconds, '', '9.5 s left is still counted as ten');
+  // Under a run's Trickle a recharge takes half again as long, and the seconds left count that out.
+  const trickled = abilityBarOf({ art: SHADOW, animaShare: 0, tenets: [0, 0.9], recharge: 1.5 }).tenets[1];
+  assert.equal(trickled.seconds, String(Math.ceil(0.1 * 38 * 1.5)));
   assert.equal(tenetShown(0.999, 38).seconds, '1');
   assert.equal(tenetShown(0.999, 38).sweep, 6, 'a sliver left still shows one step of the wedge');
 });
