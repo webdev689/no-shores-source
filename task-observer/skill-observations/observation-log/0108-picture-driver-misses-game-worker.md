@@ -1,5 +1,5 @@
 ---
-id: 98
+id: 108
 title: "The picture driver patches the page, but the game now runs in a worker, so pictures fail headless"
 status: open
 type: open-source
