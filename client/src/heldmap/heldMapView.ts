@@ -33,7 +33,7 @@ struct Ink {
 // Each of the route's points: where it lies, metres, and how far along the route.
 @group(0) @binding(5) var<storage, read> route: array<vec4f>;
 // The waters' wash over the charted sea, its holders' colours blended and its alpha how much is charted sea; and how
-// much of it is contested and how much the Grey Tithe's, each hatched (watersWash.ts).
+// much of it is the Lattice's and how much the Grey Tithe's, each hatched (watersWash.ts).
 @group(0) @binding(6) var wash: texture_2d<f32>;
 @group(0) @binding(7) var hatch: texture_2d<f32>;
 // The parchment's words, marks and key, painted at its own pixels, premultiplied (mapLetters.ts).
@@ -43,10 +43,10 @@ struct Ink {
 const INK_RGB = vec3f(58.0, 40.0, 22.0) / 255.0;
 const ROUTE_RGB = vec3f(120.0, 28.0, 20.0) / 255.0;
 const NO_ISLAND = 255u;
-// How strong the waters' wash is; the contested's diagonal hatching and the Grey Tithe's level hatching, each its
-// strength, colour and lines' spacing, device pixels (watersWash.ts).
+// How strong the waters' wash is; the Lattice's and the Grey Tithe's level hatching, each its strength, colour and
+// lines' spacing, device pixels (watersWash.ts).
 const WASH_ALPHA = ${WASH_STRENGTH.toFixed(3)};
-${Object.entries({ CONTESTED: HATCHES.contested, TITHE: HATCHES['grey-tithe'] })
+${Object.entries({ LATTICE: HATCHES.lattice, TITHE: HATCHES['grey-tithe'] })
   .map(
     ([name, hatch]) => `const ${name}_ALPHA = ${hatch.strength.toFixed(3)};
 const ${name}_RGB = vec3f(${hatch.colour.map((channel) => channel.toFixed(1)).join(', ')}) / 255.0;
@@ -121,16 +121,16 @@ fn route_at(world: vec2f) -> f32 {
       alpha = max(alpha, 0.28 * fade * (1.0 - smoothstep(0.3, 1.0, ring)) * step(4.0, pixels));
     }
   }
-  // The waters under the ink: their wash, and over the contested fine diagonal lines in a dark amber.
+  // The waters under the ink: their wash, and over the Lattice's and the Tithe's fine level lines in their dark ink.
   let sea = select(0.0, 1.0, metres > 0.0 && inside);
   let tint = textureSampleLevel(wash, soft, world / size, 0.0);
   let shares = textureSampleLevel(hatch, soft, world / size, 0.0).rg;
-  let line = (1.0 - smoothstep(0.5, 1.1, abs(fract((at.x + at.y) / CONTESTED_PX) - 0.5) * CONTESTED_PX));
+  let line = (1.0 - smoothstep(0.5, 1.1, abs(fract(at.y / LATTICE_PX) - 0.5) * LATTICE_PX));
   let level = (1.0 - smoothstep(0.5, 1.1, abs(fract(at.y / TITHE_PX) - 0.5) * TITHE_PX));
-  let diagonal = CONTESTED_ALPHA * shares.r * tint.a * sea * line;
+  let crystal = LATTICE_ALPHA * shares.r * tint.a * sea * line;
   let flat = TITHE_ALPHA * shares.g * tint.a * sea * level;
-  let hatched = diagonal + flat * (1.0 - diagonal);
-  let hatchedRgb = CONTESTED_RGB * diagonal + TITHE_RGB * flat * (1.0 - diagonal);
+  let hatched = crystal + flat * (1.0 - crystal);
+  let hatchedRgb = LATTICE_RGB * crystal + TITHE_RGB * flat * (1.0 - crystal);
   let tinted = WASH_ALPHA * tint.a * sea;
   let under = hatched + tinted * (1.0 - hatched);
   let underRgb = hatchedRgb + tint.rgb / max(tint.a, 1e-4) * tinted * (1.0 - hatched);

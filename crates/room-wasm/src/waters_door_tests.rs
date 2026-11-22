@@ -23,7 +23,8 @@ fn the_table_names_each_water_its_holder_and_its_levels() {
     assert_eq!(waters[0]["name"], "The Lantern Sea");
     assert_eq!(waters[0]["holder"], "home");
     assert_eq!(waters[0]["levels"], json!([1, 4]));
-    assert_eq!(waters[3]["holder"], "pirates");
+    assert_eq!(waters[1]["holder"], "lattice");
+    assert_eq!(waters[3]["holder"], "grey-tithe");
     assert_eq!(waters[8]["levels"], json!([26, 30]));
     assert_eq!(table["borders"].as_array().unwrap().len(), 17);
     assert_eq!(table["routes"].as_array().unwrap().len(), 3);

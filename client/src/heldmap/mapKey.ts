@@ -174,12 +174,12 @@ type KeyPainter = Measure & {
 };
 
 /** A holder's swatch with its top-left at `x`, `y`: its wash as the map shows it over its parchment, and over the
- *  contested's and the Grey Tithe's their hatching, diagonal and level, its lines as far apart as on the map. */
+ *  Grey Tithe's and the Lattice's their level hatching, its lines as far apart as on the map. */
 function paintSwatch(painter: KeyPainter, holder: WaterHolder, x: number, y: number): void {
   const [width, height] = KEY.swatch;
   painter.fillStyle = washedOver(holder);
   painter.fillRect(x, y, width, height);
-  const hatch = holder === 'contested' || holder === 'grey-tithe' ? HATCHES[holder] : null;
+  const hatch = holder === 'lattice' || holder === 'grey-tithe' ? HATCHES[holder] : null;
   if (!hatch) return;
   painter.save();
   painter.beginPath();
@@ -189,16 +189,10 @@ function paintSwatch(painter: KeyPainter, holder: WaterHolder, x: number, y: num
   painter.lineWidth = 1.2;
   painter.beginPath();
   const gap = hatch.spacingPx;
-  if (holder === 'grey-tithe')
-    for (let down = gap / 2; down < height; down += gap) {
-      painter.moveTo(x, y + down);
-      painter.lineTo(x + width, y + down);
-    }
-  else
-    for (let across = 0; across < width + height; across += gap) {
-      painter.moveTo(x + across, y);
-      painter.lineTo(x + across - height, y + height);
-    }
+  for (let down = gap / 2; down < height; down += gap) {
+    painter.moveTo(x, y + down);
+    painter.lineTo(x + width, y + down);
+  }
   painter.stroke();
   painter.restore();
 }
