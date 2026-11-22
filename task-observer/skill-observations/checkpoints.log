@@ -49,3 +49,4 @@
 2026-11-22T18:17:14Z merge-124 session: merge3 worker + second main merge + Lattice republish + PR merge; no new observations (worker finished inside its limit)
 2026-11-22 19:21 [overlook-source] session-start scan: files=108 parsed=100 principles=0
 2026-11-22 checkpoint: audit of the audit done; 2 observations
+2026-11-22 17:59 [overlook-source] session-start scan: files=101 parsed=93 principles=0
