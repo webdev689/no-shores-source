@@ -14,8 +14,9 @@ export const AHEAD_AT_ONCE = 6;
 
 /** The decoded sheets kept: a few dresses' moves, each used for every view and frame of its move. */
 const DECODED_BYTES = 128 * 1024 * 1024;
-/** The fetched bytes kept: every move of the dresses shown, a tenth or less of their decoded size. */
-const FETCHED_BYTES = 96 * 1024 * 1024;
+/** The fetched bytes kept here: the moves of the dresses lately shown. The packs' blocks are kept by the browser
+ *  besides (`forge/store.ts`), so a strip let go here is read again from the disk, not the network. */
+const FETCHED_BYTES = 32 * 1024 * 1024;
 
 /** The path of a strip's depth (`_z`), or of the strip a depth belongs to. */
 export const twinOf = (path: string): string =>
