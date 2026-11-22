@@ -45,7 +45,8 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 - **Never inside a block.** Falling past the top of a block beside it, too slowly to clear it, the body is pushed out
   of it the shortest way, never past its far side. A body set down overlapping a block, as a blow's charge may leave
   it, is pushed out the same way before it moves. So no edge or corner holds a body fast. A block overhead, clear of
-  the body's column, never pushes it.
+  the body's column, never pushes it. Hanging or climbing, a sideways move that would take the body into a block, the
+  ledge itself or one meeting the wall, is not made.
 - **The blocks near a body.** A course is kept with a grid over it (`Blocks`, `near.rs`), built once when the
   blocks are set: in the movement door, in a room, and in the room door's course. Each cell lists, in the course's
   order, every block whose footprint grown by the body's radius reaches into it, so a rule asks only the blocks of the
@@ -69,7 +70,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
   steeply than the slope limit, or more than a step above the feet, is tried an axis at a time, as against a
   block's side, so the body slides along the rise. Walked slantwise, a slope too steep to walk straight up is
   climbed as steeply as the path rises. The rise is the terrain's own, so a block sunk into a slope is walked onto
-  and off again. Climbing down a wall stops at the terrain.
+  and off again. Climbing down a wall stops at the ground under the feet, the terrain or a block's top.
 - **A grid of heights.** One terrain is a grid of square cells, each with its height or none (`Heights`), as a
   ship's deck is ([[Sailing]], "Its deck"). In a cell with a height, the ground blends the four cell centres round
   the point by nearness, leaving out any that hold none; a cell with none, or past the grid's end, stands 10 m over
@@ -104,7 +105,7 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 | Ground | Walks, runs, crouches or rides where the controls point. A jump, once the feet have stood 0.1 s, lifts it into the air, or goes over a lip within reach (1.8 m). Pressed into a wall too high to grab, stopped across its face however it slides along it and looking within 45° of square, it takes hold square to the wall and climbs. Off an edge higher than a step, it falls |
 | Air | Falls under gravity. Pressed into a wall with the lip within reach (1.95 m in the air), it hangs, or goes over a low lip |
 | Hang | Sideways shimmies along the lip; forward goes over; crouch lets go |
-| Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs |
+| Climb | Forward climbs and sideways moves along the wall; a jump kicks off it; at 1.8 m below the lip, it hangs. The lip of a face built of blocks stacked flush is the top of the stack, so a seam is climbed past |
 | Mantle | Rises first, then goes over onto the lip |
 | Vault | Arcs over a lip up to 1.2 m on a block up to 0.8 m deep, landing 0.2 m past it, met head on or slantwise |
 

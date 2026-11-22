@@ -1,6 +1,8 @@
 //! One step of a body: the rules for each way it can be held.
 
-use crate::blocks::{Block, WallAhead, feet_after, ground_at, pushed_out, room_at, slide, under_ceiling, wall_ahead};
+use crate::blocks::{
+    Block, WallAhead, feet_after, ground_at, pushed_out, room_at, slide, under_ceiling, wall_ahead, wall_top,
+};
 use crate::body::{Body, Controls, Mode, Over, TUNING};
 use crate::near::Near;
 use crate::terrain::Terrain;
@@ -193,22 +195,24 @@ fn on_wall<B: Near + ?Sized>(
     let pace = if climbing { TUNING.climb } else { TUNING.shimmy };
     let along = controls.sideways * pace * seconds;
     let moved = Body { x: body.x + along_x * along, y: body.y + along_y * along, ..*body };
-    // Off the end of the block there is nothing to hold, and past the terrain's wall (a rim round a course laid over the
-    // sea) nowhere to be.
-    let holds =
-        wall_ahead(blocks, &moved, body.facing).is_some() && !terrain.walled((body.x, body.y), (moved.x, moved.y));
+    // Off the end of the block there is nothing to hold, into a block beside it no room, and past the terrain's wall (a
+    // rim round a course laid over the sea) nowhere to be.
+    let holds = wall_ahead(blocks, &moved, body.facing).is_some()
+        && room_at(blocks, moved.x, moved.y, body.z, body.height())
+        && !terrain.walled((body.x, body.y), (moved.x, moved.y));
     let (x, y) = if holds { (moved.x, moved.y) } else { (body.x, body.y) };
     let mut z = body.z;
     if climbing {
-        let climbed = (z + controls.forward * TUNING.climb * seconds).max(terrain.height_at(x, y));
+        let climbed = (z + controls.forward * TUNING.climb * seconds).max(ground_at(blocks, terrain, x, y, z));
         z = under_ceiling(blocks, x, y, z, climbed, body.height());
     }
-    let mode = if climbing && ahead.block.top - z <= TUNING.hang { Mode::Hang } else { body.mode };
+    let lip = if climbing { wall_top(blocks, body, body.facing, &ahead) } else { ahead.block.top };
+    let mode = if climbing && lip - z <= TUNING.hang { Mode::Hang } else { body.mode };
     if mode == Mode::Hang {
-        z = ahead.block.top - TUNING.hang;
+        z = lip - TUNING.hang;
     }
     let moving = along != 0.0 || (climbing && controls.forward != 0.0);
-    Body { x, y, z, mode, lip: ahead.block.top, moving, vx: 0.0, vy: 0.0, vz: 0.0, ..*body }
+    Body { x, y, z, mode, lip, moving, vx: 0.0, vy: 0.0, vz: 0.0, ..*body }
 }
 
 /// In the air: falling under gravity, exactly for a constant pull so a jump's apex does not hang on the tick, and

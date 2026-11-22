@@ -74,3 +74,19 @@ fn a_kill_on_a_deck_pays_by_the_seas_tier_but_drops_no_vestige_or_item_as_the_ho
     };
     assert_eq!(paid(gear::Difficulty::Abyss), paid(gear::Difficulty::Normal) * 2, "an Abyss sea's deck pays twice");
 }
+
+#[test]
+fn on_a_deck_fights_floor_a_run_or_a_dodges_hop_is_never_carried_through_a_wall_one_cell_thick() {
+    // The test deck's mast is one 0.1 m cell, x 0.0 to 0.1 and y 0.0 to 0.1; a run's tick (0.1265 m) and a hop's
+    // (0.167 m) are each longer than it.
+    let floor = Floor::Deck(Box::new(test_deck().heights));
+    let start = movement::Body { z: 0.8, ..movement::standing(0.05, 0.3) };
+    let running = movement::Controls { forward: 1.0, run: true, ..movement::Controls::default() };
+    let hop = movement::Body { mode: movement::Mode::Air, vy: -10.0, vz: 3.0, grounded: 0.0, ..start };
+    for (mut body, controls) in [(start, running), (hop, movement::Controls::default())] {
+        for _ in 0..60 {
+            body = movement::step_body(&body, &controls, &[], &floor, movement::TICK_SECONDS);
+            assert!(body.y > 0.05, "carried through the mast: {body:?}");
+        }
+    }
+}
