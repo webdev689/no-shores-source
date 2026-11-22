@@ -43,7 +43,7 @@ const heading = (said: string, size: number): Node => words(said.toUpperCase(), 
 function rewardNode(reward: PlaylistReward, size: number): Node {
   const small = Math.max(1, size - 1);
   const cleared = reward.clears?.filter(Boolean).length ?? 0;
-  const of = reward.clears?.length ?? 0;
+  const needed = reward.clears?.length ?? 0;
   const marks: Child[] = (reward.clears ?? []).map((filled) => ({
     width: 14 * size,
     height: 6 * size,
@@ -56,7 +56,7 @@ function rewardNode(reward: PlaylistReward, size: number): Node {
       : reward.clears !== null
         ? reward.taken
           ? 'Paid'
-          : `${cleared} of ${of}`
+          : `${cleared} of ${needed}`
         : reward.taken
           ? 'Taken'
           : 'Not taken';
@@ -65,7 +65,9 @@ function rewardNode(reward: PlaylistReward, size: number): Node {
     height: 6,
     fill: INK.well,
     outline: { width: 1, colour: 'rgba(192,138,62,0.5)' },
-    children: [{ width: `${of === 0 ? 0 : Math.round((cleared / of) * 100)}%`, height: 'grow', fill: INK.brassLit }],
+    children: [
+      { width: `${needed === 0 ? 0 : Math.round((cleared / needed) * 100)}%`, height: 'grow', fill: INK.brassLit },
+    ],
   };
   return {
     width: 'grow',
