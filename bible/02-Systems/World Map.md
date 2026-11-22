@@ -127,7 +127,9 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
   there are 17: 1-2, 1-3, 1-4, 1-5, 1-8, 1-9, 2-5, 2-6, 2-9, 3-7, 3-8, 3-9, 4-5, 4-8, 5-6, 7-8 and 7-9. 4-8 is the
   only border between a pirate water and a Tithe water.
 - `grid(cell_m)` judges the frame at each cell's middle, row by row from the north-west: one byte a cell, the
-  continent's index for sea with bit 0x80 set on the seam, 255 for land. The [[Held Map]] tints from it.
+  continent's index for sea with bit 0x80 set on the seam, 255 for land. The [[Held Map]] tints from it, lights at sea the
+  water under its pointer that is not the ship's own, and asks to travel to the water a course chosen ends in: each
+  read from this grid, never a second copy of the rule.
 - Speed: a bucket grid of 32 km cells lists, for each bucket, every coast edge that can be nearest to some point in it,
   so a query looks at a few dozen edges; each bucket lists the isles that can be nearest the same way. `water_at`
   takes about 0.4 µs natively; `grid(4_800.0)`, 1024 × 640 cells, about 80 ms natively in release and 100 ms in

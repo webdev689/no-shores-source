@@ -4,6 +4,8 @@ status: live
 code:
   - client/src/heldmap/heldMap.ts#HeldMap
   - client/src/heldmap/heldMap.ts#layoutKey
+  - client/src/heldmap/heldMapAsk.ts#MapAsk
+  - client/src/heldmap/heldMapAsk.ts#litCells
   - client/src/game/helmMap.ts#HelmMap
   - client/src/heldmap/heldMapLaw.ts#stageOf
   - client/src/heldmap/heldMapLaw.ts#clampView
@@ -135,6 +137,16 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **Choosing.** A click picks the discovered place within 16 px of it, or else the point of the sea under it; a node
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
+- **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
+  pointer (the pad's cursor too), when it is not the one the ship is in, is lit: its sea brightened a little with the
+  parchment's light and its edge with the other waters softly lined in the ink, where its cells' share crosses a half
+  (`litCells`, on the page's grid of the waters, the world crate's rule judged once). Its name, holder and level band
+  are written small by the pointer ("The Elmwater · Grey Tithe · levels 8-14"). The ship's own water and land light
+  nothing. A course chosen whose end lies in another water asks, on a card of parchment ringed in ink a quarter of the
+  way down the map and in its letters: "Travel to <water>?", its holder and level band, and "Yes <key> No Escape"
+  (`MapAsk`). Yes (the confirm key, the pad's A, or the card's press, which reads Travel while it asks) lowers the map
+  and the ship travels there ([[Sailing]], "Travel by the held map"); No (Escape, the pad's B) lets the prompt go and
+  keeps the course inked, to be sailed the long way with Set sail. A course within the ship's own water asks nothing.
 - **The difficulty.** Beside Set sail the card offers the voyage's difficulty, Normal, Elite or Abyss
   ([[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]): the island's foes as they are, or two or three
   levels higher, paying half again or twice the XP, Aurem and Vestiges. The difficulty picked is the voyage's only once
