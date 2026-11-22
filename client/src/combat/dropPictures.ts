@@ -1,32 +1,17 @@
-// The pictures a drop stands as on the ground, pixel by pixel in the gear screens' glyph style: a sealed Vestige in its
-// rarity's colours, an Ammo box and an Ammo crate. The gear screens draw the same rows as their glyphs, so a drop looks
-// on the ground as it does in the pack.
+// The pictures an Ammo box and an Ammo crate stand as on the ground, pixel by pixel in the gear screens' glyph style.
+// The gear screens draw the same rows as their glyphs, so a drop looks on the ground as it does in the pack; a Vestige
+// is its crystal (`vestigeCrystal.ts`).
 
-import { RARITIES } from '../player/gear.ts';
-
-/** A picture: rows of letters, each a colour of `colours` ('a' the first) and a dot none. 12 × 12. */
+/** A picture: rows of letters, each a colour of `colours` ('a' the first) and a dot none, each pixel `pixelM` metres
+ *  in the world (a glyph's 0.035 m when not given). */
 export interface PixelPicture {
   readonly rows: readonly string[];
   readonly colours: readonly string[];
+  readonly pixelM?: number;
 }
 
 /** Every glyph's outline. */
 export const OUTLINE = '#120e0a';
-
-export const VESTIGE_ROWS: readonly string[] = [
-  '....aaaa....',
-  '...abbbba...',
-  '..abccccba..',
-  '.abcbddbcba.',
-  'abcbddddbcba',
-  'abcddbbddcba',
-  'abcddbbddcba',
-  'abcbddddbcba',
-  '.abcbddbcba.',
-  '..abccccba..',
-  '...abbbba...',
-  '....aaaa....',
-];
 
 /** An Ammo box: a small olive can, its lid lit, a brass round stamped on its side. */
 export const AMMO_BOX: PixelPicture = {
@@ -65,9 +50,3 @@ export const AMMO_CRATE: PixelPicture = {
   ],
   colours: [OUTLINE, '#c08a3e', '#b07a40', '#6e4a22', '#d8a464'],
 };
-
-/** A Vestige's picture in a rarity's colours: its shade, its own and its light. */
-export function vestigePicture(rarity: number): PixelPicture {
-  const found = RARITIES[rarity] ?? RARITIES[0];
-  return { rows: VESTIGE_ROWS, colours: [OUTLINE, found.shade, found.colour, found.lit] };
-}

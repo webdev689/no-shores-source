@@ -666,7 +666,8 @@ never while a press is held. Each press is an ask the room answers.
   Enhanced Plus fits its icons, and one larger than its place is shrunk by an area average, each screen pixel the mean
   of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny
   lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
-  name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
+  name's initials. A Vestige is its crystal, still and turned broadside, 18 pixels square, its halo see-through
+  ([[Gear]], "Drops"). Currencies, materials, nodes and elements are small pixel glyphs; each material is drawn as what it
   is, mostly in its island's colour. The ship's glyphs (its materials, its modules and its officers' posts) are drawn
   at 24 by 24, as the Arts' emblems are, so a module shows a picture where a piece shows the forge's: shaded lit from
   the top left, and shown only at whole multiples of their cells (24, 48, 96, 264). `tools/ship-glyphs/` draws them.

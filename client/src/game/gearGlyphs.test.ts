@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { RARITIES, RESOURCE_COUNT } from '../player/gear.ts';
+import { RESOURCE_COUNT } from '../player/gear.ts';
 import { glyphSvg } from './gearGlyphs.ts';
 
 /** Each pixel a glyph's picture fills: its column, its row and its colour, each run along a row unpacked. */
@@ -13,13 +13,28 @@ const shapeOf = (svg: string) =>
     .map(({ x, y }) => `${x},${y}`)
     .join(' ');
 
-test('each glyph is twelve pixels square, a Vestige in its rarity’s colour', () => {
-  for (const glyph of ['aurem', 'fruit', 'resource', 'vestige', 'empty', 'weapon-essence'] as const) {
+test('each glyph is twelve pixels square, a Vestige its crystal, 18, in its rarity’s colour', () => {
+  for (const glyph of ['aurem', 'fruit', 'resource', 'empty', 'weapon-essence'] as const) {
     const svg = glyphSvg(glyph);
     assert.match(svg, /viewBox="0 0 12 12"/);
     for (const [, x, y] of svg.matchAll(/x="(\d+)" y="(\d+)"/g)) assert.ok(Number(x) < 12 && Number(y) < 12, glyph);
   }
-  assert.ok(glyphSvg('vestige', 4).includes(RARITIES[4].colour), 'an Atheric Vestige is cyan');
+  const mostly = (rarity: number) => {
+    const solid = pixelsOf(glyphSvg('vestige', rarity)).filter(({ fill }) => fill.length === 7);
+    const counts = new Map<string, number>();
+    for (const { fill } of solid) counts.set(fill, (counts.get(fill) ?? 0) + 1);
+    const [top = ''] = [...counts].sort((first, second) => second[1] - first[1])[0] ?? [];
+    return [1, 3, 5].map((start) => Number.parseInt(top.slice(start, start + 2), 16));
+  };
+  assert.match(glyphSvg('vestige', 4), /viewBox="0 0 18 18"/);
+  const [red = 0, green = 0, blue = 0] = mostly(4);
+  assert.ok(blue > red && green > red, 'an Atheric Vestige is cyan blue');
+  const [magicRed = 0, magicGreen = 0, magicBlue = 0] = mostly(1);
+  assert.ok(magicGreen > magicRed && magicGreen > magicBlue, 'a Magic one green');
+  assert.ok(
+    pixelsOf(glyphSvg('vestige', 0)).some(({ fill }) => fill.length === 9),
+    'its halo see-through',
+  );
 });
 
 test('an Ammo box and an Ammo crate are pictures of their own, inside the grid', () => {

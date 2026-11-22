@@ -1,15 +1,15 @@
 // The gear screens' glyphs, drawn pixel by pixel to sit with the forge's pixel figures and Enhanced Plus's carved
-// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a sealed Vestige, an Ammo box
+// frames: Aurem, the fragments and Essence, the Fruit of Dagon, each island's resource, a Vestige's crystal, an Ammo box
 // and an Ammo crate (the pictures drops stand as on the ground), and an empty place. Enhanced Plus has no icons of its
 // own for these, and the classic item art stays behind, so they are ours.
 
-import { AMMO_BOX, AMMO_CRATE, OUTLINE, VESTIGE_ROWS } from '../combat/dropPictures.ts';
-import { RARITIES } from '../player/gear.ts';
+import { AMMO_BOX, AMMO_CRATE, OUTLINE } from '../combat/dropPictures.ts';
+import { crystalStill } from '../combat/vestigeCrystal.ts';
 import type { Glyph } from './gearCards.ts';
 import { SHIP_MAPS, SHIP_PALETTES } from './shipGlyphs.ts';
 
 /** Each glyph as rows of letters, each letter a colour of its palette and a dot none. 12 × 12. */
-const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string[]>> = {
+const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource' | 'vestige'>, readonly string[]>> = {
   ...SHIP_MAPS,
   aurem: [
     '....aaaa....',
@@ -95,7 +95,6 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string
     '...abbbba...',
     '....aaaa....',
   ],
-  vestige: VESTIGE_ROWS,
   'ammo-box': AMMO_BOX.rows,
   'ammo-crate': AMMO_CRATE.rows,
   empty: [
@@ -114,7 +113,7 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource'>, readonly string
   ],
 };
 
-/** Each glyph's colours, outline first; a Vestige's come from its rarity. */
+/** Each glyph's colours, outline first. */
 const PALETTES: Readonly<Record<string, readonly string[]>> = {
   ...SHIP_PALETTES,
   aurem: [OUTLINE, '#c08a3e', '#f3cf86'],
@@ -300,18 +299,17 @@ export function glyphSvg(glyph: Exclude<Glyph, 'item'>, rarity = 0, tint = 0): s
     const material = MATERIALS[tint];
     return material ? pictureSvg(material.rows, material.colours) : glyphSvg('empty');
   }
-  const found = RARITIES[rarity];
-  const colours =
-    glyph === 'vestige'
-      ? [OUTLINE, found?.shade ?? '#555', found?.colour ?? '#999', found?.lit ?? '#ddd']
-      : (PALETTES[glyph] ?? [OUTLINE]);
-  return pictureSvg(MAPS[glyph], colours);
+  if (glyph === 'vestige') {
+    const crystal = crystalStill(rarity);
+    return pictureSvg(crystal.rows, crystal.colours);
+  }
+  return pictureSvg(MAPS[glyph], PALETTES[glyph] ?? [OUTLINE]);
 }
 
 /** The letters a map draws with, each a colour of its palette in turn; a dot is none. */
 export const GLYPH_LETTERS = 'abcdefghijkl';
 
-/** Rows of letters as an SVG picture as large as its map (12 cells, or a ship glyph's 24): each run of one letter
+/** Rows of letters as an SVG picture as large as its map (12 cells, a ship glyph's 24, a crystal's 18): each run of one letter
  *  along a row a strip in its colour, crisp at any size. */
 function pictureSvg(rows: readonly string[], colours: readonly string[]): string {
   const strips: string[] = [];
@@ -320,7 +318,7 @@ function pictureSvg(rows: readonly string[], colours: readonly string[]): string
       const letter = row.charAt(column);
       let end = column + 1;
       while (row.charAt(end) === letter) end++;
-      const fill = colours[GLYPH_LETTERS.indexOf(letter)];
+      const fill = colours[letter.charCodeAt(0) - GLYPH_LETTERS.charCodeAt(0)];
       if (fill) strips.push(`<rect x="${column}" y="${line}" width="${end - column}" height="1" fill="${fill}"/>`);
       column = end;
     }
