@@ -69,6 +69,15 @@ export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
 }
 
+/** The same dress with its weapon the other way, drawn or put away, so the figure is warmed both ways; null with
+ *  nothing in either hand, which draws the same either way. */
+export function otherHand(dress: Dress): Dress | null {
+  const { outfit } = dress;
+  return outfit.right === null && outfit.left === null
+    ? null
+    : { ...dress, outfit: { ...outfit, drawn: !outfit.drawn } };
+}
+
 /** Whether the figure and the hands hold the weapon out in a fight this frame. While the rules are busy they keep the
  *  weapon the frame before held (`kept`): they take up another only at rest. The forge has no drinking pose, so it is
  *  put away while a drink lasts; and the frame after one (`drank`) it comes from the player's own dress (`worn`), as
@@ -366,6 +375,9 @@ export class Walker {
       forge.warm(shown, likely, glow, owner);
     };
     warm(dress, outfit.drawn ? this.shownGlow[0] : 0, you.id);
+    // The weapon the other way too, so drawing it or putting it away shows at once.
+    const other = otherHand(dress);
+    if (other) warm(other, other.outfit.drawn ? this.shownGlow[0] : 0, `${you.id} other hand`);
     // The other loadout's too, so a swap shows it at once.
     if (this.spare) warm({ ...dress, outfit: { ...this.spare, drawn: true } }, this.spareGlow, `${you.id} spare`);
     forge.pump();

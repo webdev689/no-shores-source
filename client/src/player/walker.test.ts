@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Body } from '../rules/movementRules.ts';
 import { plainDress } from './dressing.ts';
-import { climbOf, drawnInFight, ownColours, shownDress, strokesAfter } from './walker.ts';
+import { climbOf, drawnInFight, otherHand, ownColours, shownDress, strokesAfter } from './walker.ts';
 
 test('a stroke is counted when a swing begins, and again when the next begins within a frame', () => {
   assert.equal(strokesAfter(0, null, null), 0, 'no swing');
@@ -17,6 +17,20 @@ test('on a wall or a ledge the weapon is worn, not held', () => {
   assert.equal(shownDress(drawn, true).outfit.drawn, true);
   assert.equal(shownDress(drawn, false).outfit.drawn, false);
   assert.equal(shownDress(drawn, true), drawn, 'held hands show the dress as it is');
+});
+
+test('the dress with its weapon the other way is warmed too, so drawing or putting it away shows at once', () => {
+  const dress = plainDress('human', 0.3);
+  const armed = { ...dress, outfit: { ...dress.outfit, right: 'sword_long', drawn: true } };
+  assert.equal(otherHand(armed)?.outfit.drawn, false, 'drawn, the same dress put away');
+  assert.equal(otherHand({ ...armed, outfit: { ...armed.outfit, drawn: false } })?.outfit.drawn, true, 'and drawn');
+  assert.deepEqual({ ...otherHand(armed)?.outfit, drawn: true }, armed.outfit, 'nothing else changed');
+  assert.equal(
+    otherHand({ ...armed, outfit: { ...armed.outfit, right: null, left: 'shield_round' } })?.outfit.drawn,
+    false,
+  );
+  const bare = { ...dress, outfit: { ...dress.outfit, right: null, left: null } };
+  assert.equal(otherHand(bare), null, 'nothing to draw, nothing warmed twice');
 });
 
 test('the climb the hands follow is read off the body: its move, feet and facing, and a mantle under way', () => {
