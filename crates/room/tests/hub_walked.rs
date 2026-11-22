@@ -97,7 +97,11 @@ fn every_keeper_stands_in_a_stall_of_their_own_behind_its_counter_inside_the_rin
     let hub = hub();
     let social = &hub.plan.social;
     let kinds: Vec<_> = social.stations.iter().map(|station| station.kind).collect();
-    assert_eq!(social.stations.len(), 12, "eleven kinds of keeper, the vault twice: {kinds:?}");
+    assert_eq!(
+        social.stations.len(),
+        13,
+        "twelve kinds of keeper, the Postmaster among them, the vault twice: {kinds:?}"
+    );
     for station in &social.stations {
         let apart = libm::hypot(station.counter[0] - station.keeper[0], station.counter[1] - station.keeper[1]);
         assert!((0.6..=4.0).contains(&apart), "{:?}'s keeper stands {apart:.2} m from the counter", station.kind);

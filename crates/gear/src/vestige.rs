@@ -15,7 +15,7 @@ pub const ATHERIC_FROM: u8 = 20;
 /// A Vestige's colour from most foes, in 100: Normal, Magic, Rare, Legendary, Atheric.
 const FROM_FOES: [u32; 5] = [55, 33, 10, 2, 0];
 /// A Vestige's colour from a boss.
-const FROM_BOSSES: [u32; 5] = [0, 20, 55, 22, 3];
+pub(crate) const FROM_BOSSES: [u32; 5] = [0, 20, 55, 22, 3];
 /// What a Vestige of each colour opens to, in 100: it can open below its own colour, and rarely above it.
 const OPENS: [[u32; 5]; 5] =
     [[85, 15, 0, 0, 0], [20, 70, 10, 0, 0], [0, 25, 65, 10, 0], [0, 0, 60, 35, 5], [0, 0, 0, 20, 80]];
@@ -38,13 +38,17 @@ pub(crate) fn gated(mut weights: [u32; 5], level: u8) -> [u32; 5] {
 /// foe's chance of leaving one; a boss always does, and leaves the better colours.
 #[must_use]
 pub fn dropped(chance: f64, boss: bool, foe_level: u8, dice: &Dice) -> Option<(Rarity, Slot, u8)> {
-    if !boss && dice.roll(Purpose::Drops, 0) >= chance {
-        return None;
-    }
-    let weights = gated(if boss { FROM_BOSSES } else { FROM_FOES }, foe_level);
-    let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &weights)];
+    (boss || dice.roll(Purpose::Drops, 0) < chance)
+        .then(|| of_colours(if boss { FROM_BOSSES } else { FROM_FOES }, foe_level, dice))
+}
+
+/// A Vestige of these colour weights (Normal to Atheric) for a foe of this level, gated as every drop is: its
+/// colour, its slot and its item's level.
+#[must_use]
+pub fn of_colours(weights: [u32; 5], foe_level: u8, dice: &Dice) -> (Rarity, Slot, u8) {
+    let colour = Rarity::ALL[dice.weighted(Purpose::Colour, 0, &gated(weights, foe_level))];
     let slot = Slot::VESTIGE[dice.pick(Purpose::Slot, 0, Slot::VESTIGE.len())];
-    Some((colour, slot, foe_level.clamp(1, NAMED_LEVEL)))
+    (colour, slot, foe_level.clamp(1, NAMED_LEVEL))
 }
 
 /// The colour a Vestige of this level opens to: above its own colour only as far as its level allows a drop, so a

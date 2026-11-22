@@ -8,6 +8,7 @@ import { BODY_HEIGHT } from '../player/crosshair.ts';
 import type { StationInfo } from './nodes.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
 import { DOOR_PICTURE, markOfKind, markedHere } from './overheadMarks.ts';
+import { countersOf } from './plazaLife.ts';
 import { STATIONS } from './welcome/plazaForTests.ts';
 
 const station = (kind: string, keeper: readonly [number, number]): StationInfo => ({
@@ -29,6 +30,33 @@ test('each keeper who deals with a player wears their own mark over their crown;
     'over his crown, on the floor where he stands',
   );
   assert.ok(keeperPicture('harbourmaster'), 'the Harbourmaster has a sign of his own');
+});
+
+test("the Postmaster's sealed letter beats over him while letters wait for the player, and stands still while none does", () => {
+  const here = { stations: [station('mail', [0, 0]), station('weaponsmith', [10, 0])] };
+  const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
+  const beating = (mail: readonly unknown[]) =>
+    markedHere({ mail } as unknown as GearState, here, () => 0).map((mark) => mark.beating);
+  assert.equal(markedHere(null, here, () => 0)[0]?.picture, keeperPicture('mail'), 'his own sign');
+  assert.deepEqual(beating([letter]), [true, false], 'his alone, while a letter waits');
+  assert.deepEqual(beating([]), [false, false]);
+});
+
+test('the bounty board wears a gold "!" over its gable, a sign of its own in the keepers\' diamond; no other plaza one', () => {
+  const here = countersOf({ stations: [], board: [5, 2], boardAt: [5, 0] });
+  const marked = markedHere(null, here, () => 1);
+  const sign = keeperPicture('board');
+  assert.ok(sign);
+  assert.equal(marked.length, 1);
+  assert.equal(marked[0]?.picture, sign);
+  assert.deepEqual(marked[0]?.at.slice(0, 2), [5, 0], 'over the board, not where it is read');
+  assert.ok((marked[0]?.at[2] ?? 0) > 1 + 3 + OVER_HEAD_M, 'over its gable, higher than a keeper’s crown');
+  assert.deepEqual([sign.rows.length, sign.rows[0]?.length], [21, 21], 'the size of every keeper’s sign');
+  assert.notDeepEqual(sign.colours, keeperPicture('weaponsmith')?.colours, 'in gold, not the keepers’ brass');
+  // The "!": a stroke over a dot, a gap between.
+  const column = sign.rows.map((row) => row.charAt(10));
+  assert.deepEqual([column[6], column[11], column[12], column[14]], ['d', 'd', 'b', 'd']);
+  assert.equal(markedHere(null, countersOf({ stations: [] }), () => 1).length, 0, 'no board, no mark');
 });
 
 test("a faction keeper's mark is its emblem in the diamond, edged in its Art's colour", () => {

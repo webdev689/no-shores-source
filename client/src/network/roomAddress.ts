@@ -1,12 +1,16 @@
+import { TEST_GROUND } from '../../../server/roomNames.ts';
+
 /** Where the deployed rooms are: a room is `${LIVE_ROOMS}/room/<name>`. */
 export const LIVE_ROOMS = 'wss://overlook-rooms.mackcothran.workers.dev';
 
-/** A room's address from what a page was given: a whole `ws://` or `wss://` address as it is, or a room's name on the
- *  deployed rooms; null when it is neither. A name is letters, digits and hyphens, as the server takes them. */
+/** A Test Ground room's address from what a page was given: a whole `ws://` or `wss://` address as it is, or a name,
+ *  that Test Ground room on the deployed rooms (`test-<name>`); null when it is neither. A name is letters, digits and
+ *  hyphens, as the server takes them, and fits a room's 64 characters with its start. */
 export function roomAddress(given: string): string | null {
   if (/^wss?:\/\//.test(given)) return given;
   const name = given.trim().toLowerCase();
-  return /^[a-z0-9-]{1,64}$/.test(name) ? `${LIVE_ROOMS}/room/${name}` : null;
+  const most = 64 - TEST_GROUND.length;
+  return new RegExp(`^[a-z0-9-]{1,${most}}$`).test(name) ? `${LIVE_ROOMS}/room/${TEST_GROUND}${name}` : null;
 }
 
 /** The longest a fleet's own name may be: a room's name is at most 64 characters, `fleet-` and the name. */

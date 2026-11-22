@@ -21,7 +21,7 @@ mod torches;
 
 pub use block::{BLOCK_CELLS, Ends, Opening};
 pub use dungeon::{
-    BLOCKS, DOORWAY_HALF_M, Dungeon, EXIT_HEIGHT_M, EXIT_WIDTH_M, FLOOR_M, Frame, JAMB_DEPTH_M, LINTEL_M,
+    BLOCKS, DOORWAY_HALF_M, Dungeon, ELITE_BLOCKS, EXIT_HEIGHT_M, EXIT_WIDTH_M, FLOOR_M, Frame, JAMB_DEPTH_M, LINTEL_M,
     PILLAR_HALF_M, Room, WallDoor,
 };
 pub use fixtures::{

@@ -5,6 +5,7 @@
 use crate::asks::{Done, Here, Refusal};
 use crate::catalogue::{NamedDef, catalogue};
 use crate::character::{CARRIED_MOST, Character, STOCK_MOST};
+use crate::clock::{DAY_MINUTES, WEEK_MINUTES, minutes_to_next_week};
 use crate::dice::{Dice, Purpose};
 use crate::element;
 use crate::item::Item;
@@ -13,33 +14,29 @@ use crate::rarity::Rarity;
 use crate::vestige;
 use crate::world::Difficulty;
 
-/// Minutes in a day and a week, and how far Thursday 1 January 1970, where Unix time starts, lies past a Monday.
-pub const DAY_MINUTES: u64 = 1_440;
-pub const WEEK_MINUTES: u64 = 7 * DAY_MINUTES;
-const EPOCH_PAST_MONDAY: u64 = 3 * DAY_MINUTES;
-/// When in the week (from Monday 00:00 UTC) he comes and goes: Friday 09:00, Xur's Friday, to Sunday 21:00.
-pub const COMES_AT: u64 = 4 * DAY_MINUTES + 9 * 60;
-pub const GOES_AT: u64 = 6 * DAY_MINUTES + 21 * 60;
+/// When in the clock's week (from Tuesday 09:00 UTC) he comes and goes: Friday 09:00, Xur's Friday, to Sunday 21:00.
+pub const COMES_AT: u64 = 3 * DAY_MINUTES;
+pub const GOES_AT: u64 = 5 * DAY_MINUTES + 12 * 60;
 /// How many places on the plaza he may stand at (the city's `visitor_spots`, which reach the room as its
 /// `shape_spots`), and how many pieces he sells a week, the first `LEGENDARIES` of them Legendary and the rest Atheric.
 pub const PLACES: usize = 8;
 pub const WARES: usize = 6;
 const LEGENDARIES: usize = 4;
 
-/// The week a moment falls in, counted in whole weeks from Monday 00:00 UTC.
-#[must_use]
-pub fn week_of(unix_minutes: u64) -> u64 {
-    (unix_minutes + EPOCH_PAST_MONDAY) / WEEK_MINUTES
-}
-
 /// Whether Shape is in Overlook at a moment.
 #[must_use]
 pub fn present(unix_minutes: u64) -> bool {
-    let into = (unix_minutes + EPOCH_PAST_MONDAY) % WEEK_MINUTES;
-    (COMES_AT..GOES_AT).contains(&into)
+    minutes_left(unix_minutes) > 0
 }
 
-/// Where he stands in a week: one of the plaza's `PLACES`, by the week's dice.
+/// The minutes until Shape leaves Overlook, none while he is away.
+#[must_use]
+pub fn minutes_left(unix_minutes: u64) -> u64 {
+    let into = WEEK_MINUTES - minutes_to_next_week(unix_minutes);
+    if (COMES_AT..GOES_AT).contains(&into) { GOES_AT - into } else { 0 }
+}
+
+/// Where he stands in a week of the clock's (`clock::week_of`): one of the plaza's `PLACES`, by the week's dice.
 #[must_use]
 pub fn place(week: u64) -> usize {
     Dice { seed: week, tick: 0, player: 0 }.pick(Purpose::Shape, 0, PLACES)

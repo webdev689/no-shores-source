@@ -135,3 +135,8 @@ its nodes, and a node's card listing its costs as held against needed.
   inventory tab and the rest ([[Pick - Enhanced Plus UI]]).
 - **Later:** Marks, factions and their reputation are still to be discussed; the vendors are
   [[Voyages Choose a Difficulty, Overlook Lives Like the Tower]]'s.
+
+How the loop around it is planned: [[The Game's Loop Runs From Town to the Land and the Sea]]. Prestige gains an
+infusion in [[Prestige Stays as Built, With a Costly Infusion]]; the Elite Dungeons and Breaches are placed in
+[[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]] and
+[[Breaches Drop the Best, at Sea Too, for a Fleet of Eight]].

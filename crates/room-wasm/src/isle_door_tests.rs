@@ -1,4 +1,4 @@
-use super::{heights_bytes, hold_ashore, isle_landing, open_island, plan_json, sea_island, sea_landed};
+use super::{heights_bytes, hold_ashore, isle_landing, open_island, plan_json, sea_dungeon, sea_island, sea_landed};
 use crate::{Opened, with_open};
 use isle::{Kind, Plan};
 
@@ -83,4 +83,29 @@ fn an_islands_room_checks_landings_and_only_a_sea_answers_one() {
     assert!(isle_landing(None), "an island's room checks landings");
     assert!(isle_landing(Some(("anchored", 1))));
     assert_eq!(sea_landed(1, 5, "anchored"), 0, "an island's room is no sea");
+}
+
+#[test]
+fn the_sea_gives_its_word_on_an_island_by_its_dungeons_room_alone() {
+    let layout = r#"{ "continents": [{ "id": "continent-4", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
+    assert!(crate::open_sea(layout.as_bytes(), 7));
+    let player = crate::room_join();
+    assert_eq!(crate::input(player, &protocol::course_bytes(&[[50_000.0, 50_000.0]], 10)), crate::TAKEN);
+    let standing = || {
+        with_open(|opened| match opened {
+            Opened::Sea(sea) => sea.islands().standing().next().map(|island| (island.id, island.seed)),
+            _ => None,
+        })
+        .flatten()
+    };
+    while standing().is_none() {
+        crate::room_tick();
+    }
+    let (id, seed) = standing().unwrap_or_default();
+    let word: serde_json::Value =
+        serde_json::from_str(&sea_dungeon(&room::sea::islands::dungeon_room(seed, "continent-4")))
+            .expect("the island's word");
+    assert_eq!((word["id"].as_u64(), word["seed"].as_str()), (Some(u64::from(id)), Some(seed.to_string().as_str())));
+    assert!(sea_dungeon(&room::sea::islands::dungeon_room(seed, "continent-3")).is_empty(), "another water's");
+    assert!(sea_dungeon(&room::sea::islands::dungeon_room(seed ^ (1 << 40), "continent-4")).is_empty(), "another seed");
 }

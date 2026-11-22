@@ -75,6 +75,9 @@ function pixelSvg(pixels: Pixels): string {
   return `<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' viewBox='0 0 ${width} ${height}' shape-rendering='crispEdges'>${rects.join('')}</svg>`;
 }
 
+/** A pixel picture as SVG markup, each pixel a rect, crisp at any whole size: the Journal's art is laid from it. */
+export const svgOf = pixelSvg;
+
 /** A faction's emblem as SVG markup, or null for a faction with none. */
 export function emblemSvg(faction: number): string | null {
   const emblem = EMBLEMS[faction];

@@ -4,11 +4,21 @@ import { test } from 'node:test';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
-import { GATHER_S, GATHER_STIR_M, NODE_REACH_M, POINT_REACH_M, STOCK_MOST, questRings, useAt } from './footGear.ts';
+import {
+  GATHER_S,
+  GATHER_STIR_M,
+  NODE_REACH_M,
+  POINT_REACH_M,
+  STOCK_MOST,
+  STORY_BEHIND_ON_FOOT,
+  questRings,
+  tellsPrologue,
+  useAt,
+} from './footGear.ts';
 import { markedHere } from './overheadMarks.ts';
 import { QUESTS } from './quests/questBook.ts';
 import { OPEN_AT } from './gearScreen.ts';
-import { SERVED_M } from './plazaLife.ts';
+import { SERVED_M, countersOf } from './plazaLife.ts';
 import { awayFromCounters } from './townsfolk.ts';
 import type { StationInfo } from './nodes.ts';
 
@@ -65,6 +75,34 @@ test('a node is not offered on horseback, nor while its resource is full', () =>
   assert.ok(useAt(near, 0, {}, gear, ask)?.gather === 3);
   assert.equal(useAt(near, 0, {}, gear, ask, undefined, true), null, 'mounted');
   assert.equal(useAt(near, 0, {}, { ...gear, resources: [STOCK_MOST] }, ask), null, 'full');
+});
+
+test('the room is told the prologue was played once for each word on the gear that says it is not kept', () => {
+  const unkept = { prologueDone: false } as unknown as GearState;
+  const restored = { prologueDone: false } as unknown as GearState;
+  assert.equal(tellsPrologue(unkept, true, null), true);
+  assert.equal(tellsPrologue(unkept, true, unkept), false, 'told once for that word');
+  assert.equal(tellsPrologue(restored, true, unkept), true, 'told again once the kept character comes');
+  assert.equal(tellsPrologue({ prologueDone: true } as unknown as GearState, true, null), false);
+  assert.equal(tellsPrologue(unkept, false, null), false, 'not played in this browser');
+  assert.equal(tellsPrologue(null, true, null), false);
+});
+
+test('on foot the room is always told, so no character is kept out by a prologue that did not run', () => {
+  // Every way onto foot comes after the story: played through, Begin at the title, a `?at=` link, or a story that
+  // could not start or go on.
+  const unkept = { prologueDone: false } as unknown as GearState;
+  assert.equal(tellsPrologue(unkept, STORY_BEHIND_ON_FOOT, null), true);
+});
+
+test('the bounty board is used where a player stands before it, though no keeper stands there, and marked', () => {
+  const ask = () => undefined;
+  const here = countersOf({ stations: [WEAPONSMITH], board: [5, 0] });
+  assert.equal(useAt(5.5, 0, here, null, ask)?.words, 'The Bounty Board: bounties for XP and Aurem');
+  assert.equal(useAt(9, 0, here, null, ask), null, 'past its reach');
+  const keepers = markedHere(null, { stations: [WEAPONSMITH] }, () => 0).length;
+  assert.equal(markedHere(null, here, () => 0).length, keepers + 1, 'its mark beside the keepers');
+  assert.deepEqual(countersOf({ stations: [WEAPONSMITH] }).stations, [WEAPONSMITH], 'no board in any other plaza');
 });
 
 test("the page's reach, hold and stock are the room's", async () => {

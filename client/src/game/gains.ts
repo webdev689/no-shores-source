@@ -1,9 +1,9 @@
-// What the player gained between two words from the room on their gear: Aurem and Shapes, XP, each
-// faction's reputation, each Art's progress and fragments, fragments, essence and Fruit of Dagon, each island's
-// resource, the ship's materials and XP, ammunition from an Ammo box, Ammo crates, and every item, Vestige, emblem and
-// cosmetic new to them. What they spent or moved is not a gain, nor the ammunition a crate they used gave back.
-// Currency, XP, reputation and an Art's progress are short lines, as Destiny shows them over the items' rows. Prestige
-// is not a gain: it is what the armour worn is worth.
+// What the player gained between two words from the room on their gear: Aurem and Shapes, XP, each faction's
+// reputation, each Art's progress and fragments, fragments, essence and Fruit of Dagon, each island's resource, the
+// ship's materials and XP, ammunition from an Ammo box, Ammo crates, every item, Vestige, emblem and cosmetic new to
+// them, and the letters sent to their mail. What they spent or moved is not a gain, nor the ammunition a crate they
+// used gave back. Currency, XP, reputation and an Art's progress are short lines, as Destiny shows them over the
+// items' rows. Prestige is not a gain: it is what the armour worn is worth.
 // The feed at the right of the screen shows these as Destiny shows what is picked up.
 
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
@@ -16,7 +16,7 @@ import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
 import { EMBLEMS } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
-import { bardingSvg, shapesSvg } from './npc/npcMarks.ts';
+import { bardingSvg, keeperMarkSvg, shapesSvg } from './npc/npcMarks.ts';
 import { rarityNamed } from './npc/npcWares.ts';
 
 /** One gain: what merges with the same gain shown already, its name, how many, and how it is drawn. */
@@ -177,5 +177,9 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
     if (!worn.has(emblem)) gains.push(gain(`emblem-${emblem}`, EMBLEMS[emblem]?.name ?? 'Emblem', 1, { emblem }));
   const owned = new Set(before.cosmetics ?? []);
   for (const number of after.cosmetics ?? []) if (!owned.has(number)) gains.push(...cosmeticGain(number));
+  // What went to the mail rather than being lost is told as it goes, under the Postmaster's mark.
+  const posted = new Set((before.mail ?? []).map((letter) => letter.id));
+  const sent = (after.mail ?? []).filter((letter) => !posted.has(letter.id)).length;
+  if (sent > 0) gains.push(gain('mail', 'Sent to the mail', sent, { icon: keeperMarkSvg('mail') }));
   return gains;
 }

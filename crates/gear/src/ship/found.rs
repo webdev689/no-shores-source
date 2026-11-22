@@ -1,12 +1,14 @@
 //! What the ship's salvage holds, wherever it is found: what floats where a ship went down, wreckage scavenged on an
 //! island, and a sea Breach's hold. Each gives ship materials and now and then a module, rolled as a Vestige's item is
-//! (`vestige::make`), its colour never past what its level could drop. Taken, the module is carried with its slot's.
+//! (`vestige::make`), its colour never past what its level could drop. Taken, the module is carried with its slot's,
+//! or sent to the mail while that slot carries nine.
 
 use super::materials::{ShipMaterial, ShipStock};
 use crate::character::{At, CARRIED_MOST, Character};
 use crate::dice::{Dice, Purpose};
 use crate::item::{Item, NAMED_LEVEL};
 use crate::kinds::Slot;
+use crate::mail::{self, Posted};
 use crate::rarity::Rarity;
 use crate::vestige;
 
@@ -93,18 +95,22 @@ pub struct Taken {
 }
 
 impl Character {
-    /// Takes salvage: each material up to its most, and the module carried with its slot's, numbered as it is taken,
-    /// unless that slot carries nine already.
+    /// Takes salvage: each material up to its most, and the module carried with its slot's, numbered as it is taken;
+    /// with that slot carrying nine already, the module goes to the mail.
     pub fn take_salvage(&mut self, salvage: Salvage) -> Taken {
         let mut taken = Taken::default();
         for material in ShipMaterial::ALL {
             let got = self.materials.ship.add(material, salvage.materials.of(material));
             taken.materials.add(material, got);
         }
-        if let Some(module) = salvage.module.filter(|module| self.carried_in(module.bucket) < CARRIED_MOST) {
-            let id = self.take_id();
-            self.items.insert(id, (Item { id, ..module }, At::Carried));
-            taken.module = Some(id);
+        match salvage.module {
+            Some(module) if self.carried_in(module.bucket) < CARRIED_MOST => {
+                let id = self.take_id();
+                self.items.insert(id, (Item { id, ..module }, At::Carried));
+                taken.module = Some(id);
+            }
+            Some(module) => self.post(mail::Source::Salvage, Posted::Item(module)),
+            None => {}
         }
         taken
     }

@@ -67,6 +67,31 @@ table GearDrop {
   flying: ubyte;
 }
 
+// A letter of the game's mail: its number, where what it holds came from (the gear crate's `mail::Source`, which the
+// page words), whether it tells of a letter a full mailbox let go, and what it holds, a Vestige (never in the vault) or
+// an item, each numbered anew as it is taken; a letter may hold neither.
+table GearLetter {
+  id: uint;
+  from: ubyte;
+  crowded: bool;
+  vestige: GearVestige;
+  item: GearItem;
+}
+
+// A bounty of the day's board as it stands for a player: its words, how many it asks, how many they have counted,
+// whether they hold it and whether they turned it in.
+table GearBounty {
+  words: string;
+  target: uint;
+  count: uint;
+  held: bool;
+  paid: bool;
+  // Where it counts, by the board's pools: 0 on land, 1 at sea, 2 in dungeons.
+  pool: ubyte;
+  // Its short name, as its card heads it.
+  name: string;
+}
+
 // A player's own gear, sent to them alone whenever it changes: their XP, level, Prestige and Defense; their Aurem,
 // then their Weapon and Armor Fragments, Weapon and Armor Essence and Fruit of Dagon, and each island's resource in
 // the catalogue's order; their items, Vestiges and those lying for them; the room's resource nodes they have spent; whether they stand where a Vestige opens (the Mage's counter, or the
@@ -148,8 +173,9 @@ table Gear {
   // In a social space, every faction's wares in the factions' order, each numbered by its place among its faction's
   // and priced in Aurem: its cape, its armour and its weapons, as the room makes them.
   faction_wares: [GearItem];
-  // The day, counted from the epoch at UTC midnight, whose smiths' wares the message shows: a smith's ware is asked
-  // by it, so none sent as the day turns buys the next day's.
+  // The clock's day the room's word is of (`gear::clock::day_of`, each beginning at 09:00 UTC): the smiths' wares it
+  // shows are that day's, and a smith's ware is asked by it, so none sent as the day turns buys the next day's. An
+  // ask about the bounty board sends it back too.
   day: uint;
   // The quest they walk, by its place in content/quests/quests.json counted from 1 (0 for none), its task, and that
   // task's goals' counts in its order; each quest done (1) or not (0) in the file's order; each Art's earned bits in
@@ -183,6 +209,25 @@ table Gear {
   // there, the model's yaw (radians clockwise from north, turning its +z as an RMB block's yaw does), and which of
   // the six entrance models it is (0 to 5).
   dungeons: [double];
+  // Whether they have finished the prologue, as kept with their character. A room that writes no word of it (one built
+  // before it was said) reads as past it, as a save with no story does.
+  prologue_done: bool = true;
+  // Their day's and week's record as kept with their character (gear's Activity): the day it is for and the tiers of
+  // the dungeon of the day cleared then (0 Normal, 1 Elite, 2 Abyss); the week it is for, whether they cleared the
+  // Elite and the Abyss Dungeon of the week, and whether they hold the Abyss boon. The page judges each by its own day.
+  activity_day: uint;
+  cleared: [ubyte];
+  activity_week: uint;
+  week_elite: bool;
+  week_abyss: bool;
+  boon: bool;
+  // The day's six bounties on the board, in its order, as they stand for them (none held from another day); and what
+  // each pays them when turned in, at their level.
+  bounties: [GearBounty];
+  bounty_xp: uint;
+  bounty_aurem: uint;
+  // The game's letters waiting for them at the mail counter, oldest first.
+  mail: [GearLetter];
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

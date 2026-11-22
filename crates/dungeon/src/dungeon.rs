@@ -18,6 +18,8 @@ use crate::{CELL_M, Cell, SIDES, Side};
 /// Blocks a dungeon grows to, fewest and most, each count as likely; and the share of dungeons whose last block is
 /// laid in the style below.
 pub const BLOCKS: (usize, usize) = (2, 5);
+/// Blocks an Elite Dungeon grows to: four or five, longer than a patrol's.
+pub const ELITE_BLOCKS: (usize, usize) = (4, 5);
 const DEEPER_SHARE: f64 = 0.5;
 /// A doorway's frame: the opening's half width, the jambs' depth into the corridor, and the lintel's underside (m).
 pub const DOORWAY_HALF_M: f64 = 0.8;
@@ -147,7 +149,14 @@ impl Dungeon {
     /// last is laid in the style below on another.
     #[must_use]
     pub fn forge(seed: u32, style: Style) -> Self {
-        let count = Lane::named(&format!("size:{seed}")).int(BLOCKS.0, BLOCKS.1);
+        Self::forge_within(seed, style, BLOCKS)
+    }
+
+    /// The dungeon a seed lays in a style, its block count drawn within `blocks`, fewest and most, each as likely, on
+    /// its size lane.
+    #[must_use]
+    pub fn forge_within(seed: u32, style: Style, blocks: (usize, usize)) -> Self {
+        let count = Lane::named(&format!("size:{seed}")).int(blocks.0, blocks.1);
         let deeper = Lane::named(&format!("deeper:{seed}")).chance(DEEPER_SHARE);
         let grown = grow(&mut Lane::named(&format!("squares:{seed}")), count);
         let (west, north) =

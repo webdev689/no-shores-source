@@ -105,6 +105,7 @@ test('a voyage for an anchorage from the far side comes in through its gate, not
   assert.deepEqual(detour(straightIn, keptClear([isle])), straightIn);
 });
 
+// crates/room/src/sea_islands_tests.rs folds the same two seeds to the same digits, as the sea names the room.
 test("a door's dungeon room is named by its continent, style and the island's seed folded to 32 bits", () => {
   assert.equal(dungeonRoomName('255', 'crypt', 'continent-2'), 'sea-dungeon-continent-2-crypt-000000ff');
   const seed = BigInt('0x123456789abcdef0').toString();

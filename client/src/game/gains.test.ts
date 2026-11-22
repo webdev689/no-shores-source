@@ -122,6 +122,19 @@ test('Shapes gained and a cosmetic newly kept are gains, each with a picture of 
   assert.deepEqual(gainsOf(state({ shapes: 6 }), state({ shapes: 1 })), [], 'Shapes spent are no gain');
 });
 
+test('letters newly in the mail are told as sent there, counted together; those already waiting are not', () => {
+  const letter = (id: number) => ({ id, from: 0, crowded: false, vestige: null, item: null });
+  const before = state({ mail: [letter(1)] });
+  const after = state({ mail: [letter(1), letter(5), letter(6)] });
+  const sent = gainsOf(before, after).filter((gained) => gained.key === 'mail');
+  assert.deepEqual(
+    sent.map((gained) => gained.count),
+    [2],
+  );
+  assert.ok(sent[0]?.icon, 'under the Postmaster’s mark');
+  assert.deepEqual(gainsOf(after, state({ mail: [letter(6)] })), [], 'a letter taken is no gain');
+});
+
 test('XP, reputation and an Art’s progress are short lines; a level, a fragment and the ship’s materials are rows', () => {
   const before = state({
     xp: 1000n,

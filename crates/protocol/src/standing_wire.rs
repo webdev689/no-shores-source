@@ -55,7 +55,7 @@ pub(crate) fn standing_of<'built>(
         Vec::new()
     };
     let shape = room.shape_at().filter(|_| social);
-    let week = gear::shape::week_of(room.minute);
+    let week = gear::clock::week_of(room.minute);
     let shape_place = shape.map_or(crate::gear_wire::SHAPE_AWAY, |_| {
         u8::try_from(gear::shape::place(week)).unwrap_or(crate::gear_wire::SHAPE_AWAY)
     });

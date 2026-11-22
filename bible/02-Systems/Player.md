@@ -63,8 +63,11 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   (`StripFetcher`) fetches six at a time, each dress's next in turn, skipping any strip already held, and each strip
   with its depth in one range, as the packs lay them side by side; a joined range that fails falls back to each strip's
   own. A strip fetched ahead that fails is let go at once, so a frame that wants it fetches it again; one the page names
-  no place for is none, and is not kept as missing. The fetched bytes are kept (96 MB) apart from the decoded strips
-  (128 MB, a few moves of a few dresses), so a strip let go is decoded again rather than fetched.
+  no place for is none, and is not kept as missing. The fetched bytes are kept (32 MB) apart from the decoded strips
+  (128 MB, a few moves of a few dresses), so a strip let go is decoded again rather than fetched. Every strip's bytes
+  are read from its pack a 256 KB block at a time, each block kept in the browser's storage (`forge/store.ts`,
+  `PackBlocks`; [[Areas Load in Chunks With Proper Caching]]): the strips a dress asks for together lie together in a
+  pack, so a burst of them comes in one request, and from the disk after.
 - **A room** (`Fighting`): it is joined with the player's session, if they have one, to keep their character
   ([[Accounts]]). Each tick's intent goes to it, with what the figure shows, the dress when it changed, a gear ask and
   a respawn when asked. Each snapshot corrects the prediction, keeps the player's standing with the room's section,

@@ -34,6 +34,7 @@ struct Now {
     shots: Vec<combat::Shot>,
     spells: Vec<SpellSeen>,
     cache: Option<[f64; 5]>,
+    revives: Option<u8>,
 }
 
 #[derive(Debug, Default)]
@@ -83,6 +84,7 @@ impl Sent {
             shots: room.shots().copied().collect(),
             spells: room.spells_seen().collect(),
             cache: room.cache(),
+            revives: room.revives(),
         };
         let own: BTreeMap<_, _> = now
             .players
@@ -163,6 +165,7 @@ impl Sent {
             lines: &lines,
             spells: &now.spells,
             cache: now.cache.as_ref().map_or(&[], |cache| cache.as_slice()),
+            revives: now.revives,
         })
     }
 }

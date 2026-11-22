@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Charting } from './charting.ts';
+import { Charting, WARM_REACH_M } from './charting.ts';
 
 const continents = [
   {
@@ -72,4 +72,24 @@ test('a continent that will not open is not tried again', async () => {
     console.error = quiet;
   }
   assert.equal(tries, 1);
+});
+
+test("a continent is warmed once as the ship comes within twice its opening's reach, before it is opened", () => {
+  const warmed: string[] = [];
+  const opened: string[] = [];
+  const charting = new Charting(
+    continents,
+    (id) => (opened.push(id), new Promise<string>(() => undefined)),
+    () => undefined,
+    (id) => warmed.push(id),
+  );
+  // South of the far continent, where its coast is the nearest.
+  const off = (metres: number): [number, number] => [350_000, -metres];
+  charting.tick(off(WARM_REACH_M + 1000), 'home', 1, true);
+  assert.deepEqual(warmed, [], 'not yet near enough');
+  charting.tick(off(WARM_REACH_M - 1000), 'home', 1, true);
+  charting.tick(off(WARM_REACH_M - 2000), 'home', 1, true);
+  assert.deepEqual([warmed, opened], [['far'], []], 'warmed once, not yet opened');
+  charting.tick(off(40_000), 'home', 1, true);
+  assert.deepEqual(opened, ['far']);
 });

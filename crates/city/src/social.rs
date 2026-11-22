@@ -1,8 +1,10 @@
 //! Stage I: the city's social space, the one part of it a player walks, as Destiny 1's Tower is the one part of its
 //! City walked. A plaza the Tower's size beside the landmark on its seaward side, level with the landmark's foot,
-//! walled all round with a parapet and laid out as a courtyard (`courtyard`); from it the city below and the harbour
-//! are seen whole and never reached.
+//! walled all round with a parapet and laid out as a courtyard (`courtyard`); Overlook's is its hub (`hub`), the bounty
+//! board and the mail counter on it (`board`, `mail`). From it the city below and the harbour are seen whole and never
+//! reached.
 
+use crate::board::Board;
 use crate::courtyard::{Frame, PARAPET_TOP_M, SPAWN_OFFSETS_M, courtyard, townsfolk_life, visitor_spots};
 use crate::landmarks::{Landmark, ahead};
 use crate::life::{Post, Ways};
@@ -31,6 +33,9 @@ pub struct Social {
     pub solids: Vec<Solid>,
     /// The stations in its arcades' alcoves (`stations`).
     pub stations: Vec<Station>,
+    /// Overlook's bounty board, on its hub's landing (`board`); none in any other city's plaza, whose plan says nothing.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub board: Option<Board>,
     /// Where a visitor of no counter may stand, one a week (`visitor_spots`): Shape's places.
     pub visitor_spots: Vec<[f64; 2]>,
     /// The ways its townsfolk walk, and the posts where they work, play or stay a while (`life`).
@@ -141,6 +146,7 @@ pub fn plaza(
         spawns,
         solids,
         stations,
+        board: None,
         visitor_spots,
         ways,
         posts,

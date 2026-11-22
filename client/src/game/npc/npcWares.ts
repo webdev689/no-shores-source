@@ -292,11 +292,12 @@ export function rowsOf(kind: KeeperKind, gear: GearState, choosing = false): Row
   }
 }
 
-/** The currencies a keeper deals in: Shapes for Shape, what an Art's rise takes for a faction, else Aurem. */
+/** The currencies a keeper deals in: Shapes for Shape, what an Art's rise takes for a faction, none at the Mage's and
+ *  the Postmaster's, who sell nothing, else Aurem. */
 export function purseOf(kind: KeeperKind, gear: GearState): Coin[] {
   if (kind === 'shape') return [{ glyph: 'shapes', amount: gear.shapes ?? 0, name: 'Shapes' }];
   const aurem: Coin = { glyph: 'aurem', amount: gear.aurem, name: 'Aurem' };
-  if (KEEPERS[kind].faction === undefined) return kind === 'mage' ? [] : [aurem];
+  if (KEEPERS[kind].faction === undefined) return kind === 'mage' || kind === 'mail' ? [] : [aurem];
   const stocks = ['weapon-fragments', 'armor-fragments', 'weapon-essence', 'armor-essence'] as const;
   return [
     aurem,

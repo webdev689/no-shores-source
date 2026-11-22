@@ -1,12 +1,14 @@
 //! A patrol's dungeon as a room: the Forge's floor in the dungeon's own frame (x east, y south from its north-west
 //! corner, its floor at 0 m), one spawn at the way in, and a navmesh over the whole dungeon kept to the floor joined to
-//! the way in. Its garrison is the Grey Tithe's dungeon garrison standing where the Forge puts foes: the Reeve, a
-//! Miniboss, alone in the end room, and a band in each other room past the way in's, each room's on its free cells
-//! nearest its middle, its quiet cells first, round its props. Beside the Reeve's post stands the cache, shut while the Reeve stands; when the Reeve falls it
-//! opens and every player then in the room finds a Vestige before it, theirs alone.
+//! the way in. Its garrison is the Grey Tithe's dungeon garrison standing where the Forge puts foes: its end foe (the
+//! Reeve, a Miniboss, or an Elite Dungeon's own Boss) alone in the end room, and a band in each other room past the
+//! way in's, each room's on its free cells nearest its middle, its quiet cells first, round its props. Beside the end
+//! foe's post stands the cache, shut while it stands; when it falls the cache opens and every player then in the room
+//! finds a Vestige before it, theirs alone, and a second where the run's first clear pays (`run_room.rs`).
 
 use crate::dungeon_ground::clear_of;
 use crate::garrison::{DUNGEON, Post, draws_of, index, node_seed};
+use crate::run::Run;
 use crate::{Floor, NODE_FOES_MOST, PlayerId, Room};
 use ::foes::Rank::{self, Miniboss};
 use ::foes::roster::{REEVE, foe_type};
@@ -105,15 +107,20 @@ fn band_rooms(dungeon: &Dungeon, most: usize) -> Vec<usize> {
 }
 
 impl Room {
-    /// A patrol's dungeon by its number as a room, its garrison standing at the patrol's island band of `levels`: none
-    /// for a number past the patrol's dungeons.
+    /// A patrol's dungeon by its number as its patrol's shared room, its garrison standing at the patrol's island band
+    /// of `levels`, its first clear at Normal paying the day's while it is its island's dungeon of the day: none for a
+    /// number past the patrol's dungeons.
     #[must_use]
     pub fn dungeon(patrol: &str, number: usize, levels: Option<(u8, u8)>) -> Option<Self> {
         if number >= dungeon::PER_PATROL {
             return None;
         }
         let (seed, style) = dungeon::of_patrol(patrol, number);
-        Self::dungeon_of(&format!("{patrol}--dungeon-{number}"), seed, style, levels)
+        let (name, laid) = (format!("{patrol}--dungeon-{number}"), Dungeon::forge(seed, style));
+        let mut room = Self::laid_dungeon(&name, &laid, levels, (REEVE, Miniboss), Some(Run::today(patrol, number)))?;
+        room.place = Some(gear::gate::Place::PatrolDungeon);
+        room.island = gear::activities::island_of(patrol).map(|island| island.continent);
+        Some(room)
     }
 
     /// The room of a dungeon laid by a seed and a style, where no patrol lays it (a sea island's): `name` seeds its
@@ -121,28 +128,43 @@ impl Room {
     /// where its floor cannot be made.
     #[must_use]
     pub fn dungeon_of(name: &str, seed: u32, style: dungeon::Style, levels: Option<(u8, u8)>) -> Option<Self> {
-        let dungeon = Dungeon::forge(seed, style);
-        let floor = Floor::of_dungeon(&dungeon)?;
+        Self::laid_dungeon(name, &Dungeon::forge(seed, style), levels, (REEVE, Miniboss), None)
+    }
+
+    /// The room of a laid dungeon: `name` seeds its world, `levels` is its foes' band, `end` the type and rank that
+    /// stands alone in its end room, and `run` what its run carries, known before its garrison stands. Gated by its
+    /// tier alone until its maker says what place it is. None where its floor cannot be made.
+    pub(crate) fn laid_dungeon(
+        name: &str,
+        dungeon: &Dungeon,
+        levels: Option<(u8, u8)>,
+        end: (u8, Rank),
+        run: Option<Run>,
+    ) -> Option<Self> {
+        let floor = Floor::of_dungeon(dungeon)?;
         let (width, depth) = (dungeon.columns as f64 * CELL_M, dungeon.rows as f64 * CELL_M);
         let ([x, y], [toward_x, toward_y]) = dungeon.arrival();
         let ring = vec![[0.0, 0.0], [width, 0.0], [width, depth], [0.0, depth]];
         // Its jambs and pillars are its ground's own walls, not blocks a body could climb.
         let mut room = Self::node(floor, Vec::new(), Section { ring, spawns: vec![[x, y]], falls_kill: false });
         room.facing = bearing([x, y], [x + toward_x, y + toward_y]);
+        // Shut by its seas alone, as a node with no patrol is; a patrol's own dungeon is gated as its patrol.
+        room.place = Some(gear::gate::Place::Node);
         room.world_seed = node_seed(name);
         room.foes_most = NODE_FOES_MOST;
-        room.stand_dungeon_garrison(&dungeon, levels);
+        room.run = run;
+        room.stand_dungeon_garrison(dungeon, levels, end);
         Some(room)
     }
 
-    /// Posts the Reeve alone at the end room's middle, facing the way in, and a band drawn from the dungeon garrison in
-    /// each room `band_rooms` names, each foe on a cell nearest its room's middle facing out from it; then girds and
-    /// stands them as any garrison, and lays the cache by the Reeve.
-    fn stand_dungeon_garrison(&mut self, dungeon: &Dungeon, levels: Option<(u8, u8)>) {
+    /// Posts the end foe alone at the end room's middle, facing the way in, and a band drawn from the dungeon garrison
+    /// in each room `band_rooms` names, each foe on a cell nearest its room's middle facing out from it; then girds and
+    /// stands them as any garrison, and lays the cache by the end foe.
+    fn stand_dungeon_garrison(&mut self, dungeon: &Dungeon, levels: Option<(u8, u8)>, (number, rank): (u8, Rank)) {
         let (arrival, _) = dungeon.arrival();
         let end = dungeon.end();
         let reeve = self.placed(dungeon, end, 1).first().copied().unwrap_or([arrival[0], arrival[1], 0.0]);
-        let members = vec![(REEVE, Miniboss, reeve, bearing([reeve[0], reeve[1]], arrival))];
+        let members = vec![(number, rank, reeve, bearing([reeve[0], reeve[1]], arrival))];
         self.garrison.push(Post {
             at: reeve,
             members,
@@ -212,10 +234,23 @@ impl Room {
         let Some(post) = self.garrison.get(cache.post) else { return };
         let open = post.cleared_at.is_some();
         if open && !cache.open {
+            if let Some(run) = self.run.as_mut() {
+                run.won = true;
+            }
             let level = self.at_seas(post.girds.first().map_or(0, |&(level, _)| level));
             let players: Vec<PlayerId> = self.players.keys().copied().collect();
+            let (cleared, day) =
+                (gear::objectives::Feat::Cleared { island: self.island, tier: self.difficulty }, self.day());
             for player in players {
                 self.lay_cache_vestige(player, &cache, level);
+                self.pay_clear(player, level);
+                // Counted as the clear pays, for those the room keeps, once a day each however often the cache opens.
+                let owner = self.players.get(&player).and_then(|found| found.owner.clone());
+                let first =
+                    owner.is_some_and(|owner| self.run.as_mut().is_some_and(|run| run.count_clear(&owner, day)));
+                if first {
+                    self.saw(player, &cleared);
+                }
             }
         }
         self.cache = Some(Cache { open, ..cache });

@@ -45,12 +45,12 @@ pub fn set_ground(text: &[u8]) -> bool {
     kept
 }
 
-/// Keeps a patrol's dungeon's ground for predicting a fighter without a room, from the JSON ask `room_dungeon` takes
-/// (its patrol's id and name and its number), and an empty course: a dungeon's jambs and pillars are its ground's own.
-/// Answers whether the ask was a dungeon.
+/// Keeps a dungeon's ground for predicting a fighter without a room, from the JSON ask `room_dungeon` takes (a
+/// patrol's id and name and its number, an Elite Dungeon's place, or a seed and a style), and an empty course: a
+/// dungeon's jambs and pillars are its ground's own. Answers whether the ask was a dungeon.
 pub fn set_dungeon(text: &[u8]) -> bool {
     let Some(floor) = crate::dungeon_door::asked(text)
-        .and_then(|(seed, style)| Floor::of_dungeon(&dungeon::Dungeon::forge(seed, style)))
+        .and_then(|(seed, style, blocks)| Floor::of_dungeon(&dungeon::Dungeon::forge_within(seed, style, blocks)))
     else {
         return false;
     };
@@ -70,7 +70,7 @@ pub fn set_heights(bytes: &[u8]) -> bool {
 }
 
 /// Keeps the rim round a course laid over the sea for predicting a fighter without a room, from its blocks' numbers,
-/// five each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
+/// six each: the floor the sea room holds its bodies by (`Floor::Sea`), so a fighter predicted at its edge is held
 /// as the room holds it. Answers whether the numbers were blocks.
 pub fn set_rim(bytes: &[u8]) -> bool {
     let floats = floats_of(bytes);

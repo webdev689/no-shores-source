@@ -63,3 +63,5 @@ Where [[Overlook Is a Shared World After Destiny 1]] differs, it holds: islands 
 world.
 
 How it is built: [[World Map]].
+
+The discoveries hold the sea's dungeons: [[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]].

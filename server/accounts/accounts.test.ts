@@ -72,7 +72,7 @@ test('the API answers any page, and nothing it does not know', async () => {
   assert.equal((await ask('GET', `/v1/discord/start?back=${PAGE}/`)).status, 503, 'no keys, no Discord');
 });
 
-test('one room at a time holds a character; a claim waits for another to let go, then takes it', async () => {
+test('one room at a time holds a character; a claim waits for another to let go, takes it, and says from where', async () => {
   const { deps, clock, ask } = accounts();
   const token = (await ask('POST', '/v1/guest')).body['token'] as string;
   const waited: number[] = [];
@@ -85,11 +85,12 @@ test('one room at a time holds a character; a claim waits for another to let go,
   const first = await kept.claim(token, 'room-a:1');
   assert.ok(first);
   assert.equal(first.body, null, 'none kept yet');
+  assert.equal(first.from, null, 'held nowhere before');
   assert.equal(await kept.save(first.account, 'room-a:1', '{"xp":5}'), true);
 
   // A second room waits three seconds for the first to let go, then takes the character anyway.
   const second = await kept.claim(token, 'room-b:1');
-  assert.deepEqual(second, { account: first.account, body: '{"xp":5}' });
+  assert.deepEqual(second, { account: first.account, body: '{"xp":5}', from: 'room-a' });
   assert.equal(
     waited.reduce((sum, millis) => sum + millis, 0),
     3000,
@@ -100,13 +101,18 @@ test('one room at a time holds a character; a claim waits for another to let go,
   // Let go with a last save, the next claim takes it at once.
   assert.equal(await kept.release(first.account, 'room-b:1', '{"xp":9}'), true);
   waited.length = 0;
-  assert.deepEqual(await kept.claim(token, 'room-a:2'), { account: first.account, body: '{"xp":9}' });
+  assert.deepEqual(await kept.claim(token, 'room-a:2'), { account: first.account, body: '{"xp":9}', from: 'room-b' });
   assert.deepEqual(waited, []);
 
   // A hold its room stopped saving lapses.
   clock.now += HOLD_MS + 1;
-  assert.deepEqual(await kept.claim(token, 'room-c:1'), { account: first.account, body: '{"xp":9}' });
+  assert.deepEqual(await kept.claim(token, 'room-c:1'), { account: first.account, body: '{"xp":9}', from: 'room-a' });
   assert.deepEqual(waited, []);
+
+  // Let go untouched (its gate shut), it was never in that room: the next claim comes from the room before.
+  assert.equal(await kept.release(first.account, 'room-c:1', null), true);
+  assert.equal((await kept.look(token))?.from, 'room-a');
+  assert.equal((await kept.claim(token, 'room-d:1'))?.from, 'room-a');
 });
 
 test('limits are kept by address, an IPv6 address by its /64; a name no account can hold is never kept', async () => {
