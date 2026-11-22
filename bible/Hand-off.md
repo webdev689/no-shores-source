@@ -252,8 +252,6 @@ The decisions in [[Open Questions]] are not repeated here.
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
     a rebound Details or Character. The clash finder sees neither.
   - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`, which #135 changes).
-  - A charge run off a drop judges a body's height from where it set off, as a leap did before this audit: whether a
-    charge, too, strikes from where it ends is the owner's to say ([[Combat]], "a leap's from where it lands").
   - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
     scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
     (`server/worker.ts`) has no test.

@@ -112,7 +112,7 @@ pub struct TelegraphOrder {
 
 /// A telegraphed blow winding up: its shape, ticks since it began, the wind-up's length, where the shape stands
 /// (the foe's feet when it began) and the bearing it points, how far ahead a leap or an aimed shot reaches, whether it
-/// is iron, and the tick a feint is cut at.
+/// is iron, the tick a feint is cut at, and the height a charge or a leap came down at once it lands.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Telegraph {
     pub shape: Shape,
@@ -123,6 +123,7 @@ pub struct Telegraph {
     pub ahead: f64,
     pub iron: bool,
     pub feint_at: Option<u32>,
+    pub landed_z: Option<f64>,
 }
 
 impl Telegraph {
@@ -139,6 +140,7 @@ impl Telegraph {
             ahead: order.ahead,
             iron: order.iron,
             feint_at: order.feint_at,
+            landed_z: None,
         }
     }
 
@@ -183,15 +185,17 @@ impl Telegraph {
     }
 
     /// Whether its blow strikes a body standing at `feet`: inside its shape on the ground, within a blow's height of
-    /// its foe, and with no block between the body and where the blow comes from (a leap's landing, else its foe).
+    /// its foe where it ends (a charge's or a leap's where it came down), and with no block between the body and where
+    /// the blow comes from (a leap's landing, else its foe as it set off).
     #[must_use]
     pub fn strikes(&self, feet: [f64; 3], blocks: &[Block]) -> bool {
+        let ends_z = self.landed_z.unwrap_or(self.origin[2]);
         let leap = self.landing().filter(|_| self.shape == Shape::Leap);
-        let from = leap.unwrap_or([self.origin[0], self.origin[1]]);
+        let (from, from_z) = leap.map_or(([self.origin[0], self.origin[1]], self.origin[2]), |at| (at, ends_z));
         let chest = |x: f64, y: f64, z: f64| [x, y, z + CHEST];
         self.holds(feet[0], feet[1])
-            && (feet[2] - self.origin[2]).abs() <= STRIKE_HEIGHT
-            && clear_line(blocks, chest(from[0], from[1], self.origin[2]), chest(feet[0], feet[1], feet[2]))
+            && (feet[2] - ends_z).abs() <= STRIKE_HEIGHT
+            && clear_line(blocks, chest(from[0], from[1], from_z), chest(feet[0], feet[1], feet[2]))
     }
 
     /// Where its foe's feet go at the end of a charge or a leap: along its lane, or to its disc.
