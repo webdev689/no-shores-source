@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { isDeepStrictEqual } from 'node:util';
 import type { GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
-import { bannerFor, bannerSvg } from '../plus/journalArt.ts';
+import { BANNER_KEYS, bannerSvg } from '../plus/journalArt.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface, UiEvent } from '../ui/ui.ts';
-import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
+import { byId, fakeInterface, laidOf, laidWith, nodesOf, wordsIn } from '../ui/uiForTests.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { sizesOf } from './gearNodes.ts';
 import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
@@ -41,15 +42,25 @@ const weekEnding = (endsAt: number, day = 20_778): ThisWeek => ({
   week: { endsAt: endsAt + 3 * 86_400_000, dungeons: [], boon: null },
 });
 
-/** The Journal drawn frame by frame as the menu frames it: its hourglass over its page, the last tree built, a step of
- *  frames hearing `events`, and a click on what an id names. */
-function journalOf(source: JournalSource, now = () => FRIDAY_AT, width = 1280) {
+/** The Journal drawn frame by frame as the menu frames it: its hourglass over its page in a solid window floated over
+ *  the world, the page given `tall` pixels of room; the last tree built, a step of frames hearing `events`, and a
+ *  click on what an id names. */
+function journalOf(source: JournalSource, now = () => FRIDAY_AT, width = 1280, tall = 700) {
   const { ui, step } = fakeInterface(width, 900);
   const journal = new Journal(source, now);
   const sizes = sizesOf(width, 900, 1);
   let built: Node = {};
-  const page = () => journal.page({ ui, sizes, room: { width: width - 120, height: 700 }, holds: null as never });
-  const tree = (): Node => ({ width: 'grow', direction: 'column', children: [journal.hourglass(ui), page()] });
+  const page = () => journal.page({ ui, sizes, room: { width: width - 120, height: tall }, holds: null as never });
+  const window: () => Node = () => ({
+    role: 'window',
+    solid: true,
+    width,
+    height: 900,
+    direction: 'column',
+    float: { to: 'screen', z: 20 },
+    children: [journal.hourglass(ui), page()],
+  });
+  const tree = (): Node => ({ width: 'grow', height: 'grow', children: [window()] });
   const frame = (events: UiEvent[] = []) => step(() => (built = tree()), events);
   const click = (id: string) => {
     const box = ui.boxOf(id);
@@ -98,7 +109,11 @@ test('the Journal shows the houses’ roads: the opening at its task before the 
     'a line of its tale: the opening line its first scene says',
   );
   const banner = nodesOf(byId(before.tree(), `quest-${opening.id}`)).find((node) => node.picture)?.picture;
-  assert.deepEqual(banner?.source, { svg: bannerSvg(bannerFor('story', opening.id)) }, 'a story mission’s banner');
+  const pennants = BANNER_KEYS.filter((key) => key.startsWith('story-')).map((key) => bannerSvg(key));
+  assert.ok(
+    pennants.some((svg) => isDeepStrictEqual(banner?.source, { svg })),
+    'a story mission’s banner',
+  );
   const pledged = journalOf({ week: () => null, kept: () => geared(roads(2, 3, [1, 0, 0, 0])) });
   const cards = nodesOf(pledged.tree()).filter((node) => node.id?.startsWith('quest-'));
   assert.deepEqual(
@@ -178,10 +193,51 @@ test('the timers stay down as the minute, the day and the gear change under them
   assert.equal(journal.down, true, 'still down');
 });
 
-test('two columns of cards where the page is wide, one where it is not', () => {
-  const wide = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) });
+test('two columns of cards where the page is wide, one where it is not; a card alone in its row keeps its width', () => {
+  const wide = journalOf({ week: () => null, kept: () => geared(roads(3, 0, [1, 1, 0, 0])) });
   const narrow = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) }, () => FRIDAY_AT, 800);
-  const [first, second] = [`quest-${QUESTS[0]?.id}`, `quest-${QUESTS[1]?.id}`];
+  const [first, second, third] = QUESTS.map((quest) => `quest-${quest.id}`);
+  assert.ok(first && second && third);
   assert.equal(wide.ui.boxOf(first)?.y, wide.ui.boxOf(second)?.y, 'side by side');
   assert.ok((narrow.ui.boxOf(first)?.y ?? 0) < (narrow.ui.boxOf(second)?.y ?? 0), 'one over the other');
+  assert.ok((wide.ui.boxOf(third)?.y ?? 0) > (wide.ui.boxOf(first)?.y ?? 0), 'the third on a row of its own');
+  assert.equal(wide.ui.boxOf(third)?.width, wide.ui.boxOf(first)?.width, 'as wide as the cards above it');
+});
+
+test('the timers stand within the room the menu gives the page, however many rows they hold', () => {
+  const { ui, journal, frame } = journalOf(
+    { week: () => weekEnding(FRIDAY_AT), kept: () => null },
+    () => FRIDAY_AT,
+    1280,
+    240,
+  );
+  journal.toggle();
+  frame();
+  const [page, timers] = [ui.boxOf('journal'), ui.boxOf('journal-timers')];
+  assert.ok(page && timers);
+  assert.ok(timers.y + timers.height <= page.y + 240, 'no lower than the page’s room');
+});
+
+test('a bounty’s card keeps its name within its edge, cut short where it is too long', () => {
+  const long = BOARD.map((one, place) => (place === 1 ? { ...one, name: 'A Name Far Too Long For Any Card' } : one));
+  const { tree } = journalOf({ week: () => null, kept: () => geared(null, long) });
+  const laid = laidOf(tree(), 1280, 900);
+  const card = laidWith(laid, 'bounty-card');
+  const name = laid.find((each) => each.node.text?.words === 'A NAME FAR TOO LONG FOR ANY CARD');
+  assert.ok(card && name);
+  assert.ok(name.box.x + name.box.width <= card.box.x + card.box.width, 'within the card');
+  assert.equal(name.node.text?.ellipsis, true, 'cut short');
+});
+
+test('the keys’ focus on a quest’s card edges it white, and no other card', () => {
+  const { ui, frame, tree } = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) });
+  const [first, second] = QUESTS.map((quest) => `quest-${quest.id}`);
+  assert.ok(first && second);
+  assert.equal(byId(tree(), first)?.outline, undefined, 'none before the keys come to it');
+  ui.focusOn(HOURGLASS);
+  frame([{ kind: 'key', key: 'Tab' }]);
+  frame();
+  assert.equal(ui.focusedId, first);
+  assert.ok(byId(tree(), first)?.outline, 'edged');
+  assert.equal(byId(tree(), second)?.outline, undefined);
 });

@@ -3,10 +3,9 @@
 //
 //     node tools/uiShot.mjs <shots.json>
 //
-// shots.json: { "size": [w, h], "scale": 2, "shots": [{ "module": "/src/game/tasks.ts", "build": "trackerShot",
-// "out": "target/ui/tracker.png", "size": [w, h], "events": [...] }] }. `build` is a function the module exports that
-// takes the interface (`Interface`) and answers the tree; `events` are heard on the second frame, once the first has
-// laid what they press. Shader problems and the page's errors are printed.
+// shots.json: { "size": [w, h], "scale": 2, "frames": 10, "shots": [{ "module": "/src/game/journalShots.ts", "build":
+// "journalShot", "out": "target/ui/journal.png", "size": [w, h], "events": [...], "at": 3 }] }: `build` answers the
+// tree for the interface it is given; `events`, `at` and `frames` are as the Interface note says. Errors are printed.
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { createRequire } from 'node:module';
@@ -25,7 +24,7 @@ const browser = await chromium.launch({
 });
 let failed = false;
 try {
-  const page = await browser.newPage();
+  const page = await browser.newPage({ reducedMotion: 'reduce' });
   page.on('console', (message) => {
     if (message.type() === 'error' || message.type() === 'warning')
       console.log(`page ${message.type()}: ${message.text()}`);
@@ -39,12 +38,19 @@ try {
     const [width, height] = one.size ?? asked.size ?? [640, 360];
     const scale = one.scale ?? asked.scale ?? 1;
     const url = await page.evaluate(
-      async ({ module, build, view, events }) => {
+      async ({ module, build, view, events, frames, at }) => {
         const { shot } = await import('/src/ui/shot.ts');
         const made = await import(module);
-        return shot(made[build], view, { events });
+        return shot(made[build], view, { events, frames, at });
       },
-      { module: one.module, build: one.build, view: { width, height, scale }, events: one.events ?? [] },
+      {
+        module: one.module,
+        build: one.build,
+        view: { width, height, scale },
+        events: one.events ?? [],
+        frames: one.frames ?? asked.frames ?? 4,
+        at: one.at ?? 1,
+      },
     );
     mkdirSync(dirname(one.out), { recursive: true });
     writeFileSync(one.out, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));

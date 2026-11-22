@@ -315,7 +315,10 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   words in a span's colour wrapping across a break, at two sizes, with a halo and with a hard shadow, a chip, a field
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
-  each size.
+  each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
+  the Journal, its timers down, the bounty board and a dungeon's entrance card. A shot may hear its events on a later
+  frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
+  to come; the page asks for reduced motion, so a screen stands settled.
 
 ## How it works
 
@@ -778,13 +781,14 @@ never while a press is held. Each press is an ask the room answers.
   - **The quests** are the houses' roads ([[Quests]]) as story missions: the opening, walked from the start, and each
     house's road the player walks, each at its task, and each road done, in the roads' order. They show as cards six a
     page in two columns (one under 900 px); how many show stands beside the title, and the page between its drawn
-    arrows at the head's right. Each card shows its banner, sixteen by twenty-four: a story mission's swallowtail
-    pennant in blood and brass, charged with a star, a crown, a watchtower, an anchor, an open eye or a ship, chosen by
-    its quest's id, so each keeps its own and cards side by side differ (a side quest's shield, its field stone, plum,
-    sea, moss, ochre or slate, charged with a lozenge, a key, a fish, a sheaf of wheat, a hammer or a compass rose, is
-    drawn for quests of other kinds). Then its name, the first line its opening scene says as a line of its tale, and
-    its task's number in a brass badge with the task's words, the last task with a brass tick once the road is done.
-    A name too long for its card is cut short there and read whole to a screen reader with the rest of its card. With
+    arrows at the head's right; a card alone in its row keeps its column's width. Each card shows its banner, sixteen
+    by twenty-four: a story mission's swallowtail pennant in blood and brass, charged with a star, a crown, a
+    watchtower, an anchor, an open eye or a ship, one to each road by its place in the roads' file, so no two roads
+    wear the same (a side quest's shield, its field stone, plum, sea, moss, ochre or slate, charged with a lozenge, a
+    key, a fish, a sheaf of wheat, a hammer or a compass rose, is drawn for quests of other kinds). Then its name, the
+    first line its opening scene says as a line of its tale, and its task's number in a brass badge with the task's
+    words, the last task with a brass tick once the road is done. The keys' focus edges a card white. A name too long
+    for its card is cut short there and read whole to a screen reader with the rest of its card. With
     none to show (before any room's word, or a word not on the player's own character), it says why, the two banners
     resting over the line.
   - **The bounties**: six slots three to a row under "Bounties", with how many are taken. A tile bears its bounty's own
@@ -792,10 +796,10 @@ never while a press is held. Each press is an ask the room answers.
     a cannon firing, a great fish, a wolf over the swell, a torch, steps down into the dark, a lantern) on its kind's
     ground, with no words on it (a bounty not drawn wears the mark of where it counts: two peaks, a wave, an arched
     door): a gauge of its count while held, a gilded edge once done, its glyph dimmed with a drawn tick once turned in. A
-    slot not taken is an empty frame. The hovered, focused or pressed tile's card stands under the grid: its name, its
-    kind by its mark, its words, its count, and what it pays, XP and Aurem each by its glyph. Bounties are taken and
-    turned in at the board alone. The column stands at the right wherever it fits beside the quests, as wide as its
-    head; on a phone (under 600 px) it stands under them.
+    slot not taken is an empty frame. The hovered, focused or pressed tile, ringed white just outside its edge, has its
+    card under the grid: its name, cut short where too long, its kind by its mark, its words, its count, and what it
+    pays, XP and Aurem each by its glyph. Bounties are taken and turned in at the board alone. The column stands at the
+    right wherever it fits beside the quests, as wide as its head; on a phone (under 600 px) it stands under them.
   - **The timers** lead with icons, drawn in the gear glyphs' style (`journalIcons.ts`), and write nothing twice.
     Today's head carries the rising sun and the one countdown to the daily reset, with its moment in the player's own
     time; This week's, a page of the week and the countdown to the weekly reset; Later's, its name alone. Each row
@@ -887,11 +891,13 @@ The Test Ground makes its own sound at full volume on the first click into its v
 ## At a dungeon's entrance
 
 E at a dungeon's entrance ([[Game]], "A dungeon") opens a card drawn in a window of the menu's kit, in the middle of
-the view (`EntranceCardView`, a layer of its own over the menu's): the dungeon's name in its header; under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite Dungeon ·
-Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss Dungeon of
-the week's "Never matched. Bring your company."), its modifiers with what each does, and what it pays, "Taken today"
-or "Taken this week" once this character's record holds it; why it is shut, in its gate's words, if it is; and Enter
-(E) and Close (Esc) on its footer, Enter resting while it is shut. It reads as the Journal's timers do ([[Activities]]),
+the view (`EntranceCardView`, a layer of its own over the menu's), its words as large as the menu's on the same
+screen: the dungeon's name in its header; under it the run's tier and level ("Elite seas · Levels 3 to 6", "Elite
+Dungeon · Levels 1 to 4", "Elite Dungeon of the week · Level 26"), its rules (an Abyss run's revives, and the Abyss
+Dungeon of the week's "Never matched. Bring your company."), its modifiers each led by its icon as the timers draw it,
+with what each does, and what it pays, "Taken today" or "Taken this week" once this character's record holds it; why
+it is shut, in its gate's words, if it is; and Enter (E) and Close (Esc) on its footer, Enter resting while it is
+shut. It reads as the Journal's timers do ([[Activities]]),
 built again as the minute or the character's word changes. While it stands the world is dimmed, the pointer is free
 and no key of the game's or the menu's acts behind it. It goes if the player falls, goes into a dungeon or leaves
 the place.
@@ -1009,9 +1015,10 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   what a player can use"; [[Activities]], "Quests and bounties"), after
   Destiny's Bounty Tracker ([[The Journal Holds the Quests, the Bounties at Its Side and the Timers at Its Top]]): one
   line, "Bounties for XP and Aurem, posted each day."; the day's six as tiles, a row to each kind (land on stone, the
-  sea on deep water, dungeons on old blood), each its bounty's own glyph at four times its pixels, showing its state
-  with no words; under them the rising sun and the time to the next board, over a bar filling as the day goes; and
-  beside them the chosen tile's card: its name, its kind by its mark, its words, a gauge with its count, what it pays
+  sea on deep water, dungeons on old blood), each its bounty's own glyph at four times its pixels (six where the
+  menu's words are large), showing its state with no words, the chosen one ringed white; under them the rising sun
+  and the time to the next board, over a bar filling as the day goes; and beside them, or under them on a phone, the
+  chosen tile's card: its name, its kind by its mark, its words, a gauge with its count, what it pays
   the player now (XP and Aurem each by its glyph, resting once paid), and its press, Take on one not held or Turn in on
   one done, with E on its keycap, each asked with the day of the board shown. The arrows move between tiles; E or a
   click takes or turns one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the

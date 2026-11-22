@@ -5,8 +5,9 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
 import type { EntranceCard } from './activityWords.ts';
-import { INK, pressNode, words } from './gearNodes.ts';
+import { INK, pressNode, sizesOf, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
+import { modifierNode } from './journalTimers.ts';
 import { play } from './uiSounds.ts';
 
 export interface CardPresses {
@@ -30,8 +31,8 @@ const ENTER = 'card-enter';
 const FIND = 'card-find';
 const STOP = 'card-stop';
 const CLOSE = 'card-close';
-/** How wide the card stands at most. */
-const WIDE = 520;
+/** How wide the card stands at most, a step of its words' size. */
+const WIDE = 260;
 
 /** The card E opens at a dungeon's entrance, in the kit's window over the dimmed world: the dungeon's name at its head;
  *  its tier and level, its rules, its modifiers and what it pays; why it is shut, if it is; the wait while Find a
@@ -101,18 +102,25 @@ export class EntranceCardView {
     if (!card) return null;
     if (this.focusNext && ui.boxOf(this.focusNext)) [this.focusNext] = [null, ui.focusOn(this.focusNext)];
     const view = ui.size;
-    const line = (said: string, colour: string = INK.word): Node => ({ width: 'grow', text: { words: said, colour } });
+    // Its words as large as the menu's on the same screen.
+    const size = sizesOf(view.width, view.height, 1).label;
+    const line = (said: string, colour: string = INK.word): Node => ({
+      width: 'grow',
+      text: { words: said, size, colour },
+    });
     const finding = search.finding !== null;
     const body: Child[] = [
       line(card.tier, INK.brassLit),
       ...card.rules.map((rule) => line(rule)),
+      // Each modifier led by its icon, as the timers draw it, its name and what it does beside.
       ...card.modifiers.map((modifier): Node => ({
         width: 'grow',
         gap: 8,
-        wrap: true,
+        alignY: 'center',
         children: [
-          words(modifier.name, 1, INK.word),
-          { width: 'grow', text: { words: modifier.words, colour: INK.faint } },
+          modifierNode(modifier, 12 * (size + 1)),
+          words(modifier.name, size, INK.word),
+          { width: 'grow', text: { words: modifier.words, size, colour: INK.faint } },
         ],
       })),
       line(card.pays, INK.faint),
@@ -140,7 +148,7 @@ export class EntranceCardView {
           solid: true,
           modal: true,
           direction: 'column',
-          width: Math.min(WIDE, view.width - 32),
+          width: Math.min(WIDE * (size + 1), view.width - 32),
           padding: 2,
           opacity: motionReduced() ? 1 : Math.min(1, 0.25 + ui.age('entrance-card') * 4),
           float: { to: 'screen', anchor: [0.5, 0.5], at: [0.5, 0.5], z: 20 },
@@ -150,7 +158,7 @@ export class EntranceCardView {
               height: 48,
               alignX: 'center',
               alignY: 'center',
-              children: [words(card.name.toUpperCase(), 2, INK.brassLit, { tracking: 3 })],
+              children: [words(card.name.toUpperCase(), size + 1, INK.brassLit, { tracking: 3 })],
             },
             { width: 'grow', direction: 'column', gap: 10, padding: [10, 20, 14, 20], children: body },
             { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
@@ -161,11 +169,11 @@ export class EntranceCardView {
               alignX: 'end',
               wrap: true,
               children: [
-                pressNode(ENTER, 'Enter', 'primary', 'E', 1, { disabled: card.shut !== null }),
+                pressNode(ENTER, 'Enter', 'primary', 'E', size, { disabled: card.shut !== null }),
                 finding
-                  ? pressNode(STOP, 'Stop finding', 'button', 'F')
-                  : search.canFind && pressNode(FIND, 'Find a Company', 'button', 'F'),
-                pressNode(CLOSE, 'Close', 'button', 'Esc'),
+                  ? pressNode(STOP, 'Stop finding', 'button', 'F', size)
+                  : search.canFind && pressNode(FIND, 'Find a Company', 'button', 'F', size),
+                pressNode(CLOSE, 'Close', 'button', 'Esc', size),
               ],
             },
           ],

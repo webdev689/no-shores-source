@@ -4,7 +4,7 @@
 import houses from '../../../content/story/houses.json' with { type: 'json' };
 import type { GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
-import { bannerFor } from '../plus/journalArt.ts';
+import { BANNER_KEYS } from '../plus/journalArt.ts';
 import { type BountyRow, bountyRows } from './bountyBoard.ts';
 import { QUESTS, type QuestLine } from './quests/questBook.ts';
 
@@ -56,14 +56,16 @@ export function whenWords(moment: number, now: number): string {
 }
 
 const SCENES: Readonly<Record<string, readonly { readonly say: string }[]>> = houses.scenes;
+/** The story missions' pennants, one to each road by its place in the roads' file, so no two roads wear the same. */
+const PENNANTS = BANNER_KEYS.filter((key) => key.startsWith('story-'));
 
-/** A quest's card at task `task` (from 0), or done. */
-function cardOf(quest: QuestLine, task: number, done: boolean): QuestCard {
+/** The quest at `road` (its place in the roads' file) as its card, at task `task` (from 0), or done. */
+function cardOf(quest: QuestLine, road: number, task: number, done: boolean): QuestCard {
   const place = Math.min(task, quest.tasks.length - 1);
   return {
     id: quest.id,
     kind: 'story',
-    banner: bannerFor('story', quest.id),
+    banner: PENNANTS[road % PENNANTS.length] ?? 'story',
     name: quest.name,
     tale: SCENES[quest.begin]?.[0]?.say ?? '',
     step: place + 1,
@@ -77,8 +79,8 @@ function cardOf(quest: QuestLine, task: number, done: boolean): QuestCard {
 export function questCardsOf(state: QuestState | null | undefined, quests: readonly QuestLine[] = QUESTS) {
   if (!state || state.claimed === false) return [];
   return quests.flatMap((quest, place): QuestCard[] => {
-    if (state.quest === place + 1) return [cardOf(quest, state.task, false)];
-    return state.done[place] === 1 ? [cardOf(quest, quest.tasks.length - 1, true)] : [];
+    if (state.quest === place + 1) return [cardOf(quest, place, state.task, false)];
+    return state.done[place] === 1 ? [cardOf(quest, place, quest.tasks.length - 1, true)] : [];
   });
 }
 
