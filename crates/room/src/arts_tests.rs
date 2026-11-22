@@ -176,6 +176,24 @@ fn a_cast_asked_with_a_drink_goes_off_and_holds_the_drink_off() {
 }
 
 #[test]
+fn a_drink_pressed_a_moment_before_a_cast_never_takes_the_cast_s_place() {
+    let (mut room, player) = room_with_player();
+    wearing(&mut room, player, 2, &[]);
+    let mut hurt = *room.fighter(player).expect("in");
+    // A press of the drink made in a swing's last ticks, kept for when the swing ends.
+    (hurt.health, hurt.kept.heal) = (30.0, 8);
+    room.set_fighter(player, hurt);
+    let cast = Some(Cast { spell: MEND, aim: None });
+    room.input(player, Input { sequence: 1, cast, seen: room.clock(), ..Input::default() }).expect("in order");
+    for _ in 0..19 {
+        room.tick();
+        let fighter = *room.fighter(player).expect("in");
+        assert!(!matches!(fighter.action, combat::Action::Drink { .. }), "no drink under the cast");
+    }
+    assert_eq!(room.fighter(player).expect("in").health, 70.0, "the cast went off: Mend heals");
+}
+
+#[test]
 fn a_room_without_arts_takes_no_cast_and_charges_nothing() {
     let (mut room, player) = room_with_player();
     room.forbid_arts();
