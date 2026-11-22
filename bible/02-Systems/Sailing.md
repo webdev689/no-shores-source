@@ -300,7 +300,8 @@ A body walks its deck ([[The Ship Is Managed and Walked From the Sea's Panel]]):
 
 The [[Held Map]] takes the ship to other waters, seen sailing away
 ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). A course chosen into another water asks whether to
-travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks:
+travel there; yes runs the cinematic (`SailAway`, `SeaTravel`), which no key, press or wheel breaks: the sea bar goes
+while it runs, and Stop and the pace dial do nothing however they are asked:
 
 1. The map lowers and the camera leaves the helm on an eased rail out to the ship's aft starboard quarter, 70 m off and
    28 m up, carried along with the ship as it gets under way on the course at the world's own pace, 3 s.

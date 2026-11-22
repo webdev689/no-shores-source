@@ -123,3 +123,22 @@ test('a fight met ends the travel at any time: the room forgets it, and the pict
     assert.equal(asked.length, sent, `${when}: nothing more is asked`);
   }
 });
+
+test('while a travel is under way Stop and the pace dial do nothing, whoever presses them', async () => {
+  const { Sea } = await import('./sea.ts');
+  const done: string[] = [];
+  const sea = Object.create(Sea.prototype) as InstanceType<typeof Sea>;
+  Object.assign(sea, {
+    passage: { stop: () => done.push('stop'), stepPace: () => done.push('pace') },
+    chase: { stop: () => undefined },
+    aboard: { walking: false },
+    travelling: {},
+  });
+  sea.stop();
+  sea.stepPace(1);
+  assert.deepEqual(done, []);
+  sea.travelling = null;
+  sea.stop();
+  sea.stepPace(1);
+  assert.deepEqual(done, ['stop', 'pace'], 'and they act once it is over');
+});

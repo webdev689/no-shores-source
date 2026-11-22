@@ -256,6 +256,8 @@ export class Sea {
 
   /** Stops the ship where it is; the voyage's destination is kept, to be resumed. */
   stop(): void {
+    // A travel under way is the cinematic's to end: no press stops it.
+    if (this.travelling) return;
     this.chase.stop();
     this.passage.stop();
   }
@@ -302,7 +304,7 @@ export class Sea {
   /** One step of the pace dial: -1 slower, +1 faster. */
   stepPace(direction: number): void {
     // Off the helm the room takes no new course, so the dial waits for the player's return to it.
-    if (!this.aboard.walking) this.passage.stepPace(direction);
+    if (!this.aboard.walking && !this.travelling) this.passage.stepPace(direction);
   }
 
   /** A mark chosen at sea: the ship sails for it, to the water nearest it; for a sighted hostile ship's, the ship
