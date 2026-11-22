@@ -11,11 +11,12 @@ use crate::dice::Dice;
 use crate::noises::stir_of;
 use crate::roles::Numbers;
 use crate::share::sooner;
-use crate::tuning::{ENGAGE_RANGE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
+use crate::tuning::{ENGAGE_RANGE, FOE_PACE, HUNT, OFF_FLOOR_NEAR, SHOOT_RANGE, SIGHT_ARC, SIGHT_GAIN};
 use combat::lock::sees;
 use combat::sight::{apart, bearing, off};
 use combat::tuning::STRIKE_HEIGHT;
 use combat::{Fighter, FighterId, Status};
+use movement::TUNING;
 
 /// A foe in its room this tick: its id, its fighter, the room, its numbers and its dice.
 #[derive(Clone, Copy, Debug)]
@@ -41,6 +42,23 @@ impl Here<'_, '_> {
     #[must_use]
     pub fn feet(&self) -> [f64; 3] {
         [self.fighter.body.x, self.fighter.body.y, self.fighter.body.z]
+    }
+
+    /// The most of a player's walk or run it asks of itself: a foe's share (`FOE_PACE`), an ally's whole.
+    #[must_use]
+    pub fn pace(&self) -> f64 {
+        if self.fighter.side.is_players() { 1.0 } else { FOE_PACE }
+    }
+
+    /// How fast it walks, and runs, in metres a second, at its own pace: Hasted, faster.
+    #[must_use]
+    pub fn walk(&self) -> f64 {
+        TUNING.walk * self.pace() * combat::status::pace(&self.fighter)
+    }
+
+    #[must_use]
+    pub fn run(&self) -> f64 {
+        TUNING.run * self.pace() * combat::status::pace(&self.fighter)
     }
 
     /// A fighter of the room by id.

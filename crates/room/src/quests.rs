@@ -157,7 +157,7 @@ impl Room {
     /// their account (`land`).
     pub(crate) fn landed(&self, player: PlayerId) -> bool {
         let (Some(isle), Some(found)) = (self.isle.as_ref(), self.players.get(&player)) else { return false };
-        isle.landed.as_ref().is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains(owner)))
+        isle.landed.as_ref().is_none_or(|landed| found.owner.as_ref().is_some_and(|owner| landed.contains_key(owner)))
     }
 
     /// Tells a player's quest log they landed on this sea island, once the room knows they did.

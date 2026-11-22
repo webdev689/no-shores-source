@@ -85,24 +85,27 @@ export class LocalRoom implements RoomLink {
   }
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
-   *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
+   *  joined at its first spawn. With `foeAsks` the player may ask it for foes, to try a fight on the node's land; the
+   *  player's own gear goes to `gear`. */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,
     snapshot: (snapshot: Snapshot) => void,
     foeAsks = false,
+    gear: (gear: GearMessage) => void = () => undefined,
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
     door.epoch(Date.now());
     if (foeAsks) door.takeFoeAsks();
-    return new LocalRoom(door, snapshot, () => undefined);
+    return new LocalRoom(door, snapshot, gear);
   }
 
   /** Opens the sea round the continents of a layout file's text from the compiled `room-wasm` module, its player
    *  joined, their ship not yet at sea; its pirates come as `seed` draws them, a new sea each time by default, and the
    *  Grey Tithe patrols the lanes between those of `ports` that are port cities (none with none); its ships come at
-   *  the difficulty `seas` raises them to (0 Normal, 1 Elite, 2 Abyss). */
+   *  the difficulty `seas` raises them to (0 Normal, 1 Elite, 2 Abyss); the player's own gear, as the sea keeps it, goes
+   *  to `gear`. */
   static openSea(
     module: WebAssembly.Module,
     layoutText: string,
@@ -110,26 +113,29 @@ export class LocalRoom implements RoomLink {
     seed = Math.floor(Math.random() * 2 ** 32),
     ports: readonly PortInfo[] = [],
     seas = 0,
+    gear: (gear: GearMessage) => void = () => undefined,
   ): LocalRoom {
     const door = startRoomDoor(module);
     const text = ports.length > 0 ? `{"layout":${layoutText},"ports":${JSON.stringify(ports)}}` : layoutText;
     if (!door.openSea(text, seed, Date.now() / 1000) || !door.difficulty(seas))
       throw new Error('the world’s layout is not one the sea can open round');
     door.epoch(Date.now());
-    return new LocalRoom(door, snapshot, () => undefined);
+    return new LocalRoom(door, snapshot, gear);
   }
 
   /** Opens a sea island's room from the compiled `room-wasm` module on the sea's word on it (`isleWord`) at the sea's
-   *  difficulty (`seas`, 0 Normal to 2 Abyss), its player joined at the first of its beach's spawns. */
+   *  difficulty (`seas`, 0 Normal to 2 Abyss), its player joined at the first of its beach's spawns; the player's own
+   *  gear goes to `gear`. */
   static openIsland(
     module: WebAssembly.Module,
     word: string,
     snapshot: (snapshot: Snapshot) => void,
     seas = 0,
+    gear: (gear: GearMessage) => void = () => undefined,
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openIsland(word) || !door.difficulty(seas)) throw new Error('the island is not one a room can stand on');
-    return new LocalRoom(door, snapshot, () => undefined);
+    return new LocalRoom(door, snapshot, gear);
   }
 
   /** The word on its island `id` of the sea this room is, as an island's room opens on it; empty if none stands. */

@@ -19,7 +19,7 @@ export async function ashoreOn(
   { word, continent, seas }: { readonly word: string | null; readonly continent: string; readonly seas: Difficulty },
   enter: (door: DungeonDoor) => void,
 ): Promise<Foot> {
-  const node = isleNode(held.seen, held.plan.ring, held.plan.spawns, { continent, seas });
+  const node = isleNode(held.seen, held.plan, { continent, seas });
   const gear: { gear: GearState | null } = { gear: null };
   let hear: (snapshot: Snapshot) => void = () => undefined;
   const heard = (snapshot: Snapshot) => hear(snapshot);

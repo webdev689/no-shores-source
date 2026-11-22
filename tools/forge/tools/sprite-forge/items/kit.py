@@ -269,8 +269,9 @@ class Item:
         return m
 
     # --- the eye ---
-    def frame(self, px):
-        """Set the eye and the work render so the item's longest side on screen is `px` texels (each SUPER samples)."""
+    def frame(self, px, span=None):
+        """Set the eye and the work render so the item's longest side on screen is `px` texels (each SUPER samples), or
+        so `px` texels hold `span` metres, as every picture of one thing does to share its scale."""
         right, up, fwd = eye_axes()
         dg = bpy.context.evaluated_depsgraph_get()
         pts = []
@@ -284,7 +285,10 @@ class Item:
             ev.to_mesh_clear()
         pts = np.concatenate(pts)
         sx, sy = pts @ right, pts @ up
-        span = max(sx.max() - sx.min(), sy.max() - sy.min())
+        measured = max(sx.max() - sx.min(), sy.max() - sy.min())
+        if span is not None and measured > span:
+            raise ValueError(f'kit: the item spans {measured:.3f}, past the {span} its picture holds')
+        span = measured if span is None else span
         per = span / px   # metres a texel
         self.span, self.per = span, per
         w = int(math.ceil((sx.max() - sx.min()) / per)) + 2 * MARGIN
@@ -316,9 +320,10 @@ class Item:
             raise KeyError(f'item kit: no ramp "{ramp}"')
         self.sparkles.append((np.asarray(point, dtype=np.float64), ramp, arm))
 
-    def render(self, px, samples=SAMPLES):
-        """The item's picture: (h, w, 4) uint8 rows top first, cut to what it draws, `px` texels on its longest side."""
-        w, h = self.frame(px)
+    def render(self, px, samples=SAMPLES, span=None):
+        """The item's picture: (h, w, 4) uint8 rows top first, cut to what it draws, `px` texels on its longest side
+        (or holding `span` metres)."""
+        w, h = self.frame(px, span)
         # every look a texel may take: each material's ramp, and each pattern's (ramp, dim) as a look of its own
         looks = []
         for m in self.mats:

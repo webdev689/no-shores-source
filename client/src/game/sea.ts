@@ -24,6 +24,7 @@ import { type Lying, SLOOP_DECK } from '../ships/deck.ts';
 import { Aboard } from './aboard.ts';
 import { Boarding } from './deckBoarding.ts';
 import { Foot, type FootContext } from './foot.ts';
+import type { GearHere } from './gearScreen.ts';
 import { Passage } from './passage.ts';
 import type { SeaFrame, SeaInput } from './seaFrame.ts';
 import { Chase } from './seaChase.ts';
@@ -55,6 +56,8 @@ export class Sea {
   /** Its waterline, and what draws a fight's marks; how many times its size every ship is drawn on the sea's view;
    *  each ship's rig by who sails it. */
   private readonly hull: SeaHull;
+  /** What the deck is walked with, whose forge and walker draw what the feed tells. */
+  private readonly context: FootContext;
   private readonly scale: number;
   private readonly drawn: SeaShips;
   /** The view brought down aboard it: Manage, or the walk off the helm. */
@@ -106,8 +109,7 @@ export class Sea {
     heading: number,
     aboard: FootContext,
   ) {
-    this.landmass = landmass;
-    this.hull = hull;
+    [this.landmass, this.hull, this.context] = [landmass, hull, aboard];
     this.drawn = new SeaShips(hull.shown);
     [this.aboard, this.boarding] = [
       new Aboard(aboard, SLOOP_DECK),
@@ -118,6 +120,13 @@ export class Sea {
     this.passage.keepClear = () => keptClear(this.isles?.all() ?? []);
     this.view = new SeaView(start, heading);
     this.setLandmass(landmass);
+  }
+
+  /** The player's gear at sea, for the feed to tell what they gain there; the menu at sea keeps to the ship, so nothing
+   *  is asked of it here. */
+  get gear(): GearHere | null {
+    const { forge, walker } = this.context;
+    return this.room ? { gear: this.room.gearSent, ask: () => undefined, forge, dress: walker.you.dress } : null;
   }
 
   /** Where the ship lies. */

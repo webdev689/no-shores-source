@@ -2,7 +2,7 @@
 // opening (a node's navmesh baked, a sea laid) and every tick off the game's thread, its snapshots handed on as they
 // come, as a server's are.
 import type { ArtState } from './artMessages.ts';
-import type { RoomLink, Snapshot } from './roomConnection.ts';
+import type { GearMessage, RoomLink, Snapshot } from './roomConnection.ts';
 import type { FromRooms, Opening, ToRooms } from './roomServe.ts';
 import type { PortInfo } from '../rules/watersRules.ts';
 
@@ -49,7 +49,7 @@ function heard(said: FromRooms): void {
   }
   const room = rooms.get(said.id);
   if (said.kind === 'snapshot') room?.told(said.snapshot);
-  else if (room) [room.trim, room.arms, room.arts] = [said.trim, said.arms, said.arts];
+  else room?.geared(said.gear);
 }
 
 /** A room for playing alone, in the rooms' worker: a link as a server's room is, joined once and never lost. */
@@ -65,20 +65,23 @@ export class RoomThread implements RoomLink {
   arts: ArtState | null = null;
   private readonly id: number;
   private snapshot: (snapshot: Snapshot) => void = () => undefined;
+  private gear: (gear: GearMessage) => void = () => undefined;
 
   constructor(id: number, player: number, epoch: number) {
     [this.id, this.player, this.epoch] = [id, player, epoch];
   }
 
-  /** Opens a room in the worker, `opening` as `LocalRoom` opens it, each snapshot going to `snapshot`. */
+  /** Opens a room in the worker, `opening` as `LocalRoom` opens it, each snapshot going to `snapshot` and each word on
+   *  the player's gear to `gear`. */
   private static open(
     module: WebAssembly.Module,
     how: Opening,
     snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void = () => undefined,
   ): Promise<RoomThread> {
     const id = next++;
     const opened = new Promise<RoomThread>((resolve, reject) => opening.set(id, { resolve, reject })).then((room) => {
-      room.snapshot = snapshot;
+      [room.snapshot, room.gear] = [snapshot, gear];
       rooms.set(id, room);
       return room;
     });
@@ -96,7 +99,7 @@ export class RoomThread implements RoomLink {
     return RoomThread.open(module, { how: 'node', nodeText, foeAsks }, snapshot);
   }
 
-  /** The sea round a layout's continents, as `LocalRoom.openSea`. */
+  /** The sea round a layout's continents, as `LocalRoom.openSea`, the player's gear going to `gear`. */
   static openSea(
     module: WebAssembly.Module,
     layoutText: string,
@@ -104,8 +107,9 @@ export class RoomThread implements RoomLink {
     seed = Math.floor(Math.random() * 2 ** 32),
     ports: readonly PortInfo[] = [],
     seas = 0,
+    gear: (gear: GearMessage) => void = () => undefined,
   ): Promise<RoomThread> {
-    return RoomThread.open(module, { how: 'sea', layoutText, seed, ports, seas }, snapshot);
+    return RoomThread.open(module, { how: 'sea', layoutText, seed, ports, seas }, snapshot, gear);
   }
 
   /** A sea island's room on the sea's word on it, as `LocalRoom.openIsland`. */
@@ -121,6 +125,14 @@ export class RoomThread implements RoomLink {
   /** A snapshot from the worker, handed on. */
   told(snapshot: Snapshot): void {
     this.snapshot(snapshot);
+  }
+
+  /** A word on the player's gear from the worker, kept as `LocalRoom` keeps it and handed on. */
+  geared(gear: GearMessage): void {
+    if (gear.trim) this.trim = gear.trim;
+    if (gear.arms) this.arms = gear.arms;
+    if (gear.arts) this.arts = gear.arts;
+    this.gear(gear);
   }
 
   send(bytes: Uint8Array<ArrayBuffer>): void {

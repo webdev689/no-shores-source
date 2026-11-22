@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import layout from '../../../content/world/layout.json' with { type: 'json' };
 import { LocalRoom } from './localRoom.ts';
-import type { Snapshot } from './roomConnection.ts';
+import type { GearMessage, Snapshot } from './roomConnection.ts';
 import { type FromRooms, serveRooms, type ToRooms } from './roomServe.ts';
 import { roomPort, RoomThread } from './roomThread.ts';
 
@@ -31,8 +31,25 @@ test('a sea in the rooms’ worker sends the same snapshots as the same sea in t
   context.mock.method(Date, 'now', () => Date.UTC(2026, 10, 21, 12, 0, 0));
   joinedPort();
   const [here, there]: Snapshot[][] = [[], []];
-  const page = LocalRoom.openSea(compiled, layoutText, (snapshot) => here.push(snapshot), 42);
-  const worker = await RoomThread.openSea(compiled, layoutText, (snapshot) => there.push(snapshot), 42);
+  const [geared, gearedThere]: GearMessage[][] = [[], []];
+  const page = LocalRoom.openSea(
+    compiled,
+    layoutText,
+    (snapshot) => here.push(snapshot),
+    42,
+    [],
+    0,
+    (gear) => geared.push(gear),
+  );
+  const worker = await RoomThread.openSea(
+    compiled,
+    layoutText,
+    (snapshot) => there.push(snapshot),
+    42,
+    [],
+    0,
+    (gear) => gearedThere.push(gear),
+  );
   assert.deepEqual([worker.player, worker.epoch], [page.player, page.epoch]);
   for (let frame = 0; frame < 10; frame++) {
     page.pump(0.05);
@@ -41,11 +58,52 @@ test('a sea in the rooms’ worker sends the same snapshots as the same sea in t
   }
   assert.ok(here.length > 0, 'the sea ticked');
   assert.deepEqual(there, here, 'tick for tick');
+  assert.deepEqual(gearedThere, geared, 'and each word on the gear, if it says any');
+  assert.deepEqual([worker.trim, worker.arms, worker.arts], [page.trim, page.arms, page.arts]);
   assert.equal(await worker.isleWord(1), page.isleWord(1), 'its word on an island too');
   worker.close();
   worker.pump(1);
   await settled();
   assert.equal(there.length, here.length, 'let go, it sends no more');
+});
+
+/** A node's file as the bake writes it: a glade 100 m square round its spawn, on land 10 m up. */
+function glade(): string {
+  const grid = (value: number) => ({
+    ...{ width: 4, height: 4, left_m: -2000, top_m: -2000, cell_m: 1000, first_column: 0, first_row: 0 },
+    data: Array<number>(16).fill(value),
+  });
+  const layers = { land: grid(10), lake_level: Array<number>(16).fill(0), rivers: [], roads: [], towns: [] };
+  const ground = { ...layers, coast: grid(5000), across: grid(-50), pads: [], seed: 7 };
+  const ring = [
+    [-50, -50],
+    [50, -50],
+    [50, 50],
+    [-50, 50],
+  ];
+  return JSON.stringify({
+    id: 'glade',
+    kind: 'social',
+    ring,
+    spawns: [[0, 0]],
+    bounds: [-150, -150, 150, 150],
+    boxes: [],
+    ground,
+  });
+}
+
+test("a node's room in the worker keeps the player's gear as the same room in the page does", async () => {
+  joinedPort();
+  const page = LocalRoom.openNode(compiled, glade(), () => undefined);
+  const worker = await RoomThread.openNode(compiled, glade(), () => undefined);
+  for (let frame = 0; frame < 10; frame++) {
+    page.pump(0.05);
+    worker.pump(0.05);
+    await settled();
+  }
+  assert.ok(page.trim ?? page.arms ?? page.arts, 'the room said the gear');
+  assert.deepEqual([worker.trim, worker.arms, worker.arts], [page.trim, page.arms, page.arts]);
+  worker.close();
 });
 
 test('a room that cannot open says why, and the game hears it as a failed opening', async () => {

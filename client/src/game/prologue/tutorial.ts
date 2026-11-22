@@ -214,20 +214,21 @@ export interface Teaching {
   readonly parryOpen: boolean;
 }
 
-/** How far to either side of where the player faces a blow can come from and still be parried: a blade's guard
+/** How far to either side of where the player aims a blow can come from and still be parried: a blade's guard
  *  (crates/combat/src/tuning.rs GUARD_ARC), the narrower of a blade's and a shield's. */
 const FACING_RAD = (60 * Math.PI) / 180;
 /** What the player may be doing as the fight freezes, for a press then to answer it at once. */
 const ANSWERABLE = new Set(['idle', 'guard']);
 
 /** Whether a press now would meet `foe`'s blow for `lesson`: the player standing on their feet, alive, doing nothing
- *  a press must wait out; for a dodge with stamina for it, and for a parry facing the blow. */
+ *  a press must wait out; for a dodge with stamina for it, and for a parry aimed at the blow, as the rules judge a
+ *  guard (crates/combat/src/judge.rs), whichever way the body stands. */
 export function answerable(teaching: Teaching, foe: FighterView): boolean {
   const { own, lesson } = teaching;
   if (!own || !ANSWERABLE.has(own.action.kind) || own.mode !== 'ground' || own.health <= 0) return false;
   if (lesson === 'dodge') return own.stamina > 0;
   const toward = Math.atan2(foe.x - own.x, -(foe.y - own.y));
-  return Math.abs(Math.atan2(Math.sin(toward - own.facing), Math.cos(toward - own.facing))) <= FACING_RAD;
+  return Math.abs(Math.atan2(Math.sin(toward - own.aim), Math.cos(toward - own.aim))) <= FACING_RAD;
 }
 
 /** The fight frozen on a blow until the player answers it: each blow at most once, so the answer plays on. */

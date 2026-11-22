@@ -31,6 +31,6 @@ test("each keeper's coin is their sign's board, and no two of a colour carry the
 });
 
 test('a station or a site names its glyph only where one is drawn for it', () => {
-  assert.ok(isGlyph('harbourmaster') && isGlyph('chandler') && isGlyph('ore'));
-  assert.ok(!isGlyph('shape') && !isGlyph('resource'));
+  assert.ok(isGlyph('harbourmaster') && isGlyph('chandler') && isGlyph('resource'));
+  assert.ok(!isGlyph('shape') && !isGlyph('ore'), "a node is its island's resource, not a kind of its own");
 });

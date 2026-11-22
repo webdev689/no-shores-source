@@ -1,5 +1,5 @@
 use super::*;
-use crate::harbour::{Harbours, REPAIR_MOST_S};
+use crate::harbour::{HELD, Harbours, REPAIR_MOST_S};
 use crate::pirates::Pirate;
 use naval::damage::{Hurt, State};
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
@@ -174,6 +174,21 @@ fn a_captain_that_sinks_lays_what_floats_for_the_player_who_fought_it_and_their_
     let pieces: Vec<_> = sea.flotsam_for(player).copied().collect();
     assert_eq!(pieces.len(), 3);
     assert!(pieces.iter().all(|piece| piece.level == 9), "rolled at its level");
+    // Its ship brought onto them gathers them, each told with what it held, the ship's materials among it.
+    sea.harbour.characters.insert(player, gear::Character::starting());
+    let mut held = Vec::new();
+    for piece in pieces {
+        let ship = &mut sea.berths.get_mut(&player).unwrap().sailing.as_mut().unwrap().ship;
+        [ship.x, ship.y] = piece.at;
+        sea.tick();
+        held.extend(sea.take_told().into_iter().filter(|(_, numbers)| numbers[0] == HELD));
+    }
+    assert_eq!(held.len(), 3, "each piece told: {held:?}");
+    let materials = |numbers: &[f64]| numbers[6..10].iter().sum::<f64>();
+    assert!(held.iter().all(|(_, numbers)| numbers.len() == 11 && materials(numbers) > 0.0), "{held:?}");
+    let stock = sea.harbour.characters[&player].materials.ship;
+    let told: f64 = held.iter().map(|(_, numbers)| materials(numbers)).sum();
+    assert_eq!(told, f64::from(stock.timber + stock.canvas + stock.iron + stock.heartwood), "what it took, told");
 }
 
 #[test]

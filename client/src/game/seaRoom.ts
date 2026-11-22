@@ -13,6 +13,7 @@ import {
   type SeenShip,
   walkBytes,
 } from '../network/messages.ts';
+import type { GearState } from '../network/gearMessages.ts';
 import type { RoomLink, Snapshot } from '../network/roomConnection.ts';
 import { type NavalEvent, fightViewOf, ordersNumbers } from '../network/seaFight.ts';
 import { RoomThread } from '../network/roomThread.ts';
@@ -48,6 +49,9 @@ export class SeaRoom {
    *  null while they hold it; and how many words it has sent, so each is taken once. */
   onDeck: { readonly acknowledged: number; readonly body: Body } | null = null;
   words = 0;
+  /** The player's gear as the sea last sent it: the character it keeps for them, or their deck room's while they
+   *  fight aboard another ship. */
+  gearSent: GearState | null = null;
   /** The player's own fight as the room last showed it, and its events since they were last taken. */
   private fight: FightView | null = null;
   private events: FightEvent[] = [];
@@ -104,12 +108,15 @@ export class SeaRoom {
 
   /** Joins the sea through `open`, which hands on each snapshot, the ship put to sea at `start`, at rest. */
   static async join(
-    open: (snapshot: (snapshot: Snapshot) => void) => Promise<Closable> | Closable,
+    open: (snapshot: (snapshot: Snapshot) => void, gear: (gear: GearState) => void) => Promise<Closable> | Closable,
     start: Point2,
     pace: Pace,
   ): Promise<SeaRoom> {
     let room: SeaRoom | null = null;
-    const link = await open((snapshot) => room?.take(snapshot));
+    const link = await open(
+      (snapshot) => room?.take(snapshot),
+      (gear) => room && (room.gearSent = gear),
+    );
     room = new SeaRoom(link);
     room.course([start], pace);
     return room;

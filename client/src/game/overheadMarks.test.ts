@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { resourcePicture } from '../combat/dropPictures.ts';
 import { markPicture } from '../combat/drops.ts';
-import { OVER_HEAD_M, OVER_NODE_M, marksSeen } from '../combat/marksOver.ts';
+import { OVER_HEAD_M, marksSeen } from '../combat/marksOver.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import type { StationInfo } from './nodes.ts';
@@ -46,7 +45,7 @@ test("a faction keeper's mark is its emblem in the diamond, edged in its Art's c
   assert.equal(markOfKind('chandler'), null);
 });
 
-test("Shape wears his mark on his week's spot, and each node to gather its resource's picture over its ground", () => {
+test("Shape wears his mark on his week's spot; a node to gather wears none, its own picture standing on the ground", () => {
   const gear = {
     shape: { place: 0, wares: [] },
     nodes: [{ index: 1, x: 5, y: 5, resource: 0 }],
@@ -54,8 +53,7 @@ test("Shape wears his mark on his week's spot, and each node to gather its resou
   const marked = markedHere(gear, { stations: [], visitorSpots: [[40, 40]] }, () => 1);
   assert.equal(marked[0]?.picture, keeperPicture('shape'));
   assert.deepEqual(marked[0]?.at, [40, 40, 1 + BODY_HEIGHT + OVER_HEAD_M]);
-  assert.equal(marked[1]?.picture, resourcePicture(0));
-  assert.deepEqual(marked[1]?.at, [5, 5, 1 + OVER_NODE_M]);
+  assert.equal(marked.length, 1, 'no mark over the node');
 });
 
 test("near, the hub's twelve marks are laid in layers, in under half the vertices of laying them flat", () => {

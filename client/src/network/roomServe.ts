@@ -1,8 +1,7 @@
 // The rooms' worker's side of playing alone (`roomWorker.ts`): each room opened, told and ticked as the game's thread
 // says (`roomThread.ts`), what it sends said back.
-import type { ArtState } from './artMessages.ts';
 import { LocalRoom } from './localRoom.ts';
-import type { Snapshot } from './roomConnection.ts';
+import type { GearMessage, Snapshot } from './roomConnection.ts';
 import type { PortInfo } from '../rules/watersRules.ts';
 
 /** How a room is opened, as `LocalRoom` opens it. */
@@ -30,13 +29,7 @@ export type FromRooms =
   | { readonly kind: 'opened'; readonly id: number; readonly player: number; readonly epoch: number }
   | { readonly kind: 'failed'; readonly id: number; readonly error: string }
   | { readonly kind: 'snapshot'; readonly id: number; readonly snapshot: Snapshot }
-  | {
-      readonly kind: 'gear';
-      readonly id: number;
-      readonly trim: readonly number[] | null;
-      readonly arms: readonly number[] | null;
-      readonly arts: ArtState | null;
-    }
+  | { readonly kind: 'gear'; readonly id: number; readonly gear: GearMessage }
   | { readonly kind: 'word'; readonly id: number; readonly word: string };
 
 /** The rooms' side: each room opened, told and ticked as the game's thread says, what it sends said back by `say`. */
@@ -44,9 +37,12 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
   const rooms = new Map<number, LocalRoom>();
   const open = (id: number, module: WebAssembly.Module, opening: Opening): LocalRoom => {
     const snapshot = (whole: Snapshot) => say({ kind: 'snapshot', id, snapshot: whole });
-    if (opening.how === 'node') return LocalRoom.openNode(module, opening.nodeText, snapshot, opening.foeAsks);
-    if (opening.how === 'island') return LocalRoom.openIsland(module, opening.word, snapshot, opening.seas);
-    return LocalRoom.openSea(module, opening.layoutText, snapshot, opening.seed, opening.ports, opening.seas);
+    // Each word on the player's gear, before its tick's snapshot, as the room gives them.
+    const gear = (said: GearMessage) => say({ kind: 'gear', id, gear: said });
+    if (opening.how === 'node') return LocalRoom.openNode(module, opening.nodeText, snapshot, opening.foeAsks, gear);
+    if (opening.how === 'island') return LocalRoom.openIsland(module, opening.word, snapshot, opening.seas, gear);
+    const { layoutText, seed, ports, seas } = opening;
+    return LocalRoom.openSea(module, layoutText, snapshot, seed, ports, seas, gear);
   };
   return (told) => {
     if (told.kind === 'open') {
@@ -64,12 +60,6 @@ export function serveRooms(say: (told: FromRooms) => void): (told: ToRooms) => v
     if (told.kind === 'input') room.send(told.bytes);
     else if (told.kind === 'word') say({ kind: 'word', id: told.id, word: room.isleWord(told.isle) });
     else if (told.kind === 'close') rooms.delete(told.id);
-    else {
-      const { trim, arms, arts } = room;
-      room.pump(told.seconds);
-      // The room's last word on the player's gear, said on whenever a tick changed it.
-      if (room.trim !== trim || room.arms !== arms || room.arts !== arts)
-        say({ kind: 'gear', id: told.id, trim: room.trim, arms: room.arms, arts: room.arts });
-    }
+    else room.pump(told.seconds);
   };
 }

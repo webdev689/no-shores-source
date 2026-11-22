@@ -251,7 +251,7 @@ fn a_node_is_entered_and_a_sea_island_landed_on_as_the_character_arrives() {
         quests().quests[landed[0]].tasks[landed[1]].goals.iter().position(|it| it.kind() == GoalKind::Scavenge);
     let seed = (0..).find(|&seed| Kind::of(seed) == Kind::Cove).unwrap_or(0);
     let plan = Plan::new(seed, "woodland").expect("woodland dresses islands");
-    let mut cove = Room::island(&plan, [612_345.5, 287_654.25], None, Some((5, 9)));
+    let mut cove = Room::island(&plan, [612_345.5, 287_654.25], None, Some((5, 9)), None);
     let player = joined(&mut cove, &on_goal(landed), [0.0, 0.0]);
     assert_eq!(now(&cove, player).1, counted(landed, 1), "landed in a cove");
     let wreck = cove.isle.as_ref().expect("an island").wrecks[0];
@@ -272,6 +272,11 @@ fn a_resource_gathered_counts_for_its_goal() {
     room.furnish(None, vec![ResourceNode { x: 1.0, y: 0.0, resource: 0 }]);
     let player = joined(&mut room, &on_goal(key), [0.0, 0.0]);
     room.answer(player, Asked::Gather { node: 0 });
+    assert_eq!(now(&room, player).1, counted(key, 0), "begun, not yet gathered");
+    // Held through its two seconds, the player standing still.
+    for _ in 0..=crate::asks::GATHER_TICKS {
+        room.tick();
+    }
     assert_eq!(now(&room, player).1, counted(key, 1));
 }
 
@@ -346,7 +351,7 @@ fn guarded_isle() -> (Room, [usize; 3]) {
     });
     let seed = (0..).find(|&seed| Kind::of(seed) == Kind::Ruin).unwrap_or(0);
     let plan = Plan::new(seed, "woodland").expect("woodland dresses islands");
-    (Room::island(&plan, [612_345.5, 287_654.25], Some(::foes::factions::GREY_TITHE), Some((5, 9))), key)
+    (Room::island(&plan, [612_345.5, 287_654.25], Some(::foes::factions::GREY_TITHE), Some((5, 9)), None), key)
 }
 
 #[test]
@@ -454,8 +459,8 @@ fn where_the_sea_checks_landings_a_player_lands_and_counts_the_isles_kills_only_
     let reeve = isle.foes.iter().find(|(_, foe)| foe.brain.foe_type.name == "Reeve").map(|(id, _)| *id);
     shoot_dead(&mut isle, player, reeve.expect("the isle's leader"));
     assert_eq!(now(&isle, player).1, counted(key, 0), "its leader's fall before they landed");
-    assert!(isle.land("account-b"));
+    assert!(isle.land("account-b", 1));
     assert_eq!(now(&isle, player).1, counted(key, 0), "another account's word");
-    assert!(isle.land("account-a"));
+    assert!(isle.land("account-a", 1));
     assert_eq!(now(&isle, player).1, counted(key, 1), "the sea's word for theirs");
 }
