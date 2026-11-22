@@ -286,4 +286,5 @@ test("a session whose feel nobody takes keeps only the latest of the fight's eve
     [5, MOST_FELT + 4],
     'the oldest dropped',
   );
+  assert.equal(play.takeEvents().length, MOST_FELT, 'the panel’s events, untaken, are kept as few');
 });

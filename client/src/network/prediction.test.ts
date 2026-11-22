@@ -36,7 +36,9 @@ test('while the room agrees, its word corrected by the inputs it has not taken i
   const predicted = roomSaw[roomSaw.length - 1];
   const corrected = prediction.corrected(roomSaw[25] ?? rules.standing(0, 2), 25, step);
   assert.deepEqual(floatsOf(corrected), predicted && floatsOf(predicted));
-  assert.equal(prediction.waitingCount, 15);
+  let stepped = 0;
+  prediction.corrected(0, 25, (count) => ((stepped += 1), count));
+  assert.equal(stepped, 15, 'the 15 still on their way');
 });
 
 test('on a window of the land, the room’s word and the prediction still agree to the bit', async () => {
@@ -82,7 +84,6 @@ test('inputs are numbered 1, 2, 3 and so on', () => {
 test('a room that takes nothing for 4 s leaves at most 240 inputs waiting, the newest', () => {
   const prediction = new Prediction<number>();
   for (let tick = 1; tick <= 300; tick += 1) prediction.next(tick);
-  assert.equal(prediction.waitingCount, 240);
   assert.equal(
     prediction.corrected(0, 0, (sum, ask) => sum + ask),
     (61 + 300) * 120,

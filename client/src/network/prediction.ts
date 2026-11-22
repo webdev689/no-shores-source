@@ -14,11 +14,6 @@ export class Prediction<Ask> {
     return this.sequence;
   }
 
-  /** How many inputs the room has not taken yet. */
-  get waitingCount(): number {
-    return this.waiting.length;
-  }
-
   /** The state the room saw after the player's input `acknowledged`, with every input it has not taken yet stepped
    *  on top by the same rules. While the room agrees, this is the state the browser already predicted, to the bit. */
   corrected<State>(state: State, acknowledged: number, step: (state: State, ask: Ask) => State): State {

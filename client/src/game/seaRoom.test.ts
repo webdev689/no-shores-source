@@ -107,3 +107,10 @@ test('back at sea, its ship lies where the room last kept it', async () => {
   atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 2, pace: 0 }], [[23, 5, 61_000, 50_000, 2]]);
   assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 2 });
 });
+
+test('washed up in the snapshot that lets the fight go, the fight is over as sunk, never as gone', async () => {
+  const { room, atTick } = await joined();
+  Object.assign(room, { fight: { over: null, events: [] } });
+  atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0 }], [[20, 5, 0, 1]]);
+  assert.equal(room.takeFight()?.over, 'sunk');
+});

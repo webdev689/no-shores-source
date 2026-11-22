@@ -8,7 +8,8 @@ import { panShot, type Shot } from './camera.ts';
 import { IDLE, type InputFrame } from '../player/input.ts';
 import { SeaCombat } from './seaCombat.ts';
 import { pictureAt, shownScale } from './seaLaw.ts';
-import type { SeaRoom } from './seaRoom.ts';
+import { SeaRoom } from './seaRoom.ts';
+import type { Snapshot } from '../network/roomConnection.ts';
 
 const vessel: FightVessel = {
   ship: [5000, 6000, 0.4, 0, 0, 0, 0, 2],
@@ -362,4 +363,56 @@ test("the pad's brace tapped braces for that tap alone, and held braces until it
   fight.padFrame(pad(false, true), 1 / 30);
   await frames(1);
   assert.equal(orders.at(-1)?.brace, false);
+});
+
+/** A sea room on a link that does nothing, holding `FIRST` as the player's fight, and the hand its snapshots come by. */
+async function roomInFight() {
+  let hand: (snapshot: Snapshot) => void = () => undefined;
+  const link = {
+    player: 1,
+    dressed: [],
+    joins: 1,
+    rejoining: false,
+    lost: null,
+    send: () => undefined,
+    pump: () => undefined,
+  };
+  const room = await SeaRoom.join((snapshot) => ((hand = snapshot), link), [5000, 6000], 10);
+  Object.assign(room, { fight: FIRST });
+  const empty = {
+    tick: 1n,
+    players: [],
+    ships: [],
+    pirates: [],
+    fights: [],
+    flotsam: [],
+    kept: [],
+    told: [],
+    decks: [],
+    islands: [],
+  };
+  return { room, nothingFought: () => hand(empty as unknown as Snapshot) };
+}
+
+/** Steps `fight` past the pan, a frame at a time, and says whether the view came back up. */
+async function pannedUp(fight: SeaCombat): Promise<boolean> {
+  for (let frame = 1; frame <= 60; frame++) {
+    fight.frame(1 / 20, frame / 20, 1000, (error) => assert.fail(String(error)));
+    await new Promise((settled) => setImmediate(settled));
+  }
+  return fight.done;
+}
+
+test('a fight whose sea room is let go, its link lost, ends: the view comes back up to the sea', async () => {
+  const { room } = await roomInFight();
+  const fight = new SeaCombat(room, FIRST, MARKS, 0);
+  room.close();
+  assert.ok(await pannedUp(fight));
+});
+
+test('a fight the room no longer lists, the link joined again with no frame between, ends too', async () => {
+  const { room, nothingFought } = await roomInFight();
+  const fight = new SeaCombat(room, FIRST, MARKS, 0);
+  nothingFought();
+  assert.ok(await pannedUp(fight));
 });

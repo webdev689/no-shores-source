@@ -559,8 +559,9 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   waits its turn sends the course first, then the leave, so the room takes the course from the helm. While the sea
   room is joined again after its socket closed, the game sails the ship alone and shows none of the room's ships, a fight in it
   over, and the voyage's line says "Reconnecting…"; joined again, the player is called to the helm and the ship puts to sea
-  where it lies, on its voyage. A sea room that sends the player away is lost: they are called to the helm and sail
-  on alone, the voyage's line saying so. While the room is well, the line says nothing of it (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its pirates and
+  where it lies, on its voyage. A sea room that sends the player away is lost: a fight in it is over, its view
+  going back up, and they are called to the helm and sail on alone, the voyage's line saying so. A fight the room no
+  longer lists for the player (joined again with no frame between) is over the same way. While the room is well, the line says nothing of it (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its pirates and
   fights are the same law.
 
 ## Drawing

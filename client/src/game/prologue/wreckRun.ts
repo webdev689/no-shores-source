@@ -15,7 +15,7 @@ import type { Gpu } from '../../gpu.ts';
 import type { GearState } from '../../network/gearMessages.ts';
 import { LocalRoom } from '../../network/localRoom.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
-import { crosshairPoint } from '../../player/crosshair.ts';
+import { crosshairPoint, shotBodies } from '../../player/crosshair.ts';
 import { CARD_NEAREST_M } from '../../player/figures.ts';
 import { handsZoom } from '../../player/playerCamera.ts';
 import type { Dress } from '../../player/dressing.ts';
@@ -389,7 +389,7 @@ export class WreckRun {
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: !held && !frozen,
       hands: hands && !still,
-      markOf: () => crosshairPoint(camera(), aspect, this.course, bodies, groundAt),
+      markOf: () => crosshairPoint(camera(), aspect, this.course, shotBodies(foes.placed, fight.foes), groundAt),
       zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });

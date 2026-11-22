@@ -153,10 +153,10 @@ export function blockedBy(
 /** The fight's display over the view, kept each frame from a `HudFrame` and drawn as a layer of the interface. */
 export class Hud {
   private readonly vitals = new Vitals();
-  private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
-  private readonly foeBars = new FoeBars();
+  private target = new FoePlate({ poise: true, remembers: 'whole' });
+  private foeBars = new FoeBars();
   private readonly crosshair = new Crosshair();
-  private readonly foeTarget = new FoeTarget();
+  private foeTarget = new FoeTarget();
   private readonly words = new Words();
   /** The side the next number with no stroke to follow is thrown to. */
   private nextSide = 1;
@@ -200,6 +200,17 @@ export class Hud {
     this.beside = beside;
     this.abilities = pictures && new AbilityBar(pictures);
     this.weapons = new WeaponRows(forge && new ItemPictures(forge));
+  }
+
+  /** Forgets every foe the display kept (its target, plates and wind-ups told): a room left, its foes' numbers mean
+   *  other foes in the next. */
+  forget(): void {
+    [this.target, this.foeBars, this.foeTarget] = [
+      new FoePlate({ poise: true, remembers: 'whole' }),
+      new FoeBars(),
+      new FoeTarget(),
+    ];
+    this.ironTold.clear();
   }
 
   /** Whether a Boss's bar stands under the compass. */

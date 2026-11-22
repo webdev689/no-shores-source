@@ -4,7 +4,7 @@
 import type { FirstPerson } from '../firstperson/firstPerson.ts';
 import type { Gpu } from '../gpu.ts';
 import type { CardAt } from '../player/cards.ts';
-import { IDLE, type Input, type InputFrame, axis } from '../player/input.ts';
+import { IDLE, type Input, type InputFrame, axis, handsFree } from '../player/input.ts';
 import type { Walker } from '../player/walker.ts';
 import type { ShipModels } from '../ships/shipModels.ts';
 import type { seaWeatherOn } from '../water/seaWeather.ts';
@@ -175,7 +175,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
-    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: controls.locked, aspect });
+    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: handsFree(controls, paused), aspect });
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
@@ -346,7 +346,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // Only while sailing: a landing chosen, or under way, stands on the landmass open now.
     charting.tick(here.position, landmass.id, seconds, flow.mode === 'sea');
     parts.isleFrame();
-    const ashore = flow.mode === 'sea' ? seaWord?.ashore(landmass) : null;
+    // Washed up, ashore only once the fight's view has panned home and the ship lies where the room moored it.
+    const ashore = flow.mode === 'sea' && !here.fight ? seaWord?.ashore(landmass) : null;
     if (ashore)
       parts.travel(ashore.washUp, () =>
         parts.goFoot(ashore.node, arrivalFacing(ashore.node, playing.landmass.plan, null)),

@@ -409,6 +409,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
         playing.flow = { mode: 'sea', menu: false };
         hud.veil(null);
         hud.note(`You could not go ashore: ${error instanceof Error ? error.message : String(error)}.`);
+        if (rooms) await enterSea(seaSeas).catch(() => undefined); // the island's room may have taken the character
         return;
       }
       leaveHere();

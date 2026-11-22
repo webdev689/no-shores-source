@@ -75,6 +75,8 @@ export class FootView {
   private bloodOf(foot: FootShown, groundAt: (x: number, y: number) => number | null) {
     if (this.blood?.foot === foot) return this.blood;
     this.blood?.drawn.destroy();
+    // A new room numbers its foes from 1 again: the display forgets the last room's.
+    this.hud.forget();
     const [x, y] = foot.node.spawns[0] ?? foot.node.centre;
     const origin: Point = [x, y, 0];
     const surfaces = surfacesOf(foot.boxes, (east, south) => groundAt(east, south) ?? 0);
