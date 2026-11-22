@@ -70,13 +70,13 @@ ground's radius, or its farthest point from its middle past it: the growth's spo
 form) and 16 m more, measured from its own place (the ground's middle, or a Collector's post at its store), on ground
 the room's mesh covers; past that it gives them up and walks back. A zone's room that holds events stands 40 foes alive
 at most and keeps 16 of them for its event (the most it stands at once: a Fissure's living foes short of a wave, its
-fullest wave and its growth or Warden); its garrison stands again, calls and arrives only while the foes not of the
-event stay within 24, as in any other node. The growth, the Warden and Marrow stand half their health more for each
-player at the event beyond the first (the most seen at the Fissure; those on the raid's ground as Marrow comes). The
-Fissure's growth and the raid's tithe-taker the room handles itself: their brains are left be, so neither moves on its
-own nor strikes; the growth stands where it rose, and the tithe-taker walks the navmesh at his own pace, keeping his way
-from tick to tick; their statuses still wear off. A raid's approach, where its waves form and its raiders' home (the
-stores' middle) are put on the navmesh as it begins, at its nearest point.
+fullest wave and its growth or Warden); its garrison stands again, calls and arrives, and a road's kill goal stands its
+group, only while the foes not of the event stay within 24, as in any other node. The growth, the Warden and Marrow
+stand half their health more for each player at the event beyond the first (the most seen at the Fissure; those on the
+raid's ground as Marrow comes). The Fissure's growth and the raid's tithe-taker the room handles itself: their brains
+are left be, so neither moves on its own nor strikes; the growth stands where it rose, and the tithe-taker walks the
+navmesh at his own pace, keeping his way from tick to tick; their statuses still wear off. A raid's approach, where its
+waves form and its raiders' home (the stores' middle) are put on the navmesh as it begins, at its nearest point.
 
 
 **The Fissure.** It opens and a wave of the Lattice pours out of it, 4 m round its middle: three foes and one more for
