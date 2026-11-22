@@ -22,8 +22,11 @@ import { forgedModel, type ModelBuffers, modelBuffers, type ModelKey, modelKeyOf
 import { addPolygon, appendMesh, emptyMesh, type MeshData } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
 import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach } from './plan.ts';
+import type { LampPlace } from '../sky/lamps.ts';
+import { buildingGrowth, crystalLamps, type Growth, heapGrowth, inPlazaWindow, wreckCrust } from './overtaken.ts';
 import { brokenMass, buildingRuin, type BuildingRuin, fallenHeap } from './ruins.ts';
 import { meshSolid } from './solidMesh.ts';
+import { boxReach, tiersReached } from './tiers.ts';
 
 /** Cells a side of a chunk: about 400 m, a few hundred buildings. */
 export const CHUNK_CELLS = 4;
@@ -38,6 +41,8 @@ const RETAINING_THICK_M = 1.2;
 /** How far a decal stands over the ground it is laid on, so the land's own triangles never show through it. */
 const DECAL_LIFT_M = 0.04;
 const TERRACE_WALL_M = 16;
+/** The great spires of the crown on a ruin's landmark that light the night. */
+const CROWN_LAMPS = 3;
 
 export type CityTables = {
   readonly buildings: BuildingTable;
@@ -66,6 +71,8 @@ export type Chunk = {
   readonly masses: Range;
   readonly hulls: Range;
   readonly solids: Range;
+  /** The Lattice's small crystal in a ruin, drawn only near: its shards and its lesser spires. */
+  readonly detail: Range;
 };
 
 export type CityData = {
@@ -85,6 +92,8 @@ export type CityData = {
   readonly cleared: (x: number, y: number) => boolean;
   /** Whether the city is a ruin, its broken buildings open to the sky. */
   readonly ruined: boolean;
+  /** The lamps a ruin's crystal lights at night, a few at each great formation. */
+  readonly lamps: readonly LampPlace[];
 };
 
 type Placed = {
@@ -196,7 +205,7 @@ export function buildCity(
   );
 
   const chunkCount = chunkSide * chunkSide;
-  const { masses, massRanges, hullRanges, tops, heaps } = buildingMassesOf(
+  const { masses, massRanges, hullRanges, tops, heaps, growth, lamps } = buildingMassesOf(
     plan,
     placedPieces,
     tables,
@@ -213,6 +222,7 @@ export function buildCity(
   for (const list of near.values()) list.sort((a, b) => a.model - b.model);
 
   const chunkMeshes = Array.from({ length: chunkCount }, emptyMesh);
+  const detailMeshes = Array.from({ length: chunkCount }, emptyMesh);
   // each chunk's solids' box, west, north, bottom, then east, south, top, from the city's middle: a solid past the
   // grid's edge is kept with the edge chunk, so the chunk's box must reach it
   const solidBoxes = Array.from({ length: chunkCount }, () => [
@@ -223,9 +233,17 @@ export function buildCity(
     -Infinity,
     -Infinity,
   ]);
-  const solids: Solid[] = [...plan.landmark, ...plan.works, ...plan.social.solids, ...heaps];
+  // The crate's crystal on the rubble is small, drawn near; its crown on the landmark is great, drawn at every distance.
+  const crust = plan.works.filter((solid) => solid.material === 'crystal');
+  const works = plan.works.filter((solid) => solid.material !== 'crystal');
+  const solids: Solid[] = [...plan.landmark, ...works, ...plan.social.solids, ...heaps, ...growth.great];
+  const wrecks = plan.ruined ? (plan.wrecks ?? []) : [];
+  const detail = [...crust, ...growth.detail, ...wrecks.flatMap(wreckCrust)];
   const onRamp = rampWall(plan);
-  for (const solid of solids) {
+  for (const [solid, meshes] of [
+    ...solids.map((solid) => [solid, chunkMeshes] as const),
+    ...detail.map((solid) => [solid, detailMeshes] as const),
+  ]) {
     const chunk = chunkOf(
       Math.floor((solid.at[0] - plan.grid.west) / CELL_M),
       Math.floor((solid.at[1] - plan.grid.north) / CELL_M),
@@ -233,7 +251,7 @@ export function buildCity(
     const layer = retaining(solid) || onRamp(solid) ? book.terrace : book.materials[solid.material];
     const picture = book.pictures[layer] ?? { width: 64, height: 64 };
     const grounded = GROUNDS.has(solid.material);
-    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height, grounded }, chunkMeshes[chunk]);
+    meshSolid(solid, origin, { layer, width: picture.width, height: picture.height, grounded }, meshes[chunk]);
     const reach = solidReach(solid);
     const [east, south] = [solid.at[0] - origin[0], solid.at[1] - origin[1]];
     const box = solidBoxes[chunk];
@@ -266,11 +284,13 @@ export function buildCity(
   const terracePicture = book.pictures[book.terrace] ?? { width: 64, height: 128 };
   plateSkirts(plan, book.terrace, terracePicture, (cell) => chunkMeshes[chunkOf(cell.column, cell.row)]);
   const allSolids = emptyMesh();
-  const solidRanges: Range[] = chunkMeshes.map((mesh) => {
+  const appended = (mesh: MeshData): Range => {
     const first = allSolids.indices.length;
     appendMesh(allSolids, mesh);
     return { first, count: mesh.indices.length };
-  });
+  };
+  const solidRanges = chunkMeshes.map(appended);
+  const detailRanges = detailMeshes.map(appended);
 
   const chunks: Chunk[] = [];
   for (let chunk = 0; chunk < chunkCount; chunk++) {
@@ -288,7 +308,7 @@ export function buildCity(
         lowest = Math.min(lowest, cell.level);
         highest = Math.max(highest, cell.level);
       }
-    const hasSolids = solidRanges[chunk].count > 0;
+    const hasSolids = solidRanges[chunk].count + detailRanges[chunk].count > 0;
     if (!members.length && !hasSolids) continue;
     const box = solidBoxes[chunk];
     const [cellLow, cellHigh] = members.length
@@ -310,6 +330,7 @@ export function buildCity(
       masses: massRanges[chunk],
       hulls: hullRanges[chunk],
       solids: solidRanges[chunk],
+      detail: detailRanges[chunk],
     });
   }
 
@@ -327,7 +348,26 @@ export function buildCity(
     plates: groundPlates(plan, blocks, book.ground, book.materials.paving),
     cleared: clearedGround(plan),
     ruined: plan.ruined === true,
+    lamps: [
+      ...crystalLamps(
+        plan.landmark.filter((solid) => solid.material === 'crystal'),
+        CROWN_LAMPS,
+      ),
+      ...lamps,
+    ],
   };
+}
+
+/** The ranges of the crystal's small detail to draw: those of the chunks within the whole tier's reach of the eye
+ *  (measured from the city's middle). */
+export function detailRuns(chunks: readonly Chunk[], eye: readonly number[]): Range[] {
+  const near = chunks.filter((chunk) => {
+    const low = [0, 1, 2].map((axis) => chunk.middlesLow[axis] - eye[axis]);
+    const high = [0, 1, 2].map((axis) => chunk.middlesHigh[axis] - eye[axis]);
+    const middles = boxReach(low, high);
+    return tiersReached(middles.nearest, middles.farthest).has('whole');
+  });
+  return runs(near.map((chunk) => chunk.detail));
 }
 
 /** Whether a solid is a terrace's retaining wall: a stone block a cell long (or a length of one a ramp cuts) and
@@ -361,14 +401,23 @@ export function rampWall(plan: CityPlan): (solid: Solid) => boolean {
 
 /** Every building's masses (for the middle distance) and hull (for far off), grouped by chunk: all the masses in
  *  chunk order, then all the hulls. In a ruin each building is broken (`ruins.ts`): a fallen one leaves a heap
- *  among the solids instead, a broken one's masses and hull end at its break, roofless. */
+ *  among the solids instead, a broken one's masses and hull end at its break, roofless; and the Lattice's crystal
+ *  grows through each (`overtaken.ts`), none in the plaza's window, each great formation lighting a lamp. */
 function buildingMassesOf(
   plan: CityPlan,
   pieces: readonly Placed[],
   tables: CityTables,
   book: PictureBook,
   chunkCount: number,
-): { masses: ArrayBuffer; massRanges: Range[]; hullRanges: Range[]; tops: Float32Array; heaps: Solid[] } {
+): {
+  masses: ArrayBuffer;
+  massRanges: Range[];
+  hullRanges: Range[];
+  tops: Float32Array;
+  heaps: Solid[];
+  growth: Growth;
+  lamps: LampPlace[];
+} {
   const known = new Map<number, { kept: Mass[]; hull: Mass | null; wall: number; roof: number }>();
   const shapesOf = (id: number) => {
     const found = known.get(id);
@@ -390,6 +439,14 @@ function buildingMassesOf(
   }));
   const tops = new Float32Array(chunkCount).fill(-Infinity);
   const heaps: Solid[] = [];
+  const growth: Growth = { great: [], detail: [] };
+  const lamps: LampPlace[] = [];
+  const overtake = (grown: Growth) => {
+    const great = grown.great.filter((solid) => !inPlazaWindow(solid, plan));
+    growth.great.push(...great);
+    growth.detail.push(...grown.detail.filter((solid) => !inPlazaWindow(solid, plan)));
+    lamps.push(...crystalLamps(great, 1));
+  };
   const placeOf = (piece: Placed) => ({
     east: piece.at[0] + plan.centre[0],
     south: piece.at[1] + plan.centre[1],
@@ -406,7 +463,9 @@ function buildingMassesOf(
       const eaves = Math.min(...shapes.kept.map((mass) => mass.eaves));
       piece.ruin = buildingRuin(place.east, place.south, { ...shapes.hull, eaves });
       if (piece.ruin.fallen) {
-        heaps.push(fallenHeap(massShape(shapes.hull, place, plan.centre), plan.centre));
+        const heap = fallenHeap(massShape(shapes.hull, place, plan.centre), plan.centre);
+        heaps.push(heap);
+        overtake(heapGrowth(heap, [place.east, place.south]));
         continue;
       }
       const cut = piece.ruin.cut;
@@ -415,7 +474,10 @@ function buildingMassesOf(
         if (broken) byChunk[piece.chunk].masses.push([broken, piece]);
       }
       const hull = brokenMass(shapes.hull, cut);
-      if (hull) byChunk[piece.chunk].hulls.push([hull, piece]);
+      if (hull) {
+        byChunk[piece.chunk].hulls.push([hull, piece]);
+        overtake(buildingGrowth(massShape(hull, place, plan.centre), plan.centre, [place.east, place.south]));
+      }
       continue;
     }
     for (const mass of shapes.kept) byChunk[piece.chunk].masses.push([mass, piece]);
@@ -437,7 +499,7 @@ function buildingMassesOf(
   };
   const massRanges = byChunk.map((chunk, k) => lay(chunk.masses, MASS_TIER_MASSES, k));
   const hullRanges = byChunk.map((chunk, k) => lay(chunk.hulls, MASS_TIER_HULLS, k));
-  return { masses, massRanges, hullRanges, tops, heaps };
+  return { masses, massRanges, hullRanges, tops, heaps, growth, lamps };
 }
 
 /** Ranges laid end to end in one buffer, joined where one starts as the last ends, so a run of chunks is one draw. */

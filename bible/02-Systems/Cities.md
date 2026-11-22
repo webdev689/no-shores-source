@@ -31,6 +31,9 @@ code:
   - crates/city/src/ruins.rs#broken_landmark
   - crates/city/src/ruins.rs#street_rubble
   - crates/city/src/ruins.rs#wrecks
+  - crates/city/src/overtaken.rs#crown
+  - crates/city/src/overtaken.rs#crusted
+  - crates/city/src/overtaken.rs#spire
   - crates/land/src/pads.rs#Pads
   - crates/land/src/sites.rs#City
   - client/src/city/cityView.ts#CityView
@@ -49,6 +52,10 @@ code:
   - client/src/city/painter.ts#CityPainter
   - client/src/city/cityShaders.ts#PULL_SHARE
   - client/src/city/ruins.ts#buildingRuin
+  - client/src/city/overtaken.ts#buildingGrowth
+  - client/src/city/overtaken.ts#heapGrowth
+  - client/src/city/overtaken.ts#wreckCrust
+  - client/src/city/cityBuild.ts#detailRuns
   - client/src/game/wrecks.ts#withWrecks
 ---
 # Cities
@@ -330,6 +337,44 @@ be, so its land, its nodes and its plaza's floor stand as they would. Then what 
 Every heap is a frustum of rubble, its top 0.3 of its base, dressed in the climate's terrace rubble. At sea a ruin
 shows no port icon over its harbour and offers no docking there; its island's other landings stay ([[Game]],
 "Landings").
+
+### Overtaken by the Lattice
+
+Every ruin is overtaken by the Lattice's red crystal, the ruined port's people turned to it where they stood
+([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]); a port city has none. The crystal is
+drawn in its own material (`crystal.ts`): red in the sun, purple in its shadows, its core half alight. Every piece is a
+six-sided spire, a body three quarters of its height tapering to 0.8 of its width, then a point (`spire`, laid alike by
+the crate and the page), or a shard, one six-sided point two sevenths as wide as it is high; leaned out from what
+it grows from, rolled a little, its six faces cut flat. All of it is seeded, by the city in the crate and by each
+building's place to the centimetre in the page, the same on every machine.
+
+- **The landmark** is crowned from its break (`crown`): from the middle of what reached through the break a spire 85 %
+  of the height the landmark lost, leaning 3 to 7 degrees; 5 to 8 great spires round it, a quarter to two thirds as
+  tall, leaning 11 to 34 degrees out; 14 to 20 small ones round the break's rim, leaning out 29 to 63 degrees. It is
+  among the landmark's solids, so the room's boxes hold it. Its three tallest spires light the night.
+- **The rubble** of the ways and the breaches is crusted (`crusted`): 2 to 5 shards on each heap's upper slopes, 0.5
+  to 1.6 m high, 3 more on a breach's fall, 1 to 2.8 m. They are among the works, so the room holds them too.
+- **A broken building** (`buildingGrowth`): 12 % are untouched, 33 % heavily overtaken, the rest lightly. Out of its
+  break grow clusters of a few large spires and many small shards, leaning out from the wall top: heavily 2 to 3
+  clusters of 2 to 3 spires 0.9 to 1.6 times the standing wall's height (at most 16 m), standing well over the break,
+  and 6 to 10 shards; lightly 1 to 2 clusters of 1 to 2 spires a quarter to a half its height, and 3 to 6 shards.
+  Veins of shards climb from the ground toward the break, one every 1.1 m, one in five missing: at every corner and
+  at a seam of each long side heavily, at about half its corners lightly. 4 to 6 shards choke the foot of a long side
+  where a doorway is, and heavily, 3 shards stand at 1.8 m on each long side where windows are, and 1 to 2 patches of
+  4 to 7 shards break through the paving 1.5 to 4 m out from its walls.
+- **A fallen building's heap** (`heapGrowth`): but for the untouched share, a spire 2.5 to 4.5 times the heap's height
+  rises from its heart, 2 to 4 more round it, and 4 to 7 shards through the rubble.
+- **The harbour's wrecks** (`wreckCrust`) are crusted at the waterline, a shard every 1.4 m or so round the hull as
+  long and broad as its ship's, three in ten missing, true size: at sea, where a wreck is drawn larger, its crust is
+  inside it.
+- **The plaza stays clear:** nothing the page lays reaches into the 110 m window round the plaza, as no rubble lies
+  there; only the crown on the landmark stands within it.
+- **Near and far.** A spire 5 m or taller is a great one, drawn at every distance with the city's solids, so a ruin
+  reads as the Lattice's from the sea and the Overworld; the shards, the smaller spires and the rubble's crust are
+  drawn only in the chunks within the near tier's reach (`detailRuns`) and cast only into the near shadow.
+- **At night** each building's or heap's tallest great spire lights a lamp of the crystal's light (`CRYSTAL_LAMP`)
+  halfway up it, reaching 6 m more than the spire is tall, at most 30 m; with the landmark's three, the sky's nearest
+  lamps are chosen from them as from any city's.
 
 ## Limits
 

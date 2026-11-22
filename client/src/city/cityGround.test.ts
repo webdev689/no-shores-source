@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
 import { parseBlockFile, type RmbBlock, TILES } from './blocks.ts';
-import { buildCity, retaining, runs } from './cityBuild.ts';
+import { buildCity, detailRuns, retaining, runs } from './cityBuild.ts';
 import { clearedGround, groundPlates, PAVED_TILE, plateSkirts, sideOf } from './cityGround.ts';
 import { MASS_FLOATS, MASS_RUIN } from './cityMasses.ts';
 import { emptyMesh } from './mesh.ts';
@@ -263,4 +263,49 @@ test('a ruin breaks every building the same every time: some fallen to heaps, th
     return highest;
   };
   assert.ok(tops(ruin) < tops(port), `${tops(ruin)} under ${tops(port)}`);
+});
+
+/** The crystal's vertices in a drawing's solids, from the city's middle, inside some ranges of its indices. */
+function crystalCorners(data: ReturnType<typeof buildCity>, ranges: readonly { first: number; count: number }[]) {
+  const crystal = data.book.materials.crystal;
+  const corners: [number, number, number][] = [];
+  for (const { first, count } of ranges)
+    for (let k = first; k < first + count; k++) {
+      const vertex = data.solids.indices[k];
+      if (data.solids.layers[vertex] !== crystal) continue;
+      const place = data.solids.positions.slice(vertex * 3, vertex * 3 + 3);
+      corners.push([place[0], place[1], place[2]]);
+    }
+  return corners;
+}
+
+test("a ruin's buildings are overtaken by the crystal, its great spires drawn far and its shards near; a port's not", () => {
+  const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
+  const ruin = buildCity({ ...madePlan(), ruined: true }, TEMPERATE, blocksOf(), TABLES);
+  const everything = (data: typeof ruin) => data.chunks.flatMap((chunk) => [chunk.solids, chunk.detail]);
+  assert.equal(crystalCorners(port, everything(port)).length, 0, 'a port city is untouched');
+  assert.equal(port.lamps.length, 0);
+  // Nothing the page lays stands in the plaza's window (the made plan's plaza, 110 m round).
+  const [west, north, east, south] = madePlan().social.bounds.map((bound, k) => bound - madePlan().centre[k % 2]);
+  for (const [x, y] of crystalCorners(ruin, everything(ruin)))
+    assert.ok(x < west - 110 || x > east + 110 || y < north - 110 || y > south + 110, `${x}, ${y} in the window`);
+  // With its plaza far off, every building of the made city is overtaken as its seed says.
+  const plan = madePlan();
+  const away = { ...plan, ruined: true, social: { ...plan.social, bounds: [0, 0, 10, 10] as const } };
+  const overtaken = buildCity(away, TEMPERATE, blocksOf(), TABLES);
+  const great = crystalCorners(
+    overtaken,
+    overtaken.chunks.map((chunk) => chunk.solids),
+  );
+  const detail = crystalCorners(
+    overtaken,
+    overtaken.chunks.map((chunk) => chunk.detail),
+  );
+  assert.ok(great.length > 0 && detail.length > great.length, `${great.length} great, ${detail.length} detail`);
+  assert.ok(overtaken.lamps.length > 0, 'its great formations light the night');
+  // Far off a chunk draws its great spires only; near, its shards too.
+  const chunk = overtaken.chunks.find((each) => each.detail.count > 0);
+  assert.ok(chunk);
+  assert.equal(detailRuns([chunk], [chunk.middlesLow[0], chunk.middlesLow[1], 50]).length, 1);
+  assert.equal(detailRuns([chunk], [chunk.middlesLow[0] + 5000, chunk.middlesLow[1], 50]).length, 0);
 });

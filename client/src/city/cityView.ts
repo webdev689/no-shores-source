@@ -1,12 +1,13 @@
 // A port city drawn with the land: its blocks' forged models near the eye, its buildings' masses further out and
-// their hulls far off, dithered into each other; its landmark, works and plaza always; its ground plates at every
-// distance. A Drawer the game's scene draws into its own pass.
+// their hulls far off, dithered into each other; its landmark, works and plaza always, and in a ruin the Lattice's
+// great spires, its small crystal only near; its ground plates at every distance. A Drawer the game's scene draws
+// into its own pass.
 import { CITY_LAMPS } from '../sky/lamps.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
-import { buildCity, type Chunk, type CityData, type CityTables, type Range, runs } from './cityBuild.ts';
+import { buildCity, type Chunk, type CityData, type CityTables, detailRuns, type Range, runs } from './cityBuild.ts';
 import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import { MODEL_FLOATS } from './cityModels.ts';
 import type { MeshData } from './mesh.ts';
@@ -100,6 +101,7 @@ export class CityView implements CityDrawer {
     const started = performance.now();
     const { solids, ...data } = buildCity(plan, climate, blocks, tables);
     this.frame.buildMs = performance.now() - started;
+    CITY_LAMPS.set(this, [...glowLamps(plan), ...data.lamps]);
     const { device } = this.gpu;
     const buffers: GPUBuffer[] = [];
     const buffer = (contents: ArrayBufferView | ArrayBuffer, usage: number, least = 16): GPUBuffer => {
@@ -263,7 +265,7 @@ export class CityView implements CityDrawer {
   }
 
   /** Draws into the cascade being drawn what may cast there: the solids into both; into the near one the near cells'
-   *  models, and into the far one each building's masses, or its hull past where the masses are drawn. A mass is a
+   *  models and the crystal's small detail, and into the far one each building's masses, or its hull past where the masses are drawn. A mass is a
    *  few boxes where a model is hundreds of triangles, and at the far map's 1.2 m texels the two throw one shadow. */
   castInto(pass: GPURenderPassEncoder, fromEye: Float32Array, shot: CityShot, time: number, shadow: ShadowMap): void {
     const drawn = this.drawn;
@@ -280,9 +282,12 @@ export class CityView implements CityDrawer {
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
     for (const run of runs(chunks.map((chunk) => chunk.solids))) pass.drawIndexed(run.count, 1, run.first, 0, 0);
-    if (!far) return;
     const { origin } = drawn.data;
     const eye = [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] as const;
+    if (!far) {
+      for (const run of detailRuns(chunks, eye)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
+      return;
+    }
     pass.setPipeline(this.pipelines.massesCast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.massesCast));
     pass.setVertexBuffer(0, drawn.masses);
@@ -316,7 +321,7 @@ export class CityView implements CityDrawer {
     pass.setVertexBuffer(0, drawn.solidVertices);
     pass.setVertexBuffer(1, drawn.origin);
     pass.setIndexBuffer(drawn.solidIndices, 'uint32');
-    for (const run of runs(chunks.map((chunk) => chunk.solids))) {
+    for (const run of [...runs(chunks.map((chunk) => chunk.solids)), ...detailRuns(chunks, eye)]) {
       pass.drawIndexed(run.count, 1, run.first, 0, 0);
       frame.draws++;
       frame.triangles += run.count / 3;

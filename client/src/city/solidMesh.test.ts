@@ -163,3 +163,21 @@ test("a ground's top takes its pattern from the world, so its pieces join as one
     }
   }
 });
+
+test("the crystal's six-sided columns are cut in flat facets, each lit as one; a stone column stays round", () => {
+  const facetNormals = (material: Solid['material']): number => {
+    const mesh = meshed({ ...solidOf({ shape: 'column', sides: 6, top: 0.8 }, [2, 2, 6]), material });
+    const sides = new Set<string>();
+    for (let vertex = 0; vertex < mesh.normals.length / 3; vertex++) {
+      const normal = mesh.normals.slice(vertex * 3, vertex * 3 + 3);
+      if (Math.abs(normal[2]) < 0.99) sides.add(normal.map((part) => part.toFixed(3)).join());
+    }
+    return sides.size;
+  };
+  assert.equal(facetNormals('crystal'), 6, 'one normal a facet');
+  assert.ok(facetNormals('stone') > 6, 'smooth round its sides');
+  const enclosed = enclosure(
+    meshed({ ...solidOf({ shape: 'column', sides: 6, top: 0 }, [2, 2, 6]), material: 'crystal' }),
+  );
+  assert.ok(enclosed.volume > 0, 'a facetted point is wound out of itself');
+});
