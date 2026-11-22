@@ -1939,7 +1939,7 @@
   ]
  },
  "corsairs-rest": {
-  "theme": "A corsairs' haven hidden in the marsh channels.",
+  "theme": "A Grey Tithe haven hidden in the marsh channels.",
   "areas": [
    {
     "kind": "entrance",
@@ -1947,11 +1947,11 @@
    },
    {
     "kind": "dock",
-    "name": "Corsairs' Jetty"
+    "name": "Tithe Jetty"
    },
    {
     "kind": "camp",
-    "name": "Corsairs' Rest"
+    "name": "Tithe's Rest"
    },
    {
     "kind": "arena",
