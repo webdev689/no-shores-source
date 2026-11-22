@@ -154,8 +154,13 @@ export class RoomHost extends DurableObject<Env> {
       this.opened = null;
       return new Response('No such room', { status: 404 });
     }
-    if (this.players.size >= socketsMost(this.name)) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
+    // Past its sockets the room still takes one, to say why it closes: a page never reads a refused upgrade's status.
+    if (this.players.size >= socketsMost(this.name)) {
+      server.accept();
+      server.close(1013, 'the room is full');
+      return new Response(null, { status: 101, webSocket: client });
+    }
     // A join at an entrance that is not one is the room's ordinary join; one at an entrance stays there only once the
     // room keeps the player's character as come out of its dungeon (`outOfDoor`).
     const entrance = entranceOf(request);

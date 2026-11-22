@@ -363,7 +363,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const syncMenu = () => {
     const resume = { label: 'Resume', run: () => change({ kind: 'back' }) };
     if (playing.flow.mode === 'foot' && playing.flow.menu && playing.foot) {
-      const home = { label: 'Return to ship', run: () => returnToShip(playing.foot, toSea, (why) => hud.note(why)) };
+      const home = { label: 'Return to ship', run: () => returnToShip(playing.foot, toSea, tell) };
       hud.menu({ title: playing.foot.node.name, choices: [resume, home] });
     } else if (playing.flow.mode === 'sea' && playing.flow.menu) {
       const landfall = playing.sea?.landfall;

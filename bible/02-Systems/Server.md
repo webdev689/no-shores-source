@@ -528,8 +528,9 @@ so every decision is Rust and the shell only carries bytes and time.
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").
 - Sockets are the object's own: the room lives only in its memory, so a socket never outlasts it, and a browser whose
   room is gone learns so by its socket closing, and joins again.
-- A full room closes the socket saying so; past 64 sockets, the sea's guard, or a run's eight, a join is turned
-  away (503). A locked node's room takes no one, at any seas: the room answers every join with none and says why
+- A full room closes the socket saying so (1013, "the room is full"), and so does one past its sockets, 64, the
+  sea's guard, or a run's eight: the socket is taken only to be closed, since a page never reads a refused upgrade's
+  status. A locked node's room takes no one, at any seas: the room answers every join with none and says why
   (`refusal`), and the host closes the socket with 4003 and those words, "<name> is locked". A landing, a gate and a
   company's join all come in as a join, so none gets in. Should the room's WebAssembly ever trap, every socket is
   closed and the object starts over.
