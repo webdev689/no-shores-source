@@ -1,3 +1,4 @@
+import '../keptNames.ts';
 import { FirstPerson } from '../firstperson/firstPerson.ts';
 import { type Gpu, GpuUnavailable, TEXTURE_USAGE, startGpu, stopWhenLost } from '../gpu.ts';
 import type { ForgeLooks } from '../forge/looks.ts';

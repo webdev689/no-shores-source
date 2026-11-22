@@ -21,7 +21,7 @@ synthesiser, with the CC0 and public-domain recordings the owner chose for its s
 ([[DFO's Own Sounds Join the Sound Sheet]]).
 
 **Why.** DFO Online ported other authors' mods and later spent months replacing them with its own work, and one ship
-system came from a decompiled mod with no licence. Overlook starts where DFO ended up ([[Overlook Is Our Own Game]]).
+system came from a decompiled mod with no licence. No Shores starts where DFO ended up ([[Overlook Is Our Own Game]]).
 
 **Checked by.** The assets check keeps media out of git outside `bible/Attachments/`, so art must come from our
 tools. Review holds the rest. [[Lessons from DFO]] has the evidence.

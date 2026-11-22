@@ -12,9 +12,10 @@ import type { Interface } from '../ui/ui.ts';
 import { ease } from '../ui/ease.ts';
 import { breath, dropped, Eased, pageClock, ruleOf } from './cinemaParts.ts';
 import { lidDrop, lidOf, lidShut } from './eyelids.ts';
+import { logoNode, logoScale } from './logo.ts';
 
 /** The title as the screen shows it. */
-export const TITLE = 'Overlook';
+export const TITLE = 'No Shores';
 
 /** Whether the page is played by touch, so its prompts say tap and hold rather than name keys. */
 export const playedByTouch = (): boolean => globalThis.matchMedia?.('(pointer: coarse)').matches ?? false;
@@ -192,22 +193,17 @@ export class Screen {
   private titleNode(width: number, height: number, now: number): Child {
     const shown = this.titled.value(now);
     if (shown <= 0) return null;
-    // min(99px, 10vw), in the face's whole steps of 11 px.
-    const size = Math.max(1, Math.min(9, Math.floor((width * 0.1) / 11)));
     return {
       width,
       direction: 'column',
       alignX: 'center',
-      // The rule stands 22 px under the name; the name's shadow, 4 px of that, is laid in its own box.
-      gap: 18,
+      gap: 22,
       opacity: shown,
+      label: TITLE,
       float: { to: 'screen', y: Math.round(height * 0.3) },
       children: [
-        dropped(
-          { words: TITLE.toUpperCase(), size, leading: size * 11, colour: '#e9d8a6', tracking: 8, wrap: false },
-          '#3a2c14',
-          4,
-        ),
+        // The logo across half the view at most, three times its cells at most.
+        logoNode(logoScale(width * 0.5, 3)),
         { width: Math.min(440, Math.round(width * 0.7)), height: 4, picture: TITLE_RULE },
       ],
     };

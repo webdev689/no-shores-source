@@ -1190,7 +1190,7 @@ button's corner and screen, and the Tailor's wares.
   720's sizes rather than twice them. A tile's soft glow and a card's drop shadow are drawn as hard light and no
   shadow; a charging picture quivers but does not brighten.
 - A boss's name strikes in by fading alone: the page grew it from 1.6 times its size, which the face's whole steps
-  cannot. The tap's and the title's soft dark glows are not drawn, only their hard shadows. What each of the held
+  cannot. The tap's soft dark glow is not drawn, only its hard shadow. What each of the held
   map's seas does, a tooltip on the page, is told only to a screen reader, in the press's label.
 - The creation's windows wear the kit's window, wells and presses, where the page's sheet had cleared the kit's frames
   to plain light borders.

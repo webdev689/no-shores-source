@@ -161,18 +161,18 @@ test('guesses at one username from many addresses meet a ceiling, but one addres
 });
 
 test('a Discord sign-in comes back only to a page under a listed one, by origin and path', () => {
-  const pages = ['https://lattymoy.github.io/overlook-source/'];
+  const pages = ['https://lattymoy.github.io/no-shores-source/'];
   assert.equal(
-    backTo('https://lattymoy.github.io/overlook-source/?room=live#x', pages),
-    'https://lattymoy.github.io/overlook-source/?room=live',
+    backTo('https://lattymoy.github.io/no-shores-source/?room=live#x', pages),
+    'https://lattymoy.github.io/no-shores-source/?room=live',
   );
   assert.equal(
-    backTo('https://lattymoy.github.io/overlook-source', pages),
-    'https://lattymoy.github.io/overlook-source',
+    backTo('https://lattymoy.github.io/no-shores-source', pages),
+    'https://lattymoy.github.io/no-shores-source',
   );
   assert.equal(backTo('https://lattymoy.github.io/daggerfall-js-source/', pages), null, "another project's page");
-  assert.equal(backTo('https://lattymoy.github.io/overlook-sourced/', pages), null);
-  assert.equal(backTo('https://evil.example/overlook-source/', pages), null);
+  assert.equal(backTo('https://lattymoy.github.io/no-shores-sourced/', pages), null);
+  assert.equal(backTo('https://evil.example/no-shores-source/', pages), null);
   assert.equal(backTo('javascript:alert(1)', pages), null);
 });
 

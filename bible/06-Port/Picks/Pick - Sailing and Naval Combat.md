@@ -29,7 +29,7 @@ dfo_commit: ce0bb33c20 (main); fc2a8e63d1 (ccr-aff93cb4-gw1nto-audit) for ownBoa
 # Pick - Sailing and Naval Combat
 
 DFO's sailing (its port of Come Sail Away, [[Come Sail Away's Sailing Comes Over]]) and its naval combat
-([[Naval, Living World, Professions and Synth Come Over Leaner]]), adapted to Overlook.
+([[Naval, Living World, Professions and Synth Come Over Leaner]]), adapted to No Shores.
 
 ## What comes over
 

@@ -3,7 +3,7 @@ type: index
 ---
 # Port
 
-What Overlook takes from DFO Online, and what it leaves. DFO's work is ours to draw on
+What No Shores takes from DFO Online, and what it leaves. DFO's work is ours to draw on
 ([[Built From What DFO Taught Us]]). Client code comes over as TypeScript; GPU code is rewritten for WebGPU; server and
 rules code is rebuilt in Rust ([[Porting from DFO]]).
 
@@ -30,4 +30,4 @@ rules code is rebuilt in Rust ([[Porting from DFO]]).
 | **Practice** | A process or check to carry as an idea, not as code |
 
 Effort is the size of the work to bring it over: **S** small, **M** medium, **L** large. Whether a system belongs in
-Overlook is the owner's call alone: the list says what can come, never what should.
+No Shores is the owner's call alone: the list says what can come, never what should.

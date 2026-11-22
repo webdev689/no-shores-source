@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Overlook, the owner's own game. The client is strict TypeScript drawing with WebGPU only; the server and the game's
+No Shores, the owner's own game. The client is strict TypeScript drawing with WebGPU only; the server and the game's
 rules are Rust, with the server the sole authority. Everything else is in the Obsidian vault `bible/`: start at
 `bible/Home.md`, and `bible/Hand-off.md` says where the work stands.
 

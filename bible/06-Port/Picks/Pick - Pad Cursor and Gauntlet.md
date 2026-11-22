@@ -44,5 +44,5 @@ Drawn by the interface, last of all, in the page and the game's worker alike (`c
 `gauntlet.ts`; [[Interface]], "The pad's cursor" and "The pointer and the ratio"). Every press the pad can reach in
 the top window pulls it, so the pull works in every window. Lengths are DFO's CSS pixels turned into the interface's.
 The stick's rest is the game's 0.2, not DFO's 0.1 after a 0.19 clip. What it is over is lit with its own brass, not a
-ring. The cross keeps Overlook's repeat (0.4 s, then every 0.12 s). The gauntlet is a grid of its five colours in
+ring. The cross keeps the game's repeat (0.4 s, then every 0.12 s). The gauntlet is a grid of its five colours in
 code, not a PNG; the mouse wears it as an SVG at 1x and 2x. The pad cursor's press frame shows while A holds, not RT.

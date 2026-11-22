@@ -40,8 +40,8 @@ enhanced ai from dfo as it handles enemies and build upon it to utilize the new 
 ## What stays behind
 
 - DFU's enemy motor, which the brain stood on, and every table it read: the enemy, mobile and class tables, skills and
-  weapon templates. Foes stand on Overlook's own kinds and the [[Movement]] rules.
-- Cover by billboards: Overlook has none yet; the course's blocks stop sight and shots.
+  weapon templates. Foes stand on the game's own kinds and the [[Movement]] rules.
+- Cover by billboards: No Shores has none yet; the course's blocks stop sight and shots.
 - Revenants (RVN), the anti-grief rules for doorways and pools, and the switch back to DFU's classic motor.
 
 ## Our version

@@ -1,5 +1,5 @@
 {
-"about": "Daggerfall's RMB town blocks as data: every block of the freeware BLOCKS.BSA, its building and prop placements, ground tiles and flat counts. Overlook holds no reader of Daggerfall's files; this table is the blocks.",
+"about": "Daggerfall's RMB town blocks as data: every block of the freeware BLOCKS.BSA, its building and prop placements, ground tiles and flat counts. The game holds no reader of Daggerfall's files; this table is the blocks.",
 "frame": {"block":"A block is 102.4 m square (4096 Daggerfall units at 0.025 m).","x":"metres east of the block's west edge","y":"metres south of the block's north edge","z":"metres up from the block's ground","yaw":"degrees clockwise from north, turning a model's +z (its north, in content/forged's model frame: x right, y up, z forward) towards east","model":"A model's origin stands at (x, y, z); content/forged keeps Daggerfall's model origins."},
 "buildings": "[modelId, x, y, z, yaw, buildingType, record]: one row per model of a building record; models of one building share its record (0-based, the block building record that keys its interior and name).",
 "props": "[modelId, x, y, z, yaw, scale]: the block's scene models. z includes Daggerfall Unity's props offset (4 units, 0.1 m down) as DFO stands them; scale is 1 in every block.",

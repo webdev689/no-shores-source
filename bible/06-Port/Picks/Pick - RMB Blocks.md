@@ -21,7 +21,7 @@ Daggerfall's 920 town blocks, which DFO reads from the game's files to fill ever
 
 ## What stays behind
 
-- The readers themselves: Overlook holds no reader of Daggerfall's files ([[Readers of Our Own Formats Only]]).
+- The readers themselves: No Shores holds no reader of Daggerfall's files ([[Readers of Our Own Formats Only]]).
 - Flats (Daggerfall's sprites), counted but not placed.
 
 ## Our version

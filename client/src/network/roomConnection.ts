@@ -256,7 +256,7 @@ export class RoomConnection implements RoomLink {
 /** Loads the page again for a room that speaks another protocol, once for each protocol, so a page a deploy left
  *  behind takes the new one without looping should the two still differ. */
 function loadAgainFor(protocol: number): void {
-  const key = 'overlook.protocol';
+  const key = 'noshores.protocol';
   try {
     if (globalThis.sessionStorage.getItem(key) === String(protocol)) return;
     globalThis.sessionStorage.setItem(key, String(protocol));

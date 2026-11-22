@@ -5,7 +5,7 @@ import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { LOOK, heading, labelled, copyLine, pick, press, slide, tick } from './panelKit.ts';
 
-const KEPT_KEY = 'overlook.testground.feel';
+const KEPT_KEY = 'noshores.testground.feel';
 
 /** What the glow may show: the gear's own element, or one chosen, by the gear crate's numbers. */
 const GLOW_CHOICES = ['Own gear', 'Blaze', 'Volt', 'Cosmic'] as const;

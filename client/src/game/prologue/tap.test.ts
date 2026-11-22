@@ -30,7 +30,11 @@ test('the tap to start waits for both the tap and the world, then fades and goes
     const ready = new Promise<void>((resolve) => (loaded = resolve));
     let started = false;
     void tapToStart(stack, ready, () => clock.now).then(() => (started = true));
-    assert.ok(words().includes('OVERLOOK'));
+    assert.ok(
+      laidOf(stack.node(ui)).some((each) => each.node.picture?.key === 'logo'),
+      'the logo',
+    );
+    assert.match(laidOf(stack.node(ui)).find((each) => each.node.id === 'story-tap')?.node.label ?? '', /^No Shores\./);
     assert.ok(words().includes('CLICK OR PRESS ANY KEY TO START'));
     assert.equal(
       laidOf(stack.node(ui)).find((each) => each.node.id === 'story-tap')?.node.solid,
