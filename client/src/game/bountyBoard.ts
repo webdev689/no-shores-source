@@ -100,8 +100,9 @@ function nextBoard(until: number | null, size: number): Node {
  *  tiles. Before the prologue the tiles rest grey and the card says why. */
 export function boardPage(context: MenuContext, resetAt: () => number | null, now = roomNow): Node {
   const { gear, ui, sizes, room } = context;
-  // The card stands beside the tiles, or under them on a phone, within the board's padding either way.
-  const cardWidth = Math.min(130 * (sizes.label + 1), room.width - 2 * BOARD_PADDING);
+  // The card stands beside the tiles, or under them on a phone, within the board's padding either way; on the menu's
+  // first frame its body is not yet laid and gives no room.
+  const cardWidth = Math.max(0, Math.min(130 * (sizes.label + 1), room.width - 2 * BOARD_PADDING));
   const rows = bountyRows(gear);
   const shut = gear.prologueDone === false;
   const ids = new Map(rows.map((row) => [row.place, `bounty-${row.place}`]));
