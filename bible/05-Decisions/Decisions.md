@@ -278,6 +278,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Character Tab Shows No Fruit of Dagon]]
 - [[A Player's Square Shows Their Level, Gold Past 20]]
 - [[The Level and Prestige Plaques Show Their Numbers Alone]]
+- [[The Weapons Heading Stands Under the Art]]
 
 ## Replaced
 

@@ -38,6 +38,7 @@ Claude's, with its reason. The owner can change any.
 | How a mute works | One way, hiding only their chat lines and Whispers, a Whisper to a muter answered as sent; from the menu's Mute row, `/mute` and `/unmute`, and Settings' list of the muted; 200 at most | DFO's `/mute` was a moderator's, so a player's own mute is new: it hides less than a block, which stays the way to keep a player away; what is hidden follows the Roster's block law |
 | Inspect's banner | The menu's own banner, the emblem's pattern carried across the window, their name and guild's tag, level, Prestige and Defense over it | The Character tab stands under that banner for the player's own character |
 | Level and Prestige, side by side | Two framed plaques over the figure, each its name over a rule and its number large: the level in brass, Prestige in a pale steel; the meter to the next level under both | Past level 20 Prestige sets the level ([[Gear]]), so the two read as a pair |
+| The Armour heading | Level with the Weapons heading, under room as tall as the Art's row, so each armour row stands level with a weapon's | [[The Weapons Heading Stands Under the Art]] moved the Weapons heading down a row |
 | The gold of levels past 20 | The plates' own brass (`TONES.brassHi`), the Character tab's level colour | One gold for the level wherever it shows |
 | What Inspect leaves out | Hints, the XP meter and Appearance; Back returns to their menu | What only the player's own character can do |
 

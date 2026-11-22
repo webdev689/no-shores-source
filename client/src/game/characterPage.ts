@@ -386,12 +386,12 @@ function appearanceNode(context: MenuContext): Node {
 }
 
 /** A side's heading over a rule, at its side's edge. */
-function heading(said: string, size: number, end: boolean): Node {
+function heading(said: string, size: number, end: boolean, below: number): Node {
   return {
     width: 'grow',
     direction: 'column',
     gap: 4,
-    padding: [4, 0, 10, 0],
+    padding: [4, 0, below, 0],
     children: [
       { width: 'grow', alignX: end ? 'end' : 'start', children: [label(said, size)] },
       { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
@@ -515,14 +515,18 @@ export function characterPage(context: MenuContext, open: number | null, choose:
   const [side, middle] = [Math.max(220, Math.floor(share)), Math.max(300, Math.floor(share * 1.6))];
   const gap = sizes.short ? 10 : 14;
   const art = artNode(context);
+  // The Art's row holds its 96 px diamond, so the heading under it stands clear; a short view lets its tip into the
+  // gap and the heading's top, and keeps the heading's foot close, so the page stands as tall as before.
+  const artRow = sizes.short ? 84 : 96;
+  const below = sizes.short ? 3 : 10;
   const left: Node = {
     width: side,
     direction: 'column',
     alignX: 'end',
     gap,
     children: [
-      heading('Weapons', sizes.label, true),
-      { height: sizes.short ? SLOT_TILE_SHORT : SLOT_TILE, alignY: 'center', children: [art] },
+      { height: artRow, alignY: 'center', children: [art] },
+      heading('Weapons', sizes.label, true, below),
       ...WEAPONS.map((slot, place) => slotNode(context, slot, open, choose, true, place >= WEAPONS.length - 1)),
       !context.inspected && appearanceNode(context),
     ],
@@ -532,7 +536,9 @@ export function characterPage(context: MenuContext, open: number | null, choose:
     direction: 'column',
     gap,
     children: [
-      heading('Armour', sizes.label, false),
+      // Room beside the Art, so the two headings stand on one line and each armour row level with a weapon's.
+      { height: artRow },
+      heading('Armour', sizes.label, false, below),
       ...ARMOUR.map((slot, place) => slotNode(context, slot, open, choose, false, place >= ARMOUR.length - 2)),
     ],
   };
