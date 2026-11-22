@@ -1,5 +1,6 @@
 // The game's page: one canvas, handed to the game's own thread to draw on (`gameWorker.ts`), and the page's side of
 // it, which keeps what only a page has (`thread/pageHost.ts`).
+import './keptNames.ts';
 import { PageHost } from './thread/pageHost.ts';
 import { stopped } from './ui/page.ts';
 

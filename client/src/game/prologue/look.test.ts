@@ -31,7 +31,7 @@ const felid: Look = { body: 'female', race: 'felid', tone: 0.3, hair: { style: '
 test('a kept look comes back as it was kept, under overlook.look', () => {
   const kept = shelf();
   keepLook(kept, felid);
-  assert.ok(kept.held.has('overlook.look'));
+  assert.ok(kept.held.has('noshores.look'));
   assert.deepEqual(keptLook(kept), felid);
   keepLook(kept, { ...FIRST_LOOK, race: 'anole', hair: null });
   assert.deepEqual(keptLook(kept), { ...FIRST_LOOK, race: 'anole', hair: null });
@@ -58,7 +58,7 @@ test('nothing kept, or anything malformed, is no look', () => {
     { body: 'male', race: 'human', tone: 0.5 },
   ];
   for (const value of refused) {
-    kept.held.set('overlook.look', typeof value === 'string' ? value : JSON.stringify(value));
+    kept.held.set('noshores.look', typeof value === 'string' ? value : JSON.stringify(value));
     assert.equal(keptLook(kept), null, JSON.stringify(value));
   }
 });

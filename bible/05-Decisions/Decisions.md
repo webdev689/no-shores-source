@@ -262,7 +262,6 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
 - [[Built From What DFO Taught Us]]
-- [[Private Repo overlook-source]]
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
 - [[What a Player Can Use Wears Its Mark Over It]]
@@ -270,6 +269,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 
 ## Replaced
 
+- [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
 - [[Locked On, the Figure Faces Its Foe]], by [[Locked On, the Figure Faces Its Foe Unless It Sprints]]
 - [[Rust for Everything]], by [[TypeScript and Rust]]
 - [[Servers on Dedicated-Core VPS]], by [[Servers on Cloudflare]]

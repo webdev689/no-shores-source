@@ -76,6 +76,7 @@ const RESERVED = new Set(
     'mods',
     'staff',
     'owner',
+    'no shores',
     'overlook',
     'vestige',
     'official',
@@ -156,10 +157,12 @@ export function blocked(text: string): boolean {
 }
 
 /** Whether a name claims to speak for the game: a reserved word, however its letters are dressed, as the whole name or
- *  its first or last word. */
+ *  its first or last one or two words. */
 export function reserved(name: string): boolean {
   const words = wordsOf(apart(name));
-  return [words.join(''), words[0] ?? '', words.at(-1) ?? ''].some((word) => RESERVED.has(skeleton(word)));
+  // Two words too, so a reserved name of two (No Shores) is held as one of one word is.
+  const ends = [words[0] ?? '', words.at(-1) ?? '', words.slice(0, 2).join(''), words.slice(-2).join('')];
+  return [words.join(''), ...ends].some((word) => RESERVED.has(skeleton(word)));
 }
 
 /** Why a player's name or line is refused, in words for them, or null when others may read it. */

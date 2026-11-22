@@ -12,7 +12,7 @@ export interface Look {
 }
 
 /** Where this browser keeps the look. */
-const KEY = 'overlook.look';
+const KEY = 'noshores.look';
 
 /** Each body's hair styles, as the forge draws them. */
 const HAIR_STYLES: Readonly<Record<Look['body'], readonly string[]>> = {

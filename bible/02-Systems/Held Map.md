@@ -194,7 +194,7 @@ The map on land speaks in icon glyphs, with little text, and a table on it says 
 
 ## Fog of war
 
-What the player has discovered is kept in this browser (`overlook-discovery`), every 30 s once it changes and as the
+What the player has discovered is kept in this browser (`noshores-discovery`), every 30 s once it changes and as the
 page is hidden or goes ([[World Map]]):
 
 | What | Discovered |

@@ -85,11 +85,11 @@ test('ordinary words and names pass, those that hold a short root among them', (
   for (const text of ordinary) assert.equal(blocked(text), false, text);
 });
 
-test('a name may not claim to speak for the game, whole or as its first or last word', () => {
+test('a name may not claim to speak for the game, whole or at its start or end', () => {
   const claims = ['Admin', 'ADMIN', 'Adm1n', '4dmin', 'Adrnin', 'Ad_min', 'Overlook Staff', 'Admin_Ray', 'Ray_Admin'];
-  for (const name of [...claims, 'AdminRay', 'Moderator', 'GM', 'Gm_Ray', 'Dev', 'Official_Overlook', 'Null'])
+  for (const name of [...claims, 'AdminRay', 'Moderator', 'GM', 'Gm_Ray', 'Dev', 'Official_Overlook', 'Null', 'No Shores', 'NoShores_Ray', 'Ray_N0_Sh0res'])
     assert.ok(reserved(name), name);
-  const fair = ['Ray_Admin_Bob', 'Adminton', 'Modesty', 'Mood', 'Devon', 'Staffordshire', 'Guesthouse', 'Overlooked'];
+  const fair = ['Ray_Admin_Bob', 'Adminton', 'Modesty', 'Mood', 'Devon', 'Staffordshire', 'Guesthouse', 'Overlooked', 'Shores', 'No_Ray', 'Ray_No_Shoresmen'];
   for (const name of fair) assert.equal(reserved(name), false, name);
   assert.equal(refusalOf('username', 'Overlook_Staff'), 'That name is not allowed. Choose another.');
   assert.equal(refusalOf('guild', 'The Moderators'), null, 'only the words as they are');
