@@ -50,12 +50,14 @@ jobs:
     uses: ./.github/workflows/pages.yml
 
   # Deploys the rooms from main, once this same commit has passed the check, when their code changed: the owner's yes
-  # to a merge covers it. Reading the deployments tells it what was deployed last.
+  # to a merge covers it. Reading the deployments tells it what was deployed last, and reading the checks whether a
+  # commit run by hand passed.
   rooms:
     needs: check
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       deployments: read
+      checks: read
     uses: ./.github/workflows/rooms.yml
     secrets: inherit
