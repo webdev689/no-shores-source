@@ -85,7 +85,10 @@ test('the Core counts and locks the fragments not owned, and refuses them before
   assert.ok(conduction);
   const card = fragmentCard(art(1), conduction, null, 1, howHad(1));
   assert.equal(card.kind, 'Storm fragment, not owned');
-  assert.match(card.words, /Raise the Art at the Stormcallers' counter, or buy it there from their first rank\.$/);
+  assert.match(
+    card.words,
+    /Choose it on the Stormcallers' road, raise the Art at the Stormcallers' counter, or buy it there from their first rank\.$/,
+  );
 });
 
 test('a spell’s numbers at each level are scaled as the room scales them, the rest as written', () => {

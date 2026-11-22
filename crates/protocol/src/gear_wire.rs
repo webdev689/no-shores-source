@@ -77,6 +77,12 @@ pub const WEAR_COSMETIC: u8 = 55;
 pub const BUY_COSMETIC: u8 = 56;
 /// One of Shape's wares of the week bought, by its place in `node`.
 pub const BUY_FROM_SHAPE: u8 = 57;
+/// A keeper spoken with, by their number in `column` (`gear::quests::keeper_key`), at their counter.
+pub const SPEAK: u8 = 64;
+/// A fragment chosen for a choice a house's road gave: the Art in `column`, the fragment's place in `node`.
+pub const CHOOSE_FRAGMENT: u8 = 65;
+/// A puzzle's point used, by its place among its goal's points in `column`.
+pub const USE_POINT: u8 = 66;
 /// Shape's place on the gear message while he is away.
 pub const SHAPE_AWAY: u8 = 255;
 
@@ -162,6 +168,9 @@ pub fn asked_of(ask: &messages::Ask<'_>) -> Option<Asked> {
         WEAR_COSMETIC => Asked::Gear(Ask::WearCosmetic { cosmetic: u16::try_from(item).ok()? }),
         BUY_COSMETIC => Asked::Gear(Ask::BuyCosmetic { cosmetic: u16::try_from(item).ok()? }),
         BUY_FROM_SHAPE => Asked::Gear(Ask::BuyFromShape { ware: node, shown: item }),
+        SPEAK => Asked::Gear(Ask::Speak { keeper: column }),
+        CHOOSE_FRAGMENT => Asked::Gear(Ask::ChooseFragment { art: column, fragment: node }),
+        USE_POINT => Asked::UsePoint { point: column },
         _ => return None,
     })
 }
@@ -229,9 +238,14 @@ pub fn ask_offset<'built>(builder: &mut FlatBufferBuilder<'built>, asked: &Asked
             Ask::BuyFromShape { ware, shown } => {
                 args = messages::AskArgs { kind: BUY_FROM_SHAPE, node: ware, item: shown, ..args };
             }
+            Ask::Speak { keeper } => args = messages::AskArgs { kind: SPEAK, column: keeper, ..args },
+            Ask::ChooseFragment { art, fragment } => {
+                args = messages::AskArgs { kind: CHOOSE_FRAGMENT, column: art, node: fragment, ..args };
+            }
         },
         Asked::Gather { node } => args = messages::AskArgs { kind: GATHER, node: *node, ..args },
         Asked::Scavenge { wreck } => args = messages::AskArgs { kind: SCAVENGE, node: *wreck, ..args },
+        Asked::UsePoint { point } => args = messages::AskArgs { kind: USE_POINT, column: *point, ..args },
         Asked::Grant(Grant::Vestige { rarity, slot, level }) => {
             args = messages::AskArgs {
                 kind: GRANT_VESTIGE,
@@ -432,6 +446,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
     let casting = found.casting;
     let ship = Some(crate::ship_wire::ship_offset(&mut builder, character, room.recruiting_at(player)));
     let more = crate::standing_wire::standing_of(&mut builder, room, player, character);
+    let quests = crate::quest_wire::quests_of(&mut builder, room, player, character);
     let args = messages::GearArgs {
         xp: character.xp,
         level: character.level(),
@@ -458,8 +473,8 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         emblems: Some(builder.create_vector(&emblems)),
         emblem: gear::emblems::number_of(&character.emblem).unwrap_or_default(),
         emblems_sold: Some(builder.create_vector(&emblems_sold)),
-        // A room without Arts says none is worn (0 is no Art's number), so the page shows no Art.
-        art: if room.arts_on() { character.art().id } else { 0 },
+        // A room without Arts, or a player with none worn, says none is worn (0 is no Art's number).
+        art: if room.arts_on() { character.worn_art().map_or(0, |art| art.id) } else { 0 },
         cores: Some(builder.create_vector(&cores)),
         anima: if room.arts_on() { casting.anima } else { 0.0 },
         tenets: Some(builder.create_vector(&if room.arts_on() { casting.tenets } else { [0.0; 2] })),
@@ -485,6 +500,19 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         shape_wares: Some(more.shape_wares),
         faction_wares: Some(more.faction_wares),
         day: u32::try_from(room.day()).unwrap_or(u32::MAX),
+        quest: quests.quest,
+        quest_task: quests.task,
+        quest_counts: Some(quests.counts),
+        quests_done: Some(quests.done),
+        arts_earned: Some(quests.earned),
+        fragment_choices: Some(quests.choices),
+        quest_at: Some(quests.at),
+        quest_clock: quests.clock,
+        quest_fails: Some(quests.fails),
+        quest_points: Some(quests.points),
+        quest_figures: Some(quests.figures),
+        quest_ward: Some(quests.ward),
+        claimed: found.claimed,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

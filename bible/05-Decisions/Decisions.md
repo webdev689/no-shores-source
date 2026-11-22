@@ -232,6 +232,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Private Repo overlook-source]]
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
+- [[What a Player Can Use Wears Its Mark Over It]]
 
 ## Replaced
 

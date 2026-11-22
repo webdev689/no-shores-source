@@ -2,10 +2,13 @@
 // lit from the bottom as it charges and glowing once full; the two Tenets' icons in rings, a dark wedge over each
 // sweeping clockwise away as it recharges, its last seconds counted in it, the ring lit once ready. Each has its key on
 // a keycap under it. A spell just cast flashes its frame white; while the player cannot cast (staggered, down, dead),
-// every icon greys under a hatch. What it shows is worked out from the room's numbers alone.
+// every icon greys under a hatch; one its road has not earned stands dark under a padlock, saying which road earns it.
+// What it shows is worked out from the room's numbers alone.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { motionReduced } from '../plus/kit.ts';
 import { TONES } from '../plus/tones.ts';
+import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
+import { roadOf } from '../player/factionNames.ts';
 import { ELEMENTS } from '../player/gear.ts';
 import type { Child, Node, Picture } from '../ui/node.ts';
 import { keycapNode } from './barDraw.ts';
@@ -28,11 +31,13 @@ export const USED_SECONDS = 0.5;
 const EPSILON = 1e-9;
 
 /** What the bar is shown from: the Art worn (its id in the Arts' file, 0 for none), how far the Anima has charged,
- *  and how far each Tenet has recharged, each a share from 0 (just cast) to 1 (ready). */
+ *  and how far each Tenet has recharged, each a share from 0 (just cast) to 1 (ready); and what its road has earned
+ *  (1 the Art, 2 its first Tenet, 4 its second), every bit where none is said. */
 export interface AbilityState {
   readonly art: number;
   readonly animaShare: number;
   readonly tenets: readonly [number, number];
+  readonly earned?: number;
 }
 
 /** A Tenet as the bar shows it: how many degrees of its wedge are still dark, clockwise from the top, the seconds
@@ -43,13 +48,14 @@ export interface TenetShown {
   readonly ready: boolean;
 }
 
-/** What the bar shows: the Art, how many of the Anima's rows are lit from the bottom, whether it is full, and each
- *  Tenet. */
+/** What the bar shows: the Art, how many of the Anima's rows are lit from the bottom, whether it is full, each
+ *  Tenet, and which of the Anima and the Tenets its road has not yet earned. */
 export interface AbilityShown {
   readonly art: number;
   readonly animaRows: number;
   readonly animaFull: boolean;
   readonly tenets: readonly [TenetShown, TenetShown];
+  readonly locked: readonly [boolean, boolean, boolean];
 }
 
 /** The pictures the bar draws an Art with, as SVG: its Anima's icon and that icon's outline alone, its two Tenets'
@@ -81,6 +87,7 @@ export function tenetShown(charged: number, rechargeS: number): TenetShown {
 export function abilityBarOf(state: AbilityState): AbilityShown {
   const tenets = arts.arts.find((art) => art.id === state.art)?.tenets ?? [];
   const charged = share(state.animaShare);
+  const lockedOf = (bit: number) => ((state.earned ?? 0b111) & bit) === 0;
   return {
     art: state.art,
     animaRows: Math.floor(charged * ANIMA_ROWS + EPSILON),
@@ -89,6 +96,7 @@ export function abilityBarOf(state: AbilityState): AbilityShown {
       tenetShown(state.tenets[0], tenets[0]?.rechargeS ?? 0),
       tenetShown(state.tenets[1], tenets[1]?.rechargeS ?? 0),
     ],
+    locked: [lockedOf(1), lockedOf(2), lockedOf(4)],
   };
 }
 
@@ -178,20 +186,22 @@ export class AbilityBar {
     [this.shown, this.state] = [null, null];
   }
 
-  /** What a screen reader says of each ability: its name, then ready, charging with its share, or its seconds. */
+  /** What a screen reader says of each ability: its name, then ready, charging with its share, or its seconds; or,
+   *  not yet earned, which road earns it. */
   words(): readonly string[] {
     const shown = this.shown;
     const art = shown && arts.arts.find((each) => each.id === shown.art);
     if (!art || !shown || !this.state) return [];
     const unable = this.unable;
+    const lock = (index: number, how: string) => (shown.locked[index] ? `earned on ${roadOf(art.id)}` : how);
     const animaWords = shown.animaFull ? 'ready' : `charging, ${Math.floor(share(this.state.animaShare) * 100)}%`;
     return [
-      `${art.anima.name} (${ABILITY_KEYS[0]}), ${unable ? 'cannot be cast now' : animaWords}`,
+      `${art.anima.name} (${ABILITY_KEYS[0]}), ${lock(0, unable ? 'cannot be cast now' : animaWords)}`,
       ...shown.tenets.map((tenet, index) => {
         const name = art.tenets[index]?.name ?? '';
         const left = Math.ceil((1 - share(this.state?.tenets[index] ?? 0)) * (art.tenets[index]?.rechargeS ?? 0));
         const how = unable ? 'cannot be cast now' : tenet.ready ? 'ready' : `${left} s to recharge`;
-        return `${name} (${ABILITY_KEYS[index + 1]}), ${how}`;
+        return `${name} (${ABILITY_KEYS[index + 1]}), ${lock(index + 1, how)}`;
       }),
     ];
   }
@@ -254,6 +264,17 @@ export class AbilityBar {
       (this.used[index] ?? 0) > 0 && still
         ? { width: 'grow', height: 'grow', outline: { width: 2, colour: '#ffffff' }, float: { z: 1 } }
         : null;
+    const artElement = arts.arts.find((each) => each.id === shown.art)?.element ?? 0;
+    /** A padlock over an ability its road has not earned. */
+    const lockOver = (index: number): Child =>
+      shown.locked[index]
+        ? {
+            width: 10 * unit,
+            height: 12 * unit,
+            picture: { key: `ability lock ${artElement}`, source: { svg: mapSvg(LOCK_MAP, artElement) } },
+            float: { at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
+          }
+        : null;
     const hatchOver = (side: number): Child =>
       unable
         ? {
@@ -265,14 +286,16 @@ export class AbilityBar {
         : null;
     const diamond = DIAMOND_CELLS * unit;
     const icon = ANIMA_ROWS * unit;
-    const lit = Math.round((shown.animaRows / ANIMA_ROWS) * icon);
+    const [animaLocked] = shown.locked;
+    const full = shown.animaFull && !animaLocked;
+    const lit = animaLocked ? 0 : Math.round((shown.animaRows / ANIMA_ROWS) * icon);
     const anima = layered(diamond, [
       ...framed(
         'diamond',
         pictures.diamond,
-        shown.animaFull ? 1 : 0.45,
-        usedFor(0) ? 3 : shown.animaFull ? 1 : 0.8,
-        shown.animaFull ? Math.round(pulse * zoom) : 0,
+        full ? 1 : animaLocked ? 0 : 0.45,
+        usedFor(0) ? 3 : full ? 1 : animaLocked ? 0.5 : 0.8,
+        full ? Math.round(pulse * zoom) : 0,
         diamond,
       ),
       {
@@ -299,19 +322,21 @@ export class AbilityBar {
         ],
       },
       hatchOver(diamond),
+      lockOver(0),
       usedRing(0),
     ]);
     const ring = RING_CELLS * unit;
     const tenet = (index: 0 | 1): Node => {
       const state = shown.tenets[index];
-      const ready = state.ready;
-      const counting = state.seconds !== '';
+      const locked = shown.locked[index + 1] ?? false;
+      const ready = state.ready && !locked;
+      const counting = state.seconds !== '' && !locked;
       return layered(ring, [
         ...framed(
           'ring',
           pictures.ring,
-          ready ? 1 : 0.45,
-          usedFor(index + 1) ? 3 : ready ? 1.25 : 0.8,
+          ready ? 1 : locked ? 0 : 0.45,
+          usedFor(index + 1) ? 3 : ready ? 1.25 : locked ? 0.5 : 0.8,
           ready ? 2 * zoom : 0,
           ring,
         ),
@@ -319,15 +344,16 @@ export class AbilityBar {
           width: TENET_CELLS * unit,
           height: TENET_CELLS * unit,
           ...(counting ? { opacity: 0.3 } : {}),
-          picture: picture(`tenet ${index}`, pictures.tenets[index], ready ? 1 : 0.5, ready ? 1 : 0.7),
+          picture: picture(`tenet ${index}`, pictures.tenets[index], ready ? 1 : locked ? 0 : 0.5, ready ? 1 : 0.7),
           float: { at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
         },
-        !ready && {
-          width: RING_CLEAR * unit,
-          height: RING_CLEAR * unit,
-          picture: { key: `tenet sweep ${state.sweep}`, source: { draw: sweepDrawing(state.sweep) } },
-          float: { at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
-        },
+        !ready &&
+          !locked && {
+            width: RING_CLEAR * unit,
+            height: RING_CLEAR * unit,
+            picture: { key: `tenet sweep ${state.sweep}`, source: { draw: sweepDrawing(state.sweep) } },
+            float: { at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
+          },
         counting && {
           text: {
             words: state.seconds,
@@ -339,6 +365,7 @@ export class AbilityBar {
           float: { at: [0.5, 0.5], anchor: [0.5, 0.5], z: 1 },
         },
         hatchOver(ring),
+        lockOver(index + 1),
         usedRing(index + 1),
       ]);
     };

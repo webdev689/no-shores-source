@@ -49,7 +49,12 @@ each part works is in its system note.
 - **The [[Interface]] without HTML**, held by the `html` check; the game in a worker of its own ([[Game]]); the
   network packed and sent as changes; an error in a frame no longer stops the game's loop.
 - **Keys and the pad**: every control rebound and kept with the account, the pad played as Destiny's, the key strip
-  following the moment, K for every control, the pad's cursor and DFO's gauntlet as the pointer ([[Player]]).
+  following the moment, K for every control, the pad's cursor and DFO's gauntlet as the pointer ([[Player]],
+  [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]); a mark over each keeper and usable thing in place
+  of the rings on the ground ([[What a Player Can Use Wears Its Mark Over It]]).
+- **The houses' roads**: after the intro the player pledges to a house, whose road of eleven tasks gives its Art, its
+  Tenets and three fragments, with six step kinds any mission can use: escort, tail, defend, puzzle, unseen and race
+  ([[Each House Has Its Own Road to Its Art]], [[Missions Are Varied, Not Only Simple Tasks]], [[Quests]]).
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
@@ -73,11 +78,15 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
-- **Open pull requests.** For the owner's yes once their checks pass: #139 (areas in chunks), #135 (swings chain;
-  foes at 75% of the player's pace), #134 (a keeper's mark over what can be used), #132 (resource nodes), #131 (the
-  houses' roads), #124 (public events on Saltmere). Drafts: #72 and #88 (dungeons), #77 (lore), #82 (the owner's
-  loop), #97 (activities), #122 (server authority), #123 (the Postmaster); #93 and #114 sit on the merged
-  `claude/waters-from-islands`.
+- **Open pull requests.** For the owner's yes once their checks pass: #143 (Vestiges as project-final's crystals),
+  #141 (the balance pass halfway back), #140 (a city's vertices), #139 (areas in chunks), #135 (swings chain; foes at
+  75% of the player's pace), #132 (resource nodes), #124 (public events on Saltmere). Drafts: #72 and #88 (dungeons),
+  #77 (lore), #82 (the owner's loop), #97 (activities), #122 (server authority), #123 (the Postmaster); #93 and #114
+  sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127 holds.
+- **The dungeons-to-mail stack** (#72, #88, #97, #122, #123): each layer passes the full check on its head, but it
+  conflicts with `main` and needs a catch-up before it merges, with the owner's yes; #122's move of the asset
+  workflows to `R2_TOKEN` waits on the owner's named yes. Meeting the marks, the Postmaster's letter mark should beat
+  while mail waits, the board wear a gold "!", an entrance a door.
 - **The Thunderlock's hold** (#119). After the owner's "fix the thunderlock idle hold. Currently its held backwards",
   the forge holds it trigger to the front (`gunplay.PORT`), but its rest, walk and sprint are not drawn again ("Blades
   only for now"), so the game holds it as before. Drawing them is about 27,000 frames a body for every set and both
@@ -168,8 +177,12 @@ The decisions in [[Open Questions]] are not repeated here.
   4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
   (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
 - **Browser QA**: `tools/claude-toolkit/webgpu-shot.cjs` reads the page's canvas, so it pictures the Test Ground and
-  the World Editor but not the game, which draws in its worker ([[Toolkit]]); time the game's frames through
-  Playwright's worker handle. The kit is kept as shipped, so its fix is the co-dev's (observation 0068).
+  the World Editor but not the game, which draws in its worker ([[Toolkit]]); the owner: "The headless issue is due to
+  us moving away from html. So not really an issue per say." A driver that patches the worker too is on the branch
+  `ccr-130008df-u4ahst-headless` (cfd75bba), unmerged. `tools/uiShot.mjs` writes blank pictures (the read-back is only
+  the ground under SwiftShader); the game's own frame read back from its worker shows the interface whole.
+- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
+  140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
   `server/garrison.test.ts`): its 13 foes stand all 1500 ticks, so nothing after a fall (drops, a group's break,
   fallback and last stand, waves) is checked natively against WebAssembly. Next: a scripted player that turns to its

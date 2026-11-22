@@ -34,6 +34,8 @@ export interface MarkedFoe {
   readonly statuses?: FoeStatuses;
   /** A companion fighting beside the players, whose plate is drawn in the players' colour. */
   readonly ally?: boolean;
+  /** Whether its plate shows wherever the player looks, as a foe fought lately does: a ward a step defends. */
+  readonly held?: boolean;
 }
 
 /** A plate's tier by its foe's rank: a Minor's, a Major's, or an Elite's and up. */

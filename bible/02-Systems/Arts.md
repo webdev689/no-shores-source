@@ -55,7 +55,8 @@ code:
 The Arts are Overlook's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, Divine and Shadow, each with an
 Anima, two Tenets and a Core of fragments ([[Arts and Loadouts as Claude Shapes Them]]). Every name, word and number
 the client shows comes from `content/arts/arts.json`, the file the rules read too, the fragments' numbers with it.
-This note covers what the player sees (the Art's screen in the menu, the Art's diamond on the Character page, the
+An Art, its Anima and each Tenet are earned on its house's road ([[Quests]]): a new character wears none until
+then, and a character made before earns them all. This note covers what the player sees (the Art's screen in the menu, the Art's diamond on the Character page, the
 ability bar on the HUD), how the rules cast each spell, how the browser asks for a cast, and how each spell looks.
 
 ## How it works

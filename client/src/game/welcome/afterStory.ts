@@ -112,6 +112,13 @@ export class AfterStory {
     this.arrived = false;
   }
 
+  /** Whether the story's last moment and the welcome are past: neither plays, nor waits for an arrival. */
+  get past(): boolean {
+    const kept = this.parts.kept;
+    const waiting = welcomeDue(kept) || (prologuePlayed(kept) && welcomeUnmarked(kept));
+    return !this.epilogue && !this.welcome && !this.asked && !waiting;
+  }
+
   /** The menu opens at `view`, as a counter opens it: her own counter's ends her walk. */
   counterOpened(view: string): void {
     this.welcome?.counterOpened(view);

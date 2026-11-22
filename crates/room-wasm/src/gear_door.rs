@@ -85,14 +85,14 @@ pub extern "C" fn room_keep_characters() -> u32 {
     u32::from(kept == Some(true))
 }
 
-/// The keeper has no character to give a player at sea (none kept, or the page plays unkept): the course held for
-/// them sails (`Sea::none_kept`). Nothing elsewhere.
+/// The keeper has no character to give a player (none kept, or the page plays unkept): at sea the course held for
+/// them sails (`Sea::none_kept`); on land the character the room holds is theirs from now on (`Room::none_kept`).
 #[unsafe(no_mangle)]
 pub extern "C" fn room_none_kept(player: PlayerId) {
-    with_open(|opened| {
-        if let Opened::Sea(sea) = opened {
-            sea.none_kept(player);
-        }
+    with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.none_kept(player),
+        Opened::Land { room, .. } => room.none_kept(player),
+        Opened::Fleet(_) => {}
     });
 }
 
