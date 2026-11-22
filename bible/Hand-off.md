@@ -144,6 +144,17 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **The owner's six prologue points** (#161, branch `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which
+  deploys the page and the rooms (the naval rules changed): the wreck's hitches (blood's rays, its sheet drawn behind
+  the crash's black), the ship's aim after Black Flag from its own deck with a lay that narrows as it is held
+  ([[Aiming a Ship Follows Black Flag, From Its Deck]]), the wreck's arms 8 m out as a loot drop
+  ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]), the story's one-shots (the crash, the splash) fetched as its
+  sound wakes, the Boarding playing on through a death before Thule, Maren at three quarters of a walk
+  ([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]), and the marks seen faded through walls
+  ([[A Mark Over What a Player Can Use Is Seen Through Walls]]). Tested offline (the full check at d82fe9f7); the deck
+  eye's framing on each hull, the faded marks, the arms' pop and the sounds are not yet seen on a real GPU, heard or
+  played. Open for the owner: whether each hull's eye frames well (the Brig's stands on its quarterdeck, aft of its
+  battery; the Schooner's under its main boom), and the narrowing's 2× and 1.5 s.
 - **The owner's bugs and polish** (#148, branch `claude/prologue-bugs-polish-lphicj`), merged with the owner's yes ("Merge and deploy"), which
   deploys the page and the rooms;, the owner's six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's
   calls: [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
@@ -311,6 +322,12 @@ The decisions in [[Open Questions]] are not repeated here.
   migration of each character's room. Known, small: before any gear has come a tier's seas show open, the server
   still refusing them. A change to `tools/dungeon/` or the contracts publishes new packs: take the manifest line from
   the workflow's log into `content/dungeon/modules.json`.
+- **Hitching in the prologue, left by #161**: the wreck's room still opens and ticks on the game's thread
+  (`LocalRoom.openOverSea`, its navmesh bake over some 134 by 116 m, and every tick's foes); moving it to the rooms'
+  worker as the other rooms are needs its story calls (`standFoe`, `storyTakeArms`, `storyHunt`, `storyPost`, the
+  teaching's freeze) made asynchronous. The aim's view (`AimView`) is made again for every sea fight; the shore's
+  return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by
+  the room's standing orders while their page keeps counting.
 - **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is
   opened on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
   difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
