@@ -9,6 +9,8 @@ code:
   - crates/navmesh/src/raster.rs#voxelise
   - crates/navmesh/src/compact.rs#build
   - crates/navmesh/src/regions.rs#partition
+  - crates/navmesh/src/lib.rs#bake_anchored
+  - crates/room/src/dungeon_room.rs#baked
   - crates/navmesh/src/contours.rs#build
   - crates/navmesh/src/poly.rs#build
   - crates/navmesh/src/locate.rs#Mesh
@@ -25,6 +27,9 @@ code:
   - crates/navmesh/src/lib.rs#path_length
   - crates/room/src/foes.rs#MeshSpots
   - crates/room/src/foes.rs#MeshRoutes
+  - crates/room/src/routes.rs#think_foes
+  - crates/room/src/routes.rs#mesh_index
+  - crates/room/src/garrison.rs#square
 ---
 # Navmesh
 
@@ -32,9 +37,11 @@ Where a foe can walk, and the way there. A room bakes its course into a navmesh 
 it for paths, many times a second. It is DFO's own navmesh, Recast and Detour in spirit, in Rust, with the same
 steps and numbers, which were project-final's ([[Pick - project-final AI]]). A course's room bakes one over its
 course and 30 m of ground about it (a course laid over open sea, its blocks' tops alone); a node's room over a 70 m
-square of its own land by its first spawn, where its garrison stands ([[Enemies]]), among the boxes of its layout
-inside that square, which its node file holds. Its [[Foes]] find their way and their firing spots by it, and climb
-and drop where its links say.
+square of its own land by its first spawn, where its garrison stands ([[Enemies]]), and one more 70 m square round each
+place a house's road stands a group at ([[Quests]]), each among the boxes of its layout inside it, which its node file
+holds; a dungeon's room over the whole dungeon ([[Dungeons]]). Each foe finds its way on the mesh that holds its post,
+or with none the one whose square holds where it stands, and on the node's own otherwise. Its [[Foes]] find their way
+and their firing spots by it, and climb and drop where its links say.
 
 ## How it works
 
@@ -57,7 +64,11 @@ and drop where its links say.
 3. **Regions.** A watershed over each cell's distance from the floor's edge splits the floor into rooms and runs
    of corridor. Slivers under 2 m² join their largest neighbour. Only the largest part a walk or a link joins is
    kept: a block's top that neither a step nor a link reaches is dropped. Over open sea (`bake_over_sea`) the water is
-   no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are.
+   no floor, so no ground joins the blocks' tops: every part of 4 m² or more is kept, as a ship's decks are. An
+   anchored bake keeps instead the part joined to the floor nearest a point it is given, the way in of a dungeon, whose
+   rock stands as walls 10 m tall ([[Movement]]'s grid of heights) with flat tops larger than its floor. A dungeon
+   bakes in cells of 0.4 m, an eighth of its own, so every wall of it lies on a cell's edge and the bake holds a third
+   of the columns 0.25 m would; its jambs and pillars are the bake's colliders.
 4. **Outlines.** Each region's edge is traced around its cells and simplified to within half a cell, keeping every
    corner where the region across changes. A region round a pillar has an inner outline, a hole.
 5. **Polys.** Each outline, its holes bridged in, is cut into triangles, sliced on one lattice across the room so
@@ -132,8 +143,9 @@ climbing after them, is fingerprinted natively (`crates/room-wasm/src/climb_door
 
 ## Limits
 
-- A node's room bakes a 70 m square of its [[Land]], its first spawn 15 m inside the square's edge toward the middle
-  of its section, and only the boxes that reach into it; a larger square would hold more of a node, at a bake's cost.
+- A node's room bakes a 70 m square of its [[Land]] (its first spawn 15 m inside the edge toward the middle of its
+  section), and a 70 m square round each place a kill goal stands a group at, each with only the boxes that reach into
+  it. Elsewhere a node has no mesh, so a foe leashed there gives up its fights. Each place's square (a kill group's, a defence's, a puzzle's, an unseen step's watch, an escort's ambush) is baked the first time it is needed and kept, one in a tick at most (130 to 245 ms that tick natively), a step waiting a tick for its own; where the node's own square holds all the step stands things in, it is used instead. WebAssembly's cost is unmeasured. A larger square would hold more of a node, at a bake's cost.
 - An underside between 1.75 and 1.8 m over a floor rounds up to 2 m, so the mesh may run a path under it that a body
   stoops for; within a voxel.
 - A path's corners can sit a little off the shortest way where the lattice cuts a poly thin.

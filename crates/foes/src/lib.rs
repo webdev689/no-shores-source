@@ -121,13 +121,14 @@ impl Spots for NoSpots {
 }
 
 /// What a foe knows of its room this tick: the room's tick and seed, every fighter by id (alive or not, both sides), the
-/// course's blocks, routes and firing spots, and the room's director, whose heat sets the turn caps and the aggression
-/// bias.
+/// course's blocks and the ground they stand on, whose walls a look meets as a block, its routes and firing spots, and
+/// the room's director, whose heat sets the turn caps and the aggression bias.
 pub struct World<'a> {
     pub tick: u64,
     pub seed: u64,
     pub fighters: &'a [(FighterId, Fighter)],
     pub blocks: &'a [movement::Block],
+    pub terrain: &'a dyn movement::Terrain,
     pub routes: &'a dyn Routes,
     pub spots: &'a dyn Spots,
     pub director: Director,

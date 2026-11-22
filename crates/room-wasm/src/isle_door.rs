@@ -30,7 +30,7 @@ fn seed_of(low: u32, high: u32) -> u64 {
 }
 
 /// An island's plan as JSON: its kind and its dungeon's style, its radius and reach, where it is landed and anchored
-/// off, its spawns and the bearing a player landed faces, its door, landmark, guards' posts, camp and wrecks, its
+/// off, its spawns and the bearing a player landed faces, its door, landmark, guards' posts, camp, wrecks and resource nodes, its
 /// section's ring, every module set on it as [its number in the contract, x, y, z, turn, scale, lift], and the blocks
 /// its modules' solids stand as [west, north, east, south, top]. Empty for a climate the contract does not dress.
 #[must_use]
@@ -62,6 +62,7 @@ pub fn plan_json(seed: u64, climate: &str) -> String {
             "guards": sites.guards,
             "camp": sites.camp,
             "wrecks": wrecks,
+            "nodes": sites.nodes,
             "ring": plan.ring,
             "placements": placements,
             "blocks": blocks,
@@ -80,8 +81,8 @@ pub fn heights_bytes(seed: u64, climate: &str, at: [f64; 2]) -> Vec<u8> {
 }
 
 /// The sea's word an island's room opens on: its seed as a decimal (JSON's numbers cannot hold 64 bits), its climate,
-/// where its middle lies, whose guards stand on it (the foes' faction number, 0 for none), and its water's band of
-/// levels.
+/// where its middle lies, whose guards stand on it (the foes' faction number, 0 for none), its water's band of levels,
+/// and the resource its nodes give (its place in the gear's catalogue; none stand without it).
 #[derive(Deserialize)]
 struct IslandRequest {
     seed: String,
@@ -89,6 +90,8 @@ struct IslandRequest {
     at: [f64; 2],
     guards: u8,
     levels: Option<(u8, u8)>,
+    #[serde(default)]
+    resource: Option<u8>,
 }
 
 /// Opens an island's room from the sea's word on it; false for words that do not make an island.
@@ -97,7 +100,13 @@ pub fn open_island(text: &[u8]) -> bool {
     let Ok(request) = serde_json::from_slice::<IslandRequest>(text) else { return false };
     let Ok(seed) = request.seed.parse::<u64>() else { return false };
     let Some(room) = with_plan(seed, &request.climate, |plan| {
-        Room::island(plan, request.at, (request.guards != 0).then_some(request.guards), request.levels)
+        Room::island(
+            plan,
+            request.at,
+            (request.guards != 0).then_some(request.guards),
+            request.levels,
+            request.resource,
+        )
     }) else {
         return false;
     };
@@ -122,6 +131,7 @@ pub fn sea_island(id: u32) -> String {
                 "climate": island.climate,
                 "guards": island.guards.unwrap_or(0),
                 "levels": levels,
+                "resource": island.resource,
                 "kind": island.kind.name(),
                 "at": island.at,
                 "anchorage": island.anchorage,
@@ -191,28 +201,29 @@ pub extern "C" fn room_hold_ashore(id: u32, low: u32, high: u32) -> u32 {
     u32::from(hold_ashore(id, seed_of(low, high)))
 }
 
-/// Whether the open sea has `account` landed on its standing island `id` of `seed`: its ship at rest at that island's
-/// anchorage when last at sea.
+/// The number of the open sea's landing of `account` on its standing island `id` of `seed` (its ship at rest at that
+/// island's anchorage when last at sea), or 0 if it is not landed there.
 #[must_use]
-pub fn sea_landed(id: u32, seed: u64, account: &str) -> bool {
-    let landed = with_open(|opened| matches!(opened, Opened::Sea(sea) if sea.islands().landed(id, seed, account)));
-    landed.unwrap_or(false)
+pub fn sea_landed(id: u32, seed: u64, account: &str) -> u32 {
+    let landed =
+        with_open(|opened| if let Opened::Sea(sea) = opened { sea.islands().landed(id, seed, account) } else { None });
+    landed.flatten().unwrap_or(0)
 }
 
 /// Turns on the open island room's check of landings (`Room::check_landings`), or lands `account` on it once checked
-/// (`Room::land`): whether an island's room is open.
+/// by its landing's number (`Room::land`): whether an island's room is open.
 #[must_use]
-pub fn isle_landing(account: Option<&str>) -> bool {
+pub fn isle_landing(account: Option<(&str, u32)>) -> bool {
     let open = with_open(|opened| match (opened, account) {
-        (Opened::Land { room, .. }, Some(account)) => room.land(account),
+        (Opened::Land { room, .. }, Some((account, landing))) => room.land(account, landing),
         (Opened::Land { room, .. }, None) => room.check_landings(),
         _ => false,
     });
     open.unwrap_or(false)
 }
 
-/// Whether the open sea has the account written at `address` landed on its island `id` of the seed whose halves are
-/// given (`sea_landed`); 1 if so, 0 if not.
+/// The number of the open sea's landing of the account written at `address` on its island `id` of the seed whose
+/// halves are given (`sea_landed`), or 0 if it is not landed there.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.
@@ -220,7 +231,7 @@ pub fn isle_landing(account: Option<&str>) -> bool {
 pub unsafe extern "C" fn room_sea_landed(id: u32, low: u32, high: u32, address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let account = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(address, length) }).into_owned();
-    u32::from(sea_landed(id, seed_of(low, high), &account))
+    sea_landed(id, seed_of(low, high), &account)
 }
 
 /// Turns on the open island room's check of landings (`isle_landing`); 1 if an island's room is open.
@@ -229,15 +240,16 @@ pub extern "C" fn room_isle_check_landings() -> u32 {
     u32::from(isle_landing(None))
 }
 
-/// Lands the account written at `address` on the open island room (`isle_landing`); 1 if an island's room is open.
+/// Lands the account written at `address` on the open island room by its landing's number (`isle_landing`); 1 if an
+/// island's room is open.
 ///
 /// # Safety
 /// `address` must point at `length` readable bytes, as `reserve` gives.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn room_isle_land(address: *const u8, length: usize) -> u32 {
+pub unsafe extern "C" fn room_isle_land(address: *const u8, length: usize, landing: u32) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     let account = String::from_utf8_lossy(unsafe { std::slice::from_raw_parts(address, length) }).into_owned();
-    u32::from(isle_landing(Some(&account)))
+    u32::from(isle_landing(Some((&account, landing))))
 }
 
 #[cfg(test)]

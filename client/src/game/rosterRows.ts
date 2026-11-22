@@ -39,7 +39,7 @@ export const ROWS_A_PAGE = 14;
 /** The fewest a page shows, where the screen is too short for fourteen. */
 export const ROWS_LEAST = 6;
 
-/** Where a player is, in words: a node's name, and its difficulty past Normal; at sea; or away. */
+/** Where a player is, in words: a node's name, a patrol's dungeon, and its difficulty past Normal; at sea; or away. */
 export function placeWords(place: string | null): string {
   if (place === null) return 'Away';
   if (place === 'sea') return 'At sea';
@@ -52,7 +52,8 @@ export function placeWords(place: string | null): string {
     (_whole, gap: string, first: string) => `${gap ? ' ' : ''}${first.toUpperCase()}`,
   );
   // "difficulty" keeps an Elite voyage apart from an Elite foe.
-  return seas === 'normal' ? name : `${name} · ${seas[0]?.toUpperCase()}${seas.slice(1)} difficulty`;
+  const tier = seas === 'normal' ? [] : [`${seas[0]?.toUpperCase()}${seas.slice(1)} difficulty`];
+  return [name, ...(node.dungeon === null ? [] : ['Dungeon']), ...tier].join(' · ');
 }
 
 /** A name with its guild's tag, as Destiny shows one: `Ada [SWK]`. */

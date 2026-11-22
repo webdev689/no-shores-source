@@ -305,6 +305,33 @@ test('the compass turns its points with the view, its marks at each ship’s bea
   assert.match(String((marks[0]?.picture?.source as { svg: string }).svg), new RegExp(SHIP_MARK_COLOURS.hostile));
 });
 
+test("the compass marks where the roads' next goal stands, at its bearing or held at the end nearer it", () => {
+  const questMark = (node: Node) => allOf(node).find((each) => each.picture?.key === 'compass quest');
+  assert.equal(questMark(compassNode(520, 0, 1, [0, 0], [], [0, -300]))?.float?.at?.[0], 0.5, 'dead ahead, north');
+  assert.equal(questMark(compassNode(520, 0, 1, [0, 0], [], [300, 0]))?.float?.at?.[0], 1, 'east, off the strip');
+  assert.equal(questMark(compassNode(520, 0)), undefined, 'none to mark');
+  const hud = new Hud();
+  const frame: HudFrame = {
+    own: standing,
+    foes: [],
+    where: () => [0, 0, 0],
+    matrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    width: 1280,
+    height: 720,
+    events: [],
+    player: 1,
+    firstPerson: false,
+    pressed: false,
+    lost: null,
+    groundAt: null,
+  };
+  const matrix = viewProjection({ targetX: 0, targetY: 0, targetZ: 1.7, yaw: 0, pitch: 0, distance: 4 }, 16 / 9);
+  hud.update({ ...frame, matrix, questAt: [standing.x, standing.y - 300] }, 1 / 60);
+  assert.ok(questMark(drawn(hud)), 'on the fight’s compass');
+  hud.update({ ...frame, matrix }, 1 / 60);
+  assert.equal(questMark(drawn(hud)), undefined);
+});
+
 test('an arrow to a threat off the screen stands clear of what the page keeps beside the display, as the game’s hints', () => {
   // The game's hints stand over the left edge's middle, where an arrow to a foe off the left would point.
   const box = { left: 28, top: 300, right: 428, bottom: 420 };

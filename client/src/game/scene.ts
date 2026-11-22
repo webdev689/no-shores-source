@@ -23,6 +23,7 @@ import { waterUnder } from '../water/shore.ts';
 import { dropPatchWater, type PatchWater, SAMPLES, WaterView } from '../water/waterView.ts';
 import { frameOf, fromEyeMatrix, type Shot } from './camera.ts';
 import { BlurView } from './blur.ts';
+import { DepthCopy } from './depthCopy.ts';
 import { DrainView } from './drain.ts';
 import { groundTiles } from './groundTiles.ts';
 
@@ -59,19 +60,6 @@ const MIDDLE_SAMPLES = 513;
 const MIDDLE_STEP_M = 16;
 const MIDDLE_REFRESH_M = 1500;
 
-export const DEPTH_COPY = /* wgsl */ `
-@group(0) @binding(0) var depths: texture_depth_multisampled_2d;
-@vertex fn copy_vertex(@builtin(vertex_index) index: u32) -> @builtin(position) vec4f {
-  let corner = vec2f(f32((index << 1u) & 2u), f32(index & 2u));
-  return vec4f(corner * 2.0 - 1.0, 0.0, 1.0);
-}
-@fragment fn copy_fragment(@builtin(position) position: vec4f) -> @location(0) vec4f {
-  var sum = 0.0;
-  for (var sample = 0; sample < ${SAMPLES}; sample++) { sum += textureLoad(depths, vec2i(position.xy), sample); }
-  return vec4f(sum / ${SAMPLES}.0, 0.0, 0.0, 1.0);
-}
-`;
-
 /**
  * One landmass drawn for the game: its 1 km land in rings round the eye, the exact ground round the player, the
  * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
@@ -99,7 +87,7 @@ export class GameScene {
   readonly gpu: Gpu;
   private readonly water: WaterView;
   private readonly shadow: ShadowMap;
-  private readonly copy: GPURenderPipeline;
+  private readonly copy: DepthCopy;
   private readonly drain: DrainView;
   private readonly blur: BlurView;
   private readonly light: LightLayer;
@@ -134,14 +122,9 @@ export class GameScene {
     this.sky = new SkyDriver(law, skyUniformFor(gpu.device));
     this.fall = new FallView(gpu);
     this.bolts = new BoltView(gpu);
+    this.copy = new DepthCopy(gpu);
     this.drain = new DrainView(gpu);
     this.blur = new BlurView(gpu);
-    const module = gpu.device.createShaderModule({ code: DEPTH_COPY });
-    this.copy = gpu.device.createRenderPipeline({
-      layout: 'auto',
-      vertex: { module, entryPoint: 'copy_vertex' },
-      fragment: { module, entryPoint: 'copy_fragment', targets: [{ format: 'r32float' }] },
-    });
   }
 
   /** Draws this landmass from now on, wearing its biome's ground tiles. */
@@ -341,21 +324,7 @@ export class GameScene {
     drawn.drawInto(pass, this.shadow);
     for (const drawer of drawers) drawer.drawInto(pass, fromEye, shot, time, this.shadow);
     pass.end();
-    const copy = encoder.beginRenderPass({
-      colorAttachments: [
-        { view: targets.depth.createView(), loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] },
-      ],
-    });
-    copy.setPipeline(this.copy);
-    copy.setBindGroup(
-      0,
-      this.gpu.device.createBindGroup({
-        layout: this.copy.getBindGroupLayout(0),
-        entries: [{ binding: 0, resource: targets.multidepth.createView() }],
-      }),
-    );
-    copy.draw(3);
-    copy.end();
+    this.copy.encode(encoder, targets.multidepth, targets.depth);
     const camera = frameOf(local);
     const canvas = this.gpu.context.getCurrentTexture();
     const target = canvas.createView();

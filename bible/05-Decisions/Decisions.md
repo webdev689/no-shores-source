@@ -137,6 +137,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]
 - [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map Comes to the Social Spaces and Every Land Area]]
+- [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]
 - [[The Sea as Claude Shapes It]]
 - [[The Sea Fight Looks and Aims as DFO's Does]]
 - [[A Ship's Level Raises Its Strength, and the Tiers Reach the Sea]]
@@ -172,6 +173,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Day Lasts One Real Hour]]
 - [[Weather and Day as Claude Shapes It]]
 - [[The Weather's Gutters and Thunder Come From Freesound]]
+- [[DFO's Dungeons 2.0 Comes Over, Within the Patrol Areas]]
+- [[Dungeons as Claude Builds Them]]
+- [[The Dungeons Are Perfect and Insanely Varied]]
+- [[Each Dungeon Style Has Its Own Pieces, Built in Blender]]
 - [[Foes Show Their Level, Patrol in Groups and Climb]]
 - [[Melee Swings a Quarter Faster, Strikes All in Reach, and the Lock Lets Go Past 70°]]
 - [[The Slot Grid Closes Off Hover, and the Inventory Shows Only Held Stacks]]
@@ -226,6 +231,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]
 - [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]
 - [[Areas Load in Chunks With Proper Caching]]
+- [[Foes Walk and Run at Three Quarters of a Player's Pace]]
+- [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 - [[The Crew Still Standing Regroup Ahead]]
 - [[Players Arrive as Destiny's Transmat Does, Unexplained]]
 - [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]
@@ -236,6 +243,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Private Repo overlook-source]]
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
+- [[What a Player Can Use Wears Its Mark Over It]]
 
 ## Replaced
 

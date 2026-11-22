@@ -1,5 +1,6 @@
 use super::*;
 use combat::Fighter;
+use combat::sight::apart;
 use movement::{Controls, Flat, TICK_SECONDS, Terrain, standing, step_body};
 use protocol::wire::overlook::wire as messages;
 use room::sea::Ship;
@@ -344,6 +345,10 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     patrol["continent"] = json!("continent-1");
     patrol["ring"] = json!([[-400.0, -400.0], [400.0, -400.0], [400.0, 400.0], [-400.0, 400.0]]);
     patrol["bounds"] = json!([-500.0, -500.0, 500.0, 500.0]);
+    // Its layout's twelve resource places, as the bake writes them.
+    let places: Vec<[f64; 2]> =
+        (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect();
+    patrol["resources"] = json!(places);
     assert!(open_node(patrol.to_string().as_bytes()));
     assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
@@ -359,7 +364,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
-    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve spots, four numbers each");
+    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
 }
 
@@ -411,6 +416,60 @@ fn a_browser_predicts_a_fighter_on_a_nodes_ground_as_its_room_steps_it() {
     assert_eq!(stepped(), expected, "on the node's window, the same step as its room's");
     let land = movement::Terrain::height_at(&floor, expected.body.x, expected.body.y);
     assert!(land > 1.0 && (expected.body.z - land).abs() < 1e-6, "walking on the land, well above 0 m");
+}
+
+#[test]
+fn a_patrols_dungeon_opens_from_its_node_file_with_its_cache_shut_and_a_player_at_its_way_in() {
+    let patrol = node_file().to_string();
+    let mut mission = node_file();
+    mission["kind"] = json!("mission");
+    assert!(!open_dungeon(mission.to_string().as_bytes(), 0), "a mission has no dungeons");
+    assert!(!open_dungeon(patrol.as_bytes(), 3), "a patrol has three");
+    assert!(!open_dungeon(b"not a node", 0));
+    for number in 0..3 {
+        assert!(open_dungeon(patrol.as_bytes(), number));
+        let player = room_join();
+        room_tick();
+        let bytes = snapshot(player);
+        let message = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        let cache: Vec<f64> = message.cache().expect("a dungeon's cache").iter().collect();
+        assert_eq!((cache.len(), cache[4]), (5, 0.0), "shut while the Reeve stands");
+        let (seed, style) = dungeon::of_patrol("glade", number);
+        let ([x, y], _) = dungeon::Dungeon::forge(seed, style).arrival();
+        let body = players_in(&bytes).into_iter().find(|(id, ..)| *id == player).expect("in").2;
+        assert_eq!([body.x, body.y], [x, y], "at the way in");
+        assert_eq!(dungeon_door::room_join_at(0), 0, "a dungeon has no entrances");
+    }
+    let mut locked = node_file();
+    locked["locked"] = json!(true);
+    assert!(open_dungeon(locked.to_string().as_bytes(), 0));
+    assert_eq!(room_join(), 0, "a locked patrol's dungeon takes no player");
+    assert_eq!(refusal().as_deref(), Some("The Glade is locked"));
+    assert!(open_node(locked.to_string().as_bytes()));
+    assert_eq!(dungeon_door::room_join_at(0), 0, "nor does its entrance");
+}
+
+#[test]
+fn a_patrols_room_is_joined_before_an_entrance_and_sends_its_entrances() {
+    let mut patrol = node_file();
+    patrol["continent"] = json!("continent-1");
+    patrol["ring"] = json!([[-800.0, -800.0], [800.0, -800.0], [800.0, 800.0], [-800.0, 800.0]]);
+    patrol["bounds"] = json!([-900.0, -900.0, 900.0, 900.0]);
+    assert!(open_node(patrol.to_string().as_bytes()));
+    let player = dungeon_door::room_join_at(1);
+    assert_ne!(player, 0);
+    assert_eq!(dungeon_door::room_join_at(3), 0, "no such entrance");
+    room_tick();
+    let sent = gear(player);
+    let entrances: Vec<f64> =
+        messages::root_as_from_room(&sent).unwrap().gear().unwrap().dungeons().expect("its entrances").iter().collect();
+    assert_eq!(entrances.len(), 15, "three entrances, five numbers each");
+    let body = players_in(&snapshot(player)).into_iter().find(|(id, ..)| *id == player).expect("in").2;
+    assert!(apart([body.x, body.y], [entrances[5], entrances[6]]) < 15.0, "by the second entrance: {body:?}");
+    let mut mission = node_file();
+    mission["kind"] = json!("mission");
+    assert!(open_node(mission.to_string().as_bytes()));
+    assert_eq!(dungeon_door::room_join_at(0), 0, "a mission has no entrances");
 }
 
 #[test]

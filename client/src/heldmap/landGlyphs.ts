@@ -19,7 +19,7 @@ export type KeeperGlyph =
   | 'lamplighters'
   | 'veiled';
 export type SiteGlyph = 'landing' | 'event' | 'gate' | 'door' | 'objective' | 'foes' | 'beacon';
-export type ResourceGlyph = 'ore' | 'herbs' | 'timber' | 'salvage';
+export type ResourceGlyph = 'resource';
 export type LandGlyph = KeeperGlyph | SiteGlyph | ResourceGlyph;
 
 /** Every glyph in the order the table lists them: the keepers, the sites, the resources. */
@@ -42,10 +42,7 @@ export const GLYPHS: readonly LandGlyph[] = [
   'objective',
   'foes',
   'beacon',
-  'ore',
-  'herbs',
-  'timber',
-  'salvage',
+  'resource',
 ];
 export const isGlyph = (name: string): name is LandGlyph => (GLYPHS as readonly string[]).includes(name);
 
@@ -146,7 +143,7 @@ export function paintGlyph(painter: Painter, glyph: LandGlyph): void {
     painter.fillStyle = device;
     painter.strokeStyle = device;
     KEEPER_DEVICES[glyph as KeeperGlyph](painter, coin);
-  } else if (glyph === 'ore' || glyph === 'herbs' || glyph === 'timber' || glyph === 'salvage') {
+  } else if (glyph === 'resource') {
     painter.fillStyle = PARCHMENT;
     painter.strokeStyle = LIGHT_INK;
     painter.lineWidth = 1.1;
@@ -155,7 +152,7 @@ export function paintGlyph(painter: Painter, glyph: LandGlyph): void {
     painter.fill();
     painter.stroke();
     painter.fillStyle = LIGHT_INK;
-    RESOURCE_DEVICES[glyph](painter);
+    resourceDevice(painter);
   } else SITE_DEVICES[glyph as SiteGlyph](painter);
   painter.restore();
 }
@@ -368,46 +365,19 @@ const SITE_DEVICES: Readonly<Record<SiteGlyph, (painter: Painter) => void>> = {
   },
 };
 
-/** Each resource's device on its small ring: ore's lumps, a sprig of herbs, a log of timber, a crate of salvage. */
-const RESOURCE_DEVICES: Readonly<Record<ResourceGlyph, (painter: Painter) => void>> = {
-  ore: (painter) => {
-    filled(painter, [
-      [-3.2, 2],
-      [-2.2, -0.8],
-      [-0.4, -1.2],
-      [0.4, 2],
-    ]);
-    filled(painter, [
-      [0, 2],
-      [0.8, -2.6],
-      [2.4, -1.8],
-      [3.2, 2],
-    ]);
-  },
-  herbs: (painter) => {
-    painter.strokeStyle = LIGHT_INK;
-    line(painter, 0.9, [0, 3.2], [0, -2.6]);
-    for (const [y, side] of [
-      [-1.6, -1],
-      [0.2, 1],
-      [1.8, -1],
-    ] as const)
-      filled(painter, [
-        [0, y],
-        [side * 2.8, y - 1.6],
-        [side * 2.2, y + 0.4],
-      ]);
-  },
-  timber: (painter) => {
-    painter.fillRect(-3.4, -1.4, 5.4, 2.8);
-    painter.strokeStyle = LIGHT_INK;
-    ring(painter, [2.4, 0], 1.4, 0.9);
-  },
-  salvage: (painter) => {
-    painter.strokeStyle = LIGHT_INK;
-    painter.lineWidth = 1;
-    painter.strokeRect(-2.8, -2.8, 5.6, 5.6);
-    line(painter, 0.8, [-2.8, -2.8], [2.8, 2.8]);
-    line(painter, 0.8, [2.8, -2.8], [-2.8, 2.8]);
-  },
-};
+/** A resource node's device on its small ring: a cut stone, its facets in the parchment, whatever the island gives. */
+function resourceDevice(painter: Painter): void {
+  filled(painter, [
+    [0, -3.4],
+    [3, -1],
+    [1.8, 2.9],
+    [-1.8, 2.9],
+    [-3, -1],
+  ]);
+  painter.strokeStyle = PARCHMENT;
+  line(painter, 0.6, [-3, -1], [3, -1]);
+  line(painter, 0.6, [0, -3.4], [-0.9, -1]);
+  line(painter, 0.6, [0, -3.4], [0.9, -1]);
+  line(painter, 0.6, [-0.9, -1], [0, 2.9]);
+  line(painter, 0.6, [0.9, -1], [0, 2.9]);
+}

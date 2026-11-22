@@ -37,7 +37,8 @@ import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { COURSE, RESOURCE_NODES, ROCKS_SHOWN, STALL, START, STOOD, WOODEN } from './course.ts';
 import { rockTriangles } from './rockRow.ts';
-import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
+import { STALL_REACH, gearMarked, nodesInReach } from './gearGround.ts';
+import { marksSeen } from '../combat/marksOver.ts';
 import { GearPanel, type GearView } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
@@ -251,13 +252,7 @@ async function start(): Promise<void> {
   const { forge, store, looks, hair } = await openCards(scene);
   loadForgedBirds((path) => store.strip(path));
   cards = forge;
-  // The first person swings in the direction the fight's rules began the swing with.
-  const strokeShare = () => {
-    const action = fight?.own?.action;
-    const stroke = action?.kind === 'attack' ? action.stroke : (fight?.stroke ?? 1);
-    return (stroke - 0.5) / 6;
-  };
-  const firstPerson = await FirstPerson.open(gpu, store, strokeShare);
+  const firstPerson = await FirstPerson.open(gpu, store);
   const player = new Walker(standing, you, firstPerson, forge);
   walker = player;
   status = 'Click the view to play.';
@@ -454,7 +449,7 @@ async function start(): Promise<void> {
       muzzleOf: () =>
         fpMuzzle ? screenMuzzle(camera, aspect, fpMuzzle) : figureMuzzle([body.x, body.y, body.z], you.facing),
       more: [
-        ...gearRings(STALL, RESOURCE_NODES, gear, clock),
+        ...marksSeen(gearMarked(STALL, gear), cameraOf(camera).eye, clock),
         ...dropped.marks,
         ...foes.overheads(cameraOf(camera).eye, clock),
       ],

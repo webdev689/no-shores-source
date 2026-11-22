@@ -46,21 +46,22 @@ A weapon in an element glows in it while drawn, each hand in its own weapon's ([
 
 ### Swinging
 
-A click swings once. Holding the button swings again as each blow ends. Each blow takes one of six directions at
-random: down, down and left, left, right, down and right, or up. In the [[Test Ground]] the [[Combat]] rules decide
-when a swing begins and the direction is chosen before it, so the first person swings as the rules do; a swing the
-rules refuse (no stamina, a stagger) is not drawn. A swing the rules begin once the last blow has landed starts the
-strike again, a pair's from the other hand, so no held swing is lost to the frames' rounding; one the rules end early
-(a dodge, a flinch, a guard) ends in the first person at once, and a bow's draw let go too soon to shoot is put away
-without a loose. A swing takes five of DFO's strike frames, and its blow lands as the third begins: a frame lasts
-0.149 s for a sword, three quarters of DFO's swing law at an average Speed ([[Combat]]). A dagger and bare hands come
-round quicker; a mace, a flail and the two-handed weapons slower. In a fight the rules' own swing paces each strike,
-whatever the weapon: its blow's frame shows on the tick they land it and it ends with their swing, and a pair's flurry,
-drawn from the hand already raised, lands when they land it. The strike's own frames run faster than that
-([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]): the first is held until a quarter of
-the way to the blow, the first two run through the last three quarters of that time, the third shows as the blow
-lands, and the last two run over a little over half that time after. The weapon is then at rest while the swing runs
-out. Bare hands' strike to the left goes up and back down over eight frames, paced the same way.
+A click swings once. Holding the button swings again as each blow ends. Out of a fight each blow takes one of six
+directions at random: down, down and left, left, right, down and right, or up. In a fight, the game's or the
+[[Test Ground]]'s, the [[Combat]] rules decide when a swing begins and its stroke, the chain's next ([[Combat]],
+"Swings"), so the first person swings as the rules do; a swing the rules refuse (no stamina, a stagger) is not drawn. A
+swing the rules begin once the last blow has landed starts the strike again, a pair's from the other hand, so no held
+swing is lost to the frames' rounding; one the rules end early (a dodge, a flinch, a guard) ends in the first person at
+once, and a bow's draw let go too soon to shoot is put away without a loose. A swing takes five of DFO's strike frames,
+and its blow lands as the third begins: a frame lasts 0.149 s for a sword, three quarters of DFO's swing law at an
+average Speed ([[Combat]]). A dagger and bare hands come round quicker; a mace, a flail and the two-handed weapons
+slower. In a fight the rules' own swing paces each strike, whatever the weapon: its blow's frame shows on the tick they
+land it and it ends with their swing, and a pair's flurry, drawn from the hand already raised, lands when they land it.
+The strike's own frames run faster than that
+([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]): the first is held until a quarter of the
+way to the blow, the first two run through the last three quarters of that time, the third shows as the blow lands, and
+the last two run over a little over half that time after. The weapon is then at rest while the swing runs out. Bare
+hands' strike to the left goes up and back down over eight frames, paced the same way.
 
 A bow has two shots ([[Ranged Weapons Aim and Fire]]). Not aimed, a pull of the trigger looses a quick shot at once:
 the bow jumps to its sixth frame, the arrow leaving on it, and plays the rest of its release, a frame every 0.0625 s;

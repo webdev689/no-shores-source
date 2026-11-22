@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
 import { layout } from '../ui/layout.ts';
 import { glyphDrawn } from '../ui/glyphs.ts';
-import type { Node } from '../ui/node.ts';
+import type { Child, Node } from '../ui/node.ts';
 import type { Face } from '../ui/text.ts';
 import { AcquiredFeed } from './acquiredFeed.ts';
 import { companyNode } from './companyHud.ts';
@@ -29,7 +29,7 @@ function feed() {
     const node = shown.node(sizes, VIEW, false);
     return node ? (node.children ?? []).length : 0;
   };
-  return { rows, set: (next: GearState) => (gear = next), wait: (span: number) => (now += span) };
+  return { rows, shown, set: (next: GearState) => (gear = next), wait: (span: number) => (now += span) };
 }
 
 test('what a room first says, and what changes in the ten seconds after, is not a gain', () => {
@@ -51,6 +51,42 @@ test('gains show a row each, a gain like one shown adds to its row, and the rows
   assert.equal(rows(), 2, 'more Aurem joins its row; Shapes take one of their own');
   wait(5_000);
   assert.equal(rows(), 0, 'gone after four and a half seconds and their fade');
+});
+
+test("currency, XP and reputation stand as short lines over the items' rows, and the sea's gains are told in", () => {
+  const { set, wait, shown } = feed();
+  shown.node(sizes, VIEW, false);
+  wait(11_000);
+  const base = sampleGear();
+  set({
+    ...base,
+    aurem: base.aurem + 10,
+    xp: base.xp + 250n,
+    stocks: base.stocks.map((count, place) => (place === 0 ? count + 3 : count)),
+  });
+  const kidsOf = (node: Child) => (node ? (node.children ?? []) : []);
+  const kinds = kidsOf(shown.node(sizes, VIEW, false)).map((child) =>
+    child && typeof child === 'object' && 'padding' in child && Array.isArray(child.padding) && child.padding[3] === 4
+      ? 'row'
+      : 'line',
+  );
+  assert.deepEqual(kinds, ['line', 'line', 'row'], 'Aurem and XP over the fragments');
+  shown.tell([
+    {
+      key: 'ship-0',
+      name: 'Timber',
+      count: 2,
+      rarity: null,
+      glyph: 'timber',
+      tint: 0,
+      item: null,
+      emblem: null,
+      icon: null,
+      compact: false,
+      word: null,
+    },
+  ]);
+  assert.equal(kidsOf(shown.node(sizes, VIEW, false)).length, 4, 'what floats gathered at sea, told in');
 });
 
 test('the company shows each other member’s nameplate and the first invite, laid 240 by 48', () => {
@@ -76,4 +112,19 @@ test('the company shows each other member’s nameplate and the first invite, la
   const plates = laid.filter((each) => each.node.width === 240);
   assert.equal(plates.length, 1, 'one plate: the player’s own is left out');
   assert.deepEqual([plates[0]?.box.width, plates[0]?.box.height], [240, 48]);
+});
+
+test("short lines and rows are capped apart: a kill's currency, XP and reputation never push its drops out", () => {
+  const { rows, shown, wait } = feed();
+  rows();
+  const gain = (key: string, compact: boolean) => ({
+    ...{ key, name: key, count: 1, rarity: null, glyph: 'aurem' as const, tint: 0 },
+    ...{ item: null, emblem: null, icon: null, compact, word: null },
+  });
+  shown.tell(['aurem', 'xp', 'rep-0', 'art-0', 'ship-xp'].map((key) => gain(key, true)));
+  shown.tell([0, 1, 2, 3, 4, 5].map((rarity) => gain(`vestige-${rarity}`, false)));
+  assert.equal(rows(), 11, 'five lines over six rows');
+  shown.tell([gain('shapes', true)]);
+  wait(500);
+  assert.equal(rows(), 11, 'a sixth line sends the oldest line, not a row, once it has faded');
 });

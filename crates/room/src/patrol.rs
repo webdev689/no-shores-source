@@ -1,61 +1,26 @@
-//! A patrol's land: its island's resource at spots laid out from the node's own name, the same every time, a third of
+//! A patrol's land: its island's resource at its layout's resource places (each a pile of that resource), a third of
 //! them holding a node at once and the next third after a while, so a player can plan a route through them. Each
-//! player may gather each node once while it stands. Its fights are its garrison's (`garrison.rs`).
+//! player may gather each node once while it stands, holding E. Its fights are its garrison's (`garrison.rs`), and
+//! its dungeons lie behind its entrances (`entrances.rs`).
 
-use crate::{ResourceNode, Room};
+use crate::asks::{GATHER_GRACE_TICKS, GATHER_STIR_M, GATHER_TICKS};
+use crate::{PlayerId, ResourceNode, Room};
 use gear::Difficulty;
-use gear::dice::{Dice, Purpose};
-use std::collections::BTreeMap;
 
-/// A patrol's resource spots, how many groups of them take turns, and how long each group stands (three minutes).
-pub const SPOTS: usize = 12;
+/// How many groups of a patrol's nodes take turns, and how long each group stands (three minutes).
 pub const GROUPS: usize = 3;
 pub const ROTATE_TICKS: u64 = 60 * 180;
-/// How far apart the spots stand, and from the spawns.
-const SPOTS_APART_M: f64 = 60.0;
-const SPOTS_FROM_SPAWNS_M: f64 = 25.0;
-
-/// A patrol: the nodes each account's character gathered this turn, kept past a player's leaving.
-#[derive(Clone, Debug, Default, PartialEq)]
-pub struct Patrol {
-    pub gathered: BTreeMap<String, Vec<u8>>,
-}
-
-/// A number for a name, the same every time: FNV-1a.
-fn named(name: &str) -> u64 {
-    name.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
-}
-
-/// Up to `count` places inside a ring, each `apart` from the others and `from_spawns` from every spawn, by `dice`.
-fn places(ring: &[[f64; 2]], spawns: &[[f64; 2]], dice: &Dice, count: usize, apart: [f64; 2]) -> Vec<[f64; 2]> {
-    let (west, east) = ring.iter().fold((f64::MAX, f64::MIN), |(lo, hi), point| (lo.min(point[0]), hi.max(point[0])));
-    let (north, south) = ring.iter().fold((f64::MAX, f64::MIN), |(lo, hi), point| (lo.min(point[1]), hi.max(point[1])));
-    let [from_others, from_spawns] = apart;
-    let mut found: Vec<[f64; 2]> = Vec::with_capacity(count);
-    for nth in 0..400 {
-        if found.len() == count {
-            break;
-        }
-        let x = west + dice.roll(Purpose::Patrol, nth * 2) * (east - west);
-        let y = north + dice.roll(Purpose::Patrol, nth * 2 + 1) * (south - north);
-        let clear = reach::inside(ring, x, y)
-            && spawns.iter().all(|spawn| libm::hypot(spawn[0] - x, spawn[1] - y) >= from_spawns)
-            && found.iter().all(|place| libm::hypot(place[0] - x, place[1] - y) >= from_others);
-        if clear {
-            found.push([x, y]);
-        }
-    }
-    found
-}
 
 impl Room {
-    /// Makes this node's room a patrol: `resource`'s nodes at places laid out from the node's name.
-    pub fn start_patrol(&mut self, node: &str, resource: u8) {
+    /// Makes this node's room a patrol: `resource`'s nodes where its layout stands them (`places`, each on its
+    /// section's floor), numbered in the layout's order as the page numbers them; and its dungeons' entrances, laid
+    /// out from the node's id apart from them.
+    pub fn start_patrol(&mut self, node: &str, resource: u8, places: &[[f64; 2]]) {
+        self.resource_nodes = places.iter().map(|&[x, y]| ResourceNode { x, y, resource }).collect();
+        self.patrol = true;
         let Some(section) = &self.section else { return };
-        let spots = Dice { seed: named(node), tick: 0, player: 0 };
-        let nodes = places(&section.ring, &section.spawns, &spots, SPOTS, [SPOTS_APART_M, SPOTS_FROM_SPAWNS_M]);
-        self.resource_nodes = nodes.into_iter().map(|[x, y]| ResourceNode { x, y, resource }).collect();
-        self.patrol = Some(Patrol::default());
+        let dry = |x: f64, y: f64| crate::entrances::dry(&self.floor, x, y);
+        self.entrances = crate::entrances::laid(node, &self.floor, &dry, &section.ring, &section.spawns, places);
     }
 
     /// Sets the difficulty the room's voyage set out at, and raises the garrison standing to it.
@@ -67,7 +32,7 @@ impl Room {
     /// Whether a resource node stands now: in a patrol, only its group's turn; elsewhere, always.
     #[must_use]
     pub fn node_standing(&self, index: usize) -> bool {
-        self.patrol.is_none() || (self.clock / ROTATE_TICKS) as usize % GROUPS == index % GROUPS
+        !self.patrol || (self.clock / ROTATE_TICKS) as usize % GROUPS == index % GROUPS
     }
 
     /// The resource nodes standing that a player may still gather, each with its number.
@@ -82,13 +47,44 @@ impl Room {
     /// Keeps a patrol going for a tick: when the nodes' turn passes, every player may gather again and is sent the
     /// nodes now standing.
     pub(crate) fn keep_patrol(&mut self) {
-        let Some(patrol) = self.patrol.as_mut() else { return };
-        if self.clock.is_multiple_of(ROTATE_TICKS) {
+        if self.patrol && self.clock.is_multiple_of(ROTATE_TICKS) {
             for found in self.players.values_mut() {
                 found.spent.clear();
                 found.gear_changed = true;
             }
-            patrol.gathered.clear();
+            self.gathered.clear();
+        }
+    }
+
+    /// Keeps each gather under way for a tick: one whose player may no longer gather it (`gather_refused`) or was hurt
+    /// stops; one stepped off or let go of stops, unless within `GATHER_GRACE_TICKS` of its end, when it is gathered;
+    /// one held `GATHER_TICKS` gathers its node, spent for the player this turn.
+    pub(crate) fn keep_gathering(&mut self) {
+        let under_way: Vec<PlayerId> =
+            self.players.iter().filter(|(_, found)| found.gathering.is_some()).map(|(&id, _)| id).collect();
+        for player in under_way {
+            let Some(gathering) = self.players.get(&player).and_then(|found| found.gathering) else { continue };
+            let Some(fighter) = self.fighter(player).copied() else { continue };
+            let stirred = libm::hypot(fighter.body.x - gathering.at[0], fighter.body.y - gathering.at[1]);
+            let broken = self.gather_refused(player, gathering.node).is_some() || fighter.health < gathering.health;
+            let left = (gathering.since + GATHER_TICKS).saturating_sub(self.clock);
+            let ended = gathering.let_go || stirred > GATHER_STIR_M;
+            let done = !broken && (left == 0 || (ended && left <= GATHER_GRACE_TICKS));
+            let Some(found) = self.players.get_mut(&player) else { continue };
+            if !(broken || ended || done) {
+                // A blow is measured from the health it found last, so a heal meanwhile hides none.
+                found.gathering = Some(crate::asks::Gathering { health: fighter.health, ..gathering });
+                continue;
+            }
+            found.gathering = None;
+            found.gear_changed = true;
+            let Some(node) = self.resource_nodes.get(usize::from(gathering.node)).filter(|_| done) else { continue };
+            found.spent.push(gathering.node);
+            if let Some(owner) = &found.owner {
+                self.gathered.entry(owner.clone()).or_default().push(gathering.node);
+            }
+            found.character.gather(usize::from(node.resource));
+            found.character.tell(&gear::quests::Event::Gather);
         }
     }
 }

@@ -1,7 +1,8 @@
 /**
- * Where the player is in the game's loop: in the story that opens the game, on foot in a node, back at their ship on
- * the sea, or over an island's side choosing where to land. Travel between them passes through a loading veil. On
- * foot and at sea a menu may be open over the play. Pure: the page feeds it what happened and draws what it answers.
+ * Where the player is in the game's loop: in the story that opens the game, on foot in a node or a patrol's dungeon,
+ * back at their ship on the sea, or over an island's side choosing where to land. Travel between them passes through
+ * a loading veil. On foot and at sea a menu may be open over the play. Pure: the page feeds it what happened and
+ * draws what it answers.
  */
 export type Flow =
   | { readonly mode: 'story' }
@@ -20,6 +21,8 @@ export type Happening =
   | { readonly kind: 'land'; readonly node: string; readonly name: string }
   | { readonly kind: 'pass'; readonly node: string; readonly name: string; readonly into: boolean }
   | { readonly kind: 'join'; readonly node: string; readonly name: string }
+  | { readonly kind: 'enter'; readonly node: string; readonly name: string }
+  | { readonly kind: 'leave'; readonly node: string; readonly name: string }
   | { readonly kind: 'wash-up'; readonly node: string; readonly words: string }
   | { readonly kind: 'isle'; readonly node: string; readonly words: string }
   | { readonly kind: 'back' }
@@ -66,6 +69,13 @@ export function next(flow: Flow, happening: Happening): Flow {
         words: `Joining your company at ${happening.name}`,
         then: { mode: 'foot', node: happening.node, menu: false },
       };
+    case 'enter':
+    case 'leave': {
+      // Into a patrol's dungeon, or out of one to its patrol, on foot with no menu open.
+      if (flow.mode !== 'foot' || flow.menu) return flow;
+      const words = `${happening.kind === 'enter' ? 'Entering' : 'Leaving'} ${happening.name}`;
+      return { mode: 'loading', words, then: { mode: 'foot', node: happening.node, menu: false } };
+    }
     case 'wash-up':
     case 'isle':
       // Washed up from the sea, the player stands in the port city's social space or on an island's beach, the veil

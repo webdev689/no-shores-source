@@ -21,7 +21,7 @@ fn a_lone_swordsman_walks_to_a_player_and_swings_in_reach() {
     let mut room = Room::new(7).player(PLAYER, 0.0, 0.0, 0.0).foe(10, SWORDSMAN, Major, 0.0, -8.0, PI);
     let mut closest = f64::MAX;
     let mut first_swing = None;
-    for _ in 0..300 {
+    for _ in 0..400 {
         room.step(&mut still(0.0));
         closest = closest.min(room.distance(PLAYER, 10));
         if first_swing.is_none() && swinging(&room.fighter(10)) {

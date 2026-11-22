@@ -281,7 +281,35 @@ Where the work stands now, for the next session. Each session rewrites this note
   head as drawn; the sway never opens a gap at an edge a picture is cut at, and eases out on a wall; the Test Ground
   holds foes 1.5 m off. Open for the owner: aiming in first person now sees 43° (1.6 times from 65°, where it was
   32.5°), and the iron blow's small red mark beside the bolder rings.
-
+- **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), merged with the owner's yes ("Lets go ahead and queue up
+  the deploy"), which deploys the page and the rooms; audited (an independent read-only audit and a ponytail review,
+  their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a death),
+  tested offline (`cargo xtask check`). The player's melee swings chain side cut, overhead and thrust, starting over
+  after a second without a swing ([[The Player's Swings Chain Side Cut, Overhead and Thrust]]); foes walk and run at
+  three quarters of a player's pace ([[Foes Walk and Run at Three Quarters of a Player's Pace]]); the prologue's parry
+  freeze reads the player's aim, as the rules judge a guard. Not yet played live or seen in a browser. Its open points:
+  whether the one-second reset and the pace feel right in play; whether a stroke that would not reach the locked foe is
+  passed over, as now (at the edge of reach every swing thrusts), or the chain kept strictly and a short stroke left to
+  miss, asked and not yet answered; the raised shield's walk, deferred by the owner (Next).
+- **The controls and the marks are on `main`**, merged with the owner's yes ("Yes start the merges and deploys"),
+  each after an independent audit whose findings were all fixed ("Fix all"): the key strip that follows the moment and
+  K's sheet of every control (#130, [[The Key Strip Follows the Moment, and K Opens Every Control]]); every control
+  rebound and kept with the account, the pad as Destiny's, the pad's cursor in windows and DFO's gauntlet as the
+  pointer (#133, [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]],
+  [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]); a mark over each keeper and usable thing in
+  place of the rings on the ground (#134, [[What a Player Can Use Wears Its Mark Over It]]). Tested offline with the
+  full check. Not yet: a real controller, the mouse's gauntlet seen in Chromium and Firefox (headless pictures never
+  show the system cursor), the binds' D1 migration and route live, the marks on a real GPU.
+- **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
+  and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
+  with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges,
+  with the owner's yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134,
+  the Postmaster's letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a
+  door.
+- **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
+  external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
+  So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
+  (cfd75bba), unmerged; the marks were pictured with it.
 - **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
   ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map
   message they sent is an injected script's, not the game's.
@@ -393,9 +421,38 @@ Where the work stands now, for the next session. Each session rewrites this note
   and 2560x1440. Not yet seen: a real sea fight on a real GPU, or anything of it in the deployed rooms. The cloud
   sessions that built on the sea branch (islands, ship power, activities) take `main` now; bounties count in the sea
   room through `Sea.minute`, and the island dungeon trip is one line once #88's stack meets `main`.
-- **The whole plan of the owner's four points, on branch `ccr-3320a365-bzwp4s`, merged with `main`, audited and
-  tested offline (the full check) and live headless (the menu holding the keys at ratios 1 and 1.25), in #127,
-  which supersedes #112**: no HTML
+- **#72, the dungeons, is finished and waits on the owner's yes to merge**: DFO's Dungeons 2.0 within the patrol
+  areas, perfect and insanely varied as the owner asked ([[The Dungeons Are Perfect and Insanely Varied]], Claude's
+  calls in [[Dungeons as Claude Builds Them]], [[Dungeons]]). Six styles, two to five blocks, a deeper last block in
+  about half, rooms shaped, purposed, named, furnished and lit by their style, vaults, domes and caves, cave mouths
+  for the caverns and the mines. Tested offline: `cargo xtask check`, and headless pictures of every room of six
+  dungeons, one of each style. Two reviews' findings are fixed, each with a test; #72 lists them. Not tested live: a
+  deployed dungeon room.
+
+- **#88, the dungeon modules, stacked on #72, waits on the owner's yes after #72**: each style's own pieces built
+  by script in Blender, a kit of eighteen and three landmarks
+  ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]], [[Dungeon Modules]], Claude's calls in
+  [[Dungeons as Claude Builds Them]], "The modules"). The rules place the landmarks; the page places the kits and
+  draws both from packs the `dungeon-modules` workflow publishes to R2. Tested offline: `cargo xtask check`, the
+  packs built twice to the same bytes here and by the workflow, four code reviews and five rounds of headless
+  pictures of over a dozen dungeons that hold every style and landmark, every finding fixed at its cause with a test.
+  The last two fixes (rock hiding a flame from still water, the mines' drifts strewing rock) are not yet pictured.
+  Not tested live.
+
+- **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
+  check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
+  account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
+  tasks gives its Art early, then its two Tenets, then three fragments of their choosing
+  ([[Each House Has Its Own Road to Its Art]], [[The Houses' Roads as Claude Shapes Them]], [[Quests]]). The owner's
+  second ask ([[Missions Are Varied, Not Only Simple Tasks]]) added six step kinds any later mission can use: escort,
+  tail, defend, puzzle, unseen and race, each judged by the rooms. Each road goes round the island once (about 2,370
+  km of sailing, so a road runs past the 45 to 60 minutes asked). Every task has an id and the save keeps roads and
+  tasks by id. A comprehensive audit (rules, client, story) is fixed with tests. Not yet walked end to end by a
+  person or on a real GPU. Needs the owner's yes to merge (it deploys the page and the rooms, and adds `content/quests`
+  and `content/story/cast.json` to the rooms' code list).
+- **The whole plan of the owner's four points, on `main` (#127)**, merged with the owner's yes ("Merge and deploy"),
+  which deploys the page and the rooms; checked on the deployed page headless (the game in its worker, the menu holding
+  the keys). Asked of the owner: whether to close #112, which #127 holds. No HTML
   anywhere in the interface ([[The Interface Uses No HTML, Now or Later]]): the HUD, the fight's display, the menu and
   every page of it, the story's screens, the held map's marks, the Test Ground and the World Editor drawn by the game,
   each page one canvas and its script, and a repo check (`html`) refusing new HTML with no way round it; the game in a
@@ -407,8 +464,7 @@ Where the work stands now, for the next session. Each session rewrites this note
   stands; no shared memory. Five audits (the drawn interface, the screens, the thread, the network, the repo's rules)
   found an input that stalled a room (verified now under tight limits), a pointer off at a fractional ratio, a Discord
   sign-in's return that stopped the game, keys leaking past the menu, Space and Backspace lost in a field, no modal
-  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Needs the owner's yes:
-  the `html` check by name (a new check), and the merge. Playing alone at sea is now sent the per-player cut of the
+  scope, silent or ducking sounds in the worker, and smaller ones; each is fixed with a test. Playing alone at sea is now sent the per-player cut of the
   snapshot, as with others.
 - **The co-dev's `webgpu-shot` cannot picture the game now**: it reads the page's WebGPU canvas, and the game draws
   from its worker. Its picture runs work for the Test Ground and the World Editor, which stay on the page; for the
@@ -569,6 +625,18 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **#72 once the owner says yes**: squash-merge it, which deploys the page and the rooms, then play a dungeon in a
+  deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out.
+- **#88 once #72 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
+  merge; then play a dungeon of each style in a deployed room. A change to `tools/dungeon/` or the contracts
+  publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
+- **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
+  `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA), once `webgpu-shot`
+  can picture the game again: since #127 the game draws in its worker, which it cannot read (above).
+- **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
+  `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
+  `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
+  draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
 - **Areas in chunks, after the recordings** ([[Areas Load in Chunks With Proper Caching]]): the forge's picture packs
   read in fixed blocks kept in Cache Storage (at the intro's start some 60 range requests went to one pack within
   2 ms; one block holds them all), through `contentCache.ts`; the next area's land, pictures and sounds fetched ahead
@@ -607,6 +675,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   public events and fleets ([[The Sea Is a Patrol Zone, and the Ship Is Gear]]).
 - **Its third round (#69)**: DFO's #1687 forge work ([[DFO's Blows on the Move Come Over Before the Merge]]), its
   renders on R2 (125 moves); figures act on the move where every layer draws the walking version; the world's sound
+- **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
+  140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
+- **`tools/uiShot.mjs` writes blank pictures**: the interface lays its quads, but the shot's read-back is only the
+  ground under SwiftShader. The game's own frame read back from its worker shows the interface whole, so check
+  pictures that way meanwhile.
 - **After the four points**: the game's frame time on a real GPU, in and out of the worker; a sound heard by a person
   from the worker's cues; holding a press with the pad's A, which waits on an "A held" signal from the interface (main
   had no pad holds either).

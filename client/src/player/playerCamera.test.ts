@@ -1,5 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
+import { BOOM } from './boom.ts';
 import {
   AIM,
   askedView,
@@ -49,6 +50,24 @@ test('third person sits behind the head and up; a wall between pulls it in', () 
   assert.ok(Math.abs(rayHit([0, 0, 1.7], [0, 2, 2.2], [wall]) - 0.5) < 1e-9);
   const pulled = cameraOrbit([0, 0, 1.7], 0, 0, view, [wall]);
   assert.ok(pulled.targetY + 1 < 1, `${pulled.targetY + 1} is short of the wall`);
+});
+
+test('under a ceiling the third-person camera stays below it, pulled in along its line from the head', () => {
+  const view = { firstPerson: false, distance: 4.5, shown: 4.5 };
+  const [head, pitch] = [[0, 0, 1.7] as const, 1.2];
+  const eyeOf = (orbit: ReturnType<typeof cameraOrbit>) =>
+    [orbit.targetX, orbit.targetY + Math.cos(pitch), orbit.targetZ + Math.sin(pitch)] as const;
+  const open = eyeOf(cameraOrbit(head, 0, pitch, view, []));
+  assert.ok(open[2] > 3.2, `looking down, the camera would stand at ${open[2]} m, over a 3.2 m ceiling`);
+  const under = eyeOf(cameraOrbit(head, 0, pitch, view, [], 0, AIM, null, () => 3.2));
+  assert.ok(Math.abs(under[2] - (3.2 - BOOM.clearance)) < 1e-9, `${under[2]} m is short of the ceiling`);
+  const [outY, outZ, inY, inZ] = [open[1] - head[1], open[2] - head[2], under[1] - head[1], under[2] - head[2]];
+  assert.ok(Math.abs(under[0]) < 1e-9 && Math.abs(outY * inZ - outZ * inY) < 1e-9, 'on the line from the head');
+  assert.deepEqual(
+    eyeOf(cameraOrbit(head, 0, pitch, view, [], 0, AIM, null, () => null)),
+    open,
+    'no ceiling, no change',
+  );
 });
 
 test('aiming in third person stands the camera over the right shoulder and zooms in; in first person it zooms more', () => {

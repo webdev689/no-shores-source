@@ -7,8 +7,9 @@ use super::*;
 use crate::judging::How;
 use crate::recharge::{DEALT_SHARE, kill_share};
 use ::foes::Rank;
+use combat::fighter::Action;
 use combat::judge::{Blow, BlowKind};
-use combat::tuning::CHARGES;
+use combat::tuning::{CHARGES, RESPAWN};
 use combat::{CombatInput, Intent, Ranged, Stroke};
 use std::collections::BTreeMap;
 

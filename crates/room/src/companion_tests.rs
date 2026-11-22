@@ -137,9 +137,13 @@ fn a_companion_fights_a_factions_foe_near_their_leader_and_their_kill_pays_the_l
     let foe = tithe(&mut room, 1, -8.0);
     let mut landed = false;
     for _ in 0..3600 {
-        // The leader kept whole and out of it, so only the companion's blows reach the foe.
+        // The leader kept whole and out of it, so only the companion's blows reach the foe; the companion kept whole,
+        // so the fight ends in its kill whichever way the blows fall.
         let fighter = &mut room.players.get_mut(&player).unwrap().fighter;
         fighter.health = fighter.health_max;
+        if let Some(kept) = room.foes.get_mut(&companion) {
+            kept.fighter.health = kept.fighter.health_max;
+        }
         room.tick();
         let events = room.take_events();
         landed |= events.iter().any(|event| event.striker == companion && event.defender == foe);

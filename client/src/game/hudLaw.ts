@@ -64,6 +64,7 @@ export const KIND_WORDS = {
   boss: 'World boss',
   port: 'Port',
   hostile: 'Hostile',
+  quest: 'Quest',
 } as const;
 
 export type MarkKind = keyof typeof KIND_WORDS;
@@ -77,10 +78,14 @@ export function distanceText(metres: number): string {
 /** The islands' names the owner has given, by continent. */
 export const ISLANDS: Readonly<Record<string, string>> = { 'continent-1': 'Saltmere' };
 
-/** The words under a place's name: its kind, and its island's name where it has one. A ruined city's place is no
- *  social space: it says only that it lies in ruins. */
-export function placeWords(node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string }): string {
+/** The words under a place's name: the room of a dungeon the player stands in, the place's kind, and its island's
+ *  name where it has one. A ruined city's place is no social space: it says only that it lies in ruins. */
+export function placeWords(
+  node: Pick<NodeInfo, 'kind' | 'continent'> & { readonly name?: string },
+  room?: string | null,
+): string {
   const island = ISLANDS[node.continent];
   const kind = node.name?.startsWith(ruinedName('')) ? 'Ruins' : KIND_WORDS[node.kind];
-  return island ? `${kind} · ${island}` : kind;
+  const named = room ? `${room[0]?.toUpperCase()}${room.slice(1)} · ${kind}` : kind;
+  return island ? `${named} · ${island}` : named;
 }

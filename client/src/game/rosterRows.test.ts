@@ -36,6 +36,8 @@ test('where a player is reads as its place: a node by name and its difficulty, t
   assert.equal(placeWords('node-saltgrass-downs--abyss'), 'Saltgrass Downs · Abyss difficulty');
   assert.equal(placeWords('node-saltgrass-downs--rough'), 'Saltgrass Downs · Elite difficulty', 'an old name read');
   assert.equal(placeWords('node-saltgrass-downs--storm'), 'Saltgrass Downs · Abyss difficulty');
+  assert.equal(placeWords('node-saltgrass-downs--dungeon-0'), 'Saltgrass Downs · Dungeon');
+  assert.equal(placeWords('node-saltgrass-downs--abyss--dungeon-2'), 'Saltgrass Downs · Dungeon · Abyss difficulty');
   assert.equal(placeWords('sea'), 'At sea');
   assert.equal(placeWords(null), 'Away');
 });

@@ -158,7 +158,8 @@ export function boomFollowed(
 /** The camera as an orbit the scene draws from: at the head in first person; in third at the end of its boom as far
  *  out as it has eased (`boomFollowed`), and never nearer a block or the ground than `BOOM.closest`, so a boom easing
  *  in behind a sudden wall never shows through it; and `aim` (0 to 1) of the way into aiming's view, at `place` over
- *  the shoulder and zoomed. `pitch` is how far it looks down, negative looking up. */
+ *  the shoulder and zoomed; and under the ceiling `roof` gives over a point (null where there is none). `pitch` is how
+ *  far it looks down, negative looking up. */
 export function cameraOrbit(
   head: Point,
   yaw: number,
@@ -168,6 +169,7 @@ export function cameraOrbit(
   aim = 0,
   place: AimPlace = AIM,
   groundAt: ((x: number, y: number) => number | null) | null = null,
+  roof: ((x: number, y: number) => number | null) | null = null,
 ): Orbit {
   const forward = forwardOf(yaw, pitch);
   const end = boomEnd(head, yaw, pitch, view, aim, place);
@@ -180,7 +182,13 @@ export function cameraOrbit(
         ? boomReach(head, end, blocks, groundAt, BOOM.clearance)
         : Math.min(view.boom, boomReach(head, end, blocks, groundAt, BOOM.closest));
     const share = length > 1e-6 ? Math.min(1, Math.max(0, shown) / length) : 0;
-    eye = [0, 1, 2].map((axis) => head[axis] + (end[axis] - head[axis]) * share) as unknown as Point;
+    const along = (part: number) =>
+      [0, 1, 2].map((axis) => head[axis] + (end[axis] - head[axis]) * part) as unknown as Point;
+    const reach = along(share);
+    // Under a ceiling by the clearance too, along the same line, so the player stays in the middle of the view.
+    const ceiling = Math.min(roof?.(head[0], head[1]) ?? Infinity, roof?.(reach[0], reach[1]) ?? Infinity);
+    const [over, rise] = [ceiling - BOOM.clearance, end[2] - head[2]];
+    eye = reach[2] > over && rise > 0 ? along(Math.max(0, (over - head[2]) / rise)) : reach;
   }
   const zoom = aimZoom(view.shown, aim, place) * widened(view.shown);
   return {

@@ -38,6 +38,9 @@ export interface RoomDoor {
   open(spawn: { readonly x: number; readonly y: number }, blocks: readonly CourseBlock[], overSea?: boolean): boolean;
   /** Opens a node's room from its file's text, as the bake writes it; false if the text is not a node. */
   openNode(nodeText: string): boolean;
+  /** Opens the room of a patrol's dungeon by its number (0 to 2), from the patrol's node file's text; false if the
+   *  text is not a patrol's or it has no such dungeon. */
+  openDungeon(nodeText: string, dungeon: number): boolean;
   /** Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's number, its faction, its rank
    *  (1 Minor to 5 Boss) and level; false if the hull or the rank is not one. */
   openDeck(hull: number, faction: number, rank: number, level: number): boolean;
@@ -53,13 +56,15 @@ export interface RoomDoor {
   seaIsland(id: number): string;
   /** Holds the open sea's island by its number and seed while players stand ashore: whether it stands. */
   holdAshore(id: number, seed: string): boolean;
-  /** Whether the open sea has an account landed on its island of that number and seed: its ship at rest at the
-   *  island's anchorage when last at sea. */
-  seaLanded(id: number, seed: string, account: string): boolean;
-  /** Turns on the open island room's check of landings: only the accounts `land` names scavenge. Whether it is one. */
+  /** The number of the open sea's landing of an account on its island of that number and seed (its ship at rest at
+   *  the island's anchorage when last at sea), or 0 if it is not landed there. */
+  seaLanded(id: number, seed: string, account: string): number;
+  /** Turns on the open island room's check of landings: only the accounts `land` names scavenge and gather. Whether
+   *  it is one. */
   checkLandings(): boolean;
-  /** Lands an account on the open island room, on its sea's word: whether it is an island's room. */
-  land(account: string): boolean;
+  /** Lands an account on the open island room, on its sea's word, by its landing's number (a new number, a new
+   *  visit): whether it is an island's room. */
+  land(account: string, landing: number): boolean;
   /** An island's plan as JSON in its own frame, and its ground's numbers as `movement::Heights` gives them with its
    *  middle at `at` in the world, from its seed (a decimal string) and climate: both empty for a climate the islands'
    *  contract does not dress. */
@@ -73,6 +78,9 @@ export interface RoomDoor {
   storyWreck(): void;
   /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
+  /** A new player's number, standing before the door of the open patrol's entrance numbered `entrance`, facing away
+   *  from it; 0 when the room is no patrol, has no such entrance, is full or its node locked. */
+  joinAt(entrance: number): number;
   /** Why the room takes no player, a locked node's words; null for a room that takes them. */
   refusal(): string | null;
   /** The welcome's bytes for a player. */
@@ -124,6 +132,12 @@ export interface RoomDoor {
    *  and `faction_name`), domain (land or deck), role (`role` and `role_name`), ranks (their numbers, the plainest
    *  first), and its right and left forge layers. */
   roster(): string;
+  /** A patrol's dungeon by its patrol's id and name and its number, as JSON (crates/room-wasm/src/dungeon_door.rs),
+   *  or "null" for an ask that does not read. */
+  dungeon(patrol: string, name: string, number: number): string;
+  /** A dungeon laid by a seed and a style's key where no patrol lays it (a sea island's), named for its place `name`,
+   *  as `dungeon` answers it; "null" for a style that is none. */
+  dungeonOf(seed: number, style: string, name: string): string;
   /** The port cities' ids, as JSON: every other city is a ruin. */
   mainPorts(): string;
   /** A page playing a course alone, never a server: stands a foe of the roster (its `type`, `rank` and `level` as the
@@ -157,6 +171,7 @@ interface RoomExports {
   room_open(address: number, length: number): number;
   room_open_over_sea(address: number, length: number): number;
   room_open_node(address: number, length: number): number;
+  room_open_dungeon(address: number, length: number, dungeon: number): number;
   room_open_deck(hull: number, faction: number, rank: number, level: number): number;
   room_open_sea(address: number, length: number, seed: number): number;
   room_open_fleet(): number;
@@ -165,13 +180,14 @@ interface RoomExports {
   room_hold_ashore(id: number, low: number, high: number): number;
   room_sea_landed(id: number, low: number, high: number, address: number, length: number): number;
   room_isle_check_landings(): number;
-  room_isle_land(address: number, length: number): number;
+  room_isle_land(address: number, length: number, landing: number): number;
   room_isle_plan(low: number, high: number, address: number, length: number): bigint;
   room_isle_heights(low: number, high: number, x: number, y: number, address: number, length: number): bigint;
   room_world_start(seconds: number): void;
   room_take_foe_asks(): void;
   room_story_wreck(): void;
   room_join(): number;
+  room_join_at(entrance: number): number;
   room_refusal(): bigint;
   room_joined(player: number): bigint;
   room_leave(player: number): void;
@@ -192,6 +208,7 @@ interface RoomExports {
   room_furnish(address: number, length: number): number;
   room_sloop(): bigint;
   room_roster(): bigint;
+  room_dungeon(address: number, length: number): bigint;
   room_main_ports(): bigint;
   room_stand_foe(type: number, rank: number, x: number, y: number, facing: number, level: number): number;
   room_clear_foes(): number;
@@ -251,6 +268,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       return lend(bytes, (address) => entry(address, bytes.length)) === 1;
     },
     openNode: (nodeText) => openWith(exports.room_open_node, nodeText),
+    openDungeon: (nodeText, dungeon) =>
+      openWith((address, length) => exports.room_open_dungeon(address, length, dungeon >>> 0), nodeText),
     openDeck: (hull, faction, rank, level) => exports.room_open_deck(hull, faction, rank, level) === 1,
     openSea: (layoutText, seed, worldStartS = 0) => {
       const opened = openWith((address, length) => exports.room_open_sea(address, length, seed >>> 0), layoutText);
@@ -265,10 +284,13 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     openIsland: (word) => openWith(exports.room_open_island, word),
     seaIsland: (id) => new TextDecoder().decode(take(exports.room_sea_island(id >>> 0))),
     holdAshore: (id, seed) => exports.room_hold_ashore(id >>> 0, ...halves(seed)) === 1,
-    seaLanded: (id, seed, account) =>
-      openWith((address, length) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, length), account),
+    seaLanded: (id, seed, account) => {
+      const bytes = new TextEncoder().encode(account);
+      return lend(bytes, (address) => exports.room_sea_landed(id >>> 0, ...halves(seed), address, bytes.length));
+    },
     checkLandings: () => exports.room_isle_check_landings() === 1,
-    land: (account) => openWith(exports.room_isle_land, account),
+    land: (account, landing) =>
+      openWith((address, length) => exports.room_isle_land(address, length, landing >>> 0), account),
     islePlan: (seed, climate) =>
       new TextDecoder().decode(
         take(
@@ -290,6 +312,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     takeFoeAsks: () => exports.room_take_foe_asks(),
     storyWreck: () => exports.room_story_wreck(),
     join: () => exports.room_join(),
+    joinAt: (entrance) => exports.room_join_at(entrance >>> 0),
     refusal: () => new TextDecoder().decode(take(exports.room_refusal())) || null,
     joined: (player) => take(exports.room_joined(player)),
     leave: (player) => exports.room_leave(player),
@@ -328,6 +351,14 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     noneKept: (player) => exports.room_none_kept(player),
     sloop: () => new TextDecoder().decode(take(exports.room_sloop())),
     roster: () => new TextDecoder().decode(take(exports.room_roster())),
+    dungeon: (patrol, name, number) => {
+      const bytes = new TextEncoder().encode(JSON.stringify({ patrol, name, number }));
+      return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_dungeon(address, bytes.length))));
+    },
+    dungeonOf: (seed, style, name) => {
+      const bytes = new TextEncoder().encode(JSON.stringify({ name, seed: seed >>> 0, style }));
+      return new TextDecoder().decode(take(lend(bytes, (address) => exports.room_dungeon(address, bytes.length))));
+    },
     mainPorts: () => new TextDecoder().decode(take(exports.room_main_ports())),
     standFoe: (type, rank, x, y, facing, level) => exports.room_stand_foe(type, rank, x, y, facing, level),
     clearFoes: () => exports.room_clear_foes() === 1,

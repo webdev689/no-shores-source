@@ -9,6 +9,7 @@ import {
   blowFrame,
   blowWay,
   type Doing,
+  FULL_RUN,
   FULL_WALK,
   likelyMoves,
   Loop,
@@ -212,6 +213,13 @@ test('the likeliest moves are the kit’s, the strokes of a weapon held alone, a
   const paired = likelyMoves('sword_iron', 'dagger_iron_l', classic);
   assert.ok(paired.includes('twinslash') && !paired.includes('chop'));
   assert.equal(new Set(paired).size, paired.length);
+});
+
+test('a run slower than a full run, as a foe’s, strides as much slower; never faster', () => {
+  const run = (speed: number) => shownMove({ ...doing, moving: true, running: true, speed }, frames, classic);
+  assert.deepEqual(run(FULL_RUN), { anim: 'run', frame: null, frameSeconds: 0.125 });
+  assert.ok(Math.abs(run(FULL_RUN * 0.75).frameSeconds - 0.125 / 0.75) < 1e-12, 'a foe’s run, at three quarters');
+  assert.equal(run(FULL_RUN * 1.3).frameSeconds, 0.125, 'a Hasted run at the full run’s pace');
 });
 
 test('running with a gun or a crossbow drawn plays its own run; put away, the plain run', () => {

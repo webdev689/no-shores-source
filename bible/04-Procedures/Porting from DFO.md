@@ -7,7 +7,8 @@ How a pick comes over depends on where it lands ([[TypeScript and Rust]]):
 
 - **Client code** (engine, interface, tools): DFO's JavaScript comes over as TypeScript. Rename it `.ts`, type it
   strictly, cut the seams the pick list names, and rename to our own names. The logic stays.
-- **GPU code**: rewritten for WebGPU and WGSL, with DFO's WebGL2 code as the specification ([[WebGPU Only]]).
+- **GPU code**: rewritten for WebGPU and WGSL, with DFO's WebGL2 code as the specification ([[WebGPU Only]]). DFO
+  stores a picture bottom row first and Overlook top row first, so a v ported from DFO's UVs comes out flipped.
 - **Server and rules code**: rebuilt in Rust, with DFO's version as the specification.
 What may come is in the [[Pick List]]; why we draw on DFO at all is [[Built From What DFO Taught Us]].
 

@@ -37,6 +37,7 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
           0,
           0,
           0,
+          0,
         );
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);
