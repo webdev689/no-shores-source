@@ -1,11 +1,13 @@
-// What a player's gear lays on the ground on foot: each resource node they may still gather, a ring in sea green
-// under a beam of light seen across the patrol, so a route can be planned through them; each station that deals with
-// them, a brass ring at its counter, and Shape's spot while he is here; a quest's puzzle points under beams, gold once
-// lit, and a named ward it defends. The drops lying for them stand as their own pictures (`combat/drops.ts`). And what
-// E does where they stand: a station's or Shape's offer opened (or its keeper spoken with, while a quest asks it), a
-// puzzle's point used, or a node within reach gathered. The room judges every use; the rings only show where.
+// What a player's gear lays on foot: over each resource node they may still gather a beam of light seen across the
+// patrol, so a route can be planned through them, standing clear over the node's mark; a quest's puzzle points ringed
+// under beams, gold once lit, and a named ward it defends. The marks over what they can use are `combat/marksOver.ts`'s,
+// the drops lying for them their own pictures (`combat/drops.ts`). And what E does where they stand: a station's or
+// Shape's offer opened (or its keeper spoken with, while a quest asks it), a puzzle's point used, or a node within reach
+// gathered. The room judges every use; the rings and beams only show where.
 
+import type { DropsShown } from '../combat/drops.ts';
 import { markRing } from '../combat/marks.ts';
+import { type Marked, TALLEST_M } from '../combat/marksOver.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { resourceName } from '../player/gear.ts';
 import { openGearWindow } from './gearScreen.ts';
@@ -13,6 +15,7 @@ import { SERVED_M, offerAt } from './plazaLife.ts';
 import { KEEPERS } from './keepers.ts';
 import { goalOf, puzzlePoints } from './quests/questBook.ts';
 import { shapeSpot } from './townsfolk.ts';
+import { chime } from './uiSounds.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a resource node a player stands to gather it, and a puzzle's point to use it, as the room has them. */
@@ -22,8 +25,7 @@ export const POINT_REACH_M = 3;
 const UNLIT = [0.62, 0.72, 0.9] as const;
 const LIT = [0.98, 0.84, 0.45] as const;
 const WARD = [0.42, 0.86, 0.42] as const;
-/** A station's ring in brass, a resource node's in sea green, each beating slowly so it is seen across the ground. */
-const BRASS = [0.93, 0.74, 0.32] as const;
+/** A resource node's beam in sea green, beating slowly so it is seen across the ground. */
 const NODE = [0.35, 0.85, 0.7] as const;
 /** How tall a node's beam stands, and half of how wide it is, metres: it is seen across the patrol, hundreds of metres
  *  off. */
@@ -98,26 +100,21 @@ function markBeam(
   }
 }
 
-/** The rings on the ground at `seconds` of the page's clock, each standing on `floor`'s height where it is. */
-export function groundRings(
-  gear: GearState | null,
-  here: Here,
-  floor: (x: number, y: number) => number,
-  seconds: number,
-): number[] {
+/** The beams over the marks that stand under one (the nodes') at `seconds` of the page's clock, each standing over
+ *  the tallest its mark is drawn, so the mark reads clear of it. */
+export function nodeBeams(marked: readonly Marked[], seconds: number): number[] {
   const out: number[] = [];
   const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
-  const stations = here.stations ?? [];
-  const counters = stations.filter((station) => offerAt([station], ...station.counter)).map((each) => each.counter);
-  const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
-  for (const [x, y] of shape ? [...counters, shape] : counters)
-    markRing(out, [x, y, floor(x, y)], SERVED_M - 0.12, SERVED_M, [...BRASS, 0.6]);
-  for (const { x, y } of gear?.nodes ?? []) {
-    const base = [x, y, floor(x, y)] as const;
-    markRing(out, base, NODE_REACH_M - 0.1, NODE_REACH_M, [...NODE, 0.5]);
-    markRing(out, base, 0.3, 0.6, [...NODE, beat]);
-    markBeam(out, base, NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
-  }
+  for (const { at, beam } of marked)
+    if (beam) markBeam(out, [at[0], at[1], at[2] + TALLEST_M], NODE_BEAM, [...NODE, Math.min(1, beat + 0.25)]);
+  return out;
+}
+
+/** A quest's puzzle points and the ward it defends by name at `seconds` of the page's clock, each a ring on `floor`'s
+ *  height where it stands under a beam. */
+export function questRings(gear: GearState | null, floor: (x: number, y: number) => number, seconds: number): number[] {
+  const out: number[] = [];
+  const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
   for (const { x, y, lit } of puzzlePoints(gear?.quest)) {
     const base = [x, y, floor(x, y)] as const;
     const colour = lit ? LIT : UNLIT;
@@ -133,4 +130,19 @@ export function groundRings(
     markBeam(out, base, NODE_BEAM, [...WARD, Math.min(1, beat + 0.25)]);
   }
   return out;
+}
+
+/** The drops lying for the player (`lying`), flying and standing, seen from `eye`, laid after the marks in `out`, and
+ *  where each came to rest this frame; a Rare or finer chimes as it comes to rest. */
+export function dropsLaid(
+  drops: DropsShown,
+  lying: Parameters<DropsShown['frame']>[0],
+  clock: number,
+  eye: readonly [number, number, number],
+  out: number[],
+) {
+  const shown = drops.frame(lying, clock, eye, out);
+  const rarest = Math.max(-1, ...shown.rested);
+  if (rarest >= 2) chime(rarest);
+  return shown;
 }
