@@ -7,6 +7,7 @@ import { flagFlat, flagGrid } from './flag.ts';
 import { HULL_NAMES, type HullPaint, hullPaint } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
+import type { ShipHarm } from './shipHarm.ts';
 import { loadShip, type ShipMesh, shipSails, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 import { cellShows, flagAt, harmedCanvas, mastFalls } from './harmDrawn.ts';
 import {
@@ -174,10 +175,12 @@ export class ShipView {
   private readonly kit: ShipKit;
   private readonly vertices: GPUBuffer;
   private readonly indices: GPUBuffer;
-  /** Each slot's canvas as last laid: for which frame (`fromEye`), rig and side (its flag's), and how many of its
-   *  indices are drawn. */
+  /** Each slot's canvas as last laid: from which rig, as it and its harm had changed then, for which side (its
+   *  flag's), and how many of its indices are drawn. A moored ship's furled rig never changes, so its canvas is laid
+   *  once; a sailing one's once a frame for the shadows' passes and the picture alike. */
   private readonly laid: (
-    { fromEye: Float32Array; rig: SailRig; side: ShipLook['side']; indices: number } | undefined
+    | { rig: SailRig; changes: number; harm: ShipHarm; harmed: number; side: ShipLook['side']; indices: number }
+    | undefined
   )[] = [];
   private readonly slots: {
     readonly uniforms: GPUBuffer;
@@ -316,9 +319,16 @@ export class ShipView {
     else for (let mast = 0; mast < MOST_MASTS; mast++) values.set([0, 1, 0, 1], MAST_FLOATS_AT + mast * 8);
     this.device.queue.writeBuffer(drawn.uniforms, 0, values);
     if (!rig) return 0;
-    // A frame's shadow passes and its picture lay the same canvas: it is laid once a frame (`fromEye`) and rig.
     const laid = this.laid[slot];
-    if (laid?.fromEye === camera.fromEye && laid.rig === rig && laid.side === look.side) return laid.indices;
+    const { changes, harm } = rig;
+    if (
+      laid?.rig === rig &&
+      laid.changes === changes &&
+      laid.harm === harm &&
+      laid.harmed === harm.changes &&
+      laid.side === look.side
+    )
+      return laid.indices;
     const flown = flagAt(this.masthead, rig.harm, this.tags.masts, now);
     const flag = flagGrid(flown.at, this.waterline.lengthM, rig.offDeg, rig.time);
     const flagLayer = SHIP_PARTS.length + SHIP_SIDES.indexOf(look.side);
@@ -326,7 +336,7 @@ export class ShipView {
     const grid = canvasIndices(this.sails.length + 1, (sail, cell) =>
       sail < this.sails.length ? cellShows(rig.harm, sail, cell, now) : flown.shows,
     );
-    this.laid[slot] = { fromEye: camera.fromEye, rig, side: look.side, indices: grid.length };
+    this.laid[slot] = { rig, changes, harm, harmed: harm.changes, side: look.side, indices: grid.length };
     if (grid.length === 0) return 0;
     this.device.queue.writeBuffer(drawn.canvasIndices, 0, grid);
     this.device.queue.writeBuffer(

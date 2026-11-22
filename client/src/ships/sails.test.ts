@@ -185,3 +185,27 @@ test('a square sail furled is gathered up to its yard', () => {
   for (let point = 2; point < canvas.length; point += 3)
     assert.ok((canvas[point] ?? 0) > COURSE.head_port[2] - drop * 0.12, `${canvas[point]}`);
 });
+
+test('a rig counts each change to it and to its harm, so a canvas laid from it is laid again only after one', () => {
+  const rig = new SailRig([STAY, GAFF]);
+  const counted = () => [rig.changes, rig.harm.changes];
+  const still = counted();
+  rig.canvas();
+  assert.deepEqual(counted(), still, 'laying its canvas changes nothing');
+  const moves: (() => void)[] = [
+    () => rig.step(1 / 60, { offDeg: 90, set: true }, 1),
+    () => rig.harm.hole(0, 3),
+    () => rig.harm.scar([1, 2, 0]),
+    () => rig.harm.wear(0.2),
+    () => rig.harm.loseSail(1, 2, 1),
+    () => rig.harm.fellMast(0, 2, -1),
+    () => rig.harm.strike(3),
+    () => rig.harm.sink(4),
+    () => rig.harm.step(1 / 60, 1, 5),
+  ];
+  for (const move of moves) {
+    const before = counted();
+    move();
+    assert.notDeepEqual(counted(), before, String(move));
+  }
+});

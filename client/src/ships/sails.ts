@@ -178,6 +178,8 @@ export class SailRig {
   /** The wind's way off its bow and the clock at its last step, which its flag streams by. */
   offDeg = 0;
   time = 0;
+  /** How many times it has been stepped or mended: a canvas laid from it holds until this, or its harm's, moves. */
+  changes = 0;
   /** What a fight has done to its rig and hull, as drawn (`ShipHarm`). */
   harm: ShipHarm;
 
@@ -198,6 +200,7 @@ export class SailRig {
 
   /** One step of `seconds` at `time` (seconds, for a luff's flapping). */
   step(seconds: number, wind: SailWind, time: number): void {
+    this.changes += 1;
     [this.offDeg, this.time] = [wind.offDeg, time];
     this.harm.step(seconds, wind.way ?? 0, time);
     this.setShare = toward(this.setShare, wind.set ? 1 : 0, seconds / SET_S);
@@ -223,6 +226,7 @@ export class SailRig {
 
   /** Its rig made whole again, the fight's harm gone with the fight. */
   mend(): void {
+    this.changes += 1;
     this.harm = new ShipHarm(this.sails.map((sail) => sail.corners));
   }
 
