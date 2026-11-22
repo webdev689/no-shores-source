@@ -41,6 +41,8 @@ export interface MenuContext {
   /** The forge and the player's dress, for what draws the player or their horse; null while there is none. */
   readonly forge: Cards | null;
   readonly dress: Dress | null;
+  /** Another player's character, shown as the Character tab shows one's own and changed by nothing on it (Inspect). */
+  readonly inspected?: boolean;
 }
 
 /** What a drawn page that needs no gear (Ship, Social, Settings, a page to come) draws from: the part of `MenuContext`

@@ -30,6 +30,8 @@ export interface KeptRoom {
   restoreCharacter(player: number, kept: string): boolean;
   /** Notes the account that keeps a player's character. */
   own(player: number, account: string): boolean;
+  /** Names a player by their account's username, which others read over their head. */
+  name(player: number, name: string): boolean;
   /** Why the room's gate shuts to a player's kept character, or to a new one (null), with the story the player already
    *  holds in the room carried forward; empty when it may enter. */
   shut(player: number, kept: string | null): string;
@@ -115,6 +117,14 @@ export class Keeper {
     return this.held.get(player)?.from ?? null;
   }
 
+  /** Names a kept player by the username their session's account keeps now, as one taken since they signed in; their
+   *  token must still be their account's. */
+  async rename(player: number, token: string): Promise<void> {
+    const held = this.held.get(player);
+    const looked = held ? await this.characters?.look(token) : null;
+    if (held && looked && looked.account === held.account && looked.name !== null) this.room.name(player, looked.name);
+  }
+
   /** Claims a player's character with their session's token and gives it to them; whether it is now kept. `here`
    *  says whether the player is still in the room once the claim is answered. */
   async signIn(player: number, token: string, now: () => number, here: () => boolean): Promise<boolean> {
@@ -176,6 +186,7 @@ export class Keeper {
         this.lost(other);
       }
     this.room.own(player, claimed.account);
+    if (claimed.name !== null) this.room.name(player, claimed.name);
     if (this.company) this.admitted.add(claimed.account);
     this.held.set(player, {
       account: claimed.account,

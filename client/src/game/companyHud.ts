@@ -13,6 +13,10 @@ import { placeWords } from './rosterRows.ts';
 
 /** How often the company is asked for while playing, in milliseconds. */
 const LOOK_MS = 20_000;
+
+/** The Roster as the company's display last heard it, here or by the Social tab; null before it has, or for a guest. */
+let heardRoster: Roster | null = null;
+export const rosterNow = (): Roster | null => heardRoster;
 /** A nameplate's size, its emblem drawn at twice its cells. */
 const PLATE_WIDTH = 240;
 const PLATE_HEIGHT = 48;
@@ -28,9 +32,11 @@ export class CompanyHud {
     let unnamed = false;
     const show = (roster: Roster | string) => {
       heardAt = performance.now();
-      // A guest has no Roster: asked again only once the account changes.
+      // A guest has no Roster: asked again only once the account changes. Accounts out of reach a moment keep the last
+      // one heard, so the company's plates do not turn blue meanwhile.
       unnamed = typeof roster === 'string' && roster.startsWith('Add a username');
-      this.roster = typeof roster === 'string' ? null : roster;
+      this.roster = typeof roster !== 'string' ? roster : unnamed ? null : this.roster;
+      heardRoster = this.roster;
     };
     const look = () => {
       if (!document.hidden && !unnamed) void link.roster().then(show);
@@ -42,6 +48,7 @@ export class CompanyHud {
     addEventListener(ROSTER_HEARD, (event) => show((event as CustomEvent<Roster | string>).detail));
     addEventListener(ACCOUNT_CHANGED, () => {
       unnamed = false;
+      [this.roster, heardRoster] = [null, null];
       look();
     });
   }

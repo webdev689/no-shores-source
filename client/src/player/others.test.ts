@@ -67,10 +67,16 @@ test('other players are placed in their own dress, moved as the room saw them, a
     facing: 0,
   });
   const robed = plainDress('felid', 0.4);
-  others.takeDresses([
-    { player: 7, dress: JSON.stringify(robed) },
-    { player: 8, dress: '{ not a dress' },
-  ]);
+  const named = { player: 7, name: 'Mariner', level: 20, menu: true };
+  others.take({
+    dressed: [
+      { player: 7, dress: JSON.stringify(robed) },
+      { player: 8, dress: '{ not a dress' },
+    ],
+    plates: [named],
+  });
+  assert.deepEqual(others.plateOf(7), named, "a player's plate is kept as the room sent it");
+  assert.equal(others.plateOf(8), null, 'none before the room sends one');
   others.seen([seen(1, 0), seen(7, 3), seen(8, 5)], 1, forge);
   assert.deepEqual([...others.placed.keys()], [7, 8], 'all but their own');
   assert.deepEqual(others.placed.get(7)?.dress, robed, 'in the dress they sent');
@@ -100,7 +106,7 @@ test('another player drinking has their weapon put away at once, from the snapsh
     },
     remove: () => undefined,
   });
-  others.takeDresses([{ player: 7, dress: JSON.stringify(armed) }]);
+  others.take({ dressed: [{ player: 7, dress: JSON.stringify(armed) }] });
   const forge = { draws: () => false } as unknown as Cards;
   const seen = (kind: number): SeenPlayer => ({
     player: 7,

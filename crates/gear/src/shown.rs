@@ -1,6 +1,7 @@
 //! What others see of a character, kept beside it so the accounts can show it without the rules: their level, their
 //! Defense and Melee loadout's Attack (the Ranged one's without one), the emblem they wear, and each piece they wear,
-//! numbered as the gear message numbers them.
+//! numbered as the gear message numbers them; and for another player's Inspect, their Prestige and the Art they wear
+//! at its level (0 for none).
 
 use crate::character::Character;
 use crate::kinds::Slot;
@@ -30,6 +31,9 @@ pub struct Shown {
     pub attack: u32,
     pub emblem: String,
     pub worn: Vec<ShownPiece>,
+    pub prestige: u32,
+    pub art: u8,
+    pub art_level: u8,
 }
 
 impl Character {
@@ -58,6 +62,9 @@ impl Character {
             attack: self.attack(Slot::Melee).or_else(|| self.attack(Slot::Ranged)).unwrap_or_default(),
             emblem: self.emblem.clone(),
             worn,
+            prestige: self.prestige(),
+            art: self.arts.worn,
+            art_level: if self.arts.worn == 0 { 0 } else { self.art_level(self.arts.worn) },
         }
     }
 }

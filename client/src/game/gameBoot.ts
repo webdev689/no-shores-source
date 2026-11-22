@@ -30,6 +30,7 @@ import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
 import { Stack } from '../ui/stack.ts';
 import { DrawnInterface } from './drawnInterface.ts';
+import { startSocial } from './social/social.ts';
 
 /** Where every player arrives: Overlook's social space, on Saltmere; `?at=<node id>` arrives at any node instead, to
  *  look round the world. */
@@ -79,6 +80,9 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
     openForge(gpu, figureView),
     shipModels.load(SLOOP_HULL),
   ]);
+  // The chat, and the menu and Inspect holding Use on another player opens, over the HUD; after the interface, whose
+  // keys it hears after them.
+  startSocial(stack, link, session, () => forge);
   const { continents } = world;
   // The sea by weather, the swell the sea is drawn with, and how far the view last reached.
   const [seaWeather, seaView] = [seaWeatherOn(roomModule, world.layoutText, world.cities), { reachM: 0 }];
