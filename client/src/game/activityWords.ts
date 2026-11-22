@@ -14,10 +14,12 @@ const SEAS = ['Normal seas', 'Elite seas', 'Abyss seas'];
 
 const DAY_PAYS = 'Once a day at each tier, on any island: a Vestige and a richer cache.';
 const PLAIN_PAYS = 'It pays its kills and its cache.';
-const ELITE_PAYS = 'Once a week: a Legendary Vestige and Essence.';
-const ABYSS_PAYS = 'Once a week: a Legendary or Atheric Vestige, Essence, and the Abyss boon.';
-const NEVER_MATCHED = 'Never matched. Bring your company.';
+export const ELITE_PAYS = 'Once a week: a Legendary Vestige and Essence.';
+export const ABYSS_PAYS = 'Once a week: a Legendary or Atheric Vestige, Essence, and the Abyss boon.';
+export const NEVER_MATCHED = 'Never matched. Bring your company.';
 const BOON = 'Abyss boon: 25% more XP until the week turns.';
+/** Where the week's two and the playlists are queued from. */
+export const QUEUED = 'Queued from the Playlist beside any port.';
 
 /** An island's band, or a fixed level: "Levels 3 to 6", "Level 26". */
 export function levelWords([low, high]: readonly [number, number]): string {
@@ -59,6 +61,8 @@ export interface WeekDungeon extends WeekRow {
   readonly modifiers: readonly KeyedModifier[];
   readonly pays: string;
   readonly rewards: readonly Reward[];
+  /** Where it is queued from. */
+  readonly queued: string;
 }
 
 export interface ThisWeek {
@@ -87,7 +91,7 @@ export interface Named {
 }
 
 /** The modifiers of these keys, as the rules name and word them. */
-const shown = (drawn: Activities, keys: readonly string[]): KeyedModifier[] =>
+export const shown = (drawn: Activities, keys: readonly string[]): KeyedModifier[] =>
   keys.flatMap((key) => {
     const modifier = drawn.modifiers[key];
     return modifier ? [{ key, ...modifier }] : [];
@@ -99,7 +103,8 @@ const ELITE_REWARDS: readonly Reward[] = ['legendary-vestige', 'essence'];
 const ABYSS_REWARDS: readonly Reward[] = ['atheric-vestige', 'essence', 'boon'];
 
 /** The line Abyss's rules add: the revives its company shares. */
-const revivesWords = (drawn: Activities) => `${drawn.revives} revives for the company. A wipe starts the run over.`;
+export const revivesWords = (drawn: Activities) =>
+  `${drawn.revives} revives for the company. A wipe starts the run over.`;
 
 /** Whether this character cleared the dungeon of the day at tier `tier` today. */
 const takenToday = (drawn: Activities, record: ActivityRecord | null, tier: number) =>
@@ -167,6 +172,7 @@ export function thisWeekOf(
       modifiers: shown(drawn, weekOn.modifiers),
       pays: which === 'elite' ? ELITE_PAYS : ABYSS_PAYS,
       rewards: which === 'elite' ? ELITE_REWARDS : ABYSS_REWARDS,
+      queued: QUEUED,
     };
   };
   const boon = record?.week === drawn.week && record.boon ? BOON : null;

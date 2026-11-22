@@ -63,6 +63,7 @@ export const KIND_WORDS = {
   dungeon: 'Dungeon',
   boss: 'World boss',
   port: 'Port',
+  playlist: 'Elite and Abyss dungeons',
   hostile: 'Hostile',
   quest: 'Quest',
 } as const;

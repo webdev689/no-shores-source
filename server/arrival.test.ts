@@ -94,6 +94,17 @@ test('a playlist’s run is launched from the sea, from beside any port, and lef
   assert.equal(arrives(run, null, null, null), false);
   assert.equal(arrives(run, run, null, null), true, 'a rejoin');
   assert.equal(cameOutOf('node-krakens-grotto--elite', run, 0), false, 'it leaves to the sea, not the door');
+  assert.equal(
+    arrives('node-saltworm-warrens--abyss--run-k3j4h5g6', 'sea', null, null),
+    true,
+    'the week’s, from the sea',
+  );
+  assert.equal(
+    arrives('node-krakens-grotto--run-k3j4h5g6', 'sea', null, null),
+    false,
+    'not an Elite Dungeon at Normal',
+  );
+  assert.equal(arrives('node-gullwing-vale--elite--dungeon-1--run-k3j4h5g6', 'sea', null, null), false);
 });
 
 test('a player stands out of an entrance only as they come out of its dungeon or its run', () => {

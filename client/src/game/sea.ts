@@ -318,10 +318,14 @@ export class Sea {
     const landfall = this.landfall;
     if (!landfall) return false;
     this.chase.stop();
-    const nodes = this.islandMarks.filter((mark) => mark.kind !== 'port');
+    const nodes = this.islandMarks.filter((mark) => mark.kind !== 'port' && mark.kind !== 'playlist');
     const near = sideNodes(this.position, ringCentre(this.landmass.outline), nodes);
     const social = nodes.find((mark) => mark.kind === 'social');
-    const side = landfall.kind === 'dock' && social && !near.includes(social) ? [social, ...near] : near;
+    const playlist = this.islandMarks.filter((mark) => mark.kind === 'playlist');
+    const side = [
+      ...(landfall.kind === 'dock' && social && !near.includes(social) ? [social, ...near] : near),
+      ...playlist,
+    ];
     const aspect = this.viewport.width / this.viewport.height;
     this.passage.stop();
     this.view.flyToSide(side, frameSide(this.position, side, aspect, this.landmass.heightAt));
