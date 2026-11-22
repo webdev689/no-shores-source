@@ -15,6 +15,20 @@ Claude listed what it had left for the owner and offered a fix for each.
 The suggestions were numbered to match the list of leftovers, and the owner took every one. The keys and deploys among
 them (1 to 5) were offered as needing the owner's named yes; this is it.
 
+> "Can you audit everything that was done"
+
+The audit found two fixes built otherwise than worded, and a weakness in the guest cap; the owner was asked.
+
+> Asked whether item 14 should keep a ship coming back exactly where it was left, or accept a place within what it
+> could have sailed while away: "Keep it (Recommended)".
+
+> Asked whether item 10 should keep the sea's own random loot seeds, as a hash of its 32-bit seed would show as its
+> islands do: "Keep it (Recommended)".
+
+> Asked what should hold the guest cap, which one holder of many IPv6 networks could spend for everyone: "Limit by /48
+> too (Recommended)", the option that read: "Count IPv6 guests by /48, the block one tunnel or customer usually gets,
+> so using up the 500 takes 50 such networks, not one."
+
 ## What it settles
 
 **Keys and deploys**
@@ -23,7 +37,8 @@ them (1 to 5) were offered as needing the owner's named yes; this is it.
    only uploads what the first made, holds `R2_TOKEN`.
 2. A hand run of the rooms' deploy is refused unless `main`'s CI check passed on that commit.
 3. `sloop.blend` is pinned by its SHA-256 and checked before use.
-4. New guests are capped at 500 an hour across every address, and a guest account unused for 30 days is deleted.
+4. New guests are capped at 500 an hour across every address, and 10 an hour from one IPv6 /48; a guest account
+   unused for 30 days is deleted.
 5. A room takes a player as mounted only from a character who has a horse.
 
 **Exploits**
@@ -33,11 +48,11 @@ them (1 to 5) were offered as needing the owner's named yes; this is it.
 7. The room keeps the swings' chain, and a stroke out of order becomes the chain's next.
 8. The first voyage starts at the port's roadstead.
 9. A knocked-out companion's or officer's rest is kept with the character, so a rejoin keeps it.
-10. The sea's loot seed comes from the host's secret seed through a one-way hash, so the island seeds cannot show it.
+10. The sea's loot seed comes from the host's own secret seeds, never its own seed, so the island seeds cannot show it.
 11. When a Boss leashes, the foes it called go with it and drop nothing.
 12. An island's spent resource nodes are kept with the character until the day turns at 09:00 UTC.
 13. The Arts' charge is kept with the character across rooms.
-14. The sea refuses a ship's position farther than it could have sailed since its last word.
+14. A ship comes back where the sea last had it, however far the page puts it.
 15. A quest's waves an account has fought drop nothing again, kept with their quest log.
 
 **Design**

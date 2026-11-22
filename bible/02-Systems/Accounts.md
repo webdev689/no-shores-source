@@ -65,7 +65,8 @@ they play in holds it while they are there.
   `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a redirect. Without the app's keys,
   Discord sign-in says it is not set up.
 - **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
-  guests an hour and every address together 500 ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and one
+  guests an hour (an IPv6 address by its /48 for guests) and every address together 500
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and one
   address register 10 times an hour, try 20 sign-ins in ten minutes, and start Discord 20 times in ten minutes;
   one username may be tried 10 times in ten minutes from one address and 100 times from everywhere; one account may
   take 10 Discord tickets in ten minutes. Guessing is held down before a lockout is: a flood of guesses from many

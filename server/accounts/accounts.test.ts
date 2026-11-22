@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { addressKey } from './accounts.ts';
+import { addressKey, guestKey } from './accounts.ts';
 import { HOLD_MS, characters } from './characters.ts';
 import { SESSION_IDLE_MS } from './database.ts';
 import { backTo } from './discord.ts';
@@ -296,4 +296,16 @@ test('a guest unused for 30 days is deleted with its character as the next guest
   assert.equal((await ask('GET', '/v1/me', undefined, playing)).status, 200, 'seen within the month');
   assert.equal(await rows('accounts'), 3, 'the one in use, the named and the new: the signed-out guest went too');
   assert.equal((await ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' })).status, 200);
+});
+
+test("new guests from IPv6 are counted by the /48, so one tunnel's many networks make ten an hour, not ten each", async () => {
+  const { ask } = accounts();
+  const from = (address: string) => ask('POST', '/v1/guest', undefined, undefined, { 'CF-Connecting-IP': address });
+  for (let network = 0; network < 10; network += 1) {
+    assert.equal((await from(`2001:db8:4c::${network.toString(16)}:0:0:1`)).status, 200, `the /64 ${network}`);
+  }
+  assert.equal((await from('2001:db8:4c:ff::1')).status, 429, 'another /64 of the same /48');
+  assert.equal((await from('2001:db8:4d::1')).status, 200, 'another /48');
+  assert.equal(guestKey('2001:db8:4c:ff::1'), '2001:db8:4c::/48');
+  assert.equal(guestKey('203.0.113.9'), '203.0.113.9', 'an IPv4 address whole');
 });

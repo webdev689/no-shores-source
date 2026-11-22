@@ -78,17 +78,29 @@ async function nameAndPassword(request: Request): Promise<{ username: string; pa
 /** The address a request's limits are kept by: an IPv4 address whole, an IPv6 address by its /64, since one network
  *  holds a whole /64. */
 export function addressKey(address: string): string {
+  return ipv6Prefix(address, 4);
+}
+
+/** The address new guests are counted by: an IPv6 address by its /48, the block one tunnel or one customer is given,
+ *  so many networks of one holder make ten guests an hour, not ten each
+ *  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). */
+export function guestKey(address: string): string {
+  return ipv6Prefix(address, 3);
+}
+
+/** An IPv4 address whole; an IPv6 address by its first `groups` groups of 16 bits. */
+function ipv6Prefix(address: string, groups: number): string {
   if (!address.includes(':')) return address;
   const [head = '', tail = ''] = address.split('::');
   const front = head ? head.split(':') : [];
   const back = tail ? tail.split(':') : [];
-  const groups = address.includes('::')
+  const whole = address.includes('::')
     ? [...front, ...Array(8 - front.length - back.length).fill('0'), ...back]
     : front;
-  return `${groups
-    .slice(0, 4)
+  return `${whole
+    .slice(0, groups)
     .map((group) => group.toLowerCase().replace(/^0+(?=.)/, ''))
-    .join(':')}::/64`;
+    .join(':')}::/${groups * 16}`;
 }
 
 /** Takes what a Discord sign-in came to for the page that began it: a session, or a link to the page's own account,
@@ -156,16 +168,17 @@ async function social(request: Request, deps: Deps, route: string, now: number):
 async function respond(request: Request, deps: Deps): Promise<Response> {
   const { database } = deps;
   const now = deps.now();
-  const address = addressKey(request.headers.get('CF-Connecting-IP') ?? 'nowhere');
+  const connecting = request.headers.get('CF-Connecting-IP') ?? 'nowhere';
+  const address = addressKey(connecting);
   const route = `${request.method} ${new URL(request.url).pathname}`;
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: HEADERS });
   switch (route) {
     case 'GET /v1/health':
       return json({ ok: true, discord: deps.discord !== null });
     case 'POST /v1/guest': {
-      // One address past its ten spends none of everywhere's 500.
+      // One network past its ten spends none of everywhere's 500.
       const allowed =
-        (await within(database, `guest:${address}`, LIMITS.guest, now)) &&
+        (await within(database, `guest:${guestKey(connecting)}`, LIMITS.guest, now)) &&
         (await within(database, 'guests', LIMITS.guests, now));
       if (!allowed) return refused(429, 'Too many new guests.');
       await database
