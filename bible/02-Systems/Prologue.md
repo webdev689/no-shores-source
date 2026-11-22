@@ -268,10 +268,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   The ships tool builds the Brig, the Frigate and the Sloop, each at its own size. The Frigate lies north to south,
   its bow driven into where the Brig's waist was. The Brig is broken in two, its halves thrown some 35 m apart, each
   turned about its far end and settled a little lower at its break. Its mainmast is down, its waist on the struck
-  side fallen into its hold, its foremast standing with its canvas burnt to rags. The Frigate's bowsprit is torn
-  away and its mizzen down; its deck is burnt through over its gun deck, its side stove in amidships and abreast its
-  gun deck to port, and its port bulwark broken forward. A pirate Sloop sunk in the fight at sea floats on its beam
-  ends east of the Frigate's bow, high enough that its side stays out of the swell.
+  side fallen into its hold, its foremast standing with its canvas burnt to rags. The wreck's Frigate is the ships
+  tool's with its quarterdeck run forward to just abaft its mainmast (`WRECK_HULLS`), the arena. Its bowsprit is torn
+  away and its mizzen down, its side stove in amidships and abreast its quarterdeck to port, and its port bulwark
+  broken forward. A pirate Sloop sunk in the fight at sea floats on its beam ends east of the Frigate's bow, high
+  enough that its side stays out of the swell.
 - **The wreckage** (`wreck_fields.py`). Six wide rafts of torn decking, each laid within an ellipse a little over the
   sea, on lengths of mast and casks: the wreckage of the Brig's waist and its torn deck between its halves, one beside
   its fore deck, the wreckage the Sloop drifted into, and two off the Frigate's port bow and port quarter. Broken
@@ -279,8 +280,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 - **The way through.** Ramps of fallen timber lead off the Brig's stern half onto the wreckage of its waist, from its
   torn deck up onto its bow half, from its fore deck onto the raft beside it and down from it onto the Sloop's side,
   off the Sloop onto the wreckage it drifted into and up from it into the Frigate's stove-in waist, out over its
-  port bow, down into its gun deck, up through its quarterdeck's broken front, and out of its gun deck onto the
-  wreckage off its port quarter. Splintered timber stands along every break, but where a ramp meets a deck or a raft:
+  port bow, across from the wreckage there onto the wreckage off its port quarter, and up from that through its
+  stove-in side onto its quarterdeck. Splintered timber stands along every break, but where a ramp meets a deck or a raft:
   each ramp's way, 1.3 m either side of its line and 1 m past its ends, is cleared of every piece no longer than 2 m
   (splinters, the stubs of beams, fittings) that a body would stand against (`clear_ways`). Wreckage is strewn on the
   decks and the rafts' edges, kept off the way through, and flotsam floats all round.
@@ -302,12 +303,13 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 - **The path** runs from the Brig's quarterdeck, where the player wakes by its wheel, down through its thrown-down
   breast rail into its waist, along its port gangway past the fallen waist, off its broken end across the wreckage of
   its waist and its torn deck, up onto its fore deck, out onto the raft beside it, down onto the Sloop's side, along
-  it and across the wreckage it drifted into, up into the Frigate's waist east of its boat, past its mainmast, down
-  into its gun deck and up onto its quarterdeck. Every lane of it is a body wide, and every figure the level stands
-  a body's radius clear of anything a step over or under its feet.
+  it and across the wreckage it drifted into, up into the Frigate's waist east of its boat, out over its port bow
+  onto the wreckage there, across onto the wreckage off its port quarter and up onto its quarterdeck near its front.
+  Every lane of it is a body wide, and every figure the level stands a body's radius clear of anything a step over or
+  under its feet.
 - **Zones.** Eight along the path: the Brig's stern, the wreckage of its waist, the torn deck over the gap, its fore
   deck and the raft beside it, the Sloop and the wreckage it drifted into, the Frigate's waist and the wreckage off
-  its port bow, its gun deck and the wreckage off its port quarter, and its quarterdeck. Each is an area with a
+  its port bow, the wreckage off its port quarter, and its quarterdeck. Each is an area with a
   checkpoint; entered, its checkpoint is where the next respawn stands the player. The first, where the player
   wakes, is quiet: no wave, nothing across its way on, room for the teaching. Each between it and the arena
   holds a wave of Grey Tithe crew and pirates, Minor and Major, and the Tithe-Mates and pirate Captains that come only
@@ -332,10 +334,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   its wave, walks there by the room's routes (`Room::story_post`) and joins its fight. None comes into the arena:
   Thule's fight is one on one.
 - **Heaps across the way.** Each zone but the first and the arena has a heap of wreckage across the way on from it,
-  piled 2.9 m over its deck and out over the bulwarks (the arena's 3.7 m, past a jump from its quarterdeck), standing
-  from the start. It is cleared once its zone's wave has stood whole and
-  fallen. The Frigate's gangways beside its gun deck are closed for good by heaps on cores of stacked crates, higher
-  than its rails. A player found past a heap still standing is brought back to their last checkpoint.
+  piled 2.9 m over the deck or the ramp it stands on and out over the bulwarks, standing from the start. It is
+  cleared once its zone's wave has stood whole and fallen. The steps up to the Frigate's quarterdeck at its front's
+  corners are closed for good by heaps on cores of stacked crates, higher than its rails, so the arena's only way in
+  is up from the wreckage off its port quarter. A player found past a heap still standing is brought back to their
+  last checkpoint.
 - **The level's check.** The export refuses a level its own ground does not hold, measured twice, the second half a
   square across and along: every zone, checkpoint, foe and crewman reached in order, walked with a body's width (into
   a square only where nothing higher than it steps or climbs stands within 0.35 m of its middle, as a body's radius
@@ -352,22 +355,25 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   dead ends (`withoutDeadEnds`): every square from which no body can walk back to the path, a step (0.5 m) up at most
   from one square to the next and any drop down, and that a body coming from the path can step, jump, vault or drop
   into, is left out, so the rim holds bodies at its edge there too. A wall is no ground a body comes from: no body
-  stands on one, so a wall stays, in a dead end too, and stops shots. They are 33 slips of ground at most 60 squares
-  across: slots at the waterline beside the Sloop's side, a ledge by the Frigate's gun deck, and 30 others. Foes never jump, so a ledge they
+  stands on one, so a wall stays, in a dead end too, and stops shots. They are 30 slips of ground at most 60 squares
+  across: slots at the waterline beside the Sloop's side, ledges outboard of the Frigate's quarterdeck rails, and
+  others. Foes never jump, so a ledge they
   cannot step out of would hold them in the sea. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
-  back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, its gun deck and
-  the Sloop's side, is never the sea.
+  back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, as the Sloop's
+  side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
   itself, where they arrive as a respawn on foot does ([[Game]]). The HUD shows no death panel and no Respawn; a toast says "You will rise at the last checkpoint."
-- **The arena** is the Frigate's quarterdeck, 9.8 m across between its rails' inner faces and 8.5 m from its
-  quarterdeck's broken front to its taffrail, open but for its wheel (its binnacle and skylight swept away), no wave in
-  it. Its heap stands below its front, on the way up out of its gun deck. The arena is reached once the player stands
-  1.6 m clear of its heap's place (`ARENA_CLEAR_M`), so the camera behind them has room once the heap stands again,
-  which at the heap's foot would press it to the back of their head. When the boss fight begins, its heap closes
-  the way in behind the player, every other foe is sent away, and Captain Brannoc Thule stands before the wheel facing
-  the player, three levels over them: their blows land at 0.94 of their worth (0.47 for the levels, doubled by the
-  balance pass). A player back over the heap is brought back in; anywhere aft of the heap, on its deck or up on its
-  rails, is never brought back, and its rails hold them.
+- **The arena** is the Frigate's quarterdeck, run forward to just abaft its mainmast: as the ground lays it, some
+  9.3 m across between its rails and 17.5 m from its breast rail to its taffrail, twice the ships tool's, open but for
+  its wheel (its binnacle, its skylight and the companionway before its front swept away), no wave in it. Its heap
+  stands on the ramp up into it from the wreckage off its port quarter, outside its stove-in side, a body's room clear
+  of its deck. The arena is reached once the player stands 1.6 m clear of its heap's place (`ARENA_CLEAR_M`), so the
+  camera behind them has room once the heap stands again, which at the heap's foot would press it to the back of
+  their head. When the boss fight begins, its heap closes the way in behind the player, every other foe is sent away,
+  and Captain Brannoc Thule stands before the wheel at its far end facing the player, three levels over them: their
+  blows land at 0.94 of their worth (0.47 for the levels, doubled by the balance pass). A player back over the heap is
+  brought back in; anywhere on its side of the heap, on its deck or up on its rails, is never brought back, and its
+  rails hold them.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
   his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.

@@ -12,8 +12,6 @@ class Frames:
         self.hulls = hulls
         self.ground = ground
         self.break_x = break_x
-        # The Frigate's gun deck's height in her frame.
-        self.lower = hulls['frigate'].numbers['lower_deck_m']
 
     def matrix(self, ship, x):
         if ship == 'brig':
@@ -40,8 +38,8 @@ def wreck_frames(ground=None):
     import os
     import sys
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'ships'))
-    from build_ship import HULLS
     from ship_hull import Hull
     from wreck_scene import BOW, FRIGATE, SLOOP, STERN
-    hulls = {'brig': Hull(HULLS['brig']), 'frigate': Hull(HULLS['frigate'])}
+    from wreck_ships import WRECK_HULLS
+    hulls = {'brig': Hull(WRECK_HULLS['brig']), 'frigate': Hull(WRECK_HULLS['frigate'])}
     return Frames({'stern': STERN, 'bow': BOW, 'frigate': FRIGATE, 'sloop': SLOOP}, hulls, ground)

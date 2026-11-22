@@ -39,9 +39,6 @@ def main():
     clear_lane((groups['Brig.Bow'],), (16.0, 7.2, 20.6, 10.8), 2.4, 5.6)
     # Her port gangway is the way along her fallen waist.
     clear_lane((groups['Brig.Stern'],), (-26.2, 7.9, -19.0, 10.3), 2.6, 5.2)
-    # The timber fallen from the Frigate's gun deck lands on her quarterdeck: what stood there was knocked down, her
-    # companionway with it.
-    clear_lane((groups['Frigate'],), (-1.7, -33.8, 1.7, -30.0), 4.4, 7.0)
     frames = Frames(places, hulls, Ground(groups.values()))
     groups['Ramps'] = ramps(frames, 201)
     clear_ways([group for name, group in groups.items() if name != 'Ramps'], groups['Ramps'])

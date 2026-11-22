@@ -1,12 +1,11 @@
 """The wreck's ships as the ram left them: the Brig broken in two, her mainmast down and her waist fallen into her
-flooded hold; Thule's Frigate with her bowsprit torn off, her mizzen down, her deck burnt through over her gun deck and
-her side stove in; and a pirate Sloop sunk in the fight before, floating on her beam ends between them. Each ship is damaged in
+flooded hold; Thule's Frigate with her bowsprit torn off, her mizzen down, her side stove in and her port bulwark
+broken; and a pirate Sloop sunk in the fight before, floating on her beam ends between them. Each ship is damaged in
 her own frame (x her bow, y her port, z up, her waterline at 1.2), then laid in the wreck's.
 """
 import bpy  # noqa: I001 - Blender's own modules load once bpy has
 from mathutils import Vector
 
-from ship_mesh import Piece
 from wreck_damage import (
     carve,
     faces_where,
@@ -92,24 +91,13 @@ def frigate(sloop, seed):
     snap_mast(ship, (11.4, 0.0, deck(11.4)), 13.0, 12.0, rng)
     snap_mast(ship, (-13.5, 0.0, deck(-13.5) + 0.8), 1.3, 11.0, rng)
     tear_sails(ship, keep_share=0.45, seed=seed, near_foot=0.8)
-    # Her deck burnt through between her mainmast and her quarterdeck: her gun deck lies open under it.
-    breach = (-10.9, -3.5, -2.4, 3.5)
-    lower = hull.numbers['lower_deck_m']
-
-    carve(ship, breach, lambda point, part: lower + 0.35 < point.z < deck(point.x) + 1.6, keep=('Cannon',))
-    pieces_where(ship, lambda point: breach[0] < point.x < breach[2] and breach[1] < point.y < breach[3]
-                 and lower + 0.35 < point.z < deck(point.x) + 1.6)
-    gun_deck(ship, hull, breach, rng)
-    # The timber fallen from her gun deck up to her quarterdeck broke through its front and its breast rail.
-    front = (-11.9, -1.35, -10.8, 1.35)
-    carve(ship, front, lambda point, part: deck(point.x) - 0.2 < point.z < hull.floor_at(point.x) + 2.0,
-          keep=('Cannon',))
-    pieces_where(ship, lambda point: front[0] < point.x < front[2] and front[1] < point.y < front[3]
-                 and deck(point.x) - 0.2 < point.z < hull.floor_at(point.x) + 2.0)
-    # The binnacle before her wheel and the skylight on her quarterdeck were smashed and swept away: Thule's ground is
-    # open from her quarterdeck's front to her wheel.
-    pieces_where(ship, lambda point: -16.0 < point.x < -11.4 and abs(point.y) < 1.4
+    # Her quarterdeck, Thule's ground, is open from its front to her wheel: the binnacle before the wheel and the
+    # skylight on it were smashed and swept away, and so was the companionway before its front, by her mainmast.
+    front = hull.numbers['quarterdeck_m'][0]
+    pieces_where(ship, lambda point: -16.0 < point.x < front - 0.3 and abs(point.y) < 1.4
                  and point.z > hull.floor_at(point.x) - 0.05, parts=('hull', 'iron', 'spar'))
+    faces_where(ship, (), lambda point, part: part != 'spar' and front + 0.05 < point.x < front + 1.7
+                and abs(point.y) < 0.9 and deck(point.x) + 0.02 < point.z < deck(point.x) + 1.6)
     # Her starboard bulwark stove in amidships, where the fallen yard from the Sloop leans on her.
     faces_where(ship, ('Cannon.Starboard.4',), lambda point, part: 4.2 < point.x < 8.4 and point.y < -4.4
                 and point.z > deck(point.x) + 0.1)
@@ -119,37 +107,17 @@ def frigate(sloop, seed):
                 and point.z > deck(point.x) + 0.12)
     pieces_where(ship, lambda point: 7.8 < point.x < 10.2 and point.y > hull.half_beam(point.x) - 0.9
                  and point.z > deck(point.x) - 0.2)
-    # Her port side stove in abreast her gun deck, where her mizzen fell over it: her gangway there and her side down
-    # to her gun deck are gone, the way out onto the wreckage off her port quarter. Her side goes down past her gun
-    # deck's planking, which stays, so none of it leans over the way out.
-    side = (-9.2, 3.3, -4.8, 5.6)
-    carve(ship, side, lambda point, part: lower - 0.3 < point.z < deck(point.x) + 2.0
-          and not (part == 'deck' and abs(point.z - lower) < 0.1), keep=('Cannon',))
+    # Her port side stove in abreast her quarterdeck, where the wreckage off her port quarter drifted against her: her
+    # bulwark and her side down to her lower guns are gone between the ports there, the way up onto it. Her
+    # quarterdeck's planking stays, and nothing of her side stands under the way, where a body would meet it.
+    side = (-6.5, 4.2, -3.5, 6.0)
+    lower = hull.numbers['lower_deck_m']
+    carve(ship, side, lambda point, part: lower - 0.3 < point.z < hull.floor_at(point.x) + 2.0
+          and not (part == 'deck' and abs(point.z - hull.floor_at(point.x)) < 0.1), keep=('Cannon',))
     pieces_where(ship, lambda point: side[0] < point.x < side[2] and side[1] < point.y < side[3] + 0.4
-                 and lower + 0.35 < point.z < deck(point.x) + 2.0)
+                 and lower + 0.35 < point.z < hull.floor_at(point.x) + 2.0)
     move(ship, placing(**FRIGATE))
     return ship, hull
-
-
-def gun_deck(ship, hull, breach, rng):
-    """Her gun deck where her deck burnt away over it: its planks, the stubs of the deck's beams at the breach's
-    sides, and the splintered rim."""
-    x0, y0, x1, y1 = breach
-    lower = hull.numbers['lower_deck_m']
-    piece = Piece()
-    half = hull.half_beam((x0 + x1) / 2) * 0.96
-    piece.box((x0 - 0.8, -half, lower - 0.12), (x1 + 0.8, half, lower), 'deck')
-    for x in (x0 + 1.2, (x0 + x1) / 2, x1 - 1.2):
-        z = hull.deck(x) - 0.16
-        for side in (-1, 1):
-            reach = rng.uniform(0.3, 0.9)
-            piece.prism((x, side * (y1 + 0.2), z), (x + rng.uniform(-0.1, 0.1), side * (y1 - reach), z - 0.1), 0.12,
-                        'spar', sides=4, end_radius=0.04)
-    piece.build('Frigate.GunDeck', ship)
-    splinter_rim(ship, lambda point: x0 - 0.05 < point.x < x1 + 0.05 and y0 - 0.05 < point.y < y1 + 0.05
-                 and abs(point.z - hull.deck(point.x)) < 0.4,
-                 lambda point: Vector((0, -1 if point.y > 0 else 1, 0)) if abs(point.y) > y1 - 0.1
-                 else Vector((1 if point.x < (x0 + x1) / 2 else -1, 0, 0)), 41, 'Frigate.Breach.Splinters')
 
 
 def sloop(shaped):
