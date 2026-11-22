@@ -226,6 +226,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]
 - [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]
 - [[Areas Load in Chunks With Proper Caching]]
+- [[The Room for Playing Alone Runs in a Worker of Its Own]]
 - [[The Crew Still Standing Regroup Ahead]]
 
 - [[Overlook Is Our Own Game]]

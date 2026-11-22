@@ -4,7 +4,7 @@
 // door; the room judges both.
 import type { GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { ANCHORED_M, type DungeonDoor, approach, isleNode, isleRoomName, isleUses, isleWords } from './isleLaw.ts';
@@ -35,7 +35,7 @@ export async function ashoreOn(
     );
   } else {
     if (!word) throw new Error('the sea no longer holds this island');
-    link = LocalRoom.openIsland(await context.roomModule, word, heard, DIFFICULTIES.indexOf(seas));
+    link = await RoomThread.openIsland(await context.roomModule, word, heard, DIFFICULTIES.indexOf(seas));
   }
   const boxes = held.plan.blocks.map(([west, north, east, south, top]) => ({
     minX: west + held.seen.at[0],
@@ -55,7 +55,7 @@ export async function ashoreOn(
     return await Foot.onDeck(context, node, Array.from(held.heights), open, place);
   } catch (error) {
     // A landing that fails leaves no socket open behind it, joining the island's room again and again.
-    if (link instanceof RoomConnection) link.close();
+    link.close?.();
     throw error;
   }
 }

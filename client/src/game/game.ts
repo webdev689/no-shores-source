@@ -6,7 +6,7 @@ import { Input, keyNameOf } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { askedView } from '../player/playerCamera.ts';
 import { Walker } from '../player/walker.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { HULL_NAMES } from '../ships/hulls.ts';
@@ -271,7 +271,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
         ? async (snapshot) =>
             RoomConnection.open(rooms(seaRoomName(seas)), snapshot, (gear) => quests.hear(gear), await session())
         : async (snapshot) =>
-            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
+            RoomThread.openSea(await roomModule, world.layoutText, snapshot, undefined, portsOf(world.cities), level),
     );
   };
 
@@ -373,7 +373,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const goIsle = (held: IsleHeld, words: string) => {
     const continent = continents[held.seen.continent]?.id ?? '';
     travel({ kind: 'isle', node: held.seen.id.toString(), words }, async () => {
-      const word = playing.sea?.sighted?.isleWord(held.seen.id) ?? null;
+      const word = (await playing.sea?.sighted?.isleWord(held.seen.id)) ?? null;
       let foot: Foot;
       try {
         foot = await ashoreOn(footContext, held, { word, continent, seas: seaSeas }, enterDungeon);

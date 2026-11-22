@@ -15,7 +15,7 @@ import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
 import type { FoeAsk } from '../network/messages.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt, Cards } from '../player/cards.ts';
 import type { Dress } from '../player/dressing.ts';
@@ -219,7 +219,8 @@ export class Foot {
     }
     const module = await context.roomModule;
     const link =
-      connection ?? LocalRoom.openNode(module, nodeText(node, rect, ground, boxes), received, asked.length > 0);
+      connection ??
+      (await RoomThread.openNode(module, nodeText(node, rect, ground, boxes), received, asked.length > 0));
     const fight = new Fighting(combat, link);
     heard.fight = fight;
     for (const foe of asked) fight.ask(foe);
@@ -581,7 +582,7 @@ export class Foot {
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */
   leave(): void {
-    if (this.link instanceof RoomConnection) this.link.close();
+    this.link.close?.();
     this.otherPlayers.clear();
     this.plaza?.close();
     this.prompt.show(null);
