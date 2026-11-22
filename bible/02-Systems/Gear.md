@@ -348,7 +348,8 @@ the factions' counters are in [[Factions]].
   Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
   slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only at its smith's counter, and carried with
-  its slot's nine. Legendary and Atheric gear is never sold for Aurem: it is earned, or had from Shape.
+  its slot's nine. The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
+  bought at its counter by rank ([[Factions]]).
 - **The Mage** identifies Vestiges, free.
 - **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
   ("Cosmetics").
