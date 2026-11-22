@@ -79,6 +79,7 @@ impl Room {
                 self.gathered.entry(owner.clone()).or_default().push(gathering.node);
             }
             found.character.gather(usize::from(node.resource));
+            found.character.tell(&gear::quests::Event::Gather);
         }
     }
 }

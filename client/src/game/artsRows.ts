@@ -1,9 +1,12 @@
 // The Art's screen's rows (artsPage.ts): its ANIMA and its two TENETS on one line, each spell's tile with its key on a
-// keycap under it, the Anima breathing; its CORE under them, three slots, the open one's flyout of the Art's six
-// fragments beside them (one set in another slot, or not owned, refused before any ask), and the fragments set written
-// out under the slots. A slot the room has just set flares. The screen's look in the worn Art's element is here too.
+// keycap under it, the Anima breathing, one its road has not earned locked; its CORE under them, three slots, the open
+// one's flyout of the Art's six fragments beside them (one set in another slot, or not owned, refused before any ask),
+// and the fragments set written out under the slots; and while its road's fragment choice waits, the fragments not
+// owned to choose from. A slot the room has just set flares. The screen's look in the worn Art's element is here too.
 
+import { earnedOf } from '../network/artMessages.ts';
 import { motionReduced } from '../plus/kit.ts';
+import { earnedOn } from '../player/factionNames.ts';
 import { ELEMENTS, answerText } from '../player/gear.ts';
 import { LOCK_MAP, mapSvg } from '../player/artGlyphs.ts';
 import { announce } from '../ui/announce.ts';
@@ -53,6 +56,7 @@ export const ARTS_HINTS: readonly Hint[] = [
 const CHANGE: readonly Hint[] = [['Click', 'Change it']];
 const CHOOSE: readonly Hint[] = [['Click', 'Choose a fragment']];
 const SET: readonly Hint[] = [['Click', 'Set it here']];
+const TAKE: readonly Hint[] = [['Click', 'Choose it']];
 /** A cell's tile and its picture, a slot's on a short screen and elsewhere, in pixels. */
 const CELL = 64;
 const CELL_PX = 48;
@@ -185,14 +189,23 @@ function heading(said: string, look: ArtLook, width: number | 'grow'): Node {
 const litOf = (context: MenuContext, id: string) =>
   context.ui.hovered(id) || (context.ui.focused(id) && context.ui.keyFocused);
 
+/** A padlock in the corner of a tile not to be had yet, in the Art's element. */
+const lockMark = (art: Art): Node => ({
+  ...svgNode(`lock ${art.element}`, mapSvg(LOCK_MAP, art.element), 20, 24),
+  float: { to: 'parent', clipped: true, anchor: [1, 1], at: [1, 1], x: -3, y: -3 },
+});
+
 /** A spell's tile: its icon and its key on a keycap under it. It is pressed for nothing; its card shows beside the
- *  spells' line on hover or focus. The Anima's breathes in its element. */
+ *  spells' line on hover or focus. The Anima's breathes in its element; one its road has not earned stands dim under
+ *  a padlock, its card saying which road earns it. */
 function spellTile(context: MenuContext, art: Art, spell: Spell, look: ArtLook): Node {
   const { ui, sizes, gear } = context;
   const anima = spell === art.anima;
   const key = keyOf(art, spell);
   const id = spellKey(spell);
   const level = levelOf(gear.standing, art.id).level;
+  const bit = anima ? 1 : 2 << art.tenets.indexOf(spell);
+  const lock = (earnedOf(gear.arts, art.id) & bit) === 0 ? `${earnedOn(art.id)}.` : null;
   context.card(
     id,
     () => {
@@ -202,7 +215,9 @@ function spellTile(context: MenuContext, art: Art, spell: Spell, look: ArtLook):
       const now = spellNumbers(spell, level, held);
       const most = spellNumbers(spell, LEVEL_MOST, held).filter(([, value], place) => value !== now[place]?.[1]);
       const said = most.map(([name, value]) => `${name} ${value}`).join(' · ');
-      return cardNode(spellCard(art, spell, level, core), null, [[key, 'Cast in play']], sizes, {
+      const card = spellCard(art, spell, level, core);
+      const shown = lock ? { ...card, kind: `${card.kind}, not earned`, words: `${card.words} ${lock}` } : card;
+      return cardNode(shown, null, lock ? [] : [[key, 'Cast in play']], sizes, {
         tone: look.tone,
         icon: svgNode(`spell ${art.key} ${spell.key}`, spellSvg(art, spell), 72),
         after: [
@@ -225,13 +240,19 @@ function spellTile(context: MenuContext, art: Art, spell: Spell, look: ArtLook):
     size,
     null,
     litOf(context, id) ? 'lit' : 'rest',
-    [svgNode(`spell ${art.key} ${spell.key}`, spellSvg(art, spell), picture)],
+    [
+      {
+        ...svgNode(`spell ${art.key} ${spell.key}`, spellSvg(art, spell), picture),
+        ...(lock ? { opacity: 0.35 } : {}),
+      },
+    ],
     {
       id,
       focusable: true,
-      label: `${spell.name}, ${anima ? 'Anima' : 'Tenet'}, key ${key}`,
+      label: `${spell.name}, ${anima ? 'Anima' : 'Tenet'}, key ${key}${lock ? `, not earned. ${lock}` : ''}`,
       toned: look.tone,
       marks: [
+        lock !== null && lockMark(art),
         anima && {
           width: size + 4,
           height: size + 4,
@@ -435,10 +456,7 @@ function flyoutNode(
           text: { words: String(setIn + 1), colour: INK.word, edge: 'halo', edgeColour: INK.outline },
           float: { to: 'parent', clipped: true, anchor: [1, 1], at: [1, 1], x: -4, y: -5 },
         },
-        !owned && {
-          ...svgNode(`lock ${art.element}`, mapSvg(LOCK_MAP, art.element), 20, 24),
-          float: { to: 'parent', clipped: true, anchor: [1, 1], at: [1, 1], x: -3, y: -3 },
-        },
+        !owned && lockMark(art),
         ui.focused(id) && ui.keyFocused && focusRing(CELL, CELL),
       ],
     });
@@ -461,6 +479,52 @@ function flyoutNode(
         children: [0, 1].map((row) => ({ gap: 6, children: cells.slice(row * 3, row * 3 + 3) })),
       },
       { minHeight: 16, children: [typeof refusal === 'string' && refusal !== '' && words(refusal, 1, INK.word)] },
+    ],
+  };
+}
+
+/** The fragments its road's choice may take, while one waits for the Art: each not owned, chosen by a click (an ask
+ *  the room answers, owning it); none while no choice waits, or once every fragment is owned. */
+function choiceRow(context: MenuContext, art: Art, look: ArtLook, state: ArtsState, rise: number): Node | null {
+  const { ui, gear, sizes } = context;
+  const waiting = gear.quest?.choices[art.id - 1] ?? 0;
+  if (waiting === 0) return null;
+  const standing = levelOf(gear.standing, art.id);
+  const tiles = art.core.flatMap((fragment, index): Node[] => {
+    if (owns(standing, index)) return [];
+    const id = `choose-${index}`;
+    if (ui.clicked(id)) state.ask({ kind: 'chooseFragment', art: art.id, fragment: index });
+    const icon = () => svgNode(`fragment ${art.key} ${fragment.key}`, fragmentSvg(art, fragment), CELL_PX);
+    context.card(
+      id,
+      () =>
+        cardNode(fragmentCard(art, fragment, null, standing.level), null, TAKE, sizes, {
+          tone: look.tone,
+          icon: icon(),
+        }),
+      'arts-choice',
+    );
+    return [
+      tileNode(CELL, null, litOf(context, id) ? 'lit' : 'rest', [icon()], {
+        id,
+        press: true,
+        label: `${fragment.name}, choose it`,
+        toned: look.tone,
+        marks: [ui.focused(id) && ui.keyFocused && focusRing(CELL, CELL)],
+      }),
+    ];
+  });
+  // A choice its Art has no fragment left for is the room's to pay in Aurem: none to offer.
+  if (tiles.length === 0) return null;
+  return {
+    id: 'arts-choice',
+    width: 'grow',
+    direction: 'column',
+    opacity: rise,
+    offset: [0, Math.round(8 * (1 - rise))],
+    children: [
+      heading(`Choose a fragment · ${waiting} waiting`, look, 'grow'),
+      { gap: 11, wrap: true, children: tiles },
     ],
   };
 }
@@ -493,6 +557,7 @@ export function artsRows(context: MenuContext, art: Art, look: ArtLook, state: A
         ],
       },
       coreRow(context, art, look, state, rise(0.16), opened),
+      choiceRow(context, art, look, state, rise(0.2)),
     ],
   };
 }

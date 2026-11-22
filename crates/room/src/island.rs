@@ -167,17 +167,21 @@ impl Room {
     }
 
     /// The sea's word that an account's ship lies at this island's anchorage, by its landing's number: its players may
-    /// scavenge and gather. A landing of another number than the one before is a new visit: the nodes the account
-    /// gathered stand for it again. Whether this is an island's room.
+    /// scavenge and gather, and their quest logs are told they landed. A landing of another number than the one before
+    /// is a new visit: the nodes the account gathered stand for it again. Whether this is an island's room.
     pub fn land(&mut self, account: &str, landing: u32) -> bool {
         let Some(isle) = self.isle.as_mut() else { return false };
-        let Some(landed) = isle.landed.as_mut() else { return true };
-        if landed.insert(account.to_owned(), landing).is_some_and(|before| before != landing) {
+        let before = isle.landed.as_mut().and_then(|landed| landed.insert(account.to_owned(), landing));
+        if before.is_some_and(|before| before != landing) {
             self.gathered.remove(account);
             for found in self.players.values_mut().filter(|found| found.owner.as_deref() == Some(account)) {
                 found.spent.clear();
                 found.gear_changed = true;
             }
+        }
+        let owned = self.players.iter().filter(|(_, found)| found.owner.as_deref() == Some(account));
+        for player in owned.map(|(id, _)| *id).collect::<Vec<_>>() {
+            self.tell_landed(player);
         }
         true
     }
@@ -211,6 +215,7 @@ impl Room {
         // Spent for them on this island for good: their page offers it no more, nor any room of this island again.
         scavenger.character.scavenge(seed, wreck);
         let taken = scavenger.character.take_salvage(found);
+        scavenger.character.tell(&gear::quests::Event::Scavenge);
         scavenger.gear_changed = true;
         if let Some(isle) = self.isle.as_mut() {
             isle.hauls.push((player, wreck, taken));

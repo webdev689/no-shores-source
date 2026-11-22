@@ -571,6 +571,32 @@ table Gear {
   // The day, counted from the epoch at UTC midnight, whose smiths' wares the message shows: a smith's ware is asked
   // by it, so none sent as the day turns buys the next day's.
   day: uint;
+  // The quest they walk, by its place in content/quests/quests.json counted from 1 (0 for none), its task, and that
+  // task's goals' counts in its order; each quest done (1) or not (0) in the file's order; each Art's earned bits in
+  // the Arts' order (1 the Art, 2 its first Tenet, 4 its second); each Art's fragment choices waiting; and where the
+  // task's first unmet goal with a place stands in their room (x, y and its reach; empty when none is here).
+  quest: ubyte;
+  quest_task: ubyte;
+  quest_counts: [ushort];
+  quests_done: [ubyte];
+  arts_earned: [ubyte];
+  fragment_choices: [ubyte];
+  quest_at: [double];
+  // The task's running goal's clock: seconds left on a race, or until a failed goal may be tried again (below 0 for
+  // none). Each goal's failures this task, in its order, so the page says a goal's line as it fails. A puzzle's points
+  // in their room, each x, y and 1 lit or 0. Their quest figures in their room (an escort, a tail's quarry), each its
+  // look (1 and up a speaker's place in content/story/cast.json's speakers, 101 and up a roster type's number plus
+  // 100), x, y, z, facing, and its state (0 waiting, 1 walking, 2 noticed the player, 3 arrived, 4 held by an ambush,
+  // its shout said as it begins). A defended ward in
+  // their room: x, y, and its health's share (empty with none).
+  quest_clock: double = -1;
+  quest_fails: [ushort];
+  quest_points: [double];
+  quest_figures: [double];
+  quest_ward: [double];
+  // Whether this word is on the player's own character, as their account keeps it: false for the starting character a
+  // room holds until the account's is given, which the page shows nothing of.
+  claimed: bool;
   // On a sea island, the wrecks they have scavenged there, by their numbers among its wrecks.
   scavenged: [ubyte];
 }

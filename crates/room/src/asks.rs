@@ -30,8 +30,10 @@ pub const OUT_OF_REACH: u8 = 100;
 pub const NOT_THE_TEST_GROUND: u8 = 101;
 /// The resource a node gives is already at its most, so the node is left standing.
 pub const STOCK_FULL: u8 = 102;
+/// A puzzle takes no use for a while after a wrong one (`steps.rs`).
+pub const NOT_YET: u8 = 103;
 /// A node is not gathered on horseback.
-pub const MOUNTED: u8 = 103;
+pub const MOUNTED: u8 = 104;
 
 /// What a player asks of their gear.
 #[derive(Clone, Debug, PartialEq)]
@@ -49,6 +51,10 @@ pub enum Asked {
     Grant(Grant),
     /// Wears an Art, or sets a fragment in a slot of one's Core.
     Art(gear::arts::ArtAsk),
+    /// Uses a puzzle's point, by its place among the goal's points (`steps.rs`).
+    UsePoint {
+        point: u8,
+    },
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -163,8 +169,24 @@ pub fn counter_for(ask: &Ask) -> Option<CounterKind> {
         | Ask::Recruit { faction, .. } => Some(CounterKind::Faction(*faction)),
         Ask::RiseArt { art, .. } | Ask::BuyFragment { art, .. } => art_faction(*art),
         Ask::BuyFromShape { .. } => Some(CounterKind::Shape),
+        Ask::Speak { keeper } => keeper_counter(*keeper),
         _ => None,
     }
+}
+
+/// The counter a keeper stands at, by the number ask 64 sends: a house's by its faction's, else the Mage's (10), the
+/// vault's, the Armorsmith's, the Weaponsmith's, the Tailor's, the Tack's and the Harbourmaster's (16).
+fn keeper_counter(keeper: u8) -> Option<CounterKind> {
+    Some(match keeper {
+        10 => CounterKind::Mage,
+        11 => CounterKind::Vault,
+        12 => CounterKind::Vendor(Vendor::Armorsmith),
+        13 => CounterKind::Vendor(Vendor::Weaponsmith),
+        14 => CounterKind::Tailor,
+        15 => CounterKind::Tack,
+        16 => CounterKind::Vendor(Vendor::Shipwright),
+        house => CounterKind::Faction(gear::factions::factions().faction(house)?.id),
+    })
 }
 
 /// The number an answer sends: 0 done, else the refusal's.
@@ -298,6 +320,7 @@ impl Room {
             Asked::Grant(grant) if self.is_test_ground() => self.grant(player, grant),
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
+            Asked::UsePoint { point } => self.use_point(player, point),
         };
         if let Some(found) = self.players.get_mut(&player) {
             found.answer = code;

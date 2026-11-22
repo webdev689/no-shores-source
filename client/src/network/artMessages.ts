@@ -8,15 +8,25 @@ const CORE_SLOTS = 3;
 
 type Point = readonly [number, number, number];
 
-/** The player's own Arts as the room last sent them: the Art worn (1 Storm, 2 Divine, 3 Shadow), each Art's Core in
- *  the Arts' order (three slots, each a fragment's place in its Art's list or null), and how far the Anima has charged
- *  and each Tenet recharged, 0 to 1 (1 ready), as the room's tick that sent them had it. */
+/** The player's own Arts as the room last sent them: the Art worn (1 Storm, 2 Divine, 3 Shadow, 0 none), each Art's
+ *  Core in the Arts' order (three slots, each a fragment's place in its Art's list or null), how far the Anima has
+ *  charged and each Tenet recharged, 0 to 1 (1 ready), as the room's tick that sent them had it; and what each Art's
+ *  road has earned in the Arts' order (1 the Art, 2 its first Tenet, 4 its second), none from a room that sends none. */
 export interface ArtState {
   readonly art: number;
   readonly cores: readonly (readonly (number | null)[])[];
   readonly anima: number;
   readonly tenets: readonly [number, number];
+  readonly earned?: readonly number[];
 }
+
+/** Every bit an Art's road earns: the Art and both its Tenets. */
+export const ALL_EARNED = 0b111;
+
+/** What the road of the Art numbered `art` has earned, by `ArtState.earned`'s bits; all of it where the room has
+ *  said nothing of it, so nothing is locked the room may allow. */
+export const earnedOf = (state: ArtState | null | undefined, art: number): number =>
+  state?.earned?.[art - 1] ?? ALL_EARNED;
 
 /** The spells, by the number a cast and a spell's kind carry: each its Art's number less one, times three, plus its
  *  ability (0 the Anima, 1 and 2 the Tenets), plus one; and a Duskraven's bolt. */
@@ -71,7 +81,8 @@ export function artsOf(gear: Gear): ArtState {
     numbers.slice(art * CORE_SLOTS, art * CORE_SLOTS + CORE_SLOTS).map((set) => (set === NO_FRAGMENT ? null : set)),
   );
   const [first = 0, second = 0] = Array.from(gear.tenetsArray() ?? []);
-  return { art: gear.art(), cores, anima: gear.anima(), tenets: [first, second] };
+  const earned = Array.from(gear.artsEarnedArray() ?? []);
+  return { art: gear.art(), cores, anima: gear.anima(), tenets: [first, second], earned };
 }
 
 /** Every spell a snapshot holds. */

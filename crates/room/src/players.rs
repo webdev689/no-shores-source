@@ -152,9 +152,11 @@ pub struct Player {
     /// A dress waiting its turn, and the room tick the dress last changed (none before the first).
     pub dress_next: Option<String>,
     pub dressed_at: Option<u64>,
-    /// Their gear, and whether it changed since it was last sent to them.
+    /// Their gear, whether it changed since it was last sent to them, and whether it is their own as their account
+    /// keeps it (given back, `restore_character`) rather than the one they joined with.
     pub character: Character,
     pub gear_changed: bool,
+    pub claimed: bool,
     /// Where they stood as their gear was last sent: at the Mage, in a social space, and at the counter that signs their
     /// officers on. All ride the gear
     /// message and change as they walk, so a change sends it again.
@@ -224,6 +226,7 @@ impl Player {
             dressed_at: None,
             character,
             gear_changed: true,
+            claimed: false,
             placed_sent: (false, false, false),
             gear_sent: None,
             asked_at: None,
@@ -407,13 +410,22 @@ impl Room {
         self.players.get(&player).map(|found| found.character.to_json())
     }
 
-    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear; false if
-    /// they are not in the room or the text is not a character.
+    /// No character is kept for a player (they play unkept, or their account gave none back): the one the room holds is
+    /// their own from now on, so their page shows its word.
+    pub fn none_kept(&mut self, player: PlayerId) {
+        if let Some(found) = self.players.get_mut(&player) {
+            (found.gear_changed, found.claimed) = (true, true);
+        }
+    }
+
+    /// Gives a player the character kept for them, trimming their fight by it and sending them their gear, its quest
+    /// log told they arrived here; false if they are not in the room or the text is not a character.
     pub fn restore_character(&mut self, player: PlayerId, text: &str) -> bool {
         let Some(character) = gear::Character::from_json(text) else { return false };
         let Some(found) = self.players.get_mut(&player) else { return false };
         found.character = character;
-        found.gear_changed = true;
+        (found.gear_changed, found.claimed) = (true, true);
+        self.arrived(player);
         self.retrim(player);
         if let Some(found) = self.players.get_mut(&player) {
             found.fighter = found.armed(found.fighter);
@@ -440,8 +452,9 @@ impl Room {
     }
 
     /// Notes the account that keeps a player's character: the nodes that account gathered in this room (in a patrol,
-    /// this turn) are spent for them again, however often they rejoin; and the Arts' charge the room kept for it is
-    /// theirs again. A sea island's wrecks are kept on the character itself.
+    /// this turn; on a sea island, this landing) are spent for them again, however often they rejoin, and they are told
+    /// they landed if the sea said that account did; and the Arts' charge the room kept for it is theirs again. A sea
+    /// island's wrecks are kept on the character itself.
     pub fn own(&mut self, player: PlayerId, owner: &str) -> bool {
         let gathered = self.gathered.get(owner).cloned().unwrap_or_default();
         let Some(found) = self.players.get_mut(&player) else { return false };
@@ -453,6 +466,7 @@ impl Room {
         }
         found.gear_changed = true;
         self.give_casting_back(player, owner);
+        self.tell_landed(player);
         true
     }
 

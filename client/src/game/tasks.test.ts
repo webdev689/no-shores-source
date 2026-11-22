@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { glyphDrawn } from '../ui/glyphs.ts';
 import { layout } from '../ui/layout.ts';
 import type { Node } from '../ui/node.ts';
-import { justMet, type Quest, TaskTracker } from './tasks.ts';
+import { justMet, type Quest, TaskTracker, toldChange } from './tasks.ts';
 
 const face = { glyph: () => glyphDrawn({ rows: ['#'], advance: 600 }) };
 const quest: Quest = {
@@ -75,4 +75,56 @@ test('each change to a task is told aloud, as the page’s status region told it
   );
   delete page['document'];
   assert.deepEqual(said, ['The Wreck: Find the captain', 'Move, done', 'Foes 2']);
+});
+
+test('a clock is told as it starts, each 30 s, and each of its last 10 s; a ward’s health at each quarter', () => {
+  const said: string[] = [];
+  const page = globalThis as unknown as Record<string, unknown>;
+  page['document'] = { ariaNotify: (words: string) => said.push(words) };
+  const tracker = new TaskTracker();
+  const race = (clock: number | undefined): Quest => ({
+    name: 'The Stolen Storm',
+    task: 'Catch the riders',
+    steps: [{ text: 'Run the road', ...(clock === undefined ? {} : { clock }) }],
+  });
+  tracker.show(race(undefined), 0);
+  // Ten frames a second down from 2:30 to nothing.
+  for (let tenths = 1500; tenths >= 0; tenths -= 1) tracker.show(race(tenths / 10), 0);
+  delete page['document'];
+  assert.deepEqual(said, [
+    'The Stolen Storm: Catch the riders',
+    'Run the road 2:30',
+    'Run the road 2:00',
+    'Run the road 1:30',
+    'Run the road 1:00',
+    'Run the road 0:30',
+    ...[10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0].map((seconds) => `Run the road 0:${String(seconds).padStart(2, '0')}`),
+  ]);
+  const ward = (share: number): Quest => ({ name: 'Road', task: 'Hold', steps: [{ text: 'The glass', share }] });
+  const told: string[] = [];
+  page['document'] = { ariaNotify: (words: string) => told.push(words) };
+  const holding = new TaskTracker();
+  for (const share of [1, 0.98, 0.9, 0.74, 0.7, 0.5, 0.49]) holding.show(ward(share), 0);
+  delete page['document'];
+  assert.deepEqual(told, ['Road: Hold', 'The glass 74%', 'The glass 50%']);
+  assert.equal(toldChange({ text: 'A', count: '1/4' }, { text: 'A', count: '2/4' }), true, 'a count is told');
+});
+
+test('a step shows its clock as m:ss and its share as a percentage where a count stands', () => {
+  const tracker = new TaskTracker();
+  tracker.show(
+    {
+      name: 'Road',
+      task: 'Run',
+      steps: [
+        { text: 'Run', clock: 84.2 },
+        { text: 'Hold', share: 0.641 },
+      ],
+    },
+    0,
+  );
+  const words = lay(tracker.node({ width: 1280, height: 720 }, 0, true)).flatMap((laid) =>
+    laid.node.text ? [String(laid.node.text.words)] : [],
+  );
+  assert.ok(words.includes('1:25') && words.includes('64%'), words.join(' | '));
 });

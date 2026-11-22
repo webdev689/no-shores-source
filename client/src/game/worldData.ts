@@ -26,6 +26,8 @@ export interface NodeInfo {
   /** A patrol area's resource places (where, and the island's resource they hold), where its room's nodes stand, in
    *  its layout's order. */
   readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
+  /** The places its layout names, which a quest's goals stand at (layouts.ts `placesOf`); none for a node not laid. */
+  readonly places?: readonly { readonly name: string; readonly at: Point; readonly radius: number }[];
 }
 
 /** A continent's port city, as its edits file names it. */

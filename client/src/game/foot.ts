@@ -38,7 +38,7 @@ import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { type Use, groundRings, useAt } from './footGear.ts';
+import { type Speak, type Use, groundRings, useAt } from './footGear.ts';
 import { GatherHold } from './gatherHold.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
@@ -68,6 +68,8 @@ export interface FootContext {
   readonly session: () => Promise<string | null>;
   /** What E does where the player stands, drawn low in the middle of the view. */
   readonly usePrompt: UsePrompt;
+  /** What E does at a counter a quest names: speaks with its keeper. */
+  readonly speak?: Speak;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }
@@ -407,7 +409,7 @@ export class Foot {
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
     const dropped = this.dropMarks(clock, shot.eye, [
-      ...groundRings(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z),
+      ...groundRings(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
     const marks = effects.marks(fight, seconds, {
@@ -471,7 +473,8 @@ export class Foot {
     const { x, y } = walker.player.body;
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
     const { mounted } = walker.player;
-    const nodeUse = () => useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked), mounted);
+    const near = (asked: GearAsk) => gear?.ask(asked);
+    const nodeUse = () => useAt(x, y, this.node, gear?.gear ?? null, near, this.context.speak, mounted);
     this.using = able ? (placeUse ?? nodeUse()) : null;
     // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
     if (!controls.held('use')) this.hold.release();

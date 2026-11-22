@@ -9,12 +9,50 @@ import type { Node } from '../ui/node.ts';
 import { edged } from '../combat/barDraw.ts';
 import { header, keycap } from './hudParts.ts';
 
-/** One step of a task: its words, the keys that do it (each on a keycap), what is left of it, and whether it is met. */
+/** One step of a task: its words, the keys that do it (each on a keycap), what is left of it (a count, or in words:
+ *  points lit of all), the seconds left on its clock, the share of something it keeps whole (a ward's health, 0 to
+ *  1), and whether it is met. */
 export interface Step {
   readonly text: string;
   readonly keys?: readonly string[];
-  readonly count?: number;
+  readonly count?: number | string;
+  readonly clock?: number;
+  readonly share?: number;
   readonly done?: boolean;
+}
+
+/** Seconds as a clock reads them, m:ss, a part second counted as whole: "2:05". */
+export const clockWords = (seconds: number): string => {
+  const whole = Math.max(0, Math.ceil(seconds));
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+};
+
+/** What a step shows beside its words: its clock, its share as a percentage, or its count. */
+const leftOf = (step: Step): string | undefined =>
+  step.clock !== undefined
+    ? clockWords(step.clock)
+    : step.share !== undefined
+      ? `${Math.round(Math.min(1, Math.max(0, step.share)) * 100)}%`
+      : step.count === undefined
+        ? undefined
+        : String(step.count);
+
+/** How often a clock is told aloud as it runs, seconds, and the last seconds it is told each one; a share is told at
+ *  each quarter it passes. A screen reader hearing every second would hear nothing else. */
+const CLOCK_TOLD_S = 30;
+const CLOCK_LAST_S = 10;
+const SHARE_STEPS = 4;
+
+/** Whether a step's change from `was` is told aloud: met, its count changed, its clock come or reaching a told
+ *  second, or its share passing a quarter. */
+export function toldChange(was: Step, step: Step): boolean {
+  const [before, after] = [was.clock, step.clock];
+  const shown = after === undefined ? undefined : Math.ceil(after);
+  const clocked =
+    shown !== undefined &&
+    (before === undefined || (shown !== Math.ceil(before) && (shown % CLOCK_TOLD_S === 0 || shown <= CLOCK_LAST_S)));
+  const quarter = (share: number | undefined) => (share === undefined ? -1 : Math.ceil(share * SHARE_STEPS));
+  return was.done !== step.done || was.count !== step.count || clocked || quarter(was.share) !== quarter(step.share);
 }
 
 /** A quest as the tracker shows it: its name, the task now, and that task's steps. */
@@ -58,11 +96,12 @@ export class TaskTracker {
       this.met = [];
       announce(`${quest.name}: ${quest.task}`);
     } else if (quest && before) {
-      // Each change is told: a step met or its count changed.
+      // Each change worth telling is told: a step met, its count changed, its clock or its share at a told step.
       for (const step of quest.steps) {
         const was = before.steps.find((each) => each.text === step.text);
-        if (was && was.done === step.done && was.count === step.count) continue;
-        announce(`${step.text}${step.count === undefined ? '' : ` ${step.count}`}${step.done ? ', done' : ''}`);
+        if (was && !toldChange(was, step)) continue;
+        const left = leftOf(step);
+        announce(`${step.text}${left === undefined ? '' : ` ${left}`}${step.done ? ', done' : ''}`);
       }
     }
   }
@@ -138,8 +177,10 @@ function stepNode(step: Step, size: number, flash: number): Node {
         : { width: box, height: box, role: 'well', bevel: 1 },
       { padding: [0, 2, 0, 0], children: [{ text: { words: step.text, size, colour } }] },
       ...(step.keys ?? []).map((key) => keycap(key, size)),
-      step.count !== undefined && { width: 'grow' },
-      step.count !== undefined && { text: { words: String(step.count), size: 2, colour: TONES.brassHi, wrap: false } },
+      leftOf(step) !== undefined && { width: 'grow' },
+      leftOf(step) !== undefined && {
+        text: { words: leftOf(step) ?? '', size: 2, colour: TONES.brassHi, wrap: false },
+      },
     ],
   };
 }
