@@ -26,7 +26,8 @@ status: in force
   ([[Enemies Come in Five Ranks, After Destiny]], [[Enemies]]).
 - When a Boss falls, the foes it called fall too, so each fight starts clean and every phase's call comes.
 - A garrison foe gives up once its target is 50 m from its post or off the room's navmesh. It walks back to its post,
-  healing as it goes, and stands idle there again ([[Foes]]).
+  healing as it goes, and stands idle there again ([[Foes]]). "Or off the room's navmesh" is replaced by
+  [[A Foe Gives Up Only When the Player Is Far Away]]: it gives up on distance alone.
 - A Boss that leashes goes back to its first phase as it heals, and the foes it called fall, so the next attempt is a
   fresh fight.
 - A garrison foe whose search finds nothing walks back to its post as after a leash, healing, and stands idle there.

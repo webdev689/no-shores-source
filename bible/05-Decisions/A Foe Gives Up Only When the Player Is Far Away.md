@@ -13,4 +13,9 @@ fix the close case only; a foe gives up only when the player is well past its ra
 
 ## What it settles
 
-- A posted foe never walks home, heals and turns away from the fight while the player is close ([[Foes]]).
+- A posted foe gives its fight up only once its target is past its leash from its post (50 m, or its own),
+  wherever the target stands: never for ground its routes do not reach, so it no longer walks home, heals and turns
+  away from a player close by. A foe that cannot reach a close player fights from as near as its routes take it
+  ([[Foes]]).
+- It replaces "or off the room's navmesh" in [[Foes Leash to Their Posts and Fall With Their Boss]], and the two
+  rows of [[Public Events as Claude Builds Them]] that judged a player by the room's mesh.
