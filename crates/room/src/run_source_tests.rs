@@ -40,6 +40,11 @@ fn an_elite_dungeons_clear_lays_its_vestiges_and_items_from_its_content() {
         character.story.prologue = true;
         let player: PlayerId = room.join().expect("a room with space");
         assert!(room.restore_character(player, &character.to_json()));
+        // Its Boss stands only once its seals are broken.
+        for seal in &mut room.encounters.as_mut().expect("its encounters").seals {
+            seal.state = crate::encounters::SealState::Broken;
+        }
+        room.tick();
         for id in room.garrison[0].standing.clone() {
             let found = room.foes.get_mut(&id).expect("standing");
             (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
