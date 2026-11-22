@@ -25,12 +25,12 @@ const OVER_DECK_S = 12.5;
 
 /** The run in the Brig's own frame (metres to its bow, to its starboard, up from its waterline), so it keeps with
  *  it as it sails: low over the swell astern and to port, then well out from its port side, bow to quarter, its
- *  crew at work across the deck, and in over its quarter's rail under the spanker's boom to its helm, where it ends
- *  on the creation's own shot for a view `aspect` wide to its height. Its yards reach 6.5 m out each side and its
- *  spanker swings some 8 m out over its quarter, so the run keeps 16 m out until it comes in under the boom (5.9 m
- *  up), at the quarter's height. */
+ *  crew at work across the deck, and in under the spanker's boom to the creation's own shot off the helm's port side,
+ *  outboard of its rail, for a view `aspect` wide to its height. Its yards reach 6.5 m out each side and its spanker
+ *  swings some 8 m out over its quarter, so the run keeps 16 m out until it comes in under the boom (5.9 m up), at the
+ *  quarter's height. */
 export function runKeys(aspect: number): RailKey[] {
-  const creation = creationEye(0, aspect);
+  const creation = creationEye(aspect);
   return [
     { at: 0, eye: [-420, -260, 22], look: [0, 0, 6] },
     { at: 6, eye: [-150, -90, 14], look: [0, 0, 8] },
@@ -170,7 +170,7 @@ export class StormDive implements Beat {
       ...own,
       pitch: deck.pitch * share,
       roll: deck.roll * share,
-      z: own.z * (0.35 + 0.65 * share),
+      z: own.z * 0.35 * (1 - share) + deck.z * share,
     };
     const carried = runKeys(aspect).map((key) => ({
       ...key,

@@ -14,8 +14,8 @@ import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipCamera } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Afloat } from './afloat.ts';
-import { aimEye, type Lying, lookBearing, lookRange } from './aim.ts';
-import { AimCamera, type AimHull, aimHullOf } from './aimCamera.ts';
+import { lookBearing } from './aim.ts';
+import { AimCamera, type AimHull, aimHullOf, type AimShip, type Laid } from './aimCamera.ts';
 import { type FightInput, type FightSource, Fighting, sideReady } from './fighting.ts';
 import { cameraOf, type Orbit } from './orbit.ts';
 import { SAILS_RUNG, type Sailing } from './sailing.ts';
@@ -65,6 +65,8 @@ export class Naval {
   /** What draws the aim over the water (`drawAimOver`), where the marks' device can; and the eye it is laid from. */
   private readonly aimView: AimView | null;
   private readonly aimEye = new AimCamera();
+  /** The look the aim laid at its last frame, while it lays one. */
+  private aimed: FightLook | null = null;
   /** The hull a ship is drawn as: its own once its model has come. */
   private readonly shown: (hull: number) => number;
   private farewell: { readonly lines: string[]; readonly said: string[]; readonly until: number } | null = null;
@@ -196,13 +198,13 @@ export class Naval {
     ]);
   }
 
-  /** The look the camera lays while aiming (`lookOf`). */
-  look(orbit: Orbit, sailing: FightingShip, view: Window, from?: readonly [number, number, number]): FightLook {
-    return lookOf(orbit, sailing, view, from);
+  /** The look the aim camera laid at its last frame (`aimCamera`), while it lays one. */
+  look(): FightLook | null {
+    return this.aimed;
   }
 
   /** The camera `seconds` on (`easedAimOf`): eased out to its battery while `aiming` and its guns can speak, short
-   *  of its captain's hull, and home again. */
+   *  of its captain's hull, and home again; the look it lays is kept for the next step (`look`). */
   aimCamera(orbit: Orbit, sailing: Aboard, view: Window, shown: number, aiming: boolean, seconds: number): Orbit {
     const answer = this.fight?.view;
     const captain = answer?.captain;
@@ -211,7 +213,17 @@ export class Naval {
         ? [aimHullOf(captain.ship, captain.pose[0] ?? 0, this.shown(hullOfCaptain(captain)))]
         : [];
     const speaks = aiming && answer?.player.state === 'afloat';
-    return easedAimOf(this.aimEye, orbit, sailing, view, shown, speaks, alongside, seconds);
+    const aimed = easedAimOf(
+      this.aimEye,
+      orbit,
+      sailing,
+      view,
+      { shown, aiming: speaks, alongside },
+      answer?.lay ?? null,
+      seconds,
+    );
+    this.aimed = aimed.look;
+    return aimed.orbit;
   }
 
   /** Its footprint on the water while it floats, at its hull's waterline. */
@@ -251,7 +263,7 @@ export class Naval {
     return this.farewell && this.farewell.until > now ? this.farewell.said : [];
   }
 
-  /** The fight's readout at `now` (`fightDisplay`): its plate and rose, the card on the nearest captain with `board`'s
+  /** The fight's readout at `now` (`fightDisplay`): its plate and its abilities' bar, the card on the nearest captain with `board`'s
    *  key while it can be boarded, and its last volley's tally; none out of a fight. */
   display(now: number, board: Parameters<typeof fightDisplay>[3]): ReturnType<typeof fightDisplay> | null {
     return this.fight ? fightDisplay(this.fight.view, this.feel, now, board, this.fight.own) : null;
@@ -344,51 +356,46 @@ function captainPlace(ship: FeelShip, view: Window, shown: number) {
   return { x: x - view.leftM, y: y - view.topM, z: heave * shown, heading, pitch, roll };
 }
 
-/** Where a Sloop lies, for the aim. */
-function lyingOf(ship: Aboard, view: Window): Lying {
+/** A Sloop as the aim lays from it: where and how it is drawn. */
+function aimShipOf(ship: Aboard, view: Window): AimShip {
   const place = ship.place(view, 1);
-  return { x: place.x + view.leftM, y: place.y + view.topM, heading: place.heading, heave: place.z };
+  const { heading, pitch, roll } = place;
+  return { x: place.x + view.leftM, y: place.y + view.topM, heading, heave: place.z, pitch, roll, hull: SLOOP_HULL };
 }
 
-/** The look the camera lays while aiming from a Sloop: its bearing off its bow, its range out along its fire, and its
- *  ray from the aim eye, or from `from` (world metres), the eye the view is drawn from, where one is given. */
-export function lookOf(orbit: Orbit, ship: Aboard, view: Window, from?: readonly [number, number, number]): FightLook {
-  const lying = lyingOf(ship, view);
-  const bearing = lookBearing(orbit.yaw, lying.heading);
-  const eye = from ?? aimEye(lying, bearing >= 0 ? 1 : -1);
-  const flat = Math.cos(orbit.pitch);
-  const way = [Math.sin(orbit.yaw) * flat, -Math.cos(orbit.yaw) * flat, -Math.sin(orbit.pitch)];
-  return { bearing, range: Math.max(0, lookRange(lying, eye, orbit.yaw, -orbit.pitch)), ray: [...eye, ...way] };
-}
-
-/** The camera while laying from a Sloop (DFO's aim camera): `orbit`'s eye eased by `camera` out to the aim eye on the
- *  side looked at while `aiming`, short of each hull `alongside`, and home again once let go; along the orbit's yaw
- *  and pitch, heights as drawn. */
+/** The aim camera while laying from a Sloop (`AimCamera`): `orbit`'s eye eased out to its battery's station on the
+ *  side looked at while `aiming`, short of each hull `alongside`, looking at the water its guns are laid on (`lay`,
+ *  the rules' last answer), and home again once let go; heights drawn `shown` times their own. Answers the orbit
+ *  drawn and the look laid. */
 export function easedAimOf(
   camera: AimCamera,
   orbit: Orbit,
   ship: Aboard,
   view: Window,
-  shown: number,
-  aiming: boolean,
-  alongside: readonly AimHull[],
+  how: { readonly shown: number; readonly aiming: boolean; readonly alongside: readonly AimHull[] },
+  lay: Laid | null,
   seconds: number,
-): Orbit {
-  const lying = lyingOf(ship, view);
+): { readonly orbit: Orbit; readonly look: FightLook | null } {
+  const lying = aimShipOf(ship, view);
   const [eastM, southM, upM] = cameraOf(orbit).eye;
-  const home = [eastM + view.leftM, southM + view.topM, upM / shown] as const;
-  const want = aiming ? (lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1) : null;
-  const eye = camera.eye(home, want, lying, alongside, seconds);
-  if (eye === home) return orbit;
+  const eye = [eastM + view.leftM, southM + view.topM, upM / how.shown] as const;
+  const want: 1 | -1 | null = how.aiming ? (lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1) : null;
+  const home = { eye, yaw: orbit.yaw, pitch: orbit.pitch };
+  const ask = { home, want, ship: lying, pitch: orbit.pitch, lay, alongside: how.alongside };
+  const aimed = camera.frame(ask, seconds);
+  if (aimed.eye === eye) return { orbit, look: null };
   const ahead = 3;
-  const flat = Math.cos(orbit.pitch) * ahead;
-  return {
+  const flat = Math.cos(aimed.pitch) * ahead;
+  const drawn = {
     ...orbit,
-    targetX: eye[0] - view.leftM + Math.sin(orbit.yaw) * flat,
-    targetY: eye[1] - view.topM - Math.cos(orbit.yaw) * flat,
-    targetZ: (eye[2] - Math.sin(orbit.pitch) * ahead) * shown,
+    yaw: aimed.yaw,
+    pitch: aimed.pitch,
+    targetX: aimed.eye[0] - view.leftM + Math.sin(aimed.yaw) * flat,
+    targetY: aimed.eye[1] - view.topM - Math.cos(aimed.yaw) * flat,
+    targetZ: (aimed.eye[2] - Math.sin(aimed.pitch) * ahead) * how.shown,
     distance: ahead,
   };
+  return { orbit: drawn, look: aimed.look };
 }
 
 /** What the aim shows of a lay (DFO's drawn aim): each gun's unscattered flight to where the rules stop it, where the

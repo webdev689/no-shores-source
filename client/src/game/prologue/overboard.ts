@@ -52,6 +52,8 @@ export class Overboard implements Beat {
   private readonly scenery: WreckScenery;
   private readonly cues: Cues;
   private since = 0;
+  /** Set once skipped: its moments left still change the world, but none sounds or speaks. */
+  private skipped = false;
   done = false;
 
   constructor(story: Story, layout: WreckLayout, scenery: WreckScenery) {
@@ -68,8 +70,8 @@ export class Overboard implements Beat {
     screen.fade(1, 0);
     this.cues = new Cues([
       [0.3, () => screen.fade(0, 0.9)],
-      [1.1, () => void stage.play('overboard', true, { thule: 'thule', tithe: 'celebrant-1' })],
-      [THROW_AT_S + FLIGHT_S, () => ambience.splash(1)],
+      [1.1, () => this.skipped || void stage.play('overboard', true, { thule: 'thule', tithe: 'celebrant-1' })],
+      [THROW_AT_S + FLIGHT_S, () => this.skipped || ambience.splash(1)],
       [OVER_S - 1, () => screen.fade(1, 1)],
       [OVER_S, () => (this.done = true)],
     ]);
@@ -81,7 +83,9 @@ export class Overboard implements Beat {
   }
 
   skip(): void {
+    this.skipped = true;
     this.cues.finish();
+    this.story.stage.parts.screen.fade(1, 0);
     this.done = true;
   }
 
@@ -91,6 +95,8 @@ export class Overboard implements Beat {
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
     const [x, y, z] = this.thule();
+    const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
+    const shot = this.shot([x, y, z], aspect);
     const actors: Actor[] = [];
     const heads = new Map<string, readonly [number, number, number]>();
     CELEBRANTS.forEach((one, index) => {
@@ -107,7 +113,7 @@ export class Overboard implements Beat {
         x: standX,
         y: standY,
         z: stand,
-        facing: Math.PI / 2,
+        facing: cheering([standX, standY], shot.eye),
         since: index * 0.3,
       });
     });
@@ -122,8 +128,6 @@ export class Overboard implements Beat {
         z: thrown[2],
         facing: -Math.PI / 2,
       });
-    const aspect = tick.viewport.width / Math.max(1, tick.viewport.height);
-    const shot = this.shot([x, y, z], aspect);
     return {
       shot,
       actors,
@@ -144,4 +148,16 @@ export class Overboard implements Beat {
     const eye: Point3 = [target[0] + from[0] * back, target[1] + from[1] * back, target[2] + from[2] * back];
     return { ...LENS, eye: [...eye], ...lookAt(eye, target) };
   }
+}
+
+/** How far round from the rail the body went over (east) toward the camera a celebrant turns: the camera stands
+ *  nearly across the deck from the rail, so facing the rail shows their backs and halfway their sides. */
+const TOWARD_EYE = 0.6;
+
+/** The way a celebrant at `spot` faces: turned from the rail toward the camera, so the crowing is seen and a back never
+ *  fills the view. */
+function cheering(spot: readonly [number, number], eye: readonly number[]): number {
+  const toEye = Math.atan2((eye[0] ?? 0) - spot[0], -((eye[1] ?? 0) - spot[1]));
+  const toRail = Math.PI / 2;
+  return toRail + Math.atan2(Math.sin(toEye - toRail), Math.cos(toEye - toRail)) * TOWARD_EYE;
 }

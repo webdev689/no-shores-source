@@ -16,7 +16,7 @@ import type { Child, Node } from '../ui/node.ts';
 import type { Box } from '../ui/quads.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { filteredSvg } from './abilityBar.ts';
+import { filteredSvg } from './ringSlot.ts';
 import { ammoWords } from './ammoCounter.ts';
 import { baselineOf, lineHeight } from '../ui/text.ts';
 import { keycapNode, mix, paintBox, type Pen, ring } from './barDraw.ts';

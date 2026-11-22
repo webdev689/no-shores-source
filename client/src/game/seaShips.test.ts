@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import type { SeenPirate, SeenShip } from '../network/messages.ts';
 import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
+import { captainAtSea, plainCrew } from '../ships/shipCrew.ts';
 import { FAIR_LINE, HULLS } from '../water/hullMask.ts';
 
 /** Every hull's line the fair one: no mesh is fetched. */
@@ -116,4 +117,15 @@ test("each ship's footprint is its own hull at its drawn size, and its bow slams
     calmMost = Math.max(calmMost, calm.hulls(lies, [], [], 1)[0]?.spray ?? 0);
   }
   assert.ok(most > 0.5 && most > calmMost * 2, `rough ${most}, calm ${calmMost}`);
+});
+
+test("every other ship carries its people: a player's Sloop its plain crew, a captain's its faction and rank", () => {
+  const pirate: SeenPirate = { id: 3, x: 800, y: -300, heading: 1.2, faction: 1, rank: 3, hull: 1 };
+  const other: SeenShip = { player: 2, x: 500, y: 0, heading: 0, pace: 0 };
+  const ships = new SeaShips(undefined, FAIR_LINES).ships(1 / 60, 10, 0.4, OWN, [other], [pirate], 4, WATER);
+  assert.deepEqual(
+    ships.map((ship) => ship.crew),
+    [undefined, plainCrew('player-2'), captainAtSea('pirate-3', 1, 3)],
+    "the player's own carries none here: its people are its own",
+  );
 });

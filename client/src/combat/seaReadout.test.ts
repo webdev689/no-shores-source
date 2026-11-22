@@ -1,26 +1,33 @@
-// The sea fight's readout is the on-foot display's own build: the ship's plate the vitals' thin bars, the card the
-// target plate, so the sea reads as the same display.
+// The sea fight's readout is the on-foot display's own build: the ship's plate the vitals' thin bars, its abilities
+// the Arts' bar, the card the target plate, so the sea reads as the same display.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { VITAL_SIZES } from '../plus/barFrame.ts';
 import { UNDER_COMPASS } from '../plus/compass.ts';
-import type { RoseSide, SeaFightModel } from '../plus/seaFight.ts';
+import type { SeaFightModel, SeaWarning, ShipAbility } from '../plus/seaFight.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { drawLaid } from '../ui/drawLaid.ts';
 import type { Node } from '../ui/node.ts';
 import { allOf, coloursDrawn, fakeRenderer, laidOf, wordsIn, written } from './nodes.test.ts';
 import { withMotionReduced } from './page.test.ts';
-import { boostCells, SeaFightReadout } from './seaReadout.ts';
+import { fuseSpan, SeaFightReadout } from './seaReadout.ts';
 
-const side = (more: Partial<RoseSide> = {}): RoseSide => ({
-  fill: 1,
-  ready: true,
-  fresh: false,
-  laid: false,
-  load: 'Round',
-  left: 0,
-  ...more,
-});
+/** One of the ship's abilities, ready unless `more` says otherwise. */
+const ability = (id: string, icon: ShipAbility['icon'], name: string, more: Partial<ShipAbility> = {}) =>
+  ({
+    id,
+    icon,
+    name,
+    key: 'C',
+    state: 'ready',
+    unable: false,
+    charge: 1,
+    left: 0,
+    running: 0,
+    laid: false,
+    said: 'ready',
+    ...more,
+  }) as const satisfies ShipAbility;
 const MODEL: SeaFightModel = {
   ship: {
     name: 'Your Sloop',
@@ -28,11 +35,14 @@ const MODEL: SeaFightModel = {
     sail: 0.5,
     crew: 1,
     fire: false,
-    braced: true,
-    boost: { state: 'charging', share: 0.25 },
-    port: side(),
-    starboard: side(),
-    blow: null,
+    // Braced, its guns holding fire, and its burst recharging.
+    abilities: [
+      ability('port', 'port', 'Port broadside', { unable: true }),
+      ability('starboard', 'starboard', 'Starboard broadside', { unable: true }),
+      ability('burst', 'burst', 'Burst', { state: 'charging', charge: 0.25, left: 9 }),
+      ability('brace', 'brace', 'Brace', { state: 'active', running: 1 }),
+      ability('load', 'round', 'Round shot'),
+    ],
   },
   card: {
     name: 'Pirate Brig',
@@ -87,23 +97,46 @@ test("the ship's plate is the vitals' thin bars: Hull over Sails over Crew, each
     ],
   );
   assert.deepEqual(plate?.float && [plate.float.x, plate.float.y], [28, 14], "at the vitals' corner");
-  assert.deepEqual(wordsIn(plate), ['BOOST', 'Braced', 'Bow', 'Round', 'Round', 'Stern'], 'no words inside the bars');
   readout.lay({ length: 333, wide: true, zoom: 1 });
   const wide = labelled(readout.node(), 'Hull');
   assert.deepEqual([wide?.width, wide?.height], [333, VITAL_SIZES.wide.health], 'laid as the vitals are');
 });
 
-test("the boost ring under the ship's bars is lit as far as its burst has recharged, and says so to a reader", () => {
-  const charging = readoutOf(MODEL).node() ?? {};
-  assert.ok(labelled(charging, 'Boost recharging'));
-  assert.ok(tilesDrawn(charging).includes(`boost ${TONES.stoneMid} 0.25`), 'a quarter lit, in dim stone');
-  // Clockwise from the top: a cell just right of the top is lit, one just left of it is not.
-  const cells = boostCells(TONES.stoneMid, 0.25);
-  assert.deepEqual([cells[1 * 16 + 9], cells[1 * 16 + 6]], [TONES.stoneMid, TONES.groundTrack]);
-  if (!MODEL.ship) return;
-  const ready = readoutOf({ ...MODEL, ship: { ...MODEL.ship, boost: { state: 'ready', share: 1 } } }).node() ?? {};
-  assert.ok(labelled(ready, 'Boost ready'));
-  assert.ok(tilesDrawn(ready).includes(`boost ${TONES.brassHi} 1`), 'lit whole in brass');
+test("the plate keeps only its bars and the fire's chip: the burst, the brace and the guns stand on the ship's bar", () => {
+  const plate = (model: SeaFightModel) => labelled(readoutOf(model).node(), 'Your ship');
+  assert.deepEqual(wordsIn(plate(MODEL)), [], 'braced and recharging, yet no words on the plate');
+  assert.ok(MODEL.ship);
+  assert.deepEqual(wordsIn(plate({ ...MODEL, ship: { ...MODEL.ship, fire: true } })), ['On fire']);
+  const shown = allOf(plate(MODEL));
+  assert.equal(
+    shown.some((node) => /Boost|Braced|Bow|Stern|broadside/.test(`${node.label ?? ''} ${node.text?.words ?? ''}`)),
+    false,
+    'no boost ring, brace chip or battery rose',
+  );
+});
+
+test("the ship's bar stands at the Arts' corner at the bottom left, at each step and doubled, its abilities in order", () => {
+  const readout = readoutOf(MODEL);
+  const bar = () => labelled(readout.node(), 'Your Ship');
+  const placed = (node: Node | null) => node?.float && [node.float.at, node.float.anchor, node.float.x, node.float.y];
+  assert.deepEqual(placed(bar()), [[0, 1], [0, 1], 28, -22], '28 in and 22 up, as the Arts and weapons');
+  assert.deepEqual(
+    (bar()?.children ?? []).map((slot) => slot && slot.label?.split(' (')[0]),
+    ['Port broadside', 'Starboard broadside', 'Burst', 'Brace', 'Round shot'],
+  );
+  const ringSide = () => (bar()?.children?.[0] as Node | undefined)?.children?.[0];
+  assert.equal((ringSide() as Node | undefined)?.width, 44);
+  assert.equal(readout.reach?.right, 28 + 5 * 44 + 4 * 8);
+  readout.lay({ length: 333, wide: true, zoom: 1 });
+  assert.equal((ringSide() as Node | undefined)?.width, 66, 'the larger step');
+  assert.equal(bar()?.gap, 12);
+  readout.lay({ length: 333, wide: false, zoom: 2 });
+  assert.deepEqual(placed(bar()), [[0, 1], [0, 1], 56, -44], 'doubled past 1440p');
+  assert.equal((ringSide() as Node | undefined)?.width, 88);
+  assert.equal(readout.reach?.right, 56 + (5 * 44 + 4 * 8) * 2);
+  readout.update(null, 1);
+  assert.equal(readout.node(), null, 'gone with the readout');
+  assert.equal(readout.reach, null);
 });
 
 test("the hull's frame flashes blood low as health's does, on for the first half of each 0.9 s", () => {
@@ -170,65 +203,112 @@ test("an ally's card shows no emblem, its name in the players' colour and its ba
   assert.ok(card && coloursDrawn(card).has(written(FILLS.ally)));
 });
 
+/** A battery run out at the player: the Pirate Brig's port side, chain shot, on its starboard beam. */
+const WARN: SeaWarning = {
+  id: '1 port',
+  name: 'Pirate Brig',
+  range: 140.4,
+  bearing: 'on your starboard beam',
+  load: 'chain',
+  tell: 1.3,
+  ranFor: 0,
+  braceKey: 'C',
+  braced: false,
+};
+const warnedOf = (more: Partial<SeaWarning> = {}) => ({ ...MODEL, warn: { ...WARN, ...more } });
+const WARN_LABEL = 'Broadside from the Pirate Brig';
+
 test('the broadside warning stands under the target card at the top, never over the sight; the ships’ plates under both', () => {
   assert.equal(readoutOf({ ...MODEL, card: null }).under, UNDER_COMPASS, 'under the compass with nothing shown');
   const carded = readoutOf(MODEL).under;
   assert.equal(carded, UNDER_COMPASS + 37 + 8, 'under the card');
-  const warned = readoutOf({ ...MODEL, warn: 'Broadside! Brace' });
-  assert.ok(warned.under > carded + 20, 'and under the warning');
-  const warn = labelled(warned.node(), 'Broadside! Brace');
-  assert.deepEqual(warn?.float?.at, [0.5, 0], 'set from the top, not the middle where the sight is');
-  assert.equal(warn?.float?.y, carded, 'just under the card');
-  assert.deepEqual(wordsIn(warn), ['BROADSIDE! BRACE']);
+  for (const braced of [false, true]) {
+    const warned = readoutOf(warnedOf({ braced }));
+    const root = warned.node();
+    const warn = labelled(root, WARN_LABEL);
+    assert.deepEqual(warn?.float?.at, [0.5, 0], 'set from the top, not the middle where the sight is');
+    assert.equal(warn?.float?.y, carded, 'just under the card');
+    const box = root && laidOf(root).find((laid) => laid.node === warn)?.box;
+    assert.ok(box, 'laid');
+    assert.equal(warned.under, box.y + box.height + 8, `the plates just under it, braced ${braced}`);
+    assert.ok(box.y + box.height < 720 / 2 - 40, 'well over the sight');
+  }
 });
 
-test('the warning pulses in steps, its lit look the second half of each half second, and stands still with reduced motion', () => {
-  const warned = { ...MODEL, warn: 'Broadside! Brace' };
+test('the warning is no panel and few words: BROADSIDE large between two signs, then the brace large by its key', () => {
+  const warn = labelled(readoutOf(warnedOf()).node(), WARN_LABEL);
+  assert.equal(warn?.draw, undefined, 'nothing drawn behind it');
+  assert.equal(warn?.fill, undefined);
+  assert.deepEqual(wordsIn(warn), ['BROADSIDE', 'C', 'BRACE']);
+  const sizeOf = (said: string) => allOf(warn).find((node) => node.text?.words === said)?.text?.size;
+  assert.deepEqual([sizeOf('BROADSIDE'), sizeOf('C'), sizeOf('BRACE')], [3, 2, 2]);
+  assert.equal(allOf(warn).filter((node) => node.picture?.key === 'broadside sign').length, 2);
+  assert.ok(
+    allOf(warn).every((node) => !node.text || node.text.words === 'C' || node.text.edge === 'halo'),
+    'every word but the keycap’s outlined, read over the sea',
+  );
+});
+
+test('braced, the warning says so in brass with no key to press', () => {
+  const braced = labelled(readoutOf(warnedOf({ braced: true })).node(), WARN_LABEL);
+  assert.deepEqual(wordsIn(braced), ['BROADSIDE', 'BRACED']);
+  const brace = allOf(braced).find((node) => node.text?.words === 'BRACED');
+  assert.equal(brace?.text?.colour, TONES.brassHi);
+});
+
+test('the fuse burns in from both ends over the battery’s tell, then flashes with the title as it may fire', () => {
+  assert.deepEqual(
+    [fuseSpan(100, 1, false), fuseSpan(100, 0.5, true), fuseSpan(100, 0, false), fuseSpan(100, 0, true)],
+    [100, 50, 0, 100],
+  );
+  const fuseLitAt = (now: number, reduced = false) =>
+    withMotionReduced(reduced, () => {
+      const readout = readoutOf(warnedOf({ ranFor: now }), now);
+      const fuse = allOf(labelled(readout.node(), WARN_LABEL)).find((node) => node.height === 4 && node.draw);
+      assert.ok(fuse, 'a fuse under the title');
+      return coloursDrawn({ ...fuse, width: 100 }).has(written('#ff7a5c'));
+    });
+  assert.equal(fuseLitAt(0.1), true, 'burning at first');
+  assert.equal(fuseLitAt(1.5), false, 'burnt through, dark between flashes');
+  assert.equal(fuseLitAt(1.65), true, 'lit on the flash');
+  assert.equal(fuseLitAt(1.65, true), false, 'never flashing with reduced motion');
+});
+
+test('the title pulses in steps, faster once the tell has burnt, and stands still with reduced motion', () => {
   const colourAt = (now: number, reduced = false) =>
     withMotionReduced(reduced, () => {
-      const readout = readoutOf(warned, 0);
-      readout.update(warned, now);
-      return allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE! BRACE')?.text?.colour;
+      const readout = readoutOf(warnedOf({ ranFor: now }), now);
+      return allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE')?.text?.colour;
     });
-  assert.equal(colourAt(0.1), '#ffd9cf');
-  assert.equal(colourAt(0.3), '#ff9c8a');
-  assert.equal(colourAt(0.3, true), '#ffd9cf');
+  assert.equal(colourAt(0.1), '#ff5a45');
+  assert.equal(colourAt(0.3), '#ffc2b8');
+  assert.equal(colourAt(1.5), '#ff5a45', 'a quarter second a step once it may fire');
+  assert.equal(colourAt(1.65), '#ffc2b8');
+  assert.equal(colourAt(0.3, true), '#ff5a45');
 });
 
-test('the warning is said to a screen reader once as it comes, and again only when it comes again', () => {
+test('each battery’s warning is said to a screen reader once as it comes, its tell timed from when it ran out', () => {
   const said: string[] = [];
   const page = globalThis as { document?: unknown };
   const was = page.document;
   page.document = { ariaNotify: (words: string) => said.push(words) };
+  const line =
+    'Broadside from the Pirate Brig - 140 m on your starboard beam. Chain shot - tears your sails. C: brace.';
   try {
-    const warned = { ...MODEL, warn: 'Broadside! Brace' };
     const readout = readoutOf(MODEL, 0);
-    readout.update(warned, 0.1);
-    readout.update(warned, 0.2);
-    assert.deepEqual(said, ['Broadside! Brace'], 'once while it stands');
+    readout.update(warnedOf(), 0.1);
+    readout.update(warnedOf({ braced: true }), 0.2);
+    assert.deepEqual(said, [line], 'once while it stands, braced or not');
     readout.update(MODEL, 0.3);
-    readout.update(warned, 0.4);
-    assert.deepEqual(said, ['Broadside! Brace', 'Broadside! Brace'], 'and again once it comes back');
+    readout.update(warnedOf(), 0.4);
+    assert.deepEqual(said, [line, line], 'and again once it comes back');
+    readout.update(warnedOf({ id: '2 starboard', name: 'Tithe Sloop', ranFor: 2.15 }), 2);
+    assert.equal(said.length, 3, 'another battery said as it comes');
+    const title = allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE');
+    assert.equal(title?.text?.colour, '#ffc2b8', 'run out 2.15 s before it was warned of: flashing as due at once');
   } finally {
     page.document = was;
   }
-});
-
-test("a side's chip fills from its foot as it loads, glows gold round where the look lays it, and flashes as it comes ready", () => {
-  const rose = (model: SeaFightModel, now: number, from = 0) => {
-    const readout = readoutOf(model, from);
-    readout.update(model, now);
-    return labelled(readout.node(), 'Your ship');
-  };
-  const loading = { ...MODEL, ship: { ...MODEL.ship!, port: side({ ready: false, fill: 0.5, left: 3.2 }) } };
-  const plate = rose(loading, 0);
-  assert.ok(wordsIn(plate).includes('Round 4s'), 'its load and the seconds it still loads');
-  assert.ok(plate && coloursDrawn(plate).has(written('rgba(122,84,36,0.8)')), 'filled in brass from its foot');
-  const laid = rose({ ...MODEL, ship: { ...MODEL.ship!, port: side({ laid: true }) } }, 0);
-  assert.ok(laid && coloursDrawn(laid).has(written(TONES.brassHi)), 'edged in light brass where laid');
-  const fresh = { ...MODEL, ship: { ...MODEL.ship!, starboard: side({ fresh: true }) } };
-  const lit = (now: number) => coloursDrawn(rose(fresh, now) ?? {}).has(written(TONES.brassHi));
-  assert.deepEqual([lit(0.1), lit(0.25), lit(0.4), lit(0.6)], [false, true, false, true], 'twice, in steps');
 });
 
 test("the tally says the last volley under the view's middle, a miss dimmed", () => {
@@ -239,4 +319,17 @@ test("the tally says the last volley under the view's middle, a miss dimmed", ()
   assert.equal(tallied(4)?.text?.words, '4 OF 6 BALLS STRUCK');
   assert.deepEqual([tallied(4)?.text?.colour, tallied(0)?.text?.colour], [TONES.brassHi, '#b3a684']);
   assert.deepEqual(tallied(4)?.float?.at, [0.5, 0.5]);
+});
+
+test('past 1440p the warning doubles with the plate and the bar', () => {
+  const readout = new SeaFightReadout();
+  readout.lay({ length: 320, wide: false, zoom: 2 });
+  readout.update(warnedOf(), 0);
+  const warn = labelled(readout.node(), WARN_LABEL);
+  const sizeOf = (said: string) => allOf(warn).find((node) => node.text?.words === said)?.text?.size;
+  assert.deepEqual([sizeOf('BROADSIDE'), sizeOf('BRACE')], [6, 4]);
+  const root = readout.node();
+  const box = root && laidOf(root, 2560, 1440).find((laid) => laid.node === labelled(root, WARN_LABEL))?.box;
+  assert.ok(box);
+  assert.equal(readout.under, box.y + box.height + 8, 'the plates still just under it');
 });

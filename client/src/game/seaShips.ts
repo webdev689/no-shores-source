@@ -8,6 +8,7 @@ import type { Swell } from '../rules/landRules.ts';
 import { factionSide, type ShipSide } from '../ships/dress.ts';
 import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
+import { captainAtSea, plainCrew, type ShipCrew } from '../ships/shipCrew.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipPlace } from '../ships/shipView.ts';
@@ -62,12 +63,14 @@ export function heelShare(hull: number): number {
   return hullWaterline(SLOOP_HULL).beamM / hullWaterline(hull).beamM;
 }
 
-/** A ship at sea and whose it is: its hull, its side and who sails it. */
+/** A ship at sea and whose it is: its hull, its side, who sails it and who is seen aboard (none for the player's own,
+ *  whose people are its own). */
 interface Sailing {
   readonly who: string;
   readonly lies: Lies;
   readonly hull: number;
   readonly side: ShipSide;
+  readonly crew?: ShipCrew;
 }
 
 /** Every ship at sea but the player's: each other player's Sloop, then each captain's ship. */
@@ -82,12 +85,14 @@ function round(
       lies: { ...ship, underWay: ship.pace > 0 },
       hull: SLOOP_HULL,
       side: 'player' as const,
+      crew: plainCrew(`player-${ship.player}`),
     })),
     ...pirates.map((pirate) => ({
       who: `pirate-${pirate.id}`,
       lies: { ...pirate, underWay: true },
       hull: shown(hullOfCaptain(pirate)),
       side: factionSide(pirate.faction),
+      crew: captainAtSea(`pirate-${pirate.id}`, pirate.faction, pirate.rank),
     })),
   ];
 }
@@ -184,7 +189,7 @@ export class SeaShips {
     scale: number,
     water: SeaWater,
   ): SeaShip[] {
-    const riding = ({ who, lies, hull, side }: Sailing, place: ShipPlace | null): SeaShip => {
+    const riding = ({ who, lies, hull, side, crew }: Sailing, place: ShipPlace | null): SeaShip => {
       const wind = { offDeg: windOff(lies.heading, windBearing), set: lies.underWay };
       let rigged = this.rigs.get(who);
       if (!rigged || rigged.hull !== hull) {
@@ -195,7 +200,7 @@ export class SeaShips {
       }
       rigged.rig.step(seconds, wind, time);
       const placed = place ?? this.placeOf(who, lies, scale, water, seconds, time, hull);
-      return { hull, place: placed, rig: rigged.rig, look: { side } };
+      return { hull, place: placed, rig: rigged.rig, look: { side }, ...(crew ? { crew } : {}) };
     };
     const ships = round(others, pirates, this.shown);
     const sailing = new Set(['own', ...ships.map((ship) => ship.who)]);

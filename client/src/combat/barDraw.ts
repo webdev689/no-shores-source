@@ -317,8 +317,16 @@ export function thinBarNode(bar: {
 }
 
 /** A key on a keycap, as the display's keys are drawn: stone lit at its top and left and dark at its right and foot
- *  (two pixels deep there), on a dark ground inside the outline, at least `least` CSS pixels wide and `tall` high. */
-export function keycapNode(key: string, size: number, least: number, tall: number, zoom = 1): Node {
+ *  (two pixels deep there), on a dark ground inside the outline, at least `least` CSS pixels wide and `tall` high;
+ *  `face` stands on the cap in place of the key's words where one is given (a mouse's button drawn). */
+export function keycapNode(
+  key: string,
+  size: number,
+  least: number,
+  tall: number,
+  zoom = 1,
+  face: Node | null = null,
+): Node {
   return {
     minWidth: least * zoom,
     height: tall * zoom,
@@ -343,7 +351,7 @@ export function keycapNode(key: string, size: number, least: number, tall: numbe
         TONES.stoneDark,
       );
     },
-    children: [{ text: { words: key, size: size * zoom, colour: TONES.word, wrap: false } }],
+    children: [face ?? { text: { words: key, size: size * zoom, colour: TONES.word, wrap: false } }],
   };
 }
 

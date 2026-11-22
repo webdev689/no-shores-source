@@ -41,11 +41,11 @@ async function fought(run: ReturnType<typeof storied>['run'], battle: Battle, fr
   return frames;
 }
 
-test('the sighting starts from the shot the creation last drew, on a tall screen and after a turn', () => {
+test('the sighting starts from the shot the creation last drew, on a tall screen', () => {
   const { story, run } = storied();
   const own = story.sailing.frame([story.brig.sailed()], 0, 0, 0, undefined)[0]?.place;
   assert.ok(own);
-  const from = creationShot({ ...own, roll: own.roll * 0.25, pitch: own.pitch * 0.25 }, Math.PI / 4, 9 / 16);
+  const from = creationShot({ ...own, roll: own.roll * 0.25, pitch: own.pitch * 0.25 }, 9 / 16);
   const first = run(new Sighted(story, from), STEP_S)[0]?.frame.shot;
   assert.ok(first);
   const moved = Math.hypot(...([0, 1, 2] as const).map((axis) => first.eye[axis] - from.eye[axis]));

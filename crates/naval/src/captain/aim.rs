@@ -1,7 +1,8 @@
-//! A captain's guns, as DFO's: each broadside laid on where its mark will be when its balls arrive, run out as a
-//! warning (the tell) when it is loaded, in reach, near its beam, bearing soon and its lay would strike, and fired no
-//! sooner than the tell's 1.3 s, within its gunners' window, long or short by their error. A side run out too long
-//! unfired, or that loses its mark, is run in.
+//! A captain's guns, as DFO's: each broadside laid on where its gunners judge its mark will be when its balls arrive,
+//! run out as a warning (the tell) when it is loaded, in reach, near its beam, bearing soon and its lay would strike,
+//! and fired no sooner than the tell's 1.3 s, within its gunners' window, long or short by their error. Each volley's
+//! gunners misjudge as they lay it, by their want of skill and their rank: the mark's bearing as they fire, its way,
+//! and their elevation. A side run out too long unfired, or that loses its mark, is run in.
 
 use super::course::{DEG, distance, heading_to, lead_point, velocity_of, wrap};
 use crate::arms::{Arms, Build, Side};
@@ -30,6 +31,52 @@ pub const FIRE_EXTENT_K: f64 = 0.35;
 pub const FIRE_EXTENT_SKILL: f64 = 0.65;
 /// Its crew's lay is long or short by up to half this share of the range, by their want of skill.
 pub const LAY_ERR: f64 = 0.9;
+/// A volley's gunners misjudge, at their whole want of skill and a Major's rank, by up to: where the mark stands
+/// across their line as they fire (metres at the mark), the share of its speed and the degrees of its course they
+/// lead it by, and their elevation (degrees). Across the line is what most often sends a broadside past a ship's bow
+/// or stern, at any range.
+pub const JUDGE_ACROSS_M: f64 = 80.0;
+pub const JUDGE_SPEED: f64 = 0.8;
+pub const JUDGE_COURSE_DEG: f64 = 40.0;
+pub const JUDGE_ELEVATION_DEG: f64 = 3.0;
+
+/// How a volley's gunners misjudge it, drawn as its side runs out: the metres across their line they hold the mark
+/// off, the share of its speed and the radians of its course they lead it off, and the radians of elevation they
+/// lay off.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub struct Judgement {
+    pub across_m: f64,
+    pub speed: f64,
+    pub course: f64,
+    pub elevation: f64,
+}
+
+impl Judgement {
+    /// A volley's misjudgement by gunners of `skill` at a rank's `aim_error` (1 a Major's): each even either way,
+    /// most often small (the mean of two draws).
+    pub fn drawn(skill: f64, aim_error: f64, draws: &mut Mulberry32) -> Self {
+        let want = (1.0 - skill).max(0.0) * aim_error;
+        let mut either = |most: f64| (draws.draw() + draws.draw() - 1.0) * most * want;
+        Self {
+            across_m: either(JUDGE_ACROSS_M),
+            speed: either(JUDGE_SPEED),
+            course: either(JUDGE_COURSE_DEG) * DEG,
+            elevation: either(JUDGE_ELEVATION_DEG) * DEG,
+        }
+    }
+
+    /// A mark's way as the gunners judge it.
+    #[must_use]
+    pub fn way(&self, velocity: [f64; 2]) -> [f64; 2] {
+        let (sine, cosine) = (libm::sin(self.course), libm::cos(self.course));
+        let scale = 1.0 + self.speed;
+        [(velocity[0] * cosine - velocity[1] * sine) * scale, (velocity[0] * sine + velocity[1] * cosine) * scale]
+    }
+
+    fn numbers(&self) -> [f64; 4] {
+        [self.across_m, self.speed, self.course, self.elevation]
+    }
+}
 
 /// The captain's mark as its guns see it: where it is, its heading if it has way, its velocity now and smoothed over
 /// the last second, the water under it, and its arms (its hull's box).
@@ -140,11 +187,12 @@ pub fn dead_zone(arms: &Arms) -> f64 {
     reach
 }
 
-/// Each side's tell: when it was run out, and when last run in.
+/// Each side's tell: when it was run out, and when last run in; and how its gunners misjudge the volley it stands for.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct RunOut {
     out: [Option<f64>; 2],
     run_in: [f64; 2],
+    judged: [Judgement; 2],
 }
 
 impl Default for RunOut {
@@ -156,7 +204,7 @@ impl Default for RunOut {
 impl RunOut {
     #[must_use]
     pub fn new() -> Self {
-        Self { out: [None; 2], run_in: [f64::NEG_INFINITY; 2] }
+        Self { out: [None; 2], run_in: [f64::NEG_INFINITY; 2], judged: [Judgement::default(); 2] }
     }
 
     /// When `side` was run out, if it stands run out.
@@ -167,8 +215,11 @@ impl RunOut {
 
     /// Every number the tells hold, in a fixed order.
     #[must_use]
-    pub fn numbers(&self) -> [f64; 4] {
-        [self.out[0].unwrap_or(-1.0), self.out[1].unwrap_or(-1.0), self.run_in[0], self.run_in[1]]
+    pub fn numbers(&self) -> Vec<f64> {
+        let mut numbers =
+            vec![self.out[0].unwrap_or(-1.0), self.out[1].unwrap_or(-1.0), self.run_in[0], self.run_in[1]];
+        numbers.extend(self.judged.iter().flat_map(Judgement::numbers));
+        numbers
     }
 
     /// Both sides run in: a ship that no longer fights.
@@ -190,12 +241,16 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
     let ship = at.ship;
     let me = [ship.x, ship.y];
     let own = velocity_of(ship);
-    let (rel, carry) = ([mark.velocity[0] - own[0], mark.velocity[1] - own[1]], [own[0], own[1], 0.0]);
+    let carry = [own[0], own[1], 0.0];
     let top = mark.arms.hull[1][2];
     let band = [mark.level, mark.level + top];
     let skill = at.build.skill;
     for (side, want) in [(Side::Starboard, 90.0), (Side::Port, -90.0)] {
         let gun = at.guns.gun();
+        // Its gunners lead the mark by its way as they last saw it, as they misjudge it for the volley run out.
+        let judged = run.out[side.index()].map_or_else(Judgement::default, |_| run.judged[side.index()]);
+        let seen = judged.way(mark.smoothed);
+        let rel = [seen[0] - own[0], seen[1] - own[1]];
         let lead = lead_point(me, mark.place, rel, gun.speed);
         let range = distance(me, lead);
         let error = wrap(heading_to(me, lead) - ship.heading - want * DEG).abs() / DEG;
@@ -211,6 +266,18 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             ];
             lay_on(ship, at.pose, at.arms, side, at.guns.load, target)
         };
+        // Fired as they judge it: as far across the mark as they misjudge it, the ship swinging under them as they
+        // touch off, but never further off its beam than it ever fires (`BEAR_DEG`), so the broadside stays square
+        // and no ball flies near its bow or stern; and as high or low as they misjudge their elevation.
+        let misjudged = |share: f64| {
+            let laid = lay_k(share);
+            let off = libm::atan2(judged.across_m, range.max(1.0)).clamp(-BEAR_DEG * DEG, BEAR_DEG * DEG);
+            let (sine, cosine) = (libm::sin(off), libm::cos(off));
+            let dir = [laid.dir[0] * cosine - laid.dir[1] * sine, laid.dir[0] * sine + laid.dir[1] * cosine];
+            // Never past what its carriage depresses or raises to.
+            let (low, high) = (laid.gun.min_el_deg * DEG, laid.gun.max_el_deg * DEG);
+            Lay { elevation: (laid.elevation + judged.elevation).clamp(low, high), dir, ..laid }
+        };
         // The mark's near side, where a ball laid past its middle's reach still strikes it.
         let toward = depth.min(range) / range.max(1e-6);
         let near = [lead[0] - (lead[0] - me[0]) * toward, lead[1] - (lead[1] - me[1]) * toward];
@@ -225,6 +292,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
             let soon = error <= window || bears_within(ship, lead, swept, want, window) <= RUN_OUT_S;
             if loaded && range <= reach * RUN_OUT_REACH && error <= RUN_OUT_DEG && soon && strikes() {
                 run.out[side.index()] = Some(clock);
+                run.judged[side.index()] = Judgement::drawn(skill, at.aim_error, draws);
                 battery.run_out = Some(side);
             }
             continue;
@@ -237,7 +305,7 @@ pub fn captain_guns(run: &mut RunOut, at: &Aboard, mark: &Mark, clock: f64, draw
         if clock - since < RUN_OUT_S || error > window || !strikes() {
             continue;
         }
-        battery.fire = Some(lay_k(1.0 + (draws.draw() - 0.5) * LAY_ERR * (1.0 - skill) * at.aim_error));
+        battery.fire = Some(misjudged(1.0 + (draws.draw() - 0.5) * LAY_ERR * (1.0 - skill) * at.aim_error));
         run.out[side.index()] = None;
     }
     battery

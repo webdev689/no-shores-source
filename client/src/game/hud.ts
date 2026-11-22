@@ -20,7 +20,7 @@ import type { Hint } from './gearNodes.ts';
 import { type StripHint, hintsFor } from './hints.ts';
 import { countdownText, deathWords, type Standing, vignette, WARNING_SECONDS } from './hudLaw.ts';
 import { markNodes, type ScreenMark } from './hudMarks.ts';
-import { Tween } from './hudParts.ts';
+import { capFace, Tween } from './hudParts.ts';
 import {
   type Choice,
   deathNode,
@@ -96,8 +96,8 @@ export class Hud {
   readonly usePrompt = new UsePrompt();
   /** Every control, opened with K over everything else. */
   readonly controls = new ControlsSheet();
-  /** The sea fight's readout: the ship's plate and rose, the card and the tally; and what it shows now. */
-  private readonly fight = new SeaFightReadout();
+  /** The sea fight's readout: the ship's plate and its abilities' bar, the card and the tally; and what it shows now. */
+  private readonly fight = new SeaFightReadout(capFace);
   private fightModel: SeaFightModel | null = null;
   /** The sight while the guns are laid, its aim line while a lay is held. */
   private readonly seaSight = new SeaSight();
@@ -362,7 +362,13 @@ export class Hud {
         },
       placeNode(view, this.title, this.kind),
       standing.kind === 'warned' && warningNode(view, countdownText(standing.secondsLeft)),
-      hintsNode(view, atMost(hintsFor(this.hintsShown, BINDS.device, BINDS.now)), sea !== null, Boolean(sea?.landfall)),
+      hintsNode(
+        view,
+        atMost(hintsFor(this.hintsShown, BINDS.device, BINDS.now)),
+        sea !== null,
+        Boolean(sea?.landfall),
+        this.fight.reach,
+      ),
       this.tasks.node(view, clock, still),
       {
         width: 'grow',
