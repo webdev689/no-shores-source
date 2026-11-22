@@ -1,7 +1,7 @@
 ---
 id: 134
 title: "roomThread.test.ts waits a fixed 5 ms for a worker's failure and fails under the full check's load"
-status: open
+status: actioned
 type: project
 skill: []
 proposes_skill: []
@@ -12,7 +12,7 @@ date: 2026-11-22
 session_context: "Overlook: cargo xtask check on 3cfc941d failed once at 'a room that fails in the worker is lost' (node.lost still unset after settled(), a 5 ms setTimeout); the file passed 5 of 5 alone and the change under check did not touch it."
 parked_until:
 resolved:
-resolution:
+resolution: "roomThread.test.ts now waits until node.lost, up to 2 s (96e34833, PR #154)"
 reference:
 commands_verified: "node --import ./tools/testStyles.mjs --test client/src/network/roomThread.test.ts (5 runs, all pass)"
 ---

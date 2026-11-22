@@ -47,3 +47,4 @@
 2026-11-22T18:25:33Z overlook second pass: logged 0128
 2026-11-22 15:20 [overlook-source] session-start scan: files=91 parsed=84 principles=0
 2026-11-22T18:17:14Z merge-124 session: merge3 worker + second main merge + Lattice republish + PR merge; no new observations (worker finished inside its limit)
+2026-11-22 19:21 [overlook-source] session-start scan: files=108 parsed=100 principles=0
