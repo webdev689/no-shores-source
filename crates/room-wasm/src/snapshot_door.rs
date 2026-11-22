@@ -81,6 +81,11 @@ impl SeaParts {
         (ships, hostiles)
     }
 
+    /// Where `player`'s ship lies, once it is at sea.
+    fn own(&self, player: PlayerId) -> Option<[f64; 2]> {
+        self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y])
+    }
+
     /// The islands `player` is told of: those in sight of their ship, and those they have found, wherever they lie.
     fn islands(&self, player: PlayerId) -> Vec<protocol::IsleSeen> {
         let own = self.ships.iter().find(|(each, _)| *each == player).map(|(_, ship)| [ship.x, ship.y]);
@@ -204,7 +209,7 @@ pub fn snapshot_for(player: PlayerId) -> Vec<u8> {
                     .collect(),
                 islands: parts.islands(player),
                 taken: all.taken.clone(),
-                friendlies: all.friendlies.clone(),
+                friendlies: friendlies_seen(parts.own(player), &all.friendlies),
             };
             // Each player's fight view is theirs alone too.
             let fights: Vec<_> = parts.fights.iter().filter(|fight| fight.player == player).cloned().collect();
@@ -262,4 +267,35 @@ fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(Play
             (at_sea, protocol::snapshot_bytes(&snapshot))
         })
         .collect()
+}
+
+/// The friendly ships the room keeps that a player's ship at `own` keeps in sight, as a hostile ship is kept; none before
+/// it is at sea.
+fn friendlies_seen(own: Option<[f64; 2]>, all: &[room::friendlies::Friendly]) -> Vec<room::friendlies::Friendly> {
+    all.iter().filter(|friend| own.is_some_and(|at| friend.kept_by(at))).copied().collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_player_is_sent_only_the_friendly_ships_their_ship_keeps_in_sight() {
+        let friend = |traffic, x| room::friendlies::Friendly {
+            traffic,
+            hull: sailing::HullKind::Sloop,
+            seed: 0,
+            level: 0,
+            sight_m: 5_000.0,
+            x,
+            y: 0.0,
+            heading: 0.0,
+            to: [0.0; 2],
+            lane: None,
+        };
+        let all = [friend(1, 4_000.0), friend(2, 40_000.0)];
+        let seen = |own| friendlies_seen(own, &all).iter().map(|ship| ship.traffic).collect::<Vec<_>>();
+        assert_eq!(seen(Some([0.0, 0.0])), [1], "within 1.1 times its sight");
+        assert!(seen(None).is_empty(), "none before their ship is at sea");
+    }
 }
