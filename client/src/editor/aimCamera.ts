@@ -7,7 +7,7 @@ import { hullBox, hullMouths, hullSails } from '../ships/hulls.ts';
 import { shipAxes } from '../ships/shipAxes.ts';
 import { lookPitch, lookReach } from './aim.ts';
 import { aimStation } from './aimStation.ts';
-import { clearAround } from './shipClear.ts';
+import { clearAround, sweptBoxes } from './shipClear.ts';
 
 /** How long the eye takes to ease in or out, and from one battery to the other: its time constant, seconds. */
 export const AIM_CAM_TAU = 0.22;
@@ -23,10 +23,12 @@ const DRIFT_TAU = 0.25;
 /** Taken again on the other side, the view goes out there once it has eased this near home. */
 const SWAP_SHARE = 0.05;
 /** On its way between the camera's own place and the battery the eye keeps this far out past the ship and its rig,
- *  metres, coming in to the battery's station at the end. */
+ *  and this far over and under each part of it, metres, coming in to the battery's station at the end. */
 const ROUND_CLEAR_M = 0.6;
-/** The eye's way round the ship is felt at this many points each way, to choose the way that keeps nearer it. */
-const ROUND_FELT = 12;
+/** However close a ship alongside, the aim's eye stays this far clear of its own hull and sails' swing, metres. */
+const OWN_CLEAR_M = 0.5;
+/** The eye's way round the ship is felt every this many radians of bearing (5°). */
+const ROUND_STEP = Math.PI / 36;
 
 type Point = readonly [number, number, number];
 
@@ -221,7 +223,12 @@ export class AimCamera {
     const mirrored = (point: Point): Point => [point[0], point[1] * side, point[2]];
     const ports = toWorld(ship, mirrored(station.ports));
     let eye = toWorld(ship, mirrored(station.eye));
-    const clear = Math.min(1, ...ask.alongside.map((hull) => segmentBoxEntry(ports, eye, hull, AIM_CAM_CLEAR) ?? 1));
+    const alongside = Math.min(
+      1,
+      ...ask.alongside.map((hull) => segmentBoxEntry(ports, eye, hull, AIM_CAM_CLEAR) ?? 1),
+    );
+    // Never so far in that its own hull or a sail's swing stands in the view, however close the other ship lies.
+    const clear = Math.max(alongside, ownClear(ship.hull, station));
     if (clear < 1) eye = toward(ports, eye, clear);
     const local = toLocal(ship, eye);
     this.local = this.local ? toward(this.local, local, step) : local;
@@ -261,32 +268,95 @@ export class AimCamera {
   }
 }
 
+/** How far out from its ports toward its station (0 to 1) the eye must stay to stand `OWN_CLEAR_M` clear of its own
+ *  hull and every sail's swing. */
+function ownClear(hull: number, station: ReturnType<typeof aimStation>): number {
+  const within = (share: number) => {
+    const [along, out, up] = [0, 1, 2].map(
+      (axis) => (station.ports[axis] ?? 0) + ((station.eye[axis] ?? 0) - (station.ports[axis] ?? 0)) * share,
+    ) as [number, number, number];
+    return sweptBoxes(hull).some(
+      ([low, high]) =>
+        along > low[0] - OWN_CLEAR_M &&
+        along < high[0] + OWN_CLEAR_M &&
+        out > low[1] - OWN_CLEAR_M &&
+        out < high[1] + OWN_CLEAR_M &&
+        up > low[2] - OWN_CLEAR_M &&
+        up < high[2] + OWN_CLEAR_M,
+    );
+  };
+  let share = 1;
+  while (share > 0 && !within(share - 0.05)) share -= 0.05;
+  return Math.max(0, share);
+}
+
 /** A place in a ship's frame as its bearing from its bow (radians, to starboard positive), its distance out from its
  *  middle, and its height. */
 function roundOf(point: Point): [number, number, number] {
   return [Math.atan2(point[1], point[0]), Math.hypot(point[0], point[1]), point[2]];
 }
 
-/** The point `share` of the way round a ship (by its hull's number) from `from` to `to`, both in its frame: bearing,
- *  distance out and height each eased, the way round its bow or its stern that keeps nearer it, and never nearer it
- *  than its hull and every sail's swing allow, short of the end itself. A straight line from the camera's place on
- *  one beam to a battery on the other passed through its rig. */
+/** How far out a level look along `bearing` at `up` keeps clear of every part of a hull and its sails' swing, from
+ *  `ROUND_CLEAR_M` under to over it, with that margin out past it. */
+const clearOf = (hull: number, bearing: number, up: number): number =>
+  Math.max(...[-ROUND_CLEAR_M, 0, ROUND_CLEAR_M].map((over) => clearAround(hull, bearing, up + over))) + ROUND_CLEAR_M;
+
+/** The point `share` of the way round a ship (by its hull's number) from `from` to `to`, both in its frame: out from
+ *  `from` to the one distance that clears its hull and every sail's swing all the way round, round at that distance
+ *  (or farther, eased between the two ends' own) as its height eases, and in to `to`; the way round its bow or its
+ *  stern that is shorter. One distance for the whole way never steps in and out as the eye passes a sail's edge, and a
+ *  straight line from one beam to a battery on the other would pass through its rig. */
 export function roundShip(hull: number, from: Point, to: Point, share: number): Point {
+  if (share >= 1) return to;
+  const [[bearing, out, up], [toBearing, toOut, toUp]] = [roundOf(from), roundOf(to)];
+  const { turn, safe, outward, inward, length } = sweepOf(hull, from, to);
+  if (length < 1e-9) return to;
+  const placed = (round: number, reach: number, height: number): Point => [
+    Math.cos(round) * reach,
+    Math.sin(round) * reach,
+    height,
+  ];
+  const along = share * length;
+  if (along < outward) return placed(bearing, out + along, up);
+  const arc = length - outward - inward;
+  if (along < outward + arc) {
+    const part = arc > 0 ? (along - outward) / arc : 1;
+    return placed(bearing + turn * part, Math.max(safe, out + (toOut - out) * part), up + (toUp - up) * part);
+  }
+  return placed(toBearing, Math.max(toOut, safe - (along - outward - arc)), toUp);
+}
+
+/** The way round a hull from `from` to `to`, as `roundShip` goes: the turn, the distance it keeps, how far out and in
+ *  it goes at either end, and its length; the last one kept, as both ends hold still while the aim eases. */
+let swept: { hull: number; from: Point; to: Point; way: ReturnType<typeof sweepFor> } | null = null;
+function sweepOf(hull: number, from: Point, to: Point) {
+  const same = (one: Point, other: Point) => one.every((part, index) => Math.abs(part - (other[index] ?? 0)) < 1e-3);
+  if (swept?.hull !== hull || !same(swept.from, from) || !same(swept.to, to))
+    swept = { hull, from, to, way: sweepFor(hull, from, to) };
+  return swept.way;
+}
+
+function sweepFor(hull: number, from: Point, to: Point) {
   const [[bearing, out, up], [toBearing, toOut, toUp]] = [roundOf(from), roundOf(to)];
   const short = turnTo(bearing, toBearing);
-  const other = short - Math.sign(short || 1) * 2 * Math.PI;
-  const pointAt = (turn: number, along: number): Point => {
-    if (along >= 1) return to;
-    const round = bearing + turn * along;
-    const height = up + (toUp - up) * along;
-    // Clear of the ship all the way, its margin given up as the eye comes in to the battery, which stands clear.
-    const least = clearAround(hull, round, height) + ROUND_CLEAR_M * (1 - along);
-    const reach = Math.max(out + (toOut - out) * along, least);
-    return [Math.cos(round) * reach, Math.sin(round) * reach, height];
-  };
-  const furthest = (turn: number) =>
-    Math.max(
-      ...Array.from({ length: ROUND_FELT + 1 }, (_unused, index) => roundOf(pointAt(turn, index / ROUND_FELT))[1]),
-    );
-  return pointAt(furthest(short) <= furthest(other) ? short : other, share);
+  // A box's farthest from the middle along any bearing lies along one of its corners', so each is felt too.
+  const corners = sweptBoxes(hull).flatMap(([low, high]) =>
+    [low[0], high[0]].flatMap((along) => [low[1], high[1]].map((out) => Math.atan2(out, along))),
+  );
+  const ways = [short, short - Math.sign(short || 1) * 2 * Math.PI].map((turn) => {
+    const steps = Math.max(1, Math.ceil(Math.abs(turn) / ROUND_STEP));
+    const partOf = (round: number) => {
+      const ahead = (((Math.sign(turn) * (round - bearing)) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+      return turn === 0 ? 0 : ahead / Math.abs(turn);
+    };
+    const felt = [
+      ...Array.from({ length: steps + 1 }, (_unused, index) => index / steps),
+      ...corners.flatMap((round) => [round - 1e-4, round + 1e-4].map(partOf)).filter((part) => part <= 1),
+    ];
+    const safe = Math.max(...felt.map((part) => clearOf(hull, bearing + turn * part, up + (toUp - up) * part)));
+    const [outward, inward] = [Math.max(0, safe - out), Math.max(0, safe - toOut)];
+    return { turn, safe, outward, inward, length: outward + Math.abs(turn) * Math.max(safe, out, toOut) + inward };
+  });
+  const [first, second] = ways as [(typeof ways)[0], (typeof ways)[0]];
+  return first.length <= second.length ? first : second;
 }

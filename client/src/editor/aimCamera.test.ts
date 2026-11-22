@@ -13,7 +13,7 @@ import {
   segmentBoxEntry,
 } from './aimCamera.ts';
 import { aimStation } from './aimStation.ts';
-import { sweptBoxes } from './shipClear.ts';
+import { orbitClearance, sweptBoxes } from './shipClear.ts';
 import { hullBox, SLOOP_HULL } from '../ships/hulls.ts';
 
 // Heading north: starboard is east, forward is north (south negative).
@@ -80,6 +80,44 @@ test('from the far beam, out to the battery and home again, the eye goes round t
         assert.ok(!inside(hull, eye), `hull ${hull}, home, frame ${frame}: ${eye.map((value) => value.toFixed(1))}`);
       }
     }
+  }
+});
+
+test('taken from any place round any hull, near or far, the eye swings out and round in one sweep, never through a sail', () => {
+  for (const hull of [0, 1, 2, 3]) {
+    const ship = { ...SHIP, hull };
+    for (let degrees = 0; degrees < 360; degrees += 30)
+      for (const pitch of [0.05, 0.3, 0.8])
+        for (const zoom of [11.4, 25.6]) {
+          const yaw = (degrees * Math.PI) / 180;
+          const away = Math.max(zoom, orbitClearance(ship, [SHIP.x, SHIP.y, 6], yaw, pitch));
+          const back = [-Math.sin(yaw) * Math.cos(pitch), Math.cos(yaw) * Math.cos(pitch), Math.sin(pitch)];
+          const eye = [
+            SHIP.x + (back[0] ?? 0) * away,
+            SHIP.y + (back[1] ?? 0) * away,
+            6 + (back[2] ?? 0) * away,
+          ] as const;
+          for (const side of [1, -1] as const) {
+            const camera = new AimCamera();
+            const outs: number[] = [];
+            for (let frame = 0; frame < 90; frame++) {
+              const drawn = camera.frame(asked(side, { ship, home: { eye, yaw, pitch } }), 1 / 60).eye;
+              outs.push(Math.hypot((drawn[0] ?? 0) - SHIP.x, (drawn[1] ?? 0) - SHIP.y));
+              // The Schooner's station stands clear of its sails' true swing but inside the box round it.
+              if (hull !== 1)
+                assert.ok(!inside(hull, drawn), `hull ${hull} ${degrees}° ${pitch} ${zoom} m, frame ${frame}`);
+            }
+            outs.forEach((here, index) => {
+              const [before, after] = [outs[index - 1] ?? here, outs[index + 1] ?? here];
+              const detour =
+                (here - before) * (here - after) > 0 ? Math.min(Math.abs(here - before), Math.abs(here - after)) : 0;
+              assert.ok(
+                detour < 0.05,
+                `hull ${hull} ${degrees}° ${pitch} ${zoom} m: out and back ${detour.toFixed(2)} m`,
+              );
+            });
+          }
+        }
   }
 });
 
@@ -170,7 +208,7 @@ test('the eye rides the ship as drawn: its heave, its bow rising and its heel ca
   assert.ok(near(gap(aimed.eye, [rolled.x, rolled.y, rolled.heave]), gap(ON_STARBOARD, [SHIP.x, SHIP.y, 0]), 1e-6));
 });
 
-test('a ship close alongside stops the eye short of its side, never inside its hull', () => {
+test('a ship close alongside stops the eye short of its side, never inside its hull, nor in toward its own rig', () => {
   // A Brig lying off its starboard side, its rail higher than the eye.
   const alongside: AimHull = {
     x: SHIP.x + 9,
@@ -183,11 +221,14 @@ test('a ship close alongside stops the eye short of its side, never inside its h
   };
   const aimed = settled(new AimCamera(), asked(1, { alongside: [alongside] }), 240);
   const side = alongside.x - alongside.halfBeam;
-  assert.ok(
-    (aimed.eye[0] ?? 0) <= side - AIM_CAM_CLEAR + 1e-6,
-    `the eye stands at ${aimed.eye[0]}, its side at ${side}`,
-  );
+  assert.ok((aimed.eye[0] ?? 0) < side, `the eye stands at ${aimed.eye[0]}, its side at ${side}`);
   assert.ok((aimed.eye[0] ?? 0) > SHIP.x, 'and still out on its own starboard side');
+  assert.ok(!inside(SLOOP_HULL, aimed.eye), 'clear of its own hull and every sail’s swing');
+  // Hulls far enough apart for both: it keeps its margin off the other's side.
+  const roomy = { ...alongside, x: SHIP.x + 11 };
+  const spaced = settled(new AimCamera(), asked(1, { alongside: [roomy] }), 240);
+  assert.ok((spaced.eye[0] ?? 0) <= roomy.x - roomy.halfBeam - AIM_CAM_CLEAR + 1e-6, `${spaced.eye[0]}`);
+  assert.ok(!inside(SLOOP_HULL, spaced.eye));
   const far = settled(new AimCamera(), asked(1, { alongside: [{ ...alongside, x: SHIP.x + 60 }] }), 240);
   assert.ok(gap(far.eye, ON_STARBOARD) < 0.01, 'one far off leaves it where it was');
 });

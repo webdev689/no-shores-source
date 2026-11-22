@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { MarkDrawer } from '../editor/naval.ts';
+import { sweptBoxes } from '../editor/shipClear.ts';
+import { SLOOP_HULL } from '../ships/hulls.ts';
 import { eyeFor, FIELD_OF_VIEW, HEIGHT } from '../overworld/overworldCamera.ts';
 import type { FightCaptain, FightOrders, FightVessel, FightView } from '../rules/fightRules.ts';
 import { BAR_OVER_M } from '../ships/shipBars.ts';
@@ -325,6 +327,28 @@ test("out of the aim the wheel zooms the fight's camera by half again a notch, a
   // DFO's nearest is 11.4 m; looking forward from astern, the Sloop's boom swinging over its quarter keeps it farther.
   assert.ok(closest && away(closest, deck) >= 11.4 && away(closest, deck) < 15, `${closest && away(closest, deck)} m`);
   assert.equal(orders.filter((sent) => sent.load).length, 0);
+});
+
+test("swung fast round the ship at its nearest, the fight's camera never stands inside its hull or its sails' swing", async () => {
+  const { fight, frames } = ordered();
+  for (let notch = 0; notch < 20; notch++) fight.wheel(-100, 1 + notch);
+  await frames(120);
+  const [x = 0, y = 0, heading = 0] = vessel.ship;
+  const [heave = 0] = vessel.pose;
+  for (let frame = 0; frame < 90; frame++) {
+    fight.drag(40, 0);
+    const [shot] = await frames(1);
+    const [east, south, up] = [(shot?.eye[0] ?? 0) - x, (shot?.eye[1] ?? 0) - y, (shot?.eye[2] ?? 0) - heave];
+    const [along, out] = [
+      east * Math.sin(heading) - south * Math.cos(heading),
+      east * Math.cos(heading) + south * Math.sin(heading),
+    ];
+    const inside = sweptBoxes(SLOOP_HULL).some(
+      ([low, high]) =>
+        along > low[0] && along < high[0] && out > low[1] && out < high[1] && up > low[2] && up < high[2],
+    );
+    assert.ok(!inside, `frame ${frame}: ${along.toFixed(1)} ${out.toFixed(1)} ${up.toFixed(1)}`);
+  }
 });
 
 test("each captain's plate is keyed by its own fight number, so plates in a fight of three never share a lift", () => {

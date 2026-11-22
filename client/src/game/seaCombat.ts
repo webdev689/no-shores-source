@@ -7,7 +7,7 @@ import { AimCamera, type AimFrame, aimHullOf, type AimShip } from '../editor/aim
 import { type FightInput, type FightSource, Fighting } from '../editor/fighting.ts';
 import { type MarkDrawer, Naval, type Window } from '../editor/naval.ts';
 import { cameraOf, type Orbit } from '../editor/orbit.ts';
-import { orbitClearance } from '../editor/shipClear.ts';
+import { ORBIT_CLEAR_M, orbitClearance } from '../editor/shipClear.ts';
 import { SAILS_RUNG } from '../editor/sailing.ts';
 import { FIELD_OF_VIEW, smooth01 } from '../overworld/overworldCamera.ts';
 import type { SeaFightModel } from '../plus/seaFight.ts';
@@ -318,7 +318,9 @@ export class SeaCombat {
   }
 
   /** The fight's camera round the player's ship `seconds` on, standing back at least as far as clears its hull and
-   *  its rig: eased out quickly as the look comes round to where more of the ship stands, and back in slowly. */
+   *  its rig: eased out quickly as the look comes round to where more of the ship stands, and back in slowly; only
+   *  the outer half of its margin is eased, so however fast the look swings it stands a metre clear of the ship and
+   *  its sails' swing, past the lens's near plane. */
   private orbitAt(seconds: number): Orbit {
     const ship = this.ownShip();
     const target = { targetX: ship.x - this.window.leftM, targetY: ship.y - this.window.topM, targetZ: ship.heave };
@@ -327,6 +329,7 @@ export class SeaCombat {
     const wanted = Math.max(this.distance, clearance);
     const tau = wanted > this.backed ? BACK_OUT_S : BACK_IN_S;
     this.backed += (wanted - this.backed) * (1 - Math.exp(-Math.max(0, seconds) / tau));
+    this.backed = Math.max(this.backed, clearance - ORBIT_CLEAR_M / 2);
     return { ...target, targetZ: target.targetZ + ORBIT.lookOverM, ...this.orbit, distance: this.backed };
   }
 

@@ -620,7 +620,9 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
 - **The side** is the one the camera looks toward as the aim is taken, the nearer one even over the bow or the stern,
   and it is held until the aim is let go ([[A Held Aim Keeps the Camera on Its Side]],
   [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]). Taken again on the other side, the view eases home
-  first and then out to the other battery, never across the ship.
+  first and then out to the other battery, never across the ship. Between the camera's own place and a battery the
+  eye goes out to one distance that clears its hull and every sail's swing all the way round, and 0.6 m over and
+  under each, round at that distance the shorter way, and in to the battery (`roundShip`).
 - **The eye** (`AimCamera`) eases out over DFO's 0.22 s, smoothstepped, to its battery's station (`aimStation`):
   abreast the middle of the side's upper guns, 1.5 m out past the widest of its hull and its guns' mouths, 3.1 m over
   its gun line (DFO's height over the Sloop's), and out past where any of its own sails can swing, whatever the wind:
@@ -629,7 +631,9 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   past its main course's yard. It rides the ship as drawn, its heave, pitch and heel (the story's Brig on the story's
   swell), so nothing of the ship moves relative to it; the view itself stays level. On its way out from the ports it
   stops 1.2 m short of any ship afloat alongside (that ship's box from its keel to a metre over its rail, as wide as
-  its hull, its guns' mouths or its low yards over its side). A crippled ship's guns are silent: its eye never moves.
+  its hull, its guns' mouths or its low yards over its side), but never nearer its own ports than half a metre clear
+  of its own hull and every sail's swing, however close the other lies. A crippled ship's guns are silent: its eye
+  never moves.
 - **Where it looks**: square off the side, at the water its guns are laid on, so the crosshair at the view's middle
   stands on the landing zone. A drag left or right does nothing while the aim is held; a drag up or down lays the
   guns farther or nearer, the range read from the drag as DFO's lookReach reads a look from the eye's height (where
@@ -642,7 +646,8 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   keeps its own clamp, 0.05 to 1.2 rad down.
 - **The fight's camera** stands back from the ship's middle, 6 m over its waterline, at least as far as clears every
   part of the ship its look back passes through (`orbitClearance`): its hull's box and each sail's box as far as it
-  swings, and 2 m more; the wheel's zoom goes no nearer.
+  swings, and 2 m more; the wheel's zoom goes no nearer. Swung fast, it eases out only that last metre: it never
+  stands nearer than a metre clear.
 - **The sight** (`seaSight.ts`): a crosshair at the view's middle while aiming, in the sea's fights and the story's,
   and under it DFO's aim line at the face's 11 px (DFO's 13) in
   the HUD's outline: the side and its shot, the range the guns are laid to (the mean of where each gun stops, out
@@ -665,8 +670,9 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
 
 The World Editor's fight and its fleet room aim the same way (`easedAimOf`), their look laid from the aim's last
 frame, and draw the lay with `AimView` after the water; a drag across while aiming turns nothing there either. Let
-go, the editor's camera eases back to its own place round the ship, and its drag up past the guns' longest throw
-runs on unheld until it comes back (the editor keeps its own camera).
+go, the editor's camera eases back to its own place round the ship. The editor keeps its own camera: a drag past
+the guns' nearest or longest runs on unheld until it comes back, and its fight's orbit keeps no clearance off the
+ship (its zoom comes to 3 m).
 
 ## An ambush
 

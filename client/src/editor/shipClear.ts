@@ -13,7 +13,7 @@ export const STAY_SWAY_M = 0.9;
  *  the wind bellies forward of its luff by up to this. */
 export const BELLY_M = 1.2;
 /** How far the fight's camera keeps back from the nearest part of its ship it would otherwise stand in, metres. */
-const ORBIT_CLEAR_M = 2;
+export const ORBIT_CLEAR_M = 2;
 
 /** How a sail swings, in its ship's frame: about the point along its keel it turns on (its mast, or its luff), as
  *  far as its farthest corner from there, between its lowest and highest corners; a gaff aft of its luff alone, a
