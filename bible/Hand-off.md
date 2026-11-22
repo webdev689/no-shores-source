@@ -293,23 +293,21 @@ Where the work stands now, for the next session. Each session rewrites this note
   external Instance reference no longer exists"); the owner: "The headless issue is due to us moving away from html.
   So not really an issue per say." A driver that patches the worker too is on the branch `ccr-130008df-u4ahst-headless`
   (cfd75bba), unmerged; the marks were pictured with it.
-- **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
-  ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map
-  message they sent is an injected script's, not the game's.
-  - #136 (branch `claude/keen-cannon-4nbe4z`): any error thrown in a frame stopped the game's loop for good, the
-    picture frozen and the music playing on; each frame now runs under `FrameGuard` (`frameGuard.ts`), which reports
-    it and asks for the next. And the leaks two audits found, each fixed with a test that fails without it: the blood
-    view's pictures, an audio node a frame for a bed not yet come, unclosed bitmaps, figure frames never trimmed in
-    cutscenes, a sea join after the player left, a failed landing's socket, the worker's waits with no page audio, a
-    wreck run opened late, the forge's last cards. Tested offline (the full check).
-  - The second (branch `claude/keen-cannon-4nbe4z-audio`, stacked on #136): every recording was decoded at the
-    first tap, about 112 minutes of audio, some 2.5 GB of samples and a second copy in the worker. Now recordings come
-    as they are wanted, long ones a 1 MB chunk at a time, held once on the page within 192 MB, every file kept in the
-    browser's Cache Storage ([[Interface]], "How recordings load"). Tested against R2 headless: 26 MiB held after the
-    wake, a reload asking R2 for 4 files where the first visit asked for 96. Not yet heard: the seams between a bed's
-    chunks.
+- **The intro's freeze and the game's memory, on `main`** with the owner's yes ("Lets merge and deokoy this", then
+  "Deploy" for the rest), which deploys the page and the rooms ([[Areas Load in Chunks With Proper Caching]]). The
+  source map message the owner sent is an injected script's, not the game's.
+  - #136: any error thrown in a frame stopped the game's loop for good, the picture frozen and the music playing on;
+    each frame now runs under `FrameGuard` (`frameGuard.ts`). And the leaks two audits found, each with a test.
+  - #137: every recording was decoded at the first tap, about 112 minutes of audio, some 2.5 GB and a second copy in
+    the worker; now they come as wanted, long ones a 1 MB chunk at a time, held once within 192 MB ([[Interface]],
+    "How recordings load"). Not yet heard: the seams between a bed's chunks.
+  - #139: the areas' chunks and caching, the decision's rest: picture packs read in 256 KB blocks, every R2 file kept
+    by the browser within 1 GB, a continent's flora fetched ahead, one fetch per `world/` file, and memory caps.
+  - #140: a city's vertices copied for the GPU a number at a time (about 17 ms for 600,000, where slicing took 125).
+  - `main`'s check at #131 failed only because `client/src/ships/shipTags.test.ts` fetched ship meshes from `r2.dev`
+    and got HTTP 500: those tests make every deploy wait on R2 answering.
   - Not seen on a real GPU: headless Chromium in the cloud container loses the game's WebGPU device about 2 s after
-    start on every commit tried (the published page too), so the intro could not be run headless at all.
+    start on every commit tried (the published page too).
 - **#119's open items.** The Thunderlock at port arms is held trigger to the front in the forge, as drill holds it,
   after the owner's "fix the thunderlock idle hold. Currently its held backwards" (`gunplay.PORT`), but its rest, walk
   and sprint are not drawn again, the owner's "Blades only for now": the arms move, so every layer in those three
@@ -646,13 +644,13 @@ Where the work stands now, for the next session. Each session rewrites this note
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
   draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
-- **Areas in chunks, after the recordings** ([[Areas Load in Chunks With Proper Caching]]): the forge's picture packs
-  read in fixed blocks kept in Cache Storage (at the intro's start some 60 range requests went to one pack within
-  2 ms; one block holds them all), through `contentCache.ts`; the next area's land, pictures and sounds fetched ahead
-  of a switch; a cap on what the browser's storage keeps, least lately used let go; R2's `Cache-Control: immutable`
-  set by `tools/r2.py` once it is checked that Cloudflare's object API takes the header (and marking the files
-  already there writes to R2: the owner's yes); then the hitching measured on a real GPU, which a cloud session
-  cannot do.
+- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is opened
+  on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
+  difficulty changes; a city is built in one go on the game's thread after each landmass switch and every 1.5 km
+  (`landDrawers.ts`, `cityView.ts`); flora is decoded and its mips made again on every switch, the same biome too.
+  A landmass cannot be prepared before it opens: the land's worker holds one. R2's own `Cache-Control` waits on a
+  test upload (the owner's yes, a write to R2). Then the hitching measured on a real GPU, which a cloud session cannot
+  do.
 - **Memory still worth measuring**: the figure cards' 4000-texture budget (`player/cards.ts`) against a real GPU's
   memory; the scene's full-size targets, about 590 MB at 5120 by 2880 (`scene.ts`), with no cap at the device's
   limits; the item pictures' cache (`player/itemPictures.ts`), uncapped.

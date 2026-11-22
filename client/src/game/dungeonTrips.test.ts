@@ -172,7 +172,11 @@ test('an Elite Dungeon is entered from its node as its run, the week’s where i
 test('a sea island’s dungeon is entered by its name and left back onto the island at its door', async () => {
   const back = { x: 1_250.5, y: -340.25, facing: Math.PI / 2 };
   const { trips, happenings, ways, settled } = recorded({ foot: null });
-  trips.enterSeaDungeon('sea-dungeon-continent-4-caverns-0a1b2c3d--abyss', back);
+  trips.enterSeaDungeon({
+    room: 'sea-dungeon-continent-4-caverns-0a1b2c3d--abyss',
+    at: [back.x, back.y],
+    facing: back.facing,
+  });
   await settled();
   assert.deepEqual(ways[0]?.slice(2), [
     'sea-dungeon-continent-4-caverns-0a1b2c3d--abyss--run-k3j4h5g6',
@@ -187,7 +191,11 @@ test('a sea island’s dungeon is entered by its name and left back onto the isl
     ['enter', 'surface'],
   );
   const shared = recorded({ foot: null });
-  shared.trips.enterSeaDungeon('sea-dungeon-continent-1-crypt-00000000', back);
+  shared.trips.enterSeaDungeon({
+    room: 'sea-dungeon-continent-1-crypt-00000000',
+    at: [back.x, back.y],
+    facing: back.facing,
+  });
   await shared.settled();
   assert.deepEqual(shared.ways[0]?.slice(2), [
     'sea-dungeon-continent-1-crypt-00000000',
@@ -195,7 +203,11 @@ test('a sea island’s dungeon is entered by its name and left back onto the isl
     'normal',
   ]);
   const nowhere = recorded({ foot: null });
-  nowhere.trips.enterSeaDungeon('sea-dungeon-continent-4-grotto-0a1b2c3d', back);
+  nowhere.trips.enterSeaDungeon({
+    room: 'sea-dungeon-continent-4-grotto-0a1b2c3d',
+    at: [back.x, back.y],
+    facing: back.facing,
+  });
   await nowhere.settled();
   assert.deepEqual([nowhere.ways, nowhere.happenings], [[], []], 'no such style: no trip');
 });
@@ -228,7 +240,11 @@ test('a company that falls is taken out by the way it came in, the veil saying i
   assert.deepEqual(ways[1]?.slice(0, 2), ['onto', 'saltgrass-downs']);
   const sea = recorded({ foot: null });
   const back = { x: 1, y: 2, facing: 0 };
-  sea.trips.enterSeaDungeon('sea-dungeon-continent-4-caverns-0a1b2c3d--abyss', back);
+  sea.trips.enterSeaDungeon({
+    room: 'sea-dungeon-continent-4-caverns-0a1b2c3d--abyss',
+    at: [back.x, back.y],
+    facing: back.facing,
+  });
   await sea.settled();
   sea.trips.fell();
   await sea.settled();
@@ -265,7 +281,7 @@ test('a company leaves an Elite Dungeon’s run together, at the run’s own sea
 
 test('out of a sea island’s dungeon a player stands before its door, facing the way out of it', async () => {
   const { trips, ways, settled } = recorded({ foot: null });
-  trips.enterSeaDungeon('sea-dungeon-continent-4-caverns-0a1b2c3d', { x: 10, y: 20, facing: Math.PI / 2 });
+  trips.enterSeaDungeon({ room: 'sea-dungeon-continent-4-caverns-0a1b2c3d', at: [10, 20], facing: Math.PI / 2 });
   await settled();
   trips.leave();
   await settled();

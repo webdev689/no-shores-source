@@ -8,6 +8,7 @@ import { BEFORE_DOOR_M, beforeDoor, type Entrance } from './entrances.ts';
 import type { AtEntrance } from './footPlace.ts';
 import { type InDungeon, type Trips, seaPlace } from './footTrips.ts';
 import type { Happening } from './flow.ts';
+import type { DungeonDoor } from './isleLaw.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import type { PropTable } from '../models/tables.ts';
 import { dungeonRoom, nodeOfRoom, nodeRoom, runInstance, runOf, sharedRun } from './rooms.ts';
@@ -71,9 +72,9 @@ export function dungeonTrips(
   /** Out by the way in, the veil saying the company fell: before the entrance, or back to the sea. */
   fell(): void;
   join(node: NodeInfo, place: string): void;
-  /** Into a sea island's dungeon by its room's name (`sea-dungeon-...`, server/roomNames.ts), back out before its
-   *  door; a name that is none goes nowhere. */
-  enterSeaDungeon(room: string, back: SeaBack): void;
+  /** Into a sea island's dungeon by its door's room name (`sea-dungeon-...`, server/roomNames.ts), back out before
+   *  the door; a name that is none goes nowhere. */
+  enterSeaDungeon(door: DungeonDoor): void;
 } {
   /** The way out of the dungeon the player is in, kept as they went in; `fell` when their company fell. */
   let out: ((fell: boolean) => void) | null = null;
@@ -170,7 +171,7 @@ export function dungeonTrips(
         game.travel({ kind: 'join', node: inside, name }, work);
       });
     },
-    enterSeaDungeon: (room, back) => {
+    enterSeaDungeon: ({ room, at: [x, y], facing }) => {
       const [, base = '', tier = 'normal'] = SEA_TIER.exec(room) ?? [];
       const sea = seaDungeonRoom(base);
       if (!sea || sea.run !== null) return;
@@ -180,7 +181,6 @@ export function dungeonTrips(
         const layout = askLayout(module, ask);
         const outside = { node: seaPlace(sea.continent, layout), text: '' };
         // Out before the door, as a patrol's entrance stands a player out of it: x east, y south.
-        const { x, y, facing } = back;
         const before = { x: x + Math.sin(facing) * BEFORE_DOOR_M, y: y - Math.cos(facing) * BEFORE_DOOR_M, facing };
         const away = (laid: DungeonLayout, fell: boolean) =>
           game.travel({ kind: 'surface', name: laid.name, fell }, () => game.ontoSea(before));
