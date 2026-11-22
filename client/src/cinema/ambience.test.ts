@@ -164,7 +164,7 @@ test('every one-shot plays its recording and lets go of its nodes once it has pl
   assert.equal(fake.live.size, before);
 });
 
-test('the gulls cry on a seeded clock while their level is up, fewer while it is lower, and stop with it', () => {
+test('the gulls cry on a seeded clock while their level is up, one flock at a time, fewer while lower, and stop', () => {
   const cries = (level: number, glideS: number) => {
     const fake = fakeAudio();
     const ambience = ambienceOn(fake);
@@ -177,7 +177,7 @@ test('the gulls cry on a seeded clock while their level is up, fewer while it is
   };
   const first = cries(1, 2);
   assert.deepEqual(cries(1, 2), first, 'the same every run');
-  assert.ok(first.crying >= 10, 'thirty seconds of gulls faded in over two');
+  assert.ok(first.crying >= 2 && first.crying <= 3, 'thirty seconds of ten-second flocks, none over the last');
   assert.equal(first.after, first.crying, 'silent gulls cry no more');
   assert.ok(cries(0.2, 0).crying < cries(1, 0).crying);
 });

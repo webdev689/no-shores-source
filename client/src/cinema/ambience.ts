@@ -238,10 +238,9 @@ export class Ambience {
     const gullsGain = engine.beds.get('gulls')?.gain;
     if (gulls > 0 && gullsGain) {
       let countdown = (this.gullCountdownS ?? nextGapS(GULL_GAP_S, this.random())) - step * gulls;
-      if (countdown <= 0) {
-        this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain);
-        countdown = nextGapS(GULL_GAP_S, this.random());
-      }
+      // The recording is a whole flock, so the next waits for it to end: never two flocks over each other.
+      if (countdown <= 0)
+        countdown = this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain) + nextGapS(GULL_GAP_S, this.random());
       this.gullCountdownS = countdown;
     }
     if (!this.heart) this.nextBeatAt = 0;
@@ -302,10 +301,10 @@ export class Ambience {
   }
 
   /** A one-shot's recording at `level`, now or at `when` on the audio clock, `after` seconds on, into the shots or
-   *  `into`, as loud as the sound it took the place of. */
-  private shot(recorded: Recorded, level = 1, when?: number, after = 0, into?: AudioNode): void {
+   *  `into`, as loud as the sound it took the place of; its length in seconds, 0 until its recording has come. */
+  private shot(recorded: Recorded, level = 1, when?: number, after = 0, into?: AudioNode): number {
     const engine = this.live();
-    if (!engine) return;
+    if (!engine) return 0;
     const { audio } = engine;
     const sized = audio.createGain();
     sized.gain.value = level;
@@ -314,6 +313,7 @@ export class Ambience {
     const source = this.play(audio, sized, recorded.cue, 1, { when: (when ?? audio.currentTime) + after, like });
     if (source) source.addEventListener('ended', () => sized.disconnect());
     else sized.disconnect();
+    return source?.buffer?.duration ?? 0;
   }
 
   /** A bed's recording, once it has come: each play fades into the next before it ends, at equal power, so the bed
