@@ -89,7 +89,13 @@ fn the_storys_chapters_are_found_once_it_is_played_and_a_tasks_once_it_is_done_n
     character.story.prologue = true;
     character.find_lore_due(&sample);
     assert_eq!(character.lore, ["first/wake"]);
-    let road = |task: &str, done| Road { task: task.into(), counts: Vec::new(), done, unknown: Default::default() };
+    let road = |task: &str, done| Road {
+        task: task.into(),
+        counts: Vec::new(),
+        done,
+        fought: Vec::new(),
+        unknown: Default::default(),
+    };
     character.quests.roads.insert("stormcallers".into(), road("climb-old-beacon", false));
     character.find_lore_due(&sample);
     assert_eq!(character.lore, ["first/wake"], "on the task, not past it");
