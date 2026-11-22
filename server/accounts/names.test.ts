@@ -87,10 +87,12 @@ test('ordinary words and names pass, those that hold a short root among them', (
 
 test('a name may not claim to speak for the game, whole or at its start or end', () => {
   const claims = ['Admin', 'ADMIN', 'Adm1n', '4dmin', 'Adrnin', 'Ad_min', 'Overlook Staff', 'Admin_Ray', 'Ray_Admin'];
-  for (const name of [...claims, 'AdminRay', 'Moderator', 'GM', 'Gm_Ray', 'Dev', 'Official_Overlook', 'Null', 'No Shores', 'NoShores_Ray', 'Ray_N0_Sh0res'])
+  const ours = ['No Shores', 'NoShores_Ray', 'Ray_N0_Sh0res'];
+  for (const name of [...claims, ...ours, 'AdminRay', 'Moderator', 'GM', 'Gm_Ray', 'Dev', 'Official_Overlook', 'Null'])
     assert.ok(reserved(name), name);
-  const fair = ['Ray_Admin_Bob', 'Adminton', 'Modesty', 'Mood', 'Devon', 'Staffordshire', 'Guesthouse', 'Overlooked', 'Shores', 'No_Ray', 'Ray_No_Shoresmen'];
-  for (const name of fair) assert.equal(reserved(name), false, name);
+  const fair = ['Ray_Admin_Bob', 'Adminton', 'Modesty', 'Mood', 'Devon', 'Staffordshire', 'Guesthouse', 'Overlooked'];
+  const nearOurs = ['Shores', 'No_Ray', 'Ray_No_Shoresmen'];
+  for (const name of [...fair, ...nearOurs]) assert.equal(reserved(name), false, name);
   assert.equal(refusalOf('username', 'Overlook_Staff'), 'That name is not allowed. Choose another.');
   assert.equal(refusalOf('guild', 'The Moderators'), null, 'only the words as they are');
   assert.equal(refusalOf('tag', 'GM'), 'That tag is not allowed. Choose another.');
