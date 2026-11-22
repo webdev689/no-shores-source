@@ -14,7 +14,7 @@ import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
 import { crosshairPoint } from '../player/crosshair.ts';
@@ -93,11 +93,12 @@ export interface FootFrame {
 /**
  * The player on foot in one node: standing on its real ground, among its city's walls, inside its section, fighting
  * whatever foes its room holds as the Test Ground fights. The node's room is the authority: alone, the room crate runs
- * in the page on the same ground; online, the server's. It judges the edge and the fight, and the page predicts the
- * player by its own rules and takes its word; every other player and foe is shown where it last saw them. Online, the
- * room keeps the player's gear, which their figure wears; a mark stands over what E uses within reach: a station's
- * keeper, Shape or a dungeon's entrance. A social space's keepers and townsfolk walk it. In a patrol, E at an entrance's
- * door goes into its dungeon; in a dungeon, its floor is the ground, and E at its exit door goes out.
+ * in the rooms' worker on the same ground; online, the server's. It judges the edge and the fight, and the page
+ * predicts the player by its own rules and takes its word; every other player and foe is shown where it last saw
+ * them. Online, the room keeps the player's gear, which their figure wears; a mark stands over what E uses within
+ * reach: a station's keeper, Shape or a dungeon's entrance. A social space's keepers and townsfolk walk it. In a
+ * patrol, E at an entrance's door goes into its dungeon; in a dungeon, its floor is the ground, and E at its exit door
+ * goes out.
  */
 export class Foot {
   readonly node: NodeInfo;
@@ -196,7 +197,7 @@ export class Foot {
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
    *  names, keeping how they hold the camera, and joins its room: online the server's at the voyage's `seas`, signed
-   *  in with the session's token; alone one in the page that may stand the foes the context asks for. */
+   *  in with the session's token; alone one in the rooms' worker that may stand the foes asked for. */
   static async enter(
     context: FootContext,
     node: NodeInfo,
@@ -227,14 +228,14 @@ export class Foot {
       }
       const text = nodeText(node, rect, ground, boxes);
       const local = { gear: heard.gear, entrance: arriving?.number };
-      const link = connection ?? LocalRoom.openNode(module, text, heard.snapshot, heard.asks, local);
+      const link = connection ?? (await RoomThread.openNode(module, text, heard.snapshot, heard.asks, local));
       return { link, boxes, text, dungeon: null, seas };
     });
   }
 
   /** Takes the player into the dungeon `into` names (its number among the entrances of the place `outside`, whose node
    *  file's text a room alone opens it from, the ask it is laid by and its room's name), at its way in, and joins its
-   *  room: online the server's, alone one in the page. */
+   *  room: online the server's, alone one in the rooms' worker. */
   static async enterDungeon(
     context: FootContext,
     outside: { readonly node: NodeInfo; readonly text: string },
@@ -251,7 +252,7 @@ export class Foot {
     return Foot.start(context, dungeonPlace(outside.node, layout), rules, async (heard, session) => ({
       link: address
         ? await RoomConnection.open(address, heard.snapshot, heard.gear, session)
-        : openAlone(module, outside.text, into, heard),
+        : await openAlone(module, outside.text, into, heard),
       boxes: seenBlocks(layout),
       text: outside.text,
       dungeon,
@@ -583,7 +584,7 @@ export class Foot {
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */
   leave(): void {
-    if (this.link instanceof RoomConnection) this.link.close();
+    this.link.close?.();
     this.otherPlayers.clear();
     this.arrivals.clear();
     this.plaza?.close();

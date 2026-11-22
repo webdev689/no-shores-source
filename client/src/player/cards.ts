@@ -127,6 +127,9 @@ export class Cards {
   private readonly warmed = new Set<string>();
   /** The dress each warmed frame was warmed for, so a warmed frame let go has its dress warmed again. */
   private readonly warmedBy = new Map<string, string>();
+  /** Each body's layers a move carries (its props, instrument or spark), found once a body and move: a figure asks
+   *  every frame, and a body has hundreds of layers. */
+  private readonly carriedBy = new Map<string, readonly string[]>();
   private readonly scene: CardMaker;
   private readonly looks: ForgeLooks;
   private readonly dyes: DyeTable;
@@ -264,7 +267,12 @@ export class Cards {
   private figured(dress: Dress, anim: string, flip: boolean) {
     const layers = this.looks.bodies[dress.body]?.layers ?? {};
     const dressed = figureOf(dress, layers, anim);
-    const carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
+    const move = `${dress.body} ${anim}`;
+    let carried = this.carriedBy.get(move);
+    if (!carried) {
+      carried = Object.keys(layers).filter((layer) => CARRIED.test(layer) && layers[layer]?.includes(anim));
+      this.carriedBy.set(move, carried);
+    }
     const gear = [...dressed.gear, ...carried];
     // A view drawn mirrored keeps each hip piece at its own hip, and what each fist holds in its own fist.
     const held = [dress.outfit.right, dress.outfit.left, ...carried];

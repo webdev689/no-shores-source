@@ -90,6 +90,12 @@ the screen reader's announcements.
   parameter and buffer the game's sound code makes there is a number the page keeps, each call sent with the rest of
   its task's and carried out on the page; the page's clock is sent back now and then, and the worker runs it on
   between. The page makes its audio at the player's first press or key, as a browser lets sound start only then.
+- **The room for playing alone** runs in a worker of its own, started by the game's
+  ([[The Room for Playing Alone Runs in a Worker of Its Own]]): a node's, the sea's and an island's room (`LocalRoom`)
+  is opened there, its navmesh baked and its sea laid, and ticked there as the game lets its clock run, its snapshots
+  handed back as they come, as a server's are (`RoomThread`, `serveRooms`, `roomWorker.ts`). The game's thread only
+  sends the player's inputs and the seconds to run. The wreck's room in the prologue, which the story asks things of
+  and waits on the answer, and the [[Test Ground]]'s, are still opened in the thread that asks.
 - **Measured** headless on SwiftShader at 480 by 270, the world drawn at Overlook's social space for 30 seconds with
   W pressed every two: the page's thread is busy 0.0 ms a frame at the median and keeps 60 frames a second while the
   worker draws, with 4 long tasks (0.26 s in all); the worker is busy 25 ms a frame. SwiftShader draws on the CPU, so

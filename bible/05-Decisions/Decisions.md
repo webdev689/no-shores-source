@@ -242,6 +242,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Areas Load in Chunks With Proper Caching]]
 - [[Foes Walk and Run at Three Quarters of a Player's Pace]]
 - [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
+- [[The Room for Playing Alone Runs in a Worker of Its Own]]
 - [[The Crew Still Standing Regroup Ahead]]
 - [[The Server Is the Authority Over Everything]]
 - [[A Mail Vendor Keeps Lost Items and the Game's Mail]]

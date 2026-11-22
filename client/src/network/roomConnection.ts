@@ -25,6 +25,8 @@ export interface RoomLink {
   readonly epoch?: number;
   send(bytes: Uint8Array<ArrayBuffer>): void;
   pump(seconds: number): void;
+  /** Lets the room go, where the link holds one open: a socket, or a room in a worker. */
+  close?(): void;
   /** The player's trim, from the room's last word on their gear; none until it sends it. */
   readonly trim?: readonly number[] | null;
   /** The arms the room lets the player take up, from its last word on their gear; none until it sends it. */

@@ -1,10 +1,10 @@
 // A visit to one of the sea's islands: the ship sails in round it to its anchorage and the player walks ashore on its
-// beach, into its room (the server's, or the same room in the page), standing on its own fine ground among its
+// beach, into its room (the server's, or the same room in the rooms' worker), standing on its own fine ground among its
 // modules' boxes, in the world's metres. On foot E scavenges a wreck within reach, once each, and opens the dungeon's
 // door; the room judges both.
 import type { GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { ANCHORED_M, type DungeonDoor, approach, isleNode, isleRoomName, isleUses, isleWords } from './isleLaw.ts';
@@ -12,7 +12,7 @@ import type { IsleHeld, Isles } from './isles.ts';
 import type { Sea } from './sea.ts';
 
 /** The player walks ashore on an island: online into its room on the server, which opens on the sea's word; alone
- *  into the same room in the page, opened on the page's sea's word (`word`). */
+ *  into the same room in the rooms' worker, opened on the sea's word (`word`). */
 export async function ashoreOn(
   context: FootContext,
   held: IsleHeld,
@@ -35,7 +35,7 @@ export async function ashoreOn(
     );
   } else {
     if (!word) throw new Error('the sea no longer holds this island');
-    link = LocalRoom.openIsland(await context.roomModule, word, heard, DIFFICULTIES.indexOf(seas));
+    link = await RoomThread.openIsland(await context.roomModule, word, heard, DIFFICULTIES.indexOf(seas));
   }
   const boxes = held.plan.blocks.map(([west, north, east, south, top]) => ({
     minX: west + held.seen.at[0],
@@ -55,7 +55,7 @@ export async function ashoreOn(
     return await Foot.onDeck(context, node, Array.from(held.heights), open, place);
   } catch (error) {
     // A landing that fails leaves no socket open behind it, joining the island's room again and again.
-    if (link instanceof RoomConnection) link.close();
+    link.close?.();
     throw error;
   }
 }

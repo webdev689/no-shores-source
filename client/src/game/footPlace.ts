@@ -1,4 +1,4 @@
-// Where a player stands on foot and the room they join there: the node's ground, its file for a room in the page, and
+// Where a player stands on foot and the room they join there: the node's ground, its file for a room playing alone, and
 // what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
@@ -17,7 +17,7 @@ import type { UsePrompt } from './usePrompt.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
- *  ask a room in the page for (none but under `npm run dev`), the session's token the rooms keep the player's
+ *  ask a room playing alone for (none but under `npm run dev`), the session's token the rooms keep the player's
  *  character by (null for none), read as each room connects, and the ways into a patrol's dungeons and out. */
 export interface FootContext {
   readonly movement: MovementRules;

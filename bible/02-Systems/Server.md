@@ -10,6 +10,7 @@ code:
   - crates/room/src/judging.rs#Event
   - crates/room/src/players.rs#VIEW_LAG
   - client/src/network/localRoom.ts#LocalRoom
+  - client/src/network/roomThread.ts#RoomThread
   - client/src/combat/fighting.ts#Fighting
   - crates/room/src/players.rs#SLACK_TICKS
   - crates/room/src/players.rs#WAITING_LIMIT
@@ -296,7 +297,8 @@ will take it, by the room's own tick.
   its end. So it sails on, at the pace the page eases it to for the view.
   They take the helm again within 0.8 m of the spot behind its wheel, standing, judged where their steps leave them
   once the steps the clock allows by then are taken; a bold pirate that meets them calls them to it at once.
-- Playing alone, the [[Game]] runs this same room in the page (`LocalRoom.openSea`).
+- Playing alone, the [[Game]] runs this same room in a worker of its own (`LocalRoom.openSea`, through `RoomThread`;
+  [[Game]], "Threads").
 
 - **Islands.** The sea rolls its procedural islands near players' ships in hostile waters, tells each player those
   within 20 km of their ship and those they found, keeps every course and hostile ship off their coasts, and lets each
