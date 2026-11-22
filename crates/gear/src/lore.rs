@@ -167,8 +167,10 @@ impl Character {
         true
     }
 
-    /// Keeps every chapter `other` holds that this does not, in the order `other` found them.
-    pub fn keep_all_lore(&mut self, other: &Self) {
+    /// Takes forward what `other` has come to that this has not, never putting any of it back: the story played, and
+    /// each chapter found, in the order `other` found them.
+    pub fn carry_forward(&mut self, other: &Self) {
+        self.story = std::mem::take(&mut self.story).merged(&other.story);
         for key in &other.lore {
             self.keep_lore(key);
         }

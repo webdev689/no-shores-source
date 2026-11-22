@@ -28,6 +28,9 @@ export interface Shown {
     readonly defense: number;
     readonly gilded: boolean;
   }[];
+  readonly prestige?: number;
+  readonly art?: number;
+  readonly art_level?: number;
 }
 
 /** The most players a room lists beside the company: a social space holds a few dozen. */
@@ -123,6 +126,12 @@ export async function rosterOf(database: Db, own: string, now: number) {
     )
     .bind(own)
     .all<{ name: string }>();
+  const { results: muted } = await database
+    .prepare(
+      'SELECT accounts.username AS name FROM mutes JOIN accounts ON accounts.id = mutes.muted_id WHERE muter_id = ?1 ORDER BY accounts.username_key',
+    )
+    .bind(own)
+    .all<{ name: string }>();
   return {
     me: self ? shown(self) : null,
     privacy: PRIVACIES[privacy],
@@ -145,6 +154,7 @@ export async function rosterOf(database: Db, own: string, now: number) {
       : null,
     guildInvites: guildInvites.map((row) => ({ name: row.name, tag: row.tag, from: row.from_name })),
     blocked: blocked.map((row) => row.name),
+    muted: muted.map((row) => row.name),
   };
 }
 

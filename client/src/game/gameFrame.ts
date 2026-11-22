@@ -54,6 +54,8 @@ import { mooredShips } from './moorings.ts';
 import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { HULLS } from '../water/hullMask.ts';
+import { chatAtSea, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
+import { uiScale } from '../ui/uiRenderer.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -181,7 +183,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
     const { flow, helmMap } = playing;
-    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
+    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen() || socialUp();
+    // Others see three dots over a player in a menu, not over one still behind the loading veil.
+    here.fight.menuOpen = (flow.mode === 'foot' && flow.menu) || gearScreenOpen() || socialUp();
     const aspect = size.width / Math.max(1, size.height);
     // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
     const looking = helmMap.looking;
@@ -226,8 +230,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt } };
+    const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
+    // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
+    const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
+    holdOnPlayer(footView.playerPlates, offered, controls.held('use'), clock, {
+      width: size.width / uiScale(devicePixelRatio),
+    });
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
@@ -288,7 +298,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const { flow, helmMap } = playing;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
+    const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen() || socialUp();
+    chatAtSea(here.waterAt?.(here.position)?.name ?? null);
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     parts.eventProps.set([]);
@@ -413,10 +424,18 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const windowUp = menuUp || gearTakesKeys() || creationOpen();
+    const windowUp = menuUp || gearTakesKeys() || creationOpen() || socialUp();
+    // The open chat's field has the keys as a window's would, and the pad plays nothing of the game's under it.
+    const covered = menuUp || socialUp() || chatOpen();
     // The sheet takes the keys and the pad but while it waits for one to bind.
     const tookWheel = ui.hear(seconds, !input.locked, windowUp || hud.controls.takesKeys);
-    const top = hud.controls.open ? 'sheet' : gearTakesKeys() ? 'gear' : creationOpen() ? 'creation' : menuUp && 'menu';
+    const top = hud.controls.open
+      ? 'sheet'
+      : gearTakesKeys()
+        ? 'gear'
+        : creationOpen()
+          ? 'creation'
+          : covered && 'menu';
     input.window(top || null);
     input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
     const heard = input.frame();

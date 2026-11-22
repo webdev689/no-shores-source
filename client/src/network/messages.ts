@@ -11,6 +11,7 @@ import { unpack } from './pack.ts';
 import { withOthers } from './seaFight.ts';
 import { type PublicEvent, publicOf } from './publicMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
+import { type PlayerPlate, platesOf } from './plateMessages.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
 export interface Look {
@@ -233,6 +234,7 @@ export type FromRoomMessage =
       readonly kind: 'joined';
       readonly player: number;
       readonly dressed: readonly PlayerDress[];
+      readonly plates: readonly PlayerPlate[];
       readonly node: JoinedNode | null;
       /** The room's protocol: its schema's hash. */
       readonly protocol: number;
@@ -244,6 +246,8 @@ export type FromRoomMessage =
       readonly tick: bigint;
       readonly players: readonly SeenPlayer[];
       readonly dressed: readonly PlayerDress[];
+      /** On land, the plates that changed since the snapshot the screen showed. */
+      readonly plates: readonly PlayerPlate[];
       readonly foes: readonly SeenFoe[];
       readonly events: readonly FightEvent[];
       readonly shots: readonly FlyingShot[];
@@ -282,6 +286,8 @@ export interface InputParts {
   readonly respawn?: boolean;
   readonly ask?: GearAsk;
   readonly cast?: CastAsk;
+  /** A menu is open on the player's screen, which others see over their head. */
+  readonly menu?: boolean;
 }
 
 /** The most a ulong field holds. */
@@ -350,6 +356,7 @@ function inputOffset(builder: flatbuffers.Builder, sequence: number, parts: Inpu
   if (parts.cast) Input.addCast(builder, wholeIn(parts.cast.spell, 0, 0xff, 'the spell'));
   if (aim) Input.addCastAim(builder, aim);
   if (earlier) Input.addEarlier(builder, earlier);
+  if (parts.menu) Input.addMenu(builder, true);
   return Input.endInput(builder);
 }
 
@@ -439,7 +446,8 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const [west = 0, north = 0, east = 0, south = 0] = bounds;
       const node = id !== null && bounds.length === 4 ? { id, bounds: [west, north, east, south] as const } : null;
       const [player, protocol, epoch] = [joined.player(), joined.protocol(), joined.epoch()];
-      return { kind: 'joined', player, dressed, node, protocol, epoch };
+      const plates = platesOf(joined.platesLength(), (index) => joined.plates(index));
+      return { kind: 'joined', player, dressed, plates, node, protocol, epoch };
     }
     const gear = message.gear();
     if (gear) return { kind: 'gear', ...gearOf(gear) };
@@ -552,6 +560,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       tick: snapshot.tick(),
       players,
       dressed,
+      plates: platesOf(snapshot.platesLength(), (index) => snapshot.plates(index)),
       foes,
       events,
       shots,

@@ -1,5 +1,6 @@
 import type { ArtState } from './artMessages.ts';
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, readFromRoom } from './messages.ts';
+import type { PlayerPlate } from './plateMessages.ts';
 import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
 import { LinkMeasure, type Measured } from './linkMeasure.ts';
 import { SnapshotKeeper } from './snapshots.ts';
@@ -18,6 +19,8 @@ type Welcome = Extract<FromRoomMessage, { kind: 'joined' }>;
 export interface RoomLink {
   readonly player: number;
   readonly dressed: readonly PlayerDress[];
+  /** Everyone's plate at the last welcome; none from a room in the page, where no one else plays. */
+  readonly plates?: readonly PlayerPlate[];
   readonly joins: number;
   readonly rejoining: boolean;
   readonly lost: string | null;
@@ -27,6 +30,8 @@ export interface RoomLink {
   pump(seconds: number): void;
   /** Lets the room go, where the link holds one open: a socket, or a room in a worker. */
   close?(): void;
+  /** Sends the session's token again, so the room names the player by a username taken since they joined. */
+  named?(): void;
   /** The player's trim, from the room's last word on their gear; none until it sends it. */
   readonly trim?: readonly number[] | null;
   /** The arms the room lets the player take up, from its last word on their gear; none until it sends it. */
@@ -102,6 +107,7 @@ export class RoomConnection implements RoomLink {
    *  last welcome. */
   player: number;
   dressed: readonly PlayerDress[];
+  plates: readonly PlayerPlate[];
   node: JoinedNode | null;
   joins = 1;
   rejoining = false;
@@ -118,6 +124,8 @@ export class RoomConnection implements RoomLink {
   private closed = false;
   private readonly measure = new LinkMeasure();
   private waiting: ReturnType<typeof setTimeout> | null = null;
+  /** The last welcome, until a snapshot after it carries its dresses and plates on. */
+  private welcomeUnheard: Welcome | null = null;
 
   private constructor(
     url: string,
@@ -126,14 +134,19 @@ export class RoomConnection implements RoomLink {
     socket: WebSocket,
     welcome: Welcome,
   ) {
-    // Each snapshot's tick says the room's world time, which keeps the page's clock in step with the room's.
+    // Each snapshot's tick says the room's world time, which keeps the page's clock in step with the room's. The last
+    // welcome's dresses and plates go under the first snapshot after it, so what is newer is never undone by them.
     const told = (shot: Snapshot) => {
       WORLD_CLOCK.heard(this.epoch + Number(shot.tick) * ROOM_TICK_S);
-      heard.snapshot(shot);
+      const welcome = this.welcomeUnheard;
+      this.welcomeUnheard = null;
+      const dressed = welcome ? [...welcome.dressed, ...shot.dressed] : shot.dressed;
+      heard.snapshot(welcome ? { ...shot, dressed, plates: [...welcome.plates, ...shot.plates] } : shot);
     };
     [this.url, this.snapshot, this.gear, this.session] = [url, told, heard.gear, heard.session];
     [this.connect, this.socket] = [connect, socket];
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
+    [this.plates, this.welcomeUnheard] = [welcome.plates, welcome];
     this.watch(socket);
   }
 
@@ -207,8 +220,14 @@ export class RoomConnection implements RoomLink {
     }
     if (this.session !== null) socket.send(this.session);
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
+    [this.plates, this.welcomeUnheard] = [welcome.plates, welcome];
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
     this.measure.clear();
+  }
+
+  named(): void {
+    if (this.session !== null && !this.rejoining && this.socket.readyState === WebSocket.OPEN)
+      this.socket.send(this.session);
   }
 
   /** The room's word on the player's gear: its trim and arms kept, and the whole handed on. */

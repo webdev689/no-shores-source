@@ -184,6 +184,13 @@ code:
   - client/src/face.ts#useMendedFace
   - client/src/face.ts#CANVAS_FACE
   - client/src/trueType.ts#trueType
+  - client/src/combat/playerPlates.ts#PlayerPlates
+  - client/src/combat/playerPlates.ts#aimedPlayer
+  - client/src/combat/playerPlates.ts#levelInk
+  - client/src/game/social/interactMenu.ts#interactRows
+  - client/src/game/social/social.ts#holdOnPlayer
+  - client/src/game/social/inspectWindow.ts#InspectWindow
+  - client/src/game/social/inspectGear.ts#inspectedGear
 ---
 # Interface
 
@@ -326,8 +333,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
   each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
-  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card. A shot may hear its events on a later
-  frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
+  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card.
+  `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut. A shot may
+  hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
 
 ## How it works
@@ -721,16 +729,20 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the Melee
-  and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
-  Appearance button stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
-  names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's across from
-  it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
-  at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A
-  slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its flyout of the nine
-  it may carry, toward the figure, upward from each side's two lowest slots; a click there wears one, and F held over
-  one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the gap between them
-  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot.
+- **Character.** The player's figure large in the middle, under two plaques side by side ([[Prestige Stands Beside Level
+  on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
+  in pale steel, each its number alone, and under both the meter to the next level and what it takes; under the figure
+  the Melee and Ranged loadouts' Attack and Defense ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and
+  Ranged loadouts, the cloak and the Appearance button stand to its left, under the worn Art's diamond, the armour to
+  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading ([[The
+  Weapons Heading Stands Under the Art]]) level with the Armour heading across, under room as tall as the Art's row, so
+  each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
+  ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
+  it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the
+  focus to it; a click opens its flyout of the nine it may carry, toward the figure, upward from each side's two lowest
+  slots; a click there wears one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and
+  itself, a strip over the gap between them keeping it while the mouse crosses, or on a click or Escape; a key's focus
+  in it goes back to its slot.
 - **Appearance** ([[The Character Page Opens Appearance From an Icon Button]]). Among the slots stands the
   Appearance button: a wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner. It opens the
   Appearance screen in the page's place, as the Art's diamond opens the Art's screen, the focus on the worn emblem. At
@@ -1132,6 +1144,43 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   click takes or turns one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the
   padlock and "The bounty board opens after the prologue."
 
+## Players
+
+- **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]],
+  [[A Player's Square Shows Their Level, Gold Past 20]]): a square and their username beside it, after the owner's
+  pictures of Destiny's. The square shows their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`,
+  `TONES.brassHi`); while a menu is open on their screen (the pause menu, the menu's window, a player's menu or Inspect)
+  a speech bubble's three dots stand in its place. Square and name are the company's green (`FILLS.green`,
+  `TONES.company`) for a member of the viewer's company, by the Roster the company's display last heard, and the
+  players' blue (`FILLS.ally`, `TONES.ally`) for anyone else; a guest shows the square alone. The room sends each plate
+  once as it changes ([[Server]], "Messages").
+- **Which show**: as DFO showed names over players, every other player within 60 m across the ground whose head the
+  place's blocks and land do not hide, the line tried as a foe's plate's is (`PlateSight`), shrinking with distance by
+  the foes' plates' law (`plateScale`) and laid so none covers another (`BarLayout`); not the cone the foes' plates
+  keep. They stand under the foes' plates, 1.9 m over the feet.
+- **Interact** ([[Holding Use on a Player Opens Their Interact Menu]]): the named player the crosshair rests on within
+  6.4 m of the player's own feet, the nearest of several (`aimedPlayer`), a guest nearer in the line hiding one
+  behind, wears a thin diamond round their body, a chevron in each corner, with Use's key and "Interact" beside it,
+  kept on the screen, wherever Use offers nothing else and no menu, gate's offer or the held map is up. Holding Use
+  0.45 s, its key ringed as it fills and the menus' hold sounding, opens their menu; a tap does nothing. The hold
+  outlasts the crosshair slipping off them for under 0.2 s, and lets go if the frames stop for a quarter second.
+- **Their menu** stands over the view with their plate at its head and six rows: Add friend (or Accept friend, or
+  Cancel friend ask, as the Roster would offer it), Invite to company, Invite to guild, Whisper, Inspect and Mute (or
+  Unmute). Each asks the Roster as its row in the Social tab does ([[Accounts]], "The Roster"); one that cannot be
+  done now stands greyed with why ("Already friends", "In your company", "Only the leader invites", "You are in no
+  guild", and so on), still reached by the keys and read by a screen reader, and without a Roster (a guest, or a page
+  playing alone) only Whisper and Inspect are offered. While an ask is out every row waits, and what it answered stands
+  under the rows. Whisper opens the chat's field to them ([[Chat]]); Mute hides their chat lines
+  ([[A Player May Mute Another]]); Close or Escape shuts the menu. While it is up the player stands as in a menu, the
+  pointer free and the keys the menu's alone.
+- **Inspect** ([[Inspect Opens the Character Tab]], [[Inspect Shows the Player's Emblem Banner]]) shows the player as
+  the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
+  and Defense over it, and under it the Character tab: their figure in the dress they wear here, each piece they wear in
+  its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
+  others to see. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
+  back to their menu.
+- **Settings** lists the muted under the blocked, each with Unmute.
+
 ## Emblems
 
 An emblem is a sign 24 cells square and the nameplate it heads, 120 by 24, whose left square is the sign's own ground,
@@ -1139,7 +1188,7 @@ as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is d
 and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the
-Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Appearance
+Roster's rows, the menu's banner and Inspect's, another player's details, the company on the heads-up display, the Appearance
 button's corner and screen, and the Tailor's wares.
 
 ## Limits
@@ -1218,7 +1267,8 @@ button's corner and screen, and the Tailor's wares.
   pictures on the player's own figure, which is not theirs.
 - A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
   or at sea, is not reached, and the Roster says so.
-- No names stand over other players' heads yet.
+- A player's plate shows their username from the room their account last claimed their character in: one added
+  meanwhile shows from their next room.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
