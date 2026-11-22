@@ -611,7 +611,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   them: it leaves the sea and the fight begins with it where it lay, under sail, and the player's Sloop hove to
   (`Fight::meet`). The room steps it each tick by the players' orders on the fight of many ships, so the Sloop's stem
   may ram the captain's, on waters made from the coasts (open sea, the swell on it, dry land on them), until every
-  captain has sunk or gone; its last view is shown once, and the players sail on from where it left them, keeping their
+  captain has sunk or gone; its last view is shown once, in the next snapshot however many ticks the room caught up before it (`Fights::sent`),
+  and the players sail on from where it left them, keeping their
   hurts.
 - **In the game** the view pans down over 1.5 s from the raised sea to their Sloop, every ship easing on the way from
   the size the sea draws it to its true size as on the sea's other views near the Sloop ([[Game]], "At sea"); the fight is

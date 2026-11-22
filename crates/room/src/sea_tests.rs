@@ -677,3 +677,30 @@ fn a_ship_in_home_waters_is_never_held_by_a_bold_pirate_outside_them() {
     assert!(libm::hypot(off[0] - at[0], off[1] - at[1]) < HOSTILE_NEAR_M);
     assert_eq!(ship(&sea, player).rate, 60, "its pace is its own");
 }
+
+#[test]
+fn an_ended_fight_is_shown_in_the_next_snapshot_however_many_ticks_ran_before_it_and_never_twice() {
+    let end = |sea: &mut Sea, player: PlayerId| {
+        let fight = &mut sea.fights.of_mut(player).unwrap().0.fight;
+        if let Some(Sailor::Captain(command)) = fight.ships.get_mut(&CAPTAIN).map(|vessel| &mut vessel.sailor) {
+            command.gone = Some(End::Gone);
+        }
+    };
+    let (mut sea, player) = met_at_sea(700.0);
+    sea.tick();
+    end(&mut sea, player);
+    ticks(&mut sea, 2);
+    assert_eq!(sea.fights().count(), 0, "the player sails again");
+    let shown: Vec<PlayerId> = sea.fight_views().into_iter().map(|seen| seen.player).collect();
+    assert_eq!(shown, [player], "its last view, though a tick ran past it");
+    sea.fights_sent();
+    assert!(sea.fight_views().is_empty(), "once");
+    // Shown in the snapshot of the tick it ended, it is not shown again.
+    let (mut sea, player) = met_at_sea(700.0);
+    sea.tick();
+    end(&mut sea, player);
+    assert_eq!(sea.fight_views().len(), 1);
+    sea.fights_sent();
+    ticks(&mut sea, 2);
+    assert!(sea.fight_views().is_empty(), "not twice");
+}

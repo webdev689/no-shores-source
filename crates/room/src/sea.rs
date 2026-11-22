@@ -371,8 +371,8 @@ impl Sea {
     /// it comes to it, and comes to rest at its course's end; each player off the helm takes the steps due; each fight
     /// steps, its player's ship where the fight has it, and each clash; the pirates sail, come and go, a bold one that
     /// meets a player begins their fight, calling them to the helm, one that meets a rival begins a clash, and a player
-    /// who comes within sight of a clash joins it. A fight that ended is shown for one tick, then gone, its player at
-    /// rest where it left them.
+    /// who comes within sight of a clash joins it. A fight that ended lets its player go the next tick, at rest where it
+    /// left them; its last view waits for the next snapshot (`fights_sent`).
     pub fn tick(&mut self) {
         self.clock += 1;
         for aboard in self.aboard.values_mut() {
@@ -481,6 +481,11 @@ impl Sea {
         let seen = self.fights.views(&self.coasts, time);
         seen.map(|seen| crate::battle::FightSeen { may_board: seen.may_board && !self.on_deck(seen.player), ..seen })
             .collect()
+    }
+
+    /// The fights' views were taken into a snapshot: an ended fight's last view is sent once.
+    pub fn fights_sent(&mut self) {
+        self.fights.sent();
     }
 }
 
