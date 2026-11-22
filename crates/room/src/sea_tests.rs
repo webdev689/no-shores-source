@@ -649,3 +649,12 @@ fn a_fight_with_a_chased_wary_ship_who_will_not_engage_ends_once_it_is_out_of_re
     });
     assert!(lasted.is_some(), "it broke off within its give-up time and the fight ended for the player too");
 }
+
+#[test]
+fn a_ships_water_is_named_once_it_puts_to_sea() {
+    let mut sea = sea();
+    let player = sea.join();
+    assert_eq!(sea.water_name(player), None, "no water before its first course");
+    sea.course(player, &[[50_000.0, 150_000.0], [50_000.0, 50_000.0]], 10).unwrap();
+    assert_eq!(sea.water_name(player), Some("The Sunscorch Coves"), "the fourth island's water");
+}

@@ -1,22 +1,29 @@
 import assert from 'node:assert/strict';
 import { type TestContext, test } from 'node:test';
 import * as flatbuffers from 'flatbuffers';
-import { FromRoom, Joined, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
+import { FromRoom, Joined, Plate, Snapshot } from '../../../generated/messages/ts/overlook/wire.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 import { ELSEWHERE, RoomConnection, SHUT, type Snapshot as RoomSnapshot, rejoinWait } from './roomConnection.ts';
 
-/** A room's message as its bytes: a welcome for `player`, or a snapshot at `tick`. */
-function fromRoom(message: { readonly player: number } | { readonly tick: bigint }): ArrayBuffer {
+/** Each plate a message carries: a player's number and level. */
+type Plated = { readonly plates?: readonly (readonly [number, number])[] };
+type Said = ({ readonly player: number } | { readonly tick: bigint }) & Plated;
+
+/** A room's message as its bytes: a welcome for `player`, or a snapshot at `tick`, with the plates given. */
+function fromRoom(message: Said): ArrayBuffer {
   const builder = new flatbuffers.Builder(64);
+  const each = (message.plates ?? []).map(([player, level]) => Plate.createPlate(builder, player, 0, level, false));
+  const plates = message.plates ? Joined.createPlatesVector(builder, each) : 0;
   // A snapshot holds a table of its own (its public events), so flatc writes it no one-call maker.
   const snapshot = (tick: bigint) => {
     Snapshot.startSnapshot(builder);
     Snapshot.addTick(builder, tick);
+    if (plates) Snapshot.addPlates(builder, plates);
     return Snapshot.endSnapshot(builder);
   };
   const part =
     'player' in message
-      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL, 0)
+      ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL, 0, plates)
       : snapshot(message.tick);
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);
@@ -46,7 +53,7 @@ class FakeSocket extends EventTarget {
   }
 
   /** The room says something: its welcome to player `player`, or a snapshot at `tick`. */
-  says(message: { readonly player: number } | { readonly tick: bigint }): void {
+  says(message: Said): void {
     this.readyState = WebSocket.OPEN;
     this.dispatchEvent(new MessageEvent('message', { data: fromRoom(message) }));
   }
@@ -60,9 +67,10 @@ class FakeSocket extends EventTarget {
 
 /** A connection joined as player `player` over fake sockets, each socket it opens, and the snapshots it handed on;
  *  with `session`, the token it sends once welcomed. */
-async function joined(player: number, session: string | null = null) {
+async function joined(player: number, session: string | null = null, welcome: Plated = {}) {
   const sockets: FakeSocket[] = [];
   const ticks: bigint[] = [];
+  const plates: number[][] = [];
   const connect = () => {
     const socket = new FakeSocket();
     sockets.push(socket);
@@ -70,13 +78,16 @@ async function joined(player: number, session: string | null = null) {
   };
   const opening = RoomConnection.open(
     'ws://test/room/court',
-    (snapshot: RoomSnapshot) => ticks.push(snapshot.tick),
+    (snapshot: RoomSnapshot) => {
+      ticks.push(snapshot.tick);
+      plates.push(snapshot.plates.map((plate) => plate.level));
+    },
     undefined,
     session,
     connect,
   );
-  sockets[0]?.says({ player });
-  return { connection: await opening, sockets, ticks };
+  sockets[0]?.says({ player, ...welcome });
+  return { connection: await opening, sockets, ticks, plates };
 }
 
 const waitMs = (tries: number) => rejoinWait(tries) * 1000;
@@ -150,6 +161,19 @@ test('a rejoin sends the session token again once welcomed, before any input', a
   sockets[1]?.says({ player: 4 });
   connection.send(new Uint8Array([1]));
   assert.deepEqual(sockets[1]?.sent, ['token', new Uint8Array([1])]);
+});
+
+test("a welcome's plates go under the next snapshot's, once, and a rejoin's welcome again", async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { sockets, plates } = await joined(3, null, { plates: [[7, 5]] });
+  sockets[0]?.says({ tick: 1n, plates: [[7, 6]] });
+  sockets[0]?.says({ tick: 2n });
+  assert.deepEqual(plates, [[5, 6], []], "the welcome's first, so the snapshot's newer one is last");
+  sockets[0]?.closed(1006);
+  context.mock.timers.tick(waitMs(0));
+  sockets[1]?.says({ player: 4, plates: [[7, 6]] });
+  sockets[1]?.says({ tick: 3n });
+  assert.deepEqual(plates.at(-1), [6]);
 });
 
 test('a room whose gate shuts is never joined again, and says why', async (context: TestContext) => {

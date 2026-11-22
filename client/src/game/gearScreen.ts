@@ -103,7 +103,6 @@ export interface Character {
   readonly prestige: number;
   readonly defense: number;
   readonly attack: readonly [number | null, number | null];
-  readonly fruit: number;
   /** How far the next Fruit of Dagon has grown, past level 20's XP; null below it. */
   readonly fruitGrown: number | null;
   readonly slots: readonly { readonly slot: number; readonly name: string; readonly worn: Tile | null }[];
@@ -130,7 +129,6 @@ export function characterOf(state: GearState): Character {
     prestige: state.prestige,
     defense: state.defense,
     attack: [hand(0), hand(1)],
-    fruit: state.stocks[4] ?? 0,
     fruitGrown: state.fruitGrowing ?? null,
     slots: SLOTS.map((name, slot) => {
       const worn = state.items.find((item) => item.at === WORN + slot);
