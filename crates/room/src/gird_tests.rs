@@ -255,3 +255,24 @@ fn a_levelled_foe_backs_off_from_a_third_of_its_health_lost_in_its_first_seconds
         assert!(backed, "level {level}: it backs off");
     }
 }
+
+#[test]
+fn a_garrison_foe_raised_to_the_seas_backs_off_from_a_third_of_its_health_lost_in_its_first_seconds() {
+    let mut room = levelled(NodeKind::Dungeon, "glade", (7, 10));
+    room.set_difficulty(Difficulty::Abyss);
+    let player = room.join().unwrap();
+    let (&foe, found) = room.foes.iter().find(|(_, found)| found.brain.rank < ::foes::Rank::Miniboss).unwrap();
+    let at = [found.fighter.body.x, found.fighter.body.y + 2.0];
+    assert!(room.put_player(player, at[0], at[1]));
+    let (clock, z) = (room.clock, room.foes[&foe].fighter.body.z);
+    room.foes.get_mut(&foe).unwrap().brain.hunt(player, [at[0], at[1], z], clock);
+    run(&mut room, 20);
+    let fighter = &mut room.foes.get_mut(&foe).unwrap().fighter;
+    fighter.health -= fighter.health_max / 3.0;
+    let mut backed = false;
+    for _ in 0..60 {
+        run(&mut room, 1);
+        backed |= room.foes[&foe].brain.plan() == ::foes::brain::Plan::Backoff;
+    }
+    assert!(backed, "raised, it backs off as one that stood at the level would");
+}

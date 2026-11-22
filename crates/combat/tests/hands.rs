@@ -25,6 +25,8 @@ fn hanging_climbing_or_going_over_a_lip_the_hands_neither_swing_guard_nor_shoot(
         let shooting = asking(0.0, CombatInput { shoot: true, ..CombatInput::default() });
         let (_, shots) = run(archer, shooting, 1, None);
         assert!(shots.is_empty(), "{mode:?} looses no shot: {shots:?}");
+        let (aimed, _) = run(archer, asking(0.0, CombatInput { aim: true, ..CombatInput::default() }), 1, None);
+        assert!(!matches!(aimed.action, Action::Draw { .. }), "{mode:?} draws no bow: {:?}", aimed.action);
     }
     let mut leaping = player_at(0.0, 0.0);
     leaping.body.mode = Mode::Air;
