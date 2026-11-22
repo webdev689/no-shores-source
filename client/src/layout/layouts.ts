@@ -48,6 +48,8 @@ export interface LaidSite {
   readonly at: Point;
   readonly radius: number;
   readonly holds?: string;
+  /** Where a resource's node stands: before its dressing, toward its path; none off the section's floor. */
+  readonly node?: Point;
 }
 
 /** A run breaking off a patrol area, as the layout crate writes it: its kind, its mouth, its line and its beats. */
@@ -116,10 +118,12 @@ interface Placed {
   readonly ring: readonly Point[];
   readonly spawns: readonly Point[];
   readonly centre: Point;
+  readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
   readonly places?: readonly NodePlace[];
 }
 
-/** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with. */
+/** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, and its
+ *  resource places, where its room's nodes stand, in the layout's order (as the bake writes them). */
 export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: readonly NodeLayout[]): Node[] {
   const byId = new Map(layouts.map((layout) => [layout.id, layout]));
   return drawn.map((node) => {
@@ -129,7 +133,10 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
       0, 0,
     ] as const);
     const centre = [sum[0] / laid.ring.length, sum[1] / laid.ring.length] as const;
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, places: placesOf(laid) };
+    const resources = laid.sites.flatMap(({ kind, node, holds }) =>
+      kind === 'resource' && node ? [{ at: node, holds }] : [],
+    );
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, places: placesOf(laid) };
   });
 }
 

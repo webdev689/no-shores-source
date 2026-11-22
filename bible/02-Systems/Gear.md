@@ -95,7 +95,9 @@ number is one of [[Gear as Claude Shapes It]].
   Aurem, and more as the rarity rises: a Magic's upgrades a fragment, a Rare's nodes one and its upgrades three; a
   Legendary's or Atheric's handling, finish and perks 2 fragments and 5 of its island's resource, a weapon's upgrades
   before its last three 5 fragments and 10 of the resource, and its last three upgrades (every upgrade of an armour
-  piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]).
+  piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]). A resource is
+  gathered at its island's nodes, each drawn as the resource itself
+  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
   each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.

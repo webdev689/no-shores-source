@@ -27,7 +27,7 @@ test("the page's WebAssembly builds an island's ground to the room's own bits", 
 });
 
 /** crates/room-wasm/src/isle_door_tests.rs pins the same of the room's own plans (PLANS): a cove and a quarry. */
-const PLANS = '5c5af7813ea5353d';
+const PLANS = 'b34441b512d89694';
 
 test("the page's WebAssembly lays every module, block and post of an island where the room does", () => {
   const door = startRoomDoor(compiled);
@@ -61,6 +61,6 @@ test("an island's room checks landings, which only a sea answers", () => {
   const door = startRoomDoor(compiled);
   assert.equal(door.openIsland('{"seed":"41","climate":"desert","at":[700000,300000],"guards":0,"levels":null}'), true);
   assert.equal(door.checkLandings(), true);
-  assert.equal(door.land('account-a'), true);
-  assert.equal(door.seaLanded(1, '41', 'account-a'), false, 'an island room is no sea');
+  assert.equal(door.land('account-a', 1), true);
+  assert.equal(door.seaLanded(1, '41', 'account-a'), 0, 'an island room is no sea');
 });

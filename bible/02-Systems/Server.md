@@ -93,9 +93,10 @@ on Cloudflare.
   each foe the noises made and its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
-- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands at twelve
-  spots laid out from the node's name, the same every time, 60 m apart; a third of them hold a node at once, the next
-  third every three minutes, and each player may gather each node once while it stands. A kill, in any node, pays by
+- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands where its layout
+  stands its nodes ([[Layouts]], "The sites"; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file (`resources`) and the room
+  numbers in that order, as the page does; a third of them hold a node at once, the next third every three minutes, and each player may gather each node once while it
+  stands. A kill, in any node, pays by
   the room's seas ([[Gear]], "Where foes stand").
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
@@ -119,7 +120,13 @@ on Cloudflare.
   opened at the Mage's, the vault at a vault's, a ware at its own smith's, an emblem or a dye at
   the Tailor's, a coat or barding at the Tack's, a faction's asks and its Art's at that faction's counter, and Shape's
   at his place of the week while he is there ([[Factions]], [[Gear]]); the Test Ground's course serves them all within
-  4 m of its stall. A resource node is gathered within 2.5 m by a player alive, and is
+  4 m of its stall. A resource node is gathered by a player alive and on foot within
+  2.5 m of it who holds E two seconds: the gather ask begins it, and the room gathers it two seconds on unless they
+  were hurt (from their health the tick before), fell, mounted, filled its resource, or it stopped standing for
+  them; or they let go (the stop-gather ask) or stirred 0.3 m before its last quarter second, which the room, counting
+  from its answer while the page counts from the press, gathers all the same. A stop-gather ask is heard at once,
+  past the queue, and lets go of every gather asked before it. Starting and keeping a gather share one check
+  (`gather_refused`). It is then
   spent for them until the nodes' turn passes; a kept character's is spent for its account, however often its player
   rejoins. One whose resource the player holds the most of is left standing, and a body dead past the edge gathers
   nothing. A room answers one player's asks five times a second at most, in the order asked, holding four for their
@@ -363,7 +370,7 @@ that is not lowercase letters, digits and underscores or is over 40 bytes, and a
 another player's dress only when it has a dress's shape, and their move only where the forge draws it for that
 figure; otherwise it shows the move their body is in.
 
-| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent (on a sea island, the wrecks they have scavenged); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); and the day the wares are of, which a smith's ware is asked by |
+| Gear | The room, to one player alone, whenever theirs changes | Their XP, level, Prestige and Defense; their Aurem, fragments, Essence, Fruit of Dagon and each island's resource; every item they hold (its number, kind, rarity, level, name, island resource, XP and most, nodes bought and chosen, where it is, its Attack, Defense and Prestige, each column of its nodes with its traits, the XP that unlocks it and its cost, so the browser draws them without the rules, a weapon's element, and a ware's price); in a social space the day's wares; their Vestiges, and the drops lying for them (a Vestige, an Ammo box or an Ammo crate, where it lies, where it was thrown from and the ticks it still flies); the resource nodes they have spent; on a sea island, the wrecks they have scavenged there (`scavenged`); whether they stand where a Vestige opens (the Mage's counter, or the stall); the answer to their last ask; their fighter's trim, which their browser puts back on the fighter a snapshot gives before it predicts them; the arms their gear lets them take up, which their browser predicts them with, bare hands for any other; how far they are to their next level and their next Fruit of Dagon; the emblems they keep, the one they wear, and in a social space the Tailor's of the day; the Art they wear, each Art's Core, and how far their Anima and each Tenet have charged; and the Ranged loadout's ammunition (the shots left and the capacity of the one worn, the share of a full capacity kept), the Ammo crates carried and, in a social space, the Weaponsmith's price for one; where they stand with the factions (the pledge, each faction's reputation and packages waiting) and each Art's level, XP and fragments owned; the cosmetics they keep and wear and, in a social space, those the Tailor and the Tack sell that day; their Shapes, and while Shape is in their social space his place and wares; in a social space every faction's wares ([[Factions]]); and the day the wares are of, which a smith's ware is asked by |
 
 ## The host
 

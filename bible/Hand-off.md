@@ -26,9 +26,12 @@ each part works is in its system note.
 - **Patrol areas and Saltmere's three zones**, laid out with RMB blocks, heights, ledges, caverns and handcrafted
   modules ([[Layouts]], [[Modules]]).
 - **Overlook's hub** ([[Overlook Becomes a Hub of Courts and Ways, After the Tower]]): keepers in stalls, townsfolk.
-- **The fight on foot**: Soulframe's guard, parry, riposte and dodge over DFO's blows; DFO's Enhanced AI with
-  project-final's, in groups that lead, break and give ground; three healing charges; the aim, the crosshair and
-  ranged weapons ([[Combat]], [[Foes]], [[Navmesh]]).
+- **The fight on foot**: Soulframe's guard, parry, riposte and dodge over DFO's blows, the player's swings chaining
+  side cut, overhead and thrust; DFO's Enhanced AI with project-final's, in groups that lead, break and give ground,
+  walking and running at three quarters of a player's pace; three healing charges; the aim, the crosshair and ranged
+  weapons ([[Combat]], [[Foes]], [[Navmesh]], [[The Player's Swings Chain Side Cut, Overhead and Thrust]],
+  [[Foes Walk and Run at Three Quarters of a Player's Pace]]). Resource nodes worked by holding E, each island's own
+  ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]], [[Islands]]).
 - **[[Enemies]]**: factions starting with the Grey Tithe, five ranks, two bosses, a garrison in every node but the
   social spaces, and the Enhanced Plus bars and plates.
 - **[[Gear]]** after Destiny 1: levels, Attack and Defense, perks, Atheric exotics, elements and shields, the gear
@@ -79,10 +82,12 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
 - **Open pull requests.** For the owner's yes once their checks pass: #143 (Vestiges as project-final's crystals),
-  #141 (the balance pass halfway back), #140 (a city's vertices), #139 (areas in chunks), #135 (swings chain; foes at
-  75% of the player's pace), #132 (resource nodes), #124 (public events on Saltmere). Drafts: #72 and #88 (dungeons),
+  #141 (the balance pass halfway back), #139 (areas in chunks), #124 (public events on Saltmere). Drafts: #72 and #88 (dungeons),
   #77 (lore), #82 (the owner's loop), #97 (activities), #122 (server authority), #123 (the Postmaster); #93 and #114
   sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127 holds.
+- **The combat notes' open points** (#135): whether the one-second reset of the swings' chain and the foes' pace feel
+  right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge of reach
+  every swing thrusts), or the chain kept strictly and a short stroke left to miss, asked and not yet answered.
 - **The dungeons-to-mail stack** (#72, #88, #97, #122, #123): each layer passes the full check on its head, but it
   conflicts with `main` and needs a catch-up before it merges, with the owner's yes; #122's move of the asset
   workflows to `R2_TOKEN` waits on the owner's named yes. Meeting the marks, the Postmaster's letter mark should beat
@@ -181,6 +186,10 @@ The decisions in [[Open Questions]] are not repeated here.
   us moving away from html. So not really an issue per say." A driver that patches the worker too is on the branch
   `ccr-130008df-u4ahst-headless` (cfd75bba), unmerged. `tools/uiShot.mjs` writes blank pictures (the read-back is only
   the ground under SwiftShader); the game's own frame read back from its worker shows the interface whole.
+- **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
+  `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
+  `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
+  draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
 - **After the roads**: a road walked end to end by a person; the cost of a place's navmesh bake in WebAssembly (about
   140 to 270 ms natively, in the tick its group first stands); playing alone walks no road, as it keeps no gear.
 - **The garrison agreement run kills no foe** (`crates/room-wasm/src/garrison_door_tests.rs`,
@@ -251,7 +260,7 @@ The decisions in [[Open Questions]] are not repeated here.
     under still burns a captain with heated shot though its balls do nothing: the owner's to say which way each goes.
   - Binds: Use rebound to R is never heard walking the deck, where Repair keeps R; F held to dismantle can be taken by
     a rebound Details or Character. The clash finder sees neither.
-  - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`, which #135 changes).
+  - A coward's flight is cancelled for good by a stagger (`foes/tactics.rs`).
   - The terrain's painted paths are sampled at window coordinates in f32 (3 to 6 cm steps far out), the water and the
     scene make about 13 GPU objects a frame, an island room's hauls are kept and never told, and `RoomHost`
     (`server/worker.ts`) has no test.

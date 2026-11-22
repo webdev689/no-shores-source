@@ -1,16 +1,21 @@
 name: forge
 
-# Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds and the
-# weapons drawn large), and publishes them to R2 with the repository's Cloudflare token, whenever their tools change
-# on main or a run is asked for on a branch; a run asked for may also draw figure strips for both bodies (`figures`).
-# R2's objects are named by their hashes, so a run changes nothing already published; the log ends with the forge's
-# manifest on one line, which a commit then takes into content/forge/renders.json.
+# Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
+# weapons drawn large and the material nodes), and publishes them to R2 with the repository's Cloudflare token,
+# whenever their tools change on main or a run is asked for on a branch; a run asked for may also draw figure strips
+# for both bodies (`figures`). R2's objects are named by their hashes, so a run changes nothing already published; the
+# log ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
 on:
   push:
     branches: [main]
     paths:
       - tools/forge/tools/sprite-forge/artbirds.py
       - tools/forge/tools/sprite-forge/weaponart.py
+      # The material nodes are laid from the item forge's models, any of which may change them.
+      - tools/forge/tools/sprite-forge/items/**
+      - tools/forge/tools/sprite-forge/itempics.py
+      - tools/forge/tools/sprite-forge/specs/item-ramps.json
+      - tools/forge/tools/sprite-forge/specs/pictures/nodes.json
       - tools/forge/tools/sprite-forge/artbirds-requirements.txt
       - .github/workflows/forge.yml
   workflow_dispatch:
@@ -62,6 +67,12 @@ jobs:
         if: steps.token.outputs.set == 'true'
         working-directory: tools/forge
         run: python -I tools/sprite-forge/weaponart.py --out public/art/weapons
+      - name: Render the material nodes
+        if: steps.token.outputs.set == 'true'
+        working-directory: tools/forge
+        run: |
+          nodes=$(python -c "import json; print(','.join(json.load(open('tools/sprite-forge/specs/pictures/nodes.json'))['pictures']))")
+          python -I tools/sprite-forge/itempics.py --set pictures --only "$nodes" --out public/art/studio/forge
       # Figure strips over the published tables (layers.py), each whose inputs changed drawn again; no token here.
       - name: Draw the figure strips asked for
         if: steps.token.outputs.set == 'true' && inputs.figures

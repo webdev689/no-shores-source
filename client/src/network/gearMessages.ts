@@ -37,6 +37,8 @@ export const ASKS = {
   train: 61,
   chooseOfficer: 62,
   gather: 20,
+  /** A gather let go of before it is done: E released. */
+  stopGather: 67,
   grantVestige: 30,
   grantNamed: 31,
   grantItem: 32,
@@ -189,6 +191,8 @@ export interface GearState {
   readonly vestiges: readonly GearVestige[];
   readonly drops: readonly GearDrop[];
   readonly spent: readonly number[];
+  /** On a sea island, the wrecks they have scavenged there, by their places in its list. */
+  readonly scavenged?: readonly number[];
   /** Whether they stand where a Vestige opens: the Mage's counter, or the Test Ground's stall. */
   readonly atMage: boolean;
   readonly answer: number;
@@ -395,6 +399,7 @@ export function gearOf(gear: Gear): GearState {
     vestiges,
     drops,
     spent: Array.from(gear.spentArray() ?? []),
+    scavenged: Array.from(gear.scavengedArray() ?? []),
     atMage: gear.atMage(),
     answer: gear.answer(),
     identified: gear.identified(),

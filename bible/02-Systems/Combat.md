@@ -69,8 +69,10 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
 - **Swings.** DFO's swing law times them, each swing taking three quarters of its time at the owner's word: five strike
   frames, each 0.15 s for a sword, shorter or longer by the weapon's handling and a two-handed weight; the blow lands as
   the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
-  struck the fighter moves at a third of its pace. A click picks the stroke at random, as Daggerfall Unity's click to
-  attack does, among the strokes that reach the locked foe when some do (the page rolls it): up thrusts half a metre
+  struck the fighter moves at a third of its pace. The player's swings chain the side cut (left), the overhead (down)
+  and the thrust (up) in turn, starting over at the side cut after a second without a swing; a stroke that does not
+  reach the locked foe gives way to the next in the chain that does (the page chooses it,
+  [[The Player's Swings Chain Side Cut, Overhead and Thrust]]). A foe's strokes come by chance. Up thrusts half a metre
   further, in a narrow arc; down chops, heavier on poise and half again on a guard; left and right sweep the widest arc;
   the diagonals slash between. A blow strikes every fighter of another side within its reach and arc (close in, almost
   any way it faces), near the striker's height, with no block between them, each taking the whole blow; the soft lock's
@@ -117,7 +119,7 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks
   (0.4 s), in which no blow or shot starts; a guard and a dodge still do. A weapon taken up from bare hands is drawn
   at once, but a swap begun as another was put away runs on. A click made in a swap is kept until it ends, however
-  early, and its swing starts on the tick the swap ends, once, with the stroke the click rolled for the new weapon
+  early, and its swing starts on the tick the swap ends, once, with the stroke the chain gives the new weapon
   ([[A Click During a Weapon Swap Swings as It Ends]]); the page predicts it by the same rules, so the first person
   and the figure swing on that tick. A trigger pulled in a swap to a ranged weapon fires then if it is loaded, as a
   pull at rest does, and does nothing if not. The newest press wins: a guard, a dodge or another swap pressed after
