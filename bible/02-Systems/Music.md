@@ -7,6 +7,10 @@ code:
   - client/src/game/audio/music/score.ts#makeSong
   - client/src/game/audio/music/score.ts#ROLES
   - client/src/game/audio/music/songPlayer.ts#SongPlayer
+  - client/src/game/audio/music/form.ts#makeForm
+  - client/src/game/audio/music/form.ts#Arranger
+  - client/src/game/audio/music/form.ts#takeAfter
+  - client/src/game/audio/music/form.ts#openingOf
   - client/src/game/audio/music/directorLaw.ts#hear
   - client/src/game/audio/music/directorLaw.ts#MOOD_ROLES
   - client/src/game/audio/music/directorLaw.ts#voyageSongFor
@@ -15,6 +19,8 @@ code:
   - client/src/game/audio/music/hearing.ts#hearFoot
   - client/src/game/audio/music/hearing.ts#hearSea
   - client/src/game/audio/music/seaScore.ts#seaSongs
+  - client/src/game/audio/music/seaFights.ts#seaFight
+  - client/src/game/audio/music/seaFights.ts#seaStorm
   - client/src/game/audio/music/wrathScore.ts#wrathScore
   - client/src/game/audio/music/reckoningScore.ts#reckoningScore
   - client/src/game/audio/music/boardingScore.ts#boardingScore
@@ -39,9 +45,10 @@ The game's music: DFO's own FM synthesiser playing scores written as notes in co
 ([[Music and Ambience Come From DFO's Synthesiser]], [[Pick - Music]]). Out of danger a calm piece comes now and then,
 at sea, in the social space and on the islands, with minutes of silence between pieces
 ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]); music comes as danger nears, grows into the
-fight a layer at a time on the bar line, and falls back to silence when it ends. Nothing in it rings or whines: no
-note sounds over B5, no note's partials reach past 6 kHz, no struck tone over 1.5 kHz lasts past a tenth of a
-second, and no fight sweeps a pitched swell: its risers and gusts are noise.
+fight a layer at a time on the bar line, and falls back to silence when it ends. A fight's music never plays the same
+bars over for minutes, nor opens the way the last fight did: each fight song is written as takes, recombined as it
+plays. Nothing in it rings or whines: no note sounds over B5, no note's partials reach past 6 kHz, no struck tone over
+1.5 kHz lasts past a tenth of a second, and no fight sweeps a pitched swell: its risers and gusts are noise.
 
 ## How it works
 
@@ -51,7 +58,8 @@ second, and no fight sweeps a pitched swell: its risers and gusts are noise.
   keeps its voice's whole depth. Each General MIDI family has a voice; a harp, pizzicato, timpani, bells and a few
   more have their own articulation. Channel 9 is the drums: a sine falling in pitch, or a band of noise.
 - **The player.** It wakes ten times a second and schedules the next quarter second's notes at their exact times. A
-  page that stalls past that skips the gap. A song loops on its bar line to the tick. A score may give a track its
+  page that stalls past that skips the gap. A song loops on its bar line to the tick; a song written as takes plays,
+  at each seam, the take its arranger chooses, again on the bar line and to the tick. A score may give a track its
   own voice: unison copies a few cents apart, spread across the stereo, with a sub an octave under. Drums may carry a
   beater's click or a skin's body. Every song is high-passed at 30 Hz. A song may play through a press: a compressor
   under a soft ceiling. The whole plays at 0.22 into the Music bus ([[Interface]]), under a soft ceiling of the
@@ -66,33 +74,59 @@ second, and no fight sweeps a pitched swell: its risers and gusts are noise.
 - **Writing helps** (`craft.ts`). A score names its plan of sections; writes its harmony a bar at a time
   (`'Em | C/D'`), a bar's chords split where its metre says; holds a chord that follows itself as one note; and
   checks each tune's bars against its metre, so a slip in one note's length cannot shift the rest.
-- **A score, written.** A fight score is a song like this, set in `overlookScores` as a family's
-  `{ song, cadence, victory, defeat }`:
+- **A score, written.** A fight score is a song written as takes (`makeForm`), set in `overlookScores` as a family's
+  `{ song, cadence, victory, defeat }`. Each take names its section, its length, the sections that may follow it and
+  whether a fight may open on it, and lays its notes from its own bar 0; a note laid past its edges stays inside it:
 
 ```ts
 const theme = tune('E4:1 G4:1 A4:2 | B4:3 r:1');
-const song = makeSong(
+const vamp = (snare: number) => (w: Writer<'pad' | 'lead', 'kick' | 'snare'>) => {
+  for (let bar = 0; bar < 8; bar++) {
+    w.note('pad', bar, 0, 4, 'E3', 80);
+    w.hit('kick', bar, 0, 100);
+    w.hit('snare', bar, snare, 90);
+  }
+};
+const song = makeForm(
   {
     name: 'example-fight',
     bpm: 120,
-    bars: 8,
     tracks: {
       pad: { program: 89, volume: 90, pan: 64, role: 'bed' },
       lead: { program: 73, volume: 100, pan: 70, role: 'lead', voice: { unison: 2, cents: 6, spread: 0.2 } },
     },
     kit: { volume: 100, role: 'combat', keys: { kick: 36, snare: 38 }, roles: { kick: 'tension' } },
   },
-  (w) => {
-    for (let bar = 0; bar < 8; bar++) {
-      w.note('pad', bar, 0, 4, 'E3', 80);
-      w.hit('kick', bar, 0, 100);
-      w.hit('snare', bar, 2, 90);
-    }
-    lay(w, 'lead', 0, theme, 96);
-  },
+  [
+    { section: 'vamp', bars: 8, next: ['tune'], opens: true, write: vamp(2) },
+    { section: 'vamp', bars: 8, next: ['tune'], opens: true, write: vamp(1.5) },
+    {
+      section: 'tune',
+      bars: 8,
+      next: ['vamp'],
+      write: (w) => {
+        vamp(2)(w);
+        lay(w, 'lead', 0, theme, 96);
+      },
+    },
+  ],
 );
 ```
 
+- **Takes.** A fight song is its takes laid end to end, one song with one set of tracks, so the ceiling and the
+  layers hold across all of them. The takes of a section share its harmony and its tune and differ in how they are
+  played: each family's and each boss's takes come in three feels (the drums' groove and fills, the bass's figure,
+  the pulse's figure, the strings' voicing, and the danger's own figures, a gate, a heartbeat, a rub, drips or the
+  clock's woods). Two takes of a section differ in every bar, even in the tension's layers alone: they are in
+  different feels, or a turned take's chords and its drive set it apart. Some takes answer the tune (one instrument
+  states it, another takes its second half) or set it over turned chords, and every song but the last stands has a
+  breakdown where the drums thin and the tune's head comes back alone.
+- **The arranger** (`Arranger`, one for every player of the director, its die the director's) chooses each take at
+  its seam: one of a section the take before may lead to, never the same take twice running; a pairing of takes not
+  yet heard before one heard (else the one heard longest ago), and among those a take heard longest ago, by the die.
+  A fight opens on one of its opening takes (a vamp, an intro, a break of calls, a breakdown), never the one the last
+  fight on that song opened on. The arranger remembers each song's last 64 takes across its fights, so a run of short
+  fights each hears different music.
 - **Layers.** The roles in the order the director brings them in: `bed` (the harmony's floor), `tension` (the colour
   of danger: bells, a swell, high strings, a heartbeat drum), `pulse` (an ostinato, a clock), `combat` (the drums,
   the timpani), `lead` (the tune), `peak` (the choir, the orchestra hit, a theme doubled). Only the notes of the
@@ -119,11 +153,11 @@ on, and the sky over it.
   over a beat, so two tempos never sound together for long; a song still fading out is brought back where it stands.
   A boss's fall ends its fight: only a foe still engaged keeps the music going.
 - **Fight scores.** Each island's climate is in a family: green (temperate coast, highland, woodland), dry (desert,
-  savanna, steppe), wet (rainforest, swamp) and cold (tundra). Each family's fight score is one song in layers, with
-  a cadence, a victory and a defeat. A family with no score is silent.
+  savanna, steppe), wet (rainforest, swamp) and cold (tundra). Each family's fight score is one song in layers,
+  written as takes, with a cadence, a victory and a defeat. A family with no score is silent.
 - **Bosses.** Captain Brannoc Thule plays the Boarding; High Assessor Corvane plays the Reckoning; any other Boss
   plays the Wrath. The phase is the boss's health: a phase a third, the last stand in its last tenth (the Wrath, with
-  none, keeps its third phase). A new phase begins on the bar line.
+  none, keeps its third phase). A new phase begins on the bar line, on one of its opening takes.
 - **Stings.** A boss engaged plays its wake if its score has one, straight into its first phase. A boss fallen plays
   its fall; the player dead plays the score's defeat. A fight that ends plays the family's cadence, or its victory
   if the player killed a foe in it. A sting holds the next song until it ends; where none is written, silence
@@ -143,12 +177,14 @@ on, and the sky over it.
 - **The story.** While the [[Prologue]] plays, each beat tells the director what plays: a song of the story's own in
   the layers of the mood it asks; a silence, let ring out or cut at once (the crash, and the black after it); or the
   fight it plays, heard as any fight. At sea that is the sea's own fight song. On the wreck it is the Boarding's first
-  phase in the fight's layers, tense at least, until Thule wakes his own score; the player beaten plays its end. The
-  story's songs leave the ambience at 0.8.
+  phase in the fight's layers, tense at least, until Thule wakes his own score; the player beaten plays its end. Its
+  tension, heard for minutes on the wreck, changes take by take: the taiko's heartbeat, the bass's strikes, the
+  strings' voicing, the bell, a soft shriek, the organ swelling into a rising take, the chords turned. The story's
+  songs leave the ambience at 0.8.
 - **A wake holds what follows it.** A boss's wake is never heard over the song it leads into, even when that song was
   playing before it: the song begins again once the wake has played.
-- **A hidden page** falls silent at once; the music starts again from the song's top when the page is seen, but a
-  sea song cut short by it is not begun again.
+- **A hidden page** falls silent at once; the music starts again when the page is seen, from the song's top or, for
+  a fight, on an opening take, but a sea song cut short by it is not begun again.
 
 ## The scores
 
@@ -173,40 +209,69 @@ on, and the sky over it.
 - **The sea's band**: three songs for fiddle, flute, whistle, harp and bodhran over strings, horns and timpani: the
   storm (D Aeolian), landfall (3/4 at 88, D Mixolydian: a homecoming, the fiddle's tune and the whistle's over held
   strings and horn, the harp rolling each chord, the harbour's bell; [[Landfall Is Kept as Made Again]]; its whistle
-  now an octave down, under the ceiling) and the sea fight (D minor).
+  now an octave down, under the ceiling) and the sea fight (D minor). The storm (`seaFights.ts`) is twelve takes: the
+  drive growing in, the horn's theme (on the strings, with the brass, or answered over turned chords), the second
+  harmony's unrest (bare, or with a line on the horn or the strings) and the breath of drive and choir alone, each in
+  one of three feels of the drive, the bass, the timpani and the choir's voicing. The sea fight is twelve: an intro of
+  stabs or a fiddle's pickup, the brass's tune (on the fiddle and strings, with the horns, or answered over turned
+  chords), its second strain, and a break where the drums thin to the drive under the tune's head; each in one of
+  three feels of the drive, the timpani, the bass, the strings and the march.
 - **The Wrath**: D minor on low brass, organ, choir, a tolled bell and low drums; three phases at 132, 138 and 150,
-  the third on the Neapolitan; its fall turns to D major.
+  the third on the Neapolitan; its fall turns to D major. Each phase is twelve takes: the march of stabs, the theme
+  (its own, or the one it recalls with the strings over it), the theme answered by the strings, in full, over turned chords,
+  and the drums stopped to the ostinato and the surdo under the theme's head.
 - **The Reckoning**: C minor and a clock: a broken quarter chime, a harpsichord's escapement, wood blocks ticking;
   three phases at 136, 142 and 152 (the second a canon), a last stand at 160 counting on the bell, and the chime
-  mended in C major as the boss falls.
+  mended in C major as the boss falls. Each phase is twelve takes: the clock alone, the theme, the theme answered (or
+  the canon turned round), in full, over turned chords, and the clock stopped to its woods and its chime; the last
+  stand is nine: counting, tolling with the changes struck in turn, and hammered from D-flat.
 - **The Boarding**: E Phrygian: a broken fanfare on the horn over a crew's drums, low strings, a chant and shrieking
   strings; a two-bar wake, phases at 138, 144 and 152, a last stand at 160, a hymn in E major for the boss's fall,
-  and the end for the player's.
+  and the end for the player's. Each phase is eleven takes: rising (the organ swelling), the motif called and the
+  horn answering, driven with the motif hammered twice, the horn leading over turned chords, and a breakdown to the
+  taiko and the chant; the last stand is nine: counting, at its height, and hammered from F.
+- **Their feels.** Each boss's takes come in three feels: the Boarding's kick, taiko heartbeat, toms, hats, fills,
+  bass strikes, ostinato's lean, low strings' figure and voicing; the Reckoning's escapement figures, woods, surdo,
+  bass, voicing, kick and fills; the Wrath's ostinato accents, bass, voicing, surdo, bell and drums.
 - **Green**, the coast, the highland and the woodland: E Dorian in 6/8 at a dotted quarter of 104, a war jig. A
   fiddle's tune runs over the cellos' gallop, a horn's counter-line under it, a bodhran and a big drum; then the
   horn's own broad tune under the fiddle's descant, and a break of horn calls. Its tension is strings gated in
   sixteenths over a heartbeat; its peak sets the choir and the low brass's stabs under the tune, and noise swells
   into each section. The cadence turns the tune's hemiola home, the victory ends in E major, the defeat lets the call
-  fall to the low strings. 80 bars, 92 s round.
+  fall to the low strings. Nineteen takes of eight bars, 175 s of music: three vamps, the tune's two halves three ways
+  each (over the counter-line, answered by the horn, in octaves over turned chords), the horn's tune's two halves three
+  ways each (under the descant, with the fiddle an octave over, or on the fiddle over the horn held low), two breaks
+  of calls (the horn's or the fiddle's) and two breakdowns (the call slowed on the fiddle or the horn over the gallop).
 - **Dry**, the desert, the savanna and the steppe: A Phrygian with its major third, in 7/8 (two, two, three) at 150.
   An oboe's tune over an oud's ostinato and a darbuka's doum and tek, the strings' counter-line slow under it; then
   the steppe's gallop, repeated notes rising F, G, A. Its tension is cellos rubbing A against B flat in sixteenths
   over a frame drum and a hiss of sand; its peak lays the brass under the tune, the choir in open fifths and stabs on
   the bar. The cadence falls D, C, B flat, A; the victory rises F, G, A into A major; the defeat leaves the oboe
-  alone. 64 bars, 90 s round.
+  alone. Nineteen takes, 213 s: three vamps, the tune's halves three ways each, the gallop's halves three ways each
+  (on the oboe, on the strings, or traded two bars at a time), two breaks (the oboe's calls, or the strings' answered)
+  and two breakdowns.
 - **Wet**, the rainforest and the swamp: F sharp Aeolian in 4/4 at 104, the sixteenths grouped three, three, three,
   three and four. A low clarinet's tune over a marimba in that grouping, a second clarinet's counter-line under it,
   congas, log drums and a deep drum; then the second clarinet's own tune under the first's long notes. Its tension is
   a kalimba dripping in dotted eighths, a log drum's heartbeat, insects in a shaker and a bassoon creeping a half
   step; its peak sets the strings an octave over the tune, the voices' oohs and the horns swelling. The cadence turns
-  G, C sharp, F sharp minor; the victory rises into F sharp major; the defeat sinks on the clarinet. 48 bars, 111 s
-  round.
+  G, C sharp, F sharp minor; the victory rises into F sharp major; the defeat sinks on the clarinet. Sixteen takes,
+  295 s: three vamps, the tune's halves three ways each, the second clarinet's tune three ways (under the first,
+  swapped, or both an octave down), two breaks and two breakdowns.
 - **Cold**, the tundra: B Aeolian with its flat second borrowed, in 5/4 (three and two) at 120. A horn calls the tune
   over the low strings' ostinato and a taiko, a fiddle's counter-line above, the harmony spaced wide: a low bass and
   open fifths high. Then the fiddle's own tune over the horns. Its tension is strings shivering in fifths, gusts
   of noise as wind, the strings' wood ticking and the taiko's slow heart; its peak doubles the horn with the brass and
   sets the choir high. The cadence closes on the low B, the victory rises into B major, the defeat falls through C.
-  40 bars, 100 s round.
+  Sixteen takes, 320 s: three vamps, the tune's halves three ways each (the third over turned chords with the fiddle
+  held high), the fiddle's tune three ways (over the horns, on the horn under the fiddle, or the two answering), two
+  breaks and two breakdowns.
+- **The families' feels.** Green's: the bodhran's grooves and fills, the gallop, the bass (held, struck on the dotted
+  beats, or a jig), the voicing, the gate's sixteenths, the heartbeat and the tremolo's bars. Dry's: the darbuka's
+  grooves and fills, the oud's figure, the bass, the voicing, the rub, the heart and the sand. Wet's: the congas'
+  and logs' grooves and fills, the marimba's figure, the bass, the voicing, the drips, the heart, the insects and the
+  croak. Cold's: the taiko's grooves and fills, the low strings' figure, the bass, the voicing, the shiver (held,
+  bowed again, or in octaves), the gusts, the ticks and the heart.
 - **The story's songs**, one theme told through six songs ([[Prologue]]) for strings, harp, flute, fiddle, horns, low
   brass, a choir, bells and a celesta. The theme is D, A, B flat, A: a rise of a fifth and a sigh from the minor sixth.
   - The title, 79 in 4/4, 67 s round: first light for the intro's 6 s over the cloud, then the theme on the horn and
@@ -232,3 +297,9 @@ story's songs -20 to -22.8 dBFS, the deep -24.3 under the sea, the ram -18.4 as 
 - A boss's score is chosen by the name over its bar.
 - At its peak a family's fight renders 12 to 15 times faster than it plays in headless Chromium: under a tenth of one
   audio core.
+- The takes are written, not made up as the game plays: the arranger only recombines them. A test plays every fight
+  song for ten minutes on six seeded dice and finds no sixteen bars heard twice in its first four minutes, in the
+  tension's layers, the fight's or the peak's, and every take heard; past that a long fight hears its pairings again.
+- The arranger's memory lasts while the game runs; a new session's first fight may open as the last session's did.
+- The loudness above is not yet measured across every take: a breakdown, or a take in another feel, may sit a
+  decibel or two off it. No take has been heard by the owner on the sound sheet.
