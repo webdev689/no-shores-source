@@ -7,15 +7,13 @@ use sky::heavens::heavens_at;
 use sky::lightning::strikes_near;
 use sky::weather::{ground_at, weather_at};
 
-/// A sky request: x, y, height above the sea, world time, and the climate's number.
-pub const SKY_REQUEST_FLOATS: usize = 5;
-/// An answer: latitude; the sun; the moon, its phase and lit share; the stars' turn; the daylight; the cloud, the fall
-/// and its snow, the storm, the fog and the sand; the wind east and south, its gusts; the temperature; the wetness;
-/// the steering flow that carries the weather, m/s east.
+/// A sky request is x, y, height above the sea, world time, and the climate's number. Its answer: latitude; the sun;
+/// the moon, its phase and lit share; the stars' turn; the daylight; the cloud, the fall and its snow, the storm, the
+/// fog and the sand; the wind east and south, its gusts; the temperature; the wetness; the steering flow that carries
+/// the weather, m/s east; and the snow lying.
 pub const SKY_ANSWER_FLOATS: usize = 24;
-/// A strikes request: x, y, the reach, from and to (world time) and the climate's number; and each strike's
-/// numbers: x, y, its moment, whether it reaches the ground, its power.
-pub const STRIKES_REQUEST_FLOATS: usize = 6;
+/// A strikes request is x, y, the reach, from and to (world time) and the climate's number; each strike's numbers:
+/// x, y, its moment, whether it reaches the ground, its power.
 pub const STRIKE_FLOATS: usize = 5;
 /// The farthest a browser may ask for lightning, metres, and the longest window, seconds: a storm on the horizon's
 /// worth, a few frames' at a time.

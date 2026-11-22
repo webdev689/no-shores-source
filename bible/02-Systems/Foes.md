@@ -83,8 +83,8 @@ phases) is [[Enemies]].
 | Captain | 160 | 60 | heavy | 1.2 | 14 | 25% / 30% / 15% | sweep, lunge, charge, leap |
 
   A foe may have a level: its health is its rank's times 1.07 for each, and its blows on a player and theirs on it
-  are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike twice
-  and its blows on a player half, at every level ([[Gear]], "Blows"). A foe of level 0 has no power, and fights by
+  are made with the power of [[Gear]], its rank's might and its phase's on top. A player's blows on it strike half
+  again and its blows on a player three quarters, at every level ([[Gear]], "Blows"; [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]). A foe of level 0 has no power, and fights by
   these numbers and those two alone. A garrison's foes stand at their island's levels ([[Enemies]]).
 
   A skirmisher is a coward: below a fifth of its health it runs, once, for 8 s.
@@ -122,7 +122,8 @@ phases) is [[Enemies]].
   sight a foe fights as it always did; turns, the beat, the line, the flanker, the chase and the leash stay each
   target's own.
 - **Moving.** A foe walks and runs at three quarters of a player's pace, 3.3 and 5.7 m/s
-  ([[Foes Walk and Run at Three Quarters of a Player's Pace]]). It asks no more of itself (`FOE_PACE`): its slower moves
+  ([[Foes Walk and Run at Three Quarters of a Player's Pace]]). It asks no more of itself (`FOE_PACE`), crossing a
+  climb or a drop too: its slower moves
   keep their speeds, and steering apart from its allies may push it a little faster for a moment, but never on along its
   way past its own run, so a player running away gets away. It faces a bearing of its own and turns at 320 degrees a
   second; walking somewhere it turns first and steps only within 45 degrees of its way, so no foe walks backwards. It
@@ -165,7 +166,7 @@ phases) is [[Enemies]].
   Miniboss back to its first phase, and the foes it called fall ([[Enemies]]). With nothing stirring it, a garrison
   foe keeps to its place: one a stir drew off, or an ally walking past moved, walks back to it once idle. While its
   group walks its beat it keeps up with its place, walking at the share of a walk that its distance behind is of 2 m,
-  a full walk at most, and faces its way.
+  its own walk at most, and faces its way.
 - **Its group.** A garrison foe does as its group asks ([[Enemies]], "A garrison";
   [[Foes Fight in Groups That Lead, Break and Give Ground, After Bungie]]; the numbers are Claude's,
   [[Foe Groups as Claude Builds Them]]):

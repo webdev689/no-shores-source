@@ -19,8 +19,8 @@ test('each hull carries its own hands, cut by the share of its men left, one at 
 test('struck, a ship keeps its hands and its captain leaves the wheel; going down or gone, no one is aboard', () => {
   const whole = plainCrew('b');
   assert.deepEqual([handsShown(0, whole), captainStands(whole)], [3, 'wheel']);
-  for (const state of ['struck', 'wrecked'] as const)
-    assert.deepEqual([handsShown(0, { ...whole, state }), captainStands({ ...whole, state })], [3, 'aside']);
+  const struck = { ...whole, state: 'struck' as const };
+  assert.deepEqual([handsShown(0, struck), captainStands(struck)], [3, 'aside']);
   for (const state of ['sinking', 'sunk'] as const)
     assert.deepEqual([handsShown(0, { ...whole, state }), captainStands({ ...whole, state })], [0, null]);
 });

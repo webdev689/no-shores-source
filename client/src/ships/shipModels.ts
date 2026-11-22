@@ -121,7 +121,9 @@ export class ShipModels {
 
   /** Draws a frame's ships' shadows into the cascade of the sun's map being drawn, each in the slot `draw` gives it. */
   castInto(pass: GPURenderPassEncoder, ships: readonly DrawnShip[], camera: ShipCamera, shadow: ShadowMap): void {
-    this.each(ships, (model, ship, slot) => model.castInto(pass, ship.place, camera, slot, ship.rig, shadow));
+    this.each(ships, (model, ship, slot) =>
+      model.castInto(pass, ship.place, camera, slot, ship.rig, shadow, ship.look),
+    );
   }
 
   private each(ships: readonly DrawnShip[], drawn: (model: ShipView, ship: DrawnShip, slot: number) => void): void {

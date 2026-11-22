@@ -4,7 +4,8 @@ type: reference
 # Testing
 
 Tests say what the code does ([[Tests Check Behaviour]]). They run in `cargo xtask check`, and the whole run stays
-fast enough to run before every push.
+fast enough to run before every push; but for three a workflow runs alone, as its tools change: `tools/flora`'s,
+`tools/islands`' and `tools/freesound`'s.
 
 ## Where tests live
 

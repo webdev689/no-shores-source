@@ -95,7 +95,7 @@ has sunk, or lies past every ship they may fight and is not fighting, leaves the
 is one pure function (`sail_hurt`), which a browser predicting it runs too.
 
 Its guns, the balls striking and falling in the sea, and a ship breaking up are heard where each happens, through the
-sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
+sea's soundscape ([[Ambience]]).
 
 ## How it works
 
@@ -158,11 +158,11 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   slow its rudder takes hold twice as fast. A captain reckons its own swing at a fight's (`swing_rate`).
 - **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
   burst is over it recharges for 12 s, so it may burst again 16 s after the tap. A tap while it bursts or recharges
-  does nothing, and a wreck cannot burst (its burst is kept). Captains never burst. The fight's view carries each
+  does nothing, nor does one on a ship going down (its burst is kept). Captains never burst. The fight's view carries each
   ship's burst, the share still to run and the share of its recharge done, which the ship's bar shows on the burst's
   ring, lit and draining as it runs, then swept dark as it recharges with its last seconds counted, the browser
   turning the shares to seconds by the burst's 4 s and 12 s (`ships/shipAbilities.ts`; "How it looks", "The
-  readout"). Sailing between ports has no burst: only a fight's helm has one.
+  readout"). Sailing between ports has no burst: only a fight's helm has one, and a fleet room's fight has none.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
@@ -184,11 +184,11 @@ their rudder and the sail the rung whose way is nearest. Under the ladder's law 
 so they never tack.
 
 - **Whom they fight.** A captain is bold one time in four by their seed, an Elite and above always. A bold one takes on a
-  ship they may fight within 750 m; a wary one only a wreck, a hull nearly gone, or a ship they outgun 5 to 4 by DFO's
+  ship they may fight within 750 m; a wary one only a hull nearly gone, or a ship they outgun 5 to 4 by DFO's
   fighting power (the time each takes to make the other strike, by each ship's whole rank: its hull and men, its guns'
   harm and reload). Struck by a ship, they are hostile to it for 5 minutes. Of the ships they would fight and do not
   spare, they take the nearest, the one they already fight reckoned a fifth nearer (as DFO ranks them), and run from
-  the nearest that struck them within 320 m. What they remember of a chase, a wreck, their mark's way and the side they
+  the nearest that struck them within 320 m. What they remember of a chase, their mark's way and the side they
   presented is let go when they mark another ship.
 - **Their course.** They bend round every hull about them that will pass within both their reaches (each half of half its
   box's beam and length) and 15 m, the bends of each summed, as DFO's traffic does. Far off, they steer to intercept,
@@ -213,14 +213,13 @@ so they never tack.
   ([[Ship Guns Keep Square Broadsides]]). Against a Sloop sailing on or weaving, a Minor's balls strike its hull 14 to
   33 times in a hundred (0.3 to 1.2 hull hits a minute), a Major's about half (1.5 to 8), an Elite's to a Boss's 44 to
   64 in a hundred (5 to 34 a minute) (`captain_gunnery`, six fights of 4 minutes a rank). Their misjudged elevation never passes
-  what their carriage depresses or raises to. One run out too long unfired, or that loses its mark, is run in. They
-  never fire on a wreck.
+  what their carriage depresses or raises to. One run out too long unfired, or that loses its mark, is run in.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
-  ship that outguns them. A chase that gains nothing in 150 s is given up, and a wreck left after 30 s. They leave the
-  fight when they have sunk, or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each
-  afloat captain's of another faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as
-  long as they give a chase: so a wary ship a player chased into a fight it will not take breaks off, and the fight
-  ends for both. The editor's fight ends when its one captain leaves.
+  ship that outguns them. A chase that gains nothing in 150 s is given up. They leave the fight when they have sunk, or,
+  not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of another
+  faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as long as they give a chase:
+  so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The editor's
+  fight ends when its one captain leaves.
 
 ## Ranks and factions
 
@@ -278,14 +277,13 @@ Pass]]) with Claude's numbers:
   Minor, 4 a Major, 5 an Elite, 6 a Miniboss and 8 a Boss, for each player who fought it, kept for that player alone
   as a land drop is, within 30 m, drifting downwind at 0.3 m/s and gone after 180 s. A player's ship within 25 m of one
   of their pieces gathers it. What floats for a player is their account's: dropped and joined again, the pieces still
-  floating are theirs again (`Sea::own`). Each piece is a kill's drop by the gear loop's own law ([[Gear]], "Drops") for a foe of
-  its rank at its level (its water's, raised by the sea's tier): its Vestige by the rewards' foe its rank names
-  (a Minor the Skirmisher's chance,
-  a Major the Swordsman's, an Elite the Brute's, a Miniboss and a Boss the Captain's sure one; at Elite or Abyss times
-  the tier's reward, as a harder voyage's kill on land, `vestige_chance`), an Ammo box by its rank,
-  and from a Miniboss or a Boss an Ammo crate; what the player has no room for is lost with the piece. For an Elite or
-  higher one piece of each player's is a chest, rolled as a foe one rank higher. A piece looks like a crate or a barrel
-  (half each by its draw) or a chest.
+  floating are theirs again (`Sea::own`). A ship drops as one foe of its rank at its level does (its water's, raised by
+  the sea's tier), by the gear loop's own law ([[Gear]], "Drops"): the first piece laid for each player holds its
+  Vestige by its rank's chance (at Elite or Abyss times the tier's reward, as a harder voyage's kill on land,
+  `vestige_chance`), an Ammo box by its rank, and from a Miniboss or a Boss an Ammo crate. Every piece holds the
+  ship's salvage ([[Ship Power]], "Found"); what the player has no room for is lost with the piece. For an Elite or
+  higher one piece of each player's is a chest, its salvage rolled as a ship one rank higher. A piece looks like a
+  crate or a barrel (half each by its draw) or a chest.
 - **Striking, and boarding.** A captain who strikes lies hove to with their colours down. For 90 s any player in the
   fight may board the captain's ship: their ship within 30 m of it, both under 2 m/s, and its deck holding a crew (the pirates have
   no deck Boss, so their Boss is not boarded). With no one aboard by then it is scuttled
@@ -306,8 +304,10 @@ Pass]]) with Claude's numbers:
   an Elite; a Miniboss six, the Tithe-Mate (the pirates' Captain) the Miniboss; a Boss Captain Brannoc Thule and six.
   The plain hands are the faction's skirmisher, swordsman and shot in turn (the Deckhand, Hookman and Pistoleer; the
   pirates' Skirmisher, Swordsman and Archer), standing two abreast along its deck from 2 m forward of amidships, 1.6 m
-  apart, facing aft, at its level. Clearing its deck opens its hold: what floats, twice over, every chest a rank higher
-  still, for each boarder, on top of the lot every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
+  apart, facing aft, at its level. Its deck room takes the sea's tier, so its crew's kills pay XP and Aurem as a
+  harder voyage's; they drop no Vestige or item, as the hold is the boarding's loot. Clearing its deck opens its hold:
+  what floats, twice over, for each boarder, every chest's salvage a rank higher still, and its drop what a foe one
+  rank above the ship would leave; on top of the lot every player who fought it takes when it is scuttled. A boarder leaves its deck (back aboard their own ship) once its crew has fallen, and a
   minute after it fell every boarder still aboard is sent back; it is scuttled when the last one has left it. A
   boarder's own ship takes no orders or course while they stand on the struck ship's deck. Its deck room fights with the boarder's
   character, the real one even when the accounts answer after boarding, and gives it back with what was won aboard.
@@ -388,7 +388,7 @@ rammer's way along its keel, at the most over the last 0.6 s, closes on that fac
   drawn from the fight's stream.
 - **The recoil**: the rammer takes 0.6 of the blow back (half that braced), and a ram is only as hard as the rammer can pay
   for within its own room over its line, one point short of it, so its own ram never makes it strike and a hull at its
-  line rams nothing. A wreck rams nothing.
+  line rams nothing. A ship going down rams nothing.
 - **One ram a tick** for each player, none on the same ship again within 3 s, and the rammer's remembered way is spent on it.
   A ram provokes the captain struck. Captains do not ram.
 - **Hulls kept apart.** Two hulls whose boxes overlap on the flat are each pushed out half the overlap, and each loses
@@ -636,7 +636,7 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   swell), so nothing of the ship moves relative to it; the view itself stays level. On its way out from the ports it
   stops 1.2 m short of any ship afloat alongside (that ship's box from its keel to a metre over its rail, as wide as
   its hull, its guns' mouths or its low yards over its side), but never nearer its own ports than half a metre clear
-  of its own hull and every sail's swing, however close the other lies. A crippled ship's guns are silent: its eye
+  of its own hull and every sail's swing, however close the other lies. A sinking ship's guns are silent: its eye
   never moves.
 - **Where it looks**: square off the side, at the water its guns are laid on, so the crosshair at the view's middle
   stands on the landing zone. A drag left or right does nothing while the aim is held; a drag up or down lays the
@@ -699,7 +699,7 @@ bearing off the player's bow and its distance, heading for the player's ship unl
 under the sail and way it was sighted with, its rig drawn on from the one it was last drawn with; hears from each step
 a ball striking the player's ship, the player's striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
 An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
-player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves it a point of hull); and it is over
+player's ship never goes down in it (a ball, a ram's recoil or a fire leaves it a point of hull); and it is over
 (`beaten`) once every captain has sunk, is going down, or has struck, its crew having given up the fight. It draws
 the player's ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a storm's too), for
 the drawing only; a captain's hurts and its going down settle, trim and list it on that swell by what the land door

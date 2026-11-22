@@ -258,7 +258,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   where the floor round them has room: each is tried round three rings of twelve, 2.5 m apart, and in a pocket too small
   for them all the last go on their ring regardless.
 - **Standing again**: a group whose last foe has fallen stands again, whole and idle at its places at its post and
-  its beat begun again from there, 120 s later, once
+  its beat begun again from there, 120 s later (a group with a Miniboss or a Boss, 10 minutes later, so neither is
+  farmed: [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]), once
   no player stands within 40 m of its post and the room's living foes leave room for all of it.
 - **The limit**: a node's room holds 24 foes, its garrison and every foe its Boss calls counted; a course's room 12.
   Only the living count when a group stands again or a Boss calls, so the fallen, lying their ten seconds, never
@@ -266,7 +267,7 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 ## On screen
 
-- **Over each foe**, just over its head (1.9 m over its feet, under where the parry ring closes), its plate in the
+- **Over each foe**, just over its head (1.9 m over its feet, over its parry ring round the head), its plate in the
   [[Interface]]'s kit: its level in a square at the left (empty for a foe of no level), and to its right its type's name
   above a thin bar of its health, red for a Minor, orange for a Major, yellow for an Elite and a Miniboss, over a
   dark trough with a hairline edge. An Elite has one brass chevron beside its name, a Miniboss two. A "?" stands before

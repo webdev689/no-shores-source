@@ -74,18 +74,18 @@ test('a fight through WebAssembly fights to the same fingerprint as the door nat
   assert.ok(Math.abs((bursts[2] ?? 0) - 0.75) < 0.01 && bursts[6] === 0, `the third leg's burst: ${bursts.join(' ')}`);
   assert.equal(
     prints.join(' '),
-    '2e1ef46e585a5c56 7d8cb000c180814d c8a7f566cc351a82 7241a01ebec5379e 26f58c74421d8c1b 7bfe19588a901710 ' +
-      'aa8f5a0a3300acb2 6cadb37ad62aa60d 00105cb616104608',
+    'b14f9598cbf5b61b e397e5f02e7a84cc 2ad50820d6be449b 1317600c5c5fbd17 5528fe740d7fac46 d804cb133e9748c9 ' +
+      '02caed3cd7fd035f a5ab81f02b0b956c f10178758430a2b5',
   );
 });
 
 // Each hull's fight, as crates/land-wasm/src/fight_tests.rs HULL_FIGHTS pins it: its captain's rank, the hull they
 // sail, and the last leg's fingerprint.
 const HULL_FIGHTS = [
-  [2, 0, '00105cb616104608'],
-  [3, 1, 'bec4d009237db406'],
-  [4, 2, 'b168931bd570f995'],
-  [5, 3, '0a8922b198ef3743'],
+  [2, 0, 'f10178758430a2b5'],
+  [3, 1, '9ec9292317147a0b'],
+  [4, 2, '0ea01ead5260b810'],
+  [5, 3, '651f5825a886c74a'],
 ] as const;
 
 test('a fight against each hull through WebAssembly fights to the same fingerprint as the door natively', async () => {

@@ -1,6 +1,6 @@
 //! Shape, after Destiny 1's Xur: a figure who comes to Overlook each week from Friday to Sunday evening, stands in one
-//! place on the plaza all that week, and sells Legendary and Atheric gear for Shapes, a currency found only at the
-//! Elite and Abyss seas. When he comes, where he stands and what he sells are the same for everyone, from the clock.
+//! place on the plaza all that week, and sells Legendary and Atheric gear for Shapes, a currency the Abyss Dungeon of
+//! the week alone gives, as Destiny 1's weekly strikes gave Strange Coins; no kill gives any. When he comes, where he stands and what he sells are the same for everyone, from the clock.
 
 use crate::asks::{Done, Here, Refusal};
 use crate::catalogue::{NamedDef, catalogue};
@@ -12,7 +12,6 @@ use crate::item::Item;
 use crate::kinds::Slot;
 use crate::rarity::Rarity;
 use crate::vestige;
-use crate::world::Difficulty;
 
 /// When in the clock's week (from Tuesday 09:00 UTC) he comes and goes: Friday 09:00, Xur's Friday, to Sunday 21:00.
 pub const COMES_AT: u64 = 3 * DAY_MINUTES;
@@ -88,18 +87,6 @@ fn drawn(week: u64, rarity: Rarity, count: usize) -> Vec<(&'static NamedDef, Slo
     }
     pool.truncate(count);
     pool
-}
-
-/// The Shapes a kill gives at the seas it was made at: none at Normal; at Elite and Abyss a few in a hundred kills
-/// give one, and a Boss or a Miniboss (`great`) gives two or four.
-#[must_use]
-pub fn found(great: bool, difficulty: Difficulty, dice: &Dice) -> u16 {
-    let (chance, sure) = match difficulty {
-        Difficulty::Normal => return 0,
-        Difficulty::Elite => (0.03, 2),
-        Difficulty::Abyss => (0.06, 4),
-    };
-    if great { sure } else { u16::from(dice.roll(Purpose::Shape, 2) < chance) }
 }
 
 impl Character {

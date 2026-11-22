@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 
-/// How rare an item is: Normal (white), Magic (blue), Rare (yellow), Legendary (gold) or Atheric (cyan blue).
+/// How rare an item is: Normal (white), Magic (green), Rare (yellow), Legendary (red) or Atheric (cyan blue).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Rarity {

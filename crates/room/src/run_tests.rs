@@ -109,7 +109,7 @@ fn juggler_drops_no_ammunition_and_trickle_and_exposure_slow_what_returns() {
         room.run = Some(run_of(modifiers));
         let player = room.join().expect("in");
         let dice = room.dice(player);
-        room.drop_spoils(player, None, 4, [2.0, 0.0, 0.0], &dice); // a Miniboss: a box, and a crate taken
+        room.drop_spoils(player, Vec::new(), 4, [2.0, 0.0, 0.0], &dice); // a Miniboss: a box, and a crate taken
         assert_eq!((room.drops.len(), room.players[&player].character.materials.crates), dropped);
     }
     let filled = |modifiers: Vec<Modifier>| {

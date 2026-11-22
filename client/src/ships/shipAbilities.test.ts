@@ -63,12 +63,12 @@ test('the guns cannot fire while braced or once the ship is no longer afloat', (
   const braced = shownOf(guns({ braced: true }));
   assert.deepEqual([braced.port.unable, braced.starboard.unable], [true, true]);
   assert.equal(braced.starboard.said, 'braced, holding fire');
-  const wrecked = shownOf({ state: 'wrecked' });
-  assert.deepEqual([wrecked.port.unable, wrecked.port.said], [true, 'guns silent']);
+  const sinking = shownOf({ state: 'sinking' });
+  assert.deepEqual([sinking.port.unable, sinking.port.said], [true, 'guns silent']);
   assert.equal(shownOf().port.unable, false);
 });
 
-test('the burst runs, then recharges for its 12 s, then is ready; a wreck cannot burst', () => {
+test('the burst runs, then recharges for its 12 s, then is ready; a ship going down cannot burst', () => {
   const running = shownOf({ boost: [0.75, 0] }).burst;
   assert.deepEqual([running.state, running.running, running.charge, running.left], ['active', 0.75, 0, 3]);
   assert.equal(running.said, 'bursting');
@@ -76,7 +76,7 @@ test('the burst runs, then recharges for its 12 s, then is ready; a wreck cannot
   assert.deepEqual([charging.state, charging.charge, charging.left], ['charging', 0.25, 0.75 * RECHARGE_S]);
   assert.equal(charging.said, '9 s to recharge');
   assert.deepEqual([shownOf().burst.state, shownOf().burst.said], ['ready', 'ready']);
-  assert.equal(shownOf({ state: 'wrecked' }).burst.unable, true);
+  assert.equal(shownOf({ state: 'sinking' }).burst.unable, true);
 });
 
 test('the brace is in use while held; going down the ship no longer braces or loads', () => {
@@ -87,8 +87,6 @@ test('the brace is in use while held; going down the ship no longer braces or lo
   assert.equal(shownOf().brace.state, 'ready');
   const sinking = shownOf({ state: 'sinking' });
   assert.deepEqual([sinking.brace.unable, sinking.load.unable], [true, true]);
-  const wrecked = shownOf({ state: 'wrecked' });
-  assert.deepEqual([wrecked.brace.unable, wrecked.load.unable], [false, false], 'a wreck still braces and loads');
 });
 
 test('the load shows the shot the guns take, by its own picture', () => {

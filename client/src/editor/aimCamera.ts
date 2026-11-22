@@ -1,6 +1,6 @@
 // The aim camera: while a broadside is laid the view eases out to its battery's station (aimStation) on the side
 // taken, riding the ship as it is drawn, and looks square off it at the water where the guns are laid, so the sight
-// at the view's middle stands on the landing zone; let go, it eases home. A crippled ship's guns are silent, so its
+// at the view's middle stands on the landing zone; let go, it eases home. A sinking ship's guns are silent, so its
 // eye never moves (the caller asks for no side).
 import type { FightLook } from '../rules/fightRules.ts';
 import { hullBox, hullMouths, hullSails } from '../ships/hulls.ts';

@@ -1,6 +1,7 @@
 import type { GlowLook } from '../elementGlow.ts';
 import type { Contact, FirstPerson, FirstPersonState } from '../firstperson/firstPerson.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
+import { widened } from './playerCamera.ts';
 import type { Climb } from '../firstperson/climbHands.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Pace } from '../firstperson/weaponMachine.ts';
@@ -15,7 +16,7 @@ import { cardStand, type Placed, viewOf } from './figures.ts';
 import type { InputFrame } from './input.ts';
 import { RUNNING } from './others.ts';
 import { CAST_SECONDS, type Player, shownBody, updatePlayer } from './player.ts';
-import { likelyMoves, Loop, type Shown, shownMove } from './playerMoves.ts';
+import { likelyMoves, Loop, type Shown, shownMove, steadyMoves } from './playerMoves.ts';
 
 /** Nearer than this, the third-person camera is inside the figure, so it is not drawn. */
 export const HIDE_FIGURE_M = 0.6;
@@ -67,6 +68,15 @@ const NO_GLOW = [0, 0] as const;
 /** The dress the figure shows: on a wall or a ledge the hands hold on, so the weapon is worn, not held. */
 export function shownDress(dress: Dress, holding: boolean): Dress {
   return holding ? dress : { ...dress, outfit: { ...dress.outfit, drawn: false } };
+}
+
+/** The same dress with its weapon the other way, drawn or put away, so the figure is warmed both ways; null with
+ *  nothing in either hand, which draws the same either way. */
+export function otherHand(dress: Dress): Dress | null {
+  const { outfit } = dress;
+  return outfit.right === null && outfit.left === null
+    ? null
+    : { ...dress, outfit: { ...outfit, drawn: !outfit.drawn } };
 }
 
 /** Whether the figure and the hands hold the weapon out in a fight this frame. While the rules are busy they keep the
@@ -304,7 +314,8 @@ export class Walker {
       body: dress.body,
       yaw: player.yaw,
       pitch: player.pitch,
-      fov: FIELD_OF_VIEW,
+      // The lens as first person sees it, widened, so the fists on a wall stand where it shows them.
+      fov: 2 * Math.atan(Math.tan(FIELD_OF_VIEW / 2) / widened(player.view.shown)),
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
       zoom,
@@ -357,15 +368,22 @@ export class Walker {
       (anim, drawn) => forge.draws(dress.body, anim, drawn),
       (action) => forge.walking(dress, action),
     );
-    const warm = (shown: Dress, glow: GlowLook, owner: number | string) => {
+    const warm = (shown: Dress, glow: GlowLook, owner: number | string, steady = false) => {
       const { drawn, right, left, grip } = shown.outfit;
       const draws = (anim: string, held: string | null) => forge.draws(shown.body, anim, held);
       const walking = (action: string) => forge.walking(shown, action);
+      const [inRight, inLeft] = [drawn ? right : null, drawn ? left : null];
       const likely = () =>
-        likelyMoves(drawn ? right : null, drawn ? left : null, draws, drawn ? (grip ?? null) : null, walking);
+        steady
+          ? steadyMoves(inRight, inLeft, draws)
+          : likelyMoves(inRight, inLeft, draws, drawn ? (grip ?? null) : null, walking);
       forge.warm(shown, likely, glow, owner);
     };
     warm(dress, outfit.drawn ? this.shownGlow[0] : 0, you.id);
+    // The weapon the other way too, standing and on the move, so drawing it or putting it away shows at once; only
+    // those, as a whole second dress warmed would crowd the kept cards.
+    const other = otherHand(dress);
+    if (other) warm(other, other.outfit.drawn ? this.shownGlow[0] : 0, `${you.id} other hand`, true);
     // The other loadout's too, so a swap shows it at once.
     if (this.spare) warm({ ...dress, outfit: { ...this.spare, drawn: true } }, this.spareGlow, `${you.id} spare`);
     forge.pump();

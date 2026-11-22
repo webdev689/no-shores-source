@@ -187,7 +187,7 @@ test("the aim's tone: hot on target while the side can fire, laid off it, not re
   assert.equal(aimOf(LAID, portLoading, WINDOW, 1)?.tone, 'hot', 'its port side is not the one laid');
   const braced = { ...vessel, guns: { ...vessel.guns, braced: true } };
   assert.equal(aimOf(LAID, braced, WINDOW, 1)?.tone, 'idle');
-  assert.equal(aimOf(LAID, { ...vessel, state: 'wrecked' }, WINDOW, 1)?.tone, 'idle');
+  assert.equal(aimOf(LAID, { ...vessel, state: 'sinking' }, WINDOW, 1)?.tone, 'idle');
   assert.equal(aimOf(null, vessel, WINDOW, 1), null);
 });
 

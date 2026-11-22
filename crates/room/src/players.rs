@@ -105,8 +105,9 @@ impl SpawnAsk {
 }
 
 impl Input {
-    /// Whether its look and dress are within what a room carries, and every number in it is one (the intent's reading
-    /// already took a pitch or mark that is none as such).
+    /// Whether its look and dress are within what a room carries, and every number it moves or faces by is one (a
+    /// button reads as pressed by any number but 0, and the intent's reading already took a pitch or mark that is
+    /// none as such).
     #[must_use]
     pub fn fits(&self) -> bool {
         let anim = &self.shown.anim;

@@ -3,11 +3,11 @@ import type { Difficulty } from '../heldmap/heldMap.ts';
 import { warmFlora } from '../nature/flora.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Placed } from '../player/figures.ts';
-import { Input, keyNameOf } from '../player/input.ts';
+import { Input, keyUpNameOf } from '../player/input.ts';
 import { newPlayer } from '../player/player.ts';
 import { askedView } from '../player/playerCamera.ts';
 import { Walker } from '../player/walker.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import { RoomConnection } from '../network/roomConnection.ts';
 import { MarkView } from '../ships/markView.ts';
 import { HULL_NAMES } from '../ships/hulls.ts';
@@ -103,7 +103,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     rooms,
     roomModule,
     groundAt: (x, y) => groundAt(x, y),
-    // Under `npm run dev` only, `?spawn=` asks a room in the page for foes to fight.
+    // Under `npm run dev` only, `?spawn=` asks a room playing alone for foes to fight.
     foesAsked: import.meta.env.DEV ? foesAsked(location.search) : [],
     session,
     trips: onFoot,
@@ -283,7 +283,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** The sea room a voyage at `seas` sails in, joined: online the server's at that difficulty; playing alone, the same
-   *  room in the page. */
+   *  room in the rooms' worker. */
   let seaSeas: Difficulty = 'normal';
   let switching = Promise.resolve();
   const enterSea = async (seas: Difficulty) => {
@@ -302,7 +302,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
               await session(),
             )
         : async (snapshot, gear) =>
-            LocalRoom.openSea(await roomModule, world.layoutText, snapshot, undefined, ports, level, gear),
+            RoomThread.openSea(await roomModule, world.layoutText, snapshot, undefined, ports, level, gear),
     );
   };
 
@@ -401,7 +401,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const goIsle = (held: IsleHeld, words: string) => {
     const continent = continents[held.seen.continent]?.id ?? '';
     travel({ kind: 'isle', node: held.seen.id.toString(), words }, async () => {
-      const word = playing.sea?.sighted?.isleWord(held.seen.id) ?? null;
+      const word = (await playing.sea?.sighted?.isleWord(held.seen.id)) ?? null;
       let foot: Foot;
       try {
         foot = await ashoreOn(footContext, held, { word, continent, seas: seaSeas }, trips.enterSeaDungeon);
@@ -469,8 +469,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
           return enterSea(seas);
         })
         .then(() => sea.sailTo(sail))
-        // A room that will not open leaves the ship sailing alone, as a link lost does.
-        .catch(() => sea.sailTo(sail));
+        // A room that will not open leaves the ship sailing alone, and says so, as a link lost does.
+        .catch(() => sea.sailAlone(sail));
     }
   };
 
@@ -553,7 +553,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   const resting = () => storyMode() && !story?.gear;
   stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens));
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
-  addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyNameOf(event), false)));
+  addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
     ...{ playing, input, ui, hud, story, retry: () => retry, change, respawn, goAshore, stopOrResume, openMap },
     ...{ manage, leaveHelm, takeHelm, goThrough, landAt },

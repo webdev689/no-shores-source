@@ -194,7 +194,7 @@ on, and the sky over it.
   ostinato over the chords' own tones, the tune and its counter-line, soft low drums; every chord voiced by hand. Each
   closes on the world's leitmotif in its key, the story's rise of a fifth and sigh from the minor sixth. A minute and
   a half to two and a half each.
-  - Saltmere's: its own theme, the climb G, A, B flat, D in a dotted step leaning on the sixth, now G Dorian in 3/4 at
+  - Saltmere's: its own theme, the climb G, A, B flat, D in a dotted step leaning on the sixth, in G Dorian in 3/4 at
     76 on the cello then the fiddle over a harp and a pulsing bass; Lamplight, a nocturne in D minor at 62, a low
     flute over the piano, the horn answering; the Tithe, E Phrygian at 70, low strings ticking E against F under a
     bassoon and a far taiko, the levy's weight. The plaza's band (`band.ts`, `bandScore.ts`) plays where it stands,

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { carriedLight, flicker, type LampPlace, lampsLit, lampsRound } from './lamps.ts';
+import { CityLamps, carriedLight, flicker, type LampPlace, lampsLit, lampsRound } from './lamps.ts';
 import { AFTERNOON, LAMPS_MOST, PUDDLE_WRAP_M, skyNumbers, WRAP_M } from './skyUniform.ts';
 
 const place = (x: number, seed = 0): LampPlace => ({ at: [x, 0, 2], reachM: 10, light: [1, 0.6, 0.3], seed });
@@ -78,4 +78,27 @@ test("the eye's place goes to the uniform wrapped, marked known; without it, unk
   assert.equal(known[row - 2], 420, "the ground's height under the eye, where the snow was laid");
   const unknown = skyNumbers(AFTERNOON, []);
   assert.deepEqual([...unknown.slice(row, row + 4)], [0, 0, 0, 0]);
+});
+
+test("a landmass's city and its layouts light their own lamps: one view set or cleared never puts out the other's", () => {
+  const lamps = new CityLamps();
+  const [city, layouts] = [{}, {}];
+  lamps.set(city, [place(1), place(2)]);
+  lamps.set(layouts, [place(3)]);
+  assert.deepEqual(
+    lamps.current.map((lamp) => lamp.at[0]),
+    [1, 2, 3],
+  );
+  lamps.set(layouts, []);
+  assert.deepEqual(
+    lamps.current.map((lamp) => lamp.at[0]),
+    [1, 2],
+    "the layouts gone, the city's stay lit",
+  );
+  lamps.set(layouts, [place(4)]);
+  lamps.set(city, []);
+  assert.deepEqual(
+    lamps.current.map((lamp) => lamp.at[0]),
+    [4],
+  );
 });

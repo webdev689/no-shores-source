@@ -56,11 +56,11 @@ const FIGURE_AROUND = 264;
 /** What a worn slot's presses do, and a carried piece's. */
 const SLOT_HINTS: readonly Hint[] = [
   ['Click', 'Swap'],
-  ['Right-click / X', 'Details'],
+  ['Right-click / details', 'Details'],
 ];
 const CELL_HINTS: readonly Hint[] = [
   ['Click', 'Equip'],
-  ['Right-click / X', 'Details'],
+  ['Right-click / details', 'Details'],
   [DISMANTLE_KEY, 'Hold to dismantle'],
 ];
 

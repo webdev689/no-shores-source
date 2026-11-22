@@ -684,8 +684,8 @@ never while a press is held. Each press is an ask the room answers.
 
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
-- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped.
-  A loadout is the forge's large picture of what its hands hold
+- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped. A
+  loadout is the forge's large picture of what its hands hold
   ([[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): the right hand's level, its business end to the
   right, and a shield or a pair's second behind it at its left, at three quarters of its size, its middle on the
   first's top edge a fifth of the way along it. Each is dyed as the figure's layer is, a faction's colour too, and
@@ -693,15 +693,19 @@ never while a press is held. Each press is an ask the room answers.
   loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip, and one in
   both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is fitted to its place as
   Enhanced Plus fits its icons, and one larger than its place is shrunk by an area average, each screen pixel the mean
-  of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny
-  lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
-  name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
-  is, mostly in its island's colour. The ship's glyphs (its materials, its modules and its officers' posts) are drawn
-  at 24 by 24, as the Arts' emblems are, so a module shows a picture where a piece shows the forge's: shaded lit from
-  the top left, and shown only at whole multiples of their cells (24, 48, 96, 264). `tools/ship-glyphs/` draws them.
-- **Rarity.** Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal piece's frame is the
-  kit's plain stone. A tile is Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a
-  card or page takes its rarity's band; pips mark it.
+  of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon
+  long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny lays weapons, so it reads. Where
+  the forge draws nothing of a piece, its slot shows its name's initials. A Vestige is its crystal, still and turned
+  broadside, 18 pixels square (12 where it is drawn at 24), its halo see-through ([[Gear]], "Drops"). Each island's
+  resource, the Ammo box and the Ammo crate are baked from Blender models at 18 cells, each resource mostly in its
+  island's colour ([[Item Pictures]]). Currencies, nodes and elements are small pixel glyphs drawn by hand. The ship's
+  glyphs are 24 by 24, as the Arts' emblems are, so a module shows a picture where a piece shows the forge's: its
+  materials and modules baked as the resources are, its officers' posts drawn by hand, all lit from the top left. A
+  baked or ship glyph shows only at whole multiples of its cells (36 for 18; 24, 48, 96 and 264 for 24).
+- **Rarity** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]). Normal white, Magic green,
+  Rare yellow, Legendary red, Atheric cyan blue; a Normal piece's frame is the kit's plain stone. A tile is Enhanced
+  Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a card or page takes its rarity's band;
+  pips mark it.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
@@ -929,7 +933,9 @@ Recordings come as they are wanted, as the owner decided areas load ([[Areas Loa
 the short sounds of play (every cue but the ambience's and the story's) once the page's sound wakes, the ambience's and
 the story's the first time each is asked for, silent until it has come (`soundSamples.ts`, `Samples`). A recording
 longer than a chunk (1 MB, about a minute) is fetched a chunk at a time, a stretch of its bytes that decodes on its
-own, and the next chunk fetched as one plays, so a bed's minutes are never held at once, two chunks at most. The page
+own, its last part shorter than a chunk among them; as one plays, another not held is fetched at random, and each
+play takes a chunk other than the one played last, so every chunk fetched is heard and a bed's minutes are never held
+at once, two chunks at most. A file or chunk that fails to come is asked for again only after 30 s. The page
 decodes each and keeps it; the worker holds only its shape and how it measures, its level and its loudness over each
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
 played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
@@ -1032,11 +1038,11 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
   room would sell. At the foot "Stock refresh" and the time to the next daily reset, 09:00 UTC, for the smiths, the
   Tailor and the Tack, or "Leaves in" and the time left for Shape, to Sunday 21:00 UTC: both counted in minutes by the
-  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone.
-  The footer: Hold (Buy; Open at the Mage's), I (Open Character), Esc (Dismiss); while a fragment is chosen it says Esc
-  (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter presses, Escape steps
-  back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone, the keeper stands
-  over the rest, a third of its height, and the rest takes its whole width.
+  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone. The
+  footer: Hold (Buy; Open at the Mage's), the Character key as bound (Open Character), Esc (Dismiss); while a fragment
+  is chosen it says Esc (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter
+  presses, Escape steps back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone,
+  the keeper stands over the rest, a third of its height, and the rest takes its whole width.
 - **The keepers' rows.** The Mage: VESTIGES, those carried, each held to identify, the piece it opened to shown after.
   The Armorsmith: ARMOUR, the day's six. The Weaponsmith: WEAPONS, the day's six, and SUPPLIES, the Ammo crate with how
   many of the five are carried. The Tailor: DYES, the day's four, each a swatch of its ramp, then EMBLEMS, the day's
@@ -1171,7 +1177,7 @@ button's corner and screen, and the Tailor's wares.
   or at sea, is not reached, and the Roster says so.
 - No names stand over other players' heads yet.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
-- The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
+- The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
 - The Acquired feed shows no level of the player's own gained, only an Art's.
 - The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled

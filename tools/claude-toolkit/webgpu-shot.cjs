@@ -4,7 +4,11 @@
 //
 // Headless SwiftShader has no shared-image backing for a WebGPU canvas, so presenting to one loses the device a few
 // seconds in. The page's canvas context is given a texture of its own instead, and a picture reads that texture back
-// and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. The
+// and lays it over the canvas before Playwright's screenshot, so the page's own HTML (the HUD) is in it too. A game
+// that draws from a worker, on a canvas the page handed it, gets the same in the worker: the page marks each worker's
+// address, the driver puts the patches ahead of its script, and the worker sends its frames and pictures to the page
+// over a BroadcastChannel. Init scripts reach no worker, so without this the worker presents and every device in the
+// page is lost: a pipeline still compiling then fails with "A valid external Instance reference no longer exists". The
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first, or, where another
 // checkout holds 5173, Vite on any port with "anyPort": true, and the driver fetches R2 for the page.
 //
@@ -31,6 +35,7 @@ const { chromium } = require('playwright');
 const { mkdirSync, readFileSync } = require('node:fs');
 
 const SHADER_ERRORS = () => {
+  if (typeof GPUAdapter === 'undefined') return;
   // A validation error (a destroyed buffer drawn, a bad binding) loses the frame without a word: say each one.
   const requestDevice = GPUAdapter.prototype.requestDevice;
   GPUAdapter.prototype.requestDevice = async function (descriptor) {
@@ -51,46 +56,56 @@ const SHADER_ERRORS = () => {
 };
 
 const OWN_TEXTURE = () => {
+  if (typeof GPUCanvasContext === 'undefined') return;
+  const scope = globalThis;
+  const inWorker = typeof WorkerGlobalScope !== 'undefined';
+  const channel = new BroadcastChannel('webgpu-shot');
   const kept = new WeakMap();
   // A frame counts once it has given the GPU work: frames before the first draw (loading) do not.
   let done = Promise.resolve();
   let submitted = false;
-  window.__shotFrames = 0;
+  scope.__shotFrames = 0;
   const submit = GPUQueue.prototype.submit;
   GPUQueue.prototype.submit = function (buffers) {
     submit.call(this, buffers);
     submitted = true;
     done = this.onSubmittedWorkDone();
   };
-  const nextFrame = window.requestAnimationFrame.bind(window);
-  window.requestAnimationFrame = (callback) =>
-    nextFrame(() =>
-      done.then(() => {
-        if (submitted) window.__shotFrames += 1;
-        submitted = false;
-        callback(performance.now());
-      }),
-    );
+  const nextFrame = scope.requestAnimationFrame?.bind(scope);
+  if (nextFrame)
+    scope.requestAnimationFrame = (callback) =>
+      nextFrame(() =>
+        done.then(() => {
+          if (submitted) {
+            scope.__shotFrames += 1;
+            if (inWorker) channel.postMessage('frame');
+          }
+          submitted = false;
+          callback(performance.now());
+        }),
+      );
   const proto = GPUCanvasContext.prototype;
   proto.configure = function (config) {
     const usage = (config.usage ?? GPUTextureUsage.RENDER_ATTACHMENT) | GPUTextureUsage.COPY_SRC;
     kept.set(this, { config: { ...config, usage }, texture: null });
-    window.__shotContext = this;
+    scope.__shotContext = this;
   };
   proto.unconfigure = function () {};
   proto.getCurrentTexture = function () {
     const own = kept.get(this);
     const { width, height } = this.canvas;
     if (!own.texture || own.texture.width !== width || own.texture.height !== height) {
+      if (!own.texture && inWorker) channel.postMessage('drawing');
       own.texture?.destroy();
       own.texture = own.config.device.createTexture({ size: [width, height], format: own.config.format, usage: own.config.usage });
     }
     return own.texture;
   };
-  window.__shotLay = async () => {
-    const context = window.__shotContext;
+  // The canvas's picture as RGBA, read back from its texture, or null before it has drawn.
+  const read = async () => {
+    const context = scope.__shotContext;
     const own = context && kept.get(context);
-    if (!own?.texture) return 'no WebGPU canvas has drawn';
+    if (!own?.texture) return null;
     const { device, format } = own.config;
     const { texture } = own;
     const row = Math.ceil((texture.width * 4) / 256) * 256;
@@ -109,12 +124,60 @@ const OWN_TEXTURE = () => {
       }
     buffer.unmap();
     buffer.destroy();
+    return { rgba, width: texture.width, height: texture.height };
+  };
+  if (inWorker) {
+    // Always answered, with null if there is no picture (none drawn, the device lost), so the page never waits on it.
+    channel.onmessage = async ({ data }) => {
+      if (data !== 'read') return;
+      const picture = await read().catch(() => null);
+      channel.postMessage(picture ?? 'none');
+    };
+    return;
+  }
+  // The page: each worker marked for the driver, the canvas handed to one kept, and a worker's frames counted.
+  const Worker = scope.Worker;
+  scope.Worker = class extends Worker {
+    constructor(url, options) {
+      const marked = new URL(url, location.href);
+      if (marked.protocol.startsWith('http')) marked.searchParams.set('__webgpuShot', '');
+      super(marked, options);
+    }
+  };
+  let handed = null;
+  const transfer = HTMLCanvasElement.prototype.transferControlToOffscreen;
+  HTMLCanvasElement.prototype.transferControlToOffscreen = function () {
+    handed = this;
+    return transfer.call(this);
+  };
+  let workerDrew = false;
+  let answer = null;
+  channel.onmessage = ({ data }) => {
+    if (data === 'frame') scope.__shotFrames += 1;
+    else if (data === 'drawing') workerDrew = true;
+    else if (data?.rgba) answer?.(data);
+    else if (data === 'none') answer?.(null);
+  };
+  scope.__shotLay = async () => {
+    let picture = await read();
+    let canvas = scope.__shotContext?.canvas;
+    if (!picture && workerDrew) {
+      picture = await new Promise((resolve) => {
+        answer = resolve;
+        channel.postMessage('read');
+        // A worker gone or stuck answers nothing: the picture is given up after 20 s.
+        setTimeout(() => resolve(null), 20_000);
+      });
+      canvas = handed;
+    }
+    if (!picture) return 'no WebGPU canvas has drawn';
+    const { rgba, width, height } = picture;
     document.getElementById('__shot')?.remove();
     const laid = document.createElement('canvas');
     laid.id = '__shot';
-    [laid.width, laid.height] = [texture.width, texture.height];
-    laid.getContext('2d').putImageData(new ImageData(rgba, texture.width, texture.height), 0, 0);
-    const box = context.canvas.getBoundingClientRect();
+    [laid.width, laid.height] = [width, height];
+    laid.getContext('2d').putImageData(new ImageData(rgba, width, height), 0, 0);
+    const box = canvas.getBoundingClientRect();
     Object.assign(laid.style, {
       position: 'fixed',
       left: `${box.left}px`,
@@ -123,7 +186,7 @@ const OWN_TEXTURE = () => {
       height: `${box.height}px`,
       pointerEvents: 'none',
     });
-    context.canvas.after(laid);
+    canvas.after(laid);
     return '';
   };
 };
@@ -156,6 +219,21 @@ async function main() {
       },
     );
   }
+  // A worker the page marked gets the patches ahead of its script, as the page gets them from its init scripts.
+  await page.route(
+    (url) => url.searchParams.has('__webgpuShot'),
+    async (route) => {
+      const url = new URL(route.request().url());
+      url.searchParams.delete('__webgpuShot');
+      const response = await route.fetch({ url: url.href });
+      const body = `(${OWN_TEXTURE})();\n(${SHADER_ERRORS})();\n${await response.text()}`;
+      // The patched script is longer and already decoded: the original's length and encoding no longer hold.
+      const headers = { ...response.headers() };
+      delete headers['content-length'];
+      delete headers['content-encoding'];
+      await route.fulfill({ response, body, headers });
+    },
+  );
   await page.addInitScript(OWN_TEXTURE);
   await page.addInitScript(SHADER_ERRORS);
   if (plan.init) await page.addInitScript({ content: plan.init });
@@ -222,7 +300,10 @@ async function main() {
   await browser.close();
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+// The stall probe (webgpu-stall.cjs) puts the same patches in the game's worker.
+module.exports = { OWN_TEXTURE, SHADER_ERRORS };
+if (require.main === module)
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

@@ -334,7 +334,7 @@ export class SeaCombat {
   }
 
   /** The aim's frame: the orbit's view eased out to the ship's battery on the side looked at while aiming (never for
-   *  a crippled ship, its guns silent), short of every other ship afloat, and the look it lays. */
+   *  a sinking ship, its guns silent), short of every other ship afloat, and the look it lays. */
   private aimAt(orbit: Orbit, seconds: number): AimFrame {
     // The orbit's own eye keeps the orbit's clamp, so a look raised over the horizon never takes it under the sea.
     const [eastM, southM, upM] = cameraOf({ ...orbit, pitch: Math.max(PITCH[0], orbit.pitch) }).eye;

@@ -123,6 +123,8 @@ oldest giving way unsaid as more came. Everything below is Claude's.
 | Shapes | At most 200 held. A kill at Elite (Rough) seas gives one 3 times in 100, at Abyss (Storm) 6 in 100; a Boss or Miniboss 2 and 4. None at Normal (Calm) |
 | His level | His named pieces are made at level 20 and sold from level 20, as a faction's are; below it his screen dims them "From level 20", so no keeper sells a piece the buyer could not wear yet |
 
+Replaced in part by [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: no kill gives Shapes; only the week's Abyss content does.
+
 Replaced in part by Claude's call under [[Dailies and Weeklies Follow Destiny 1, With One Abyss Dungeon a Week]]: his
 weeks are the game's, from Tuesday 09:00 UTC, so his place and wares turn then; he still comes Friday 09:00 and goes
 Sunday 21:00 UTC ([[Activities]], "The clock").

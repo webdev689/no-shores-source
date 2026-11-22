@@ -23,7 +23,7 @@ impl super::fitting::Fitting {
     pub(crate) fn stand(&mut self, damage: &mut Damage, hurt: &Hurt, floor: f64) -> f64 {
         // A ship held afloat already (an ambush's least hull, a floor) is not one the ball would sink.
         let held = damage.least_hull > 0.0 || floor > 0.0;
-        let sinks = !held && hurt.hull.trunc() >= damage.hull && matches!(damage.state, State::Afloat | State::Wrecked);
+        let sinks = !held && hurt.hull.trunc() >= damage.hull && damage.state == State::Afloat;
         if self.stood || self.trim.last_stand <= 0.0 || !sinks {
             return floor;
         }

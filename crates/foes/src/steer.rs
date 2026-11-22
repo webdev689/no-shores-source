@@ -140,7 +140,8 @@ fn across(brain: &mut Brain, here: &Here<'_, '_>, ask: &Ask) -> Option<Controls>
         brain.heading = crossing.bearing;
     }
     let jump = square && crossing.jump && body.mode == Mode::Ground;
-    Some(Controls { forward: if square { 1.0 } else { 0.0 }, yaw: brain.heading, jump, ..Controls::default() })
+    // At its own pace, as everywhere: a foe crosses no faster than it walks.
+    Some(Controls { forward: if square { here.pace() } else { 0.0 }, yaw: brain.heading, jump, ..Controls::default() })
 }
 
 /// Whether this tick's step, a share of a walk (or a run) east and south, walks a foe on its feet off an edge more

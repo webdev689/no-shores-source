@@ -46,7 +46,6 @@ const MODE_WORDS: Readonly<Record<CaptainMode | ShipState, string>> = {
   struck: 'struck',
   sinking: 'going down',
   sunk: 'sunk',
-  wrecked: 'crippled',
 };
 
 /** DFO's words for what happened, as the panel says them, or none; a captain's ship is named by its number. */
@@ -59,15 +58,11 @@ export function wordsFor(event: FightEvent, nameOf: (ship: number) => string): s
     return `The ${side} guns are reloading (${(event.left ?? 0).toFixed(1)} s).`;
   }
   if (event.kind === 'ram' && event.by === 0) return 'You ram the ship!';
-  if (event.kind === 'no-sail')
-    return event.wrecked ? 'The ship is crippled. No sail will set.' : 'The rigging is shot away. No sail will set.';
+  if (event.kind === 'no-sail') return 'The rigging is shot away. No sail will set.';
   if (event.kind === 'state' && event.ship > 0 && event.state === 'struck')
     return `The ${nameOf(event.ship)} surrenders!`;
   if (event.kind === 'state' && event.ship > 0 && event.state === 'sinking')
     return `The ${nameOf(event.ship)} is going down!`;
-  if (event.kind === 'state' && event.ship === 0 && event.state === 'wrecked')
-    return 'Your ship is crippled! The sails hang in rags.';
-  if (event.kind === 'state' && event.ship === 0 && event.state === 'afloat') return 'Your hands have it afloat again.';
   return null;
 }
 

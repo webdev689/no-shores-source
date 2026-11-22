@@ -225,7 +225,7 @@ impl Fight {
     pub(crate) fn fire_order(&self, shooter: ShipId, aim: Option<&Aim>) -> Result<Lay, Refusal> {
         let lay = aim.and_then(|aim| self.laid(shooter, aim)).ok_or(Refusal::NoGuns)?;
         let player = self.vessel(shooter).ok_or(Refusal::NoGuns)?;
-        if matches!(player.damage.state, State::Wrecked | State::Sinking | State::Sunk) {
+        if matches!(player.damage.state, State::Sinking | State::Sunk) {
             return Err(Refusal::Silent);
         }
         if player.guns.braced {

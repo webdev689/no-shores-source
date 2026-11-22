@@ -212,13 +212,10 @@ test("every captain's strike and sinking is told by its own name", async () => {
   assert.ok(lines.includes('The Tithe Frigate is going down!'));
 });
 
-test('DFO says a struck captain surrenders and a wrecked Sloop is crippled', () => {
+test('DFO says a struck captain surrenders and rigging shot away sets no sail', () => {
   const named = () => 'Pirate Sloop';
   assert.equal(wordsFor({ kind: 'state', ship: 1, state: 'struck' }, named), 'The Pirate Sloop surrenders!');
-  assert.equal(
-    wordsFor({ kind: 'state', ship: 0, state: 'wrecked' }, named),
-    'Your ship is crippled! The sails hang in rags.',
-  );
+  assert.equal(wordsFor({ kind: 'no-sail' }, named), 'The rigging is shot away. No sail will set.');
   assert.equal(wordsFor({ kind: 'run-out', side: 'port' }, named), null);
 });
 

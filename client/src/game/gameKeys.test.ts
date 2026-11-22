@@ -60,30 +60,21 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
   assert.deepEqual(asked, ['repair', 'repair']);
 });
 
-// Whether the menu answers, on the wreck alone, is the menu's to say (gearWindow.test.ts).
-test("in the story the pad's Start still asks the menu for the Character page", () => {
+test("the pad's Start opens the Character page in the story as the key does, for the teaching that asks for it", () => {
   const { window } = fakePage();
-  globalThis.CustomEvent ??= class extends Event {
-    readonly detail: unknown;
-    constructor(type: string, init?: { detail?: unknown }) {
-      super(type);
-      this.detail = init?.detail;
-    }
-  } as unknown as typeof CustomEvent;
   const opened: unknown[] = [];
-  window.addEventListener(OPEN_AT, (event) => opened.push((event as unknown as { detail: unknown }).detail));
-  let pad: ((pressed: Set<string>, buttons: Set<string>) => void) | null = null;
+  window.addEventListener(OPEN_AT, (event) => opened.push(event.detail));
+  let pad: (pressed: Set<string>, buttons: Set<string>) => void = () => undefined;
   const nothing = () => undefined;
   listenForControls({
-    playing: { flow: { mode: 'story' }, sea: null, foot: null, helmMap: { busy: false } },
-    input: { onPad: (listener: typeof pad) => (pad = listener) },
+    playing: { flow: { mode: 'story' }, sea: null, foot: null, helmMap: { key: () => false }, through: null },
+    input: { onPad: (heard: typeof pad) => (pad = heard) },
     ui: { typing: false },
     hud: { controls: { open: false, rebinding: { slot: null } } },
     story: { press: nothing },
     retry: () => null,
     change: nothing,
   } as unknown as Controlled);
-  assert.ok(pad);
-  (pad as (pressed: Set<string>, buttons: Set<string>) => void)(new Set(['character']), new Set(['Start']));
+  pad(new Set(['character']), new Set(['Start']));
   assert.deepEqual(opened, [{ view: 'character', toggle: true }]);
 });

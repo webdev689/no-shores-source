@@ -106,3 +106,55 @@ test('over its budget, the bank lets go of the ambience played least lately, nev
   await settled();
   assert.ok(play('amb.land.breeze'), 'and comes back once asked for again');
 });
+
+test('a long recording plays each chunk it fetches, never one twice in a row, and none is let go unplayed', async () => {
+  const { asked, read } = reading({ 'breeze.mp3': CHUNK_BYTES * 12 });
+  const samples = new Samples(sounds, read);
+  const audio = fakeAudio();
+  const out = {} as AudioNode;
+  samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+  await settled();
+  const played: unknown[] = [];
+  for (let play = 0; play < 8; play++) {
+    audio.currentTime += 60;
+    const source = samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+    played.push(source?.buffer);
+    await settled();
+  }
+  for (let play = 1; play < played.length; play++) assert.notEqual(played[play], played[play - 1], `play ${play}`);
+  assert.equal(new Set(played).size, played.length, 'each play a chunk not heard before, while new ones come');
+  assert.equal(asked.length, played.length + 1, 'each chunk fetched once');
+});
+
+test("a long recording's last part, shorter than a chunk, is fetched and played too", async () => {
+  const { asked, read } = reading({ 'breeze.mp3': Math.round(CHUNK_BYTES * 1.9) });
+  const samples = new Samples(sounds, read);
+  const audio = fakeAudio();
+  const out = {} as AudioNode;
+  samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+  await settled();
+  samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+  await settled();
+  assert.deepEqual(asked, ['breeze.mp3 0', `breeze.mp3 ${CHUNK_BYTES}`]);
+});
+
+test('a recording that failed to come is asked for again only after a wait, not every tick', async () => {
+  let reads = 0;
+  const read = (): Promise<Fetched> => {
+    reads++;
+    return Promise.reject(new Error('offline'));
+  };
+  const samples = new Samples(sounds, read);
+  const audio = fakeAudio();
+  const out = {} as AudioNode;
+  for (let tick = 0; tick < 20; tick++) {
+    audio.currentTime += 0.1;
+    samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+    await settled();
+  }
+  assert.equal(reads, 1, 'asked once in two seconds');
+  audio.currentTime += 31;
+  samples.play(audio as unknown as AudioContext, out, 'amb.land.breeze');
+  await settled();
+  assert.equal(reads, 2, 'and again once the wait has passed');
+});

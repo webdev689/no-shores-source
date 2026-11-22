@@ -5,7 +5,7 @@ code:
   - crates/reach/src/lib.rs#Section
   - crates/reach/src/lib.rs#Standing
   - crates/reach/src/lib.rs#inside
-  - crates/reach/src/lib.rs#distance_outside
+  - crates/reach/src/lib.rs#distance_to_ring
   - crates/reach/src/lib.rs#respawn_point
   - crates/reach/src/lib.rs#WARNING_TICKS
   - crates/room/src/lib.rs#tick
@@ -41,7 +41,8 @@ walls ([[Layouts]]).
 | Dead | Dead a tick longer, wherever the body is: only a respawn ends it |
 
 - **Respawning.** A respawn is offered once the body has been dead 4 s (240 ticks). It comes back at the section's
-  spawn nearest where it died; of two as near, the first listed.
+  spawn nearest where it died; of two as near, the first listed. The room tells everyone it respawned, as it does for
+  a death in a fight, and it arrives ([[Game]]).
 - **How far past.** The distance past the edge is to the ring's nearest edge, on the map.
 
 ## Who judges

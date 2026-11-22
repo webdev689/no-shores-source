@@ -51,7 +51,8 @@ const TIER_WHOLE = 1;
 const VIEW_BYTES = 96;
 
 type Drawn = {
-  readonly data: CityData;
+  /** The city's drawing less its solids' vertices, which are let go once on the GPU. */
+  readonly data: Omit<CityData, 'solids'>;
   readonly painter: CityPainter;
   readonly group: GPUBindGroup;
   readonly buffers: GPUBuffer[];
@@ -95,9 +96,9 @@ export class CityView implements CityDrawer {
   /** Draws this city from now on, in its climate's pictures; the blocks by name, the forged tables parsed. */
   setCity(plan: CityPlan, climate: CityClimate, blocks: ReadonlyMap<string, RmbBlock>, tables: CityTables): void {
     this.clear();
-    CITY_LAMPS.current = glowLamps(plan);
+    CITY_LAMPS.set(this, glowLamps(plan));
     const started = performance.now();
-    const data = buildCity(plan, climate, blocks, tables);
+    const { solids, ...data } = buildCity(plan, climate, blocks, tables);
     this.frame.buildMs = performance.now() - started;
     const { device } = this.gpu;
     const buffers: GPUBuffer[] = [];
@@ -116,7 +117,7 @@ export class CityView implements CityDrawer {
     };
     const sizes = new Float32Array(PICTURE_LAYERS * 4).fill(64);
     data.book.pictures.forEach((picture, layer) => sizes.set([picture.width, picture.height], layer * 4));
-    const solidVertices = interleaved(data.solids);
+    const solidVertices = interleaved(solids);
     const tiles = device.createTexture({
       size: [data.plates.width, data.plates.width],
       format: 'rg8uint',
@@ -161,7 +162,7 @@ export class CityView implements CityDrawer {
       modelVertices: buffer(data.models.vertices, CITY_BUFFER_USAGE.vertex),
       modelIndices: buffer(data.models.indices, CITY_BUFFER_USAGE.index),
       solidVertices: buffer(solidVertices, CITY_BUFFER_USAGE.vertex),
-      solidIndices: buffer(new Uint32Array(data.solids.indices), CITY_BUFFER_USAGE.index),
+      solidIndices: buffer(new Uint32Array(solids.indices), CITY_BUFFER_USAGE.index),
       origin: buffer(origin, CITY_BUFFER_USAGE.vertex),
       masses: buffer(data.masses, CITY_BUFFER_USAGE.vertex),
       plates: buffer(data.plates.tops, CITY_BUFFER_USAGE.vertex),
@@ -175,9 +176,10 @@ export class CityView implements CityDrawer {
 
   /** Stops drawing any city and frees its buffers. */
   clear(): void {
+    // Its lamps go even when no city stands: a build that failed lit them first.
+    CITY_LAMPS.set(this, []);
     const drawn = this.drawn;
     if (!drawn) return;
-    CITY_LAMPS.current = [];
     drawn.painter.destroy();
     drawn.tiles.destroy();
     for (const buffer of [...drawn.buffers, ...Object.values(drawn.instances).map((held) => held.buffer)])

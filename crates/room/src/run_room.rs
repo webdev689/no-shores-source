@@ -124,14 +124,12 @@ impl Room {
             Pays::Nothing => None,
             Pays::Today { patrol, number } => {
                 let today = island_of(&patrol).and_then(|island| dungeon_of_the_day(day, island.continent));
-                let paid = (tier == Difficulty::Normal && today == Some((patrol.as_str(), number)))
+                (tier == Difficulty::Normal && today == Some((patrol.as_str(), number)))
                     .then(|| character.clear_of_the_day(day, tier, level, &dice))
-                    .flatten();
-                paid.and_then(|reward| reward.vestige)
+                    .flatten()
             }
             Pays::Day { day: opened } => {
-                let paid = (opened == day).then(|| character.clear_of_the_day(day, tier, level, &dice)).flatten();
-                paid.and_then(|reward| reward.vestige)
+                (opened == day).then(|| character.clear_of_the_day(day, tier, level, &dice)).flatten()
             }
             Pays::Week { weekly, week } => {
                 (week == now).then(|| character.clear_of_the_week(week, weekly, &dice)).flatten()

@@ -12,6 +12,7 @@ pub mod boarding_hands;
 mod bounties;
 pub mod chart;
 pub mod clash;
+mod clears;
 mod companions;
 mod course;
 pub mod crew;
@@ -53,7 +54,7 @@ pub mod winds;
 pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
-pub use drops::{DROP_TICKS, Drop, Dropped, REST_TICKS};
+pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
 pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
@@ -185,6 +186,8 @@ pub struct Room {
     pub(crate) island: Option<&'static str>,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
+    /// A mission's, a dungeon's or a world boss's garrison's clear (`clears.rs`).
+    pub(crate) clearing: Option<clears::Clearing>,
     /// The way a body faces as it stands at a spawn, and a dungeon's cache by its Reeve's post (`dungeon_room.rs`).
     pub(crate) facing: f64,
     pub(crate) cache: Option<dungeon_room::Cache>,
@@ -257,6 +260,7 @@ impl Room {
             island: None,
             ashore: companions::Ashore::default(),
             isle: None,
+            clearing: None,
             facing: core::f64::consts::PI,
             cache: None,
             minute: 0,
@@ -421,9 +425,11 @@ impl Room {
                     let pitch = input.intent.combat.pitch;
                     input.intent.combat = combat::CombatInput { pitch, ..combat::CombatInput::default() };
                 }
-                // A cast under way holds off a drink, so neither is lost to the other; the page holds its press too.
-                if self.players.get(&id).is_some_and(|found| found.casting.releasing.is_some()) {
+                // A cast under way holds off a drink, so neither is lost to the other: this press and one kept from a
+                // moment before alike; the page holds its press too.
+                if let Some(found) = self.players.get_mut(&id).filter(|found| found.casting.releasing.is_some()) {
                     input.intent.combat.heal = false;
+                    found.fighter.kept.heal = 0;
                 }
                 let kept = past.iter().find(|(kept, _)| *kept == seen).map(|(_, view)| view.as_slice());
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
@@ -443,6 +449,7 @@ impl Room {
                             found.stood = body.z;
                             found.graced = graced;
                         }
+                        self.tell(EventKind::Respawned, None, id, id, 0.0);
                     }
                     continue;
                 }

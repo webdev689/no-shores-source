@@ -218,6 +218,12 @@ export function likelyMoves(
   return [...new Set([...own, 'idle', 'walk', 'run', 'jump', 'crouch_idle'])];
 }
 
+/** The moves a figure shows standing and on the move with these hands: what a draw or a sheathe shows first. */
+export function steadyMoves(right: string | null, left: string | null, draws: Draws): string[] {
+  const kit = kitOf(right, left, draws);
+  return [...new Set([kit.idle, kit.walk, ...(kit.run ? [kit.run] : []), 'idle', 'walk', 'run'])];
+}
+
 /** A move as the right hand's bow, crossbow or staff plays it, where the forge draws its own (`hurt_bow`); else the
  *  move itself. */
 function ownMove(anim: string, right: string | null, draws: Draws): string {

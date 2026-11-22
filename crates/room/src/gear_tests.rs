@@ -16,8 +16,17 @@ fn room() -> Room {
 }
 
 fn stand(room: &mut Room, role: ::foes::Role, level: u8, y: f64) -> FighterId {
-    let id = room.next_id();
     let (foe_type, rank) = foes::pirate_in(role).expect("a role the pirates fill");
+    stand_type(room, foe_type, rank, level, y)
+}
+
+/// Captain Brannoc Thule, a Boss, whose kill always leaves a Vestige.
+fn stand_boss(room: &mut Room, level: u8, y: f64) -> FighterId {
+    stand_type(room, ::foes::foe_type(12).expect("Thule"), ::foes::Rank::Boss, level, y)
+}
+
+fn stand_type(room: &mut Room, foe_type: &'static ::foes::FoeType, rank: ::foes::Rank, level: u8, y: f64) -> FighterId {
+    let id = room.next_id();
     let (mut fighter, brain) = ::foes::spawn(foe_type, rank, 0.0, y, core::f64::consts::PI);
     fighter.health *= gear::power::foe_health_times(level);
     fighter.health_max = fighter.health;
@@ -127,26 +136,26 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     let events = chop(&mut room, player, 1);
     assert!(events.iter().any(|event| event.kind == EventKind::Killed && event.defender == brute));
     let paid = &room.player(player).expect("in").character;
-    assert_eq!((paid.xp, paid.materials.aurem), (90, 7), "a brute's worth at level 0: 180 and 15, halved");
+    assert_eq!((paid.xp, paid.materials.aurem), (55, 4), "a Major brute's worth at level 0: 110 and 8, halved");
     assert_eq!(room.player(onlooker).expect("in").character.xp, 0, "striking nothing earns nothing");
     let sword = paid.worn(Slot::Melee).expect("the sword");
-    assert_eq!(sword.xp, 90, "the weapon that struck earns it");
+    assert_eq!(sword.xp, 55, "the weapon that struck earns it");
 
-    // The brute's own drop is a roll of the room's dice, so the captain's is told from it and counted from what the
+    // The brute's own drop is a roll of the room's dice, so the Boss's is told from it and counted from what the
     // player holds.
     let held = room.player(player).expect("in").character.vestiges_held(false);
     let earlier: Vec<u32> = room.drops_for(player).map(|drop| drop.id).collect();
-    let captain = stand(&mut room, ::foes::Role::Captain, 0, -8.0);
+    let captain = stand_boss(&mut room, 0, -8.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     let lying: Vec<Drop> = room.drops_for(player).cloned().collect();
     let vestige = lying.iter().find(|drop| matches!(drop.what, Dropped::Vestige(_)) && !earlier.contains(&drop.id));
-    let Drop { id, at, .. } = *vestige.expect("a captain always leaves a Vestige");
+    let Drop { id, at, .. } = *vestige.expect("a Boss always leaves a Vestige");
     assert_eq!(room.drops_for(onlooker).count(), 0);
     room.tick();
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held, "it lies 6 m away");
     move_to(&mut room, player, at[0], at[1]);
-    for _ in 0..REST_TICKS {
+    for _ in 0..VESTIGE_REST_TICKS {
         room.tick();
     }
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held + 1, "walked over, it is taken");
@@ -157,7 +166,7 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
 fn a_vestige_left_lying_goes_to_the_mail_after_two_minutes() {
     let mut room = room();
     let player = room.join().expect("a room with space");
-    let captain = stand(&mut room, ::foes::Role::Captain, 0, -30.0);
+    let captain = stand_boss(&mut room, 0, -30.0);
     room.mark_struck(player, captain, Slot::Melee);
     room.pay_kill(captain);
     let rarity = room.drops_for(player).find_map(|drop| match &drop.what {
@@ -165,6 +174,7 @@ fn a_vestige_left_lying_goes_to_the_mail_after_two_minutes() {
         _ => None,
     });
     assert!(rarity.is_some(), "the Captain dropped a Vestige");
+    assert_eq!(room.drops_for(player).filter(|drop| matches!(drop.what, Dropped::Vestige(_))).count(), 1);
     for _ in 0..DROP_TICKS {
         room.tick();
     }
@@ -485,6 +495,67 @@ fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wear
     assert_eq!((worn.kind, worn.rarity), (Kind::Bow, Rarity::Normal), "a Normal one handed out");
     assert_eq!(found.character.at(bow), Some(At::Carried), "the Atheric one still carried");
     assert_eq!(found.character.at(mace), Some(At::Worn(Slot::Melee)), "the Atheric mace carried was worn");
+}
+
+#[test]
+fn a_kills_pay_by_rank_is_its_ranks_health_against_a_majors() {
+    let foe_type = ::foes::foe_type(14).expect("the pirates' swordsman");
+    let major = foe_type.numbers(::foes::Rank::Major, 1).health;
+    for (rank, pay) in ::foes::Rank::ALL.into_iter().zip(gear::rewards::RANK_PAY) {
+        assert!((foe_type.numbers(rank, 1).health / major - pay).abs() < 1e-12, "{rank:?}");
+    }
+}
+
+/// The fight measured for the balance's record: a level 1 player with the starting sword, swinging and never
+/// guarding, against one level 1 foe of each rank; felling it with the player's health held whole, and being felled
+/// by it standing still. Run by hand to print the table:
+/// `cargo test -p room --release measure_blows -- --ignored --nocapture`.
+#[test]
+#[ignore = "a measurement, printed by hand in release"]
+fn measure_blows() {
+    use ::foes::Rank;
+    let rows = [
+        ("Minor Swordsman", 14, Rank::Minor),
+        ("Major Hookman", 8, Rank::Major),
+        ("Major Brute", 15, Rank::Major),
+        ("Elite Captain", 17, Rank::Elite),
+        ("Miniboss Captain", 17, Rank::Miniboss),
+        ("Boss (Thule)", 12, Rank::Boss),
+    ];
+    eprintln!("| Foe | Felled in | Fells the player in |");
+    for (name, number, rank) in rows {
+        let foe_type = ::foes::foe_type(number).expect("a type");
+        let mut arena = room();
+        let player = arena.join().expect("a room with space");
+        let foe = stand_type(&mut arena, foe_type, rank, 1, -1.5);
+        let (mut landed, mut ticks) = (0, 0_u32);
+        while ticks < 60 * 600 {
+            let (me, them) = (*arena.fighter(player).expect("in"), arena.fighter(foe).copied());
+            let Some(them) = them.filter(|found| !found.dead()) else { break };
+            arena.set_fighter(player, combat::fighter::Fighter { health: me.health_max, ..me });
+            let attack = (ticks % 30 == 0).then_some(Stroke::Down);
+            let mut input = asking(ticks + 1, &arena, CombatInput { attack, ..CombatInput::default() });
+            input.intent.controls.yaw = combat::sight::bearing([me.body.x, me.body.y], [them.body.x, them.body.y]);
+            let near = libm::hypot(me.body.x - them.body.x, me.body.y - them.body.y);
+            input.intent.controls.forward = if near > 1.6 { 1.0 } else { 0.0 };
+            arena.input(player, input).unwrap();
+            arena.tick();
+            ticks += 1;
+            let hits = arena.take_events();
+            landed += hits.iter().filter(|hit| hit.kind == EventKind::Hit && hit.striker == player).count();
+        }
+        let mut arena = room();
+        let player = arena.join().expect("a room with space");
+        stand_type(&mut arena, foe_type, rank, 1, -1.5);
+        let mut felled = 0_u32;
+        while felled < 60 * 600 && !arena.fighter(player).expect("in").dead() {
+            arena.input(player, asking(felled + 1, &arena, CombatInput::default())).unwrap();
+            arena.tick();
+            felled += 1;
+        }
+        let seconds = |ticks: u32| f64::from(ticks) / 60.0;
+        eprintln!("| {name} | {landed} blows, {:.1} s | {:.1} s |", seconds(ticks), seconds(felled));
+    }
 }
 
 #[test]

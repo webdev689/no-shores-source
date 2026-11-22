@@ -143,8 +143,14 @@ fn a_respawn_is_refused_for_four_seconds_then_stands_the_body_at_the_nearest_spa
         lying = body;
     }
     assert_eq!((lying.vx, lying.vy), (0.0, 0.0), "at rest where it lies");
+    room.take_events();
     let back = runner.play(&mut room, NORTH, true);
     assert_eq!(back.standing, Standing::Inside);
+    let told = room.take_events();
+    assert!(
+        told.iter().any(|event| event.kind == EventKind::Respawned && event.defender == runner.player),
+        "everyone is told it respawned, as a fight's death is: {told:?}"
+    );
     assert_eq!(
         back.fighter.body,
         standing_on(&Floor::Flat, &[], 30.0, -40.0),

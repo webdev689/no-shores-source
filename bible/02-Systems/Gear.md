@@ -8,7 +8,6 @@ code:
   - crates/gear/src/cosmetics.rs#sold_on
   - crates/gear/src/shape.rs#present
   - crates/gear/src/shape.rs#wares
-  - crates/gear/src/shape.rs#found
   - content/gear/cosmetics.json
   - crates/gear/src/shown.rs#Shown
   - crates/room/src/asks.rs#counter_for
@@ -36,6 +35,11 @@ code:
   - crates/gear/src/vestige.rs#opens_to
   - crates/gear/src/vestige.rs#make
   - crates/gear/src/rewards.rs#worth
+  - crates/gear/src/rewards.rs#loot_kill
+  - crates/gear/src/rewards.rs#keep_found
+  - crates/gear/src/rewards.rs#Clear
+  - crates/gear/src/vestige.rs#found_items
+  - crates/room/src/clears.rs#pay_garrison_clear
   - crates/gear/src/catalogue.rs#catalogue
   - crates/gear/src/world.rs#island_levels
   - crates/gear/src/vendor.rs#wares
@@ -47,6 +51,8 @@ code:
   - crates/room/src/power.rs#empower
   - crates/room/src/power.rs#pay_kill
   - crates/room/src/drops.rs#drop_spoils
+  - client/src/combat/drops.ts#motionAt
+  - client/src/combat/vestigeCrystal.ts#crystalFrame
   - crates/room/src/drops.rs#mail_lying
   - crates/gear/src/mail.rs#Letter
   - crates/gear/src/mail.rs#carry_or_post
@@ -102,6 +108,10 @@ number is one of [[Gear as Claude Shapes It]].
   piece) 6 Essence each; an Atheric's own, 1,000 Aurem and 1 Essence ([[Gear as Claude Shapes It]]). A resource is
   gathered at its island's nodes, each drawn as the resource itself
   ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]).
+- **A kill's pay.** XP and Aurem are the foe's kind's as a Major at level 5 (Skirmisher 80 and 7, Archer 85 and 7,
+  Swordsman 95 and 7, Brute 110 and 8, Captain 120 and 8), times its rank's health against a Major's (Minor 0.6,
+  Elite 2.2, Miniboss 4, Boss 7; `rewards::RANK_PAY`), times (5 + its level) ÷ 10, times the voyage's tier. The kinds
+  span less than one rank's step, so a higher rank always pays more, whatever the kinds, at every level and tier.
 - **XP.** A kill's XP goes to every player who struck the foe in its last 10 s, a tenth more with Scholar worn; for
   each, to the loadout whose blow last landed and to every armour piece worn. An item stops earning at its
   last column. Past level 20, each 20,000 XP grows a Fruit of Dagon, which gives an item 5,000 XP when fed to it.
@@ -113,19 +123,36 @@ number is one of [[Gear as Claude Shapes It]].
   times 1.07 for each of its levels past the player's Defense ÷ 45, and a quarter more for each level the player is
   below it, up to double. Defense comes from the four armour pieces alone: head 0.3125 of a full set's, torso 0.3375,
   arms 0.2625, legs 0.2375.
-- **Vestiges.** A kill may leave a Vestige for each player who struck the foe, seen by them alone: by the foe's
-  chance (a boss's is sure), its colour weighted by the foe (Legendary from level 18, Atheric from 20), for one slot,
-  its item at the foe's level. A player carries ten. Identified in a social space, it opens to a colour at, below or
-  now and then above its own, never above what its level could drop (Legendary from 18, Atheric from 20), and to a
-  named item of its slot (a Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled,
-  never a trait twice.
+- **Vestiges**, in Destiny 1's order ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]], [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). A kill may leave a Vestige for each player who
+  struck the foe, seen by them alone: by the foe's rank (Minor 2 in 100, Major 4, Elite 10, Miniboss 35, a Boss always;
+  `vestige::chance`), raised by the voyage's tier, a chance past one leaving one sure and another by what is over; its
+  colour weighted by its rank, for one slot, its item at the foe's level. At every rank each colour is half or less of
+  the one below it, and each colour or better likelier the higher the rank (`vestige::colours`, in 1,000: Minor 750,
+  188, 47, 12, 3; Major 716, 204, 58, 17, 5; Elite 670, 223, 74, 25, 8; Miniboss 606, 242, 97, 39, 16; Boss 517, 258,
+  129, 64, 32); a colour too good for the foe's level (Legendary below 18, Atheric below 20) is struck out, the rest
+  keeping their order. A player carries ten. Identified in a social space, it opens to its
+  own colour three times in four, one colour below one time in five and one above one time in twenty (a Normal opens
+  Normal 95 in 100, an Atheric Atheric 80), never above what its level could drop, and to a named item of its slot (a
+  Breach's excepted) or a lesser one of a kind the slot takes, its name and traits rolled, never a trait twice.
+- **Items as themselves.** A Boss's kill always leaves each player who struck it an item, not sealed, and a Miniboss's
+  35 times in 100, each beside its Vestige and by a roll of its own, raised by the tier as the Vestige is
+  (`vestige::found_items`, `loot_kill`). It is made as a Vestige of its rank's colours, opened, would make it, for any
+  slot, at the foe's level, and goes into its slot's nine, else the vault; with both full it is laid as a Vestige of
+  its colour and slot (`keep_found`).
+- **A clear** ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]], `room::clears`):
+  once every group of a mission's, a dungeon's or a world boss's garrison is down at once, no wave standing, each
+  player still in the room who shared a kill of it since its last clear is paid, at the garrison's highest level as a
+  kill is: at level 5 a mission 400 XP and 30 Aurem, a dungeon 800 and 60, a world boss 1,600 and 120
+  (`rewards::Clear`). A dungeon's clear also leaves an item, coloured as its Miniboss's, and a Vestige as often as its
+  Miniboss leaves one. It pays once until a group stands again. A patrol never ends, so it pays none. A laid
+  dungeon's room pays the same clear as its cache opens ([[Dungeons]], "The cache").
 - **Asks.** Wearing, taking off, buying and choosing nodes, dismantling, identifying, feeding Fruit, and the vault;
   a ship's modules are fitted, upgraded and infused by the same asks ([[Ship Power]]), and its officers have theirs
   ([[Crew]]).
   An ask refused changes nothing and says why. A slot carries nine beside the one worn; the vault, reached in a
   social space, twenty weapons, twenty armour and twenty Vestiges. A slot read past nine from a kept character
   carries what it holds, and takes no more until it is down to nine. Dismantling returns Aurem, fragments and, from a
-  Legendary or Atheric, Essence with a third of what was spent on it.
+  Legendary (2, or 3 one time in two) or an Atheric (3), Essence, with a third of what was spent on it.
 - **Chance** comes from a hash of the room's seed, its tick, a count of the rolls the room has made, the player and
   what the roll is for. A deployed room's seed is its host's own, random and never sent, so no player can foresee a
   roll; a room in the game's worker keeps one fixed seed, so it gives the same loot for the same play. A kept character is
@@ -142,8 +169,10 @@ number is one of [[Gear as Claude Shapes It]].
 - **Blows.** Every blow is made with its power as it is struck: a player's on a foe by the Attack of the loadout its
   came from (a shot the Ranged one's, as it was when the shot was loosed; a swing Melee's, or Ranged's while it is
   drawn or no Melee is worn), a foe's on a player by the player's Defense, each by the two levels. On top, at every
-  level, a player's blow on a foe strikes twice (`PLAYER_HARM`) and a foe's on a player half (`FOE_HARM`), from
-  [[The Whole Game Gets a Balance Pass]]. A foe of level 0 fights by combat's own numbers and those two alone.
+  level, a player's blow on a foe strikes half again (`PLAYER_HARM`) and a foe's on a player three quarters
+  (`FOE_HARM`), from [[The Whole Game Gets a Balance Pass]] and
+  [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]. A foe of level 0 fights by combat's own
+  numbers and those two alone.
 - **Kills.** A foe's death pays every player whose blow landed on it in its last ten seconds and could harm it (four
   levels below, a blow does nothing and shares nothing), and throws out what it drops for each, seen by them alone,
   for two minutes ("Drops", below). While a player holds the Abyss boon this week ([[Activities]]), each kill pays
@@ -282,18 +311,21 @@ shape.
 [[Loot Drops Are Seen, and Ranged Weapons Carry Ammo]], in [[Arts and Loadouts as Claude Shapes Them]]'s shape, after
 DFO's spoils ([[Pick - Loot Drops]]).
 
-- **What drops.** For each player who earned a kill: their Vestige, if one dropped; an Ammo box by the foe's rank
-  (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always); and from a Miniboss or a Boss an
-  Ammo crate, straight into their crates while they carry fewer than five, else lying with the rest (`room::drops`).
-- **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: each
-  piece a kill's drop for a foe of the ship's rank and level, kept for its player, gathered by their ship within 25 m, a
-  Vestige they have no room for sent to the mail and any other part they have no room for lost with it
-  (`room::flotsam`).
+- **What drops.** For each player who earned a kill: their Vestiges, if any dropped (by its rank, "Vestiges" above);
+  an Ammo box by the foe's rank (Minor one in five, Major 35 in 100, Elite 60 in 100, a Miniboss or a Boss always);
+  and from a Miniboss or a Boss an Ammo crate, straight into their crates while they carry fewer than five, else
+  lying with the rest (`room::drops`).
+- **At sea** ([[Naval Combat]], "How a fight ends"), what floats where a captain's ship sank is the same law's: a
+  ship drops as one foe of its rank and level does, its Vestige, Ammo box and crate in the first piece laid for each
+  player, and a boarded hold as one foe a rank higher, items from a Miniboss or a Boss kept as on land; every piece
+  holds the ship's salvage ([[Ship Power]]). A kill on a boarded deck leaves no Vestige or item: the hold is the
+  boarding's loot. Each piece is kept for its player, gathered by their ship within 25 m, what they have no room for
+  lost with it, but a Vestige they have no room for sent to the mail (`room::flotsam`).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
-  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once its
-  rests.
+  section's ring, so a piece never rests out of its player's reach. A piece is taken only once it has had time to
+  settle, the longest it can bounce: a Vestige 94 ticks (about 1.6 s) after it is thrown, ammunition 60 (1 s).
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
   the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
@@ -303,10 +335,30 @@ DFO's spoils ([[Pick - Loot Drops]]).
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
   says "Ammo full" on the player, once each time they step within reach of such a box at rest, never again while they
   stand there ([[Interface]], "A blow's words"; `DropsShown`).
-- **Seen.** Each piece arcs out of the body and bounces twice to rest, then stands upright as its own picture, the
-  Vestige glyph in its rarity's colours, an Ammo box or an Ammo crate. A thin line rises from its top as it rests:
-  Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs
-  it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it comes to rest ([[Interface]]).
+- **Seen** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
+  [[Pick - project-final Drops]]). Each piece pops up out of the body, falls, and bounces until it lands slower than it
+  settles, coming down on the room's spot; one thrown up to a spot over the body pops at least high enough to land
+  there. Settled, it rises to hover, bobbing and turning:
+
+  | | A Vestige | Ammunition |
+  |---|---|---|
+  | Leaves the body, its middle over the feet | 1.15 m | 1.01 m |
+  | Pops up at | 4.4 to 5.4 m/s | 2.8 to 3.4 m/s |
+  | Falls under | 16 m/s² | 16 m/s² |
+  | Keeps of each bounce's speed, and of its way along the ground | 0.4, 0.55 | 0.3, 0.55 |
+  | Settles once it lands slower than | 1.1 m/s | 1.6 m/s |
+  | Its middle over the ground bouncing, then hovering | 0.23 m, then 0.42 m | 0.31 m, then 0.5 m |
+  | Rises to hover over | 0.35 s | 0.28 s |
+  | Bobs | 5 cm | 6 cm |
+  | Turns in the air, then at rest | 7, then 2.4 radians a second | 5, then 2.4 radians a second |
+  | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m | its Blender model, 12 frames of 0.038 m a pixel |
+
+  The heights keep every frame's lowest pixel over the ground. A Vestige's crystal is a faceted gem crusted with
+  shards, in its rarity's white, green, yellow, red or cyan blue, each frame baked as its turn first reaches it,
+  cel-shaded in five bands, its outline darkened and a halo of its glow round it, added light. An Ammo box or crate is
+  its model ([[Item Pictures]]). A thin line rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m,
+  Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs it, a Legendary's and an Atheric's
+  pulse, and a Rare or finer chimes as it settles ([[Interface]]).
 
 ## The mail
 
@@ -363,7 +415,8 @@ the factions' counters are in [[Factions]].
   Magic, made at the buyer's level (at most 20), the same for everyone that day and new the next (`gear::vendor`). The
   slots turn with the day, so over four days the Armorsmith sells each armour piece at each rarity.
 - A ware costs Aurem only: 2,000 for Rare, 600 for Magic. It is bought only at its smith's counter, and carried with
-  its slot's nine. Legendary and Atheric gear is never sold for Aurem: it is earned, or had from Shape.
+  its slot's nine. The smiths sell no Legendary or Atheric gear: it is earned, had from Shape, or a faction's own
+  bought at its counter by rank ([[Factions]]).
 - **The Mage** identifies Vestiges, free.
 - **The Tailor** sells six emblems a day ("Emblems") and four dyes; **the Tack** four horse pieces a day
   ("Cosmetics").
@@ -371,9 +424,10 @@ the factions' counters are in [[Factions]].
 - **Shape** comes to Overlook from Friday 09:00 to Sunday 21:00 UTC and stands at one of eight places on the plaza,
   the week's (`gear::shape`, in the clock's weeks from Tuesday 09:00 UTC). He sells six pieces for the week, four
   Legendary and two Atheric, each a named item at level 20 for a slot of the week's dice, for 7 and 15 Shapes, sold
-  from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come
-  only from kills at the Elite and Abyss seas: one in 33 kills at Elite, one in 17 at Abyss, and
-  2 or 4 from a Boss or Miniboss; a player holds 200 at most.
+  from level 20 as a faction's are (his screen dims them "From level 20" below it). **Shapes** come only from the
+  week's Abyss content ([[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]): the
+  week's Abyss Dungeon's first clear pays 15 (`gear::clears`, [[Activities]]), and no kill gives any. A player holds
+  200 at most.
 - The room keeps the minute, set by its host before its first tick and each second after (and by the page as its own
   room steps, playing alone), whose day (`gear::clock`, from 09:00 UTC) sets every daily list and whose week (from
   Tuesday 09:00 UTC) sets Shape. It sends the day's wares, the Tailor's emblems and dyes, the Tack's pieces and, while he is here, Shape's place and his
@@ -382,7 +436,7 @@ the factions' counters are in [[Factions]].
   `node` and the day it was shown, which the gear message carries, so one shown before the day turned is refused as
   "It is not sold here today"), 16 an Ammo crate, 56 a cosmetic (its number in `item`), 57 a piece of Shape's (its
   place in `node` and the piece shown there, its place in the catalogue's items, in `item`, so a page shown another
-  piece than his week now draws there, as the catalogue grew, is told it is not sold here).
+  piece than his week now draws there is told it is not sold here).
 
 ## Emblems
 
@@ -441,8 +495,9 @@ on the wire, each with a kind, a name, a rarity, words, where it comes from and 
 - **Each island** has a band of foe levels (`gear::world`), rising with the voyage away from Overlook as Destiny 1's
   worlds did: 1–4, 4–7, 7–10, 10–13, 13–16, 16–19, 19–22, 22–26 and 26–30, the ninth reaching the highest player.
 - **The difficulty** a voyage sets out at raises them: Normal as they are, Elite two levels higher, Abyss three,
-  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige.
-  The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
+  never past level 32; and pays by them: half again, or twice, the XP and Aurem of a kill and its chance of a Vestige,
+  on land, on a boarded deck (whose room takes the sea's tier) and at sea, where a ship's sinking pays its XP and its
+  drop the same way. The tier Elite is not the foe rank Elite (`Difficulty::Elite`, `Rank::Elite`).
 - **A garrison's foes** ([[Garrisons Take the Gear Loop's Levels and Shields]], [[Enemies]]) each stand at a level
   drawn evenly from their island's band, from the node's id, raised by the room's difficulty; a Boss's called foes at its
   level. The level sets a foe's power against a player's gear, as above; its rank multiplies its health, poise, might

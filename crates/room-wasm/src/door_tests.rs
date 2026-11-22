@@ -708,6 +708,32 @@ fn each_player_at_sea_is_sent_the_hostile_ships_within_their_keeping_sight_and_t
 }
 
 #[test]
+fn each_player_at_sea_is_sent_only_those_walking_the_decks_of_the_ships_they_are_sent() {
+    small_sea();
+    let (one, near, far) = (room_join(), room_join(), room_join());
+    for (player, at) in [(one, [50_000.0, 50_000.0]), (near, [50_000.0, 90_000.0]), (far, [300_000.0, 50_000.0])] {
+        assert_eq!(input(player, &protocol::course_bytes(&[at], 10)), TAKEN);
+    }
+    room_tick();
+    with_open(|opened| {
+        if let Opened::Sea(sea) = opened {
+            for player in [one, near, far] {
+                assert_eq!(sea.leave_helm(player), Ok(()));
+            }
+        }
+    });
+    room_tick();
+    snapshot_door::prepare();
+    let walking = |player: PlayerId| {
+        let bytes = snapshot_door::snapshot_for(player);
+        let snapshot = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
+        snapshot.players().map_or(Vec::new(), |seen| seen.iter().map(|each| each.player()).collect::<Vec<_>>())
+    };
+    assert_eq!(walking(one), vec![one, near]);
+    assert_eq!(walking(far), vec![far], "250 km off, no one else's deck");
+}
+
+#[test]
 fn the_sea_says_why_its_tier_shuts_to_a_kept_character_or_a_new_one() {
     small_sea();
     assert_eq!(shut(0, b""), "", "the Normal sea is open to anyone");

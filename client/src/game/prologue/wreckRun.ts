@@ -1,4 +1,5 @@
 import { QUIET, pushedIn, showAnimaEdge } from '../../combat/animaMoment.ts';
+import { Arrivals } from '../../combat/arrivals.ts';
 import { AttackFeel, type DrawnFigure } from '../../combat/attackFeel.ts';
 import { FightEffects } from '../../combat/fightEffects.ts';
 import { Fighting } from '../../combat/fighting.ts';
@@ -15,6 +16,8 @@ import type { GearState } from '../../network/gearMessages.ts';
 import { LocalRoom } from '../../network/localRoom.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { crosshairPoint } from '../../player/crosshair.ts';
+import { CARD_NEAREST_M } from '../../player/figures.ts';
+import { handsZoom } from '../../player/playerCamera.ts';
 import type { Dress } from '../../player/dressing.ts';
 import { IDLE, type InputFrame } from '../../player/input.ts';
 import { cameraFollowed, newPlayer, playerCamera, shownBody } from '../../player/player.ts';
@@ -89,6 +92,8 @@ export class WreckRun {
   readonly boxes: readonly Block[];
   private readonly foes: FoeFigures;
   private readonly effects = new FightEffects();
+  /** The player raised at a checkpoint arrives there as one respawning does on foot. */
+  private readonly arrivals = new Arrivals();
   private readonly feel: AttackFeel;
   private readonly sounds = new WorldSounds(louder(worldOutput, STORY_FIGHT_GAIN));
   private readonly scenery: WreckScenery;
@@ -410,11 +415,12 @@ export class WreckRun {
       running: !held && !frozen,
       hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.course, bodies, groundAt),
-      zoomOf: () => camera().zoom ?? 1,
+      zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
     effects.ownLook = walker.glowing[0];
     const events = effects.events(fight, seconds, (id, look) => foes.dissolveFoe(id, look, clock));
+    this.arrivals.told(events, clock);
     const ownWeapon = effects.flashes.ownOf(fight.own);
     walker.fought(ownWeapon.surge, ownWeapon.contact);
     feel.frame(events, fight.own, fight.player, seconds, new Set());
@@ -423,6 +429,8 @@ export class WreckRun {
     const kicked = pushedIn(feel.camera(aimed(), fight.player, fight.own, firstPerson, sights), effects.anima.push);
     const shot = shotOfOrbit(kicked, LENS, groundAt, CAMERA_CLEARANCE_M);
     const [eyeX, eyeY] = shot.eye;
+    // Through the player's own eyes no other figure stands so near that it fills the view.
+    const nearest = firstPerson ? CARD_NEAREST_M : 0;
     const frameTicks = seconds / movement.tickSeconds;
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, shot.yaw);
     const right = [Math.cos(shot.yaw), Math.sin(shot.yaw)] as const;
@@ -435,14 +443,25 @@ export class WreckRun {
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
-      figures.push({ ...own, veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) });
+      const arrival = this.arrivals.ownShareOf(fight.player, clock);
+      const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player), arrival };
+      figures.push({ ...own, ...looks });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
       drawnAt.set(fight.player, { feet, anim: walker.look.anim, flip: own.flip });
     }
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: drawnAt, smear };
     const { tickSeconds } = movement;
     figures.push(
-      ...foes.cards(fight, forge, { x: eyeX, y: eyeY }, clock, frameTicks, tickSeconds, effects.flashes, foeFeel),
+      ...foes.cards(
+        fight,
+        forge,
+        { x: eyeX, y: eyeY, nearest },
+        clock,
+        frameTicks,
+        tickSeconds,
+        effects.flashes,
+        foeFeel,
+      ),
     );
     const lying = this.armsLie ? this.lying.figure(walker.you.dress) : null;
     if (lying) figures.push(lying);
@@ -526,6 +545,7 @@ export class WreckRun {
       swings,
       fight: fought,
       hints,
+      dark: this.arrivals.darkOf(fight.player, clock),
     };
   }
 

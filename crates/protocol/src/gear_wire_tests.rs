@@ -175,8 +175,8 @@ fn an_ask_the_room_does_not_know_reads_as_none() {
 }
 
 /// A room whose first player holds a granted Legendary sword worn, a Vestige carried, two Ammo crates and half their
-/// ammunition, with a resource node spent, an Ammo box lying for them, and two letters in their mail: a Rare Vestige
-/// for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
+/// ammunition, with a resource node spent, an Ammo box and a Magic Vestige lying for them, and two letters in their
+/// mail: a Rare Vestige for the arms at level 9 left lying, and a Magic hull at level 6 salvaged.
 fn furnished() -> (Room, PlayerId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.furnish(Some([0.0, 0.0]), vec![ResourceNode { x: 0.0, y: 1.0, resource: 4 }]);
@@ -212,6 +212,7 @@ fn furnished() -> (Room, PlayerId) {
     kept.post(Source::LeftLying, Posted::Vestige(Vestige::new(0, Rarity::Rare, Slot::Arms, 9)));
     kept.post(Source::Salvage, Posted::Item(gear::Item::new(0, Kind::Hull, Rarity::Magic, 6, Slot::Hull)));
     assert!(room.restore_character(player, &kept.to_json()), "the character kept again");
+    room.lay_drop(player, Dropped::Vestige(Vestige::new(90, Rarity::Magic, Slot::Head, 20)), [3.0, 2.0, 0.0]);
     (room, player)
 }
 
@@ -295,7 +296,9 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     assert_eq!((drops[0].id(), drops[0].rarity(), drops[0].slot(), drops[0].kind()), (3, 2, Slot::Torso as u8, 0));
     assert_eq!(drops[0].at().map(|at| at.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
     assert_eq!(drops[0].from().map(|from| from.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
-    let flying = u8::try_from(room::REST_TICKS - 1).expect("a tick");
+    let crystal = u8::try_from(room::VESTIGE_REST_TICKS - 1).expect("a tick");
+    assert_eq!(drops[0].flying(), crystal, "a Vestige, a tick into its longer flight");
+    let flying = u8::try_from(room::AMMO_REST_TICKS - 1).expect("a tick");
     assert_eq!((drops[1].kind(), drops[1].flying()), (2, flying), "a crate, a tick into its flight");
 }
 

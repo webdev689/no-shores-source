@@ -136,6 +136,7 @@ Its rank, by the lowest level of its water's band:
 
 - **Sinking**: any ship at no hull goes down over 20 s. It leaves each player who fought it 3, 4, 5, 6 or 8 pieces,
   Minor to Boss, each a kill's drop by the gear loop's law; from an Elite up, one piece is a chest a rank higher.
+  Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: the ship drops as one foe of its rank, in its first piece.
   They lie within 30 m, drift downwind at 0.3 m/s, are gone after 180 s, and are gathered within 25 m.
 - **Striking**: a struck ship lies hove to 90 s, then is scuttled.
 - **Boarding**: within 30 m of it, both ships under 2 m/s, never a ship with no crew on its deck. Its crew are 3 hands at a Minor, 3 and a heavy at a

@@ -12,6 +12,7 @@ import {
   FULL_RUN,
   FULL_WALK,
   likelyMoves,
+  steadyMoves,
   Loop,
   onTheMove,
   PlacedLoop,
@@ -436,4 +437,16 @@ test('moving, a blow, a shot, a reload, an aim and the cast play their own on th
   assert.equal(shownMove({ ...doing, cast: 0.5 }, frames, everything, walking).anim, 'cast');
   assert.equal(shownMove({ ...moving, cast: 0.5 }, frames, everything, () => null).anim, 'cast');
   assert.equal(blowWay('side1hwalk'), blowWay('side1h'), 'a blow on the move goes its standing way');
+});
+
+test("the moves a figure shows standing and moving are a few of its likely ones, its kit's own and the plain", () => {
+  const steady = steadyMoves('sword_iron', null, classic);
+  const likely = likelyMoves('sword_iron', null, classic);
+  for (const anim of ['idle', 'walk', 'run']) assert.ok(steady.includes(anim), anim);
+  assert.ok(
+    steady.every((anim) => likely.includes(anim)),
+    'all of them likely',
+  );
+  assert.ok(steady.length < likely.length / 2, 'and few: no blow, guard, roll or hurt');
+  assert.equal(new Set(steady).size, steady.length);
 });

@@ -8,7 +8,7 @@ export const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = 
   // A worn piece is not dismantled; a carried one's card in the flyout says how.
   character: [
     ['Click', 'Swap'],
-    ['Right-click / X', 'Details'],
+    ['Right-click / details', 'Details'],
   ],
   social: [
     ['Click', 'Choose a player'],
@@ -16,7 +16,7 @@ export const HINTS: Readonly<Partial<Record<View | 'item', readonly Hint[]>>> = 
   ],
   vault: [
     ['Click', 'Put in or take out'],
-    ['Right-click / X', 'Details'],
+    ['Right-click / details', 'Details'],
     [DISMANTLE_KEY, 'Hold to dismantle'],
   ],
   harbourmaster: [['Hold', 'Buy']],

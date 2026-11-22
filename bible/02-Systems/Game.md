@@ -12,6 +12,7 @@ code:
   - client/src/game/game.ts#startGame
   - client/src/game/drain.ts#Drain
   - client/src/game/drain.ts#DrainView
+  - client/src/combat/arrivals.ts#Arrivals
   - client/src/game/gameBoot.ts#bootGame
   - client/src/game/gameFrame.ts#startFrames
   - client/src/game/pageWaters.ts#watersOnce
@@ -94,6 +95,12 @@ the screen reader's announcements.
   parameter and buffer the game's sound code makes there is a number the page keeps, each call sent with the rest of
   its task's and carried out on the page; the page's clock is sent back now and then, and the worker runs it on
   between. The page makes its audio at the player's first press or key, as a browser lets sound start only then.
+- **The room for playing alone** runs in a worker of its own, started by the game's
+  ([[The Room for Playing Alone Runs in a Worker of Its Own]]): a node's, the sea's and an island's room (`LocalRoom`)
+  is opened there, its navmesh baked and its sea laid, and ticked there as the game lets its clock run, its snapshots
+  handed back as they come, as a server's are (`RoomThread`, `serveRooms`, `roomWorker.ts`). The game's thread only
+  sends the player's inputs and the seconds to run. The wreck's room in the prologue, which the story asks things of
+  and waits on the answer, and the [[Test Ground]]'s, are still opened in the thread that asks.
 - **Measured** headless on SwiftShader at 480 by 270, the world drawn at Overlook's social space for 30 seconds with
   W pressed every two: the page's thread is busy 0.0 ms a frame at the median and keeps 60 frames a second while the
   worker draws, with 4 long tasks (0.26 s in all); the worker is busy 25 ms a frame. SwiftShader draws on the CPU, so
@@ -200,6 +207,11 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   crumbles from the head down in 2 by 2 cells over 0.6 s, white at the break; a death in an element (the player's own in
   their weapon's glow as their game shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
   from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
+  A player arriving, as they spawn into a place or respawn, is built from the feet up in 2 by 2 cells over 0.6 s, each
+  white as it lands, throwing no shadow until they stand whole, when their weapon glows ([[Players Arrive as Destiny's
+  Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and on each respawn, every other
+  player on respawning or when first seen after the player arrived. The player sees their own figure begin once their
+  view is first open, 0.5 s in. Foes never arrive so.
   A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in
   [[Arts]], and the weapon's glow surges ([[Weapon Glow]]).
 - **Sounds.** The world sounds on foot ([[Interface]], "World sounds"): the fight's blows, shots, steps and spells,
@@ -233,8 +245,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
   gathered it, until its turn comes round; a place resting its turn shows only its dressing. The picture alone marks a
-  node: no ring, no beam, no mark over it. Each drop lying for them stands as its own picture under its rarity's line
-  (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
+  node: no ring, no beam, no mark over it. Each drop lying for them hovers, a Vestige as its crystal, under its
+  rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"), and at the bounty board its bounties, offered as "The Bounty Board:
@@ -640,7 +652,8 @@ ripples follow it.
 In death the world drains to grey once death is told (a fall plays out in colour first, the camera holding and turning
 after the body, no key listed until Respawn is offered), and comes back in colour on respawn or on leaving: over 1.4 s
 each way, eased out, grey to 92%, at 72% of its light and 5% more contrast. The scene draws it last into its own
-picture, so the interface the game draws over the world keeps its colour.
+picture, so the interface the game draws over the world keeps its colour. In the same pass the arriving player's view
+blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, open by 1 s.
 
 ## Limits
 

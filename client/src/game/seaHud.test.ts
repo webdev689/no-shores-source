@@ -30,7 +30,6 @@ test('in a fight it marks its captains: red while it would take the player, grey
     captain(100, 0, 'afloat', true),
     captain(0, 100, 'afloat', false),
     captain(50, 50, 'struck', true),
-    captain(60, 60, 'wrecked', true),
     captain(70, 70, 'sinking', true),
     captain(80, 80, 'sunk', true),
   ];
@@ -39,7 +38,6 @@ test('in a fight it marks its captains: red while it would take the player, grey
     { x: 100, y: 0, kind: 'hostile' },
     { x: 0, y: 100, kind: 'ship' },
     { x: 50, y: 50, kind: 'struck' },
-    { x: 60, y: 60, kind: 'struck' },
   ]);
 });
 

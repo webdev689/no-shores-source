@@ -228,8 +228,8 @@ test('pressing aim eases the eye out to its battery, not a cut from the orbit in
   assert.ok(last && Math.hypot(last.eye[0] - x, last.eye[1] - y) < 8, "a second on it stands by the ship's side");
 });
 
-test("a crippled ship's guns are silent: aiming never moves its eye", async () => {
-  const { fight, frames } = ordered({ ...FIRST, player: { ...vessel, state: 'wrecked' } });
+test("a sinking ship's guns are silent: aiming never moves its eye", async () => {
+  const { fight, frames } = ordered({ ...FIRST, player: { ...vessel, state: 'sinking' } });
   const [orbit] = await frames(1);
   fight.aim(true);
   const shots = await frames(30);

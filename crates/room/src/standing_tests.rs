@@ -134,16 +134,12 @@ fn shapes_for(rank: ::foes::Rank, difficulty: gear::Difficulty) -> u16 {
 }
 
 #[test]
-fn a_boss_or_miniboss_slain_at_the_abyss_seas_gives_shapes_and_at_normal_none() {
-    for rank in [::foes::Rank::Boss, ::foes::Rank::Miniboss] {
-        for (difficulty, shapes) in
-            [(gear::Difficulty::Normal, 0), (gear::Difficulty::Elite, 2), (gear::Difficulty::Abyss, 4)]
-        {
-            assert_eq!(shapes_for(rank, difficulty), shapes, "{rank:?} at {difficulty:?}");
+fn no_kill_gives_shapes_at_any_rank_or_sea_as_they_come_from_the_abyss_dungeon_of_the_week_alone() {
+    for rank in ::foes::Rank::ALL {
+        for difficulty in gear::Difficulty::ALL {
+            assert_eq!(shapes_for(rank, difficulty), 0, "{rank:?} at {difficulty:?}");
         }
     }
-    let elite = shapes_for(::foes::Rank::Elite, gear::Difficulty::Abyss);
-    assert!(elite <= 1, "an Elite gives a chance of one, never a great foe's {elite}");
 }
 
 /// The health a hurt player standing in a Sunwell gains over three seconds, cast at a Divine level.

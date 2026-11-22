@@ -38,7 +38,7 @@ fn blow(striker: PlayerId, damage: f64) -> Blow {
 }
 
 /// Lands `damage` of `striker`'s main hand on `foe`, as the room settles a blow it judged a hit.
-fn land(room: &mut Room, striker: PlayerId, foe: FighterId, damage: f64) {
+pub(super) fn land(room: &mut Room, striker: PlayerId, foe: FighterId, damage: f64) {
     let hit = Verdict::Hit { damage, poise: 10.0 };
     room.settle(&blow(striker, damage), How::Swing, foe, hit, Some(Slot::Melee));
 }
@@ -136,7 +136,7 @@ fn a_garrison_kill_pays_by_its_level_and_seas_every_player_whose_blow_landed_in_
     let (early, late) = (room.join().expect("room"), room.join().expect("room"));
     let foe = room.garrison[0].standing[0];
     room.foes.get_mut(&foe).expect("standing").shield = None;
-    let (level, role) = (room.foes[&foe].level, room.foes[&foe].brain.role() as u8);
+    let (level, role, rank) = (room.foes[&foe].level, room.foes[&foe].brain.role() as u8, room.foes[&foe].brain.rank);
     assert!((6..=9).contains(&level), "the island's 4 to 7, two higher at Elite difficulty: {level}");
     let had = |room: &Room, player: PlayerId| {
         let character = &room.players[&player].character;
@@ -146,20 +146,23 @@ fn a_garrison_kill_pays_by_its_level_and_seas_every_player_whose_blow_landed_in_
     land(&mut room, early, foe, 1.0);
     room.clock += gear::rewards::SHARE_TICKS + 1;
     land(&mut room, late, foe, 1e9);
-    let worth = gear::rewards::worth(match role {
-        1 => gear::rewards::Foe::Skirmisher,
-        2 => gear::rewards::Foe::Swordsman,
-        3 => gear::rewards::Foe::Brute,
-        4 => gear::rewards::Foe::Archer,
-        _ => gear::rewards::Foe::Captain,
-    });
+    let worth = gear::rewards::worth(
+        match role {
+            1 => gear::rewards::Foe::Skirmisher,
+            2 => gear::rewards::Foe::Swordsman,
+            3 => gear::rewards::Foe::Brute,
+            4 => gear::rewards::Foe::Archer,
+            _ => gear::rewards::Foe::Captain,
+        },
+        rank as u8,
+    );
     let paid = |amount: u32| (f64::from(amount * (5 + u32::from(level)) / 10) * 1.5).round() as u64;
     let (late_has, early_has) = (had(&room, late), had(&room, early));
     let gained = (late_has.0 - late_had.0, late_has.1 - late_had.1);
     assert_eq!(
         gained,
         (paid(worth.xp), paid(worth.aurem)),
-        "its role's worth at its level, half again at Elite difficulty"
+        "its role's worth at its rank and level, half again at Elite difficulty"
     );
     assert_eq!(early_has, early_had, "a blow over ten seconds old shares none");
 }

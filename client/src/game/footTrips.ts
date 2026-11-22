@@ -3,7 +3,7 @@
 import { runAsk } from '../../../server/roomNames.ts';
 import { EVENT } from '../combat/cues.ts';
 import type { GearAsk } from '../network/gearMessages.ts';
-import { LocalRoom } from '../network/localRoom.ts';
+import { RoomThread } from '../network/roomThread.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
 import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrances.ts';
@@ -82,19 +82,19 @@ export function takeWipe(held: { wiped: boolean }): boolean {
   return wiped;
 }
 
-/** A dungeon's room in the page, played alone: a patrol's shared dungeon from the patrol's node file, any other room
- *  (a run, a sea island's dungeon) from its name, a patrol's run with the patrol's file too, as the servers open them
- *  (`runAsk`). */
+/** A dungeon's room played alone, in the rooms' worker: a patrol's shared dungeon from the patrol's node file, any
+ *  other room (a run, a sea island's dungeon) from its name, a patrol's run with the patrol's file too, as the servers
+ *  open them (`runAsk`). */
 export function openAlone(
   module: WebAssembly.Module,
   outsideText: string,
   into: { readonly number: number; readonly room: string },
   heard: Heard,
-): LocalRoom {
+): Promise<RoomThread> {
   const ask = runAsk(into.room, Math.floor(Date.now() / 60_000));
   return ask === null
-    ? LocalRoom.openDungeon(module, outsideText, into.number, heard.snapshot, heard.gear)
-    : LocalRoom.openRun(module, ask, outsideText, heard.snapshot, heard.gear);
+    ? RoomThread.openDungeon(module, outsideText, into.number, heard.snapshot, heard.gear)
+    : RoomThread.openRun(module, ask, outsideText, heard.snapshot, heard.gear);
 }
 
 /** Stands the fight's rules on the dungeon an ask names as its room stands its bodies, on the dungeon's own ground;

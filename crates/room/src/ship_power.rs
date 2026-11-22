@@ -85,13 +85,18 @@ impl Fights {
 }
 
 /// What a captain who went down pays each player who fought it, whose character the sea holds: its rank's foe's XP
-/// at its level to their ship and to their officers aboard. Answers who was paid.
-pub fn pay_sinking(sank: &Sank, characters: &mut BTreeMap<PlayerId, Character>) -> Vec<PlayerId> {
-    let foe = crate::flotsam::foe_of(sank.pirate.commission.rank);
+/// at its level, raised by the sea's tier, to their ship and to their officers aboard. Answers who was paid.
+pub fn pay_sinking(
+    sank: &Sank,
+    difficulty: gear::Difficulty,
+    characters: &mut BTreeMap<PlayerId, Character>,
+) -> Vec<PlayerId> {
+    let rank = sank.pirate.commission.rank;
+    let foe = crate::flotsam::foe_of(rank);
     let mut paid = Vec::new();
     for player in &sank.players {
         let Some(character) = characters.get_mut(player) else { continue };
-        let xp = character.reward_sinking(foe, sank.pirate.level, gear::Difficulty::Normal);
+        let xp = character.reward_sinking(foe, rank.number(), sank.pirate.level, difficulty);
         character.earn_officer_xp(xp, true);
         paid.push(*player);
     }
@@ -99,14 +104,18 @@ pub fn pay_sinking(sank: &Sank, characters: &mut BTreeMap<PlayerId, Character>) 
 }
 
 /// A won deck's captain's officer, now and then, joining a boarder who won it: each boarder rolls their own, at its
-/// level, more often the higher its rank (`gear::crew::recruit::taken`). Answers who gained one.
-pub fn officers_join(won: &Sank, tick: u64, characters: &mut BTreeMap<PlayerId, Character>) -> Vec<PlayerId> {
+/// level, more often the higher its rank and the sea's tier (`gear::crew::recruit::taken`). Answers who gained one.
+pub fn officers_join(
+    won: &Sank,
+    (tick, difficulty): (u64, gear::Difficulty),
+    characters: &mut BTreeMap<PlayerId, Character>,
+) -> Vec<PlayerId> {
     let mut joined = Vec::new();
     for player in &won.players {
         let Some(character) = characters.get_mut(player) else { continue };
         let dice = gear::dice::Dice { seed: u64::from(won.pirate.seed), tick, player: *player };
         let rank = won.pirate.commission.rank.number();
-        let officer = gear::crew::recruit::taken(rank, won.pirate.level, &dice);
+        let officer = gear::crew::recruit::taken(rank, won.pirate.level, difficulty.reward(), &dice);
         if officer.and_then(|officer| character.sign_on(officer)).is_some() {
             joined.push(*player);
         }

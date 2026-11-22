@@ -36,8 +36,8 @@ pub struct Helm {
 /// The rung its sails are set at.
 pub const SAILS_SET: i8 = 2;
 
-/// The shares of the way its sails and its oars may ask that its hurts leave it (naval combat's: canvas shot away,
-/// a wreck's oars), and of the turn its helm asks that its trim gives it; whole for a sound ship.
+/// The shares of the way its sails and its oars may ask that its hurts leave it (naval combat's: canvas shot away),
+/// and of the turn its helm asks that its trim gives it; whole for a sound ship.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Pull {
     pub sail: f64,

@@ -292,6 +292,7 @@ fn styled_beyond(css: &str, canvas: &str) -> Vec<String> {
 fn page_problems(html: &str) -> Vec<String> {
     let mut problems = Vec::new();
     let mut canvases: Vec<String> = Vec::new();
+    let mut scripts = 0;
     let mut css = String::new();
     let mut inside = String::new();
     let mut rest = html;
@@ -337,6 +338,7 @@ fn page_problems(html: &str) -> Vec<String> {
                 problems.push(format!("<{name} href={said}>: links a stylesheet"));
             }
         }
+        scripts += usize::from(name == "script");
         match name.as_str() {
             "canvas" => canvases.push(value("id").unwrap_or_default().to_owned()),
             "script"
@@ -354,6 +356,9 @@ fn page_problems(html: &str) -> Vec<String> {
     }
     if canvases.len() != 1 {
         problems.push(format!("holds {} canvases: the game draws on one", canvases.len()));
+    }
+    if scripts != 1 {
+        problems.push(format!("holds {scripts} scripts: the page starts from one module"));
     }
     let canvas = canvases.first().map_or("", String::as_str);
     for selector in styled_beyond(&css, canvas) {
