@@ -12,11 +12,16 @@ import type { ChatLog, Logged } from './chatLog.ts';
 /** The chat's field, which takes the keys while it is open. */
 export const CHAT_FIELD = 'chat-field';
 /** The band's width at most, and its gap from the screen's left and bottom, in CSS pixels; and how many lines it shows
- *  open, as many as an arrow reads back. */
+ *  open at most, as many as an arrow reads back. */
 const WIDTH = 440;
 const LEFT = 16;
 const BOTTOM = { base: 250, wide: 340 } as const;
 const OPEN_LINES = 12;
+/** How much of the view's top the open band keeps clear, for the vitals and the company, in CSS pixels; a line's
+ *  height; and the fewest lines it shows open. */
+const TOP_CLEAR = 200;
+const LINE_PX = 16;
+const FEWEST_LINES = 3;
 /** What each channel is called before the field, and the colour of its words. */
 const CHANNEL = {
   local: { words: 'Local', colour: '#c4beb2' },
@@ -49,8 +54,9 @@ export class ChatPanel {
   open = false;
   channel: Channel = 'local';
   to: string | null = null;
-  /** How many lines back from the newest the open band reads. */
+  /** How many lines back from the newest the open band reads, and how many it shows, as the view last had room. */
   private back = 0;
+  private fits = OPEN_LINES;
   /** Whether it opened this frame: the Enter that opened it is not a line said. */
   private fresh = false;
 
@@ -75,11 +81,14 @@ export class ChatPanel {
     relation: (name: string) => Relation,
     say: (typed: string) => 'shut' | 'keep' | 'clear',
   ): Child {
-    if (this.open) this.hear(ui, log, say);
     const width = Math.min(WIDTH, view.width - LEFT * 2);
     const bottom = view.width >= 1500 && view.height >= 900 ? BOTTOM.wide : BOTTOM.base;
+    // A short view shows fewer lines open, so the band stays clear of the vitals and the company at the top.
+    const room = Math.floor((view.height - bottom - TOP_CLEAR - 2 * LINE_PX) / LINE_PX);
+    this.fits = Math.max(FEWEST_LINES, Math.min(OPEN_LINES, room));
+    if (this.open) this.hear(ui, log, say);
     const shown = this.open
-      ? log.lines.slice(Math.max(0, log.lines.length - OPEN_LINES - this.back), log.lines.length - this.back)
+      ? log.lines.slice(Math.max(0, log.lines.length - this.fits - this.back), log.lines.length - this.back)
       : log.peek(now);
     if (!this.open && shown.length === 0) return null;
     // Shut, the band fades with its newest line, and each older line by as much more as it has faded beyond it.
@@ -144,8 +153,8 @@ export class ChatPanel {
     if (!ui.focused(CHAT_FIELD)) return this.shut(ui);
     for (const key of ui.keysOn(CHAT_FIELD)) {
       if (key === 'tab') [this.channel, this.to] = [this.channel === 'local' ? 'world' : 'local', null];
-      if (key === 'arrowup') this.back = Math.min(Math.max(0, log.lines.length - OPEN_LINES), this.back + OPEN_LINES);
-      if (key === 'arrowdown') this.back = Math.max(0, this.back - OPEN_LINES);
+      if (key === 'arrowup') this.back = Math.min(Math.max(0, log.lines.length - this.fits), this.back + this.fits);
+      if (key === 'arrowdown') this.back = Math.max(0, this.back - this.fits);
     }
     if (!ui.submitted(CHAT_FIELD)) return;
     const typed = ui.fieldText(CHAT_FIELD);

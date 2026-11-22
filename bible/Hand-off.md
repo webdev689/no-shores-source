@@ -94,6 +94,16 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **Nameplates, the player menu and chat** (branch `claude/player-nameplates-interaction-3b6cwr`), for the owner's
+  yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall):
+  [[Other Players Wear a Nameplate, Their Level or Prestige in a Square]] (level, from 20 the Prestige total, three
+  dots in a menu, green company, blue others), [[Holding Use on a Player Opens Their Interact Menu]] (Add friend,
+  Invite to company, Invite to guild, Whisper, Inspect), [[Chat Comes From DFO With Local, World and Whisper]]
+  ([[Chat]], [[Pick - Chat]]); Claude's calls in [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]].
+  Tested offline (the room, the wire, the hall, the panel's law) and pictured headless alone; not yet played live,
+  nor seen over the game's HUD on a real GPU. Open: chat at the helm (Enter sets sail there) and on the pad; a mute;
+  Local at sea reaches no one else; whether Inspect should be the Character page's layout rather than the Roster's
+  Details.
 - **The owner's bugs and polish** (#148, branch `claude/prologue-bugs-polish-lphicj`), merged with the owner's yes ("Merge and deploy"), which
   deploys the page and the rooms;, the owner's six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's
   calls: [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
@@ -184,9 +194,8 @@ The decisions in [[Open Questions]] are not repeated here.
   in `combat/attackFeel.ts`). And whether a drawn bow or gun can punch, and in what element.
 - **The mirrored view**: a drawn sword, dagger or mace changes hands through the walk, the rest and a blow, as the
   forge draws none in the left fist there; whether it should.
-- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; names over
-  other players' heads, green for the company; the Guild tab's own page; more emblems and where they come from;
-  whether Overlook has text chat, which mute would need.
+- **The Roster** ([[The Roster and Emblems as Claude Shapes Them]]): a join that loads another landmass; the Guild
+  tab's own page; more emblems and where they come from; a mute, now that Overlook has text chat.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.

@@ -57,9 +57,11 @@ one player alone. There is no list of who is in a channel. Claude's calls are in
   `#e8cf86` for the player's own, the company's green for a member, `#8fd0ff` for a friend, `#f4b86c` for anyone else.
 - **Shut**, it shows the newest five lines, each whole for 15 s and then fading out over 5 s, in steps of a twentieth,
   the band fading with its newest line. It keeps the newest 200 lines.
-- **Open** (Chat, Enter on foot), it shows the newest 12 and a field, its channel before it ("Local:", "World:", or
-  "To Ada:"), and holds the keys while it is open. Enter says the line and shuts it, an empty Enter or Escape shuts it,
-  Tab turns the channel between Local and World, and the up and down arrows read back twelve lines at a time.
+- **Open** (Chat, Enter on foot, while no window of the menu or a player's menu is up), it shows the newest 12 lines,
+  fewer in a view too short to keep its top 200 px clear (3 at the fewest), and a field, its channel before it
+  ("Local:", "World:", or "To Ada:"), and holds the keys while it is open. Enter says the line and shuts it, an empty
+  Enter or Escape shuts it, Tab turns the channel between Local and World, and the up and down arrows read back as
+  many lines at a time as it shows.
 - **Commands**: `/l`, `/local`, `/s`, `/say` (Local); `/g`, `/world` (World); `/w`, `/whisper`, `/tell` and a name
   (a Whisper); `/r`, `/reply`; `/help` or `/?` lists them; `//` says the rest as typed. A channel's command with
   nothing after it sets the field to that channel. One that is none says "There is no /x command. /help lists them."
