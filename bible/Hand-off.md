@@ -264,6 +264,14 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **Players arrive as Destiny's transmat does, #144** (branch `ccr-8b8ae0f3-usbis7`), waiting on the owner's yes to
+  merge ([[Players Arrive as Destiny's Transmat Does, Unexplained]]). Every spawn into a place and every respawn builds
+  the figure from the feet up in 2 by 2 cells, each white as it lands, seen by everyone; the arriving player's own view
+  goes dark and blinks open (`arrivals.ts`, the cards' dissolve shader's fifth look, the drain pass's dark). On foot,
+  on boarded decks and at the prologue's checkpoints; why the player comes back stays unexplained. Tested offline (the
+  full check); not yet seen in a browser. Read "a translator from destiny" as Destiny's transmat: the owner may say
+  otherwise.
+
 - **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
   ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map
   message they sent is an injected script's, not the game's.
