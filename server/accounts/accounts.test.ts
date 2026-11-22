@@ -176,7 +176,7 @@ test('a Discord sign-in comes back only to a page under a listed one, by origin 
   assert.equal(backTo('javascript:alert(1)', pages), null);
 });
 
-test('a session with a way back in lapses after 30 days unseen; a guest is never lost; all may be signed out', async () => {
+test('a session with a way back in lapses after 30 days unseen; a guest in use never lapses; all may be signed out', async () => {
   const { deps, clock, ask } = accounts();
   const kept = characters(deps.database, deps.now, () => Promise.resolve());
   const guest = (await ask('POST', '/v1/guest')).body['token'] as string;
@@ -255,4 +255,45 @@ test('a write that fails is answered as JSON with the usual headers: 409 when an
   assert.deepEqual([failed.status, failed.body], [500, { error: 'Something went wrong. Try again.' }]);
   assert.equal(failed.response.headers.get('Access-Control-Allow-Origin'), '*');
   assert.equal(logged.mock.callCount(), 2, 'each is logged');
+});
+
+test('new guests are 10 an hour from one address and 500 an hour from everywhere at once', async () => {
+  const { clock, ask } = accounts();
+  const from = (address: string) => ask('POST', '/v1/guest', undefined, undefined, { 'CF-Connecting-IP': address });
+  for (let network = 0; network < 50; network += 1) {
+    for (let each = 0; each < 10; each += 1) assert.equal((await from(`198.51.100.${network}`)).status, 200);
+  }
+  assert.equal((await from('198.51.100.0')).status, 429, "one address's ten");
+  const everywhere = await from('192.0.2.7');
+  assert.deepEqual([everywhere.status, everywhere.body['error']], [429, 'Too many new guests.'], 'the 501st anywhere');
+  clock.now += 60 * 60_000;
+  assert.equal((await from('192.0.2.7')).status, 200, 'the next hour');
+});
+
+test('a guest unused for 30 days is deleted with its character as the next guest is made; one in use is kept', async () => {
+  const { deps, clock, ask } = accounts();
+  const kept = characters(deps.database, deps.now, () => Promise.resolve());
+  const guest = async () => (await ask('POST', '/v1/guest')).body['token'] as string;
+  const away = await guest();
+  const claimed = await kept.claim(away, 'room-a:1');
+  assert.ok(claimed);
+  assert.equal(await kept.save(claimed.account, 'room-a:1', '{"xp":5}'), true);
+  assert.equal(await kept.release(claimed.account, 'room-a:1', '{"xp":5}'), true);
+  const gone = await guest();
+  await ask('POST', '/v1/logout', undefined, gone);
+  const playing = await guest();
+  const named = await guest();
+  await ask('POST', '/v1/register', { username: 'Mariner', password: 'long enough' }, named);
+  const rows = async (table: string) =>
+    (await deps.database.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first<{ n: number }>())?.n;
+
+  clock.now += SESSION_IDLE_MS - 60_000;
+  assert.equal((await ask('GET', '/v1/me', undefined, playing)).status, 200);
+  clock.now += 60_000 + 1;
+  await guest();
+  assert.equal((await ask('GET', '/v1/me', undefined, away)).body['error'], 'Not signed in.', '30 days away');
+  assert.equal(await rows('characters'), 0, 'its character with it');
+  assert.equal((await ask('GET', '/v1/me', undefined, playing)).status, 200, 'seen within the month');
+  assert.equal(await rows('accounts'), 3, 'the one in use, the named and the new: the signed-out guest went too');
+  assert.equal((await ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' })).status, 200);
 });
