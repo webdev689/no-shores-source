@@ -1,5 +1,6 @@
 // What the views draw over the land as lines, dots and names, in screen pixels: the port city, the nodes and their
 // layouts share these, so their names are placed in one pass and never cover one another.
+import type { Run, ScreenPoint } from './strokes.ts';
 
 /** A world point on the screen, or null where it cannot be drawn (behind the 3D camera). `height` stands it at that
  *  height in 3D instead of on the ground as drawn; the 2D map ignores it. */
@@ -7,15 +8,23 @@ export type Project = (x: number, y: number, height?: number) => { readonly x: n
 
 /** One thing drawn over a view, in screen pixels. */
 export type SiteMark =
-  | { readonly shape: 'wall'; readonly path: string }
-  | { readonly shape: 'section'; readonly path: string; readonly colour: string; readonly whole: boolean }
+  | { readonly shape: 'wall'; readonly runs: readonly Run[]; readonly closed: boolean }
+  | {
+      readonly shape: 'section';
+      readonly runs: readonly Run[];
+      readonly closed: boolean;
+      readonly colour: string;
+      readonly whole: boolean;
+    }
   | {
       readonly shape: 'line';
-      readonly path: string;
+      readonly runs: readonly Run[];
+      readonly closed: boolean;
       readonly colour: string;
       readonly width: number;
       readonly fill?: string;
-      readonly dash?: string;
+      /** Lengths on and off, pixels. */
+      readonly dash?: readonly number[];
       /** A dark edge under it, so a pale line reads on pale ground. */
       readonly casing?: boolean;
     }
@@ -42,26 +51,26 @@ const LABEL_PX = 14;
 
 export const span = (box: Box) => Math.max(box.right - box.left, box.bottom - box.top);
 
-/** An SVG path through projected points, broken where one cannot be drawn, with the box round those that can;
+/** A line through projected points, in runs broken where one cannot be drawn, with the box round those that can;
  *  `whole` when every point was drawn. A ring (`closed`) is closed when whole. */
 export function pathThrough(
   points: readonly ReturnType<Project>[],
   closed = true,
-): { path: string; whole: boolean; box: Box | null } {
+): { runs: Run[]; closed: boolean; whole: boolean; box: Box | null } {
   const gapAt = points.findIndex((point) => point === null);
   const whole = gapAt < 0;
   // A ring started at a gap draws its edge from its last point back to its first with the rest.
   const ordered = whole || !closed ? points : [...points.slice(gapAt), ...points.slice(0, gapAt)];
-  let path = '';
-  let gap = true;
+  const runs: ScreenPoint[][] = [];
+  let run: ScreenPoint[] | null = null;
   let box: Box | null = null;
   for (const point of ordered) {
     if (!point) {
-      gap = true;
+      run = null;
       continue;
     }
-    path += `${gap ? 'M' : 'L'}${point.x.toFixed(1)},${point.y.toFixed(1)}`;
-    gap = false;
+    if (!run) runs.push((run = []));
+    run.push({ x: point.x, y: point.y });
     box = box
       ? {
           left: Math.min(box.left, point.x),
@@ -71,7 +80,7 @@ export function pathThrough(
         }
       : { left: point.x, top: point.y, right: point.x, bottom: point.y };
   }
-  return { path: whole && closed ? `${path}Z` : path, whole, box };
+  return { runs, closed: whole && closed, whole, box };
 }
 
 /** Names laid in the order asked, each left out where it would cover one laid before or a box kept clear. */

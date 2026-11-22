@@ -140,7 +140,7 @@ pub fn open_dungeon(text: &[u8], number: usize) -> bool {
     }
     let Some(room) = Room::dungeon(&node.id, number, gear::world::island_levels(&node.continent)) else { return false };
     let refusal = node.locked.then(|| format!("{} is locked", node.name));
-    keep(Opened::Land { room: Box::new(room), node: None, refusal });
+    keep(Opened::Land { room: Box::new(room), node: None, refusal, sent: Box::default() });
     true
 }
 

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { labelPoints } from '../heldmap/watersWash.ts';
-import { Compass, SHIP_MARK_COLOURS } from '../plus/compass.ts';
+import { SHIP_MARK_COLOURS } from '../plus/compass.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { startWatersRules, type TrafficShip } from '../rules/watersRules.ts';
 import { hullWaterline } from '../ships/hulls.ts';
@@ -10,6 +10,7 @@ import { poseOnSwell } from '../ships/swellPose.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import { ASK_EVERY_S, friendlyFrame, FriendlyShips, friendlyMarks, reckoned } from './friendlyShips.ts';
 import { mapWatersOf } from './pageWaters.ts';
+import { compassNode } from './compassNode.ts';
 import { seaShipMarks } from './seaHud.ts';
 
 const shipAt = (id: number, position: [number, number], direction: [number, number]): TrafficShip => ({
@@ -188,21 +189,10 @@ test('the compass marks friendly ships within 900 m in Overlook’s blue', () =>
       { id: 2, hull: 0, x: 0, y: -2_000, heading: 0 },
     ]),
   ];
-  const nodes: { style: Record<string, string>; hidden: boolean }[] = [];
-  const element = () => {
-    const node = { className: '', textContent: '', hidden: false, style: {} as Record<string, string>, append() {} };
-    nodes.push(node);
-    return node;
-  };
-  (globalThis as { document?: unknown }).document = { createElement: element };
-  const compass = new Compass(element() as unknown as HTMLElement);
-  compass.update(0, [0, 0], marks);
-  const shown = nodes.filter((node) => node.style['borderBottomColor'] !== undefined && !node.hidden);
-  assert.deepEqual(
-    shown.map((node) => node.style['borderBottomColor']),
-    ['#2f5d9a'],
-    'only the one within 900 m',
+  const bows = (compassNode(1280, 0, [0, 0], marks).children ?? []).flatMap((child) =>
+    child && child.picture?.key.startsWith('compass bow') ? [child.picture.key] : [],
   );
+  assert.deepEqual(bows, ['compass bow #2f5d9a'], 'only the one within 900 m');
 });
 
 test('a ship at anchor at its roadstead lies with its sails furled; one under way has them set', () => {

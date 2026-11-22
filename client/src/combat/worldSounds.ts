@@ -329,7 +329,7 @@ export class WorldSounds {
       refDistance: NEAR_M,
       maxDistance: MOST_M,
     });
-    // Placed in the listener's frame, whose origin the ambience may have moved to her ship.
+    // Placed in the listener's frame, whose origin the ambience may have moved to the player's ship.
     [panner.positionX.value, panner.positionY.value, panner.positionZ.value] = audioPoint(audio, place);
     panner.connect(out);
     const source = this.play(audio, panner, cue, STRAYS.test(cue) ? 1 + (Math.random() - 0.5) * STRAY : 1);

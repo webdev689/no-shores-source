@@ -1,6 +1,7 @@
 import { QUIET, pushedIn, showAnimaEdge } from '../combat/animaMoment.ts';
 import { AttackFeel, type DrawnFigure } from '../combat/attackFeel.ts';
 import { DropsShown } from '../combat/drops.ts';
+import { marksSeen } from '../combat/marksOver.ts';
 import { FightEffects } from '../combat/fightEffects.ts';
 import { Fighting } from '../combat/fighting.ts';
 import { FoeFigures } from '../combat/foeFigures.ts';
@@ -12,7 +13,7 @@ import { figureMuzzle, screenMuzzle } from '../combat/tracers.ts';
 import { WorldSounds } from '../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
-import type { GearAsk, GearState } from '../network/gearMessages.ts';
+import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { RoomConnection, type RoomLink, type Snapshot } from '../network/roomConnection.ts';
 import type { CardAt } from '../player/cards.ts';
@@ -33,11 +34,12 @@ import type { FoeType } from '../rules/roster.ts';
 import { WORLD_CLOCK } from '../sky/worldClock.ts';
 import { type Shot, shotOfOrbit } from './camera.ts';
 import { FallWatch } from './fallWatch.ts';
-import { type Use, groundRings, useAt } from './footGear.ts';
+import { type Use, dropsLaid, questRings, useAt } from './footGear.ts';
+import { GatherHold } from './gatherHold.ts';
+import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
 import type { GearHere } from './gearScreen.ts';
-import type { Hint } from './gearDom.ts';
-import { keysShown } from './hints.ts';
+import { type StripHint, keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
 import { PlazaLife } from './plazaLife.ts';
@@ -45,9 +47,9 @@ import { dungeonRoom, nodeRoom } from './rooms.ts';
 import { dungeonPlace, Entrances, type InDungeon, roomNameAt, standInDungeon, tripAt } from './footTrips.ts';
 import { cacheOf } from './dungeonChest.ts';
 import { ceilingAt, type DungeonLayout, openAt, seenBlocks } from './dungeonLayout.ts';
-import { chime, worldOutput } from './uiSounds.ts';
-import { UsePrompt } from './usePrompt.ts';
-import { dressInGear, otherCards } from './footFigures.ts';
+import { worldOutput } from './uiSounds.ts';
+import type { UsePrompt } from './usePrompt.ts';
+import { type Dressed, dressInGear, otherCards } from './footFigures.ts';
 import { type AtEntrance, type FootContext, type Heard, type Held, type Opened, stand } from './footPlace.ts';
 import { hearing, nextOtherId, rulesOf } from './footRoom.ts';
 
@@ -67,8 +69,8 @@ export type Uses = (x: number, y: number, ask: (asked: GearAsk) => void) => Use 
 export type FootFight = Omit<HudFrame, 'matrix' | 'width' | 'height' | 'lost' | 'groundAt'>;
 
 /** What one frame on foot shows: the shot, every figure, where the player stands with the section's edge, the
- *  fight (its marks on the ground and in the air, measured from the eye, with the gear's rings and beams; the arcs
- *  of its blows, in world metres; and what its display shows), and the keys listed. */
+ *  fight (its marks on the ground and in the air, measured from the eye, with the marks over what the player can use
+ *  and the nodes' beams; the arcs of its blows, in world metres; and what its display shows), and the keys listed. */
 export interface FootFrame {
   readonly shot: Shot;
   readonly figures: readonly CardAt[];
@@ -76,7 +78,7 @@ export interface FootFrame {
   readonly marks: Float32Array;
   readonly swings: Float32Array;
   readonly fight: FootFight;
-  readonly hints: readonly Hint[];
+  readonly hints: readonly StripHint[];
 }
 
 /**
@@ -84,9 +86,9 @@ export interface FootFrame {
  * whatever foes its room holds as the Test Ground fights. The node's room is the authority: alone, the room crate runs
  * in the page on the same ground; online, the server's. It judges the edge and the fight, and the page predicts the
  * player by its own rules and takes its word; every other player and foe is shown where it last saw them. Online, the
- * room keeps the player's gear, which their figure wears; its rings mark what E uses within reach: a station's counter
- * or a resource node. A social space's keepers and townsfolk walk it. In a patrol, E at an entrance's door goes into
- * its dungeon; in a dungeon, its floor is the ground, and E at its exit door goes out.
+ * room keeps the player's gear, which their figure wears; a mark stands over what E uses within reach: a station's
+ * keeper, Shape or a resource node. A social space's keepers and townsfolk walk it. In a patrol, E at an entrance's
+ * door goes into its dungeon; in a dungeon, its floor is the ground, and E at its exit door goes out.
  */
 export class Foot {
   readonly node: NodeInfo;
@@ -122,13 +124,20 @@ export class Foot {
   private joined = 1;
   /** What the room last said of the player's gear and the place, and the gear the figure was last dressed in. */
   readonly held: Held;
-  private dressedIn: GearState | null = null;
-  private dressedLoadout = 0;
+  private readonly dressed: Dressed = { gear: null, loadout: 0 };
   /** A social space's people, and what E does where the player stands, shown low in the middle of the view. */
   private readonly plaza: PlazaLife | null;
   readonly folk: Placed[];
-  private readonly prompt: UsePrompt | null;
+  private readonly prompt: UsePrompt;
   private using: Use | null = null;
+  /** A node being gathered while E is held. */
+  readonly hold = new GatherHold(
+    () => this.gear?.ask({ kind: ASKS.stopGather }),
+    () => ({
+      at: [this.context.walker.player.body.x, this.context.walker.player.body.y],
+      health: this.fight.own?.health ?? 0,
+    }),
+  );
   /** What E does on a sea island where the player stands: a wreck scavenged, the dungeon's door. */
   private uses: Uses | null = null;
 
@@ -155,8 +164,7 @@ export class Foot {
     [this.otherPlayers, this.held, this.folk] = [people.otherPlayers, people.held, people.folk];
     this.foes = new FoeFigures(parts.roster);
     this.feel = new AttackFeel(parts.combat, context.movement.tickSeconds);
-    const hud = document.querySelector<HTMLElement>('#hud');
-    this.prompt = hud ? new UsePrompt(hud) : null;
+    this.prompt = context.usePrompt;
     const floor = (x: number, y: number) => context.movement.standing(x, y).z;
     const placing: Others = {
       place: (dress, x, y, facing) => {
@@ -313,17 +321,6 @@ export class Foot {
     return foot;
   }
 
-  /** Dresses the player's figure in their gear as their room last sent it, its hands the loadout drawn, once either
-   *  changes, its weapons glowing in their element. */
-  private dressInGear(): void {
-    const gear = this.held.gear;
-    const { walker, forge } = this.context;
-    const { loadout } = walker.player;
-    if (!gear || (gear === this.dressedIn && loadout === this.dressedLoadout)) return;
-    [this.dressedIn, this.dressedLoadout] = [gear, loadout];
-    dressInGear(walker, forge, gear);
-  }
-
   /** The player's gear in their room, and the way to ask of it; null offline or once the room is lost. */
   get gear(): GearHere | null {
     const { link, fight } = this;
@@ -337,9 +334,11 @@ export class Foot {
     return this.standing.kind === 'dead' || this.fight.own?.action.kind === 'dead';
   }
 
-  /** Does what E does where the player stands, if anything is within reach. */
+  /** Does what E does where the player stands, if anything is within reach: at a node, begins to gather it while E is
+   *  held. */
   use(): void {
     this.using?.run();
+    this.hold.begin(this.using?.gather, this.gear?.gear ?? null);
   }
 
   /** The name of the dungeon's room the player stands in, or null in a corridor or on a node's land. */
@@ -359,19 +358,20 @@ export class Foot {
     return this.link.open ? `In the room as player ${this.link.player}` : 'The room was lost: playing on alone';
   }
 
-  /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, the fight's buttons only
-   *  while `hands`), the room's clock runs, the camera follows, and every figure, foe and mark is placed for an eye
-   *  there. */
+  /** One frame on foot: the player plays and fights (with nothing pressed while `paused`, nor while `looking` at the
+   *  held map, though the world is heard as ever; the fight's buttons only while `hands`), the room's clock runs, the
+   *  camera follows, and every figure, foe and mark is placed for an eye there. */
   frame(
     controls: InputFrame,
     seconds: number,
     clock: number,
-    { paused, hands, aspect }: { paused: boolean; hands: boolean; aspect: number },
+    { paused, looking = false, hands, aspect }: { paused: boolean; looking?: boolean; hands: boolean; aspect: number },
   ): FootFrame {
+    const still = paused || looking;
     const { walker, movement, forge } = this.context;
     const { groundAt } = this;
     const { fight, foes, effects } = this;
-    this.dressInGear();
+    dressInGear(walker, forge, this.held.gear, this.dressed);
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
     if (this.link.joins !== this.joined) {
       // A link that joined its room again brings every dress there with its welcome.
@@ -386,9 +386,9 @@ export class Foot {
     const blocks = [...this.boxes, ...(this.context.cameraBlocks ?? [])];
     const aimed = () => playerCamera(walker.player, movement, blocks, AIM, groundAt, this.roof);
     const camera = () => pushedIn(aimed(), effects.anima.push);
-    const shown = this.player.frame(paused ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
+    const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: true,
-      hands: hands && !paused,
+      hands: hands && !still,
       markOf: () => crosshairPoint(camera(), aspect, this.boxes, bodies, groundAt),
       zoomOf: () => camera().zoom ?? 1,
       handsSeconds: feel.shownSeconds(fight.player, seconds),
@@ -442,8 +442,11 @@ export class Foot {
     figures.push(...foes.cards(fight, forge, eye, clock, frameTicks, tickSeconds, effects.flashes, foeFeel));
     // The player's own shots leave the weapon as drawn: the first person's muzzle, or the figure's along its shot.
     const muzzle = walker.muzzle;
-    const dropped = this.dropMarks(clock, shot.eye, [
-      ...groundRings(this.gear?.gear ?? null, this.node, (x, y) => movement.standing(x, y).z, clock),
+    const [gearNow, floor] = [this.gear?.gear ?? null, (x: number, y: number) => movement.standing(x, y).z];
+    const marked = markedHere(gearNow, this.node, floor);
+    const dropped = dropsLaid(this.drops, gearNow?.drops ?? [], clock, shot.eye, [
+      ...questRings(gearNow, floor, clock),
+      ...marksSeen(marked, shot.eye, clock),
       ...foes.overheads(shot.eye, clock),
     ]);
     const marks = effects.marks(fight, seconds, {
@@ -501,8 +504,8 @@ export class Foot {
     // The arcs are measured from the eye, as the marks are, so they keep their centimetres far out in the world.
     const swings = feel.arcsMesh(clock, strikers, drawnAt, shot.eye, firstPerson, shot.eye);
     showAnimaEdge(effects.anima);
-    // E does nothing while a menu is up or the player lies dead, past the edge or felled by a foe.
-    const able = !paused && !this.fallen;
+    // E does nothing while a menu or the held map is up, or the player lies dead, past the edge or felled by a foe.
+    const able = !still && !this.fallen;
     const gear = this.gear;
     const { x, y } = walker.player.body;
     const here = {
@@ -513,12 +516,13 @@ export class Foot {
       module: this.module,
     };
     const placeUse = this.uses?.(x, y, (asked) => fight.askGear(asked)) ?? null;
-    this.using = able
-      ? (placeUse ??
-        useAt(x, y, this.node, gear?.gear ?? null, (asked) => gear?.ask(asked)) ??
-        tripAt(x, y, here, this.context.trips))
-      : null;
-    this.prompt?.show(this.using?.words ?? null);
+    const { mounted } = walker.player;
+    const near = (asked: GearAsk) => gear?.ask(asked);
+    const nodeUse = () => useAt(x, y, this.node, gear?.gear ?? null, near, this.context.speak, mounted);
+    this.using = able ? (placeUse ?? nodeUse() ?? tripAt(x, y, here, this.context.trips)) : null;
+    // Use let go, as bound (a key, the pad's button, or the page's focus lost): a gather under way is let go of.
+    if (!controls.held('use')) this.hold.release();
+    this.prompt.show(this.using?.words ?? null, this.hold.share(clock, able && !mounted, gear?.gear ?? null));
     const ownView = fight.own;
     const where = (id: number): readonly [number, number, number] | null => {
       if (id === fight.player && ownView) return [ownView.x, ownView.y, ownView.z];
@@ -552,17 +556,8 @@ export class Foot {
       },
     };
     const edge = this.standing;
-    const hints = keysShown(edge, fight.arts?.art ?? 0);
+    const hints = keysShown(edge, onFoot(walker, shown, fight, !controls.locked && !paused));
     return { shot, figures, standing: edge, marks, swings, fight: fought, hints };
-  }
-
-  /** The drops lying for the player, flying and standing, seen from `eye`, laid after the marks in `out`, and where
-   *  each came to rest this frame; a Rare or finer chimes as it comes to rest. */
-  private dropMarks(clock: number, eye: readonly [number, number, number], out: number[]) {
-    const shown = this.drops.frame(this.gear?.gear?.drops ?? [], clock, eye, out);
-    const rarest = Math.max(-1, ...shown.rested);
-    if (rarest >= 2) chime(rarest);
-    return shown;
   }
 
   /** Where the player stands with the section's edge, as the room said. */
@@ -584,8 +579,9 @@ export class Foot {
     if (this.link instanceof RoomConnection) this.link.close();
     this.otherPlayers.clear();
     this.plaza?.close();
-    this.prompt?.remove();
+    this.prompt.show(null);
     this.falling.close();
+    this.hold.release();
     // The figure stands again wherever the walker goes next, at sea as on foot.
     this.context.walker.fall = null;
     // An Anima's edge frame cast just before leaving must not stay over the next place.

@@ -6,6 +6,40 @@ use super::*;
 use combat::{CombatInput, Stroke};
 use movement::Controls;
 use protocol::wire::overlook::wire as messages;
+use std::collections::BTreeMap;
+
+/// The foes as a browser keeps them from its snapshots, each one's numbers: a snapshot names the foes that changed
+/// since the last its screen showed, each whole or as its numbers that changed, and those gone; the rest stand.
+#[derive(Debug, Default)]
+pub struct FoesKept(pub BTreeMap<u32, Vec<f64>>);
+
+impl FoesKept {
+    pub fn take(&mut self, seen: &messages::Snapshot<'_>) {
+        let middle: Vec<f64> = seen.middle().map(|middle| middle.iter().collect()).unwrap_or_default();
+        if seen.base() == 0 {
+            self.0.clear();
+        }
+        for gone in seen.gone_foes().iter().flatten() {
+            self.0.remove(&gone);
+        }
+        for foe in seen.foes().iter().flatten() {
+            let bytes = foe.packed().unwrap().bytes();
+            let Some(bits) = foe.changed().map(|bits| bits.bytes()) else {
+                let origin = [middle.first().copied().unwrap_or_default(), middle.get(1).copied().unwrap_or_default()];
+                self.0.insert(foe.id(), protocol::pack::unpack(bytes, protocol::land::FOE_NUMBERS, origin).unwrap());
+                continue;
+            };
+            let count = bits.iter().map(|byte| byte.count_ones() as usize).sum();
+            let mut values = protocol::pack::unpack(bytes, count, [0.0; 2]).unwrap().into_iter();
+            let numbers = self.0.get_mut(&foe.id()).unwrap();
+            for (index, number) in numbers.iter_mut().enumerate() {
+                if bits[index / 8] & (1 << (index % 8)) != 0 {
+                    *number = values.next().unwrap() + middle.get(index).copied().unwrap_or_default();
+                }
+            }
+        }
+    }
+}
 
 /// A mission's node file: a section 400 m square on land rising 300 m a kilometre east and south, its two spawns near
 /// its southern edge, and in the square its room bakes a wall from below the ground up and a roof 4 m or more over it.
@@ -26,7 +60,7 @@ pub const GARRISON_NODE: &str = r#"{ "id": "glade", "kind": "mission", "name": "
             -50] } } }"#;
 
 /// Both tests hold this value; a change to the garrison, the foes or the fight changes it in both, on purpose.
-pub const GARRISON_HASH: &str = "e986cd40";
+pub const GARRISON_HASH: &str = "7b5f889c";
 
 /// Ticks the player runs north into the garrison, then stands and swings each SWING_EVERY ticks until RUN_TICKS.
 const RUN_IN: u32 = 420;
@@ -37,7 +71,7 @@ const RUN_TICKS: u32 = 1500;
 fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
     assert!(open_node(GARRISON_NODE.as_bytes()));
     let player = room_join();
-    let (mut hash, mut most_alert, mut blows) = (0x811c_9dc5_u32, 0, 0);
+    let (mut hash, mut most_alert, mut blows, mut kept) = (0x811c_9dc5_u32, 0, 0, FoesKept::default());
     for tick in 1..=RUN_TICKS {
         let running = tick <= RUN_IN;
         let controls = Controls { forward: if running { 1.0 } else { 0.0 }, run: true, ..Controls::default() };
@@ -51,10 +85,12 @@ fn a_node_s_garrison_fights_to_the_same_fingerprint_natively_as_in_the_browser_s
         };
         assert_eq!(input_of(player, &input), TAKEN);
         room_tick();
-        let bytes = snapshot();
+        let bytes = snapshot(player);
         hash = bytes.iter().fold(hash, |hash, &byte| (hash ^ u32::from(byte)).wrapping_mul(0x0100_0193));
         let seen = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
-        let alert = seen.foes().unwrap().iter().filter(|foe| foe.alert() == 2).count();
+        kept.take(&seen);
+        let alertness = combat::floats::GLANCE_FLOATS + 5;
+        let alert = kept.0.values().filter(|numbers| numbers[alertness] == 2.0).count();
         most_alert = most_alert.max(alert);
         blows += seen.events().map_or(0, |events| events.len());
     }
@@ -67,7 +103,7 @@ fn input_of(player: PlayerId, input: &room::Input) -> i32 {
 }
 
 /// Both tests hold this value: two players in one node's room, the garrison's foes shared out between them.
-pub const GARRISON_PAIR_HASH: &str = "432ddeda";
+pub const GARRISON_PAIR_HASH: &str = "09f02881";
 
 #[test]
 fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_as_in_the_browser_s_webassembly() {
@@ -86,8 +122,9 @@ fn two_players_against_a_node_s_garrison_fight_to_the_same_fingerprint_natively_
             assert_eq!(input_of(player, &input), TAKEN);
         }
         room_tick();
-        let bytes = snapshot();
+        let bytes = snapshot(players[0]);
         hash = bytes.iter().fold(hash, |hash, &byte| (hash ^ u32::from(byte)).wrapping_mul(0x0100_0193));
+        hash = snapshot(players[1]).iter().fold(hash, |hash, &byte| (hash ^ u32::from(byte)).wrapping_mul(0x0100_0193));
         let seen = messages::root_as_from_room(&bytes).unwrap().snapshot().unwrap();
         for event in seen.events().iter().flatten() {
             if let Some(index) = players.iter().position(|player| *player == event.defender()) {

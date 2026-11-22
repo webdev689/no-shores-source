@@ -69,6 +69,11 @@ pub struct SeaFight {
     /// The swell and the wind where it began, kept while it lasts.
     pub swell: Swell,
     pub wind: [f64; 2],
+    /// The last ship number it gave a player: none is given twice, so a ball still flying from a ship that left is
+    /// never laid at another's door.
+    pub given: Option<ShipId>,
+    /// The players whose last stand this fight is spent (Hard to Kill), kept should they leave and come back.
+    pub stood: Vec<PlayerId>,
 }
 
 /// What became of a player in a fight this tick: still in it, where their ship lies; out of it afloat, where it left
@@ -89,6 +94,13 @@ pub struct Sank {
     pub players: Vec<PlayerId>,
     /// The wind of its fight, which what floats drifts down.
     pub wind: [f64; 2],
+    /// Whether its captain struck before it went down, or it was sunk fighting.
+    pub struck: bool,
+}
+
+/// Whether a captain's ship struck its colours, whatever became of it after.
+fn struck(vessel: &naval::fight::Vessel) -> bool {
+    vessel.damage.state == State::Struck || vessel.command().is_some_and(|command| command.struck_at.is_some())
 }
 
 /// A fighting player's fight as their browser is sent it: the naval crate's numbers, its first captain's commission,
@@ -130,6 +142,8 @@ impl SeaFight {
             hostiles,
             fought: Vec::new(),
             pending: Vec::new(),
+            given: None,
+            stood: Vec::new(),
         }
     }
 
@@ -140,16 +154,26 @@ impl SeaFight {
         ships.into_iter().any(|vessel| apart(at, [vessel.ship.x, vessel.ship.y]) <= ENGAGE_RANGE)
     }
 
-    /// A player's Sloop put into the fight hove to at `own`, with the hurts it keeps, under the next player's number.
+    /// A player's Sloop put into the fight hove to at `own`, with the hurts it keeps, under the next player's number:
+    /// the first `PLAYER`, the rest from `PLAYERS_FROM` on, none given twice.
     fn put_in(&mut self, player: PlayerId, own: Ship, kept: [f64; 3], coasts: &[Coast], time: f64) {
         let waters = CoastWaters { coasts, swell: &self.swell };
-        let taken = self.crews.values().map(|crew| crew.ship);
-        let ship = if self.crews.is_empty() { PLAYER } else { taken.max().unwrap_or(PLAYER).max(PLAYERS_FROM - 1) + 1 };
+        let ship = self.given.map_or(PLAYER, |given| given.max(PLAYERS_FROM - 1) + 1);
+        self.given = Some(ship);
         self.fight.put_to_sea_kept(ship, own, kept, &waters, time);
         self.crews.insert(player, Crew { ship, orders: QUIET });
         if !self.fought.contains(&player) {
             self.fought.push(player);
         }
+    }
+
+    /// A player's ship taken out of the fight, its spent last stand remembered should they come back.
+    fn take_out(&mut self, player: PlayerId) {
+        let Some(crew) = self.crews.remove(&player) else { return };
+        if self.fight.fitting(crew.ship).is_some_and(|fitted| fitted.stood) && !self.stood.contains(&player) {
+            self.stood.push(player);
+        }
+        self.fight.leave(crew.ship);
     }
 
     /// The commission of its first captain, as a view shows the captain.
@@ -278,9 +302,8 @@ impl Fights {
 
     /// A player leaves the sea: their ship leaves their fight, and a fight left with no player ends with them.
     pub fn leave(&mut self, player: PlayerId) {
-        if let Some((fought, crew)) = self.of_mut(player) {
-            fought.fight.leave(crew.ship);
-            fought.crews.remove(&player);
+        if let Some((fought, _)) = self.of_mut(player) {
+            fought.take_out(player);
         }
         self.drop_empty();
     }
@@ -294,7 +317,7 @@ impl Fights {
                 let going = down && vessel.command().is_some_and(|it| it.gone.is_none());
                 let Some(pirate) = fought.hostiles.get(id).filter(|_| going) else { continue };
                 let (at, players) = ([vessel.ship.x, vessel.ship.y], fought.fought.clone());
-                self.lost.push(Sank { pirate: *pirate, at, players, wind: fought.wind });
+                self.lost.push(Sank { pirate: *pirate, at, players, wind: fought.wind, struck: struck(vessel) });
             }
         }
         self.list.retain(|fought| !fought.crews.is_empty());
@@ -457,7 +480,7 @@ impl Fights {
                     continue;
                 };
                 let (at, players) = ([vessel.ship.x, vessel.ship.y], fought.fought.clone());
-                sank.push(Sank { pirate: *pirate, at, players, wind: fought.wind });
+                sank.push(Sank { pirate: *pirate, at, players, wind: fought.wind, struck: struck(vessel) });
             }
             let mut gone = Vec::new();
             for (player, crew) in &fought.crews {
@@ -469,9 +492,8 @@ impl Fights {
                     outcomes.push(Outcome::Fighting { player: *player, ship: vessel.ship });
                 }
             }
-            for (player, ship) in gone {
-                fought.fight.leave(ship);
-                fought.crews.remove(&player);
+            for (player, _) in gone {
+                fought.take_out(player);
             }
         }
         self.drop_empty();

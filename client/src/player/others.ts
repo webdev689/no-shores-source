@@ -1,4 +1,5 @@
 import type { PlayerDress, SeenPlayer } from '../network/messages.ts';
+import { glanceFrom, glanceView } from '../rules/fighters.ts';
 import type { Body } from '../rules/movementRules.ts';
 import type { Cards } from './cards.ts';
 import { type Dress, dressFrom, plainDress } from './dressing.ts';
@@ -34,6 +35,13 @@ export function showOther(placed: Placed, seen: SeenPlayer, draws: (anim: string
   Object.assign(placed, { x, y, z, ...look });
 }
 
+/** Another player's dress as their figure wears it now: the weapon put away while the room's snapshot shows them
+ *  drinking, at once, though the dress their page sends, at most once a second, says so only later. */
+export function dressNow(dress: Dress, fighter: ArrayLike<number> | null): Dress {
+  const drinking = fighter !== null && fighter.length > 0 && glanceView(glanceFrom(fighter)).action.kind === 'drink';
+  return drinking ? { ...dress, outfit: { ...dress.outfit, drawn: false } } : dress;
+}
+
 /** Every other player in a room as their figures: each in their own dress, standing where the room last saw them, and
  *  taken away once the room no longer sees them. */
 export class OtherPlayers {
@@ -59,8 +67,8 @@ export class OtherPlayers {
     }
   }
 
-  /** Every player a snapshot saw but `own`, placed or moved, as `forge` draws their moves; one it no longer sees,
-   *  taken away. */
+  /** Every player a snapshot saw but `own`, placed or moved, as `forge` draws their moves, in their dress as it is now
+   *  (`dressNow`); one it no longer sees, taken away. */
   seen(players: readonly SeenPlayer[], own: number | null, forge: Cards): void {
     const present = new Set<number>();
     for (const seen of players) {
@@ -70,6 +78,7 @@ export class OtherPlayers {
       const dress = this.dresses.get(number) ?? plainDress('human', 0.6);
       const placed = this.figures.get(number) ?? this.page.place(dress, body.x, body.y, body.facing);
       this.figures.set(number, placed);
+      placed.dress = dressNow(dress, seen.fighter);
       showOther(placed, seen, (anim) => forge.draws(placed.dress.body, anim, null));
     }
     for (const [number, placed] of this.figures) {

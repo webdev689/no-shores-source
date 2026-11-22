@@ -1,8 +1,9 @@
-import { make } from '../editor/dom.ts';
 import type { Account } from '../network/accounts.ts';
-import type { Picture } from '../player/picture.ts';
-import { pictureCanvas } from './gearDom.ts';
 import { drawnBounds } from '../player/iconFit.ts';
+import type { Picture } from '../player/picture.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
+import { pictureNode } from './gearNodes.ts';
 
 /** The portrait's size, its face drawn at whole pixels of the figure inside it. */
 const PORTRAIT_PX = 42;
@@ -37,6 +38,16 @@ export function headOf(picture: Picture): Picture | null {
   return { width: side, height: side, pixels };
 }
 
+/** Each figure's head, cut once. */
+const heads = new WeakMap<Picture, Picture | null>();
+const headFor = (figure: Picture): Picture | null => {
+  if (!heads.has(figure)) heads.set(figure, headOf(figure));
+  return heads.get(figure) ?? null;
+};
+
+/** The name the mark stands for: the player's, a guest's, or none while offline. */
+export const markName = (account: Account | null): string => account?.username ?? (account ? 'Guest' : 'Offline');
+
 /** Whether an account is kept anywhere (a username or Discord), rather than in this browser alone, as a guest's is. */
 const keptAnywhere = (account: Account | null): boolean => !!account && (!!account.username || !!account.discord);
 
@@ -45,33 +56,80 @@ const keptAnywhere = (account: Account | null): boolean => !!account && (!!accou
  * player's face in it (a hooded head and shoulders until their figure is drawn), and a gem on its rim, filled for an
  * account kept anywhere and hollow for a guest's. Pressed, it opens the account in Settings.
  */
-export function accountMark(open: () => void): {
-  readonly node: HTMLButtonElement;
-  show(account: Account | null, figure: Picture | null): void;
-} {
-  const node = make('button', '', 'gear-profile');
-  node.type = 'button';
-  node.dataset['key'] = 'account-mark';
-  const portrait = make('span', '', 'gear-portrait');
-  portrait.setAttribute('aria-hidden', 'true');
-  const gem = make('span', '', 'gear-profile-gem');
-  gem.setAttribute('aria-hidden', 'true');
-  node.append(portrait, gem);
-  node.addEventListener('click', open);
-  let drawnFrom: Picture | null | undefined;
-  const show = (account: Account | null, figure: Picture | null) => {
-    const kept = keptAnywhere(account);
-    const name = account?.username ?? (account ? 'Guest' : 'Offline');
-    const words = account ? (kept ? 'kept with this account' : 'kept in this browser') : 'not kept';
-    node.setAttribute('aria-label', `Account: ${name}, your character ${words}. Open it in Settings.`);
-    node.title = name;
-    gem.textContent = kept ? '◆' : '◇';
-    gem.classList.toggle('gear-on', kept);
-    if (figure === drawnFrom) return;
-    drawnFrom = figure;
-    const head = figure ? headOf(figure) : null;
-    portrait.replaceChildren(head ? pictureCanvas(head, PORTRAIT_PX) : make('span', '', 'gear-silhouette'));
+export function accountMark(
+  ui: Interface,
+  account: Account | null,
+  figure: Picture | null,
+  open: () => void,
+  ratio: number,
+): Node {
+  const kept = keptAnywhere(account);
+  const name = markName(account);
+  const words = account ? (kept ? 'kept with this account' : 'kept in this browser') : 'not kept';
+  if (ui.clicked(MARK)) open();
+  const lit = ui.hovered(MARK) || (ui.focused(MARK) && ui.keyFocused);
+  const head = figure ? headFor(figure) : null;
+  return {
+    id: MARK,
+    press: true,
+    label: `Account: ${name}, your character ${words}. Open it in Settings.`,
+    width: PORTRAIT_PX + 6,
+    height: PORTRAIT_PX + 6,
+    alignX: 'center',
+    alignY: 'center',
+    picture: {
+      key: `account well ${lit}`,
+      source: { draw: (context, width, height) => well(context, width, height, lit) },
+    },
+    children: [
+      head ? { ...pictureNode(head, PORTRAIT_PX - 6, ratio), clip: true } : SILHOUETTE,
+      {
+        text: { words: kept ? '◆' : '◇', colour: kept ? '#f3cf86' : '#3a3f47', edge: 'shadow' },
+        float: { to: 'parent', anchor: [1, 1], at: [1, 1], x: 4, y: 3 },
+      },
+    ],
   };
-  show(null, null);
-  return { node, show };
 }
+
+/** The mark's id, for its press and the focus given back to it. */
+export const MARK = 'account-mark';
+
+/** The round well rimmed in brass over an iron ring, darkening from its middle, as DFO's mark is drawn. */
+function well(context: OffscreenCanvasRenderingContext2D, width: number, height: number, lit: boolean): void {
+  const [middle, radius, unit] = [width / 2, width / 2, width / 48];
+  context.fillStyle = '#3a3f47';
+  context.beginPath();
+  context.arc(middle, height / 2, radius, 0, Math.PI * 2);
+  context.fill();
+  const ground = context.createRadialGradient(middle, height * 0.38, 0, middle, height * 0.38, radius * 1.1);
+  ground.addColorStop(0, '#1b2029');
+  ground.addColorStop(0.72, '#0a0c11');
+  context.fillStyle = lit ? '#f3cf86' : '#c08a3e';
+  context.beginPath();
+  context.arc(middle, height / 2, radius - 2 * unit, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = ground;
+  context.beginPath();
+  context.arc(middle, height / 2, radius - 5 * unit, 0, Math.PI * 2);
+  context.fill();
+}
+
+/** A hooded head and shoulders, standing in for the player's face until their figure is drawn. */
+const SILHOUETTE: Node = {
+  width: PORTRAIT_PX - 6,
+  height: PORTRAIT_PX - 6,
+  picture: {
+    key: 'account silhouette',
+    source: {
+      draw: (context, width, height) => {
+        context.fillStyle = '#3a424d';
+        context.beginPath();
+        context.ellipse(width / 2, height * 0.36, width * 0.19, height * 0.2, 0, 0, Math.PI * 2);
+        context.fill();
+        context.beginPath();
+        context.ellipse(width / 2, height * 0.88, width * 0.38, height * 0.3, 0, Math.PI, 0);
+        context.fill();
+      },
+    },
+  },
+};

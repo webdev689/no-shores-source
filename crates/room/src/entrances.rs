@@ -1,7 +1,7 @@
-//! A patrol's dungeon entrances: one for each of its dungeons, laid out from the node's id the same every time, apart
-//! from its resource spots' draw so those stand where they always have. Each is one of the six entrances Daggerfall's
-//! dungeon blocks stand, drawn from its dungeon's seed, turned so its door faces the patrol's middle. A player may join
-//! the patrol's room before an entrance's door, as they come out of its dungeon.
+//! A patrol's dungeon entrances: one for each of its dungeons, laid out from the node's id the same every time, clear
+//! of its resource places. Each is one of the six entrances Daggerfall's dungeon blocks stand, drawn from its
+//! dungeon's seed, turned so its door faces the patrol's middle. A player may join the patrol's room before an
+//! entrance's door, as they come out of its dungeon.
 
 use crate::{Floor, PlayerId, Room, standing_on};
 use combat::sight::{apart, bearing};
@@ -114,6 +114,11 @@ impl Entrance {
     }
 }
 
+/// A number for a name, the same every time: FNV-1a.
+fn named(name: &str) -> u64 {
+    name.bytes().fold(0xcbf2_9ce4_8422_2325, |hash, byte| (hash ^ u64::from(byte)).wrapping_mul(0x0100_0000_01b3))
+}
+
 /// Whether a point of a room's floor is dry ground: out of the sea, and out of any river or lake the land tells.
 pub(crate) fn dry(floor: &Floor, x: f64, y: f64) -> bool {
     match floor {
@@ -156,7 +161,7 @@ pub(crate) fn laid(
     let (north, south) = ring.iter().fold((f64::MAX, f64::MIN), |(lo, hi), point| (lo.min(point[1]), hi.max(point[1])));
     let corners = ring.len().max(1) as f64;
     let middle = ring.iter().fold([0.0, 0.0], |sum, point| [sum[0] + point[0] / corners, sum[1] + point[1] / corners]);
-    let dice = Dice { seed: crate::patrol::named(&format!("{node}:dungeons")), tick: 0, player: 0 };
+    let dice = Dice { seed: named(&format!("{node}:dungeons")), tick: 0, player: 0 };
     let mut found: Vec<Entrance> = Vec::with_capacity(dungeon::PER_PATROL);
     for nth in 0..TRIES {
         if found.len() == dungeon::PER_PATROL {
@@ -186,7 +191,7 @@ impl Room {
     /// A patrol's entrances, its dungeons' in their order; none in any other room.
     #[must_use]
     pub fn entrances(&self) -> &[Entrance] {
-        self.patrol.as_ref().map_or(&[], |patrol| patrol.entrances.as_slice())
+        &self.entrances
     }
 
     /// A new player standing BEFORE_DOOR_M before the door of the entrance numbered `number`, facing away from it, as

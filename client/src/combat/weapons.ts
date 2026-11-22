@@ -2,19 +2,25 @@
 // weapon in hand drawn as its own picture, a Ranged one's shots left large over its capacity ("18 / 24", a 0 and "No
 // ammo" at none) and a Melee one's name in its rarity's colour; under it the other loadout's weapon, smaller, with its
 // key and its own shots. A swap trades the two rows over the swap's time, a reload fills a line under the count, a draw
-// flashes the weapon and one put away dims. The pictures are the forge's, as the gear screens draw them.
+// flashes the weapon and one put away dims. The pictures are the forge's, as the gear screens draw them, outlined, a
+// weapon's element by its glyph at the picture's corner.
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Dress } from '../player/dressing.ts';
 import { elementSvg } from '../player/elementGlyphs.ts';
 import { ELEMENTS, itemName, KINDS, kindName, MELEE, RANGED_SLOT, RARITIES, worn } from '../player/gear.ts';
 import type { ItemPictures } from '../player/itemPictures.ts';
 import type { Picture } from '../player/picture.ts';
-import { HALO, TONES } from '../plus/tones.ts';
+import { motionReduced } from '../plus/kit.ts';
+import { TONES } from '../plus/tones.ts';
+import type { Child, Node } from '../ui/node.ts';
+import type { Box } from '../ui/quads.ts';
+import type { UiRenderer } from '../ui/uiRenderer.ts';
 import type { FighterView } from '../rules/fighters.ts';
+import { filteredSvg } from './abilityBar.ts';
 import { ammoWords } from './ammoCounter.ts';
-import { CORNER } from '../plus/barFrame.ts';
-import { element, setStyle, showNode } from '../plus/meter.ts';
-import { weaponCanvas } from './weaponPicture.ts';
+import { baselineOf, lineHeight } from '../ui/text.ts';
+import { keycapNode, mix, paintBox, type Pen, ring } from './barDraw.ts';
+import { weaponFit } from './weaponPicture.ts';
 
 /** How long a swap between loadouts takes, in seconds (crates/combat/src/tuning.rs SWAP_TICKS, at 60 a second). */
 export const SWAP_SECONDS = 24 / 60;
@@ -87,69 +93,37 @@ export function weaponWords(shown: WeaponShown, inHand: boolean, drawn: boolean)
   return `${where}: ${shown.name}${element ? `, ${element}` : ''}${shots}`;
 }
 
-/** One row's parts, and the item and picture it last drew. */
-interface Row {
-  readonly root: HTMLElement;
-  readonly key: HTMLElement;
-  readonly shots: HTMLElement;
-  readonly most: HTMLElement;
-  readonly name: HTMLElement;
-  readonly picture: HTMLElement;
-  readonly glyph: HTMLElement;
-  readonly reload: HTMLElement;
-  item: GearItem | null;
-  drawn: Picture | null;
-}
-
-/** The weapons' rows on the HUD, written each frame; only what changed reaches the page. */
+/** The weapons' rows on the HUD, kept each frame and drawn from what they last kept. */
 export class WeaponRows {
-  readonly root: HTMLElement;
-  private readonly rows: readonly [Row, Row];
   private readonly pictures: ItemPictures | null;
   private wide = false;
   private zoom = 1;
-  /** Device pixels to one CSS pixel the pictures were drawn at: the screen's ratio times the display's zoom. */
-  private ratio = 0;
   private loadout: number | null = null;
   private drawn: boolean | null = null;
   private swapping = 0;
-  /** Swaps begun: each takes the other of two names for its animation, so one pressed during another starts afresh. */
-  private swaps = 0;
   private drawing = 0;
   private reloadMost = 0;
+  private reload = 0;
+  private arms: ArmsShown | null = null;
+  private rows: { readonly hand: WeaponShown | null; readonly next: WeaponShown | null } = { hand: null, next: null };
+  /** A number for each of the forge's pictures, by which the interface keeps it.
+   *  shortcut: the atlas keeps every picture it was given, one for each piece worn and each dress drawn; key by item
+   *  and dress, or let the atlas forget, once a session's wardrobe fills it. */
+  private readonly keys = new WeakMap<Picture, number>();
+  /** How each picture lies in its box, kept while the box and the screen's ratio stay the same, so its pixels are
+   *  read once and not each frame. */
+  private readonly fits = new WeakMap<
+    Picture,
+    { readonly asked: string; readonly fit: ReturnType<typeof weaponFit> }
+  >();
 
-  constructor(parent: HTMLElement, pictures: ItemPictures | null) {
+  constructor(pictures: ItemPictures | null) {
     this.pictures = pictures;
-    this.root = element('div', 'weapons', parent);
-    this.root.role = 'group';
-    this.root.ariaLabel = 'Your weapons';
-    this.root.hidden = true;
-    element('i', 'rule', this.root);
-    const row = (where: string): Row => {
-      const root = element('div', `weapon ${where}`, this.root);
-      root.role = 'img';
-      // What leads the row (its key, its shots or its name), then its picture, as Destiny's rows read.
-      const lead = element('span', 'lead', root);
-      const key = element('kbd', '', lead);
-      const count = element('span', 'count', lead);
-      const shots = element('b', 'shots', count);
-      const most = element('span', 'most', count);
-      const name = element('span', 'name', lead);
-      const picture = element('span', 'picture', root);
-      // The weapon's element in its picture's corner, as a gear tile shows it; the row's words name it.
-      const glyph = element('i', 'element', picture);
-      glyph.ariaHidden = 'true';
-      const reload = element('i', 'reload', root);
-      return { root, key, shots, most, name, picture, glyph, reload, item: null, drawn: null };
-    };
-    this.rows = [row('hand'), row('next')];
   }
 
-  /** Lays the rows at the display's step and zoom: their pictures are drawn again at that size. */
+  /** Lays the rows at the display's step and zoom. */
   lay(wide: boolean, zoom = 1): void {
-    if (wide === this.wide && zoom === this.zoom) return;
     [this.wide, this.zoom] = [wide, zoom];
-    for (const row of this.rows) row.item = null;
   }
 
   /** Shows `arms` for the player's fighter `own`, `seconds` on. */
@@ -161,142 +135,282 @@ export class WeaponRows {
     const arms = takenUp
       ? asked
       : { ...asked, loadout: this.loadout ?? asked.loadout, drawn: this.drawn ?? asked.drawn };
-    const { hand, next } = weaponsOf(arms, own?.ammo ?? null);
-    showNode(this.root, !!hand || !!next);
-    if (!hand && !next) return;
-    const ratio = (globalThis.devicePixelRatio || 1) * this.zoom;
-    if (ratio !== this.ratio) {
-      this.ratio = ratio;
-      for (const row of this.rows) row.item = null;
-    }
-    if (this.loadout !== null && arms.loadout !== this.loadout)
-      [this.swapping, this.swaps] = [SWAP_SECONDS, this.swaps + 1];
+    this.rows = weaponsOf(arms, own?.ammo ?? null);
+    this.arms = arms;
+    if (this.loadout !== null && arms.loadout !== this.loadout) this.swapping = SWAP_SECONDS;
+    else this.swapping = Math.max(0, this.swapping - seconds);
     if (this.drawn === false && arms.drawn) this.drawing = DRAW_SECONDS;
+    else this.drawing = Math.max(0, this.drawing - seconds);
     [this.loadout, this.drawn] = [arms.loadout, arms.drawn];
-    this.swapping = Math.max(0, this.swapping - seconds);
-    this.drawing = Math.max(0, this.drawing - seconds);
-    this.root.classList.toggle('swapping', this.swapping > 0 && this.swaps % 2 === 1);
-    this.root.classList.toggle('swapping-again', this.swapping > 0 && this.swaps % 2 === 0);
-    this.root.classList.toggle('drawing', this.drawing > 0);
-    this.root.classList.toggle('away', !arms.drawn);
-    const reload = own?.action.kind === 'reload' && hand?.slot === RANGED_SLOT ? own.action.left : 0;
-    this.reloadMost = reload > 0 ? Math.max(this.reloadMost, reload) : 0;
-    const [handRow, nextRow] = this.rows;
-    this.show(handRow, hand, arms, true);
-    this.show(nextRow, next, arms, false);
-    handRow.root.classList.toggle('reloading', reload > 0);
-    if (reload > 0) setStyle(handRow.reload, 'width', `${Math.round((1 - reload / this.reloadMost) * 100)}%`);
+    const hand = this.rows.hand;
+    this.reload = own?.action.kind === 'reload' && hand?.slot === RANGED_SLOT ? own.action.left : 0;
+    this.reloadMost = this.reload > 0 ? Math.max(this.reloadMost, this.reload) : 0;
   }
 
-  private show(row: Row, shown: WeaponShown | null, arms: ArmsShown, inHand: boolean): void {
-    showNode(row.root, !!shown);
-    if (!shown) return;
+  /** What the rows show: the loadout in hand (its slot), whether a swap is trading them, whether the hand's weapon is
+   *  put away, and how far a reload has filled its line (null while none runs). */
+  get shown(): {
+    readonly inHand: number | null;
+    readonly swapping: boolean;
+    readonly away: boolean;
+    readonly reload: number | null;
+  } {
+    return {
+      inHand: this.rows.hand?.slot ?? null,
+      swapping: this.swapping > 0,
+      away: !(this.arms?.drawn ?? true),
+      reload: this.reload > 0 ? 1 - this.reload / this.reloadMost : null,
+    };
+  }
+
+  /** What a screen reader says of each row shown. */
+  words(): readonly string[] {
+    const { hand, next } = this.rows;
+    const drawn = this.arms?.drawn ?? false;
+    return [hand && weaponWords(hand, true, drawn), next && weaponWords(next, false, drawn)].filter(
+      (said): said is string => !!said,
+    );
+  }
+
+  /** The rows under a long brass rule: the weapon in hand, then the other loadout's; none with no weapon worn. */
+  node(): Node | null {
+    const { hand, next } = this.rows;
+    if (!hand && !next) return null;
+    const wide = this.wide;
+    const zoom = this.zoom;
+    const rule = (ui: UiRenderer, box: Box, scale: number, clip: Box, fade: number) => {
+      const pen = { ui, box, scale: scale * zoom, clip, fade };
+      const line = { ...box, width: box.width + 24 * pen.scale, height: 2 * pen.scale };
+      paintBox(pen, { ...line, y: line.y - pen.scale, height: pen.scale }, TONES.outline);
+      paintBox(pen, { ...line, y: line.y + line.height, height: pen.scale }, TONES.outline);
+      gradient(pen, line, [
+        [0, TONES.brassHi],
+        [0.6, TONES.brass],
+        [1, 'rgba(192,138,62,0)'],
+      ]);
+    };
+    return {
+      label: 'Your weapons',
+      direction: 'column',
+      gap: (wide ? 6 : 4) * zoom,
+      padding: [(wide ? 9 : 6) * zoom, 0, 0, 0],
+      draw: rule,
+      children: [hand && this.row(hand, true), next && this.row(next, false)],
+    };
+  }
+
+  private row(shown: WeaponShown, inHand: boolean): Node {
+    const wide = this.wide;
+    const zoom = this.zoom;
+    const still = motionReduced();
+    const arms = this.arms;
+    const away = inHand && !(arms?.drawn ?? true);
     const ranged = shown.slot === RANGED_SLOT;
-    row.root.classList.toggle('ranged', ranged);
-    row.root.classList.toggle('low', shown.low);
-    row.root.classList.toggle('empty', shown.empty);
-    const write = (node: HTMLElement, text: string) => node.textContent !== text && (node.textContent = text);
-    write(row.key, shown.key);
-    // None left reads as a large 0, as a count does, its words small where the capacity stands.
-    write(row.shots, shown.empty ? '0' : (shown.shots ?? ''));
-    write(row.most, shown.empty ? (shown.shots ?? '') : shown.most === null ? '' : `/ ${shown.most}`);
-    write(row.name, shown.name);
-    const colour = RARITIES[shown.rarity]?.colour ?? '';
-    setStyle(row.name, 'color', colour);
-    const said = weaponWords(shown, inHand, arms.drawn);
-    if (row.root.ariaLabel !== said) row.root.ariaLabel = said;
+    const [large, middle, small] = wide ? [4, 3, 2] : [3, 2, 1];
     // A picture the forge is still drawing shows on the first frame after it is done.
-    const picture = arms.dress ? (this.pictures?.pictureOf(shown.item, arms.dress, () => undefined) ?? null) : null;
+    const drawnPicture = arms?.dress
+      ? (this.pictures?.pictureOf(shown.item, arms.dress, () => undefined) ?? null)
+      : null;
+    const ratio = Math.max(1, Math.round(globalThis.devicePixelRatio || 1)) * zoom;
+    const [boxWidth, boxHeight] = (wide ? PICTURE_BOXES.wide : PICTURE_BOXES.base)[inHand ? 'hand' : 'next'];
+    const fit = drawnPicture && this.fitOf(drawnPicture, boxWidth, boxHeight, ratio);
     // With no picture (still drawing, or none to be had) the row says the weapon's name instead.
-    row.root.classList.toggle('bare', !picture);
-    if (shown.item === row.item && picture === row.drawn) return;
-    [row.item, row.drawn] = [shown.item, picture];
-    const [width, height] = (this.wide ? PICTURE_BOXES.wide : PICTURE_BOXES.base)[inHand ? 'hand' : 'next'];
-    row.glyph.innerHTML = elementSvg(shown.item.element);
-    row.picture.replaceChildren(...(picture ? [weaponCanvas(picture, width, height, this.ratio), row.glyph] : []));
+    const bare = !fit;
+    const swap = this.swapping > 0 && !still ? Math.floor(((SWAP_SECONDS - this.swapping) / SWAP_SECONDS) * 4) / 4 : 1;
+    const flash =
+      inHand && this.drawing > 0 && !still
+        ? 2.4 - (1.4 * Math.floor(((DRAW_SECONDS - this.drawing) / DRAW_SECONDS) * 3)) / 3
+        : 1;
+    const words = (text: string, size: number, colour: string): Node => ({
+      text: { words: text, size: size * zoom, colour, edge: 'halo', wrap: false },
+    });
+    const counted = (inHand ? large : middle) * zoom;
+    // The count's line is as tall as its letters (lifted by half what the face's own line adds); the small words
+    // beside it stand on its baseline.
+    const lift = Math.round((lineHeight(counted) - counted * 11) / 2);
+    const onCount = (size: number) => counted * 11 - lineHeight(size) + baselineOf(size) - (baselineOf(counted) - lift);
+    const shotsColour = shown.empty ? '#e8968a' : shown.low ? '#f1c04f' : TONES.word;
+    const count: Child = ranged && {
+      direction: 'row',
+      gap: 4 * zoom,
+      alignY: 'end',
+      ...(inHand && this.reload > 0 ? { opacity: 0.5 } : {}),
+      children: [
+        // None left reads as a large 0, as a count does, its words small where the capacity stands.
+        // Its line as tall as its letters, so the row is no taller than they are.
+        {
+          ...words(shown.empty ? '0' : (shown.shots ?? ''), inHand ? large : middle, shotsColour),
+          height: counted * 11,
+          offset: [0, -lift] as const,
+        },
+        inHand &&
+          (shown.empty || shown.most !== null) && {
+            ...words(
+              shown.empty ? (shown.shots ?? '') : `/ ${shown.most}`,
+              small,
+              shown.empty ? '#e8968a' : TONES.wordDim,
+            ),
+            offset: [0, -onCount(small * zoom)] as const,
+          },
+      ],
+    };
+    const nameShown = bare || (!inHand ? false : !ranged);
+    const name: Child = nameShown && {
+      ...(ranged ? { offset: [0, -onCount(small * zoom)] as const } : {}),
+      text: {
+        words: shown.name,
+        size: small * zoom,
+        colour: RARITIES[shown.rarity]?.colour ?? TONES.word,
+        edge: 'halo',
+        ellipsis: true,
+      },
+    };
+    const lead: Node = {
+      direction: 'row',
+      gap: 6 * zoom,
+      alignY: 'end',
+      width: (wide ? 128 : 88) * zoom,
+      clip: true,
+      ...(away ? { opacity: 0.6 } : {}),
+      children: [!inHand && keycapNode(shown.key, small, wide ? 28 : 18, wide ? 27 : 17, zoom), count, name],
+    };
+    // The glyph greys and flashes with the picture it stands in, as one filter took both.
+    const glyph = elementSvg(shown.item.element);
+    const glyphSide = (inHand ? (wide ? 22 : 16) : wide ? 16 : 12) * zoom;
+    const glyphLook = away ? 'away' : flash;
+    const glyphOf = (tint?: string): Node => ({
+      width: glyphSide,
+      height: glyphSide,
+      picture: {
+        key: `element ${shown.item.element} ${glyphLook}`,
+        source: { svg: filteredSvg(glyph, away ? 0.3 : 1, away ? 1 : flash) },
+        ...(tint ? { tint } : {}),
+      },
+      float: { x: tint ? zoom : 0, y: tint ? zoom : 0, z: 1 },
+    });
+    // The picture stands in its box, its words' room kept as the row's; the weapon's element in the box's corner,
+    // just past its top right in the row's own margin, clear of a blade's point, as a gear tile shows it.
+    const pictureNode: Child = fit &&
+      drawnPicture && {
+        width: boxWidth * zoom,
+        height: boxHeight * zoom,
+        ...(this.swapping > 0 && still && inHand ? { outline: { width: zoom, colour: TONES.brassHi } } : {}),
+        children: [
+          {
+            // A pixel of the outline round it, past its own box, so it reads on any ground.
+            width: (fit.width + 2) * zoom,
+            height: (fit.height + 2) * zoom,
+            ...(away ? { opacity: 0.6 } : {}),
+            float: { anchor: [0, 0.5], at: [0, 0.5], x: -zoom, z: 1 },
+            picture: {
+              key: `weapon ${this.keyOf(drawnPicture)} ${away ? 'away' : flash}`,
+              source: {
+                draw: (context, width, height) => {
+                  const edge = Math.max(1, Math.round(width / (fit.width + 2)));
+                  const [innerWidth, innerHeight] = [width - 2 * edge, height - 2 * edge];
+                  if (innerWidth <= 0 || innerHeight <= 0) return;
+                  const inner = new OffscreenCanvas(innerWidth, innerHeight);
+                  const drawing = inner.getContext('2d');
+                  if (!drawing) return;
+                  drawing.filter = away ? 'grayscale(0.7)' : flash > 1 ? `brightness(${flash})` : 'none';
+                  fit.draw(drawing, innerWidth, innerHeight);
+                  outlined(context, inner, edge);
+                },
+              },
+            },
+          },
+          glyph !== '' && {
+            width: glyphSide,
+            height: glyphSide,
+            ...(away ? { opacity: 0.6 } : {}),
+            float: { at: [1, 0], x: 4 * zoom, z: 1 },
+            children: [glyphOf(TONES.outline), glyphOf()],
+          },
+        ],
+      };
+    const reload: Child = inHand &&
+      this.reload > 0 && {
+        width: `${Math.round((1 - this.reload / this.reloadMost) * 100)}%`,
+        height: 2 * zoom,
+        fill: TONES.word,
+        float: { at: [0, 1], anchor: [0, 1], x: 6 * zoom, z: 1 },
+        draw: (ui, box, scale, clip, fade) => ring({ ui, box, scale: scale * zoom, clip, fade }, box, TONES.outline),
+      };
+    // The row's height, for a swap's slide: its picture's or its words', and its padding.
+    const height = Math.max(fit ? boxHeight * zoom : 0, ranged ? counted * 11 : lineHeight(small * zoom)) + 6 * zoom;
+    const from = inHand ? 0.7 : -0.9;
+    return {
+      direction: 'row',
+      alignY: 'center',
+      // Both rows as wide as the wider, so their ends line up.
+      width: 'grow',
+      gap: (wide ? 12 : 8) * zoom,
+      padding: [3 * zoom, 28 * zoom, 3 * zoom, 6 * zoom],
+      label: weaponWords(shown, inHand, arms?.drawn ?? false),
+      opacity: (inHand ? 1 : 0.82) * (0.3 + 0.7 * swap),
+      offset: [0, Math.round(from * height * (1 - swap))],
+      draw: (ui, box, scale, clip, fade) =>
+        gradient({ ui, box, scale, clip, fade }, box, [
+          [0, 'rgba(12,14,18,0.62)'],
+          [0.7, 'rgba(12,14,18,0.38)'],
+          [1, 'rgba(12,14,18,0)'],
+        ]),
+      children: [lead, bare ? null : pictureNode, reload],
+    };
+  }
+
+  private fitOf(picture: Picture, width: number, height: number, ratio: number): ReturnType<typeof weaponFit> {
+    const asked = `${width}x${height}@${ratio}`;
+    const kept = this.fits.get(picture);
+    if (kept?.asked === asked) return kept.fit;
+    const fit = weaponFit(picture, width, height, ratio);
+    this.fits.set(picture, { asked, fit });
+    return fit;
+  }
+
+  private keyOf(picture: Picture): number {
+    let key = this.keys.get(picture);
+    if (key === undefined) {
+      key = nextKey++;
+      this.keys.set(picture, key);
+    }
+    return key;
   }
 }
 
-/** One step of the rows: the lead's width, the counts' sizes and the pictures' boxes. */
-function weaponStepCss(scope: string, wide: boolean): string {
-  const boxes = wide ? PICTURE_BOXES.wide : PICTURE_BOXES.base;
-  const [large, middle, small] = wide ? [44, 33, 22] : [33, 22, 11];
-  return `
-${scope} .weapons { gap: ${wide ? 6 : 4}px; padding-top: ${wide ? 9 : 6}px; }
-${scope} .weapon { grid-template-columns: ${wide ? 128 : 88}px auto; column-gap: ${wide ? 12 : 8}px; }
-${scope} .weapon.hand .shots { font-size: ${large}px; line-height: ${large}px; }
-${scope} .weapon.next .shots { font-size: ${middle}px; line-height: ${middle}px; }
-${scope} .weapon .most, ${scope} .weapon .name, ${scope} .weapon kbd {
-  font-size: ${small}px; }
-${scope} .weapon kbd { min-width: ${wide ? 28 : 18}px; line-height: ${wide ? 24 : 14}px; }
-${scope} .weapon.hand .picture { width: ${boxes.hand[0]}px; height: ${boxes.hand[1]}px; }
-${scope} .weapon.next .picture { width: ${boxes.next[0]}px; height: ${boxes.next[1]}px; }
-${scope} .weapon.hand .element { width: ${wide ? 22 : 16}px; height: ${wide ? 22 : 16}px; }
-${scope} .weapon.next .element { width: ${wide ? 16 : 12}px; height: ${wide ? 16 : 12}px; }`;
+let nextKey = 0;
+
+/** Draws `picture` `edge` device pixels in from the corner of `context`, ringed by the outline `edge` pixels wide all
+ *  round (its eight neighbours), as four chained 1 px drop shadows ring it on a page. */
+function outlined(context: OffscreenCanvasRenderingContext2D, picture: OffscreenCanvas, edge: number): void {
+  const shadow = new OffscreenCanvas(picture.width, picture.height);
+  const shading = shadow.getContext('2d');
+  if (shading) {
+    shading.drawImage(picture, 0, 0);
+    shading.globalCompositeOperation = 'source-in';
+    shading.fillStyle = TONES.outline;
+    shading.fillRect(0, 0, shadow.width, shadow.height);
+    for (const across of [0, 1, 2])
+      for (const down of [0, 1, 2])
+        if (across !== 1 || down !== 1) context.drawImage(shadow, across * edge, down * edge);
+  }
+  context.drawImage(picture, edge, edge);
 }
 
-/** The rows' sheet: a brass rule over two rows, each its lead and its picture; few shots in brass and none in the loss
- *  colour, as the crosshair's counter says them; a swap trading the rows in four steps, a draw's flash, a reload's
- *  line, and the weapon put away dimmed. */
-export function weaponsCss(): string {
-  return `
-.fight-hud .arms { position: absolute; left: ${CORNER.side}px; bottom: ${CORNER.foot}px; display: flex;
-  align-items: flex-end; gap: 14px; pointer-events: none; }
-.fight-hud.wide .arms { gap: 20px; }
-.fight-hud.double .arms { zoom: 2; }
-/* A view too narrow for the vitals beside the compass is too narrow for the Arts beside the weapons: the weapons stand
-   over the Arts, so the corner keeps clear of the view's middle and the hands drawn there. */
-.fight-hud.stacked .arms { flex-direction: column-reverse; align-items: flex-start; }
-.fight-hud .weapons { position: relative; display: grid; color: ${TONES.word}; text-shadow: ${HALO}; }
-.fight-hud .weapons .rule { position: absolute; left: 0; right: -24px; top: 0; height: 2px;
-  background: linear-gradient(90deg, ${TONES.brassHi}, ${TONES.brass} 60%, transparent);
-  box-shadow: 0 1px 0 ${TONES.outline}, 0 -1px 0 ${TONES.outline}; }
-.fight-hud .weapon { position: relative; display: grid; align-items: center; padding: 3px 28px 3px 6px;
-  background: linear-gradient(90deg, rgba(12,14,18,0.62), rgba(12,14,18,0.38) 70%, rgba(12,14,18,0)); }
-.fight-hud .weapon .lead { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
-.fight-hud .weapon .count { display: flex; align-items: baseline; gap: 4px; white-space: nowrap; }
-.fight-hud .weapon .shots { font-weight: 500; font-variant-numeric: tabular-nums; }
-.fight-hud .weapon .most { color: ${TONES.wordDim}; letter-spacing: 0.06em; }
-.fight-hud .weapon .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: 0.06em; }
-.fight-hud .weapon.hand kbd, .fight-hud .weapon.hand.ranged:not(.bare) .name, .fight-hud .weapon:not(.ranged) .count,
-.fight-hud .weapon.next:not(.bare) .name, .fight-hud .weapon.next .most, .fight-hud .weapon:not(.reloading) .reload,
-.fight-hud .weapon.bare .picture { display: none; }
-.fight-hud .weapon kbd { align-self: center; box-sizing: border-box; padding: 0 4px; border: 1px solid;
-  border-color: ${TONES.stoneLit} ${TONES.stoneDark} ${TONES.stoneDark} ${TONES.stoneLit}; border-bottom-width: 2px;
-  background: #16181d; font: inherit; text-align: center; text-shadow: none; box-shadow: 0 0 0 1px ${TONES.outline}; }
-.fight-hud .weapon.low .shots { color: #f1c04f; }
-.fight-hud .weapon.empty .shots, .fight-hud .weapon.empty .most { color: #e8968a; }
-.fight-hud .weapon .picture { position: relative; display: flex; align-items: center; }
-/* The glyph stands just past its picture's top right, in the row's own margin, clear of a blade's point. */
-.fight-hud .weapon .element { position: absolute; top: 0; left: calc(100% + 4px);
-  filter: drop-shadow(1px 1px 0 ${TONES.outline}); }
-.fight-hud .weapon .element:empty { display: none; }
-.fight-hud .weapon .element svg { display: block; width: 100%; height: 100%; }
-.fight-hud .weapon .picture canvas { display: block; image-rendering: pixelated;
-  filter: drop-shadow(1px 0 0 ${TONES.outline}) drop-shadow(-1px 0 0 ${TONES.outline})
-    drop-shadow(0 1px 0 ${TONES.outline}) drop-shadow(0 -1px 0 ${TONES.outline}); }
-.fight-hud .weapon.next { opacity: 0.82; }
-.fight-hud .weapon .reload { position: absolute; left: 6px; bottom: 0; height: 2px; background: ${TONES.word};
-  box-shadow: 0 0 0 1px ${TONES.outline}; }
-.fight-hud .weapon.reloading .shots { opacity: 0.5; }
-.fight-hud .weapons.away .weapon.hand > * { opacity: 0.6; }
-.fight-hud .weapons.away .weapon.hand .picture { filter: grayscale(0.7); }
-${weaponStepCss('.fight-hud', false)}
-${weaponStepCss('.fight-hud.wide', true)}
-@media (prefers-reduced-motion: no-preference) {
-  .fight-hud .weapons.swapping .weapon.hand { animation: weapon-up ${SWAP_SECONDS}s steps(4, end); }
-  .fight-hud .weapons.swapping .weapon.next { animation: weapon-down ${SWAP_SECONDS}s steps(4, end); }
-  .fight-hud .weapons.swapping-again .weapon.hand { animation: weapon-up-again ${SWAP_SECONDS}s steps(4, end); }
-  .fight-hud .weapons.swapping-again .weapon.next { animation: weapon-down-again ${SWAP_SECONDS}s steps(4, end); }
-  .fight-hud .weapons.drawing .weapon.hand .picture { animation: weapon-drawn ${DRAW_SECONDS}s steps(3, end); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .fight-hud .weapons:is(.swapping, .swapping-again) .weapon.hand .picture { outline: 1px solid ${TONES.brassHi}; }
-}
-@keyframes weapon-up { from { translate: 0 70%; opacity: 0.3; } }
-@keyframes weapon-down { from { translate: 0 -90%; opacity: 0.3; } }
-@keyframes weapon-up-again { from { translate: 0 70%; opacity: 0.3; } }
-@keyframes weapon-down-again { from { translate: 0 -90%; opacity: 0.3; } }
-@keyframes weapon-drawn { from { filter: brightness(2.4) drop-shadow(0 0 4px #fff); } }
-`;
+/** A strip across `box` going through `stops` (shares of its width and the colour there), drawn in steps of two
+ *  device pixels. */
+function gradient(pen: Pen, box: Box, stops: readonly (readonly [number, string])[]): void {
+  const step = 2;
+  for (let x = 0; x < box.width; x += step) {
+    const along = (x + step / 2) / box.width;
+    const after = stops.findIndex(([share]) => share >= along);
+    const [toShare, to] = stops[Math.max(0, after)] ?? [1, 'transparent'];
+    const [fromShare, from] = stops[Math.max(0, after - 1)] ?? [0, to];
+    const share = toShare > fromShare ? (along - fromShare) / (toShare - fromShare) : 0;
+    paintBox(
+      pen,
+      { x: box.x + x, y: box.y, width: Math.min(step, box.width - x), height: box.height },
+      mix(from, to, share),
+    );
+  }
 }

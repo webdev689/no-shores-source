@@ -111,8 +111,9 @@ export class AccountLink {
   private code: string | null = null;
   /** What the last Discord sign-in came to, in words, once the page has taken it. */
   said: string | null = null;
-  /** The session being asked for, while it is. */
+  /** The session being asked for, while it is; and the account the accounts last said the page is. */
   private asking: Promise<Account | null> | null = null;
+  private known: Account | null = null;
   /** How long an ask may go unanswered, milliseconds, before it is given up as out of reach: a host that never
    *  answers would otherwise hold whatever waits on it until the browser's own limit. */
   patienceMs = 10_000;
@@ -123,6 +124,11 @@ export class AccountLink {
     this.passing = passing;
     this.ask = ask;
     this.key = this.base === LIVE_ACCOUNTS ? KEY : `${KEY}@${this.base}`;
+  }
+
+  /** The account the accounts last said the page plays as, none until they have. */
+  get account(): Account | null {
+    return this.known;
   }
 
   /** The session's token, if the page holds one. */
@@ -189,13 +195,15 @@ export class AccountLink {
     if (typeof answer === 'string') return answer;
     if (typeof answer['token'] === 'string' && TOKEN.test(answer['token']))
       this.kept.setItem(this.key, answer['token']);
-    return answer['account'] as Account;
+    return (this.known = answer['account'] as Account);
   }
 
   /** The player's account: a Discord sign-in's first, if one came back, then the session held, or else a new guest;
    *  null if the accounts cannot be reached. Asked twice at once, it is asked once, so no two guests are made. */
   session(): Promise<Account | null> {
-    this.asking ??= this.sessionNow().finally(() => (this.asking = null));
+    this.asking ??= this.sessionNow()
+      .then((account) => (this.known = account ?? this.known))
+      .finally(() => (this.asking = null));
     return this.asking;
   }
 
@@ -217,7 +225,7 @@ export class AccountLink {
   /** Gives the account a username and password; the account, or why not. */
   async register(username: string, password: string): Promise<Account | string> {
     const answer = await this.call('POST', '/v1/register', { username, password });
-    return typeof answer === 'string' ? answer : (answer['account'] as Account);
+    return typeof answer === 'string' ? answer : (this.known = answer['account'] as Account);
   }
 
   /** Signs in with a username and password, leaving any guest behind; the account, or why not. */
@@ -229,6 +237,7 @@ export class AccountLink {
   async logout(): Promise<void> {
     await this.call('POST', '/v1/logout');
     this.kept.removeItem(this.key);
+    this.known = null;
   }
 
   /** Ends every session of an account with a way back in, this one with them; why not, if it cannot. */
@@ -236,6 +245,7 @@ export class AccountLink {
     const answer = await this.call('POST', '/v1/logout/everywhere');
     if (typeof answer === 'string') return answer;
     this.kept.removeItem(this.key);
+    this.known = null;
     return null;
   }
 
@@ -254,6 +264,19 @@ export class AccountLink {
   /** Asks something of the Roster (`friend/ask`, `company/join`, `guild/promote`, `block`...); why not, if it cannot. */
   async social(path: string, body: Readonly<Record<string, string | number>> = {}): Promise<string | null> {
     const answer = await this.call('POST', `/v1/social/${path}`, body);
+    return typeof answer === 'string' ? answer : null;
+  }
+
+  /** The controls the player bound, as kept with their account (null for none kept yet), or why not; read as the
+   *  page reads them (`client/src/player/binds.ts`). */
+  async binds(): Promise<{ readonly binds: unknown } | string> {
+    const answer = await this.call('GET', '/v1/binds');
+    return typeof answer === 'string' ? answer : { binds: answer['binds'] ?? null };
+  }
+
+  /** Keeps the controls the player bound with their account; why not, if it cannot. */
+  async keepBinds(binds: unknown): Promise<string | null> {
+    const answer = await this.call('PUT', '/v1/binds', { binds });
     return typeof answer === 'string' ? answer : null;
   }
 

@@ -72,6 +72,7 @@ test('a guard by what holds it, a parry, a guard broken, a kill and its finisher
   assert.deepEqual(cuesOf({ kind: EVENT.shielded }), ['shield.hit']);
   assert.deepEqual(cuesOf({ kind: EVENT.shieldBroken }), ['shield.break']);
   assert.deepEqual(cuesOf({ kind: EVENT.dodged }), [], 'a dodge is heard as its roll');
+  assert.deepEqual(cuesOf({ kind: EVENT.healed }), ['respawn'], 'a drink’s heal sounds as standing again whole');
   assert.ok(eventCues(event({ kind: EVENT.parried }), { striker: 0, defender: 0, look: 0 })[0]?.at === 'defender');
 });
 
@@ -238,8 +239,11 @@ test('every cue the world can play is one the Freesound list searches for', () =
   add(actionCue(idle, { kind: 'dodge', elapsed: 0, toward: [0, 1] }, 0));
   add(actionCue(idle, { kind: 'draw', elapsed: 0 }, arms(FISTS, BOW)));
   for (const cue of possible) assert.ok(searched.has(cue), `${cue} is searched for`);
-  // The interface's, the ambience's, the ships', the story's and the sea fight's cues are each checked where they play.
-  const world = listed.cues.map((cue) => cue.id).filter((id) => !/^(ui|hold|gain|ship|amb|story|sea)\./.test(id));
+  // The interface's, the ambience's, the ships', the story's, the sea fight's and the voice's cues are each checked
+  // where they play.
+  const world = listed.cues
+    .map((cue) => cue.id)
+    .filter((id) => !/^(ui|hold|gain|ship|amb|story|sea|speech)\./.test(id));
   assert.deepEqual(
     world.filter((id) => !possible.has(id)),
     [],

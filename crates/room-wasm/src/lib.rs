@@ -16,6 +16,7 @@ use room::fleet::Fleet;
 use room::sea::{CourseRefused, HelmRefused, Sea};
 use room::winds::epoch_of;
 use room::{Floor, NodeKind, PlayerId, Refused, Room, Section};
+use sent::Sent;
 use serde::Deserialize;
 use std::cell::RefCell;
 
@@ -30,6 +31,7 @@ mod gear_door;
 mod isle_door;
 mod roster_door;
 mod sea_door;
+mod sent;
 mod waters_door;
 
 pub use dungeon_door::open_dungeon;
@@ -40,7 +42,7 @@ pub use gear_door::{character, furnish, gear, restore_character, set_difficulty,
 /// player when its node is locked; the sea; or a fleet.
 #[derive(Debug)]
 enum Opened {
-    Land { room: Box<Room>, node: Option<(String, [f64; 4])>, refusal: Option<String> },
+    Land { room: Box<Room>, node: Option<(String, [f64; 4])>, refusal: Option<String>, sent: Box<Sent> },
     Sea(Box<Sea>),
     Fleet(Box<Fleet>),
 }
@@ -62,8 +64,9 @@ pub const TOO_SOON: i32 = 4;
 /// A course that reads but the sea's law refuses: it crosses land, or its pace or points are not allowed.
 pub const REFUSED: i32 = 5;
 
-/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, and whether
-/// it is locked. A page playing alone writes its own, never locked.
+/// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, whether
+/// it is locked, a patrol's resource places (where its nodes stand), and the places the houses' roads name and the
+/// paths their figures walk. A page playing alone writes its own, never locked.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
@@ -83,6 +86,12 @@ struct NodeFile {
     counters: Vec<NodeCounter>,
     #[serde(default)]
     shape_spots: Vec<[f64; 2]>,
+    #[serde(default)]
+    resources: Vec<[f64; 2]>,
+    #[serde(default)]
+    places: Vec<gear::quests::Place>,
+    #[serde(default)]
+    paths: Vec<Vec<[f64; 2]>>,
 }
 
 /// A social space's counter as the bake writes it: its station, and its middle.
@@ -141,7 +150,12 @@ fn open_course(bytes: &[u8], room_on: fn(Vec<Block>, (f64, f64)) -> Room) -> boo
         blocks.chunks_exact(BLOCK_FLOATS).filter_map(|numbers| numbers.try_into().ok()).map(Block::from_floats);
     let blocks: Vec<Block> = blocks.collect();
     fighter_door::COURSE.with(|course| *course.borrow_mut() = blocks.clone().into());
-    keep(Opened::Land { room: Box::new(room_on(blocks, (spawn[0], spawn[1]))), node: None, refusal: None });
+    keep(Opened::Land {
+        room: Box::new(room_on(blocks, (spawn[0], spawn[1]))),
+        node: None,
+        refusal: None,
+        sent: Box::default(),
+    });
     true
 }
 
@@ -162,14 +176,17 @@ pub fn open_node(text: &[u8]) -> bool {
     let mut room = Room::garrisoned(floor, blocks.collect(), section, node.kind, (&node.id, levels));
     room.counters = (node.kind == NodeKind::Social).then(|| node.counters.iter().filter_map(counter_of).collect());
     room.shape_spots = node.shape_spots;
+    room.set_places(node.places);
+    room.set_paths(node.paths);
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource
     {
-        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
+        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default(), &node.resources);
     }
     let refusal = node.locked.then(|| format!("{} is locked", node.name));
-    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal });
+    let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));
+    keep(Opened::Land { room: Box::new(room), node: Some((node.id, node.bounds)), refusal, sent });
     true
 }
 
@@ -234,8 +251,8 @@ pub fn take_foe_asks() {
     });
 }
 
-/// Plays the prologue's wreck in the open room: no Art, the story's sword and shield, and every boarder on one side
-/// and held to a Major; see `Room::story_wreck`.
+/// Plays the prologue's wreck in the open room: no Art, the player waking hurt with no weapon, and every boarder on
+/// one side and held to a Major; see `Room::story_wreck`.
 pub fn story_wreck() {
     with_open(|opened| {
         if let Opened::Land { room, .. } = opened {
@@ -248,14 +265,26 @@ pub fn story_wreck() {
 /// the helm. One of the answers above.
 pub fn input(player: PlayerId, bytes: &[u8]) -> i32 {
     let answer = with_open(|opened| match opened {
-        Opened::Land { room, .. } => match protocol::read_input(bytes) {
+        Opened::Land { room, .. } => match protocol::read_inputs(bytes) {
             Err(_) => NOT_AN_INPUT,
-            Ok(input) => match room.input(player, input) {
-                Ok(()) => TAKEN,
-                Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
-                Err(Refused::BadLook) => NOT_AN_INPUT,
-                Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
-            },
+            // Those it carries from before that the room already had are passed over: they were taken.
+            Ok(inputs) => {
+                let had = room.heard(player).map_or(0, |(received, ..)| received);
+                let fresh = inputs.into_iter().filter(|input| input.sequence > had);
+                let mut answer = TAKEN;
+                for input in fresh {
+                    answer = match room.input(player, input) {
+                        Ok(()) => TAKEN,
+                        Err(Refused::OutOfOrder { .. }) => OUT_OF_ORDER,
+                        Err(Refused::BadLook) => NOT_AN_INPUT,
+                        Err(Refused::NoSuchPlayer) => NO_SUCH_PLAYER,
+                    };
+                    if answer != TAKEN {
+                        break;
+                    }
+                }
+                answer
+            }
         },
         Opened::Sea(sea) => {
             // A boarder's inputs on the captain's deck are a land room's.
@@ -365,30 +394,6 @@ pub unsafe extern "C" fn release(address: *mut u8, length: usize) {
 pub unsafe extern "C" fn room_open(address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
     u32::from(open(unsafe { std::slice::from_raw_parts(address, length) }))
-}
-
-/// Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's deck by its number, its faction's
-/// deck crew for its rank (1 Minor to 5 Boss) at its level. The page's tests and pictures of the fight on its deck
-/// stand on it; the sea opens its own. Answers whether the hull and the rank are ones.
-#[must_use]
-pub fn open_deck(hull: u8, faction: u8, rank: u8, level: u8) -> bool {
-    let (Some(deck), Some(rank)) = (deck_door::hull_decks().get(usize::from(hull)), foes::Rank::from_number(rank))
-    else {
-        return false;
-    };
-    keep(Opened::Land {
-        room: Box::new(room::Room::deck(deck, faction, rank, level.max(1))),
-        node: None,
-        refusal: None,
-    });
-    true
-}
-
-/// Opens a captain's deck as a room alone (`open_deck`); 1 if it opened, 0 if not.
-#[unsafe(no_mangle)]
-pub extern "C" fn room_open_deck(hull: u32, faction: u32, rank: u32, level: u32) -> u32 {
-    let byte = |number: u32| u8::try_from(number).unwrap_or(u8::MAX);
-    u32::from(open_deck(byte(hull), byte(faction), byte(rank), byte(level)))
 }
 
 /// Opens a room on the course over the open sea written at `address`, `length` bytes long; 1 if it opened, 0 if not.
@@ -507,19 +512,14 @@ pub extern "C" fn room_tick() {
     });
 }
 
-/// The snapshot's bytes after the last tick, every player's part in it.
-#[unsafe(no_mangle)]
-pub extern "C" fn room_snapshot() -> u64 {
-    hand_over(snapshot_door::snapshot())
-}
-
-/// Takes the snapshot after the last tick, for `room_snapshot_for` to hand each player their part of it.
+/// Takes the snapshot after the last tick, for `room_snapshot_for` to hand each player theirs.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot_prepare() {
     snapshot_door::prepare();
 }
 
-/// The prepared snapshot's bytes as one player is sent them: at sea only what is theirs of the sea's own part.
+/// The prepared snapshot's bytes as one player is sent them: on land what changed since the one their screen last
+/// showed; at sea only what is theirs of the sea's own part.
 #[unsafe(no_mangle)]
 pub extern "C" fn room_snapshot_for(player: PlayerId) -> u64 {
     hand_over(snapshot_door::snapshot_for(player))

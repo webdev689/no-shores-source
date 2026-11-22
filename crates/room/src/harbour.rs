@@ -168,7 +168,9 @@ pub const JOINED: f64 = 22.0;
 /// A player told where their ship lies once the accounts gave it back: the code, the tick, x and y, and its heading.
 pub const MOORED: f64 = 23.0;
 /// A player told what a piece they gathered held: the code, the tick, the piece, the Vestige's rarity (0 none, else
-/// the gear crate's number and one), and whether it held an Ammo box and an Ammo crate (1 or 0).
+/// the gear crate's number and one), whether it held an Ammo box and an Ammo crate (1 or 0), each ship's material
+/// taken (`ShipMaterial::ALL`'s order), and whether a module was taken (1 or 0): what tells the player a piece that
+/// gave them nothing.
 pub const HELD: f64 = 21.0;
 
 #[cfg(test)]

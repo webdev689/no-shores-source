@@ -1,5 +1,9 @@
 // What Manage shows of the player's Sloop: what the naval rules say it is, its measure, where its voyage stands and
 // its repair. Its power, modules and crew come with the player's gear (`shipGear.ts`).
+import { sloopBuildText } from '../network/localRoom.ts';
+import { fetchRoomWasm } from '../rules/combatRules.ts';
+import { capital } from '../player/gear.ts';
+import { withKey } from './controls.ts';
 
 /** The Sloop's build as the room's door gives it (crates/room-wasm/src/deck_door.rs `sloop_build_json`). */
 export interface SloopBuild {
@@ -48,6 +52,23 @@ export interface ShipPanel {
 
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0;
 
+/** The room's module fetched from `base` (asked again each time, so a new page never runs on an old one) and compiled
+ *  once, and the Sloop's build as its naval rules hold it, read the
+ *  first time it is asked once the module has come; null until then, or when it does not read. */
+export function roomModuleFrom(base: string): {
+  readonly module: Promise<WebAssembly.Module>;
+  readonly sloop: () => SloopBuild | null;
+} {
+  const module = fetchRoomWasm(base)
+    .then((answer) => (answer.ok ? answer.arrayBuffer() : Promise.reject(new Error(`room.wasm: ${answer.status}`))))
+    .then((bytes) => WebAssembly.compile(bytes));
+  let [compiled, built]: [WebAssembly.Module | null, SloopBuild | null | undefined] = [null, undefined];
+  void module.then((made) => (compiled = made)).catch(() => undefined);
+  const sloop = () =>
+    (compiled && built === undefined ? (built = sloopBuildOf(sloopBuildText(compiled))) : built) ?? null;
+  return { module, sloop };
+}
+
 /** The build in the door's JSON, if it is one. */
 export function sloopBuildOf(text: string): SloopBuild | null {
   let value: unknown;
@@ -75,7 +96,6 @@ export function compassOf(heading: number): string {
 }
 
 const metres = (value: number) => `${value.toFixed(1)} m`;
-const capital = (word: string) => word.charAt(0).toUpperCase() + word.slice(1);
 
 /** The panel once its build is read, none before: for its build, its measure and its voyage, if it is under one. */
 export function shipPanelOnceBuilt(
@@ -128,7 +148,7 @@ export function shipPanelOf(
             },
           ]
         : []),
-      ...(kept ? [{ heading: 'Repair', rows: [['Repair the ship  R', kept.repair]] as const }] : []),
+      ...(kept ? [{ heading: 'Repair', rows: [[withKey('Repair the ship', 'repair'), kept.repair]] as const }] : []),
     ],
   };
 }

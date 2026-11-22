@@ -177,7 +177,8 @@ impl Character {
         }
     }
 
-    /// Pledges to a faction at its counter: freely the first time, for Aurem after; reputation with each is kept.
+    /// Pledges to a faction at its counter: freely the first time, for Aurem after; reputation with each is kept, and
+    /// the opening is told of it.
     pub(crate) fn pledge(&mut self, faction: u8, here: Here) -> Result<Option<Done>, Refusal> {
         factions().faction(faction).ok_or(Refusal::NoSuchFaction)?;
         if !here.social {
@@ -191,6 +192,8 @@ impl Character {
             return Err(Refusal::Short);
         }
         self.materials.aurem -= cost;
+        // Told before the pledge changes the quest walked: the opening's last goal is this pledge.
+        self.tell(&crate::quests::Event::Pledge);
         self.allegiance = std::mem::take(&mut self.allegiance).kept();
         self.allegiance.pledge = faction;
         Ok(None)

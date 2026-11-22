@@ -38,6 +38,8 @@ export interface IslePlan {
   /** Its guards' camp, on an isle; null on a cove. */
   readonly camp: Point2 | null;
   readonly wrecks: readonly (readonly [x: number, y: number, lies: number])[];
+  /** Where its resource nodes stand: the resource of the island whose waters it lies in. */
+  readonly nodes: readonly Point2[];
   readonly ring: readonly Point2[];
   readonly placements: readonly IslePlacement[];
   /** The blocks the room stands the modules' solids as; empty from a room that does not send them. */
@@ -121,6 +123,7 @@ export function readIslePlan(text: string): IslePlan {
       'wrecks',
       (each) => numbers(each, 3, 'a wreck') as unknown as readonly [number, number, number],
     ),
+    nodes: plan.nodes === undefined ? [] : list(plan.nodes, 'nodes', (each) => point(each, "a node's place")),
     ring: list(plan.ring, 'ring points', (each) => point(each, 'a ring point')),
     placements,
     blocks:

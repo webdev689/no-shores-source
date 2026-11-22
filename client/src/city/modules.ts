@@ -13,6 +13,7 @@ export type ModuleMesh = {
 type Listed = {
   readonly modules: readonly {
     readonly size: readonly number[];
+    readonly parts?: readonly (readonly number[])[];
     readonly groups: readonly { readonly mesh: string }[];
   }[];
 };
@@ -23,6 +24,12 @@ let loading: Promise<void> | null = null;
 /** A module's own height, metres: a solid of it stands stretched up to its own size's. */
 export function moduleHeight(module: number): number {
   return (manifest as Listed).modules[module]?.size[2] ?? 1;
+}
+
+/** A module's parts, the boxes a body runs into, in its own frame (x east, y south, z up from its foot): each
+ *  `[west, north, low, east, south, high]`. None for a module with none listed. */
+export function moduleParts(module: number): readonly (readonly number[])[] {
+  return (manifest as Listed).modules[module]?.parts ?? [];
 }
 
 /** A group's mesh, once loaded. */

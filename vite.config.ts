@@ -102,6 +102,8 @@ function worldFiles(): Plugin {
 export default defineConfig({
   root: 'client',
   plugins: [worldFiles()],
+  // The game's own thread loads its parts as it needs them, so its workers are modules that can be split.
+  worker: { format: 'es' },
   build: {
     outDir: '../dist',
     emptyOutDir: true,

@@ -8,30 +8,36 @@
 // forge's R2 bucket answers CORS for http://localhost:5173 alone: run `npx vite --port 5173` first, or, where another
 // checkout holds 5173, Vite on any port with "anyPort": true, and the driver fetches R2 for the page.
 //
-// steps.json: { "url": "...", "size": [w, h], "scale": deviceScaleFactor (1 unless given), "routes":
-// { "<url part>": "<local file>" }, "anyPort": true, "init": "js run before the page's own, e.g. a shifted Date.now
-// for the world's hour", "steps": [ ... ] }, each step one of
+// steps.json: { "url": "...", "size": [w, h], "routes": { "<url part>": "<local file>" }, "anyPort": true, "init": "js
+// run before the page's own, e.g. a shifted Date.now for the world's hour", "steps": [ ... ] }, each step one of
 // { "wait": seconds }, { "waitFor": "text on the page" }, { "key": "Escape" }, { "click": [x, y] },
 // { "wheel": [x, y, deltaY, notches] }, { "hold": ["ArrowLeft", seconds] }, { "clickText": "Return to ship" },
-// { "eval": "js" }, { "viewport": [w, h] } (a small one walks a long way faster), { "shot": "out.png" }. A held key
-// acts at the page's slow headless frames: an arrow turns the player about 0.03 rad a second. { "frames": n } waits
-// until the page has drawn n more frames: read what a frame writes (a panel, a note) only after one has drawn. Every
-// frame is paced from the first: the page's next animation frame waits until the GPU has done the last one's work, so
-// SwiftShader never builds a backlog that a picture then waits minutes behind. The console's errors and warnings are
-// printed, each the first time it is said, and so is every shader that fails to compile, with its line: WebGPU
-// reports a refused frame (a buffer too small for its binding) and a broken shader only as warnings, and a refused
-// frame repeats every frame. The game takes one wheel notch a frame, so a wheel step sends its notches (1 unless said)
-// 0.1 s apart: from the arrival's 4.5 m, about 20 notches in (deltaY < 0) reach first person. To arrive in a camera
-// instead, the address asks for it as it asks for a spawn: `&view=first` or `&view=third,<metres>`. Many views in one
-// load (a page takes minutes to load), offline behind the same `&spawn=` flag: { "views": [[east, south, bearing,
-// "first" | "third,<m>[,<degrees down>]", "name"], ...] or "<list.json>", "zone": "<key of the list>", "into":
-// "<folder>", "settle": seconds } arrives the body at each view in turn, inside the node the page loaded, waits
-// `settle` seconds (the ground and the sky come in) and writes `<into>/<name>.png`, or `<into>/<number>.png` without a
-// name. A view outside the node is said to be refused and skipped.
+// { "eval": "js" }, { "shot": "out.png" }. A held key acts at the page's slow headless frames: an arrow turns the
+// player about 0.03 rad a second. { "frames": n } waits until the page has drawn n more frames: read what a frame
+// writes (a panel, a note) only after one has drawn. Every frame is paced from the first: the page's next animation
+// frame waits until the GPU has done the last one's work, so SwiftShader never builds a backlog that a picture then
+// waits minutes behind. The console's errors are printed, and so is every shader that fails to compile: WebGPU
+// reports those only as warnings, so a broken shader would otherwise draw nothing and say nothing; so is every WebGPU
+// validation error, which loses a frame without a word. The game takes one
+// wheel notch a frame, so a wheel step sends its notches (1 unless said) 0.1 s apart: from the arrival's 4.5 m, about
+// 20 notches in (deltaY < 0) reach first person. To arrive in a camera instead, the address asks for it as it asks
+// for a spawn: `&view=first` or `&view=third,<metres>`. Many views in one load (a page takes minutes to load),
+// offline behind the same `&spawn=` flag: { "views": [[east, south, bearing, "first" | "third,<m>[,<degrees down>]",
+// "name"], ...] or "<list.json>", "zone": "<key of the list>", "into": "<folder>", "settle": seconds } arrives the
+// body at each view in turn, inside the node the page loaded, waits `settle` seconds (the ground and the sky come in)
+// and writes `<into>/<name>.png`, or `<into>/<number>.png` without a name. A view outside the node is said to be
+// refused and skipped.
 const { chromium } = require('playwright');
 const { mkdirSync, readFileSync } = require('node:fs');
 
 const SHADER_ERRORS = () => {
+  // A validation error (a destroyed buffer drawn, a bad binding) loses the frame without a word: say each one.
+  const requestDevice = GPUAdapter.prototype.requestDevice;
+  GPUAdapter.prototype.requestDevice = async function (descriptor) {
+    const device = await requestDevice.call(this, descriptor);
+    device.addEventListener('uncapturederror', (event) => console.error(`WebGPU: ${event.error.message}`));
+    return device;
+  };
   const create = GPUDevice.prototype.createShaderModule;
   GPUDevice.prototype.createShaderModule = function (descriptor) {
     const made = create.call(this, descriptor);
@@ -129,13 +135,9 @@ async function main() {
     args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader', '--use-angle=swiftshader'],
   });
   const [width, height] = plan.size ?? [1280, 800];
-  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: plan.scale ?? 1 });
-  const said = new Set();
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
   page.on('console', (message) => {
-    const [kind, text] = [message.type(), message.text().slice(0, 300)];
-    if ((kind !== 'error' && kind !== 'warning') || said.has(text)) return;
-    said.add(text);
-    console.log(`console ${kind}:`, text);
+    if (message.type() === 'error') console.log('console:', message.text().slice(0, 300));
   });
   page.on('pageerror', (error) => console.log('page error:', error.message.slice(0, 300)));
   for (const [part, file] of Object.entries(plan.routes ?? {}))
@@ -169,7 +171,6 @@ async function main() {
       await page.keyboard.up(step.hold[0]);
     }
     else if (step.click) await page.mouse.click(step.click[0], step.click[1]);
-    else if (step.viewport) await page.setViewportSize({ width: step.viewport[0], height: step.viewport[1] });
     else if (step.wheel) {
       await page.mouse.move(step.wheel[0], step.wheel[1]);
       for (let notch = 0; notch < (step.wheel[3] ?? 1); notch++) {

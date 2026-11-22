@@ -135,9 +135,20 @@ pub enum Ask {
     BuyCosmetic {
         cosmetic: u16,
     },
-    /// Buys one of Shape's pieces of the week, by its place among them: at his place, while he is here.
+    /// Buys one of Shape's pieces of the week, by its place among them and the named piece shown there (`shown`, its
+    /// place in the catalogue's items): at his place, while he is here, and only while that piece stands there.
     BuyFromShape {
         ware: u8,
+        shown: u32,
+    },
+    /// Speaks with a keeper, a house's by its faction's number or one of `quests::KEEPERS`: at their counter.
+    Speak {
+        keeper: u8,
+    },
+    /// Owns one of an Art's fragments by its place, for a choice a house's road gave: anywhere.
+    ChooseFragment {
+        art: u8,
+        fragment: u8,
     },
 }
 
@@ -210,6 +221,12 @@ pub enum Refusal {
     AshoreFull = 133,
     /// The officer offered is in the crew already.
     OfficerKept = 134,
+    /// No keeper has that number.
+    NoSuchKeeper = 135,
+    /// No goal of the player's task asks a word with that keeper.
+    NothingToSay = 136,
+    /// No fragment choice waits for that Art.
+    NoChoice = 137,
 }
 
 /// What an ask did, when it did more than its ask says.
@@ -269,11 +286,15 @@ impl Character {
             Ask::BuyFragment { art, fragment } => self.buy_fragment(art, fragment, here),
             Ask::WearCosmetic { cosmetic } => self.wear_cosmetic(cosmetic),
             Ask::BuyCosmetic { cosmetic } => self.buy_cosmetic(cosmetic, here),
-            Ask::BuyFromShape { ware } => self.buy_from_shape(ware, here),
+            Ask::BuyFromShape { ware, shown } => self.buy_from_shape(ware, shown, here),
+            Ask::Speak { keeper } => self.speak(keeper, here),
+            Ask::ChooseFragment { art, fragment } => self.choose_fragment(art, fragment),
         }
         .map(|done| {
-            // A level reached or a piece fully upgraded earns its emblem as it happens.
+            // A level reached or a piece fully upgraded earns its emblem as it happens; a fragment choice left with
+            // nothing to own is paid.
             self.earn_due();
+            self.settle_choices();
             done.unwrap_or(Done::Done)
         })
     }

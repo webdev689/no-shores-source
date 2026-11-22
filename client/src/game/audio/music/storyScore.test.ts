@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MOOD_ROLES } from './directorLaw.ts';
-import { saltmereScore } from './saltmereScore.ts';
+import { socialPieces } from './socialPieces.ts';
 import { type Song, songSeconds } from './score.ts';
 import { storyScores } from './storyScore.ts';
 
@@ -31,7 +31,7 @@ test("on the shore the theme's sixth is raised, and the song ends on D, which le
   assert.deepEqual(classes(story.shore, FLUTE), RAISED);
   const bass = played(story.shore, CONTRABASS);
   assert.equal((bass[bass.length - 1]?.note ?? 0) % 12, 2);
-  assert.equal((played(saltmereScore(), 32)[0]?.note ?? 0) % 12, 7, "Saltmere's bass opens on G");
+  assert.equal((played(socialPieces()[0]!, 32)[0]?.note ?? 0) % 12, 7, "Saltmere's bass opens on G");
 });
 
 test("the ram holds the Boarding's half step, E against F, swelling bar by bar, and plays once", () => {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Body } from '../rules/movementRules.ts';
 import { plainDress } from './dressing.ts';
-import { climbOf, ownColours, shownDress, strokesAfter } from './walker.ts';
+import { climbOf, drawnInFight, ownColours, shownDress, strokesAfter } from './walker.ts';
 
 test('a stroke is counted when a swing begins, and again when the next begins within a frame', () => {
   assert.equal(strokesAfter(0, null, null), 0, 'no swing');
@@ -60,4 +60,19 @@ test('the first person is told the faction whose colour each part wears, by the 
     hair: null,
   } as const;
   assert.deepEqual(ownColours(outfit), { hands: 'stormcallers', right: 'stormcallers' });
+});
+
+test('the weapon is put away while a drink lasts, and back in hand as it ends', () => {
+  // Frame by frame in a fight, the weapon out: a swing, two frames drinking, then a blow's flinch that cut it short.
+  const shown: boolean[] = [];
+  let [kept, drank] = [true, false];
+  for (const drinking of [false, true, true, false, false]) {
+    kept = drawnInFight({ holding: true, kept, worn: true, drinking, drank });
+    drank = drinking;
+    shown.push(kept);
+  }
+  assert.deepEqual(shown, [true, false, false, true, true]);
+  const busy = { holding: true, kept: false, worn: true, drinking: false, drank: false };
+  assert.equal(drawnInFight(busy), false, 'busy in the rules, the hands keep what they held');
+  assert.equal(drawnInFight({ ...busy, kept: true, holding: false }), false, 'on a wall, worn');
 });

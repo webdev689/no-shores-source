@@ -2,21 +2,26 @@ import type { FightEvent } from '../network/messages.ts';
 import { rayHit } from '../player/playerCamera.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { Block } from '../rules/movementRules.ts';
-import { Compass, headingOf } from '../plus/compass.ts';
+import { PLATES } from '../plus/barLayout.ts';
+import { COMPASS, headingOf } from '../plus/compass.ts';
+import { compassNode } from './compassNode.ts';
+import type { Child, Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
 import { AbilityBar, type AbilityState, type ArtPictures } from './abilityBar.ts';
-import { AmmoCounter } from './ammoCounter.ts';
-import { edgeArrow, parryCue, threatens } from './cues.ts';
+import { ammoNode } from './ammoCounter.ts';
+import { animaEdgeNode } from './animaMoment.ts';
+import { EVENT, edgeArrow, parryCue, threatens } from './cues.ts';
 import { FoeBars, type MarkedFoe, type PlateViewing } from './foeBars.ts';
 import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
+import { arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
-import { wearFightSheet } from './hudSheet.ts';
-import { element, setStyle, showNode } from '../plus/meter.ts';
 import { cameraOf, landBlocks, SIGHT_SKIN_M } from './plateSight.ts';
 import type { Cards } from '../player/cards.ts';
 import { ItemPictures } from '../player/itemPictures.ts';
 import { UNABLE } from './casting.ts';
+import { CORNER } from '../plus/barFrame.ts';
 import { type HudLayout, hudLayout } from './hudLayout.ts';
 import { Crosshair, type CrosshairFrame } from './reticle.ts';
 import { Vitals } from './vitals.ts';
@@ -59,6 +64,8 @@ export interface HudFrame {
   readonly ammoFull?: boolean;
   /** The loadouts as the weapons' rows show them; none hides them. */
   readonly arms?: ArmsShown | null;
+  /** Where the houses' roads' next goal stands in the room (x, y), which the compass marks; none for none. */
+  readonly questAt?: readonly [number, number] | null;
 }
 
 /** A foe winding up an iron blow this near is told to be dodged. */
@@ -140,105 +147,69 @@ export function blockedBy(
   return length > SIGHT_SKIN_M && rayHit(from, to, blocks) < 1 - SIGHT_SKIN_M / length;
 }
 
-/** The fight's display over the canvas, which lays its own sheet on the page and dresses `root` in it. */
+/** The fight's display over the view, kept each frame from a `HudFrame` and drawn as a layer of the interface. */
 export class Hud {
-  private readonly root: HTMLElement;
-  private readonly vitals: Vitals;
-  private readonly compass: Compass;
-  private readonly target: FoePlate;
-  private readonly mark: HTMLElement;
-  private readonly over: HTMLElement;
-  private readonly hurt: HTMLElement;
-  private readonly veil: HTMLElement;
-  private readonly crosshair: Crosshair;
-  private readonly ammo: AmmoCounter;
-  private readonly foeBars: FoeBars;
+  private readonly vitals = new Vitals();
+  private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
+  private readonly foeBars = new FoeBars();
+  private readonly crosshair = new Crosshair();
   private readonly foeTarget = new FoeTarget();
-  private readonly words: Words;
+  private readonly words = new Words();
   /** The side the next number with no stroke to follow is thrown to. */
   private nextSide = 1;
-  private readonly column: HTMLElement;
-  private readonly arms: HTMLElement;
   private readonly abilities: AbilityBar | null;
   private readonly weapons: WeaponRows;
-  private layout: HudLayout | null = null;
-  /** Where the vitals and the Arts and weapons stand, read from the page once and again only after they or the view
-   *  change size (`viewed`, the view's last), never each frame. */
-  private corners: { readonly vitals: Box | null; readonly under: readonly Box[] } | null = null;
-  private readonly beside: readonly HTMLElement[];
-  private viewed: readonly [number, number] = [0, 0];
-  private readonly arrows = new Map<number, HTMLElement>();
-  private readonly rings = new Map<number, HTMLElement>();
+  private layout: HudLayout = hudLayout(0, 0);
+  /** The page's own pieces beside the display (the game's hints), in its CSS pixels, which the arrows keep clear of. */
+  private readonly beside: () => readonly Box[];
   /** The foes whose iron wind-up the player has been told of, until it ends. */
   private readonly ironTold = new Set<number>();
   private staminaFlash = 0;
   private hurtFlash = 0;
+  /** What the last frame showed: its view, the veil, the shots, the compass's heading, the lock's mark, the target's share shown, the parry rings and the arrows at the edge. */
+  private view = { width: 0, height: 0 };
+  private veil: ReturnType<typeof veilOf> = null;
+  private ammo: { readonly ammo: number | null | undefined; readonly most: number | null } = { ammo: null, most: null };
+  private heading: number | null = null;
+  /** The quest's mark on the compass and where the player stands, as the last frame had them. */
+  private quest: { readonly at: readonly [number, number]; readonly from: readonly [number, number] } | null = null;
+  private lockSpot: { readonly x: number; readonly y: number } | null = null;
+  private targetShare = 0;
+  private rings: readonly {
+    readonly x: number;
+    readonly y: number;
+    readonly span: number;
+    readonly kind: 'ring' | 'now' | 'iron';
+  }[] = [];
+  private edges: readonly { readonly x: number; readonly y: number; readonly angle: number }[] = [];
 
   /** With `pictures`, the game's pictures of an Art (`abilityPictures`), the Art's abilities stand at the bottom left;
-   *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces in `beside` (the game's
-   *  hints) are kept clear of as the display's corners are. */
+   *  with `forge`, the weapons beside them are drawn as its pictures. The page's own pieces `beside` answers (the game's
+   *  hints, CSS pixels) are kept clear of as the display's corners are. */
   constructor(
-    root: HTMLElement,
     pictures: ((art: number) => ArtPictures | null) | null = null,
     forge: Cards | null = null,
-    beside: readonly HTMLElement[] = [],
+    beside: () => readonly Box[] = () => [],
   ) {
-    wearFightSheet(root.ownerDocument);
-    root.classList.add('fight-hud');
-    this.root = root;
     this.beside = beside;
-    // Back to front: what stands over the world, then the compass's column at the top over it (the compass, the boss
-    // bar, the target's plate), then the veil over all.
-    this.hurt = element('div', 'hurt', root);
-    this.vitals = new Vitals(root);
-    this.arms = element('div', 'arms', root);
-    this.abilities = pictures && new AbilityBar(this.arms, pictures);
-    this.weapons = new WeaponRows(this.arms, forge && new ItemPictures(forge));
-    this.mark = element('div', 'mark', root);
-    this.over = element('div', 'over', root);
-    this.crosshair = new Crosshair(root);
-    this.ammo = new AmmoCounter(root);
-    this.column = element('div', 'compass-column', root);
-    this.compass = new Compass(this.column);
-    this.foeBars = new FoeBars(root, this.over, this.column);
-    this.target = new FoePlate(this.column, 'target', { poise: true, remembers: 'whole' });
-    this.words = new Words(this.over);
-    this.veil = element('div', 'veil', root);
-    if (typeof ResizeObserver !== 'undefined') {
-      const resized = new ResizeObserver(() => (this.corners = null));
-      for (const node of [this.vitals.root, this.arms, ...beside]) resized.observe(node);
-    }
+    this.abilities = pictures && new AbilityBar(pictures);
+    this.weapons = new WeaponRows(forge && new ItemPictures(forge));
   }
 
-  /** Lays the corner pieces for a view `width` by `height`, only when that changes what they need. */
-  private lay(width: number, height: number): void {
-    // Any change of the view's size may move the corners, even one that lays nothing again.
-    if (width !== this.viewed[0] || height !== this.viewed[1]) [this.viewed, this.corners] = [[width, height], null];
-    const next = hudLayout(width, height);
-    const was = this.layout;
-    const same = was?.wide === next.wide && was.zoom === next.zoom && was.length === next.length;
-    if (same && was?.compassTop === next.compassTop) return;
-    this.layout = next;
-    this.root.classList.toggle('wide', next.wide);
-    this.root.classList.toggle('double', next.zoom === 2);
-    this.root.classList.toggle('stacked', next.stacked);
-    // The column's own pixels: past 1440p it stands zoomed, as the corners do.
-    this.column.style.top = next.stacked ? `${next.compassTop / next.zoom}px` : '';
-    this.vitals.lay(next.length, next.wide);
-    this.weapons.lay(next.wide, next.zoom);
+  /** Whether a Boss's bar stands under the compass. */
+  get bossed(): boolean {
+    return this.foeBars.bossShown !== null;
   }
 
   update(frame: HudFrame, seconds: number): void {
     const { own } = frame;
-    this.lay(frame.width, frame.height);
+    this.view = { width: frame.width, height: frame.height };
+    this.layout = hudLayout(frame.width, frame.height);
+    this.vitals.lay(this.layout.length, this.layout.wide);
+    this.weapons.lay(this.layout.wide, this.layout.zoom);
     this.flash(frame, seconds);
-    const veil = veilOf(frame);
-    showNode(this.veil, !!veil);
-    if (veil) {
-      if (this.veil.textContent !== veil.words) this.veil.textContent = veil.words;
-      this.veil.classList.toggle('link', veil.link);
-    }
-    this.ammo.update(frame.ammo, frame.ammoMost);
+    this.veil = veilOf(frame);
+    this.ammo = { ammo: frame.ammo, most: frame.ammoMost ?? null };
     const overHead = (view: FighterView) => {
       const point = [view.x, view.y, view.z + PLATE_OVER_M] as const;
       const spot = project(frame.matrix, point, frame.width, frame.height);
@@ -253,7 +224,8 @@ export class Hud {
       fought: (id) => this.foeTarget.foughtShare(id),
       locked: lock,
     };
-    if (viewing.camera) this.compass.update(headingOf(viewing.camera.forward));
+    this.heading = viewing.camera ? headingOf(viewing.camera.forward) : this.heading;
+    this.quest = frame.questAt && own ? { at: frame.questAt, from: [own.x, own.y] } : null;
     const boss = this.foeBars.update(frame.foes, own, overHead, viewing, seconds);
     const under = frame.foes.find((foe) => foe.id === this.foeBars.under)?.view ?? null;
     this.crosshair.update(frame.crosshair ?? null, own, under, frame.events, frame.player, seconds);
@@ -262,45 +234,35 @@ export class Hud {
     if (frame.abilities) this.abilities?.update(frame.abilities, seconds, UNABLE.has(own?.action.kind ?? ''));
     else this.abilities?.hide();
     this.weapons.update(frame.arms ?? { gear: null, loadout: 0, drawn: false, dress: null }, own, seconds);
-    this.pointAtThreats(frame);
-    this.ringParries(frame);
+    this.edges = this.threats(frame);
+    this.rings = this.parries(frame);
     this.floatWords(frame, seconds);
   }
 
   /** Over each foe at a blow the player can parry, a ring closing onto a fixed one as the blow lands, gold once a
    *  press would parry it; over an iron one, a red mark with no ring. */
-  private ringParries(frame: HudFrame): void {
-    const shown = new Set<number>();
-    for (const { id, view } of frame.foes) {
+  private parries(frame: HudFrame): Hud['rings'] {
+    return frame.foes.flatMap(({ view }) => {
       const cue = parryCue(view, frame.player, frame.parryOpen ?? true);
       const spot = cue && project(frame.matrix, [view.x, view.y, view.z + RING_HEIGHT], frame.width, frame.height);
-      if (!cue || !spot) continue;
-      shown.add(id);
-      const ring = this.rings.get(id) ?? element('div', 'parry', this.over);
-      this.rings.set(id, ring);
+      if (!cue || !spot) return [];
       const iron = cue === 'iron';
-      ring.classList.toggle('iron', iron);
-      ring.classList.toggle('now', !iron && cue.now);
       const span = iron ? RING_CLOSED : RING_CLOSED + (RING_WIDEST - RING_CLOSED) * cue.share;
-      setStyle(ring, 'transform', `translate(${spot.x}px, ${spot.y}px)`);
-      setStyle(ring, '--span', `${span}px`);
-    }
-    for (const [id, ring] of this.rings) {
-      if (shown.has(id)) continue;
-      ring.remove();
-      this.rings.delete(id);
-    }
+      return [{ ...spot, span, kind: iron ? 'iron' : cue.now ? 'now' : 'ring' } as const];
+    });
   }
 
-  /** The stamina bar flashes for a swing or a dodge asked with no stamina; the screen's edge, red, for a blow taken. */
+  /** The stamina bar flashes for a swing or a dodge asked with no stamina; the screen's edge, red, for a blow taken
+   *  (never for a drink's heal). */
   private flash(frame: HudFrame, seconds: number): void {
     const { own } = frame;
     if (frame.pressed && own && own.stamina <= 0) this.staminaFlash = FLASH_SECONDS;
-    const struck = frame.events.some((event) => event.defender === frame.player && event.amount > 0);
+    const struck = frame.events.some(
+      (event) => event.defender === frame.player && event.amount > 0 && event.kind !== EVENT.healed,
+    );
     if (struck) this.hurtFlash = FLASH_SECONDS;
     this.staminaFlash = Math.max(0, this.staminaFlash - seconds);
     this.hurtFlash = Math.max(0, this.hurtFlash - seconds);
-    setStyle(this.hurt, 'opacity', String(this.hurtFlash / FLASH_SECONDS));
   }
 
   /** The soft lock's mark at its foe's chest, and the target's plate at the top as much as it shows (`chosen`),
@@ -313,57 +275,24 @@ export class Hud {
   ): void {
     const lock = frame.own?.target ?? null;
     const locked = frame.foes.find((each) => each.id === lock);
-    const spot =
-      locked && project(frame.matrix, [locked.view.x, locked.view.y, locked.view.z + 1.1], frame.width, frame.height);
-    showNode(this.mark, !!spot);
-    if (spot) setStyle(this.mark, 'transform', `translate(${spot.x}px, ${spot.y}px)`);
+    this.lockSpot =
+      (locked &&
+        project(frame.matrix, [locked.view.x, locked.view.y, locked.view.z + 1.1], frame.width, frame.height)) ??
+      null;
     const foe = chosen && chosen.id !== boss?.id ? frame.foes.find((each) => each.id === chosen.id) : undefined;
-    showNode(this.target.root, !!foe);
     this.target.keep(new Set(frame.foes.map((each) => each.id)));
-    if (!foe || !chosen) return;
-    this.target.show(foe, seconds);
-    setStyle(this.target.root, 'opacity', chosen.share < 1 ? chosen.share.toFixed(2) : '');
+    this.targetShare = foe && chosen ? chosen.share : 0;
+    if (foe) this.target.show(foe, seconds);
   }
 
-  /** An arrow at the screen's edge toward each foe off the screen at a blow or a draw meant for the player, until it
-   *  ends, standing below the vitals and above the Arts and weapons where it would fall on them. */
-  private pointAtThreats(frame: HudFrame): void {
-    const shown = new Set<number>();
-    for (const { id, view } of frame.foes) {
-      if (!threatens(view, frame.player)) continue;
+  /** Where an arrow at the screen's edge stands toward each foe off the screen at a blow or a draw meant for the
+   *  player, until it ends. */
+  private threats(frame: HudFrame): Hud['edges'] {
+    return frame.foes.flatMap(({ view }) => {
+      if (!threatens(view, frame.player)) return [];
       const clip = clipOf(frame.matrix, [view.x, view.y, view.z + 1.1]);
-      const edge = edgeArrow(clip, frame.width, frame.height, ARROW_INSET);
-      if (!edge) continue;
-      this.corners ??= this.cornerBoxes();
-      const { vitals, under } = this.corners;
-      // Below the vitals; above what stands from the foot, the lowest first, so a move past one lands clear of the next.
-      let spot = vitals ? clearOf(edge, vitals, ARROW_CLEAR, true) : edge;
-      for (const box of under) spot = clearOf(spot, box, ARROW_CLEAR);
-      shown.add(id);
-      const arrow = this.arrows.get(id) ?? element('div', 'arrow', this.over);
-      this.arrows.set(id, arrow);
-      setStyle(arrow, 'transform', `translate(${spot.x}px, ${spot.y}px) rotate(${spot.angle}rad)`);
-    }
-    for (const [id, arrow] of this.arrows) {
-      if (shown.has(id)) continue;
-      arrow.remove();
-      this.arrows.delete(id);
-    }
-  }
-
-  /** Where the vitals stand, then the Arts and weapons and the page's pieces beside the display from the foot up, read
-   *  from the page in the display's own pixels; a piece shown nowhere (an empty box) is left out. */
-  private cornerBoxes(): { readonly vitals: Box | null; readonly under: readonly Box[] } {
-    const origin = this.root.getBoundingClientRect();
-    const boxOf = (node: HTMLElement): Box | null => {
-      const box = node.getBoundingClientRect();
-      if (box.width === 0 && box.height === 0) return null;
-      const [left, top] = [box.left - origin.left, box.top - origin.top];
-      return { left, top, right: left + box.width, bottom: top + box.height };
-    };
-    const under = [this.arms, ...this.beside].flatMap((node) => boxOf(node) ?? []);
-    under.sort((one, other) => other.bottom - one.bottom);
-    return { vitals: boxOf(this.vitals.root), under };
+      return edgeArrow(clip, frame.width, frame.height, ARROW_INSET) ?? [];
+    });
   }
 
   /** The events' words, each where its blow met the body, thrown the way the stroke went, and clear of the plates (in
@@ -418,5 +347,102 @@ export class Hud {
     if (said.amount === undefined) return 0;
     this.nextSide = -this.nextSide;
     return this.nextSide;
+  }
+
+  /** The display as the last frame left it, over the whole view, letting the pointer through to the world: what
+   *  stands over the world, then the compass's column at the top over it (the compass, the boss bar, the target's
+   *  plate), then the veil over all. The arrows keep clear of the vitals and the Arts and weapons where `ui` last laid
+   *  them. */
+  node(ui: Interface): Node {
+    const { zoom, stacked, compassTop } = this.layout;
+    const room = this.view.width / zoom;
+    const arms = this.armsNode();
+    const column: Node = {
+      direction: 'column',
+      alignX: 'center',
+      gap: COMPASS.gap * zoom,
+      width: 'grow',
+      float: { to: 'screen', y: stacked ? compassTop : COMPASS.top * zoom, z: 1 },
+      children: [
+        this.heading !== null &&
+          compassNode(
+            Math.min(COMPASS.width, COMPASS.share * room) * zoom,
+            this.heading,
+            zoom,
+            this.quest?.from,
+            [],
+            this.quest?.at ?? null,
+          ),
+        this.foeBars.bossNode(Math.round(Math.min(PLATES.boss.width, PLATES.boss.share * room) * zoom), zoom),
+        this.targetShare > 0 && this.targetNode(room, zoom),
+      ],
+    };
+    return {
+      width: 'grow',
+      height: 'grow',
+      through: true,
+      children: [
+        hurtNode(this.hurtFlash / FLASH_SECONDS),
+        this.vitals.node(zoom),
+        arms,
+        this.lockSpot && lockMarkNode(this.lockSpot),
+        ...this.foeBars.overheadNodes(),
+        ...this.rings.map((ring) => parryNode(ring, ring.span, ring.kind)),
+        ...this.arrows(ui).map(arrowNode),
+        ...this.words.nodes(),
+        this.crosshair.node(),
+        ammoNode(this.ammo.ammo, this.ammo.most),
+        column,
+        this.veil && veilNode(this.veil),
+        animaEdgeNode(),
+      ],
+    };
+  }
+
+  private targetNode(room: number, zoom: number): Child {
+    const made = this.target.node({
+      kind: 'target',
+      width: Math.round(Math.min(340, PLATES.boss.share * room) * zoom),
+      zoom,
+    });
+    return made && (this.targetShare < 1 ? { ...made, opacity: this.targetShare } : made);
+  }
+
+  /** The Art's abilities and the weapons at the bottom left, the weapons over the Arts in a view too narrow for both. */
+  private armsNode(): Child {
+    const { zoom, wide, stacked } = this.layout;
+    const abilities = this.abilities?.node(wide, zoom) ?? null;
+    const weapons = this.weapons.node();
+    if (!abilities && !weapons) return null;
+    return {
+      id: 'fight-arms',
+      direction: stacked ? 'column' : 'row',
+      alignY: 'end',
+      alignX: 'start',
+      gap: (wide ? 20 : 14) * zoom,
+      float: { to: 'screen', at: [0, 1], anchor: [0, 1], x: CORNER.side * zoom, y: -CORNER.foot * zoom, z: 1 },
+      children: stacked ? [weapons, abilities] : [abilities, weapons],
+    };
+  }
+
+  /** The arrows to threats off the screen, each standing below the vitals and above the Arts and weapons (and the
+   *  page's pieces beside the display) where it would fall on them. */
+  private arrows(ui: Interface): readonly { readonly x: number; readonly y: number; readonly angle: number }[] {
+    if (this.edges.length === 0) return [];
+    const sides = (box: { x: number; y: number; width: number; height: number } | null): Box | null =>
+      box && box.width + box.height > 0
+        ? { left: box.x, top: box.y, right: box.x + box.width, bottom: box.y + box.height }
+        : null;
+    const vitals = sides(ui.boxOf('fight-vitals'));
+    // Above what stands from the foot, the lowest first, so a move past one lands clear of the next.
+    const under = [sides(ui.boxOf('fight-arms')), ...this.beside()].flatMap((box) =>
+      box && box.right > box.left && box.bottom > box.top ? [box] : [],
+    );
+    under.sort((one, other) => other.bottom - one.bottom);
+    return this.edges.map((edge) => {
+      let spot = vitals ? clearOf(edge, vitals, ARROW_CLEAR, true) : edge;
+      for (const box of under) spot = clearOf(spot, box, ARROW_CLEAR);
+      return spot;
+    });
   }
 }

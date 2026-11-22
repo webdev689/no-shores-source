@@ -1,12 +1,15 @@
-// The menu's pages that need no gear: Journal and Guild, still to come and saying so; the Sloop's papers as Manage
-// shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the account and the
-// volumes of the interface and the world.
+// The menu's pages that need no gear, drawn by the game: Journal and Guild, still to come and saying so; the Sloop's
+// papers as Manage shows them (`shipPages.ts` puts its power and crew beside them); and Settings, which keeps the
+// account and the volumes of the interface and the world. And the parts they share with the Roster: a heading over
+// its rule, a faint hint and an answer.
 
-import { make } from '../editor/dom.ts';
-import type { AccountLink } from '../network/accounts.ts';
-import { ROLES } from '../plus/kit.ts';
-import { accountPanel } from './accountTab.ts';
-import { pressOf } from './gearDom.ts';
+import type { Child, Node } from '../ui/node.ts';
+import { PAGE, type Page } from '../ui/page.ts';
+import { slider } from '../ui/controls.ts';
+import type { AccountPanel } from './accountTab.ts';
+import { drawings, ruleUnder, strip } from './hudParts.ts';
+import { INK, type Sizes, words } from './gearNodes.ts';
+import type { PlainContext } from './menuPage.ts';
 import type { ShipPanel } from './shipPanel.ts';
 import { soundCredits } from '../soundSamples.ts';
 import {
@@ -21,141 +24,234 @@ import {
   worldVolume,
 } from './uiSounds.ts';
 
+/** A press's padding on these pages: its words' line and the room round them, as the kit's presses stand. */
+export const PRESS_PADDING = [10, 14] as const;
+
+/** A rule as the kit lays one under a part: a dark line, the groove's light under it. */
+export const RULE: Node = {
+  width: 'grow',
+  height: 2,
+  draw: drawings(strip(0, 1, 'rgba(5,6,8,0.6)'), strip(1, 1, 'rgba(163,152,128,0.13)')),
+};
+
+/** A part's heading: its name in faint capitals spaced wide over a rule, at `size`, and anything beside it at the
+ *  right. */
+export function headingNode(said: string, beside: Child = null, size = 1): Node {
+  return {
+    width: 'grow',
+    direction: 'column',
+    children: [
+      {
+        width: 'grow',
+        padding: [0, 0, 4, 0],
+        alignY: 'center',
+        draw: ruleUnder(),
+        children: [{ width: 'grow', ...words(said.toUpperCase(), size, INK.faint, { tracking: 3 }) }, beside],
+      },
+      { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.13)' },
+    ],
+  };
+}
+
+/** Faint words, wrapped to the room. */
+export const hintNode = (said: string, more: Partial<Node> = {}): Node => ({
+  maxWidth: 880,
+  ...more,
+  text: { words: said, colour: INK.faint },
+});
+
+/** Words as a paragraph stands them, an 11 px margin over and under. */
+export const paragraph = (node: Node): Node => ({ width: 'grow', padding: [11, 0], children: [node] });
+
+/** What an ask was answered, in the answer's brass; nothing while there is none. */
+export const answerNode = (said: string): Node | null =>
+  said ? { width: 'grow', text: { words: said, colour: INK.answer } } : null;
+
+/** A page's panel, set back from the window's edges and kept to `most` pixels wide, in the middle of the room. */
+function pagePanel(id: string, most: number, children: readonly Child[]): Node {
+  return {
+    width: 'grow',
+    alignX: 'center',
+    padding: [24, 0],
+    children: [{ id, ...panelOf(children), maxWidth: most }],
+  };
+}
+
+/** The panel a page's parts stand in: its 2 px frame, then 18 by 22 px of room round them. */
+const panelOf = (children: readonly Child[]): Node => ({
+  role: 'panel',
+  width: 'grow',
+  direction: 'column',
+  padding: [20, 24],
+  children,
+});
+
 /** A page still to come: its name, marked Later, and one line on what it will hold. */
-export function laterPage(name: string, words: string): HTMLElement {
-  const page = make('div', '', `gear-later ${ROLES.panel}`);
-  const head = make('h2', '', 'gear-later-name');
-  head.append(make('span', name), make('span', 'Later', `gear-chip ${ROLES.chip}`));
-  page.append(head, make('p', words, 'gear-hint'));
-  return page;
+export function laterPage(name: string, said: string): Node {
+  return pagePanel('page-later', 640, [
+    {
+      gap: 12,
+      alignY: 'center',
+      padding: [0, 0, 10, 0],
+      children: [words(name, 2, INK.word), { role: 'chip', padding: [1, 8], children: [words('Later', 1, INK.word)] }],
+    },
+    hintNode(said),
+  ]);
 }
 
-/** Its papers: its name, then each part of them. */
-export function shipPage(panel: ShipPanel | null): HTMLElement {
-  const page = make('div', '', `gear-ship ${ROLES.panel}`);
-  if (!panel) {
-    page.append(make('p', 'Loading your ship…', 'gear-hint gear-empty'));
-    return page;
-  }
-  page.append(make('h2', panel.title, 'gear-ship-name'));
-  for (const part of panel.parts) {
-    const section = make('section', '', 'gear-ship-part');
-    const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
-    heading.append(make('span', part.heading));
-    section.append(heading);
-    for (const [label, value] of part.rows) {
-      const row = make('div', '', 'gear-ship-row');
-      row.append(make('span', label, 'gear-hint'), make('b', value));
-      section.append(row);
-    }
-    page.append(section);
-  }
-  return page;
+/** Its papers: its name, then each part of them, then `more` (its materials and hands, on the ship's tab). On the
+ *  tab (`bare`) they fill the column they stand in; alone they stand as the other plain pages do. */
+export function shipPage(panel: ShipPanel | null, sizes: Sizes, more: readonly Child[] = [], bare = false): Node {
+  const parts: readonly Child[] = !panel
+    ? [
+        {
+          width: 'grow',
+          alignX: 'center',
+          padding: [48, 0],
+          children: [{ text: { words: 'Loading your ship…', size: sizes.name, colour: INK.faint } }],
+        },
+        ...more,
+      ]
+    : [
+        { padding: [0, 0, 10, 0], children: [words(panel.title, 2, INK.word)] },
+        ...panel.parts.map((part, index) => shipPart(part.heading, part.rows, index === 0)),
+        ...more,
+      ];
+  return bare ? { id: 'page-ship', ...panelOf(parts) } : pagePanel('page-ship', 640, parts);
 }
 
-/** The Settings page: the account, or why there is none, and the volumes. */
-export function settingsPage(link: AccountLink | null): HTMLElement {
-  const page = make('div', '', `gear-settings ${ROLES.panel}`);
-  page.append(make('h2', 'Account', `gear-heading ${ROLES.rule}`));
-  page.append(link ? accountPanel(link) : make('p', 'Playing offline: there is no account.', 'gear-hint'));
-  if (link) page.append(blockedPanel(link));
-  page.append(soundPanel());
-  return page;
+/** One part of the papers: its heading over its rule, then its rows, label and value. */
+export function shipPart(heading: string, rows: readonly (readonly [string, string])[], first = false): Node {
+  return {
+    width: 'grow',
+    direction: 'column',
+    padding: [first ? 4 : 18, 0, 0, 0],
+    gap: 6,
+    children: [
+      headingNode(heading),
+      {
+        width: 'grow',
+        direction: 'column',
+        children: rows.map(([label, value]): Node => ({
+          width: 'grow',
+          padding: [3, 0],
+          children: [{ width: 'grow', ...words(label, 1, INK.faint) }, words(value, 1, INK.word)],
+        })),
+      },
+    ],
+  };
+}
+
+/** The Settings page: the account, or why there is none, the players blocked, and the volumes. */
+export function settingsPage(context: PlainContext, account: AccountPanel | null, page: Page = PAGE): Node {
+  return pagePanel('page-settings', context.sizes.name > 1 ? 880 : 640, [
+    headingNode('Account'),
+    { height: 10 },
+    ...(account ? account.nodes(context) : [hintNode('Playing offline: there is no account.')]),
+    soundPanel(context, page),
+  ]);
 }
 
 /** The volumes of the interface, the world, the music and the ambience, each from silent to full, kept in this
  *  browser. */
-function soundPanel(): HTMLElement {
-  const panel = make('section', '', 'gear-sound');
-  panel.append(
-    make('h2', 'Sound', `gear-heading ${ROLES.rule}`),
-    volumeRow('Interface sounds', interfaceVolume, setInterfaceVolume),
-    volumeRow('World sounds', worldVolume, setWorldVolume),
-    volumeRow('Music', musicVolume, setMusicVolume),
-    volumeRow('Ambience', ambienceVolume, setAmbienceVolume),
-    creditsList(),
-  );
-  return panel;
+function soundPanel(context: PlainContext, page: Page): Node {
+  return {
+    width: 'grow',
+    direction: 'column',
+    padding: [18, 0, 0, 0],
+    gap: 6,
+    children: [
+      headingNode('Sound'),
+      { height: 4 },
+      volumeRow(context, 'Interface sounds', interfaceVolume, setInterfaceVolume),
+      volumeRow(context, 'World sounds', worldVolume, setWorldVolume),
+      volumeRow(context, 'Music', musicVolume, setMusicVolume),
+      volumeRow(context, 'Ambience', ambienceVolume, setAmbienceVolume),
+      creditsList(context, page),
+    ],
+  };
 }
 
 /** One volume's slider, its level said beside it; let go, the interface's press is heard at its new level. */
-function volumeRow(name: string, volume: () => number, setVolume: (volume: number) => void): HTMLElement {
-  const row = make('label', '', 'gear-sound-row');
-  const slider = make('input', '', 'gear-volume');
-  Object.assign(slider, { type: 'range', min: '0', max: '100', step: '5' });
-  slider.value = String(Math.round(volume() * 100));
-  const shown = make('b', `${slider.value}%`);
-  // The slider is named by its words alone, and says its level as a percentage.
-  shown.setAttribute('aria-hidden', 'true');
-  slider.setAttribute('aria-valuetext', `${slider.value}%`);
-  slider.addEventListener('input', () => {
-    setVolume(Number(slider.value) / 100);
-    shown.textContent = `${slider.value}%`;
-    slider.setAttribute('aria-valuetext', `${slider.value}%`);
-  });
-  slider.addEventListener('change', () => play('press'));
-  row.append(make('span', name), slider, shown);
-  return row;
+function volumeRow(
+  { ui }: PlainContext,
+  name: string,
+  volume: () => number,
+  setVolume: (volume: number) => void,
+): Node {
+  const id = `volume-${name.split(' ')[0]?.toLowerCase() ?? name}`;
+  const before = Math.round(volume() * 100);
+  const { node, value } = slider(ui, id, before, { low: 0, high: 100, step: 5, width: 260 });
+  if (value !== before) setVolume(value / 100);
+  // Let go of, or stepped by a key, the slider says its level in the interface's own press.
+  const dropped = ui.drag(id) !== null && !ui.pressing(id);
+  if (dropped || ui.keysOn(id).length > 0) play('press');
+  return {
+    width: 'grow',
+    gap: 14,
+    alignY: 'center',
+    children: [
+      { minWidth: 99, ...words(name, 1, INK.word) },
+      { ...node, label: `${name}, ${value}%` },
+      { minWidth: 36, alignX: 'end', children: [words(`${value}%`, 1, INK.word)] },
+    ],
+  };
 }
+
+/** A link in the credits: brass words that open their page in a new tab. */
+function linkNode({ ui }: PlainContext, id: string, said: string, url: string, page: Page): Node {
+  if (ui.clicked(id)) page.open(url);
+  return {
+    id,
+    press: true,
+    label: `${said}, opens in a new tab`,
+    direction: 'column',
+    children: [
+      words(said, 1, ui.hovered(id) || ui.focused(id) ? INK.word : INK.brassLit),
+      { width: 'grow', height: 1, fill: ui.hovered(id) || ui.focused(id) ? INK.word : INK.brassLit },
+    ],
+  };
+}
+
+/** Faint words a word at a time, each with its space, so a line of them and links wraps where it must. */
+const plain = (said: string): Node[] => said.split(/(?<= )/).map((word) => words(word, 1, INK.faint));
 
 /** The recorded sounds' credits: each sound's name and author, its licence and its source, and what was changed. */
-function creditsList(): HTMLElement {
-  const list = make('ul', '', 'gear-credits');
-  list.setAttribute('aria-label', 'Sound credits');
-  for (const credit of soundCredits()) {
-    const item = make('li', '');
-    // Its licence by its full name and version, as the licence's own page gives it: CC BY 4.0, CC0 1.0.
-    const version = /(\d\.\d)\/$/.exec(credit.licenceUrl)?.[1] ?? '';
-    const licence = make('a', `${credit.licence.replace('-', ' ')} ${version}`.trim());
-    licence.href = credit.licenceUrl;
-    const source = make('a', 'Freesound');
-    source.href = credit.page;
-    for (const link of [licence, source]) Object.assign(link, { target: '_blank', rel: 'noopener' });
-    item.append(`"${credit.name}" by ${credit.author}, `, licence, ', from ', source, `. ${credit.changes}`);
-    list.append(item);
-  }
-  const credits = make('section', '', 'gear-sound-credits');
-  credits.append(
-    make('h3', 'Sound credits', 'gear-hint'),
-    make('p', "Each plays at the game's own level.", 'gear-hint'),
-    list,
-  );
-  return credits;
-}
-
-/** The players blocked, each with a press to unblock them; blocking is done from the Roster. */
-function blockedPanel(link: AccountLink): HTMLElement {
-  const panel = make('section', '', 'gear-blocked');
-  const list = make('div', '', 'gear-blocked-list');
-  const said = make('p', '', 'gear-answer');
-  said.setAttribute('role', 'status');
-  panel.append(make('h2', 'Blocked players', `gear-heading ${ROLES.rule}`), list, said);
-  let busy = false;
-  /** Unblocks a player, saying why not if it could not, the focus kept in the list. */
-  const unblock = (name: string, index: number) => {
-    if (busy) return;
-    busy = true;
-    void link.social('unblock', { name }).then((why) => {
-      busy = false;
-      said.textContent = why ?? `${name} is unblocked.`;
-      show(index);
-    });
+function creditsList(context: PlainContext, page: Page): Node {
+  return {
+    width: 'grow',
+    direction: 'column',
+    padding: [12, 0, 0, 0],
+    gap: 4,
+    label: 'Sound credits',
+    children: [
+      hintNode('Sound credits'),
+      hintNode("Each plays at the game's own level."),
+      ...soundCredits().map((credit, index): Node => {
+        // Its licence by its full name and version, as the licence's own page gives it: CC BY 4.0, CC0 1.0.
+        const version = /(\d\.\d)\/$/.exec(credit.licenceUrl)?.[1] ?? '';
+        const licence = `${credit.licence.replace('-', ' ')} ${version}`.trim();
+        // The bullet stands apart, so the lines its words wrap onto start under them, as a list's do.
+        return {
+          width: 'grow',
+          padding: [0, 0, 0, 8],
+          children: [
+            { width: 10, children: [words('•', 1, INK.faint)] },
+            {
+              width: 'grow',
+              wrap: true,
+              alignY: 'end',
+              children: [
+                ...plain(`"${credit.name}" by ${credit.author}, `),
+                linkNode(context, `credit-${index}-licence`, licence, credit.licenceUrl, page),
+                ...plain(', from '),
+                linkNode(context, `credit-${index}-source`, 'Freesound', credit.page, page),
+                ...plain(`. ${credit.changes}`),
+              ],
+            },
+          ],
+        };
+      }),
+    ],
   };
-  const show = (focusAt: number | null = null) =>
-    void link.roster().then((roster) => {
-      if (typeof roster === 'string') return list.replaceChildren(make('p', roster, 'gear-hint'));
-      const presses = roster.blocked.map((name, index) => pressOf('Unblock', () => unblock(name, index)));
-      list.replaceChildren(
-        ...(roster.blocked.length === 0 ? [make('p', 'None. Block a player from the Roster.', 'gear-hint')] : []),
-        ...roster.blocked.map((name, index) => {
-          const row = make('div', '', 'gear-blocked-row');
-          presses[index]?.setAttribute('aria-label', `Unblock ${name}`);
-          row.append(make('span', name), presses[index] ?? '');
-          return row;
-        }),
-      );
-      if (focusAt !== null) presses[Math.min(focusAt, presses.length - 1)]?.focus();
-    });
-  show();
-  return panel;
 }
