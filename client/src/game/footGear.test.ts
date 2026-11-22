@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import { MARK_FLOATS } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
-import { GATHER_S, GATHER_STIR_M, NODE_REACH_M, POINT_REACH_M, STOCK_MOST, groundRings, useAt } from './footGear.ts';
+import { GATHER_S, GATHER_STIR_M, NODE_REACH_M, POINT_REACH_M, STOCK_MOST, questRings, useAt } from './footGear.ts';
+import { markedHere } from './overheadMarks.ts';
 import { QUESTS } from './quests/questBook.ts';
 import { OPEN_AT } from './gearScreen.ts';
 import { SERVED_M } from './plazaLife.ts';
@@ -40,27 +41,21 @@ test('E at a counter opens its tab, and near a node asks the room to gather it',
   );
 });
 
-test('a counter whose keeper is away still opens, which calls her back to it', () => {
+test('a counter whose keeper is away still opens, which calls her back to it, and her mark goes with her', () => {
   const LAMPLIGHTERS: StationInfo = { kind: 'lamplighters', keeper: [0, -2], counter: [0, 0] };
   const here = { stations: [LAMPLIGHTERS] };
   awayFromCounters.add('lamplighters');
   try {
     assert.equal(useAt(0, 0, here, null, () => undefined)?.words, 'Lamplighters', 'offered while she walks the plaza');
-    assert.equal(groundRings(null, here, () => 0, 0).length > 0, true, 'and ringed');
+    assert.deepEqual(
+      markedHere(null, here, () => 0),
+      [],
+      'no mark over her empty post',
+    );
   } finally {
     awayFromCounters.delete('lamplighters');
   }
-});
-
-test('the ground rings each dealing counter on the floor; a node or a drop is no ring', () => {
-  const one = groundRings(null, { stations: [WEAPONSMITH] }, () => 0, 0).length;
-  assert.equal(one % MARK_FLOATS, 0);
-  assert.equal(
-    groundRings(null, { stations: [WEAPONSMITH, CHANDLER] }, () => 0, 0).length,
-    one,
-    'the chandler deals with no one',
-  );
-  assert.equal(groundRings(lying, { stations: [WEAPONSMITH] }, () => 2, 0).length, one, 'the forge draws the nodes');
+  assert.equal(markedHere(null, here, () => 0).length, 1, 'marked again once she is back');
 });
 
 test('a node is not offered on horseback, nor while its resource is full', () => {
@@ -83,7 +78,7 @@ test("the page's reach, hold and stock are the room's", async () => {
   assert.equal(number(character, 'STOCK_MOST'), STOCK_MOST);
 });
 
-test("Shape's offer is within a counter's reach of his week's spot, ringed there, and gone with him", () => {
+test("Shape's offer is within a counter's reach of his week's spot, marked there, and gone with him", () => {
   const visitorSpots = [
     [40, 40],
     [60, 0],
@@ -112,8 +107,11 @@ test("Shape's offer is within a counter's reach of his week's spot, ringed there
     null,
     'he has left',
   );
-  const counter = groundRings(null, here, () => 0, 0).length;
-  assert.equal(groundRings(shape, here, () => 0, 0).length, counter * 2, 'a ring of his own');
+  assert.equal(
+    markedHere(shape, here, () => 0).length,
+    markedHere(null, here, () => 0).length + 1,
+    'a mark of his own',
+  );
 });
 
 /** The Stormcallers' road at its first task holding a goal of `kind`, with the varied fields `more`. */
@@ -165,7 +163,7 @@ test("a puzzle's points stand ringed under beams, gold once lit; E uses an unlit
     "a room's starting character's rods",
   );
   assert.deepEqual(
-    groundRings(theirs, {}, () => 0, 0),
+    questRings(theirs, () => 0, 0),
     [],
     'nor ringed',
   );
@@ -174,13 +172,13 @@ test("a puzzle's points stand ringed under beams, gold once lit; E uses an unlit
     null,
     'out of reach',
   );
-  const one = groundRings({ ...rods, quest: storm('puzzle', { points: [points[0]!] }) }, {}, () => 0, 0);
-  const both = groundRings(rods, {}, () => 0, 0);
+  const one = questRings({ ...rods, quest: storm('puzzle', { points: [points[0]!] }) }, () => 0, 0);
+  const both = questRings(rods, () => 0, 0);
   assert.ok(one.length > 0 && both.length === one.length * 2, 'each point its rings and beam');
-  const lit = groundRings({ ...rods, quest: storm('puzzle', { points: [points[1]!] }) }, {}, () => 0, 0);
+  const lit = questRings({ ...rods, quest: storm('puzzle', { points: [points[1]!] }) }, () => 0, 0);
   assert.notDeepEqual(coloursOf(lit), coloursOf(one), 'lit, it glows another colour');
   assert.deepEqual(
-    groundRings({ ...rods, quest: storm('puzzle') }, {}, () => 0, 0),
+    questRings({ ...rods, quest: storm('puzzle') }, () => 0, 0),
     [],
     'none here',
   );
@@ -192,11 +190,11 @@ test('a ward a quest defends by name is ringed under a beam where it stands', ()
     nodes: [],
     quest: storm('defend', { ward: { x: 5, y: 5, health: 1 } }),
   } as GearState;
-  const marks = groundRings(glass, {}, () => 2, 0);
+  const marks = questRings(glass, () => 2, 0);
   assert.ok(marks.length > 0);
   assert.ok(Math.abs((marks[2] ?? 0) - 2) < 0.1, 'on the floor');
   assert.deepEqual(
-    groundRings({ ...glass, quest: storm('defend') }, {}, () => 2, 0),
+    questRings({ ...glass, quest: storm('defend') }, () => 2, 0),
     [],
     'not in this room',
   );

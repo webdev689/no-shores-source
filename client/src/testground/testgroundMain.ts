@@ -37,7 +37,8 @@ import { type CardAt, type Cards, openCards } from '../player/cards.ts';
 import { loadForgedBirds } from '../combat/forgedBirds.ts';
 import { COURSE, RESOURCE_NODES, ROCKS_SHOWN, STALL, START, STOOD, WOODEN } from './course.ts';
 import { rockTriangles } from './rockRow.ts';
-import { STALL_REACH, gearRings, nodesInReach } from './gearGround.ts';
+import { STALL_REACH, gearMarked, nodesInReach } from './gearGround.ts';
+import { marksSeen } from '../combat/marksOver.ts';
 import { GearPanel, type GearView } from './gearPanel.ts';
 import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
@@ -453,7 +454,7 @@ async function start(): Promise<void> {
       muzzleOf: () =>
         fpMuzzle ? screenMuzzle(camera, aspect, fpMuzzle) : figureMuzzle([body.x, body.y, body.z], you.facing),
       more: [
-        ...gearRings(STALL, RESOURCE_NODES, gear, clock),
+        ...marksSeen(gearMarked(STALL, gear), cameraOf(camera).eye, clock),
         ...dropped.marks,
         ...foes.overheads(cameraOf(camera).eye, clock),
       ],

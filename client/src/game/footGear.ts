@@ -1,10 +1,11 @@
-// What a player's gear lays on the ground on foot: each station that deals with them, a brass ring at its counter, and
-// Shape's spot while he is here; a quest's puzzle points under beams, gold once lit, and a named ward it defends. The
-// drops lying for them stand as their own pictures (`combat/drops.ts`), and the resource nodes as the forge draws them
-// (`nodeCards.ts`). And what E does where they stand: a station's or Shape's offer opened (or its keeper spoken with,
-// while a quest asks it), a puzzle's point used, or a node within reach gathered while E is held. The room judges every
-// use; the rings only show where.
+// What a player's gear lays on foot: a quest's puzzle points ringed under beams, gold once lit, and a named ward it
+// defends. The marks over what they can use are `combat/marksOver.ts`'s, the drops lying for them their own pictures
+// (`combat/drops.ts`), and each resource node the forge's picture of its resource standing on the ground with no mark
+// or beam (`nodeCards.ts`). And what E does where they stand: a station's or Shape's offer opened (or its keeper spoken
+// with, while a quest asks it), a puzzle's point used, or a node within reach gathered while E is held. The room judges
+// every use; the rings and beams only show where.
 
+import type { DropsShown } from '../combat/drops.ts';
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
 import { resourceName } from '../player/gear.ts';
@@ -13,6 +14,7 @@ import { SERVED_M, offerAt } from './plazaLife.ts';
 import { KEEPERS } from './keepers.ts';
 import { goalOf, puzzlePoints } from './quests/questBook.ts';
 import { shapeSpot } from './townsfolk.ts';
+import { chime } from './uiSounds.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a resource node a player stands to gather it, and a puzzle's point to use it; how long E is held to gather
@@ -27,8 +29,6 @@ export const STOCK_MOST = 200;
 const UNLIT = [0.62, 0.72, 0.9] as const;
 const LIT = [0.98, 0.84, 0.45] as const;
 const WARD = [0.42, 0.86, 0.42] as const;
-/** A station's ring in brass. */
-const BRASS = [0.93, 0.74, 0.32] as const;
 /** How tall a puzzle point's or a ward's beam stands, and half of how wide it is, metres: it is seen hundreds of metres
  *  off. */
 const BEAM = { height: 40, half: 0.5 } as const;
@@ -109,20 +109,11 @@ function markBeam(
   }
 }
 
-/** The rings on the ground, each standing on `floor`'s height where it is, beating with the `seconds`. */
-export function groundRings(
-  gear: GearState | null,
-  here: Here,
-  floor: (x: number, y: number) => number,
-  seconds: number,
-): number[] {
+/** A quest's puzzle points and the ward it defends by name at `seconds` of the page's clock, each a ring on `floor`'s
+ *  height where it stands under a beam. */
+export function questRings(gear: GearState | null, floor: (x: number, y: number) => number, seconds: number): number[] {
   const out: number[] = [];
   const beat = 0.55 + 0.25 * Math.sin(seconds * 3);
-  const stations = here.stations ?? [];
-  const counters = stations.filter((station) => offerAt([station], ...station.counter)).map((each) => each.counter);
-  const shape = shapeSpot(gear?.shape, here.visitorSpots ?? []);
-  for (const [x, y] of shape ? [...counters, shape] : counters)
-    markRing(out, [x, y, floor(x, y)], SERVED_M - 0.12, SERVED_M, [...BRASS, 0.6]);
   for (const { x, y, lit } of puzzlePoints(gear?.quest)) {
     const base = [x, y, floor(x, y)] as const;
     const colour = lit ? LIT : UNLIT;
@@ -138,4 +129,19 @@ export function groundRings(
     markBeam(out, base, BEAM, [...WARD, Math.min(1, beat + 0.25)]);
   }
   return out;
+}
+
+/** The drops lying for the player (`lying`), flying and standing, seen from `eye`, laid after the marks in `out`, and
+ *  where each came to rest this frame; a Rare or finer chimes as it comes to rest. */
+export function dropsLaid(
+  drops: DropsShown,
+  lying: Parameters<DropsShown['frame']>[0],
+  clock: number,
+  eye: readonly [number, number, number],
+  out: number[],
+) {
+  const shown = drops.frame(lying, clock, eye, out);
+  const rarest = Math.max(-1, ...shown.rested);
+  if (rarest >= 2) chime(rarest);
+  return shown;
 }

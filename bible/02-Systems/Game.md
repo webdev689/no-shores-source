@@ -23,7 +23,9 @@ code:
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
-  - client/src/game/footGear.ts#groundRings
+  - client/src/game/footGear.ts#nodeBeams
+  - client/src/game/overheadMarks.ts#markedHere
+  - client/src/combat/marksOver.ts#marksSeen
   - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
@@ -197,12 +199,23 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the
   ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
   only once they have walked a step. The fight never takes them for targets.
-- **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player. Each resource node stands as the forge's picture of its island's resource (`nodeCards`, [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]),
-  every resource at one scale, before the place its resource comes from, while the room
-  stands it for the player, and as it looks spent once they gathered it, until its turn comes round; a place resting
-  its turn shows only its dressing. The picture alone marks a node: no ring, no beam. Each drop lying for them stands
-  as its own picture under its rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
+- **Over what a player can use** (`overheadMarks`, `marksOver`; [[What a Player Can Use Wears Its Mark Over It]]),
+  drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
+  the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)
+  or a faction's emblem in the diamond edged in its Art's colour, and none while the keeper is away from the counter
+  (the elder on her welcome); over Shape on his spot his own. As DFO's, a mark's foot stands 0.2 m over the crown,
+  0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
+  either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
+  still under reduced motion, and fades out over the last fifth of its 30 m, the nearest twelve laid. A whole mark
+  gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
+  layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
+  is laid flat, so no layer shows through another.
+- **On the ground**: each resource node stands as the forge's picture of its island's resource (`nodeCards`,
+  [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
+  before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
+  gathered it, until its turn comes round; a place resting its turn shows only its dressing. The picture alone marks a
+  node: no ring, no beam, no mark over it. Each drop lying for them stands as its own picture under its rarity's line
+  (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"); within 2.5 m of a node it reads "Hold to gather" and its
