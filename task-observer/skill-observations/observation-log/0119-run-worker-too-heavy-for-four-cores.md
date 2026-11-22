@@ -1,5 +1,5 @@
 ---
-id: 112
+id: 119
 title: "On a 4-core container, three run-worker.sh workers (each building its own WebAssembly and starting Serena with rust-analyzer) would starve each other; in-process worktree agents were used instead"
 status: open
 type: open-source

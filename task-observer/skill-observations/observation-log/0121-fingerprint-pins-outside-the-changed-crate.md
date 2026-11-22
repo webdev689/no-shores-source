@@ -1,5 +1,5 @@
 ---
-id: 114
+id: 121
 title: "A change to the naval rules moved a fingerprint pinned in room-wasm and server/roomDoor.test.ts, which the crate's own tests never ran"
 status: open
 type: open-source
