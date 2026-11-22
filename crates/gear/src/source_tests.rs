@@ -150,5 +150,4 @@ fn faction_and_breach_pieces_take_their_own_source() {
             assert_eq!(named.source(), Source::Breach, "{}", named.id);
         }
     }
-    assert!(Source::from_number(6) == Some(Source::Breach) && Source::from_number(7).is_none());
 }

@@ -32,12 +32,6 @@ impl Source {
     pub const ALL: [Source; 7] =
         [Source::World, Source::Faction, Source::Dungeon, Source::Elite, Source::Abyss, Source::Sea, Source::Breach];
 
-    /// The source of this number; none past the last.
-    #[must_use]
-    pub fn from_number(number: u8) -> Option<Self> {
-        Self::ALL.get(usize::from(number)).copied()
-    }
-
     /// Whether it is the world's, which a save leaves unwritten: a save from before sources reads as the world's.
     #[must_use]
     pub fn is_world(&self) -> bool {
