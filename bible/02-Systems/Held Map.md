@@ -139,14 +139,17 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   is sailed for at its island's coast nearest it, a port at its city. The way there round the land is planned at once ([[Game]], "Sailing") and inked, and a card over the parchment offers Set
   sail (named with its key as bound, Enter or the pad's A), or says why no way leads there. Escape lets the choice go, then lowers the map.
 - **Other waters** ([[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]). At sea, the water under the
-  pointer (the pad's cursor too), when it is not the one the ship is in, is lit: its sea brightened a little with the
+  pointer, when it is not the one the ship is in, is lit (the pad's cursor stands only in the interface's windows, so the pad lights none): its sea brightened a little with the
   parchment's light and its edge with the other waters softly lined in the ink, where its cells' share crosses a half
   (`litCells`, on the page's grid of the waters, the world crate's rule judged once a 4.8 km cell). Its name, holder
-  and level band are written small by the pointer ("The Elmwater · Grey Tithe · levels 8-14"). The ship's own water
+  and level band are written small where the pointer came into it, kept inside the map ("The Elmwater · Grey Tithe ·
+  levels 8-14"), and painted again only as another water is lit, never at each move within one; they give way to the
+  prompt while it asks. The ship's own water
   and land light nothing. Which water the ship and a course's end lie in is the exact rule's, the room's own
   (`WaterJudge`), never the grid's, which reads a coast's sea as land a cell from it. A course chosen whose planned end
   lies in another water than the ship asks, and one whose end or ship's water is unknown asks nothing: on a card of parchment ringed in ink a quarter of the
-  way down the map and in its letters: "Travel to <water>?", its holder and level band, and "Yes <key> No Escape"
+  way down the map and in its letters: "Travel to <water>?", its holder and level band, and "Yes <key> No <key>", each as the last device used names it (Enter and Escape, or the pad's A
+  and B)
   (`MapAsk`). Yes (the confirm key, the pad's A, or the card's press, which reads Travel while it asks) lowers the map
   and the ship travels to the water the prompt named, for the place chosen (a port or a node sailed for at its own
   point) ([[Sailing]], "Travel by the held map"); No (Escape, the pad's B) lets the prompt go and

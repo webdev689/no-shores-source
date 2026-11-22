@@ -61,10 +61,10 @@ export function hoverLine(water: MapWater): string {
   return `${water.name ?? water.id} · ${aboutOf(water)}`;
 }
 
-/** The prompt's lines: whether to travel to the water, its holder and level band, and its answers, `yes` the key
- *  that answers yes. */
-export function askLines(water: MapWater, yes: string): readonly string[] {
-  return [`Travel to ${water.name ?? water.id}?`, aboutOf(water), `Yes  ${yes}      No  Escape`];
+/** The prompt's lines: whether to travel to the water, its holder and level band, and its answers, `yes` and `refuse`
+ *  the keys or buttons that answer them. */
+export function askLines(water: MapWater, yes: string, refuse = 'Escape'): readonly string[] {
+  return [`Travel to ${water.name ?? water.id}?`, aboutOf(water), `Yes  ${yes}      No  ${refuse}`];
 }
 
 /** Paints the pointer's words beside it at `x`, `y`, ink units, in the painter's ink transform (`paintLettering`'s),
@@ -135,9 +135,11 @@ export class MapAsk {
   pointer: { readonly x: number; readonly y: number } | null = null;
   asking: MapWater | null = null;
   private lit: number | null = null;
+  /** The pointer's words as they stand: where the pointer came into the water lit, until another is. */
+  private said: HoverSaid | null = null;
 
   /** The water under the pointer on the map `ink` (screen pixels) showing `view`, the ship at `ship`: the cells to
-   *  light when the water lit changes (null when it has not), and the pointer's words. */
+   *  light when the water lit changes (null when it has not), and the pointer's words, standing where it came in. */
   hover(
     waters: MapWaters,
     judge: WaterJudge,
@@ -150,9 +152,11 @@ export class MapAsk {
     const world: Point2 | null = onMap ? [view.left + inked.x / view.scale, view.top + inked.y / view.scale] : null;
     const water = world && otherWater(waters, world, judge(ship));
     const lit = water?.continent ?? null;
-    const cells = lit === this.lit ? null : litCells(waters, lit);
+    if (lit === this.lit) return { cells: null, said: this.said };
     this.lit = lit;
-    return { cells, said: water && inked ? { line: hoverLine(water), x: inked.x, y: inked.y } : null };
+    // Painted once as the pointer comes into a water, not again at each move within it.
+    this.said = water && inked ? { line: hoverLine(water), x: inked.x, y: inked.y } : null;
+    return { cells: litCells(waters, lit), said: this.said };
   }
 
   /** A course chosen (`course`, from the ship at `ship`): it asks to travel when its end lies in another water than

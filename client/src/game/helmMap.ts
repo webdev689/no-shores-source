@@ -7,6 +7,7 @@ import type { MapWater } from '../heldmap/watersWash.ts';
 import { CHART_CELL_M, CHART_COLUMNS, CHART_ROWS } from '../overworld/discovery.ts';
 import type { Point2 } from '../overworld/ground.ts';
 import type { Viewport } from '../overworld/overworldCamera.ts';
+import { BINDS } from '../player/input.ts';
 import { boundWord } from './controls.ts';
 import type { Discovered } from './discovered.ts';
 import type { Sea } from './sea.ts';
@@ -68,6 +69,7 @@ export class HelmMap {
       stack,
     );
     made.sailKey = () => boundWord('confirm');
+    made.noKey = () => (BINDS.device === 'pad' ? 'B' : 'Escape');
     made.onLowered((sail, travel) => {
       if (this.onLand) return;
       this.sea()?.view.fromHelm();

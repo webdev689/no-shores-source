@@ -104,3 +104,25 @@ test('the pointer’s words stand to its right, drawn back where they would run 
   const width = 'The Elmwater · Grey Tithe · levels 8-14'.length * 6;
   assert.equal(placed(380), 400 - 6 - width, 'ending at the map’s edge, near it');
 });
+
+test('the pointer’s words stand where it came into the water, so moving within it paints nothing anew', () => {
+  const ask = new MapAsk();
+  const view = { left: 0, top: 0, scale: 0.1 };
+  const ink = { x: 10, y: 20, width: 400, height: 300 };
+  ask.pointer = { x: 10 + 350, y: 20 + 150 };
+  const first = ask.hover(waters, exact, view, ink, WEST).said;
+  ask.pointer = { x: 10 + 360, y: 20 + 120 };
+  assert.equal(ask.hover(waters, exact, view, ink, WEST).said, first, 'the same words, where they stood');
+  ask.pointer = { x: 10 + 50, y: 20 + 50 };
+  ask.hover(waters, exact, view, ink, WEST);
+  ask.pointer = { x: 10 + 360, y: 20 + 120 };
+  assert.deepEqual(
+    ask.hover(waters, exact, view, ink, WEST).said,
+    { ...first!, x: 360, y: 120 },
+    'come in again, anew',
+  );
+});
+
+test('the prompt names the key that answers no as the last device used names it', () => {
+  assert.deepEqual(askLines(waters.waters[1]!, 'A', 'B').at(-1), 'Yes  A      No  B');
+});

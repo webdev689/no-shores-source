@@ -134,6 +134,8 @@ export class HeldMap {
   private choice: Choice | null = null;
   /** The key that sets sail, as bound now, which its press names. */
   sailKey: () => string = () => 'Enter';
+  /** The key or button that answers the prompt no, as the last device used names it. */
+  noKey: () => string = () => 'Escape';
   /** The difficulty the voyage set out at: what the card showed when the player set sail. */
   difficulty: Difficulty = 'normal';
   /** The difficulty chosen on the card, kept only once the player sets sail with it. */
@@ -423,7 +425,7 @@ export class HeldMap {
     const land = this.land;
     const lettering = land ? null : this.laidOut.made(reads, () => this.layout(scene, sprite));
     const isles = lettering ? this.isleInks(lettering.scale) : [];
-    const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey());
+    const asked = this.ask.asking && askLines(this.ask.asking, this.sailKey(), this.noKey());
     const sea = [this.measuredFonts, lettering, isles, said, asked];
     const shape = JSON.stringify([width, height, inkAt, dpr, land ? reads : sea]);
     if (shape === this.letteredShape) return false;
