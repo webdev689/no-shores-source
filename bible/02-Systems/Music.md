@@ -47,7 +47,7 @@ at sea, in the social space and on the islands, with minutes of silence between 
 ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]); music comes as danger nears, grows into the
 fight a layer at a time on the bar line, and falls back to silence when it ends. A fight's music never plays the same
 bars over for minutes, nor opens the way the last fight did: each fight song is written as takes, recombined as it
-plays. Nothing in it rings or whines: no note sounds over B5, no note's partials reach past 6 kHz, no struck tone over
+plays ([[The Fight Music Varies, Recombined From Takes]]). Nothing in it rings or whines: no note sounds over B5, no note's partials reach past 6 kHz, no struck tone over
 1.5 kHz lasts past a tenth of a second, and no fight sweeps a pitched swell: its risers and gusts are noise.
 
 ## How it works
