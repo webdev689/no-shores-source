@@ -16,7 +16,7 @@ export type MapDraw = (encoder: GPUCommandEncoder, view: GPUTextureView) => void
 
 /** What the map is made with: the GPU, every continent's coast, the forge's art, the interface it draws its marks on, and
  *  the ship at sea, if one is; what a destination set does (sails for it, in the sea room of the difficulty the map
- *  set); and what is handed to the map once it is made (the waters' tint). */
+ *  set); what is handed to the map once it is made (the waters' tint); and the nodes the quest walked names. */
 export interface HelmMapContext {
   readonly gpu: Gpu;
   readonly outlines: readonly (readonly Point2[])[];
@@ -25,6 +25,7 @@ export interface HelmMapContext {
   readonly sea: () => Sea | null;
   readonly sail: (to: Point2, seas: Difficulty) => void;
   readonly made: (map: HeldMap) => void;
+  readonly quest?: () => readonly string[];
 }
 
 /**
@@ -154,6 +155,7 @@ export class HelmMap {
           places: discovered.places,
           knownIslands: discovered.knownIslands,
           course: here.course,
+          quest: this.context.quest?.() ?? [],
         })
       : null;
     return map && drawn ? (encoder, view) => map.draw(encoder, view, drawn) : undefined;

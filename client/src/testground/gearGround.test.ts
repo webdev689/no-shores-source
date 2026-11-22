@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MARK_FLOATS } from '../combat/marks.ts';
+import { resourcePicture } from '../combat/dropPictures.ts';
+import { crystalSpin } from '../combat/vestigeCrystal.ts';
 import type { GearState } from '../network/gearMessages.ts';
-import { gearRings, nodesInReach } from './gearGround.ts';
+import { gearMarked, nodesInReach } from './gearGround.ts';
 
 const NODES = [
   { x: 0, y: 0, resource: 0 },
@@ -18,10 +19,22 @@ test('a resource node is gathered within reach, and not once spent', () => {
   assert.deepEqual(nodesInReach({ x: 5, y: 0 }, NODES, null), []);
 });
 
-test('the ground marks the stall and each node; a drop lying for the player is no ring', () => {
-  const lying = { spent: [], drops: [{ id: 1, rarity: 3, slot: 0, at: [2, 2, 0] }] } as unknown as GearState;
-  const ring = gearRings({ x: 0, y: 0 }, [], null, 0).length;
-  // The stall is two rings; each node one.
-  assert.equal(gearRings({ x: 0, y: 0 }, NODES, lying, 0).length, ring + (ring / 2) * 2);
-  assert.equal(ring % MARK_FLOATS, 0);
+test("the stall wears a sealed Vestige's mark over it and each node not yet spent its resource's, as in the game", () => {
+  // The room sends the nodes a player may still gather: the first is spent.
+  const lying = {
+    spent: [0],
+    nodes: [{ index: 1, ...NODES[1] }],
+    drops: [{ id: 1, rarity: 3, slot: 0, at: [2, 2, 0] }],
+  } as unknown as GearState;
+  const marked = gearMarked({ x: 20, y: 0 }, lying);
+  assert.deepEqual(
+    marked.map((mark) => mark.picture),
+    [crystalSpin(0)[0]?.body, resourcePicture(1)],
+    'a drop lying for the player wears none',
+  );
+  assert.deepEqual(marked[0]?.at.slice(0, 2), [20, 0], 'over the stall');
+  assert.deepEqual(
+    gearMarked({ x: 20, y: 0 }, null).map((mark) => mark.picture),
+    [crystalSpin(0)[0]?.body],
+  );
 });

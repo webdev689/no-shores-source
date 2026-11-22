@@ -124,12 +124,17 @@ const REFUSALS: Readonly<Record<number, string>> = {
   100: 'Out of reach, or already gathered.',
   101: 'Only the Test Ground hands out gear.',
   102: 'You can carry no more of it.',
+  103: 'Wait a moment before you try that again.',
   110: 'There is no such Art.',
   111: 'An Art’s Core has three slots.',
   112: 'There is no such fragment.',
   113: 'That fragment is set in another slot.',
   114: 'You do not own that fragment yet.',
+  115: 'That Art is not yours yet.',
   120: 'Wear a Ranged weapon first.',
+  136: 'There is no such keeper.',
+  137: 'They have nothing more to say to you now.',
+  138: 'No fragment of that Art waits to be chosen.',
 };
 
 /** What a room's answer to an ask says: nothing for done. */

@@ -5,7 +5,7 @@
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import type { GearStanding } from '../network/gearMessages.ts';
-import { owned } from './factionNames.ts';
+import { owned, roadOf } from '../player/factionNames.ts';
 
 /** An Art's highest level, where its spells are as written. */
 export const LEVEL_MOST = 5;
@@ -64,11 +64,11 @@ export function barWords(standing: ArtLevel, art: number): string {
   return `${standing.xp.toLocaleString('en')} of ${standing.bar.toLocaleString('en')}`;
 }
 
-/** How a fragment not owned is had: as the Art rises, or bought from its faction. */
+/** How a fragment not owned is had: chosen on its road, as the Art rises, or bought from its faction. */
 export function howHad(art: number): string {
   const counter = counterOf(factionOf(art)?.name ?? 'its faction');
   const rank = RANKS[factions.fragmentRank - 1] ?? `rank ${factions.fragmentRank}`;
-  return `Raise the Art at ${counter}, or buy it there from their ${rank} rank.`;
+  return `Choose it on ${roadOf(art)}, raise the Art at ${counter}, or buy it there from their ${rank} rank.`;
 }
 
 /** The spells whose own life the room scales by the level's lasting; every spell's harm and healing it scales by the

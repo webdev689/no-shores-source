@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
-import { AMMO_BOX, AMMO_CRATE } from './dropPictures.ts';
+import { AMMO_BOX, AMMO_CRATE, type PixelPicture, resourcePicture } from './dropPictures.ts';
 import {
   AMMO_FEEL,
   CRYSTAL_FEEL,
@@ -12,6 +12,7 @@ import {
   RISE_S,
   arcsOf,
   lineLight,
+  markPicture,
   motionAt,
   pictureOf,
 } from './drops.ts';
@@ -119,12 +120,11 @@ test('in flight a drop is its picture alone; at rest its line rises, a rarer one
   const boxFlying = new DropsShown().frame([drop({ kind: DROPPED.ammoBox })], 10, EYE).marks;
   assert.ok(
     boxFlying.length < filled(AMMO_BOX.rows) * 6 * MARK_FLOATS,
-    'its runs of one colour, fewer quads than pixels',
+    'its rectangles of one colour, fewer quads than pixels',
   );
-  const area = covered(boxFlying);
   assert.ok(
-    Math.abs(area - filled(AMMO_BOX.rows) * PIXEL_M ** 2) < 1e-6,
-    `every pixel, none twice and no line: ${area}`,
+    boxFlying.every((value, index) => index % MARK_FLOATS !== 6 || value === 1),
+    'solid, and no line',
   );
   const shown = new DropsShown();
   const flying = shown.frame([drop({ rarity: 4 })], 10, EYE).marks;
@@ -200,4 +200,69 @@ test('a line is brightest where it leaves the picture and none at its tip, a gli
   assert.ok(lineLight(0, 0) > lineLight(0.5, 0.25) && lineLight(1, 0) < 1e-5);
   const glint = (seconds: number) => lineLight(0.5, seconds);
   assert.ok(glint(0) > glint(0.5), 'the glint passes half way up once a second');
+});
+
+/** The colour seen over each cell of `picture` laid at the origin and seen from the south at its own foot: the
+ *  nearest quad over the cell's middle, as its red, green and blue out of 255, or '.' for none. */
+function seen(marks: readonly number[], picture: PixelPicture): string[][] {
+  const quads = Array.from({ length: marks.length / (6 * MARK_FLOATS) }, (unused, quad) => {
+    const along = (axis: number) =>
+      Array.from({ length: 6 }, (unseen, nth) => marks[(quad * 6 + nth) * MARK_FLOATS + axis] ?? 0);
+    const colour = [3, 4, 5].map((axis) => Math.round((along(axis)[0] ?? 0) * 255)).join();
+    return { across: along(0), near: Math.min(...along(1)), up: along(2), colour };
+  });
+  const width = picture.rows[0]?.length ?? 0;
+  const pixel = picture.pixelM ?? PIXEL_M;
+  return picture.rows.map((row, line) =>
+    [...row].map((unused, column) => {
+      // The eye looks north, so its right is the west.
+      const east = -(column + 0.5 - width / 2) * pixel;
+      const high = (picture.rows.length - line - 0.5) * pixel + 0.01;
+      const inside = (values: readonly number[], value: number) =>
+        Math.min(...values) < value && value < Math.max(...values);
+      const over = quads.filter((quad) => inside(quad.across, east) && inside(quad.up, high));
+      return over.sort((one, other) => one.near - other.near)[0]?.colour ?? '.';
+    }),
+  );
+}
+
+/** What `picture` shows at each cell, as `seen` reads it. */
+const drawn = (picture: PixelPicture): string[][] =>
+  picture.rows.map((row) =>
+    [...row].map((letter) => {
+      const hex = picture.colours[letter.charCodeAt(0) - 97];
+      if (!hex) return '.';
+      const value = Number.parseInt(hex.slice(1), 16);
+      return [value >> 16, (value >> 8) & 255, value & 255].join();
+    }),
+  );
+
+test('a picture is laid in layers, each colour over those laid before it, in fewer quads, and reads as drawn', () => {
+  const pictures = [AMMO_BOX, AMMO_CRATE, resourcePicture(4)];
+  for (const picture of pictures) {
+    assert.ok(picture);
+    const layered: number[] = [];
+    markPicture(layered, picture, [0, 0, 0], [0, -5, 0]);
+    assert.deepEqual(seen(layered, picture), drawn(picture));
+    const flat: number[] = [];
+    markPicture(flat, picture, [0, 0, 0], [0, -5, 0], 1, 0.5);
+    assert.ok(layered.length < flat.length, `fewer quads than laid flat: ${layered.length} against ${flat.length}`);
+  }
+});
+
+test('seen through, a picture is laid flat, every pixel once, so no colour shows through another', () => {
+  const flat: number[] = [];
+  markPicture(flat, AMMO_BOX, [0, 0, 0], [0, -5, 0], 1, 0.5);
+  const area = covered(flat);
+  assert.ok(Math.abs(area - filled(AMMO_BOX.rows) * PIXEL_M ** 2) < 1e-6, `every pixel, none twice: ${area}`);
+  assert.deepEqual(seen(flat, AMMO_BOX), drawn(AMMO_BOX));
+});
+
+test('a crystal frame, in more colours than a glyph has, is laid flat at its own pixel, all in one plane', () => {
+  const { body } = pictureOf(drop({ rarity: 4 }), 1);
+  const solid: number[] = [];
+  markPicture(solid, body, [0, 0, 0], [0, -5, 0]);
+  assert.deepEqual(seen(solid, body), drawn(body));
+  const nears = new Set(solid.filter((unused, index) => index % MARK_FLOATS === 1));
+  assert.deepEqual([...nears], [0], 'no colour stands nearer the eye than another');
 });

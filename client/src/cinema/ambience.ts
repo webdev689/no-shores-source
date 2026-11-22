@@ -5,7 +5,8 @@
 // levels keep gliding meanwhile, and the sound picks up where they stand once it returns.
 
 import { clampLevel, glided, nextGapS, seededRandom, thunderShape } from './ambienceShapes.ts';
-import { type Loudness, playSample } from '../soundSamples.ts';
+import type { Loudness } from '../soundMeasure.ts';
+import { playSample } from '../soundSamples.ts';
 
 /** Where the world's sounds play; the game passes uiSounds' worldOutput. Null while there is no sound. */
 export type SoundOut = () => { readonly audio: AudioContext; readonly out: AudioNode } | null;

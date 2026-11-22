@@ -1,0 +1,288 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import cast from '../../../../content/story/cast.json' with { type: 'json' };
+import houses from '../../../../content/story/houses.json' with { type: 'json' };
+import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
+import { standing, state } from '../../network/gearForTests.ts';
+import type { QuestState } from '../../network/questMessages.ts';
+import type { Cards } from '../../player/cards.ts';
+import { type Line, castOf, scenesOf } from '../../speech/cast.ts';
+import type { Shot } from '../camera.ts';
+import { useAt } from '../footGear.ts';
+import { OPEN_AT } from '../gearScreen.ts';
+import type { StationInfo } from '../nodes.ts';
+import { QUESTS } from './questBook.ts';
+import { SPEAKERS } from './questLooks.ts';
+import { Quests } from './quests.ts';
+import { BEGUN_KEY } from './questWatch.ts';
+
+const CAST = castOf(cast);
+const SCENES = scenesOf(houses, CAST);
+const questOf = (id: string): number => QUESTS.findIndex((quest) => quest.id === id) + 1;
+const [STORM, LAMP, VEIL] = [questOf('stormcallers'), questOf('lamplighters'), questOf('veiled')];
+/** The first task of a road whose goals hold one of `kind`, and that goal. */
+function stepOf(quest: number, kind: string) {
+  const task = QUESTS[quest - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.kind === kind)) ?? -1;
+  const goal = QUESTS[quest - 1]?.tasks[task]?.goals.find((each) => each.kind === kind);
+  assert.ok(task >= 0 && goal, `a ${kind} step on road ${quest}`);
+  return { task, goal };
+}
+
+/** A character on quest `quest` at task `task` with its goals' counts, pledged to `pledge`, each quest done by `done`,
+ *  and more of the word. */
+function gear(
+  quest: number,
+  task: number,
+  more: { counts?: number[]; pledge?: number; done?: number[] } & Partial<QuestState> = {},
+): GearState {
+  const { counts = [], pledge = 0, done = [0, 0, 0, 0], ...rest } = more;
+  return state({
+    standing: standing({ pledge }),
+    quest: { quest, task, counts, done, choices: [0, 0, 0], at: null, ...rest },
+  });
+}
+
+/** The roads with a dialogue box that says each scene's first line and holds it until `finish`, on a clock `now`, and
+ *  a forge whose every figure has a card named for its move, warming each dress it is asked to. */
+function roads() {
+  const said: string[] = [];
+  const kept = new Map<string, string>();
+  const warmed: string[][] = [];
+  let finish: () => void = () => undefined;
+  let now = 0;
+  const voice = {
+    play: (lines: readonly Line[]) => {
+      said.push(lines[0]?.say ?? '');
+      return new Promise<void>((resolve) => (finish = resolve));
+    },
+    frame: () => undefined,
+  };
+  const keeping = { getItem: (key: string) => kept.get(key) ?? null, setItem: kept.set.bind(kept) };
+  const forge = {
+    frames: () => 4,
+    card: (id: number, _dress: unknown, anim: string) => ({ id, anim }),
+    warm: (_dress: unknown, moves: () => readonly string[]) => void warmed.push([...moves()]),
+  };
+  const quests = new Quests(
+    { cast: CAST, scenes: SCENES, kept: keeping, account: () => 'arlo-fan', forge: forge as unknown as Cards },
+    () => voice,
+    () => now,
+  );
+  /** A frame, past the story and the welcome unless said, its scenes' ends let through. */
+  const frame = async (past = true, held = false) => {
+    quests.frame(0.1, past, held);
+    await Promise.resolve();
+  };
+  return { quests, said, kept, warmed, frame, finish: () => finish(), clock: (millis: number) => (now = millis) };
+}
+
+/** The first line of `scene`, as the box says it. */
+const opening = (scene: string | undefined): string => SCENES[scene ?? '']?.[0]?.say ?? '';
+/** What each card drawn shows its figure doing, and how far east it stands: seen from far to the south, so a card's
+ *  step toward the eye moves it north and south alone. */
+const drawn = (quests: Quests) =>
+  quests
+    .cards([0, 100_000, 2], 0, () => 0)
+    .map((each) => {
+      const { anim } = each.card as unknown as { anim: string };
+      return [anim, Math.round(each.x * 10) / 10];
+    });
+
+test('within reach of a counter a talk goal names, E asks the room to speak with its keeper; the scene comes as it is met', async () => {
+  const { quests, said, frame } = roads();
+  const goals = QUESTS[0]?.tasks[0]?.goals ?? [];
+  quests.hear(gear(1, 0, { counts: [0, 1, 0] }));
+  await frame();
+  const asked: GearAsk[] = [];
+  const ask = (each: GearAsk) => void asked.push(each);
+  assert.equal(quests.speak('stormcallers', ask)?.words, 'Speak with Arlo Kestrel');
+  assert.equal(quests.speak('veiled', ask)?.words, 'Speak with Sable');
+  assert.equal(quests.speak('lamplighters', ask), null, 'Elder Maren Hale heard already');
+  assert.equal(quests.speak('mage', ask), null, 'no goal names the Mage');
+  quests.speak('stormcallers', ask)?.run();
+  await frame();
+  assert.deepEqual(asked, [{ kind: ASKS.speakWith, column: 1 }]);
+  assert.deepEqual(said, [], 'nothing said until the room meets it');
+  quests.hear(gear(1, 0, { counts: [1, 1, 0] }));
+  await frame();
+  assert.deepEqual(said, [opening(goals[0]?.scene)], 'met: its scene');
+});
+
+test('the talk offer stands where the counter would open; elsewhere the counter opens as before', () => {
+  const { quests } = roads();
+  quests.hear(gear(1, 0));
+  quests.frame(0, true, false);
+  const HALL: StationInfo[] = [
+    { kind: 'stormcallers', keeper: [0, -2], counter: [0, 0] },
+    { kind: 'mage', keeper: [40, -2], counter: [40, 0] },
+  ];
+  const asked: GearAsk[] = [];
+  const speak = (counter: string, ask: (asked: GearAsk) => void) => quests.speak(counter, ask);
+  const keeper = useAt(0.5, 0, { stations: HALL }, null, (each) => asked.push(each), speak);
+  assert.equal(keeper?.words, 'Speak with Arlo Kestrel');
+  keeper?.run();
+  assert.deepEqual(asked, [{ kind: ASKS.speakWith, column: 1 }]);
+  const opened: unknown[] = [];
+  // The page's event, as the menu hears it, without a page.
+  Object.assign(globalThis, { dispatchEvent: (event: CustomEvent) => opened.push([event.type, event.detail]) });
+  const mage = useAt(40, 0.5, { stations: HALL }, null, () => undefined, speak);
+  assert.equal(mage?.words, 'The Mage');
+  mage?.run();
+  assert.deepEqual(opened, [[OPEN_AT, { view: 'mage' }]]);
+});
+
+test("lines are said one scene after another: a keeper's scene, then what the room's word begins", async () => {
+  const { quests, said, frame, finish } = roads();
+  const goals = QUESTS[0]?.tasks[0]?.goals ?? [];
+  quests.hear(gear(1, 0, { counts: [1, 1, 0] }));
+  await frame();
+  quests.hear(gear(1, 1));
+  await frame();
+  quests.hear(gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0] }));
+  await frame();
+  assert.deepEqual(said, [opening(goals[2]?.scene)], 'the road waits for her words');
+  finish();
+  await frame();
+  await frame();
+  assert.deepEqual(said, [opening(goals[2]?.scene), opening(QUESTS[STORM - 1]?.begin)]);
+});
+
+test("a moment's line is said once while it waits or is said: a step failed twice in a breath", async () => {
+  const { quests, said, frame, finish } = roads();
+  const { task, goal } = stepOf(VEIL, 'unseen');
+  const seen = (fails: number) => quests.hear(gear(VEIL, task, { pledge: 3, fails: [fails] }));
+  seen(0);
+  await frame();
+  seen(1);
+  await frame();
+  seen(2);
+  await frame();
+  assert.deepEqual(said, [opening(goal.seen)]);
+  finish();
+  await frame();
+  await frame();
+  assert.deepEqual(said, [opening(goal.seen)], 'not said again for the second, which came while it was said');
+  seen(3);
+  await frame();
+  assert.deepEqual(said, [opening(goal.seen), opening(goal.seen)], 'a third, later, is its own moment');
+});
+
+test('no scene starts while a screen holds the view; a begin said is kept in the browser for the account', async () => {
+  const { quests, said, frame, kept } = roads();
+  quests.hear(gear(1, 0));
+  await frame(false);
+  await frame(true, true);
+  assert.deepEqual(said, [], 'the welcome given, but the menu is up');
+  await frame();
+  assert.deepEqual(said, [opening(QUESTS[0]?.begin)]);
+  assert.equal(kept.get(`${BEGUN_KEY}.arlo-fan`), QUESTS[0]?.id);
+});
+
+test("nothing shows, says or marks from a room's starting character, nor until the story and the welcome are past", async () => {
+  const { quests, said, frame } = roads();
+  const where = [100, 0, 30] as [number, number, number];
+  quests.hear(gear(LAMP, 3, { pledge: 2, at: where }));
+  await frame(false);
+  const tracked = () => quests.tracked;
+  assert.equal(tracked(), null);
+  assert.equal(
+    quests.speak('stormcallers', () => undefined),
+    null,
+  );
+  assert.deepEqual([quests.nodes, quests.goalAt], [[], null]);
+  await frame();
+  assert.equal(tracked()?.task, QUESTS[LAMP - 1]?.tasks[3]?.task);
+  assert.deepEqual(quests.goalAt, [100, 0]);
+  // A room joined later holds its starting character first: none of it shows.
+  quests.hear(gear(1, 0, { claimed: false, at: [5, 5, 10] }));
+  await frame();
+  assert.equal(tracked()?.task, QUESTS[LAMP - 1]?.tasks[3]?.task, 'the player’s own road all the same');
+  assert.equal(quests.goalAt, null, 'nothing marked');
+  assert.deepEqual(said, [], 'nothing said');
+});
+
+test("the HUD marks where the task's next goal stands in the node the player is in, named for it with its distance", async () => {
+  const { quests, frame } = roads();
+  const { task, goal } = stepOf(LAMP, 'escort');
+  quests.hear(gear(LAMP, task, { pledge: 2, at: [100, 0, 30] }));
+  await frame();
+  const east: Shot = { eye: [0, 0, 2], yaw: Math.PI / 2, pitch: 0, fov: 1, near: 0.1, far: 900 };
+  const view = { width: 1280, height: 720 };
+  const [mark] = quests.marks(east, view, [0, 0], () => 0, goal.node ?? '');
+  assert.ok(mark);
+  assert.deepEqual([mark.kind, mark.name, mark.note, mark.arrowDegrees], ['quest', goal.text, '100 m', null]);
+  assert.ok(Math.abs(mark.x - 640) < 1, 'dead ahead');
+  const [behind] = quests.marks({ ...east, yaw: -Math.PI / 2 }, view, [0, 0], () => 0, goal.node ?? '');
+  assert.ok(behind && behind.arrowDegrees !== null, 'held at the edge, pointing the way');
+  assert.deepEqual(
+    quests.marks(east, view, [0, 0], () => 0, 'elsewhere'),
+    [],
+    'its goal is in another node',
+  );
+  quests.hear(null);
+  assert.deepEqual(
+    quests.marks(east, view, [0, 0], () => 0, goal.node ?? ''),
+    [],
+    'a room just joined',
+  );
+});
+
+test("a road's gift is toasted for a while", async () => {
+  const { quests, frame, clock } = roads();
+  const earned = (bits: number) =>
+    state({
+      ...gear(STORM, 2, { pledge: 1 }),
+      arts: { art: 1, cores: [], anima: 0, tenets: [0, 0], earned: [bits, 0, 0] },
+    });
+  quests.hear(earned(0));
+  await frame();
+  quests.hear(earned(1));
+  await frame();
+  assert.deepEqual(quests.toasts, ['Storm Art earned: Tempest']);
+  clock(5000);
+  await frame();
+  assert.deepEqual(quests.toasts, []);
+});
+
+test("a step's figures glide between the room's words, warmed to walk and stand; an arrived one stands where it is", async () => {
+  const { quests, frame, clock, warmed } = roads();
+  const { task } = stepOf(VEIL, 'escort');
+  const wren = SPEAKERS.indexOf('wren') + 1;
+  const walkingAt = (x: number, figureState: number) =>
+    gear(VEIL, task, { pledge: 3, figures: [{ look: wren, x, y: 4, z: 1, facing: 0.5, state: figureState }] });
+  clock(0);
+  quests.hear(walkingAt(0, 1));
+  await frame();
+  assert.deepEqual(drawn(quests), [['walk', 0]]);
+  clock(100);
+  quests.hear(walkingAt(2, 1));
+  assert.deepEqual(drawn(quests), [['walk', 0]], 'the newest word comes: it sets off toward it');
+  clock(150);
+  assert.deepEqual(drawn(quests), [['walk', 1]], 'half the time the last two words took');
+  clock(200);
+  assert.deepEqual(drawn(quests), [['walk', 2]], 'there');
+  clock(250);
+  assert.deepEqual(drawn(quests), [['walk', 2]], 'and waits for the next word there');
+  clock(300);
+  quests.hear(walkingAt(40, 3));
+  assert.deepEqual(drawn(quests), [['idle', 40]], 'one set down far off is not walked there; arrived, it stands');
+  assert.ok(warmed.every((moves) => moves.includes('walk') && moves.includes('idle')) && warmed.length > 0);
+  quests.hear(null);
+  assert.deepEqual(drawn(quests), [], 'a room just joined');
+  quests.hear(state({ ...walkingAt(0, 1), quest: { ...walkingAt(0, 1).quest!, claimed: false } }));
+  assert.deepEqual(drawn(quests), [], "a room's starting character's");
+});
+
+test("a step's ward stands in the room the player is in, its plate held in view", async () => {
+  const { quests, frame } = roads();
+  const { task, goal } = stepOf(STORM, 'defend');
+  quests.hear(gear(STORM, task, { pledge: 1, ward: { x: 1, y: 2, health: 0.5 } }));
+  await frame();
+  const plate = quests.wardPlate(() => 0);
+  assert.deepEqual([plate?.name, plate?.held], [goal.ward, true]);
+  quests.hear(null);
+  assert.equal(
+    quests.wardPlate(() => 0),
+    null,
+  );
+});

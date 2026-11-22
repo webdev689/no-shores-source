@@ -42,6 +42,7 @@ import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { AfterStory } from './welcome/afterStory.ts';
+import type { Quests } from './quests/quests.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
 import { type GateWay, gateWay } from './gates.ts';
@@ -64,6 +65,8 @@ export interface Playing {
   readonly helmMap: HelmMap;
   /** The story's last moment, played on foot once it has ended, and the elder's welcome after it. */
   readonly after: AfterStory;
+  /** The houses' roads, shown once the story and the welcome are past. */
+  readonly quests: Quests;
   /** The way through the gate the player stands in, if any. */
   through: GateWay | null;
   seaWord: SeaWord | null;
@@ -184,7 +187,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined);
     parts.isleFrame();
-    const fight = footView.frame(here, shown, seconds, { size, viewport, groundAt: parts.groundAt });
+    const { quests } = playing;
+    quests.hear(here.gear?.gear);
+    quests.frame(seconds, playing.after.past, paused);
+    // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
+    const ward = quests.wardPlate(parts.groundAt);
+    const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt } };
+    const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: parts.groundAt });
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
@@ -210,7 +220,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       drain: drain.share,
     };
     const ships = [...moored.ships, ...fleet.ships];
-    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met], fight), more);
+    const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
+    scene.draw(shown.shot, size, clock, seconds, standing(ships, [...shown.figures, ...met, ...walking], fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node));
     // As E's other use, a gate takes no one while a menu is up or the player is down.
@@ -219,7 +230,10 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.passageOffer(playing.through?.offer ?? null);
     // N raises the map on foot unless a menu is up or the player has fallen, as `openMap` has it.
     hud.hints(looking ? HINTS.landMap : paused || here.fallen ? shown.hints : withMapKey(shown.hints));
-    hud.marks([]);
+    // The quest's mark gives way to the map, as the fight's display does.
+    hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
+    hud.tasks.show(quests.tracked);
+    hud.toast(...quests.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     return scene.closeReady(body.x, body.y);
@@ -252,6 +266,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       paused,
     });
     playing.shipScale = shown.shipScale;
+    playing.quests.frame(seconds, playing.after.past, paused);
+    hud.toast(...playing.quests.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);

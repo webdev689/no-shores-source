@@ -20,14 +20,19 @@ const END_FADE = 0.08;
 const shipSvg = (colour: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 7"><path d="M4 0 8 5 0 5Z" fill="${colour}" stroke="rgba(0,0,0,0.9)" stroke-width="0.6"/></svg>`;
 
-/** The compass `width` CSS pixels wide at `zoom`, turned to `heading` (turns from north), marking `ships` round a
- *  player at `from`. Nothing on it moves but by the view, so reduced motion asks nothing of it. */
+/** The houses' roads' mark: a brass diamond with a dark edge, where the task's next goal stands. */
+const QUEST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 10"><path d="M4 0 8 4 4 8 0 4Z" fill="${TONES.brassHi}" stroke="rgba(0,0,0,0.9)" stroke-width="0.8"/></svg>`;
+
+/** The compass `width` CSS pixels wide at `zoom`, turned to `heading` (turns from north), marking `ships` and the
+ *  quest's next goal at `quest` round a player at `from`. Nothing on it moves but by the view, so reduced motion asks
+ *  nothing of it. */
 export function compassNode(
   width: number,
   heading: number,
   zoom = 1,
   from: readonly [number, number] = [0, 0],
   ships: readonly ShipMark[] = [],
+  quest: readonly [number, number] | null = null,
 ): Node {
   const { height, rule } = COMPASS;
   const points = COMPASS_POINTS.flatMap(([letters, bearing]): Node[] => {
@@ -59,6 +64,14 @@ export function compassNode(
     picture: { key: `compass ship ${ship.kind}`, source: { svg: shipSvg(SHIP_MARK_COLOURS[ship.kind]) } },
     float: { at: [markPlace([ship.x, ship.y], from, heading), 0], anchor: [0.5, 0], z: 1 },
   }));
+  if (quest)
+    marks.push({
+      width: 8 * zoom,
+      height: 8 * zoom,
+      label: 'Quest',
+      picture: { key: 'compass quest', source: { svg: QUEST_SVG } },
+      float: { at: [markPlace(quest, from, heading), 0], anchor: [0.5, 0], z: 1 },
+    });
   return {
     width,
     height: (height + rule) * zoom,

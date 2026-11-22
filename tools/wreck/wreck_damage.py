@@ -75,6 +75,23 @@ def carve(collection, box, inside, keep=()):
         drop(mesh, item, doomed)
 
 
+def small_pieces_where(collection, inside, longest):
+    """Removes each connected piece of the collection's meshes no longer than `longest` metres corner to corner whose
+    middle `inside(point)` says is in: a splinter, a beam's stub, a fitting; never a deck or a hull."""
+    for item in list(meshes(collection)):
+        bake_placement(item)
+        mesh = bmesh.new()
+        mesh.from_mesh(item.data)
+        doomed = []
+        for piece in connected(mesh.faces):
+            points = [vertex.co for face in piece for vertex in face.verts]
+            low = Vector((min(p.x for p in points), min(p.y for p in points), min(p.z for p in points)))
+            high = Vector((max(p.x for p in points), max(p.y for p in points), max(p.z for p in points)))
+            if (high - low).length <= longest and inside(sum(points, Vector()) / len(points)):
+                doomed.extend(piece)
+        drop(mesh, item, doomed)
+
+
 def pieces_where(collection, inside, parts=None):
     """Removes each connected piece (a spar, a line, a sail, a fitting) of the collection's meshes whose middle
     `inside(point)` says is in; with `parts`, only pieces painted as one of them."""

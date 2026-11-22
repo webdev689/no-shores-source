@@ -172,44 +172,83 @@ function rgbOf(hex: string): [number, number, number] {
 /** Each rarity's line colour, read once. */
 const LINE_COLOURS = RARITIES.map((rarity) => rgbOf(rarity.colour));
 
-/** The numbers of a run of one colour along a picture's rows (as many rows as repeat it): its left and right (metres
- *  off its middle), its foot and its top (metres over the ground), and its red, green and blue. */
-const RUN = 7;
-const runsKept = new WeakMap<PixelPicture, readonly number[]>();
+/** The numbers of a rectangle of one colour: its left and right (metres off the picture's middle), its foot and its
+ *  top (metres over the ground), its red, green and blue, and its layer. */
+const RUN = 8;
+/** How much nearer the eye each layer of a picture stands than the one under it, metres: far more than the depth
+ *  buffer tells apart wherever a picture is seen, far less than the eye does. */
+const LAYER_M = 0.002;
+/** A picture in more colours than a glyph's twelve is laid flat: in layers its last colours would stand far enough
+ *  nearer the eye than its first to be seen apart. */
+const MOST_LAYERS = 12;
+/** Each picture's rectangles, laid flat and in layers, worked out the first time it is laid so. */
+const runsKept = [new WeakMap<PixelPicture, readonly number[]>(), new WeakMap<PixelPicture, readonly number[]>()];
 
-/** A picture's runs, worked out the first time it is laid. */
-function runsOf(picture: PixelPicture): readonly number[] {
-  const kept = runsKept.get(picture);
+/**
+ * A picture's rectangles of one colour, each as far across and down as it may run. Laid in layers, its colours go on
+ * in turn, the one spread widest first, each running under the colours laid after it, so a diamond inside a diamond
+ * is a rectangle a step rather than a run a row. Laid flat, for a picture seen through or in many colours, where one layer would show
+ * through another, no rectangle covers another.
+ */
+function runsOf(picture: PixelPicture, asked: boolean): readonly number[] {
+  const layered = asked && picture.colours.length <= MOST_LAYERS;
+  const kept = runsKept[Number(layered)]?.get(picture);
   if (kept) return kept;
+  const { rows } = picture;
+  const [width, height] = [rows[0]?.length ?? 0, rows.length];
   const colours = picture.colours.map(rgbOf);
-  const width = picture.rows[0]?.length ?? 0;
+  const colourOf = (letter: string) => colours[letter.charCodeAt(0) - 97];
   const pixel = picture.pixelM ?? PIXEL_M;
+  // Each drawn letter's spread: the area of the box round its cells.
+  const boxes = new Map<string, [number, number, number, number]>();
+  rows.forEach((row, line) =>
+    [...row].forEach((letter, column) => {
+      if (!colourOf(letter)) return;
+      const [left, top, right, bottom] = boxes.get(letter) ?? [column, line, column, line];
+      boxes.set(letter, [Math.min(left, column), top, Math.max(right, column), Math.max(bottom, line)]);
+    }),
+  );
+  const spread = (letter: string) => {
+    const [left, top, right, bottom] = boxes.get(letter) ?? [0, 0, -1, -1];
+    return (right - left + 1) * (bottom - top + 1);
+  };
+  const letters = [...boxes.keys()].sort((one, other) => spread(other) - spread(one));
+  const layerAt = (column: number, line: number) => letters.indexOf(rows[line]?.charAt(column) ?? '');
   const runs: number[] = [];
-  // A run open from the row above, by its columns and letter: where its foot is in `runs`.
-  let open = new Map<string, number>();
-  picture.rows.forEach((row, line) => {
-    const foot = (picture.rows.length - line - 1) * pixel + LIFT_M;
-    const next = new Map<string, number>();
-    for (let column = 0; column < row.length;) {
-      const letter = row[column] ?? '';
-      let end = column + 1;
-      while (end < row.length && row[end] === letter) end++;
-      const colour = colours[letter.charCodeAt(0) - 97];
-      const key = `${column}:${end}:${letter}`;
-      const above = open.get(key);
-      if (colour && above !== undefined) {
-        // The same run as the row above: that one reaches down to here.
-        runs[above] = foot;
-        next.set(key, above);
-      } else if (colour) {
-        next.set(key, runs.length + 2);
-        runs.push((column - width / 2) * pixel, (end - width / 2) * pixel, foot, foot + pixel, ...colour);
+  letters.forEach((letter, layer) => {
+    const [red, green, blue] = colourOf(letter) ?? [0, 0, 0];
+    const laid = new Set<number>();
+    const owed = (column: number, line: number) =>
+      rows[line]?.charAt(column) === letter && !laid.has(line * width + column);
+    const under = layered ? (column: number, line: number) => layerAt(column, line) >= layer : owed;
+    const along = (line: number, left: number, right: number, test: typeof owed) =>
+      Array.from({ length: right - left + 1 }, (unused, step) => test(left + step, line));
+    for (let line = 0; line < height; line += 1)
+      for (let column = 0; column < width; column += 1) {
+        if (!owed(column, line)) continue;
+        // Across as far as it may run and back to its last cell owed; then down the same.
+        let [right, bottom] = [column, line];
+        while (under(right + 1, line)) right += 1;
+        while (!owed(right, line)) right -= 1;
+        while (along(bottom + 1, column, right, under).every(Boolean)) bottom += 1;
+        while (!along(bottom, column, right, owed).some(Boolean)) bottom -= 1;
+        for (let row = line; row <= bottom; row += 1)
+          for (let cell = column; cell <= right; cell += 1) laid.add(row * width + cell);
+        const [foot, top] = [(height - bottom - 1) * pixel + LIFT_M, (height - line) * pixel + LIFT_M];
+        runs.push(
+          (column - width / 2) * pixel,
+          (right + 1 - width / 2) * pixel,
+          foot,
+          top,
+          red,
+          green,
+          blue,
+          // Laid flat, no rectangle covers another, so none need stand nearer the eye.
+          layered ? layer : 0,
+        );
       }
-      column = end;
-    }
-    open = next;
   });
-  runsKept.set(picture, runs);
+  runsKept[Number(layered)]?.set(picture, runs);
   return runs;
 }
 
@@ -243,19 +282,31 @@ function acrossFrom(eye: Point, base: Point): [number, number] {
   return [-south / length, east / length];
 }
 
-/** A picture standing on `base`, turned to the eye, each run of one colour along a row two triangles, as marks'
- *  vertices into `out`: solid, or light added to what stands behind it. */
-export function markPicture(out: number[], picture: PixelPicture, base: Point, eye: Point, added = false): void {
-  const opacity = added ? ADDED : 1;
+/** A picture standing on `base`, turned to the eye, each rectangle of one colour two triangles, as marks' vertices
+ *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat). */
+export function markPicture(
+  out: number[],
+  picture: PixelPicture,
+  base: Point,
+  eye: Point,
+  scale = 1,
+  opacity = 1,
+): void {
   const [right, ahead] = acrossFrom(eye, base);
-  const runs = runsOf(picture);
-  const [x, y, z] = base;
+  const runs = runsOf(picture, opacity >= 1);
+  // Each layer stands a little nearer the eye than the one under it, so it covers it.
+  const far = Math.hypot(eye[0] - base[0], eye[1] - base[1], eye[2] - base[2]) || 1;
+  const [nearX, nearY, nearZ] = [0, 1, 2].map((axis) => (((eye[axis] ?? 0) - (base[axis] ?? 0)) / far) * LAYER_M);
   let next = out.length;
   for (let start = 0; start < runs.length; start += RUN) {
-    const left = runs[start] ?? 0;
-    const end = runs[start + 1] ?? 0;
-    const foot = z + (runs[start + 2] ?? 0);
-    const top = z + (runs[start + 3] ?? 0);
+    const layer = runs[start + 7] ?? 0;
+    const x = base[0] + (nearX ?? 0) * layer;
+    const y = base[1] + (nearY ?? 0) * layer;
+    const z = base[2] + (nearZ ?? 0) * layer;
+    const left = (runs[start] ?? 0) * scale;
+    const end = (runs[start + 1] ?? 0) * scale;
+    const foot = z + (runs[start + 2] ?? 0) * scale;
+    const top = z + (runs[start + 3] ?? 0) * scale;
     const red = runs[start + 4] ?? 0;
     const green = runs[start + 5] ?? 0;
     const blue = runs[start + 6] ?? 0;
@@ -387,7 +438,7 @@ export class DropsShown {
       const tallM = body.rows.length * (body.pixelM ?? PIXEL_M);
       const base: Point = [motion.middle[0], motion.middle[1], motion.middle[2] - tallM / 2];
       markPicture(marks, body, base, eye);
-      if (halo) markPicture(marks, halo, base, eye, true);
+      if (halo) markPicture(marks, halo, base, eye, 1, ADDED);
       if (!motion.settled) continue;
       if (!this.rested.has(key)) {
         this.rested.add(key);

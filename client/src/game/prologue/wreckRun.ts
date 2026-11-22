@@ -336,13 +336,10 @@ export class WreckRun {
     for (const zone of asks.open) this.openGate(zone);
     if (asks.checkpoint) room.setSpawn(...asks.checkpoint);
     if (asks.bringBack) room.putPlayer(...asks.bringBack);
-    this.crew.stand(asks.stand, {
-      room,
-      figures: this.foes,
-      foes: this.fight.foes,
-      layout: this.layout,
-      level: this.level,
-    });
+    const crewRun = { room, figures: this.foes, foes: this.fight.foes, layout: this.layout, level: this.level };
+    this.crew.stand(asks.stand, crewRun);
+    // The crew still standing regroup at each zone the player reaches, but the arena's: the boss fight is one on one.
+    if (asks.checkpoint && this.progress.zone < this.layout.arena.zone) this.crew.regroup(this.progress.zone, crewRun);
     for (const foe of asks.stand) {
       const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level);
       if (id === 0) continue;

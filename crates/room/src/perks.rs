@@ -179,7 +179,9 @@ impl Room {
         let low = if foe.health < foe.health_max / 2.0 { trim.on_low } else { 1.0 };
         let swing = matches!(blow.kind, BlowKind::Swing(_));
         let exploits = swing && foe.statuses.has(Status::Expose) && self.perk_on(&blow, "exploit");
-        let in_element = self.arts && blow.element != 0 && blow.element == player.character.art().element;
+        let in_element = self.arts
+            && blow.element != 0
+            && player.character.worn_art().is_some_and(|art| art.element == blow.element);
         let attuned = if in_element && self.perk_on(&blow, "attuned") { ATTUNED_TIMES } else { 1.0 };
         let atheric = self.struck_harder(&blow, defender);
         let damage = blow.damage * trim.damage * staggered * low * attuned * atheric;

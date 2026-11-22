@@ -1,7 +1,8 @@
-// The marks on the screen at sea (`ScreenMark`): each node or port a ring in its kind's colour round its glyph, a
-// hostile ship's in its rank's colour round its faction's emblem, a Miniboss's mark over it; its name under it and its
-// kind and distance under that, gold with a glow when chosen, grey with a lock when locked, and an arrow on its ring's
-// edge pointing the way while it is held at the picture's edge. Each is a press: choosing it calls `chosen`.
+// The marks on the screen (`ScreenMark`): at sea each node or port a ring in its kind's colour round its glyph, a
+// hostile ship's in its rank's colour round its faction's emblem, a Miniboss's mark over it; on foot the houses' roads'
+// next goal (quests/quests.ts); its name under it and its kind and distance under that, gold with a glow when chosen,
+// grey with a lock when locked, and an arrow on its ring's edge pointing the way while it is held at the picture's
+// edge. Each is a press: choosing it calls `chosen`.
 import { CANVAS_FACE } from '../face.ts';
 import { EMBLEM_PIXELS, markPicture } from '../plus/emblems.ts';
 import { TONES } from '../plus/tones.ts';
@@ -39,6 +40,7 @@ const GLYPHS: Record<MarkKind, string> = {
   boss: '☠',
   port: '⚓︎',
   hostile: '',
+  quest: '!',
 };
 /** A locked node's glyph, in the place of its kind's. */
 const LOCK_GLYPH = '🔒︎';
@@ -53,6 +55,8 @@ const KIND_COLOURS: Record<MarkKind | 'locked', string> = {
   port: '#e8e4d6',
   // A hostile ship's mark wears its rank's colour, so its kind's own colour is the ink's.
   hostile: TONES.ink,
+  // The houses' roads' mark, in the brass of the tracker that names its goal.
+  quest: TONES.brassHi,
   locked: '#8a8f96',
 };
 const GOLD = '#f3cf6a';

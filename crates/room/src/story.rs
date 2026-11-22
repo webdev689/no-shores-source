@@ -61,6 +61,18 @@ impl Room {
         }
     }
 
+    /// On the wreck, moves the post of one of the Brig's crew, `crew`, to (`x`, `y`), facing `facing`: with nothing to
+    /// fight he walks there by the room's routes and keeps to it. False outside the story, for none standing, or for a
+    /// boarder.
+    pub fn story_post(&mut self, crew: FighterId, (x, y): (f64, f64), facing: f64) -> bool {
+        if !self.story {
+            return false;
+        }
+        let top = self.on_top(x, y);
+        let found = self.foes.get_mut(&crew).filter(|found| !found.fighter.dead() && found.fighter.side.is_players());
+        found.map(|found| found.brain.keep_to([x, y, top.z], facing, false)).is_some()
+    }
+
     /// A foe the page stood in the story's wreck: on the boarders' one side, the Grey Tithe's, whatever its crew, and
     /// below a Boss held to a Major's health, poise and defence, its own rank's look and blows kept. The Brig's crew,
     /// on the players' side, are left as they are.

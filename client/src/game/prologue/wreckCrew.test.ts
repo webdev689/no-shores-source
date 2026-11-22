@@ -4,7 +4,15 @@ import { test } from 'node:test';
 import { LocalRoom } from '../../network/localRoom.ts';
 import type { Snapshot } from '../../network/roomConnection.ts';
 import { glanceView } from '../../rules/fighters.ts';
-import { CREW_ALIVE_MOST, CREW_TYPES, ROOM_FOES_MOST, crewSpots, WreckCrew, type CrewRun } from './wreckCrew.ts';
+import {
+  CREW_ALIVE_MOST,
+  CREW_TYPES,
+  ROOM_FOES_MOST,
+  crewSpots,
+  regroupSpots,
+  WreckCrew,
+  type CrewRun,
+} from './wreckCrew.ts';
 import { courseOf, inArea, readWreck, topAt, type Zone } from './wreckLayout.ts';
 import type { Standing } from './wreckProgress.ts';
 
@@ -61,6 +69,7 @@ function fakeRun(alive: Map<number, number>): { run: CrewRun; stood: number[][];
         stood.push([type, rank, x, y, facing, level]);
         return next++;
       },
+      storyPost: () => true,
     },
     figures: { dressFoe: (id) => void dressed.push(id) },
     foes: new Map([...alive].map(([id, health]) => [id, { view: { health } }])),
@@ -100,7 +109,7 @@ test('no more of the crew stand than may live at once, so the boarders always fi
   let next = 100;
   const runWith = (alive: Map<number, number>): CrewRun => ({
     ...fakeRun(alive).run,
-    room: { standFoe: () => (ids.push(next), next++) },
+    room: { standFoe: () => (ids.push(next), next++), storyPost: () => true },
   });
   // Standing every zone's crew, none yet shown by the room: all are counted living.
   for (const zone of zones.slice(0, -1)) crew.stand(waveOf(zone).slice(0, 1), runWith(new Map()));
@@ -158,7 +167,7 @@ test('a crewman shown fallen and taken away by the room is never counted living 
   let next = 100;
   const runWith = (alive: Map<number, number>): CrewRun => ({
     ...fakeRun(alive).run,
-    room: { standFoe: () => (ids.push(next), next++) },
+    room: { standFoe: () => (ids.push(next), next++), storyPost: () => true },
   });
   const zones = layout.zones.flatMap((zone, index) => (crewSpots(zone, course).length ? [index] : []));
   for (const zone of zones) {
@@ -169,4 +178,76 @@ test('a crewman shown fallen and taken away by the room is never counted living 
   }
   const wanted = zones.reduce((sum, zone) => sum + crewSpots(layout.zones[zone] as Zone, course).length, 0);
   assert.equal(ids.length, wanted, 'every zone stood its whole crew');
+});
+
+test("the crew regroup round each zone's checkpoint, on its deck, a step apart, facing its wave", () => {
+  layout.zones.slice(1, layout.arena.zone).forEach((zone) => {
+    const spots = regroupSpots(zone, course, 6);
+    assert.ok(spots.length >= 4, `${zone.name}: ${spots.length} places`);
+    const [x, y] = zone.checkpoint;
+    for (const [index, { at, facing }] of spots.entries()) {
+      assert.ok(Math.hypot(at[0] - x, at[1] - y) < 2, `${zone.name}: by the checkpoint`);
+      assert.ok(Math.abs(topAt(course, ...at) - topAt(course, x, y)) < 0.7, `${zone.name}: on its deck`);
+      for (const other of spots.slice(0, index))
+        assert.ok(Math.hypot(at[0] - other.at[0], at[1] - other.at[1]) >= 1, `${zone.name}: a step apart`);
+      const wave = zone.wave.map((foe) => foe.at);
+      const [toX, toY] = [0, 1].map((axis) => wave.reduce((sum, foe) => sum + (foe[axis] ?? 0), 0) / wave.length);
+      const toward = Math.atan2((toX ?? 0) - at[0], -((toY ?? 0) - at[1]));
+      assert.ok(Math.abs(Math.atan2(Math.sin(facing - toward), Math.cos(facing - toward))) < 1e-9, 'facing its wave');
+    }
+  });
+});
+
+test('as the player reaches a zone, the crew still standing from before it regroup there, once; the fallen never', () => {
+  const crew = new WreckCrew();
+  const posted: number[][] = [];
+  const alive = new Map<number, number>();
+  const { run } = fakeRun(alive);
+  const posting: CrewRun = { ...run, room: { ...run.room, storyPost: (id, x, y) => (posted.push([id, x, y]), true) } };
+  crew.stand(waveOf(1).slice(0, 1), posting);
+  const first = [100, 101, 102];
+  first.forEach((id, index) => alive.set(id, index === 1 ? 0 : 40));
+  const shown: CrewRun = { ...posting, foes: new Map([...alive].map(([id, health]) => [id, { view: { health } }])) };
+  crew.stand(waveOf(2).slice(0, 1), shown);
+  crew.regroup(2, shown);
+  assert.deepEqual(
+    posted.map(([id]) => id),
+    [100, 102],
+    "zone 1's living crew, not its fallen nor zone 2's own",
+  );
+  const [x, y] = layout.zones[2]?.checkpoint ?? [0, 0];
+  for (const [, atX = 0, atY = 0] of posted) assert.ok(Math.hypot(atX - x, atY - y) < 2, 'round its checkpoint');
+  crew.regroup(2, shown);
+  assert.equal(posted.length, 2, 'once');
+  crew.regroup(3, shown);
+  const onward = posted.slice(2).map(([id]) => id ?? 0);
+  assert.deepEqual(
+    onward.sort((one, two) => one - two),
+    [100, 102, 103, 104, 105],
+    "on again at the next, with zone 2's own",
+  );
+});
+
+test('in the room on the wreck, a crewman posted at the next zone walks there', async () => {
+  const compiled = new WebAssembly.Module(
+    await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
+  );
+  let last: Snapshot | null = null;
+  const [from] = crewSpots(layout.zones[1] ?? layout.zones[0]!, course);
+  assert.ok(from);
+  const room = LocalRoom.openOverSea(
+    compiled,
+    { x: from.at[0], y: from.at[1] },
+    course,
+    (snapshot) => (last = snapshot),
+  );
+  room.storyWreck();
+  const id = room.standFoe(CREW_TYPES[0] ?? 19, 1, ...from.at, from.facing, 1);
+  const [to] = regroupSpots(layout.zones[2] ?? layout.zones[0]!, course, 1);
+  assert.ok(to && room.storyPost(id, ...to.at, to.facing));
+  for (let tick = 0; tick < 30 * 60; tick++) room.pump(1 / 60);
+  const seen = (last as Snapshot | null)?.foes.find((foe) => foe.id === id);
+  assert.ok(seen, 'still standing');
+  const { x, y } = glanceView(seen.glance);
+  assert.ok(Math.hypot(x - to.at[0], y - to.at[1]) < 1.5, `walked there: ${x.toFixed(1)}, ${y.toFixed(1)}`);
 });

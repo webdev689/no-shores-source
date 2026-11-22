@@ -23,7 +23,9 @@ code:
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/game/foesAsked.ts#foesAsked
   - client/src/game/footGear.ts#useAt
-  - client/src/game/footGear.ts#groundRings
+  - client/src/game/footGear.ts#nodeBeams
+  - client/src/game/overheadMarks.ts#markedHere
+  - client/src/combat/marksOver.ts#marksSeen
   - client/src/game/footGround.ts#standOn
   - client/src/game/plazaLife.ts#PlazaLife
   - client/src/game/usePrompt.ts#UsePrompt
@@ -197,10 +199,21 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   seed, so every browser and every visit has the same people in the same places. Each walk is found by A* over the
   ways; the walk's frames go at the pace they stroll, each in a step of its own. The floor under each is found again
   only once they have walked a step. The fight never takes them for targets.
-- **On the ground** (`footGear`), drawn among the fight's marks: a brass ring at each counter that deals with the
-  player; and at each resource node they may still gather, a sea-green ring under a beam 40 m tall, seen across the
-  patrol, so a route can be planned through them. Each drop lying for them hovers, a Vestige as its crystal, under
-  its rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
+- **Over what a player can use** (`overheadMarks`, `marksOver`; [[What a Player Can Use Wears Its Mark Over It]]),
+  drawn among the fight's marks, after DFO's marks over the people who do something: over each keeper who deals with
+  the player their own mark as their screen shows it, their sign in its brass diamond (the Harbourmaster's an anchor)
+  or a faction's emblem in the diamond edged in its Art's colour, and none while the keeper is away from the counter
+  (the elder on her welcome); over Shape on his spot his own; over each resource node they may still gather its
+  resource's picture, 1.2 m over its ground, under a sea-green beam 40 m tall seen across the patrol, so a route can
+  be planned through them (`footGear`), the beam standing clear over the tallest the mark is drawn. As DFO's, a mark's
+  foot stands 0.2 m over the crown, 0.32 m across, turned to the eye and hidden by what stands before it, never
+  narrower on the screen than 0.017 radians either side so a keeper across the plaza still shows one; it bobs 6 cm
+  once a second on a phase of its own, holding still under reduced motion, and fades out over the last fifth of its
+  30 m, the nearest twelve laid. A whole mark gives the fight's light layer no light, so a sign's brass never lights
+  its own diamond. Its colours are laid in layers as a drop's are, the widest first, each a little nearer the eye, so a
+  mark is a few dozen quads; a fading one is laid flat, so no layer shows through another. Each drop
+  lying for them hovers, a Vestige as its crystal, under its rarity's line (`combat/drops.ts`; [[Gear]], "Drops"),
+  taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"); within 2.5 m of a node it asks the room to gather it. Neither is offered while a
@@ -489,8 +502,8 @@ picture, so the interface the game draws over the world keeps its colour.
 
 - A save the game makes as the tab closes is sent from the worker to the page's storage. A closing test page still
   stored it; whether a real tab's close always does is unchecked.
-- A sound's samples are held twice: those the game fills itself are copied to the page, not moved, and every recording
-  the page decodes is kept there as its buffer and in the worker as a copy of its samples, for the game to read.
+- The samples of a sound the game fills itself are held twice: copied to the page, not moved. A recording is held
+  once, on the page, the worker keeping only its shape and how it measures ([[Interface]], "How recordings load").
 - A browser that cannot hand its canvas to a worker says so and does not start.
 
 - Until the city's tables and blocks have come, the land shows without its city.
