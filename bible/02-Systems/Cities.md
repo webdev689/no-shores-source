@@ -360,12 +360,12 @@ building's place to the centimetre in the page, the same on every machine.
 - **The formations.** The page's crystal is 40 formations made once, the same on every load (`FORMATIONS`), four of
   each of ten kinds, each meshed as a forged model is and placed by instance, turned and sized there. Each grows out
   along its own east from its foot:
-  - a heavy break's cluster: 3 to 4 spires 3 to 5.5 m and 8 to 12 shards 0.5 to 1.6 m, spread 2 m either way;
+  - a heavy break's cluster: 3 to 4 spires 3 to 6.5 m and 8 to 12 shards 0.5 to 1.6 m, spread 2 m either way;
   - a light break's: 2 to 3 spires 1.5 to 3.2 m and 4 to 7 shards 0.4 to 1.2 m;
-  - a mass: a main spire 4.5 m in the middle, nearly upright, 5 to 8 more round it 1.5 to 3.4 m and 6 to 10 shards,
-    leaning every way;
-  - a great formation: a main spire 10 m, leaning 4 degrees, 4 to 6 more round it 3.5 to 7.5 m leaning 14 to 40
-    degrees, and 5 to 8 shards 0.6 to 2 m: never one lone needle;
+  - a mass: a main spire 6 m in the middle, nearly upright, 5 to 8 more round it 2 to 4.5 m and 6 to 10 shards,
+    spread 3 m every way, leaning every way;
+  - a great formation: a main spire 18 m, leaning 4 degrees, 4 to 6 more round it 5 to 13.5 m leaning 14 to 40
+    degrees, and 6 to 10 shards 0.8 to 3 m, spread 4 m every way: never one lone needle;
   - a sheet: 16 to 22 shards 0.3 to 0.8 m over a wall's face 4 m wide and 3 m high;
   - a vein's two shards 1.1 m apart up a wall; a doorway's 4 to 6 shards 0.8 to 2.2 m; a window's 3, 0.4 to 1 m; a
     patch's 4 to 7 shards 0.4 to 1.6 m leaning every way; and a heap's heart, 3 to 5 spires 1.5 to 4.5 m and 4 to 7

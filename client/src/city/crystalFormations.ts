@@ -90,7 +90,7 @@ type Kind = {
 const NONE = [0, 0, 0, 0, 0, 0] as const;
 // [least count, most count, least height m, most height m, least lean, most lean]
 const KINDS = {
-  breakHeavy: { spires: [3, 4, 3, 5.5, 0.15, 0.55], shards: [8, 12, 0.5, 1.6, 0.5, 1.2], spread: 2 },
+  breakHeavy: { spires: [3, 4, 3, 6.5, 0.15, 0.55], shards: [8, 12, 0.5, 1.6, 0.5, 1.2], spread: 2 },
   breakLight: { spires: [2, 3, 1.5, 3.2, 0.15, 0.55], shards: [4, 7, 0.4, 1.2, 0.5, 1.2], spread: 1.6 },
   vein: { spires: NONE, shards: [2, 2, 0.5, 1.3, 0.6, 1], spread: 0.15, climbs: true },
   doorway: { spires: NONE, shards: [4, 6, 0.8, 2.2, 0.2, 0.7], spread: 0.7 },
@@ -99,16 +99,16 @@ const KINDS = {
   heap: { spires: [3, 5, 1.5, 4.5, 0.1, 0.6], shards: [4, 7, 0.5, 1.5, 0.4, 1], spread: 2.5, radial: true },
   sheet: { spires: NONE, shards: [16, 22, 0.3, 0.8, 0.5, 1], spread: 2, face: 3 },
   mass: {
-    spires: [6, 9, 1.5, 4.5, 0.1, 0.6],
+    spires: [6, 9, 2, 6, 0.1, 0.6],
     shards: [6, 10, 0.4, 1.2, 0.4, 1],
-    spread: 2.5,
+    spread: 3,
     radial: true,
     main: true,
   },
   great: {
-    spires: [5, 7, 3.5, 10, 0.25, 0.7],
-    shards: [5, 8, 0.6, 2, 0.4, 1.1],
-    spread: 2.6,
+    spires: [5, 7, 5, 18, 0.25, 0.7],
+    shards: [6, 10, 0.8, 3, 0.4, 1.1],
+    spread: 4,
     radial: true,
     main: true,
   },
