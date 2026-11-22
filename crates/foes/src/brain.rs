@@ -362,9 +362,14 @@ impl Brain {
         (self.health[0] - health) / health_max.max(1.0)
     }
 
-    /// Forgets the hurt so far, as a foe that has backed off from it.
-    pub(crate) fn heal_window(&mut self, health: f64) {
+    /// Forgets the hurt so far, as a foe that has backed off from it, or one just raised to its level.
+    pub fn heal_window(&mut self, health: f64) {
         self.health = [health; SAMPLES];
+    }
+
+    /// Lets go of the noises and shouts told it since its last thought, for a brain that does not think them over.
+    pub fn forget_heard(&mut self) {
+        self.awareness.heard.clear();
     }
 }
 

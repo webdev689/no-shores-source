@@ -262,6 +262,7 @@ impl Room {
         let times = gear::power::foe_health_times(level);
         foe.fighter.health *= times;
         foe.fighter.health_max *= times;
+        foe.brain.heal_window(foe.fighter.health);
         foe.level = level;
         foe.shield = element.map(|element| gear::element::Shield::whole(element, foe.fighter.health_max));
     }
