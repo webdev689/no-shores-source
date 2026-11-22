@@ -167,7 +167,16 @@ export class Wake implements Beat {
   private shotAt(since: number): Shot {
     const facing = this.layout.wake.facing;
     if (since >= LEAVE_S && !this.shouldered && this.run) {
-      this.back = this.backKeys(this.run.restingShot());
+      const rest = this.run.restingShot();
+      // A run come once the camera has left the eyes is eased to from where the camera is, never jumped to.
+      const easing = since > LEAVE_S && since < CONTROL_S;
+      const here = easing && restingKey({ ...LENS, ...railShot(this.back, since, LENS.fov, 'both') });
+      this.back = here
+        ? [
+            { at: since, ...here },
+            { at: CONTROL_S, ...restingKey(rest) },
+          ]
+        : this.backKeys(rest);
       this.shouldered = true;
     }
     if (since >= LEAVE_S) return { ...LENS, ...railShot(this.back, since, LENS.fov, 'both') };
