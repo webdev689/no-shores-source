@@ -51,17 +51,19 @@ const FRAME = {
   swings: new Float32Array(),
   fight: {},
   hints: [['Mouse', 'Swing']],
+  dark: 0.5,
 } as unknown as FootFrame;
 
-/** The fight on foot stood on its deck, as the land's is, its frames counted and its leaving. */
+/** The fight on foot stood on its deck, as the land's is, its frames counted, its arrivals and its leaving. */
 function standOnFoot() {
-  const kept = { frames: 0, left: 0, grid: 0, camera: 0, stand: null as unknown as StandOnDeck };
+  const kept = { frames: 0, arrived: 0, left: 0, grid: 0, camera: 0, stand: null as unknown as StandOnDeck };
   kept.stand = (context, _node, grid, open) => {
     kept.grid = grid.length;
     kept.camera = context.cameraBlocks?.length ?? 0;
     open(() => undefined);
     const foot = {
       frame: () => ((kept.frames += 1), FRAME),
+      arrive: () => void (kept.arrived += 1),
       leave: () => void (kept.left += 1),
     };
     return Promise.resolve(foot as unknown as Foot);
@@ -106,6 +108,9 @@ test('a struck captain alongside is boarded with E: the boarder stands on its de
     ['Pirate Sloop', 'Aboard: its crew stands to meet you'],
   );
   assert.equal(fightAsk(atSea), null, 'E asks nothing while its crew fights');
+  boarding.frame(sea, struck, INPUT);
+  assert.equal(foot.arrived, 1, 'the boarder arrives on its deck once, as spawning into a place');
+  assert.equal(shown.dark, 0.5, 'their view blinks open as their frame on foot says');
 });
 
 test('its deck won holds the boarder a minute, its time left and its hold’s take shown; Use or the minute’s end brings them back aboard their own ship', async () => {
