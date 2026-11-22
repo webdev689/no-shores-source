@@ -201,6 +201,8 @@ function column(
         ),
       );
   }
+  // A facetted column is the crystal's: its foot is sunk in what it grows from and a spire's body is capped by its tip.
+  if (faceted) return faces;
   faces.push(flat(bottom, [0, 0, -1], surface));
   if (top > 0) faces.push(flat(cap, [0, 0, 1], surface));
   return faces;

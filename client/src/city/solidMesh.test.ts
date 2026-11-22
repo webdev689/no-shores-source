@@ -176,8 +176,9 @@ test("the crystal's six-sided columns are cut in flat facets, each lit as one; a
   };
   assert.equal(facetNormals('crystal'), 6, 'one normal a facet');
   assert.ok(facetNormals('stone') > 6, 'smooth round its sides');
-  const enclosed = enclosure(
-    meshed({ ...solidOf({ shape: 'column', sides: 6, top: 0 }, [2, 2, 6]), material: 'crystal' }),
-  );
-  assert.ok(enclosed.volume > 0, 'a facetted point is wound out of itself');
+  // Its foot is sunk in what it grows from and a body's top is under its tip: neither is meshed.
+  const body = meshed({ ...solidOf({ shape: 'column', sides: 6, top: 0.8 }, [2, 2, 6]), material: 'crystal' });
+  for (let vertex = 0; vertex < body.normals.length / 3; vertex++)
+    assert.ok(Math.abs(body.normals[vertex * 3 + 2]) < 0.99, 'no level face');
+  assert.equal(body.indices.length / 3, 12, 'six facets of two triangles');
 });

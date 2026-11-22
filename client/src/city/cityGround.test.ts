@@ -8,6 +8,7 @@ import { clearedGround, groundPlates, PAVED_TILE, plateSkirts, sideOf } from './
 import { MASS_FLOATS, MASS_RUIN } from './cityMasses.ts';
 import { emptyMesh } from './mesh.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
+import { FORMATIONS } from './overtaken.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
 
 const content = (path: string): string => readFileSync(new URL(`../../../content/${path}`, import.meta.url), 'utf8');
@@ -244,7 +245,9 @@ test('a ruin breaks every building the same every time: some fallen to heaps, th
     drawingFingerprint(ruin),
     drawingFingerprint(buildCity({ ...madePlan(), ruined: true }, TEMPERATE, blocksOf(), TABLES)),
   );
-  const near = [...ruin.near.values()].flat();
+  // the forged models it stands, not the crystal's formations laid after them
+  const forged = ruin.models.entries.length - FORMATIONS.length;
+  const near = [...ruin.near.values()].flat().filter((each) => each.model < forged);
   const broken = near.filter((each) => each.cut > 0);
   assert.ok(broken.length > 0, 'its standing buildings are broken off');
   assert.ok(near.length < [...port.near.values()].flat().length, 'a fallen building stands no model');
@@ -279,19 +282,39 @@ function crystalCorners(data: ReturnType<typeof buildCity>, ranges: readonly { f
   return corners;
 }
 
-test("a ruin's buildings are overtaken by the crystal, its great spires drawn far and its shards near; a port's not", () => {
+test("a ruin's buildings are overtaken by the crystal, its great spires drawn far and its small crystal near", () => {
   const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
   const ruin = buildCity({ ...madePlan(), ruined: true }, TEMPERATE, blocksOf(), TABLES);
   const everything = (data: typeof ruin) => data.chunks.flatMap((chunk) => [chunk.solids, chunk.detail]);
+  /** The near instances of the crystal's formations, laid after the forged models. */
+  const formations = (data: typeof ruin) => {
+    const first = data.models.entries.length - FORMATIONS.length;
+    return [...data.near.values()].flat().filter((each) => each.model >= first);
+  };
   assert.equal(crystalCorners(port, everything(port)).length, 0, 'a port city is untouched');
-  assert.equal(port.lamps.length, 0);
+  assert.equal(formations(port).length + port.lamps.length, 0);
   // Nothing the page lays stands in the plaza's window (the made plan's plaza, 110 m round).
   const [west, north, east, south] = madePlan().social.bounds.map((bound, k) => bound - madePlan().centre[k % 2]);
-  for (const [x, y] of crystalCorners(ruin, everything(ruin)))
-    assert.ok(x < west - 110 || x > east + 110 || y < north - 110 || y > south + 110, `${x}, ${y} in the window`);
-  // With its plaza far off, every building of the made city is overtaken as its seed says.
+  const outside = ([x, y]: readonly number[]) => x < west - 110 || x > east + 110 || y < north - 110 || y > south + 110;
+  for (const corner of crystalCorners(ruin, everything(ruin))) assert.ok(outside(corner), `${corner} in the window`);
+  for (const each of formations(ruin)) assert.ok(outside(each.at), `${each.at} in the window`);
+  // With its plaza far off, every building of the made city is overtaken as its seed says; a shard of the crate's
+  // crust on its rubble is small, drawn near.
   const plan = madePlan();
-  const away = { ...plan, ruined: true, social: { ...plan.social, bounds: [0, 0, 10, 10] as const } };
+  const crust: Solid = {
+    ...plan.landmark[0],
+    shape: 'column',
+    sides: 6,
+    top: 0,
+    size: [0.3, 0.3, 1],
+    material: 'crystal',
+  };
+  const away = {
+    ...plan,
+    ruined: true,
+    works: [...plan.works, { ...crust, at: [plan.centre[0] + 150, plan.centre[1], 30] as const }],
+    social: { ...plan.social, bounds: [0, 0, 10, 10] as const },
+  };
   const overtaken = buildCity(away, TEMPERATE, blocksOf(), TABLES);
   const great = crystalCorners(
     overtaken,
@@ -301,9 +324,10 @@ test("a ruin's buildings are overtaken by the crystal, its great spires drawn fa
     overtaken,
     overtaken.chunks.map((chunk) => chunk.detail),
   );
-  assert.ok(great.length > 0 && detail.length > great.length, `${great.length} great, ${detail.length} detail`);
-  assert.ok(overtaken.lamps.length > 0, 'its great formations light the night');
-  // Far off a chunk draws its great spires only; near, its shards too.
+  assert.ok(great.length > 0 && detail.length > 0, `${great.length} great, ${detail.length} detail`);
+  assert.ok(formations(overtaken).length > 3 * 17, `${formations(overtaken).length} formations`);
+  assert.ok(overtaken.lamps.length > 0, 'its great spires light the night');
+  // Far off a chunk draws its great spires only; near, its small crystal too.
   const chunk = overtaken.chunks.find((each) => each.detail.count > 0);
   assert.ok(chunk);
   assert.equal(detailRuns([chunk], [chunk.middlesLow[0], chunk.middlesLow[1], 50]).length, 1);

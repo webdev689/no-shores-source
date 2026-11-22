@@ -4,6 +4,7 @@ import { buildingModel } from '../models/buildings.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { propModel } from '../models/props.ts';
 import type { BuildingTable, PropTable } from '../models/tables.ts';
+import type { MeshData } from './mesh.ts';
 
 /** Numbers a model vertex takes: position, normal, UV, and its layer as a whole number. */
 export const MODEL_FLOATS = 9;
@@ -41,13 +42,19 @@ export type ModelBuffers = {
   readonly triangles: readonly number[];
 };
 
-/** Lays every model into one vertex and one index buffer, each vertex wearing its part's layer. */
+/** Lays every model into one vertex and one index buffer, each vertex wearing its part's layer, then `meshes` (each in
+ *  a model's frame, every vertex with its own layer) after them, as models too. */
 export function modelBuffers(
   models: readonly (ForgedModel | null)[],
   layerOf: (archive: number, record: number) => number,
+  meshes: readonly MeshData[] = [],
 ): ModelBuffers {
-  const vertexCount = models.reduce((sum, model) => sum + (model ? model.positions.length / 3 : 0), 0);
-  const indexCount = models.reduce((sum, model) => sum + (model ? model.indices.length : 0), 0);
+  const vertexCount =
+    models.reduce((sum, model) => sum + (model ? model.positions.length / 3 : 0), 0) +
+    meshes.reduce((sum, mesh) => sum + mesh.positions.length / 3, 0);
+  const indexCount =
+    models.reduce((sum, model) => sum + (model ? model.indices.length : 0), 0) +
+    meshes.reduce((sum, mesh) => sum + mesh.indices.length, 0);
   const vertices = new ArrayBuffer(vertexCount * MODEL_FLOATS * 4);
   const [floats, whole] = [new Float32Array(vertices), new Uint32Array(vertices)];
   const indices = new Uint32Array(indexCount);
@@ -77,6 +84,21 @@ export function modelBuffers(
     triangles.push(model.indices.length / 3);
     vertexAt += count;
     indexAt += model.indices.length;
+  }
+  for (const mesh of meshes) {
+    const count = mesh.positions.length / 3;
+    for (let k = 0; k < count; k++) {
+      const slot = (vertexAt + k) * MODEL_FLOATS;
+      floats.set(mesh.positions.slice(k * 3, k * 3 + 3), slot);
+      floats.set(mesh.normals.slice(k * 3, k * 3 + 3), slot + 3);
+      floats.set(mesh.uvs.slice(k * 2, k * 2 + 2), slot + 6);
+      whole[slot + 8] = mesh.layers[k] ?? 0;
+    }
+    indices.set(mesh.indices, indexAt);
+    entries.push({ firstIndex: indexAt, indexCount: mesh.indices.length, baseVertex: vertexAt });
+    triangles.push(mesh.indices.length / 3);
+    vertexAt += count;
+    indexAt += mesh.indices.length;
   }
   return { vertices, indices, entries, triangles };
 }

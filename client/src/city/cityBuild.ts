@@ -23,7 +23,17 @@ import { addPolygon, appendMesh, emptyMesh, type MeshData } from './mesh.ts';
 import { pictureBook, type PictureBook, type PictureWant } from './pictures.ts';
 import { CELL_M, cellCorner, type CityClimate, type CityPlan, type Solid, solidReach } from './plan.ts';
 import type { LampPlace } from '../sky/lamps.ts';
-import { buildingGrowth, crystalLamps, type Growth, heapGrowth, inPlazaWindow, wreckCrust } from './overtaken.ts';
+import {
+  buildingGrowth,
+  type CrystalPlace,
+  crystalLamps,
+  FORMATION_REACH,
+  formationMeshes,
+  type Growth,
+  heapGrowth,
+  inPlazaWindow,
+  wreckCrust,
+} from './overtaken.ts';
 import { brokenMass, buildingRuin, type BuildingRuin, fallenHeap } from './ruins.ts';
 import { meshSolid } from './solidMesh.ts';
 import { boxReach, tiersReached } from './tiers.ts';
@@ -205,7 +215,7 @@ export function buildCity(
   );
 
   const chunkCount = chunkSide * chunkSide;
-  const { masses, massRanges, hullRanges, tops, heaps, growth, lamps } = buildingMassesOf(
+  const { masses, massRanges, hullRanges, tops, heaps, growth, formations, lamps } = buildingMassesOf(
     plan,
     placedPieces,
     tables,
@@ -218,6 +228,13 @@ export function buildCity(
     const list = near.get(piece.cell) ?? [];
     list.push({ model: modelIndex.get(piece.key) ?? 0, at: piece.at, cut: piece.ruin?.cut ?? 0 });
     near.set(piece.cell, list);
+  }
+  // The crystal's formations stand by instance in their buildings' cells, after the forged models.
+  for (const { cell, place } of formations) {
+    const list = near.get(cell) ?? [];
+    const stands = [place.at[0] - origin[0], place.at[1] - origin[1], place.at[2], place.yaw] as const;
+    list.push({ model: models.length + place.formation, at: stands, cut: 0 });
+    near.set(cell, list);
   }
   for (const list of near.values()) list.sort((a, b) => a.model - b.model);
 
@@ -340,7 +357,7 @@ export function buildCity(
     side,
     book,
     cells,
-    models: modelBuffers(models, book.layerOf),
+    models: modelBuffers(models, book.layerOf, formationMeshes(book.materials.crystal)),
     near,
     masses,
     chunks,
@@ -416,6 +433,7 @@ function buildingMassesOf(
   tops: Float32Array;
   heaps: Solid[];
   growth: Growth;
+  formations: { cell: number; place: CrystalPlace }[];
   lamps: LampPlace[];
 } {
   const known = new Map<number, { kept: Mass[]; hull: Mass | null; wall: number; roof: number }>();
@@ -439,12 +457,16 @@ function buildingMassesOf(
   }));
   const tops = new Float32Array(chunkCount).fill(-Infinity);
   const heaps: Solid[] = [];
-  const growth: Growth = { great: [], detail: [] };
+  const growth: Growth = { great: [], detail: [], placed: [] };
+  const formations: { cell: number; place: CrystalPlace }[] = [];
   const lamps: LampPlace[] = [];
-  const overtake = (grown: Growth) => {
-    const great = grown.great.filter((solid) => !inPlazaWindow(solid, plan));
+  const clear = (solid: Solid) => !inPlazaWindow(solid.at, solidReach(solid), plan);
+  const overtake = (grown: Growth, cell: number) => {
+    const great = grown.great.filter(clear);
     growth.great.push(...great);
-    growth.detail.push(...grown.detail.filter((solid) => !inPlazaWindow(solid, plan)));
+    growth.detail.push(...grown.detail.filter(clear));
+    for (const place of grown.placed)
+      if (!inPlazaWindow(place.at, FORMATION_REACH[place.formation], plan)) formations.push({ cell, place });
     lamps.push(...crystalLamps(great, 1));
   };
   const placeOf = (piece: Placed) => ({
@@ -465,7 +487,7 @@ function buildingMassesOf(
       if (piece.ruin.fallen) {
         const heap = fallenHeap(massShape(shapes.hull, place, plan.centre), plan.centre);
         heaps.push(heap);
-        overtake(heapGrowth(heap, [place.east, place.south]));
+        if (building) overtake(heapGrowth(heap, [place.east, place.south]), piece.cell);
         continue;
       }
       const cut = piece.ruin.cut;
@@ -476,7 +498,8 @@ function buildingMassesOf(
       const hull = brokenMass(shapes.hull, cut);
       if (hull) {
         byChunk[piece.chunk].hulls.push([hull, piece]);
-        overtake(buildingGrowth(massShape(hull, place, plan.centre), plan.centre, [place.east, place.south]));
+        const grown = buildingGrowth(massShape(hull, place, plan.centre), plan.centre, [place.east, place.south]);
+        if (building) overtake(grown, piece.cell);
       }
       continue;
     }
@@ -499,7 +522,7 @@ function buildingMassesOf(
   };
   const massRanges = byChunk.map((chunk, k) => lay(chunk.masses, MASS_TIER_MASSES, k));
   const hullRanges = byChunk.map((chunk, k) => lay(chunk.hulls, MASS_TIER_HULLS, k));
-  return { masses, massRanges, hullRanges, tops, heaps, growth, lamps };
+  return { masses, massRanges, hullRanges, tops, heaps, growth, formations, lamps };
 }
 
 /** Ranges laid end to end in one buffer, joined where one starts as the last ends, so a run of chunks is one draw. */
