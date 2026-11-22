@@ -3,7 +3,7 @@
 //! growth standing in no one's way; a heroic chest without the bonus; a foe struck from afar as a part taken; and its
 //! foes withdrawing into the crack at a walk.
 
-use super::fissure::{Shard, WARDEN_NAME};
+use super::fissure::{SPIRES, Shard, WARDEN_NAME};
 use super::fissure_tests::{chests, fissure, fissure_mut, lesser, seal_one};
 use super::fixture::{FISSURE_AT, FISSURE_MINUTE, place, room_at, running, running_mut, standing, strike, ticks};
 use super::{COUNTDOWN_TICKS, Heroic, Phase};
@@ -170,6 +170,34 @@ fn heroic_but_sealed_late_it_pays_the_heroic_chest_without_the_bonus() {
     assert_eq!(running(&room).phase, Phase::Won);
     assert!(!running(&room).bonus);
     assert_eq!(chests(&room, player), [3], "heroic, the bonus lost");
+}
+
+#[test]
+fn the_warden_is_posted_where_it_climbs_out_clear_of_the_spires_still_standing_round_the_middle() {
+    let (mut room, players) = room_at(FISSURE_MINUTE, 1);
+    let player = players[0];
+    room.tick();
+    while running(&room).heroic == Heroic::NotYet {
+        seal_one(&mut room, player);
+    }
+    let growth = fissure(&room).growth.unwrap();
+    strike(&mut room, player, growth, 1.0e6);
+    room.tick();
+    let needed = fissure(&room).needed();
+    fissure_mut(&mut room).set = needed - 1;
+    seal_one(&mut room, player);
+    let warden = fissure(&room).warden.expect("the Warden came out");
+    assert_eq!(fissure(&room).spires.len(), SPIRES.len(), "the spires stand until it falls");
+    let post = room.foes[&warden].brain.home().expect("a post").at;
+    let body = room.foes[&warden].fighter.body;
+    assert!(apart([post[0], post[1]], [body.x, body.y]) < 0.5, "posted where it climbed out");
+    // A body's width clear of every spire, so a fight round its post never wedges against one.
+    let clear = |spire: &movement::Block| {
+        let gap_x = (spire.min_x - post[0]).max(post[0] - spire.max_x).max(0.0);
+        let gap_y = (spire.min_y - post[1]).max(post[1] - spire.max_y).max(0.0);
+        (gap_x * gap_x + gap_y * gap_y).sqrt() > 2.0 * movement::TUNING.radius
+    };
+    assert!(fissure(&room).spires.iter().all(clear), "its post {post:?} is clear of the spires");
 }
 
 #[test]
