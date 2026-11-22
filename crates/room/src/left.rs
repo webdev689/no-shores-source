@@ -24,8 +24,15 @@ impl Room {
         }
     }
 
+    /// What a returning player's character brings back into the room: the body it left with, and on a sea island the
+    /// nodes it gathered there today (`spent_today`).
+    pub(crate) fn given_back(&mut self, player: PlayerId) {
+        self.give_left_back(player);
+        self.spent_today(player);
+    }
+
     /// Gives a returning player the body their character left with, what of it still holds at the room's minute.
-    pub(crate) fn give_left_back(&mut self, player: PlayerId) {
+    fn give_left_back(&mut self, player: PlayerId) {
         let minute = self.minute;
         let Some(found) = self.players.get_mut(&player) else { return };
         let Some(left) = found.character.left else { return };
