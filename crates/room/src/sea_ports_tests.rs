@@ -1,9 +1,9 @@
 use super::*;
 use crate::harbour::{HELD, Harbours, REPAIR_MOST_S};
-use crate::pirates::Pirate;
+use crate::hostiles::Hostile;
 use naval::damage::{Hurt, State};
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
-use naval::ranks::{Commission, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 
 /// One square continent 100 km a side, its north-west corner 100 km from the frame's, and two port cities' roadsteads
 /// out at sea: the first 10 km east of where the tests' ships sail.
@@ -47,9 +47,9 @@ pub(super) fn met(out: f64, rank: Rank) -> (Sea, PlayerId) {
     let mut sea = sea();
     let player = sea.join();
     sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
-    let commission = Commission { faction: PIRATES, rank };
-    let bold = Pirate { level: 9, ..Pirate::standing(1, 7, commission, [50_000.0, 50_000.0 - out], 0.0, true) };
-    sea.pirates.sailing.push(bold);
+    let commission = Commission { faction: GREY_TITHE, rank };
+    let bold = Hostile { level: 9, ..Hostile::standing(1, 7, commission, [50_000.0, 50_000.0 - out], 0.0, true) };
+    sea.hostiles.sailing.push(bold);
     sea.tick();
     assert!(sea.fights.fighting(player));
     (sea, player)
@@ -92,8 +92,8 @@ fn a_wary_ship_meets_a_player_whose_sloop_it_outguns_and_lets_a_sound_one_be() {
     let mut sea = sea();
     let player = sea.join();
     sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
-    let minor = Commission { faction: PIRATES, rank: Rank::Minor };
-    sea.pirates.sailing.push(Pirate::standing(1, 7, minor, [50_000.0, 49_400.0], 0.0, false));
+    let minor = Commission { faction: GREY_TITHE, rank: Rank::Minor };
+    sea.hostiles.sailing.push(Hostile::standing(1, 7, minor, [50_000.0, 49_400.0], 0.0, false));
     sea.tick();
     assert!(!sea.fights.fighting(player), "a wary Minor lets a sound Sloop be");
     sea.berths.get_mut(&player).unwrap().kept = [0.3, 1.0, 1.0];
@@ -130,8 +130,8 @@ fn a_ships_hurts_are_kept_after_a_fight_and_it_starts_the_next_with_them() {
     assert!(!sea.fights.fighting(player));
     let (kept, _) = sea.kept(player).unwrap();
     assert!((kept[0] - 0.5).abs() < 1e-9, "{kept:?}");
-    let bold = Pirate::standing(2, 9, Commission::default(), [50_000.0, 49_300.0], 0.0, true);
-    sea.pirates.sailing.push(bold);
+    let bold = Hostile::standing(2, 9, Commission::default(), [50_000.0, 49_300.0], 0.0, true);
+    sea.hostiles.sailing.push(bold);
     sea.tick();
     let hull = sea.fights.of_mut(player).unwrap().0.fight.vessel(PLAYER).unwrap().damage.hull;
     assert_eq!(hull, 120.0);

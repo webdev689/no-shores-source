@@ -10,9 +10,9 @@ fn room() -> Room {
     Room::new(Vec::new(), (0.0, 0.0))
 }
 
-const SWORDSMAN: u8 = 14;
-const BRUTE: u8 = 15;
-const SKIRMISHER: u8 = 13;
+const SWORDSMAN: u8 = ::foes::roster::COLLECTOR;
+const BRUTE: u8 = ::foes::roster::ENFORCER;
+const SKIRMISHER: u8 = ::foes::roster::RUNNER;
 
 /// An ask for a Major of the type numbered `number`.
 fn major(number: u8) -> Option<SpawnAsk> {
@@ -49,7 +49,7 @@ fn a_player_asks_for_foes_that_stand_before_them_and_sends_them_all_away() {
     let spawned: Vec<FoeSeen> = room.foes_seen().collect();
     assert_eq!(spawned.len(), 1);
     let foe = spawned[0];
-    assert_eq!((foe.kind, foe.foe_type, foe.rank, foe.faction, foe.phase), (2, SWORDSMAN, 2, 2, 1));
+    assert_eq!((foe.kind, foe.foe_type, foe.rank, foe.faction, foe.phase), (2, SWORDSMAN, 2, 1, 1));
     // The player looks north, though their body, never walked, faces south: the foe stands 5 m north, facing them.
     assert!((foe.fighter.body.y + 5.0).abs() < 0.5 && foe.fighter.body.x.abs() < 0.5, "{:?}", foe.fighter.body);
     assert!((foe.fighter.body.facing - PI).abs() < 1e-9, "it faces the player");
@@ -132,7 +132,7 @@ fn turns_at(dominating: bool) -> (usize, f64, f64) {
         .map(|index| {
             let bearing = (f64::from(index) * 30.0 - 60.0).to_radians();
             let (x, y) = (6.0 * libm::sin(bearing), -6.0 * libm::cos(bearing));
-            let brute = ::foes::foe_type(15).expect("the pirates' brute");
+            let brute = ::foes::foe_type(::foes::roster::ENFORCER).expect("the Tithe's Enforcer");
             let (fighter, brain) =
                 ::foes::spawn(brute, ::foes::Rank::Major, x, y, combat::sight::bearing([x, y], [0.0, 0.0]));
             let id = room.next_id();
@@ -240,7 +240,7 @@ fn a_crossbowman_fights_from_behind_the_room_s_cover() {
     assert!(hidden > watched / 3, "and out of the player's sight behind it much of the time: {hidden} of {watched}");
 }
 
-/// A pirate swordsman put straight into the room at (x, y), facing `facing`.
+/// A hostile swordsman put straight into the room at (x, y), facing `facing`.
 fn put(room: &mut Room, x: f64, y: f64, facing: f64) -> FighterId {
     let (fighter, brain) =
         ::foes::spawn(::foes::foe_type(SWORDSMAN).expect("a type"), ::foes::Rank::Major, x, y, facing);

@@ -205,11 +205,11 @@ fn shape_reach(telegraph: &Telegraph) -> f64 {
     }
 }
 
-/// The pirates' type in a role, at the rank a page asking by role alone gets (`SpawnAsk::by_role`).
+/// The Grey Tithe's type in a role, a Major or at its first rank if it comes in none.
 #[cfg(test)]
-pub(crate) fn pirate_in(role: ::foes::Role) -> Option<(&'static FoeType, Rank)> {
-    let SpawnAsk::Foe { foe_type: number, rank, .. } = SpawnAsk::by_role(role as u8, 0)? else { return None };
-    Some((foe_type(number)?, Rank::from_number(rank)?))
+pub(crate) fn hostile_in(role: ::foes::Role) -> Option<(&'static FoeType, Rank)> {
+    let found = ::foes::in_role(::foes::factions::GREY_TITHE, role)?;
+    Some((found, found.rank_or_first(Some(Rank::Major))))
 }
 
 impl Room {

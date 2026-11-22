@@ -189,7 +189,7 @@ test('a ship arrived lies at anchor where it is: reckoned nowhere, no way on it'
 test('the compass marks friendly ships within 900 m in Overlook’s blue', () => {
   assert.equal(SHIP_MARK_COLOURS.friendly, '#2f5d9a');
   const marks = [
-    ...seaShipMarks(null, { others: [], pirates: [] }),
+    ...seaShipMarks(null, { others: [], hostiles: [] }),
     ...friendlyMarks([
       { id: 1, hull: 0, x: 0, y: -500, heading: 0 },
       { id: 2, hull: 0, x: 0, y: -2_000, heading: 0 },
@@ -220,4 +220,18 @@ test('a ship at anchor at its roadstead lies with its sails furled; one under wa
   assert.ok(lying && under, 'both drawn');
   assert.equal(furled(lying), true, 'at anchor: furled');
   assert.equal(furled(under), false, 'under way: set');
+});
+
+test('a ship the room has taken off its route is drawn on it no more', () => {
+  const fleet = new FriendlyShips(() => [shipAt(2, [100, 0], [0, -1]), shipAt(5, [40, 0], [1, 0])], 5);
+  assert.deepEqual(
+    fleet.near([0, 0], 10_000, 100, 0, new Set([5])).map((ship) => ship.id),
+    [2],
+    'the room keeps the other',
+  );
+  assert.deepEqual(
+    fleet.near([0, 0], 10_000, 100.5, 0.5).map((ship) => ship.id),
+    [5, 2],
+    'let go, both on their routes',
+  );
 });

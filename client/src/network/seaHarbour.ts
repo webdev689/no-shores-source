@@ -52,6 +52,16 @@ export interface SeenIsle {
   readonly found: boolean;
 }
 
+/** A friendly ship of the traffic the room keeps at sea, off its route: its traffic id, where it is, its heading
+ *  (radians clockwise from north) and its hull (0 the Sloop to 3 the Frigate). */
+export interface SeenFriendly {
+  readonly traffic: number;
+  readonly x: number;
+  readonly y: number;
+  readonly heading: number;
+  readonly hull: number;
+}
+
 export interface HarbourPart {
   readonly flotsam: readonly SeenFlotsam[];
   readonly kept: readonly SeenKept[];
@@ -59,6 +69,9 @@ export interface HarbourPart {
   readonly told: readonly { readonly player: number; readonly numbers: readonly number[] }[];
   readonly decks: readonly SeenDeck[];
   readonly islands: readonly SeenIsle[];
+  /** Each traffic id the room has taken off its route, which the page draws no more, and those it keeps at sea. */
+  readonly taken: readonly number[];
+  readonly friendlies: readonly SeenFriendly[];
 }
 
 /** The sea's part of a snapshot: empty from any other room. */
@@ -103,5 +116,17 @@ export function harbourOf(snapshot: Snapshot): HarbourPart {
       found: isle.found(),
     };
   });
-  return { flotsam, kept, told, decks, islands };
+  const taken = Array.from({ length: snapshot.takenLength() }, (unused, index) => Number(snapshot.taken(index) ?? 0));
+  const friendlies = Array.from({ length: snapshot.friendliesLength() }, (unused, index): SeenFriendly => {
+    const friend = snapshot.friendlies(index);
+    if (!friend) throw new Error(`snapshot friendly ${index} does not read`);
+    return {
+      traffic: Number(friend.traffic()),
+      x: friend.x(),
+      y: friend.y(),
+      heading: friend.heading(),
+      hull: friend.hull(),
+    };
+  });
+  return { flotsam, kept, told, decks, islands, taken, friendlies };
 }

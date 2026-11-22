@@ -1,6 +1,6 @@
 use super::*;
 use crate::arms::Side;
-use crate::arms::{PIRATE_SLOOP, SLOOP_ARMS};
+use crate::arms::{SLOOP_ARMS, TITHE_SLOOP};
 use crate::ballistics::Ball;
 use crate::captain::Temper;
 use crate::damage::{Hurt, Zone};
@@ -128,7 +128,7 @@ fn a_broadside_laid_on_it_strikes_it() {
     let hits =
         events.iter().filter(|event| matches!(event, Event::Shot(ShotEvent::Hit { target: CAPTAIN, .. }))).count();
     assert!(hits >= 1, "{events:?}");
-    assert!(captain(&fight).damage.hull < PIRATE_SLOOP.hull);
+    assert!(captain(&fight).damage.hull < TITHE_SLOOP.hull);
     assert!(mind(&fight).hostile_to(PLAYER), "struck, it is provoked");
 }
 
@@ -423,9 +423,9 @@ fn a_ball_of_a_side_of_many_guns_takes_its_share_of_a_sloops_ball_from_it() {
 #[test]
 fn a_captain_coming_to_engage_is_round_to_its_broadside_as_the_range_comes_to_its_reach() {
     use crate::captain::course::{distance, heading_to, wrap};
-    use crate::ranks::{PIRATES, Rank};
+    use crate::ranks::{GREY_TITHE, Rank};
     for rank in Rank::ALL {
-        let commission = Commission { faction: PIRATES, rank };
+        let commission = Commission { faction: GREY_TITHE, rank };
         let seed = (1..).find(|seed| crate::captain::temper_for(commission, *seed) == Temper::Bold).unwrap();
         let coming = Ship { heading: std::f64::consts::PI, ..sloop_at(0.0, -700.0) };
         let mut fight = Fight::meet(sloop_at(0.0, 0.0), coming, commission, seed, &Open, 0.0);
@@ -453,7 +453,7 @@ fn a_captain_coming_to_engage_is_round_to_its_broadside_as_the_range_comes_to_it
 
 #[test]
 fn a_captain_raised_to_a_strength_fights_with_that_many_times_its_hull_men_and_guns_harm() {
-    let commission = Commission { faction: crate::ranks::PIRATES, rank: crate::ranks::Rank::Minor };
+    let commission = Commission { faction: crate::ranks::GREY_TITHE, rank: crate::ranks::Rank::Minor };
     let mut fight = Fight::meet(sloop_at(0.0, 0.0), sloop_at(0.0, -400.0), commission, 3, &Open, 0.0);
     fight.raise(CAPTAIN, 2.0);
     let (plain, raised, build) = (commission.damage(), &captain(&fight).damage, commission.build_at(2.0));

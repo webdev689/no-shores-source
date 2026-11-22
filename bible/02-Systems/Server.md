@@ -21,7 +21,8 @@ code:
   - crates/protocol/src/fleet.rs#read_orders
   - crates/protocol/src/fleet.rs#fleet_snapshot_bytes
   - crates/room-wasm/src/fleet_door.rs#predict
-  - crates/room/src/pirates.rs#Pirates
+  - crates/room/src/hostiles.rs#Hostiles
+  - crates/room/src/friendlies.rs#Friendlies
   - crates/naval/src/wire.rs#view_numbers
   - crates/naval/src/wire.rs#parted
   - crates/bake/src/lib.rs#nodes_of
@@ -249,28 +250,28 @@ will take it, by the room's own tick.
   hostile ship waits its first 30 s again; the hostile ships no player keeps go as ever. Either way the player is told
   (code 24: taken, or the reason's number), and a refused travel leaves the ship as it was.
 - Ships move by + - * / and square root; the heading is the pure-Rust arctangent ([[Agree to the Bit]]).
-- Pirates and the Grey Tithe's ships sail among the players', each with its faction and rank, and a bold one that
-  meets a player fights them in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a ship of
-  another faction fights it with no player (`clash.rs`): the room steps that fight each tick, the snapshot shows its
-  ships among the others at sea where the fight has them, and a player who comes within 750 m joins it. Each captain
-  sails its rank's hull ([[Hulls]]). Who comes, at which rank and level, how far out and where, is the water's at the
+- The Grey Tithe's ships sail among the players', each with its rank, and a bold one that meets a player fights them
+  in the room, by the player's orders ([[Naval Combat]], "At sea"). One that meets a friendly ship of the traffic
+  attacks it with no player (`friendlies.rs`, `clash.rs`): the room steps that fight each tick, the snapshot shows its
+  ships at sea where the fight has them, and a player who comes within 750 m joins it beside the friendly ship. Each
+  Tithe captain sails its rank's hull ([[Hulls]]), a friendly ship the traffic's. Who comes, at which rank and level, how far out and where, is the water's at the
   player's ship (`sighting.rs`, on the room's chart of its coasts, waters and lanes, `chart.rs`). The sea's snapshot
   carries each hostile ship's faction, rank, hull, level and the distance it is sighted from, and each player's fight
   its captain's faction, rank and hull; a fight's view carries every ship's hull. While a player fights,
   the room takes their orders and no course, and their ship is where the fight has it, at rest on the room's word. A
-  ship sails at its pace held down as a pirate comes near, and the snapshot's pace for it is the one it sailed at. The
-  sea opens on a seed for its pirates, from the runtime's random numbers (`room_open_sea`'s third number), round a
+  ship sails at its pace held down as a hostile ship comes near, and the snapshot's pace for it is the one it sailed at. The
+  sea opens on a seed for its hostile ships, from the runtime's random numbers (`room_open_sea`'s third number), round a
   layout file's text, or `{ "layout", "ports" }` with the ports as the waters' door takes them, whose lanes between the
   port cities the Grey Tithe patrols; with a layout alone it has no lanes. The server opens it with the port cities
   read from the land files (`server/seaPorts.ts`), as the page does (`portsOf`).
 - **Measured** (`measure_tests.rs`, by hand in release): 20 players in each kind of water of the world's layout, each
   voyaging at ×60 straight out 150 km and back for ten minutes: sailing on whatever they sight, chasing every ship they
   sight (the room told), or turning away from a ship coming for them. Sailing on, a fight comes by 5 minutes for 30 to
-  35% in the pirates' and the Grey Tithe's waters (10% contested) and by 10 for 40 to 65% (30% contested); the first
+  35% in the hostile waters and by 10 for 40 to 65%; the first
   ship is sighted at a median of 132 to 160 s; a ship stays in sight 37 to 59 s on average, 68 to 92% of them 30 s and
   over. Chasing, by 10 minutes 70 to 85% (by 5: 55 to 60%). Turning away, 35 of 36 a ship came for in hostile waters
-  never fought. A voyage is held under ×60 for 3 s at most as a ship comes near along its way, but for one contested
-  voyage, held up to 89 s.
+  never fought. A voyage is held under ×60 for 3 s at most as a ship comes near along its way, but for one voyage,
+  held up to 89 s.
 - **How its fights end** ([[Naval Combat]], "How a fight ends"): a fight holds any number of players (`battle.rs`),
   joined by a player not fighting or a hostile ship at sea within 750 m of it; a captain's ship that sinks lays what
   floats for each player who fought it (`flotsam.rs`); a struck captain may be boarded, its deck a room on land the
@@ -312,7 +313,7 @@ will take it, by the room's own tick.
   straight on along its heading (within 0.01 radians of it), the page's course straight on, set again as it nears
   its end. So it sails on, at the pace the page eases it to for the view.
   They take the helm again within 0.8 m of the spot behind its wheel, standing, judged where their steps leave them
-  once the steps the clock allows by then are taken; a bold pirate that meets them calls them to it at once.
+  once the steps the clock allows by then are taken; a bold hostile ship that meets them calls them to it at once.
 - Playing alone, the [[Game]] runs this same room in a worker of its own (`LocalRoom.openSea`, through `RoomThread`;
   [[Game]], "Threads").
 
@@ -397,11 +398,11 @@ an older reader skips them.
 
 | Message | From | Holds |
 |---|---|---|
-| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim, the point an aimed shot is laid on and a drink asked), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the pirates' type in that role, a Major), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go) |
+| Input | A browser, on land | Its number, one tick's controls and the fight's buttons (with a ranged weapon's aim, the point an aimed shot is laid on and a drink asked), the look of the player's figure on their own screen (its move, frame and facing), their dress when it changed, what their hands hold, the room tick their screen showed, a foe asked for (0 none, 255 every foe sent away) with its type and rank (a page from before the roster asks by role alone, 1 to 5, taken as the crew's own type in that role, on the players' side, a Major), its level and the element of its shield, whether they ask to respawn, an ask of their gear: what, and the item or Vestige, slot, node, rarity, level, count, kind or named item it names, and a spell cast that tick (1 Tempest to 9 Vanish) with where it is aimed (Dusk Daggers' ring while held and as it is let go) |
 | Course | A browser, at sea | The points its ship sails through, x then y, and its pace, or no points and the one heading it faces at rest; in a fight, its orders instead, in the naval crate's numbers (`naval::wire`); off the helm, a step of the walk on deck instead, its controls and its number; or the helm left (1) or taken again (2) |
-| Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the pirates' Major) or every one sent off |
+| Orders | A browser, in a fleet | Its number; the helm (rudder, a rung); while aiming, the look's bearing and range, then its ray (2 or 8 numbers); the fire and the brace; a load to take; where the ship puts to sea (3 numbers, heeded once); and a captain called (with its faction and rank; 0 for both is the Grey Tithe's Major) or every one sent off |
 | Joined | The room | The joining player's number, every dress in the room, in a node's room the node's id and its window's rect (west, north, east, south), so the browser cuts the same window (none in a dungeon's room, which stands on no land), and the protocol's version: the hash of the schema, of the fight's number layouts (`crates/combat/src/floats.rs`: a fighter, an intent and a glance cross as plain lists of numbers) and of the content the wire numbers by place (cosmetics, emblems, factions, items, resources, rolled names and the Arts), so a page built from another schema, other layouts or another order of that content loads again, once |
-| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (a pirate's or the Grey Tithe's, sailing or in a fight among captains): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire") |
+| Snapshot | The room | Cut for each player (under this table): the room's tick, the snapshot it is built on (0 for whole), the room's middle, the players and foes gone since; each player whole or as what changed: their number, their fighter without its gear's trim (its first 22 numbers their body, its healing charges and meter after its action's numbers and the shots its Ranged weapon has left, then its statuses' ticks left, a Veiled player's among them), the number of their last input taken, the look that came with it, and their standing (0 inside, 1 warned with the ticks left, 2 dead with the ticks since); the dresses changed since the screen's snapshot; each foe whole or as what changed: its number, role, a glance at its fighter, its level and its shield (its element, what it holds and held whole; none for a foe without one), type, rank, faction, phase (1 to 3), alert state (0 idle, 1 suspicious, 2 alert, 3 searching), and the ticks left of its Expose, its Charge and the immunity a Charge leaves, and for a companion (an officer ashore) its leader's number, its officer's given and family names' places and its post; and the name a foe stands under, if it has one (an event's great foe's); the fight's events since the screen's snapshot (each its kind, how the blow was struck, who struck whom, how much it did, its stroke, whether it was a crit and the element it carried); the shots in flight with the ticks each has flown, and each ball that stopped since the screen's snapshot as its last segment with the point it left its gun; in a dungeon's room its cache: where it stands, the way it faces, and whether it is open; in an Abyss run the revives its company has left (-1 in any other room); and at sea every ship near the player (as "The sea" cuts it): its player, position, heading and pace, 0 at rest; every hostile ship near them (the Grey Tithe's, sailing or in a clash): its number, position, heading, faction, rank and hull (0 the Sloop to 3 the Frigate; a reader that knows none reads the Sloop); each player's fight as the naval crate's numbers; each traffic id the room has taken off its route (`taken`) and each friendly ship it keeps at sea (`friendlies`: its traffic id, position, heading and hull), none when there are none; and each player off the helm on a ship sent, as a player whose fighter is only their body on its deck, in its frame, with the number of their last step taken; in a fleet every ship with its hull, a captain's with its faction and rank, the balls aloft (each where and when it left its gun, its launch and its radius), the fight's events since the last snapshot, and the fight's clock; and on land every spell: its number, kind (1 Tempest's orb to 9 Vanish's veil, 10 a Duskraven's bolt), caster and Art, where it is and where it heads, the foe it seeks, the ticks it has lasted and its whole life, and how far it reaches; and in a zone's room its public event (`public_event`, left out of one built on a base while it stands as the base's counted on: [[Public Events]], "The wire") |
 
 **Each player's own snapshot.** On land a snapshot is written for each player. Their own fighter crosses whole, as
 they predict from it; everyone else's numbers, and every foe's, cross packed: each in thousandths, a whole number
@@ -438,7 +439,7 @@ puts them back in their place, and reads a fight from a room that sends none as 
 The server reads an input or a course only after FlatBuffers' verifier passes its bytes, so bytes that are not one,
 controls that are not 7 numbers, or a course's numbers that are not pairs, are refused. The browser reads a message
 the room sent, and takes one it cannot read as nothing; a captain an older room sends with no faction or rank reads as
-a Major of the pirates. The browser's messages never carry a number wrapped: one that names something past what its
+a Major of the Grey Tithe. The browser's messages never carry a number wrapped: one that names something past what its
 field holds (an input's or orders' number, the arms, a foe's type, a load, a call) is refused as it is written (a
 `RangeError`), and one the room takes within a range (a frame, the tick seen, a rank, the rudder, a rung, a look) is
 held within it.

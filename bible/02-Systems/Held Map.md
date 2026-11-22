@@ -64,13 +64,13 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
 - **The waters** ([[The Waters Come From the Islands]]). The game opens the waters once, just after its first frame
   (about 0.6 s in WebAssembly, `pageWaters.ts`), and takes their grid at the coast field's own 4.8 km cell
   ([[World Map]], "Waters"). Under the ink, on the charted sea only, lies a faint wash in each water's holder's colour,
-  at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the pirates red `#d95c5c`,
-  Contested amber `#b8862f`. None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
+  at 0.26: Home green `#3f7f6f`, the Grey Tithe slate `#6b7785` (its ships' slate), the Lattice its crystal's red
+  lit a third again `#de3d49` (`CRYSTAL.red`). None darkens the parchment by more than 6 in lightness; two washes closer than 10 apart in
   CIEDE2000 are told apart by their hatching.
   Each cell blends the charted sea within a cell of it (`washOf`), and the map samples between cells, so a border is
-  soft over a cell or two and never stepped. The contested waters and the seam are hatched over their wash with fine
-  diagonal lines in a dark amber (`#6b4a12` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at
-  0.3), each 7 device pixels apart (`HATCHES`). The wash is laid for the sea charted when the map is raised, so fog
+  soft over a cell or two and never stepped. The Lattice's waters are hatched over their wash with fine level lines in
+  a dark crystal red (`#60141c` at 0.3), the Grey Tithe's with level lines in a dark slate (`#4a5563` at 0.3), each 7
+  device pixels apart (`HATCHES`). The wash is laid for the sea charted when the map is raised, so fog
   of war hides what it hides from the rest of the map.
 - **The waters' names.** Each water is lettered with its name and level band ("The Fen Deeps, 22-26") at its label
   point, the name and a ring round it inked in the band's colour on the difficulty ramp
@@ -82,9 +82,9 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   (`labelPoints`, chamfer distances in cells), then at every point of a grid 10 px apart over the map that lies on its
   sea, nearest the middle of its sea in view first (`HeldMapWaters.letters`); on one line, then on two, its name over
   its band, in a ring as tall.
-- **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the four
-  holders' swatches and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
-  its wash as the map shows it, over the map's parchment (`washedOver`), with the contested's and the Tithe's
+- **The key** is one framed panel, a double rule of ink round a fill of the parchment's colour: "Held by" over the three
+  holders' swatches (Home, Grey Tithe, The Lattice) and words in two columns, then "Levels" and the difficulty ramp from "1" to "30". Each swatch is
+  its wash as the map shows it, over the map's parchment (`washedOver`), with the Tithe's and the Lattice's
   hatching. It stands in a
   corner of the map whose box covers no discovered land (the coast field asked every 4 px across it), no name, no mark
   and no hand: the corner it stands in while that stays clear, else the first clear one, lower left, lower right, upper

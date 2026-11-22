@@ -13,7 +13,7 @@ use room::SpawnAsk;
 use serde_json::Value;
 
 /// Both tests hold this value; a change to the course, the bake, the foes or the fight changes it in both, on purpose.
-pub const CLIMB_HASH: &str = "48f1657e";
+pub const CLIMB_HASH: &str = "002fa5d3";
 
 /// The script: ticks east, then ticks north into the ledge and up it, then facing south; the tick the player asks for
 /// a swordsman, and how often they swing at it after; the run's length.
@@ -22,7 +22,7 @@ const NORTH: u32 = 230;
 const ASK_AT: u32 = 300;
 const SWING_EVERY: u32 = 30;
 const RUN_TICKS: u32 = 1200;
-const SWORDSMAN: u8 = 14;
+const SWORDSMAN: u8 = foes::roster::COLLECTOR;
 
 fn course_bytes() -> Vec<u8> {
     let course: Value = serde_json::from_str(include_str!("../../../content/testground/course.json")).unwrap();

@@ -14,7 +14,7 @@ function brig(state = 'afloat', sail = 100): FeelShip {
     vessel: { ship: [100, 50, Math.PI / 2, 4], pose: [0, 0, 0], fires: 0, sail, max_sail: 100, state },
     rig,
     hull: 2,
-    side: 'pirate',
+    side: 'tithe',
   };
 }
 
@@ -48,14 +48,14 @@ test('a hull hit, by its point in the world or in its frame, splinters its paint
   const scars = ships.get(1)?.rig?.harm.scars ?? [];
   assert.equal(scars.length, 2);
   assert.ok(Math.abs((scars[0]?.at[0] ?? 0) - 5) < 1e-9 && Math.abs((scars[0]?.at[1] ?? 0) - 4) < 1e-9);
-  const pirateHull = feel.marks(0.15).filter((mark) => mark.colour[0] < 0.2 && !mark.blend);
-  assert.ok(pirateHull.length >= 8, "its black paint flies, DFO's ten splinters a ball");
+  const hostileHull = feel.marks(0.15).filter((mark) => mark.colour[0] < 0.4 && !mark.blend);
+  assert.ok(hostileHull.length >= 8, "its slate paint flies, DFO's ten splinters a ball");
   const ship = ships.get(1) as FeelShip;
   const blots = feel.scars([{ ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0 } }]);
   assert.equal(blots.length, 8, 'each hole a ragged few blots');
   assert.ok(
     blots.some((blot) => blot.colour[0] < 0.1) && blots.some((blot) => blot.colour[0] > 0.5),
-    'a dark middle in a pale rim of raw timber, which reads on its black paint',
+    'a dark middle in a pale rim of raw timber, which reads on its slate paint',
   );
   const drawnLarger = feel.scars([
     { ship, place: { x: 100, y: 50, z: 0, heading: Math.PI / 2, pitch: 0, roll: 0, scale: 4 } },

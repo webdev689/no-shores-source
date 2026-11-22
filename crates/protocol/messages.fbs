@@ -114,7 +114,7 @@ table Kept {
 }
 
 // A captain's deck that players boarded: each boarder's number at sea and in turn their number on its deck, its hull
-// (as Pirate numbers it), its deck room's own snapshot (a FromRoom message of a room on land, in its own frame), and
+// (as Hostile numbers it), its deck room's own snapshot (a FromRoom message of a room on land, in its own frame), and
 // the sea's ticks its won deck holds its boarders yet (-1 while its crew still fights).
 table Deck {
   players: [uint];
@@ -138,8 +138,8 @@ table Told {
 // its ray: the aim eye and the way it looks, east, south and up; none while they do not aim); whether the ship fires
 // and whether it braces; a load to take (0 none, 1 round, 2 grape, 3 chain, 4 heated); where it puts to sea (x, y and
 // heading, heeded once); a captain asked for (0 none, 1 one called round the ship, 255 every one sent off); the faction
-// (1 the Grey Tithe, 2 pirates) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the pirates; and with a
-// call, the captain's level and the caller's ship's level (0 for none: a ship unfitted).
+// (1 the Grey Tithe) and rank (1 Minor to 5 Boss) of the one called, 0 for a Major of the Grey Tithe; and with a call,
+// the captain's level and the caller's ship's level (0 for none: a ship unfitted).
 table Orders {
   sequence: uint;
   steer: double;
@@ -272,7 +272,7 @@ table Flying {
 }
 
 // One ship as the sea room last moved it: where it is, its heading in radians clockwise from north, and the pace it
-// sailed at, held down near a pirate, 0 at rest.
+// sailed at, held down near a hostile, 0 at rest.
 table Ship {
   player: uint;
   x: double;
@@ -281,12 +281,22 @@ table Ship {
   pace: ushort;
 }
 
-// A captain's ship at sea, a pirate's or the Grey Tithe's: its number, where it is, its heading in radians clockwise
-// from north, its faction (1 the Grey Tithe, 2 pirates), its rank (1 Minor to 5 Boss) and the hull its rank sails (0
-// the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop); then its level (0
-// none), the distance it is sighted from, metres (0 from a room that sends none), and its way at sea, metres a second
-// at the world's own time (0 from a room that sends none).
-table Pirate {
+// A friendly ship of the traffic the room has taken off its route: its traffic id, where it is, its heading in radians
+// clockwise from north, and its hull (as Hostile numbers it).
+table Friendly {
+  traffic: ulong;
+  x: double;
+  y: double;
+  heading: double;
+  hull: ubyte;
+}
+
+// A hostile ship at sea, the Grey Tithe's: its number, where it is, its heading in radians clockwise from north, its
+// faction (1 the Grey Tithe), its rank (1 Minor to 5 Boss) and the hull its rank sails (0 the Sloop, 1 the Schooner,
+// 2 the Brig, 3 the Frigate; a reader that knows none reads the Sloop); then its level (0 none), the distance it is
+// sighted from, metres (0 from a room that sends none), and its way at sea, metres a second at the world's own time
+// (0 from a room that sends none).
+table Hostile {
   id: uint;
   x: double;
   y: double;
@@ -300,7 +310,7 @@ table Pirate {
 }
 
 // A player's fight at sea as the room last stepped it, in the naval crate's numbers (crates/naval/src/wire.rs), and
-// its captain's faction, rank and hull, as Pirate numbers them. Then the other captains in the fight, their count and
+// its captain's faction, rank and hull, as Hostile numbers them. Then the other captains in the fight, their count and
 // each one's numbers (the number its events name it by, its faction and rank, its ship and its mind; none when
 // there are none), which the view leaves out so a page that knows one captain reads it whole. Last, whether the player
 // may board a captain of it now: the sea would take the boarding they asked (crates/room/src/battle.rs `alongside`).
@@ -320,8 +330,8 @@ table SeaFight {
 // to load, port then starboard, then how far each has loaded); its load (as Orders numbers it) and whether it is
 // braced; for a captain, its mode (0 cruise, 1 engage, 2 flee, 3 struck, 4 sinking), the ship it fights (0 none) and
 // its sides run out (1 port, 2 starboard, 3 both); for a player's ship, the number of its last orders taken; and the
-// faction it sails for (0 a player's, else as Pirate numbers them), a captain's rank (1 Minor to 5 Boss, 0 none), and
-// its hull, as Pirate numbers them.
+// faction it sails for (0 a player's or a friendly ship's, else as Hostile numbers them), a captain's rank (1 Minor to 5 Boss, 0 none), and
+// its hull, as Hostile numbers them.
 table Vessel {
   id: uint;
   captain: bool;
@@ -436,7 +446,7 @@ table PublicEvent {
 
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
-// pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on their ship's
+// hostile, each player's fight, and as `players` each player off the helm, their fighter only their body on their ship's
 // deck in its own frame (x to its starboard, y to its stern, z over its waterline); in a fleet room, every ship, the
 // balls aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
@@ -451,7 +461,7 @@ table Snapshot {
   events: [Event];
   shots: [Flying];
   ships: [Ship];
-  pirates: [Pirate];
+  hostiles: [Hostile];
   fights: [SeaFight];
   vessels: [Vessel];
   balls: [Ball];
@@ -478,6 +488,10 @@ table Snapshot {
   // In an Abyss run, the revives its company has left; -1 in any other room.
   revives: byte = -1;
   public_event: PublicEvent;
+  // At sea, each traffic id the room has taken off its route, which the page draws no more, and those of its friendly
+  // ships the room keeps at sea.
+  taken: [ulong];
+  friendlies: [Friendly];
 }
 
 // What a room sends: exactly one of these is present.

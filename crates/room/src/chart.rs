@@ -1,5 +1,6 @@
 //! The sea room's chart, as its hostile ships read it: its continents' coasts, its nine waters with each island's
-//! band of levels, and the friendly lanes, each leg of every route the traffic plans between the port cities.
+//! band of levels, and the friendly lanes, each leg of every route the traffic plans between the port cities, with the
+//! traffic itself, whose ships the Grey Tithe attacks (`friendlies`).
 
 use crate::sea::{Coast, leg_meets_land, on_land, whole};
 use crate::sighting::{Chart, WaterHere};
@@ -7,13 +8,14 @@ use world::layout::Layout;
 use world::traffic::{Port, Traffic};
 use world::waters::{Holder, Waters};
 
-/// The sea's waters, each continent's id and band, and the lanes' legs, end to end.
+/// The sea's waters, each continent's id and band, the lanes' legs, end to end, and the traffic that sails them.
 #[derive(Debug)]
 pub struct Charted {
     waters: Waters,
     ids: Vec<String>,
     bands: Vec<Option<(u8, u8)>>,
     lanes: Vec<[[f64; 2]; 2]>,
+    pub traffic: Option<Traffic>,
 }
 
 impl Charted {
@@ -23,15 +25,11 @@ impl Charted {
         let waters = Waters::new(layout);
         let ids: Vec<String> = layout.continents.iter().map(|continent| continent.id.clone()).collect();
         let bands = ids.iter().map(|id| gear::world::island_levels(id)).collect();
-        let lanes = if ports.is_empty() {
-            Vec::new()
-        } else {
-            let corner = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
-            let traffic = Traffic::new(layout, &waters, ports);
-            let legs = traffic.routes.iter().flat_map(|route| route.path.windows(2).map(|leg| leg.to_vec()));
-            legs.map(|leg| [corner(&leg[0]), corner(&leg[1])]).collect()
-        };
-        Charted { waters, ids, bands, lanes }
+        let traffic = (!ports.is_empty()).then(|| Traffic::new(layout, &waters, ports));
+        let corner = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
+        let legs = traffic.iter().flat_map(|traffic| traffic.routes.iter()).flat_map(|route| route.path.windows(2));
+        let lanes = legs.map(|leg| [corner(&leg[0]), corner(&leg[1])]).collect();
+        Charted { waters, ids, bands, lanes, traffic }
     }
 
     /// How far a point of sea lies from the nearest coast, metres; 0 on land.
@@ -71,12 +69,15 @@ impl Chart for SeaChart<'_> {
     fn open(&self, from: [f64; 2], to: [f64; 2]) -> bool {
         // Only a step into home waters is refused: one a fight among captains left inside them sails out.
         let home = self.charted.home(to) && !self.charted.home(from);
+        !home && self.clear(from, to)
+    }
+
+    fn clear(&self, from: [f64; 2], to: [f64; 2]) -> bool {
         match [whole(&from), whole(&to)] {
             [Some(from), Some(to)] => {
                 let islands = crate::sea::islands::outside(self.islands.iter().copied(), Some(from));
                 let islands = islands.iter().copied();
-                !home
-                    && !on_land(self.coasts, to)
+                !on_land(self.coasts, to)
                     && !leg_meets_land(self.coasts, from, to)
                     && !on_land(islands.clone(), to)
                     && !leg_meets_land(islands, from, to)

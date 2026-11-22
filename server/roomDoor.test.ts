@@ -334,34 +334,49 @@ test('the sea travels a ship a browser asks to take to other waters, and refuses
 /** The world time the clash's sea opens at (crates/room-wasm/src/door_tests.rs `CLASH_START_S`). */
 const CLASH_START_S = 1_790_151_200;
 
-test('a sea where rivals clash and a player joins them snapshots to the fingerprint the crate holds natively', () => {
-  // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH).
+test('a sea where a Tithe ship attacks a friendly ship and a player joins them snapshots to the crate’s fingerprint', () => {
+  // crates/room-wasm/src/door_tests.rs runs the same sea natively and holds the same value (SEA_CLASH_HASH): Overlook's
+  // and Sunspire's islands with the lane between them (`TRAFFIC_SEA`).
   const room = startRoomDoor(compiled);
-  const square = [
-    [100_000, 100_000],
-    [200_000, 100_000],
-    [200_000, 200_000],
-    [100_000, 200_000],
+  const square = (west: number) => [
+    [west, 100_000],
+    [west + 100_000, 100_000],
+    [west + 100_000, 200_000],
+    [west, 200_000],
   ];
-  // The second island's waters are contested, so both factions come; on this seed two meet near the player.
-  const contested = { continents: [{ id: 'continent-2', outline: square }], isles: [] };
-  assert.equal(room.openSea(JSON.stringify(contested), 484, CLASH_START_S), true);
+  const layout = {
+    continents: [
+      { id: 'continent-1', outline: square(100_000) },
+      { id: 'continent-4', outline: square(400_000) },
+    ],
+    isles: [],
+  };
+  const ports = [
+    { id: 'overlook', name: 'Overlook', continent: 'continent-1', centre: [150_000, 150_000] },
+    { id: 'sunspire', name: 'Sunspire', continent: 'continent-4', centre: [450_000, 150_000] },
+  ];
+  assert.equal(room.openSea(JSON.stringify({ layout, ports }), 6, CLASH_START_S), true);
   const player = room.join();
-  assert.equal(room.input(player, courseBytes([[50_000, 50_000]], 10)), 'taken');
+  const out = [
+    [450_000, 97_000],
+    [340_000, 92_000],
+  ] as const;
+  assert.equal(room.input(player, courseBytes(out, 10)), 'taken');
   let hash = 0xcbf2_9ce4_8422_2325n;
-  let others = 0;
+  let friendly = false;
   for (let tick = 1; tick <= 16_000; tick++) {
-    if (tick === 6_523) assert.equal(room.input(player, courseBytes([[53_327, 53_450]], 10)), 'taken');
+    if (tick === 1_831) assert.equal(room.input(player, courseBytes([[441_700, 96_800]], 10)), 'taken');
     room.tick();
     if (tick % 60 !== 0) continue;
     const bytes = room.snapshot(player);
     for (const byte of bytes) hash = ((hash ^ BigInt(byte)) * 0x0100_0000_01b3n) & 0xffff_ffff_ffff_ffffn;
     const snapshot = readFromRoom(bytes);
     const fight = snapshot?.kind === 'snapshot' ? snapshot.fights[0] : undefined;
-    if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
+    const others = fight ? (fightViewOf(fight.view).others ?? []) : [];
+    friendly ||= others.some((other) => other.faction === 0);
   }
-  assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), '1234e219d09eb4d9');
+  assert.ok(friendly, 'the player fights beside the friendly ship');
+  assert.equal(hash.toString(16).padStart(16, '0'), '7ea4229d130d5c9e');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {
@@ -642,13 +657,13 @@ test('a wounded player’s drink through the room heals them, and the page reads
   };
   const joined = step();
   assert.equal(chargesOf(joined.fighter).charges, CHARGES_MOST, 'a player joins holding as many as the page shows');
-  // A pirate swordsman beside the player strikes once, then is sent away.
+  // A Tithe Collector beside the player strikes once, then is sent away.
   const { x, y } = course.start;
-  assert.ok(room.standFoe(14, 2, x, y - 1.5, Math.PI, 0) > 0);
+  assert.ok(room.standFoe(2, 2, x, y - 1.5, Math.PI, 0) > 0);
   let wounded = joined;
   while (fighterView(wounded.fighter).health >= fighterView(wounded.fighter).healthMax) {
     wounded = step();
-    assert.ok(sequence < 900, 'the swordsman struck');
+    assert.ok(sequence < 900, 'the Collector struck');
   }
   assert.equal(room.clearFoes(), true);
   for (let tick = 0; tick < 60; tick++) wounded = step();

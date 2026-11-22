@@ -94,7 +94,7 @@ export class Naval {
     return this.fight !== null || this.calling;
   }
 
-  /** F: calls a pirate captain round it, or sends the one called off. */
+  /** F: calls a Grey Tithe captain round it, or sends the one called off. */
   toggle(source: FightSource | null, id: string, sailing: Sailing, time: number, fail: (error: unknown) => void): void {
     if (this.fight) {
       this.end();

@@ -6,10 +6,10 @@ use super::*;
 use combat::{CombatInput, Intent};
 use movement::{Body, Controls, Mode, TUNING};
 
-const SWORDSMAN: u8 = 14;
-const BRUTE: u8 = 15;
+const SWORDSMAN: u8 = ::foes::roster::COLLECTOR;
+const BRUTE: u8 = ::foes::roster::ENFORCER;
 
-/// A pirate swordsman put straight into the room at (x, y), facing `facing`.
+/// A hostile swordsman put straight into the room at (x, y), facing `facing`.
 fn put(room: &mut Room, x: f64, y: f64, facing: f64) -> FighterId {
     let (fighter, brain) =
         ::foes::spawn(::foes::foe_type(SWORDSMAN).expect("a type"), ::foes::Rank::Major, x, y, facing);

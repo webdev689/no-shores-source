@@ -13,11 +13,11 @@ const captain = (x: number, y: number, state: ShipState, hostile: boolean): Figh
 
 test('out of a fight the compass marks every other player’s ship in bone and every hostile one in red', () => {
   const others = [{ player: 4, x: 10, y: -20, heading: 0, pace: 1 }];
-  const pirates = [
-    { id: 7, x: -300, y: 40, heading: 1, faction: 2, rank: 3 },
+  const hostiles = [
+    { id: 7, x: -300, y: 40, heading: 1, faction: 1, rank: 3 },
     { id: 8, x: 9_000, y: 0, heading: 1, faction: 1, rank: 2, sight: 25_920 },
   ];
-  assert.deepEqual(seaShipMarks(null, { others, pirates }), [
+  assert.deepEqual(seaShipMarks(null, { others, hostiles }), [
     { x: 10, y: -20, kind: 'ship' },
     { x: -300, y: 40, kind: 'hostile', rangeM: 5_000 },
     { x: 9_000, y: 0, kind: 'hostile', rangeM: 25_920 },
@@ -33,8 +33,8 @@ test('in a fight it marks its captains: red while it would take the player, grey
     captain(70, 70, 'sinking', true),
     captain(80, 80, 'sunk', true),
   ];
-  const pirates = [{ id: 7, x: -300, y: 40, heading: 1, faction: 2, rank: 3 }];
-  assert.deepEqual(seaShipMarks(captains, { others: [], pirates }), [
+  const hostiles = [{ id: 7, x: -300, y: 40, heading: 1, faction: 1, rank: 3 }];
+  assert.deepEqual(seaShipMarks(captains, { others: [], hostiles }), [
     { x: 100, y: 0, kind: 'hostile' },
     { x: 0, y: 100, kind: 'ship' },
     { x: 50, y: 50, kind: 'struck' },
@@ -91,7 +91,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
     captains: [],
     vessel: { ship: [0, 0, 0] },
     aimingNow: false,
-    view: { lay: null, captain: { name: 'Pirate Brig' } },
+    view: { lay: null, captain: { name: 'Tithe Brig' } },
     display: () => null,
   };
   show(fight);
@@ -135,7 +135,7 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
     captains: [],
     vessel: { ship: [0, 0, 0] },
     aimingNow: false,
-    view: { lay: null, captain: { name: 'Pirate Brig' } },
+    view: { lay: null, captain: { name: 'Tithe Brig' } },
     display: () => model,
   };
   const sea = (deck: unknown) =>
@@ -169,8 +169,8 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
       },
     },
   );
-  const view = { lay: null, captain: { name: 'Pirate Brig' }, others: [] };
-  const messages = () => ['The Pirate Brig surrenders!'];
+  const view = { lay: null, captain: { name: 'Tithe Brig' }, others: [] };
+  const messages = () => ['The Tithe Brig surrenders!'];
   const readout = () => ({ left: 2, men: 9 });
   const fight = {
     messages,
@@ -191,11 +191,11 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
     inRoom: true,
   } as unknown as Sea;
   const shown = { shot: { eye: [0, 0, 10], yaw: 0, pitch: 0.3, fov: 1 }, marks: [], bars: [], focus: [0, 0], note: '' };
-  const notices = ['The Pirate Schooner joined the fight.'];
+  const notices = ['The Tithe Schooner joined the fight.'];
   const state = { landing: false, onSea: true, region: 'The sea', clock: 0, friendly: [], notices };
   showSeaHud(hud as unknown as Hud, sea, shown as unknown as SeaFrame, state as unknown as SeaHudState);
   assert.deepEqual(said['hints'], [HINTS.fight]);
-  assert.deepEqual(said['notices'], [['The Pirate Schooner joined the fight.', 'The Pirate Brig surrenders!']]);
+  assert.deepEqual(said['notices'], [['The Tithe Schooner joined the fight.', 'The Tithe Brig surrenders!']]);
   // The tracker holds the fight's task: the ships left and their men.
   assert.deepEqual(tasks, [seaFightQuest('Sea fight', 2, 9)]);
 });

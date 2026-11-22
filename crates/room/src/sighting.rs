@@ -1,12 +1,12 @@
 //! Who a roll at sea sends, and where it is seen. The water at the player's ship names its faction, none in home
 //! waters; its island's level band sets its rank and its level. It is sighted farther the faster the player sails,
-//! so one met head-on stays in sight half a minute, and it comes out near that distance ahead of them: a pirate by a
-//! coast, a Tithe ship on a lane. The sea's map is a `Chart`, so the law can be tried on any sea.
+//! so one met head-on stays in sight half a minute, and it comes out near that distance ahead of them, on a lane where
+//! one runs near, else by a coast. The sea's map is a `Chart`, so the law can be tried on any sea.
 
-use crate::pirates::PIRATE_WAY_M_S;
+use crate::hostiles::HOSTILE_WAY_M_S;
 use crate::sea::SHIP_SPEED_M_S;
 use core::f64::consts::{PI, TAU};
-use naval::ranks::{GREY_TITHE, PIRATES, Rank};
+use naval::ranks::{GREY_TITHE, Rank};
 use world::waters::Holder;
 
 /// The nearest a hostile ship is sighted from, metres, and the seconds a ship met head-on stays in sight at any pace.
@@ -49,6 +49,10 @@ pub struct WaterHere {
 pub trait Chart {
     /// Whether a ship may sail straight from one point to another: no land between, and no home water at the end.
     fn open(&self, from: [f64; 2], to: [f64; 2]) -> bool;
+    /// Whether a friendly ship may: no land between, home waters or not.
+    fn clear(&self, from: [f64; 2], to: [f64; 2]) -> bool {
+        self.open(from, to)
+    }
     /// The water at a point; none on land.
     fn water(&self, at: [f64; 2]) -> Option<WaterHere>;
     /// Metres to the nearest coast.
@@ -61,18 +65,14 @@ pub trait Chart {
 /// closing head-on, and never under `SIGHT_LEAST_M`.
 #[must_use]
 pub fn sight_for(pace: f64) -> f64 {
-    (SIGHT_HOLD_S * (SHIP_SPEED_M_S + PIRATE_WAY_M_S) * pace.max(1.0)).max(SIGHT_LEAST_M)
+    (SIGHT_HOLD_S * (SHIP_SPEED_M_S + HOSTILE_WAY_M_S) * pace.max(1.0)).max(SIGHT_LEAST_M)
 }
 
-/// The faction a roll in this water sends, by `roll` in 0 to 1 on contested water; none in home waters.
+/// The faction a roll in this water sends: the Grey Tithe's in every water but home, which sends none. The Lattice's
+/// waters send the Tithe's ships too: the Lattice is met on land.
 #[must_use]
-pub fn faction_of(holder: Holder, roll: f64) -> Option<u8> {
-    match holder {
-        Holder::Home => None,
-        Holder::Pirates => Some(PIRATES),
-        Holder::GreyTithe => Some(GREY_TITHE),
-        Holder::Contested => Some(if roll < 0.5 { GREY_TITHE } else { PIRATES }),
-    }
+pub fn faction_of(holder: Holder) -> Option<u8> {
+    (holder != Holder::Home).then_some(GREY_TITHE)
 }
 
 /// A roll's chance of a hostile ship in a water of this band: `HOSTILE_CHANCE` from the first island's band to the
@@ -115,7 +115,7 @@ pub fn level_in(levels: Option<(u8, u8)>, roll: f64) -> u8 {
 /// A ship's way at sea by its rank, metres a second: the Sloop's, a Minor slower and the higher ranks faster.
 #[must_use]
 pub fn way_of(rank: Rank) -> f64 {
-    PIRATE_WAY_M_S
+    HOSTILE_WAY_M_S
         * match rank {
             Rank::Minor => 0.9,
             Rank::Major | Rank::Boss => 1.0,

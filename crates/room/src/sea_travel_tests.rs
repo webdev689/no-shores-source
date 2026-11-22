@@ -1,5 +1,5 @@
 use super::*;
-use crate::pirates::{FIRST_ROLL_S, Pirate};
+use crate::hostiles::{FIRST_ROLL_S, Hostile};
 use crate::sea::{COURSE_EVERY_TICKS, CourseRefused, Ship};
 use core::f64::consts::FRAC_PI_2;
 use naval::ranks::{Commission, GREY_TITHE, Rank};
@@ -69,10 +69,10 @@ fn a_travel_sets_the_players_next_roll_to_its_first_wait_again() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
     ticks(&mut sea, 600);
-    let before = sea.pirates.wait_of(player).unwrap();
+    let before = sea.hostiles.wait_of(player).unwrap();
     assert!(before < FIRST_ROLL_S, "the roll's wait ran down: {before}");
     sea.travel(player, &[[550_000.0, 150_000.0]], 10).unwrap();
-    assert_eq!(sea.pirates.wait_of(player), Some(FIRST_ROLL_S));
+    assert_eq!(sea.hostiles.wait_of(player), Some(FIRST_ROLL_S));
 }
 
 #[test]
@@ -98,8 +98,8 @@ fn a_travel_while_a_hostile_ship_chases_the_player_is_refused() {
     let player = at_sea(&mut sea);
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
     let chaser =
-        Pirate { quarry: Some(player), ..Pirate::standing(1, 7, commission, [270_000.0, 150_000.0], 0.0, true) };
-    sea.pirates.sailing.push(chaser);
+        Hostile { quarry: Some(player), ..Hostile::standing(1, 7, commission, [270_000.0, 150_000.0], 0.0, true) };
+    sea.hostiles.sailing.push(chaser);
     assert_eq!(sea.travel(player, &[[550_000.0, 150_000.0]], 10), Err(TravelRefused::Chased));
 }
 
@@ -108,7 +108,7 @@ fn a_travel_while_fighting_is_refused() {
     let mut sea = sea();
     let player = at_sea(&mut sea);
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Major };
-    sea.pirates.sailing.push(Pirate::standing(1, 7, commission, [250_000.0, 150_600.0], 0.0, true));
+    sea.hostiles.sailing.push(Hostile::standing(1, 7, commission, [250_000.0, 150_600.0], 0.0, true));
     sea.tick();
     assert!(sea.fights.fighting(player));
     ticks(&mut sea, COURSE_EVERY_TICKS);

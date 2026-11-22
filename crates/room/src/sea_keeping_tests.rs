@@ -63,8 +63,8 @@ fn a_repair_stops_as_the_ship_heaves_to_for_a_fight_and_the_fight_starts_from_wh
     sea.repair(player).unwrap();
     ticks(&mut sea, 10 * 60);
     let mended = sea.harbour.repairs.under_way[&player].now()[0];
-    let bold = crate::pirates::Pirate::standing(1, 7, Commission::default(), [60_000.0, 49_300.0], 0.0, true);
-    sea.pirates.sailing.push(bold);
+    let bold = crate::hostiles::Hostile::standing(1, 7, Commission::default(), [60_000.0, 49_300.0], 0.0, true);
+    sea.hostiles.sailing.push(bold);
     sea.tick();
     assert!(sea.fights.fighting(player));
     assert!(sea.harbour.repairs.under_way.is_empty(), "the repair stopped as the ship hove to");

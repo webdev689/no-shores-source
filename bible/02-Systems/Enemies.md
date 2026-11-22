@@ -56,17 +56,18 @@ The Lattice, the next faction, has its types in the roster and comes out of the 
 
 A fighter's side is the players' or a faction's, by its number. Fighters of different sides are enemies: foes of two
 factions fight each other as they fight players, and never their own side. The Brig's crew (number 0 for a faction)
-fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player. On the
-prologue's wreck every boarder fights on the Grey Tithe's side ([[The Wreck's Boarders Are One Side]]).
+fight on the players' side: foes of every faction fight them, and no player strikes them, nor they a player; so do
+the crew's own five types (13 to 17), the types a companion fights as. On the prologue's wreck every boarder is the
+Grey Tithe's ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]).
 
 | Number | Faction | Present | On land | On deck | Ships |
 |---|---|---|---|---|---|
 | 1 | The Grey Tithe | at sea and on land | Runner, Collector, Crossbowman, Enforcer, Marksman, Reeve, High Assessor Corvane, the Elite Dungeons' 18 Bosses | Deckhand, Hookman, Pistoleer, Bosun, Tithe-Mate, Captain Brannoc Thule | Tithe Sloop |
-| 2 | Pirates | at sea | | Skirmisher, Swordsman, Brute, Archer, Captain | Pirate Sloop |
 | 3 | The Lattice | on land | Husk, Flicker, Idol, Ravager, Bulwark, Heart | | |
 
 The Grey Tithe holds the land: a garrison of its foes stands in every node but the social spaces, on every continent
-(below), and its Tithe-Taker comes only with its raid on a hamlet. The pirates hold no land. The Lattice hold none
+(below), and its Tithe-Taker comes only with its raid on a hamlet; its ships sail every water but Overlook's home
+waters. The Lattice hold none
 either: they pour out of a Fissure while it is open ([[Public Events]]), and their leaders are never screened.
 
 ## The roster
@@ -90,11 +91,11 @@ out among them ([[Foes]]).
 | 10 | Bosun | Brute | `warhammer_iron` | | Major, Elite |
 | 11 | Tithe-Mate | Captain | `sword_steel` | | Elite, Miniboss |
 | 12 | Captain Brannoc Thule | Captain | `sword_ebony` | | Boss |
-| 13 | Skirmisher (pirate) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
-| 14 | Swordsman (pirate) | Swordsman | `sword_steel` | `shield_kite_steel` | Minor, Major |
-| 15 | Brute (pirate) | Brute | `warhammer_iron` | | Major, Elite |
-| 16 | Archer (pirate) | Archer | `bow_short_iron` | | Minor, Major |
-| 17 | Captain (pirate) | Captain | `sword_ebony` | | Elite, Miniboss |
+| 13 | Skirmisher (the crew's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
+| 14 | Swordsman (the crew's) | Swordsman | `sword_steel` | `shield_kite_steel` | Minor, Major |
+| 15 | Brute (the crew's) | Brute | `warhammer_iron` | | Major, Elite |
+| 16 | Archer (the crew's) | Archer | `bow_short_iron` | | Minor, Major |
+| 17 | Captain (the crew's) | Captain | `sword_ebony` | | Elite, Miniboss |
 | 18 | High Assessor Corvane | Captain | `flail_iron` | `shield_kite_iron` | Boss |
 | 19 | Crew (the Brig's) | Swordsman | `sword_iron` | | Minor, Major |
 | 20 | Crew (the Brig's) | Skirmisher | `dagger_iron` | `dagger_iron_l` | Minor, Major |
@@ -323,8 +324,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   and Pistoleer women in leather; the Marksman under a grey hooded cloak; Collector and Tithe-Mate iron under a grey
   surcoat; the Hookman in leather and a vest; the Enforcer in full iron and a short grey cloak; the Bosun in iron with
   a grey sash; the Reeve in iron with a grey surcoat and cloak; Thule in full steel plate, a grey surcoat and a long
-  grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the pirates as the Test Ground's foes
-  were dressed. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the wreck dresses its
+  grey cloak; Corvane in full iron plate, a grey surcoat and a long grey cloak); the crew's own five types in the Test
+  Ground's first foes' clothes. A page may dress a foe in clothes of its own instead, its type's weapons drawn: the wreck dresses its
   crew as the Brig's hands ([[Prologue]]).
 - **The [[Test Ground]]'s panel** picks a faction, a type (marked land or deck) and one of its ranks.
 - **In the [[Game]]**, on foot in a node, every foe its room holds is drawn and fought as on the Test Ground.

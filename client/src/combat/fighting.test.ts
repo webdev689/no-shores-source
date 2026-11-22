@@ -375,6 +375,8 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     told: [],
     decks: [],
     islands: [],
+    taken: [],
+    friendlies: [],
     dressed: [],
     foes: [
       {
@@ -385,7 +387,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
         shield: null,
         type: 14,
         rank: 2,
-        faction: 2,
+        faction: 1,
         phase: 1,
         alert: 0,
       },
@@ -393,7 +395,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     events: [],
     shots: [],
     ships: [],
-    pirates: [],
+    hostiles: [],
     fights: [],
     base: 0n,
     gonePlayers: [],

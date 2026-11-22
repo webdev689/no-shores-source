@@ -352,7 +352,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **The palette** names each tone for what it is: the stone from lit to dark, the brass from lit to dark, the grounds
   and the words; and each bar's fill (`FILLS`): red, orange and yellow by rank, and the three vitals.
 - **Emblems and marks** are our own pictures, drawn pixel for pixel in the palette and shown at whole multiples: the
-  Grey Tithe's balance in grey stone and the pirates' skull in bone over crossed brass bones, by faction number, on
+  Grey Tithe's balance in grey stone, by faction number (a friendly ship's plate bears none), on
   ships' plates (a foe's plate shows its level there instead); an Elite's brass chevron and a Miniboss's two.
 - **A hostile ship's mark at sea** is a port's mark in its own dress (`hostileLook`): the ship's faction's emblem in the
   ring, the ring and its arrow in the ship's rank's colour (red Minor, orange Major, yellow Elite and Miniboss), a Miniboss's

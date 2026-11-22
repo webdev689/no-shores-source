@@ -82,7 +82,7 @@ decision, made in the same change as its entry here.
 | `server/accounts/` | The [[Accounts]]' own Worker over D1: guests, usernames and passwords, Discord sign-in, sessions, the judge of the [[Names]] players set for others to read, the Roster (friends, companies, guilds, blocks, reports, where each player is), the characters the rooms hold, Find a Company's queues, and the database's migrations |
 | `crates/` | Every Rust crate, one folder each, named after its crate |
 | `crates/world` | The world's structure: the layout of continents and isles, its rules and exact geometry ([[World Map]]) |
-| `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names, borders and seam; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |
+| `crates/world/src/waters.rs`, `traffic.rs`, `traffic_routes.rs`, `ports.rs` | The sea's nine waters, their holders, names and borders; the three port cities; and the friendly traffic's routes and ships ([[World Map]], "Waters" and "Traffic") |
 | `crates/world/src/weather.rs` | The weather over the whole world from world time and place: the wind, the sea state and the shelter of the open water upwind and of a roadstead ([[World Map]], "Weather and travel"; [[Water]]) |
 | `crates/world-wasm` | The world rules for the browser: a door crate, text in and text out |
 | `crates/land` | The [[Land]]: relief, erosion and water from the painted coasts, the owner's edits and places, and the ground anywhere to the metre |

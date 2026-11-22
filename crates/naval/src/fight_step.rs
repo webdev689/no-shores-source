@@ -19,6 +19,15 @@ use sailing::pose::{Pose, pose_of};
 use sailing::waters::Waters;
 
 impl Fight {
+    /// Every hull in the fight but `except`'s: where it is, its way and its pass reach, for a captain to keep clear of.
+    fn traffic(&self, except: ShipId) -> Vec<crate::captain::course::Traffic> {
+        use crate::captain::course::{pass_reach, velocity_of};
+        let others = self.ships.iter().filter(|(id, vessel)| **id != except && vessel.in_fight());
+        others
+            .map(|(_, vessel)| ([vessel.ship.x, vessel.ship.y], velocity_of(&vessel.ship), pass_reach(vessel.arms())))
+            .collect()
+    }
+
     /// One tick. `orders` are the players' in the order they are taken: each steps their ship once, so a player whose
     /// orders are late is caught up by several in one tick, and one with none this tick lies as before, riding the
     /// swell. Then the captains, the guns, the volleys, the balls, the hurts, mending, and the captains who leave.
@@ -198,7 +207,7 @@ impl Fight {
             let commission = command.mind.commission;
             let laid = Lay { gun: commission.armed(laid.gun, command.mind.strength), ..laid };
             let (skill, carry) = (command.mind.build.skill, carry_of(&vessel.ship));
-            let flag = Flag::Faction(commission.faction);
+            let flag = Flag::numbered(commission.faction);
             self.balls.extend(volley(&laid, carry, skill, seed, self.clock, (id, flag)));
             vessel.guns.fired(laid.side, vessel.damage.crew_share(), true);
             vessel.guns.pace_reload(laid.side, commission.rank.scale().reload);

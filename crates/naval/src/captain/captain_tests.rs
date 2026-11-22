@@ -1,7 +1,7 @@
 use super::*;
-use crate::arms::{LARGE_BOAT, PIRATE_SLOOP, SLOOP_ARMS};
+use crate::arms::{LARGE_BOAT, SLOOP_ARMS, TITHE_SLOOP};
 use crate::damage::Hurt;
-use crate::ranks::{PIRATES, Rank};
+use crate::ranks::{GREY_TITHE, Rank};
 use sailing::{HullKind, SLOOP};
 
 const LEVEL: Pose = Pose { heave: 0.0, pitch: 0.0, roll: 0.0, aground: false };
@@ -21,7 +21,7 @@ struct Deck {
 impl Deck {
     fn new() -> Self {
         let ship = Ship { x: 0.0, y: 0.0, heading: 0.0, ahead: 2.5, abeam: 0.0, turn: 0.0, sail_way: 2.5, rung: 2 };
-        Self { ship, damage: Damage::new(&PIRATE_SLOOP, false), guns: Guns::new() }
+        Self { ship, damage: Damage::new(&TITHE_SLOOP, false), guns: Guns::new() }
     }
 
     fn own(&self) -> Own<'_> {
@@ -53,7 +53,7 @@ fn captain(temper: Temper) -> Captain {
 }
 
 #[test]
-fn one_pirate_in_four_is_bold() {
+fn one_captain_in_four_is_bold() {
     let bold = (0..4000).filter(|seed| temper_of(*seed) == Temper::Bold).count();
     assert!((800..1200).contains(&bold), "{bold}");
 }
@@ -92,7 +92,7 @@ fn a_wary_captain_lets_a_stronger_ship_be_and_runs_once_struck() {
 }
 
 #[test]
-fn a_pirate_hulled_past_seventy_percent_runs_whatever_its_temper() {
+fn a_captain_hulled_past_seventy_percent_runs_whatever_its_temper() {
     let mut deck = Deck::new();
     deck.damage.apply(Hurt { hull: 190.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);
     let mut mind = captain(Temper::Bold);
@@ -191,7 +191,7 @@ fn its_lookout_reckons_its_turning_circle_at_its_own_pace_even_lying_still() {
 #[test]
 fn an_elite_and_above_is_bold_whatever_its_seed_and_a_minor_or_major_as_its_seed_says() {
     for rank in Rank::ALL {
-        let commission = Commission { faction: PIRATES, rank };
+        let commission = Commission { faction: GREY_TITHE, rank };
         for seed in 0..200 {
             let temper = Captain::new(commission, seed, 0.0, &SLOOP_ARMS).temper;
             let wanted = if rank >= Rank::Elite { Temper::Bold } else { temper_of(seed) };
@@ -208,7 +208,7 @@ fn hulled_to_28_percent_a_major_or_elite_runs_and_a_miniboss_or_boss_fights_on()
         (Rank::Miniboss, Mode::Engage),
         (Rank::Boss, Mode::Engage),
     ] {
-        let commission = Commission { faction: PIRATES, rank };
+        let commission = Commission { faction: GREY_TITHE, rank };
         let mut deck = Deck::new();
         deck.damage = Damage::new(&commission.build(), false);
         let hull = (deck.damage.max_hull * 0.72).ceil();

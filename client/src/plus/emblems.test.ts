@@ -8,17 +8,15 @@ const STONE: readonly string[] = [TONES.stoneHi, TONES.stoneLit, TONES.stoneMid]
 const BRASS: readonly string[] = [TONES.brassHi, TONES.brassLo];
 const PALETTE = new Set<string>(Object.values(TONES));
 
-test('the Grey Tithe wears its emblem in grey stone, the pirates theirs in bone and brass, and others none', () => {
-  assert.deepEqual(EMBLEM_FACTIONS, [1, 2]);
+test('the Grey Tithe wears its emblem in grey stone, and others none', () => {
+  assert.deepEqual(EMBLEM_FACTIONS, [1]);
   const tithe = pixelsOf(emblemSvg(1) ?? '');
-  const pirates = pixelsOf(emblemSvg(2) ?? '');
   assert.ok(
     [...tithe.pixels.values()].every((tone) => STONE.includes(tone)),
     'the Tithe in stone alone',
   );
-  const pirateTones = new Set(pirates.pixels.values());
-  assert.ok(pirateTones.has(TONES.wordDim) && pirateTones.has(TONES.brass), 'the pirates in bone and brass');
-  assert.equal(emblemSvg(0), null, 'a player’s ship, faction 0, wears none');
+  assert.equal(emblemSvg(0), null, 'a player’s ship or a friendly one, faction 0, wears none');
+  assert.equal(emblemSvg(2), null, 'no faction of that number');
   assert.equal(emblemSvg(9), null);
 });
 

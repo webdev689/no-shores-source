@@ -63,7 +63,7 @@ impl Sea {
         if self.aboard.contains_key(&player) {
             return Err(TravelRefused::OffTheHelm);
         }
-        if self.pirates.sailing.iter().any(|hostile| hostile.quarry == Some(player)) {
+        if self.hostiles.sailing.iter().any(|hostile| hostile.quarry == Some(player)) {
             return Err(TravelRefused::Chased);
         }
         let &asked = points.last().ok_or(TravelRefused::Course(CourseRefused::BadCourse))?;
@@ -92,7 +92,7 @@ impl Sea {
         let (placed, heading) = placed_on(start, end);
         (sailing.ship.x, sailing.ship.y, sailing.ship.heading) = (placed[0], placed[1], heading);
         sailing.course.drain(..sailing.course.len() - 1);
-        self.pirates.wait_first(player);
+        self.hostiles.wait_first(player);
         Ok(())
     }
 }

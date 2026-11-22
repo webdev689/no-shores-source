@@ -1,10 +1,10 @@
 // The waters as the held map shows them: a faint wash over the charted sea in each water's holder's colour, soft
-// across borders, the contested waters and the seam hatched, and each water's name and level band lettered at the
-// sea cell of it farthest from land and from other waters. Worked out on the grid the waters' rules judge, which the
-// game hands over in the map's own terms (`MapWaters`); nothing here draws.
+// across borders, the Grey Tithe's and the Lattice's waters hatched, and each water's name and level band lettered at
+// the sea cell of it farthest from land and from other waters. Worked out on the grid the waters' rules judge, which
+// the game hands over in the map's own terms (`MapWaters`); nothing here draws.
 
 /** Who holds a water, as the waters' rules name them. */
-export type WaterHolder = 'home' | 'contested' | 'grey-tithe' | 'pirates';
+export type WaterHolder = 'home' | 'grey-tithe' | 'lattice';
 
 /** One water as the map letters it: its continent's index and id, its name and holder, and its level band. */
 export interface MapWater {
@@ -16,33 +16,32 @@ export interface MapWater {
 }
 
 /** The waters judged at the middle of each cell over the frame, row by row from the north-west: each cell's water by
- *  its continent's index (-1 on land) and whether it lies on the contested seam; each water; and the port cities' ids,
- *  every other city being ruins. */
+ *  its continent's index (-1 on land); each water; and the port cities' ids, every other city being ruins. */
 export interface MapWaters {
   readonly columns: number;
   readonly rows: number;
   readonly cellM: number;
   readonly water: Int16Array;
-  readonly seam: Uint8Array;
   readonly waters: readonly MapWater[];
   readonly mainPorts: readonly string[];
 }
 
 /** Each holder's colour on the map, and the word its key names it by. Washed over the parchment at `WASH_STRENGTH`,
  *  none darkens it by more than 6 in lightness; two washes that are not told apart by at least 10 in CIEDE2000 are by
- *  their hatching (`HATCHES`). The Grey Tithe is the slate its ships are. */
+ *  their hatching (`HATCHES`). The Grey Tithe is the slate its ships are, the Lattice its crystal's red, lit. */
 export const HOLDER_COLOURS: Readonly<Record<WaterHolder, string>> = {
   home: '#3f7f6f',
   'grey-tithe': '#6b7785',
-  pirates: '#d95c5c',
-  contested: '#b8862f',
+  // The crystal's red (city/crystal.ts `CRYSTAL.red`) lit a third again, so its wash darkens the parchment no more
+  // than the others' (the game's test holds the two alike).
+  lattice: '#de3d49',
 };
-/** How strongly the holders' colours are washed over the charted sea; and the hatching laid over two holders' wash:
- *  the contested's diagonal lines in a dark amber, the Grey Tithe's level lines in a dark slate, each line's colour,
- *  strength and spacing, device pixels. */
+/** How strongly the holders' colours are washed over the charted sea; and the level lines laid over the Grey Tithe's
+ *  wash in a dark slate and over the Lattice's in a dark crystal red, each line's colour, strength and spacing, device
+ *  pixels. */
 export const WASH_STRENGTH = 0.26;
 export const HATCHES = {
-  contested: { colour: [107, 74, 18], strength: 0.3, spacingPx: 7 },
+  lattice: { colour: [96, 20, 28], strength: 0.3, spacingPx: 7 },
   'grey-tithe': { colour: [74, 85, 99], strength: 0.3, spacingPx: 7 },
 } as const;
 /** The map's parchment where its ink is laid, the forge's sheet's middle colour, under the charted sea's faint ink. */
@@ -62,8 +61,7 @@ export function washedOver(holder: WaterHolder): string {
 export const HOLDER_WORDS: readonly (readonly [WaterHolder, string])[] = [
   ['home', 'Home'],
   ['grey-tithe', 'Grey Tithe'],
-  ['pirates', 'Pirates'],
-  ['contested', 'Contested'],
+  ['lattice', 'The Lattice'],
 ];
 
 /** The difficulty ramp from the easiest level to the hardest: green, gold, orange, red, deep purple, each dark enough
@@ -97,7 +95,7 @@ export function difficultyColour(levels: readonly [number, number] | null): stri
 
 /** The wash a cell at a time: `colour` RGBA, its colour the holders' of the sea round it blended over the cells either
  *  side, its alpha the share of them that is charted sea, the colour multiplied by it; `hatch` two bytes a cell, the
- *  share of them that is contested and the share that is the Grey Tithe's. */
+ *  share of them that is the Lattice's and the share that is the Grey Tithe's. */
 export interface WatersWash {
   readonly colour: Uint8Array;
   readonly hatch: Uint8Array;
@@ -111,11 +109,11 @@ function rgbOf(hex: string): readonly [number, number, number] {
   ];
 }
 
-/** A cell's holder: contested on the seam, else its water's; null on land. */
+/** A cell's holder: its water's; null on land. */
 export function holderOf(waters: MapWaters, index: number): WaterHolder | null {
   const water = waters.water[index] ?? -1;
   if (water < 0) return null;
-  return waters.seam[index] ? 'contested' : (waters.waters[water]?.holder ?? 'home');
+  return waters.waters[water]?.holder ?? 'home';
 }
 
 /** The wash over the waters, only where `charted` (a byte a cell, the waters' own cells) is set. Each cell blends the
@@ -131,7 +129,7 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
   const hatch = new Uint8Array(cells.length * 2);
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
-      let [red, green, blue, sea, contested, tithe] = [0, 0, 0, 0, 0, 0];
+      let [red, green, blue, sea, lattice, tithe] = [0, 0, 0, 0, 0, 0];
       for (let down = -1; down <= 1; down++)
         for (let across = -1; across <= 1; across++) {
           const [x, y] = [column + across, row + down];
@@ -141,7 +139,7 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
           if (!holder) continue;
           const [cellRed, cellGreen, cellBlue] = colours[holder];
           [red, green, blue, sea] = [red + cellRed, green + cellGreen, blue + cellBlue, sea + 1];
-          if (holder === 'contested') contested++;
+          if (holder === 'lattice') lattice++;
           if (holder === 'grey-tithe') tithe++;
         }
       const index = row * columns + column;
@@ -152,7 +150,7 @@ export function washOf(waters: MapWaters, charted: Uint8Array): WatersWash {
         [(red / sea) * share, (green / sea) * share, (blue / sea) * share, share * 255].map(Math.round),
         index * 4,
       );
-      hatch.set([Math.round((contested / sea) * 255), Math.round((tithe / sea) * 255)], index * 2);
+      hatch.set([Math.round((lattice / sea) * 255), Math.round((tithe / sea) * 255)], index * 2);
     }
   return { colour, hatch };
 }

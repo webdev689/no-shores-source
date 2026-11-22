@@ -158,7 +158,7 @@ fn the_quickest_still_block_a_heavy_blow_at_the_fights_pace() {
 
 #[test]
 fn a_skirmisher_in_its_own_swing_still_dodges_a_blow_at_it() {
-    // A pirate skirmisher and a Grey Tithe collector fight each other; neither flinches, so each swings into the
+    // A crew skirmisher standing as a foe and a Grey Tithe collector fight each other; neither flinches, so each swings into the
     // other's swing, and the skirmisher weighs the collector's blows while its own is under way.
     let mut dodged = 0;
     for seed in 1..=100 {
@@ -216,7 +216,7 @@ fn only_one_foe_at_a_time_strikes_an_opening_without_its_turn() {
     assert!(board.opening(PLAYER, 12, true), "a foe gone frees it");
 }
 
-/// The tick a pirate skirmisher, alert and fighting a Grey Tithe runner before it, presses a dodge from a bolt loosed
+/// The tick a crew skirmisher standing as a foe, alert and fighting a Grey Tithe runner before it, presses a dodge from a bolt loosed
 /// at it from 40 m on tick 10, told to fly at `speed` (0: not told), if it dodges at all.
 fn dodge_pressed(seed: u64, speed: f64) -> Option<u64> {
     let foe = |number: u8, y: f64, facing: f64| {

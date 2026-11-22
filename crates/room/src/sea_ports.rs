@@ -24,7 +24,7 @@ impl Sea {
     /// levels the tier raises foes to on land, and a sunk ship's drop, its sinking's XP and its deck's kills pay as a
     /// harder voyage's kill does.
     pub fn set_difficulty(&mut self, difficulty: gear::Difficulty) {
-        self.pirates.difficulty = difficulty;
+        self.hostiles.difficulty = difficulty;
         self.harbour.flotsam.difficulty = difficulty;
     }
 
@@ -44,12 +44,12 @@ impl Sea {
         }
         for ship in sank {
             // A boarded ship sunk under its boarders sends them back to their own ships.
-            self.end_deck(ship.pirate.id);
+            self.end_deck(ship.hostile.id);
             self.lay_flotsam(ship, (1, 0));
-            let paid = crate::ship_power::pay_sinking(ship, self.pirates.difficulty, &mut self.harbour.characters);
+            let paid = crate::ship_power::pay_sinking(ship, self.hostiles.difficulty, &mut self.harbour.characters);
             self.harbour.changed.extend(paid);
             let how = if ship.struck { "strike" } else { "sink" };
-            if let Some(side) = crate::quests::side_of(ship.pirate.commission.faction) {
+            if let Some(side) = crate::quests::side_of(ship.hostile.commission.faction) {
                 ship.players.iter().for_each(|player| self.tell_sea(*player, &QuestEvent::Sea { side, how }));
             }
             self.count_down(ship);
@@ -61,7 +61,7 @@ impl Sea {
     /// (`gear::objectives::count_ship_down`); a count that moved is saved and sent.
     fn count_down(&mut self, sank: &Sank) {
         let water = self.chart.water_id(sank.at);
-        let (rank, day) = (sank.pirate.commission.rank.number(), gear::clock::day_of(self.minute));
+        let (rank, day) = (sank.hostile.commission.rank.number(), gear::clock::day_of(self.minute));
         let fought: BTreeSet<PlayerId> = sank.players.iter().copied().collect();
         for player in fought {
             let Some(character) = self.harbour.characters.get_mut(&player) else { continue };
@@ -356,7 +356,7 @@ impl Sea {
     /// Normal.
     #[must_use]
     pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {
-        gear::gate::shut(character, gear::gate::Place::Node, self.pirates.difficulty)
+        gear::gate::shut(character, gear::gate::Place::Node, self.hostiles.difficulty)
     }
 
     /// Gives a player the character kept for them, and their ship the hurts kept in it; false if they are not at sea,
@@ -412,25 +412,25 @@ pub(crate) fn in_frame([x, y]: [f64; 2]) -> [f64; 2] {
 /// leaves it (`naval::captain::wary_takes`, DFO's `takesPrize`) meets them as a bold one does: it leaves the sea, and
 /// the meeting joins `met`.
 pub(super) fn wary_meet(
-    pirates: &mut crate::pirates::Pirates,
+    hostiles: &mut crate::hostiles::Hostiles,
     berths: &BTreeMap<PlayerId, Berth>,
-    ships: &[crate::pirates::Voyager],
-    met: &mut Vec<(PlayerId, crate::pirates::Pirate)>,
+    ships: &[crate::hostiles::Voyager],
+    met: &mut Vec<(PlayerId, crate::hostiles::Hostile)>,
 ) {
     let mut at = 0;
-    while at < pirates.sailing.len() {
-        let pirate = pirates.sailing[at];
-        let takes = |ship: &&crate::pirates::Voyager| {
+    while at < hostiles.sailing.len() {
+        let hostile = hostiles.sailing[at];
+        let takes = |ship: &&crate::hostiles::Voyager| {
             let hull = berths.get(&ship.player).map_or(1.0, |berth| berth.kept[0]);
-            let near = libm::hypot(ship.at[0] - pirate.x, ship.at[1] - pirate.y) <= naval::captain::ENGAGE_RANGE;
+            let near = libm::hypot(ship.at[0] - hostile.x, ship.at[1] - hostile.y) <= naval::captain::ENGAGE_RANGE;
             !ship.fighting
                 && !ship.home
                 && near
                 && !met.iter().any(|(player, _)| *player == ship.player)
-                && naval::captain::wary_takes(pirate.commission, pirate.strength(), hull)
+                && naval::captain::wary_takes(hostile.commission, hostile.strength(), hull)
         };
-        match ships.iter().find(takes).filter(|_| !pirate.bold) {
-            Some(ship) => met.push((ship.player, pirates.sailing.remove(at))),
+        match ships.iter().find(takes).filter(|_| !hostile.bold) {
+            Some(ship) => met.push((ship.player, hostiles.sailing.remove(at))),
             None => at += 1,
         }
     }

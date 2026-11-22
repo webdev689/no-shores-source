@@ -430,7 +430,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   the course to intercept it: where the ship meets the hostile ship at their ways (its rank's way and a ship's 12 m/s, both on
   the voyage's clock), planned round the land as any route, again each half second. The voyage's line says "Chasing
   the Tithe Brig." until it is met, lost from sight, or another course is set (a click, the helm's keys, Stop or
-  Resume, going ashore). Its way is the one the room sends with it (`Pirate.way`). The room is told whom the ship
+  Resume, going ashore). Its way is the one the room sends with it (`Hostile.way`). The room is told whom the ship
   chases: within 750 m of the hostile ship the fight begins, whatever its temper. Evading is turning away from a bold ship, sighted
   ahead on the ship's course where the bold ship can meet it: held, the course meets the bold ship; turned away, the ship outruns it.
 - **The helm's keys**, as in a fight (`passage.ts`, `seaHelm.ts`), in the sea's own view, close in or not:
@@ -478,11 +478,10 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   carries its people on its deck as the Sloop does, each standing where its deck lies on the swell and drawn as large as
   the ship is: its captain behind its wheel (the spot its hull's export measures), facing its bow, and its hands
   walking and pausing about its deck as the Sloop's do, clear of the wheel. A hull carries its own number of hands:
-  the Sloop 3, the Schooner 4, the Brig 5, the Frigate 6. On a pirate's or a Grey Tithe ship its faction's mate
-  stands at the wheel in the roster's dress (the Tithe-Mate, the pirates' Captain), and on a Grey Tithe Boss's
-  Captain Brannoc Thule; its hands wear the dress of the deck crew its boarders meet ([[Naval Combat]], "Its deck"),
+  the Sloop 3, the Schooner 4, the Brig 5, the Frigate 6. On a Grey Tithe ship the Tithe-Mate stands at the
+  wheel in the roster's dress, and on a Grey Tithe Boss's Captain Brannoc Thule; its hands wear the dress of the deck crew its boarders meet ([[Naval Combat]], "Its deck"),
   its lead first unless the lead is at the wheel, then its plain hands in turn. Everyone aboard keeps their weapons
-  sheathed. Another player's Sloop and a friendly ship carry a plain master and plain hands, as the player's own
+  sheathed. Another player's Sloop and a friendly ship, the room's too, carry a plain master and plain hands, as the player's own
   stand-ins look; seen from land, the friendly ships passing carry theirs too. A figure is drawn only while it would
   stand 4 pixels tall or more on the picture (`figureReach`): about 250 m off on a 720-pixel picture through the sea's
   field, as many times farther as its ship is drawn larger. The nearest are drawn first, 40 at most a frame across
@@ -490,7 +489,7 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
 - **No nodes are marked at sea.** A port has an icon, over its harbour, with its name and distance, once the ship is
   within 60 km of it; only a port city's harbour is a port, so a ruin's has none (`portOf`). Every hostile ship within
   its own sight of the ship has a mark (`seaHostiles.ts`): its faction's emblem in a ring of its rank's colour, its name
-  as its plate gives it (Pirate Brig, Tithe Schooner, ...), its level and its distance, a Miniboss's mark over it. Each
+  as its plate gives it (Tithe Brig, Tithe Schooner, ...), its level and its distance, a Miniboss's mark over it. Each
   is held at the picture's edge when off it, its arrow pointing the way; ports too near each other on the picture are
   thinned to the nearest, a hostile ship's mark never.
 - **The compass** stands at the top's middle at sea as on foot, turned with the view, the status line under it.
@@ -501,19 +500,22 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   read that one opening, the ship's first putting to sea awaiting it. The place's line at sea, at the helm and in
   Manage names
   the water the ship is in, its band and holder ("The Fen Deeps, levels 22-26, Grey Tithe"; "The Lantern Sea, Overlook's
-  home waters"; a contested one or the seam "contested"). A notice (DFO's toast) says for 6 s when the ship enters another
-  water ("Entering The Mistwrack, levels 16-19, Pirates.") and when a hostile ship is first sighted ("A Tithe Brig
+  home waters"; a ruined city's "The Lattice"). A notice (DFO's toast) says for 6 s when the ship enters another
+  water ("Entering The Mistwrack, levels 16-19, The Lattice.") and when a hostile ship is first sighted ("A Tithe Brig
   sighted, 12 km off."), the nearest first.
-- **Pirates and the Grey Tithe** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at its
+- **The Grey Tithe's ships** sail the sea round the ship from the sea room ([[Naval Combat]], "At sea"), at its
   voyage's pace. As one comes near the voyage eases down, held to ×1 within 700 m of the ship, and the voyage's line says so;
   the game sails its ship at the pace the room sailed it at, drawn to where the room has it. A bold one that comes
   within 750 m meets the ship: the ship heaves to, its voyage kept, and the view pans down to the fight, every ship in it
   easing to its true size as on any view near the ship (above), its plate over it (its faction's emblem, its name over a bar
-  of its hull coloured by its rank), then back up when it ends. Ships of two factions that meet fight each other, drawn
-  at sea where the room has them; coming within 750 m of such a fight, or of one with other players in it, joins it the
-  same way, every captain in it under their own plate.
+  of its hull coloured by its rank), then back up when it ends. A bold one that comes on a friendly ship of the traffic
+  attacks it, the two drawn at sea where the room has them, the friendly one in its own colours, never as a hostile
+  mark; the page draws that ship on its route no more once the room has taken it (its traffic id in the snapshot's
+  `taken`). Coming within 750 m of such a fight, or of one with other players in it, joins it the same way, every
+  captain in it under their own plate, the friendly one's in the players' blue beside the player's. Afloat after, it
+  sails on where the room has it, for its port.
 - **The sea's word** (`seaWord.ts`, [[Naval Combat]], "How a fight ends"). Each line stands as a notice (DFO's toast, `plus/notices.ts`)
-  for 6 s, several at once: who joins the fight ("Player 4 joined the fight.", "The Pirate Schooner joined the fight.", its hull as the
+  for 6 s, several at once: who joins the fight ("Player 4 joined the fight.", "The Tithe Schooner joined the fight.", its hull as the
   room tells it), a captain's colours struck ("The Tithe Brig's colours are down: …"), the boarding ("Boarders away:
   the Tithe Brig's crew stands to meet them."), a piece of what floats gathered that gave nothing ("Gathered a chest:
   nothing you had room for."; what one held goes to the Acquired feed, [[Interface]]), and washing up
@@ -535,7 +537,8 @@ through its harbour to water 4 m deep, then 600 m on. Later returns find it wher
   the browser's clock (the sea room sends none), four times a second within the sea view's reach of the ship (its far plane),
   and between answers reckons each on along its leg at the pace the waters' table gives (5 m/s); a new answer's gap,
   as at a turn onto its next leg, is closed over about a second. One arrived lies at anchor at its destination's
-  roadstead, no way on it, until it is gone. Of each hull only as many as the ships layer has slots for are drawn,
+  roadstead, no way on it, until it is gone. A ship the room has taken off its route (the snapshot's `taken`) is
+  left out: the sea draws it where the room has it. Of each hull only as many as the ships layer has slots for are drawn,
   16 less the room's own of that hull, the nearest first; only those are rigged, posed and footprinted. Each is drawn
   by the ships layer as its hull in friendly colours, its sails set and filled by the steady wind (furled while it
   lies at anchor), posed on the swell,
@@ -602,7 +605,7 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   lies, on its voyage. A sea room that sends the player away is lost: a fight in it is over, its view going back up, and
   they are called to the helm and sail on alone, the voyage's line saying so. A fight the room no longer lists for the
   player (joined again with no frame between) is over the same way. While the room is well, the line says nothing of it
-  (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its pirates and fights are the same law.
+  (`roomWords`). Playing alone, the same sea room runs in the game's worker, so its hostile ships and fights are the same law.
 
 ## Drawing
 
@@ -666,8 +669,8 @@ through the maps, each of its points asked of them from past that turned card, s
 shadow or a wall's and never by its own. Its contact shade stays under its feet where its own shadow is drawn, and
 past the near square leans the way the sun throws one, standing in for it.
 
-At sea the footprints of the player's ship and the 47 ships nearest it (other players', pirates, friendly ships and
-a fight's captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round each bow under
+At sea the footprints of the player's ship and the 47 ships nearest it (other players', hostile ships, friendly ships
+and a fight's captains) are handed to the water at the size each is drawn; it keeps out of each hull and foams round each bow under
 way.
 Under way the player's ship stirs the water's ripples at its bow and quarters, as the World Editor's does, and the
 ripples follow it.

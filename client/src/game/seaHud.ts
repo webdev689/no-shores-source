@@ -42,7 +42,7 @@ export interface SeaHudState {
  *  off as it is sighted. */
 export function seaShipMarks(
   captains: readonly FightCaptain[] | null,
-  sighted: Pick<SeaRoom, 'others' | 'pirates'> | null,
+  sighted: Pick<SeaRoom, 'others' | 'hostiles'> | null,
   own: readonly number[] | null = null,
 ): ShipMark[] {
   if (captains)
@@ -54,11 +54,11 @@ export function seaShipMarks(
     });
   return [
     ...(sighted?.others ?? []).map((ship): ShipMark => ({ x: ship.x, y: ship.y, kind: 'ship' })),
-    ...(sighted?.pirates ?? []).map((pirate): ShipMark => ({
-      x: pirate.x,
-      y: pirate.y,
+    ...(sighted?.hostiles ?? []).map((hostile): ShipMark => ({
+      x: hostile.x,
+      y: hostile.y,
       kind: 'hostile',
-      rangeM: sightOf(pirate),
+      rangeM: sightOf(hostile),
     })),
   ];
 }

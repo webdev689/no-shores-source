@@ -20,7 +20,7 @@ const vessel = (x: number, state: FightVessel['state']): FightVessel =>
 const fight = (state: FightVessel['state']): FightView =>
   ({
     player: vessel(0, 'afloat'),
-    captain: { ...vessel(20, state), name: 'Pirate Sloop' } as FightCaptain,
+    captain: { ...vessel(20, state), name: 'Tithe Sloop' } as FightCaptain,
     others: [],
   }) as unknown as FightView;
 
@@ -117,7 +117,7 @@ test('a struck captain alongside is boarded with E: the boarder stands on its de
   assert.deepEqual([shown.figures[0]?.x, shown.figures[0]?.y], deckToWorld(lying, 0, -2, 0.9).slice(0, 2));
   assert.deepEqual(
     [boarding.words?.place, boarding.words?.line],
-    ['Pirate Sloop', 'Aboard: its crew stands to meet you'],
+    ['Tithe Sloop', 'Aboard: its crew stands to meet you'],
   );
   assert.equal(fightAsk(atSea), null, 'E asks nothing while its crew fights');
   boarding.frame(sea, struck, INPUT);

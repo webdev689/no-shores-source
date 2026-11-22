@@ -11,11 +11,9 @@ fn sight_is_half_a_minute_of_closing_head_on_and_never_under_five_kilometres() {
 
 #[test]
 fn each_holder_sends_its_faction_and_home_waters_none() {
-    assert_eq!(faction_of(Holder::Home, 0.0), None);
-    assert_eq!(faction_of(Holder::Pirates, 0.0), Some(PIRATES));
-    assert_eq!(faction_of(Holder::GreyTithe, 0.9), Some(GREY_TITHE));
-    assert_eq!(faction_of(Holder::Contested, 0.49), Some(GREY_TITHE));
-    assert_eq!(faction_of(Holder::Contested, 0.5), Some(PIRATES));
+    assert_eq!(faction_of(Holder::Home), None);
+    assert_eq!(faction_of(Holder::GreyTithe), Some(GREY_TITHE));
+    assert_eq!(faction_of(Holder::Lattice), Some(GREY_TITHE), "the Lattice's waters send the Tithe's ships");
 }
 
 #[test]

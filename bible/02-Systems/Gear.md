@@ -576,8 +576,8 @@ Officers ashore fight beside their player, as DFO's crew companions did
 ([[The Ship's Power, Crew and Islands as Claude Shapes Them]]).
 
 - **Who.** Each officer on duty ashore (two at most) stands as a fighter on the players' side beside a player in a
-  land room (a continent's node, a patrol, the Test Ground), thinking with a foe's own brain: the First Mate a pirate
-  swordsman, the Gunner and the Lookout pirate archers, the Bosun a pirate brute, the Carpenter a pirate skirmisher,
+  land room (a continent's node, a patrol, the Test Ground), thinking with a foe's own brain, as the crew's own types ([[Enemies]]): the First
+  Mate the Swordsman, the Gunner and the Lookout the Archer, the Bosun the Brute, the Carpenter the Skirmisher,
   each at Major, dressed by their post (below). A boarded deck has none yet.
 - **Following.** Their place is 1.8 m behind the leader, 1.1 m either side when two are ashore; their post moves there
   each tick, and with no one to fight they walk back once 2.5 m from it (3.7 m for the second). One 40 m from the
