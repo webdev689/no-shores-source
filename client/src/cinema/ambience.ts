@@ -4,7 +4,8 @@
 // its recording has come. Nothing plays until the game's world output answers, and the output may come and go: the
 // levels keep gliding meanwhile, and the sound picks up where they stand once it returns.
 
-import { clampLevel, glided, nextGapS, seededRandom, thunderShape } from './ambienceShapes.ts';
+import { seeded } from '../seeded.ts';
+import { clampLevel, glided, nextGapS, thunderShape } from './ambienceShapes.ts';
 import type { Loudness } from '../soundMeasure.ts';
 import { playSample } from '../soundSamples.ts';
 
@@ -127,7 +128,7 @@ const finiteSeconds = (seconds: number): number => (Number.isFinite(seconds) ? M
 export class Ambience {
   private readonly output: SoundOut;
   private readonly play: Play;
-  private readonly random = seededRandom(SEED + 1);
+  private readonly random = seeded(SEED + 1);
   private readonly glides = new Map<Bed, Glide>(
     BEDS.map((bed) => [bed, { from: 0, to: 0, elapsedS: 0, glideS: 0, value: 0 }]),
   );

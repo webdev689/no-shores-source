@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { clampLevel, glided, nextGapS, seededRandom, thunderShape } from './ambienceShapes.ts';
+import { seeded } from '../seeded.ts';
+import { clampLevel, glided, nextGapS, thunderShape } from './ambienceShapes.ts';
 
 test('levels are clamped to 0 to 1, and nonsense is silence', () => {
   assert.equal(clampLevel(-0.5), 0);
@@ -35,12 +36,12 @@ test('thunder comes later and softer the farther it is, and only a near strike c
 });
 
 test('spot sounds come by a seeded clock, at gaps that average their mean', () => {
-  const first = seededRandom(7);
-  const second = seededRandom(7);
+  const first = seeded(7);
+  const second = seeded(7);
   for (let draw = 0; draw < 10; draw++) assert.equal(first(), second());
   assert.ok(nextGapS(4, 0.2) < nextGapS(4, 0.8));
   assert.ok(Number.isFinite(nextGapS(4, 1)));
-  const random = seededRandom(3);
+  const random = seeded(3);
   let total = 0;
   for (let draw = 0; draw < 4000; draw++) total += nextGapS(4, random());
   assert.ok(Math.abs(total / 4000 - 4) < 0.3, 'the gaps average their mean');
