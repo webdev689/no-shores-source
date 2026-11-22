@@ -158,3 +158,15 @@ test('a travel under way holds the player at sea, and coming back aboard ends an
   assert.deepEqual([sea.travelling, sea.busy], [null, false]);
   assert.ok(done.includes('cut'), 'the travel is cut, its room told to forget it');
 });
+
+test('a travel waits to be asked until the room has the ship at sea, as a tier’s new room puts it there', () => {
+  const { travel, asked, room, toFade } = travelling();
+  const ship = room.ownShip;
+  Object.assign(room, { ownShip: null });
+  toFade();
+  travel.step(0.5, room);
+  assert.deepEqual(asked, [], 'not asked of a room that has no ship of the player’s');
+  Object.assign(room, { ownShip: ship });
+  travel.step(0.1, room);
+  assert.deepEqual(asked, ['travel'], 'asked once it has');
+});

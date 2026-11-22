@@ -42,15 +42,20 @@ export class SeaTravel {
     this.away = new SailAway(water, () => this.ask());
   }
 
-  /** Asks the room for the travel; a voyage stopped meanwhile (a fight met, the ship hove to) has none to ask. */
+  /** Asks the room for the travel; a voyage stopped meanwhile (a fight met, the ship hove to) has none to ask. The
+   *  wait for its answer runs from the first ask. */
   private ask(): void {
     if (!this.passage.sailing) {
       this.passage.say('The voyage was stopped.');
       this.away.answer('The voyage was stopped.');
       return;
     }
-    [this.asked, this.sentTo] = [0, this.passage.room];
-    this.passage.travel();
+    this.asked ??= 0;
+    // A room that has no ship of the player's yet (a tier's, just joined, before its keeper put it to sea) would take
+    // it for a course with nowhere to start: it is asked once the room has it.
+    const room = this.passage.room;
+    this.sentTo = room?.ownShip ? room : null;
+    if (this.sentTo) this.passage.travel();
   }
 
   /** Ends the travel at once, `room` told to forget it: the player has the ship again. */
