@@ -168,6 +168,19 @@ impl Room {
         true
     }
 
+    /// The island's nodes a player's character gathered today, spent for them again in this room, landing or not, until
+    /// the day turns ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+    pub(crate) fn spent_today(&mut self, player: PlayerId) {
+        let (Some(seed), day) = (self.isle.as_ref().map(|isle| isle.seed), self.day()) else { return };
+        let Some(found) = self.players.get_mut(&player) else { return };
+        for node in found.character.activity.gathered_on(day, seed).to_vec() {
+            if !found.spent.contains(&node) {
+                found.spent.push(node);
+                found.gear_changed = true;
+            }
+        }
+    }
+
     /// The sea's word that an account's ship lies at this island's anchorage, by its landing's number: its players may
     /// scavenge and gather, and their quest logs are told they landed. A landing of another number than the one before
     /// is a new visit: the nodes the account gathered stand for it again. Whether this is an island's room.
@@ -183,6 +196,7 @@ impl Room {
         }
         let owned = self.players.iter().filter(|(_, found)| found.owner.as_deref() == Some(account));
         for player in owned.map(|(id, _)| *id).collect::<Vec<_>>() {
+            self.spent_today(player);
             self.tell_landed(player);
         }
         true

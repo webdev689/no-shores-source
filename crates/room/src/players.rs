@@ -478,7 +478,7 @@ impl Room {
         if let Some(found) = self.players.get_mut(&player) {
             found.fighter = found.armed(found.fighter);
         }
-        self.give_left_back(player);
+        (self.give_left_back(player), self.spent_today(player));
         true
     }
 
