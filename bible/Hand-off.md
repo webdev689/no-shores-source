@@ -101,14 +101,15 @@ The decisions in [[Open Questions]] are not repeated here.
   - Their coin on the held map is ringed, and the Postmaster has a coin.
   - Its decisions, on its branch: "The Factions Are the Baseline for Every Quest" and "A Keeper With Something for You
     Pulses and Is Seen From Everywhere", with Claude's calls listed there.
-  - The lit marks in the 3D world are not yet pictured: the headless page did not draw the world while the machine was
-    busy. See them live.
+  - Pictured headless: a lit emblem over the Hall of the Arts, drawn through its walls, and the held map's rings.
+    Not yet seen on a real GPU, nor the beat in motion.
 - **The Compendium** (branch `claude/keen-cannon-4nbe4z-audio`, its pull request), for the owner's yes to merge:
   - The tab, its Collections-style front and its Lore-style book view ([[Lore]],
     [[The Compendium Holds the Lore Books, After Destiny's]]).
   - The books are the owner's to write in `content/lore/lore.json`. [[Lore]], "The file", says how. Each chapter is
     found as the story ends, as a named quest's task is done, or lying at a named place in a node.
-  - Its pictures: `tools/uiShot.mjs` with `compendium/compendiumShots.ts`.
+  - Its pictures: `tools/uiShot.mjs` with `compendium/compendiumShots.ts`. Finding a chapter in a deployed room
+    waits on the first books.
   - #153 and it both touch `Decisions.md` and `overheadMarks.ts`. The second to merge takes `main` first.
 - **A thin black vertical line across the world**, reported by the owner and not yet found: the canvas fills the
   page, so it is not a gap in the page. The owner will send a screenshot.
@@ -237,8 +238,8 @@ The decisions in [[Open Questions]] are not repeated here.
   4000-texture budget (`player/cards.ts`), the scene's full-size targets, about 590 MB at 5120 by 2880, uncapped
   (`scene.ts`), and the item pictures' cache, uncapped (`player/itemPictures.ts`).
 - **Browser QA** ([[Toolkit]]):
-  - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker (#147). The world can take minutes to draw
-    while the machine is busy (no picture came in 4 min during a cargo build).
+  - `tools/claude-toolkit/webgpu-shot.cjs` pictures the game in its worker (#147). Run it on an idle machine: during a
+    cargo build the world did not draw in 4 min, and idle it drew in under 5.
   - The held map raised on foot pictures well. `?face=<degrees>` is not an address flag: patch a built copy's
     `askedArrival` to face a way.
   - `tools/uiShot.mjs` draws the menu whole through the real renderer (the Journal's and the Compendium's pictures).
