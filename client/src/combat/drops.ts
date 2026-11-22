@@ -1,41 +1,146 @@
-// The drops lying for the player, seen in the world after DFO's spoils: each thrown out of the fallen foe on an arc
-// and bouncing twice to rest, then standing upright as its own picture turned to the eye, with a thin line of its
-// rarity's colour rising out of its top, taller the rarer it is, a glint climbing it, a Legendary's and an Atheric's
-// pulsing. The line rises as the drop comes to rest. Each is drawn as the marks are, the line as light added to what
-// stands behind it. An Ammo box stepped onto with the ammunition full, which the room leaves lying, is told of.
+// The drops lying for the player, seen in the world as project-final throws its loot: each popped up out of the fallen
+// foe, bouncing until it settles where the room put it, then rising to hover, bobbing and turning. A Vestige is its
+// crystal and an Ammo box or crate its Blender model, each turn baked into frames and turned to the eye. Over each
+// at rest a thin line of its rarity's colour rises, taller the rarer it is, a glint climbing it, a Legendary's and an
+// Atheric's pulsing. Each is drawn as the marks are, the halo and the line as light added to what stands behind them.
+// An Ammo box stepped onto with the ammunition full, which the room leaves lying, is told of.
 
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
-import { AMMO_BOX, AMMO_CRATE, type PixelPicture, vestigePicture } from './dropPictures.ts';
+import { AMMO_BOX_TURN } from './ammoBoxPictures.ts';
+import { AMMO_CRATE_TURN } from './ammoCratePictures.ts';
+import { AMMO_BOX, type PixelPicture } from './dropPictures.ts';
+import { CROWN_M, SPIN_FRAMES, crystalFrame, hashOf } from './vestigeCrystal.ts';
 
 type Point = readonly [number, number, number];
 
-/** How long a drop flies before it rests, seconds: the room's 36 ticks. */
-export const FLIGHT_S = 0.6;
 const TICK_S = 1 / 60;
-/** How long its line takes to rise once it rests, seconds. */
+/** How long its line takes to rise once it settles, seconds. */
 export const RISE_S = 0.4;
-/** Each bounce gives back this share of the speed before it, so lasts this share of the arc before and covers its
- *  square of the ground. The flight is its first arc and two bounces. */
-const BOUNCE = 0.5;
-const ARCS = 3;
-/** A drop leaves the body this high, and its first arc rises this much higher, metres. */
-const LEAVES_M = 0.8;
-const RISES_M = 0.5;
-/** Each arc's share of the flight's time and of its ground. */
-const TIMES = Array.from({ length: ARCS }, (unused, arc) => BOUNCE ** arc);
-const GROUNDS = Array.from({ length: ARCS }, (unused, arc) => BOUNCE ** (2 * arc));
-const TIME_WHOLE = TIMES.reduce((sum, each) => sum + each, 0);
-const GROUND_WHOLE = GROUNDS.reduce((sum, each) => sum + each, 0);
-/** The pull that brings the first arc down on time from its height: its rise and fall solved for its length. */
-const FIRST_S = FLIGHT_S / TIME_WHOLE;
-const PULL = ((Math.sqrt(2 * RISES_M) + Math.sqrt(2 * (RISES_M + LEAVES_M))) / FIRST_S) ** 2;
+
+/** How a drop moves: its middle's height over the body as it leaves, its pop upward and the most more it may have,
+ *  the pull, the share of a bounce's speed it keeps and of its way along the ground, the speed under which it settles,
+ *  its middle's height over the ground as it bounces and as it hovers, how long it takes to rise there, its bob's
+ *  height and rate (radians a second), and its turn in the air and at rest (radians a second): project-final's, but
+ *  for the heights, raised so no frame dips into the ground. And how long the room waits before it may be taken, the
+ *  longest it can bounce (crates/room/src/drops.rs, VESTIGE_REST_TICKS and AMMO_REST_TICKS). */
+export interface Feel {
+  readonly leaves: number;
+  readonly pop: number;
+  readonly popMore: number;
+  readonly pull: number;
+  readonly keeps: number;
+  readonly grip: number;
+  readonly settles: number;
+  readonly low: number;
+  readonly hover: number;
+  readonly riseS: number;
+  readonly bob: number;
+  readonly bobRate: number;
+  readonly airTurn: number;
+  readonly restTurn: number;
+  readonly restS: number;
+}
+
+export const CRYSTAL_FEEL: Feel = {
+  leaves: 1.15,
+  pop: 4.4,
+  popMore: 1,
+  pull: 16,
+  keeps: 0.4,
+  grip: 0.55,
+  settles: 1.1,
+  low: 0.23,
+  hover: 0.42,
+  riseS: 0.35,
+  bob: 0.05,
+  bobRate: 1.9,
+  airTurn: 7,
+  restTurn: 2.4,
+  restS: 94 / 60,
+};
+
+/** Ammunition pops lower and settles sooner. */
+export const AMMO_FEEL: Feel = {
+  leaves: 1.01,
+  pop: 2.8,
+  popMore: 0.6,
+  pull: 16,
+  keeps: 0.3,
+  grip: 0.55,
+  settles: 1.6,
+  low: 0.31,
+  hover: 0.5,
+  riseS: 0.28,
+  bob: 0.06,
+  bobRate: 2,
+  airTurn: 5,
+  restTurn: 2.4,
+  restS: 60 / 60,
+};
+
+/** How long each arc of a flight lasts, seconds: the first from leaving `fall` metres over where it lands, popped up
+ *  at `pop`, then each bounce, until one lands slower than it settles. */
+export function arcsOf(feel: Feel, pop: number, fall: number): number[] {
+  const first = (pop + Math.sqrt(Math.max(0, pop * pop + 2 * feel.pull * fall))) / feel.pull;
+  const arcs = [first];
+  for (let speed = feel.pull * first - pop; speed >= feel.settles;) {
+    speed *= feel.keeps;
+    arcs.push((2 * speed) / feel.pull);
+  }
+  return arcs;
+}
+
+/** Where a drop is `seconds` after it was thrown: its middle, whether it has settled and how long ago, and how far it
+ *  has turned, radians. */
+export interface Motion {
+  readonly middle: Point;
+  readonly settled: boolean;
+  readonly since: number;
+  readonly turn: number;
+}
+
+/** A drop's motion thrown from `from` (a body's feet) to rest on `rest`, its pop and its first turn drawn from
+ *  `seed`. */
+export function motionAt(feel: Feel, from: Point, rest: Point, seed: number, seconds: number): Motion {
+  const floor = rest[2] + feel.low;
+  const fall = from[2] + feel.leaves - floor;
+  // Thrown up to a spot over where it leaves, it pops at least high enough to land there.
+  const pop = Math.max(feel.pop + hashOf(seed) * feel.popMore, Math.sqrt(2 * feel.pull * Math.max(0, -fall)));
+  const arcs = arcsOf(feel, pop, fall);
+  const flight = arcs.reduce((sum, each) => sum + each, 0);
+  const firstTurn = hashOf(seed + 0.5) * 2 * Math.PI;
+  if (seconds >= flight) {
+    const since = seconds - flight;
+    const share = Math.min(1, since / feel.riseS);
+    const eased = 1 - (1 - share) ** 2;
+    const height = floor + (feel.hover - feel.low) * eased + Math.sin(seconds * feel.bobRate) * feel.bob * share;
+    const turn = firstTurn + feel.airTurn * flight + feel.restTurn * since;
+    return { middle: [rest[0], rest[1], height], settled: true, since, turn };
+  }
+  // Along the ground it slows by its grip at each bounce, and comes to rest on the room's spot as it settles.
+  const ways = arcs.map((each, arc) => each * feel.grip ** arc);
+  const whole = ways.reduce((sum, each) => sum + each, 0);
+  let [start, along] = [0, 0];
+  let arc = 0;
+  while (arc < arcs.length - 1 && seconds >= start + (arcs[arc] ?? 0)) {
+    start += arcs[arc] ?? 0;
+    along += ways[arc] ?? 0;
+    arc++;
+  }
+  const time = seconds - start;
+  const share = (along + time * feel.grip ** arc) / whole;
+  const leaves = arc === 0 ? pop : (feel.pull * (arcs[arc] ?? 0)) / 2;
+  const height = (arc === 0 ? from[2] + feel.leaves : floor) + leaves * time - (feel.pull * time * time) / 2;
+  const across = (axis: 0 | 1) => from[axis] + (rest[axis] - from[axis]) * share;
+  return { middle: [across(0), across(1), height], settled: false, since: 0, turn: firstTurn + feel.airTurn * seconds };
+}
 
 /** How tall a line stands by rarity, metres, and an Ammo box's or crate's, in white. */
 export const LINE_M = [0.7, 1, 1.4, 1.9, 2.5] as const;
 const AMMO_LINE_M = LINE_M[0];
 const WHITE = [1, 1, 1] as const;
-/** A picture's pixel on the ground, metres, and how far over the ground it stands. */
+/** A picture's pixel in the world when it has none of its own, metres, and how far over the ground a line stands. */
 export const PIXEL_M = 0.035;
 const LIFT_M = 0.01;
 /** A line's width, and the least it keeps of the eye's view, radians, so one across the ground still shows; how many
@@ -45,41 +150,42 @@ const LINE_LEAST = 0.0022;
 const LINE_STEPS = 12;
 const CLIMB_HZ = 1;
 const PULSE_HZ = 1;
-/** A line's opacity, below none: the marks' sign for light added to what stands behind it. */
+/** A mark's opacity below none: the marks' sign for light added to what stands behind it. */
 const ADDED = -1;
 
-/** Where a drop thrown from `from` to rest at `rest` is `seconds` into its flight, and whether it rests. */
-export function flightAt(from: Point, rest: Point, seconds: number): { readonly at: Point; readonly resting: boolean } {
-  if (seconds >= FLIGHT_S) return { at: rest, resting: true };
-  let [start, ground] = [0, 0];
-  for (let arc = 0; arc < ARCS; arc += 1) {
-    const length = (FIRST_S * (TIMES[arc] ?? 0)) / (TIMES[0] ?? 1);
-    if (seconds < start + length || arc === ARCS - 1) {
-      const share = Math.min(1, Math.max(0, (seconds - start) / length));
-      const along = (ground + share * (GROUNDS[arc] ?? 0)) / GROUND_WHOLE;
-      const floor = from[2] + (rest[2] - from[2]) * along;
-      const time = share * length;
-      // The first arc leaves from the body's height; each bounce leaves the ground with the speed that lands it.
-      const leaves = arc === 0 ? Math.sqrt(2 * PULL * RISES_M) : (PULL * length) / 2;
-      const height = (arc === 0 ? LEAVES_M : 0) + leaves * time - (PULL * time * time) / 2;
-      const across = (axis: 0 | 1) => from[axis] + (rest[axis] - from[axis]) * along;
-      return { at: [across(0), across(1), floor + Math.max(0, height)], resting: false };
-    }
-    start += length;
-    ground += GROUNDS[arc] ?? 0;
-  }
-  return { at: rest, resting: true };
+/** How far ammunition's drawn top stands over its middle at the most through its turn, metres, so its line rises from
+ *  one height as it turns. */
+const topOf = (frames: readonly PixelPicture[]): number =>
+  Math.max(
+    ...frames.map((frame) => {
+      const first = Math.max(
+        0,
+        frame.rows.findIndex((row) => /[^.]/.test(row)),
+      );
+      return (frame.rows.length / 2 - first) * (frame.pixelM ?? PIXEL_M);
+    }),
+  );
+const BOX_TOP_M = topOf(AMMO_BOX_TURN);
+const CRATE_TOP_M = topOf(AMMO_CRATE_TURN);
+
+/** How a drop moves: a Vestige as a crystal, ammunition as ammunition. */
+const feelOf = (drop: Pick<GearDrop, 'kind'>): Feel => (drop.kind === DROPPED.vestige ? CRYSTAL_FEEL : AMMO_FEEL);
+
+/** What a drop is drawn as turned `turn` radians: its frame of a Vestige's crystal or of ammunition's turn, and the
+ *  halo a crystal glows in. */
+export function pictureOf(
+  drop: Pick<GearDrop, 'kind' | 'rarity'>,
+  turn = 0,
+): { readonly body: PixelPicture; readonly halo: PixelPicture | null } {
+  if (drop.kind === DROPPED.vestige) return crystalFrame(drop.rarity, frameOf(turn, SPIN_FRAMES));
+  const turning = drop.kind === DROPPED.crate ? AMMO_CRATE_TURN : AMMO_BOX_TURN;
+  return { body: turning[frameOf(turn, turning.length)] ?? AMMO_BOX, halo: null };
 }
 
-/** A drop's picture: a Vestige's in its rarity's colours, an Ammo box's, a crate's. */
-export function pictureOf(drop: Pick<GearDrop, 'kind' | 'rarity'>): PixelPicture {
-  if (drop.kind === DROPPED.ammoBox) return AMMO_BOX;
-  if (drop.kind === DROPPED.crate) return AMMO_CRATE;
-  return VESTIGES[drop.rarity] ?? VESTIGES[0] ?? vestigePicture(drop.rarity);
+/** Which of `frames` frames of a whole turn shows `turn` radians round. */
+function frameOf(turn: number, frames: number): number {
+  return ((Math.floor((turn / (2 * Math.PI)) * frames) % frames) + frames) % frames;
 }
-
-/** Each rarity's Vestige, made once. */
-const VESTIGES: readonly PixelPicture[] = RARITIES.map((unused, rarity) => vestigePicture(rarity));
 
 /** A colour written `#rrggbb` as red, green and blue from 0 to 1. */
 function rgbOf(hex: string): [number, number, number] {
@@ -96,22 +202,27 @@ const RUN = 8;
 /** How much nearer the eye each layer of a picture stands than the one under it, metres: far more than the depth
  *  buffer tells apart wherever a picture is seen, far less than the eye does. */
 const LAYER_M = 0.002;
+/** A picture in more colours than a glyph's twelve is laid flat: in layers its last colours would stand far enough
+ *  nearer the eye than its first to be seen apart. */
+const MOST_LAYERS = 12;
 /** Each picture's rectangles, laid flat and in layers, worked out the first time it is laid so. */
 const runsKept = [new WeakMap<PixelPicture, readonly number[]>(), new WeakMap<PixelPicture, readonly number[]>()];
 
 /**
  * A picture's rectangles of one colour, each as far across and down as it may run. Laid in layers, its colours go on
  * in turn, the one spread widest first, each running under the colours laid after it, so a diamond inside a diamond
- * is a rectangle a step rather than a run a row. Laid flat, for a picture seen through, where one layer would show
- * through another, no rectangle covers another.
+ * is a rectangle a step rather than a run a row. Laid flat, for a picture seen through or in many colours, where one
+ * layer would show through another or stand too far before it, no rectangle covers another.
  */
-function runsOf(picture: PixelPicture, layered: boolean): readonly number[] {
+function runsOf(picture: PixelPicture, asked: boolean): readonly number[] {
+  const layered = asked && picture.colours.length <= MOST_LAYERS;
   const kept = runsKept[Number(layered)]?.get(picture);
   if (kept) return kept;
   const { rows } = picture;
   const [width, height] = [rows[0]?.length ?? 0, rows.length];
   const colours = picture.colours.map(rgbOf);
-  const colourOf = (letter: string) => colours['abcdef'.indexOf(letter)];
+  const colourOf = (letter: string) => colours[letter.charCodeAt(0) - 97];
+  const pixel = picture.pixelM ?? PIXEL_M;
   // Each drawn letter's spread: the area of the box round its cells.
   const boxes = new Map<string, [number, number, number, number]>();
   rows.forEach((row, line) =>
@@ -147,16 +258,17 @@ function runsOf(picture: PixelPicture, layered: boolean): readonly number[] {
         while (!along(bottom, column, right, owed).some(Boolean)) bottom -= 1;
         for (let row = line; row <= bottom; row += 1)
           for (let cell = column; cell <= right; cell += 1) laid.add(row * width + cell);
-        const [foot, top] = [(height - bottom - 1) * PIXEL_M + LIFT_M, (height - line) * PIXEL_M + LIFT_M];
+        const [foot, top] = [(height - bottom - 1) * pixel + LIFT_M, (height - line) * pixel + LIFT_M];
         runs.push(
-          (column - width / 2) * PIXEL_M,
-          (right + 1 - width / 2) * PIXEL_M,
+          (column - width / 2) * pixel,
+          (right + 1 - width / 2) * pixel,
           foot,
           top,
           red,
           green,
           blue,
-          layer,
+          // Laid flat, no rectangle covers another, so none need stand nearer the eye.
+          layered ? layer : 0,
         );
       }
   });
@@ -335,26 +447,36 @@ export class DropsShown {
       lying.add(key);
       if (!this.began.has(key)) {
         // Told of at rest, it is as though it rested long ago, and chimes no more.
-        const flown = drop.flying > 0 ? FLIGHT_S - drop.flying * TICK_S : FLIGHT_S + RISE_S;
+        const { restS } = feelOf(drop);
+        const flown = drop.flying > 0 ? restS - drop.flying * TICK_S : restS + RISE_S;
         this.began.set(key, seconds - Math.max(0, flown));
         if (drop.flying === 0) this.rested.add(key);
       }
-      const since = seconds - (this.began.get(key) ?? seconds);
-      const { at: place, resting } = flightAt(drop.from, drop.at, since);
-      const picture = pictureOf(drop);
-      markPicture(marks, picture, place, eye);
-      if (!resting) continue;
+      const motion = motionAt(
+        feelOf(drop),
+        drop.from,
+        drop.at,
+        drop.id * 7 + drop.kind,
+        seconds - (this.began.get(key) ?? seconds),
+      );
+      const { body, halo } = pictureOf(drop, motion.turn);
+      const tallM = body.rows.length * (body.pixelM ?? PIXEL_M);
+      const base: Point = [motion.middle[0], motion.middle[1], motion.middle[2] - tallM / 2];
+      markPicture(marks, body, base, eye);
+      if (halo) markPicture(marks, halo, base, eye, 1, ADDED);
+      if (!motion.settled) continue;
       if (!this.rested.has(key)) {
         this.rested.add(key);
         landed.push(drop.at);
         if (drop.kind === DROPPED.vestige) rested.push(drop.rarity);
       }
-      const rise = Math.min(1, (since - FLIGHT_S) / RISE_S);
+      const rise = Math.min(1, motion.since / RISE_S);
       const ammo = drop.kind !== DROPPED.vestige;
       const colour = ammo ? WHITE : (LINE_COLOURS[drop.rarity] ?? WHITE);
       const tall = (ammo ? AMMO_LINE_M : (LINE_M[drop.rarity] ?? AMMO_LINE_M)) * rise;
       const pulse = !ammo && drop.rarity >= 3 ? 1 + 0.35 * Math.sin(seconds * 2 * Math.PI * PULSE_HZ) : 1;
-      const crown: Point = [place[0], place[1], place[2] + picture.rows.length * PIXEL_M + LIFT_M];
+      const top = drop.kind === DROPPED.crate ? CRATE_TOP_M : drop.kind === DROPPED.ammoBox ? BOX_TOP_M : CROWN_M;
+      const crown: Point = [motion.middle[0], motion.middle[1], motion.middle[2] + top + LIFT_M];
       markLine(marks, crown, tall, colour, rise * pulse, seconds, eye);
     }
     for (const key of this.began.keys())

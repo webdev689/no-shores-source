@@ -52,16 +52,16 @@ fn helm_of(numbers: &[f64]) -> Option<Helm> {
     fits.then_some(Helm { steer, climb: climb as i8 })
 }
 
-/// The player's ship stepped by each helm in turn, as the fleet room steps it: from the ship's numbers, whether
-/// it is a wreck, its sail and its whole sail, the room's time for its pose, the room's world time at its first tick
-/// (which the wind needs not: the room's wind is the one it opened in), then two numbers a helm. Answers the ship's
-/// numbers and its pose at that time; none for numbers that are not that.
+/// The player's ship stepped by each helm in turn, as the fleet room steps it: from the ship's numbers, its sail and
+/// its whole sail, the room's time for its pose, the room's world time at its first tick (which the wind needs not:
+/// the room's wind is the one it opened in), then two numbers a helm. Answers the ship's numbers and its pose at that
+/// time; none for numbers that are not that.
 #[must_use]
 pub fn predict(numbers: &[f64]) -> Vec<f64> {
     let (Some(ship), Some(rest)) = (numbers.get(..SHIP_FLOATS).and_then(ship_of), numbers.get(SHIP_FLOATS..)) else {
         return Vec::new();
     };
-    let Some((&[wrecked, sail, max_sail, time, _epoch], helms)) = rest.split_first_chunk::<5>() else {
+    let Some((&[sail, max_sail, time, _epoch], helms)) = rest.split_first_chunk::<4>() else {
         return Vec::new();
     };
     if !numbers.iter().all(|number| number.is_finite()) || !helms.len().is_multiple_of(HELM_FLOATS) {
@@ -70,7 +70,7 @@ pub fn predict(numbers: &[f64]) -> Vec<f64> {
     let Some(helms) = helms.chunks_exact(HELM_FLOATS).map(helm_of).collect::<Option<Vec<Helm>>>() else {
         return Vec::new();
     };
-    let hurts = Hurts::from_numbers(wrecked != 0.0, sail, max_sail);
+    let hurts = Hurts::from_numbers(sail, max_sail);
     with_weather(|swell, wind| {
         let waters = OpenSea { swell };
         // Out on the open sea a ship's step does not hang on the hour: only its pose does.

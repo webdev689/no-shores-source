@@ -91,7 +91,7 @@ fn a_browser_predicting_its_ship_by_the_door_agrees_with_the_room_to_the_bit() {
     assert_eq!(last.acknowledged, 200);
     let (sail, max_sail) = (last.hurts[2], last.hurts[3]);
     let mut request = put.ship.clone();
-    request.extend([0.0, sail, max_sail, 200.0 * movement::TICK_SECONDS, 0.0]);
+    request.extend([sail, max_sail, 200.0 * movement::TICK_SECONDS, 0.0]);
     for sequence in 2..=200 {
         let helm = helm_at(sequence);
         request.extend([helm.steer, f64::from(helm.climb)]);

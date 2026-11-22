@@ -101,15 +101,16 @@ mod in_a_fight {
     }
 
     #[test]
-    fn a_wreck_cannot_burst_and_keeps_its_charge() {
+    fn a_ship_going_down_cannot_burst_and_keeps_its_charge() {
         let mut fight = rowing();
         if let Some(vessel) = fight.ships.get_mut(&PLAYER) {
-            vessel.damage.state = State::Wrecked;
+            vessel.damage.state = State::Sinking;
         }
-        row(&mut fight, ROWING, 600);
-        let wrecked = way(&fight);
-        row(&mut fight, TAP, 120);
-        assert!((way(&fight) - wrecked).abs() < 1e-9, "its oars pull as a wreck's: {}", way(&fight));
-        assert!(fight.vessel(PLAYER).is_some_and(|vessel| vessel.boost.ready()), "its burst is kept for later");
+        row(&mut fight, TAP, 1);
+        let boost = fight.vessel(PLAYER).map(|vessel| vessel.boost);
+        assert!(
+            boost.is_some_and(|boost| boost.ready() && boost.drive() == 1.0),
+            "its helm takes no orders, a tap too"
+        );
     }
 }

@@ -2,6 +2,7 @@
 type: decision
 date: 2026-11-18
 status: replaced
+replaced_by: "[[The Ships as Claude Shapes Them]]"
 ---
 # New Ships Are Planned in the Sloop's Style, After the System
 

@@ -5,7 +5,7 @@
 use super::*;
 use crate::foes::{Foe, pirate_in};
 use crate::power::{hold, loadout_arms};
-use crate::{Input, REST_TICKS};
+use crate::{AMMO_REST_TICKS, Input, VESTIGE_REST_TICKS};
 use combat::{CombatInput, Intent};
 use dungeon::{CELL_M, Cell, Dungeon, Side};
 use gear::ammo::{AMMO_FULL, CRATES_MOST};
@@ -171,7 +171,7 @@ fn a_reeve_felled_beside_a_wall_leaves_his_drops_on_the_floor_where_his_slayer_t
     assert!(drops.len() > 1, "and his Ammo box");
     for drop in &drops {
         assert!(drop.at[2].abs() < 1e-9, "on the floor, never on the rock: {drop:?}");
-        for _ in 0..=REST_TICKS {
+        for _ in 0..=VESTIGE_REST_TICKS {
             stand(&mut room, [drop.at[0], drop.at[1]]);
             room.tick();
         }
@@ -204,16 +204,20 @@ fn a_kills_drops_are_thrown_out_in_a_fan_toward_the_player_and_taken_at_rest() {
     room.tick();
     let ammo = |room: &Room| room.player(player).expect("in").character.ammo;
     assert_eq!(ammo(&room), 0, "in the air, it is not taken yet");
-    for _ in 0..REST_TICKS {
+    for _ in 0..AMMO_REST_TICKS - 5 {
         room.tick();
     }
-    assert_eq!(ammo(&room), gear::ammo::BOX_SHARE, "at rest, walked over, a quarter back");
+    assert_eq!(ammo(&room), 0, "still bouncing, just before its rest");
+    for _ in 0..5 {
+        room.tick();
+    }
+    assert_eq!(ammo(&room), gear::ammo::BOX_SHARE, "at rest, walked over, a quarter back, sooner than a Vestige");
     assert_eq!(lying(&room, player, Dropped::AmmoBox), 0);
     if let Some(found) = room.players.get_mut(&player) {
         found.character.ammo = AMMO_FULL;
     }
     room.lay_drop(player, Dropped::AmmoBox, ammo_box.at);
-    for _ in 0..=REST_TICKS {
+    for _ in 0..=AMMO_REST_TICKS {
         room.tick();
     }
     assert_eq!(lying(&room, player, Dropped::AmmoBox), 1, "full, the box stays where it lies");
@@ -287,7 +291,7 @@ fn a_test_ground_player_who_takes_up_a_crossbow_by_its_grant_fires_it_and_takes_
     assert!(spent < AMMO_FULL, "a bolt spent from the crossbow's ammunition");
     let feet = room.player(player).expect("in").fighter.body;
     room.lay_drop(player, Dropped::AmmoBox, [feet.x, feet.y, feet.z]);
-    for sequence in 31..=(31 + REST_TICKS as u32 + 2) {
+    for sequence in 31..=(31 + AMMO_REST_TICKS as u32 + 2) {
         let intent = Intent { controls, ..Intent::default() };
         room.input(player, Input { sequence, intent, arms, seen: room.clock(), ..Input::default() }).expect("taken");
         room.tick();

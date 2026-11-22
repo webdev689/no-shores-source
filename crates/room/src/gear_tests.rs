@@ -155,7 +155,7 @@ fn a_kill_pays_those_who_struck_it_and_lays_their_vestige_for_them_alone() {
     room.tick();
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held, "it lies 6 m away");
     move_to(&mut room, player, at[0], at[1]);
-    for _ in 0..REST_TICKS {
+    for _ in 0..VESTIGE_REST_TICKS {
         room.tick();
     }
     assert_eq!(room.player(player).expect("in").character.vestiges_held(false), held + 1, "walked over, it is taken");

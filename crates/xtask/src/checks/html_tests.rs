@@ -179,6 +179,8 @@ fn a_page_is_one_canvas_and_its_module() {
         ("an inline script", page("", &format!("{CANVAS}<script>document.body.append('x')</script>"))),
         ("a module written in", page("", &format!("{CANVAS}<script type=\"module\">go()</script>"))),
         ("a classic script", page("", &format!("{CANVAS}<script src=\"/src/main.ts\"></script>"))),
+        ("a second module", page("", &format!("{body}<script type=\"module\" src=\"/src/b.ts\"></script>"))),
+        ("no script", page("", CANVAS)),
     ] {
         assert!(page_refused(&html), "{way}");
     }

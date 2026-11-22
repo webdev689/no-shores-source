@@ -14,7 +14,7 @@ use crate::tuning::{
     STAMINA_GUARDING, STAMINA_PER_TICK, STAMINA_REST, STEER_REACH, parry_window,
 };
 use core::f64::consts::FRAC_PI_2;
-use movement::blocks::{ground_at, pushed_out, slide};
+use movement::blocks::ground_at;
 use movement::{Block, Body, Controls, Mode, Near, TICK_SECONDS, Terrain, step_body, step_body_paced};
 
 /// A falling hop this near the ground has come down: its last tick, whatever the sums' last bits.
@@ -215,7 +215,8 @@ fn act<B: Near + ?Sized>(
             (elapsed == attack.strike).then_some(Happening::Struck(attack))
         }
         Action::Guard { elapsed, window } => {
-            if next.kept.attack > 0 {
+            // A click kept swings out of the guard, but only once a swing can start: until then the guard holds.
+            if next.kept.attack > 0 && can_swing(next, intent) {
                 if elapsed < window {
                     next.missed_parry = 1;
                 }
@@ -328,7 +329,8 @@ fn begin<B: Near + ?Sized>(next: &mut Fighter, intent: &Intent, around: &Surroun
         next.aim = order.bearing;
         return None;
     }
-    if next.kept.attack > 0 {
+    // A kept click that cannot swing yet (no stamina, a swap) leaves a guard free to rise.
+    if next.kept.attack > 0 && can_swing(next, intent) {
         return swing(next, intent);
     }
     if (input.guard || next.kept.guard > 0) && guards(next) {
@@ -364,10 +366,10 @@ fn raise_guard(next: &mut Fighter) -> Happening {
 /// A swing begun with the stroke held, or the one a kept press was made with: a riposte at the foe it parried, a
 /// counter a perfect dodge earned, or a plain one. None without stamina, riding off the ground, or in a swap.
 fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
-    let stroke = intent.combat.attack.or(next.kept.stroke.filter(|_| next.kept.attack > 0))?;
-    if next.stamina <= 0.0 || (intent.controls.mounted && next.body.mode != Mode::Ground) || next.swap > 0 {
+    if !can_swing(next, intent) {
         return None;
     }
+    let stroke = intent.combat.attack.or(next.kept.stroke.filter(|_| next.kept.attack > 0))?;
     let (strike, end) = swing_ticks(next.arms.melee);
     let swing = if let Some((foe, _)) = next.riposte.take() {
         Swing::Riposte(foe)
@@ -385,6 +387,13 @@ fn swing(next: &mut Fighter, intent: &Intent) -> Option<Happening> {
     let attack = Attack { stroke, elapsed: 0, strike, end, swing, left_hand };
     next.action = Action::Attack(attack);
     Some(Happening::Swung(attack))
+}
+
+/// Whether a swing could start now: a stroke held or kept, stamina left, footed when riding, and no swap under way.
+fn can_swing(next: &Fighter, intent: &Intent) -> bool {
+    let stroke = intent.combat.attack.is_some() || (next.kept.attack > 0 && next.kept.stroke.is_some());
+    let riding_aloft = intent.controls.mounted && next.body.mode != Mode::Ground;
+    stroke && next.stamina > 0.0 && !riding_aloft && next.swap == 0
 }
 
 fn can_dodge<B: Near + ?Sized>(next: &Fighter, controls: Controls, around: &Surroundings<'_, B>) -> bool {
@@ -449,6 +458,8 @@ fn wind_up<B: Near + ?Sized>(
     }
     if elapsed >= telegraph.windup {
         next.action = Action::Idle;
+        // A charge or a leap strikes at the height it came down at, not the one it set off from.
+        telegraph.landed_z = telegraph.landing().map(|_| next.body.z);
         return Some(Happening::Landed(telegraph));
     }
     next.action = Action::Telegraph(telegraph);
@@ -526,7 +537,7 @@ fn move_body<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &
         Action::Draw { .. } => slowed(controls, (AIM_PACE * next.trim.aim_pace).min(1.0)),
         Action::Drink { .. } => slowed(controls, 1.0),
         Action::Telegraph(telegraph) => {
-            if let Some(body) = travel(&next.body, &telegraph, around) {
+            if let Some(body) = crate::shapes::travel(&next.body, &telegraph, around) {
                 next.body = body;
                 return;
             }
@@ -541,26 +552,6 @@ fn move_body<B: Near + ?Sized>(next: &mut Fighter, controls: Controls, around: &
         Action::Attack(_) | Action::Guard { .. } | Action::Parry { .. } | Action::Draw { .. } | Action::Telegraph(_)
     );
     next.body = if fighting && body.mode == Mode::Ground { Body { facing: next.aim, ..body } } else { body };
-}
-
-/// A charge crosses its lane and a leap flies to its disc in the last ticks of the wind-up.
-fn travel<B: Near + ?Sized>(body: &Body, telegraph: &Telegraph, around: &Surroundings<'_, B>) -> Option<Body> {
-    let landing = telegraph.landing()?;
-    let travel = telegraph.travel_ticks();
-    let begun = telegraph.windup.saturating_sub(travel);
-    if telegraph.elapsed < begun || travel == 0 {
-        return None;
-    }
-    let left = f64::from(telegraph.windup.saturating_sub(telegraph.elapsed).max(1));
-    let (step_x, step_y) = ((landing[0] - body.x) / left, (landing[1] - body.y) / left);
-    let share = f64::from(telegraph.elapsed - begun + 1) / f64::from(travel);
-    let rise = if telegraph.shape == crate::shapes::Shape::Leap { 4.8 * share * (1.0 - share) } else { 0.0 };
-    let (x, y) = slide(around.blocks, around.terrain, body, step_x, step_y);
-    // Off a drop its feet come down beside the block it slid off at its old height: it is set down clear of it.
-    let feet = |x, y| ground_at(around.blocks, around.terrain, x, y, body.z) + rise;
-    let (x, y) = pushed_out(around.blocks, around.terrain, x, y, body.height(), feet);
-    let facing = telegraph.bearing;
-    Some(Body { x, y, z: feet(x, y), vx: 0.0, vy: 0.0, vz: 0.0, facing, moving: true, ..*body })
 }
 
 /// The arms point where the fighter looks, but a swing's wind-up turns after the soft lock's target in reach and a

@@ -36,18 +36,18 @@ fn captain_ids(fight: &Fight) -> Vec<ShipId> {
 }
 
 #[test]
-fn an_ambush_left_unfought_is_never_won_her_never_wrecked_and_no_captain_sails_off() {
+fn an_ambush_left_unfought_is_never_won_her_never_sunk_and_no_captain_sails_off() {
     let mut fight = story_ambush();
     let mut events = Vec::new();
     for tick in 0..(900 * 60) {
         events.extend(fight.step(&[(PLAYER, IDLE)], &Open, &|_| WIND, f64::from(tick) * TICK_SECONDS));
     }
     let player = &fight.ships[&PLAYER];
-    assert_ne!(player.damage.state, State::Wrecked, "the captains' balls never wreck it");
+    assert_eq!(player.damage.state, State::Afloat, "the captains' balls never sink it");
     assert!(player.damage.hull >= 1.0, "a ball or a fire leaves it a point of hull: {}", player.damage.hull);
     assert!(player.damage.hull < player.damage.max_hull * 0.5, "it was fought hard: {}", player.damage.hull);
-    let wrecked = events.iter().any(|event| matches!(event, Event::State { ship: PLAYER, state: State::Wrecked }));
-    assert!(!wrecked, "no wreck is ever told");
+    let told = events.iter().any(|event| matches!(event, Event::State { ship: PLAYER, .. }));
+    assert!(!told, "its state never changes");
     assert!(!events.iter().any(|event| matches!(event, Event::Gone { .. })), "no captain leaves an unsunk ambush");
     assert_eq!(fight.over(), None);
     assert!(!fight.beaten(), "an ambush is won only by beating its captains");

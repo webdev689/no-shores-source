@@ -121,7 +121,7 @@ decision, made in the same change as its entry here.
 | `tools/flora/` | Grows each biome's trees, shrubs and grass in Blender and bakes them into its picture layers, published to R2 by the `flora` workflow ([[Flora]]) |
 | `tools/modules/` | Scripts the hub's and the zones' handcrafted modules in Blender, their pieces and adornments, baked and published by the `modules` workflow ([[Modules]]) |
 | `tools/wreck/` | Builds, lights, dresses and exports the prologue's wreck in Blender, published by the `wreck` workflow ([[Prologue]]) |
-| `tools/ship-glyphs/` | Draws the ship's glyphs pixel by pixel, its materials, modules and officers' posts, into `client/src/game/shipGlyphs.ts` |
+| `tools/item-pictures/` | Bakes the item pictures from Blender models into the client, and draws the officers' posts by hand ([[Item Pictures]]) |
 | `tools/islands/` | Builds the sea islands' modules in Blender from `content/islands/kits.json`, checks, packs and publishes them ([[Island Modules]]) |
 | `tools/r2.py` | R2 access for the publishers: objects named by their hash, uploaded once and checked when fetched |
 | `tools/ships/shape_ship.py` | Shapes the owner's Sloop, its parts painted already: its size, and the gap and steps down from its quarterdeck ([[Sailing]]) |

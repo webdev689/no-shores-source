@@ -90,7 +90,7 @@ has sunk, or lies past every ship they may fight and is not fighting, leaves the
 is one pure function (`sail_hurt`), which a browser predicting it runs too.
 
 Its guns, the balls striking and falling in the sea, and a ship breaking up are heard where each happens, through the
-sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
+sea's soundscape ([[Ambience]]).
 
 ## How it works
 
@@ -151,11 +151,12 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   and it swings twice as fast and answers its helm twice as soon (`FIGHT_TURN`): the Sloop makes about 4.8 m/s with
   the usual breeze on its quarter, swings at up to about 28 degrees a second under sail and 40 on its oars, and from
   slow its rudder takes hold twice as fast. A captain reckons its own swing at a fight's (`swing_rate`).
-- **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift drives a player's ship's sails and oars half again for 4 s; once the
-  burst is over it recharges for 12 s, so it may burst again 16 s after the tap. A tap while it bursts or recharges
-  does nothing, and a wreck cannot burst (its burst is kept). Captains never burst. The fight's view carries each
-  ship's burst, the share still to run and the share of its recharge done, which the Sloop's plate shows as a ring
-  ("How it looks", "The readout"). Sailing between ports has no burst: only a fight's helm has one.
+- **The burst** (`boost.rs`, [[Ships Sail Faster, Turn Twice as Fast and Burst on Shift in Sea Fights]]): a tap of Shift
+  drives a player's ship's sails and oars half again for 4 s; once the burst is over it recharges for 12 s, so it may
+  burst again 16 s after the tap. A tap while it bursts or recharges does nothing, nor does one on a ship going down
+  (its burst is kept). Captains never burst. The fight's view carries each ship's burst, the share still to run and the
+  share of its recharge done, which the Sloop's plate shows as a ring ("How it looks", "The readout"). Sailing between
+  ports has no burst: only a fight's helm has one, and a fleet room's fight has none.
 - **Ship power** ([[Ship Power]]): a player's ship whose character the sea holds is fitted each tick (`fitting.rs`):
   its harm on each captain and each captain's on it by its level, Attack and Defense against the captain's level, and
   its trim from its modules and posted officers, among them its Gunner firing the broadside it does not lay, its
@@ -177,11 +178,11 @@ their rudder and the sail the rung whose way is nearest. Under the ladder's law 
 so they never tack.
 
 - **Whom they fight.** A captain is bold one time in four by their seed, an Elite and above always. A bold one takes on a
-  ship they may fight within 750 m; a wary one only a wreck, a hull nearly gone, or a ship they outgun 5 to 4 by DFO's
+  ship they may fight within 750 m; a wary one only a hull nearly gone, or a ship they outgun 5 to 4 by DFO's
   fighting power (the time each takes to make the other strike, by each ship's whole rank: its hull and men, its guns'
   harm and reload). Struck by a ship, they are hostile to it for 5 minutes. Of the ships they would fight and do not
   spare, they take the nearest, the one they already fight reckoned a fifth nearer (as DFO ranks them), and run from
-  the nearest that struck them within 320 m. What they remember of a chase, a wreck, their mark's way and the side they
+  the nearest that struck them within 320 m. What they remember of a chase, their mark's way and the side they
   presented is let go when they mark another ship.
 - **Their course.** They bend round every hull about them that will pass within both their reaches (each half of half its
   box's beam and length) and 15 m, the bends of each summed, as DFO's traffic does. Far off, they steer to intercept,
@@ -196,13 +197,13 @@ so they never tack.
   mouths, and the mark's depth along the line of fire (half its length end-on, half its beam abeam); their lay strikes if
   it passes through the mark's middle or its near side.
   It fires no sooner than 1.3 s on, within their gunners' window, long or short by the gunners' want of skill. One run out too
-  long unfired, or that loses its mark, is run in. They never fire on a wreck.
+  long unfired, or that loses its mark, is run in.
 - **When they break off.** A captain runs below their rank's share of their hull (a Major's 30%); a wary one runs from a
-  ship that outguns them. A chase that gains nothing in 150 s is given up, and a wreck left after 30 s. They leave the
-  fight when they have sunk, or, not fighting, lie past 1.9 km from every ship they may fight (each player's, and each
-  afloat captain's of another faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as
-  long as they give a chase: so a wary ship a player chased into a fight it will not take breaks off, and the fight
-  ends for both. The editor's fight ends when its one captain leaves.
+  ship that outguns them. A chase that gains nothing in 150 s is given up. They leave the fight when they have sunk, or,
+  not fighting, lie past 1.9 km from every ship they may fight (each player's, and each afloat captain's of another
+  faction), or, engaged by no captain, have lain out of all their guns' reach for 150 s, as long as they give a chase:
+  so a wary ship a player chased into a fight it will not take breaks off, and the fight ends for both. The editor's
+  fight ends when its one captain leaves.
 
 ## Ranks and factions
 
@@ -371,7 +372,7 @@ rammer's way along its keel, at the most over the last 0.6 s, closes on that fac
   drawn from the fight's stream.
 - **The recoil**: the rammer takes 0.6 of the blow back (half that braced), and a ram is only as hard as the rammer can pay
   for within its own room over its line, one point short of it, so its own ram never makes it strike and a hull at its
-  line rams nothing. A wreck rams nothing.
+  line rams nothing. A ship going down rams nothing.
 - **One ram a tick** for each player, none on the same ship again within 3 s, and the rammer's remembered way is spent on it.
   A ram provokes the captain struck. Captains do not ram.
 - **Hulls kept apart.** Two hulls whose boxes overlap on the flat are each pushed out half the overlap, and each loses
@@ -600,7 +601,7 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   and no turn of the ship takes it out of that side's arc, past 35° off the bow and short of 40° off the stern, where
   the guns bear ([[A Held Aim Keeps the Camera on Its Side]]); an aim taken over the bow holds nothing until the look
   first lays on a side. On its way out from the ship's ports it stops 1.2 m short of any ship afloat alongside (that ship's
-  waterline's box, from its draught to a metre over its upper gun line). A crippled ship's guns are silent: its eye
+  waterline's box, from its draught to a metre over its upper gun line). A sinking ship's guns are silent: its eye
   never moves. The look's ray runs from the eye drawn, so the crosshair is where it lays.
 - **The reach**: while aiming the look may rise 0.15 rad over the horizon, past the guns' longest throw on the water
   (DFO's look is free); out of the aim the orbit keeps its own clamp, 0.05 to 1.2 rad down.
@@ -647,7 +648,7 @@ bearing off the player's bow and its distance, heading for the player's ship unl
 under the sail and way it was sighted with, its rig drawn on from the one it was last drawn with; hears from each step
 a ball striking the player's ship, the player's striking a captain, a captain going down and one sunk; and its task counts the ships left to beat.
 An ambush keeps rules of its own, and only it: it is fought to the end, so no captain sails off out of it; the
-player's ship is never wrecked in it (a ball, a ram's recoil or a fire leaves it a point of hull); and it is over
+player's ship never goes down in it (a ball, a ram's recoil or a fire leaves it a point of hull); and it is over
 (`beaten`) once every captain has sunk, is going down, or has struck, its crew having given up the fight. It draws
 the player's ship as the Brig and every captain as a Sloop, each posed on the swell it is handed (a storm's too), for
 the drawing only; a captain's hurts and its going down settle, trim and list it on that swell by what the land door

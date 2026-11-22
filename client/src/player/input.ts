@@ -115,12 +115,17 @@ export class Input {
       this.releasedSince.add(name);
     };
     addEventListener('keydown', (event) => {
+      const name = keyNameOf(event);
+      if (event.code) wentDown.set(event.code, name);
       if (typing()) return;
-      press(keyNameOf(event));
+      press(name);
       if (this.locked && event.key === ' ') event.preventDefault();
     });
-    addEventListener('keyup', (event) => release(keyNameOf(event)));
-    addEventListener('blur', () => this.down.clear());
+    addEventListener('keyup', (event) => release(keyUpNameOf(event)));
+    addEventListener('blur', () => {
+      this.down.clear();
+      wentDown.clear();
+    });
     canvas.addEventListener('contextmenu', (event) => event.preventDefault());
     canvas.addEventListener('mousedown', (event) => {
       if (!this.locked) return;
@@ -235,7 +240,33 @@ export class Input {
   }
 }
 
-/** A key's name as it is bound: a digit by its place on the row, not its character, since Shift (the run) turns 2
- *  into '@' and other layouts differ; any other key by its own name in lower case. */
-export const keyNameOf = (event: Pick<KeyboardEvent, 'code' | 'key'>): string =>
-  /^Digit\d$/.test(event.code) ? event.code.slice('Digit'.length) : event.key.toLowerCase();
+/** The signs' keys by their place, named as they type without Shift. */
+const SIGNS: Readonly<Record<string, string>> = {
+  Comma: ',',
+  Period: '.',
+  Slash: '/',
+  Semicolon: ';',
+  Quote: "'",
+  BracketLeft: '[',
+  BracketRight: ']',
+  Backslash: '\\',
+  Minus: '-',
+  Equal: '=',
+  Backquote: '`',
+};
+
+/** A key's name as it is bound: a key that types a letter by that letter in lower case, on any layout; a digit or a
+ *  sign by its place on the row, since Shift (the run) turns 2 into '@' and ',' into '<'; any other key by its own
+ *  name in lower case. */
+export function keyNameOf(event: Pick<KeyboardEvent, 'code' | 'key'>): string {
+  const typed = event.key.toLowerCase();
+  if (/^Digit\d$/.test(event.code)) return event.code.slice('Digit'.length);
+  return /^\p{L}$/u.test(typed) ? typed : (SIGNS[event.code] ?? typed);
+}
+
+/** The name each key last went down with, by its place (the input records it as each key goes down). */
+const wentDown = new Map<string, string>();
+
+/** A key let go, named as it went down: on a layout whose sign Shift changes, its own name may differ. */
+export const keyUpNameOf = (event: Pick<KeyboardEvent, 'code' | 'key'>): string =>
+  wentDown.get(event.code) ?? keyNameOf(event);

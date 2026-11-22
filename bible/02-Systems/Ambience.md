@@ -19,11 +19,11 @@ code:
 ---
 # Ambience
 
-What the world sounds like where the player is: the open sea, Saltmere's social space and its port, and each of the
-nine islands by its climate. Each is its own: beds of wind, water and leaves under it, and the calls of birds,
-beasts, insects, timbers and a city's work over it, placed round the listener. It is DFO's soundscape, grown to eleven
-places ([[Music and Ambience Come From DFO's Synthesiser]]), its every sound a Freesound recording the owner picked
-([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
+What the world sounds like where the player is: the open sea, Saltmere's social space and its port, and each of the nine
+islands by its climate. Each is its own: beds of wind, water and leaves under it, and the calls of birds, beasts,
+insects, timbers and a city's work over it, placed round the listener. It is DFO's soundscape ([[Pick - Soundscape]]),
+grown to eleven places ([[Music and Ambience Come From DFO's Synthesiser]]), its every sound a Freesound recording the
+owner picked ([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]).
 
 ## How it works
 
@@ -100,10 +100,10 @@ places ([[Music and Ambience Come From DFO's Synthesiser]]), its every sound a F
 | Highland | Moaning wind, whistling gusts, grass | Gusts and whistles on the ridges, stone falls, ravens, buzzard, curlew, lark | Wolves on the ridges, an owl |
 | Woodland | Leaves, wind, crickets at dusk | Warbler, thrush, finch, wren, chiffchaff, woodpecker, cuckoo, dove, crow, boughs, twigs | Tawny owls, deep owl, a far wolf |
 | Desert | Blown sand, dry wind, rock whistles | Sand gusts, rock whistles, stone falls, hawk, raven, flies | Jackals, crickets, an owl |
-| Savanna | Grass, wind, cicadas, crickets | Weavers, doves, fluting birds, hawk, cicadas, flies | Jackals, nightjar, owl, a lion once picked |
-| Rainforest | Canopy drips, cicadas, crickets, frogs, leaves | Fluting birds, warblers, drips, cicadas, mosquitoes, woodpecker, parrots once picked | Tree frogs, frogs, owl |
+| Savanna | Grass, wind, cicadas, crickets | Weavers, doves, fluting birds, hawk, cicadas, flies | Jackals, nightjar, owl, a lion |
+| Rainforest | Canopy drips, cicadas, crickets, frogs, leaves | Fluting birds, warblers, drips, cicadas, mosquitoes, woodpecker, parrots | Tree frogs, frogs, owl |
 | Steppe | Wide wind, grass, crickets at dusk | Larks, marmots, buzzard, gusts, raven | Wolves, crickets |
-| Swamp | Marsh drone, frog chorus, still water | Gas bubbles, frogs, bullfrogs, mosquitoes, flies, a fish, reed warbler, raven, a heron once picked | The full frog chorus, peepers, owl |
+| Swamp | Marsh drone, frog chorus, still water | Gas bubbles, frogs, bullfrogs, mosquitoes, flies, a fish, reed warbler, raven, a heron | The full frog chorus, peepers, owl |
 | Tundra | Gale, whistling gusts, blown snow | Gusts, rock whistles, ice groaning, cracking and singing, ravens, a far wolf | Wolves, an owl |
 
 ## Limits

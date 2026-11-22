@@ -307,7 +307,7 @@ export class SeaCombat {
   }
 
   /** The eye the fight is drawn from this frame, world metres: the orbit's, eased out to the ship's battery on the side
-   *  looked at while aiming (never for a crippled ship, its guns silent), short of every other ship afloat. */
+   *  looked at while aiming (never for a sinking ship, its guns silent), short of every other ship afloat. */
   private eyeAt(orbit: Orbit, seconds: number): readonly [number, number, number] {
     // The orbit's own eye keeps the orbit's clamp, so a look raised over the horizon never takes it under the sea.
     const [eastM, southM, upM] = cameraOf({ ...orbit, pitch: Math.max(PITCH[0], orbit.pitch) }).eye;
