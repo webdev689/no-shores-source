@@ -10,5 +10,5 @@ const ENCODED = `
   dhrrs qvyqb cravf intvan pyvg chffl phz phzfubg wvmm betnfz oybjwbo unaqwbo uragnv obbof gvgf gvggl cbea ohxxnxr
   tnatonat crqbcuvyr cnrqbcuvyr zbyrfg znfgheong snc sryyngvb ohggcyht ohggubyr wrexbss frk vaprfg`;
 
-/** The roots no name or motto may hold: slurs, obscenities and sexual terms in English, written for Overlook. */
+/** The roots no name or motto may hold: slurs, obscenities and sexual terms in English, written for the game. */
 export const BLOCKED: readonly string[] = ENCODED.trim().split(/\s+/).map(rot13);

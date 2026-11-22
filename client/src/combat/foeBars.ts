@@ -4,7 +4,7 @@ import { TONES } from '../plus/tones.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { baselineRise } from './barDraw.ts';
 import type { FighterView } from '../rules/fighters.ts';
-import { BOSS_RANK } from '../rules/roster.ts';
+import { BOSS_RANK, PUBLIC_CLIMAX } from '../rules/roster.ts';
 import { FoePlate, type MarkedFoe, OVERHEAD_SIZES, plateTier } from './foePlate.ts';
 import type { Box } from './hitWords.ts';
 import {
@@ -40,7 +40,7 @@ export function bossInFight(
   const apart = (foe: MarkedFoe) => (near ? Math.hypot(foe.view.x - near.x, foe.view.y - near.y) : 0);
   const fighting = foes.filter(
     (foe) =>
-      foe.rank === BOSS_RANK &&
+      (foe.rank === BOSS_RANK || PUBLIC_CLIMAX.has(foe.name)) &&
       foe.view.action.kind !== 'dead' &&
       (foe.alert === ALERT.alert || foe.view.health < foe.view.healthMax),
   );
@@ -50,11 +50,12 @@ export function bossInFight(
 /** Where the boss bar marks its health, as shares of the whole: where its phases change. */
 export const PHASE_MARKS: readonly number[] = [2 / 3, 1 / 3];
 
-/** What the boss bar shows of a Boss: its name and faction, its health's share, and its phase, 1 to 3. */
+/** What the boss bar shows of a Boss: its name and faction, its health's share, and its phase, 1 to 3 (none for a
+ *  public event's climax, a Miniboss of one phase). */
 export function bossBarOf(foe: MarkedFoe): { title: string; faction: string; share: number; phase: string } {
   const phase = Math.min(3, Math.max(1, foe.phase));
   const share = Math.max(0, Math.min(1, foe.view.health / Math.max(1, foe.view.healthMax)));
-  return { title: foe.name, faction: foe.faction, share, phase: `Phase ${phase} of 3` };
+  return { title: foe.name, faction: foe.faction, share, phase: foe.rank >= BOSS_RANK ? `Phase ${phase} of 3` : '' };
 }
 
 /** How the plates over figures are seen this frame: the camera (its eye, the way it looks and its focal length; null
@@ -259,7 +260,7 @@ export class FoeBars {
       kind: 'boss',
       width,
       zoom,
-      words: [small(shown.faction), { width: 'grow' }, small(shown.phase)],
+      words: [small(shown.faction), { width: 'grow' }, ...(shown.phase === '' ? [] : [small(shown.phase)])],
       marks: PHASE_MARKS,
     });
   }

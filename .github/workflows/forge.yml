@@ -1,10 +1,11 @@
 name: forge
 
 # Renders the forge's pictures that the game draws as they are, beside the published figures (the Arts' birds, the
-# weapons drawn large and the material nodes), and publishes them to R2 with the repository's R2 token, whenever
-# their tools change on main or a run is asked for on a branch; a run asked for may also draw figure strips for both
-# bodies (`figures`). R2's objects are named by their hashes, so a run changes nothing already published; the log
-# ends with the forge's manifest on one line, which a commit then takes into content/forge/renders.json.
+# weapons drawn large and the material nodes), and publishes them to R2 whenever their tools change on main or a run
+# is asked for on a branch; a run asked for may also draw figure strips for both bodies (`figures`). The job that
+# renders holds no secret and stages them, and a second job, which only uploads them, holds the repository's R2 token.
+# R2's objects are named by their hashes, so a run changes nothing already published; the render's log ends with the
+# forge's manifest on one line, which a commit takes into content/forge/renders.json once the run has published.
 on:
   push:
     branches: [main]
@@ -34,12 +35,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  publish:
+  # Installs others' code (pip), so it holds no secret: what it stages for R2 goes on as an artifact.
+  build:
     runs-on: ubuntu-latest
     # A run drawing figure strips takes hours on four cores; the birds and the weapons, minutes.
     timeout-minutes: ${{ inputs.figures && 300 || 20 }}
-    # The token reaches only the two steps that check it and publish. What the publishing step imports (Pillow) is
-    # installed as the exact wheels the requirements name by their hashes, and the checkout keeps no git credential.
+    outputs:
+      staged: ${{ steps.staged.outputs.staged }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -47,35 +49,23 @@ jobs:
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.13'
-      # Without the token there is nothing to publish with: the run says so and stops, rather than failing main.
-      - name: Check the token is set
-        id: token
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
-        run: |
-          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
-          else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
       - name: Install Blender's module
-        if: steps.token.outputs.set == 'true'
         run: |
           pip install --require-hashes --only-binary=:all: -r tools/forge/tools/sprite-forge/artbirds-requirements.txt
       - name: Render the Arts' birds
-        if: steps.token.outputs.set == 'true'
         working-directory: tools/forge
         run: python -I tools/sprite-forge/artbirds.py --out public/art/arts/birds
       - name: Render the weapons drawn large
-        if: steps.token.outputs.set == 'true'
         working-directory: tools/forge
         run: python -I tools/sprite-forge/weaponart.py --out public/art/weapons
       - name: Render the material nodes
-        if: steps.token.outputs.set == 'true'
         working-directory: tools/forge
         run: |
           nodes=$(python -c "import json; print(','.join(json.load(open('tools/sprite-forge/specs/pictures/nodes.json'))['pictures']))")
           python -I tools/sprite-forge/itempics.py --set pictures --only "$nodes" --out public/art/studio/forge
-      # Figure strips over the published tables (layers.py), each whose inputs changed drawn again; no token here.
+      # Figure strips over the published tables (layers.py), each whose inputs changed drawn again.
       - name: Draw the figure strips asked for
-        if: steps.token.outputs.set == 'true' && inputs.figures
+        if: inputs.figures
         env:
           FIGURES: ${{ inputs.figures }}
         run: |
@@ -89,12 +79,47 @@ jobs:
             done
           done
       # The published tables first (kept as the figures left them), then the new pictures beside what is published.
-      - name: Publish them
-        if: steps.token.outputs.set == 'true'
+      - name: Stage them
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
+          R2_STAGE: ${{ runner.temp }}/stage
           FIGURES: ${{ inputs.figures }}
         run: |
           [ -n "$FIGURES" ] || python -I tools/forge_publish.py pull
           python -I tools/forge_publish.py add
           node -p "JSON.stringify(require('./content/forge/renders.json'))"
+      - name: Say whether anything is staged
+        id: staged
+        run: if [ -d "$RUNNER_TEMP/stage" ]; then echo "staged=true" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.staged.outputs.staged == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: r2-stage
+          path: ${{ runner.temp }}/stage
+          retention-days: 1
+
+  # A fresh machine with nothing installed, and the only job that holds the token: tools/r2.py uploads the stage's
+  # files, each only if it is named by its own hash under a folder a publisher writes.
+  publish:
+    needs: build
+    if: needs.build.outputs.staged == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: r2-stage
+          path: ${{ runner.temp }}/stage
+      # Without the token there is nothing to publish with: the run says so and stops, rather than failing.
+      - name: Check the token is set
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
+      - name: Upload what the build staged
+        if: steps.token.outputs.set == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
+        run: python3 -I tools/r2.py upload "$RUNNER_TEMP/stage"

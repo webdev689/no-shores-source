@@ -14,6 +14,7 @@ import { musiciansOf } from './audio/music/band.ts';
 import type { MusicDirector } from './audio/music/director.ts';
 import type { Charting } from './charting.ts';
 import type { Discovered } from './discovered.ts';
+import type { EventPropsDraw } from './eventPropsDraw.ts';
 import type { DungeonDrawers } from './dungeonDrawers.ts';
 import type { FigureView } from './figureView.ts';
 import { type Flow, type Happening, next } from './flow.ts';
@@ -46,6 +47,7 @@ import type { AfterStory } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
+import { TOLD_MS } from './tripBack.ts';
 import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
 import type { ShipPeople } from './shipPeople.ts';
@@ -79,6 +81,8 @@ export interface Playing {
   drawers: LandDrawers;
   ready: boolean;
   waited: number;
+  /** Why the player is not where their last trip went, shown until `until` (ms, `performance.now`). */
+  told: { readonly words: string; readonly until: number } | null;
   shipScale: number;
 }
 
@@ -98,6 +102,8 @@ export interface FrameParts {
   readonly footView: FootView;
   readonly shipModels: ShipModels;
   readonly figureView: FigureView;
+  /** The public events' props, set from the event's view each frame on foot and emptied at sea. */
+  readonly eventProps: EventPropsDraw;
   readonly traffic: FriendlyTraffic;
   /** The people aboard every other ship drawn, at sea and seen from land. */
   readonly crews: ShipPeople;
@@ -149,6 +155,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
         isles: parts.isles,
         shipModels: parts.shipModels,
         figureView: parts.figureView,
+        props: parts.eventProps,
         seaFight: playing.sea?.fight,
       },
       ships,
@@ -167,6 +174,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
+  /** The words that tell why the player is not where they went, while they stand. */
+  const toldNow = () => (playing.told && performance.now() < playing.told.until ? [playing.told.words] : []);
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
@@ -183,8 +192,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
     const shown = here.frame(controls, seconds, clock, { paused, looking, hands: controls.locked, aspect });
+    // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
+    if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
     parts.music.onFoot(parts.world, here.node, shown.fight, seconds, { musicians: musiciansOf(here.folk), listener });
+    parts.eventProps.set(shown.props ?? []);
     parts.ambience.onFoot(here.node, playing.landmass, shown.shot, here.folk, !!here.dungeon);
     const { body } = walker.player;
     if (!here.dungeon) {
@@ -270,8 +282,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.hints(looking ? HINTS.landMap : mapless ? shown.hints : withMapKey(shown.hints));
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
-    hud.tasks.show(quests.tracked);
-    hud.toast(...quests.toasts);
+    // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
+    hud.tasks.show(shown.quest ?? quests.tracked);
+    hud.toast(...toldNow(), ...quests.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
@@ -285,6 +298,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     chatAtSea(here.waterAt?.(here.position)?.name ?? null);
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
+    parts.eventProps.set([]);
     // The helm's controls while the sea's own view is up: the map's and the deck's are their own, and a fight's its.
     if (!paused && !helmMap.shown) {
       const steer = axis(controls, 'steerLeft', 'steerRight');
@@ -307,7 +321,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     });
     playing.shipScale = shown.shipScale;
     playing.quests.frame(seconds, playing.after.past, paused);
-    hud.toast(...playing.quests.toasts);
+    hud.toast(...toldNow(), ...playing.quests.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);
@@ -439,6 +453,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (settled || playing.waited > GROUND_WAIT_S) {
         playing.flow = next(playing.flow, { kind: 'loaded' });
         hud.veil(null);
+        // Why the player is not where they went stays its whole time once the veil has lifted.
+        if (playing.told) playing.told = { ...playing.told, until: performance.now() + TOLD_MS };
         // The player arrives on foot as the veil lifts, so their arrival is seen.
         if (playing.flow.mode === 'foot') playing.foot?.arrive(clock);
         parts.syncMenu();

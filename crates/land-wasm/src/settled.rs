@@ -156,6 +156,28 @@ pub extern "C" fn land_layouts() -> u64 {
     hand_over(layouts_json().into_bytes())
 }
 
+/// Where the open landmass's node `id` fights its public events, as JSON (the bake's `grounds`, from the same layout
+/// code, so a room in the page runs the events the server's does), or `null` for a node that holds none.
+#[must_use]
+pub fn grounds_json(id: &str) -> String {
+    CITY.with(|city| {
+        let city = city.borrow();
+        let laid = city.layouts.iter().find(|layout| layout.id == id && layout.ring.len() >= 3);
+        serde_json::to_string(&laid.and_then(layout::grounds::grounds_of)).unwrap_or_else(|_| "null".to_owned())
+    })
+}
+
+/// The grounds of the node whose id is the request at `address`, `length` bytes long.
+///
+/// # Safety
+/// `address` must point at `length` readable bytes, as `reserve` gives.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn land_grounds(address: *const u8, length: usize) -> u64 {
+    // SAFETY: the caller wrote `length` bytes at `address`, in memory `reserve` handed out.
+    let request = unsafe { std::slice::from_raw_parts(address, length) };
+    hand_over(grounds_json(&String::from_utf8_lossy(request)).into_bytes())
+}
+
 /// The open landmass's ground over the rect the request at `address`, `length` bytes long, names, as a window.
 ///
 /// # Safety
@@ -216,5 +238,35 @@ mod tests {
         assert!(!boxes["boxes"].as_array().unwrap().is_empty(), "the plaza's parapets");
         let refused: Value = serde_json::from_str(&window_json(br#"{ "west": 1 }"#)).unwrap();
         assert_eq!(refused["error"], "a rect needs its north");
+    }
+
+    /// Saltmere's zones as the page opens continent 1: each node's grounds are the bake's, from the same layouts, and
+    /// a node that holds no events (or no such node) has none.
+    #[test]
+    fn a_zones_grounds_are_the_bakes() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let read = |path: &str| std::fs::read_to_string(root.join(path)).unwrap();
+        let world = world::layout::parse(&read("content/world/layout.json")).unwrap();
+        let continent = world.continents.into_iter().find(|continent| continent.id == "continent-1").unwrap();
+        let edits = land::edits::parse(&read("content/world/land/continent-1.json")).unwrap();
+        let builders = bake::builders(&root).unwrap();
+        let blocks = Blocks::from_index(&read("content/world/rmb/index.json")).unwrap();
+        let mut landmass = land::landmass::generate(&continent, edits).unwrap();
+        keep_blocks(blocks.clone(), builders.book.clone(), builders.briefs.clone());
+        settle(&mut landmass);
+        let mut baked = land::landmass::generate(
+            &continent,
+            land::edits::parse(&read("content/world/land/continent-1.json")).unwrap(),
+        )
+        .unwrap();
+        city::settle(&mut baked, &blocks).unwrap();
+        let layouts = layout::settle::settle(&mut baked, &builders.book, &builders.briefs);
+        for id in bake::EVENT_ZONES {
+            let laid = layouts.iter().find(|layout| layout.id == id).unwrap();
+            let grounds = bake::grounds_of(laid).expect("an event zone has grounds");
+            assert_eq!(grounds_json(id), serde_json::to_string(&grounds).unwrap(), "{id}");
+        }
+        assert_eq!(grounds_json("overlook-social"), "null");
+        assert_eq!(grounds_json("nowhere"), "null");
     }
 }

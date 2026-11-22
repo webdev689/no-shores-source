@@ -158,14 +158,14 @@ fragments to choose (`fragments`: how many choices). Which Art is the quest's ho
   layout's paths between its places (each path's points within 6 m join it to another), straight where none comes
   within a place's reach, on the ground's height, and is no fighter. An ambush stands 6 m round it, on a mesh baked
   there. A ward has 700 health (a player's is 100), stands where it is put and fights no one, and only its player is
-  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground within about 7 m of where it is meant to stand. A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it; wards count against no cap. A place's mesh is baked the first
+  sent it. Waves stand 25 to 30 m out. A puzzle's point is moved onto ground within about 7 m of where it is meant to stand. A failed defence waits 10 s, then 20, then 40 (its foes after the first failure in a task drop nothing, and so do those of a wave the character stood before in the task, kept with their road, so a rejoin or a return pays no wave twice: [[The Audit's Leftovers Are Fixed as Claude Suggested]]); a tail noticed waits 10 s and walks back, whichever is longer; an unseen step seen waits 10 s. A wave with no ground to stand on counts as fallen. A figure that arrived stays standing at its end for its player until they leave the node. A ward, a wave, an ambush or a watch stands only while the room's cap on foes leaves room for it; wards count against no cap. A place's mesh is baked the first
   time a kill group, a defence, a puzzle or an ambush needs it (about 140 to 270 ms that tick, natively).
 - **Figures, wards and points are the player's own**: they stand where the room's last word put them, unglided, and
   show only from the room the player is in, once it has spoken; other players do not see them.
 - **A word that ends two tasks at once** says each task's end and the next task's start in turn.
 - **The first word on the player's own character is where they stand**: it says nothing. A word that goes back is never
   news.
-- **A quest's `begin` is said once for an account in a browser**, which keeps it (`overlook.roads.begun.<account>`):
+- **A quest's `begin` is said once for an account in a browser**, which keeps it (`noshores.roads.begun.<account>`):
   as the quest is first walked from its first task, or on the first settled word for a character on its first task
   with nothing counted (one from before the roads). A switch back to a road says nothing. What a step says while the
   story or the welcome holds the screen waits for it to pass; the begin of a quest left meanwhile (the opening, left by

@@ -6,6 +6,7 @@
 // boss's fall or waking and a fight won are stings. The story tells it what to play. Pure: the game's state, the memory
 // and a die in, the mood, the score and any sting out; the director plays them on bar lines.
 
+import { PUBLIC_CLIMAX } from '../../../rules/roster.ts';
 import type { Climate, Place } from '../place.ts';
 import type { Role } from './score.ts';
 import type { SeaSong } from './seaScore.ts';
@@ -110,6 +111,8 @@ export interface Hearing {
   readonly sky: HeardSky | null;
   /** What the story asks, while it plays; never outside it. */
   readonly story?: StoryHeard;
+  /** The least mood a public event holds the player to, on its ground while it runs. */
+  readonly least?: Mood;
 }
 
 /** The ranks: an Elite and a Miniboss bring the peak, a Boss its own score. */
@@ -298,7 +301,7 @@ export function bossPart(health: number): BossPart {
   return health > 2 / 3 ? 1 : health > 1 / 3 ? 2 : 3;
 }
 
-/** The sea's song for an encounter, the sea score's own law on Overlook's waters: its storm, its gravest arm, for two
+/** The sea's song for an encounter, the sea score's own law on the game's waters: its storm, its gravest arm, for two
  *  hostile ships or one of Elite rank or over; else its fight. Held for the whole encounter. */
 export function seaSongFor(sea: HeardSea): SeaSong {
   return sea.captains >= 2 || sea.hostilesNear >= 2 || sea.strongest >= ELITE ? 'storm' : 'fight';
@@ -333,7 +336,10 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
   const kept = memory.boss;
   const alive = (foe: HeardFoe) => foe.health > 0;
   const bossFoe = foes.find(
-    (foe) => foe.rank >= BOSS && alive(foe) && (foe.engaged || (foe.id === kept?.id && foe.alert >= ALERT)),
+    (foe) =>
+      (foe.rank >= BOSS || PUBLIC_CLIMAX.has(foe.name)) &&
+      alive(foe) &&
+      (foe.engaged || (foe.id === kept?.id && foe.alert >= ALERT)),
   );
   let boss = kept;
   if (bossFoe) {
@@ -372,7 +378,7 @@ export function hear(memory: Memory, hearing: Hearing, seconds: number, songs: S
       : clock - lastDanger < TENSION_HOLD_S
         ? 'tension'
         : 'silent';
-  const mood = story ? atLeast(heard, story.least) : heard;
+  const mood = atLeast(story ? atLeast(heard, story.least) : heard, hearing.least ?? 'silent');
   const playing = mood !== 'silent';
   const seaSong = atSea && playing ? (memory.seaSong ?? seaSongFor(sea)) : null;
   const roam = roamOf(memory, clock, !playing && !boss, hearing, songs);

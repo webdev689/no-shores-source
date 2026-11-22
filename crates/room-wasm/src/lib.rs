@@ -5,7 +5,6 @@
 //! protocol crate.
 #![allow(unsafe_code, reason = "the WebAssembly door hands raw memory between JavaScript and Rust")]
 
-use gear::vendor::Vendor;
 use land::ground::Ground;
 use movement::Block;
 use movement::floats::BLOCK_FLOATS;
@@ -30,6 +29,7 @@ mod fleet_door;
 mod gear_door;
 mod isle_door;
 mod plate_door;
+mod public_door;
 mod roster_door;
 mod run_door;
 mod sea_door;
@@ -39,6 +39,7 @@ mod waters_door;
 pub use dungeon_door::open_dungeon;
 pub use fighter_door::{arms_code, predict, set_course, set_ground, set_heights};
 pub use gear_door::{character, furnish, gear, restore_character, set_difficulty, set_minute, shut};
+pub use public_door::parting;
 pub use run_door::{activities_json, gates_json, open_run};
 
 /// The room an instance keeps: on land, with its node's id and window rect when it is a node's, and why it takes no
@@ -86,42 +87,20 @@ struct NodeFile {
     ground: Ground,
     boxes: Vec<[f64; BLOCK_FLOATS]>,
     #[serde(default)]
-    counters: Vec<NodeCounter>,
+    counters: Vec<gear_door::NodeCounter>,
     /// In Overlook's social space, where a player stands to read the bounty board.
     #[serde(default)]
     board: Option<[f64; 2]>,
     #[serde(default)]
     shape_spots: Vec<[f64; 2]>,
     #[serde(default)]
+    grounds: Option<public_door::NodeGrounds>,
+    #[serde(default)]
     resources: Vec<[f64; 2]>,
     #[serde(default)]
     places: Vec<gear::quests::Place>,
     #[serde(default)]
     paths: Vec<Vec<[f64; 2]>>,
-}
-
-/// A social space's counter as the bake writes it: its station, and its middle.
-#[derive(Debug, Deserialize)]
-struct NodeCounter {
-    kind: String,
-    at: [f64; 2],
-}
-
-/// A counter that serves a player's gear, from its station's name: a faction's by the faction's key.
-fn counter_of(found: &NodeCounter) -> Option<Counter> {
-    let faction = || gear::factions::factions().factions.iter().find(|faction| faction.key == found.kind);
-    let kind = match found.kind.as_str() {
-        "mage" => CounterKind::Mage,
-        "vault" => CounterKind::Vault,
-        "armorsmith" => CounterKind::Vendor(Vendor::Armorsmith),
-        "weaponsmith" => CounterKind::Vendor(Vendor::Weaponsmith),
-        "harbourmaster" => CounterKind::Vendor(Vendor::Shipwright),
-        "tailor" => CounterKind::Tailor,
-        "tack" => CounterKind::Tack,
-        "mail" => CounterKind::Mail,
-        _ => CounterKind::Faction(faction()?.id),
-    };
-    Some(Counter { kind, at: found.at })
 }
 
 fn floats_of(bytes: &[u8]) -> Vec<f64> {
@@ -184,11 +163,14 @@ pub fn open_node(text: &[u8]) -> bool {
     room.set_island(&node.continent);
     room.counters = (node.kind == NodeKind::Social).then(|| {
         let board = node.board.map(|at| Counter { kind: CounterKind::Board, at });
-        node.counters.iter().filter_map(counter_of).chain(board).collect()
+        node.counters.iter().filter_map(gear_door::counter_of).chain(board).collect()
     });
     room.shape_spots = node.shape_spots;
     room.set_places(node.places);
     room.set_paths(node.paths);
+    if let Some(grounds) = node.grounds {
+        room.open_public(&node.id, grounds.into(), levels);
+    }
     let resource = gear::catalogue::catalogue().resources.iter().position(|found| found.continent == node.continent);
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource
@@ -596,3 +578,6 @@ mod garrison_door_tests;
 #[cfg(test)]
 #[path = "load_tests.rs"]
 mod load_tests;
+#[cfg(test)]
+#[path = "public_door_tests.rs"]
+mod public_door_tests;

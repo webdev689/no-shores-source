@@ -42,6 +42,8 @@ pub struct Snapshot<'snapshot> {
     pub cache: &'snapshot [f64],
     /// In an Abyss run, the revives its company has left (`Room::revives`); none in any other room.
     pub revives: Option<u8>,
+    /// A zone's public events, sent whole each time; none in a room whose zone holds none.
+    pub public: Option<&'snapshot room::public::PublicSeen>,
 }
 
 /// How many numbers a foe crosses as, packed: its glance, then its role, type, rank, faction, phase, alertness and
@@ -145,7 +147,9 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
             let (bytes, bits) = changes_of(&quantized(&foe_numbers(foe), snapshot.middle), was);
             let packed = Some(builder.create_vector(&bytes));
             let changed = (!bits.is_empty()).then(|| builder.create_vector(&bits));
-            let args = messages::FoeArgs { id: foe.foe, packed, changed };
+            // Left out for none, so a foe of its type's name costs nothing more on the wire.
+            let name = (!foe.name.is_empty()).then(|| builder.create_string(foe.name));
+            let args = messages::FoeArgs { id: foe.foe, packed, changed, name };
             messages::Foe::create(&mut builder, &args)
         })
         .collect();
@@ -193,6 +197,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
     let middle = builder.create_vector(&snapshot.middle);
     let cache = (!snapshot.cache.is_empty()).then(|| builder.create_vector(snapshot.cache));
     let revives = snapshot.revives.map_or(-1, |left| i8::try_from(left).unwrap_or(i8::MAX));
+    let public_event = snapshot.public.map(|seen| crate::public_wire::public_offset(&mut builder, seen));
     let args = messages::SnapshotArgs {
         tick,
         players,
@@ -207,6 +212,7 @@ pub fn snapshot_bytes(snapshot: &Snapshot<'_>) -> Vec<u8> {
         middle: Some(middle),
         cache,
         revives,
+        public_event,
         plates,
         ..messages::SnapshotArgs::default()
     };

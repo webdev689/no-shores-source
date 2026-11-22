@@ -41,7 +41,7 @@ order a failure is cheapest to read:
 | assets | no file over 1 MB; media only in `bible/Attachments/`, and no WebAssembly or ship mesh anywhere | [[Generated Files Stay Out of Git]] |
 | vault | every wikilink resolves; every `code:` path exists and holds its symbol | [[Notes Say How It Works Now]] |
 | versions | every `.sql` file in a `migrations/` folder is named by its UTC timestamp to the second and what it does | [[Versions Are Not Counters]] |
-| dialogue | every scene in `content/story/`: 14 words a line, 4 a bark, 2 lines a speaker in a row, 8 lines a scene, no dash or ellipsis, every speaker in the cast with a voice the speech system can read | [[Dialogue]] |
+| dialogue | every scene in `content/story/`: 14 words a line, 4 a bark, 2 lines a speaker in a row, 8 lines a scene, no dash or ellipsis, every speaker in the cast with a voice the speech system can read; and `content/quests/quests.json`, whose every named scene is the story's, every speaker the cast's and every word on the screen free of a dash or an ellipsis ([[The Audit's Leftovers Are Fixed as Claude Suggested]]) | [[Dialogue]] |
 
 The checks read scripts of every extension: `.ts`, `.mts`, `.cts`, `.tsx`, `.js`, `.mjs` and `.cjs`. A file that is
 not UTF-8 is reported, not skipped. Two folders are kept as their authors ship them, so the size, comment and assets

@@ -146,6 +146,12 @@ export class AttackFeel {
     this.kick.update(seconds);
   }
 
+  /** Shakes the player's view at least this hard (0 to 1), as the ground trembles under a public event's beat; not
+   *  where the player has turned the kick off. */
+  tremor(trauma: number): void {
+    if (this.feel.kick) this.kick.shake(trauma, this.feel.kickStrength);
+  }
+
   /** How far behind the rules a fighter's drawing is held, seconds. */
   private lag(id: number): number {
     return this.unheld.has(id) ? 0 : this.stops.lagOf(id);

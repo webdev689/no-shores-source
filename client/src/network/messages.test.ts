@@ -9,6 +9,7 @@ import { fighterView, glanceView, statusesOf } from '../rules/fighters.ts';
 import { floatsOf, startMovementRules } from '../rules/movementRules.ts';
 import { courseBytes, inputBytes, ordersBytes, readFromRoom, walkBytes } from './messages.ts';
 import { fightViewOf, ordersNumbers } from './seaFight.ts';
+import { HEROIC, MARK, PUBLIC_KIND, PUBLIC_PHASE } from './publicMessages.ts';
 
 const target = (path: string) => new URL(`../../../target/${path}`, import.meta.url);
 const built = (path: string, how: string) =>
@@ -79,6 +80,22 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.deepEqual(brute.action, { kind: 'staggered', left: 30, cause: 'parried' });
   // The brute Exposed for 200 ticks and immune to a Charge for 90; the second player Veiled for 150 and Hasted for 30.
   assert.deepEqual(foe?.statuses, { expose: 200, charge: 0, chargeImmune: 90 });
+  assert.equal(foe?.name, 'The Warden of the Fissure', 'the name it stands under');
+  // A heroic Fissure in its second stage, eleven of fourteen shards set, the fissure and a shard carried by player 9.
+  const event = snapshot.public;
+  assert.deepEqual(
+    [event?.kind, event?.phase, event?.ticksLeft, event?.nextKind, event?.nextTicks, event?.ground],
+    [PUBLIC_KIND.fissure, PUBLIC_PHASE.running, 12_000, PUBLIC_KIND.raid, 25_200, [10, -20.5, 3.25]],
+  );
+  assert.deepEqual(
+    [event?.stage, event?.stages, event?.progress, event?.needed, event?.heroic, event?.bonus, event?.nextWaveTicks],
+    [2, 2, 11, 14, HEROIC.met, true, 1_500],
+  );
+  assert.deepEqual([event?.radius, event?.nextGround, event?.heroicTicks], [27.5, [140, 60, 4.5], 1_234]);
+  assert.deepEqual(event?.marks, [
+    { kind: MARK.fissure, id: 0, at: [10, -20.5, 3.25], health: 0.25, state: 0 },
+    { kind: MARK.carried, id: 9, at: [12, -18, 3.5], health: 1, state: 0 },
+  ]);
   // A foe is no one's companion; the officer ashore beside player 9 is, named by their names' places.
   assert.equal(foe?.companion, null);
   assert.deepEqual(snapshot.foes[1]?.companion, { leader: 9, given: 2, family: 5, post: 4 });

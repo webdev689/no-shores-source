@@ -12,13 +12,13 @@ import { loadSamples, playSample } from '../soundSamples.ts';
 export type Cue = 'hover' | 'press' | 'tab' | 'open' | 'close' | 'back' | 'dismantle' | 'feed' | 'refused';
 
 /** Where the player's volumes are kept, 0 to 1: the interface's and the world's. */
-const VOLUME_KEY = 'overlook.interfaceVolume';
+const VOLUME_KEY = 'noshores.interfaceVolume';
 const VOLUME_FIRST = 0.6;
-const WORLD_KEY = 'overlook.worldVolume';
+const WORLD_KEY = 'noshores.worldVolume';
 const WORLD_FIRST = 0.8;
-const MUSIC_KEY = 'overlook.musicVolume';
+const MUSIC_KEY = 'noshores.musicVolume';
 const MUSIC_FIRST = 0.7;
-const AMBIENCE_KEY = 'overlook.ambienceVolume';
+const AMBIENCE_KEY = 'noshores.ambienceVolume';
 const AMBIENCE_FIRST = 0.8;
 /** How loud the whole interface stands at full volume, under the game's own sounds. */
 const LEVEL = 0.35;

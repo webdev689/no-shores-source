@@ -14,39 +14,17 @@ function fromRoom(message: Said): ArrayBuffer {
   const builder = new flatbuffers.Builder(64);
   const each = (message.plates ?? []).map(([player, level]) => Plate.createPlate(builder, player, 0, level, false));
   const plates = message.plates ? Joined.createPlatesVector(builder, each) : 0;
+  // A snapshot holds a table of its own (its public events), so flatc writes it no one-call maker.
+  const snapshot = (tick: bigint) => {
+    Snapshot.startSnapshot(builder);
+    Snapshot.addTick(builder, tick);
+    if (plates) Snapshot.addPlates(builder, plates);
+    return Snapshot.endSnapshot(builder);
+  };
   const part =
     'player' in message
       ? Joined.createJoined(builder, message.player, Joined.createDressedVector(builder, []), 0, 0, PROTOCOL, 0, plates)
-      : Snapshot.createSnapshot(
-          builder,
-          message.tick,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0n,
-          0,
-          0,
-          0,
-          0,
-          -1,
-          plates,
-        );
+      : snapshot(message.tick);
   FromRoom.startFromRoom(builder);
   if ('player' in message) FromRoom.addJoined(builder, part);
   else FromRoom.addSnapshot(builder, part);

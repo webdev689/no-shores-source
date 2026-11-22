@@ -144,10 +144,10 @@ fn a_test_and_its_aids_are_free_only_while_nothing_but_tests_reach_them() {
     assert_eq!(scripts(&[reached, ("client/src/game/menu.ts", "import './menu.test.ts';")]).len(), 1);
 }
 
-const HEAD: &str = "<meta charset=\"utf-8\" /><title>Overlook</title>";
+const HEAD: &str = "<meta charset=\"utf-8\" /><title>No Shores</title>";
 const STYLE: &str =
     "<style>:root { color-scheme: dark; } html, body { margin: 0; } /* fills */ #game { width: 100%; }</style>";
-const CANVAS: &str = "<canvas id=\"game\" role=\"application\" aria-label=\"Overlook\"></canvas>";
+const CANVAS: &str = "<canvas id=\"game\" role=\"application\" aria-label=\"No Shores\"></canvas>";
 const SCRIPT: &str = "<script type=\"module\" src=\"/src/main.ts\"></script>";
 
 fn page(head: &str, body: &str) -> String {

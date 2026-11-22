@@ -1,21 +1,23 @@
-//! What a room on land's snapshots held, kept a short while: each tick's players and foes as the others see them,
-//! and what happened (the fight's events, dresses and plates changed, balls stopped) with the tick it happened. A
-//! player's snapshot then holds only the players and foes that changed since the one their screen last showed, and
-//! what happened since; so a snapshot lost on the way costs nothing the next does not carry again.
+//! What a room on land's snapshots held, kept a short while: each tick's players and foes as the others see them, the
+//! zone's events, and what happened (the fight's events, dresses and plates changed, balls stopped) with the tick it
+//! happened. A player's snapshot then holds only the players and foes that changed since the one their screen last
+//! showed, the events only when they stand otherwise than that one's counted on, and what happened since; so a
+//! snapshot lost on the way costs nothing the next does not carry again.
 
 use combat::fighter::FighterId;
 use combat::shots::Line;
 use protocol::land::foe_numbers;
 use protocol::pack::quantized;
 use protocol::{Snapshot, UNTRIMMED_FLOATS, snapshot_bytes, standing_parts};
+use room::public::PublicSeen;
 use room::{Event, FoeSeen, Plate, PlayerId, Room, Seen, SpellSeen};
 use std::collections::{BTreeMap, VecDeque};
 
 /// How many ticks of snapshots are kept to build on: two seconds; a screen further behind is sent everything.
 const KEPT_TICKS: usize = 120;
 
-/// One tick's players and foes, each's numbers as they cross to others (`pack::quantized`) and each player's look, and
-/// each player's own fighter whole (less its trim) as it crosses to them.
+/// One tick's players and foes, each's numbers as they cross to others (`pack::quantized`) and each player's look,
+/// each player's own fighter whole (less its trim) as it crosses to them, and the zone's events.
 #[derive(Debug, Default)]
 struct Held {
     tick: u64,
@@ -23,6 +25,7 @@ struct Held {
     looks: BTreeMap<PlayerId, Vec<u8>>,
     foes: BTreeMap<FighterId, Vec<u64>>,
     own: BTreeMap<PlayerId, Vec<f64>>,
+    public: Option<PublicSeen>,
 }
 
 /// The tick being sent: everyone and everything as the room stands after it.
@@ -35,6 +38,7 @@ struct Now {
     spells: Vec<SpellSeen>,
     cache: Option<[f64; 5]>,
     revives: Option<u8>,
+    public: Option<PublicSeen>,
 }
 
 #[derive(Debug, Default)]
@@ -87,6 +91,7 @@ impl Sent {
             spells: room.spells_seen().collect(),
             cache: room.cache(),
             revives: room.revives(),
+            public: room.public_seen(),
         };
         let own: BTreeMap<_, _> = now
             .players
@@ -96,7 +101,8 @@ impl Sent {
         let players = own.iter().map(|(player, floats)| (*player, quantized(floats, middle))).collect();
         let looks = now.players.iter().map(|seen| (seen.player, look_bytes(seen))).collect();
         let foes = now.foes.iter().map(|foe| (foe.foe, quantized(&foe_numbers(foe), middle))).collect();
-        self.held.push_back(Held { tick, players, looks, foes, own });
+        let public = now.public.clone();
+        self.held.push_back(Held { tick, players, looks, foes, own, public });
         while self.held.len() > KEPT_TICKS {
             self.held.pop_front();
         }
@@ -155,6 +161,13 @@ impl Sent {
         let plates: Vec<(PlayerId, Plate)> =
             newest.into_iter().map(|(player, plate)| (player, plate.clone())).collect();
         let lines: Vec<(u64, Line)> = self.lines.iter().filter(|(at, _)| *at > since).copied().collect();
+        // The zone's events are left out while they stand as the page counts them on from the base (every tick's
+        // snapshot would otherwise carry them whole, a raid's stores and banners among them, to every player).
+        let counted = |held: &Held| {
+            let elapsed = now.tick - held.tick;
+            held.public.as_ref().map(|was| was.counted_on(elapsed)) == now.public
+        };
+        let public = now.public.as_ref().filter(|_| !base.is_some_and(counted));
         snapshot_bytes(&Snapshot {
             tick: now.tick,
             viewer,
@@ -175,6 +188,7 @@ impl Sent {
             spells: &now.spells,
             cache: now.cache.as_ref().map_or(&[], |cache| cache.as_slice()),
             revives: now.revives,
+            public,
         })
     }
 }

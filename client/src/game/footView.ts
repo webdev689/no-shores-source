@@ -2,6 +2,7 @@ import { FEEL } from '../combat/attackFeel.ts';
 import { FightBlood, surfacesOf } from '../combat/fightBlood.ts';
 import type { PlayerPlates } from '../combat/playerPlates.ts';
 import { Hud } from '../combat/hud.ts';
+import type { BannerTone } from '../combat/publicBanner.ts';
 import type { Box as Laid } from '../ui/quads.ts';
 import { abilityPictures } from './artsCards.ts';
 import { MarkDraw } from '../combat/markDraw.ts';
@@ -66,10 +67,14 @@ export class FootView {
     });
   }
 
-  /** Whether the fight's display shows (on foot), and whether a Boss's bar stands under its compass, which the game's
-   *  own pieces at the top give way to. */
-  get shown(): { readonly fight: boolean; readonly bossed: boolean } {
-    return { fight: this.showing, bossed: this.showing && this.hud.bossed };
+  /** Whether the fight's display shows (on foot), whether a Boss's bar or a public event's banner (its tone) stands
+   *  under its compass, which the game's own pieces at the top give way to. */
+  get shown(): { readonly fight: boolean; readonly bossed: boolean; readonly banner: BannerTone | null } {
+    return {
+      fight: this.showing,
+      bossed: this.showing && this.hud.bossed,
+      banner: this.showing ? this.hud.bannerTone : null,
+    };
   }
 
   /** The node's blood, kept from its first spawn so its marks keep their centimetres; made again in a new node. */

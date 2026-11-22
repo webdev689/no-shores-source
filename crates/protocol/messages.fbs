@@ -216,10 +216,12 @@ table Seen {
 // gear crate's numbers, 0 for none), what it holds still and what it held whole. Then its type's number in the roster,
 // its rank (1 Minor to 5 Boss), its faction's number, the phase it fights in (1, 2 or 3), and how alert it is (0 idle,
 // 1 suspicious, 2 alert, 3 searching). Then the ticks left of its Expose and its Charge, and of the immunity a Charge
-// leaves after it. Last, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
+// leaves after it. Then, for a companion (an officer ashore), its leader's number (0 for a foe), its officer's given
 // and family names' places in content/gear/crew.json, and its officer's post (0 First Mate to 4 Lookout), which it is
-// dressed by. All of it crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
+// dressed by. All of it but the name below crosses `packed`, after its glance and in this order (crates/protocol/src/land.rs,
 // `foe_numbers`); the fields between `id` and `packed` are kept deprecated only so the table's field numbers hold.
+// Last, the name it stands under in place of its type's (absent for none), sent each time the foe is: a public
+// event's Warden or Marrow, or the Fissure's growth.
 table Foe {
   id: uint;
   kind: ubyte (deprecated);
@@ -244,6 +246,7 @@ table Foe {
   // In a snapshot built on another that held this foe, `packed` holds only the numbers that changed since, a bit set
   // here for each; the rest stand as they stood.
   changed: [ubyte];
+  name: string;
 }
 
 // Something that happened in the fight: what (as the room numbers it), how the blow was struck (0 for none), who struck
@@ -399,6 +402,49 @@ table Spell {
   radius: double;
 }
 
+// Something of a zone's public event the page draws: what (1 the fissure, 2 its growth, 3 a store, 4 a shard on the
+// ground, 5 a shard carried, its id its carrier's, 6 the tithe-taker, its id his foe's, 7 a banner, 8 the raiders'
+// approach), its number, where it is (x, y, z), its health 0 to 1 (the growth's and a store's; the fissure's how far
+// open; a shard's life left; the tithe-taker's), and its state (the growth: 1 rising, 2 standing, 3 sinking, 4
+// broken; a store: 1 whole, 2 plundered; the tithe-taker: 1 arriving, 2 counting, 3 leaving). A struct, laid in its
+// list as it is, each in 24 bytes: a snapshot carries dozens of them sixty times a second.
+struct PublicMark {
+  x: float;
+  y: float;
+  z: float;
+  health: float;
+  id: uint;
+  kind: ubyte;
+  state: ubyte;
+}
+
+// A zone's public events: the one running or showing its result (1 the Fissure, 2 the Grey Tithe's raid, 0 none),
+// its phase (0 waiting, 1 running, 2 won, 3 failed), its ground's middle (x, y, z) and radius, and its countdown (its
+// result's time left once won or failed), in ticks; the next's kind, ground and the ticks until it starts, good to
+// the minute; its stage of how many (the Fissure: 1 sealing, 2 the Warden; the raid: its wave); its progress toward
+// what it needs (the Fissure: shards set of shards needed; the raid: the stores' health left per mille of 1000); its
+// heroic task (0 not yet offered, 1 offered, 2 met, 3 missed) and the ticks left of its window; whether its bonus
+// still holds or was met; its marks; and the ticks until a raid's next wave comes in (0 while none is on its way).
+table PublicEvent {
+  kind: ubyte;
+  phase: ubyte;
+  ground: [double];
+  radius: double;
+  ticks_left: uint;
+  next_kind: ubyte;
+  next_ground: [double];
+  next_ticks: uint;
+  stage: ubyte;
+  stages: ubyte;
+  progress: ushort;
+  needed: ushort;
+  heroic: ubyte;
+  heroic_ticks: uint;
+  bonus: bool;
+  marks: [PublicMark];
+  next_wave_ticks: uint;
+}
+
 // Every player in the room after one of its ticks, the dresses that changed since the last snapshot, every foe, what
 // happened in the fight since the last snapshot, and the shots in flight; in the sea room, every ship at sea, every
 // pirate, each player's fight, and as `players` each player off the helm, their fighter only their body on their ship's
@@ -406,7 +452,8 @@ table Spell {
 // balls aloft, what happened in its fight since the last snapshot, and the fight's clock. Then every spell in a room on
 // land; and at sea what floats for each player, each player's ship's kept hurts, what each player is told this tick,
 // and each deck boarded; and in a fleet room the world time its clock started at, seconds since the Unix epoch, which
-// sets its weather. Then, at sea, the islands the player sees or has found.
+// sets its weather. Then, at sea, the islands the player sees or has found. Last, in a zone that holds them, its
+// public events, sent whole in each snapshot.
 table Snapshot {
   tick: ulong;
   players: [Seen];
@@ -441,6 +488,7 @@ table Snapshot {
   cache: [double];
   // In an Abyss run, the revives its company has left; -1 in any other room.
   revives: byte = -1;
+  public_event: PublicEvent;
   // On land, the plates that changed since the snapshot the screen showed, as dresses are sent.
   plates: [Plate];
 }

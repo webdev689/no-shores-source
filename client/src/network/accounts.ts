@@ -85,11 +85,11 @@ export interface Kept {
   removeItem(key: string): void;
 }
 
-const KEY = 'overlook.session';
+const KEY = 'noshores.session';
 /** What the accounts say of a session its player has not used in a month, which they end. */
 const LAPSED = 'Your sign-in lapsed after 30 days away. Sign in again.';
 /** Where the page keeps the nonce of the Discord sign-in it began, for the tab alone. */
-const NONCE_KEY = 'overlook.discord';
+const NONCE_KEY = 'noshores.discord';
 const TOKEN = /^[0-9a-f]{64}$/;
 /** What the page says of a Discord sign-in that came back and went through: a new session, or Discord linked. */
 export const DISCORD_SIGNED_IN = 'Signed in with Discord.';

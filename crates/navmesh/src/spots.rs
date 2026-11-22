@@ -248,7 +248,7 @@ impl NavMesh {
     /// The firing spots within `radius` of a point, across, in the order they were baked: row by row from the north,
     /// west to east, lower floors first.
     pub fn spots_near(&self, point: [f64; 3], radius: f64) -> impl Iterator<Item = &Spot> {
-        self.spots.iter().filter(move |spot| {
+        self.parts().flat_map(|part| &part.spots).filter(move |spot| {
             let (east, south) = (spot.point[0] - point[0], spot.point[1] - point[1]);
             east * east + south * south <= radius * radius
         })

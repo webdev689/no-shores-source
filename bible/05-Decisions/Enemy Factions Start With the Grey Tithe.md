@@ -38,8 +38,9 @@ status: in force
 - Every enemy has a rank ([[Enemies Come in Five Ranks, After Destiny]]), and its name within its faction shows over
   its bar.
 
+The crystal faction comes over, adapted: [[Raum's Lore Is Adapted Into One Mystery]].
+
 ## Still open
 
 - Whether a faction's presence shifts over time.
-- Whether project-final's crystal faction comes over ([[Pick List - project-final]]).
 - Where each faction is present, and what sets one faction apart from another.

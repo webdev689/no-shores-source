@@ -5,6 +5,7 @@ import * as flatbuffers from 'flatbuffers';
 import { Input } from '../../../generated/messages/ts/overlook/wire.ts';
 import course from '../../../content/testground/course.json' with { type: 'json' };
 import { startRoomDoor } from '../../../server/roomDoor.ts';
+import { EVENT } from './cues.ts';
 import { SPELLS } from '../network/artMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import { readFromRoom } from '../network/messages.ts';
@@ -406,6 +407,7 @@ test('a foe’s two glances are as many ticks apart as the snapshots that brough
     fightClock: 0,
     worldStart: 0,
     spells: [],
+    public: null,
   });
   fighting.receive(snapshot(10n, 0));
   fighting.receive(snapshot(13n, 0.15));
@@ -508,6 +510,51 @@ test('a respawn asked goes with the next input only', () => {
   fighting.askRespawn();
   for (let count = 0; count < 3; count += 1) steps.step({} as Body, STILL);
   assert.deepEqual(asked, [true, false, false]);
+});
+
+test('a public event’s beats are kept apart from the fight’s events, and its latest word is kept', () => {
+  const link = { player: 1, dressed: [], joins: 1, rejoining: false, lost: null, send: () => undefined } as unknown;
+  const fighting = new Fighting(startCombatRules(compiled), link as RoomLink);
+  const event = (kind: number) => ({ tick: 1n, kind, how: 0, striker: 1, defender: 1, amount: 3, stroke: 0 });
+  const word = { kind: 2, phase: 1, marks: [] } as unknown as Snapshot['public'];
+  fighting.receive({
+    kind: 'snapshot',
+    tick: 1n,
+    players: [],
+    dressed: [],
+    foes: [],
+    events: [event(1), event(EVENT.chestOpened), event(EVENT.publicBegun)],
+    shots: [],
+    spells: [],
+    public: word,
+  } as unknown as Snapshot);
+  assert.deepEqual(
+    fighting.takeEvents().map((each) => each.kind),
+    [1],
+    'a chest opened is no blow on the player',
+  );
+  assert.deepEqual(
+    fighting.takePublicEvents().map((each) => each.kind),
+    [EVENT.chestOpened, EVENT.publicBegun],
+  );
+  assert.equal(fighting.takePublicEvents().length, 0, 'handed over once');
+  assert.equal(fighting.public, word);
+  fighting.receive({
+    kind: 'snapshot',
+    tick: 2n,
+    players: [],
+    dressed: [],
+    foes: [],
+    events: [event(16)],
+    shots: [],
+    spells: [],
+    public: word,
+  } as unknown as Snapshot);
+  (link as { rejoining: boolean }).rejoining = true;
+  assert.equal(fighting.public, null, 'a room lost leaves no event on the screen');
+  assert.deepEqual(fighting.takePublicEvents(), [], 'nor its beats');
+  (link as { rejoining: boolean }).rejoining = false;
+  assert.equal(fighting.public, word, 'back once it holds again');
 });
 
 test('on a link that loses inputs and snapshots, each input carries those before it and the player still agrees', () => {

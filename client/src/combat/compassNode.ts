@@ -7,10 +7,13 @@ import {
   compassPlace,
   markPlace,
   SHIP_MARK_COLOURS,
+  type PlaceMark,
   type ShipMark,
   shipsMarked,
 } from '../plus/compass.ts';
+import { motionReduced } from '../plus/kit.ts';
 import { TONES } from '../plus/tones.ts';
+import { blinkDark, diamondNode } from './publicBanner.ts';
 
 /** A point at an end fades out over this share of the strip rather than being cut in half, where half of NE would
  *  read as N. */
@@ -20,12 +23,22 @@ const END_FADE = 0.08;
 const shipSvg = (colour: string) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 7"><path d="M4 0 8 5 0 5Z" fill="${colour}" stroke="rgba(0,0,0,0.9)" stroke-width="0.6"/></svg>`;
 
+/** How a public event's place is marked on the strip's foot: its colour, its size (CSS pixels), and how long its
+ *  blink takes (seconds; none for none). The ground gold, its heroic task orange and blinking, a chest waiting a
+ *  smaller gold, a store under attack red and blinking faster. */
+const PLACE_LOOKS: Readonly<Record<PlaceMark['kind'], { colour: string; size: number; blink: number | null }>> = {
+  event: { colour: '#e9b44c', size: 13, blink: null },
+  heroic: { colour: '#ff7a3d', size: 13, blink: 0.8 },
+  chest: { colour: '#e9b44c', size: 10, blink: null },
+  store: { colour: '#e0483c', size: 13, blink: 0.5 },
+};
+
 /** The houses' roads' mark: a brass diamond with a dark edge, where the task's next goal stands. */
 const QUEST_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 10 10"><path d="M4 0 8 4 4 8 0 4Z" fill="${TONES.brassHi}" stroke="rgba(0,0,0,0.9)" stroke-width="0.8"/></svg>`;
 
 /** The compass `width` CSS pixels wide at `zoom`, turned to `heading` (turns from north), marking `ships` and the
- *  quest's next goal at `quest` round a player at `from`. Nothing on it moves but by the view, so reduced motion asks
- *  nothing of it. */
+ *  quest's next goal at `quest` round a player at `from`, and a public event's `places` on its foot, those that blink
+ *  by `time` (seconds) unless motion is reduced. Nothing else on it moves but by the view. */
 export function compassNode(
   width: number,
   heading: number,
@@ -33,6 +46,7 @@ export function compassNode(
   from: readonly [number, number] = [0, 0],
   ships: readonly ShipMark[] = [],
   quest: readonly [number, number] | null = null,
+  places: { readonly marks: readonly PlaceMark[]; readonly time: number } = { marks: [], time: 0 },
 ): Node {
   const { height, rule } = COMPASS;
   const points = COMPASS_POINTS.flatMap(([letters, bearing]): Node[] => {
@@ -72,6 +86,16 @@ export function compassNode(
       picture: { key: 'compass quest', source: { svg: QUEST_SVG } },
       float: { at: [markPlace(quest, from, heading), 0], anchor: [0.5, 0], z: 1 },
     });
+  const still = motionReduced();
+  const placed = places.marks.map((place): Node => {
+    const look = PLACE_LOOKS[place.kind];
+    const dark = !still && look.blink !== null && blinkDark(places.time, look.blink);
+    return {
+      ...diamondNode(look.size * zoom, look.colour, TONES.outline, look.colour),
+      opacity: dark ? 0.4 : 1,
+      float: { at: [markPlace([place.x, place.y], from, heading), 1], anchor: [0.5, 0.5], y: zoom, z: 2 },
+    };
+  });
   return {
     width,
     height: (height + rule) * zoom,
@@ -95,6 +119,7 @@ export function compassNode(
         ],
       },
       ...marks,
+      ...placed,
     ],
   };
 }

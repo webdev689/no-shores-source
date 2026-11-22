@@ -1,5 +1,5 @@
 // The face's glyphs as cells on Pixelify's grid, one texel a cell, for the game to draw its own words: each read from
-// Pixelify Sans at its cells' centres (`faceReader.ts`), or taken from the face's own drawings where Overlook mends it
+// Pixelify Sans at its cells' centres (`faceReader.ts`), or taken from the face's own drawings where the game mends it
 // (`face.ts`), so every glyph is a whole number of cells and nothing generated is kept.
 import { DRAWINGS, type Drawing } from '../face.ts';
 
@@ -66,7 +66,7 @@ export function glyphDrawn(drawing: Drawing): Glyph {
   return cropped(grid, left, base, drawing.advance ?? 90 * width + 142);
 }
 
-/** The glyphs Overlook mends, by code point: drawn, never read from Pixelify. */
+/** The glyphs the game mends, by code point: drawn, never read from Pixelify. */
 export const MENDED_GLYPHS: ReadonlyMap<number, Glyph> = new Map(
   Object.entries(DRAWINGS).map(([char, drawing]) => [char.codePointAt(0) ?? 0, glyphDrawn(drawing)]),
 );

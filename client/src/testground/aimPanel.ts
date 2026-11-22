@@ -6,7 +6,7 @@ import type { Node } from '../ui/node.ts';
 import type { Interface } from '../ui/ui.ts';
 import { heading, labelled, copyLine, press, slide, tick } from './panelKit.ts';
 
-const KEPT_KEY = 'overlook.testground.aim';
+const KEPT_KEY = 'noshores.testground.aim';
 
 /** Each number the panel sets: its name, its label, and its least and most. */
 const SLIDERS = [

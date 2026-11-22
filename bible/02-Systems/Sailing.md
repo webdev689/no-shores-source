@@ -117,7 +117,7 @@ nothing.
 Its faces are in five part materials, `hull`, `deck`, `spar`, `sail` and `iron`, and its UVs are metres, each face
 laid flat on the axis it faces most so the planks run along the ship and a spar's grain up it
 (`tools/ships/paint_ship.py` sorted the owner's model so, and packed the game's pictures into it, so Blender shows it
-as the game does). `tools/ships/export_ship.py` turns what Blender would render into Overlook's mesh: a header with
+as the game does). `tools/ships/export_ship.py` turns what Blender would render into the game's mesh: a header with
 its waterline, 28 bytes a vertex (position, normal, UV, part) and the corners' indices. Its canvas is left out of the
 mesh: the export writes each sail's corners to `ships.json`, and the game sets the sails on them. Its frame is x to its
 bow, y to starboard and z up, mirrored from the model's as the world (east, south, up) is, so each face keeps the
@@ -126,7 +126,9 @@ model whose faces are not wound outward. Its waterline is 1.2 m above the shaped
 where its beam nears its widest ([[The Sloop's Trim]]): 18.7 m long, 5.6 m across, its keel 1.8 m below it. The
 mesh lives on R2 under its hash ([[Generated Files Stay Out of Git]]); its key and the ship's waterline are in
 `content/ships/ships.json`, and a test holds the rules' Sloop to that waterline. Its `.blend` is on R2 beside it
-([[Ship Models Live on R2]]). Its cannons are the objects named `Cannon` in it, three a side, fore to aft: the export
+([[Ship Models Live on R2]]), named by the SHA-256 of its bytes, so the `ships` and `wreck` workflows check what they
+fetch against that hash before Blender opens it.
+Its cannons are the objects named `Cannon` in it, three a side, fore to aft: the export
 reads each one's mouth and bore, and the boxes a ball can strike (its hull, and each sail's canvas), into `ships.json`
 for [[Naval Combat]].
 

@@ -1,4 +1,4 @@
-# Overlook
+# No Shores
 
 > "A proper pirate sandbox experience with goals of venturing into MMO territory. Everything built by us with 0
 > bethesda assets."

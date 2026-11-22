@@ -48,7 +48,7 @@ pub struct Agent {
     pub cell_height: f64,
 }
 
-/// Overlook's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
+/// The game's body: its radius, step and standing height from the movement rules. Cells are DFO's 0.25 m. A
 /// voxel is half the step, so a step is two voxels as in DFO, and the welding of corners within two voxels still
 /// joins the floors on either side of every step a body climbs.
 pub const AGENT: Agent = Agent {
@@ -87,15 +87,18 @@ pub struct Bounds {
 const KEEP_WAY: f64 = 1.0;
 
 /// A walker's way over the mesh: the corridor of polys and links its last path ran through, the goal it was found
-/// for, and the mesh's epoch then. A walker keeps one for `find_path_kept`.
+/// for, the mesh's epoch then, and which of a joined mesh's parts it runs over. A walker keeps one for
+/// `find_path_kept`.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Way {
     corridor: Vec<usize>,
     goal: [f64; 3],
     epoch: u64,
+    part: usize,
 }
 
-/// A baked navmesh, with its ground (none for open ground at 0), its firing spots, and the obstacles laid over it.
+/// A baked navmesh, with its ground (none for open ground at 0), its firing spots, the obstacles laid over it, and the
+/// meshes joined to it: baked apart, with no way between them, each answering for the ground it covers.
 #[derive(Clone, Debug, PartialEq)]
 pub struct NavMesh {
     min_x: f64,
@@ -107,6 +110,7 @@ pub struct NavMesh {
     spots: Vec<Spot>,
     obstacles: Obstacles,
     search: Scratch,
+    joined: Vec<NavMesh>,
 }
 
 impl NavMesh {
@@ -189,10 +193,43 @@ impl NavMesh {
         let obstacles = Obstacles::new(mesh.polys.len());
         let (min_x, min_y, cell) = (grid.min_x, grid.min_y, grid.cell);
         let search = Scratch::default();
-        let mut navmesh =
-            Self { min_x, min_y, cell, colliders: colliders.to_vec(), ground, mesh, spots, obstacles, search };
+        let mut navmesh = Self {
+            min_x,
+            min_y,
+            cell,
+            colliders: colliders.to_vec(),
+            ground,
+            mesh,
+            spots,
+            obstacles,
+            search,
+            joined: Vec::new(),
+        };
         navmesh.lay(links);
         navmesh
+    }
+
+    /// Joins others to this mesh, each baked apart over ground of its own: a path runs within one of them, never from
+    /// one to another, and a point is placed on whichever has it nearest.
+    pub fn join(&mut self, others: Vec<NavMesh>) {
+        for mut other in others {
+            let theirs = core::mem::take(&mut other.joined);
+            self.joined.push(other);
+            self.joined.extend(theirs);
+        }
+    }
+
+    /// The mesh itself, then each joined to it.
+    fn parts(&self) -> impl Iterator<Item = &NavMesh> {
+        core::iter::once(self).chain(&self.joined)
+    }
+
+    /// The first part both ends stand on, with its place among the parts: the mesh itself when none is joined.
+    fn holding(&self, from: [f64; 3], to: [f64; 3]) -> Option<(usize, &NavMesh)> {
+        if self.joined.is_empty() {
+            return Some((0, self));
+        }
+        self.parts().enumerate().find(|(_, part)| part.locate(from).is_some() && part.locate(to).is_some())
     }
 
     /// Lays each link whose ends stand on two polys, each within `REACH_LEVEL` of its floor.
@@ -222,6 +259,10 @@ impl NavMesh {
     /// of `from` across, and a step of its height.
     #[must_use]
     pub fn crossing(&self, way: &Way, from: [f64; 3]) -> Option<Link> {
+        let part = self.parts().nth(way.part)?;
+        if !core::ptr::eq(part, self) {
+            return part.crossing(&Way { part: 0, ..way.clone() }, from);
+        }
         let near = |link: &Link| {
             let (east, south) = (link.from[0] - from[0], link.from[1] - from[1]);
             east * east + south * south <= LINK_REACH * LINK_REACH && (link.from[2] - from[2]).abs() <= TUNING.step
@@ -241,19 +282,23 @@ impl NavMesh {
     /// walked there. None when either end is off the mesh or nothing joins them.
     #[must_use]
     pub fn find_path(&self, from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
-        self.solve(from, to, None)
+        self.holding(from, to)?.1.solve(from, to, None)
     }
 
     /// A path that walks through one obstacle, a foe's own body.
     #[must_use]
     pub fn find_path_ignoring(&self, from: [f64; 3], to: [f64; 3], ignore: ObstacleId) -> Option<Vec<[f64; 3]>> {
-        self.solve(from, to, Some(ignore))
+        self.holding(from, to)?.1.solve(from, to, Some(ignore))
     }
 
     /// How far a path from `from` to `to` walks across the ground, each link counted at its cost rather than its leg
     /// across; none where `find_path` finds no path.
     #[must_use]
     pub fn path_length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
+        let (_, part) = self.holding(from, to)?;
+        if !core::ptr::eq(part, self) {
+            return part.path_length(from, to);
+        }
         if self.mesh.polys.is_empty() {
             return None;
         }
@@ -272,17 +317,23 @@ impl NavMesh {
     pub fn add_obstacle(&mut self, id: ObstacleId, x: f64, y: f64, radius: f64) {
         let (grid_x, grid_y) = self.to_grid(x, y);
         self.obstacles.add(&self.mesh, id, grid_x, grid_y, radius / self.cell);
+        for part in &mut self.joined {
+            part.add_obstacle(id, x, y, radius);
+        }
     }
 
     pub fn remove_obstacle(&mut self, id: ObstacleId) {
         self.obstacles.remove(&self.mesh, id);
+        for part in &mut self.joined {
+            part.remove_obstacle(id);
+        }
     }
 
     /// Goes up by one each time an obstacle is added, moved or removed: a path found at another epoch may run
     /// through one.
     #[must_use]
     pub fn epoch(&self) -> u64 {
-        self.obstacles.epoch
+        self.parts().map(|part| part.obstacles.epoch).sum()
     }
 
     fn to_grid(&self, x: f64, y: f64) -> (f64, f64) {
@@ -367,6 +418,16 @@ impl NavMesh {
     /// on, as far as the goal's, or one step on to it. Anything else searches afresh.
     #[must_use]
     pub fn find_path_kept(&self, way: &mut Way, from: [f64; 3], to: [f64; 3]) -> Option<Vec<[f64; 3]>> {
+        let (place, part) = self.holding(from, to)?;
+        if place != 0 {
+            let mut kept = if way.part == place { Way { part: 0, ..core::mem::take(way) } } else { Way::default() };
+            let points = part.find_path_kept(&mut kept, from, to);
+            *way = Way { part: place, ..kept };
+            return points;
+        }
+        if way.part != 0 {
+            *way = Way::default();
+        }
         if self.mesh.polys.is_empty() {
             return None;
         }
@@ -376,7 +437,7 @@ impl NavMesh {
         }
         let corridor = self.search(start, goal, None)?;
         let points = self.walk(&corridor, from, to);
-        *way = Way { corridor, goal: to, epoch: self.epoch() };
+        *way = Way { corridor, goal: to, epoch: self.epoch(), part: 0 };
         points
     }
 

@@ -52,7 +52,7 @@ code:
 ---
 # Arts
 
-The Arts are Overlook's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, Divine and Shadow, each with an
+The Arts are the game's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, Divine and Shadow, each with an
 Anima, two Tenets and a Core of fragments ([[Arts and Loadouts as Claude Shapes Them]]). Every name, word and number
 the client shows comes from `content/arts/arts.json`, the file the rules read too, the fragments' numbers with it.
 An Art, its Anima and each Tenet are earned on its house's road ([[Quests]]): a new character wears none until
@@ -164,10 +164,12 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   already in another slot of that Art (113), and one not owned (114). Only the worn Art's Core changes its spells.
 - **Charge.** The room keeps each player's Anima and Tenets while they are in it, as shares from 0 to 1, and an
   account's for ten minutes after it leaves, as it left them: they are its again as it rejoins, or empty if it now
-  wears another Art. It keeps as many as it holds players, the oldest let go first. A first join starts the Anima
-  empty and the Tenets ready. Each share fills over its worn spell's recharge, a tick at a time. Each
-  kill the player makes gives the Anima 2% more. Wearing another Art empties all three and lets go a cast on its way,
-  so no recharge runs at another Art's pace.
+  wears another Art. It keeps as many as it holds players, the oldest let go first. The character keeps them too, so
+  a return within ten minutes to another room finds them as left (`left.rs`,
+  [[The Audit's Leftovers Are Fixed as Claude Suggested]]). A first join, or one past ten minutes, starts the Anima
+  empty and the Tenets ready. Each share fills over its worn spell's recharge, a tick at a time. Each kill the player
+  makes gives the Anima 2% more. Wearing another Art empties all three and lets go a cast on its way, so no recharge
+  runs at another Art's pace.
 - **Casting.** An input names a spell by its number: its Art's number less one, times three, plus its ability (0 the
   Anima, 1 and 2 the Tenets), plus one, so 1 Tempest to 9 Vanish. The room takes it only if it is the worn Art's,
   its share is full, no other cast is on its way, and the player is on foot and not staggered, Charged, drinking

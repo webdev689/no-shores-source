@@ -150,7 +150,7 @@ fn a_ships_hurts_are_kept_in_the_players_character_across_sessions() {
 fn by_a_port_at_rest_a_ship_is_repaired_free_over_a_second_a_hundredth_and_sailing_stops_it_where_it_stood() {
     let mut sea = sea();
     let player = sea.join();
-    sea.course(player, &[[58_000.0, 50_000.0]], 10).unwrap();
+    sea.course(player, &[[60_000.0, 50_000.0]], 10).unwrap();
     sea.tick();
     sea.berths.get_mut(&player).unwrap().kept = [0.6, 0.8, 1.0];
     assert_eq!(sea.repair(player), Ok(()));

@@ -17,10 +17,10 @@ import { awayFromCounters, plazaFrameOf, plazaOf } from '../townsfolk.ts';
 import type { NodeInfo } from '../worldData.ts';
 import { HER_COUNTER, WelcomeWalk } from './walk.ts';
 
-/** Where the browser keeps that the welcome has been played, beside the story's own mark (`overlook.prologue`), and
+/** Where the browser keeps that the welcome has been played, beside the story's own mark (`noshores.prologue`), and
  *  the scenes said in a walk ended early, by name. */
-export const WELCOME_KEY = 'overlook.welcome';
-export const WELCOME_SAID_KEY = 'overlook.welcome.said';
+export const WELCOME_KEY = 'noshores.welcome';
+export const WELCOME_SAID_KEY = 'noshores.welcome.said';
 /** Her figure's number among the story's placed figures, clear of the stranger's. */
 const MAREN_ID = ACTOR_IDS + 90;
 

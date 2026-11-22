@@ -13,6 +13,8 @@ use room::sea::Ship;
 use room::{Event, FoeSeen, Seen};
 use room::{EventKind, How};
 
+use crate::public_wire_tests::public;
+
 /// An input with these controls and nothing else.
 fn input(sequence: u32, controls: Controls) -> Input {
     Input { sequence, intent: Intent { controls, ..Intent::default() }, ..Input::default() }
@@ -51,7 +53,7 @@ pub fn players() -> Vec<Seen> {
 
 /// The foe the client's test expects: a pirate brute (type 15) of the Elite rank, foe 12, in its first phase,
 /// staggered with 40 of its 130 health gone, alert to the player its lock is on, Exposed for 200 ticks and immune to a
-/// Charge for 90.
+/// Charge for 90, standing under a name of its own.
 pub fn foes() -> Vec<FoeSeen> {
     let warhammer = Arms { melee: WeaponClass::Warhammer, ranged: None, off_hand: OffHand::Empty };
     let mut brute = fighter(Side::Faction(2), standing(3.0, -6.0), warhammer, Weight::Heavy, 130.0, 70.0);
@@ -72,6 +74,7 @@ pub fn foes() -> Vec<FoeSeen> {
         level: 7,
         shield: Some(gear::element::Shield::whole(gear::Element::Cosmic, 80.0)),
         companion: None,
+        name: "The Warden of the Fissure",
     };
     // An officer ashore beside player 9: a pirate swordsman's figure on the players' side.
     let sword = Arms { melee: WeaponClass::Sword, ranged: None, off_hand: OffHand::Shield };
@@ -86,7 +89,7 @@ pub fn foes() -> Vec<FoeSeen> {
         brawler: false,
         out: false,
     };
-    let ashore = FoeSeen { foe: 13, kind: 2, foe_type: 14, faction: 0, fighter: mate, level: 4, ..brute };
+    let ashore = FoeSeen { foe: 13, kind: 2, foe_type: 14, faction: 0, fighter: mate, level: 4, name: "", ..brute };
     vec![brute, FoeSeen { shield: None, companion: Some(companion), ..ashore }]
 }
 
@@ -240,9 +243,8 @@ const MIDDLE: [f64; 2] = [1.0, -2.0];
 fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
-    shots: &'snapshot [Shot],
-    lines: &'snapshot [(u64, Line)],
-    plates: &'snapshot [(PlayerId, room::Plate)],
+    (shots, lines, plates): (&'snapshot [Shot], &'snapshot [(u64, Line)], &'snapshot [(PlayerId, room::Plate)]),
+    public: &'snapshot room::public::PublicSeen,
 ) -> Snapshot<'snapshot> {
     Snapshot {
         tick: 1234,
@@ -264,6 +266,7 @@ fn snapshot<'snapshot>(
         spells: &SPELLS,
         cache: &[],
         revives: None,
+        public: Some(public),
     }
 }
 
@@ -399,8 +402,8 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     let plain = flatbuffers::root::<messages::FromRoom>(&plain).unwrap().joined().unwrap();
     assert_eq!((plain.node(), plain.bounds().is_none()), (None, true));
 
-    let (players, foes, shots, lines, plates) = (players(), foes(), shots(), lines(), plates());
-    let bytes = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines, &plates));
+    let (players, foes, shots, lines, plates, public) = (players(), foes(), shots(), lines(), plates(), public());
+    let bytes = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines, &plates), &public));
     let read = flatbuffers::root::<messages::FromRoom>(&bytes).unwrap().snapshot().unwrap();
     assert_eq!(read.tick(), 1234);
     assert_eq!(crate::plates_wire::plates_of(read.plates()), plates);
@@ -428,10 +431,22 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert!(near(&foes[0].fighter.glance(), glance), "a foe's glance crosses packed");
     // Its role, type, rank, faction, phase, alertness and level; its shield; its debuffs' ticks; no one's companion.
     assert_eq!(rest, [3.0, 15.0, 3.0, 2.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0]);
+    assert_eq!(foe.name(), Some("The Warden of the Fissure"), "the name it stands under crosses");
+    let event = read.public_event().unwrap();
+    let counts = (event.kind(), event.phase(), event.ticks_left(), event.next_kind(), event.next_ticks());
+    assert_eq!(counts, (1, 1, 12_000, 2, 25_200));
+    let stood = (event.stage(), event.stages(), event.progress(), event.needed(), event.heroic(), event.bonus());
+    assert_eq!(stood, (2, 2, 11, 14, 2, true));
+    assert_eq!(event.ground().unwrap().iter().collect::<Vec<_>>(), public.ground.to_vec());
+    assert_eq!(event.next_ground().unwrap().iter().collect::<Vec<_>>(), public.next_ground.to_vec());
+    assert_eq!((event.radius(), event.heroic_ticks()), (27.5, 1_234), "how far round, and the window's ticks");
+    let marks: Vec<_> = event.marks().unwrap().iter().map(|mark| (mark.kind(), mark.id(), mark.health())).collect();
+    assert_eq!(marks, vec![(1, 0, 0.25), (5, 9, 1.0)]);
     let ashore = read.foes().unwrap().get(1);
     let numbers = unpack(ashore.packed().unwrap().bytes(), crate::land::FOE_NUMBERS, MIDDLE).unwrap();
     // A companion's leader, given and family names, and post (the Lookout), last.
     assert_eq!(numbers[crate::land::FOE_NUMBERS - 4..], [9.0, 2.0, 5.0, 4.0]);
+    assert_eq!(ashore.name(), None, "and no name of an event's");
     let events: Vec<_> =
         read.events().unwrap().iter().map(|event| (event.tick(), event.kind(), event.how(), event.amount())).collect();
     assert_eq!(events, vec![(1233, 3, 1, 0.0), (1234, 1, 8, 35.0)]);
@@ -556,9 +571,9 @@ fn orders_cross_in_a_course_message_and_a_course_without_them_is_a_course() {
 fn the_bytes_for_the_clients_test_are_written() {
     let folder = concat!(env!("CARGO_MANIFEST_DIR"), "/../../target/protocol");
     std::fs::create_dir_all(folder).unwrap();
-    let (players, foes, shots, lines, plates) = (players(), foes(), shots(), lines(), plates());
+    let (players, foes, shots, lines, plates, public) = (players(), foes(), shots(), lines(), plates(), public());
     std::fs::write(format!("{folder}/joined.bin"), welcome()).unwrap();
-    let snapshot = snapshot_bytes(&snapshot(&players, &foes, &shots, &lines, &plates));
+    let snapshot = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines, &plates), &public));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
     let sea = sea_snapshot_bytes(77, &SHIPS, &PIRATES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
@@ -602,7 +617,8 @@ fn an_input_pointing_at_one_earlier_input_again_and_again_is_refused_before_it_i
 
 #[test]
 fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
-    let plain = snapshot(&[], &[], &[], &[], &[]);
+    let none = crate::public_wire_tests::public();
+    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[], &[]), &none) };
     let cache = [12.5, 30.0, 0.0, 1.25, 1.0];
     let read = |snapshot: &Snapshot<'_>| {
         let bytes = snapshot_bytes(snapshot);
@@ -615,7 +631,8 @@ fn a_dungeons_cache_crosses_in_its_snapshot_and_no_other_room_sends_one() {
 
 #[test]
 fn an_abyss_runs_revives_cross_in_its_snapshot_and_every_other_room_sends_none() {
-    let plain = snapshot(&[], &[], &[], &[], &[]);
+    let none = crate::public_wire_tests::public();
+    let plain = Snapshot { public: None, ..snapshot(&[], &[], (&[], &[], &[]), &none) };
     let read = |snapshot: &Snapshot<'_>| {
         let bytes = snapshot_bytes(snapshot);
         flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").snapshot().expect("a snapshot").revives()

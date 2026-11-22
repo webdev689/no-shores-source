@@ -3,10 +3,10 @@
     python -I tools/modules/bake.py <folder>
 
 Each surface group is a mesh file in the folder named by its hash, as R2 names it (`modules/<sha-256>.mesh`): a
-vertex count and a triangle count (two little-endian u32), then each vertex's position in the game's frame (3 floats)
-and its normal (3 signed bytes and a zero), then each triangle's three vertex numbers (u32). The manifest,
-content/modules/modules.json, names R2's base and each module's size, parts, sockets and groups; `publish.py`
-uploads the meshes it names.
+vertex count and a triangle count (two little-endian u32), then each vertex's position in the game's frame (3 floats),
+its normal (3 signed bytes) and its glow (a byte, 0 to 127: only crystal's is ever more than 0), then each triangle's
+three vertex numbers (u32). The manifest, content/modules/modules.json, names R2's base and each module's size, parts,
+sockets, groups and, where it opens the land, its mouth; `publish.py` uploads the meshes it names.
 """
 import hashlib
 import json
@@ -35,8 +35,8 @@ def snorm(value):
 def encoded(group):
     """A surface group's mesh file."""
     out = [struct.pack('<2I', len(group['vertices']), len(group['triangles']))]
-    for (x, y, z), (nx, ny, nz) in group['vertices']:
-        out.append(struct.pack('<3f4b', x, y, z, snorm(nx), snorm(ny), snorm(nz), 0))
+    for (x, y, z), (nx, ny, nz), glow in group['vertices']:
+        out.append(struct.pack('<3f4b', x, y, z, snorm(nx), snorm(ny), snorm(nz), snorm(glow)))
     for triangle in group['triangles']:
         out.append(struct.pack('<3I', *triangle))
     return b''.join(out)
@@ -46,6 +46,7 @@ def baked(name):
     """One module built and exported: its manifest entry and its mesh files' bytes by key."""
     kit.reset()
     module = kit.Module(name, catalogue.SEEDS[name])
+    module.steady = name in catalogue.EVENTS
     catalogue.BUILDERS[name](module)
     made = kit.exported(module)
     files = {}
@@ -63,6 +64,8 @@ def baked(name):
                  groups=groups)
     if made['pads']:
         entry['pads'] = [written(pad) for pad in made['pads']]
+    if made['mouth']:
+        entry['mouth'] = [[written(point) for point in lip] for lip in made['mouth']]
     return entry, files
 
 

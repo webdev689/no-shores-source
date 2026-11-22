@@ -35,7 +35,7 @@ The [[Test Ground]] shows them.
   drawn again with the walk's hips and legs under the action's chest, which keeps the action's turn and half its lean
   (`onthemove.py`, named `over1hwalk`, `bowshotwalk`, `castwalk` and so on). The sprint's fists close thumb up, the
   wrist straight.
-- **The dodge roll**: drawn by DFO for Overlook, outside its own studio, on both adult bodies and what they wear, but
+- **The dodge roll**: drawn by DFO for No Shores, outside its own studio, on both adult bodies and what they wear, but
   no weapon, held or worn: a weapon is not seen through a roll
   ([[DFO's Next Forge Work Comes Over, With Its Dodge Roll]]).
 - **Views**: five, from the front round to the back. The other three are drawn mirrored.
@@ -72,6 +72,8 @@ business end to the right. Each is made, lit, graded (a bow's grip on the armour
 laid grey for its dye as the man's layer in hand is, so the page colours it as it colours that layer. They are published as `@art/weapons/<layer>.png`; a left hand's twin
 (`dagger_iron_l`) is its right hand's picture.
 
+The Lattice's foes are drawn by it, with their own looks and moves, from beside it: [[Lattice]].
+
 ## Where it lives
 
 `tools/forge/` holds the forge as DFO laid it out, so its paths work unchanged: the code in `tools/sprite-forge/`, the
@@ -89,6 +91,9 @@ tables in `src/systems/studioArt/`, packs in `packs/`.
 - `pull` fetches the tables back for the forge to render more. `pull --strips` also unpacks every strip as PNG.
 - `roll <folder>` lays the dodge roll DFO drew outside its studio in beside the studio's strips, and its moves into
   the looks table, for `add` to publish.
+- `lattice <folder>...` does the same for the [[Lattice]]'s renders: each foe's strips, its moves and layers in the
+  looks table, its body's skin (the man's, in the dead's colour) in the skins table, and the death wave cut into its
+  frames as the site's own pictures (`@art/lattice/wave-<frame>.png`).
 
 The bucket is public at `pub-d12f498b9e8d40e7a180531f21e17c18.r2.dev` and lets the site and local servers read it.
 Cloudflare limits how often an `r2.dev` address answers; the renders will move to a name under `daggerfalljs.dev`
@@ -120,15 +125,30 @@ A layer takes its set's or metal's own grades by its name (`layers.set_of`), a p
 sword (`_short`) their metal's as the right hand's. A strip whose inputs did not change is kept; `fanout.py` splits a large render into shards. Then
 `python3 -I tools/forge_publish.py publish` uploads what changed and rewrites the manifest for a pull request.
 The `forge` workflow renders the Arts' birds, the weapons drawn large and the material nodes, and adds them to what is
-published with the repository's `R2_TOKEN` whenever `artbirds.py`, `weaponart.py`, the item forge's models
+published whenever `artbirds.py`, `weaponart.py`, the item forge's models
 (`items/`, which the nodes are laid from), `itempics.py`, the nodes' rows or their pinned packages change on main, or
-when a run is asked for on a branch; its log ends with the manifest, which a commit takes into `content/forge/renders.json`.
+when a run is asked for on a branch. The job that renders holds no secret and stages them, and its log ends with the
+manifest; a second job uploads them with the repository's `R2_TOKEN` ([[Toolchain]]), and a commit then takes the
+manifest into `content/forge/renders.json`.
 A run asked for may also draw figure strips first, for both bodies (`figures`: runs split by `;`, each `anims|layers`,
 either empty for all), with a limit of 300 minutes: a cloud session holds no Cloudflare key, so this is how a figure
 strip reaches R2 from one. A fresh checkout holds no strips, so every strip of each layer named is drawn.
-It installs only the exact wheels `artbirds-requirements.txt` names by their hashes, and its checkout keeps no git
-credential. The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without
-rendering.
+The weapons take under a minute on four cores; `weaponart.py --check` checks their layout without rendering.
+
+The `lattice` workflow runs only when asked: by a push to a branch other than `main` that changes
+`tools/lattice/render-request.txt`, whose first line names the foes, or by hand on `main`. Its actions are pinned by
+commit, as `ci.yml`, `pages.yml` and `rooms.yml` pin theirs. A job plans one render job for each move of each foe asked
+for and one for the wave (`tools/lattice/jobs.py`), they render in parallel without the token, and one job pulls the
+tables, lays them all in (`lattice`), adds them to what is published and ends its log with the manifest. A first line
+`publish-from <run id>` renders nothing: the publish job checks that earlier run is this workflow's own, run on this
+repository by a push or by hand, downloads its `lattice-*` artifacts (while GitHub keeps them) and lays them into the
+tables as published now, those `main`'s `content/forge/renders.json` names (the publish job starts from it, not the
+branch's), refusing a body whose name is not lower-case letters and underscores, so the forge's own changes to the
+tables never need the Lattice rendered again. Both workflows publish in one concurrency group (`forge`), as both publish
+the same tables: one publishes at a time, and GitHub keeps one more waiting, so a newer run that waits replaces an older
+one still waiting. Each installs only the exact wheels its requirements name by their hashes (the forge
+`tools/forge/tools/sprite-forge/artbirds-requirements.txt`, the Lattice `tools/lattice/requirements.txt`: the forge's
+wheels, SciPy among them, and nothing more), and its checkout keeps no git credential.
 
 The tools that fit the forge to Daggerfall's sprites (`fit.py`, `colour.py`, the `*Reference.mjs` readers) and the
 doll and class-look tools need Daggerfall's files and DFO's game code, so they do not run here.

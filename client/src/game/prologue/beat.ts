@@ -62,7 +62,7 @@ export function beatNamed(name: string | null): BeatName | null {
 
 /** Where the story starts: at its first beat, or for a player who has played it, at the title, where Begin goes
  *  straight into the game. */
-export const PROLOGUE_KEY = 'overlook.prologue';
+export const PROLOGUE_KEY = 'noshores.prologue';
 
 export function prologuePlayed(kept: Pick<Storage, 'getItem'>): boolean {
   try {

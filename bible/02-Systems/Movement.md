@@ -113,11 +113,11 @@ to grab. The [[Test Ground]] plays it with DFO's controls ([[The Player Plays as
 DFO's numbers ([[The Player Plays as in DFO]]), in `TUNING`: walking 4.43 m/s, running 7.59, crouched 2.53; a foe on the
 ground at three quarters of those ([[Foes]], "Moving"). A jump leaves at 4.5 m/s against gravity of 20 m/s², about half
 a metre high; crouched, it leaves at 0.8 of that speed. Shimmying and climbing go at 1 m/s. Riding goes at 6 m/s and
-galloping at 12, until Overlook has riding speeds of its own. A mantle or vault takes (0.25 + 0.22 × rise) × 1.05
+galloping at 12, until No Shores has riding speeds of its own. A mantle or vault takes (0.25 + 0.22 × rise) × 1.05
 seconds, DFO's time at middling skill. The eye stands 1.7 m over the feet, 0.8 m crouched; the crown 1.8 m, 1.0 m
 crouched.
 
-The slope limit is Overlook's own: terrain rising 1.19 m a metre, about 50°, is the steepest walked up, Claude's
+The slope limit is the game's own: terrain rising 1.19 m a metre, about 50°, is the steepest walked up, Claude's
 choice ([[The World Is Claude's to Mold]]). The pace is the same up a slope as on the flat.
 
 ## Agreement

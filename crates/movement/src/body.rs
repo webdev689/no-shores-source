@@ -36,7 +36,7 @@ pub struct Tuning {
     pub hang: f64,
     pub shimmy: f64,
     pub climb: f64,
-    /// The steepest terrain walked up, in metres of rise a metre across: about 50°. Overlook's own, not DFO's.
+    /// The steepest terrain walked up, in metres of rise a metre across: about 50°. The game's own, not DFO's.
     pub slope: f64,
 }
 

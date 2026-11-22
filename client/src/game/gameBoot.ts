@@ -13,6 +13,7 @@ import { startLandWorker } from '../terrain/landClient.ts';
 import { loadLandTexts } from '../terrain/landTexts.ts';
 import { seaWeatherOn } from '../water/seaWeather.ts';
 import { keptDiscovered } from './discovered.ts';
+import { EventPropsDraw } from './eventPropsDraw.ts';
 import { FigureView } from './figureView.ts';
 import { gearScreenOpen } from './gearScreen.ts';
 import { arriving, type Flow } from './flow.ts';
@@ -64,6 +65,8 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   // The interface the game draws itself, once its face is read, alone until the game's frames begin.
   const ui = new DrawnInterface(gpu, canvas, stack);
   const figureView = new FigureView(gpu);
+  /** The public events' props, drawn from the list the event's view sets each frame. */
+  const eventProps = new EventPropsDraw(gpu);
   const shipModels = new ShipModels(openHull(gpu, SEA_SHIPS));
   const [world, landTexts, movement, { forge, firstPerson, store }, sloop] = await Promise.all([
     loadWorld(base),
@@ -105,7 +108,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
     return terrainOf(opened.view, biome ? woodsOf(castOf(biome)) : undefined);
   };
   scene.setLand(landmass.view, terrainFor(landmass), biomeOf(landmass.id));
-  const views = { scene, figureView, shipModels, forge, firstPerson, store, sloop };
+  const views = { scene, figureView, eventProps, shipModels, forge, firstPerson, store, sloop };
   const modules = {
     roomModule,
     builtSloop,

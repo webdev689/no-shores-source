@@ -14,7 +14,6 @@ import { HULL_NAMES } from '../ships/hulls.ts';
 import { Ambience } from './audio/ambience/ambience.ts';
 import { MusicDirector } from './audio/music/director.ts';
 import { Charting } from './charting.ts';
-import { boundWord } from './controls.ts';
 import { arriving, type Happening, next, onTheSea } from './flow.ts';
 import { Foot, type FootContext } from './foot.ts';
 import { DungeonDrawers } from './dungeonDrawers.ts';
@@ -51,8 +50,10 @@ import { SeaWord } from './seaWord.ts';
 import { seaPointer } from './seaPointer.ts';
 import { shipPanelOnceBuilt } from './shipPanel.ts';
 import { firstAnchorage, landfallWords } from './seaLaw.ts';
-import { type NodeInfo, portsOf } from './worldData.ts';
+import { arrivalAt, type NodeInfo, portsOf } from './worldData.ts';
+import { startTravel } from './travel.ts';
 import { Drain } from './drain.ts';
+import { returnToShip } from './toShip.ts';
 import { speaking } from '../speech/dialogue.ts';
 
 /**
@@ -141,6 +142,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     drawers: drawersOn(landmass),
     ready: false,
     waited: 0,
+    told: null,
     get shipScale() {
       return shipScale;
     },
@@ -181,50 +183,24 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   /** The island the player stands on, drawn though the sea no longer tells of it. */
   let ashore: IsleHeld | null = null;
   const waterHere = () => waterOf(scene.land?.swell, playing.landmass.heightAt);
+  /** Draws the landmass `opened` in place of the one left, at sea and on land. */
+  const showLandmass = (opened: Landmass) => {
+    playing.landmass = opened;
+    playing.drawers.release();
+    playing.drawers = drawersOn(opened);
+    scene.setLand(opened.view, terrainFor(opened), boot.biomeOf(opened.id));
+    playing.sea?.setLandmass(opened);
+  };
   const charting = new Charting(
     continents,
     (id) => openLandmass(land, world, landTexts, id),
-    (opened: Landmass) => {
-      playing.landmass = opened;
-      playing.drawers.release();
-      playing.drawers = drawersOn(opened);
-      scene.setLand(opened.view, terrainFor(opened), boot.biomeOf(opened.id));
-      playing.sea?.setLandmass(opened);
-    },
+    showLandmass,
     // Its flora fetched ahead, so its land opens without waiting on the network.
     (id) => {
       const biome = boot.biomeOf(id);
       if (biome) void warmFlora(biome);
     },
   );
-
-  /** A way that failed, tried again with Enter. */
-  let retry: (() => void) | null = null;
-  /** Runs `work` behind the veil showing `words`; the veil lifts once it is done and the ground has come. A failure
-   *  stays on the veil, and Enter tries it again. */
-  const behindVeil = (words: string, work: () => Promise<void>) => {
-    retry = null;
-    [playing.ready, playing.waited] = [false, 0];
-    hud.veil(words);
-    work()
-      .then(() => {
-        playing.ready = true;
-      })
-      .catch((error: unknown) => {
-        const why = error instanceof Error ? error.message : String(error);
-        hud.veil(`${words} failed: ${why}. Press ${boundWord('confirm')} to try again.`);
-        retry = () => behindVeil(words, work);
-      });
-  };
-
-  const travel = (happening: Happening, work: () => Promise<void>) => {
-    const after = next(playing.flow, happening);
-    if (after === playing.flow || after.mode !== 'loading') return;
-    playing.flow = after;
-    hud.menu(null);
-    document.exitPointerLock();
-    behindVeil(after.words, work);
-  };
 
   /** Leaves wherever the player was: death's grey and the story's last moment go with them. */
   const leaveHere = () => {
@@ -306,6 +282,29 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     );
   };
 
+  /** Walks ashore on `held` on the sea's `word` for it; online its room is joined by its name alone. */
+  const isleFoot = (held: IsleHeld, word: string | null) =>
+    ashoreOn(
+      footContext,
+      held,
+      { word, continent: continents[held.seen.continent]?.id ?? '', seas: seaSeas },
+      trips.enterSeaDungeon,
+    );
+  const { travel, behindVeil, retry, tell } = startTravel({
+    ...{ playing, hud, footContext, goInto, goFoot, goSea, showLandmass },
+    ashore: () => ashore,
+    backAshore: async (held) => {
+      await goInto(() => isleFoot(held, null));
+      ashore = held;
+    },
+    // Overlook's landmass, opened where the player was on another.
+    hubLand: async () => {
+      const continent = arrivalAt(world, FIRST_NODE)?.continent;
+      if (continent && continent !== playing.landmass.id)
+        showLandmass(await openLandmass(land, world, landTexts, continent));
+    },
+  });
+
   const arrived = playing.landmass.nodes.find((node) => node.id === start.node) ?? playing.landmass.nodes[0];
   if (!arrived) throw new Error(`${start.name} has no place to arrive at`);
   const { node: firstNode, facing: firstFacing } = askedArrival(arrived, location.search);
@@ -361,10 +360,11 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     return null;
   };
 
+  const toSea = () => travel({ kind: 'return-to-ship' }, goSea);
   const syncMenu = () => {
     const resume = { label: 'Resume', run: () => change({ kind: 'back' }) };
     if (playing.flow.mode === 'foot' && playing.flow.menu && playing.foot) {
-      const home = { label: 'Return to ship', run: () => travel({ kind: 'return-to-ship' }, goSea) };
+      const home = { label: 'Return to ship', run: () => returnToShip(playing.foot, toSea, tell) };
       hud.menu({ title: playing.foot.node.name, choices: [resume, home] });
     } else if (playing.flow.mode === 'sea' && playing.flow.menu) {
       const landfall = playing.sea?.landfall;
@@ -399,17 +399,16 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
    *  is left only once the island's room has opened: one that does not (it faded, or the sea no longer holds it)
    *  leaves the player aboard, told so. */
   const goIsle = (held: IsleHeld, words: string) => {
-    const continent = continents[held.seen.continent]?.id ?? '';
     travel({ kind: 'isle', node: held.seen.id.toString(), words }, async () => {
       const word = (await playing.sea?.sighted?.isleWord(held.seen.id)) ?? null;
       let foot: Foot;
       try {
-        foot = await ashoreOn(footContext, held, { word, continent, seas: seaSeas }, trips.enterSeaDungeon);
+        foot = await isleFoot(held, word);
       } catch (error) {
         // Still aboard, at sea: the veil lifts on the ship, as no load is under way.
         playing.flow = { mode: 'sea', menu: false };
         hud.veil(null);
-        hud.note(`You could not go ashore: ${error instanceof Error ? error.message : String(error)}.`);
+        tell(`You could not go ashore: ${error instanceof Error ? error.message : String(error)}.`);
         return;
       }
       leaveHere();
@@ -555,7 +554,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));
   listenForControls({
-    ...{ playing, input, ui, hud, story, retry: () => retry, change, respawn, goAshore, stopOrResume, openMap },
+    ...{ playing, input, ui, hud, story, retry, change, respawn, goAshore, stopOrResume, openMap },
     ...{ manage, leaveHelm, takeHelm, goThrough, landAt },
   });
   canvas.addEventListener('click', () => {
@@ -591,7 +590,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
       ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
-      isles: islesDrawer,
+      ...{ isles: islesDrawer, eventProps: boot.eventProps },
       ...{ world, music, ambience, dungeons },
       heed: (here) => heed(here, (why) => travel({ kind: 'shut', why }, goSea)),
     },

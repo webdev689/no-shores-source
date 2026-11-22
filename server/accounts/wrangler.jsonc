@@ -30,5 +30,5 @@
   ],
   // The pages a Discord sign-in may come back to, by origin and path: the published game alone. `npm run accounts`
   // gives the dev server's own.
-  "vars": { "PAGES": "https://lattymoy.github.io/overlook-source/" },
+  "vars": { "PAGES": "https://lattymoy.github.io/no-shores-source/" },
 }

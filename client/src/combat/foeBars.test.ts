@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { FILLS, TONES } from '../plus/tones.ts';
 import type { FighterView } from '../rules/fighters.ts';
 import type { Node } from '../ui/node.ts';
-import { rankBand, rankMark } from '../rules/roster.ts';
+import { PUBLIC_CLIMAX, rankBand, rankMark } from '../rules/roster.ts';
 import {
   ALERT_MARK_SECONDS,
   FoeBars,
@@ -340,4 +341,20 @@ test('the crosshair on a near foe takes the plate from one behind it on the line
   bars.update([aside, far], null, spotOf, LOOKING_NORTH, 1 / 60);
   const farPlate = drawnAs(bars, 'Far');
   assert.deepEqual([farPlate?.x, farPlate?.y], [400, 300], 'not lifted over the plate going');
+});
+
+test("a public event's climax, the Warden or Marrow, takes the boss bar, with no phase line", () => {
+  const player = { x: 0, y: 0 };
+  const warden = thule(6, 3, { rank: 4, name: 'The Warden of the Fissure' });
+  const miniboss = thule(7, 1, { rank: 4, name: 'Grimwald the Stout' });
+  assert.equal(bossInFight([warden, miniboss], player)?.id, 6);
+  assert.equal(bossBarOf(warden).phase, '');
+  for (const [file, constant] of [
+    ['fissure.rs', 'WARDEN_NAME'],
+    ['raid.rs', 'MARROW_NAME'],
+  ] as const) {
+    const rules = readFileSync(new URL(`../../../crates/room/src/public/${file}`, import.meta.url), 'utf8');
+    const name = new RegExp(`${constant}: &str = "([^"]+)"`).exec(rules)?.[1];
+    assert.ok(name && PUBLIC_CLIMAX.has(name), `${constant} is a climax`);
+  }
 });

@@ -221,7 +221,8 @@ from the sea, fresh water and the claim's edge), then:
    terrain draws its cliffs in; in a layout with a `stone` of chalk its rubble wears chalk's white instead (the client
    turns its rubble solids to the `chalk` material, a picture of the same stone tile brought to white).
 9. **The sites** the activities that come later will stand on: the landing, each gate and what it leads to, each
-   wilds or arena as an event's ground, two patrol beacons at each place's rim, up to sixteen resource nodes off the
+   wilds or arena as an event's ground, each hamlet's three stores, its raiders' approach and their two banners, where
+   each wilds' fissure opens beside its obelisk and its growth spot ([[Public Events]]), two patrol beacons at each place's rim, up to sixteen resource nodes off the
    paths, each holding its island's resource (content/gear/resources.json, by the landmass's continent; [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), each beacon and resource
    5 m clear of every way's edge, each resource 12 m from every other and from each beacon, and where foes hold ground. Each resource lies in a pocket the carving leaves off its path, a side way 18 m wide in from the path's
    nearest point. Each resource's node stands 5 m before its dressing toward its path, clear of it (`node`; none where that lies outside
@@ -315,7 +316,12 @@ out past its edge.
   stands within 1.2 m of its way under head height, but for what a body climbs on it, and the rock and walls laid after
   it keep off it; every ceiling over a building run's way stands 2.6 m or more over its floor. A body walks every run
   from its mouth to within 3 m of its door, and no further; up each keep's stair to its turret's top; and over each
-  undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`).
+  undercroft's chapel floor and down its stair (`crates/room/tests/runs_walked.rs`). Every patrol zone of every
+  continent is given a run of each of four kinds too, one test a continent (`runs_everywhere.rs`), with ten failures
+  known and named with their reasons, so a new one fails CI ([[The Audit's Leftovers Are Fixed as Claude Suggested]]):
+  on the savanna, steppe, tundra, woodland and fen a body walks round some ledges' and ramparts' doors across their
+  faces, and at highwater-glen a ledge's way meets a face a body would climb. They wait on the owner's call on the
+  runs there; only Saltmere's zones have runs of their own yet.
 
 ## Laid on the land
 
