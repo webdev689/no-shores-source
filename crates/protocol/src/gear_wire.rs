@@ -573,6 +573,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         bounty_xp,
         bounty_aurem,
         mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
+        recharge: room.recharge_times(),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

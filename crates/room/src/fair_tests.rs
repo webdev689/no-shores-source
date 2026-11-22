@@ -201,3 +201,15 @@ fn an_aimed_shot_leaves_from_the_foes_own_weapon_a_ball_straight_and_quick() {
     assert!(((east * east + south * south + up * up).sqrt() - 70.0 * 1.3).abs() < 1e-9 && up.abs() < 1e-12);
     assert!((ball.damage - 30.0 * 1.4 * foe.might).abs() < 1e-9, "{ball:?}");
 }
+
+#[test]
+fn a_dead_foe_gone_from_the_room_is_forgotten_by_every_set_that_named_it() {
+    let mut room = room();
+    let foe = stand(&mut room, 14, 0.0, -5.0);
+    room.quiet.insert(foe);
+    room.quests.spoilless.insert(foe);
+    room.foes.get_mut(&foe).expect("stood").fighter.action = Action::Dead { elapsed: combat::tuning::FOE_GONE };
+    room.tick();
+    assert!(room.fighter(foe).is_none(), "gone");
+    assert!(!room.quiet.contains(&foe) && !room.quests.spoilless.contains(&foe), "and named nowhere");
+}

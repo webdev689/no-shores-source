@@ -359,6 +359,8 @@ impl Room {
         for id in gone {
             self.foes.remove(&id);
             self.board.forget(id);
+            self.quiet.remove(&id);
+            self.quests.spoilless.remove(&id);
         }
     }
 

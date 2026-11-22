@@ -172,7 +172,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   ([[Three Healing Charges, Refilled by Blows and Kills]]), dead or dead past a section's edge. It releases 18 ticks
   (0.3 s) after the tick that took it. If the player is staggered, Charged, drinking, dead or dead past the edge by
   then, it is lost and costs nothing; else its share empties and the spell is cast. Casting is attacking: any spell
-  but Vanish ends the caster's veil as it is cast, though a spell already out, a raven's bolt or a ring, does not.
+  but Vanish ends the caster's veil as it is cast, though a spell already out, a raven's bolt or a ring, does not; and
+  any spell ends the grace of one stood again ([[Server]], "The dead").
 - **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from a
   matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the Ranged
   one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is
@@ -211,8 +212,9 @@ The numbers are an Art's at level 5.
   for a bolt), caster, Art, where it is, where it heads (the Dawnflare's end, Arc Lash's reach ahead), the foe it
   seeks, its age and life in ticks, and its radius.
 - **The player's own gear** carries `art` (0 where none works), `cores` (three slots an Art in the Arts' order, 255 for none), `anima` and
-  `tenets`, each share as the tick that sent it had it. It is sent whenever a cast releases, a kill gives charge or an
-  ask changes them; between, the browser runs each share on by its recharge (`abilitiesAt`).
+  `tenets`, each share as the tick that sent it had it, and `recharge`, how much longer the room takes to recharge them
+  (1.5 under a run's Trickle, [[Activities]]). It is sent whenever a cast releases, a kill gives charge or an ask
+  changes them; between, the browser runs each share on by its recharge times `recharge` (`abilitiesAt`).
 - **The asks** are numbered 40 (`wearArt`, the Art in `column`), 41 (`setCore`, the Art in `column`, the slot in
   `slot`, the fragment in `node`) and, in the Test Ground alone, 36 (the Anima full and the Tenets ready).
 

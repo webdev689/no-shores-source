@@ -93,7 +93,7 @@ impl Room {
         if walled || outside || buried || ground < from[2] - TUNING.step { from } else { [x, y, ground] }
     }
 
-    /// Lays a drop for a player where it lies already, thrown from nowhere: for tests and the Test Ground.
+    /// Lays a drop for a player where it lies already, thrown from nowhere: for tests, this crate's and the door's.
     pub fn lay_drop(&mut self, player: PlayerId, what: Dropped, at: [f64; 3]) {
         self.lay(player, what, at, at);
     }

@@ -59,6 +59,14 @@ test('the bar runs each share on by its recharge from the room’s word, and hol
   assert.equal(abilitiesAt(state(0), 0, 0), null, 'no Art worn, as in the prologue: no bar');
 });
 
+test('the bar runs each share on at the room’s recharge: half again as long under a run’s Trickle', () => {
+  const taken = { ...state(1, 0, [0.2, 0.9]), recharge: 1.5 };
+  const after = abilitiesAt(taken, 100, 100 + 60 * 50);
+  assert.ok(after);
+  assert.ok(Math.abs(after.animaShare - 50 / 750) < 1e-9, 'Tempest recharges over 750 s');
+  assert.ok(Math.abs(after.tenets[0] - (0.2 + 50 / 136.5)) < 1e-9);
+});
+
 test('a press casts its ability only when it is ready, then waits for the room’s word before another', () => {
   const casting = new CastKeys();
   assert.deepEqual(framed(casting, state(1, 0.5), keys(['anima'])).cast, null, 'the Anima is not full');

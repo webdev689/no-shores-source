@@ -301,7 +301,12 @@ impl Room {
         }
         self.garrison.push(post);
         let stood = self.garrison.len() - 1;
+        // An arrival is no group of the garrison's: the last stand keeps its leader and its break.
+        let last_stand = self.encounter.as_ref().map(|encounter| (encounter.leader, encounter.broken));
         self.stand_post(stood);
+        if let (Some(encounter), Some(kept)) = (self.encounter.as_mut(), last_stand) {
+            (encounter.leader, encounter.broken) = kept;
+        }
         Some(self.garrison[stood].standing.clone())
     }
 

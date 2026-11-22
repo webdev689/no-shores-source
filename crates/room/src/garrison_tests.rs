@@ -378,3 +378,24 @@ fn a_node_s_mesh_keeps_its_layout_s_wall_a_body_s_radius_off_and_bakes_no_box_pa
     assert!(route.len() > 2 && clear, "round the wall's end: {route:?}");
     assert_eq!(nav, baked(&floor, &[wall], first, Some(&section)), "a box off the square bakes nothing");
 }
+
+#[test]
+fn a_quests_group_arriving_leaves_the_last_stand_its_leader_and_its_break() {
+    let mut room = crate::quests::quests_tests::node_room("node-test", &[("glade", [0.0, 0.0], 48.0)]);
+    let leader = room.next_id();
+    room.encounter = Some(Encounter {
+        stage: super::groups::Stage::LastStand,
+        last_stand: [0.0, 30.0, 0.0],
+        leader: Some(leader),
+        broken: true,
+        waves: None,
+        called: 0,
+        levels: None,
+    });
+    let place = gear::quests::Place { name: "glade".to_owned(), at: [0.0, 0.0], radius: 48.0 };
+    let ground = room.ground_of(&place, 48.0).expect("a mesh round the glade");
+    let stood = room.stand_arriving(ground, [0.0, 0.0], 48.0, &[(14, ::foes::Rank::Minor)], 2.0, 1);
+    assert!(stood.is_some_and(|ids| ids.len() == 1), "the group stands");
+    let encounter = room.encounter.as_ref().expect("an encounter");
+    assert_eq!((encounter.leader, encounter.broken), (Some(leader), true), "the last stand is as it was");
+}

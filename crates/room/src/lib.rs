@@ -349,9 +349,10 @@ impl Room {
         found.received = input.sequence;
         found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
         if found.held {
-            // Taken in order, so the next follows on; played as standing still, asking and casting nothing.
-            let Input { sequence, seen, shown, arms, .. } = input;
-            input = Input { sequence, seen, shown, arms, ..Input::default() };
+            // Taken in order, so the next follows on; played as standing still, asking and casting nothing. A dress is
+            // kept, as the page sends one only when it changes.
+            let Input { sequence, seen, shown, arms, dress, .. } = input;
+            input = Input { sequence, seen, shown, arms, dress, ..Input::default() };
         }
         // A dress waits its turn; one back to the dress shown clears whatever waited, so the last sent is the one shown.
         // One that does not read is refused, and the last that did is kept.

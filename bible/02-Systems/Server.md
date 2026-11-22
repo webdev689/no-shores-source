@@ -174,7 +174,7 @@ on Cloudflare.
   with.
 - **The dead** stand again, whole and with all three healing charges, after four seconds, at the spawn nearest where
   they fell (in a dungeon, at its way in, facing into the room), and the foes leave them be for three more unless they
-  strike first; a dead foe is gone after ten. One standing again past a node's section, as they ask, stands with all
+  strike first (a blow, a shot or a spell); a dead foe is gone after ten. One standing again past a node's section, as they ask, stands with all
   three too. In an Abyss run each stand takes one of the company's five revives, and the fallen stay down once none
   is left; when every player in it is down at once and it was never won, the run starts over (`abyss.rs`).
 - **A run's room** opens from a JSON ask (`room_open_run`): its dungeon (a patrol's by its number, an Elite Dungeon
@@ -310,7 +310,8 @@ will take it, by the room's own tick.
   way: only when the sea of its tier holds an island whose door leads there, named from that island's seed, water and
   style (`room_sea_dungeon`, `dungeon_room`), so no page opens one for a seed or a style it names. It holds that
   island while players are in it, lets go of an account the sea has not landed there (one the sea did not answer
-  for, or not within 20 seconds, may join again), and plays each input before the sea's answer as standing still.
+  for, or not within 20 seconds, may join again), and plays each input before the sea's answer as standing still, though a dress sent then is
+  shown as any other.
 
 ## A fleet
 
@@ -502,7 +503,8 @@ so every decision is Rust and the shell only carries bytes and time.
   play online." (in a run, "Sign in to enter this run."), so sockets that never sign in cannot hold a room's places;
   every page of the game sends one, a guest's included. While the accounts do not answer a claim, or the look before it, the player plays on
   unkept, and a look unanswered claims nothing. The Test Ground's rooms and a fleet's keep nothing and take anyone. A character the room's gate shuts
-  ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. A save keeps the keys a
+  ([[Activities]]) is let go untouched, and the socket closed with 4003 and the gate's reason. Every room that keeps
+  characters judges one on a look before it claims it, so one turned away stays with the room that plays it. A save keeps the keys a
   room does not know, at its top, in its materials, Arts, allegiance and cosmetics, in its day's activity and its story,
   and in each item and Vestige, so a room that knows fewer fields carries the newer ones through; a room built before
   this keeping drops them, so a rollback to one loses them. A new value of a kind the room knows (a slot, a rarity)
