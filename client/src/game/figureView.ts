@@ -1,5 +1,6 @@
 import type { GlowField } from '../elementGlow.ts';
 import { BUFFER_USAGE, SHADER_STAGE, TEXTURE_USAGE, type Gpu } from '../gpu.ts';
+import { PULL_WGSL } from '../city/cityShaders.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { PX_PER_M } from '../player/figures.ts';
 import { CARD_LOOK_FLOATS, STATUS_WGSL, cardLookValues, statusClock } from '../player/cardLooks.ts';
@@ -20,6 +21,7 @@ const LIT_AT_M = 1.2;
 /** A figure's card stands upright on its feet, measured from the eye as the land is; the forge's pixels are drawn
  *  texel for texel and anything clear is cut away. Shared by the figures' pass and their shadow's. */
 const CARD = /* wgsl */ `
+// 'right' holds the eye's world height in z, for the pull.
 struct View { from_eye: mat4x4f, right: vec4f }
 @group(0) @binding(0) var<uniform> view: View;
 struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f, tint: vec4f, light: vec4f }
@@ -27,6 +29,7 @@ struct Card { feet: vec4f, size: vec4f, root: vec4f, status: vec4f, look: vec4f,
 @group(2) @binding(1) var picture: texture_2d<f32>;
 
 ${SKY_WGSL}
+${PULL_WGSL}
 const CORNERS = array(vec2f(0, 0), vec2f(1, 0), vec2f(0, 1), vec2f(0, 1), vec2f(1, 0), vec2f(1, 1));
 
 // How far a corner (0 to 1 across, 0 to 1 down) stands across the card from its feet, metres.
@@ -77,7 +80,8 @@ struct Out { @builtin(position) position: vec4f, @location(0) corner: vec2f, @lo
   let corner = CORNERS[index];
   let offset = card_point(corner, view.right.xy, card_up(view.right.xy));
   var out: Out;
-  out.position = view.from_eye * vec4f(offset, 1.0);
+  // Pulled nearer as the city's ground is drawn, so its slabs never cut off the feet standing on them.
+  out.position = view.from_eye * vec4f(pulled(offset, offset.z + view.right.z), 1.0);
   // A smear stands a hair behind its figure (depth is reversed), so the figure is drawn over it.
   if (card.tint.w > 0.5) { out.position.z = out.position.z * 0.999; }
   out.corner = corner;
@@ -139,7 +143,7 @@ struct Shade { @builtin(position) position: vec4f, @location(0) rim: f32, @locat
   let radius = vec2f(0.45, 0.45) * rim * select(1.0, 0.75, own);
   let offset = vec3f(card.feet.xy + lean * 0.5 * rim + vec2f(cos(angle), sin(angle)) * radius, card.feet.z + 0.03);
   var out: Shade;
-  out.position = view.from_eye * vec4f(offset, 1.0);
+  out.position = view.from_eye * vec4f(pulled(offset, offset.z + view.right.z), 1.0);
   out.rim = rim;
   out.darkness = select(0.42, 0.3, own);
   return out;
@@ -302,7 +306,7 @@ export class FigureView implements CardMaker {
     if (this.written?.fromEye === fromEye && this.written.figures === figures) return this.written.groups;
     const values = new Float32Array(VIEW_BYTES / 4);
     values.set(fromEye);
-    values.set([Math.cos(yaw), Math.sin(yaw), 0, 0], 16);
+    values.set([Math.cos(yaw), Math.sin(yaw), eye[2], 0], 16);
     this.gpu.device.queue.writeBuffer(this.viewBuffer, 0, values);
     const time = statusClock();
     // Each card, then again as its smear where its own swing leaves one: its shape above the hips, shifted back

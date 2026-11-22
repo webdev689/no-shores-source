@@ -236,8 +236,9 @@ with no kerb or border, so a run of avenues reads as one road; the landmark's ow
 retaining walls and a plate's skirts, 30 m down its open sides or to the lower plate beside it, are rubble near the
 ground's colour, so the walls between the terraces read as terracing, not as a grid. The whole city is
 drawn nearer in depth than it stands (not on screen) by 5 cm and 1.2 % of the distance, above the sea only, since
-the 1 km land stands up to about 20 m off a terrace's level; a plate is drawn 3 cm under its level, so a floor laid
-at that level shows over it.
+the 1 km land stands up to about 20 m off a terrace's level (`PULL_WGSL`); a plate is drawn 3 cm under its level, so a
+floor laid at that level shows over it. The figures and their contact shades are pulled the same way, so the walks,
+lawns and paving under their feet never cut their soles off.
 
 **The pictures.** One texture array of at most 252 layers, each picture resampled to 128 texels square, sampled
 nearest up close and mipmapped far off. Daggerfall's stone is dark, so a solid's picture may be painted lighter or
