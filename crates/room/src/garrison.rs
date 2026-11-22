@@ -193,7 +193,7 @@ pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section:
         return over(floor, blocks, ground_around(blocks, first, GROUND_AROUND));
     };
     if let Floor::Dungeon(_) = floor {
-        return crate::dungeon_room::baked(floor, first, section);
+        return crate::dungeon_room::baked(floor, blocks, first, section);
     }
     let (bounds, walked) = square_of(blocks, ground_middle(section, first));
     match floor {
@@ -496,7 +496,7 @@ impl Room {
             let found = &self.garrison[post];
             let fallen = |id: &FighterId| self.foes.get(id).is_none_or(|foe| foe.fighter.dead());
             let Some(cleared) = found.cleared_at else {
-                if found.standing.iter().all(fallen) {
+                if found.standing.iter().all(fallen) && !self.held_back(post) {
                     self.garrison[post].cleared_at = Some(self.clock);
                 }
                 continue;

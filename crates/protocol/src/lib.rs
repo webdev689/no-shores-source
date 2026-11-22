@@ -34,6 +34,7 @@ use wire::overlook::wire as messages;
 pub const PROTOCOL: u32 = include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/messages/rust/version.rs"));
 
 mod bounty_wire;
+pub mod encounter_wire;
 pub mod fleet;
 pub mod gear_wire;
 pub mod land;
@@ -426,6 +427,9 @@ pub fn body_of(numbers: &[f64]) -> Option<Body> {
     numbers.try_into().ok().map(Body::from_floats)
 }
 
+#[cfg(test)]
+#[path = "encounter_wire_tests.rs"]
+mod encounter_wire_tests;
 #[cfg(test)]
 #[path = "protocol_tests.rs"]
 mod protocol_tests;

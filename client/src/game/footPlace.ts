@@ -1,5 +1,6 @@
 // Where a player stands on foot and the room they join there: the node's ground, its file for a room playing alone, and
 // what the page hears of the room. The fight's rules on the room's module are made in `footRoom.ts`.
+import type { EncounterSeen } from '../network/encounterMessages.ts';
 import type { Cache } from './dungeonChest.ts';
 import type { Entrances, Trips } from './footTrips.ts';
 import type { GearAsk, GearState } from '../network/gearMessages.ts';
@@ -83,7 +84,8 @@ export interface Opened {
   readonly seas: Difficulty;
 }
 
-/** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache. */
+/** What the room last said of the player's gear (online), of a patrol's entrances, and of a dungeon's cache and
+ *  encounters. */
 export interface Held {
   gear: GearState | null;
   /** Alone, the room's word on the player's gear, read only for their public events' chests: the page dresses and
@@ -94,6 +96,8 @@ export interface Held {
   /** An Abyss run's revives left (-1 in any other room), and whether it said this player's company fell. */
   revives: number;
   wiped: boolean;
+  /** An Elite Dungeon's encounters as its room last said; null in any other room. */
+  encounter: EncounterSeen | null;
 }
 
 /** What E does where a player stands on a place of its own, if anything: with the way to ask of their gear. */

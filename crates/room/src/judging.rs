@@ -48,6 +48,16 @@ pub enum EventKind {
     PublicFailed = 23,
     StorePlundered = 24,
     ChestOpened = 25,
+    /// An Elite Dungeon's moments, each told to every player (`encounters.rs`): a seal broken (the amount how many are
+    /// broken now), a wrong rune and a drained relic (the amount the seal's number), the Boss warded and its ward
+    /// broken (the amount the ward's number), a Reckoning landing (the amount how many it struck), and the Boss woken.
+    SealBroken = 26,
+    RuneWrong = 27,
+    WardRaised = 28,
+    WardBroken = 29,
+    ReckoningLanded = 30,
+    BossWoke = 31,
+    RelicDrained = 32,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round
@@ -158,7 +168,8 @@ impl Room {
         let crit = harms && crits(blow, self.fighter(blow.striker), &before);
         let verdict = self.weighed(blow, &before, verdict);
         let (verdict, shielded) = self.shielded(defender, blow, verdict);
-        let after = self.held_up(defender, suffer(&before, blow, &verdict));
+        let held = self.held_up(defender, suffer(&before, blow, &verdict));
+        let after = self.warded(defender, held);
         self.set_fighter(defender, after);
         // The fight's heat follows what the players' side took and what it dealt and killed, their companions and
         // hands with them, each as the numbers combat is tuned for: what they dealt, a shield's share with it,

@@ -16,12 +16,15 @@ pub mod clash;
 mod clears;
 mod companions;
 mod course;
+pub mod court;
 pub mod crew;
 pub mod deck;
 mod deck_fight;
 mod drops;
 pub mod dungeon_ground;
 mod dungeon_room;
+pub mod encounter_plan;
+mod encounters;
 mod entrances;
 pub mod fleet;
 mod floor;
@@ -44,6 +47,7 @@ mod routes;
 mod run;
 pub mod sea;
 pub mod sea_weather;
+pub mod seals;
 mod seeing;
 pub mod ship_power;
 pub mod sighting;
@@ -58,6 +62,7 @@ pub use arts::{Cast, Casting};
 pub use asks::{Asked, Grant, ResourceNode};
 pub use companions::Companion;
 pub use drops::{AMMO_REST_TICKS, DROP_TICKS, Drop, Dropped, VESTIGE_REST_TICKS};
+pub use encounters::{EncounterSeen, SealSeen, SealState};
 pub use entrances::Entrance;
 pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
@@ -206,6 +211,8 @@ pub struct Room {
     pub(crate) inert_ways: BTreeMap<FighterId, navmesh::Way>,
     /// Its node and places, and the groups the houses' roads stood here (`quests.rs`).
     pub(crate) quests: quests::QuestGround,
+    /// An Elite Dungeon's seals and Court (`encounters.rs`); none in any other room.
+    pub(crate) encounters: Option<Box<encounters::Encounters>>,
 }
 
 impl Room {
@@ -280,6 +287,7 @@ impl Room {
             inert_ways: BTreeMap::new(),
             names: BTreeMap::new(),
             quests: quests::QuestGround::default(),
+            encounters: None,
         }
     }
 
@@ -399,6 +407,7 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_encounters();
         self.keep_public();
         self.keep_cache();
         self.keep_quests();

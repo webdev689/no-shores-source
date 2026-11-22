@@ -22,6 +22,9 @@ import {
 import { CHEST_LIES_S, bannerOf, chestQuestOf, compassOf, elsewhereOf, questOf, ringOf } from './publicLaw.ts';
 import { type Moments, PublicMoments } from './publicMoments.ts';
 import { SpireCourse } from './fissureSpires.ts';
+import type { DungeonLayout } from './dungeonLayout.ts';
+import { encounterBanner, encounterBeat, encounterMarks } from './encounterLaw.ts';
+import { type EncounterSeen, SEAL_STATE } from '../network/encounterMessages.ts';
 import type { Block } from '../rules/movementRules.ts';
 import type { Shot } from './camera.ts';
 import type { Quest } from './tasks.ts';
@@ -109,6 +112,35 @@ export interface PublicFrame {
   readonly chime: 'refused' | 'open' | 'shard' | null;
 }
 
+/** An Elite Dungeon's layout and its encounters as its room last said, for a frame in it. */
+export interface EncounterHere {
+  readonly layout: DungeonLayout | null | undefined;
+  readonly seen: EncounterSeen | null;
+}
+
+/** An Elite Dungeon's frame: its marks laid into `marks`, its banner with the beat it slides in for, the music's mood
+ *  (its Court at its peak, a seal running tense), and the sting a moment plays (a seal broken or a ward won, a
+ *  cadence as the Boss wakes or a ward rises). None outside one. */
+function encounterFrame(
+  { layout, seen }: EncounterHere,
+  events: readonly FightEvent[],
+  bodies: PublicBodies,
+  clock: number,
+  marks: number[],
+): { shown: PublicShown | null; sting: 'cadence' | 'victory' | null } | null {
+  const plan = layout?.encounters;
+  if (!layout || !plan || !seen) return null;
+  marks.push(...encounterMarks(plan, seen, clock, bodies.where));
+  const banner = encounterBanner(layout, seen, bodies.feet);
+  const beat = encounterBeat(events);
+  const running = seen.seals.some((seal) => seal.state === SEAL_STATE.running);
+  const mood = seen.woken ? 'peak' : running ? 'tension' : null;
+  const shown: PublicShown | null = banner && { banner, beat, places: [], stores: [], mood };
+  const won = events.some((each) => each.kind === EVENT.sealBroken || each.kind === EVENT.wardBroken);
+  const rose = events.some((each) => each.kind === EVENT.bossWoke || each.kind === EVENT.wardRaised);
+  return { shown, sting: won ? 'victory' : rose ? 'cadence' : null };
+}
+
 /** A point `forward` along and `left` across the way `yaw` looks (x east, y south: yaw 0 looks north). */
 function along(from: Point, yaw: number, forward: number, left: number, up = 0): Point {
   const [rightX, rightY] = [Math.cos(yaw), Math.sin(yaw)];
@@ -194,7 +226,11 @@ export class PublicView {
     clock: number,
     marks: number[],
     floor: (x: number, y: number) => number,
-    { quiet = false, held = null }: { quiet?: boolean; held?: PublicEvent | null } = {},
+    {
+      quiet = false,
+      held = null,
+      encounter = null,
+    }: { quiet?: boolean; held?: PublicEvent | null; encounter?: EncounterHere | null } = {},
   ): PublicFrame {
     const wall = this.now();
     const event = this.counted(word, wall);
@@ -230,9 +266,10 @@ export class PublicView {
     // A frame with no event (the room lost a while) forgets nothing: on its return no beat is played again.
     if (event) this.clock.done(true);
     const ownShard = events.some((each) => each.kind === EVENT.shardTaken && each.striker === bodies.player);
+    const setBack = events.some((each) => each.kind === EVENT.runeWrong || each.kind === EVENT.relicDrained);
     const chime = !loud
       ? null
-      : events.some((each) => each.kind === EVENT.heroicMissed)
+      : events.some((each) => each.kind === EVENT.heroicMissed) || setBack
         ? 'refused'
         : events.some((each) => each.kind === EVENT.chestOpened && each.striker === bodies.player)
           ? 'open'
@@ -262,12 +299,13 @@ export class PublicView {
       mood: moodOf(event, bodies.feet),
     };
     const left = Math.min(...waiting.map((chest) => moments.chestsLeft.get(chest.id) ?? CHEST_LIES_S));
+    const sealed = encounter && encounterFrame(encounter, events, bodies, clock, marks);
     return {
-      shown,
+      shown: shown ?? sealed?.shown ?? null,
       quest: questOf(event, this.zone) ?? (waiting.length > 0 ? chestQuestOf(left, this.zone, this.lastKind) : null),
       props,
       sounds,
-      sting: beat && !stale ? (STINGS[beat] ?? null) : null,
+      sting: stale ? null : ((beat && STINGS[beat]) ?? sealed?.sting ?? null),
       chime,
     };
   }
