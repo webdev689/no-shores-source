@@ -40,6 +40,8 @@ export const npcChoosing = (): boolean => choosing;
 /** The figure's height beside what the screen's body leaves it, and the least it is drawn at. */
 const FIGURE_AROUND = 120;
 const FIGURE_LEAST = 200;
+/** A room narrower than this, in pixels, stands the keeper over the rest. */
+const NARROW = 600;
 /** The rows' own id, which scrolls where a screen is too short for them all. */
 const ROWS = 'npc-rows';
 
@@ -218,14 +220,14 @@ function footNode(kind: KeeperKind, gear: GearState, look: KeeperLook, width: nu
   };
 }
 
-/** The keeper at the left: their mark and title above them, the figure on a floor lit in their colour. */
-function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, width: number): Node {
-  const { room, forge, sizes } = context;
+/** The keeper `width` by `height`: their mark and title above them, the figure on a floor lit in their colour. */
+function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, width: number, height: number): Node {
+  const { forge, sizes } = context;
   const rgb = channels(look.glow);
   const figure = keeperFigure(
     kind,
     forge,
-    Math.max(FIGURE_LEAST, room.height - FIGURE_AROUND),
+    Math.max(Math.min(FIGURE_LEAST, height - 44), height - FIGURE_AROUND),
     sizes.ratio,
     performance.now(),
     motionReduced(),
@@ -233,7 +235,7 @@ function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, wid
   const mark = look.wide ? 63 : 42;
   return {
     width,
-    height: room.height,
+    height,
     clip: true,
     direction: 'column',
     alignX: 'center',
@@ -263,9 +265,9 @@ function stageNode(context: MenuContext, kind: KeeperKind, look: KeeperLook, wid
           glow(across / 2, down * 0.58, across * 0.6, down * 0.55, 0.34, 0.72);
           glow(
             across / 2,
-            down - 11 * (down / room.height) - 22 * (down / room.height),
+            down - 11 * (down / height) - 22 * (down / height),
             across * 0.4,
-            22 * (down / room.height),
+            22 * (down / height),
             0.45,
             0.7,
           );
@@ -312,8 +314,10 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
     choosing = !choosing;
     [focusNext, focusWaited] = [choosing ? 'first-rise' : 'npc-rise', 0];
   };
-  const stageWidth = Math.floor((room.width * 2) / 5);
-  const sideWidth = room.width - stageWidth;
+  // In a room as narrow as a phone's the keeper stands over the rest, so neither side is too narrow to read.
+  const narrow = room.width < NARROW;
+  const stageWidth = narrow ? room.width : Math.floor((room.width * 2) / 5);
+  const sideWidth = narrow ? room.width : room.width - stageWidth;
   // The vault keeper thanks the player for each thing put in or taken out, and the Postmaster for each letter taken,
   // as a keeper does for a ware.
   const thanked = { ...context, ask: (asked: GearAsk) => (waitFor(), context.ask(asked)) };
@@ -343,8 +347,9 @@ export function npcPage(context: MenuContext, kind: KeeperKind, more: readonly C
   return {
     width: room.width,
     height: room.height,
+    direction: narrow ? 'column' : 'row',
     children: [
-      stageNode(context, kind, look, stageWidth),
+      stageNode(context, kind, look, stageWidth, narrow ? Math.floor(room.height / 3) : room.height),
       {
         width: sideWidth,
         height: 'grow',

@@ -174,6 +174,14 @@ test('the focus on a letter taken goes to the same press of the letter after it,
   assert.equal(ui.focusedId, 'letter-32', 'a tile’s to the next tile');
 });
 
+test('on a phone the Postmaster stands over his letters, which take the room’s whole width', () => {
+  const rows = (width: number, height: number) => postmasterOf(width, height).ui.boxOf('npc-rows');
+  const [phone, wide] = [rows(390, 844), rows(1280, 720)];
+  assert.ok(phone && wide);
+  assert.ok(phone.width > 390 * 0.8 && phone.y > (844 - 120) / 4, 'the whole width, under him');
+  assert.ok(wide.x > 1280 / 3, 'beside him where there is room');
+});
+
 test('on a phone a letter stands in one column: its tile and name, its words under them, its Take at its end', () => {
   const { ui } = postmasterOf(390, 844);
   const [tile, take] = [ui.boxOf('letter-31'), ui.boxOf('npc-take-31')];
