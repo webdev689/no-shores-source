@@ -211,6 +211,7 @@ const WARN: SeaWarning = {
   bearing: 'on your starboard beam',
   load: 'chain',
   tell: 1.3,
+  ranFor: 0,
   braceKey: 'C',
   braced: false,
 };
@@ -262,8 +263,7 @@ test('the fuse burns in from both ends over the battery’s tell, then flashes w
   );
   const fuseLitAt = (now: number, reduced = false) =>
     withMotionReduced(reduced, () => {
-      const readout = readoutOf(warnedOf(), 0);
-      readout.update(warnedOf(), now);
+      const readout = readoutOf(warnedOf({ ranFor: now }), now);
       const fuse = allOf(labelled(readout.node(), WARN_LABEL)).find((node) => node.height === 4 && node.draw);
       assert.ok(fuse, 'a fuse under the title');
       return coloursDrawn({ ...fuse, width: 100 }).has(written('#ff7a5c'));
@@ -277,8 +277,7 @@ test('the fuse burns in from both ends over the battery’s tell, then flashes w
 test('the title pulses in steps, faster once the tell has burnt, and stands still with reduced motion', () => {
   const colourAt = (now: number, reduced = false) =>
     withMotionReduced(reduced, () => {
-      const readout = readoutOf(warnedOf(), 0);
-      readout.update(warnedOf(), now);
+      const readout = readoutOf(warnedOf({ ranFor: now }), now);
       return allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE')?.text?.colour;
     });
   assert.equal(colourAt(0.1), '#ff5a45');
@@ -288,7 +287,7 @@ test('the title pulses in steps, faster once the tell has burnt, and stands stil
   assert.equal(colourAt(0.3, true), '#ff5a45');
 });
 
-test('each battery’s warning is said to a screen reader once as it comes, its tell burning afresh for another', () => {
+test('each battery’s warning is said to a screen reader once as it comes, its tell timed from when it ran out', () => {
   const said: string[] = [];
   const page = globalThis as { document?: unknown };
   const was = page.document;
@@ -303,10 +302,10 @@ test('each battery’s warning is said to a screen reader once as it comes, its 
     readout.update(MODEL, 0.3);
     readout.update(warnedOf(), 0.4);
     assert.deepEqual(said, [line, line], 'and again once it comes back');
-    readout.update(warnedOf({ id: '2 starboard', name: 'Tithe Sloop' }), 2);
+    readout.update(warnedOf({ id: '2 starboard', name: 'Tithe Sloop', ranFor: 2.15 }), 2);
     assert.equal(said.length, 3, 'another battery said as it comes');
     const title = allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE');
-    assert.equal(title?.text?.colour, '#ff5a45', 'its tell burning afresh, not flashing as due');
+    assert.equal(title?.text?.colour, '#ffc2b8', 'run out 2.15 s before it was warned of: flashing as due at once');
   } finally {
     page.document = was;
   }
@@ -320,4 +319,17 @@ test("the tally says the last volley under the view's middle, a miss dimmed", ()
   assert.equal(tallied(4)?.text?.words, '4 OF 6 BALLS STRUCK');
   assert.deepEqual([tallied(4)?.text?.colour, tallied(0)?.text?.colour], [TONES.brassHi, '#b3a684']);
   assert.deepEqual(tallied(4)?.float?.at, [0.5, 0.5]);
+});
+
+test('past 1440p the warning doubles with the plate and the bar', () => {
+  const readout = new SeaFightReadout();
+  readout.lay({ length: 320, wide: false, zoom: 2 });
+  readout.update(warnedOf(), 0);
+  const warn = labelled(readout.node(), WARN_LABEL);
+  const sizeOf = (said: string) => allOf(warn).find((node) => node.text?.words === said)?.text?.size;
+  assert.deepEqual([sizeOf('BROADSIDE'), sizeOf('BRACE')], [6, 4]);
+  const root = readout.node();
+  const box = root && laidOf(root, 2560, 1440).find((laid) => laid.node === labelled(root, WARN_LABEL))?.box;
+  assert.ok(box);
+  assert.equal(readout.under, box.y + box.height + 8, 'the plates still just under it');
 });

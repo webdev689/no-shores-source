@@ -134,6 +134,8 @@ export class FightFeel {
   /** Its guns' reload and each captain's sides run out at the last frame. */
   private reloads: readonly [number, number] | null = null;
   private readonly runOut = new Map<number, number>();
+  /** When each captain's side was first seen run out, by its number and side, while it stands run out. */
+  private readonly ranOut = new Map<string, number>();
   /** Its volley while its balls are aloft, and its tally once the last is down. */
   private volley: { balls: number; hits: number; holed: number; rig: number; lastShot: number } | null = null;
   private tallied: {
@@ -428,6 +430,11 @@ export class FightFeel {
       const sides = ship.vessel.run_out?.length ?? 0;
       if (sides > (this.runOut.get(number) ?? 0)) this.call('ship.runout', toWindow(lying(ship.vessel).middle));
       this.runOut.set(number, sides);
+      for (const side of ['port', 'starboard']) {
+        const key = `${number} ${side}`;
+        if (!ship.vessel.run_out?.includes(side)) this.ranOut.delete(key);
+        else if (!this.ranOut.has(key)) this.ranOut.set(key, now);
+      }
       if (sides > 0 && ship.vessel.state === 'afloat') this.glints(ship, now, seconds, toWindow);
     });
     const share = own && own.vessel.max_hull ? (own.vessel.hull ?? 0) / own.vessel.max_hull : 1;
@@ -460,6 +467,12 @@ export class FightFeel {
   }
 
   /** Its last volley's tally while it is shown, or null. */
+  /** How long captain `number`'s `side` has stood run out at `now`, seconds; 0 while it is not. */
+  ranOutFor(number: number, side: string, now: number): number {
+    const since = this.ranOut.get(`${number} ${side}`);
+    return since === undefined ? 0 : Math.max(0, now - since);
+  }
+
   tally(
     now: number,
   ): { readonly balls: number; readonly hits: number; readonly holed: number; readonly rig: number } | null {

@@ -35,6 +35,7 @@ const ICONS: Readonly<Record<string, { rows: readonly string[]; lit: string; key
   'Left button': { rows: MOUSE, lit: 'l' },
   'Right button': { rows: MOUSE, lit: 'r' },
   'Wheel': { rows: MOUSE, lit: 'w' },
+  'Middle button': { rows: MOUSE, lit: 'w' },
   'Drag': { rows: DRAG, lit: 'la' },
   'Forward side button': { rows: MOUSE, lit: 'f' },
   'Back side button': { rows: MOUSE, lit: 'k' },

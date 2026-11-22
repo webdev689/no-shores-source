@@ -25,8 +25,8 @@ status: in force
 | The burst | A near-white light round its ring draining over its 4 s, then the wedge and seconds of its 12 s recharge | One ring for both its clocks |
 | Brace and the load | Brace lit while held; the load shows the shot loaded and flashes as it changes | Both were only words on the plate or the aim line |
 | The icons | Our own: a cannon on its carriage facing its side, a sail bellied under its yard with speed lines, a shield with a brass boss, and each shot (a ball, a cluster, two balls on a chain, a glowing ball) | Drawn as the Arts' pictures are |
-| The keycaps | The bound keys and pad buttons; the aim's right button drawn as the key strip's mouse; the load's wheel | What the player presses |
-| The plate | Keeps Hull, Sails, Crew and On fire; its boost ring, Braced chip and battery rose go to the bar | Each shown once |
+| The keycaps | The bound keys and pad buttons; a broadside's the aim's right button on the keys, drawn as the key strip's mouse, whose release fires, and the fire's trigger on the pad; the load's wheel | What fires each, as the player presses it |
+| The plate | Keeps Hull, Sails, Crew and On fire; its boost ring, Braced chip and battery rose go to the bar, without the rose's red outline on the side a blow came from or its flash as a side comes ready (asked of the owner) | Each shown once; the bar has two broadsides, no side for a blow from the bow or stern |
 | A narrow view | The key strip moves up over the bar where it would come within 8 px of it | The bar has no weapons to stack over |
 
 Links: [[Naval Combat]], [[Interface]].

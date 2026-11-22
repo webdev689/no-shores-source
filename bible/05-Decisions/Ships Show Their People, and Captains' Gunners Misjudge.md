@@ -10,7 +10,7 @@ status: in force
 ## What it settles
 
 - Every other ship carries its crew on deck and its captain, seen as the player's own hands are.
-- Captains' ships hit far less often than they did.
+- Captains' ships hit far less often: a Minor's balls one time in seven, a Boss's one in two.
 
 ## Claude's calls
 

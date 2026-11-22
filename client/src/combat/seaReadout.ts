@@ -35,11 +35,12 @@ const EMBLEM_SQUARE = EMBLEM_PIXELS * 3 + 4;
 /** The card's height: its emblem's square, or with none (an ally's), its words over its 12 px bar. */
 const cardTall = (ally: boolean) => (ally ? lineHeight(1) + 3 + 12 : EMBLEM_SQUARE);
 /** The warning's three lines, 4 px apart: its title at three times the words' size, the fuse, and the brace at twice
- *  beside its keycap. */
+ *  beside its keycap; all doubled past 1440p with the plate and the bar (`zoom`). */
 const WARN_GAP = 4;
 const FUSE_TALL = 4;
 const KEYCAP_TALL = 27;
-const WARN_TALL = lineHeight(3) + FUSE_TALL + Math.max(lineHeight(2), KEYCAP_TALL) + WARN_GAP * 2;
+const warnTall = (zoom: number) =>
+  lineHeight(3 * zoom) + Math.max(lineHeight(2 * zoom), KEYCAP_TALL * zoom) + (FUSE_TALL + WARN_GAP * 2) * zoom;
 /** The letters of the card's name kept however long the words after it, as a browser's row shrinks them all. */
 const NAME_KEPT = 3;
 /** The colours the palette does not name: the fire's chip, a state going down, the warning's title at rest and lit,
@@ -97,9 +98,9 @@ export class SeaFightReadout {
   private now = 0;
   /** The card's ship last shown, so its bar forgets another's losses. */
   private carded: string | null = null;
-  /** Since when the hull's warning and the broadside's have run, seconds; null while neither does. */
-  private readonly since: Record<'low' | 'warn', number | null> = { low: null, warn: null };
-  /** The battery the warning was last on, so another's tell burns afresh and is said again. */
+  /** Since when the hull's warning has run, seconds; null while it does not. */
+  private readonly since: Record<'low', number | null> = { low: null };
+  /** The battery the warning was last on, so another's is said as it comes. */
   private warned: string | null = null;
   private readonly face: CapFace | null;
   private layout = { length: 0, wide: false, zoom: 1 };
@@ -149,18 +150,14 @@ export class SeaFightReadout {
       this.carded = card.name;
       this.cardHull.set(card.hull, seconds);
     }
-    // Each battery's warning is said as it comes, once, as a page's alert is; its tell burns from then.
+    // Each battery's warning is said as it comes, once, as a page's alert is.
     const warn = model?.warn ?? null;
-    if (warn && warn.id !== this.warned) {
-      announce(seaWarnWords(warn).said);
-      this.since.warn = null;
-    }
+    if (warn && warn.id !== this.warned) announce(seaWarnWords(warn).said);
     this.warned = warn?.id ?? null;
-    this.mark('warn', warn !== null);
     // The warning under the card, or the compass while none shows: clear of the sight and the ship aimed at; the
     // ships' plates under both.
     this.under = UNDER_COMPASS + (model && card ? cardTall(card.band === 'ally') + CARD_GAP : 0);
-    if (warn) this.under += WARN_TALL + CARD_GAP;
+    if (warn) this.under += warnTall(this.layout.zoom) + CARD_GAP;
   }
 
   private mark(what: keyof SeaFightReadout['since'], now: boolean): void {
@@ -197,7 +194,7 @@ export class SeaFightReadout {
           text: words(said.tally, model.tally?.hits === 0 ? INKS.miss : TONES.brassHi, 2),
           float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0], y: 64, z: 1 },
         },
-        model.warn !== null && this.warnNode(model.warn, this.under - WARN_TALL - CARD_GAP),
+        model.warn !== null && this.warnNode(model.warn, this.under - warnTall(this.layout.zoom) - CARD_GAP),
       ],
     };
   }
@@ -347,33 +344,34 @@ export class SeaFightReadout {
    *  reader's line. */
   private warnNode(warn: SeaWarning, top: number): Node {
     const said = seaWarnWords(warn);
-    const age = this.age('warn') ?? 0;
+    const age = warn.ranFor;
     const left = warn.tell > 0 ? Math.max(0, 1 - age / warn.tell) : 0;
     const pulse = left > 0 ? WARN_PULSE.burning : WARN_PULSE.due;
     const lit = !motionReduced() && age % pulse >= pulse / 2;
+    const { zoom } = this.layout;
     const sign: Node = {
-      width: WARN_SIGN.width,
-      height: WARN_SIGN.height,
+      width: WARN_SIGN.width * zoom,
+      height: WARN_SIGN.height * zoom,
       picture: { key: 'broadside sign', source: { svg: WARN_SIGN.svg } },
     };
     return {
       direction: 'column',
       alignX: 'center',
-      gap: WARN_GAP,
+      gap: WARN_GAP * zoom,
       through: true,
       float: { to: 'screen', at: [0.5, 0], anchor: [0.5, 0], y: top, z: 1 },
       label: said.said,
       children: [
         {
           direction: 'row',
-          gap: 8,
+          gap: 8 * zoom,
           alignY: 'center',
-          height: lineHeight(3),
-          children: [sign, { text: { ...words(said.title, lit ? INKS.warnLit : INKS.warn, 5), size: 3 } }, sign],
+          height: lineHeight(3 * zoom),
+          children: [sign, { text: { ...words(said.title, lit ? INKS.warnLit : INKS.warn, 5), size: 3 * zoom } }, sign],
         },
         {
           width: 'grow',
-          height: FUSE_TALL,
+          height: FUSE_TALL * zoom,
           draw: (ui, box, scale, clip, fade) => {
             const pen = { ui, box, scale, clip, fade };
             paintBox(pen, box, INKS.burnt);
@@ -384,9 +382,9 @@ export class SeaFightReadout {
         },
         {
           direction: 'row',
-          gap: 8,
+          gap: 8 * zoom,
           alignY: 'center',
-          height: Math.max(lineHeight(2), KEYCAP_TALL),
+          height: Math.max(lineHeight(2 * zoom), KEYCAP_TALL * zoom),
           children: [
             !warn.braced &&
               keycapNode(
@@ -394,10 +392,10 @@ export class SeaFightReadout {
                 2,
                 KEYCAP_TALL,
                 KEYCAP_TALL,
-                1,
-                this.face?.(warn.braceKey, 1) ?? null,
+                zoom,
+                this.face?.(warn.braceKey, 2 * zoom) ?? null,
               ),
-            { text: { ...words(said.brace, warn.braced ? TONES.brassHi : TONES.word, 5), size: 2 } },
+            { text: { ...words(said.brace, warn.braced ? TONES.brassHi : TONES.word, 5), size: 2 * zoom } },
           ],
         },
       ],

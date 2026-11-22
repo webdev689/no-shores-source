@@ -1,7 +1,7 @@
 // Where the sea is not drawn over the wreck. The export lays one footprint for each ship and raft, a hull's shape
-// pointed at its bow; the decks and rafts as they fell are not that shape, so a twelfth of the ground lay outside
-// every footprint and the storm's swell was drawn over it, figures standing there seen waist-deep in the sea. Each
-// footprint is fitted to the ground nearest it: its middle and length to the ground's, its outline station by station.
+// pointed at its bow; the decks and rafts as they fell are not that shape, so a twelfth of the ground lies outside
+// every footprint, where the storm's swell would be drawn over figures standing there waist-deep. Each footprint is
+// fitted to the ground nearest it: its middle and length to the ground's, its outline station by station.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import { headingFrame } from '../../rules/landRules.ts';
 import { HULL_FIT, type HullMask, hullEdge, STATIONS } from '../../water/hullMask.ts';

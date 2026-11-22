@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { FightVessel } from '../rules/fightRules.ts';
-import { RECHARGE_S, SHIP_KEYS, shipAbilities } from './shipAbilities.ts';
+import { BURST_S, RECHARGE_S, SHIP_KEYS, shipAbilities } from './shipAbilities.ts';
 
 const VESSEL: FightVessel = {
   ship: [0, 0, 0, 0, 0, 0, 0, 2],
@@ -95,4 +96,10 @@ test('the load shows the shot the guns take, by its own picture', () => {
     const shown = shownOf(guns({ load })).load;
     assert.deepEqual([shown.icon, shown.state, shown.said], [load, 'ready', 'loaded']);
   }
+});
+
+test("the burst's seconds are the rules' own", async () => {
+  const rules = await readFile(new URL('../../../crates/naval/src/boost.rs', import.meta.url), 'utf8');
+  assert.match(rules, new RegExp(`pub const BURST_S: f64 = ${BURST_S}\\.0;`));
+  assert.match(rules, new RegExp(`pub const RECHARGE_S: f64 = ${RECHARGE_S}\\.0;`));
 });

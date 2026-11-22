@@ -232,7 +232,7 @@ cleared at the next load, and never heeded once the story has been played throug
 connects, and the step's end tells the page the account changed, so the menu's mark and banner and the company HUD
 follow the account signed in to at the helm.
 The camera opens off the player's port side, abeam of them on a screen wider than tall and 60° round from before them
-on one taller (`openingTurn`): from before them, the wheel and its binnacle hid two thirds of the figure. It stands far
+on one taller (`openingTurn`): from before them, the wheel and its binnacle stand between it and the figure. It stands far
 enough back that the whole figure fits the part of the screen the window leaves clear, its nearest corner at any turn,
 and turns so the figure stands in its middle: the left on a screen wider than tall, with the window on the right; the
 top on one taller than wide, with the window along the bottom (`creationEye`).
@@ -337,7 +337,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   from one square to the next and any drop down, and that a body can step or drop into, is left out, so the rim
   holds bodies at its edge there too. They are slips of ground at most 60 squares across: slots at the waterline
   beside the Sloop's side, a ledge by the Frigate's gun deck, and some 190 others. Foes never jump, so a ledge they
-  could not step out of held them in the sea. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
+  cannot step out of would hold them in the sea. A foe found off it is stood again at its post. A player in the sea (lower than 1.5 m over it, with no block of the wreck under them) is brought
   back to their last checkpoint after 1.2 s, as they were, never killed; the wreck's own low ground, its gun deck and
   the Sloop's side, is never the sea.
 - **A death** before the end of the boss fight: the room raises the player at the last checkpoint after 4 s, by
@@ -345,8 +345,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
 - **The arena** is the Frigate's quarterdeck, 9.8 m across between its rails' inner faces and 8.5 m from its
   quarterdeck's broken front to its taffrail, open but for its wheel (its binnacle and skylight swept away), no wave in
   it. Its heap stands below its front, on the way up out of its gun deck. The arena is reached once the player stands
-  1.6 m clear of its heap's place (`ARENA_CLEAR_M`), so the camera behind them has room once the heap stands again;
-  stood at the heap's foot, the camera came in to the back of their head. When the boss fight begins, its heap closes
+  1.6 m clear of its heap's place (`ARENA_CLEAR_M`), so the camera behind them has room once the heap stands again,
+  which at the heap's foot would press it to the back of their head. When the boss fight begins, its heap closes
   the way in behind the player, every other foe is sent away, and Captain Brannoc Thule stands before the wheel facing
   the player, three levels over them: their blows land at 0.94 of their worth (0.47 for the levels, doubled by the
   balance pass). A player back over the heap is brought back in; anywhere aft of the heap, on its deck or up on its
@@ -372,7 +372,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   3.2 m over the deck, so once the mesh has come each such wall is lowered for the camera to the highest timber or
   iron the mesh stands there (canvas never counts), a mast or spar standing through it kept whole, and the heaps
   standing added; its boom eases in and out round them as on foot. Where the player wakes, facing as they wake, the
-  boom stands 1.9 m back of its 2.1 m, where the walls held it to 0.8 m and showed only the crown of the head. Its room is
+  boom stands 1.9 m back of its 2.1 m, the whole figure in view. Its room is
   let go as the wreck's fight ends. The key strip is foot's, without M. The menu's gear pages open on the wreck alone
   in the story (I for Character, O for Inventory), on the player's gear in its room; over them the player's presses
   rest while the room runs on, so what they equip is worn at once.

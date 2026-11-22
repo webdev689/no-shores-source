@@ -1,6 +1,6 @@
 // The wreck as its third-person camera keeps clear of it. The course a body walks makes anything in a body's room (a
-// rail, the wheel, a gun, a stump) a wall 3.2 m over the deck, past any jump; the camera kept clear of those walls
-// stood in at the head, which showed only its crown. Its boom keeps clear of what is drawn instead: each wall lowered
+// rail, the wheel, a gun, a stump) a wall 3.2 m over the deck, past any jump, which would press the camera in to the
+// head under open sky. Its boom keeps clear of what is drawn instead: each wall lowered
 // to the top of the timber and iron the mesh stands there, masts and spars still standing whole.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 import { SQUARE_M, type Squares, squaresOf } from './wreckGround.ts';

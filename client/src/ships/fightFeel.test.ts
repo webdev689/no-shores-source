@@ -381,3 +381,20 @@ test("its volley's tally is told within four seconds of its last shot, though ot
   step([], 4.5);
   assert.deepEqual(feel.tally(4.6), { balls: 1, hits: 0, holed: 0, rig: 0 });
 });
+
+test('it times each captain side from when it was first seen run out, and forgets it once run in', () => {
+  const feel = new FightFeel(7);
+  const captain = brig();
+  const ships = new Map([
+    [0, own()],
+    [1, captain],
+  ]);
+  frame(feel, ships, [], 0);
+  ships.set(1, { ...captain, vessel: { ...captain.vessel, run_out: ['port'] } });
+  frame(feel, ships, [], 0.5);
+  frame(feel, ships, [], 1.5);
+  assert.deepEqual([feel.ranOutFor(1, 'port', 1.5), feel.ranOutFor(1, 'starboard', 1.5)], [1, 0]);
+  ships.set(1, captain);
+  frame(feel, ships, [], 2);
+  assert.equal(feel.ranOutFor(1, 'port', 2), 0);
+});

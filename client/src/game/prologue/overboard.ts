@@ -150,7 +150,7 @@ export class Overboard implements Beat {
 }
 
 /** How far round from the rail the body went over (east) toward the camera a celebrant turns: the camera stands
- *  nearly across the deck from the rail, so facing the rail showed their backs and halfway their sides. */
+ *  nearly across the deck from the rail, so facing the rail shows their backs and halfway their sides. */
 const TOWARD_EYE = 0.6;
 
 /** The way a celebrant at `spot` faces: turned from the rail toward the camera, so the crowing is seen and a back never

@@ -47,7 +47,7 @@ const share = (have: number, most: number) => (most > 0 ? have / most : 0);
  *  kind (`own`) its plate names. */
 export function fightDisplay(
   view: FightView,
-  feel: Pick<FightFeel, 'tally'>,
+  feel: Pick<FightFeel, 'tally' | 'ranOutFor'>,
   now: number,
   board: {
     readonly boardable: boolean;
@@ -84,6 +84,7 @@ export function fightDisplay(
         bearing: bowWords(player, first.captain.ship),
         load: first.captain.guns.load,
         tell: RUN_OUT_S,
+        ranFor: feel.ranOutFor(first.captain.id, first.side, now),
         braceKey: board.braceKey,
         braced: player.guns.braced,
       }

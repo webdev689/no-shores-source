@@ -19,7 +19,7 @@ import type { Story } from './story.ts';
 
 export const LENS = { fov: 0.85, near: 0.3, far: 30_000 } as const;
 /** The deck shot the crew talk in: from over the helm, looking forward down its deck, off to port of the spanker's
- *  boom, whose line hid the gunner's head as he spoke. */
+ *  boom, whose line would cross the gunner's head as he speaks. */
 export const DECK_VIEW = { eye: [-15.5, -3.5, 7.4], look: [4, 0.4, 3.2] } as const;
 /** The still air on its deck, the storm still heard round it. */
 export const CALM_SOUND: Partial<AmbienceLevels> = { wind: 0.3, rain: 0.7, waves: 0.7, creak: 0.7 };

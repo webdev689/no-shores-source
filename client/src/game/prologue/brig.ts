@@ -24,8 +24,8 @@ interface Hand {
   readonly body: 'male' | 'female';
 }
 
-/** Its crew at work in the storm: the lookout up forward pointing, to port of its foremast, which hid him from
- *  every shot astern on its centreline; the bosun and hands hauling and sweeping, the gunner at a gun, the mate at
+/** Its crew at work in the storm: the lookout up forward pointing, to port of its foremast, which hides anyone
+ *  behind it from every shot astern on its centreline; the bosun and hands hauling and sweeping, the gunner at a gun, the mate at
  *  the head of the quarterdeck, to port, out of the shot that shows the player at the helm. */
 const CREW: readonly Hand[] = [
   { who: 'lookout', at: [-1.8, -11], facing: 0, work: 'gesture', race: 'human', tone: 0.2, body: 'male' },

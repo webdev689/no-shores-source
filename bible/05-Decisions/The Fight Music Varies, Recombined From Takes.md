@@ -18,7 +18,7 @@ status: in force
 |---|---|---|
 | How a song varies | Each is written as takes of eight bars, several to a section, strung together at each seam on the bar line, not one longer loop | Recombined, minutes pass before any stretch comes round again; whole bars keep the director's hand-offs |
 | Which take comes next | Never the one just played; a pairing not yet heard first, then the take heard longest ago; each song remembers its last 64 takes across fights, for the session | A run of short fights hears new music, not the same first half-minute |
-| How a fight opens | On a take other than the last fight's opening: a vamp, an intro, a break of calls or a breakdown | Every fight used to open on the same 9 to 11 s |
+| How a fight opens | On a take other than the last fight's opening: a vamp, an intro, a break of calls or a breakdown | One opening would start every fight on the same 9 to 11 s |
 | What differs between takes | The drums and fills, the bass, the voicing, the danger's figure, who carries the tune (answered, in octaves, over turned chords), with breakdowns added; the tension layers alone differ too | The wreck's long walk hears only the tension layers |
 | Which songs | The four climates' fights, the sea fight and the sea storm, the Boarding's phases and last stand, Corvane's Reckoning and the Wrath | Every song a fight plays |
 | What stays | Keys, metres, tempi, themes, instruments, stings, layer roles, the bosses' tempi, the wake, the hymn, the end and the calm pieces | "great" |

@@ -72,8 +72,9 @@ export interface SeaWarning {
   readonly range: number;
   readonly bearing: string;
   readonly load: SeaShot;
-  /** Seconds a battery stands run out before it may fire. */
+  /** Seconds a battery stands run out before it may fire, and how long this one has. */
   readonly tell: number;
+  readonly ranFor: number;
   readonly braceKey: string;
   readonly braced: boolean;
 }
@@ -90,7 +91,7 @@ const SHOT_HARM: Readonly<Record<SeaShot, string>> = {
  *  from the bow, and its shot and what it does. */
 export function seaWarnWords(warn: SeaWarning) {
   const who = `${warn.name} - ${Math.round(warn.range)} m ${warn.bearing}`;
-  const said = `Broadside from the ${who}. ${SHOT_HARM[warn.load]}. ${warn.braced ? 'Braced' : `${warn.braceKey}: brace`}.`;
+  const said = `Broadside from the ${who}. ${SHOT_HARM[warn.load]}. ${warn.braced ? 'Braced' : `${warn.braceKey.replace(/^pad:/, '')}: brace`}.`;
   return { title: 'Broadside', brace: warn.braced ? 'Braced' : 'Brace', said };
 }
 

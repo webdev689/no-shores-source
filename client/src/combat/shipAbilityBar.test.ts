@@ -69,6 +69,11 @@ test('an ability is used as a side fires, the burst begins, the brace is taken o
   assert.deepEqual(ids(barWith('burst', { state: 'active', charge: 0, running: 1 })), ['burst']);
   assert.deepEqual(ids(barWith('brace', { state: 'active', running: 1 })), ['brace']);
   assert.deepEqual(ids(barWith('load', { icon: 'grape', name: 'Grape shot' })), ['load']);
+  // A new load puts each loaded side back on its clock (gunnery.rs `set_load`): no side fired.
+  const reloaded = barWith('load', { icon: 'grape', name: 'Grape shot' }).map((each) =>
+    each.id === 'port' || each.id === 'starboard' ? { ...each, state: 'charging' as const, charge: 0, left: 2 } : each,
+  );
+  assert.deepEqual(ids(reloaded), ['load'], 'another load is no broadside');
   assert.deepEqual(usedBetween(null, BAR), [false, false, false, false, false], 'first shown: none');
   assert.deepEqual(usedBetween(BAR.slice(0, 4), BAR).at(4), false, 'one not there before');
 });

@@ -144,6 +144,7 @@ test("the broadside warning names the nearest captain running out its guns at th
       bearing: 'on your starboard beam',
       load: 'chain',
       tell: RUN_OUT_S,
+      ranFor: 0,
       braceKey: 'C',
       braced: true,
     },

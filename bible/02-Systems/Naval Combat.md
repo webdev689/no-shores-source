@@ -493,11 +493,11 @@ captain's number comes with them in the view, so one leaving the fight never mov
   turning it up to a degree a unit of jar, the jars at once added together.
 - **The readout** (drawn by `combat/seaReadout.ts` from `plus/seaFight.ts`'s words, fed by `ships/fightDisplay.ts`,
   shown by the HUD at sea and over the World Editor's view): the Sloop's plate at the top left (its hull, canvas and
-  crew, and whether it burns); its abilities at the bottom left, where the Arts stand on foot, each in a ring over its
+  crew, and whether it burns); its abilities at the bottom left, where the Arts stand on foot ([[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]), each in a ring over its
   key (each broadside's reload, the side laid glowing gold, the burst, the brace and the shot loaded); the card under
   the compass on the ship the look is on (the captain nearest where the Sloop's laid guns fall, else the nearest), and its volley's tally under the sight, in every fight from its first frame to its
-  last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a captain afloat
-  stands with a battery run out at the Sloop, the broadside warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at, written over the sea with no panel and few words: BROADSIDE, the tell burning as a fuse, and the brace by its key ([[Interface]], "The broadside warning"; [[The Broadside Warning Is Written Over the Sea, Not a Panel]]); that captain's compass mark is lit. At
+  last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a hostile captain afloat
+  stands with a battery run out at the Sloop, the broadside warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at, written over the sea with no panel and few words: BROADSIDE, the tell burning as a fuse, and the brace by its key ([[Interface]], "The broadside warning"; [[The Broadside Warning Is Written Over the Sea, Not a Panel]], and the compass's mark of every captain with a battery run out at the Sloop is lit. At
   sea the panel's lines are not written over the world: each captain's hurts are its plate and the card, the lay the
   sight's aim line and the broadside the warning, and DFO's messages ("The Tithe Sloop surrenders!") stand as notices
   at the top right; the hints are the fight's keys alone. On a struck ship's deck it gives way to the fight on foot's
@@ -611,7 +611,8 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
 
 ## The aim, as DFO's
 
-The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and Aims as DFO's Does]]). Ported from
+The owner: the sea fight looks and aims as DFO's does ([[The Sea Fight Looks and Aims as DFO's Does]]), but for the
+eye's station and where it looks ([[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]). Ported from
 DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZoom.js`:
 
 - **The side** is the one the camera looks toward as the aim is taken, the nearer one even over the bow or the stern,

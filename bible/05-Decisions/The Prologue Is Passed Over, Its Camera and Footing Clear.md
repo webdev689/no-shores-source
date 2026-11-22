@@ -12,7 +12,7 @@ status: in force
 > 2 ships, enemies/crew alike tend to fall off into the water and get stuck"
 
 > "The entire prolouge honestly needs a detailed pass. Take some autonomy, research properly and be as detailed as
-> possible, while taking your time."
+> possible, while taking your time. No questions. Only come back when everything is 100%"
 
 ## What it settles
 

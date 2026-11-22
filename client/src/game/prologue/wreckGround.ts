@@ -1,6 +1,6 @@
 // The wreck's ground as its fight walks it. The course the export lays has dead ends: low ledges a body can step or
 // be thrown down into but never climb out of (a slot by the Sloop's side at the waterline, a ledge by the gun deck),
-// where foes and crew stood stuck in the sea. Every square from which no body can walk back to the way through is
+// where foes and crew would stand stuck in the sea. Every square from which no body can walk back to the way through is
 // left out, so the rim holds bodies at its edge as it does at every other.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
 

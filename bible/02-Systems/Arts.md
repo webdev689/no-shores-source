@@ -127,7 +127,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
 - **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
   its emblem again. The Anima's tile breathes. With less motion asked for, none of it plays.
 - **The ability bar** stands at the bottom left, left of the weapons, after Destiny's abilities ([[Interface]], "The
-  Arts and weapons"). The Anima's own icon, the one the Art's screen shows, stands in a diamond 68 px across: unlit but
+  Arts and weapons"); in a sea fight the ship's abilities stand there in a bar of its build ([[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]). The Anima's own icon, the one the Art's screen shows, stands in a diamond 68 px across: unlit but
   for its outline, it fills with colour a row of cells at a time from the bottom as it charges, and full, the diamond
   glows in the Art's colour. Each Tenet's icon stands in a ring 44 px across, dimmed while it recharges, under a dark
   wedge that sweeps away clockwise from the top in 6-degree steps; with 9 seconds or fewer left, the seconds stand in

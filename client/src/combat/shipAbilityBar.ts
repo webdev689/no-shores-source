@@ -56,13 +56,16 @@ export function shipSlotShown(ability: ShipAbility): ShipSlotShown {
 }
 
 /** Which of `now`'s abilities were used since `was`: its recharge begun again (a side fired, the burst spent), its
- *  use begun (the brace taken) or its picture changed (another load). One not there before was not. */
+ *  use begun (the brace taken) or its picture changed (another load). One not there before was not. A new load puts
+ *  each loaded side back on its clock, which is no side fired. */
 export function usedBetween(was: readonly ShipAbility[] | null, now: readonly ShipAbility[]): boolean[] {
+  const changed = (ability: ShipAbility) => was?.find((each) => each.id === ability.id)?.icon !== ability.icon;
+  const reloaded = now.some((ability) => ability.id === 'load' && was !== null && changed(ability));
   return now.map((ability) => {
     const before = was?.find((each) => each.id === ability.id);
     if (!before) return false;
     const begun = ability.state === 'active' && before.state !== 'active';
-    return ability.charge < before.charge - EPSILON || begun || ability.icon !== before.icon;
+    return (!reloaded && ability.charge < before.charge - EPSILON) || begun || ability.icon !== before.icon;
   });
 }
 

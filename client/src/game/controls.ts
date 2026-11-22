@@ -207,13 +207,14 @@ export function boundCap(id: BindId, device: Device = BINDS.device, binds: Binds
   return device === 'keys' ? keyName(first) : padName(first);
 }
 
-/** The keycaps of the ship's bar in a sea fight, for the keys or the pad last used: the aim's, the burst's, the
- *  brace's and the next load's, which on the keys is the wheel while no key is bound to it. */
+/** The keycaps of the ship's bar in a sea fight, for the keys or the pad last used: the broadsides' (the aim's, whose
+ *  release fires on the keys; the fire's on the pad), the burst's, the brace's and the next load's, which on the keys
+ *  is the wheel while no key is bound to it. */
 export function shipKeys(device: Device = BINDS.device, binds: Binds = BINDS.now): ShipKeys {
   const cap = (id: BindId) => boundCap(id, device, binds);
   const load = cap('shotNext');
   return {
-    aim: cap('aim'),
+    aim: (device === 'pad' && cap('fire')) || cap('aim'),
     burst: cap('burst'),
     brace: cap('brace'),
     load: load === '' && device === 'keys' ? 'Wheel' : load,

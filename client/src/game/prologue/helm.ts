@@ -38,9 +38,9 @@ export function helmInShip(): Point3 {
 
 /** Where the creation camera opens round the player, radians from in front of them, to starboard positive, by the
  *  view's width to its height: off the helm's port side, the side the storm's run comes in on. From in front, the
- *  wheel and its binnacle hid two thirds of the figure; abeam they hide a twenty-fifth of it on a wide view, the eye
+ *  wheel and its binnacle hide two thirds of the figure; abeam they hide a twenty-fifth of it on a wide view, the eye
  *  a metre clear of the rail, and 60° round about a sixth on a tall one, where the camera stands farther back. On a
- *  wide view it is two of the turn's steps round, so the turns come round to in front of them as they did. */
+ *  wide view it is two of the turn's steps round, so the turns still come round to in front of them. */
 export function openingTurn(aspect: number): number {
   return ((aspect <= 1 ? -60 : -90) * Math.PI) / 180;
 }

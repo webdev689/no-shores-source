@@ -872,7 +872,7 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
   vitals. In a fight the place's name gives way to the plate.
 - **The ship's bar** (`combat/shipAbilityBar.ts`) holds the ship's abilities at the bottom left, where the Arts'
   bar stands on foot ([[Arts]], "The ability bar"): the same corner (28 px in, 22 up), the same rings (44 px, 66 at
-  the larger step, both doubled past 1440p) and gaps, each icon in a ring over its key's keycap. A reader hears it as
+  the larger step, 88 past 1440p) and gaps, each icon in a ring over its key's keycap. A reader hears it as
   "Your Ship", each ability by its name, its key and how it stands ("Port broadside (Right button), 4 s to reload").
   In order:
 
@@ -909,7 +909,8 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
   three times the words' size between two blood triangles, each round a "!", pulsing to pale every half second; under
   it the battery's tell (1.3 s, the captain's `RUN_OUT_S`) as a 4 px fuse, a red rule burning in from both ends, which
   once burnt flashes every quarter second with the title as the battery may fire; and "BRACE" at twice the words'
-  size beside its keycap, "BRACED" in brass with no keycap once braced. That captain's compass mark is lit; the
+  size beside its keycap, "BRACED" in brass with no keycap once braced. Every captain with a battery run out at the
+  Sloop has its compass mark lit; the
   nearest battery is the one warned of, and another's tell burns afresh. A reader hears it once as it comes, in one
   line: whose battery, how far and where from the bow (`bowWords`), its shot and what it does, and the brace. With
   less motion asked for, it neither pulses nor flashes; the fuse still burns.
