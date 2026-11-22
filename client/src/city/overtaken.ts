@@ -168,8 +168,9 @@ export function formationMeshes(layer: number): MeshData[] {
     for (const solid of solids) meshSolid(solid, [0, 0], { layer, width: 64, height: 64 }, mesh);
     const turned = (values: number[]) => {
       for (let first = 0; first < values.length; first += 3) {
-        const [east, south, up] = [values[first], values[first + 1], values[first + 2]];
-        values.splice(first, 3, east, up, -south);
+        const [south, up] = [values[first + 1], values[first + 2]];
+        values[first + 1] = up;
+        values[first + 2] = -south;
       }
     };
     turned(mesh.positions);
