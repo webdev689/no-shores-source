@@ -28,6 +28,8 @@ export const HELD_BYTES = 192 * 1024 * 1024;
 const KEPT_PLAYED_S = 120;
 /** A long recording's chunks held at once: the one playing and the next. */
 const CHUNKS_HELD = 2;
+/** A file or chunk that failed to come is not asked for again until this many seconds have passed. */
+const FAILED_WAIT_S = 30;
 
 /** A recording held, decoded: its buffer, how it measures, its decoded size, the chunk of its file it is (null for
  *  a whole file), and when it last played, or came, on the audio clock. */
@@ -88,7 +90,10 @@ export class Samples {
   private readonly coming = new Set<string>();
   /** Each long file's size, once its first chunk has said it. */
   private readonly sizes = new Map<string, number>();
-  private readonly lastPlayed = new Map<string, number>();
+  /** The sound each cue played last, so the next play is another: by the sound, as a chunk let go moves the rest. */
+  private readonly lastPlayed = new Map<string, Held>();
+  /** When each file and chunk that failed to come failed, on the audio clock. */
+  private readonly failed = new Map<string, number>();
   private audio: BaseAudioContext | null = null;
 
   constructor(sounds: Bank, read: Read = contentBytes, most = HELD_BYTES) {
@@ -130,10 +135,11 @@ export class Samples {
       this.want(id);
       return null;
     }
-    const index = variantOf(variants.length, this.lastPlayed.get(id));
-    this.lastPlayed.set(id, index);
-    const sound = variants[index];
+    const last = this.lastPlayed.get(id);
+    const lastAt = last ? variants.indexOf(last) : -1;
+    const sound = variants[variantOf(variants.length, lastAt < 0 ? undefined : lastAt)];
     if (!sound) return null;
+    this.lastPlayed.set(id, sound);
     sound.playedAt = audio.currentTime;
     // A long recording's next chunk is fetched as one of its chunks plays, so the next play has it.
     if (sound.chunk !== null) this.nextChunk(id, sound.file);
@@ -153,7 +159,7 @@ export class Samples {
   private nextChunk(id: string, file: string): void {
     const size = this.sizes.get(file);
     if (!size || [...this.coming].some((each) => each.startsWith(`${file} `))) return;
-    const count = Math.max(1, Math.floor(size / CHUNK_BYTES));
+    const count = Math.max(1, Math.ceil(size / CHUNK_BYTES));
     const held = new Set((this.held.get(id) ?? []).filter((each) => each.file === file).map((each) => each.chunk));
     const free = Array.from({ length: count }, (unused, chunk) => chunk).filter((chunk) => !held.has(chunk));
     const chunk = free[Math.floor(Math.random() * free.length)];
@@ -165,6 +171,8 @@ export class Samples {
     const audio = this.audio;
     const coming = `${file} ${chunk}`;
     if (!audio || this.coming.has(coming)) return;
+    const failedAt = this.failed.get(coming);
+    if (failedAt !== undefined && audio.currentTime - failedAt < FAILED_WAIT_S) return;
     this.coming.add(coming);
     const first = chunk * CHUNK_BYTES;
     void this.read(this.bank.base + file, [first, first + CHUNK_BYTES - 1])
@@ -177,8 +185,8 @@ export class Samples {
         const playedAt = audio.currentTime;
         this.keep(id, { file, buffer, measured, bytes: held, chunk: long ? chunk : null, playedAt });
       })
-      // A sound that cannot be fetched leaves its cue silent, as before it was picked.
-      .catch(() => undefined)
+      // A sound that cannot be fetched leaves its cue silent, as before it was picked, and is asked for again later.
+      .catch(() => this.failed.set(coming, audio.currentTime))
       .finally(() => this.coming.delete(coming));
   }
 

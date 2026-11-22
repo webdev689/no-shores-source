@@ -77,15 +77,20 @@ fn the_prologue_is_marked_played_by_its_ask_anywhere_and_again_changes_nothing()
 const DICE: Dice = Dice { seed: 7, tick: 1, player: 1 };
 
 #[test]
-fn the_first_clear_at_each_tier_of_a_day_pays_a_captains_worth_raised_by_the_tier_and_a_sure_vestige() {
+fn the_first_clear_at_each_tier_of_a_day_pays_a_boss_captains_worth_raised_by_the_tier_and_a_sure_vestige() {
     let mut character = Character::starting();
     let (xp, aurem) = (character.xp, character.materials.aurem);
-    let paid = character.clear_of_the_day(20_778, Difficulty::Elite, 12, &DICE).expect("the first Elite clear today");
-    assert_eq!((paid.xp, paid.aurem), (5_100, 306), "2,000 and 120 at level 12, times 1.5");
-    assert_eq!((character.xp, character.materials.aurem), (xp + 5_100, aurem + 306));
-    let vestige = paid.vestige.expect("sure");
+    let boss = Character::starting().reward_kill(crate::rewards::Foe::Captain, 5, 12, None, Difficulty::Elite);
+    assert_eq!(
+        (boss.xp, boss.aurem),
+        (2_142, 143),
+        "a Major Captain's 120 and 8 at level 5, times 7, at 12, times 1.5"
+    );
+    let vestige =
+        character.clear_of_the_day(20_778, Difficulty::Elite, 12, &DICE).expect("the first Elite clear today");
+    assert_eq!((character.xp, character.materials.aurem), (xp + u64::from(boss.xp), aurem + boss.aurem));
     assert_eq!(vestige.level, 12);
-    assert!(matches!(vestige.rarity, Rarity::Magic | Rarity::Rare), "no Legendary below 18");
+    assert!(vestige.rarity <= Rarity::Rare, "no Legendary below 18");
     assert_eq!(character.clear_of_the_day(20_778, Difficulty::Elite, 12, &DICE), None, "once a day at a tier");
     assert!(character.clear_of_the_day(20_778, Difficulty::Normal, 10, &DICE).is_some());
     assert!(character.clear_of_the_day(20_778, Difficulty::Abyss, 13, &DICE).is_some());
@@ -105,17 +110,19 @@ fn a_clear_in_a_room_whose_day_is_behind_the_record_pays_no_more() {
 }
 
 #[test]
-fn the_weeks_two_pay_once_a_legendary_vestige_and_essence_and_the_abyss_its_boon() {
+fn the_weeks_two_pay_once_a_legendary_vestige_and_essence_and_the_abyss_its_boon_and_shapes() {
     let mut character = Character::starting();
     let (weapon, armor) = (character.materials.weapon_essence, character.materials.armor_essence);
     let elite = character.clear_of_the_week(2_968, Weekly::Elite, &DICE).expect("once");
     assert_eq!((elite.rarity, elite.level), (Rarity::Legendary, 20));
     assert_eq!((character.materials.weapon_essence, character.materials.armor_essence), (weapon + 3, armor + 3));
     assert!(!character.activity.this_week(2_968).boon, "the Elite's gives no boon");
+    assert_eq!(character.materials.shapes, 0, "nor Shapes, which come from the Abyss alone");
     assert_eq!(character.clear_of_the_week(2_968, Weekly::Elite, &DICE), None);
     let abyss = character.clear_of_the_week(2_968, Weekly::Abyss, &DICE).expect("once");
     assert!(matches!(abyss.rarity, Rarity::Legendary | Rarity::Atheric));
     assert!(character.activity.this_week(2_968).boon);
+    assert_eq!(character.materials.shapes, crate::clears::ABYSS_SHAPES);
     assert_eq!(character.materials.weapon_essence, weapon + 8);
     let atheric = (0..1_000_u32)
         .filter(|&player| {
@@ -144,8 +151,7 @@ fn the_abyss_boon_earns_a_quarter_more_reputation_for_the_faction_pledged_with_i
     let reputation = |boon: bool| {
         let mut character = crate::factions_tests::caped(1);
         character.activity.this_week(2_968).boon = boon;
-        let dice = Dice { seed: 7, tick: 1, player: 1 };
-        let reward = character.reward_kill(crate::rewards::Foe::Brute, 5, None, Difficulty::Normal, &dice);
+        let reward = character.reward_kill(crate::rewards::Foe::Brute, 2, 5, None, Difficulty::Normal);
         character.boon_xp(2_968, reward.xp, None);
         (u64::from(reward.xp), character.reputation(1))
     };

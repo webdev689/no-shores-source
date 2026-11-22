@@ -118,6 +118,9 @@ decision, made in the same change as its entry here.
 | `.claude/settings.json` | The repository's Claude Code settings: a hook that says, as a session starts, when the toolkit is not installed in its container ([[Toolkit]]) |
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
+| `tools/flora/` | Grows each biome's trees, shrubs and grass in Blender and bakes them into its picture layers, published to R2 by the `flora` workflow ([[Flora]]) |
+| `tools/modules/` | Scripts the hub's and the zones' handcrafted modules in Blender, their pieces and adornments, baked and published by the `modules` workflow ([[Modules]]) |
+| `tools/wreck/` | Builds, lights, dresses and exports the prologue's wreck in Blender, published by the `wreck` workflow ([[Prologue]]) |
 | `tools/item-pictures/` | Bakes the item pictures from Blender models into the client, and draws the officers' posts by hand ([[Item Pictures]]) |
 | `tools/islands/` | Builds the sea islands' modules in Blender from `content/islands/kits.json`, checks, packs and publishes them ([[Island Modules]]) |
 | `tools/r2.py` | R2 access for the publishers: objects named by their hash, uploaded once and checked when fetched |

@@ -66,6 +66,8 @@ impl Sea {
                 let deck = self.decks.hulls.get(hull).unwrap_or(&self.deck);
                 let (faction, rank) = (pirate.commission.faction, foe_rank(pirate.commission.rank));
                 let mut room = Room::deck(deck, faction, rank, pirate.level.max(1));
+                // Its crew stand at the level the sea's tier raised its ship to; their kills pay by that tier too.
+                room.difficulty = self.pirates.difficulty;
                 room.set_minute(self.minute);
                 self.decks.boarded.push(Boarded { pirate, at, wind, room, aboard: BTreeMap::new(), won_at: None });
                 self.decks.boarded.len() - 1
@@ -139,29 +141,8 @@ impl Sea {
         let fallen = deck.room.fallen_hands(boarder);
         deck.room.leave(boarder);
         self.fights.lose_men(player, f64::from(fallen) / naval::arms::LARGE_BOAT.crew);
-        if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
-            (character.ship, character.ship_at) = (held.ship, held.ship_at);
-            // What only the sea changes while they fight on foot: their ship's experience, materials and crew, and
-            // the ships sunk in a fight they sailed in, counted toward their bounties (a deck counts none).
-            (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
-            character.activity.clone_from(&held.activity);
-            // An officer who joined at sea while they fought here took the sea's next id, which an item picked up on
-            // the deck may hold too: they sign on again here, under an id of this character's.
-            let joined: Vec<_> = held
-                .crew
-                .officers
-                .values()
-                .filter(|each| !character.crew.officers.contains_key(&each.id))
-                .cloned()
-                .collect();
-            character.crew.clone_from(&held.crew);
-            for officer in joined {
-                character.crew.officers.remove(&officer.id);
-                character.sign_on(officer);
-            }
-            for (id, entry) in held.items.iter().filter(|(_, (item, _))| item.kind.module()) {
-                character.items.insert(*id, entry.clone());
-            }
+        if let (Some(character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
+            let mut character = with_sea_kept(character, held);
             // Its hands who fell on the deck are men it has lost, kept until a port city repairs it.
             let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
             character.ship[2] = character.ship[2].saturating_sub(man.saturating_mul(u16::from(fallen)));
@@ -201,7 +182,8 @@ impl Sea {
                     }
                 }
                 self.lay_flotsam(&sank, (2, 1));
-                let joined = crate::ship_power::officers_join(&sank, self.clock, &mut self.harbour.characters);
+                let when = (self.clock, self.pirates.difficulty);
+                let joined = crate::ship_power::officers_join(&sank, when, &mut self.harbour.characters);
                 self.harbour.changed.extend(joined);
             }
             let deck = &self.decks.boarded[index];
@@ -304,4 +286,25 @@ pub(crate) fn foe_rank(rank: naval::ranks::Rank) -> ::foes::Rank {
         Naval::Miniboss => ::foes::Rank::Miniboss,
         Naval::Boss => ::foes::Rank::Boss,
     }
+}
+
+/// A boarder's character as their deck's room holds it, with what only the sea changes while they fight on foot: their
+/// ship, where it lies, its experience, materials, crew and modules, and the ships sunk in a fight they sailed in,
+/// counted toward their bounties (a deck counts none). An officer who joined at sea while they fought took the sea's
+/// next id, which an item picked up on the deck may hold too: they sign on again, under an id of this character's.
+pub(crate) fn with_sea_kept(mut character: gear::Character, held: &gear::Character) -> gear::Character {
+    (character.ship, character.ship_at) = (held.ship, held.ship_at);
+    (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
+    character.activity.clone_from(&held.activity);
+    let joined: Vec<_> =
+        held.crew.officers.values().filter(|each| !character.crew.officers.contains_key(&each.id)).cloned().collect();
+    character.crew.clone_from(&held.crew);
+    for officer in joined {
+        character.crew.officers.remove(&officer.id);
+        character.sign_on(officer);
+    }
+    for (id, entry) in held.items.iter().filter(|(_, (item, _))| item.kind.module()) {
+        character.items.insert(*id, entry.clone());
+    }
+    character
 }

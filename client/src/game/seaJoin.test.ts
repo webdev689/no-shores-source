@@ -49,3 +49,15 @@ test('a second join closes the room of the first, whichever comes first', async 
   assert.deepEqual([first.closed, second.closed], [true, false]);
   assert.equal(sea.room, second);
 });
+
+test('a sea room that would not open leaves the ship sailing alone and says so', () => {
+  const { sea } = seaJoining();
+  sea.roomLost = false;
+  const sailed: unknown[] = [];
+  const left = Object.assign(sea, {
+    leaveRoom: Sea.prototype.leaveRoom,
+    sailTo: (point: unknown) => sailed.push(point),
+  });
+  Sea.prototype.sailAlone.call(left as unknown as Sea, [3, 4]);
+  assert.deepEqual([sea.room, sea.roomLost, sailed], [null, true, [[3, 4]]]);
+});

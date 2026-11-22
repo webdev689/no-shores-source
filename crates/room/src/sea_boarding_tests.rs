@@ -218,6 +218,17 @@ fn an_officer_who_joins_at_sea_while_its_player_fights_a_deck_never_shares_an_id
     assert!(kept.crew.officers.keys().all(|id| !kept.items.contains_key(id)), "under ids of their own");
 }
 
+#[test]
+fn a_boarded_deck_room_takes_the_seas_tier() {
+    for difficulty in gear::Difficulty::ALL {
+        let (mut sea, player) = met(20.0, Rank::Major);
+        sea.set_difficulty(difficulty);
+        strike(&mut sea, player);
+        sea.board(player).unwrap();
+        assert_eq!(sea.decks()[0].room.difficulty, difficulty);
+    }
+}
+
 /// A character pledged to `faction`, its road at `task`, kept by the sea for `player`.
 fn on_road(sea: &mut Sea, player: PlayerId, faction: u8, task: u8) {
     let mut character = gear::Character::starting();
@@ -365,4 +376,22 @@ fn a_boarder_who_steps_off_is_sent_their_gear_from_the_sea_again() {
     sea.harbour.changed.clear();
     sea.leave_deck(player).unwrap();
     assert!(sea.take_character_change(player).is_some(), "the sea's word again, with what the deck won");
+}
+
+#[test]
+fn a_boarder_kept_while_still_aboard_keeps_what_the_sea_gave_them_meanwhile() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    let ship = sea.fights.of_mut(player).unwrap().1.ship;
+    vessel_mut(&mut sea, player, ship).ship.ahead = 0.0;
+    sea.board(player).unwrap();
+    // While they fight its deck, an officer joins at sea and their ship earns.
+    let held = sea.harbour.characters.get_mut(&player).unwrap();
+    held.sign_on(gear::crew::Officer::new(0, gear::crew::Post::Bosun, gear::Rarity::Magic, 1)).expect("signed on");
+    held.earn_ship_xp(500);
+    // Their tab closes before they step off: the account keeps what the sea gave too.
+    let kept = gear::Character::from_json(&sea.kept_character(player).expect("kept")).expect("read");
+    assert_eq!(kept.crew.officers.len(), 1, "the officer who joined");
+    assert_eq!(kept.ship_xp, 500, "the ship's experience");
 }

@@ -158,19 +158,20 @@ the owner approved ([[Where You Go and the Seas You Choose Set the Difficulty]])
   this build loses none.
 - **What a first clear pays** is `gear::clears`. Each writes the record, and none pays for a day or a week behind the
   one the record holds, so a room a few seconds behind 09:00 cannot write yesterday's clear into today.
-- **The dungeon of the day**, the first clear at each tier each day, on any island's: its cache, raised by the tier,
-  that is a Captain's kill at the run's level (XP 2,000 and Aurem 120 at level 5, times (5 + level) ÷ 10, times the
-  tier's 1, 1.5 or 2), and a sure Vestige in a boss's colours at the run's level. Three a day at most, under the rules
-  every Vestige keeps now (no Legendary from foes under level 18).
+- **The dungeon of the day**, the first clear at each tier each day, on any island's: beside the cache's own pay
+  ([[Dungeons]], "The cache"), a Boss Captain's kill at the run's level, raised by the tier (XP 840 and Aurem 56 at
+  level 5, times (5 + level) ÷ 10, times the tier's 1, 1.5 or 2), and a sure Vestige in a Boss's colours at the run's
+  level ([[Gear]], "Vestiges"). Three a day at most, under the rules every Vestige keeps now (no Legendary from foes
+  under level 18).
 - **The Elite Dungeon of the week**, once: a Legendary Vestige (its item at level 20) and 3 Essence of each stock.
 - **The Abyss Dungeon of the week**, once: a Legendary Vestige, Atheric one time in five, 5 Essence of each stock,
-  and the Abyss boon until the week turns: a quarter more of each kill's XP, rounded down, and as much more
+  15 Shapes, the only Shapes there are ([[Gear]], "Vendors"), and the Abyss boon until the week turns: a quarter more of each kill's XP, rounded down, and as much more
   reputation for the faction pledged while its cape is worn ([[Factions]]), as `boon_xp` pays it. A kill on a ship's
   deck earns no boon, as it pays no officer ([[Naval Combat]]).
 - **Where it is paid.** The room pays as the cache opens, each player then in it whose character it keeps, and keeps the
   Vestige with the record that pays it, in the carried ten, else the vault, else the mail ([[Gear]], "The mail"), so a
   Vestige once paid is never lost (`pay_clear`, `keep_paid`). A player playing unkept finds the
-  cache's own Vestige alone. A run's first clear pays only in the day or the week it was opened for, as its modifiers
+  cache's own pay alone. A run's first clear pays only in the day or the week it was opened for, as its modifiers
   are fixed then. The day's pays in a run opened while its dungeon was its island's dungeon of the day, with that day's
   modifier at Elite and Abyss, and cleared that day; and at Normal in a patrol's shared room while it is its island's
   dungeon of the day by the room's clock then. The week's pays only in the week its run was opened for. So a run opened

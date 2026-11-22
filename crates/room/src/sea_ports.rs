@@ -21,7 +21,8 @@ pub const LEFT_AS_SUNK: f64 = 1.0 / 3.0;
 
 impl Sea {
     /// Sets the sea's tier, as a host sets it once the sea has opened: an Elite or Abyss sea sends its ships at the
-    /// levels the tier raises foes to on land, and their pieces hold a Vestige as often as a harder voyage pays one.
+    /// levels the tier raises foes to on land, and a sunk ship's drop, its sinking's XP and its deck's kills pay as a
+    /// harder voyage's kill does.
     pub fn set_difficulty(&mut self, difficulty: gear::Difficulty) {
         self.pirates.difficulty = difficulty;
         self.harbour.flotsam.difficulty = difficulty;
@@ -45,7 +46,8 @@ impl Sea {
             // A boarded ship sunk under its boarders sends them back to their own ships.
             self.end_deck(ship.pirate.id);
             self.lay_flotsam(ship, (1, 0));
-            self.harbour.changed.extend(crate::ship_power::pay_sinking(ship, &mut self.harbour.characters));
+            let paid = crate::ship_power::pay_sinking(ship, self.pirates.difficulty, &mut self.harbour.characters);
+            self.harbour.changed.extend(paid);
             let how = if ship.struck { "strike" } else { "sink" };
             if let Some(side) = crate::quests::side_of(ship.pirate.commission.faction) {
                 ship.players.iter().for_each(|player| self.tell_sea(*player, &QuestEvent::Sea { side, how }));
@@ -278,8 +280,12 @@ impl Sea {
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
         let berth = self.berths.get(&player)?;
-        // On a deck, its room holds their character as it fights.
-        let held = self.deck_character(player).or_else(|| self.harbour.characters.get(&player).cloned());
+        // On a deck, its room holds their character as it fights, with what the sea gave them meanwhile.
+        let at_sea = self.harbour.characters.get(&player);
+        let held = match (self.deck_character(player), at_sea) {
+            (Some(deck), Some(at_sea)) => Some(super::decks::with_sea_kept(deck, at_sea)),
+            (deck, at_sea) => deck.or_else(|| at_sea.cloned()),
+        };
         let mut character = held.unwrap_or_else(gear::Character::starting);
         // In a fight, the ship is kept as the fight has it, and lies at the port city it would wash up at, as one who
         // lost does: a player who leaves mid-fight comes back there.

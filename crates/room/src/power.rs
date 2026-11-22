@@ -14,12 +14,12 @@ use gear::objectives::Feat;
 use gear::rewards::{Foe as Worth, SHARE_TICKS};
 use gear::{Character, Kind, Slot};
 
-/// What a player's blow on a foe strikes times, at every level: twice, so a new player fells a Minor in one or two
-/// blows and a Major Brute in five, well before the Brute fells them.
-pub const PLAYER_HARM: f64 = 2.0;
-/// What a foe's blow on a player strikes times, at every level: half, so a Major Brute takes six or seven blows to
-/// fell a player who never guards, and a fight leaves time to learn the keys.
-pub const FOE_HARM: f64 = 0.5;
+/// What a player's blow on a foe strikes times, at every level: half again, so a new player fells any Major one on
+/// one with health to spare, while an Elite still asks for guarding and dodging.
+pub const PLAYER_HARM: f64 = 1.5;
+/// What a foe's blow on a player strikes times, at every level: three quarters, so a Major Brute takes about 13 s to
+/// fell a new player who never guards (`measure_blows`), time to learn the keys.
+pub const FOE_HARM: f64 = 0.75;
 
 /// What a player's blow carries of its striker: the Attack and element of the loadout it came from, and their trim. An
 /// arrow or a bolt keeps those it was loosed with, so a weapon changed while it flies changes nothing of it, whether it
@@ -188,10 +188,11 @@ impl Room {
         }
     }
 
-    /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, with the
-    /// Shapes the Elite and Abyss seas give, throwing out what it drops for each, and tells each one's quest log; off
-    /// a ship's deck its XP also pays their officers ashore and the Abyss boon's share, and the kill counts toward
-    /// their bounties.
+    /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, throwing
+    /// out what it drops for each, and tells each one's quest log; off a ship's deck its XP also pays their officers
+    /// ashore and the Abyss boon's share, and the kill counts toward their bounties. On a boarded deck, or from a
+    /// defence tried again, a kill drops no Vestige or item: the hold, or the first try, is the loot. Each player paid
+    /// has fought the room's garrison, for its clear (`clears.rs`).
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
@@ -199,26 +200,30 @@ impl Room {
         let week = gear::clock::week_of(self.minute);
         let felled = Feat::Felled { faction: brain.foe_type.faction, rank: brain.rank as u8, island: self.island };
         let deck = matches!(self.floor, crate::Floor::Deck(_));
+        // A defence tried again stands foes that drop nothing (`steps.rs`).
+        let spoilless = self.quests.spoilless.contains(&defender);
+        let rank = brain.rank as u8;
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
                 continue;
             }
             let dice = self.dice(player);
             let Some(found) = self.players.get_mut(&player) else { continue };
-            let reward = found.character.reward_kill(worth, level, Some(hand), self.difficulty, &dice);
+            let character = &mut found.character;
+            let reward = character.reward_kill(worth, rank, level, Some(hand), self.difficulty);
+            let looted = deck || spoilless;
+            let vestiges = if looted { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, &dice) };
             // A ship's deck is no island: what is felled there counts toward no land bounty and earns no boon.
             if !deck {
-                found.character.boon_xp(week, reward.xp, Some(hand));
-                found.character.earn_officer_xp(reward.xp, false);
+                character.boon_xp(week, reward.xp, Some(hand));
+                character.earn_officer_xp(reward.xp, false);
             }
-            let great = brain.rank as u8 >= foes::Rank::Miniboss as u8;
-            found.character.add_shapes(gear::shape::found(great, self.difficulty, &dice));
             found.gear_changed = true;
-            // A defence tried again stands foes that drop nothing (`steps.rs`).
-            if !self.quests.spoilless.contains(&defender) {
-                self.drop_spoils(player, reward.vestige, brain.rank as u8, at, &dice);
+            self.fought_garrison(player);
+            if !spoilless {
+                self.drop_spoils(player, vestiges, rank, at, &dice);
             }
-            self.tell_kill(player, brain.foe_type.name, brain.rank as u8, [at[0], at[1]]);
+            self.tell_kill(player, brain.foe_type.name, rank, [at[0], at[1]]);
             if !deck {
                 self.saw(player, &felled);
             }

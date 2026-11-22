@@ -244,6 +244,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 - [[The Room for Playing Alone Runs in a Worker of Its Own]]
 - [[The Crew Still Standing Regroup Ahead]]
+- [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]
+- [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]
 - [[The Server Is the Authority Over Everything]]
 - [[A Mail Vendor Keeps Lost Items and the Game's Mail]]
 - [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]

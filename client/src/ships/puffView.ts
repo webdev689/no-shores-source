@@ -21,8 +21,9 @@ export function puffFloats(
   const away = (mark: Mark) => Math.hypot(mark.x - (eye[0] ?? 0), mark.y - (eye[1] ?? 0), mark.z - (eye[2] ?? 0));
   const floats = (list: readonly Mark[]) => {
     const values = new Float32Array(Math.min(list.length, MOST_PUFFS) * PUFF_FLOATS);
+    // Past the most drawn, the farthest go: the list runs far to near, so its last are kept.
     list
-      .slice(0, MOST_PUFFS)
+      .slice(Math.max(0, list.length - MOST_PUFFS))
       .forEach((mark, index) =>
         values.set(
           [

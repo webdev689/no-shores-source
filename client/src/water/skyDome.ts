@@ -42,7 +42,8 @@ fn twilight_glow() -> vec3f {
 fn fog_light(direction: vec3f) -> vec3f {
   let level = normalize(direction.xy + vec2f(1e-5, 0.0));
   let sun_level = normalize(sky_state.sun.xy + vec2f(1e-5, 0.0));
-  let toward = 0.5 + 0.5 * dot(level, sun_level);
+  // Held in 0..1: two unit vectors' dot may round an ulp past 1, and pow of a negative base is undefined in WGSL.
+  let toward = clamp(0.5 + 0.5 * dot(level, sun_level), 0.0, 1.0);
   let ahead = pow(max(dot(normalize(direction), sky_state.sun.xyz), 0.0), 8.0) * max(sky_state.sun.z, 0.0);
   return sky_state.fog.rgb + twilight_glow() * pow(toward, 4.0) * 0.45 + sky_state.key_light.rgb * ahead * 0.15;
 }
@@ -63,7 +64,7 @@ fn sky_dome(direction: vec3f) -> vec3f {
   if (luma(glow) > 0.0) {
     let level = normalize(direction.xy + vec2f(1e-5, 0.0));
     let sun_level = normalize(sky_state.sun.xy + vec2f(1e-5, 0.0));
-    let toward = 0.5 + 0.5 * dot(level, sun_level);
+    let toward = clamp(0.5 + 0.5 * dot(level, sun_level), 0.0, 1.0);
     // The glow takes the blue's place rather than adding to it, and pales toward gold higher up, so the two never
     // mix into purple.
     let low_glow = pow(toward, 3.0) * exp(-lifted * 7.0);

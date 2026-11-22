@@ -182,6 +182,14 @@ export class Sea {
     [this.room, this.passage.room] = [null, null];
   }
 
+  /** A sea room that would not open: the ship sails on alone to `point`, and the player is told so, as when a link
+   *  is lost. */
+  sailAlone(point: Point2): void {
+    this.leaveRoom();
+    this.roomLost = true;
+    this.sailTo(point);
+  }
+
   /** What the ship is offered off the open landmass's coast: to dock at its port, to go ashore, or nothing. */
   get landfall(): Landfall {
     if (this.view.kind !== 'sail' || this.combat || this.aboard.active) return null;

@@ -513,7 +513,7 @@ impl Character {
             Rarity::Magic => (50, 1, 0),
             Rarity::Rare => (100, if item.level >= NAMED_LEVEL { 3 } else { 2 }, 0),
             Rarity::Legendary => (200, 3, 2 + u16::from(dice.roll(Purpose::Essence, 0) < 0.5) + back),
-            Rarity::Atheric => (300, 5, 2 + back),
+            Rarity::Atheric => (300, 5, 3 + back),
         };
         self.materials.add_aurem(aurem);
         if stock == Stock::Ship {

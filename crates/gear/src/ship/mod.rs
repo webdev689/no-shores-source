@@ -118,10 +118,10 @@ impl Character {
         }
     }
 
-    /// Pays it for a ship it fought sinking or striking, as a kill pays a player: the foe's own XP at its level, more
-    /// on a harder voyage; what it earned.
-    pub fn reward_sinking(&mut self, foe: Foe, foe_level: u8, difficulty: Difficulty) -> u32 {
-        let worth = crate::rewards::worth(foe).xp * (5 + u32::from(foe_level)) / 10;
+    /// Pays it for a ship of a rank (1 Minor to 5 Boss) it fought sinking or striking, as a kill pays a player: the
+    /// foe's own XP at its rank and level, more on a harder voyage; what it earned.
+    pub fn reward_sinking(&mut self, foe: Foe, rank: u8, foe_level: u8, difficulty: Difficulty) -> u32 {
+        let worth = crate::rewards::worth(foe, rank).xp * (5 + u32::from(foe_level)) / 10;
         let xp = u32::try_from(libm::round(f64::from(worth) * difficulty.reward()) as u64).unwrap_or(u32::MAX);
         self.earn_ship_xp(xp);
         xp

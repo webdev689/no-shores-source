@@ -9,6 +9,8 @@ import { ACCOUNT_CHANGED } from './gearScreen.ts';
 
 /** How long the controls rest unchanged before they are kept, milliseconds: a few bound in a row are sent once. */
 export const KEEP_AFTER_MS = 1500;
+/** How long a save the accounts did not take waits before it is tried again, milliseconds. */
+export const KEEP_AGAIN_MS = 15_000;
 
 /** Keeps `binds` with the account behind `link`; answers once they are first read, or could not be. */
 export function keepBinds(
@@ -46,18 +48,29 @@ export function keepBinds(
   };
   const read = () => (reading ??= readNow().finally(() => (reading = null)));
 
+  const later = (wait: number) => {
+    if (waiting !== null) clearTimeout(waiting);
+    waiting = setTimeout(() => void save(), wait);
+  };
   const save = async () => {
     waiting = null;
+    const known = await read();
     // A read that laid the account's controls under the player's has a save of its own waiting.
-    if (!(await read()) || !unsaved || waiting !== null) return;
+    if (!unsaved || waiting !== null) return;
+    // Controls the accounts did not take, or could not be read to lay under, are tried again later, not lost.
+    if (!known) {
+      later(KEEP_AGAIN_MS);
+      return;
+    }
     unsaved = false;
-    if ((await link.keepBinds(overridesOf(binds.now))) !== null) unsaved = true;
+    if ((await link.keepBinds(overridesOf(binds.now))) === null) return;
+    unsaved = true;
+    if (waiting === null) later(KEEP_AGAIN_MS);
   };
   binds.onChange((_binds, kept) => {
     if (kept) return;
     unsaved = true;
-    if (waiting !== null) clearTimeout(waiting);
-    waiting = setTimeout(() => void save(), KEEP_AFTER_MS);
+    later(KEEP_AFTER_MS);
   });
   addEventListener(ACCOUNT_CHANGED, () => void read());
   return read().then(() => undefined);

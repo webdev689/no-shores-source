@@ -98,7 +98,16 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
-- **Open pull requests.** For the owner's yes once their checks pass: #141 (the balance pass halfway back), #125 (main's
+- **#141, the balance pass halfway back, loot in Destiny 1's order and a whole-codebase audit** (branch
+  `ccr-1e1aa6da-yox2v1`), with the owner's yes to merge, which deploys the page and the rooms
+  ([[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]],
+  [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]). Claude's calls in bringing
+  #97 under the owner's loot rules: a dungeon's cache pays a dungeon's clear (an item, a Vestige one time in three,
+  XP and Aurem), the week's Abyss Dungeon pays 15 Shapes, the only Shapes, and the dungeon of the day a Boss
+  Captain's kill. What its audit left for the owner (keys and deploys, exploits needing a rule, a failed trip's
+  return) is in #141's description and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD). Not yet played
+  by hand or in a deployed room.
+- **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px), #124 (public events on Saltmere). Drafts: #77 (lore), #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
   holds.

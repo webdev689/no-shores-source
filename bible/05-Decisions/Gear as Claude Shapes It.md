@@ -28,6 +28,9 @@ rules carry them out is [[Gear]].
 | Prestige a piece | Rare at level 20, 13 to 15; Legendary, 18 to 27; a Breach's Legendary, 18 to 30; Atheric, 21 to 30; Normal, Magic and Rare below 20, none | Destiny 1 at launch, its raid armour as the Breaches' (the owner: "Highest prestige drops") |
 | What that reaches | Four Rares, level 24; four Legendaries, 28; three Legendaries and an Atheric, 29; level 30 only with Breach armour | Destiny 1 at launch: level 30 took raid armour |
 
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's XP goes by its kind and its rank, and the captain's 2,000 is gone
+([[Gear]], "A kill's pay").
+
 ### Attack, Defense and damage
 
 | Choice | Chosen | Why |
@@ -169,6 +172,10 @@ these are Claude's numbers for them.
 
 Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges open at the Mage's counter.
 
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]] and [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]: a Vestige's chance and colour go by the foe's rank in Destiny 1's
+order, it opens to its own colour three times in four, and a Miniboss, a Boss and a dungeon's clear leave items as
+themselves too ([[Gear]], "Vestiges").
+
 ### Materials and keeping things
 
 | Choice | Chosen | Why |
@@ -181,6 +188,9 @@ Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: Vestiges ope
 | Gathering | A resource node gives 3 of its resource, 4 with Forager, and is spent for that player's account until the nodes' turn passes; on the Test Ground, until they leave. One whose resource is at its most is left standing | Destiny 1: a node came back after a while |
 | What a player carries | One equipped and 9 more in each slot; 10 Vestiges | Destiny 1 at launch |
 | The vault | 20 weapons, 20 armour, shields and cloaks, 20 Vestiges, reached in a social space | Destiny 1 at launch: 20, 20 and 20, in the Tower |
+
+Replaced in part by [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]: a kill's Aurem goes by
+its kind and rank, and a dismantled Atheric gives 3 Essence ([[Gear]], "A kill's pay", "Asks").
 
 ### Wearing
 

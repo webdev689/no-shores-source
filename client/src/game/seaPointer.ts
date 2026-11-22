@@ -78,6 +78,9 @@ export function fightControls(canvas: HTMLCanvasElement, fight: () => SeaCombat 
   };
   addEventListener('keydown', key(true), { capture: true });
   addEventListener('keyup', key(false), { capture: true });
+  // A key let go while the window is away is never heard: nothing it held stays held, as on land.
+  addEventListener('blur', () => fight()?.letGo());
+  document.addEventListener('visibilitychange', () => fight()?.letGo());
   let held = false;
   canvas.addEventListener(
     'pointerdown',

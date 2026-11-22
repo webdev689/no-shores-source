@@ -4,7 +4,7 @@
 //! Reeve falls, and the dead standing again at the way in.
 
 use super::*;
-use crate::garrison::STAND_AGAIN;
+use crate::garrison::GREAT_STAND_AGAIN;
 use crate::{Input, standing_on};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
@@ -255,7 +255,7 @@ fn a_body_pressed_into_the_rock_or_a_jamb_stops_its_half_width_off_it_and_never_
 }
 
 #[test]
-fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_shuts_when_he_stands_again() {
+fn the_cache_opens_with_a_dungeons_clear_for_each_player_in_when_the_reeve_falls_and_shuts_when_he_stands_again() {
     let mut room = Room::dungeon(PATROLS[2], 0, LEVELS).expect("a patrol's dungeon");
     let [x, y, _, facing, open] = room.cache().expect("a dungeon's room has its cache");
     let post = room.garrison[0].at;
@@ -268,27 +268,29 @@ fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_sh
     assert!(players.iter().all(|player| room.drops_for(*player).count() == 0));
     let reeve = room.garrison[0].standing[0];
     let level = room.foes[&reeve].level;
+    let items = |room: &Room, player: PlayerId| room.players[&player].character.items.len();
+    let held: Vec<usize> = players.iter().map(|player| items(&room, *player)).collect();
     clear(&mut room, 0);
     run(&mut room, 1);
     assert_eq!(room.cache().map(|cache| cache[4]), Some(1.0), "open");
-    for player in &players {
-        let drops: Vec<&crate::Drop> = room.drops_for(*player).collect();
-        assert_eq!(drops.len(), 1, "one Vestige for each player in the room");
-        let sure = matches!(&drops[0].what, crate::Dropped::Vestige(vestige) if vestige.level == level);
-        assert!(apart([drops[0].at[0], drops[0].at[1]], [x, y]) < 1.0 && sure, "a Vestige at the Reeve's level");
-        assert_eq!(
-            drops[0].from,
-            room.cache().map(|cache| [cache[0], cache[1], cache[2]]).unwrap(),
-            "thrown out of it"
-        );
+    let from = room.cache().map(|cache| [cache[0], cache[1], cache[2]]).unwrap();
+    for (player, held) in players.iter().zip(held) {
+        assert_eq!(items(&room, *player), held + 1, "an item for each player in the room, as a dungeon's clear pays");
+        // Beside the item, now and then a Vestige at the Reeve's level, thrown out of the cache.
+        for drop in room.drops_for(*player) {
+            assert!(matches!(&drop.what, crate::Dropped::Vestige(vestige) if vestige.level == level), "{drop:?}");
+            assert!(apart([drop.at[0], drop.at[1]], [x, y]) < 1.0 && drop.from == from, "thrown out of it");
+        }
     }
     let later = room.join().expect("room");
+    let later_held = items(&room, later);
     run(&mut room, 1);
     assert_eq!(room.drops_for(later).count(), 0, "none for a player who came after");
+    assert_eq!(items(&room, later), later_held, "nor an item");
     for player in players.into_iter().chain([later]) {
         room.leave(player);
     }
-    run(&mut room, STAND_AGAIN);
+    run(&mut room, GREAT_STAND_AGAIN); // A Miniboss, who stands again in ten minutes.
     assert!(room.garrison[0].cleared_at.is_none(), "the Reeve stands again");
     assert_eq!(room.cache().map(|cache| cache[4]), Some(0.0), "shut");
 }
@@ -421,9 +423,9 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
     let floor = Floor::of_dungeon(&dungeon).expect("a dungeon's ground");
     let Floor::Dungeon(ground) = &floor else { panic!("a dungeon's ground") };
     let mut room = Room::dungeon_of("isle-test--dungeon", 1, style, LEVELS).expect("an island's dungeon");
-    let player = room.join().expect("room");
+    room.join().expect("a player for the cache to pay");
     room.garrison[0].cleared_at = Some(0);
-    let mut on_post = 0;
+    let (mut on_post, mut thrown) = (0, 0);
     for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != Cell::Rock) {
         let [x, y] = dungeon.centre(cell);
         for step in 0..64 {
@@ -437,11 +439,16 @@ fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
             }
             on_post += 1;
             room.cache = Some(cache);
+            let before = room.drops.len();
             room.keep_cache();
-            let vestige = room.drops_for(player).last().expect("its Vestige");
-            let lies = [vestige.at[0], vestige.at[1]];
-            assert!(ground.clear_between(post, lies, 0.0), "{post:?}: its Vestige thrown into rock or a solid");
+            // A dungeon's clear leaves a Vestige one time in three: whatever this one threw.
+            for vestige in &room.drops[before..] {
+                thrown += 1;
+                let lies = [vestige.at[0], vestige.at[1]];
+                assert!(ground.clear_between(post, lies, 0.0), "{post:?}: its Vestige thrown into rock or a solid");
+            }
         }
     }
     assert!(on_post > 0, "some post where no way round fits");
+    assert!(thrown * 5 > on_post, "{thrown} Vestiges from {on_post} clears");
 }

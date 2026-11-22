@@ -14,7 +14,7 @@ const compiled = new WebAssembly.Module(
 
 /** The room door's agreement test holds the same node, script and fingerprint
  *  (crates/room-wasm/src/garrison_door_tests.rs). */
-const GARRISON_HASH = '7b5f889c';
+const GARRISON_HASH = 'ac4f6eab';
 const RUN_IN = 420;
 const SWING_EVERY = 30;
 const RUN_TICKS = 1500;
@@ -94,7 +94,7 @@ test('a node’s garrison fights to the same fingerprint through WebAssembly as 
 
 /** The room door's agreement test holds the same run and fingerprint: two players, the garrison's foes shared out
  *  between them. */
-const GARRISON_PAIR_HASH = '09f02881';
+const GARRISON_PAIR_HASH = 'be9b3ed3';
 
 test('two players against a node’s garrison fight to the same fingerprint through WebAssembly as natively', () => {
   const room = startRoomDoor(compiled);

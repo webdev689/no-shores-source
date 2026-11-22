@@ -468,8 +468,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
           return enterSea(seas);
         })
         .then(() => sea.sailTo(sail))
-        // A room that will not open leaves the ship sailing alone, as a link lost does.
-        .catch(() => sea.sailTo(sail));
+        // A room that will not open leaves the ship sailing alone, and says so, as a link lost does.
+        .catch(() => sea.sailAlone(sail));
     }
   };
 

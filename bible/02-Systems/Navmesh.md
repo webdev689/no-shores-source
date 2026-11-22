@@ -99,7 +99,8 @@ a goal on another island has no path without a search. A path's length, as a foe
 cost rather than its leg across. The search keeps its buffers from one path to the next, so a path costs the polys it
 visits, not the whole mesh.
 
-**Obstacles** are circles laid over the mesh while a room runs, such as a big foe's body. Each blocks every poly it
+**Obstacles** are circles that can be laid over the mesh, such as a big foe's body; no room lays any yet, so they are
+held by the crate's own tests alone. Each blocks every poly it
 touches. A path goes round them where it can, and through them where it must: they steer a path, they never sever
 it. A foe asking for a path walks through its own obstacle, and a foe standing in one walks out. Each change bumps
 the mesh's epoch, so a foe knows its path may be stale.

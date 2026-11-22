@@ -163,8 +163,11 @@ fn a_reeve_felled_beside_a_wall_leaves_his_drops_on_the_floor_where_his_slayer_t
     room.mark_struck(player, reeve, Slot::Melee);
     room.pay_kill(reeve);
     room.foes.remove(&reeve);
+    // A Miniboss leaves a Vestige one time in three: one thrown from the same spot stands for it.
+    let dice = room.dice(player);
+    room.drop_spoils(player, vec![gear::Vestige::new(0, gear::Rarity::Rare, Slot::Head, 10)], 0, fallen, &dice);
     let drops: Vec<Drop> = room.drops_for(player).filter(|drop| drop.from == fallen).cloned().collect();
-    assert!(drops.iter().any(|drop| matches!(drop.what, Dropped::Vestige(_))), "his sure Vestige: {drops:?}");
+    assert!(drops.iter().any(|drop| matches!(drop.what, Dropped::Vestige(_))), "a Vestige: {drops:?}");
     assert!(drops.len() > 1, "and his Ammo box");
     for drop in &drops {
         assert!(drop.at[2].abs() < 1e-9, "on the floor, never on the rock: {drop:?}");

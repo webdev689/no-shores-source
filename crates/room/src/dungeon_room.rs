@@ -11,7 +11,7 @@ use crate::garrison::{DUNGEON, Post, draws_of, index, node_seed};
 use crate::run::Run;
 use crate::{Floor, NODE_FOES_MOST, PlayerId, Room};
 use ::foes::Rank::{self, Miniboss};
-use ::foes::roster::{REEVE, foe_type};
+use ::foes::roster::REEVE;
 use combat::sight::bearing;
 use dungeon::{CELL_M, Dungeon};
 use movement::{Block, Terrain};
@@ -227,8 +227,8 @@ impl Room {
             .collect()
     }
 
-    /// Each tick: the cache opens as its Reeve's post is cleared, a Vestige lying before it for every player in the
-    /// room, and shuts as the Reeve stands again.
+    /// Each tick: the cache opens as its Reeve's post is cleared, paying every player in the room a dungeon's clear,
+    /// and shuts as the Reeve stands again.
     pub(crate) fn keep_cache(&mut self) {
         let Some(cache) = self.cache else { return };
         let Some(post) = self.garrison.get(cache.post) else { return };
@@ -242,7 +242,7 @@ impl Room {
             let (cleared, day) =
                 (gear::objectives::Feat::Cleared { island: self.island, tier: self.difficulty }, self.day());
             for player in players {
-                self.lay_cache_vestige(player, &cache, level);
+                self.pay_cache(player, &cache, level);
                 self.pay_clear(player, level);
                 // Counted as the clear pays, for those the room keeps, once a day each however often the cache opens.
                 let owner = self.players.get(&player).and_then(|found| found.owner.clone());
@@ -256,18 +256,17 @@ impl Room {
         self.cache = Some(Cache { open, ..cache });
     }
 
-    /// A sure Vestige for a player before the cache, at the Reeve's level and in the colours a Reeve's kill drops.
-    fn lay_cache_vestige(&mut self, player: PlayerId, cache: &Cache, level: u8) {
-        let boss = foe_type(REEVE)
-            .and_then(|reeve| crate::power::worth_of(reeve.role as u8))
-            .is_some_and(|worth| gear::rewards::worth(worth).boss);
-        let dice = self.dice(player);
-        let Some((rarity, slot, level)) = gear::vestige::dropped(1.0, boss, level, &dice) else { return };
+    /// A dungeon's clear for a player as its cache opens, at the Reeve's level, as the owner chose for a dungeon's
+    /// completion: its XP and Aurem, an item as itself coloured as its Miniboss's, and now and then a Vestige.
+    fn pay_cache(&mut self, player: PlayerId, cache: &Cache, level: u8) {
+        let (dice, difficulty) = (self.dice(player), self.difficulty);
         let Some(found) = self.players.get_mut(&player) else { return };
-        let vestige = gear::Vestige::new(found.character.take_id(), rarity, slot, level);
+        let vestiges = found.character.reward_clear(gear::rewards::Clear::Dungeon, level, difficulty, &dice);
         found.gear_changed = true;
         // Thrown out of the cache onto the floor before it, which `cache_by` keeps clear, as a kill throws its drops.
-        self.lay(player, crate::Dropped::Vestige(vestige), cache.vestige, cache.at);
+        for vestige in vestiges {
+            self.lay(player, crate::Dropped::Vestige(vestige), cache.vestige, cache.at);
+        }
     }
 
     /// The cache of a dungeon's room, as the snapshot carries it: x, y, z, the way it faces, and 1 open or 0 shut.

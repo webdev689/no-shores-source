@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 import { DEFAULTS, type Overrides, rebind } from '../player/binds.ts';
 import { LiveBinds } from '../player/input.ts';
-import { KEEP_AFTER_MS, keepBinds } from './bindsKept.ts';
+import { KEEP_AFTER_MS, KEEP_AGAIN_MS, keepBinds } from './bindsKept.ts';
 
 /** Accounts that keep `kept` for one signed-in player and answer only while `up`; each save they keep is counted. */
 function accountsKeeping(kept: Overrides | null) {
@@ -42,6 +42,26 @@ test('binds never read are never saved over: a save waits on a read, and lays wh
   await quiet();
   assert.deepEqual(accounts.kept, { jump: { keys: ['x'] }, dodge: { keys: ['h', 'mouse4'] }, heal: { keys: ['j'] } });
   assert.deepEqual([page.now.jump.keys, page.now.dodge.keys, page.now.heal.keys], [['x'], ['h', 'mouse4'], ['j']]);
+  mock.timers.reset();
+  delete (globalThis as Record<string, unknown>)['addEventListener'];
+});
+
+test('a save the accounts did not take is tried again later, so a bind is not lost to one failed save', async () => {
+  Object.assign(globalThis, { addEventListener: () => undefined });
+  mock.timers.enable({ apis: ['setTimeout'] });
+  const { accounts, link } = accountsKeeping({});
+  accounts.up = true;
+  const page = new LiveBinds();
+  await keepBinds(link, page);
+  accounts.up = false;
+  page.set(rebind(page.now, { id: 'dodge', device: 'keys', place: 0 }, 'h').binds ?? DEFAULTS);
+  await quiet();
+  assert.equal(accounts.saves, 0, 'the accounts did not take it');
+  accounts.up = true;
+  mock.timers.tick(KEEP_AGAIN_MS);
+  for (let turn = 0; turn < 10; turn++) await new Promise((settled) => setImmediate(settled));
+  assert.equal(accounts.saves, 1, 'tried again, and kept');
+  assert.deepEqual(accounts.kept, { dodge: { keys: ['h', 'mouse4'] } });
   mock.timers.reset();
   delete (globalThis as Record<string, unknown>)['addEventListener'];
 });

@@ -48,12 +48,12 @@ pub struct Drop {
 }
 
 impl Room {
-    /// Lays what a kill at `from` left one player: their Vestige, an Ammo box by the foe's rank (the foes crate's
+    /// Lays what a kill at `from` left one player: their Vestiges, an Ammo box by the foe's rank (the foes crate's
     /// number), and from a Miniboss or a Boss an Ammo crate, which goes straight into their five while there is room.
     pub(crate) fn drop_spoils(
         &mut self,
         player: PlayerId,
-        vestige: Option<Vestige>,
+        vestiges: Vec<Vestige>,
         rank: u8,
         from: [f64; 3],
         dice: &Dice,
@@ -61,7 +61,7 @@ impl Room {
         // Juggler leaves no ammunition: no box, and no crate, kept or thrown.
         let juggling = self.modded(Modifier::Juggler);
         let Some(found) = self.players.get_mut(&player) else { return };
-        let mut spoils: Vec<Dropped> = vestige.map(Dropped::Vestige).into_iter().collect();
+        let mut spoils: Vec<Dropped> = vestiges.into_iter().map(Dropped::Vestige).collect();
         if !juggling && dice.roll(Purpose::AmmoBox, 0) < gear::ammo::box_chance(rank) {
             spoils.push(Dropped::AmmoBox);
         }
