@@ -27,6 +27,9 @@ rarities": Magic becomes green and Legendary red everywhere. Asked whether the s
 iron, heartwood) are baked too: "Bake them too". Asked whether bringing over project-final's sprites meant more than
 its drop sprites (its enemies, projectiles and first-person gun): "Drop sprites only".
 
+Asked where the Blender bakes live, rows of pixel letters in a source file as the ship's glyphs are or R2 as the rule
+says, the owner chose the first: "#1, also should we stop using R2 or keep using it?"
+
 ## What it settles
 
 - **A Vestige is project-final's loot crystal**, hovering and turning, on the ground and in the gear screens
@@ -37,7 +40,9 @@ its drop sprites (its enemies, projectiles and first-person gun): "Drop sprites 
 - **The rarities are recoloured to match**: Magic green and Legendary red everywhere, in frames, cards, pips and lines;
   Normal, Rare and Atheric keep theirs ([[Gear and Power Follow Destiny 1 Vanilla]]).
 - **The island resources, the Ammo box and crate, and the ship's modules and materials become Blender models baked
-  to sprites.** The officers' posts stay drawn in code.
+  to sprites.** The officers' posts stay drawn in code ([[Item Pictures]]).
+- **The bakes are written into the client as rows of pixel letters**, kept in git as the ship's glyphs are: an
+  exception to [[Generated Files Stay Out of Git]].
 - **Currencies, elements, statuses, nodes and the Arts' emblems stay drawn in code.**
 - **Only project-final's drop sprites come over**: not its cache chest, its Bits shard, its enemies, its projectiles
   or its first-person gun.

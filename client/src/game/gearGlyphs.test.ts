@@ -13,8 +13,8 @@ const shapeOf = (svg: string) =>
     .map(({ x, y }) => `${x},${y}`)
     .join(' ');
 
-test('each glyph is twelve pixels square, a Vestige its crystal, 18, in its rarity’s colour', () => {
-  for (const glyph of ['aurem', 'fruit', 'resource', 'empty', 'weapon-essence'] as const) {
+test('each drawn glyph is twelve pixels square, a Vestige its crystal, 18, in its rarity’s colour', () => {
+  for (const glyph of ['aurem', 'fruit', 'empty', 'weapon-essence'] as const) {
     const svg = glyphSvg(glyph);
     assert.match(svg, /viewBox="0 0 12 12"/);
     for (const [, x, y] of svg.matchAll(/x="(\d+)" y="(\d+)"/g)) assert.ok(Number(x) < 12 && Number(y) < 12, glyph);
@@ -37,20 +37,20 @@ test('each glyph is twelve pixels square, a Vestige its crystal, 18, in its rari
   );
 });
 
-test('an Ammo box and an Ammo crate are pictures of their own, inside the grid', () => {
+test('an Ammo box and an Ammo crate are baked pictures of their own, 18 pixels square', () => {
   const [box, crate] = [glyphSvg('ammo-box'), glyphSvg('ammo-crate')];
   for (const svg of [box, crate]) {
-    assert.match(svg, /viewBox="0 0 12 12"/);
+    assert.match(svg, /viewBox="0 0 18 18"/);
     assert.ok(pixelsOf(svg).length > 60, 'mostly filled');
   }
   assert.notEqual(shapeOf(box), shapeOf(crate));
 });
 
-test('each island’s resource is a picture of its own, inside the grid, mostly in a colour of its own', () => {
+test('each island’s resource is a baked picture of its own, 18 pixels square, mostly in a colour of its own', () => {
   const materials = Array.from({ length: RESOURCE_COUNT }, (unused, index) => glyphSvg('resource', 0, index));
   for (const svg of materials) {
-    assert.match(svg, /viewBox="0 0 12 12"/);
-    for (const { x, y } of pixelsOf(svg)) assert.ok(x < 12 && y < 12);
+    assert.match(svg, /viewBox="0 0 18 18"/);
+    for (const { x, y } of pixelsOf(svg)) assert.ok(x < 18 && y < 18);
   }
   const shapes = materials.map(shapeOf);
   assert.ok(!shapes.includes(shapeOf(glyphSvg('empty'))), 'every one is drawn');

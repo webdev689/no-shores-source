@@ -3,6 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
 import { readFromRoom } from '../network/messages.ts';
+import { AMMO_BOX_TURN } from './ammoBoxPictures.ts';
+import { AMMO_CRATE_TURN } from './ammoCratePictures.ts';
 import { AMMO_BOX, AMMO_CRATE, type PixelPicture, resourcePicture } from './dropPictures.ts';
 import {
   AMMO_FEEL,
@@ -112,7 +114,7 @@ test('thrown up to a spot over the body, a drop pops high enough to land there, 
     }
 });
 
-test('a Vestige is its crystal, turning through its frames, in its rarity; ammunition is its picture', () => {
+test('a Vestige is its crystal, turning through its frames, in its rarity; ammunition its baked model, turning', () => {
   const frames = new Set(
     Array.from(
       { length: SPIN_FRAMES },
@@ -135,20 +137,23 @@ test('a Vestige is its crystal, turning through its frames, in its rarity; ammun
   assert.ok(yellowRed > yellowBlue && yellowGreen > yellowBlue, 'Rare yellow');
   const [legendRed = 0, legendGreen = 0] = mostly(3);
   assert.ok(legendRed > legendGreen * 2, 'Legendary red');
-  assert.deepEqual(pictureOf(drop({ kind: DROPPED.ammoBox })), { body: AMMO_BOX, halo: null });
-  assert.deepEqual(pictureOf(drop({ kind: DROPPED.crate })), { body: AMMO_CRATE, halo: null });
-  for (const rows of [AMMO_BOX.rows, AMMO_CRATE.rows]) {
-    assert.equal(rows.length, 12);
-    for (const row of rows) assert.equal(row.length, 12);
-  }
+  assert.deepEqual(pictureOf(drop({ kind: DROPPED.ammoBox })), { body: AMMO_BOX_TURN[0], halo: null });
+  assert.deepEqual(pictureOf(drop({ kind: DROPPED.crate })), { body: AMMO_CRATE_TURN[0], halo: null });
+  const turned = new Set(
+    Array.from({ length: SPIN_FRAMES }, (unused, frame) => {
+      const { body } = pictureOf(drop({ kind: DROPPED.crate }), (frame + 0.5) * ((2 * Math.PI) / SPIN_FRAMES));
+      assert.equal(body.rows.length, 18);
+      for (const row of body.rows) assert.equal(row.length, 18);
+      return body;
+    }),
+  );
+  assert.equal(turned.size, SPIN_FRAMES, 'ammunition turns through frames of its own too');
 });
 
 test('in flight a drop is its picture alone; at rest its line rises, a rarer one taller, ammo white', () => {
   const boxFlying = new DropsShown().frame([drop({ kind: DROPPED.ammoBox })], 10, EYE).marks;
-  assert.ok(
-    boxFlying.length < filled(AMMO_BOX.rows) * 6 * MARK_FLOATS,
-    'its rectangles of one colour, fewer quads than pixels',
-  );
+  const mostFilled = Math.max(...AMMO_BOX_TURN.map((frame) => filled(frame.rows)));
+  assert.ok(boxFlying.length < mostFilled * 6 * MARK_FLOATS, 'its rectangles of one colour, fewer quads than pixels');
   assert.ok(
     boxFlying.every((value, index) => index % MARK_FLOATS !== 6 || value === 1),
     'solid, and no line',
@@ -284,7 +289,8 @@ test('seen through, a picture is laid flat, every pixel once, so no colour shows
   const flat: number[] = [];
   markPicture(flat, AMMO_BOX, [0, 0, 0], [0, -5, 0], 1, 0.5);
   const area = covered(flat);
-  assert.ok(Math.abs(area - filled(AMMO_BOX.rows) * PIXEL_M ** 2) < 1e-6, `every pixel, none twice: ${area}`);
+  const pixel = AMMO_BOX.pixelM ?? PIXEL_M;
+  assert.ok(Math.abs(area - filled(AMMO_BOX.rows) * pixel ** 2) < 1e-6, `every pixel, none twice: ${area}`);
   assert.deepEqual(seen(flat, AMMO_BOX), drawn(AMMO_BOX));
 });
 

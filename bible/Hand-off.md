@@ -264,12 +264,15 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
-- **#143, Vestiges as project-final's crystals** (`ccr-e806aa9f-fngvgz`), tested offline, waiting for the owner's
-  yes to merge ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
-  [[Pick - project-final Drops]]): the crystal baked in the page in the owner's white, green, yellow, red and cyan
-  blue; every drop popped, bounced, settled and hovering as project-final's loot; the line kept over the halo; the
-  room's rest 94 ticks for a Vestige and 60 for ammunition; the Vestige glyph the crystal's still; Magic green and Legendary red everywhere. Not yet seen
-  in a live fight.
+- **#143, Vestiges as project-final's crystals, and the item pictures baked in Blender** (`ccr-e806aa9f-fngvgz`),
+  tested offline, waiting for the owner's yes to merge
+  ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]], [[Pick - project-final Drops]],
+  [[Item Pictures]]): the crystal baked in the page in the owner's white,
+  green, yellow, red and cyan blue; every drop popped, bounced, settled and hovering as project-final's loot; the line
+  kept over the halo; the room's rest 94 ticks for a Vestige and 60 for ammunition; Magic green and Legendary red
+  everywhere; the island resources, the Ammo box and crate (turning on the ground) and the ship's materials and
+  modules baked from Blender models by `tools/item-pictures/`, kept as rows in the client as the owner chose. Not yet
+  seen in a live fight or on a real GPU; the bakes are a first pass for the owner to judge.
 - **The controls and the marks are on `main`**, merged with the owner's yes ("Yes start the merges and deploys"),
   each after an independent audit whose findings were all fixed ("Fix all"): the key strip that follows the moment and
   K's sheet of every control (#130, [[The Key Strip Follows the Moment, and K Opens Every Control]]); every control
@@ -586,10 +589,6 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
-- **The Blender bakes** the owner approved in [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]:
-  the nine island resources, the Ammo box and crate (with turning frames, since drops now turn), and the ship's four
-  modules and four materials, modelled in Blender and baked to sprites in place of their code glyphs; the officers'
-  posts, currencies, elements, statuses, nodes and the Arts' emblems stay code. Its own pull request, after #143.
 - **Areas in chunks, after the recordings** ([[Areas Load in Chunks With Proper Caching]]): the forge's picture packs
   read in fixed blocks kept in Cache Storage (at the intro's start some 60 range requests went to one pack within
   2 ms; one block holds them all), through `contentCache.ts`; the next area's land, pictures and sounds fetched ahead

@@ -62,7 +62,7 @@ export function marksSeen(marked: readonly Marked[], eye: Point, seconds: number
     // brightest brass of a keeper's sign would otherwise light the sign itself in blocks over its own colours.
     const opacity = far <= fading ? WHOLE : Math.max(0, (REACH_M - far) / (REACH_M - fading));
     const bobbing: Point = [mark.at[0], mark.at[1], mark.at[2] + bob];
-    markPicture(out, mark.picture, bobbing, eye, width / cells / PIXEL_M, opacity);
+    markPicture(out, mark.picture, bobbing, eye, width / cells / (mark.picture.pixelM ?? PIXEL_M), opacity);
   }
   return out;
 }

@@ -1,13 +1,15 @@
 // The drops lying for the player, seen in the world as project-final throws its loot: each popped up out of the fallen
 // foe, bouncing until it settles where the room put it, then rising to hover, bobbing and turning. A Vestige is its
-// crystal, its turn baked into frames; an Ammo box and an Ammo crate are their pictures, turned to the eye. Over each
+// crystal and an Ammo box or crate its Blender model, each turn baked into frames and turned to the eye. Over each
 // at rest a thin line of its rarity's colour rises, taller the rarer it is, a glint climbing it, a Legendary's and an
 // Atheric's pulsing. Each is drawn as the marks are, the halo and the line as light added to what stands behind them.
 // An Ammo box stepped onto with the ammunition full, which the room leaves lying, is told of.
 
 import { DROPPED, type GearDrop } from '../network/gearMessages.ts';
 import { RARITIES } from '../player/gear.ts';
-import { AMMO_BOX, AMMO_CRATE, type PixelPicture } from './dropPictures.ts';
+import { AMMO_BOX_TURN } from './ammoBoxPictures.ts';
+import { AMMO_CRATE_TURN } from './ammoCratePictures.ts';
+import { AMMO_BOX, type PixelPicture } from './dropPictures.ts';
 import { CROWN_M, SPIN_FRAMES, crystalFrame, hashOf } from './vestigeCrystal.ts';
 
 type Point = readonly [number, number, number];
@@ -153,16 +155,16 @@ const ADDED = -1;
 /** How a drop moves: a Vestige as a crystal, ammunition as ammunition. */
 const feelOf = (drop: Pick<GearDrop, 'kind'>): Feel => (drop.kind === DROPPED.vestige ? CRYSTAL_FEEL : AMMO_FEEL);
 
-/** What a drop is drawn as turned `turn` radians: a Vestige its crystal's frame, ammunition its picture, and the halo
- *  a crystal glows in. */
+/** What a drop is drawn as turned `turn` radians: its frame of a Vestige's crystal or of ammunition's turn, and the
+ *  halo a crystal glows in. */
 export function pictureOf(
   drop: Pick<GearDrop, 'kind' | 'rarity'>,
   turn = 0,
 ): { readonly body: PixelPicture; readonly halo: PixelPicture | null } {
-  if (drop.kind === DROPPED.ammoBox) return { body: AMMO_BOX, halo: null };
-  if (drop.kind === DROPPED.crate) return { body: AMMO_CRATE, halo: null };
   const frame = ((Math.floor((turn / (2 * Math.PI)) * SPIN_FRAMES) % SPIN_FRAMES) + SPIN_FRAMES) % SPIN_FRAMES;
-  return crystalFrame(drop.rarity, frame);
+  if (drop.kind === DROPPED.vestige) return crystalFrame(drop.rarity, frame);
+  const turning = drop.kind === DROPPED.crate ? AMMO_CRATE_TURN : AMMO_BOX_TURN;
+  return { body: turning[frame] ?? AMMO_BOX, halo: null };
 }
 
 /** A colour written `#rrggbb` as red, green and blue from 0 to 1. */

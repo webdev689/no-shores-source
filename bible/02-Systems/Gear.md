@@ -296,7 +296,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
   hover at 0.42 m (0.2 to 0.5), bobbing 5 cm (6). A Vestige is a crystal, turning 7 radians a second in the air and
   2.4 at rest, a faceted gem crusted with shards, in its rarity's white, green, yellow, red or cyan blue, baked into
   12 frames of 27 pixels for 0.7 m as its turn first reaches each, cel-shaded in five bands, its outline darkened and
-  a halo of its glow round it, added light; an Ammo box or crate is its picture, turned to the eye. A thin line rises
+  a halo of its glow round it, added light; an Ammo box or crate is its Blender model ([[Item Pictures]]),
+  turning 5 radians a second in the air and 2.4 at rest, in 12 frames of 0.038 m a pixel. A thin line rises
   from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white
   at 0.7 m. A glint climbs it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it settles
   ([[Interface]]).
