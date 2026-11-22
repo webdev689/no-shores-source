@@ -75,22 +75,22 @@ each part works is in its system note.
   band edged by a gold line ([[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]). Open for
   the owner: aiming in first person sees 43° (1.6 times from 65°, was 32.5°), and the iron blow's small red mark.
   Impeccable's design hook is on in every session, at v4.10.0 ([[Toolkit]]).
-- The world's lore and its first crystal faction, on #77, not yet merged. The owner's decisions: Raum's lore adapted
-  into one mystery ([[Raum's Lore Is Adapted Into One Mystery]]), shown and hardly told
+- The world's lore and its first crystal faction, #77, merged with #124 on the owner's "Merge and deploy". The owner's
+  decisions: Raum's lore adapted into one mystery ([[Raum's Lore Is Adapted Into One Mystery]]), shown and hardly told
   ([[The Game Shows the Mystery and Explains Almost None of It]]); an ageless world with quiet nods to DFO and
   Daggerfall; three ports left, the rest ruined; the Grey Tithe's tenth, which Overlook does not pay; and the Lattice,
-  the ruined ports' people overtaken by the crystal ([[The Lattice Are the Ruined Ports' People, Overtaken]]). The
-  six Lattice foes are drawn by the [[Sprite Forge]] through `tools/lattice/` ([[Lattice]]), each with its look and
-  moves, after a detailed pass and a full audit of every frame, its code and these notes
-  ([[The Lattice Is Drawn Whole Before It Comes Into the Game]], [[The Lattice as Claude Shapes It]]). Then each
-  foe's flinch and stagger, and in place of deaths one wave of crystallized energy for all, the owner's pick
-  (`tools/lattice/wave.py`). Tested offline: every move posed numerically (feet on the ground, blades, maul and
-  anchor clear of the ground and the body) and rendered. Then the Lattice's props, made in Blender, as the owner
-  asked: sixteen across the owner's four kinds, each on its own patch of corrupted ground, drawn as pictures in both
-  crystals ([[The Lattice Has Props of Its Own, Made in Blender]], `tools/lattice/props.py`); tested offline, every
-  one rendered in red and purple and looked at.
-- **The public events**, on #124 (stacked on #77), not yet merged: built in full on Claude's autonomy
-  ([[Public Events Are Built in Full, on Claude's Autonomy]]) after the owner's decisions
+  the ruined ports' people overtaken by the crystal ([[The Lattice Are the Ruined Ports' People, Overtaken]]). The six
+  Lattice foes are drawn by the [[Sprite Forge]] through `tools/lattice/` ([[Lattice]]), each with its look and moves,
+  after a detailed pass and a full audit of every frame, its code and these notes
+  ([[The Lattice Is Drawn Whole Before It Comes Into the Game]], [[The Lattice as Claude Shapes It]]). Then each foe's
+  flinch and stagger, and in place of deaths one wave of crystallized energy for all, the owner's pick
+  (`tools/lattice/wave.py`). Tested offline: every move posed numerically (feet on the ground, blades, maul and anchor
+  clear of the ground and the body) and rendered. Then the Lattice's props, made in Blender, as the owner asked: sixteen
+  across the owner's four kinds, each on its own patch of corrupted ground, drawn as pictures in both crystals
+  ([[The Lattice Has Props of Its Own, Made in Blender]], `tools/lattice/props.py`); tested offline, every one rendered
+  in red and purple and looked at.
+- **The public events**, #124 (with #77 beneath it), merged on the owner's "Merge and deploy": built in full on Claude's
+  autonomy ([[Public Events Are Built in Full, on Claude's Autonomy]]) after the owner's decisions
   ([[Public Events Run on a Clock, After Destiny 1]]), the system in [[Public Events]] and every call of Claude's in
   [[Public Events as Claude Builds Them]]. On Saltmere's three zones, on a clock: the Fissure in each wilds, beside its
   battlefield's obelisk, and the Grey Tithe raid in each hamlet, each with its heroic task, a bonus, and a chest for
@@ -103,19 +103,21 @@ each part works is in its system note.
   offline play; dev-only `&public=`, `&speed=`, `&bots=`, `&heroic=0`. Paced by scripted players at Saltmere's levels; a
   first read-only audit, its findings each tested first and fixed. Then the owner's "comprehensive audit and deep detail
   pass": five read-only audits (the rules and server, the page, the assets and pipelines, the bible's truth, the
-  design's detail), whose rules, page, assets and bible fixes are merged into #124's branch. Then the owner's third ask,
-  "Do one more comprehensive audit. Ensure this is perfect": six read-only audits (the rules, the page, the assets, the
-  bible, regressions outside the events, the tests), every fix merged; the tests found and fixed two bugs (the next
-  event's line said "in 1 min" for one starting that minute; the tithe-taker stuck on a navmesh corner). Then a picture
-  pass on the real page, which stopped at its time limit; the owner chose to merge what it fixed (a carried shard seen
-  on another player, one bonus wording, the banner's rows full width, the picture driver reaching the game in its
-  worker) and leave the rest of the pictures for later (see "Next"). Tested offline: `cargo xtask check` passes at the
-  head of #124's branch, native and WebAssembly agreeing; the raid and the heroic Fissure pictured on the built page in
-  part; not tested live. The `modules` workflow published the 13 event modules, and all their groups answer on R2, the
-  sealed scar's rubble since its run on 3e1bf535. `main` is merged in again after the hub, the healing charges and the
-  ship's burst: the events' banner, store bars and compass marks are drawn as nodes of the game's own interface, the
-  events' fight events moved up past main's heal (14), and their wire fields appended after main's packed, delta
-  snapshots. Main merged a third time (merge3): event kinds 16 to 25 (main's Wiped is 15); see the merge3 report.
+  design's detail), whose rules, page, assets and bible fixes are merged into #124. Then the owner's third ask, "Do one
+  more comprehensive audit. Ensure this is perfect": six read-only audits (the rules, the page, the assets, the bible,
+  regressions outside the events, the tests), every fix merged; the tests found and fixed two bugs (the next event's
+  line said "in 1 min" for one starting that minute; the tithe-taker stuck on a navmesh corner). Then a picture pass on
+  the real page, which stopped at its time limit; the owner chose to merge what it fixed (a carried shard seen on
+  another player, one bonus wording, the banner's rows full width, the picture driver reaching the game in its worker)
+  and leave the rest of the pictures for later (see "Next"). Tested offline: `cargo xtask check` passes at the head of
+  #124, native and WebAssembly agreeing; the raid and the heroic Fissure pictured on the built page in part; not tested
+  live. The `modules` workflow published the 13 event modules, and all their groups answer on R2, the sealed scar's
+  rubble since its run on 3e1bf535. `main` is merged in again after the hub, the healing charges and the ship's burst:
+  the events' banner, store bars and compass marks are drawn as nodes of the game's own interface, the events' fight
+  events moved up past main's heal (14), and their wire fields appended after main's packed, delta snapshots. Main
+  merged a third time before the merge: the events' fight events 16 to 25 (main's Wiped is 15), the Tithe-Taker 45 after
+  main's wardens (21 to 38), the chest's Vestige drawn on main's rank colours (Major plain, Boss heroic), and the
+  Lattice laid into main's forge tables again by `lattice.yml`'s run 45048576675.
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
@@ -155,8 +157,12 @@ each part works is in its system note.
   ([[Game]], limits).
 The decisions in [[Open Questions]] are not repeated here.
 
-- **#124, the public events**: its merge, the owner's yes; it holds #77 beneath it, and #77's merge waits on the
-  owner ("Not yet"), so merging #124 merges both. Its points for the owner are in its description and in
+- **The public events under main's balance pass** (#141): with the fight's harm at 1.5 and 0.75, the rules' two scripted
+  players still seal a heroic Fissure (5.2 minutes, 3.7 before) but run out the heroic raid's clock in its third wave;
+  with the heroic task left alone, the page's scripted pair holds the raid. The events are Claude's to tune ("Claude
+  tunes them"); whether a pair should hold the heroic raid is the owner's to say. The chest's Vestige: #141 dropped the
+  colour rows it drew on, so a plain chest draws on a Major's colours and a heroic one on a Boss's; a heroic chest's
+  Vestige is now Normal about half the time (never before). The rest of #124's points are in its description and in
   [[Open Questions]], "The public events".
 - **The Lattice's story**: the talk stops at the rest of [[Open Questions]], "The Lattice's places and events": the
   nine story missions as three acts of three or one chain through the islands, where the Lattice and the Heart come
@@ -176,7 +182,7 @@ The decisions in [[Open Questions]] are not repeated here.
   return) is in #141's description and its page (https://claude.ai/artifact/3nNQjiwGEFxPqtD98HNJtD). Not yet played
   by hand or in a deployed room.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
-  screens: the Harbourmaster's rows, the menu under 600 px), #124 (public events on Saltmere). Drafts: #77 (lore), #82
+  screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
   holds.
 - **The combat notes' open points** (#135): whether the one-second reset of the swings' chain and the foes' pace feel
@@ -240,9 +246,9 @@ The decisions in [[Open Questions]] are not repeated here.
 - **The ships** ([[The Ships as Claude Shapes Them]]): the owner asked for the Frigate as one more model "and call its
   there", so the Tithe Ram and the Fluyt wait until asked; splitting ships into parts for upgrades, and the cabin's
   decoration from DFO's `decor/`, are set aside by the owner for now.
-- **The lore** (#77): nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name.
-  Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision recorded only on
-  #77's branch ("The Grey Tithe Take a Tenth, and Overlook Does Not Pay").
+- **The lore**: nothing in the prologue names the Cube or a crystal, and the voice in the deep has no name.
+  Elder Maren Hale says the Grey Tithe take a tenth and Overlook pays nothing, the owner's decision
+  ("The Grey Tithe Take a Tenth, and Overlook Does Not Pay").
 - **Accounts and hosting** ([[The Audit's Calls Are Claude's]]): the Workers plan (a password sign-in takes about
   50 ms of CPU; the Free plan allows 10); a domain of the game's own, since every Pages project of
   `lattymoy.github.io` shares one origin and its storage; rate-limiting rules over the accounts; required reviewers
@@ -271,7 +277,7 @@ The decisions in [[Open Questions]] are not repeated here.
 
 ## Next
 
-- **The public events' last pictures** (#124), left for later by the owner: the raid's waves marching, a store
+- **The public events' last pictures**, left for later by the owner: the raid's waves marching, a store
   plundered, Marrow, the Tithe giving up and a failed raid; the Fissure's growth sinking, the Warden, the last minute,
   the seal and a failed Fissure; the chest, the result and the reward feed; night; the banner at 1280x720, 1000x600,
   390x844 and 844x390. Pictured and still wrong: a store's bar shows through a house's wall (the bars are interface
@@ -306,9 +312,9 @@ The decisions in [[Open Questions]] are not repeated here.
   World Editor but not the game, which draws in its worker ([[Toolkit]]); the owner: "The headless issue is due to us
   moving away from html. So not really an issue per say." A driver that patches the worker too is on the branch
   `ccr-130008df-u4ahst-headless` (cfd75bba), unmerged. `tools/uiShot.mjs` writes blank pictures (the read-back is only
-  the ground under SwiftShader); the game's own frame read back from its worker shows the interface whole. #124's branch
-  fixes it (the hooks and the plan's `init` at the head of the game worker's script, each picture from the worker's own
-  texture, R2 read by the driver 8 at a time); it reaches `main` with #124 (observation 0068 logs the port lesson).
+  the ground under SwiftShader); the game's own frame read back from its worker shows the interface whole. #124
+  fixed it (the hooks and the plan's `init` at the head of the game worker's script, each picture from the worker's own
+  texture, R2 read by the driver 8 at a time; observation 0068 logs the port lesson).
 - **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
   `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
   `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
