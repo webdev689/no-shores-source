@@ -87,10 +87,12 @@ export class BarLayout {
       const halfWidth = spot.width / 2;
       // Never over the compass at the top of the screen: a plate high in the view stands under its foot.
       const floor = this.top + spot.height;
+      // In the pushes' own sums, so a bar pushed to a box's edge is clear of it: (foot + height) - height can round
+      // short of foot, and a bar under a box would be pushed to the same place for ever.
       const covers = (box: Box, foot: number) =>
         Math.abs(spot.x - box.x) < halfWidth + box.halfWidth + GAP + slack &&
         foot > box.top - GAP &&
-        foot - spot.height < box.bottom + GAP;
+        foot < box.bottom + GAP + spot.height;
       // Each push sets the bar above one box for good, as it only ever rises, so this ends; one that would rise over
       // the compass goes under the boxes instead, each push only lowering it.
       let bottom = Math.max(spot.y, floor);
