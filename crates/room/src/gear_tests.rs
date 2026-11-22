@@ -188,6 +188,10 @@ fn asks_are_answered_where_the_player_stands() {
     assert_eq!(ask(&mut room, player, 3, Asked::Gather { node: 0 }), OUT_OF_REACH, "the node is 20 m off");
     move_to(&mut room, player, 1.0, 9.0);
     assert_eq!(ask(&mut room, player, 4, Asked::Gather { node: 0 }), 0);
+    // Held two seconds, it is gathered.
+    for _ in 0..crate::asks::GATHER_TICKS {
+        room.tick();
+    }
     assert_eq!(room.player(player).expect("in").character.materials.resource(0), 3);
     assert_eq!(ask(&mut room, player, 5, Asked::Gather { node: 0 }), OUT_OF_REACH, "spent until they leave");
     assert_eq!(room.player(player).expect("in").answered, 5);

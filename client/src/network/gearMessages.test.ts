@@ -218,8 +218,19 @@ test("the ship's and crew's asks carry the numbers the protocol reads them by", 
       ASKS.chooseOfficer,
       ASKS.grantOfficers,
       ASKS.scavenge,
+      ASKS.stopGather,
     ],
-    ['INFUSE', 'RECRUIT', 'STATION', 'DISMISS', 'TRAIN', 'CHOOSE_OFFICER', 'GRANT_OFFICERS', 'SCAVENGE'].map(number),
+    [
+      'INFUSE',
+      'RECRUIT',
+      'STATION',
+      'DISMISS',
+      'TRAIN',
+      'CHOOSE_OFFICER',
+      'GRANT_OFFICERS',
+      'SCAVENGE',
+      'STOP_GATHER',
+    ].map(number),
   );
 });
 

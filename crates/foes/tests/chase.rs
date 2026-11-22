@@ -62,3 +62,37 @@ fn a_chaser_closes_no_nearer_than_bodies_touch_and_keeps_pace_rather_than_stop_a
         assert!(stops <= 10, "seed {seed}: it stopped {stops} times in 10 s at the player's heels");
     }
 }
+
+/// A player running south at a full run.
+fn running_away(_room: &Room, _me: u32) -> Intent {
+    Intent { controls: Controls { forward: 1.0, yaw: PI, run: true, ..Controls::default() }, ..Intent::default() }
+}
+
+#[test]
+fn a_player_running_away_gets_away_no_foe_outrunning_three_quarters_of_their_run_even_pushed_by_an_ally() {
+    let most = foes::tuning::FOE_PACE * movement::TUNING.run;
+    for seed in 1..=4 {
+        let room = Room::new(seed).player(PLAYER, 0.0, 0.0, PI);
+        let room = room.foe(10, SWORDSMAN, Major, 0.0, -3.0, PI).foe(11, SWORDSMAN, Major, 0.0, -3.5, PI);
+        let mut room = room.alert(10, PLAYER).alert(11, PLAYER);
+        let mut fastest: f64 = 0.0;
+        for _ in 0..600 {
+            room.step(&mut running_away);
+            for id in [10, 11] {
+                // Toward the player: an ally's push aside may add a little across the chase, never along it.
+                let (body, them) = (room.fighter(id).body, room.fighter(PLAYER).body);
+                let (east, south) = (them.x - body.x, them.y - body.y);
+                let apart = libm::hypot(east, south).max(1e-9);
+                if body.mode == movement::Mode::Ground {
+                    fastest = fastest.max((body.vx * east + body.vy * south) / apart);
+                }
+            }
+        }
+        assert!(fastest <= most + 1e-9, "seed {seed}: a foe ran after them at {fastest:.3} m/s, past its {most:.3}");
+        assert!(
+            room.distance(PLAYER, 10) > 20.0,
+            "seed {seed}: the player got away: {:.1} m",
+            room.distance(PLAYER, 10)
+        );
+    }
+}

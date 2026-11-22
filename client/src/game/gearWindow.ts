@@ -77,11 +77,13 @@ export function startGearWindow(
   ship: () => ShipPanel | null,
   travel: (place: string) => string | null = () => null,
   resting: () => boolean = () => false,
+  fed: () => GearHere | null = here,
 ): Layer {
   // What the player gains shows at the right, in play and over the menu alike, its pieces drawn by the menu's forge.
   let pictures: ItemPictures | null = null;
   const picturesOf = (forge: Cards) => (pictures ??= new ItemPictures(forge));
-  const feed = new AcquiredFeed(here, picturesOf);
+  // `fed` is the feed's gear: at sea, the sea's word on it, where the menu shows none.
+  const feed = new AcquiredFeed(fed, picturesOf);
   const company = new CompanyHud(link);
   const holds = new Holds();
   let view: View | null = null;

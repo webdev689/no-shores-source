@@ -1,6 +1,7 @@
-// The pictures an Ammo box and an Ammo crate stand as on the ground, and each island's resource as its node's mark:
-// baked from Blender models (`resourcePictures.ts`, `ammoBoxPictures.ts`, `ammoCratePictures.ts`). The gear screens draw the same rows as their glyphs, so a drop or a
-// resource looks in the world as it does in the pack; a Vestige is its crystal (`vestigeCrystal.ts`).
+// The pictures an Ammo box and an Ammo crate stand as on the ground, and each island's resource as the screens show
+// it (and as the Test Ground marks its nodes): baked from Blender models (`resourcePictures.ts`, `ammoBoxPictures.ts`,
+// `ammoCratePictures.ts`). The gear screens draw the same rows as their glyphs, so a drop looks on the ground as it
+// does in the pack; a Vestige is its crystal (`vestigeCrystal.ts`).
 
 import { RESOURCE_PICTURES } from './resourcePictures.ts';
 

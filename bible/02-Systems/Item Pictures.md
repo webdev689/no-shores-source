@@ -38,8 +38,8 @@ the page ([[Gear]], "Drops").
   - Prettier then lays them out, so writing them again changes nothing that did not change.
   - These rows are kept in git, as the owner chose ([[Generated Files Stay Out of Git]]).
 - **Drawn.** The screens draw a glyph at a whole multiple of its cells: an 18-cell one at 36, a 24-cell one at 48, 96
-  or 264 ([[Interface]], "Pictures"). In the world a resource is its node's mark ([[Game]]), and ammunition turns
-  as it hovers ([[Gear]], "Drops").
+  or 264 ([[Interface]], "Pictures"). A resource's picture is the resource as it is carried; its node in the world is
+  the forge's picture of the place it is gathered from ([[Game]]). Ammunition turns as it hovers ([[Gear]], "Drops").
 
 | Command | Does |
 |---|---|

@@ -427,7 +427,7 @@ fn speed_away(sight: &Sight) -> f64 {
 /// pace a swing allows.
 fn lead(here: &Here<'_, '_>, away: f64) -> f64 {
     let strike = f64::from(swing_ticks(here.fighter.arms.melee).0) * TICK_SECONDS;
-    (away - ATTACK_PACE * TUNING.walk).max(0.0) * strike
+    (away - ATTACK_PACE * here.walk()).max(0.0) * strike
 }
 
 /// The side round its target toward which the target's guard faces away from it (1 clockwise, -1 not): a blow from

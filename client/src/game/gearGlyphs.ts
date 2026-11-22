@@ -11,6 +11,21 @@ import { SHIP_MAPS, SHIP_PALETTES } from './shipGlyphs.ts';
 /** Each glyph as rows of letters, each letter a colour of its palette and a dot none. 12 × 12. */
 const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource' | 'vestige'>, readonly string[]>> = {
   ...SHIP_MAPS,
+  // XP: a four-pointed spark, lit at its heart.
+  xp: [
+    '.....aa.....',
+    '.....bb.....',
+    '....abba....',
+    '....bccb....',
+    '.aabccccbaa.',
+    'abbccddccbba',
+    'abbccddccbba',
+    '.aabccccbaa.',
+    '....bccb....',
+    '....abba....',
+    '.....bb.....',
+    '.....aa.....',
+  ],
   aurem: [
     '....aaaa....',
     '..aabbbbaa..',
@@ -117,6 +132,7 @@ const MAPS: Readonly<Record<Exclude<Glyph, 'item' | 'resource' | 'vestige'>, rea
 const PALETTES: Readonly<Record<string, readonly string[]>> = {
   ...SHIP_PALETTES,
   aurem: [OUTLINE, '#c08a3e', '#f3cf86'],
+  xp: [OUTLINE, '#b88a3e', '#f6e2a8', '#ffffff'],
   'weapon-fragments': [OUTLINE, '#9fb2c4', '#e2ecf4'],
   'armor-fragments': [OUTLINE, '#a3753e', '#e6c08a'],
   'weapon-essence': [OUTLINE, '#7a8b99', '#c9d6e0', '#6ba8e8'],

@@ -63,8 +63,8 @@ pub const TOO_SOON: i32 = 4;
 pub const REFUSED: i32 = 5;
 
 /// A node's file as the bake writes it; the room reads its id, kind, name, section, window, rect and boxes, whether
-/// it is locked, and the places the houses' roads name and the paths their figures walk. A page playing alone writes
-/// its own, never locked.
+/// it is locked, a patrol's resource places (where its nodes stand), and the places the houses' roads name and the
+/// paths their figures walk. A page playing alone writes its own, never locked.
 #[derive(Debug, Deserialize)]
 struct NodeFile {
     id: String,
@@ -84,6 +84,8 @@ struct NodeFile {
     counters: Vec<NodeCounter>,
     #[serde(default)]
     shape_spots: Vec<[f64; 2]>,
+    #[serde(default)]
+    resources: Vec<[f64; 2]>,
     #[serde(default)]
     places: Vec<gear::quests::Place>,
     #[serde(default)]
@@ -178,7 +180,7 @@ pub fn open_node(text: &[u8]) -> bool {
     if node.kind == NodeKind::Patrol
         && let Some(resource) = resource
     {
-        room.start_patrol(&node.id, u8::try_from(resource).unwrap_or_default());
+        room.start_patrol(u8::try_from(resource).unwrap_or_default(), &node.resources);
     }
     let refusal = node.locked.then(|| format!("{} is locked", node.name));
     let sent = Box::new(Sent::around(protocol::pack::middle_of(Some(node.bounds))));

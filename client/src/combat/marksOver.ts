@@ -14,7 +14,7 @@ type Point = readonly [number, number, number];
 /** How far from the eye a mark shows (metres), and the share of that over which it fades out at its far end. */
 export const REACH_M = 30;
 const FADE = 0.2;
-/** How far over the crown a mark's foot stands, and over a resource node's ground (metres). */
+/** How far over the crown a mark's foot stands, and over the Test Ground's course nodes' ground (metres). */
 export const OVER_HEAD_M = 0.2;
 export const OVER_NODE_M = 1.2;
 /** A mark's width (metres), as DFO's. */
@@ -30,16 +30,10 @@ export const MOST = 12;
 /** A whole mark's opacity: solid, lighting nothing. */
 const WHOLE = ditherCode(1);
 
-/** A little over the most a mark rises over its foot (metres): its height at the end of its reach, where MIN_RAD
- *  holds it 2 × REACH_M × tan(MIN_RAD) tall, and its bob. */
-export const TALLEST_M = 1.2;
-
-/** One mark to lay: its picture, the point its foot stands on before the bob, and whether a beam of light stands
- *  over it (a resource node's, seen across the patrol). */
+/** One mark to lay: its picture, and the point its foot stands on before the bob. */
 export interface Marked {
   readonly picture: PixelPicture;
   readonly at: Point;
-  readonly beam?: boolean;
 }
 
 /** The marks seen from `eye` at `seconds`, as mark vertices: the nearest MOST within reach, each bobbing on a phase of
