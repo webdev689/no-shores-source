@@ -43,9 +43,9 @@ const RING = {
 /** A shard's light pillar: how tall, its colour (the Lattice's red), how strong, the least of it as the shard fades,
  *  and its foot over the shard. */
 const PILLAR = { heightM: 7, colour: [1, 0.28, 0.36] as const, strength: 0.9, least: 0.35, liftM: 0.5 } as const;
-/** Where a carried shard is held, metres, from the carrier's feet (third person: out to the off hand, forward, the
- *  drawer adding its own height), or from the eye in first person (forward, left, down, low in the view's left). */
-const HAND = { left: 0.32, forward: 0.16 } as const;
+/** Where a carried shard is held, metres, from the carrier's feet (third person: out to the off hand's side and
+ *  before the figure's card, toward the eye, the drawer adding its own height), or from the eye in first person (forward, left, down, low in the view's left). */
+const HAND = { left: 0.42, before: 0.3 } as const;
 const HAND_FIRST = { forward: 0.55, left: 0.3, down: 0.42 } as const;
 /** How near a chest the player stands to open it (crates/room/src/public/chest.rs CHEST_REACH, CHEST_HEIGHT). */
 const CHEST_REACH_M = 2.5;
@@ -114,6 +114,24 @@ function along(from: Point, yaw: number, forward: number, left: number, up = 0):
   const [rightX, rightY] = [Math.cos(yaw), Math.sin(yaw)];
   const [aheadX, aheadY] = [Math.sin(yaw), -Math.cos(yaw)];
   return [from[0] + aheadX * forward - rightX * left, from[1] + aheadY * forward - rightY * left, from[2] + up];
+}
+
+/** A shard held at the off hand of a figure at `feet` facing `facing`, seen from `eye`. A figure is a card turned to
+ *  the eye, so the shard stands just before the card, on the side of it the off hand shows on: placed at the hand
+ *  itself, it would stand behind the card as often as before it, and the figure would hide it. */
+function beforeCard(feet: Point, facing: number, eye: Point): Point {
+  const [toX, toY] = [eye[0] - feet[0], eye[1] - feet[1]];
+  const far = Math.hypot(toX, toY) || 1;
+  const [nearX, nearY] = [toX / far, toY / far];
+  // The eye's right, looking at the figure; the off hand shows on the side its left lies toward.
+  const [rightX, rightY] = [nearY, -nearX];
+  const [handX, handY] = [-Math.cos(facing), -Math.sin(facing)];
+  const side = handX * rightX + handY * rightY > 0 ? 1 : -1;
+  return [
+    feet[0] + side * rightX * HAND.left + nearX * HAND.before,
+    feet[1] + side * rightY * HAND.left + nearY * HAND.before,
+    feet[2],
+  ];
 }
 
 /**
@@ -327,10 +345,10 @@ export class PublicView {
         const reach = HAND_FIRST.forward * Math.cos(first.pitch);
         return { ...mark, at: along(first.eye, first.yaw, reach, HAND_FIRST.left, -HAND_FIRST.down - lift) };
       }
-      return { ...mark, at: along(bodies.feet, bodies.yaw, HAND.forward, HAND.left) };
+      return { ...mark, at: beforeCard(bodies.feet, bodies.yaw, bodies.shot.eye) };
     }
     const other = bodies.others.get(mark.id);
-    return other ? { ...mark, at: along([other.x, other.y, other.z], other.facing, HAND.forward, HAND.left) } : mark;
+    return other ? { ...mark, at: beforeCard([other.x, other.y, other.z], other.facing, bodies.shot.eye) } : mark;
   }
 
   /** The ring at the running event's edge, laid on the land arc by arc, breathing; a pillar of light over every shard

@@ -193,6 +193,7 @@ export class PublicBanner {
         : [
             {
               direction: 'row',
+              width: 'grow',
               gap: 12 * zoom,
               alignY: 'end',
               children: [kicker, { width: 'grow' }, { ...clock, opacity: urgentDark ? 0.35 : 1 }],
@@ -260,6 +261,7 @@ export class PublicBanner {
   private barNode(label: string, tone: string, zoom: number): Node {
     return {
       direction: 'row',
+      width: 'grow',
       gap: 8 * zoom,
       alignY: 'center',
       padding: [4 * zoom, 0, 0, 0],
@@ -284,6 +286,7 @@ export class PublicBanner {
     const dark = !still && !heroic.met && blinkDark(this.time, 0.8);
     return {
       direction: 'row',
+      width: 'grow',
       gap: 8 * zoom,
       alignY: 'center',
       padding: [5 * zoom, 0, 0, 0],
