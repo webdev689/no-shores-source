@@ -133,6 +133,8 @@ export class Ambience {
   );
   /** The gulls' countdown to their next cry, in seconds at their full level: quieter, it counts down slower. */
   private gullCountdownS: number | null = null;
+  /** When the last flock ends on the audio clock: the next one's gap begins only then. */
+  private gullEndsAt = 0;
   private engine: Engine | null = null;
   private heart = false;
   private nextBeatAt = 0;
@@ -236,11 +238,13 @@ export class Ambience {
     }
     const gulls = this.heard('gulls');
     const gullsGain = engine.beds.get('gulls')?.gain;
-    if (gulls > 0 && gullsGain) {
+    // The recording is a whole flock, so the next waits for it to end: never two flocks over each other.
+    if (gulls > 0 && gullsGain && now >= this.gullEndsAt) {
       let countdown = (this.gullCountdownS ?? nextGapS(GULL_GAP_S, this.random())) - step * gulls;
-      // The recording is a whole flock, so the next waits for it to end: never two flocks over each other.
-      if (countdown <= 0)
-        countdown = this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain) + nextGapS(GULL_GAP_S, this.random());
+      if (countdown <= 0) {
+        this.gullEndsAt = now + this.shot(RECORDED_SHOTS.gull, 1, now, 0, gullsGain);
+        countdown = nextGapS(GULL_GAP_S, this.random());
+      }
       this.gullCountdownS = countdown;
     }
     if (!this.heart) this.nextBeatAt = 0;
@@ -281,8 +285,9 @@ export class Ambience {
   private teardown(): void {
     const engine = this.engine;
     this.engine = null;
-    // The heart's next beat was on the old clock; a new context's clock starts again near 0.
+    // The heart's next beat and the last flock's end were on the old clock; a new context's clock starts again near 0.
     this.nextBeatAt = 0;
+    this.gullEndsAt = 0;
     if (!engine) return;
     const { audio } = engine;
     const end = audio.currentTime + FADE_S;
