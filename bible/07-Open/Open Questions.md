@@ -61,3 +61,9 @@ Decisions waiting on the owner. None is in force until the owner decides it and 
 - **What others see.** The room puts the cosmetics and faction colours a player has earned into the dress others see,
   but the armour, garments and weapons drawn are still each page's own word; whether those should be the room's too
   ([[Server]]).
+- **Named pieces for each content.** A Vestige now opens to its own content's named pieces where it has any of its
+  slot and colour ([[Armour and Weapon Looks Belong to the Content That Gives Them]]), and the 39 there are spread
+  thinly: the world has one Legendary Melee piece (Mooring Chain) and only guns for Ranged, no named armour, and no
+  Atheric but two guns; a dungeon has no Atheric; an Elite Dungeon's Legendaries are three Melee pieces. Where a content
+  has none, its Vestige opens to any content's. Whether to write more named pieces for each content (their names and
+  words are the owner's), or to let the world's Vestiges open to any content's named piece.
