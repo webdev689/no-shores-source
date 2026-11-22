@@ -25,7 +25,7 @@ pub fn at_sea(id: u32, commission: Commission, x: f64, bold: bool) -> Hostile {
 /// a `hull`, bound north.
 pub fn friend_at(traffic: u64, hull: sailing::HullKind, x: f64) -> Friendly {
     let sight_m = crate::sighting::SIGHT_LEAST_M;
-    Friendly { traffic, hull, seed: 5, level: 0, sight_m, x, y: 0.0, heading: 0.0, to: [x, -100_000.0] }
+    Friendly { traffic, hull, seed: 5, level: 0, sight_m, x, y: 0.0, heading: 0.0, to: [x, -100_000.0], lane: None }
 }
 
 #[test]

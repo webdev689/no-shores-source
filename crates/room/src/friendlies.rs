@@ -16,8 +16,8 @@ use world::traffic::{DWELL_S, SPEED_M_S, Traffic, TrafficShip};
 use world::waters::Holder;
 
 /// A friendly ship off its route: its traffic id, its hull, its seed (its sinking's chances), the level of the Tithe
-/// ship it met, the distance it is sighted from, where it is, its heading (radians clockwise from north), and its
-/// route's far port's roadstead, where it sails for.
+/// ship it met, the distance it is sighted from, where it is, its heading (radians clockwise from north), its route's
+/// far port's roadstead, where it sails for, and what is left of its route (none: straight for its port).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Friendly {
     pub traffic: u64,
@@ -29,6 +29,54 @@ pub struct Friendly {
     pub y: f64,
     pub heading: f64,
     pub to: [f64; 2],
+    pub lane: Option<Lane>,
+}
+
+/// What is left of a friendly ship's route: the route by its number, whether it sails it from its second port back to
+/// its first, the next corner it makes for (counted from its start the way it sails), and whether it is back on it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Lane {
+    pub route: usize,
+    pub back: bool,
+    pub next: usize,
+    pub on: bool,
+}
+
+/// The corner `nth` of a lane's route, counted the way it sails.
+fn corner(traffic: &Traffic, lane: Lane, nth: usize) -> Option<[f64; 2]> {
+    let path = &traffic.routes.get(lane.route)?.path;
+    let index = if lane.back { path.len().checked_sub(1 + nth)? } else { nth };
+    path.get(index).map(|point| [point.x as f64, point.y as f64])
+}
+
+/// The point of the leg from `from` to `to` nearest `at`.
+fn onto_leg(at: [f64; 2], from: [f64; 2], to: [f64; 2]) -> [f64; 2] {
+    let way = [to[0] - from[0], to[1] - from[1]];
+    let length = way[0] * way[0] + way[1] * way[1];
+    let share = if length > 0.0 { ((at[0] - from[0]) * way[0] + (at[1] - from[1]) * way[1]) / length } else { 0.0 };
+    let share = share.clamp(0.0, 1.0);
+    [from[0] + share * way[0], from[1] + share * way[1]]
+}
+
+/// Where a friendly ship makes for now, moving its lane on past a point it has come to within `step`: first back to
+/// its leg, then each corner of its route in turn; with no route, its port.
+fn making_for(friend: &mut Friendly, traffic: Option<&Traffic>, step: f64) -> [f64; 2] {
+    let at = [friend.x, friend.y];
+    let Some((traffic, lane)) = traffic.zip(friend.lane.as_mut()) else { return friend.to };
+    loop {
+        let Some(next) = corner(traffic, *lane, lane.next) else { return friend.to };
+        let target = match corner(traffic, *lane, lane.next.saturating_sub(1)).filter(|_| !lane.on) {
+            Some(from) => onto_leg(at, from, next),
+            None => next,
+        };
+        if apart(at, target) > step {
+            return target;
+        }
+        if lane.on {
+            lane.next += 1;
+        }
+        lane.on = true;
+    }
 }
 
 /// The commission a friendly ship fights under: the players' faction, so it flies their flag, at Major.
@@ -126,14 +174,20 @@ impl Friendlies {
         self.sailing.extend(ships);
     }
 
-    /// One tick of `seconds`: each ship sailing on heads for its port at the traffic's speed, round any coast in its
-    /// way, and is gone once there or once no player at `players` keeps it; each taken id whose voyage would have
-    /// ended by world time `world_s` is let go.
-    pub fn sail(&mut self, seconds: f64, players: &[[f64; 2]], chart: &impl Chart, world_s: f64) {
+    /// One tick of `seconds`: each ship sailing on makes for its port at the traffic's speed by what is left of its
+    /// route in `traffic` (back to it first), round any coast in its way, and is gone once there or once no player at
+    /// `players` keeps it; each taken id whose voyage would have ended by world time `world_s` is let go.
+    pub fn sail(
+        &mut self,
+        seconds: f64,
+        players: &[[f64; 2]],
+        (traffic, chart): (Option<&Traffic>, &impl Chart),
+        world_s: f64,
+    ) {
         let step = SPEED_M_S * seconds;
         for friend in &mut self.sailing {
             let at = [friend.x, friend.y];
-            let heading = heading_to(at, friend.to);
+            let heading = heading_to(at, making_for(friend, traffic, step));
             let ahead = [at[0] + libm::sin(heading) * step, at[1] - libm::cos(heading) * step];
             friend.heading = heading.rem_euclid(core::f64::consts::TAU);
             if chart.clear(at, ahead) {
@@ -165,7 +219,22 @@ fn taken_of(traffic: &Traffic, ship: &TrafficShip, tithe: &Hostile) -> Friendly 
         y: ship.position[1],
         heading: heading_to([0.0, 0.0], ship.direction).rem_euclid(core::f64::consts::TAU),
         to: far,
+        lane: Some(lane_of(traffic, ship)),
     }
+}
+
+/// What is left of a traffic ship's route: the first corner past how far it has sailed.
+fn lane_of(traffic: &Traffic, ship: &TrafficShip) -> Lane {
+    let mut lane = Lane { route: ship.route, back: ship.id & 1 == 1, next: 1, on: true };
+    let mut sailed = 0.0;
+    while let (Some(from), Some(to)) = (corner(traffic, lane, lane.next - 1), corner(traffic, lane, lane.next)) {
+        sailed += apart(from, to);
+        if sailed > ship.progress_m {
+            break;
+        }
+        lane.next += 1;
+    }
+    lane
 }
 
 #[cfg(test)]

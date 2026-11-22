@@ -571,6 +571,7 @@ fn the_bytes_for_the_clients_test_are_written() {
         y: 2_200.25,
         heading: 0.75,
         to: [0.0; 2],
+        lane: None,
     };
     let harbour = SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], ..SeaHarbour::default() };
     let sea = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &harbour);
@@ -661,6 +662,7 @@ fn a_sea_snapshot_carries_the_traffic_ids_the_room_took_and_the_friendly_ships_i
         y: 20.25,
         heading: 1.5,
         to: [0.0; 2],
+        lane: None,
     };
     let harbour = SeaHarbour { taken: vec![id, 9], friendlies: vec![friend], ..SeaHarbour::default() };
     let bytes = sea_snapshot_bytes(1, &[], &[], &[], &[], &harbour);

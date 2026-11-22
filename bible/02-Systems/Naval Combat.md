@@ -610,8 +610,8 @@ the Grey Tithe's ships alone ([[Pirates Are Replaced by the Grey Tithe]]).
   its route at 5 m/s, and its 600 s at the roadstead), so the page draws it once. Each ship stays where the fight has
   it, and the snapshot shows it there, the friendly one among the friendly ships. The fight lasts while either fights
   on; then one who struck, sank or runs leaves the sea, a Tithe ship that won sails on as hostile ships do, and a
-  friendly ship afloat (at once, one that strikes) sails on for its route's far port at the traffic's 5 m/s, round any coast in its way, home
-  waters or not, kept while a player is within 1.1 times its sight and gone at its port or once none is. Two that
+  friendly ship afloat (at once, one that strikes) sails on for its route's far port at the traffic's 5 m/s by what
+  is left of its route (back to its leg first, then corner by corner), round any coast in its way, home waters or not, kept while a player is within 1.1 times its sight and gone at its port or once none is. Two that
   parted meet again only once they have been 750 m apart. None meets a friendly ship lying in Overlook's home waters,
   which hold no hostile ship. A fight with no ship a player keeps at sea leaves the sea, as a ship does. Two Tithe
   ships never meet.
