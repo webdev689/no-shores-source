@@ -187,8 +187,10 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Played live, once deployed**: a dungeon of each style (a band's fight, the Reeve's fall, the cache's Vestige and
   the portal out); the Journal and the board (take a bounty, count it, turn it in, the timers off with T; a sea bounty
   counted at sea); an arrival of each kind (a landing, a gate, a dungeon and back out at its entrance, a company join,
-  one refused); a Vestige left lying and taken from the Postmaster, his counter and figure pictured. Known, small:
-  before any gear has come a tier's seas show open, the server still refusing them.
+  one refused); a Vestige left lying and taken from the Postmaster, his counter and figure pictured; the accounts'
+  migration of each character's room. Known, small: before any gear has come a tier's seas show open, the server
+  still refusing them. A change to `tools/dungeon/` or the contracts publishes new packs: take the manifest line from
+  the workflow's log into `content/dungeon/modules.json`.
 - **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is
   opened on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
   difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
