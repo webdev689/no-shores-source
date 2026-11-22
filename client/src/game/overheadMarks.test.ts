@@ -7,9 +7,10 @@ import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 import type { StationInfo } from './nodes.ts';
 import { keeperPicture } from './npc/npcMarks.ts';
-import { DOOR_PICTURE, markOfKind, markedHere } from './overheadMarks.ts';
+import { DOOR_PICTURE, keeperLit, markOfKind, markedHere } from './overheadMarks.ts';
 import { countersOf } from './plazaLife.ts';
 import { STATIONS } from './welcome/plazaForTests.ts';
+import { awayFromCounters } from './townsfolk.ts';
 
 const station = (kind: string, keeper: readonly [number, number]): StationInfo => ({
   kind,
@@ -153,4 +154,24 @@ test("near, the hub's twelve marks are laid in layers, in under half the vertice
     return sum + out.length;
   }, 0);
   assert.ok(layered < flat / 2, `${layered} numbers a frame against ${flat}`);
+});
+
+test('a keeper away from their counter is not lit, on the map or over their post', () => {
+  const letter = { id: 9, from: 0, crowded: false, vestige: null, item: null };
+  const gear = { mail: [letter] } as unknown as GearState;
+  assert.equal(
+    keeperLit(gear, 'mail', () => false),
+    true,
+    'letters wait',
+  );
+  awayFromCounters.add('mail');
+  try {
+    assert.equal(
+      keeperLit(gear, 'mail', () => true),
+      false,
+      'away, whatever waits',
+    );
+  } finally {
+    awayFromCounters.delete('mail');
+  }
 });

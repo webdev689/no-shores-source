@@ -240,10 +240,10 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]): a step of the quest walked asks to speak with them, once the story and the welcome are
   past (`Quests.wants`), or, the Postmaster's sealed letter, letters wait. A lit mark is laid apart (`litMarksSeen`):
   at any distance, every one of them, whole, beating (a fifth wider and back every 1.3 s), farthest first, and drawn
-  last of all over the finished picture with no depth (`MarkDraw.drawAbove`), so it is seen from everywhere in the
-  space, through walls and crowds; never narrower than 0.017 radians, it keeps its size on the screen however far.
-  It holds still under reduced motion, and goes out once the player has spoken with the keeper or taken their
-  letters. A whole mark
+  over the finished picture after the water with no depth (`MarkDraw.drawAbove`), so it is seen from everywhere in the
+  space, through walls and crowds; only the weather's fall and the blows' light are laid over it. Never narrower than
+  0.017 radians, it keeps its size on the screen however far. It holds still under reduced motion, goes out once the
+  player has spoken with the keeper or taken their letters, and is not lit while its keeper is away from the counter. A whole mark
   gives the fight's light layer no light, so a sign's brass never lights its own diamond. Its colours are laid in
   layers as a drop's are, the widest first, each a little nearer the eye, so a mark is a few dozen quads; a fading one
   is laid flat, so no layer shows through another.

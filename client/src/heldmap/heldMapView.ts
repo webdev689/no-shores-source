@@ -99,7 +99,7 @@ fn pulse_at(at: vec2f) -> f32 {
     let away = length(at - coin.xy);
     let width = max(1.4, coin.z * 0.14);
     let held = 1.0 - smoothstep(width * 0.5, width, abs(away - coin.z * 1.25));
-    let going = moving * (1.0 - beat) * (1.0 - smoothstep(width * 0.5, width, abs(away - coin.z * (1.25 + beat))));
+    let going = moving * (1.0 - beat) * (1.0 - smoothstep(width * 0.5, width, abs(away - coin.z * (1.25 + 0.75 * beat))));
     strongest = max(strongest, max(0.9 * held, 0.8 * going));
   }
   return strongest;

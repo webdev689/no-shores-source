@@ -100,7 +100,7 @@ export function markOfKind(kind: string): PixelPicture | null {
 /** Whether the keeper at a counter of `kind` has something for the player, so their mark is lit: a quest step asks
  *  to speak with them (`waits`), or, the Postmaster's, letters wait in `gear`. The held map lights their coin alike. */
 export const keeperLit = (gear: GearState | null, kind: string, waits: (counter: string) => boolean): boolean =>
-  (kind === 'mail' && (gear?.mail?.length ?? 0) > 0) || waits(kind);
+  !awayFromCounters.has(kind) && ((kind === 'mail' && (gear?.mail?.length ?? 0) > 0) || waits(kind));
 
 /** What wears a mark where a player stands, on `floor`'s height, read once each: each station that deals with them
  *  over its keeper's crown while the keeper stands there (the bounty board over its gable), lit while `speak` offers a

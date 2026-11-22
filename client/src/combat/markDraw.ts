@@ -1,8 +1,8 @@
 // The fight's marks on the GPU, for the Test Ground's scene and the game's alike. Solid marks write depth and are
 // drawn with the figures; the see-through ones are blended after them, far to near, tested against what is drawn.
 // The game draws its see-through marks after the water, testing them against the scene's depth by hand, so the water
-// laid over the land near a coast never covers a mark that stands above it; and a lit keeper's mark last of all, over
-// everything, so it is seen from everywhere (`drawAbove`).
+// laid over the land near a coast never covers a mark that stands above it; and a lit keeper's mark after them with no
+// depth, so no wall hides it and it is seen from everywhere (`setAbove`, `drawAbove`).
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { BUFFER_USAGE, type Gpu, SHADER_STAGE } from '../gpu.ts';
 import { LIGHT_DEPTH, LIGHT_TARGET, LIGHT_WGSL } from './lightLayer.ts';
@@ -107,6 +107,8 @@ export class MarkDraw {
   private readonly order = new MarkOrder();
   private buffer: GPUBuffer | null = null;
   private counts = { solid: 0, clear: 0 };
+  private aboveBuffer: GPUBuffer | null = null;
+  private aboveCount = 0;
   private origin: [number, number, number, number] = [0, 0, 0, 0];
   private readonly values = new Float32Array(20);
 
@@ -156,12 +158,25 @@ export class MarkDraw {
     this.counts = { solid, clear };
     this.origin = ditherOrigin(origin);
     if (laid.length === 0) return;
-    if (!this.buffer || this.buffer.size < laid.byteLength) {
-      this.buffer?.destroy();
-      const size = Math.max(4096, 2 ** Math.ceil(Math.log2(laid.byteLength)));
-      this.buffer = this.gpu.device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
-    }
+    this.buffer = this.grown(this.buffer, laid.byteLength);
     this.gpu.device.queue.writeBuffer(this.buffer, 0, laid);
+  }
+
+  /** The marks the next frame draws over everything (`drawAbove`), measured from the eye, in the order given. */
+  setAbove(vertices: ArrayLike<number>): void {
+    const laid = Float32Array.from(vertices);
+    this.aboveCount = laid.length / MARK_FLOATS;
+    if (laid.length === 0) return;
+    this.aboveBuffer = this.grown(this.aboveBuffer, laid.byteLength);
+    this.gpu.device.queue.writeBuffer(this.aboveBuffer, 0, laid);
+  }
+
+  /** `buffer`, or a new one in its place when it holds fewer than `bytes`: a power of two, 4 KB at least. */
+  private grown(buffer: GPUBuffer | null, bytes: number): GPUBuffer {
+    if (buffer && buffer.size >= bytes) return buffer;
+    buffer?.destroy();
+    const size = Math.max(4096, 2 ** Math.ceil(Math.log2(bytes)));
+    return this.gpu.device.createBuffer({ size, usage: BUFFER_USAGE.vertex | BUFFER_USAGE.copyDestination });
   }
 
   /** The solid marks, into a pass with the scene's depth, `matrix` taking the marks' points to clip space. */
@@ -198,11 +213,12 @@ export class MarkDraw {
     pass.end();
   }
 
-  /** Every mark over a finished single-sampled picture `target`, in the order laid and hidden by nothing: a lit
-   *  keeper's mark, seen from everywhere (`litMarksSeen` lays them far to near, so a nearer one stands over it). */
+  /** The marks `setAbove` gave over a finished single-sampled picture `target`, in the order given and hidden by
+   *  nothing: a lit keeper's mark, seen from everywhere (`litMarksSeen` lays them far to near, so a nearer one stands
+   *  over it). */
   drawAbove(encoder: GPUCommandEncoder, target: GPUTextureView, matrix: Float32Array): void {
-    const count = this.counts.solid + this.counts.clear;
-    if (!this.buffer || count === 0) return;
+    const [buffer, count] = [this.aboveBuffer, this.aboveCount];
+    if (!buffer || count === 0) return;
     this.above ??= this.gpu.device.createRenderPipeline({
       layout: this.gpu.device.createPipelineLayout({ bindGroupLayouts: [this.viewLayout] }),
       vertex: { module: this.module, entryPoint: 'mark_vertex', buffers: [VERTEX_LAYOUT] },
@@ -217,7 +233,7 @@ export class MarkDraw {
     const pass = encoder.beginRenderPass({ colorAttachments: [{ view: target, loadOp: 'load', storeOp: 'store' }] });
     pass.setPipeline(this.above);
     pass.setBindGroup(0, this.group);
-    pass.setVertexBuffer(0, this.buffer);
+    pass.setVertexBuffer(0, buffer);
     pass.draw(count);
     pass.end();
   }
@@ -275,6 +291,7 @@ export class MarkDraw {
 
   destroy(): void {
     this.buffer?.destroy();
+    this.aboveBuffer?.destroy();
     this.view.destroy();
   }
 }
