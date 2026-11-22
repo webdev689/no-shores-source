@@ -17,7 +17,7 @@ import {
 } from '../rules/fightRules.ts';
 import { feelOf, type NavalEvent, PARTS, PIECES } from '../rules/feelEvents.ts';
 
-const STATES: readonly ShipState[] = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'];
+const STATES: readonly ShipState[] = ['afloat', 'struck', 'sinking', 'sunk'];
 const MODES: readonly CaptainMode[] = ['cruise', 'engage', 'flee', 'struck', 'sinking'];
 const SIDES: readonly SideName[] = ['port', 'starboard'];
 const ZONES = ['hull', 'holed', 'rig'] as const;
@@ -212,7 +212,9 @@ export function fightViewOf(
         return why === 'reloading' ? { kind: 'refused', why, side, left } : { kind: 'refused', why };
       }
       case 8:
-        return { kind: 'no-sail', wrecked: next() === 1 };
+        // Its one number is always 0.
+        next();
+        return { kind: 'no-sail' };
       case 9:
         return { kind: 'load', shot: named(SHOT_CYCLE) };
       case 10:

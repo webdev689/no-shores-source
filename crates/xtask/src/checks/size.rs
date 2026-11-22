@@ -5,8 +5,18 @@ pub const MAX_LINES: usize = 600;
 /// Test files read top to bottom as a list of cases, so they get a little more room.
 pub const MAX_TEST_LINES: usize = 800;
 
+/// A test file as the repo names them: Rust's `tests/` and `_tests.rs`, Python's `test_*.py` (pytest's other name,
+/// `*_test.py`, too), and a script's `.test.` before any of the extensions the checks read.
 fn is_test_file(path: &str) -> bool {
-    path.contains("/tests/") || path.ends_with("_tests.rs") || path.ends_with("_test.py") || path.ends_with(".test.ts")
+    let name = path.rsplit('/').next().unwrap_or(path);
+    let script = [".ts", ".mts", ".cts", ".tsx", ".js", ".mjs", ".cjs"]
+        .iter()
+        .any(|extension| name.strip_suffix(extension).is_some_and(|stem| stem.ends_with(".test")));
+    path.contains("/tests/")
+        || path.ends_with("_tests.rs")
+        || (name.starts_with("test_") && name.ends_with(".py"))
+        || name.ends_with("_test.py")
+        || script
 }
 
 pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
@@ -51,5 +61,15 @@ mod tests {
     fn test_files_get_the_test_limit() {
         assert!(check(&[source("crates/core/tests/sailing.rs", MAX_TEST_LINES)]).is_empty());
         assert_eq!(check(&[source("crates/core/src/wind_tests.rs", MAX_TEST_LINES + 1)]).len(), 1);
+    }
+
+    #[test]
+    fn every_kind_of_test_file_the_repo_names_gets_the_test_limit_and_nothing_else_does() {
+        for path in ["tools/islands/test_envelope.py", "tools/freesound/pages.test.mjs", "client/src/a.test.ts"] {
+            assert!(check(&[source(path, MAX_TEST_LINES)]).is_empty(), "{path}");
+        }
+        for path in ["tools/islands/envelope.py", "tools/testStyles.mjs", "client/src/latest.ts", "tools/a.test.py"] {
+            assert_eq!(check(&[source(path, MAX_LINES + 1)]).len(), 1, "{path}");
+        }
     }
 }

@@ -47,7 +47,7 @@ export interface FleetRules {
   /** Its ship after each helm in turn, and its pose at `time`; null for numbers no ship could have. */
   predict(
     ship: ArrayLike<number>,
-    hurts: { readonly wrecked: boolean; readonly sail: number; readonly maxSail: number },
+    hurts: { readonly sail: number; readonly maxSail: number },
     time: number,
     epoch: number,
     helms: readonly Helm[],
@@ -103,7 +103,7 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
   return {
     setWorldStart: (seconds) => exports.room_world_start(seconds),
     predict: (ship, hurts, time, epoch, helms) => {
-      const request = [...Array.from(ship), hurts.wrecked ? 1 : 0, hurts.sail, hurts.maxSail, time, epoch];
+      const request = [...Array.from(ship), hurts.sail, hurts.maxSail, time, epoch];
       for (const helm of helms) request.push(helm.steer, helm.climb);
       const out = ask(exports.fleet_predict, request);
       if (out.length !== SHIP_FLOATS + POSE_FLOATS) return null;

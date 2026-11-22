@@ -3,7 +3,8 @@
 //! their screen last showed (`sent.rs`); at sea what floats, each ship's kept hurts, what the sea tells and each deck
 //! boarded go only to the player they are for, and a deck's own snapshot only to its boarders, each their own; and
 //! each player is sent only the ships near them: the hostile ships their ship keeps at sea (within `KEEP_SHARE` times
-//! its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in their fight.
+//! its sight, as it reckons it), the other players' within `PLAYERS_SEEN_M`, and every player in their fight; and
+//! only those walking the decks of the ships they are sent.
 
 use crate::{Opened, with_open};
 use combat::shots::Line;
@@ -47,7 +48,14 @@ impl SeaParts {
         fights: &[room::battle::FightSeen],
         harbour: &protocol::SeaHarbour,
     ) -> Vec<u8> {
-        protocol::sea_snapshot_bytes(self.tick, ships, pirates, fights, &self.aboard, harbour)
+        // Those walking a deck are seen as their ship is: on a ship this player is sent.
+        let aboard: Vec<_> = self
+            .aboard
+            .iter()
+            .filter(|(walker, _, _)| ships.iter().any(|(owner, _)| owner == walker))
+            .copied()
+            .collect();
+        protocol::sea_snapshot_bytes(self.tick, ships, pirates, fights, &aboard, harbour)
     }
 
     /// The ships and hostile ships `player` is sent: none but their own before their ship is at sea.

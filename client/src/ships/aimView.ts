@@ -21,7 +21,7 @@ export interface AimDrawn {
 }
 
 /** DFO's aim tones, each colour's fourth its strength: brass laid, red when its guns strike a ship, grey while the
- *  side cannot fire (loading, braced, crippled: where it would fall, not a promise). */
+ *  side cannot fire (loading, braced, sinking: where it would fall, not a promise). */
 export const AIM_TONES = {
   laid: {
     zone: [0.98, 0.84, 0.46, 0.42],

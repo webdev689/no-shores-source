@@ -163,6 +163,3 @@ export function padIconNode(name: string, size: number): Node | null {
     },
   };
 }
-
-/** The pad's names it draws. */
-export const PAD_PICTURES: readonly string[] = Object.keys(PICTURES);

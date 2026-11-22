@@ -39,15 +39,7 @@ impl Deck {
 
 fn player_at(x: f64, y: f64) -> Sighting {
     let ship = Ship { x, y, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    Sighting {
-        id: 0,
-        hull: HullKind::Sloop,
-        ship,
-        level: 0.0,
-        hull_share: 1.0,
-        wrecked: false,
-        power: Power::player(&LARGE_BOAT, 1.0),
-    }
+    Sighting { id: 0, hull: HullKind::Sloop, ship, level: 0.0, hull_share: 1.0, power: Power::player(&LARGE_BOAT, 1.0) }
 }
 
 /// The captain's helm against one player's ship, the only hull about it.
@@ -133,25 +125,6 @@ fn a_chase_that_gains_nothing_for_150_seconds_is_given_up_and_the_player_spared(
         steer_against(&mut mind, &deck, &player_at(100.0, 0.0), 0.5);
         assert_eq!(mind.mode, Mode::Cruise, "spared 300 s");
     }
-}
-
-#[test]
-fn it_leaves_a_wrecked_player_after_thirty_seconds() {
-    let deck = Deck::new();
-    let mut mind = captain(Temper::Bold);
-    let wreck = Sighting { wrecked: true, hull_share: 0.0, ..player_at(100.0, 0.0) };
-    for _ in 0..59 {
-        steer_against(&mut mind, &deck, &wreck, 0.5);
-        assert_eq!(mind.mode, Mode::Engage);
-        assert_eq!(
-            mind.aim(&deck.own(), Some(&wreck), &mut Mulberry32::new(1)).run_out,
-            None,
-            "it never fires on a wreck"
-        );
-    }
-    steer_against(&mut mind, &deck, &wreck, 0.5);
-    steer_against(&mut mind, &deck, &wreck, 0.5);
-    assert_eq!(mind.mode, Mode::Cruise);
 }
 
 #[test]

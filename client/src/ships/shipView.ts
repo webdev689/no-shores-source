@@ -4,11 +4,11 @@ import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { DRESSES, PLAYER_LOOK, SHIP_SIDES, type ShipLook } from './dress.ts';
 import { flagFlat, flagGrid } from './flag.ts';
-import { HULL_NAMES, type HullPaint, hullPaint } from './hulls.ts';
+import type { HullPaint } from './hulls.ts';
 import { SAIL_COLUMNS, SAIL_ROWS, type SailCorners, type SailRig } from './sails.ts';
 import { shipAxes } from './shipAxes.ts';
 import type { ShipHarm } from './shipHarm.ts';
-import { loadShip, type ShipMesh, shipSails, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
+import { type ShipMesh, VERTEX_BYTES, type Waterline } from './shipMesh.ts';
 import { cellShows, flagAt, harmedCanvas, mastFalls } from './harmDrawn.ts';
 import {
   bufferOf,
@@ -381,14 +381,4 @@ export class ShipView {
     for (const slot of this.slots)
       for (const buffer of [slot.uniforms, slot.canvas, slot.canvasIndices]) buffer.destroy();
   }
-}
-
-/** A published ship drawn by its name (the Sloop, the Brig): its mesh fetched as the manifest names it, its sails'
- *  corners from it, up to `slots` of it a frame. */
-export async function shipViewNamed(
-  gpu: Gpu,
-  name: (typeof HULL_NAMES)[number],
-  slots = SHIP_SLOTS,
-): Promise<ShipView> {
-  return ShipView.open(gpu, await loadShip(name), shipSails(name), hullPaint(HULL_NAMES.indexOf(name)), slots);
 }

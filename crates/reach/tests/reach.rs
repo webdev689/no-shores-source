@@ -2,7 +2,7 @@
 //! or it strays too far, dead until it respawns, and respawned at the nearest spawn.
 
 use reach::{
-    FALL_M, LIMIT_M, Place, RESPAWN_TICKS, Section, Standing, TICKS_PER_SECOND, WARNING_TICKS, distance_outside,
+    FALL_M, LIMIT_M, Place, RESPAWN_TICKS, Section, Standing, TICKS_PER_SECOND, WARNING_TICKS, distance_to_ring,
     inside, respawn_point,
 };
 
@@ -59,7 +59,7 @@ fn a_point_on_the_ring_is_inside_and_one_just_beyond_it_is_not() {
             assert!(inside(ring, from_x, from_y), "the corner ({from_x}, {from_y})");
             let (middle_x, middle_y) = ((from_x + to_x) / 2.0, (from_y + to_y) / 2.0);
             assert!(inside(ring, middle_x, middle_y), "the edge's middle ({middle_x}, {middle_y})");
-            assert_eq!(distance_outside(ring, middle_x, middle_y), 0.0);
+            assert!(distance_to_ring(ring, middle_x, middle_y) < 1e-9);
         }
     }
     assert!(inside(&TRIANGLE, 20.0, 15.0) && inside(&TRIANGLE, 8.0, 24.0), "along the slanting edge");
@@ -77,14 +77,14 @@ fn a_ring_of_fewer_than_three_points_holds_nothing() {
 }
 
 #[test]
-fn the_distance_outside_is_to_the_nearest_edge() {
+fn the_distance_from_outside_is_to_the_nearest_edge() {
     let ring = square().ring;
-    assert_eq!(distance_outside(&ring, 50.0, 50.0), 0.0);
-    assert_eq!(distance_outside(&ring, 150.0, 50.0), 50.0);
-    assert_eq!(distance_outside(&ring, 50.0, -20.0), 20.0);
-    assert_eq!(distance_outside(&ring, 130.0, 140.0), 50.0, "past a corner, to the corner");
-    assert_eq!(distance_outside(&HORSESHOE, 15.0, 20.0), 5.0, "in the notch, to its nearer side");
-    assert_eq!(distance_outside(&TRIANGLE, 40.0, 30.0), 24.0, "off the slanting edge, square to it");
+    assert!(inside(&ring, 50.0, 50.0));
+    assert_eq!(distance_to_ring(&ring, 150.0, 50.0), 50.0);
+    assert_eq!(distance_to_ring(&ring, 50.0, -20.0), 20.0);
+    assert_eq!(distance_to_ring(&ring, 130.0, 140.0), 50.0, "past a corner, to the corner");
+    assert_eq!(distance_to_ring(&HORSESHOE, 15.0, 20.0), 5.0, "in the notch, to its nearer side");
+    assert_eq!(distance_to_ring(&TRIANGLE, 40.0, 30.0), 24.0, "off the slanting edge, square to it");
 }
 
 #[test]

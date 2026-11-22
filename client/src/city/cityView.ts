@@ -96,7 +96,7 @@ export class CityView implements CityDrawer {
   /** Draws this city from now on, in its climate's pictures; the blocks by name, the forged tables parsed. */
   setCity(plan: CityPlan, climate: CityClimate, blocks: ReadonlyMap<string, RmbBlock>, tables: CityTables): void {
     this.clear();
-    CITY_LAMPS.current = glowLamps(plan);
+    CITY_LAMPS.set(this, glowLamps(plan));
     const started = performance.now();
     const { solids, ...data } = buildCity(plan, climate, blocks, tables);
     this.frame.buildMs = performance.now() - started;
@@ -176,9 +176,10 @@ export class CityView implements CityDrawer {
 
   /** Stops drawing any city and frees its buffers. */
   clear(): void {
+    // Its lamps go even when no city stands: a build that failed lit them first.
+    CITY_LAMPS.set(this, []);
     const drawn = this.drawn;
     if (!drawn) return;
-    CITY_LAMPS.current = [];
     drawn.painter.destroy();
     drawn.tiles.destroy();
     for (const buffer of [...drawn.buffers, ...Object.values(drawn.instances).map((held) => held.buffer)])

@@ -79,14 +79,27 @@ export async function friendAsk(
       .run();
     return done;
   }
-  // Their ask waiting is accepted, by accepting it or by asking them back.
+  // Their ask waiting is accepted, by accepting it or by asking them back. Theirs was counted as they made it; the
+  // friend it makes must fit the acceptor's list, judged in the one statement that accepts, so two at once cannot
+  // both pass it.
   const acceptTheirs = () =>
     database
-      .prepare('UPDATE friends SET accepted = 1 WHERE asker_id = ?1 AND asked_id = ?2 AND accepted = 0')
-      .bind(them.id, own)
+      .prepare(
+        `UPDATE friends SET accepted = 1 WHERE asker_id = ?1 AND asked_id = ?2 AND accepted = 0
+         AND (SELECT COUNT(*) FROM friends WHERE asker_id = ?2 OR (asked_id = ?2 AND accepted = 1)) < ?3`,
+      )
+      .bind(them.id, own, FRIENDS_MOST)
       .run();
+  const full = said(409, `You can keep ${FRIENDS_MOST} friends and asks at most.`);
   if ((await acceptTheirs()).meta.changes === 1) return done;
-  if (asked === 'accept') return notAsked;
+  if (asked === 'accept') {
+    // An ask that waits and was not taken met a full list; with none waiting, it is answered as for anyone.
+    const waits = await database
+      .prepare('SELECT 1 AS waits FROM friends WHERE asker_id = ?1 AND asked_id = ?2 AND accepted = 0')
+      .bind(them.id, own)
+      .first<{ waits: number }>();
+    return waits ? full : notAsked;
+  }
   // Each player's count is their friends and their own asks, so strangers' asks cannot fill it; a list that holds
   // the most takes no new asks.
   const counts = await database
@@ -96,7 +109,7 @@ export async function friendAsk(
     )
     .bind(own, them.id)
     .first<{ mine: number; theirs: number }>();
-  if ((counts?.mine ?? 0) >= FRIENDS_MOST) return said(409, `You can keep ${FRIENDS_MOST} friends and asks at most.`);
+  if ((counts?.mine ?? 0) >= FRIENDS_MOST) return full;
   if ((counts?.theirs ?? 0) >= FRIENDS_MOST) return said(409, 'Their list is full.');
   const made = await database
     .prepare('INSERT OR IGNORE INTO friends (asker_id, asked_id, created_at) VALUES (?1, ?2, ?3)')

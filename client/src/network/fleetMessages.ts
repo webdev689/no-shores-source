@@ -95,7 +95,7 @@ export function ordersBytes(sequence: number, orders: FleetOrders): Uint8Array<A
 }
 
 /** A ship's state, a captain's mode, as the messages number them. */
-export const STATES = ['afloat', 'struck', 'sinking', 'sunk', 'wrecked'] as const;
+export const STATES = ['afloat', 'struck', 'sinking', 'sunk'] as const;
 export type VesselState = (typeof STATES)[number];
 export const MODES = ['cruise', 'engage', 'flee', 'struck', 'sinking'] as const;
 export type CaptainMode = (typeof MODES)[number];

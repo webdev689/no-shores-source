@@ -267,6 +267,9 @@ A loadout's perks, these and the rest, work while it is drawn, beside the armour
 | Taking them | Walking within 1.5 m, as Vestiges are taken now; a Vestige past the ten carried stays on the ground |
 | How long | Two minutes, then gone |
 
+Replaced in part by [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]: a Vestige is
+project-final's crystal, and every drop moves as project-final's loot does; the line stays.
+
 ## Ammo
 
 | Call | Choice |

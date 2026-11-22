@@ -305,7 +305,8 @@ fn on_ground<B: Near + ?Sized>(
     if ground < body.z - TUNING.step {
         return Body { z: body.z, mode: Mode::Air, vz: 0.0, grounded: 0.0, ..next };
     }
-    if controls.jump && grounded >= TUNING.grounded_to_jump && !controls.mounted {
+    // Six ticks of 1/60 s add up a hair short of 0.1 s, so the stand before a jump is held to within a nanosecond.
+    if controls.jump && grounded + 1e-9 >= TUNING.grounded_to_jump && !controls.mounted {
         let ahead = if controls.forward > 0.0 { wall_ahead(blocks, &next, controls.yaw) } else { None };
         // A lip in reach from the ground is vaulted if low and thin, else mantled; a higher one is caught in the air.
         // Where bodies never climb, the reach is a vault's.

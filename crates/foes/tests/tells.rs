@@ -27,8 +27,13 @@ fn a_brute_winds_up_iron_slams_and_never_guards_or_dodges() {
     assert!(orders.iter().all(|(_, order)| (order.shape == Shape::Slam) == order.iron), "only its slams are iron");
     assert!(orders.iter().all(|(_, order)| matches!(order.shape, Shape::Slam | Shape::Sweep)));
     assert!(room.foe_intents(10).iter().all(|(_, intent)| !intent.combat.guard && !intent.combat.dodge));
-    let gaps: Vec<u64> = orders.windows(2).map(|pair| pair[1].0 - pair[0].0).collect();
-    assert!(gaps.iter().all(|gap| *gap >= 8 * 60), "at least its cooldown apart: {gaps:?}");
+    // From the end of its wind-up as it runs, an iron one's extra with it.
+    let whole = |order: &combat::shapes::TelegraphOrder| {
+        u64::from(order.windup + if order.iron { combat::ticks(combat::shapes::IRON_EXTRA) } else { 0 })
+    };
+    let gaps: Vec<(u64, u64)> =
+        orders.windows(2).map(|pair| (pair[1].0 - pair[0].0, whole(&pair[0].1) + 8 * 60)).collect();
+    assert!(gaps.iter().all(|(gap, least)| gap >= least), "its wind-up and its cooldown apart: {gaps:?}");
 }
 
 #[test]
