@@ -781,13 +781,14 @@ never while a press is held. Each press is an ask the room answers.
   - **The quests** are the houses' roads ([[Quests]]) as story missions: the opening, walked from the start, and each
     house's road the player walks, each at its task, and each road done, in the roads' order. They show as cards six a
     page in two columns (one under 900 px); how many show stands beside the title, and the page between its drawn
-    arrows at the head's right. Each card shows its banner, sixteen by twenty-four: a story mission's swallowtail
-    pennant in blood and brass, charged with a star, a crown, a watchtower, an anchor, an open eye or a ship, chosen by
-    its quest's id, so each keeps its own and cards side by side differ (a side quest's shield, its field stone, plum,
-    sea, moss, ochre or slate, charged with a lozenge, a key, a fish, a sheaf of wheat, a hammer or a compass rose, is
-    drawn for quests of other kinds). Then its name, the first line its opening scene says as a line of its tale, and
-    its task's number in a brass badge with the task's words, the last task with a brass tick once the road is done.
-    A name too long for its card is cut short there and read whole to a screen reader with the rest of its card. With
+    arrows at the head's right; a card alone in its row keeps its column's width. Each card shows its banner, sixteen
+    by twenty-four: a story mission's swallowtail pennant in blood and brass, charged with a star, a crown, a
+    watchtower, an anchor, an open eye or a ship, one to each road by its place in the roads' file, so no two roads
+    wear the same (a side quest's shield, its field stone, plum, sea, moss, ochre or slate, charged with a lozenge, a
+    key, a fish, a sheaf of wheat, a hammer or a compass rose, is drawn for quests of other kinds). Then its name, the
+    first line its opening scene says as a line of its tale, and its task's number in a brass badge with the task's
+    words, the last task with a brass tick once the road is done. The keys' focus edges a card white. A name too long
+    for its card is cut short there and read whole to a screen reader with the rest of its card. With
     none to show (before any room's word, or a word not on the player's own character), it says why, the two banners
     resting over the line.
   - **The bounties**: six slots three to a row under "Bounties", with how many are taken. A tile bears its bounty's own

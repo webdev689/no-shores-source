@@ -10,7 +10,7 @@ import type { Interface } from '../ui/ui.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { type BountyRow, bountyWords, payOf } from './bountyBoard.ts';
 import { TileChoice, bountyCardNode, bountyTileNode, stateLine } from './bountyTiles.ts';
-import { INK, type Sizes, words } from './gearNodes.ts';
+import { FOCUS, INK, type Sizes, words } from './gearNodes.ts';
 import { iconNode, pixelNode } from './journalIcons.ts';
 import { timersNode } from './journalTimers.ts';
 import { CARDS_A_PAGE, type QuestCard, bountyColumnOf, questCardsOf } from './journalWords.ts';
@@ -35,12 +35,15 @@ const TIMERS_Z = 25;
 const NO_QUESTS = 'No quests held. Quests you take up are kept here.';
 
 /** A quest's card: its banner, its name, a line of its tale, and its task's number in a brass badge and its words,
- *  marked by a tick once the quest is done; a name or tale it cuts short is read whole to a screen reader. */
-function questCard(card: QuestCard, wide: boolean): Node {
+ *  marked by a tick once the quest is done, and edged white while the keys' focus is on it; a name or tale it cuts
+ *  short is read whole to a screen reader. */
+function questCard(ui: Interface, card: QuestCard, wide: boolean): Node {
   const [bannerWidth, bannerHeight] = wide ? [80, 120] : [64, 96];
+  const id = `quest-${card.id}`;
   return {
-    id: `quest-${card.id}`,
+    id,
     focusable: true,
+    ...(ui.focused(id) && ui.keyFocused && { outline: { width: 2, colour: FOCUS } }),
     label: `${card.name}. ${card.tale} Step ${card.step}: ${card.stepName}${card.done ? '. Done' : ''}`,
     role: 'panel',
     width: 'grow',
@@ -207,7 +210,7 @@ export class Journal {
       alignY: 'center',
       padding: [0, 0, 8, 0],
       children: [
-        words('Quests', 2, INK.word),
+        words('QUESTS', 2, INK.word, { tracking: 3 }),
         cards.length > 0 && {
           role: 'chip',
           padding: [1, 8],
@@ -255,12 +258,18 @@ export class Journal {
     const shown = cards.slice(this.pageAt * CARDS_A_PAGE, (this.pageAt + 1) * CARDS_A_PAGE);
     const perRow = twoColumns ? 2 : 1;
     const rows: Child[] = [];
-    for (let first = 0; first < shown.length; first += perRow)
-      rows.push({
-        width: 'grow',
-        gap: 16,
-        children: shown.slice(first, first + perRow).map((card) => questCard(card, wide)),
+    for (let first = 0; first < shown.length; first += perRow) {
+      // Each card its column's share of the row, a card alone in its row too, the gutter split between them.
+      const cells = Array.from({ length: perRow }, (_unused, nth): Node => {
+        const card = shown[first + nth];
+        return {
+          width: `${100 / perRow}%`,
+          padding: [0, nth < perRow - 1 ? 8 : 0, 0, nth > 0 ? 8 : 0],
+          children: [card && questCard(ui, card, wide)],
+        };
       });
+      rows.push({ width: 'grow', children: cells });
+    }
     return { width: 'grow', direction: 'column', gap: 10, children: [head, ...rows] };
   }
 
@@ -300,7 +309,7 @@ export class Journal {
           gap: 10,
           alignY: 'center',
           children: [
-            { width: 'grow', ...words('Bounties', 2, INK.word) },
+            { width: 'grow', ...words('BOUNTIES', 2, INK.word, { tracking: 3 }) },
             column.slots > 0 && {
               role: 'chip',
               padding: [1, 8],

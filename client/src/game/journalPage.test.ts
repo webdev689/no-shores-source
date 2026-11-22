@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { isDeepStrictEqual } from 'node:util';
 import type { GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
-import { bannerFor, bannerSvg } from '../plus/journalArt.ts';
+import { BANNER_KEYS, bannerSvg } from '../plus/journalArt.ts';
 import type { Node } from '../ui/node.ts';
 import type { Interface, UiEvent } from '../ui/ui.ts';
 import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
@@ -108,7 +109,11 @@ test('the Journal shows the houses’ roads: the opening at its task before the 
     'a line of its tale: the opening line its first scene says',
   );
   const banner = nodesOf(byId(before.tree(), `quest-${opening.id}`)).find((node) => node.picture)?.picture;
-  assert.deepEqual(banner?.source, { svg: bannerSvg(bannerFor('story', opening.id)) }, 'a story mission’s banner');
+  const pennants = BANNER_KEYS.filter((key) => key.startsWith('story-')).map((key) => bannerSvg(key));
+  assert.ok(
+    pennants.some((svg) => isDeepStrictEqual(banner?.source, { svg })),
+    'a story mission’s banner',
+  );
   const pledged = journalOf({ week: () => null, kept: () => geared(roads(2, 3, [1, 0, 0, 0])) });
   const cards = nodesOf(pledged.tree()).filter((node) => node.id?.startsWith('quest-'));
   assert.deepEqual(
@@ -188,12 +193,15 @@ test('the timers stay down as the minute, the day and the gear change under them
   assert.equal(journal.down, true, 'still down');
 });
 
-test('two columns of cards where the page is wide, one where it is not', () => {
-  const wide = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) });
+test('two columns of cards where the page is wide, one where it is not; a card alone in its row keeps its width', () => {
+  const wide = journalOf({ week: () => null, kept: () => geared(roads(3, 0, [1, 1, 0, 0])) });
   const narrow = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) }, () => FRIDAY_AT, 800);
-  const [first, second] = [`quest-${QUESTS[0]?.id}`, `quest-${QUESTS[1]?.id}`];
+  const [first, second, third] = QUESTS.map((quest) => `quest-${quest.id}`);
+  assert.ok(first && second && third);
   assert.equal(wide.ui.boxOf(first)?.y, wide.ui.boxOf(second)?.y, 'side by side');
   assert.ok((narrow.ui.boxOf(first)?.y ?? 0) < (narrow.ui.boxOf(second)?.y ?? 0), 'one over the other');
+  assert.ok((wide.ui.boxOf(third)?.y ?? 0) > (wide.ui.boxOf(first)?.y ?? 0), 'the third on a row of its own');
+  assert.equal(wide.ui.boxOf(third)?.width, wide.ui.boxOf(first)?.width, 'as wide as the cards above it');
 });
 
 test('the timers stand within the room the menu gives the page, however many rows they hold', () => {
@@ -208,4 +216,17 @@ test('the timers stand within the room the menu gives the page, however many row
   const [page, timers] = [ui.boxOf('journal'), ui.boxOf('journal-timers')];
   assert.ok(page && timers);
   assert.ok(timers.y + timers.height <= page.y + 240, 'no lower than the page’s room');
+});
+
+test('the keys’ focus on a quest’s card edges it white, and no other card', () => {
+  const { ui, frame, tree } = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) });
+  const [first, second] = QUESTS.map((quest) => `quest-${quest.id}`);
+  assert.ok(first && second);
+  assert.equal(byId(tree(), first)?.outline, undefined, 'none before the keys come to it');
+  ui.focusOn(HOURGLASS);
+  frame([{ kind: 'key', key: 'Tab' }]);
+  frame();
+  assert.equal(ui.focusedId, first);
+  assert.ok(byId(tree(), first)?.outline, 'edged');
+  assert.equal(byId(tree(), second)?.outline, undefined);
 });

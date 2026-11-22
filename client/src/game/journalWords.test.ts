@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
 import type { QuestState } from '../network/questMessages.ts';
-import { BANNER_KEYS, bannerFor } from '../plus/journalArt.ts';
+import { BANNER_KEYS } from '../plus/journalArt.ts';
 import { bountyWords } from './bountyBoard.ts';
 import { bountyColumnOf, countdownWords, questCardsOf, whenWords } from './journalWords.ts';
 import type { QuestLine } from './quests/questBook.ts';
@@ -56,10 +56,10 @@ test('the roads are cards: the one walked at its task from one, each done at its
   const roads = [sample('opening'), sample('first-house'), sample('second-house')];
   const cards = questCardsOf(walking(3, 0, [1, 0, 0]), roads);
   assert.deepEqual(
-    cards.map((card) => [card.id, card.kind, card.banner, card.step, card.stepName, card.done]),
+    cards.map((card) => [card.id, card.kind, card.banner.startsWith('story-'), card.step, card.stepName, card.done]),
     [
-      ['opening', 'story', bannerFor('story', 'opening'), 2, 'Sample second task', true],
-      ['second-house', 'story', bannerFor('story', 'second-house'), 1, 'Sample first task', false],
+      ['opening', 'story', true, 2, 'Sample second task', true],
+      ['second-house', 'story', true, 1, 'Sample first task', false],
     ],
     'the opening done, the house walked; the house not begun shows nothing',
   );
@@ -96,11 +96,12 @@ test('the bounties taken stand in the board’s order, each with its count, done
   );
 });
 
-test('every road the rules keep has a card to show: its banner drawn, a line of its tale and a task', () => {
+test('every road the rules keep has a card to show: a banner of its own drawn, a line of its tale and a task', () => {
   const cards = questCardsOf(walking(0, 0, [1, 1, 1, 1]));
   assert.equal(cards.length, 4, 'the opening and the three houses’ roads');
   for (const card of cards) {
     assert.ok(BANNER_KEYS.includes(card.banner), `${card.id}’s banner is drawn`);
     assert.ok(card.tale !== '' && card.stepName !== '', `${card.id} has a tale and a task`);
   }
+  assert.equal(new Set(cards.map((card) => card.banner)).size, 4, 'no two roads wear the same banner');
 });
