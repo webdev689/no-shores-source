@@ -18,3 +18,8 @@ test('a missing or broken pixel ratio counts as one', () => {
   assert.deepEqual(canvasSize(10, 20, 0), { width: 10, height: 20 });
   assert.deepEqual(canvasSize(10, 20, Number.NaN), { width: 10, height: 20 });
 });
+
+test('a buffer wider or taller than the GPU draws is shrunk to its most, keeping its shape', () => {
+  assert.deepEqual(canvasSize(5000, 1000, 2), { width: 8192, height: 1638 });
+  assert.deepEqual(canvasSize(1000, 6000, 2), { width: 1365, height: 8192 });
+});

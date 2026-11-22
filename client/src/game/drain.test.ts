@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { countingGpu } from '../gpuForTests.ts';
 import { easeOut } from '../ui/ease.ts';
-import { DRAIN_S, Drain, drainOf } from './drain.ts';
+import { DRAIN_S, Drain, type DrainView, drainOf } from './drain.ts';
+import { DungeonScene } from './dungeonScene.ts';
 
 const near = (actual: number, expected: number, within = 1e-4) =>
   assert.ok(Math.abs(actual - expected) <= within, `${actual} is not within ${within} of ${expected}`);
@@ -48,4 +50,16 @@ test('turned mid-way, it starts from where it stands and takes the share of the 
   assert.ok(drain.share > 0 && drain.share < 0.01, 'all but back');
   drain.step(DRAIN_S * stood * 0.001);
   assert.equal(drain.share, 0);
+});
+
+test("a dungeon's scene let go gives back the drain's copy of the picture", () => {
+  const counting = countingGpu();
+  const scene = new DungeonScene(counting.gpu);
+  const before = counting.live();
+  const drain = (scene as unknown as { drain: DrainView }).drain;
+  const encoder = counting.gpu.device.createCommandEncoder();
+  drain.encode(encoder, { width: 64, height: 32, createView: () => ({}) } as unknown as GPUTexture, 0.5);
+  assert.equal(counting.live(), before + 1, 'the copy the picture drains from');
+  scene.release();
+  assert.equal(counting.live(), before);
 });

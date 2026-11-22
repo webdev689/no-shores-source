@@ -237,7 +237,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   over the letters, Shift for one capital, Back, a wide Space and Done (Enter), at the view's foot or its head where the field stands
   low; the pad's cross walks them, A types the one it stands on and B puts them away, the field keeping the focus.
   While they are open the browser's own typing and keyboard stay away; a keyboard's key, or the focus leaving the
-  field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is `CanvasEvents`; the interface hears plain events, and with the game in its worker
+  field, sends them away. A on a field the pad reached opens them again once B has put them away. The page's side is `CanvasEvents`, which sends a held Enter or Space once, never its repeats, so it presses once as the pad's A does; the interface hears plain events, and with the game in its worker
   ([[Game]], "Threads") hears them as the page sends them (`eventsOn`), what it types in sent back to the page. Outside a menu the keys stay the game's, and the pointer locked to look round presses nothing.
 - **The pad's cursor** (`padCursor.ts`, [[Pick - Pad Cursor and Gauntlet]]). Wherever the interface takes the pad (a
   window, the sheet, the creation, a field being typed in, the Test Ground's panels while a control there has focus), the left stick thrown from rest past its 0.2 lean brings
@@ -757,7 +757,7 @@ never while a press is held. Each press is an ask the room answers.
   longer the rarer it is: 0.6 seconds for Normal up to 1.8 for Atheric. Once it acts, a dismantled piece breaks
   into shards of its rarity and a fed one gives off a ring; let go early, nothing happens. F dismantles the carried
   piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
-  or leaving the window, lets go.
+  the focus leaving a press held by Enter or Space, or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
   shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye, coat or barding
   newly kept among them. Rows slide in, stay four
@@ -998,7 +998,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   cannot be asked for says why under its price (a level not reached, a pack full), and "Not enough" is only for one the
   room would sell. At the foot "Stock refresh" and the time to the next daily reset, 09:00 UTC, for the smiths, the
   Tailor and the Tack, or "Leaves in" and the time left for Shape, to Sunday 21:00 UTC: both counted in minutes by the
-  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`), the page taking off the seconds gone. The
+  room module's rules (`activitiesAt`, its `untilDay` and `untilShapeGoes`) at the rooms' clock (`roomNow`), the page
+  taking off the seconds gone. The
   footer: Hold (Buy; Open at the Mage's), the Character key as bound (Open Character), Esc (Dismiss); while a fragment
   is chosen it says Esc (Back) and offers Back, which steps back as Escape does. Arrow keys move among the tiles, Enter
   presses, Escape steps back, and the focus goes back where it came from. In a room narrower than 600 px, as on a phone,

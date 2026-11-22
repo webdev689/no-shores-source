@@ -69,7 +69,9 @@ test('let go early, or moved off, or its page gone, a hold does nothing', () => 
   frame(fakeUi({ pressing: 'buy', hovered: 'buy' }));
   holds.frame(fakeUi({ pressing: 'buy', hovered: 'buy' }));
   holds.end();
-  assert.ok(!holds.holding, 'a press no longer laid is let go');
+  wait(HOLD_MS);
+  frame(fakeUi({ pressing: 'buy', hovered: 'buy' }));
+  assert.deepEqual(acted, [], 'a press no longer laid is let go, its hold begun again');
 });
 
 test('Enter held on the focused press holds it until Enter is let go', () => {
@@ -87,6 +89,29 @@ test('Enter held on the focused press holds it until Enter is let go', () => {
   wait(HOLD_MS);
   frame(ui);
   assert.deepEqual(acted, ['buy']);
+});
+
+test('Enter held on a press lets go once the focus leaves it, acting on neither it nor the press focused next', () => {
+  const { acted, wait, holds } = setup();
+  const both = (focused: string) => {
+    const ui = fakeUi({ focused, keyFocused: true });
+    holds.frame(ui);
+    for (const id of ['buy', 'sell']) holds.press(ui, id, () => acted.push(id));
+    holds.end();
+  };
+  holds.key('Enter', true);
+  both('buy');
+  wait(HOLD_MS / 2);
+  both('sell');
+  wait(HOLD_MS);
+  both('sell');
+  assert.deepEqual(acted, [], 'Enter must be pressed again');
+  holds.key('Enter', false);
+  holds.key('Enter', true);
+  both('sell');
+  wait(HOLD_MS);
+  both('sell');
+  assert.deepEqual(acted, ['sell']);
 });
 
 test('F held over a carried piece dismantles it after as long as its rarity asks; a chord is the browser’s', () => {

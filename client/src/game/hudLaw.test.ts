@@ -56,6 +56,8 @@ test('distances read in metres near and kilometres far', () => {
   assert.equal(distanceText(347), '350 m');
   assert.equal(distanceText(4_260), '4.3 km');
   assert.equal(distanceText(146_000), '146 km');
+  assert.equal(distanceText(996), '1.0 km', 'rounded before its unit is chosen');
+  assert.equal(distanceText(19_960), '20 km');
 });
 
 test("the warning's count and the wait to respawn are the reach rules' own, read through the movement door", async () => {
