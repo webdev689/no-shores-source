@@ -161,9 +161,12 @@ Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   level 10.", "The Abyss Playlist opens at level 20."), then the character's band: a run takes no one below its
   band's first level or above its last ("This run is for levels 15 to 19.", "This run is for level 30.").
 - **Starting one.** Find a Company searches the playlist's one queue for the whole game ([[Accounts]], "Find a
-  Company"); the server draws the Elite Dungeon as the company is found. Launch starts a fresh run alone, which the
-  player's company joins by the Roster; the page draws its Elite Dungeon. The Elite Dungeon of the week is found or
-  launched; the Abyss Dungeon of the week is launched only, never matched. Offline the page launches alone.
+  Company"); the server draws the Elite Dungeon as the company is found. Launch asks the same finder for a run at
+  once, alone, which the player's company joins by the Roster; the server draws its Elite Dungeon too, as the owner
+  chose ([[A Playlist's Launch Is Drawn by the Server]]), and a playlist's room lets in first only an account the server
+  drew it for ([[Server]], "A run keeps to its company"). The Elite Dungeon of the week is found or launched; the Abyss Dungeon
+  of the week is launched only, never matched, each the week's own dungeon, which the room checks. Offline, where
+  nothing is kept, the page draws a playlist's Launch.
 - **Going and coming back.** A run found or launched is gone into from the sea or over the island's side, through a
   voyage's veil; out of it by its door, its portal or a wipe, the player is back on the sea where the ship lies,
   beside the port it was launched from, as a sea island's dungeon leaves back to the sea. The rooms take a player

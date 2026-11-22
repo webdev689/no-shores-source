@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { runAsk, runInstance } from '../roomNames.ts';
 import { accounts } from './accountsForTests.ts';
 import { characters } from './characters.ts';
-import { FOUND_KEPT_MS, companionsOf } from './companies.ts';
+import { FOUND_KEPT_MS, companionsOf, launchedFor } from './companies.ts';
 import {
   FINDING_MOST,
   Finder,
@@ -376,4 +376,34 @@ test('a playlist’s seekers are banded by five levels and sent into an Elite Du
     minute: 29_919_420,
     playlist: 17,
   });
+});
+
+test('a playlist’s Launch is started at once, for its seeker alone, its Elite Dungeon drawn and kept by the server', async () => {
+  const { made, tokens, ids, database } = await world(['Ada', 'Ben'], 22);
+  const finder = new Finder('playlist-abyss', {
+    seeker: (token) => seekerOf(database, token, made.clock.now),
+    found: (run, found) => foundRun(database, run, found, made.clock.now),
+    now: () => made.clock.now,
+    instance: () => 'k3j4h5g6',
+    pick: () => 1,
+  });
+  const ben = await seeking(finder, tokens['Ben'] ?? '');
+  const launch = new FakeSocket();
+  await finder.heard(finder.opened(launch, true), tokens['Ada'] ?? '');
+  await finder.tick();
+  const run = 'node-pearl-tomb--abyss--playlist-23--run-k3j4h5g6';
+  assert.deepEqual(launch.sent, [JSON.stringify({ run })], 'at once, not after a minute');
+  assert.deepEqual(ben.sent, [], 'a seeker of Find a Company waits on, never put into a launch');
+  assert.equal(await launchedFor(database, ids['Ada'] ?? '', run, made.clock.now), true, 'kept for its seeker');
+  assert.equal(await launchedFor(database, ids['Ben'] ?? '', run, made.clock.now), false);
+  const elsewhere = new Finder('node-pearl-tomb', {
+    seeker: (token) => seekerOf(database, token, made.clock.now),
+    found: (found, accounts) => foundRun(database, found, accounts, made.clock.now),
+    now: () => made.clock.now,
+    instance: () => 'k3j4h5g7',
+  });
+  const alone = new FakeSocket();
+  await elsewhere.heard(elsewhere.opened(alone, true), tokens['Ada'] ?? '');
+  await elsewhere.tick();
+  assert.deepEqual(alone.sent, [], 'only a playlist launches: an Elite Dungeon’s search waits for its company');
 });

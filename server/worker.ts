@@ -236,6 +236,7 @@ export class RoomHost extends DurableObject<Env> {
       save: (account: string, holder: string, body: string) => accounts.save(account, holder, body),
       release: (account: string, holder: string, body: string | null) => accounts.release(account, holder, body),
       companions: (account: string, room: string) => accounts.companions(account, room),
+      launched: (account: string, room: string) => accounts.launched(account, room),
     };
     // The game's nodes, dungeons, islands and the sea keep characters (at sea, with their ship's hurts): the Test
     // Ground grants gear to try it, and a fleet room is the World Editor's.

@@ -77,35 +77,46 @@ export function startPlaylists(deps: PlaylistDeps): Playlists {
     close();
     deps.intoRun(node, run);
   };
+  /** Asks the server for a run of `entry`'s base: Find a Company's group, or with `launch` a playlist's run at once,
+   *  alone or for the company, its Elite Dungeon drawn there as a found run's is; false where the page cannot ask. */
+  const seek = (entry: PlaylistEntry, launch: boolean): boolean => {
+    const [base, token, link] = [entry.launch.finds, deps.link?.token ?? null, deps.link];
+    if (base === null || token === null || !link || search) return false;
+    said = null;
+    const address = launch ? `${link.finderAt(base)}?launch` : link.finderAt(base);
+    search = findCompany(
+      address,
+      base,
+      token,
+      {
+        found: (run) => {
+          search = null;
+          into(run);
+        },
+        ended: (why) => {
+          [search, said] = [null, why];
+          render();
+        },
+      },
+      deps.now,
+      deps.open,
+    );
+    render();
+    return true;
+  };
   const view = new PlaylistView({
     launch: (entry: PlaylistEntry) => {
+      if (search) return;
+      // A playlist's Elite Dungeon is the server's draw while signed in; the week's two are the week's own.
+      if (entry.launch.place === null && entry.launch.playlist !== null && seek(entry, true)) return;
       const module = deps.module();
       const elites = module ? activitiesAt(module, Math.floor(deps.now() / 60_000)).elites : [];
+      // Playing alone keeps nothing, so the page draws it: no account's record is paid there.
       const place = entry.launch.place ?? elites[pick(elites.length)];
-      if (place !== undefined && !search) into(launchRoom(entry.launch, place, instance()));
+      if (place !== undefined) into(launchRoom(entry.launch, place, instance()));
     },
     find: (entry: PlaylistEntry) => {
-      const [base, token, link] = [entry.launch.finds, deps.link?.token ?? null, deps.link];
-      if (base === null || token === null || !link || search) return;
-      said = null;
-      search = findCompany(
-        link.finderAt(base),
-        base,
-        token,
-        {
-          found: (run) => {
-            search = null;
-            into(run);
-          },
-          ended: (why) => {
-            [search, said] = [null, why];
-            render();
-          },
-        },
-        deps.now,
-        deps.open,
-      );
-      render();
+      seek(entry, false);
     },
     stop: () => {
       stopSearch();

@@ -203,6 +203,9 @@ each playlist, never the Abyss Dungeon of the week, whose company forms it.
   (`playlistBand`, `playlists.ts`): the Elite's 10 to 14 up to 30 alone, the Abyss's 20 to 24 up to 30 alone; a
   seeker below it is closed with 4003 and "The Elite Playlist opens at level 10." (or the Abyss's at 20). Its levels
   and the 18 Elite Dungeons are the rules' own, which a test holds to the room module's word (`playlists.test.ts`).
+- **Launch** (`?launch` on a playlist's address, `opened(socket, alone)`): the seeker's run is started at the next
+  look, alone, its Elite Dungeon drawn and kept for them as a found run is; no other seeker joins it, and it joins no
+  group. Only a playlist launches: on an Elite Dungeon's base a launch waits as any search does.
 - **Matching** (`Queue`): within a band, the one waiting longest first, then each next longest still free who blocks
   none of those taken and is blocked by none of them. A run starts with four as soon as there are four, or with as
   many as there are once its first has waited a minute (`FIND_WAIT_MS`). It looks each second while it holds a

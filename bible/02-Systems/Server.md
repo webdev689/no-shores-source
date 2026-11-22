@@ -484,6 +484,10 @@ so every decision is Rust and the shell only carries bytes and time.
   dungeon (on its sea's word, "The sea") open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
   player joins, and a patrol's dungeon's run is given its patrol's node file too, so it keeps the patrol's lock. One
   no rule lays, or whose patrol's file is missing, answers 404.
+- **A playlist's run is the server's**: its first character is given only to an account the server found or launched
+  it for within a day (`launched(account, room)`, `found_runs`), so its Elite Dungeon is always the server's draw
+  ([[A Playlist's Launch Is Drawn by the Server]]); any other first is let go untouched, closed with 4003 and "Start
+  this run from the Playlist.". Then it keeps to its company as any run does.
 - **A run keeps to its company** (`Keeper.forCompany`): a character is given to the first to come, then only to one
   it let in before, one in the company of someone it let in, or one it was found for with them by Find a Company
   (`companions(account, room)`, [[Accounts]]), for as long as the run lives, so a member back after every other

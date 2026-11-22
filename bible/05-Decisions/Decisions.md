@@ -279,6 +279,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]]
 - [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]
 - [[The Playlist and Its Dungeons as Claude Shapes Them]]
+- [[A Playlist's Launch Is Drawn by the Server]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

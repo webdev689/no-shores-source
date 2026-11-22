@@ -46,13 +46,15 @@ export function findingAt(request: Request): string | null {
   return base !== undefined && base.length <= BASE_MOST ? base : null;
 }
 
-/** One waiting for a run: their socket's number, account, band, when they began, and whom they are kept apart from. */
+/** One waiting for a run: their socket's number, account, band, when they began, whom they are kept apart from, and
+ *  whether they launch alone (a playlist's Launch: their run is started at once, for them and their company). */
 export interface Seeker {
   readonly socket: number;
   readonly account: string;
   readonly band: number;
   readonly since: number;
   readonly apart: readonly string[];
+  readonly alone?: boolean;
 }
 
 /** Whether two seekers may share a run: neither blocks the other. */
@@ -87,11 +89,11 @@ export class Queue {
       if (taken.has(first)) continue;
       const group = [first];
       for (const other of oldest) {
-        if (group.length === RUN_MOST) break;
-        const free = other !== first && !taken.has(other) && other.band === first.band;
+        if (group.length === RUN_MOST || first.alone) break;
+        const free = other !== first && !taken.has(other) && !other.alone && other.band === first.band;
         if (free && group.every((one) => together(one, other))) group.push(other);
       }
-      if (group.length < RUN_MOST && now - first.since < FIND_WAIT_MS) continue;
+      if (group.length < RUN_MOST && now - first.since < FIND_WAIT_MS && !first.alone) continue;
       for (const one of group) taken.add(one);
       runs.push(group);
     }
@@ -149,7 +151,7 @@ export class Finder {
   /** Each socket held, by its number, when it opened, and whether its token has come. */
   private readonly sockets = new Map<
     number,
-    { readonly socket: FinderSocket; readonly since: number; heard: boolean }
+    { readonly socket: FinderSocket; readonly since: number; heard: boolean; readonly alone: boolean }
   >();
   private next = 1;
 
@@ -158,9 +160,10 @@ export class Finder {
     this.deps = deps;
   }
 
-  opened(socket: FinderSocket): number {
+  /** Holds a new seeker's socket; `alone` for a playlist's Launch, whose run is drawn and kept here at once. */
+  opened(socket: FinderSocket, alone = false): number {
     const number = this.next++;
-    this.sockets.set(number, { socket, since: this.deps.now(), heard: false });
+    this.sockets.set(number, { socket, since: this.deps.now(), heard: false, alone });
     return number;
   }
 
@@ -180,7 +183,9 @@ export class Finder {
     const playlist = playlistOf(this.base);
     const band = playlist === null ? bandOf(level) : playlistBand(playlist, level);
     if (playlist !== null && band === null) return this.letGo(socket, 4003, playlistShut(playlist));
-    const replaced = this.queue.join({ socket, account, band: band ?? 0, since: this.deps.now(), apart });
+    // Only a playlist's run is launched alone: an Elite Dungeon's and the week's start from their entrances.
+    const alone = held.alone && playlist !== null;
+    const replaced = this.queue.join({ socket, account, band: band ?? 0, since: this.deps.now(), apart, alone });
     if (replaced !== null) this.letGo(replaced, 4003, ANOTHER_TAB);
   }
 

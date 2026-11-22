@@ -122,7 +122,7 @@ const places = [...activitiesAt(await module, FRIDAY_NINE).elites, 'overlook-soc
 const link = { token: 'a'.repeat(64), finderAt: (base: string) => `ws://finder.test/v1/find/${base}` };
 
 /** The screens at sea for a character of `level`, the Playlist's layer drawn on a page, every run gone into kept. */
-async function atSea(level: number) {
+async function atSea(level: number, signedIn = true) {
   const { window } = fakePage();
   const [sockets, into] = [[] as FinderSocket[], [] as string[]];
   let look = () => undefined as void;
@@ -141,7 +141,7 @@ async function atSea(level: number) {
     places,
     () => null,
     trips,
-    link,
+    signedIn ? link : null,
     clock,
     () => gear,
   );
@@ -173,8 +173,8 @@ function drawn(screens: ActivityScreens) {
   };
 }
 
-test('a Playlist’s mark opens its screen beside its port; Launch goes into a fresh run of a drawn Elite Dungeon', async () => {
-  const { screens, window, into, root } = await atSea(17);
+test('a Playlist’s mark opens its screen beside its port; Launch goes into the run the server draws for it', async () => {
+  const { screens, window, sockets, into, root } = await atSea(17);
   assert.equal(screens.playlist('overlook-port'), false, 'a port’s own mark is no Playlist');
   assert.equal(screens.playlist('overlook-playlist'), true);
   for (const words of ['PLAYLIST', 'Beside Overlook', 'ELITE PLAYLIST', 'Elite · Levels 15 to 19 · Foes at level 17'])
@@ -182,8 +182,12 @@ test('a Playlist’s mark opens its screen beside its port; Launch goes into a f
   assert.ok(root.find('Shadow spells deal double damage. Wearing Shadow, you take double.'), 'a modifier’s words');
   assert.equal(gearScreenOpen(), true, 'the game’s keys rest under it');
   assert.ok(root.click('playlist-launch'));
-  assert.equal(into.length, 1);
-  assert.match(into[0] ?? '', /^([a-z-]+) node-\1--elite--playlist-17--run-[a-z0-9]{8}$/);
+  assert.equal(sockets[0]?.address, 'ws://finder.test/v1/find/playlist-elite?launch', 'the server draws it');
+  sockets[0]?.fire('open');
+  assert.deepEqual(sockets[0]?.sent, [link.token]);
+  assert.equal(into.length, 0, 'not before the server answers');
+  sockets[0]?.fire('message', { data: '{"run":"node-coral-halls--elite--playlist-17--run-m9n8b7v6"}' });
+  assert.deepEqual(into, ['coral-halls node-coral-halls--elite--playlist-17--run-m9n8b7v6']);
   assert.equal(gearScreenOpen(), false, 'closed as the run is gone into');
   screens.playlist('sunspire-playlist');
   window.dispatchEvent(new FakeEvent('keydown', { key: 'ArrowRight' }));
@@ -204,4 +208,12 @@ test('Find a Company on a playlist searches its one queue and goes into the run 
   assert.ok(root.find('Finding a company · 0:00'));
   sockets[0]?.fire('message', { data: '{"run":"node-coral-halls--elite--playlist-17--run-m9n8b7v6"}' });
   assert.deepEqual(into, ['coral-halls node-coral-halls--elite--playlist-17--run-m9n8b7v6']);
+});
+
+test('playing alone, Launch goes into a run of an Elite Dungeon the page draws, as nothing is kept', async () => {
+  const { screens, sockets, into, root } = await atSea(17, false);
+  screens.playlist('overlook-playlist');
+  assert.ok(root.click('playlist-launch'));
+  assert.equal(sockets.length, 0, 'no server to ask');
+  assert.match(into[0] ?? '', /^([a-z-]+) node-\1--elite--playlist-17--run-[a-z0-9]{8}$/);
 });

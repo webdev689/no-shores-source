@@ -54,6 +54,15 @@ export async function companionsOf(database: Db, account: string, room: string, 
   return [...new Set([...company, ...results.map((row) => row.account_id)])];
 }
 
+/** Whether `room` was found or launched for the account by the server within FOUND_KEPT_MS. */
+export async function launchedFor(database: Db, account: string, room: string, now: number): Promise<boolean> {
+  const row = await database
+    .prepare('SELECT 1 AS found FROM found_runs WHERE room = ?1 AND account_id = ?2 AND found_at >= ?3')
+    .bind(room, account, now - FOUND_KEPT_MS)
+    .first<{ found: number }>();
+  return row !== null;
+}
+
 /** Takes a player out of their company: a company left with one ends, and a leader who leaves hands the lead to the
  *  longest there. */
 async function leave(database: Db, account: string): Promise<void> {

@@ -11,13 +11,15 @@
 
 import type { Claimed, Characters as Kept } from './accounts/characters.ts';
 import { NO_WAY_HERE } from './arrival.ts';
-import { runFull } from './roomNames.ts';
+import { nodeRoom, runFull } from './roomNames.ts';
 
 /** What a room keeps characters with: claiming, saving and letting go, and a player's companions. */
-type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions'>;
+type Characters = Pick<Kept, 'look' | 'claim' | 'save' | 'release' | 'companions' | 'launched'>;
 
 /** Why a run's room sends a player away who is in no company of those kept in it. */
 export const ANOTHER_COMPANY = "This run is another company's.";
+/** Why a playlist's run sends away a first player the server never started it for: its dungeon is the server's draw. */
+export const FROM_THE_PLAYLIST = 'Start this run from the Playlist.';
 /** Why a room sends away a player it cannot keep: their token is no session, or none came in time. */
 export const SIGN_IN = 'Sign in to play online.';
 export const SIGN_IN_FOR_RUN = 'Sign in to enter this run.';
@@ -216,8 +218,16 @@ export class Keeper {
     // A run is full by the accounts it keeps, so a member's own older socket never counts against them.
     const others = new Set([...this.held.values()].map((held) => held.account).filter((one) => one !== account));
     const full = this.company ? runFull(this.name, others.size + 1) : null;
+    // A playlist's run is the server's: its first player must be one the server drew it for (`finding.ts`).
+    const drawn =
+      this.admitted.size === 0 && characters && nodeRoom(this.name.slice('node-'.length))?.playlist != null
+        ? await this.tried(() => characters.launched(account, this.name), here)
+        : true;
+    if (drawn === undefined) return undefined;
     const shut =
-      this.room.shut(player, body) || (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : ''));
+      this.room.shut(player, body) ||
+      (full ?? (companions && !this.admits(companions) ? ANOTHER_COMPANY : '')) ||
+      (drawn ? '' : FROM_THE_PLAYLIST);
     if (shut !== '' || !characters || !this.arrives || this.arrives(from, body)) return shut;
     // Come by no way that leads here, a player may still join one of their company who plays here.
     const company = companions ?? (await this.tried(() => characters.companions(account, this.name), here));

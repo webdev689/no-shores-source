@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { accounts } from './accounts/accountsForTests.ts';
 import { characters } from './accounts/characters.ts';
 import { foundRun } from './accounts/finding.ts';
-import { ACCOUNTS_TROUBLE, Keeper, SAVE_UNCHANGED_MS, SIGN_IN, SIGN_IN_FOR_RUN } from './keeping.ts';
+import { ACCOUNTS_TROUBLE, FROM_THE_PLAYLIST, Keeper, SAVE_UNCHANGED_MS, SIGN_IN, SIGN_IN_FOR_RUN } from './keeping.ts';
 import { roomOf, world } from './keepingForTests.ts';
 
 test('a run its gate shuts judges before it claims, so the room playing the character keeps it', async () => {
@@ -262,4 +262,33 @@ test('a run sends away a player whose kept body it cannot read, since it keeps n
   );
   assert.deepEqual(sent, [[1, ACCOUNTS_TROUBLE, false]]);
   assert.equal((await kept.claim(token, 'node-b:1'))?.body, 'not readable', 'let go untouched');
+});
+
+test('a playlist’s run lets in first only one the server started it for, then their company', async () => {
+  const made = accounts();
+  const tokens: Record<string, string> = {};
+  for (const name of ['Ada', 'Ben', 'Cal']) {
+    tokens[name] = (await made.ask('POST', '/v1/guest')).body['token'] as string;
+    await made.ask('POST', '/v1/register', { username: name, password: 'long enough' }, tokens[name]);
+  }
+  await made.ask('POST', '/v1/social/company/invite', { name: 'Ben' }, tokens['Ada']);
+  await made.ask('POST', '/v1/social/company/accept', { name: 'Ada' }, tokens['Ben']);
+  const kept = characters(
+    made.deps.database,
+    () => made.clock.now,
+    () => Promise.resolve(),
+  );
+  const room = roomOf();
+  for (const player of [1, 2, 3]) room.held.set(player, '{"starting":true}');
+  const sent: [number, string | undefined][] = [];
+  const name = 'node-pearl-tomb--elite--playlist-22--run-k3j4h5g6';
+  const keeper = new Keeper(kept, room, name, (player, why) => sent.push([player, why])).forCompany();
+  const [now, here] = [() => made.clock.now, () => true];
+  // A page that names its own playlist run, its dungeon its own pick, is refused.
+  assert.equal(await keeper.signIn(1, tokens['Cal'] ?? '', now, here), false);
+  assert.deepEqual(sent, [[1, FROM_THE_PLAYLIST]]);
+  const ada = (await kept.look(tokens['Ada'] ?? ''))?.account ?? '';
+  assert.equal(await foundRun(made.deps.database, name, [ada], made.clock.now), true);
+  assert.equal(await keeper.signIn(2, tokens['Ada'] ?? '', now, here), true, 'the one the server launched it for');
+  assert.equal(await keeper.signIn(3, tokens['Ben'] ?? '', now, here), true, 'and her company');
 });
