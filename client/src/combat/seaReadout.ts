@@ -3,48 +3,73 @@
 // Crew, the hull's frame flashing low as health's does, a fire chip under them); the ship's abilities stand at the
 // bottom left as the Arts' bar does on foot (`shipAbilityBar.ts`); the target card under the compass is the target's
 // plate (the faction's emblem, its name, one hull bar in its rank's colour, its class, distance and state as small
-// words); the tally of the last volley under the view's middle; and DFO's warning under the card while a battery is
-// run out at the player's ship.
+// words); the tally of the last volley under the view's middle; and the broadside warning under the card while a
+// battery is run out at the player's ship, written over the sea as the game's other warnings are, with no panel.
 import { BAR_TONES, CORNER, VITAL_SIZES } from '../plus/barFrame.ts';
 import { PIECE_LEAST } from '../plus/barLoss.ts';
 import { UNDER_COMPASS } from '../plus/compass.ts';
 import { EMBLEM_PIXELS, emblemSvg } from '../plus/emblems.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { lowShare, Meter } from '../plus/meter.ts';
-import { CARD_GAP, SHIP_BARS, type SeaFightModel, seaFightWords } from '../plus/seaFight.ts';
+import {
+  CARD_GAP,
+  SHIP_BARS,
+  type SeaFightModel,
+  seaFightWords,
+  type SeaWarning,
+  seaWarnWords,
+} from '../plus/seaFight.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { announce } from '../ui/announce.ts';
 import type { Node, Text } from '../ui/node.ts';
 import { lineHeight } from '../ui/text.ts';
-import { drawMeter, edges, grownBy, paintBox, ring, thinBarNode } from './barDraw.ts';
-import { type CapFace, ShipAbilityBar, shipBarSize } from './shipAbilityBar.ts';
+import { drawMeter, grownBy, keycapNode, paintBox, thinBarNode } from './barDraw.ts';
+import { type CapFace, capWords, ShipAbilityBar, shipBarSize } from './shipAbilityBar.ts';
 
-/** The hull's low blink (on for its first half) and the warning's pulse (its lit look for the second half of each
- *  0.5 s), in seconds. */
+/** The hull's low blink (on for its first half), and the warning's pulse (its lit look for the second half of each),
+ *  in seconds: slower while its battery's tell burns, faster once it may fire. */
 const LOW_BLINK = 0.9;
-const WARN_PULSE = 0.5;
+const WARN_PULSE = { burning: 0.5, due: 0.25 } as const;
 /** The card's emblem square, the emblem at three screen pixels a pixel inside a 2 px edge, as the target plate's. */
 const EMBLEM_SQUARE = EMBLEM_PIXELS * 3 + 4;
 /** The card's height: its emblem's square, or with none (an ally's), its words over its 12 px bar. */
 const cardTall = (ally: boolean) => (ally ? lineHeight(1) + 3 + 12 : EMBLEM_SQUARE);
-/** The warning's height: its words' line, 3 px over and 4 under them, inside a 2 px edge. */
-const WARN_TALL = lineHeight(1) + 3 + 4 + 4;
+/** The warning's lines, 3 px apart: its title at twice the words' size, the fuse, whose battery and where, its shot,
+ *  the brace over its keycap, and the other batteries' line while any are run out. */
+const WARN_GAP = 3;
+const FUSE_TALL = 2;
+const KEYCAP_TALL = 15;
+const warnTall = (more: boolean) =>
+  lineHeight(2) +
+  FUSE_TALL +
+  lineHeight(1) * 2 +
+  Math.max(lineHeight(1), KEYCAP_TALL) +
+  WARN_GAP * 4 +
+  (more ? lineHeight(1) + WARN_GAP : 0);
 /** The letters of the card's name kept however long the words after it, as a browser's row shrinks them all. */
 const NAME_KEPT = 3;
-/** The colours the palette does not name: the fire's chip, a state going down, the warning's words and edges, the
- *  tally's miss. */
+/** The colours the palette does not name: the fire's chip, a state going down, the warning's title at rest and lit,
+ *  its fuse burning and burnt, and the tally's miss. */
 const INKS = {
   fire: '#ffb066',
   sinking: '#ee5745',
-  warn: '#ffd9cf',
-  warnLit: '#ff9c8a',
+  warn: '#ff5a45',
+  warnLit: '#ffc2b8',
+  fuse: '#ff7a5c',
+  burnt: 'rgba(20, 6, 4, 0.55)',
   miss: '#b3a684',
 } as const;
-/** The warning's edges, top, right, bottom and left, at rest and lit. */
-const WARN_EDGES = {
-  rest: ['#e0584a', '#5a130f', '#3d0d0a', '#b83a2e'],
-  lit: ['#ff8a76', '#7a1a12', '#52110c', '#e0584a'],
+/** The warning's sign, a blood triangle round a "!", either side of its title. */
+const WARN_SIGN = {
+  width: 15,
+  height: 13,
+  svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 17 15"><path d="M7.5 0 15 13 0 13Z" fill="${INKS.warn}" stroke="rgba(0,0,0,0.9)" stroke-width="1"/><path d="M6.5 4h2v5h-2zM6.5 10h2v2h-2z" fill="#1a0604"/></svg>`,
 } as const;
+
+/** How much of a fuse `width` long stands unburnt with `left` of its tell to burn: burnt in from both ends, then whole
+ *  on each flash (`lit`) once burnt through, as the battery may fire. */
+export const fuseSpan = (width: number, left: number, lit: boolean): number =>
+  left > 0 ? width * Math.min(1, left) : lit ? width : 0;
 
 /** Words of the readout: in the face's 11 px, outlined as the display's words are, in capitals spaced `tracking` 22nds
  *  of the size apart where it is given. */
@@ -80,6 +105,9 @@ export class SeaFightReadout {
   private carded: string | null = null;
   /** Since when the hull's warning and the broadside's have run, seconds; null while neither does. */
   private readonly since: Record<'low' | 'warn', number | null> = { low: null, warn: null };
+  /** The battery the warning was last on, so another's tell burns afresh and is said again. */
+  private warned: string | null = null;
+  private readonly face: CapFace | null;
   private layout = { length: 0, wide: false, zoom: 1 };
   /** The ship's abilities at the bottom left. */
   private readonly abilities: ShipAbilityBar;
@@ -91,6 +119,7 @@ export class SeaFightReadout {
   /** With `face`, a key on the ship's bar that is no word (a mouse's button, a pad's) stands drawn on its keycap. */
   constructor(face: CapFace | null = null) {
     this.abilities = new ShipAbilityBar(face);
+    this.face = face;
   }
 
   /** How far the ship's bar reaches from the view's bottom left while it shows, in the view's pixels; none while it
@@ -126,13 +155,18 @@ export class SeaFightReadout {
       this.carded = card.name;
       this.cardHull.set(card.hull, seconds);
     }
-    // The warning is said as it comes, once, as a page's alert is.
-    if (model?.warn && this.since.warn === null) announce(model.warn);
-    this.mark('warn', !!model && model.warn !== null);
+    // Each battery's warning is said as it comes, once, as a page's alert is; its tell burns from then.
+    const warn = model?.warn ?? null;
+    if (warn && warn.id !== this.warned) {
+      announce(seaWarnWords(warn).said);
+      this.since.warn = null;
+    }
+    this.warned = warn?.id ?? null;
+    this.mark('warn', warn !== null);
     // The warning under the card, or the compass while none shows: clear of the sight and the ship aimed at; the
     // ships' plates under both.
     this.under = UNDER_COMPASS + (model && card ? cardTall(card.band === 'ally') + CARD_GAP : 0);
-    if (model && model.warn !== null) this.under += WARN_TALL + CARD_GAP;
+    if (warn) this.under += warnTall(warn.more > 0) + CARD_GAP;
   }
 
   private mark(what: keyof SeaFightReadout['since'], now: boolean): void {
@@ -169,7 +203,7 @@ export class SeaFightReadout {
           text: words(said.tally, model.tally?.hits === 0 ? INKS.miss : TONES.brassHi, 2),
           float: { to: 'screen', at: [0.5, 0.5], anchor: [0.5, 0], y: 64, z: 1 },
         },
-        model.warn !== null && this.warnNode(model.warn, this.under - WARN_TALL - CARD_GAP),
+        model.warn !== null && this.warnNode(model.warn, this.under - warnTall(model.warn.more > 0) - CARD_GAP),
       ],
     };
   }
@@ -313,21 +347,70 @@ export class SeaFightReadout {
     };
   }
 
-  /** DFO's warning under the card, blood-edged and pulsing in steps, never over the sight. */
-  private warnNode(warn: string, top: number): Node {
+  /** The broadside warning under the card, never over the sight, as the game's other warnings stand with no panel:
+   *  BROADSIDE at twice the words' size between two blood signs, pulsing in steps; under it the battery's tell as a
+   *  fuse burning in from both ends; whose battery, how far and where from the bow; its shot and what it does; the
+   *  brace over its key, brass once braced; and how many other batteries stand run out. */
+  private warnNode(warn: SeaWarning, top: number): Node {
+    const said = seaWarnWords(warn);
     const age = this.age('warn') ?? 0;
-    const lit = !motionReduced() && age % WARN_PULSE >= WARN_PULSE / 2;
+    const left = warn.tell > 0 ? Math.max(0, 1 - age / warn.tell) : 0;
+    const pulse = left > 0 ? WARN_PULSE.burning : WARN_PULSE.due;
+    const lit = !motionReduced() && age % pulse >= pulse / 2;
+    const sign: Node = {
+      width: WARN_SIGN.width,
+      height: WARN_SIGN.height,
+      picture: { key: 'broadside sign', source: { svg: WARN_SIGN.svg } },
+    };
+    const line = (text: string, colour: string): Node => ({ text: words(text, colour, 3) });
     return {
-      padding: [5, 14, 6, 14],
+      direction: 'column',
+      alignX: 'center',
+      gap: WARN_GAP,
+      through: true,
       float: { to: 'screen', at: [0.5, 0], anchor: [0.5, 0], y: top, z: 1 },
-      label: warn,
-      draw: (ui, box, scale, clip, fade) => {
-        const pen = { ui, box, scale, clip, fade };
-        ring(pen, box, TONES.outline);
-        paintBox(pen, box, 'rgba(60, 12, 8, 0.72)');
-        edges(pen, box, lit ? WARN_EDGES.lit : WARN_EDGES.rest, 2);
-      },
-      children: [{ text: words(warn, lit ? INKS.warnLit : INKS.warn, 3) }],
+      label: said.said,
+      children: [
+        {
+          direction: 'row',
+          gap: 8,
+          alignY: 'center',
+          height: lineHeight(2),
+          children: [sign, { text: { ...words(said.title, lit ? INKS.warnLit : INKS.warn, 5), size: 2 } }, sign],
+        },
+        {
+          width: 'grow',
+          height: FUSE_TALL,
+          draw: (ui, box, scale, clip, fade) => {
+            const pen = { ui, box, scale, clip, fade };
+            paintBox(pen, box, INKS.burnt);
+            // Burnt in from both ends; once burnt through it flashes with the title, as the battery may fire.
+            const width = fuseSpan(box.width, left, lit);
+            if (width > 0) paintBox(pen, { ...box, x: box.x + (box.width - width) / 2, width }, INKS.fuse);
+          },
+        },
+        line(said.who, TONES.word),
+        line(said.shot, TONES.wordDim),
+        {
+          direction: 'row',
+          gap: 6,
+          alignY: 'center',
+          height: Math.max(lineHeight(1), KEYCAP_TALL),
+          children: [
+            !warn.braced &&
+              keycapNode(
+                capWords(warn.braceKey),
+                1,
+                KEYCAP_TALL,
+                KEYCAP_TALL,
+                1,
+                this.face?.(warn.braceKey, 1) ?? null,
+              ),
+            line(said.brace, warn.braced ? TONES.brassHi : TONES.word),
+          ],
+        },
+        said.more !== '' && line(said.more, TONES.wordDim),
+      ],
     };
   }
 }

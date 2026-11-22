@@ -235,6 +235,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Ships Show Their People, and Captains' Gunners Misjudge]]
 - [[The Fight Music Varies, Recombined From Takes]]
 - [[The Prologue Is Passed Over, Its Camera and Footing Clear]]
+- [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

@@ -67,7 +67,7 @@ export function usedBetween(was: readonly ShipAbility[] | null, now: readonly Sh
 }
 
 /** A key as its keycap writes it: a pad's button by its own name. */
-const capWords = (key: string): string => key.replace(/^pad:/, '');
+export const capWords = (key: string): string => key.replace(/^pad:/, '');
 
 /** How far the bar reaches from its corner with `count` abilities at its step (`wide`) and `zoom`: across, and up from
  *  the foot of its slots, in the view's pixels. */

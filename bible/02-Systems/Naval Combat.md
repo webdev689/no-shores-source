@@ -497,7 +497,7 @@ captain's number comes with them in the view, so one leaving the fight never mov
   key (each broadside's reload, the side laid glowing gold, the burst, the brace and the shot loaded); the card under
   the compass on the ship the look is on (the captain nearest where the Sloop's laid guns fall, else the nearest), and its volley's tally under the sight, in every fight from its first frame to its
   last ([[Interface]], "The sea fight's readout"). The panel leaves the Sloop's own hurts and guns to it. While a captain afloat
-  stands with their guns run out, DFO's warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at: "Broadside from the Pirate Brig - C: brace". At
+  stands with a battery run out at the Sloop, the broadside warning stands directly under the card (under the compass while none shows), never over the sight or the ship aimed at, written over the sea with no panel: who fires, how far and where from the bow, the shot and what it does, the tell burning as a fuse, and the brace over its key ([[Interface]], "The broadside warning"; [[The Broadside Warning Is Written Over the Sea, Not a Panel]]); that captain's compass mark is lit. At
   sea the panel's lines are not written over the world: each captain's hurts are its plate and the card, the lay the
   sight's aim line and the broadside the warning, and DFO's messages ("The Tithe Sloop surrenders!") stand as notices
   at the top right; the hints are the fight's keys alone. On a struck ship's deck it gives way to the fight on foot's

@@ -4,6 +4,7 @@
 import { forwardOf, poseOf } from '../overworld/overworldCamera.ts';
 import { headingOf, type ShipMark } from '../plus/compass.ts';
 import type { FightCaptain } from '../rules/fightRules.ts';
+import { runOutAt } from '../ships/fightDisplay.ts';
 import type { Waterline } from '../ships/shipMesh.ts';
 import { seaHints } from './hints.ts';
 import { sightOf } from './seaHostiles.ts';
@@ -36,16 +37,19 @@ export interface SeaHudState {
 }
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
- *  down and red while it would take the player, none going down; out of one, every other player's ship in bone and
- *  every hostile one in red, marked as far off as it is sighted. */
+ *  down, red while it would take the player and lit while a battery of its stands run out at the player's ship
+ *  (`own`), none going down; out of one, every other player's ship in bone and every hostile one in red, marked as far
+ *  off as it is sighted. */
 export function seaShipMarks(
   captains: readonly FightCaptain[] | null,
   sighted: Pick<SeaRoom, 'others' | 'pirates'> | null,
+  own: readonly number[] | null = null,
 ): ShipMark[] {
   if (captains)
     return captains.flatMap((captain): ShipMark[] => {
       if (captain.state === 'sinking' || captain.state === 'sunk') return [];
-      const kind = captain.state !== 'afloat' ? 'struck' : captain.hostile ? 'hostile' : 'ship';
+      const firing = own !== null && runOutAt(captain, own).length > 0;
+      const kind = captain.state !== 'afloat' ? 'struck' : firing ? 'firing' : captain.hostile ? 'hostile' : 'ship';
       return [{ x: captain.ship[0] ?? 0, y: captain.ship[1] ?? 0, kind }];
     });
   return [
@@ -120,7 +124,7 @@ export function showSeaHud(hud: Hud, here: Sea, shown: SeaFrame, state: SeaHudSt
   // Aboard it the ships' plates and the sea's bar give the view to the fight on foot's display, as on land.
   hud.shipBars(deck ? [] : shown.bars, poseOf({ eye: [...eye], forward: forwardOf(yaw, -pitch) }, fov));
   // The held map raised at the helm covers the view, the compass with it.
-  const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted);
+  const ships = seaShipMarks(here.fight?.captains ?? null, here.sighted, here.fight?.vessel.ship ?? null);
   hud.compass(
     atHelm ? null : { heading: headingOf(forwardOf(yaw, 0)), from: shown.focus, ships: [...ships, ...state.friendly] },
   );

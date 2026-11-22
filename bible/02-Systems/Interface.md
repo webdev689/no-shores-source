@@ -354,7 +354,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
     as notices, DFO's toasts;
   - the fight: the player's plate (the vitals' thin bars), the ship's bar (the Arts' rings and keycaps) and the card (the target plate), the bars (track and meter), the tally and the
     broadside warning directly under the card at the top's middle (under the compass while no card shows), never over
-    the sight or the ship aimed at (DFO's `.dfnaval-warn`, its blood edge pulsing in steps), each captain's plate
+    the sight or the ship aimed at, written over the sea with no panel as the game's other warnings are, each captain's plate
     over its masthead; DFO's messages are notices (`plus/notices.ts`: a panel at the top right, under the status line, its right edge 28 px in
     as the chip's, its edge in the toast's yellow, three at most, sliding in from the edge in steps), and the hints the fight's keys;
   - the ship's deck: the place line (the ship's hold's take on its second line) and the hints, as on foot;
@@ -394,7 +394,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   ship within its own sight (5 km at the helm, farther with the voyage's pace, [[Naval Combat]], "At sea") and every
   other ship within 900 m on its top edge, a bow pointing up, at its bearing on the same quarter turn, so one
   north-east stands under NE; one off the strip is held at the end on the side to turn toward. A mark is red while its
-  ship would take the player (a hostile ship, or a hostile captain in the fight), bone for another player's or a
+  ship would take the player (a hostile ship, or a hostile captain in the fight), lit pale red (`#ffc2b8`) while a
+  captain has a battery run out at the player, as the broadside warning names it, bone for another player's or a
   captain who is not hostile, Overlook's blue (`#2f5d9a`) for a friendly ship of the traffic, and grey once its colours
   are down; one going down has no mark. The compass hides with the view while the held map is up at the helm.
 - **The vitals** stand at the top left, 28 px in and 14 down, after a souls-like display: three long thin bars, health
@@ -902,6 +903,18 @@ lost strip and falling pieces), and the ship's bar is built of the Arts' bar's o
   words its class and how far ("Brig - 70 m") and its state: "Hostile", "Colors struck", "Colors struck - E: board"
   once it can be boarded, or "Going down". The name keeps its first three letters, cut short after them, however long
   its class and state. The ships' plates keep under it while it shows, as under the compass.
+- **The broadside warning** stands under the card while a hostile captain afloat has a battery run out at the Sloop
+  (the Sloop within 45° of that side's beam), written over the sea with no panel, as "Return to the area" is
+  ([[The Broadside Warning Is Written Over the Sea, Not a Panel]]): "BROADSIDE" in blood red capitals at twice the words' size between two blood triangles, each round a "!", pulsing
+  to pale every half second; under it the battery's tell (1.3 s, the captain's `RUN_OUT_S`) as a fuse, a red rule
+  burning in from both ends, which once burnt flashes every quarter second with the title as the battery may fire;
+  then, in outlined capitals, whose battery, how far and where from the bow ("Pirate Brig - 140 m on your starboard
+  beam"; dead ahead, off the bow, on the beam, off the quarter or astern, `bowWords`), its shot and what it does
+  ("Chain shot - tears your sails"), and the brace over its keycap ("Brace - halves the harm to hull and sails", with
+  ", not to men" for grape), in brass with no keycap once braced ("Braced - ..."), and while others stand run out,
+  how many ("2 more batteries run out at you"). The nearest battery is the one named; another's tell burns afresh. A
+  reader hears it once as it comes, in one line. With less motion asked for, it neither pulses nor flashes; the fuse
+  still burns.
 - **The tally**, under the middle of the screen, for 4 s once the Sloop's last volley's last ball is down: "3 of 6 balls
   struck - 1 below the waterline - 2 in the rigging".
 
@@ -972,7 +985,7 @@ button's corner and screen, and the Tailor's wares.
 ## Limits
 
 - The sea fight's readout writes at the face's 11 px where DFO's wrote 10, 12 and 15, and the sight's aim line at 11
-  where DFO's was 13, so the broadside warning stands smaller; the laid side's soft 8 px glow stands as a hard gold
+  where DFO's was 13; the laid side's soft 8 px glow stands as a hard gold
   halo round its broadside's ring; and a long ship's name on the card is cut short a little sooner, the face's
   letters being wider than the page's.
 - The ship's bar holds the guns as two broadsides, where DFO's battery rose also named the bow and the stern: it

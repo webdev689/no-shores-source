@@ -4,13 +4,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { VITAL_SIZES } from '../plus/barFrame.ts';
 import { UNDER_COMPASS } from '../plus/compass.ts';
-import type { SeaFightModel, ShipAbility } from '../plus/seaFight.ts';
+import type { SeaFightModel, SeaWarning, ShipAbility } from '../plus/seaFight.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
 import { drawLaid } from '../ui/drawLaid.ts';
 import type { Node } from '../ui/node.ts';
 import { allOf, coloursDrawn, fakeRenderer, laidOf, wordsIn, written } from './nodes.test.ts';
 import { withMotionReduced } from './page.test.ts';
-import { SeaFightReadout } from './seaReadout.ts';
+import { fuseSpan, SeaFightReadout } from './seaReadout.ts';
 
 /** One of the ship's abilities, ready unless `more` says otherwise. */
 const ability = (id: string, icon: ShipAbility['icon'], name: string, more: Partial<ShipAbility> = {}) =>
@@ -203,45 +203,121 @@ test("an ally's card shows no emblem, its name in the players' colour and its ba
   assert.ok(card && coloursDrawn(card).has(written(FILLS.ally)));
 });
 
+/** A battery run out at the player: the Pirate Brig's port side, chain shot, on its starboard beam. */
+const WARN: SeaWarning = {
+  id: '1 port',
+  name: 'Pirate Brig',
+  range: 140.4,
+  bearing: 'on your starboard beam',
+  load: 'chain',
+  tell: 1.3,
+  braceKey: 'C',
+  braced: false,
+  more: 0,
+};
+const warnedOf = (more: Partial<SeaWarning> = {}) => ({ ...MODEL, warn: { ...WARN, ...more } });
+const WARN_LABEL = 'Broadside from the Pirate Brig';
+
 test('the broadside warning stands under the target card at the top, never over the sight; the ships’ plates under both', () => {
   assert.equal(readoutOf({ ...MODEL, card: null }).under, UNDER_COMPASS, 'under the compass with nothing shown');
   const carded = readoutOf(MODEL).under;
   assert.equal(carded, UNDER_COMPASS + 37 + 8, 'under the card');
-  const warned = readoutOf({ ...MODEL, warn: 'Broadside! Brace' });
-  assert.ok(warned.under > carded + 20, 'and under the warning');
-  const warn = labelled(warned.node(), 'Broadside! Brace');
-  assert.deepEqual(warn?.float?.at, [0.5, 0], 'set from the top, not the middle where the sight is');
-  assert.equal(warn?.float?.y, carded, 'just under the card');
-  assert.deepEqual(wordsIn(warn), ['BROADSIDE! BRACE']);
+  for (const more of [0, 2]) {
+    const warned = readoutOf(warnedOf({ more }));
+    const root = warned.node();
+    const warn = labelled(root, WARN_LABEL);
+    assert.deepEqual(warn?.float?.at, [0.5, 0], 'set from the top, not the middle where the sight is');
+    assert.equal(warn?.float?.y, carded, 'just under the card');
+    const box = root && laidOf(root).find((laid) => laid.node === warn)?.box;
+    assert.ok(box, 'laid');
+    assert.equal(warned.under, box.y + box.height + 8, `the plates just under it, ${more} more batteries`);
+    assert.ok(box.y + box.height < 720 / 2 - 40, 'well over the sight');
+  }
 });
 
-test('the warning pulses in steps, its lit look the second half of each half second, and stands still with reduced motion', () => {
-  const warned = { ...MODEL, warn: 'Broadside! Brace' };
+test('the warning is no panel: its words over the sea, BROADSIDE large between two signs, then who, where, the shot and the brace', () => {
+  const warn = labelled(readoutOf(warnedOf()).node(), WARN_LABEL);
+  assert.equal(warn?.draw, undefined, 'nothing drawn behind it');
+  assert.equal(warn?.fill, undefined);
+  assert.deepEqual(wordsIn(warn), [
+    'BROADSIDE',
+    'PIRATE BRIG - 140 M ON YOUR STARBOARD BEAM',
+    'CHAIN SHOT - TEARS YOUR SAILS',
+    'C',
+    'BRACE - HALVES THE HARM TO HULL AND SAILS',
+  ]);
+  const title = allOf(warn).find((node) => node.text?.words === 'BROADSIDE');
+  assert.equal(title?.text?.size, 2, 'twice the words’ size, as the game’s other warnings');
+  assert.equal(allOf(warn).filter((node) => node.picture?.key === 'broadside sign').length, 2);
+  assert.ok(
+    allOf(warn).every((node) => !node.text || node.text.words === 'C' || node.text.edge === 'halo'),
+    'every word but the keycap’s outlined, read over the sea',
+  );
+});
+
+test('braced, the warning says so in brass with no key to press; grape is said to spare no men; more batteries are counted', () => {
+  const braced = labelled(readoutOf(warnedOf({ braced: true, load: 'grape', more: 2 })).node(), WARN_LABEL);
+  assert.deepEqual(wordsIn(braced).slice(2), [
+    'GRAPE SHOT - CUTS DOWN YOUR CREW',
+    'BRACED - HALVES THE HARM TO HULL AND SAILS, NOT TO MEN',
+    '2 MORE BATTERIES RUN OUT AT YOU',
+  ]);
+  const brace = allOf(braced).find((node) => String(node.text?.words ?? '').startsWith('BRACED'));
+  assert.equal(brace?.text?.colour, TONES.brassHi);
+});
+
+test('the fuse burns in from both ends over the battery’s tell, then flashes with the title as it may fire', () => {
+  assert.deepEqual(
+    [fuseSpan(100, 1, false), fuseSpan(100, 0.5, true), fuseSpan(100, 0, false), fuseSpan(100, 0, true)],
+    [100, 50, 0, 100],
+  );
+  const fuseLitAt = (now: number, reduced = false) =>
+    withMotionReduced(reduced, () => {
+      const readout = readoutOf(warnedOf(), 0);
+      readout.update(warnedOf(), now);
+      const fuse = allOf(labelled(readout.node(), WARN_LABEL)).find((node) => node.height === 2 && node.draw);
+      assert.ok(fuse, 'a fuse under the title');
+      return coloursDrawn({ ...fuse, width: 100 }).has(written('#ff7a5c'));
+    });
+  assert.equal(fuseLitAt(0.1), true, 'burning at first');
+  assert.equal(fuseLitAt(1.5), false, 'burnt through, dark between flashes');
+  assert.equal(fuseLitAt(1.65), true, 'lit on the flash');
+  assert.equal(fuseLitAt(1.65, true), false, 'never flashing with reduced motion');
+});
+
+test('the title pulses in steps, faster once the tell has burnt, and stands still with reduced motion', () => {
   const colourAt = (now: number, reduced = false) =>
     withMotionReduced(reduced, () => {
-      const readout = readoutOf(warned, 0);
-      readout.update(warned, now);
-      return allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE! BRACE')?.text?.colour;
+      const readout = readoutOf(warnedOf(), 0);
+      readout.update(warnedOf(), now);
+      return allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE')?.text?.colour;
     });
-  assert.equal(colourAt(0.1), '#ffd9cf');
-  assert.equal(colourAt(0.3), '#ff9c8a');
-  assert.equal(colourAt(0.3, true), '#ffd9cf');
+  assert.equal(colourAt(0.1), '#ff5a45');
+  assert.equal(colourAt(0.3), '#ffc2b8');
+  assert.equal(colourAt(1.5), '#ff5a45', 'a quarter second a step once it may fire');
+  assert.equal(colourAt(1.65), '#ffc2b8');
+  assert.equal(colourAt(0.3, true), '#ff5a45');
 });
 
-test('the warning is said to a screen reader once as it comes, and again only when it comes again', () => {
+test('each battery’s warning is said to a screen reader once as it comes, its tell burning afresh for another', () => {
   const said: string[] = [];
   const page = globalThis as { document?: unknown };
   const was = page.document;
   page.document = { ariaNotify: (words: string) => said.push(words) };
+  const line =
+    'Broadside from the Pirate Brig - 140 m on your starboard beam. Chain shot - tears your sails. C: brace.';
   try {
-    const warned = { ...MODEL, warn: 'Broadside! Brace' };
     const readout = readoutOf(MODEL, 0);
-    readout.update(warned, 0.1);
-    readout.update(warned, 0.2);
-    assert.deepEqual(said, ['Broadside! Brace'], 'once while it stands');
+    readout.update(warnedOf(), 0.1);
+    readout.update(warnedOf({ braced: true }), 0.2);
+    assert.deepEqual(said, [line], 'once while it stands, braced or not');
     readout.update(MODEL, 0.3);
-    readout.update(warned, 0.4);
-    assert.deepEqual(said, ['Broadside! Brace', 'Broadside! Brace'], 'and again once it comes back');
+    readout.update(warnedOf(), 0.4);
+    assert.deepEqual(said, [line, line], 'and again once it comes back');
+    readout.update(warnedOf({ id: '2 starboard', name: 'Tithe Sloop' }), 2);
+    assert.equal(said.length, 3, 'another battery said as it comes');
+    const title = allOf(readout.node()).find((node) => node.text?.words === 'BROADSIDE');
+    assert.equal(title?.text?.colour, '#ff5a45', 'its tell burning afresh, not flashing as due');
   } finally {
     page.document = was;
   }
