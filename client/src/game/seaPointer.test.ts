@@ -90,6 +90,7 @@ test('a key held in a fight is let go as the window loses focus or the page is h
   fightControls({ addEventListener: () => undefined } as unknown as HTMLCanvasElement, () => combat);
   window.dispatchEvent(new FakeEvent('keydown', { key: 'a', code: 'KeyA' }));
   window.dispatchEvent(new FakeEvent('blur', {}));
-  (globalThis as unknown as { document: EventTarget }).document.dispatchEvent(new FakeEvent('visibilitychange', {}));
+  const page = globalThis as unknown as { document: { dispatchEvent: (event: FakeEvent) => boolean } };
+  page.document.dispatchEvent(new FakeEvent('visibilitychange', {}));
   assert.equal(letGo, 2, 'let go on each');
 });
