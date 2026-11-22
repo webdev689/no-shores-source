@@ -10,7 +10,8 @@ import { Battle, type Wreck } from './battle.ts';
 import { Calm, DECK_VIEW, onBrig } from './calm.ts';
 import { BRACED_S, IMPACT_S, Ram, RAMMER_SHADE, rammerAway } from './ram.ts';
 import { onDeck } from './sailing.ts';
-import { CRY_S, inboundAt, Sighted } from './sighted.ts';
+import { CRY_S, inboundAt, shotOnDeck, Sighted } from './sighted.ts';
+import { helmInShip } from './helm.ts';
 import { captainAtSea } from '../../ships/shipCrew.ts';
 import { headOnView } from './stage.ts';
 import { FROM, lying, sayingS, speakers, STEP_S, storied, turnBetween, unseen, VIEW, viewOf } from './seaStory.test.ts';
@@ -164,6 +165,51 @@ test('as the lookout speaks of the wrecks the camera looks out over him to the n
   assert.ok(back && Math.abs(back.fov - deck.fov) < 1e-6);
 });
 
+// The Brig's foremast and the feet of its fore shrouds at the calm's eye height, in its deck's frame (x to starboard,
+// y to its stern), as boxes [west, north, east, south] measured from its mesh.
+const FOREMAST = [-0.28, -8.53, 0.28, -7.93] as const;
+const FORE_SHROUDS = [
+  [-3.5, -9, -3, -7],
+  [3, -9, 3.5, -7],
+] as const;
+
+test('looking out over the lookout, the camera stands clear of the foremast and its shrouds, his head unhidden', () => {
+  const lines = scenes.scenes.calm as readonly Line[];
+  const lookout = lines.find((line) => line.who === 'lookout');
+  assert.ok(lookout);
+  const outside = (box: readonly number[], [x, y]: readonly number[]) =>
+    Math.hypot(
+      Math.max((box[0] ?? 0) - (x ?? 0), 0, (x ?? 0) - (box[2] ?? 0)),
+      Math.max((box[1] ?? 0) - (y ?? 0), 0, (y ?? 0) - (box[3] ?? 0)),
+    );
+  // Wrecks a little to port of ahead and on the starboard bow, where the shot's eye lands among the fore rigging.
+  for (const degrees of [-15, -12, -10, 39, 45, 48, 51, 57]) {
+    const { story, saying, run } = storied();
+    const bearing = story.brig.heading + (degrees * Math.PI) / 180;
+    const [wreckX, wreckY] = [story.brig.x + Math.sin(bearing) * 300, story.brig.y - Math.cos(bearing) * 300];
+    const calm = new Calm(story, FROM, [{ ship: lying('near', wreckX, wreckY, 1), going: null }]);
+    run(calm, 4);
+    saying.get('calm')?.(lookout);
+    const out = run(calm, 1.6, 4).at(-1)?.frame;
+    const own = out?.ships?.[0]?.place;
+    const head = out?.heads?.get('lookout');
+    assert.ok(out && own && head);
+    assert.ok(headOnView(onScreen(out.shot, VIEW, head), VIEW), `the lookout in view at ${degrees}°`);
+    const onDeckPlan = ([x = 0, y = 0]: readonly number[]) => {
+      const [east, south] = [x - own.x, y - own.y];
+      const [sin, cos] = [Math.sin(own.heading), Math.cos(own.heading)];
+      return [cos * east + sin * south, -(sin * east - cos * south)] as const;
+    };
+    const [eye, face] = [onDeckPlan(out.shot.eye), onDeckPlan(head)];
+    for (const box of [FOREMAST, ...FORE_SHROUDS])
+      assert.ok(outside(box, eye) > 0.25, `at ${degrees}° the eye ${eye.map((value) => value.toFixed(2))} by ${box}`);
+    for (let share = 0; share <= 1; share += 0.02) {
+      const along = [eye[0] + (face[0] - eye[0]) * share, eye[1] + (face[1] - eye[1]) * share];
+      assert.ok(outside(FOREMAST, along) > 0, `at ${degrees}° the foremast stands before his head`);
+    }
+  }
+});
+
 test('the ram opens where the calm left the camera, its cries on the view and the larger ship shown coming', () => {
   const { story, said, done, run } = storied();
   const ram = new Ram(story, []);
@@ -188,6 +234,60 @@ test('the ram opens where the calm left the camera, its cries on the view and th
       `the larger ship on the view at ${at.toFixed(2)} s`,
     );
   }
+});
+
+// The spanker boom's port crutch off the helm's port quarter, in the Brig's frame (forward, starboard, up from its
+// waterline), measured from its mesh: a post a fifth of a metre thick from the quarterdeck to 5.67 m up.
+const CRUTCH = { forward: [-13.62, -13.42], starboard: [-1.3, -1.07], top: 5.67 } as const;
+
+/** Whether the crutch stands on the sight from `eye` to `point`, both in the Brig's frame. */
+function crutchBetween(eye: readonly number[], point: readonly number[]): boolean {
+  for (let share = 0; share <= 1; share += 0.005) {
+    const [forward = 0, starboard = 0, up = 0] = [0, 1, 2].map(
+      (axis) => (eye[axis] ?? 0) + ((point[axis] ?? 0) - (eye[axis] ?? 0)) * share,
+    );
+    const [aft, fore] = CRUTCH.forward;
+    const [port, side] = CRUTCH.starboard;
+    if (forward >= aft && forward <= fore && starboard >= port && starboard <= side && up <= CRUTCH.top) return true;
+  }
+  return false;
+}
+
+/** Points over the player standing at the helm, in the Brig's frame: feet to head, a body's breadth round. */
+const YOU_AT_HELM = [0.1, 0.5, 0.9, 1.3, 1.7].flatMap((over) =>
+  [-0.2, 0, 0.2].flatMap((forward) =>
+    [-0.2, 0, 0.2].map((starboard) => {
+      const [along, across, up] = helmInShip();
+      return [along + forward, across + starboard, up + over] as const;
+    }),
+  ),
+);
+
+test("the boom's crutch never stands before the player as the larger ship strikes, nor in the calm's deck shot", () => {
+  const { story, run } = storied();
+  // From the camera's coming down by the helm until the blow, which shakes it.
+  for (const { at, frame } of run(new Ram(story, []), IMPACT_S).filter((each) => each.at >= 7.6)) {
+    const own = frame.ships?.[0]?.place;
+    assert.ok(own);
+    const eye = shotOnDeck(frame.shot, own).eye;
+    const head = onDeck(own, ...(YOU_AT_HELM.at(-1) ?? [0, 0, 0]));
+    assert.ok(
+      headOnView(onScreen(frame.shot, VIEW, head), VIEW),
+      `the player's head on the view at ${at.toFixed(2)} s`,
+    );
+    for (const point of YOU_AT_HELM)
+      assert.ok(!crutchBetween(eye, point), `the crutch before them at ${at.toFixed(2)} s`);
+  }
+  const calm = run(new Calm(story, FROM, []), 4).at(-1)?.frame;
+  const own = calm?.ships?.[0]?.place;
+  assert.ok(calm && own);
+  const eye = shotOnDeck(calm.shot, own).eye;
+  for (const view of [VIEW, { width: VIEW.height, height: VIEW.width }])
+    for (const point of YOU_AT_HELM) {
+      const seen = onScreen(calm.shot, view, onDeck(own, ...point));
+      const onView = seen && seen[0] >= 0 && seen[0] <= view.width && seen[1] >= 0 && seen[1] <= view.height;
+      assert.ok(!onView || !crutchBetween(eye, point), `the crutch before the player on ${view.width}x${view.height}`);
+    }
 });
 
 test("the larger ship is Thule's Frigate at its own size, lighter than a captain's, its stem first touching the Brig's side as it strikes", () => {

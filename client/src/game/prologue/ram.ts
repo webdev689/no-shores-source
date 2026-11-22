@@ -59,8 +59,8 @@ export function ramKeys(side: number): RailKey[] {
     { at: 2.6, eye: [-38 - ahead * 36, -36 * across, 26], look: [10 + ahead * 30, across * 30, 4] },
     { at: 3.6, eye: [-70 - ahead * 80, -80 * across, 48], look: [ahead * 40, across * 40, 4] },
     { at: BRACED_S, eye: [-60 - ahead * 75, -75 * across, 40], look: [ahead * 25, across * 25, 5] },
-    { at: 7.6, eye: [-15, -2.4 * across, 4.9], look: [ahead * 24, across * 24, 9] },
-    { at: IMPACT_S + 2, eye: [-14.5, -2.2 * across, 4.9], look: [ahead * 20, across * 20, 8] },
+    { at: 7.6, eye: [-14.2, -3 * across, 4.9], look: [ahead * 24, across * 24, 9] },
+    { at: IMPACT_S + 2, eye: [-13.7, -2.8 * across, 4.9], look: [ahead * 20, across * 20, 8] },
   ];
 }
 

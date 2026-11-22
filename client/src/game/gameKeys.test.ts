@@ -60,7 +60,8 @@ test('the repair key repairs at the helm and walking its own deck, never in a fi
   assert.deepEqual(asked, ['repair', 'repair']);
 });
 
-test("in the story the pad's Start asks for the Character page, which opens wherever the story keeps gear", () => {
+// Whether the menu answers, on the wreck alone, is the menu's to say (gearWindow.test.ts).
+test("in the story the pad's Start still asks the menu for the Character page", () => {
   const { window } = fakePage();
   globalThis.CustomEvent ??= class extends Event {
     readonly detail: unknown;

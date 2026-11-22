@@ -113,6 +113,15 @@ test('the throw overboard begins black, as the fight faded out, and only then fa
   assert.ok(shown.drawers?.includes(scenery.drawer), 'the wreck is drawn');
 });
 
+test('the throw overboard cut short leaves the screen black at once, so the deep fades in from black', () => {
+  const { story, calls } = recorded();
+  const beat = new Overboard(story, layout, scenery);
+  beat.frame(tick(2));
+  beat.skip();
+  const fades = calls.filter((call) => call.startsWith('stage.parts.screen.fade'));
+  assert.equal(fades.at(-1), 'stage.parts.screen.fade(1, 0)', fades.join(' '));
+});
+
 test('Thule and his crew crow turned toward the camera from the rail: none shows it his back', async () => {
   const compiled = new WebAssembly.Module(
     await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
@@ -228,6 +237,31 @@ test("the wake takes the run's shot as it leaves the eyes, and draws the player 
   for (let step = 0; step < 60 && !beat.done; step++) shown = beat.frame(tick(0.05));
   while (!beat.done) shown = beat.frame(tick(0.05));
   rest.eye.forEach((value, axis) => assert.ok(Math.abs((shown.shot.eye[axis] ?? 0) - value) < 1e-6, 'the later shot'));
+  const drawn = shown.actors?.some((actor) => actor.id === YOU_ID);
+  assert.ok(drawn, 'the player drawn once the camera stands a metre out of the eyes');
+});
+
+test("until the wreck is drawn the fight holds the picture; drawn, the wake works out the run's camera at once", async () => {
+  const { story } = recorded(FOOT_VIEW);
+  const drawing = { drawer: scenery.drawer, coming: true };
+  let worked = 0;
+  const run = Object.assign(stillRun({ dead: false }, false), {
+    restingShot: (): Shot => {
+      worked++;
+      return { eye: [0, 0, 5], yaw: 0, pitch: 0.2, fov: 0.8, near: 0.1, far: 1000 };
+    },
+  });
+  const opened = Promise.resolve(run);
+  const wake = new Wake(story, layout, drawing as unknown as WreckScenery, opened);
+  const fight = new WreckFight(story, layout, drawing as unknown as WreckScenery, opened, {} as Nameplate);
+  await opened;
+  wake.frame(tick(2));
+  assert.equal(fight.frame(tick(0.016)), null, 'the fight holds the picture');
+  assert.equal(worked, 0, "the run's camera is not worked out before the wreck is drawn");
+  drawing.coming = false;
+  wake.frame(tick(0.05));
+  assert.equal(worked, 1, 'worked out at once, long before the camera leaves the eyes');
+  assert.ok(fight.frame(tick(0.016))?.drawers?.includes(scenery.drawer), 'the fight plays once it is drawn');
 });
 
 test('the wake cut short leaves the eyes open, though the director frames it once more', () => {
