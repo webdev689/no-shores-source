@@ -84,7 +84,9 @@ on Cloudflare.
   Any other room stands them on its course of blocks on open ground at 0 m, or, for a course laid over open sea
   (`room_open_over_sea`, the [[Prologue]]'s wreck), on its blocks over the sea at 0 m.
 - **Joining:** a player gets a number no one else in the room has had, and comes in with all three healing charges
-  ([[Combat]], "Healing charges"; [[Three Healing Charges, Refilled by Blows and Kills]]), which are never saved. In
+  ([[Combat]], "Healing charges"; [[Three Healing Charges, Refilled by Blows and Kills]]) and whole, unless their
+  character left a room within the last two minutes: then with the health and charges it left with, fallen if it
+  left fallen (`left.rs`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]). In
   a node's room they stand on the ground at the node's spawns in turn, the first player at the first spawn, the next
   at the next; elsewhere at the room's spawn, on the top of the block under it (or the ground where none stands), and
   a respawn stands them there too. A patrol's room may instead stand a player 1.5 m before one of its entrances'
