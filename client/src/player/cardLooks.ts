@@ -1,6 +1,6 @@
 // How a figure's card shows what befalls it, in its own pixels: struck (a stepped flash), Charged, Exposed, Veiled,
-// shaken, smeared by its own swing, and dissolving as it dies. Both scenes that draw cards (the Test Ground's and the
-// game's) write the same numbers and read them with the same WGSL.
+// shaken, smeared by its own swing, dissolving as it dies, and built as it arrives. Both scenes that draw cards (the
+// Test Ground's and the game's) write the same numbers and read them with the same WGSL.
 import { GLOW_RAMPS, type Rgb, wgslRgb } from '../elementGlow.ts';
 import type { CardAt } from './cards.ts';
 import { PX_PER_M } from './figures.ts';
@@ -15,16 +15,20 @@ export const CARD_LOOK_FLOATS = 12;
 /** A flash's stages: off, the whole figure, its outline alone. */
 export const FLASH = { off: 0, whole: 1, outline: 2 } as const;
 
+/** The dissolve's look an arriving card is built in, past the four elements' (`arrivals.ts`). */
+const ARRIVING = 4;
+
 /** The numbers a card's look is drawn with at `time` (the status clock): Veiled, Exposed, the clock and how far it
- *  has dissolved; Charged, the element it dissolves in, how far it is shaken (figure pixels) and its flash's stage;
- *  then its flash's colour. Drawn as its smear (`smear`), the tint is the smear's colour, marked so. */
+ *  has dissolved (or is still to come, arriving); Charged, the element it dissolves in (or arriving), how far it is
+ *  shaken (figure pixels) and its flash's stage; then its flash's colour. Drawn as its smear (`smear`), the tint is
+ *  the smear's colour, marked so. */
 export function cardLookValues(shown: CardAt, time: number, smear = false): number[] {
   const flash = shown.flash;
   const colour = smear && shown.smear ? shown.smear.colour : (flash?.colour ?? [1, 1, 1]);
   const stage = smear ? FLASH.off : (flash?.stage ?? FLASH.off);
   return [
-    ...[shown.veiled ? 1 : 0, shown.exposed ? 1 : 0, time, shown.dissolve?.share ?? 0],
-    ...[shown.charged ? 1 : 0, shown.dissolve?.look ?? 0, shown.jitter ?? 0, stage],
+    ...[shown.veiled ? 1 : 0, shown.exposed ? 1 : 0, time, shown.dissolve?.share ?? shown.arrival ?? 0],
+    ...[shown.charged ? 1 : 0, shown.dissolve?.look ?? (shown.arrival ? ARRIVING : 0), shown.jitter ?? 0, stage],
     ...[colour[0], colour[1], colour[2], smear ? 1 : 0],
   ];
 }
@@ -41,10 +45,11 @@ const ramps = (looks: readonly (readonly Rgb[])[]) => looks.flatMap((ramp) => ra
 
 /**
  * A card's look in WGSL, from its uniform's `status` (Veiled, Exposed, the clock, the dissolve's share), `look`
- * (Charged, the dissolve's element, the shake in pixels, the flash's stage) and `tint` (the flash's colour; w 1 for a
- * smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic death, drawn in toward the
- * chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none. Everything is drawn on the
- * figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades through a ghost.
+ * (Charged, the dissolve's element or 4 for arriving, the shake in pixels, the flash's stage) and `tint` (the flash's
+ * colour; w 1 for a smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic death,
+ * drawn in toward the chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none. Everything
+ * is drawn on the figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades through a
+ * ghost.
  */
 export const STATUS_WGSL = /* wgsl */ `
 const STATUS_ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);
@@ -126,10 +131,18 @@ fn status_arc(texel: vec2f, root: vec2f, strike: f32, arc: f32) -> f32 {
   return best;
 }
 
-// A dying card's colour (rgb, a 0 for gone) at a texel 'high' of the way up it: its look's dissolve at 'share'.
+// A dying or arriving card's colour (rgb, a 0 for gone) at a texel 'high' of the way up it: its look's dissolve at
+// 'share'.
 fn status_dissolve(element: u32, share: f32, texel: vec2i, high: f32, colour: vec3f, edge: bool, clock: f32) -> vec4f {
   let light = status_light(colour);
   let order = status_order(texel / 2);
+  if (element == ${ARRIVING}u) {
+    // Arriving: built from the feet up in 2 by 2 cells while 'share' is still to come, each white as it lands.
+    let left = high * 0.6 + order * 0.4 - (1.0 - share) * 1.05;
+    if (left > 0.0) { return vec4f(0.0); }
+    if (left > -0.1) { return vec4f(1.0, 1.0, 1.0, 1.0); }
+    return vec4f(colour, 1.0);
+  }
   if (element == 1u) {
     // Blaze climbs from the feet, heating each pixel up its ramp, then burns away bottom up; a few stay as ash.
     let front = min(share / 0.55, 1.0) * 1.3;

@@ -250,11 +250,16 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   what it came to (its damage, Blocked, Parry, Riposte, Counter, Perfect dodge, Staggered, Guard broken, Crit, Slain, a
   foe's Feint), gold or green when it is good for the player and red when bad, those said together (a stroke over each
   foe it struck) each standing clear of the rest; in first person, words about the player under the crosshair; an arrow
-  at the screen's edge toward a foe out of view that swings, winds up or draws at the player; over a foe at a blow at
-  the player that can be parried, a ring closing onto a fixed one exactly as the blow lands, gold once a press of the
-  guard would parry it (never while the player's guard could open no window: a ranged weapon in hand, or hard on the
-  heels of a parry missed) ([[Foes Show a Closing Parry Ring]]), and over one winding up an iron blow a red mark with no
-  ring; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the [[Game]] has it; a
+  at the screen's edge toward a foe out of view that swings, winds up or draws at the player; round the head of a foe
+  at a blow at the player that can be parried (1.6 m over its feet), a ring closing from 90 px across onto a fixed one
+  24 px across exactly as the blow lands, each 4 px wide over a dark edge, with a gold band on the fixed ring out to
+  where the parry window opens, gold once a press of the guard would parry it (no band, and never gold, while the
+  player's guard could open no window: a ranged weapon in hand, or hard on the heels of a parry missed)
+  ([[Foes Show a Closing Parry Ring]], [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]),
+  and round one winding up an iron blow a red mark with no ring; the head as its figure is drawn, 1.5 m off at least
+  in first person; the band faint, edged by a hard 2 px gold line where the window opens; each kept on the screen,
+  its widest 6 px inside the edge, where the head stands beyond it or behind the eye, set at the edge the way it lies
+  as a threat's arrow is and clear of the vitals and the Arts; a figure a blow harms flashing ([[Struck Figures Flash, and DFO's Blood Comes Over]]) as the [[Game]] has it; a
   red edge when the player is struck; and, while the player lies dead, how long until they stand again at the start, or,
   with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a

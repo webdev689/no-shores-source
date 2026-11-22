@@ -50,7 +50,7 @@ export function frameAt(seconds: number, frames: number, fps: number): number {
 const CARD_FORWARD_M = 0.35;
 /** In first person no other figure's card stands nearer the eye than this, metres: one nearer, a foe in a melee,
  *  would fill the view; it stands this far off along the same line instead. */
-export const CARD_NEAREST_M = 1;
+export const CARD_NEAREST_M = 1.5;
 
 /** Where a figure's card stands: its body's centre (x, y) moved toward the eye by the body's radius, never past it,
  *  and never nearer the eye than `nearest` (`CARD_NEAREST_M` for another figure seen in first person). */

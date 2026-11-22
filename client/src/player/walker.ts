@@ -1,6 +1,7 @@
 import type { GlowLook } from '../elementGlow.ts';
 import type { Contact, FirstPerson, FirstPersonState } from '../firstperson/firstPerson.ts';
 import { FIELD_OF_VIEW } from '../editor/orbit.ts';
+import { widened } from './playerCamera.ts';
 import type { Climb } from '../firstperson/climbHands.ts';
 import { ART_LIGHTS } from '../firstperson/fpFrames.ts';
 import type { Pace } from '../firstperson/weaponMachine.ts';
@@ -304,7 +305,8 @@ export class Walker {
       body: dress.body,
       yaw: player.yaw,
       pitch: player.pitch,
-      fov: FIELD_OF_VIEW,
+      // The lens as first person sees it, widened, so the fists on a wall stand where it shows them.
+      fov: 2 * Math.atan(Math.tan(FIELD_OF_VIEW / 2) / widened(player.view.shown)),
       blocking: own?.action.kind === 'guard' || own?.action.kind === 'parry',
       pose: own ? guardPose(own.action) : null,
       zoom,

@@ -53,7 +53,7 @@ when to install it and what each session does at its start and end; this note sa
 | Caveman | Through the kit's SubagentStart hook only: sub-agents and workers are terse; replies to the owner stay in full sentences. |
 | rtk | Compacts `git status`, `git log` and `ls` only; reads, greps, diffs and test runs stay exact. If an output looks cut, run it again as `rtk bypass <command>`; write `git --no-pager log ...` for an exact log. |
 | MarkItDown | Convert uploaded files (PDF, Word, Excel, PowerPoint) with `markitdown <file>` before reading them. |
-| impeccable | The web and UI layer only. |
+| impeccable | The web and UI layer only. `install-all.sh` turns its design hook on in each session, so UI edits are reviewed as they land; `impeccable doctor` says what has drifted. |
 | SkillsMP | Find a skill for a new kind of job. |
 | Web research | WebSearch, then WebFetch on the pages that hold the answer. A page that answers 200 with almost no text was built by JavaScript, not refused: read it with the preinstalled Chromium (`page.goto(url, { waitUntil: 'networkidle' })`, then `document.body.innerText`). reddit is closed to WebSearch; GameSpot, GameFAQs, Tom's Hardware and dotesports refuse WebFetch, and fandom answers 402, so spend no calls on them. |
 | claude-code-setup | Run "recommend Claude Code automations for this project" when the setup is reviewed or a new stack arrives; adopt only what the other tools do not already cover. |

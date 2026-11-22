@@ -232,6 +232,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       hulls: [...moored.hulls, ...fleet.hulls].slice(0, HULLS),
       carried,
       drain: drain.share,
+      dark: shown.dark,
     };
     const ships = [...moored.ships, ...fleet.ships];
     // Each material node as the forge draws it, standing while the room stands it for the player, or gathered.
@@ -318,7 +319,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // Walking its deck, what the player carries lights round them as it does ashore.
     const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
     const more = {
-      ...{ hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share },
+      ...{ hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share, dark: shown.dark },
       ...(swell ? { swell } : {}),
     };
     const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);
@@ -413,6 +414,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (settled || playing.waited > GROUND_WAIT_S) {
         playing.flow = next(playing.flow, { kind: 'loaded' });
         hud.veil(null);
+        // The player arrives on foot as the veil lifts, so their arrival is seen.
+        if (playing.flow.mode === 'foot') playing.foot?.arrive(clock);
         parts.syncMenu();
       }
     }

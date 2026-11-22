@@ -169,6 +169,9 @@ struct Shadowed { @builtin(position) position: vec4f, @location(0) corner: vec2f
 
 /** Draws the forge's figures into the scene's pass, after the land and before the water, and their shadows into the
  *  sun's near map before that. */
+/** A figure that throws no shadow and has no contact shade: a Veiled one, all but unseen, or one still arriving. */
+const unshaded = (figure: CardAt | undefined) => !!figure?.veiled || !!figure?.arrival;
+
 export class FigureView implements CardMaker {
   private readonly gpu: Gpu;
   private readonly pipeline: GPURenderPipeline;
@@ -335,9 +338,8 @@ export class FigureView implements CardMaker {
     pass.setBindGroup(0, this.viewGroup);
     skyUniformFor(this.gpu.device).bindShared(pass);
     pass.setBindGroup(1, shadow.casterGroup(this.cast));
-    // A Veiled figure is all but unseen, so it throws no shadow and has no contact shade.
     groups.forEach((group, index) => {
-      if (index >= figures.length || figures[index]?.veiled) return;
+      if (index >= figures.length || unshaded(figures[index])) return;
       pass.setBindGroup(2, group);
       pass.draw(6);
     });
@@ -362,7 +364,7 @@ export class FigureView implements CardMaker {
     pass.setBindGroup(1, (shadow ?? ShadowMap.none(this.gpu)).receiverGroup(this.pipeline));
     pass.setPipeline(this.shade);
     groups.forEach((group, index) => {
-      if (index >= figures.length || figures[index]?.veiled) return;
+      if (index >= figures.length || unshaded(figures[index])) return;
       pass.setBindGroup(2, group);
       pass.draw(36);
     });
@@ -371,8 +373,8 @@ export class FigureView implements CardMaker {
       pass.setBindGroup(2, group);
       pass.draw(6);
     }
-    // A Veiled figure's weapon shows no outline: it is all but unseen.
-    const glowing = figures.filter(({ card, veiled }) => card.glow && !veiled);
+    // A Veiled figure's weapon shows no outline, as it is all but unseen; nor does one still arriving.
+    const glowing = figures.filter(({ card, veiled, arrival }) => card.glow && !veiled && !arrival);
     this.glows.draw(
       pass,
       fromEye,

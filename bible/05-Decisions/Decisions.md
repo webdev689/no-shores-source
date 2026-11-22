@@ -247,6 +247,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Mail Vendor Keeps Lost Items and the Game's Mail]]
 - [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]
 - [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]
+- [[Players Arrive as Destiny's Transmat Does, Unexplained]]
+- [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

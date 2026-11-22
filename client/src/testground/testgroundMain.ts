@@ -44,11 +44,11 @@ import { PanelAsks } from './panelAsks.ts';
 import { SLOTS, heldElements, worn } from '../player/gear.ts';
 import { gearOutfit, otherLoadout, spareOutfit } from '../player/gearLooks.ts';
 import { type Dress, plainDress, wardrobeOf } from '../player/dressing.ts';
-import { type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
+import { CARD_NEAREST_M, type Placed, cardStand, eyeOf, frameAt, viewOf } from '../player/figures.ts';
 import { type Orbit, cameraOf, viewProjection } from '../editor/orbit.ts';
 import { Input } from '../player/input.ts';
 import { type Player, newPlayer, playerCamera, shownBody } from '../player/player.ts';
-import { AIM, type AimPlace } from '../player/playerCamera.ts';
+import { AIM, type AimPlace, handsZoom } from '../player/playerCamera.ts';
 import { OtherPlayers } from '../player/others.ts';
 import { Walker } from '../player/walker.ts';
 import { AimPanel } from './aimPanel.ts';
@@ -369,7 +369,7 @@ async function start(): Promise<void> {
       running,
       hands: controls.locked,
       markOf: () => crosshairPoint(aimView(player.player), aspect, STOOD, bodies),
-      zoomOf: () => aimView(player.player).zoom ?? 1,
+      zoomOf: () => handsZoom(aimView(player.player), player.player.view),
       handsSeconds: feel.shownSeconds(fighting.player, seconds),
     });
     const own = fighting.own;
@@ -384,7 +384,8 @@ async function start(): Promise<void> {
     const sights = shown.aiming || aimHeld || (shown.rangedDrawn && inFirstPerson);
     const feltCamera = feel.camera(aimView(player.player), fighting.player, own, inFirstPerson, sights);
     const camera = pushedIn(feltCamera, effects.anima.push);
-    const eye = eyeOf(camera);
+    // Through the player's own eyes no other figure stands so near that it fills the view, as in the game.
+    const eye = { ...eyeOf(camera), nearest: inFirstPerson ? CARD_NEAREST_M : 0 };
     // Each figure drawn off where it stands by the attack feel; each fighter's figure as drawn, which its arc follows.
     const shift = (id: number, view: FighterView | null): Vector => feel.shift(id, view, camera.yaw);
     const figuresDrawn = new Map<number, DrawnFigure>();
@@ -432,7 +433,7 @@ async function start(): Promise<void> {
       const drawnAt: Vector = [placed.x + moved[0], placed.y + moved[1], placed.z + moved[2]];
       if (number !== undefined) figuresDrawn.set(number, { feet: drawnAt, anim: placed.anim, flip });
       const veiled = number !== undefined && veiledIn(fighting, number);
-      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y);
+      const stand = cardStand(drawnAt[0], drawnAt[1], eye.x, eye.y, eye.nearest);
       if (card) drawn.push({ card, ...stand, z: drawnAt[2], flip, flash, veiled });
     }
     const foeFeel = { held: (id: number, view: FighterView) => feel.held(id, view), shift, drawn: figuresDrawn, smear };

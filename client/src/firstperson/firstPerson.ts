@@ -28,6 +28,7 @@ import {
   lowerDrop,
   lowerStep,
   runFrameAt,
+  Sway,
   swayFrame,
 } from './fpMotion.ts';
 import { type HandView, type HandsEvents, Hands, SWAY_FRAMES, SWAY_RECORD, type Swing, everyView } from './hands.ts';
@@ -60,6 +61,7 @@ import {
   castPlace,
   ducks,
   holds,
+  swayedQuad,
   zoomedOnScreen,
 } from './fpPlaces.ts';
 import type { AttackInput, Pace } from './weaponMachine.ts';
@@ -131,6 +133,8 @@ interface Wanted {
   readonly place: (picture: Picture) => Omit<ScreenQuad, 'texture'>;
   readonly tip?: readonly [number, number];
   readonly hand?: Hand;
+  /** Held still on the screen, never swayed: a hand on a wall's stone, the horse and its reins. */
+  readonly still?: true;
 }
 
 /** A composed picture kept on the GPU: its texture, and its outline's field in each element it has glowed in. */
@@ -166,6 +170,9 @@ export class FirstPerson {
   private dye = '';
   private readonly chain = new ChainSwing();
   private readonly bob = new Bob();
+  /** The weapon's sway as it is held (`Sway`), design pixels across and down; none on a wall or a horse. */
+  private readonly sway = new Sway();
+  private swayed: readonly [number, number] = [0, 0];
   private readonly hands: Hands;
   private readonly ride: RideMotion;
   private plan: HandsPlan | null = null;
@@ -281,6 +288,9 @@ export class FirstPerson {
     this.duck = lowerStep(this.duck, ducks(this.plan?.held) && this.hands.swing ? 1 : 0, seconds);
     const walking = state.moving && !state.mounted;
     const drop = this.bob.step(seconds, state.stride, walking, state.running) + lowerDrop(this.lower);
+    const held = this.lower < 0.001 && !state.mounted;
+    const looked = held ? { yaw: state.yaw ?? 0, pitch: state.pitch ?? 0 } : null;
+    this.swayed = this.sway.step(seconds, looked, state.stride, walking, state.running);
     const sway = this.chain.step(seconds, !walking ? 0 : state.running ? 2 : 1);
     this.flameClock += seconds;
     this.stepShield(seconds, !!state.blocking);
@@ -432,7 +442,8 @@ export class FirstPerson {
         key: `grip|${frame}|${worn.hands}`,
         ask: () => climbPicture(this.source, frame, worn.hands),
         place: climbPlace('grip', grip.hand, grip.x, grip.y, GRIP.height),
-      };
+        still: true,
+      } as const;
     });
     const { reach } = this.climbShown;
     if (!reach) return wanted;
@@ -441,6 +452,7 @@ export class FirstPerson {
       key: `reach|${frame}|${worn.hands}`,
       ask: () => climbPicture(this.source, frame, worn.hands, 'reach'),
       place: climbPlace('reach', reach.hand, reach.x, reach.y, REACH_HEIGHT),
+      still: true,
     });
     return wanted;
   }
@@ -457,11 +469,13 @@ export class FirstPerson {
       key: `${HORSE_KEY}${shot.key}|${coat}|${barding}`,
       ask: () => horsePicture(this.source, shot, coat, barding),
       place: ridePlace(false),
+      still: true as const,
     };
     const reins = SIDES.filter(([, hand]) => !busy[hand]).map(([side]) => ({
       key: `rein|${shot.key}|${side}|${worn.hands}`,
       ask: () => reinPicture(this.source, shot, side, worn.hands),
       place: ridePlace(side === 'L'),
+      still: true as const,
     }));
     return [horse, ...reins];
   }
@@ -522,7 +536,8 @@ export class FirstPerson {
     if (!sighting?.tip) return null;
     const kept = this.kept.get(sighting.key);
     const quad = kept && sighting.place(kept.picture);
-    const muzzle = quad ? ([quad.x + sighting.tip[0], quad.y + sighting.tip[1]] as const) : this.drawnMuzzle;
+    const placed = quad && swayedQuad(quad, this.swayed, sighting.still);
+    const muzzle = placed ? ([placed.x + sighting.tip[0], placed.y + sighting.tip[1]] as const) : this.drawnMuzzle;
     return muzzle && zoomedOnScreen(muzzle[0], muzzle[1], this.zoom);
   }
 
@@ -562,7 +577,7 @@ export class FirstPerson {
       const kept = this.kept.get(wanted.key);
       if (kept === undefined) ready = false;
       else if (kept) {
-        const quad = wanted.place(kept.picture);
+        const quad = swayedQuad(wanted.place(kept.picture), this.swayed, wanted.still);
         const look = wanted.hand ? this.glow[wanted.hand === 'right' ? 0 : 1] : 0;
         // A plain weapon takes a blow's rim on an outline measured round, as Cosmic's is.
         const lit = !!wanted.hand && (look !== 0 || rim);

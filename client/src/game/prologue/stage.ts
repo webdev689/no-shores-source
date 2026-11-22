@@ -56,6 +56,8 @@ export interface StoryFrame {
   readonly heard?: WorldHeard;
   /** How far the picture drains toward grey under the interface, 0 to 1: a frozen fight's. */
   readonly drain?: number;
+  /** How dark the picture is under the interface, 0 to 1: the player's view blinking open as they arrive. */
+  readonly dark?: number;
 }
 
 export type WorldHeard =
@@ -294,6 +296,7 @@ export class Stage {
       // The screen's blur in CSS pixels, as device pixels of the picture.
       blur: screen.blurPixels * (canvas.width / Math.max(1, canvas.clientWidth)),
       drain: frame.drain ?? 0,
+      dark: frame.dark ?? 0,
     });
     const view = { width: canvas.clientWidth, height: canvas.clientHeight };
     const heads = new Map<string, readonly [number, number] | null>();
