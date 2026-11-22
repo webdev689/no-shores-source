@@ -238,7 +238,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
     const cards = [...shown.figures, ...met, ...nodes, ...walking];
-    if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands);
+    if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
     hud.place(here.node.name, placeWords(here.node, here.roomName));

@@ -264,8 +264,8 @@ A patrol's three dungeons ([[Dungeons]]) are entered on foot through the Game's 
   entrance's door, facing away from it.
 
 **Its scene** (`DungeonScene`) has no land, sky, sea or sun: the dungeon and what stands in it, in one pass over a
-near-black, then the blows' arcs, the see-through marks and their light over the picture, as the game's scene draws
-them. Wherever the player goes that is no dungeon, its pictures and the scene's targets are let go. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
+near-black, then the blows' arcs, the see-through marks and their light over the picture, and last death's grey, as
+the game's scene draws them. Wherever the player goes that is no dungeon, its pictures and the scene's targets are let go. Its floor's mesh is DFO's Forge's for one floor (`dungeonMesh`): each open cell's floor and ceiling; a
 wall wherever an open cell meets rock or the grid's edge, a trim band at its foot (0.4 m) and at its head (0.3 m); a
 wall from a lower ceiling up to a higher; each doorway's frame, its jambs exactly the boxes a body runs into and a
 lintel from 2.8 m up to the frame's height; a square pillar, trimmed, at each of a great room's corners; the exit
