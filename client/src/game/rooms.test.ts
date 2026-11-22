@@ -108,7 +108,13 @@ test("a room's name reads back as its node, its difficulty and its dungeon; a du
     run: null,
     playlist: null,
   });
-  assert.deepEqual(nodeOfRoom('node-dungeon-0'), { id: 'dungeon-0', seas: 'normal', dungeon: null, run: null, playlist: null });
+  assert.deepEqual(nodeOfRoom('node-dungeon-0'), {
+    id: 'dungeon-0',
+    seas: 'normal',
+    dungeon: null,
+    run: null,
+    playlist: null,
+  });
   assert.equal(nodeOfRoom('sea'), null);
 });
 

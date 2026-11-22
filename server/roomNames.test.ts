@@ -79,8 +79,20 @@ test('a patrol’s dungeon is one shared room at Normal and a run at each harder
 
 test('a node called as a dungeon is named is still its own room, at every difficulty', () => {
   assert.deepEqual(nodeRoom('dungeon-0'), { id: 'dungeon-0', seas: 0, dungeon: null, run: null, playlist: null });
-  assert.deepEqual(nodeRoom('dungeon-1--elite'), { id: 'dungeon-1', seas: 1, dungeon: null, run: null, playlist: null });
-  assert.deepEqual(nodeRoom('dungeon-2--dungeon-0'), { id: 'dungeon-2', seas: 0, dungeon: 0, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('dungeon-1--elite'), {
+    id: 'dungeon-1',
+    seas: 1,
+    dungeon: null,
+    run: null,
+    playlist: null,
+  });
+  assert.deepEqual(nodeRoom('dungeon-2--dungeon-0'), {
+    id: 'dungeon-2',
+    seas: 0,
+    dungeon: 0,
+    run: null,
+    playlist: null,
+  });
   assert.deepEqual(nodeRoom('run-a1b2c3d4'), { id: 'run-a1b2c3d4', seas: 0, dungeon: null, run: null, playlist: null });
 });
 
@@ -126,7 +138,13 @@ test('a run is a room of its own: an instance after its dungeon, at Elite and Ab
     run: 'k3j4h5g6',
     playlist: null,
   });
-  assert.deepEqual(nodeRoom('saltgrass-downs--dungeon-1'), { id: 'saltgrass-downs', seas: 0, dungeon: 1, run: null, playlist: null });
+  assert.deepEqual(nodeRoom('saltgrass-downs--dungeon-1'), {
+    id: 'saltgrass-downs',
+    seas: 0,
+    dungeon: 1,
+    run: null,
+    playlist: null,
+  });
   assert.deepEqual(nodeRoom('tidewall--elite'), { id: 'tidewall', seas: 1, dungeon: null, run: null, playlist: null });
 });
 

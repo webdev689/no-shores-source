@@ -276,7 +276,10 @@ mod tests {
         assert_eq!(drawn["modifiers"]["burn-shadow"], json!({ "name": "Burn (Shadow)", "words": burn }));
         let keys: std::collections::BTreeSet<&str> =
             drawn["modifiers"].as_object().expect("an object").keys().map(String::as_str).collect();
-        assert_eq!(keys, ["brawler", "burn-divine", "burn-shadow", "juggler", "lightswitch", "trickle"].into_iter().collect());
+        assert_eq!(
+            keys,
+            ["brawler", "burn-divine", "burn-shadow", "juggler", "lightswitch", "trickle"].into_iter().collect()
+        );
     }
 
     #[test]

@@ -47,7 +47,9 @@ fn the_elite_playlist_carries_the_days_modifier_and_the_abyss_one_more_of_anothe
 
 #[test]
 fn a_playlists_run_opens_after_the_prologue_at_its_level_to_its_band_alone() {
-    let elite_at = |level, prologue, foes_at| shut_at(level, prologue, Place::Playlist(Playlist::Elite, foes_at), Difficulty::Elite);
+    let elite_at = |level, prologue, foes_at| {
+        shut_at(level, prologue, Place::Playlist(Playlist::Elite, foes_at), Difficulty::Elite)
+    };
     assert_eq!(elite_at(30, false, 32), Some(Shut::Prologue));
     assert_eq!(elite_at(9, true, 12), Some(Shut::Playlist(Playlist::Elite)));
     assert_eq!(elite_at(10, true, 12), None);
@@ -115,7 +117,10 @@ fn the_playlists_records_are_written_only_once_touched_and_read_from_a_save_that
     activity.today(DAY).abyss_playlist = true;
     activity.this_week(WEEK).elite_playlist = 2;
     let written = serde_json::to_value(&activity).expect("written");
-    assert_eq!((&written["today"]["abyss_playlist"], &written["this_week"]["elite_playlist"]), (&serde_json::json!(true), &serde_json::json!(2)));
+    assert_eq!(
+        (&written["today"]["abyss_playlist"], &written["this_week"]["elite_playlist"]),
+        (&serde_json::json!(true), &serde_json::json!(2))
+    );
     let read: Activity = serde_json::from_value(written).expect("read");
     assert_eq!(read, activity);
     let old: Activity = serde_json::from_value(plain).expect("an older save reads");
