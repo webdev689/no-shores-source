@@ -55,7 +55,9 @@ code:
   - client/src/city/overtaken.ts#buildingGrowth
   - client/src/city/overtaken.ts#heapGrowth
   - client/src/city/overtaken.ts#wreckCrust
-  - client/src/city/overtaken.ts#FORMATIONS
+  - client/src/city/overtaken.ts#worksGrowth
+  - client/src/city/crystalFormations.ts#FORMATIONS
+  - client/src/city/crystalInstances.ts#crystalInstances
   - client/src/city/cityBuild.ts#detailRuns
   - client/src/game/wrecks.ts#withWrecks
 ---
@@ -355,39 +357,59 @@ building's place to the centimetre in the page, the same on every machine.
   among the landmark's solids, so the room's boxes hold it. Its three tallest spires light the night.
 - **The rubble** of the ways and the breaches is crusted (`crusted`): 2 to 5 shards on each heap's upper slopes, 0.5
   to 1.6 m high, 3 more on a breach's fall, 1 to 2.8 m. They are among the works, so the room holds them too.
-- **The small crystal** is 28 formations made once, the same on every load (`FORMATIONS`), four of each kind, each a
-  forged model's mesh placed by instance in its building's cell, so it is drawn only near, dithered as the buildings
-  are, and casts into the near shadow. Each grows out along its own east from its foot: a break's cluster (heavy: 2 to
-  3 spires 2.8 to 4.8 m and 7 to 10 shards 0.4 to 1.4 m, spread 1.8 m either way; light: 1 to 2 spires 1.2 to 2.6 m
-  and 3 to 6 shards up to 1 m); a vein's two shards 1.1 m apart up a wall, 0.5 to 1.3 m, leaning out 34 to 57
-  degrees; a doorway's 4 to 6 shards 0.8 to 2.2 m; a window's 3, 0.4 to 1 m; a patch's 4 to 7 shards 0.4 to 1.6 m
-  leaning every way; and a heap's heart, 3 to 5 spires 1.5 to 4.5 m and 4 to 7 shards round them.
+- **The formations.** The page's crystal is 40 formations made once, the same on every load (`FORMATIONS`), four of
+  each of ten kinds, each meshed as a forged model is and placed by instance, turned and sized there. Each grows out
+  along its own east from its foot:
+  - a heavy break's cluster: 3 to 4 spires 3 to 5.5 m and 8 to 12 shards 0.5 to 1.6 m, spread 2 m either way;
+  - a light break's: 2 to 3 spires 1.5 to 3.2 m and 4 to 7 shards 0.4 to 1.2 m;
+  - a mass: a main spire 4.5 m in the middle, nearly upright, 5 to 8 more round it 1.5 to 3.4 m and 6 to 10 shards,
+    leaning every way;
+  - a great formation: a main spire 10 m, leaning 4 degrees, 4 to 6 more round it 3.5 to 7.5 m leaning 14 to 40
+    degrees, and 5 to 8 shards 0.6 to 2 m: never one lone needle;
+  - a sheet: 16 to 22 shards 0.3 to 0.8 m over a wall's face 4 m wide and 3 m high;
+  - a vein's two shards 1.1 m apart up a wall; a doorway's 4 to 6 shards 0.8 to 2.2 m; a window's 3, 0.4 to 1 m; a
+    patch's 4 to 7 shards 0.4 to 1.6 m leaning every way; and a heap's heart, 3 to 5 spires 1.5 to 4.5 m and 4 to 7
+    shards.
 - **A broken building** (`buildingGrowth`, standing buildings only, not props): 12 % are untouched, 33 % heavily
-  overtaken, the rest lightly. Out of its break grow clusters leaning out from the wall tops, 2 to 3 heavily, 1 to 2
-  lightly; heavily, a spire stands among the first, 1.2 to 2.2 times the standing wall's height but never under 5.5
-  m nor over 16 m, well over the break. Veins climb from the ground toward the break, a formation every 2.2 m, one in five
-  missing: at every corner and at a seam of each long side heavily, at about half its corners lightly. A doorway's
-  formation chokes the foot of a long side, and heavily, a window's stands at 1.8 m on each long side and 1 to 2
-  patches break through the paving 1.5 to 4 m out from its walls.
+  overtaken, the rest lightly.
+  - Heavily: 2 to 3 heavy break clusters at the break, leaning out from the wall tops, each the standing wall's
+    height over 3.5 times its own (0.9 to 2); a mass over the middle of the break, as large as the smaller half of
+    its footprint over 2.5 (0.6 to 2.2), so the building is mostly crystal over its break; 2 to 4 sheets over its
+    walls from the ground up, the wall's height over 3 times their own (0.6 to 2); windows' shards at 1.8 m on each
+    long side; 1 to 2 patches through the paving 1.5 to 4 m out from its walls.
+  - Lightly: 1 to 2 light break clusters, and a sheet one time in two.
+  - Both: veins climbing from the ground toward the break, a formation every 2.2 m, one in five missing, at every
+    corner and at a seam of each long side heavily, at about half its corners lightly; a doorway's formation at the
+    foot of a long side.
 - **A fallen building's heap** (`heapGrowth`): but for the untouched share, a heap's formation rises from its heart,
-  half way up the heap.
-- **The harbour's wrecks** (`wreckCrust`) are crusted at the waterline, a shard every 1.4 m or so round the hull as
-  long and broad as its ship's, three in ten missing, true size: at sea, where a wreck is drawn larger, its crust is
-  inside it.
+  half way up the heap, the heap's height over 2 times its size (0.8 to 1.6).
+- **The great formations** stand across the city, drawn at every distance, so the skyline seen from the water is
+  broken by crystal everywhere:
+  - on every tower and gatehouse tower of the wall, on its broken top, 1 to 1.6 times their size; in every breach,
+    0.9 to 1.3; at the broken end of every pier, 0.8 to 1.1; along the quay, at three in five places 60 m apart, 0.7
+    to 1 (`worksGrowth`);
+  - over the break of a heavily overtaken building, the wall's height over 4 (0.8 to 1.8), and out of a fallen heap
+    of 150 m² or more, the root of its area over 14 (0.8 to 1.6), each by a chance that grows from 3 % at the grid's
+    edge to 60 % at its middle with the square of the nearness (`GREAT_CHANCE`): the overtaking spread from the heart.
+- **The harbour's wrecks** (`wreckCrust`) are crusted at the waterline: patches round the hull as long and broad as
+  its ship's, one about every 3 m, three in ten missing, set out as large as the wreck is drawn (the ships' size: at
+  sea larger, true size on foot), drawn at every distance.
 - **The plaza stays clear:** nothing the page lays reaches into the 110 m window round the plaza, as no rubble lies
   there; only the crown on the landmark stands within it.
-- **Near and far.** A heavy building's spire 8 m or taller is a great one, drawn at every distance with the city's
-  solids, so a ruin reads as the Lattice's from the sea and the Overworld, with the crown. A lower one, the rubble's
-  crust and the wrecks' are drawn only in the chunks within the near tier's reach (`detailRuns`) and cast only into
-  the near shadow; the formations only in the near cells. A spire's body has no top meshed: its tip stands on it.
-- **Its cost**, Mistfall's (`ruinBudget.test.ts` holds it under its limits): 142 608 triangles of solids at every
-  distance (the same plan drawn with its buildings whole, 52 166; Overlook's 117 894); the near-only solids at most
-  2 038 a chunk; formations of under 200 triangles each, one instanced draw a formation, placed in the near cells
-  with the forged models; 280 lamps; the city built in about 5 s where its buildings whole take under 1 s, most of
-  it the solids' meshing and its garbage.
-- **At night** each great spire of a building lights a lamp of the crystal's light (`CRYSTAL_LAMP`) at the middle of
-  its body, reaching 6 m more than its body is tall, at most 30 m; with the landmark's three, the sky's nearest lamps
-  are chosen from them as from any city's.
+- **Near and far.** The great formations are drawn at every distance (`crystalInstances.ts`), a draw a formation. A
+  heavy building's clusters and mass are drawn in the middle distance, the chunks within 1 200 m of the eye
+  (`MIDDLE_M`). Everything else the page grows is drawn in the near cells with the forged models, dithered as they
+  are. The rubble's crust is drawn in the chunks within the near tier's reach (`detailRuns`). All of it casts into
+  both shadows but the near cells' and the crust, which cast into the near one. A spire's body has no top meshed:
+  its tip stands on it.
+- **At night** the ruin's formations glow brighter than any other crystal the city draws (their core 0.8 alight,
+  against 0.45), so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
+  light (`CRYSTAL_LAMP`) a third of the way up it, reaching 6 m more than it stands tall, at most 30 m; with the
+  crown's three, the sky's nearest lamps are chosen from them as from any city's.
+- **Its cost**, Mistfall's (`ruinBudget.test.ts` holds it under its limits): 135 406 triangles of solids at every
+  distance (the crown, the heaps, the works); 1 092 great formations, 253 692 triangles, and as many lamps; from the
+  landmark, before the view's culling, 861 752 triangles of the middle distance's crystal and 498 558 of the near
+  cells'; the city built in 1.1 s where its buildings whole take 0.8 s.
 
 ## Limits
 

@@ -5,14 +5,15 @@ import type { BuildingTable, PropTable } from '../models/tables.ts';
 import { startLand } from '../rules/landRules.ts';
 import { parseBlockFile, type RmbBlock } from './blocks.ts';
 import { buildCity } from './cityBuild.ts';
-import { FORMATIONS } from './overtaken.ts';
+import { middleDraws } from './crystalInstances.ts';
+import { NEAR_M } from './tiers.ts';
 import type { CityPlan } from './plan.ts';
 
 const content = (path: string) => readFile(new URL(`../../../content/${path}`, import.meta.url), 'utf8');
 const LAND_WASM = new URL('../../../target/wasm32-unknown-unknown/release/land_wasm.wasm', import.meta.url);
 
 /** Mistfall's plan as the land's worker plans it, its blocks and the forged tables, from the repository's files. */
-async function mistfall(): Promise<{ plan: CityPlan; blocks: Map<string, RmbBlock>; tables: object }> {
+export async function mistfallForBudget(): Promise<{ plan: CityPlan; blocks: Map<string, RmbBlock>; tables: object }> {
   const land = await startLand(
     await readFile(LAND_WASM).catch(() => {
       throw new Error('land_wasm.wasm is not built: run `npm run wasm` first');
@@ -36,30 +37,51 @@ async function mistfall(): Promise<{ plan: CityPlan; blocks: Map<string, RmbBloc
   return { plan: JSON.parse(land.cityPlan() ?? 'null') as CityPlan, blocks, tables };
 }
 
-test("a ruined city's crystal stays within the city's budgets: few triangles far, its formations instanced near", async () => {
-  const { plan, blocks, tables } = await mistfall();
+test("a ruined city's crystal stays within the city's budgets, and builds in about the time a whole one does", async () => {
+  const { plan, blocks, tables } = await mistfallForBudget();
   const climate = { climate: 'temperate', season: 'summer' } as const;
-  const ruin = buildCity(plan, climate, blocks, tables as Parameters<typeof buildCity>[3]);
-  const triangles = (data: typeof ruin, key: 'solids' | 'detail') =>
-    data.chunks.reduce((sum, chunk) => sum + chunk[key].count / 3, 0);
-  // Drawn at every distance: the solids, a ruin's great spires among them (Mistfall's are 142 608 triangles; the same
-  // plan drawn with its buildings whole, 52 166).
-  assert.ok(triangles(ruin, 'solids') < 170_000, `${triangles(ruin, 'solids')} far`);
-  // Drawn near only: the small solids, a chunk's at most a few thousand.
-  assert.ok(Math.max(...ruin.chunks.map((chunk) => chunk.detail.count / 3)) < 4000);
-  // The formations: one model each, instanced in the near cells, a cell's crystal a few thousand triangles.
-  const first = ruin.models.entries.length - FORMATIONS.length;
-  const formationTriangles = ruin.models.triangles.slice(first);
-  let [most, cells] = [0, 0];
-  for (const list of ruin.near.values()) {
-    const drawn = list.reduce((sum, each) => sum + (formationTriangles[each.model - first] ?? 0), 0);
-    most = Math.max(most, drawn);
-    cells++;
-  }
+  const built = (ruined: boolean) => {
+    const started = performance.now();
+    const data = buildCity({ ...plan, ruined }, climate, blocks, tables as Parameters<typeof buildCity>[3]);
+    return { data, ms: performance.now() - started };
+  };
+  // Warmed once each, then measured: the ruin builds in about the time its plan does with its buildings whole (on
+  // this machine 1.1 s against 0.8 s), well under twice it.
+  built(true);
+  built(false);
+  const [ruin, whole] = [built(true), built(false)];
+  assert.ok(ruin.ms < 2 * whole.ms, `${ruin.ms} ms against ${whole.ms} ms`);
+  const data = ruin.data;
+  const solids = data.chunks.reduce((sum, chunk) => sum + chunk.solids.count / 3, 0);
+  // Drawn at every distance: the solids (Mistfall's 135 406 triangles, its crown and fallen heaps among them) and the
+  // great formations (1 092 of them, 253 692 triangles), each lighting a lamp.
+  const formationTriangles = data.models.triangles.slice(data.firstFormation);
+  const greats = data.crystal.great.reduce((sum, draw) => sum + draw.count, 0);
+  const greatTriangles = data.crystal.great.reduce(
+    (sum, draw) => sum + draw.count * formationTriangles[draw.model - data.firstFormation],
+    0,
+  );
+  assert.ok(solids < 160_000, `${solids} solids`);
+  assert.ok(greats > 600 && greatTriangles < 350_000, `${greats} great, ${greatTriangles} triangles`);
+  assert.ok(data.lamps.length >= greats && data.lamps.length < 1500, `${data.lamps.length} lamps`);
   assert.ok(
-    formationTriangles.every((count) => count < 200),
+    formationTriangles.every((count) => count < 350),
     `${formationTriangles}`,
   );
-  assert.ok(most < 12_000 && cells > 0, `a cell's crystal ${most} triangles`);
-  assert.ok(ruin.lamps.length < 1000, `${ruin.lamps.length} lamps`);
+  // Drawn near only: the crust's solids, a chunk's at most a few thousand.
+  assert.ok(Math.max(...data.chunks.map((chunk) => chunk.detail.count / 3)) < 4000);
+  // From the landmark, before the view's culling: the middle distance's crystal (861 752 triangles) and the near
+  // cells' formations (498 558) under a million and a half together.
+  const eye = [0, -150, 60];
+  const middle = middleDraws(data.chunks, data.crystal.middle, eye, data.firstFormation).reduce(
+    (sum, draw) => sum + draw.count * formationTriangles[draw.model - data.firstFormation],
+    0,
+  );
+  let near = 0;
+  for (const [cell, list] of data.near) {
+    const middleOf = data.cells.subarray(cell * 4, cell * 4 + 3);
+    if (Math.hypot(middleOf[0] - eye[0], middleOf[1] - eye[1], middleOf[2] - eye[2]) >= NEAR_M) continue;
+    for (const each of list) near += formationTriangles[each.model - data.firstFormation] ?? 0;
+  }
+  assert.ok(middle + near < 1_500_000, `${middle} middle, ${near} near`);
 });

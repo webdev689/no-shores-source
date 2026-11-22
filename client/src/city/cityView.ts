@@ -8,6 +8,8 @@ import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData, type CityTables, detailRuns, type Range, runs } from './cityBuild.ts';
+import { drawsByFormation, type InstancedDraw, middleDraws, writeInstances } from './crystalInstances.ts';
+import { wreckCrustAt } from './overtaken.ts';
 import { CITY_BUFFER_USAGE, type CityPipelines, cityPipelines, MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import { MODEL_FLOATS } from './cityModels.ts';
 import type { MeshData } from './mesh.ts';
@@ -68,6 +70,10 @@ type Drawn = {
   readonly plates: GPUBuffer;
   readonly plateVertices: number;
   readonly instances: Record<Modelled, Instances>;
+  /** A ruin's crystal formations past the near cells, by instance. */
+  readonly crystal: GPUBuffer;
+  /** Its wrecks' crusts by instance, written again whenever the size the wrecks are drawn at changes. */
+  readonly wreckCrust: { readonly buffer: GPUBuffer; scale: number; draws: InstancedDraw[] } | null;
 };
 
 export class CityView implements CityDrawer {
@@ -79,9 +85,13 @@ export class CityView implements CityDrawer {
   private seen: Seen | null = null;
   private onPainted: () => void = () => {};
 
-  constructor(gpu: Gpu) {
+  /** The size a ruin's wrecks are drawn at now (the ships': larger at sea, true size on foot), its crust's too. */
+  private readonly wreckScale: () => number;
+
+  constructor(gpu: Gpu, wreckScale: () => number = () => 1) {
     this.gpu = gpu;
     this.pipelines = cityPipelines(gpu);
+    this.wreckScale = wreckScale;
   }
 
   /** Called whenever another picture is painted, so a page that draws on demand can draw again. */
@@ -173,7 +183,61 @@ export class CityView implements CityDrawer {
         view: { buffer: null, key: '', draws: [] },
         near: { buffer: null, key: '', draws: [] },
       },
+      crystal: buffer(data.crystal.bytes, CITY_BUFFER_USAGE.vertex),
+      wreckCrust: data.wrecks.length
+        ? {
+            buffer: buffer(
+              new ArrayBuffer(data.wrecks.reduce((sum, each) => sum + each.crust.length, 0) * MODEL_INSTANCE_BYTES),
+              CITY_BUFFER_USAGE.vertex,
+            ),
+            scale: 0,
+            draws: [],
+          }
+        : null,
     };
+  }
+
+  /** Draws a ruin's crystal formations past the near cells: the great ones, the middle distance's of the chunks
+   *  within its reach, and the wrecks' crusts as large as the wrecks are drawn. Answers what it drew. */
+  private drawCrystal(
+    pass: GPURenderPassEncoder,
+    drawn: Drawn,
+    chunks: readonly Chunk[],
+    eye: readonly number[],
+  ): { draws: number; triangles: number } {
+    const { data } = drawn;
+    const drew = { draws: 0, triangles: 0 };
+    const draw = (draws: readonly InstancedDraw[]) => {
+      for (const { model, first, count } of draws) {
+        const entry = data.models.entries[model];
+        if (!entry?.indexCount) continue;
+        pass.drawIndexed(entry.indexCount, count, entry.firstIndex, entry.baseVertex, first);
+        drew.draws++;
+        drew.triangles += (entry.indexCount / 3) * count;
+      }
+    };
+    pass.setVertexBuffer(0, drawn.modelVertices);
+    pass.setIndexBuffer(drawn.modelIndices, 'uint32');
+    pass.setVertexBuffer(1, drawn.crystal);
+    draw(data.crystal.great);
+    draw(middleDraws(chunks, data.crystal.middle, eye, data.firstFormation));
+    const crust = drawn.wreckCrust;
+    if (crust) {
+      const scale = this.wreckScale();
+      if (scale !== crust.scale) {
+        const places = data.wrecks
+          .flatMap(({ wreck, crust: each }) => wreckCrustAt(wreck, each, scale))
+          .sort((a, b) => a.formation - b.formation);
+        const bytes = new ArrayBuffer(places.length * MODEL_INSTANCE_BYTES);
+        writeInstances(places, data.origin, bytes);
+        this.gpu.device.queue.writeBuffer(crust.buffer, 0, bytes);
+        crust.draws = drawsByFormation(places, data.firstFormation);
+        crust.scale = scale;
+      }
+      pass.setVertexBuffer(1, crust.buffer);
+      draw(crust.draws);
+    }
+    return drew;
   }
 
   /** Stops drawing any city and frees its buffers. */
@@ -285,10 +349,9 @@ export class CityView implements CityDrawer {
     for (const run of runs(chunks.map((chunk) => chunk.solids))) pass.drawIndexed(run.count, 1, run.first, 0, 0);
     const { origin } = drawn.data;
     const eye = [shot.eye[0] - origin[0], shot.eye[1] - origin[1], shot.eye[2]] as const;
-    if (!far) {
-      for (const run of detailRuns(chunks, eye)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
-      return;
-    }
+    if (!far) for (const run of detailRuns(chunks, eye)) pass.drawIndexed(run.count, 1, run.first, 0, 0);
+    this.drawCrystal(pass, drawn, chunks, eye);
+    if (!far) return;
     pass.setPipeline(this.pipelines.massesCast);
     pass.setBindGroup(1, shadow.casterGroup(this.pipelines.massesCast));
     pass.setVertexBuffer(0, drawn.masses);
@@ -327,6 +390,9 @@ export class CityView implements CityDrawer {
       frame.draws++;
       frame.triangles += run.count / 3;
     }
+    const crystal = this.drawCrystal(pass, drawn, chunks, eye);
+    frame.draws += crystal.draws;
+    frame.triangles += crystal.triangles;
 
     pass.setPipeline(drawn.data.ruined ? this.pipelines.brokenMasses : this.pipelines.masses);
     pass.setVertexBuffer(0, drawn.masses);
@@ -374,6 +440,7 @@ export class CityView implements CityDrawer {
           whole[slot * stride + 4] = cell;
           whole[slot * stride + 5] = TIER_WHOLE;
           floats[slot * stride + 6] = instance.cut;
+          floats[slot * stride + 7] = instance.scale;
         }
       if (!held.buffer || held.buffer.size < bytes.byteLength) {
         held.buffer?.destroy();

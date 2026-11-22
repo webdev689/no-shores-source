@@ -8,7 +8,8 @@ import { clearedGround, groundPlates, PAVED_TILE, plateSkirts, sideOf } from './
 import { MASS_FLOATS, MASS_RUIN } from './cityMasses.ts';
 import { emptyMesh } from './mesh.ts';
 import { PICTURE_LAYERS } from './pictures.ts';
-import { FORMATIONS } from './overtaken.ts';
+import { FORMATIONS } from './crystalFormations.ts';
+import { middleDraws } from './crystalInstances.ts';
 import { CELL_M, type CityPlan, type PlanCell, type Solid } from './plan.ts';
 
 const content = (path: string): string => readFileSync(new URL(`../../../content/${path}`, import.meta.url), 'utf8');
@@ -282,7 +283,7 @@ function crystalCorners(data: ReturnType<typeof buildCity>, ranges: readonly { f
   return corners;
 }
 
-test("a ruin's buildings are overtaken by the crystal, its great spires drawn far and its small crystal near", () => {
+test("a ruin is overtaken: great formations drawn far, the buildings' crystal in the middle distance and near", () => {
   const port = buildCity({ ...madePlan(), ruined: false, wrecks: [] }, TEMPERATE, blocksOf(), TABLES);
   const ruin = buildCity({ ...madePlan(), ruined: true }, TEMPERATE, blocksOf(), TABLES);
   const everything = (data: typeof ruin) => data.chunks.flatMap((chunk) => [chunk.solids, chunk.detail]);
@@ -309,25 +310,47 @@ test("a ruin's buildings are overtaken by the crystal, its great spires drawn fa
     size: [0.3, 0.3, 1],
     material: 'crystal',
   };
+  const tower: Solid = {
+    shape: 'column',
+    sides: 16,
+    top: 1,
+    size: [16, 16, 12],
+    at: [0, 0, 30],
+    turn: 0,
+    lean: 0,
+    roll: 0,
+    material: 'stone',
+  };
   const away = {
     ...plan,
     ruined: true,
-    works: [...plan.works, { ...crust, at: [plan.centre[0] + 150, plan.centre[1], 30] as const }],
+    works: [
+      ...plan.works,
+      { ...crust, at: [plan.centre[0] + 150, plan.centre[1], 30] as const },
+      { ...tower, at: [plan.centre[0] - 150, plan.centre[1], 30] as const },
+    ],
     social: { ...plan.social, bounds: [0, 0, 10, 10] as const },
   };
   const overtaken = buildCity(away, TEMPERATE, blocksOf(), TABLES);
-  const great = crystalCorners(
-    overtaken,
-    overtaken.chunks.map((chunk) => chunk.solids),
+  assert.ok(
+    crystalCorners(
+      overtaken,
+      overtaken.chunks.map((chunk) => chunk.detail),
+    ).length > 0,
+    'the crust, near',
   );
-  const detail = crystalCorners(
-    overtaken,
-    overtaken.chunks.map((chunk) => chunk.detail),
-  );
-  assert.ok(great.length > 0 && detail.length > 0, `${great.length} great, ${detail.length} detail`);
-  assert.ok(formations(overtaken).length > 3 * 17, `${formations(overtaken).length} formations`);
-  assert.ok(overtaken.lamps.length > 0, 'its great spires light the night');
-  // Far off a chunk draws its great spires only; near, its small crystal too.
+  assert.ok(formations(overtaken).length > 3 * 17, `${formations(overtaken).length} formations near`);
+  // The great formations (the tower's among them) at every distance, each lighting the night; the middle distance's
+  // only within the masses' reach.
+  const greats = overtaken.crystal.great.reduce((sum, draw) => sum + draw.count, 0);
+  assert.ok(greats >= 1 && overtaken.lamps.length >= greats, `${greats} great`);
+  const [first] = overtaken.chunks;
+  const eyeAt = (away: number) => [first.middlesLow[0] + away, first.middlesLow[1], 50];
+  const middle = (away: number) =>
+    middleDraws(overtaken.chunks, overtaken.crystal.middle, eyeAt(away), overtaken.firstFormation).length;
+  assert.ok(middle(0) > 0 && middle(9000) === 0, `${middle(0)} near, ${middle(9000)} far`);
+  assert.equal(port.crystal.great.length + port.crystal.middle.flat().filter((range) => range.count).length, 0);
+  // The crust's chunk draws it near, not far.
   const chunk = overtaken.chunks.find((each) => each.detail.count > 0);
   assert.ok(chunk);
   assert.equal(detailRuns([chunk], [chunk.middlesLow[0], chunk.middlesLow[1], 50]).length, 1);
