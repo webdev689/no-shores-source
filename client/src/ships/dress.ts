@@ -51,9 +51,10 @@ export const DRESSES: Readonly<Record<ShipSide, ShipDress>> = {
   },
 };
 
-/** The side a captain of a faction sails for: 1 the Grey Tithe; any other a friendly ship. */
+/** The side a captain of a faction sails for: 0, the players', a friendly ship; any other a hostile one, the Grey
+ *  Tithe's (the Lattice's ships come later). */
 export function factionSide(faction: number): ShipSide {
-  return faction === 1 ? 'tithe' : 'friendly';
+  return faction === 0 ? 'friendly' : 'tithe';
 }
 
 /** How a ship is drawn: its side, and how light (1 as painted, less for another player's in the World Editor). */

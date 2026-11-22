@@ -32,8 +32,8 @@ const HULL_NAMES = ['Sloop', 'Schooner', 'Brig', 'Frigate'] as const;
 /** Their ship's name, by the faction they sail for and its hull (the Sloop unless named): the Tithe's or a merchant's
  *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names it. */
 export function shipName(faction: number, hull = 0): string {
-  // Any faction but the Tithe's sails as a merchant does, as the rules name it.
-  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Merchant Sloop';
+  // Only the players' side's sails as a merchant; any other as the Tithe does, the one hostile side that sails.
+  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Tithe Sloop';
   return sloop.replace(/Sloop$/, HULL_NAMES[hull] ?? 'Sloop');
 }
 

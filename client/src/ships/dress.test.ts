@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { colourOf, DRESSES, factionSide, SHIP_SIDES } from './dress.ts';
 
-test("a captain's faction gives its side: 1 the Grey Tithe, any other a friendly ship, as one fighting beside the players", () => {
-  assert.deepEqual([1, 0, 2, 7].map(factionSide), ['tithe', 'friendly', 'friendly', 'friendly']);
+test("a captain's faction gives its side: 0 a friendly ship fighting beside the players, any other a hostile one", () => {
+  assert.deepEqual([1, 0, 2, 7].map(factionSide), ['tithe', 'friendly', 'tithe', 'tithe']);
   assert.deepEqual(SHIP_SIDES, ['player', 'friendly', 'tithe']);
 });
 

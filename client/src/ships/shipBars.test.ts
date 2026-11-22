@@ -162,3 +162,10 @@ test('a friendly ship’s plate is in the players’ side’s blue, whatever its
   const colourOf = (key: number) => placed.find((bar) => bar.key === key)?.colour;
   assert.deepEqual([colourOf(2), colourOf(1)], [FILLS.ally, rankColour(2)]);
 });
+
+test('only the players’ side’s faction names a merchant: any other a hostile ship, the Tithe’s', () => {
+  assert.deepEqual(
+    [shipName(0, 1), shipName(3, 1), shipName(9)],
+    ['Merchant Schooner', 'Tithe Schooner', 'Tithe Sloop'],
+  );
+});
