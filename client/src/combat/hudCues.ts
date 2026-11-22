@@ -99,9 +99,9 @@ const RING_STROKE = 4;
 const RING_EDGE = 2;
 
 /** A parry ring over a foe at a blow the player can parry: a fixed ring `RING.closed` px across and one `span` px
- *  across closing onto it, each bold over a dark edge, and a gold band from the fixed ring out to `window` px across,
- *  the parry window the closing ring enters (none at 0); gold once a press would parry. An iron blow's red mark with
- *  no ring. */
+ *  across closing onto it, each bold over a dark edge, and the parry window as a faint gold band from the fixed ring
+ *  out to `window` px across, edged there by a hard gold line the closing ring crosses as the window opens (none at
+ *  0); gold once a press would parry. An iron blow's red mark with no ring. */
 export function parryNode(
   spot: { readonly x: number; readonly y: number },
   span: number,
@@ -122,7 +122,13 @@ export function parryNode(
     return centred('parry iron 0', svgOf(side, body), side, spot);
   }
   const [closing, opens] = [Math.round(span), Math.round(window)];
-  const band = opens > RING.closed ? circle(opens, 'rgba(255,217,90,0.4)', (opens - RING.closed) / 2) : '';
+  // Faint, so the foe's head shows through it; its hard edge is the line to time the press by.
+  const band =
+    opens > RING.closed
+      ? circle(opens, 'rgba(255,217,90,0.2)', (opens - RING.closed) / 2) +
+        circle(opens + 2, 'rgba(0,0,0,0.75)', 4) +
+        circle(opens, '#ffd95a', 2)
+      : '';
   const body = band + ring(RING.closed) + ring(closing);
   return centred(`parry ${kind} ${closing} ${opens}`, svgOf(side, body), side, spot);
 }

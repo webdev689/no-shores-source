@@ -29,7 +29,8 @@ test('a parry ring is bold over a dark edge, and its window is a gold band the c
   assert.match(svg(plain), /rgba\(0,0,0,0\.75\)/, 'a dark edge');
   assert.doesNotMatch(svg(plain), /rgba\(255,217,90/, 'no band where a press could open no window');
   const banded = parryNode(spot, 30, 'ring', 60);
-  assert.match(svg(banded), /rgba\(255,217,90,0\.4\)/, 'the window’s band');
+  assert.match(svg(banded), /rgba\(255,217,90,0\.2\)/, 'the window’s band, faint over the foe');
+  assert.match(svg(banded), /stroke="#ffd95a" stroke-width="2"/, 'edged by a hard gold line where the window opens');
   assert.equal(banded.width, 72, 'wide enough for the band past a ring nearly closed');
   assert.equal(banded.picture?.key, 'parry ring 30 60');
   assert.ok(RING.widest > 2 * RING.closed, 'its widest stands well clear of the fixed ring');
