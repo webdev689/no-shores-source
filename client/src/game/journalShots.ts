@@ -10,6 +10,7 @@ import type { Interface } from '../ui/ui.ts';
 import type { EntranceCard, KeyedModifier, ThisWeek, WeekRow } from './activityWords.ts';
 import { EntranceCardView } from './entranceCard.ts';
 import { openGearWindow, type View } from './gearScreen.ts';
+import { sampleGear } from './gearShots.ts';
 import { startGearWindow } from './gearWindow.ts';
 
 const HOUR = 3_600_000;
@@ -156,6 +157,15 @@ function menuShot(view: View, then: () => void = () => undefined, gear = GEAR): 
 export const journalShot = menuShot('journal');
 /** The Journal with its timers dropped, as T drops them. */
 export const journalTimersShot = menuShot('journal', () => dispatchEvent(new KeyboardEvent('keydown', { key: 't' })));
+/** The Character tab at level 24, its four armour pieces' Prestige making up its 84. */
+export const characterShot = menuShot('character', undefined, {
+  ...sampleGear(),
+  level: 24,
+  prestige: 84,
+  items: sampleGear().items.map((each) =>
+    each.at >= 4 && each.at <= 7 ? { ...each, prestige: [22, 25, 20, 17][each.at - 4] ?? 0 } : each,
+  ),
+});
 /** The bounty board's screen, its six tiles in their states and the chosen one's card. */
 export const boardShot = menuShot('board');
 

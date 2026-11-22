@@ -274,6 +274,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[A Player May Mute Another]]
 - [[Inspect Opens the Character Tab]]
 - [[Inspect Shows the Player's Emblem Banner]]
+- [[Prestige Stands Beside Level on the Character Tab]]
 
 ## Replaced
 
