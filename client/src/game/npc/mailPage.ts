@@ -97,6 +97,10 @@ export const letterPresses = (gear: GearState): string[][] => {
  *  so a second press before its answer would ask for a letter already taken, and be refused. */
 let asked = { answered: -1, letters: new Set<number>() };
 
+/** Forgets the letters asked for as a screen opens: a room joined since counts its answers afresh, so an ask it never
+ *  answered must not hold that letter back. */
+export const mailOpened = (): void => void (asked = { answered: -1, letters: new Set() });
+
 /** `ask` for `letters`, unless every one of them was asked for since the room last answered. */
 function askOnce(context: MenuContext, letters: readonly number[], ask: GearAsk): void {
   const { answered } = context.gear;

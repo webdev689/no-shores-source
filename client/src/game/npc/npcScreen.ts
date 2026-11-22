@@ -17,7 +17,7 @@ import { vaultPage } from '../stationPages.ts';
 import { clockWords, countdownsAt } from './npcClock.ts';
 import { factionOf, rankRewards, reputationOf } from './factionRows.ts';
 import { keeperFigure } from './npcFigure.ts';
-import { letterPresses, mailPage } from './mailPage.ts';
+import { letterPresses, mailOpened, mailPage } from './mailPage.ts';
 import { keeperMarkSvg } from './npcMarks.ts';
 import { type Asked, answeredWith } from './npcLines.ts';
 import { hush, keeperSays, speechBand } from './npcSpeech.ts';
@@ -63,6 +63,7 @@ let pressesShown: readonly (readonly string[])[] = [];
 /** The screen opens at `view`: a keeper's greets the player; any other view hushes the last. */
 export function npcOpened(view: View): void {
   [choosing, pending, focusNext, pressesShown] = [false, null, null, []];
+  mailOpened();
   if (isKeeperView(view)) keeperSays(view, 'Hello');
   else hush();
 }

@@ -9,7 +9,7 @@ import { fakeInterface, wordsIn } from '../../ui/uiForTests.ts';
 import { sizesOf } from '../gearNodes.ts';
 import type { MenuContext } from '../menuPage.ts';
 import { FROM_WORDS, MAIL_MOST, letterRows, letterWords } from './mailPage.ts';
-import { npcPage } from './npcScreen.ts';
+import { npcOpened, npcPage } from './npcScreen.ts';
 
 test('each letter is offered to take by its number, named by what it holds, and Take all while any waits', () => {
   const vestige = { id: 4, rarity: 2, slot: 2, level: 12, vaulted: false };
@@ -155,6 +155,14 @@ test('a click on a letter’s Take or tile, or E on either, takes that letter on
   regear({ mail: [] });
   frame();
   assert.equal(ui.boxOf('npc-take-all'), null, 'no Take all with none waiting');
+});
+
+test('an ask no room answered holds no letter back once his screen opens again, as in a room joined since', () => {
+  const { ui, asked, frame } = postmasterOf(1280, 720);
+  click(ui, frame, 'npc-take-31');
+  npcOpened('mail');
+  click(ui, frame, 'npc-take-31');
+  assert.equal(asked.length, 2);
 });
 
 test('the focus on a letter taken goes to the same press of the letter after it, else the one before', () => {
