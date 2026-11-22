@@ -1,5 +1,5 @@
 ---
-id: 137
+id: 139
 title: "A new screen was judged on legibility alone, not against the owner's reference picture; the owner called it really bad"
 status: open
 type: open-source
