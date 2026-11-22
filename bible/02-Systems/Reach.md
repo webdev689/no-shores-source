@@ -5,7 +5,7 @@ code:
   - crates/reach/src/lib.rs#Section
   - crates/reach/src/lib.rs#Standing
   - crates/reach/src/lib.rs#inside
-  - crates/reach/src/lib.rs#distance_outside
+  - crates/reach/src/lib.rs#distance_to_ring
   - crates/reach/src/lib.rs#respawn_point
   - crates/reach/src/lib.rs#WARNING_TICKS
   - crates/room/src/lib.rs#tick

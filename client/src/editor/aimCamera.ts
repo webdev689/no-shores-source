@@ -1,6 +1,6 @@
 // The aim camera, DFO's: while a broadside is laid the eye eases out to the battery's
 // aim eye, from one battery's to the other's in its own frame, and stops short of a ship alongside; let go, it eases
-// home. A crippled ship's guns are silent, so its eye never moves (the caller asks for no side).
+// home. A sinking ship's guns are silent, so its eye never moves (the caller asks for no side).
 import { headingFrame } from '../rules/landRules.ts';
 import { hullPaint, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { aimEye, type Lying } from './aim.ts';

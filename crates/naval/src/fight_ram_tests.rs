@@ -101,7 +101,7 @@ fn a_ship_once_rammed_is_not_rammed_again_by_it_for_three_seconds() {
 }
 
 #[test]
-fn a_wreck_rams_nothing() {
+fn a_ship_going_down_rams_nothing() {
     let mut fight = bow_to_side(0.5, 6.0);
     let player = fight.ships.get_mut(&PLAYER).unwrap_or_else(|| panic!("player"));
     player.damage.apply(Hurt { hull: 300.0, sail: 0.0, crew: 0.0, fire: false }, 0.0, 0.0);

@@ -51,14 +51,20 @@ function fromRoom(message: { readonly player: number } | { readonly tick: bigint
 class FakeSocket extends EventTarget {
   readyState: number = WebSocket.CONNECTING;
   binaryType = 'blob';
-  readonly sent: Uint8Array[] = [];
+  readonly sent: (Uint8Array | string)[] = [];
 
-  send(bytes: Uint8Array): void {
+  send(bytes: Uint8Array | string): void {
     this.sent.push(bytes);
   }
 
   close(): void {
     this.closed(1000);
+  }
+
+  /** The socket opens, before the room has said anything. */
+  opens(): void {
+    this.readyState = WebSocket.OPEN;
+    this.dispatchEvent(new Event('open'));
   }
 
   /** The room says something: its welcome to player `player`, or a snapshot at `tick`. */
@@ -74,8 +80,9 @@ class FakeSocket extends EventTarget {
   }
 }
 
-/** A connection joined as player `player` over fake sockets, each socket it opens, and the snapshots it handed on. */
-async function joined(player: number) {
+/** A connection joined as player `player` over fake sockets, each socket it opens, and the snapshots it handed on;
+ *  with `session`, the token it sends once welcomed. */
+async function joined(player: number, session: string | null = null) {
   const sockets: FakeSocket[] = [];
   const ticks: bigint[] = [];
   const connect = () => {
@@ -87,7 +94,7 @@ async function joined(player: number) {
     'ws://test/room/court',
     (snapshot: RoomSnapshot) => ticks.push(snapshot.tick),
     undefined,
-    null,
+    session,
     connect,
   );
   sockets[0]?.says({ player });
@@ -113,6 +120,9 @@ test('a socket a deploy closes is joined again after a second: a new player, wel
   assert.equal(sockets.length, 1, 'no try before the wait is over');
   context.mock.timers.tick(1);
   assert.equal(sockets.length, 2);
+  sockets[1]?.opens();
+  connection.send(new Uint8Array([1]));
+  assert.equal(sockets[1]?.sent.length, 0, 'an input numbered for the last join waits out the welcome');
   sockets[1]?.says({ player: 1 });
   sockets[1]?.says({ tick: 2n });
   assert.deepEqual([connection.player, connection.joins, connection.rejoining, ticks], [1, 2, false, [10n, 2n]]);
@@ -150,6 +160,18 @@ test('a room that sends the player away, or a page that leaves, is never joined 
   left.connection.close();
   context.mock.timers.tick(waitMs(9));
   assert.deepEqual([left.sockets.length, left.connection.lost], [1, null], 'the wait was let go');
+});
+
+test('a rejoin sends the session token again once welcomed, before any input', async (context: TestContext) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const { connection, sockets } = await joined(3, 'token');
+  assert.deepEqual(sockets[0]?.sent, ['token']);
+  sockets[0]?.closed(1006);
+  context.mock.timers.tick(waitMs(0));
+  sockets[1]?.opens();
+  sockets[1]?.says({ player: 4 });
+  connection.send(new Uint8Array([1]));
+  assert.deepEqual(sockets[1]?.sent, ['token', new Uint8Array([1])]);
 });
 
 test('a room whose gate shuts is never joined again, and says why', async (context: TestContext) => {

@@ -112,12 +112,6 @@ pub fn inside(ring: &[[f64; 2]], x: f64, y: f64) -> bool {
     odd
 }
 
-/// How far outside the ring (x, y) lies, metres: 0 inside it or on it, else the distance to its nearest edge.
-#[must_use]
-pub fn distance_outside(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {
-    if inside(ring, x, y) { 0.0 } else { distance_to_ring(ring, x, y) }
-}
-
 /// The distance from (x, y) to the ring's nearest edge, inside or out; infinite for a ring with no points.
 #[must_use]
 pub fn distance_to_ring(ring: &[[f64; 2]], x: f64, y: f64) -> f64 {

@@ -19,12 +19,6 @@ impl Stood {
     pub fn socket(&self, name: &str) -> Option<([f64; 3], [f64; 2])> {
         self.sockets.iter().find(|(own, _, _)| own == name).map(|(_, at, facing)| (*at, *facing))
     }
-
-    /// Every socket whose name starts with `start`, in the module's order.
-    #[must_use]
-    pub fn sockets_named(&self, start: &str) -> Vec<([f64; 3], [f64; 2])> {
-        self.sockets.iter().filter(|(own, _, _)| own.starts_with(start)).map(|(_, at, facing)| (*at, *facing)).collect()
-    }
 }
 
 fn module_named(name: &str) -> Option<(u32, &'static Module)> {

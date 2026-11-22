@@ -153,3 +153,16 @@ fn a_pull_in_a_swap_to_a_gun_fires_as_it_ends_or_does_nothing_with_none_loaded()
     let (_, happenings) = script(empty, &pulled);
     assert!(happenings.is_empty(), "{happenings:?}");
 }
+
+#[test]
+fn in_a_swap_a_guard_held_stays_up_while_a_click_after_it_waits_for_the_swap_to_end() {
+    let both = asking(0.0, CombatInput { attack: Some(Stroke::Up), guard: true, ..CombatInput::default() });
+    let mut intents = vec![guarding(0.0); SWAP_ENDS + 30];
+    intents[3] = both;
+    for tick in 1..SWAP_ENDS {
+        let (guarded, _) = script(swapping_to(SWORD), &intents[..tick]);
+        assert!(matches!(guarded.action, Action::Guard { .. }), "tick {tick}: {:?}", guarded.action);
+    }
+    let (_, happenings) = script(swapping_to(SWORD), &intents);
+    assert_eq!(swung(&happenings), [(SWAP_ENDS, Stroke::Up)], "the click swings as the swap ends");
+}

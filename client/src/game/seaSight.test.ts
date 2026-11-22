@@ -63,7 +63,7 @@ test('while the side reloads, braces or its guns are silent, the line says why a
   assert.deepEqual([reloading?.hot, reloading?.dim], [false, true]);
   const braced = { ...vessel, guns: { ...vessel.guns, braced: true } };
   assert.equal(aimLineOf(LAY, braced)?.tail, ' - braced');
-  assert.equal(aimLineOf(LAY, { ...vessel, state: 'wrecked' })?.tail, ' - guns silent');
+  assert.equal(aimLineOf(LAY, { ...vessel, state: 'sinking' })?.tail, ' - guns silent');
   assert.equal(aimLineOf(null, vessel), null);
 });
 

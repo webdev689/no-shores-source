@@ -25,19 +25,17 @@ pub const FIRE_SAIL: f64 = 0.5;
 pub const FIRE_CREW_S: f64 = 10.0;
 /// A braced crew takes this share of a ball's harm to hull and canvas.
 pub const BRACE_TAKEN: f64 = 0.5;
-/// A wrecked boat's oars pull this share of their way; bare poles leave this share of its way.
-pub const WRECKED_OARS: f64 = 0.35;
+/// Bare poles leave this share of its way.
 pub const BARE_POLES: f64 = 0.35;
 /// A captain's men stand this many blows a man; a player's crew twice as many.
 pub const SHIP_TOUGHNESS: f64 = 1.6;
 pub const PLAYER_CREW_TOUGHNESS: f64 = 3.2;
-/// Mending at sea: quiet this long first (seconds), this share of the whole a second (half that single-handed), to
-/// this share of the whole; a wreck floats again past this share of its hull.
+/// Mending at sea: quiet this long first (seconds), this share of the whole a second, halved as a player mends
+/// single-handed, to this share of the whole.
 pub const FIELD_QUIET_S: f64 = 15.0;
 pub const FIELD_MEND_PER_S: f64 = 0.004;
 pub const FIELD_MEND_ALONE: f64 = 0.5;
 pub const FIELD_MEND_CAP: f64 = 0.5;
-pub const FIELD_REFLOAT: f64 = 0.15;
 /// Under this share of its hull it lists, to this many degrees at none, taken on over these seconds.
 pub const DAMAGE_LIST_FROM: f64 = 0.4;
 pub const DAMAGE_LIST_MAX_DEG: f64 = 8.0;
@@ -49,7 +47,6 @@ pub enum State {
     Struck,
     Sinking,
     Sunk,
-    Wrecked,
 }
 
 /// Where a ball struck: its hull above the waterline band, within it, or its canvas.
@@ -139,7 +136,7 @@ pub struct Damage {
     pub list_deg: f64,
     /// The share of its hull it strikes at.
     pub struck_at: f64,
-    /// The least hull a ball or a fire leaves it: none, but one for a ship the fight must never wreck.
+    /// The least hull a ball or a fire leaves it: none, but one for a ship the fight must never sink.
     pub least_hull: f64,
     player: bool,
     /// The parts of a hull point, a canvas point and a man that balls taking a share of their blow left it owing.
@@ -206,7 +203,6 @@ impl Damage {
             State::Struck => 1.0,
             State::Sinking => 2.0,
             State::Sunk => 3.0,
-            State::Wrecked => 4.0,
         };
         let mut numbers =
             vec![self.hull, self.sail, self.crew, self.crew_burn, self.wound, state, self.sink_t, self.last_hit_at];
@@ -282,7 +278,7 @@ impl Damage {
     /// The state its numbers call for, if it changed.
     fn settle(&mut self) -> Option<State> {
         let was = self.state;
-        if matches!(self.state, State::Afloat | State::Struck | State::Wrecked) {
+        if matches!(self.state, State::Afloat | State::Struck) {
             if self.hull <= 0.0 {
                 // Its fires burn on as it goes down.
                 self.state = State::Sinking;
@@ -343,13 +339,13 @@ impl Damage {
     }
 
     /// Its hands mend its hull and canvas at `now` if nothing has hurt it for a while and no hostile ship is near: up
-    /// to half of each, a wreck afloat again past a share of its hull. Answers whether they mended anything.
-    pub fn mend(&mut self, seconds: f64, now: f64, hostile_near: bool, crewed: bool) -> bool {
+    /// to half of each, at a player's single-handed rate. Answers whether they mended anything.
+    pub fn mend(&mut self, seconds: f64, now: f64, hostile_near: bool) -> bool {
         if now - self.last_hit_at < FIELD_QUIET_S || hostile_near || matches!(self.state, State::Sinking | State::Sunk)
         {
             return false;
         }
-        let rate = FIELD_MEND_PER_S * if crewed { self.crew_share().clamp(0.0, 1.0) } else { FIELD_MEND_ALONE };
+        let rate = FIELD_MEND_PER_S * FIELD_MEND_ALONE;
         let part =
             |have: f64, whole: f64| (whole * FIELD_MEND_CAP - have).min(whole * rate * seconds.max(0.0)).max(0.0);
         let (hull, sail) =
@@ -361,12 +357,6 @@ impl Damage {
         self.sail = (self.sail + sail).min(self.max_sail);
         if self.hull > 0.0 {
             self.douse();
-        }
-        if self.state == State::Wrecked && self.hull > self.max_hull * FIELD_REFLOAT {
-            self.state = State::Afloat;
-        }
-        if self.state == State::Struck && self.hull > self.max_hull * self.struck_at && !self.unmanned() {
-            self.state = State::Afloat;
         }
         true
     }

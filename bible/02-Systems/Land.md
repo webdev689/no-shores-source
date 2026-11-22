@@ -224,7 +224,7 @@ the painted coast and its height carried over the coast, so the browser draws th
   do not follow it.
 - The 2D map, and the 3D view farther than 8 km, show places on the 1 km cells they cross, so a road reads as a
   band a kilometre wide. Closer, the close-up draws them at their true width on the exact ground, sampled every 4 m.
-- A biome sets only the climate, the ground's colour and the snow line: no plants, soils or rocks yet.
+- A biome sets the climate, the ground's colour and the snow line here; its plants and rocks are [[Nature]]'s.
 - A preview (`keep: false`) has no city settled on it.
 - A window keeps every course that reaches it whole, so a long river crossing it is carried end to end. Outside its
   rect a window still answers, but not as the whole ground would.

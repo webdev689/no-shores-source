@@ -1,6 +1,7 @@
 // Every control the player binds: the keys and the pad's buttons each is on until the player binds it otherwise, and
 // where in the game it acts, so binding a key that another control there holds swaps the two. A key is
-// `KeyboardEvent.key` in lower case (a digit by its place on the row, so Shift's 2 is still 2), the mouse's buttons
+// `KeyboardEvent.key` in lower case (a digit or a sign by its place on the row, so Shift's 2 is still 2 and its ','
+// still ','; a key that types a letter is that letter on any layout), the mouse's buttons
 // `mouse0` (left) to `mouse4` (the forward side button), bound only to a control that hears the mouse. The pad's are
 // the standard pad's, named as printed; a stick's ways ('LS up') are fixed, never bound; a button held is `B hold`, and
 // two pressed together `LB+RB`. What the player changed is kept with their account (`readOverrides`), and the accounts

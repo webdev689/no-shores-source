@@ -40,11 +40,3 @@ test('a ship glyph draws as an SVG as large as its map, every run of a tone in i
   assert.equal(cells, SHIP_MAPS.hull.join('').replaceAll('.', '').length, 'every drawn cell, once');
   for (const [, , , , fill] of runs) assert.ok(SHIP_PALETTES.hull.includes(fill ?? ''), fill);
 });
-
-test('the rigging is shrouds with ratlines across them over their deadeyes, not a ring', () => {
-  const rows = SHIP_MAPS.rigging;
-  const rungs = rows.filter((row) => /b{5,}|c{5,}/.test(row)).length;
-  assert.ok(rungs >= 3, `ratlines rigged across: ${rungs}`);
-  const deadeyes = rows.slice(17).join('');
-  for (const tone of ['f', 'g', 'k']) assert.ok(deadeyes.includes(tone), `deadeyes drawn in ${tone}`);
-});

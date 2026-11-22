@@ -1,6 +1,6 @@
 ---
 type: system
-status: building
+status: live
 code:
   - client/src/islands/islePlan.ts#readIslePlan
   - client/src/islands/islePlan.ts#gridOf
@@ -20,7 +20,7 @@ code:
 # Island Drawing
 
 How the page draws the sea's procedural islands: the `islands` layer (`client/src/islands/`), which draws what the
-room module builds from an island's seed and climate. The island crate and its rules are [[Overworld]]'s and the
+room module builds from an island's seed and climate. The island crate and its rules are [[Islands]]', and the
 modules are made in Blender (`tools/islands`); this note is only the drawing.
 
 ## The drawing
@@ -64,8 +64,8 @@ modules are made in Blender (`tools/islands`); this note is only the drawing.
 
 ## Cost
 
-A ruin isle in rainforest (about 1300 modules) drawn close: see the pull request for the measured triangles and draw
-calls; the draws are one for the ground and one a module the island wears, some 40, however many it places.
+A ruin isle in rainforest (about 1300 modules) drawn close takes one draw for the ground and one a module the island
+wears, some 40, however many it places.
 
 ## Limits
 

@@ -145,3 +145,52 @@ fn a_charge_or_a_leap_off_a_drop_never_sets_its_foe_down_inside_the_block_it_lef
         }
     }
 }
+
+#[test]
+fn a_leap_off_a_block_strikes_from_where_it_lands_not_from_where_it_set_off() {
+    let platform = movement::Block { min_x: -8.0, min_y: -3.0, max_x: 2.0, max_y: 3.0, top: 1.6, bottom: 0.0 };
+    let mut foe = foe_at(-1.0, 0.0, FRAC_PI_2);
+    foe.body.z = platform.top;
+    let (_, happenings) =
+        common::run_on(foe, telegraphing(order(Shape::Leap, 60, FRAC_PI_2, 6.0)), 70, None, &[platform]);
+    let landed = happenings.iter().find_map(|(_, happening)| match happening {
+        Happening::Landed(telegraph) => Some(*telegraph),
+        _ => None,
+    });
+    let landed = landed.expect("it landed");
+    let [x, y] = landed.landing().expect("a leap lands");
+    assert!(landed.landed_z.is_some_and(|z| z.abs() < 1e-9), "it came down on the ground: {landed:?}");
+    assert!(landed.strikes([x, y, 0.0], &[platform], &Flat), "a body on the ground where it lands is struck");
+}
+
+#[test]
+fn a_charge_off_a_block_strikes_a_body_below_at_the_height_it_ends_and_never_one_up_where_it_set_off() {
+    let platform = movement::Block { min_x: -8.0, min_y: -3.0, max_x: 2.0, max_y: 3.0, top: 1.6, bottom: 0.0 };
+    let mut foe = foe_at(-1.0, 0.0, FRAC_PI_2);
+    foe.body.z = platform.top;
+    let (_, happenings) =
+        common::run_on(foe, telegraphing(order(Shape::Charge, 60, FRAC_PI_2, 0.0)), 70, None, &[platform]);
+    let landed = happenings.iter().find_map(|(_, happening)| match happening {
+        Happening::Landed(telegraph) => Some(*telegraph),
+        _ => None,
+    });
+    let landed = landed.expect("it landed");
+    assert!(landed.landed_z.is_some_and(|z| z.abs() < 1e-9), "it ran off onto the ground: {landed:?}");
+    assert!(landed.strikes([6.0, 0.0, 0.0], &[platform], &Flat), "a body on the ground in its lane is struck");
+    assert!(!landed.strikes([1.0, 0.0, platform.top], &[platform], &Flat), "one left up on the block is not");
+}
+
+#[test]
+fn a_charge_into_a_wall_still_strikes_the_body_pinned_before_it() {
+    let wall = movement::Block { min_x: 5.0, min_y: -3.0, max_x: 5.5, max_y: 3.0, top: 3.0, bottom: 0.0 };
+    let foe = foe_at(-1.0, 0.0, FRAC_PI_2);
+    let (_, happenings) =
+        common::run_on(foe, telegraphing(order(Shape::Charge, 60, FRAC_PI_2, 0.0)), 70, None, &[wall]);
+    let landed = happenings.iter().find_map(|(_, happening)| match happening {
+        Happening::Landed(telegraph) => Some(*telegraph),
+        _ => None,
+    });
+    let landed = landed.expect("it landed");
+    assert!(landed.strikes([4.0, 0.0, 0.0], &[wall], &Flat), "a body backed against the wall is struck");
+    assert!(!landed.strikes([6.5, 0.0, 0.0], &[wall], &Flat), "never one behind the wall");
+}

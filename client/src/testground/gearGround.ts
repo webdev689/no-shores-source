@@ -1,5 +1,6 @@
-import { resourcePicture, vestigePicture } from '../combat/dropPictures.ts';
+import { resourcePicture } from '../combat/dropPictures.ts';
 import { type Marked, OVER_HEAD_M, OVER_NODE_M } from '../combat/marksOver.ts';
+import { crystalStill } from '../combat/vestigeCrystal.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import { BODY_HEIGHT } from '../player/crosshair.ts';
 
@@ -23,14 +24,11 @@ export function nodesInReach(
   );
 }
 
-/** The stall's mark: a sealed Vestige, as Vestiges are opened there. */
-const STALL_MARK = vestigePicture(0);
-
 /** What wears a mark over it on the course's flat ground, as in the game (game/overheadMarks.ts): the stall, as over a
- *  keeper's crown, and each resource node not yet spent, its resource's. The drops lying for the player stand as
- *  their own pictures (`combat/drops.ts`). */
+ *  keeper's crown, a Vestige's crystal, as Vestiges are opened there; and each resource node not yet spent, its
+ *  resource's. The drops lying for the player hover, a Vestige as its crystal (`combat/drops.ts`). */
 export function gearMarked(stall: Point, gear: GearState | null): Marked[] {
-  const marked: Marked[] = [{ picture: STALL_MARK, at: [stall.x, stall.y, BODY_HEIGHT + OVER_HEAD_M] }];
+  const marked: Marked[] = [{ picture: crystalStill(0, false), at: [stall.x, stall.y, BODY_HEIGHT + OVER_HEAD_M] }];
   for (const node of gear?.nodes ?? []) {
     const picture = resourcePicture(node.resource);
     if (picture) marked.push({ picture, at: [node.x, node.y, OVER_NODE_M] });

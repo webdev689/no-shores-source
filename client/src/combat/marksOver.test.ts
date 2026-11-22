@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { vestigePicture } from './dropPictures.ts';
+import { AMMO_BOX } from './dropPictures.ts';
 import { MARK_FLOATS, ditherCode } from './marks.ts';
 import { MIN_RAD, MOST, REACH_M, WIDTH_M, marksSeen } from './marksOver.ts';
 
@@ -11,7 +11,7 @@ const widthOf = (vertices: readonly number[]): number => {
 };
 
 test('a mark is WIDTH_M across near, never narrower on the screen than MIN_RAD far, faded at the end of its reach', () => {
-  const picture = vestigePicture(4);
+  const picture = AMMO_BOX;
   const over = [0, 0, 2] as const;
   const seen = (far: number) => marksSeen([{ picture, at: over }], [0, -far, 2], 0, true);
   assert.ok(Math.abs(widthOf(seen(3)) - WIDTH_M) < 0.05, 'WIDTH_M across, near');
@@ -29,8 +29,14 @@ test('a mark is WIDTH_M across near, never narrower on the screen than MIN_RAD f
   assert.deepEqual(seen(REACH_M + 1), [], 'none past it');
 });
 
+test('a picture with a pixel of its own is laid as wide as any other', () => {
+  const own = { rows: ['aa', 'aa'], colours: ['#ff0000'], pixelM: 0.05 };
+  const width = widthOf(marksSeen([{ picture: own, at: [0, 0, 2] }], [0, -3, 2], 0, true));
+  assert.ok(Math.abs(width - WIDTH_M) < 0.05, `WIDTH_M across, near: ${width}`);
+});
+
 test('a mark bobs on a phase of its own, holds still under reduced motion, and only the nearest are laid', () => {
-  const picture = vestigePicture(0);
+  const picture = AMMO_BOX;
   const one = [{ picture, at: [0, 0, 2] as const }];
   assert.notDeepEqual(marksSeen(one, [0, -5, 2], 0, false), marksSeen(one, [0, -5, 2], 0.25, false));
   assert.deepEqual(marksSeen(one, [0, -5, 2], 0, true), marksSeen(one, [0, -5, 2], 0.25, true), 'held still');
@@ -40,7 +46,7 @@ test('a mark bobs on a phase of its own, holds still under reduced motion, and o
 });
 
 test('a beating mark swells and eases back, a mark that does not beat keeps its width, and both hold under reduced motion', () => {
-  const picture = vestigePicture(0);
+  const picture = AMMO_BOX;
   const widths = (beating: boolean, holding: boolean) =>
     [0, 0.2, 0.4, 0.6, 0.8, 1].map((seconds) =>
       widthOf(marksSeen([{ picture, at: [0, 0, 2], beating }], [0, -3, 2], seconds, holding)),
