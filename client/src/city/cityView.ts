@@ -268,7 +268,7 @@ export class CityView implements CityDrawer {
     const uniforms = new Float32Array(VIEW_BYTES / 4);
     uniforms.set(fromEye, 0);
     uniforms.set([...eye, time], 16);
-    uniforms.set([...data.grid, data.plates.width, 0], 20);
+    uniforms.set([...data.grid, data.plates.width, data.ruined ? 1 : 0], 20);
     this.gpu.device.queue.writeBuffer(drawn.view, 0, uniforms);
     const planes = viewPlanes(fromEye);
     const casting = shadow?.active ? shadow : null;

@@ -37,7 +37,7 @@ struct View {
   from_eye: mat4x4f,
   // the eye from the city's middle, and the time
   eye: vec4f,
-  // the ground's tiles: the grid's north-west corner from the city's middle, and the tiles a row
+  // the ground's tiles: the grid's north-west corner from the city's middle, and the tiles a row; and 1 in a ruin
   grid: vec4f,
 };
 @group(0) @binding(0) var<uniform> view: View;
@@ -63,7 +63,7 @@ const BONE = ${COLOUR_LAYERS.bone}u;
 const GLOW = ${COLOUR_LAYERS.glow}u;
 const CRYSTAL = ${COLOUR_LAYERS.crystal}u;
 // A module's crystal in the city carries no glow of its own a vertex: its core is drawn half alight; a ruin's
-// overtaking crystal (its formations, placed by instance) burns brighter, so a ruin is a scatter of red at night.
+// overtaking crystal (all of it in a ruin) burns brighter, so a ruin is a scatter of red at night.
 const CITY_CRYSTAL_GLOW = 0.45;
 const RUIN_CRYSTAL_GLOW = 0.8;
 const WATER = ${COLOUR_LAYERS.water}u;
@@ -224,8 +224,8 @@ fn jagged(point: vec3f) -> f32 {
 
 @fragment
 fn surface_fragment(surface: Surface, @builtin(front_facing) facing: bool) -> @location(0) vec4f {
-  // the only crystal a model instance wears is a ruin's formations'
-  crystal_glow = select(CITY_CRYSTAL_GLOW, RUIN_CRYSTAL_GLOW, surface.tier == TIER_CRYSTAL || surface.tier == TIER_WHOLE);
+  // all a ruin's crystal is the Lattice's overtaking: its crown, its crust and its formations
+  crystal_glow = select(CITY_CRYSTAL_GLOW, RUIN_CRYSTAL_GLOW, view.grid.w > 0.5);
   let sampled = textureSample(pictures, picture_sampler, surface.uv, min(surface.layer, LAST_PICTURE)).rgb;
   // a ruin's open shell is drawn from inside too, lit from the side seen
   let normal = select(-surface.normal, surface.normal, facing);

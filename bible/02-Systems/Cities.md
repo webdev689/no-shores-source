@@ -402,8 +402,8 @@ building's place to the centimetre in the page, the same on every machine.
   are. The rubble's crust is drawn in the chunks within the near tier's reach (`detailRuns`). All of it casts into
   both shadows but the near cells' and the crust, which cast into the near one. A spire's body has no top meshed:
   its tip stands on it.
-- **At night** the ruin's formations glow brighter than any other crystal the city draws (their core 0.8 alight,
-  against 0.45), so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
+- **At night** a ruin's crystal glows brighter than any other crystal a city draws (its core 0.8 alight, against
+  0.45), so a ruin is a scatter of red on a dark coast; each great formation lights a lamp of the crystal's
   light (`CRYSTAL_LAMP`) a third of the way up it, reaching 6 m more than it stands tall, at most 30 m; with the
   crown's three, the sky's nearest lamps are chosen from them as from any city's.
 - **Its cost**, Mistfall's (`ruinBudget.test.ts` holds it under its limits): 135 406 triangles of solids at every
