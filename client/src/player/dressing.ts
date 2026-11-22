@@ -155,6 +155,15 @@ export const plainDress = (race: Race, tone: number): Dress => ({
 /** A garment's dye until one is chosen. */
 export const PLAIN_DYE = 'LightBrown';
 
+const LOOKS_SETS = new WeakMap<ForgeLooks, { readonly metal: Set<string>; readonly dyed: Set<string> }>();
+
+/** The forge's metal and dyed layers as sets, made once for its looks: every figure's ramps are found every frame. */
+function metalAndDyed(looks: ForgeLooks): { readonly metal: Set<string>; readonly dyed: Set<string> } {
+  let sets = LOOKS_SETS.get(looks);
+  if (!sets) LOOKS_SETS.set(looks, (sets = { metal: new Set(looks.metal ?? []), dyed: new Set(looks.dye ?? []) }));
+  return sets;
+}
+
 /** The ramp each dyed layer a figure wears is laid on: a faction's piece its faction's own colour, whatever dye is
  *  worn; a metal layer its set's or metal's, a garment and its hangs their garment's dye (a clothing dye, or a cosmetic
  *  dye's look); with a dye worn, every other armour layer and garment but the cloak its ramp; and the ridden horse
@@ -168,8 +177,7 @@ export function layerRamps(
   looks: ForgeLooks,
   table: DyeTable,
 ): { readonly ramps: Record<string, readonly Rgb[]>; readonly whole: string[] } {
-  const metal = new Set(looks.metal ?? []);
-  const dyed = new Set(looks.dye ?? []);
+  const { metal, dyed } = metalAndDyed(looks);
   const worn = cosmeticRamp(outfit.dye, table.palette);
   const armour = new Set(ARMOUR_PIECES.map((piece) => `${piece}_${outfit.armour[piece] ?? ''}`));
   const piece = (layer: string) => armour.has(layer) || layer.startsWith('under_');
