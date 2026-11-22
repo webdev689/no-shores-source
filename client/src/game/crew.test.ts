@@ -64,3 +64,38 @@ test('a hand sent to a post walks there only once the deck leaves a clear way; n
     });
   }
 });
+
+test('a hand at one post sent to another with no clear way there leaves it, walks on and asks again', () => {
+  let reached = 0;
+  for (const deck of HULL_DECKS) {
+    const crew = new Crew(deck, 5, 4);
+    crew.step(
+      1,
+      crew.hands.map((hand) => ({ x: hand.x, y: hand.y, z: hand.z, facing: 0 })),
+    );
+    const spots = new Crew(deck, 9, 40).hands.map((hand) => [hand.x, hand.y, hand.z] as const);
+    // The farthest spot each hand has no straight way to, as a battery's guns across the deck behind the mast.
+    const posts = crew.hands.map((hand) => {
+      const shut = spots.filter((spot) => !clearLeg(deck, [hand.x, hand.y], [spot[0], spot[1]]));
+      const far = shut.reduce((best, spot) =>
+        Math.hypot(spot[0] - hand.x, spot[1] - hand.y) > Math.hypot(best[0] - hand.x, best[1] - hand.y) ? spot : best,
+      );
+      return { x: far[0], y: far[1], z: far[2], facing: 0 };
+    });
+    const walked = crew.hands.map(() => 0);
+    for (let tick = 0; tick < 60 * 60; tick++) {
+      const before = crew.hands.map((hand) => [hand.x, hand.y] as const);
+      crew.step(1 / 60, posts);
+      crew.hands.forEach((hand, index) => {
+        const [x = 0, y = 0] = before[index] ?? [];
+        walked[index] = (walked[index] ?? 0) + Math.hypot(hand.x - x, hand.y - y);
+      });
+    }
+    walked.forEach((metres, index) => assert.ok(metres > 5, `hand ${index} walked ${metres.toFixed(2)} m`));
+    crew.hands.forEach((hand, index) => {
+      const post = posts[index];
+      if (post && Math.hypot(post.x - hand.x, post.y - hand.y) < 0.01) reached++;
+    });
+  }
+  assert.ok(reached > 0, 'a hand that comes to a clear way takes it');
+});

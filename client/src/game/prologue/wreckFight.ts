@@ -219,7 +219,8 @@ export class WreckFight implements Beat {
   frame(tick: Tick): StoryFrame | null {
     if (this.failure) throw this.failure;
     const run = this.run;
-    if (!run) return null;
+    // Held on the picture before it until the wreck is drawn, so the run's camera never plays against its course alone.
+    if (!run || this.scenery.coming) return null;
     const { story } = this;
     const { stage, walker, firstPerson } = story;
     this.clock += tick.seconds;

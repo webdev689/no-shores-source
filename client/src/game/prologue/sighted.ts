@@ -64,8 +64,8 @@ export function shotOnDeck(shot: Shot, place: ShipPlace): { eye: Point3; look: P
   return { eye: toDeck(shot.eye), look: toDeck(look), fov: shot.fov };
 }
 
-/** The camera's way, in the Brig's frame: from `start` (where the creation left it, turned round the player as it
- *  was, for the screen it was framed for) round behind them at the helm to look down its deck at the crew as they cry
+/** The camera's way, in the Brig's frame: from `start` (where the creation left it, for the screen it was framed
+ *  for) round behind them at the helm to look down its deck at the crew as they cry
  *  out, up and out over its stern to look ahead at the ships with the crew still in the picture, and down to where
  *  the fight's camera stands, through its lens. */
 export function sightedKeys(start: { readonly eye: Point3; readonly look: Point3; readonly fov: number }): RailKey[] {
@@ -204,7 +204,7 @@ export class Sighted implements Beat {
   private shot(own: ShipPlace, aspect: number): Shot {
     const steady: ShipPlace = { ...own, pitch: own.pitch * 0.3, roll: own.roll * 0.3 };
     this.keys ??= sightedKeys(
-      this.from ? shotOnDeck(this.from, steady) : { ...creationEye(0, aspect), fov: CREATION_LENS.fov },
+      this.from ? shotOnDeck(this.from, steady) : { ...creationEye(aspect), fov: CREATION_LENS.fov },
     );
     const carried = this.keys.map((key) => ({
       ...key,

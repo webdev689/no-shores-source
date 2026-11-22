@@ -85,6 +85,7 @@ export class Overboard implements Beat {
   skip(): void {
     this.skipped = true;
     this.cues.finish();
+    this.story.stage.parts.screen.fade(1, 0);
     this.done = true;
   }
 

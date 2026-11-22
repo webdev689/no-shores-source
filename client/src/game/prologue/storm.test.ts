@@ -76,7 +76,7 @@ test("the storm's run ends in the helm's own shot of it riding the swell, so the
   const dive = new StormDive(storm, FROM);
   let last = dive.frame(tick(0.5));
   while (!dive.done) last = dive.frame(tick(0.5));
-  const helm = creationShot(helmDeck(RIDING), 0, VIEW.width / VIEW.height);
+  const helm = creationShot(helmDeck(RIDING), VIEW.width / VIEW.height);
   for (let axis = 0; axis < 3; axis++)
     assert.ok(Math.abs((last.shot.eye[axis] ?? 0) - (helm.eye[axis] ?? 0)) < 1e-6, `eye ${axis}`);
   assert.ok(Math.abs(last.shot.yaw - helm.yaw) < 1e-6, 'yaw');

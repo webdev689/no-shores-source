@@ -44,6 +44,8 @@ export class Wake implements Beat {
   /** The run once it has opened, whose resting shot the camera eases out to, taken as it leaves the eyes. */
   private run: WreckRun | null = null;
   private shouldered = false;
+  /** Whether the run's camera has worked out its course: once, while the player still lies on the deck. */
+  private warmed = false;
   private since = 0;
   /** Set once skipped: its moments left still change the world, but none sounds. */
   private skipped = false;
@@ -120,8 +122,14 @@ export class Wake implements Beat {
 
   frame(tick: Tick): StoryFrame {
     const { stage } = this.story;
-    // The eyes stay shut until the wreck they open on has come.
+    // Held lying on the deck, a second before the eyes open for good, until the wreck they open on has come.
     if (!(this.scenery.coming && this.since >= OPEN_S - 1)) this.since += tick.seconds;
+    // The camera's course is long to work out: done as soon as the wreck is drawn, while the player still lies there,
+    // never as the camera leaves the eyes and the music begins.
+    if (this.run && !this.scenery.coming && !this.warmed) {
+      this.run.restingShot();
+      this.warmed = true;
+    }
     this.heart += tick.seconds;
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);

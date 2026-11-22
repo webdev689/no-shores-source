@@ -19,8 +19,9 @@ import type { Story } from './story.ts';
 
 export const LENS = { fov: 0.85, near: 0.3, far: 30_000 } as const;
 /** The deck shot the crew talk in: from over the helm, looking forward down its deck, off to port of the spanker's
- *  boom, whose line would cross the gunner's head as he speaks. */
-export const DECK_VIEW = { eye: [-15.5, -3.5, 7.4], look: [4, 0.4, 3.2] } as const;
+ *  boom, whose line would cross the gunner's head as he speaks, and forward of the line from the boom's port crutch to
+ *  the player at the helm, which would stand the crutch across them at the picture's edge. */
+export const DECK_VIEW = { eye: [-15.1, -3.8, 7.4], look: [4, 0.4, 3.2] } as const;
 /** The still air on its deck, the storm still heard round it. */
 export const CALM_SOUND: Partial<AmbienceLevels> = { wind: 0.3, rain: 0.7, waves: 0.7, creak: 0.7 };
 /** How long the camera takes down to its deck, when the crew begin to talk, and how long the mate's last line runs
@@ -35,6 +36,13 @@ const OUT_LENS = 0.55;
 const BEHIND_M = 3;
 const ASIDE_M = 1.1;
 const OVER_HEAD_M = 0.35;
+/** The Brig's foremast and the feet of its shrouds either side at that eye's height, in its deck's frame (x to
+ *  starboard, y to its stern), measured from its mesh. They stand some three metres behind the lookout, so of his two
+ *  shoulders the eye takes the one that leaves it more room from them. */
+const FORE_RIGGING: readonly (readonly [number, number])[] = [
+  [0, -8.2],
+  ...[-7, -7.5, -8, -8.5, -9].flatMap((along) => [[-3.3, along] as const, [3.3, along] as const]),
+];
 /** Once the lookout has begun, the camera pushes in on the wreck until the picture is this many metres high at it,
  *  so a ship beaten far off reads as clearly as one near; never narrower than the least lens. */
 const PUSH_AFTER_S = 1.8;
@@ -179,11 +187,21 @@ export class Calm implements Beat {
     const [toX, toY] = [nearest.x - head[0], nearest.y - head[1]];
     const far = Math.hypot(toX, toY) || 1;
     const [alongX, alongY] = [toX / far, toY / far];
-    const eye: [number, number, number] = [
-      head[0] - alongX * BEHIND_M - alongY * ASIDE_M,
-      head[1] - alongY * BEHIND_M + alongX * ASIDE_M,
+    const [behindX, behindY] = [head[0] - alongX * BEHIND_M, head[1] - alongY * BEHIND_M];
+    const shoulder = (side: number): [number, number, number] => [
+      behindX - side * alongY * ASIDE_M,
+      behindY + side * alongX * ASIDE_M,
       head[2] + OVER_HEAD_M,
     ];
+    const room = (eye: readonly [number, number, number]) =>
+      Math.min(
+        ...FORE_RIGGING.map(([across, along]) => {
+          const [gearX, gearY] = onDeck(own, -along, across, 0);
+          return Math.hypot(eye[0] - gearX, eye[1] - gearY);
+        }),
+      );
+    const [right, left] = [shoulder(1), shoulder(-1)];
+    const eye = room(left) > room(right) ? left : right;
     const fitted = Math.max(LEAST_LENS, Math.min(OUT_LENS, 2 * Math.atan(FRAMED_M / 2 / far)));
     const share = Math.min(1, Math.max(0, pushed));
     const fov = OUT_LENS + (fitted - OUT_LENS) * share * share * (3 - 2 * share);

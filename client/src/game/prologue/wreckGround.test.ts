@@ -36,6 +36,20 @@ test('ground a body can step back up from, or that no body comes down into, is k
   assert.equal(kept.length, 4);
 });
 
+test('ground no body comes onto but from the top of a wall is kept: no body stands on a wall', () => {
+  // A wall 3.2 m over the deck along its side, and beyond it a lower one, which no body steps up out of.
+  const wall = blockOf(10, 0, 10, 9, 5.2);
+  const lower = blockOf(11, 3, 11, 4, 4.5);
+  assert.equal(withoutDeadEnds([DECK, wall, lower], WAY).length, 3);
+});
+
+test('a slot a body drops into off a rail it jumps onto is left out, but a crate too high to come onto in it', () => {
+  const rail = blockOf(10, 0, 10, 9, 3);
+  const slot = blockOf(11, 3, 11, 4, 0.5);
+  const crate = blockOf(12, 3, 12, 4, 3.5);
+  assert.deepEqual(withoutDeadEnds([DECK, rail, slot, crate], WAY), [DECK, rail, crate]);
+});
+
 test('a dead end too wide to be a slip of the ground is left as it is', () => {
   const sunken = blockOf(10, 0, 19, 9, 0.6);
   assert.equal(withoutDeadEnds([DECK, sunken], WAY).length, 2);

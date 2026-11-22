@@ -11,6 +11,9 @@ export const SQUARE_M = 0.3;
 /** The rise a body steps up, metres (crates/movement's `TUNING.step`): a foe never jumps, so a ledge it cannot step
  *  out of holds it. */
 const STEP_M = 0.5;
+/** The highest a body comes up onto ground on the wreck, metres (crates/movement's `TUNING.vault`): no body climbs
+ *  there, so a wall standing past it is no ground anyone drops from. */
+const REACH_M = 1.2;
 /** A dead end larger than this many squares is no slip of the ground: it is left as it is. */
 const POCKET_MOST = 60;
 /** The way through is felt this often along it, metres: under half a square. */
@@ -55,15 +58,29 @@ function besideOf(squares: Squares, square: number): number[] {
   return beside.filter((near) => near >= 0 && (squares.owner[near] ?? -1) >= 0);
 }
 
+/** Every square reached from `seeds`, from one square to the next beside it wherever `goes` lets a body. */
+function reached(squares: Squares, seeds: readonly number[], goes: (from: number, to: number) => boolean): Uint8Array {
+  const marked = new Uint8Array(squares.owner.length);
+  for (const seed of seeds) marked[seed] = 1;
+  const queue = [...seeds];
+  for (let next = queue.pop(); next !== undefined; next = queue.pop())
+    for (const near of besideOf(squares, next))
+      if (!marked[near] && goes(next, near)) {
+        marked[near] = 1;
+        queue.push(near);
+      }
+  return marked;
+}
+
 /** The course without its dead ends: every block whose squares no body can walk back from to `way` (the way through,
  *  every point a body is meant to reach on it), up no more than a step from one square to the next and down any drop,
- *  and that a body can step or drop into. A dead end of more squares than a slip of the ground is kept. */
+ *  and that a body coming from the way can step, jump, vault or drop into. A dead end of more squares than a slip of
+ *  the ground is kept. */
 export function withoutDeadEnds(course: readonly CourseBlock[], way: readonly Point[]): CourseBlock[] {
   if (!course.length) return [];
   const squares = squaresOf(course);
   const topOf = (square: number) => course[squares.owner[square] ?? -1]?.top ?? 0;
-  const back = new Uint8Array(squares.owner.length);
-  const queue: number[] = [];
+  const onWay = new Set<number>();
   for (let index = 1; index < way.length; index++) {
     const [from, to] = [way[index - 1] ?? [0, 0], way[index] ?? [0, 0]];
     const steps = Math.ceil(Math.hypot(to[0] - from[0], to[1] - from[1]) / FELT_M);
@@ -73,18 +90,15 @@ export function withoutDeadEnds(course: readonly CourseBlock[], way: readonly Po
       const row = squareOf(from[1] + (to[1] - from[1]) * share, squares.north);
       const square = row * squares.columns + column;
       if (row < 0 || column < 0 || row >= squares.rows || column >= squares.columns) continue;
-      if ((squares.owner[square] ?? -1) < 0 || back[square]) continue;
-      back[square] = 1;
-      queue.push(square);
+      if ((squares.owner[square] ?? -1) >= 0) onWay.add(square);
     }
   }
-  // Walked backward from the way: a square steps onto one it reaches if that is no more than a step higher.
-  for (let next = queue.pop(); next !== undefined; next = queue.pop())
-    for (const near of besideOf(squares, next))
-      if (!back[near] && topOf(next) - topOf(near) <= STEP_M + 1e-6) {
-        back[near] = 1;
-        queue.push(near);
-      }
+  const seeds = [...onWay];
+  const rise = (from: number, to: number) => topOf(to) - topOf(from);
+  // Walked backward from the way, a square leads back if it steps onto one that does; out from it, a body comes onto
+  // every square it steps, jumps, vaults or drops onto, and never onto a wall.
+  const back = reached(squares, seeds, (from, to) => rise(to, from) <= STEP_M + 1e-6);
+  const walked = reached(squares, seeds, (from, to) => rise(from, to) <= REACH_M + 1e-6);
   const deadEnds = new Set<number>();
   const seen = new Uint8Array(squares.owner.length);
   for (let start = 0; start < squares.owner.length; start++) {
@@ -97,11 +111,10 @@ export function withoutDeadEnds(course: readonly CourseBlock[], way: readonly Po
           seen[near] = 1;
           pocket.push(near);
         }
-    // One no body can step or drop into from the ground it walks is no trap: it still stands in the way of shots.
-    const entered = pocket.some((square) =>
-      besideOf(squares, square).some((near) => back[near] && topOf(square) - topOf(near) <= STEP_M + 1e-6),
-    );
-    if (entered && pocket.length <= POCKET_MOST) for (const square of pocket) deadEnds.add(squares.owner[square] ?? -1);
+    // Only the ground a body comes onto is left out: a pocket no body comes into, or a wall in one, traps no one, and
+    // still stands in the way of shots.
+    if (pocket.length <= POCKET_MOST)
+      for (const square of pocket) if (walked[square]) deadEnds.add(squares.owner[square] ?? -1);
   }
   return course.filter((_block, index) => !deadEnds.has(index));
 }
