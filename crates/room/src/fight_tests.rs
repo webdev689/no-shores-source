@@ -47,6 +47,7 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
     let player = room.join().expect("a room with space");
     let foe = stand_foe(&mut room);
     assert_eq!(combat::Arms::from_code(SWORD).melee, WeaponClass::Sword);
+    // The chain's first swing, the side cut, whatever the page asks (`chain.rs`).
     let chop = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
     for sequence in 1..=30 {
         let held = if sequence == 1 { chop } else { CombatInput::default() };
@@ -55,8 +56,8 @@ fn a_players_swing_lands_on_a_foe_in_reach_and_everyone_is_told() {
     }
     let events = room.take_events();
     let hit = events.iter().find(|event| event.kind == EventKind::Hit).expect("the chop lands");
-    assert_eq!((hit.striker, hit.defender, hit.how, hit.stroke), (player, foe, Some(How::Swing), Some(Stroke::Down)));
-    let chop = 14.0 * 1.15 * crate::power::PLAYER_HARM;
+    assert_eq!((hit.striker, hit.defender, hit.how, hit.stroke), (player, foe, Some(How::Swing), Some(Stroke::Left)));
+    let chop = 14.0 * 0.85 * crate::power::PLAYER_HARM;
     assert!((hit.amount - chop).abs() < 1e-9);
     assert!((room.fighter(foe).unwrap().health - (130.0 - chop)).abs() < 1e-9);
     assert_eq!(room.fighter(player).unwrap().target, Some(foe), "the lock takes the foe it struck");
@@ -206,4 +207,41 @@ fn a_dead_player_stands_again_at_the_spawn_whole() {
     let raised = room.fighter(player).unwrap();
     assert!(!raised.dead() && (raised.health - 100.0).abs() < 1e-9);
     assert!(room.take_events().iter().any(|event| event.kind == EventKind::Respawned));
+}
+
+#[test]
+fn the_room_keeps_the_swings_chain_side_cut_overhead_thrust_whatever_stroke_the_page_asks() {
+    let mut room = room();
+    let player = room.join().expect("a room with space");
+    // Asks a swing once the last has ended, and answers the stroke it took.
+    let swing = |room: &mut Room, sequence: &mut u32, asked: Stroke| {
+        let mut step = |room: &mut Room, sequence: &mut u32, attack: Option<Stroke>| {
+            *sequence += 1;
+            room.input(player, asking(*sequence, room.clock(), CombatInput { attack, ..CombatInput::default() }))
+                .unwrap();
+            room.tick();
+            room.fighter(player).unwrap().action
+        };
+        while matches!(room.fighter(player).unwrap().action, Action::Attack(_)) {
+            step(room, sequence, None);
+        }
+        match step(room, sequence, Some(asked)) {
+            Action::Attack(attack) => attack.stroke,
+            other => panic!("a swing, not {other:?}"),
+        }
+    };
+    let mut sequence = 0;
+    assert_eq!(swing(&mut room, &mut sequence, Stroke::Down), Stroke::Left, "the chain's first, the side cut");
+    assert_eq!(swing(&mut room, &mut sequence, Stroke::Down), Stroke::Down, "then the overhead, as asked");
+    assert_eq!(swing(&mut room, &mut sequence, Stroke::Down), Stroke::Up, "never the overhead twice: the thrust");
+    assert_eq!(swing(&mut room, &mut sequence, Stroke::DownLeft), Stroke::Left, "and round again");
+    let mut rested = 0;
+    while rested <= 60 {
+        sequence += 1;
+        room.input(player, asking(sequence, room.clock(), CombatInput::default())).unwrap();
+        room.tick();
+        let swinging = matches!(room.fighter(player).unwrap().action, Action::Attack(_));
+        rested = if swinging { 0 } else { rested + 1 };
+    }
+    assert_eq!(swing(&mut room, &mut sequence, Stroke::Up), Stroke::Left, "a second's rest starts it over");
 }

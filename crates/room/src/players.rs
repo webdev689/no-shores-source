@@ -201,6 +201,8 @@ pub struct Player {
     /// The tick a foe's blow last landed on them, hit, blocked or breaking their guard: they return to their ship only
     /// ten seconds past it (`Asked::ToShip`).
     pub(crate) struck_at: Option<u64>,
+    /// Where their swings' chain stands (`chain.rs`).
+    pub(crate) chain: crate::chain::Chain,
 }
 
 impl Player {
@@ -254,6 +256,7 @@ impl Player {
             atheric: crate::atheric::AthericCounts::default(),
             struck: std::collections::BTreeMap::new(),
             struck_at: None,
+            chain: crate::chain::Chain::default(),
         }
     }
 

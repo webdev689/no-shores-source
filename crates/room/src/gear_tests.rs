@@ -41,8 +41,10 @@ fn asking(sequence: u32, room: &Room, combat: CombatInput) -> Input {
 }
 
 /// The player chops once and waits for it to land; the events it set off.
+/// One swing and its 30 ticks, the chain's first each time, the side cut (`chain.rs`).
 fn chop(room: &mut Room, player: PlayerId, from: u32) -> Vec<Event> {
-    let chop = CombatInput { attack: Some(Stroke::Down), ..CombatInput::default() };
+    room.players.get_mut(&player).expect("in").chain = crate::chain::Chain::default();
+    let chop = CombatInput { attack: Some(Stroke::Left), ..CombatInput::default() };
     for sequence in from..from + 30 {
         let held = if sequence == from { chop } else { CombatInput::default() };
         room.input(player, asking(sequence, room, held)).unwrap();
@@ -86,7 +88,7 @@ fn a_blow_on_a_levelled_foe_rises_with_attack_and_falls_away_below_it() {
         events.iter().find(|event| event.kind == EventKind::Hit && event.striker == player).expect("the chop lands");
     // A level 1 player's Normal sword of level 1 has 10 Attack: two thirds of a level's rise.
     let times = gear::power::by_player(10, 1, 1) * crate::power::PLAYER_HARM;
-    assert!((hit.amount - 14.0 * 1.15 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 1.15 * times);
+    assert!((hit.amount - 14.0 * 0.85 * times).abs() < 1e-9, "{} against {}", hit.amount, 14.0 * 0.85 * times);
     assert_eq!(room.foes[&level_one].struck_by.get(&player).map(|(_, hand)| *hand), Some(Slot::Melee));
     let level_five = stand(&mut room, ::foes::Role::Brute, 5, -40.0);
     let striker = *room.fighter(player).expect("in");

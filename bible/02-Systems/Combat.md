@@ -71,8 +71,10 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   the third frame begins. Holding the button swings again as each blow ends. A swing costs its stamina, and while it is
   struck the fighter moves at a third of its pace. The player's swings chain the side cut (left), the overhead (down)
   and the thrust (up) in turn, starting over at the side cut after a second without a swing; a stroke that does not
-  reach the locked foe gives way to the next in the chain that does (the page chooses it,
-  [[The Player's Swings Chain Side Cut, Overhead and Thrust]]). A foe's strokes come by chance. Up thrusts half a metre
+  reach the locked foe gives way to the next in the chain that does ([[The Player's Swings Chain Side Cut, Overhead and
+  Thrust]]). The page chooses it and the room keeps the same chain: a stroke asked out of turn becomes the chain's next,
+  the page's own standing only where its view of the foe, within a quarter of a metre of a stroke's reach, could have
+  chosen it (`chain.rs`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]). A foe's strokes come by chance. Up thrusts half a metre
   further, in a narrow arc; down chops, heavier on poise and half again on a guard; left and right sweep the widest arc;
   the diagonals slash between. A blow strikes every fighter of another side within its reach and arc (close in, almost
   any way it faces), near the striker's height, with no block between them, each taking the whole blow; the soft lock's
