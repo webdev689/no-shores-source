@@ -66,12 +66,16 @@ fn fall_back(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board, home: Ho
 /// in the air, on a wall or over a lip is judged by its distance alone: the navmesh lies on the floor, and its leap or
 /// climb lands back on it.
 pub fn within(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
+    let near = |home: Home| apart([home.at[0], home.at[1]], [other.body.x, other.body.y]) <= brain.leash;
+    brain.home.is_none_or(near) && reachable(brain, here, other)
+}
+
+/// Whether a garrison foe's routes reach where a fighter stands from its place, however far: always for a body off the
+/// ground, and for any foe with no place.
+pub fn reachable(brain: &Brain, here: &Here<'_, '_>, other: &combat::Fighter) -> bool {
     let feet = [other.body.x, other.body.y, other.body.z];
     let grounded = other.body.mode == movement::Mode::Ground;
-    brain.home.is_none_or(|home| {
-        let near = apart([home.at[0], home.at[1]], [feet[0], feet[1]]) <= brain.leash;
-        near && (!grounded || here.world.routes.walkable(home.at, feet))
-    })
+    brain.home.is_none_or(|home| !grounded || here.world.routes.walkable(home.at, feet))
 }
 
 /// What a foe with no one to fight asks: a garrison foe whose search has just let go (it was alert before its senses

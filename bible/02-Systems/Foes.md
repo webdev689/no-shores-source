@@ -19,6 +19,7 @@ code:
   - crates/foes/src/tactics.rs#decide
   - crates/foes/src/leash.rs#leash
   - crates/foes/src/leash.rs#unoccupied
+  - crates/foes/src/leash.rs#reachable
   - crates/foes/src/brain.rs#Orders
   - crates/foes/src/brain.rs#breaks
   - crates/foes/src/rally.rs#broken
@@ -160,7 +161,9 @@ strikes ([[Public Events]]).
   no post and never leashes. A foe a page playing a course alone stands where it wants it ([[Server]], "A course a page
   plays alone") is posted where it stands and leashes to it; a Boss stood so calls no one in its phases, so a scene that
   places its own foes keeps them as it placed them. A target in the air, hanging, climbing or going over a lip is judged
-  by its distance alone, so a foe fights on at one on a wall or over a ledge.
+  by its distance alone, so a foe fights on at one on a wall or over a ledge. Seeing one past its leash on ground its
+  routes reach stirs it (it searches toward them) but it takes them as no target; one on ground its routes do not reach
+  from its place, a part of the navmesh with no way to it, stirs it not at all (`leash::reachable`).
 - **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds back
   first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears as ever:
   they raise its awareness, and once it is alert it takes its target or searches again; short of that it walks on home,
