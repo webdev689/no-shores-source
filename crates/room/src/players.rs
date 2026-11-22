@@ -429,15 +429,6 @@ impl Room {
         true
     }
 
-    /// A player's character as it is kept between sessions.
-    #[must_use]
-    pub fn kept_character(&self, player: PlayerId) -> Option<String> {
-        let found = self.players.get(&player)?;
-        let mut character = found.character.clone();
-        character.left = Some(self.left_of(found));
-        Some(character.to_json())
-    }
-
     /// Why the room's gate shuts to a character (`gear::gate`), or none when it may enter.
     #[must_use]
     pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {

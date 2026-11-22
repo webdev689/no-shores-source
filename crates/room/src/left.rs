@@ -8,6 +8,15 @@ use crate::{PlayerId, Room};
 use gear::left::{Left, share, whole_of};
 
 impl Room {
+    /// A player's character as it is kept between sessions, with the body they would leave with now.
+    #[must_use]
+    pub fn kept_character(&self, player: PlayerId) -> Option<String> {
+        let found = self.players.get(&player)?;
+        let mut character = found.character.clone();
+        character.left = Some(self.left_of(found));
+        Some(character.to_json())
+    }
+
     /// The body a player would leave with now.
     pub(crate) fn left_of(&self, found: &Player) -> Left {
         let fighter = found.fighter;
