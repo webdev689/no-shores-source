@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MOTIFS } from '../emblemMotifs.ts';
-import { LORE, chapterAt, chaptersOf, paragraphsOf, shelfOf } from './loreBook.ts';
+import { LORE, blocksOf, chapterAt, chaptersOf, heardOf, shelfOf, spansOf } from './loreBook.ts';
 import { SAMPLE_LORE } from './loreForTests.ts';
 
 test("the lore's file holds what the page shows: names, covers in a cloth and a motif drawn, titles and words", () => {
@@ -17,7 +17,7 @@ test("the lore's file holds what the page shows: names, covers in a cloth and a 
     assert.ok(MOTIFS[book.cover.motif], `${book.id}'s motif is drawn`);
     for (const chapter of book.chapters) {
       assert.deepEqual(keys(chapter), ['found', 'id', 'text', 'title'], `${book.id}/${chapter.id}'s keys`);
-      assert.ok(chapter.title.trim() && paragraphsOf(chapter.text).length > 0, `${book.id}/${chapter.id} has words`);
+      assert.ok(chapter.title.trim() && blocksOf(chapter.text).length > 0, `${book.id}/${chapter.id} has words`);
       assert.ok(
         ['story', 'quest', 'place'].includes(chapter.found.kind),
         `${book.id}/${chapter.id} is found somewhere`,
@@ -30,8 +30,19 @@ test("the lore's words are the owner's style: no em or en dash anywhere, and eve
   for (const { book, chapter } of chaptersOf(LORE)) {
     const all = [book.name, chapter.title, chapter.text].join(' ');
     assert.ok(!/[\u2013\u2014]|--/.test(all), `${book.id}/${chapter.id} has a dash`);
-    assert.ok(paragraphsOf(chapter.text).length >= 3, `${book.id}/${chapter.id} is more than a line or two`);
+    assert.ok(blocksOf(chapter.text).length >= 3, `${book.id}/${chapter.id} is more than a line or two`);
   }
+});
+
+test("the lore's marks are whole: each bold and italic closed, a document's every line set in, a break alone", () => {
+  for (const { book, chapter } of chaptersOf(LORE))
+    for (const block of blocksOf(chapter.text)) {
+      if (block.kind === 'break') continue;
+      const left = spansOf(block.words)
+        .map((span) => span.words)
+        .join('');
+      assert.ok(!/[*>~]/.test(left), `${book.id}/${chapter.id} leaves a mark in "${left.slice(0, 60)}"`);
+    }
 });
 
 test('chapters are numbered book by book in the file’s order, as the wire numbers them', () => {
@@ -67,9 +78,27 @@ test('the shelf counts what is found of each book and category, and what found w
   );
 });
 
-test("a chapter's words are its paragraphs, apart at each blank line, each paragraph's lines run together", () => {
-  assert.deepEqual(paragraphsOf('The bell rang once.\n\nThen the sea came in,\nslow and grey.\n\n\n'), [
-    'The bell rang once.',
-    'Then the sea came in, slow and grey.',
+test("a chapter's blocks are apart at each blank line, their lines kept: words, a document set in, a break", () => {
+  assert.deepEqual(
+    blocksOf(
+      'The bell rang once.\n\nThen the sea came in,\nslow and grey.\n\n~\n\n> Item. A bell.\n>Item. A rope.\n\n\n',
+    ),
+    [
+      { kind: 'words', words: 'The bell rang once.' },
+      { kind: 'words', words: 'Then the sea came in,\nslow and grey.' },
+      { kind: 'break' },
+      { kind: 'document', words: 'Item. A bell.\nItem. A rope.' },
+    ],
+  );
+});
+
+test('**bold** and *italic* words are spans in their style, and a screen reader hears none of the marks', () => {
+  assert.deepEqual(spansOf('**Item.** One bell, *rung once*, kept.'), [
+    { words: 'Item.', style: 'bold' },
+    { words: ' One bell, ' },
+    { words: 'rung once', style: 'italic' },
+    { words: ', kept.' },
   ]);
+  assert.deepEqual(spansOf('plain'), [{ words: 'plain' }]);
+  assert.equal(heardOf('A bell.\n\n~\n\n> **Item.** *One*\n> rope.'), 'A bell. Item. One rope.');
 });

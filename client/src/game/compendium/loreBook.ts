@@ -2,6 +2,7 @@
 // wire numbers them, book by book in the file's order; and what a player has found of it, by the numbers their gear
 // gives. The rules (crates/gear/src/lore.rs) judge where each chapter is found; the page only shows it.
 import file from '../../../../content/lore/lore.json' with { type: 'json' };
+import type { Span } from '../../ui/node.ts';
 
 /** Where a chapter is found, as the file says. */
 export type Found =
@@ -131,10 +132,47 @@ export function chapterAt(
   return chaptersOf(lore)[number] ?? null;
 }
 
-/** A chapter's text as paragraphs: split at each blank line, each paragraph's lines run together. */
-export function paragraphsOf(text: string): string[] {
+/** A part of a chapter as the page sets it: words, a document set in from the left (a letter, a roll's entry, the
+ *  Tithe's own words), or a break between the chapter's parts. */
+export type Block = { readonly kind: 'words' | 'document'; readonly words: string } | { readonly kind: 'break' };
+
+/** A chapter's text as blocks, apart at each blank line, each block's lines kept as they stand: `~` alone is a break,
+ *  and a block whose every line starts `>` a document. */
+export function blocksOf(text: string): Block[] {
   return text
     .split(/\n\s*\n/)
-    .map((paragraph) => paragraph.replace(/\s*\n\s*/g, ' ').trim())
-    .filter(Boolean);
+    .map((block) =>
+      block
+        .trim()
+        .split('\n')
+        .map((line) => line.trim()),
+    )
+    .filter((lines) => lines.join('') !== '')
+    .map((lines): Block => {
+      if (lines.length === 1 && lines[0] === '~') return { kind: 'break' };
+      const kept = lines.every((line) => line.startsWith('>'));
+      return {
+        kind: kept ? 'document' : 'words',
+        words: (kept ? lines.map((line) => line.slice(1).trim()) : lines).join('\n'),
+      };
+    });
 }
+
+/** A block's words as spans: `**bold**` and `*italic*` in their style, the rest plain. */
+export function spansOf(words: string): Span[] {
+  const spans: Span[] = [];
+  let from = 0;
+  for (const mark of words.matchAll(/\*\*([^*]+)\*\*|\*([^*]+)\*/g)) {
+    if (mark.index > from) spans.push({ words: words.slice(from, mark.index) });
+    spans.push(mark[1] === undefined ? { words: mark[2] ?? '', style: 'italic' } : { words: mark[1], style: 'bold' });
+    from = mark.index + mark[0].length;
+  }
+  if (from < words.length) spans.push({ words: words.slice(from) });
+  return spans;
+}
+
+/** A chapter as a screen reader hears it: its blocks' words in a run, none of their marks. */
+export const heardOf = (text: string): string =>
+  blocksOf(text)
+    .flatMap((block) => (block.kind === 'break' ? [] : [block.words.replace(/\*/g, '').replace(/\n/g, ' ')]))
+    .join(' ');

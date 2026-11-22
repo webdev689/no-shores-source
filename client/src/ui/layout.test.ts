@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { glyphDrawn } from './glyphs.ts';
 import { layout } from './layout.ts';
 import type { Laid, Node } from './node.ts';
-import { type Face, lineHeight, widthOf } from './text.ts';
+import { type Face, lineHeight, styled, widthOf } from './text.ts';
 
 /** A face whose every glyph is a 600-unit block. */
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
@@ -214,6 +214,19 @@ test("a share of a row's room is held to its least and most, as a column's is", 
   });
   assert.equal(boxOf(laid, 'capped')?.width, 340);
   assert.equal(boxOf(laid, 'floored')?.width, 60);
+});
+
+test('a bold span is laid in its styled letters, wider, and keeps its colour', () => {
+  const laid = lay({ id: 't', text: { words: [{ words: 'ab' }, { words: 'cd', style: 'bold', colour: '#f00' }] } });
+  const text = laid.find((each) => each.node.id === 't');
+  assert.deepEqual(text?.lines, [
+    [
+      { words: 'ab', colour: '' },
+      { words: styled('cd', 'bold'), colour: '#f00' },
+    ],
+  ]);
+  assert.equal(text?.box.width, widthOf(face, `ab${styled('cd', 'bold')}`, 1));
+  assert.ok((text?.box.width ?? 0) > widthOf(face, 'abcd', 1));
 });
 
 test('a span keeps its colour after a leading space and after two spaces at a break', () => {

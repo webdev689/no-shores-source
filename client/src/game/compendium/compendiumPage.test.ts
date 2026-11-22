@@ -79,7 +79,7 @@ test('a category opens at its first book with a chapter unread, at that chapter,
   const said = wordsIn(tree());
   for (const words of ['THE DROWNED COAST', 'The Drowned Bell', '2/3', 'It Rang Once', 'The bell rang once.'])
     assert.ok(said.includes(words), words);
-  assert.ok(said.includes('Then the sea came in, slow and grey.'), 'its second paragraph');
+  assert.ok(said.includes('Then the sea came in,\nslow and grey.'), 'its second paragraph, its lines kept');
   assert.ok(pressable(tree(), bookId('bell')), 'a book found is pressed');
   assert.ok(!pressable(tree(), bookId('keeper')), 'one not found is not');
   assert.ok(read.isRead('bell/first'), 'read as it shows');

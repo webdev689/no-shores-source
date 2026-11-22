@@ -171,6 +171,8 @@ The decisions in [[Open Questions]] are not repeated here.
     ([[Each House's Lore Book Tells Its Art's Origin]]), for the owner to read. More books go in `content/lore/lore.json`;
     [[Lore]], "The file", says how. A chapter is found as the story ends, as a named quest's task is done, or lying at a
     named place in a node.
+  - The books are set out with bold, italics, documents set in and breaks
+    ([[The Lore Is Set Out, Bold and Italic Where It Helps]]); bold and italic work in any of the interface's words.
   - Its pictures: `tools/uiShot.mjs` with `compendium/compendiumShots.ts`. Finding a chapter in a deployed room
     waits on the first books.
   - #153 and it both touch `Decisions.md` and `overheadMarks.ts`. The second to merge takes `main` first.

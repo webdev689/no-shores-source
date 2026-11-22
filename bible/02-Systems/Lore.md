@@ -27,7 +27,10 @@ what they have read.
   `emblemMotifs.ts`).
 - **Books**, each in a category: an id, a name, a cover (its cloth's colour, `#rrggbb`, and a motif) and its chapters
   in reading order.
-- **Chapters**: an id, a title, the words (paragraphs apart by a blank line) and where it is found (`found`):
+- **Chapters**: an id, a title, the words and where it is found (`found`). The words are blocks apart by a blank line,
+  each block's lines kept as they stand, and set out ([[The Lore Is Set Out, Bold and Italic Where It Helps]]):
+  `**bold**` and `*italic*`; a block whose every line starts `>` a document, set in; `~` alone a break. Where it is
+  found:
   - `story`: as the story ends.
   - `quest`: as a quest's task is done, the quest's id and the task's ([[Quests]]).
   - `place`: lying in the world, at a place of a node as its layout names it (as a quest's goals name them), `at`
@@ -43,7 +46,8 @@ Houses":
 | Unwritten | The Veiled | dusk purple, the moon | a chapter for each task of "What the Tithe Writes" |
 
 Each book's eleven chapters come one as each task of its road is done, in the road's order, the last as the road ends.
-Together they tell where each Art came from. Its words keep to the owner's: no em or en dashes.
+Together they tell where each Art came from. Its words keep to the owner's: no em or en dashes; and every bold and
+italic is closed, a document's every line set in and a break alone, or a check fails.
 
 ## In the rules
 

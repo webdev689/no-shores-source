@@ -11,7 +11,16 @@ import { pixelNode } from '../journalIcons.ts';
 import type { PlainContext } from '../menuPage.ts';
 import type { Lore } from './lore.ts';
 import { COVER, MOTIF_PIXELS, NEW_PIXELS, NEW_SVG, coverSvg, motifSvg } from './loreArt.ts';
-import { type BookShown, type CategoryShown, type ChapterShown, keyOf, paragraphsOf } from './loreBook.ts';
+import {
+  type Block,
+  type BookShown,
+  type CategoryShown,
+  type ChapterShown,
+  blocksOf,
+  heardOf,
+  keyOf,
+  spansOf,
+} from './loreBook.ts';
 
 /** What the Compendium reads: the last word of the character any room sent, as the Journal does. */
 export interface CompendiumSource {
@@ -376,7 +385,7 @@ export class Compendium {
     sizes: Sizes,
     room: { readonly height: number },
   ): Node {
-    const said = chapter?.found ? paragraphsOf(chapter.def.text) : [];
+    const said = chapter?.found ? blocksOf(chapter.def.text) : [];
     const height = Math.max(160, room.height - 160);
     // As tall as the book chosen beside it, so the page stands still from chapter to chapter.
     const tall = coverHeight(sizes.name > 1 ? BIG_COVER.wide : BIG_COVER.narrow) + 72;
@@ -385,7 +394,7 @@ export class Compendium {
       role: 'panel',
       // The keys' focus takes it, so a screen reader reads the chapter whole.
       focusable: chapter?.found === true,
-      label: chapter?.found ? `${chapter.def.title}. ${said.join(' ')}` : undefined,
+      label: chapter?.found ? `${chapter.def.title}. ${heardOf(chapter.def.text)}` : undefined,
       width: 'grow',
       minHeight: Math.min(tall, height),
       direction: 'column',
@@ -403,10 +412,7 @@ export class Compendium {
           direction: 'column',
           gap: 10,
           // At the names' size, larger on a large screen, as a page is read and not glanced at.
-          children: said.map((paragraph): Node => ({
-            width: 'grow',
-            text: { words: paragraph, size: sizes.name, colour: INK.word },
-          })),
+          children: said.map((block) => blockNode(block, sizes.name)),
         },
       ],
     };
@@ -449,4 +455,14 @@ export class Compendium {
 function firstChapter(book: BookShown): number {
   const chapter = book.chapters.find((each) => each.found && !each.read) ?? book.chapters.find((each) => each.found);
   return chapter?.place ?? 0;
+}
+
+/** A block of a chapter at `size`: its words; a document set in on a darker ground, as a page laid in the book; a
+ *  break a short brass rule. */
+function blockNode(block: Block, size: number): Node {
+  if (block.kind === 'break')
+    return { width: 'grow', alignX: 'center', padding: [6, 0], children: [{ width: 48, height: 2, fill: INK.brass }] };
+  const text = { words: spansOf(block.words), size, colour: INK.word };
+  if (block.kind === 'words') return { width: 'grow', text };
+  return { width: 'grow', padding: [10, 14], fill: INK.well, outline: { width: 1, colour: INK.stoneLo }, text };
 }
