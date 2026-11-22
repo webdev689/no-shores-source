@@ -15,3 +15,6 @@ status: in force
   `CLOUDFLARE_TOKEN`, which deploys the Workers and the accounts' database ([[Toolchain]]).
 - `R2_TOKEN` is already among the repository's secrets.
 - It keeps [[Generated Files on Cloudflare R2]] and [[Model Packs Upload From Any Branch]] as they are.
+
+Taken further by [[The Audit's Leftovers Are Fixed as Claude Suggested]]: in each of those workflows only a job that
+installs no package, and uploads what a job without the token built, holds `R2_TOKEN`.

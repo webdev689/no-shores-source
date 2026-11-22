@@ -263,10 +263,11 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   close a way for good are walls no body stands on. Sails and lines are neither. The ground is laid in squares 0.3 m
   across, runs of one height joined into blocks; ground not joined to where the player wakes (flotsam afloat) is
   left out. Over 2,000 m2 of it is walked, across some 75 m by 55 m.
-- **Built in CI.** The wreck workflow builds and lights the wreck whenever its tools change, publishes the mesh, the
-  light and the model to R2, and keeps the layout it wrote (artifact `wreck-level`), which a commit takes whole: a
-  build on another machine can lay the ground a hair differently, and the game walks the ground the mesh was built
-  with.
+- **Built in CI.** The wreck workflow builds and lights the wreck whenever its tools change, in a job that holds no
+  secret, and publishes the mesh, the light and the model to R2 from a second job that only uploads them
+  ([[Toolchain]]). It keeps the layout it wrote (artifact `wreck-level`), which a commit takes whole once the run has
+  published: a build on another machine can lay the ground a hair differently, and the game walks the ground the mesh
+  was built with.
 - **The layout** is `content/prologue/wreck.json`, written by the export: the mesh's and the light's keys on R2, the
   ground's blocks, each heap's block, the fires, where the sea is not drawn (`dry`), where the player wakes, the
   path, the zones with their waves and the Brig's crew, the arena and Thule's place. Figures stand at the middle of
