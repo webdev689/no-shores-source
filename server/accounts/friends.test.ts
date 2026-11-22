@@ -155,6 +155,8 @@ test('a full list accepts no ask, by accepting it or by asking back', async () =
   }
   assert.equal(await mine(ask, ada), FRIENDS_MOST);
   assert.deepEqual((await listOf(ask, ada)).asking, ['Ben'], 'his ask still waits');
+  const never = await friend(ask, 'accept', 'Cal', ada);
+  assert.deepEqual([never.status, never.body['error']], [404, 'They have not asked you.'], 'no name told apart');
 });
 
 test('accepting or removing tells nothing of which names exist', async () => {
