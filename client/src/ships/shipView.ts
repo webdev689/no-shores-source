@@ -60,16 +60,24 @@ export function canvasIndices(
   sails: number,
   shows: (sail: number, cell: number) => boolean = () => true,
 ): Uint32Array<ArrayBuffer> {
-  const corners: number[] = [];
+  // Written in place, a ship's every frame: a hole only shortens it.
+  const corners = new Uint32Array(sails * (SAIL_ROWS - 1) * (SAIL_COLUMNS - 1) * 6);
+  let laid = 0;
   for (let sail = 0; sail < sails; sail++)
     for (let row = 0; row < SAIL_ROWS - 1; row++)
       for (let column = 0; column < SAIL_COLUMNS - 1; column++) {
         if (!shows(sail, row * (SAIL_COLUMNS - 1) + column)) continue;
         const first = sail * SAIL_COLUMNS * SAIL_ROWS + row * SAIL_COLUMNS + column;
-        const [right, up] = [first + 1, first + SAIL_COLUMNS];
-        corners.push(first, right, up + 1, first, up + 1, up);
+        const up = first + SAIL_COLUMNS;
+        corners[laid] = first;
+        corners[laid + 1] = first + 1;
+        corners[laid + 2] = up + 1;
+        corners[laid + 3] = first;
+        corners[laid + 4] = up + 1;
+        corners[laid + 5] = up;
+        laid += 6;
       }
-  return new Uint32Array(corners);
+  return laid === corners.length ? corners : corners.slice(0, laid);
 }
 
 /** The canvas's vertices, as its mesh's are, from each sail's grid now: a point's normal across its neighbours (the
@@ -84,27 +92,33 @@ export function canvasVertices(
   const view = new DataView(bytes);
   const sailPart = SHIP_PARTS.indexOf('sail');
   canvas.forEach((points, sail) => {
-    const pointAt = (column: number, row: number, axis: number): number =>
-      points[
-        (Math.min(SAIL_ROWS - 1, Math.max(0, row)) * SAIL_COLUMNS + Math.min(SAIL_COLUMNS - 1, Math.max(0, column))) *
-          3 +
-          axis
-      ] ?? 0;
+    // Each sail's every point, every frame: its neighbours read by index, as the edges' clamp gives them.
+    const place = (column: number, row: number): number => (row * SAIL_COLUMNS + column) * 3;
     for (let row = 0; row < SAIL_ROWS; row++)
       for (let column = 0; column < SAIL_COLUMNS; column++) {
-        const along = [0, 1, 2].map((axis) => pointAt(column + 1, row, axis) - pointAt(column - 1, row, axis));
-        const up = [0, 1, 2].map((axis) => pointAt(column, row + 1, axis) - pointAt(column, row - 1, axis));
-        const [alongX, alongY, alongZ] = along as [number, number, number];
-        const [upX, upY, upZ] = up as [number, number, number];
+        const left = place(Math.max(0, column - 1), row);
+        const right = place(Math.min(SAIL_COLUMNS - 1, column + 1), row);
+        const below = place(column, Math.max(0, row - 1));
+        const above = place(column, Math.min(SAIL_ROWS - 1, row + 1));
+        const alongX = (points[right] ?? 0) - (points[left] ?? 0);
+        const alongY = (points[right + 1] ?? 0) - (points[left + 1] ?? 0);
+        const alongZ = (points[right + 2] ?? 0) - (points[left + 2] ?? 0);
+        const upX = (points[above] ?? 0) - (points[below] ?? 0);
+        const upY = (points[above + 1] ?? 0) - (points[below + 1] ?? 0);
+        const upZ = (points[above + 2] ?? 0) - (points[below + 2] ?? 0);
         // The mirrored frame: a face's front is where (up × along) points, as its export's normals are.
-        const normal = [upY * alongZ - upZ * alongY, upZ * alongX - upX * alongZ, upX * alongY - upY * alongX];
-        const length = Math.hypot(...normal) || 1;
+        const normalX = upY * alongZ - upZ * alongY;
+        const normalY = upZ * alongX - upX * alongZ;
+        const normalZ = upX * alongY - upY * alongX;
+        const length = Math.hypot(normalX, normalY, normalZ) || 1;
         const byte = ((sail * SAIL_ROWS + row) * SAIL_COLUMNS + column) * VERTEX_BYTES;
-        const grid = (row * SAIL_COLUMNS + column) * 3;
-        for (let axis = 0; axis < 3; axis++) {
-          view.setFloat32(byte + axis * 4, points[grid + axis] ?? 0, true);
-          view.setInt8(byte + 12 + axis, Math.round(((normal[axis] ?? 0) / length) * 127));
-        }
+        const grid = place(column, row);
+        view.setFloat32(byte, points[grid] ?? 0, true);
+        view.setFloat32(byte + 4, points[grid + 1] ?? 0, true);
+        view.setFloat32(byte + 8, points[grid + 2] ?? 0, true);
+        view.setInt8(byte + 12, Math.round((normalX / length) * 127));
+        view.setInt8(byte + 13, Math.round((normalY / length) * 127));
+        view.setInt8(byte + 14, Math.round((normalZ / length) * 127));
         const laid = flat[sail];
         view.setFloat32(byte + 16, laid?.[grid] ?? 0, true);
         view.setFloat32(byte + 20, laid?.[grid + 2] ?? 0, true);
@@ -160,6 +174,11 @@ export class ShipView {
   private readonly kit: ShipKit;
   private readonly vertices: GPUBuffer;
   private readonly indices: GPUBuffer;
+  /** Each slot's canvas as last laid: for which frame (`fromEye`), rig and side (its flag's), and how many of its
+   *  indices are drawn. */
+  private readonly laid: (
+    { fromEye: Float32Array; rig: SailRig; side: ShipLook['side']; indices: number } | undefined
+  )[] = [];
   private readonly slots: {
     readonly uniforms: GPUBuffer;
     readonly bindGroup: GPUBindGroup;
@@ -247,7 +266,8 @@ export class ShipView {
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.pipeline, shadow.receiverGroup(this.kit.pipeline));
   }
 
-  /** Draws its shadow, as `drawInto` would draw it, into the cascade of the sun's map `shadow` is drawing. */
+  /** Draws its shadow, as `drawInto` would draw it (in its `look`, as the picture lays its canvas), into the cascade
+   *  of the sun's map `shadow` is drawing. */
   castInto(
     pass: GPURenderPassEncoder,
     place: ShipPlace,
@@ -255,8 +275,9 @@ export class ShipView {
     slot: number,
     rig: SailRig | null,
     shadow: ShadowMap,
+    look: ShipLook = PLAYER_LOOK,
   ): void {
-    const canvas = this.prepare(place, camera, slot, PLAYER_LOOK, rig);
+    const canvas = this.prepare(place, camera, slot, look, rig);
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.cast, shadow.casterGroup(this.kit.cast));
   }
 
@@ -295,6 +316,9 @@ export class ShipView {
     else for (let mast = 0; mast < MOST_MASTS; mast++) values.set([0, 1, 0, 1], MAST_FLOATS_AT + mast * 8);
     this.device.queue.writeBuffer(drawn.uniforms, 0, values);
     if (!rig) return 0;
+    // A frame's shadow passes and its picture lay the same canvas: it is laid once a frame (`fromEye`) and rig.
+    const laid = this.laid[slot];
+    if (laid?.fromEye === camera.fromEye && laid.rig === rig && laid.side === look.side) return laid.indices;
     const flown = flagAt(this.masthead, rig.harm, this.tags.masts, now);
     const flag = flagGrid(flown.at, this.waterline.lengthM, rig.offDeg, rig.time);
     const flagLayer = SHIP_PARTS.length + SHIP_SIDES.indexOf(look.side);
@@ -302,6 +326,7 @@ export class ShipView {
     const grid = canvasIndices(this.sails.length + 1, (sail, cell) =>
       sail < this.sails.length ? cellShows(rig.harm, sail, cell, now) : flown.shows,
     );
+    this.laid[slot] = { fromEye: camera.fromEye, rig, side: look.side, indices: grid.length };
     if (grid.length === 0) return 0;
     this.device.queue.writeBuffer(drawn.canvasIndices, 0, grid);
     this.device.queue.writeBuffer(
