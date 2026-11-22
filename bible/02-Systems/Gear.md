@@ -527,8 +527,10 @@ Dungeon, a sea dungeon or a Breach. Its looks follow it ("Looks", below), and it
 - **A Vestige opened** makes its item from its own content: a rolled one keeps it; a named one is drawn among its
   content's named items of its slot and colour (`source` in `content/gear/items.json`, by the content its look
   belongs to; a faction's piece the faction's, a Breach's the Breach's), else among every content's, and keeps its own
-  (`vestige::make`). An item laid back as a Vestige for want of room keeps its item's content.
-- **Kept with the character**: written only when not the world's, so a save from before reads as the world's.
+  (`vestige::make`). A kill's or a clear's item laid back as a Vestige for want of room is of the content it dropped
+  in; one found elsewhere keeps its item's.
+- **Kept with the character**: written only when not the world's, so a save from before reads as the world's; a named
+  piece reads as its entry's content whenever it was kept (`old_hands::unfit`).
 - **On the wire**: `source` at the end of `GearItem` and `GearVestige`, by `Source`'s numbers (0 the world to 6 a
   Breach).
 
@@ -568,9 +570,10 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   metal past it; a finer one its weapon's metal. A rolled pistolet, double pistolet or thunderlock is plain. A named
   weapon wears the metal (or a gun's `gilded` or `plain`) and make (a shield's kind, a bow's, `short` for a short sword)
   written on it; a faction's weapon its faction's metal and colour, its shield and bow their make by its name. A metal
-  the forge does not draw for a kind (a crossbow past mithril) falls to the nearest it does on the metals by worth
-  (iron, steel, silver, elven, dwarven, orcish, mithril, adamantium, ebony, daedric). The figure, the other players,
-  first person and the item pictures all draw the same layers.
+  the forge does not draw for a kind (a crossbow past mithril) falls to the nearest of its content's that it does, then
+  to the nearest on the metals by worth (iron, steel, silver, elven, dwarven, orcish, mithril, adamantium, ebony,
+  daedric); a faction's and a Normal one's straight to the metals by worth. The figure, the other players, first
+  person and the item pictures all draw the same layers.
 - **Cosmetics** ("Cosmetics", above) ride the dress (`Outfit.dye`, `coat`, `barding`), so every player sees them. A
   dye's four colours are laid as a 16-step ramp (`rampOf`: its anchors at steps 0, 5, 10 and 15) and snapped once to the
   game's palette where it is made, so the figure, first person, the Appearance tiles and the keepers' swatches draw the

@@ -142,6 +142,45 @@ fn a_save_from_before_sources_reads_as_the_worlds_and_a_worlds_writes_none() {
 }
 
 #[test]
+fn a_named_piece_kept_before_sources_reads_as_its_entrys_content() {
+    let mut character = Character::starting();
+    let entry = catalogue().named("harbourwarden").expect("a named sword");
+    let mut sword = crate::vestige::named_item(0, entry, Slot::Melee);
+    sword.source = Source::World;
+    let id = character.take_id();
+    character.items.insert(id, (Item { id, ..sword }, crate::character::At::Carried));
+    let read = Character::from_json(&character.to_json()).expect("reads");
+    assert_eq!(read.items[&id].0.source, Source::Sea, "Harbourwarden is the sea dungeons'");
+}
+
+#[test]
+fn an_item_with_no_room_is_laid_as_a_vestige_of_the_content_it_dropped_in() {
+    let mut character = Character::starting();
+    for slot in Slot::VESTIGE {
+        while character.carried_in(slot) < crate::character::CARRIED_MOST {
+            let id = character.take_id();
+            let kind = slot.kinds().next().expect("a kind");
+            character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), crate::character::At::Carried));
+        }
+    }
+    for stock in [crate::kinds::Stock::Weapon, crate::kinds::Stock::Armor] {
+        while character.vaulted(stock) < crate::character::VAULT_MOST {
+            let id = character.take_id();
+            let (kind, slot) = if stock == crate::kinds::Stock::Weapon {
+                (Kind::Sword, Slot::Melee)
+            } else {
+                (Kind::Head, Slot::Head)
+            };
+            character.items.insert(id, (Item::new(id, kind, Rarity::Normal, 1, slot), crate::character::At::Vault));
+        }
+    }
+    let laid: Vec<Vestige> =
+        (0..20).flat_map(|seed| character.loot_kill(5, 20, Difficulty::Normal, Source::Abyss, &dice(seed))).collect();
+    assert!(laid.len() > 20, "a Boss's item each kill, laid for want of room: {}", laid.len());
+    assert!(laid.iter().all(|vestige| vestige.source == Source::Abyss));
+}
+
+#[test]
 fn faction_and_breach_pieces_take_their_own_source() {
     for named in &catalogue().items {
         if named.faction.is_some() {

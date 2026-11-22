@@ -176,8 +176,9 @@ impl Character {
             .into_iter()
             .map(|(rarity, slot, level)| Vestige::new(self.take_id(), rarity, slot, level).from(source))
             .collect();
+        // An item there is no room for is laid as a Vestige of the content it dropped in, as a kill's own are.
         for item in vestige::found_items(items, rank, level, source, dice) {
-            laid.extend(self.keep_found(item));
+            laid.extend(self.keep_found(item).map(|vestige| vestige.from(source)));
         }
         laid
     }

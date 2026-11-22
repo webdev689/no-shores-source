@@ -11,7 +11,7 @@ import { wornCosmetic } from '../forge/cosmetics.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
 import type { Wardrobe } from './dressing.ts';
-import { MELEE, RANGED_SLOT, gearHands, nearest, numberOf, worn, writtenLook } from './gear.ts';
+import { MELEE, RANGED_SLOT, gearHands, nearest, numberOf, rung, worn, writtenLook } from './gear.ts';
 import { magicSets, nearestOwnFirst, rareSet } from './sourceLooks.ts';
 
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
@@ -102,9 +102,9 @@ function setOf(item: GearItem, slot: number, wardrobe: Wardrobe): string | null 
   const faction = factionLook(item)?.armour;
   const own = faction ?? writtenLook(item)?.look ?? magic ?? rareSet(item);
   if (drawn(own)) return own;
-  // A look the forge does not draw for this body falls to the nearest it does: a faction's on the ladder, any other
-  // among its own content's first, so it says where it was earned wherever the forge allows.
-  const fallen = faction ? nearest(SETS, Math.max(SETS.indexOf(own), 0)) : nearestOwnFirst(item, own, SETS);
+  // A look the forge does not draw for this body falls to the nearest it does: a faction's on the ladder from its
+  // rarity's rung, any other among its own content's first, so it says where it was earned wherever the forge allows.
+  const fallen = faction ? nearest(SETS, rung(item, 2, 9, 3)) : nearestOwnFirst(item, own, SETS);
   return fallen.find(drawn) ?? null;
 }
 

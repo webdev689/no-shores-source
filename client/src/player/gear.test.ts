@@ -115,6 +115,12 @@ test('the hands hold the drawn loadout in its look, or the nearest metal the for
   const greatsword = item({ id: 6, kind: 22, at: 2 });
   assert.deepEqual(gearHands(state([greatsword]), WARDROBE), hands('sword_iron', null, 'hilt'), 'on its hilt');
   assert.deepEqual(gearHands(state([brace]), WARDROBE), hands(null, null), 'no Melee worn, bare hands');
+  // The forge draws no orcish crossbow: an Elite Dungeon's falls to its own content's silver before the nearer dwarven.
+  const crossbows: Wardrobe = { ...WARDROBE, right: ['crossbow_dwarven', 'crossbow_silver', 'crossbow_mithril'] };
+  const elite = item({ id: 7, kind: 9, rarity: 2, level: 20, at: 3, source: 3 });
+  assert.deepEqual(gearHands(state([elite]), crossbows, 1).right, 'crossbow_silver', 'its own content first');
+  const world = item({ id: 7, kind: 9, rarity: 2, level: 20, at: 3, source: 0 });
+  assert.deepEqual(gearHands(state([world]), crossbows, 1).right, 'crossbow_silver', 'steel undrawn: the nearest');
 });
 
 test('each kind is worn in its loadout or its own slot, and put on with one press', () => {

@@ -5,7 +5,7 @@ import traits from '../../../content/gear/traits.json' with { type: 'json' };
 import type { GlowLook } from '../elementGlow.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { rolledMetal } from './sourceLooks.ts';
+import { rolledMetal, sourceLooks } from './sourceLooks.ts';
 
 /** The kinds of item, by the gear crate's numbers: the Melee and Ranged loadouts, the armour and the cloak. */
 export const KINDS = [
@@ -354,10 +354,21 @@ export function weaponLook(
 }
 
 /** The forge layer a weapon or shield of this kind is drawn with, among those a hand of the wardrobe takes: in its make
- *  and metal, else the nearest metal the forge draws it in, else the first of its kind. */
-function layerFor(choices: readonly string[], kind: string, make: string | null, metal: string, left: boolean) {
+ *  and metal, else the nearest metal the forge draws it in of its content's (`own`), then of any, else the first of its
+ *  kind, so a look the forge lacks still says where it was earned wherever it can. */
+function layerFor(
+  choices: readonly string[],
+  kind: string,
+  make: string | null,
+  metal: string,
+  left: boolean,
+  own: readonly string[] = [],
+) {
   const worth = WORTH.indexOf(metal);
-  const metals = worth < 0 ? [metal] : nearest(WORTH, worth);
+  const ladder = worth < 0 ? [metal] : nearest(WORTH, worth);
+  // Its own metal first, then its content's nearest first, then any other's.
+  const [first = metal, ...rest] = ladder;
+  const metals = [first, ...rest.filter((each) => own.includes(each)), ...rest.filter((each) => !own.includes(each))];
   const end = left ? '_l' : '';
   for (const each of metals) {
     // The forge names a short sword after its metal (`sword_orcish_short`), a bow's or a shield's make before it.
@@ -400,13 +411,15 @@ export function gearHands(
   const drawn = look.metal === 'plain' ? '' : look.metal;
   // A shield's make is the shield's kind, not its weapon's.
   const make = held.left === 'shield' ? null : look.make;
-  const right = layerFor(wardrobe.right, held.right, make, drawn, false);
+  // A faction's metal and a Normal weapon's plain iron or steel fall along the ladder; any other first to its content's.
+  const own = metal || item.rarity === 0 ? [] : sourceLooks(item).metals;
+  const right = layerFor(wardrobe.right, held.right, make, drawn, false, own);
   if (held.left === 'hilt') return { right, left: null, grip: 'hilt' };
   const left =
     held.left === 'pair'
-      ? layerFor(wardrobe.left, held.right, make, drawn, true)
+      ? layerFor(wardrobe.left, held.right, make, drawn, true, own)
       : held.left === 'shield'
-        ? layerFor(wardrobe.left, 'shield', look.make, look.shield, false)
+        ? layerFor(wardrobe.left, 'shield', look.make, look.shield, false, own)
         : null;
   return { right, left, grip: null };
 }
