@@ -91,6 +91,8 @@ pub struct Voyager {
     pub heading: f64,
     pub pace: u16,
     pub fighting: bool,
+    /// In Overlook's home waters, which hold no hostile ship: nothing meets it there.
+    pub home: bool,
     pub clock: f64,
     pub hull: f64,
 }
@@ -232,9 +234,8 @@ impl Pirates {
         self.sailing.retain(|pirate| ships.iter().any(|ship| pirate.kept_by(ship.at)));
         let mut met = Vec::new();
         for ship in ships {
-            // Overlook's home waters hold no hostile ship: one by their edge meets no player inside them.
-            let home = chart.water(ship.at).is_some_and(|water| water.holder == world::waters::Holder::Home);
-            if ship.fighting || home || met.iter().any(|&(taken, _)| taken == ship.player) {
+            // One by the edge of home waters meets no player inside them.
+            if ship.fighting || ship.home || met.iter().any(|&(taken, _)| taken == ship.player) {
                 continue;
             }
             let chased = self.chasing.get(&ship.player).copied();

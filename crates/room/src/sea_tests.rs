@@ -650,32 +650,51 @@ fn a_fight_with_a_chased_wary_ship_who_will_not_engage_ends_once_it_is_out_of_re
     assert!(lasted.is_some(), "it broke off within its give-up time and the fight ended for the player too");
 }
 
-#[test]
-fn a_ship_in_home_waters_is_never_held_by_a_bold_pirate_outside_them() {
-    // Overlook's island west, the pirates' east: home waters give way to theirs about 300 km east.
+/// Overlook's island west and the pirates' east, home waters giving way to theirs about 300 km east: a point 200 m
+/// inside their edge, and one 400 m outside it.
+fn by_home_waters() -> (Sea, [f64; 2], [f64; 2]) {
     let text = r#"{ "continents": [
         { "id": "continent-1", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
         { "id": "continent-4", "outline": [[400000, 100000], [500000, 100000], [500000, 200000], [400000, 200000]] }
     ], "isles": [] }"#;
-    let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
-    let holder = |sea: &Sea, at: [f64; 2]| {
-        let islands: Vec<&Coast> = sea.islands.coasts().collect();
-        let chart = SeaChart { coasts: &sea.coasts, charted: &sea.chart, islands: &islands };
-        chart.water(at).map(|water| water.holder)
-    };
-    let edge = (250_000..350_000).step_by(100).map(f64::from).find(|&x| {
-        holder(&sea, [x, 150_000.0]) == Some(world::waters::Holder::Home)
-            && holder(&sea, [x + 100.0, 150_000.0]) != Some(world::waters::Holder::Home)
-    });
+    let sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
+    let edge = (250_000..350_000)
+        .step_by(100)
+        .map(f64::from)
+        .find(|&x| sea.chart.home([x, 150_000.0]) && !sea.chart.home([x + 100.0, 150_000.0]));
     let edge = edge.expect("the edge of home waters");
-    let (at, off) = ([edge - 200.0, 150_000.0], [edge + 400.0, 150_000.0]);
-    assert_ne!(holder(&sea, off), Some(world::waters::Holder::Home), "the pirate lies outside them");
+    let (inside, outside) = ([edge - 200.0, 150_000.0], [edge + 400.0, 150_000.0]);
+    assert!(sea.chart.home(inside) && !sea.chart.home(outside));
+    (sea, inside, outside)
+}
+
+#[test]
+fn a_ship_in_home_waters_is_never_held_by_a_bold_pirate_outside_them() {
+    let (mut sea, at, off) = by_home_waters();
     let player = sea.join();
     sea.course(player, &[at, [at[0], at[1] - 10_000.0]], 60).unwrap();
     sea.pirates.sailing.push(Pirate::standing(1, 7, Commission::default(), off, 0.0, true));
     sea.tick();
     assert!(libm::hypot(off[0] - at[0], off[1] - at[1]) < HOSTILE_NEAR_M);
     assert_eq!(ship(&sea, player).rate, 60, "its pace is its own");
+}
+
+#[test]
+fn nothing_meets_a_ship_in_home_waters_neither_a_wary_ship_that_would_take_it_nor_a_fight_by_their_edge() {
+    let (mut sea, at, off) = by_home_waters();
+    let player = sea.join();
+    sea.course(player, &[at], 10).unwrap();
+    sea.berths.get_mut(&player).unwrap().kept = [0.3, 1.0, 1.0];
+    let minor = Commission { faction: naval::ranks::PIRATES, rank: Rank::Minor };
+    sea.pirates.sailing.push(Pirate::standing(1, 7, minor, off, 0.0, false));
+    ticks(&mut sea, 2);
+    assert!(!sea.fights.fighting(player), "a wary Minor that would take a holed Sloop");
+    // Another player met just outside, their fight within sight of the one inside.
+    let other = sea.join();
+    sea.course(other, &[off], 10).unwrap();
+    sea.pirates.sailing.push(Pirate::standing(2, 7, Commission::default(), [off[0] + 500.0, off[1]], 0.0, true));
+    ticks(&mut sea, 2);
+    assert!(sea.fights.fighting(other) && !sea.fights.fighting(player), "the fight by their edge");
 }
 
 #[test]

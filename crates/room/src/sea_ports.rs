@@ -428,6 +428,7 @@ pub(super) fn wary_meet(
             let hull = berths.get(&ship.player).map_or(1.0, |berth| berth.kept[0]);
             let near = libm::hypot(ship.at[0] - pirate.x, ship.at[1] - pirate.y) <= naval::captain::ENGAGE_RANGE;
             !ship.fighting
+                && !ship.home
                 && near
                 && !met.iter().any(|(player, _)| *player == ship.player)
                 && naval::captain::wary_takes(pirate.commission, pirate.strength(), hull)

@@ -194,7 +194,7 @@ pub struct Fights {
     pub list: Vec<SeaFight>,
     /// Each captain going down in a fight its last player left, sunk all the same, told with the next tick's.
     pub(crate) lost: Vec<Sank>,
-    /// The last view of each fight that ended unseen, a tick of catching up having run past it: sent once more.
+    /// The last view of each fight that ended unseen, a tick of catching up having run past it: sent with the next.
     pub(crate) ended: Vec<FightSeen>,
 }
 
@@ -449,8 +449,8 @@ impl Fights {
         for met in pirates.meet_rivals() {
             clashes.push(Clash::begin(met, weather.at([met[0].x, met[0].y], time), coasts, time));
         }
-        for &Voyager { player, at, .. } in ships {
-            if self.fighting(player) {
+        for &Voyager { player, at, home, .. } in ships {
+            if home || self.fighting(player) {
                 continue;
             }
             let near = self.list.iter().any(|fought| fought.near(at));
@@ -557,7 +557,8 @@ impl Fights {
     }
 
     /// Each fighting player's view of their fight (the naval crate's numbers, their ship as its player's), its lay
-    /// over the fight's waters now, its first captain's commission, and whether they may board (`alongside`).
+    /// over the fight's waters now, its first captain's commission, and whether they may board (`alongside`); then
+    /// the kept last views of fights that ended unseen.
     pub(crate) fn views<'fights>(
         &'fights self,
         coasts: &'fights [Coast],

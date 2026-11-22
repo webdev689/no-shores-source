@@ -47,6 +47,12 @@ impl Charted {
         Some((water, self.bands.get(water.continent).copied().flatten()))
     }
 
+    /// Whether a point lies in Overlook's home waters.
+    #[must_use]
+    pub fn home(&self, at: [f64; 2]) -> bool {
+        self.water(at).is_some_and(|(water, _)| water.holder == Holder::Home)
+    }
+
     /// The id of the continent whose water a point of sea lies in, as the bounties name a water; none on land.
     #[must_use]
     pub fn water_id(&self, at: [f64; 2]) -> Option<&str> {
@@ -64,8 +70,7 @@ pub(crate) struct SeaChart<'sea> {
 impl Chart for SeaChart<'_> {
     fn open(&self, from: [f64; 2], to: [f64; 2]) -> bool {
         // Only a step into home waters is refused: one a fight among captains left inside them sails out.
-        let is_home = |at: [f64; 2]| self.water(at).is_some_and(|water| water.holder == Holder::Home);
-        let home = is_home(to) && !is_home(from);
+        let home = self.charted.home(to) && !self.charted.home(from);
         match [whole(&from), whole(&to)] {
             [Some(from), Some(to)] => {
                 let islands = crate::sea::islands::outside(self.islands.iter().copied(), Some(from));

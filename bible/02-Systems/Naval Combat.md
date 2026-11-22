@@ -367,7 +367,7 @@ Pass]]) with Claude's numbers:
   where and when it began (`sea_weather.rs`, sheltered by the coasts and calm by the port cities' roadsteads) and
   keeps them while it lasts; a player joining it fights in its weather, a fight among captains a player came on keeps
   its own, and what floats drifts down the wind of the fight it came from.
-- **Many in a fight** (`battle.rs`). Any player not fighting who comes within 750 m of a ship of a fight joins it, a
+- **Many in a fight** (`battle.rs`). Any player not fighting and not in Overlook's home waters who comes within 750 m of a ship of a fight joins it, a
   fight with players in it too, their Sloop hove to under a number of their own; every player in it fights every
   captain, and players never harm one another (a ball passes through a ship of its own flag). A hostile ship at sea
   within 750 m of a fight joins it on its own side, under sail where it lay: it fights players and captains of other
@@ -377,7 +377,8 @@ Pass]]) with Claude's numbers:
 - **Wary captains** fall on a ship they outgun, by DFO's `takesPrize` (`navalAI.js`: "a wary one only a prize she
   outguns WARY_ODDS to one, or one crippled or holed under GRAPPLE_HULL", `WARY_ODDS = 1.25`, `GRAPPLE_HULL = 0.35`):
   in a fight by their own mind, and at sea a wary ship steers for a player not fighting in its sight whose Sloop it
-  would take as the Sloop's kept hull leaves it (`come_for`), and meets them within 750 m (`wary_takes`).
+  would take as the Sloop's kept hull leaves it (`come_for`), and meets them within 750 m (`wary_takes`), never in
+  Overlook's home waters.
 - **What a player is told** goes to that player alone: the sea's snapshot is cut for each player, what floats, kept
   hurts, the sea's own messages and a deck's own snapshot reaching only those they are for.
 
@@ -604,7 +605,7 @@ pirates alone ([[The Sloop Is Painted, Sails the Overworld and Meets Pirates]]),
   lasts while one of them fights on; then one who struck, sank or runs leaves the sea, and the rest sail on from where
   it left them. Two that sailed on meet again only once out of each other's sight. A fight with no ship a player keeps at
   sea (within 1.1 times its sight) leaves the sea, as a ship does. Ships of one faction never meet.
-- **Joining.** A player not fighting who comes within 750 m of any ship of such a fight, or of a fight with players in
+- **Joining.** A player not fighting, and not in Overlook's home waters, who comes within 750 m of any ship of such a fight, or of a fight with players in
   it, joins it: their Sloop heaves to there and is put into it with the hurts it keeps, and its captains choose whom
   to fight by their own law, the one each fights reckoned nearer ("How a fight ends").
 - **The meeting.** A bold ship within 750 m of a player who is not fighting, and not in Overlook's home waters, meets
