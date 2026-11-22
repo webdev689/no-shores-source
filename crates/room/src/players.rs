@@ -198,8 +198,7 @@ pub struct Player {
     /// The foes their own blows landed on in the last ten seconds, with the tick of each one's last: each shares its
     /// kill's healing charge with them (`recharge.rs`).
     pub(crate) struck: std::collections::BTreeMap<FighterId, u64>,
-    /// The tick a foe's blow last landed on them, hit, blocked or breaking their guard: they return to their ship only
-    /// ten seconds past it (`Asked::ToShip`).
+    /// The tick a foe's blow last landed on them: they return to their ship only ten seconds past it (`Asked::ToShip`).
     pub(crate) struck_at: Option<u64>,
     /// Where their swings' chain stands (`chain.rs`).
     pub(crate) chain: crate::chain::Chain,
@@ -365,6 +364,7 @@ impl Room {
             .collect();
         for id in gone {
             self.foes.remove(&id);
+            self.quests.spoilless.remove(&id);
             self.board.forget(id);
         }
     }

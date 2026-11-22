@@ -104,6 +104,7 @@ fn give_up(brain: &mut Brain, here: &Here<'_, '_>, board: &mut Board) {
     brain.bow = Bow::default();
     brain.plan = Plan::Wait;
     (brain.ready_at, brain.slot, brain.blocked, brain.walled) = (None, None, 0, None);
+    brain.leashed = true;
     start_home(brain, Homeward::Leashed);
 }
 

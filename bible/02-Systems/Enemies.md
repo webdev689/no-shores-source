@@ -146,7 +146,9 @@ elite tier is [[Foes]]' (quicker wind-ups and cooldowns, one blow in three iron,
   starts clean, and every phase's call comes. Called foes have no post: they never leash ([[Foes]]).
 - **A garrison's Boss or Miniboss walking home** to its post, leashed or its search let go, goes back to its first
   phase as the walk begins: its numbers, blows and chains are that phase's, a roar owed is dropped, and the foes it
-  called fall as at its death. Its next fight has every phase and call again.
+  called fall as at its death. Its next fight has every phase and call again, but the foes it calls after a leash drop
+  nothing, so pulling it to its leash again and again pays no more ([[The Audit's Leftovers Are Fixed as Claude
+  Suggested]]).
 - **Captain Brannoc Thule's**:
   1. **The blade**: sweep and lunge, feints, chains of one.
   2. **The boarding**: adds charge and leap; wind-ups ×0.85, cooldowns ×0.8, chains of two.
