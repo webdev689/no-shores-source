@@ -29,6 +29,7 @@ import { SailRig, windOff } from '../ships/sails.ts';
 import type { MarkView } from '../ships/markView.ts';
 import { barOver, type ShipBar } from '../ships/shipBars.ts';
 import type { Lying } from '../ships/deck.ts';
+import { captainInFight } from '../ships/shipCrew.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import type { ShipCamera, ShipPlace } from '../ships/shipView.ts';
 import type { Sailed } from '../terrain/landClient.ts';
@@ -431,26 +432,30 @@ export class SeaCombat {
     );
   }
 
-  /** Each ship afloat where it is drawn, `scale` times its size: settling as it goes down. */
+  /** Each ship afloat where it is drawn, `scale` times its size, by its number: settling as it goes down. */
   private placed(time: number, scale: number) {
-    return [...this.feelShips().values()].flatMap((ship) => {
+    return [...this.feelShips().entries()].flatMap(([number, ship]) => {
       if (!FightFeel.afloat(ship, time)) return [];
       const [x = 0, y = 0, heading = 0] = ship.vessel.ship;
       const [heave = 0, pitch = 0, roll = 0] = ship.vessel.pose;
       const place = { x, y, z: heave, heading, pitch, roll, scale };
-      return [{ ship, place }];
+      return [{ ship, place, number }];
     });
   }
 
   /** Every ship drawn `scale` times its size, each in its hull and its side's colours, with its sails as its rung
-   *  sets them and the fight's harm on it. */
-  ships(seconds: number, time: number, windBearing: number, scale: number): DrawnShip[] {
+   *  sets them and the fight's harm on it; each captain's with its people aboard as the fight leaves them, but the one
+   *  whose deck the player stands on (`boarded`, its number), whose crew there is the fight on foot's. */
+  ships(seconds: number, time: number, windBearing: number, scale: number, boarded: number | null = null): DrawnShip[] {
     this.scale = scale;
-    return this.placed(time, scale).map(({ ship, place }) => {
+    const captains = new Map(this.captains.map((captain) => [captain.id, captain]));
+    return this.placed(time, scale).map(({ ship, place, number }) => {
       const [, , heading = 0, ahead = 0, , , , rung = 0] = ship.vessel.ship;
       const wind = { offDeg: windOff(heading, windBearing), set: rung === SAILS_RUNG, way: ahead };
       ship.rig?.step(seconds, wind, time);
-      return { hull: ship.hull, place, rig: ship.rig, look: { side: ship.side } };
+      const captain = number === boarded ? undefined : captains.get(number);
+      const crew = captain && number > 0 ? { crew: captainInFight(`fight-${number}`, captain) } : {};
+      return { hull: ship.hull, place, rig: ship.rig, look: { side: ship.side }, ...crew };
     });
   }
 

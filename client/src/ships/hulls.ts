@@ -15,7 +15,7 @@ type Point = readonly [number, number, number];
 interface Entry {
   readonly waterline: { readonly length_m: number; readonly beam_m: number; readonly draught_m: number };
   readonly sails: readonly SailCorners[];
-  readonly guns: readonly { readonly mouth_m: Point }[];
+  readonly guns: readonly { readonly side: string; readonly mouth_m: Point }[];
   readonly boxes: { readonly hull: readonly [Point, Point] };
 }
 // The manifest is the export's own, in the repository: its entries are as `Entry` says.
@@ -95,4 +95,13 @@ export function hullPaint(hull: number): HullPaint {
   const spread = tier.reduce((sum, mouth) => sum + (mouth[0] - meanX) ** 2, 0);
   const rise = spread > 0 ? tier.reduce((sum, mouth) => sum + (mouth[0] - meanX) * (mouth[2] - meanZ), 0) / spread : 0;
   return { atM: meanZ - rise * meanX, rise };
+}
+
+/** Each of its guns, fore to aft along each side as its export numbered them: its side, and its mouth in its frame
+ *  (metres to its bow, to its starboard, up from its waterline). */
+export function hullGuns(hull: number): { readonly side: 'port' | 'starboard'; readonly mouth: Point }[] {
+  return ENTRIES[hullName(hull)].guns.map((gun) => ({
+    side: gun.side === 'starboard' ? 'starboard' : 'port',
+    mouth: gun.mouth_m,
+  }));
 }

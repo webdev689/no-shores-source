@@ -12,6 +12,7 @@ import type { Swell } from '../../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
 import { HULL_NAMES } from '../../ships/hulls.ts';
 import type { ShipBar } from '../../ships/shipBars.ts';
+import { captainInFight, type ShipCrew } from '../../ships/shipCrew.ts';
 import { shipSails, shipWaterline, type Waterline } from '../../ships/shipMesh.ts';
 import type { ShipCamera, ShipPlace } from '../../ships/shipView.ts';
 import { poseOnSwell } from '../../ships/swellPose.ts';
@@ -54,9 +55,9 @@ export interface Going {
 export type Happening = 'hit-taken' | 'hit-given' | 'sinking' | 'sunk';
 
 /** One frame of the ambush: the camera's shot, every ship as drawn (the player's first, the Brig; then each captain's
- *  Sloop, darker) with its state, their footprints, the captains' bars, the fight's readout and what the tracker
- *  counts of it, what happened since the last frame, how many captains are still to beat (afloat and fighting), and
- *  whether the fight is over: every captain beaten, sunk or struck. */
+ *  Sloop, darker, with its people aboard) with its state, their footprints, the captains' bars, the fight's readout
+ *  and what the tracker counts of it, what happened since the last frame, how many captains are still to beat (afloat
+ *  and fighting), and whether the fight is over: every captain beaten, sunk or struck. */
 export interface StoryFightFrame {
   readonly shot: Shot;
   readonly ships: readonly {
@@ -68,6 +69,7 @@ export interface StoryFightFrame {
     sunk: boolean;
     founder: Founder;
     going: Going | null;
+    crew?: ShipCrew;
   }[];
   readonly hulls: readonly HullMask[];
   readonly bars: readonly ShipBar[];
@@ -240,7 +242,10 @@ export class StoryFight {
           ? { sunk: vessel.sunk_founder, inS: vessel.sinks_in }
           : null;
       const founder: Founder = [settled, trim, list];
-      return { place, hull, shade, rig, state: vessel.state, sunk: vessel.state === 'sunk', founder, going };
+      // Each captain's people stand aboard as the fight leaves its men, named as the sighting named its ship.
+      const crew = 'faction' in vessel ? { crew: captainInFight(`pirate-${vessel.id}`, vessel) } : {};
+      const sunk = vessel.state === 'sunk';
+      return { place, hull, shade, rig, state: vessel.state, sunk, founder, going, ...crew };
     };
     const ships = [
       drawn(view.player, 'own', this.ownRig),

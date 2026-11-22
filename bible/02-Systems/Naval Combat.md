@@ -49,6 +49,7 @@ code:
   - crates/room/src/pirates.rs#Pirates
   - crates/room/src/threat.rs#held_pace
   - client/src/game/seaCombat.ts#SeaCombat
+  - client/src/ships/shipCrew.ts#captainInFight
   - crates/naval/src/ranks.rs#SCALES
   - crates/naval/src/ranks.rs#Commission
   - crates/room/src/sighting.rs#rank_for
@@ -450,6 +451,13 @@ captain's number comes with them in the view, so one leaving the fight never mov
 - **Run out**: a captain's battery running out glints at four ports along each side run out, about thirty flickers a
   second, while their guns stand out.
 - **Battered**: under three fifths of its hull, the player's ship smokes grey along its deck, more as it is hurt.
+- **Its people** (`seaCombat.ts` `ships`, `ships/shipCrew.ts`): each captain's ship carries its captain at its wheel
+  and its hands about its deck ([[Game]], "At sea"), as many of its hull's hands as its men left of its whole, one at
+  least while any are. Struck, its hands stay and its captain steps off the wheel, about a metre to port and a little
+  forward on the wheel's own level, looking out the way they stepped; going down or gone, no one is seen aboard. While
+  a side stands run out, half the hands seen (rounded up) walk to that side's guns on the deck they walk, one a gun
+  fore to aft, and stand there facing out; run in, they walk on. The ship whose deck the player stands on shows none:
+  its crew there is the fight on foot's.
 - **Struck** (`Struck`): the ship's flag comes down its mast in 4 s to a metre over its foot and is gone.
 - **Sinking** (`Sinking`): over 20 s the ship is drawn in the pose the rules send (their `founder`: it lists up to 32
   degrees to the side its seed says, trims 20 degrees by one end, settles slowly and then plunges), the page adding
@@ -706,6 +714,7 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   hull are seldom reached; striking at them would take men who stand more blows, a Major's too.
 - Two captains of one rank keep pace: a bold one gives up the chase of a wary one sailing away after 150 s.
 - Players do not ram one another.
+- The World Editor's fight and its fleet room draw no one aboard the captains' ships.
 - At sea there are no ports' waters (DFO's crown waters, fewer pirates by a port) and no notoriety. A voyage near a
   pirate is held, never stopped: DFO's Travel Options encounter, which stops a journey with a roll to avoid it, has not
   come over. A fight's land is the coasts' outlines.

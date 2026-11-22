@@ -4,6 +4,7 @@
 import type { Swell } from '../../rules/landRules.ts';
 import { SailRig, type SailCorners, windOff } from '../../ships/sails.ts';
 import type { Waterline } from '../../ships/shipMesh.ts';
+import type { ShipCrew } from '../../ships/shipCrew.ts';
 import type { ShipPlace } from '../../ships/shipView.ts';
 import { poseOnSwell } from '../../ships/swellPose.ts';
 
@@ -15,7 +16,8 @@ export type Hull = 'brig' | 'sloop' | 'frigate';
 export type Founder = readonly [number, number, number];
 
 /** A ship as the story has it now: where it lies (world metres), its heading, whether it sails, how many times its
- *  size it is drawn, how light, extra heel and rise the story gives it (a list, a lurch), and its founder. */
+ *  size it is drawn, how light, extra heel and rise the story gives it (a list, a lurch), its founder, and who is seen
+ *  aboard it (none for the Brig, whose crew the story places itself). */
 export interface Sailed {
   readonly who: string;
   readonly hull: Hull;
@@ -28,14 +30,16 @@ export interface Sailed {
   readonly heel?: number;
   readonly rise?: number;
   readonly founder?: Founder;
+  readonly crew?: ShipCrew;
 }
 
-/** A ship ready to draw: its hull, its place, its light and its canvas. */
+/** A ship ready to draw: its hull, its place, its light and its canvas, and who is seen aboard it. */
 export interface ShipDraw {
   readonly hull: Hull;
   readonly place: ShipPlace;
   readonly shade: number;
   readonly rig: SailRig;
+  readonly crew?: ShipCrew;
 }
 
 /** Each ship's rig, kept from frame to frame so its sails fill and furl over time. */
@@ -87,7 +91,7 @@ export class Sailing {
         roll: pose.roll + (ship.heel ?? 0) + list,
         scale,
       };
-      return { hull: ship.hull, place, shade: ship.shade ?? 1, rig };
+      return { hull: ship.hull, place, shade: ship.shade ?? 1, rig, ...(ship.crew ? { crew: ship.crew } : {}) };
     });
   }
 
