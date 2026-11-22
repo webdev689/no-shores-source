@@ -144,12 +144,6 @@ impl Telegraph {
         }
     }
 
-    /// How far through its wind-up it is, 0 to 1.
-    #[must_use]
-    pub fn progress(&self) -> f64 {
-        f64::from(self.elapsed) / f64::from(self.windup.max(1))
-    }
-
     /// The ticks of the wind-up's end in which a charge crosses its lane or a leap flies.
     #[must_use]
     pub fn travel_ticks(&self) -> u32 {
