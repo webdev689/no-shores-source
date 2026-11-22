@@ -260,6 +260,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
 - [[What a Player Can Use Wears Its Mark Over It]]
+- [[The Factions Are the Baseline for Every Quest]]
+- [[A Keeper With Something for You Pulses and Is Seen From Everywhere]]
 
 ## Replaced
 
