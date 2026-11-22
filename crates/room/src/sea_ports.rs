@@ -104,6 +104,7 @@ impl Sea {
                 || pieces.iter().any(|piece| piece.player == *each)
         });
         self.harbour.accounts.insert(player, account.to_owned());
+        self.moor_left(player);
         true
     }
 

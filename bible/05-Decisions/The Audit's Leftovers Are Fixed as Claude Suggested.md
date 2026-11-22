@@ -68,7 +68,7 @@ The numbers (500 an hour, 30 days, 2 minutes, 10 seconds, 1 GB) were Claude's, i
 - **5.** A horse is a coat worn, which every character starts with: the room now decides, and refuses riding on any
   deck, a boarded one too.
 - **6.** One who left fallen comes back fallen, to stand again at a spawn. The two minutes are counted in whole minutes,
-  the room's clock.
+  the room's clock. A boarder comes onto a pirate's deck whole, as before: they come from their own ship.
 - **7.** The room's chain is the page's, with a quarter of a metre either side of a stroke's reach taken as the page's
   own view, so the page is not corrected where the two see the foe a little apart.
 - **8.** A ship put to sea by a page with no place kept goes in at the nearest port's roadstead; a sea with no port
@@ -80,14 +80,17 @@ The numbers (500 an hour, 30 days, 2 minutes, 10 seconds, 1 GB) were Claude's, i
 - **13.** The Anima and Tenets come back as left for ten minutes, as a room already kept them for a rejoin.
 - **14.** A ship comes back where the sea last had it, as a ship sails nowhere while its player is away. A ship played
   unkept is known by its session (the token's SHA-256, never the token); a page with no session at all is no one the
-  sea knows, and puts in at a roadstead as a new player does. The sea remembers the latest 1,024.
+  sea knows, and puts in at a roadstead as a new player does. A page that sends a course before its token is moored
+  back where the sea last had its ship once its owner is known. The sea remembers the latest 1,024.
 - **15.** A wave counts as fought once it stands, one count for each goal of the task.
 - **16.** A trip that fails takes the player back where they stood (a node, a dungeon, an island or the ship), else to
   Overlook's hub, opening its landmass first; the reason stands as a toast for 8 seconds. The first arrival, with
   nowhere to go back to, stays on the veil as before. A room past its sockets now says it is full, as a browser never
   reads a refused join's status.
 - **17.** A blow lands when it hits, is blocked, or breaks the guard. The room answers the ask; the page leaves only on
-  its yes and says why not in a toast, and waits three seconds for an answer.
+  its yes and says why not in a toast, and waits three seconds for an answer. The sea does not refuse such a
+  character itself: the game sends fallen and struck players to their ship too (out of a sea island's dungeon), and a
+  page that leaves without asking, as one that closes its tab, keeps its hurts two minutes (6), so gains nothing.
 - **18.** A chunk late to come leaves another held to play meanwhile, never the one played last.
 - **19.** Already so since [[Areas Load in Chunks With Proper Caching]]: oldest means first kept.
 - **20.** CI reads the packs from R2's public address, each checked by the hash in its name.

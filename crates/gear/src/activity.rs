@@ -68,7 +68,6 @@ fn known_tiers<'de, D: serde::Deserializer<'de>>(reader: D) -> Result<BTreeSet<D
 }
 
 impl Activity {
-    /// The day's record, begun anew first when `day` is later than the one it holds; never turned back.
     /// The nodes of the island of `seed` gathered on `day`, none on another day.
     #[must_use]
     pub fn gathered_on(&self, day: u64, seed: u64) -> &[u8] {
@@ -76,19 +75,21 @@ impl Activity {
         today.and_then(|isles| isles.iter().find(|(isle, _)| *isle == seed)).map_or(&[], |(_, nodes)| nodes)
     }
 
-    /// Notes a node of the island of `seed` gathered on `day`.
+    /// Notes a node of the island of `seed` gathered on `day`, that island now the latest touched: the island touched
+    /// least lately is let go past `ISLES_GATHERED_KEPT`.
     pub fn gather_on(&mut self, day: u64, seed: u64, node: u8) {
         let isles = &mut self.today(day).gathered;
-        match isles.iter_mut().find(|(isle, _)| *isle == seed) {
-            Some((_, nodes)) if !nodes.contains(&node) => nodes.push(node),
-            Some(_) => {}
-            None => isles.push((seed, vec![node])),
+        let mut nodes = isles.iter().position(|(isle, _)| *isle == seed).map_or_else(Vec::new, |at| isles.remove(at).1);
+        if !nodes.contains(&node) {
+            nodes.push(node);
         }
+        isles.push((seed, nodes));
         if isles.len() > ISLES_GATHERED_KEPT {
             isles.remove(0);
         }
     }
 
+    /// The day's record, begun anew first when `day` is later than the one it holds; never turned back.
     pub fn today(&mut self, day: u64) -> &mut Today {
         if day > self.today.day {
             self.today = Today { day, ..Today::default() };

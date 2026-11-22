@@ -32,8 +32,8 @@ impl Sea {
     /// owner's ship; else, asked by a port city within reach of its roadstead, at that roadstead itself, never the
     /// page's own point; in a sea with no port cities, where the page asks. None where it may not put to sea.
     pub(super) fn puts_in(&mut self, player: PlayerId, asked: Point) -> Option<Point> {
-        let owner = self.harbour.accounts.get(&player);
-        let left = owner.and_then(|owner| self.harbour.left.get(owner)).copied();
+        let owner = self.harbour.accounts.get(&player).cloned();
+        let left = owner.and_then(|owner| self.harbour.left.remove(&owner));
         let [x, y, heading] = match left {
             Some([x, y, heading, _]) => [x, y, heading],
             None if !self.harbour.harbours.puts_to_sea(asked) => return None,
@@ -49,5 +49,25 @@ impl Sea {
             self.harbour.told.push((player, vec![crate::harbour::MOORED, self.clock as f64, x, y, heading]));
         }
         Some(at)
+    }
+
+    /// A ship played unkept that put to sea before its owner was known (a page's course before its token) is moored
+    /// where the sea last had that owner's ship, as the owner becomes known; a fight it met meanwhile is over for it.
+    pub(super) fn moor_left(&mut self, player: PlayerId) {
+        let Some(owner) = self.harbour.accounts.get(&player).cloned() else { return };
+        let at_sea = self.berths.get(&player).is_some_and(|berth| berth.sailing.is_some());
+        if self.harbour.characters.contains_key(&player) || !at_sea {
+            return;
+        }
+        let Some([x, y, heading, _]) = self.harbour.left.remove(&owner) else { return };
+        if self.fights.fighting(player) {
+            self.leave_decks(player);
+            self.fights.leave(player);
+        }
+        if let Some(sailing) = self.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut()) {
+            sailing.ship = super::Ship { x, y, heading, pace: 0, rate: 0 };
+            sailing.course.clear();
+            self.harbour.told.push((player, vec![crate::harbour::MOORED, self.clock as f64, x, y, heading]));
+        }
     }
 }

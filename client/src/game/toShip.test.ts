@@ -34,3 +34,20 @@ test('a return to the ship goes on the room yes, and is refused in words while s
   const silent = room(0, Number.POSITIVE_INFINITY);
   assert.equal(await askToShip(silent.asker, false, silent.wait), 'Your room did not answer. Try again.');
 });
+
+test("another ask's answer coming first is waited past, for the room's word on the return itself", async () => {
+  let gear = state({ answered: 3 });
+  let waits = 0;
+  const asker = () => ({ gear, ask: () => undefined });
+  const wait = () => {
+    waits += 1;
+    // The answer to an ask sent before, refused as out of reach, then the room's word on the return.
+    if (waits === 1) gear = { ...gear, answer: 100, answered: 4 };
+    if (waits === 3) gear = { ...gear, answer: FIGHTING, answered: 5 };
+    return Promise.resolve();
+  };
+  assert.equal(
+    await askToShip(asker, false, wait),
+    'You cannot return to your ship within ten seconds of being struck.',
+  );
+});

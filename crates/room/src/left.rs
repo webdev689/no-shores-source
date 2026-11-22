@@ -31,12 +31,13 @@ impl Room {
         self.spent_today(player);
     }
 
-    /// Gives a returning player the body their character left with, what of it still holds at the room's minute.
+    /// Gives a returning player the body their character left with, what of it still holds at the room's minute; a
+    /// boarder comes onto a pirate's deck from their own ship, unhurt, as before.
     fn give_left_back(&mut self, player: PlayerId) {
-        let minute = self.minute;
+        let (minute, on_deck) = (self.minute, matches!(self.floor, crate::Floor::Deck(_)));
         let Some(found) = self.players.get_mut(&player) else { return };
         let Some(left) = found.character.left else { return };
-        if left.body_holds(minute) {
+        if left.body_holds(minute) && !on_deck {
             let fighter = &mut found.fighter;
             fighter.charges = left.charges.min(combat::tuning::CHARGES);
             fighter.health = fighter.health_max * whole_of(left.health);

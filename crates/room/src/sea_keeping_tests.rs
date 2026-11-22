@@ -272,6 +272,15 @@ fn a_ship_its_owner_sailed_comes_back_where_the_sea_last_had_it_wherever_the_pag
     assert_eq!((ship.x, ship.y), (left.x, left.y), "not by the east port, where the page put it");
     let moored = told(&sea, back, crate::harbour::MOORED).map(|numbers| numbers[2..4].to_vec());
     assert_eq!(moored, Some(vec![left.x, left.y]));
+    // A page that sends a course before its token puts in by a port of its choosing, but its owner known, the ship is
+    // moored where the sea last had it.
+    sea.leave(back);
+    let early = sea.join();
+    sea.none_kept(early);
+    sea.course(early, &[[58_000.0, 50_000.0]], 10).unwrap();
+    assert!(sea.own(early, "unkept:a"));
+    let ship = sea.ships().find(|(each, _)| *each == early).unwrap().1;
+    assert_eq!((ship.x, ship.y), (left.x, left.y), "moored back once its owner is known");
     let stranger = sea.join();
     assert!(sea.own(stranger, "unkept:b"));
     sea.none_kept(stranger);

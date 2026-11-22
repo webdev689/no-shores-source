@@ -32,3 +32,20 @@ fn a_return_within_two_minutes_gets_back_the_health_and_charges_it_left_with_and
     let kept = left.kept_character(player).expect("kept");
     assert!(back(1_001, &kept).3, "one who left fallen comes back fallen, to stand again at a spawn");
 }
+
+#[test]
+fn a_boarder_comes_onto_a_pirate_deck_whole_whatever_body_their_character_last_left_a_room_with() {
+    let mut left = room();
+    left.set_minute(1_000);
+    let player = left.join().expect("a room with space");
+    let mut fallen = *left.fighter(player).expect("in");
+    (fallen.health, fallen.action) = (0.0, combat::Action::Dead { elapsed: 0 });
+    left.set_fighter(player, fallen);
+    let kept = left.kept_character(player).expect("kept");
+    let mut deck = Room::deck(&crate::deck::test_deck(), 1, ::foes::Rank::Minor, 1);
+    deck.set_minute(1_001);
+    let boarder = deck.join().expect("a deck with space");
+    assert!(deck.restore_character(boarder, &kept));
+    let fighter = *deck.fighter(boarder).expect("aboard");
+    assert!(!fighter.dead() && fighter.health == fighter.health_max, "they come from their own ship, unhurt");
+}

@@ -16,6 +16,9 @@ export interface ShipAsker {
   ask(ask: GearAsk): void;
 }
 
+/** The answers the room gives a return to the ship: yes, or why not. */
+const ANSWERS: readonly number[] = [0, FALLEN, FIGHTING];
+
 /** Why the room refused a return to the ship, in words; null where it answered yes. */
 export function refusedWords(answer: number): string | null {
   if (answer === FALLEN) return 'You cannot return to your ship while fallen.';
@@ -39,7 +42,8 @@ export async function askToShip(
     await wait(POLL_MS);
     const now = asker()?.gear;
     if (!now) return null;
-    if (now.answered !== before) return refusedWords(now.answer);
+    // An ask sent before this one may be answered first: only an answer a return to the ship takes is its word.
+    if (now.answered !== before && ANSWERS.includes(now.answer)) return refusedWords(now.answer);
   }
   return 'Your room did not answer. Try again.';
 }
