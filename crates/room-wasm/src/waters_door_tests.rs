@@ -38,7 +38,7 @@ fn the_door_answers_waters_grid_and_ships() {
     open_world();
     let overlook = [2_809_214.0, 1_201_477.0];
     assert_eq!(water_byte(overlook[0], overlook[1]), 255, "the city stands on land");
-    assert_eq!(water_byte(2_400_000.0, 1_100_000.0) & 0x7f, 0, "the sea west of Overlook is the Lantern Sea");
+    assert_eq!(water_byte(2_400_000.0, 1_100_000.0), 0, "the sea west of Overlook is the Lantern Sea");
     let grid = grid_bytes(48_000.0);
     let columns = u32::from_le_bytes(grid[0..4].try_into().unwrap());
     let rows = u32::from_le_bytes(grid[4..8].try_into().unwrap());
