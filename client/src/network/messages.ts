@@ -8,6 +8,7 @@ import { type CastAsk, type SeenSpell, spellsOf } from './artMessages.ts';
 import { BODY_FLOATS, type Body, CONTROLS_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { unpack } from './pack.ts';
 import { withOthers } from './seaFight.ts';
+import { type PublicEvent, publicOf } from './publicMessages.ts';
 import { type HarbourPart, harbourOf } from './seaHarbour.ts';
 
 /** What a player's figure shows on their own screen: the forge's move, its frame, and the way it faces. */
@@ -112,6 +113,8 @@ export interface SeenFoe {
   readonly shield: FoeShield | null;
   /** Its debuffs; none for a foe made by hand. */
   readonly statuses?: FoeStatuses;
+  /** The name it stands under in place of its type's: a public event's Warden or Marrow, or the Fissure's growth. */
+  readonly name?: string;
   /** The companion it is, an officer ashore fighting beside their leader; none for a foe. */
   readonly companion?: Companion | null;
   /** All its numbers as they crossed, for the next snapshot to build on (`snapshots.ts`). */
@@ -248,6 +251,8 @@ export type FromRoomMessage =
       readonly fights: readonly SeenSeaFight[];
       /** Every spell in a room on land, which every player sees. */
       readonly spells: readonly SeenSpell[];
+      /** A zone's public events; null in a room whose zone holds none. */
+      readonly public: PublicEvent | null;
       /** On land, the tick of the snapshot this one builds on (0 for none), and the players and foes gone since it:
        *  the players and foes it holds are those that changed since (`snapshots.ts` makes it whole again). */
       readonly base: bigint;
@@ -458,10 +463,13 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       const foe = snapshot.foes(index);
       if (!foe) throw new Error(`snapshot foe ${index} is missing`);
       const bits = foe.changedArray();
-      if (!bits) return foeOf(foe.id(), unpacked(foe.packedArray(), FOE_NUMBERS, `foe ${index}`));
+      // The name it stands under crosses each time the foe does, beside its numbers.
+      const name = foe.name();
+      const named = name ? { name } : {};
+      if (!bits) return { ...foeOf(foe.id(), unpacked(foe.packedArray(), FOE_NUMBERS, `foe ${index}`)), ...named };
       const numbers = changedValues(foe.packedArray(), bits, middle);
       if (!numbers) throw new Error(`foe ${index}'s changes do not unpack`);
-      return { ...foeOf(foe.id(), new Float64Array(FOE_NUMBERS)), changes: { bits, numbers } };
+      return { ...foeOf(foe.id(), new Float64Array(FOE_NUMBERS)), changes: { bits, numbers }, ...named };
     });
     const events = Array.from({ length: snapshot.eventsLength() }, (unused, index) => {
       const event = snapshot.events(index);
@@ -533,6 +541,7 @@ export function readFromRoom(bytes: Uint8Array): FromRoomMessage | null {
       pirates,
       fights,
       spells: spellsOf(snapshot),
+      public: publicOf(snapshot),
       base: snapshot.base(),
       gonePlayers: Array.from(snapshot.gonePlayersArray() ?? []),
       goneFoes: Array.from(snapshot.goneFoesArray() ?? []),

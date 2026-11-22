@@ -6,10 +6,11 @@ status: in force
 # Arts and Loadouts as Claude Shapes Them
 
 The owner handed this round over in full: "Build it all to 100%. Take full autonomy and ensure this is 100%
-developed." What the owner decided is in [[Arts Are Overlook's Subclasses]], [[Weapons Are a Melee and a Ranged
-Loadout]] and [[Your Weapon Glows in Its Element]]. Everything below is Claude's, made under that word, and the owner
-may change any of it. Numbers reference Destiny 2's where the owner asked for that (cooldowns), and the game's own
-scale elsewhere: a player has 100 health, a sword's blow does 14 before power, a tick is 1/60 s.
+developed." What the owner decided is in [[Arts Are Overlook's Subclasses]],
+[[Weapons Are a Melee and a Ranged Loadout]] and [[Your Weapon Glows in Its Element]]. Everything below is Claude's,
+made under that word, and the owner may change any of it. Numbers reference Destiny 2's where the owner asked for that
+(cooldowns), and the game's own scale elsewhere: a player has 100 health, a sword's blow does 14 before power, a tick is
+1/60 s.
 
 ## Loadouts
 

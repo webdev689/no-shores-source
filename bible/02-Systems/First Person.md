@@ -77,8 +77,8 @@ parry's deflect plays its right stroke's second to fourth frames over the deflec
 
 A blow of the player's own that lands lights the weapon's picture with a white rim for one frame, bursts its element
 off it ([[Weapon Glow]]) and jolts the hands 2 design pixels down for 3 frames; a blow of theirs blocked or parried,
-or one they block, jolts them 4. Never a trail ([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn
-Blow]]).
+or one they block, jolts them 4. Never a trail
+([[First Person Strikes Faster Without Arcs, and Arcs Follow the Drawn Blow]]).
 
 ### A pair
 

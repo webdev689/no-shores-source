@@ -13,6 +13,7 @@ import type { Box } from '../ui/quads.ts';
 import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { HINTS, type OnFoot, type StripHint, footHints, withMapKey } from './hints.ts';
 import { Hud } from './hud.ts';
+import { placeNode } from './hudPieces.ts';
 
 const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
 const face: Face = { glyph: () => block };
@@ -377,6 +378,31 @@ test('a hostile ship’s mark wears its rank’s colour, its faction’s emblem 
   assert.equal(emblem?.box.width, 17, '62% of its ring');
   const badge = laid.find((each) => each.node.picture?.key.startsWith('mark badge'));
   assert.ok(badge && badge.box.y < 286, 'over the ring');
+});
+
+test("at a phone's width the place's name gives way to a public event's banner, but not to the next event's line", () => {
+  const view = { width: 500, height: 900, big: false, doubled: false, fight: true, bossed: false };
+  const rest = { plates: false, seaFight: false, speaking: false, map: false };
+  assert.equal(placeNode({ ...view, ...rest, banner: 'running' }, 'Saltgrass Downs', 'Wilds'), null);
+  assert.ok(placeNode({ ...view, ...rest, banner: 'next' }, 'Saltgrass Downs', 'Wilds'));
+  assert.ok(placeNode({ ...view, ...rest, width: 800, banner: 'heroic' }, 'Saltgrass Downs', 'Wilds'));
+});
+
+test('under 1024 px the tracker gives way to a running event’s banner, but not to the next event’s line', () => {
+  const narrow = { width: 900, height: 600, scale: 1 };
+  const shown = (banner: 'running' | 'next') => {
+    const [ui, hud] = [new Interface(renderer()), new Hud()];
+    hud.onBesides(() => ({ fight: false, bossed: false, speaking: false, map: false, banner }));
+    hud.tasks.show(
+      { name: 'The Fissure', task: 'Saltgrass Downs', steps: [{ text: 'Open your chest', clock: 108 }] },
+      0,
+    );
+    ui.frame(narrow, [], 1 / 60, true);
+    const root = hud.node(ui);
+    return words(layout(root, { x: 0, y: 0, width: narrow.width, height: narrow.height }, { face }));
+  };
+  assert.ok(!shown('running').includes('Open your chest'));
+  assert.ok(shown('next').includes('Open your chest') && shown('next').includes('1:48'));
 });
 
 test("in a sea fight the ship's bar stands at the bottom left, clear of the key strip on every screen, and goes with the readout", () => {

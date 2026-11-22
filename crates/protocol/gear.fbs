@@ -55,8 +55,9 @@ table GearVestige {
 }
 
 // A drop lying on the ground for this player alone: their number for it, a Vestige's colour and slot, and where it
-// lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate), where it was thrown from (x, y, z)
-// and how many ticks it has still to fly before it rests.
+// lies (x, y, z); then what it is (0 a Vestige, 1 an Ammo box, 2 an Ammo crate, 3 a public event's chest), where it
+// was thrown from (x, y, z) and how many ticks it has still to fly before it rests; then a chest's tier (1 won, 2 won
+// with the bonus, 3 heroic, 4 heroic with the bonus; 0 for anything else).
 table GearDrop {
   id: uint;
   rarity: ubyte;
@@ -65,6 +66,7 @@ table GearDrop {
   kind: ubyte;
   from: [double];
   flying: ubyte;
+  tier: ubyte;
 }
 
 // A letter of the game's mail: its number, where what it holds came from (the gear crate's `mail::Source`, which the

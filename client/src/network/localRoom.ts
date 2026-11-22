@@ -11,6 +11,16 @@ export interface Furnishing {
   readonly nodes: readonly CourseNode[];
 }
 
+/** A dev page's play of its own room (`publicBots.ts` `BotPlay`, behind `&speed=` and `&bots=`), never a built
+ *  page's: how many ticks a frame (0 for the page's clock), the players it joins as the room opens, their inputs
+ *  before each tick, and its reading of each tick's snapshot, which answers whether the frame's ticks stop there. */
+export interface RoomPlay {
+  readonly speed: number;
+  open(door: RoomDoor, player: number): void;
+  inputs(door: RoomDoor): void;
+  heard(snapshot: Snapshot): boolean;
+}
+
 /** A room in the page itself, for playing alone: the same room crate the servers run, in its own WebAssembly, ticked
  *  by the page's clock, its snapshots handed on as a server's would be. */
 export class LocalRoom implements RoomLink {
@@ -22,6 +32,9 @@ export class LocalRoom implements RoomLink {
   private carry = 0;
   /** The world's minute the room was last told, which turns the day's wares and brings Shape and takes him away. */
   private minute = -1;
+  /** Minutes the room's clock stands ahead of the world's: none but for the dev address that starts a public event at
+   *  once (`&public=`). */
+  private readonly minuteShift: number;
   readonly player: number;
   readonly dressed = [];
   /** A room in the page is joined once and never lost. */
@@ -34,25 +47,30 @@ export class LocalRoom implements RoomLink {
   trim: readonly number[] | null = null;
   arms: readonly number[] | null = null;
   arts: ArtState | null = null;
+  private readonly play: RoomPlay | null;
 
   private constructor(
     door: RoomDoor,
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void,
     player = door.join(),
+    { minuteShift = 0, play = null }: { minuteShift?: number; play?: RoomPlay | null } = {},
   ) {
     this.door = door;
     this.snapshot = snapshot;
     this.gear = gear;
+    this.minuteShift = minuteShift;
     this.keepMinute();
     this.player = player;
     const welcome = readFromRoom(door.joined(this.player));
     this.epoch = welcome?.kind === 'joined' ? welcome.epoch : 0;
+    this.play = play;
+    play?.open(door, this.player);
   }
 
   /** Tells the room the world's minute whenever it has turned, as the servers' rooms are told it. */
   private keepMinute(): void {
-    const minute = Math.floor(Date.now() / 60_000);
+    const minute = Math.floor(Date.now() / 60_000) + this.minuteShift;
     if (minute === this.minute) return;
     this.minute = minute;
     this.door.minute(minute);
@@ -91,13 +109,24 @@ export class LocalRoom implements RoomLink {
 
   /** Opens a node's room from its file's text (as the bake writes it) from the compiled `room-wasm` module, its player
    *  joined at its first spawn, or before entrance `entrance`'s door; the player's own gear goes to `gear`. With
-   *  `foeAsks` the player may ask it for foes, to try a fight on the node's land. */
+   *  `foeAsks` the player may ask it for foes, to try a fight on the node's land; with `minuteShift` its clock stands
+   *  that many minutes ahead, and `play` plays it (a dev page's alone). */
   static openNode(
     module: WebAssembly.Module,
     nodeText: string,
     snapshot: (snapshot: Snapshot) => void,
     foeAsks = false,
-    { gear = () => undefined, entrance }: { gear?: (gear: GearMessage) => void; entrance?: number } = {},
+    {
+      gear = () => undefined,
+      entrance,
+      minuteShift = 0,
+      play = null,
+    }: {
+      gear?: (gear: GearMessage) => void;
+      entrance?: number;
+      minuteShift?: number;
+      play?: RoomPlay | null;
+    } = {},
   ): LocalRoom {
     const door = startRoomDoor(module);
     if (!door.openNode(nodeText)) throw new Error('the place is not one a room can stand on');
@@ -105,7 +134,7 @@ export class LocalRoom implements RoomLink {
     if (foeAsks) door.takeFoeAsks();
     // An entrance the room does not have is an ordinary join, as the servers take it.
     const player = (entrance === undefined ? 0 : door.joinAt(entrance)) || door.join();
-    return new LocalRoom(door, snapshot, gear, player);
+    return new LocalRoom(door, snapshot, gear, player, { minuteShift, play });
   }
 
   /** Opens dungeon `number` of a patrol from the patrol's node file's text, from the compiled `room-wasm` module, its
@@ -236,12 +265,16 @@ export class LocalRoom implements RoomLink {
     this.door.takeBlock(block);
   }
 
-  /** Ticks the room as many whole ticks as `seconds` and what was carried make, handing on each tick's snapshot. */
+  /** Ticks the room as many whole ticks as `seconds` and what was carried make (or its play's `speed`), handing on
+   *  each tick's snapshot. */
   pump(seconds: number): void {
     this.keepMinute();
-    this.carry += seconds;
+    const speed = this.play?.speed ?? 0;
+    // Half a tick over, so rounding never takes one of `speed`'s ticks away.
+    this.carry = speed > 0 ? (speed + 0.5) * this.door.tickSeconds : this.carry + seconds;
     while (this.carry >= this.door.tickSeconds) {
       this.carry -= this.door.tickSeconds;
+      this.play?.inputs(this.door);
       this.door.tick();
       // The player's gear before the snapshot, as the servers send it, so a change is predicted from the snapshot on.
       const gear = readFromRoom(this.door.gear(this.player));
@@ -253,7 +286,12 @@ export class LocalRoom implements RoomLink {
       }
       const message = readFromRoom(this.door.snapshot(this.player));
       const whole = message?.kind === 'snapshot' ? this.kept.whole(message) : null;
-      if (whole) this.snapshot(whole);
+      if (!whole) continue;
+      this.snapshot(whole);
+      if (this.play?.heard(whole)) {
+        this.carry = 0;
+        break;
+      }
     }
   }
 }

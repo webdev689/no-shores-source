@@ -36,6 +36,7 @@ fn every_ask() -> Vec<Asked> {
         Asked::Gear(Ask::Train { officer: 3, column: 1, node: 2 }),
         Asked::Gear(Ask::ChooseOfficer { officer: 3, column: 1, node: 2 }),
         Asked::Gather { node: 2 },
+        Asked::OpenChest { chest: 41 },
         Asked::StopGather,
         Asked::Scavenge { wreck: 3 },
         Asked::Grant(Grant::Vestige { rarity: Rarity::Legendary, slot: Slot::Arms, level: 18 }),
@@ -288,11 +289,13 @@ fn a_drop_lying_for_a_player_crosses_with_what_it_is_and_where_it_lies() {
     let vestige = Vestige::new(3, Rarity::Rare, Slot::Torso, 7);
     room.lay_drop(player, Dropped::Vestige(vestige), [4.0, -6.0, 0.5]);
     room.lay_drop(player, Dropped::Crate, [1.0, 1.0, 0.0]);
+    room.lay_drop(player, Dropped::Chest { tier: 4, level: 9 }, [2.0, 1.0, 0.0]);
     room.tick();
     let bytes = gear_bytes(&room, player).expect("a player of the room");
     let gear = flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear");
     let drops: Vec<_> = gear.drops().expect("drops").iter().collect();
-    assert_eq!(drops.len(), 2);
+    assert_eq!(drops.len(), 3);
+    assert_eq!((drops[2].kind(), drops[2].tier(), drops[0].tier()), (3, 4, 0), "a heroic chest with the bonus");
     assert_eq!((drops[0].id(), drops[0].rarity(), drops[0].slot(), drops[0].kind()), (3, 2, Slot::Torso as u8, 0));
     assert_eq!(drops[0].at().map(|at| at.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));
     assert_eq!(drops[0].from().map(|from| from.iter().collect::<Vec<_>>()), Some(vec![4.0, -6.0, 0.5]));

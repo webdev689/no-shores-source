@@ -2,9 +2,12 @@
 // the snapshot its `base` names (one this page showed, and so holds), and those gone since; the rest stand as they
 // stood then. What happened (the fight's events, the balls stopped) comes again in each snapshot until a later one is
 // shown, so each is handed on once: only what is newer than the last snapshot handed on. A snapshot older than that,
-// or built on one no longer held, is passed over; the room sends the next whole.
+// or built on one no longer held, is passed over; the room sends the next whole. The zone's events come only when they
+// stand otherwise than the base's counted on (`countedOn`, as crates/room/src/public/seen.rs `counted_on`); left out,
+// they are the base's, counted on.
 import { BODY_FLOATS, bodyOf } from '../rules/movementRules.ts';
 import { type Changes, type FromRoomMessage, type SeenFoe, type SeenPlayer, foeOf } from './messages.ts';
+import type { PublicEvent } from './publicMessages.ts';
 
 type Snapshot = Extract<FromRoomMessage, { kind: 'snapshot' }>;
 
@@ -14,6 +17,16 @@ const HELD_TICKS = 240n;
 interface Held {
   readonly players: ReadonlyMap<number, SeenPlayer>;
   readonly foes: ReadonlyMap<number, SeenFoe>;
+  readonly public: PublicEvent | null;
+}
+
+/** The zone's events `elapsed` ticks on, told nothing new: the countdown, the heroic window's and the next wave's run
+ *  down to 0; the rest held, the next event's ticks among them (to the minute). */
+function countedOn(event: PublicEvent | null, elapsed: bigint): PublicEvent | null {
+  if (!event) return null;
+  const down = (count: number) => Math.max(0, count - Number(elapsed));
+  const { ticksLeft, heroicTicks, nextWaveTicks } = event;
+  return { ...event, ticksLeft: down(ticksLeft), heroicTicks: down(heroicTicks), nextWaveTicks: down(nextWaveTicks) };
 }
 
 /** `numbers` with `changes` laid over them, a copy. */
@@ -64,9 +77,12 @@ export class SnapshotKeeper {
     for (const foe of snapshot.foes) {
       const held = foes.get(foe.id)?.numbers;
       if (foe.changes && !held) return null;
-      foes.set(foe.id, foe.changes && held ? foeOf(foe.id, changed(held, foe.changes)) : foe);
+      // A foe's name crosses with it each time, beside the numbers that changed.
+      const named = foe.name ? { name: foe.name } : {};
+      foes.set(foe.id, foe.changes && held ? { ...foeOf(foe.id, changed(held, foe.changes)), ...named } : foe);
     }
-    this.held.set(snapshot.tick, { players, foes });
+    const shown = snapshot.public ?? countedOn(base?.public ?? null, snapshot.tick - snapshot.base);
+    this.held.set(snapshot.tick, { players, foes, public: shown });
     for (const tick of this.held.keys()) if (tick + HELD_TICKS < snapshot.tick) this.held.delete(tick);
     const since = this.last;
     this.last = snapshot.tick;
@@ -77,6 +93,7 @@ export class SnapshotKeeper {
       goneFoes: [],
       players: byNumber(players),
       foes: byNumber(foes),
+      public: shown,
       events: snapshot.events.filter((event) => event.tick > since),
       shots: snapshot.shots.filter((shot) => shot.stopped === 0n || shot.stopped > since),
     };

@@ -2,10 +2,12 @@
 import adorn
 import bridge
 import cavern
-import dress
 import chapels
+import chest
 import citadel
 import court_pieces
+import dress
+import fissure
 import market
 import props
 import ranges
@@ -18,6 +20,7 @@ import stall_tailor
 import stall_vault
 import stall_weaponsmith
 import stones
+import tithe
 import war_table
 
 BUILDERS = {'old-stones': stones.build, 'cavern-chamber': cavern.build, 'keep-citadel': citadel.build}
@@ -65,3 +68,13 @@ HUB += dress.DRESSING
 for number, (name, builder) in enumerate(HUB):
     BUILDERS[name] = builder
     SEEDS[name] = 100 + number
+# The public events' props: drawn by the page where an event stands, never placed by a layout.
+EVENTS = {'lattice-fissure': (fissure.fissure, 101), 'lattice-fissure-sealed': (fissure.sealed, 102),
+          'lattice-growth': (fissure.growth, 103), 'lattice-shard': (fissure.shard, 104),
+          'tithe-stores-a': (tithe.stores_a, 111), 'tithe-stores-b': (tithe.stores_b, 112),
+          'tithe-stores-c': (tithe.stores_c, 113), 'tithe-stores-plundered': (tithe.stores_plundered, 114),
+          'tithe-banner': (tithe.banner, 115), 'event-chest': (chest.chest, 121), 'event-chest-lid': (chest.chest_lid, 122),
+          'event-chest-heroic': (chest.heroic, 123), 'event-chest-heroic-lid': (chest.heroic_lid, 124)}
+for name, (build, seed) in EVENTS.items():
+    BUILDERS[name] = build
+    SEEDS[name] = seed

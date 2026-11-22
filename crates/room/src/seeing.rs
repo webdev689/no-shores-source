@@ -1,5 +1,6 @@
 //! What a room hands its host to send out: every fighter and player as it last stepped them, the shots in flight, the
-//! lines and events since it was last asked, and its clock.
+//! lines and events since it was last asked, and its clock; and each fighter by its number, as the room's rules read
+//! and set it.
 
 use crate::{Event, PlayerId, Room, Seen};
 use combat::Fighter;
@@ -13,6 +14,25 @@ impl Room {
     pub fn fighters(&self) -> Vec<(FighterId, Fighter)> {
         let players = self.players.iter().map(|(id, found)| (*id, found.fighter));
         players.chain(self.foes.iter().map(|(id, foe)| (*id, foe.fighter))).collect()
+    }
+
+    /// A foe a player's blow reached, as the player's screen showed it (`view`): where it stood then, but guarding,
+    /// dodging and staggered as it is now, so a foe's answers count the same whatever the player's lag.
+    pub(crate) fn as_seen(&self, foe: FighterId, view: &[(FighterId, Fighter)]) -> Option<Fighter> {
+        let then = view.iter().find(|(other, _)| *other == foe).map(|(_, then)| then.body)?;
+        self.fighter(foe).map(|now| Fighter { body: then, ..*now })
+    }
+
+    pub(crate) fn fighter(&self, id: FighterId) -> Option<&Fighter> {
+        self.players.get(&id).map(|found| &found.fighter).or_else(|| self.foes.get(&id).map(|foe| &foe.fighter))
+    }
+
+    pub(crate) fn set_fighter(&mut self, id: FighterId, fighter: Fighter) {
+        if let Some(found) = self.players.get_mut(&id) {
+            found.fighter = fighter;
+        } else if let Some(foe) = self.foes.get_mut(&id) {
+            foe.fighter = fighter;
+        }
     }
 
     /// The number of a player's last input received, the latest tick their screen said it showed, and the tick they

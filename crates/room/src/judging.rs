@@ -35,6 +35,19 @@ pub enum EventKind {
     Healed = 14,
     /// Every player in an Abyss run fell at once: the run starts over. Told to each player.
     Wiped = 15,
+    /// A public event began, went on to its next stage, was won or failed (the amount its kind, or its stage); a
+    /// player took or set a shard; its heroic task was met or missed; a store was plundered; a player opened a chest
+    /// (the amount its tier).
+    PublicBegun = 16,
+    PublicStage = 17,
+    ShardTaken = 18,
+    ShardSet = 19,
+    HeroicMet = 20,
+    HeroicMissed = 21,
+    PublicWon = 22,
+    PublicFailed = 23,
+    StorePlundered = 24,
+    ChestOpened = 25,
 }
 
 /// How a blow was struck, for the words a client shows: an Atheric's leap from one foe to the next, its burst round

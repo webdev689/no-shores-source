@@ -235,6 +235,21 @@ fn a_kill_goals_group_stands_for_a_player_on_it_within_150_m_and_each_kill_they_
     assert_eq!(living(&room).len(), last, "the goal met, no other group");
 }
 
+#[test]
+fn in_an_event_zone_a_kill_goals_group_never_takes_the_places_the_event_keeps() {
+    let (key, goal) = group_goal();
+    let (node, place) = (goal.goal.node().expect("a node"), goal.goal.place().expect("a place"));
+    let mut room = node_room(node, &[(place, [0.0, 0.0], 48.0)]);
+    room.open_public("saltgrass-downs", crate::public::Grounds::default(), None);
+    let husk = ::foes::foe_type(::foes::roster::HUSK).unwrap();
+    for nth in 0..crate::NODE_FOES_MOST - 1 {
+        room.stand_foe(husk, ::foes::Rank::Minor, [-150.0 + nth as f64 * 2.0, -150.0, 0.0], 0.0, None);
+    }
+    joined(&mut room, &on_goal(key), [0.0, 140.0]);
+    run(&mut room, 1);
+    assert_eq!(living(&room).len(), crate::NODE_FOES_MOST - 1, "no group past a node's own places");
+}
+
 /// A land goal on an island of this kind, with another goal after it in its task.
 fn landing(island: &str, then: GoalKind) -> ([usize; 3], &'static GoalDef) {
     goal_where(|task, goal| {

@@ -174,6 +174,26 @@ fn rest(next: &mut Fighter) {
     }
 }
 
+/// A tick of a fighter its room moves itself, never stepped: its statuses, rest and reeling run on as a stepped one's.
+pub fn wear(fighter: &mut Fighter) {
+    fighter.statuses = fighter.statuses.ticked(&fighter.action);
+    rest(fighter);
+    fighter.action = reeled(fighter.action).unwrap_or(fighter.action);
+}
+
+/// A flinch, a stagger, a fall, an overreach or a reload a tick on, run out to Idle; None for any other action.
+fn reeled(action: Action) -> Option<Action> {
+    let on = |left: u32, then: Action| if left > 1 { then } else { Action::Idle };
+    Some(match action {
+        Action::Flinch { left } => on(left, Action::Flinch { left: left.saturating_sub(1) }),
+        Action::Staggered { left, cause } => on(left, Action::Staggered { left: left.saturating_sub(1), cause }),
+        Action::Down { left } => on(left, Action::Down { left: left.saturating_sub(1) }),
+        Action::Overreach { left } => on(left, Action::Overreach { left: left.saturating_sub(1) }),
+        Action::Reload { left } => on(left, Action::Reload { left: left.saturating_sub(1) }),
+        _ => return None,
+    })
+}
+
 fn spend(next: &mut Fighter, stamina: f64) {
     next.stamina = (next.stamina - stamina).max(0.0);
     next.stamina_rest = 0;
@@ -193,9 +213,12 @@ fn act<B: Near + ?Sized>(
     pulled: bool,
 ) -> Option<Happening> {
     let input = &intent.combat;
-    let countdown = |left: u32| left.saturating_sub(1);
     if dodge_leaves(&next.action) && next.kept.dodge > 0 && can_dodge(next, intent.controls, around) {
         return Some(dodge(next, intent.controls, around));
+    }
+    if let Some(on) = reeled(next.action) {
+        next.action = on;
+        return None;
     }
     match next.action {
         Action::Idle => begin(next, intent, around),
@@ -260,30 +283,11 @@ fn act<B: Near + ?Sized>(
             next.action = Action::Dodge { elapsed: elapsed.min(DODGE_TICKS), toward };
             None
         }
-        Action::Flinch { left } => {
-            next.action = if left > 1 { Action::Flinch { left: countdown(left) } } else { Action::Idle };
-            None
-        }
-        Action::Staggered { left, cause } => {
-            next.action = if left > 1 { Action::Staggered { left: countdown(left), cause } } else { Action::Idle };
-            None
-        }
-        Action::Down { left } => {
-            next.action = if left > 1 { Action::Down { left: countdown(left) } } else { Action::Idle };
-            None
-        }
-        Action::Overreach { left } => {
-            next.action = if left > 1 { Action::Overreach { left: countdown(left) } } else { Action::Idle };
-            None
-        }
-        Action::Reload { left } => {
-            next.action = if left > 1 { Action::Reload { left: countdown(left) } } else { Action::Idle };
-            None
-        }
         Action::Telegraph(telegraph) => wind_up(next, telegraph, around),
         Action::Draw { elapsed } => draw(next, elapsed, intent, pulled),
         Action::Drink { elapsed } => crate::drink::drink(next, elapsed, intent.controls),
-        Action::Dead { .. } => None,
+        // Dead, or reeling (run on above).
+        _ => None,
     }
 }
 
