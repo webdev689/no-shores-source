@@ -107,7 +107,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   const shut = inputBytes(33, { intent: walk, look: walking, arms: 0, seen: snapshot.tick });
   assert.equal(room.input(first, shut), 'taken');
   room.tick();
-  const { plates } = readFromRoom(room.snapshot(second)) as { plates: { player: number }[] };
+  const { plates } = readFromRoom(room.snapshot(second)) as unknown as { plates: { player: number }[] };
   assert.deepEqual(
     plates.filter((each) => each.player === first),
     [plate(first, { name: 'Mariner' })],
