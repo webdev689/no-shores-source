@@ -49,6 +49,9 @@ const holding = (items: readonly GearItem[]): GearState => ({
   wares: [],
 });
 
+/** The item pictures kept, those asked for least lately let go first: every screen's worth shown recently, a few MB. */
+export const PICTURES_KEPT = 256;
+
 export class ItemPictures {
   private readonly forge: Cards;
   private readonly kept = new Map<string, Picture | null>();
@@ -71,7 +74,13 @@ export class ItemPictures {
     const look = this.lookOf(item, body);
     if (!look) return null;
     const { key, worn, bare, anim, onePiece, alone } = look;
-    if (this.kept.has(key)) return this.kept.get(key) ?? null;
+    if (this.kept.has(key)) {
+      // Asked for again, it is kept the longest of all.
+      const picture = this.kept.get(key) ?? null;
+      this.kept.delete(key);
+      this.kept.set(key, picture);
+      return picture;
+    }
     if (!this.asked.has(key)) {
       this.asked.add(key);
       const cutOut = () =>
@@ -86,6 +95,11 @@ export class ItemPictures {
         .then((picture) => picture ?? cutOut())
         .then((picture) => {
           this.kept.set(key, picture);
+          this.asked.delete(key);
+          for (const oldest of this.kept.keys()) {
+            if (this.kept.size <= PICTURES_KEPT) break;
+            this.kept.delete(oldest);
+          }
           ready();
         })
         .catch(() => this.asked.delete(key));

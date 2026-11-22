@@ -1,4 +1,5 @@
 import renders from '../../../content/forge/renders.json' with { type: 'json' };
+import { contentBytes, type Fetched } from '../contentCache.ts';
 import type { Strip } from './compose.ts';
 import { StripCache } from './stripCache.ts';
 
@@ -33,10 +34,9 @@ export function pictureRange(manifest: Manifest, index: PackIndex, path: string)
   return { url: manifest.base + pack, range: `bytes=${offset}-${offset + length - 1}`, type };
 }
 
-async function fetched(url: string, init?: RequestInit): Promise<Response> {
-  const answer = await fetch(url, init);
-  if (!answer.ok) throw new Error(`${url} answered ${answer.status}`);
-  return answer;
+/** A JSON file R2 keeps under its hash, from the browser's storage once kept there. */
+async function jsonAt<T>(url: string): Promise<T> {
+  return JSON.parse(new TextDecoder().decode((await contentBytes(url)).bytes)) as T;
 }
 
 /** A picture's bytes decoded to RGBA. The strips' alpha is all or nothing, so the canvas keeps every texel exact. */
@@ -80,15 +80,64 @@ export function rangeLength(range: string): number {
   return last - first + 1;
 }
 
-/** A picture's bytes fetched from where it lies, not yet decoded. A cache can hand back a range cut short with no
- *  error, so a body shorter than its range is fetched again past it. */
-export async function stripBytes(where: StripWhere): Promise<ArrayBuffer> {
-  const wanted = rangeLength(where.range);
-  let bytes = await (await fetched(where.url, { headers: { range: where.range } })).arrayBuffer();
-  if (bytes.byteLength !== wanted)
-    bytes = await (await fetched(where.url, { headers: { range: where.range }, cache: 'reload' })).arrayBuffer();
-  if (bytes.byteLength !== wanted) throw new Error(`${where.url} sent ${bytes.byteLength} of ${wanted} bytes`);
-  return bytes;
+/** Packs are read a block of this many bytes at a time, each kept by the browser: the pictures a figure's moves ask
+ *  for together lie together in a pack, so a burst of them comes in one request, and from the disk after. */
+export const BLOCK_BYTES = 256 * 1024;
+/** The blocks held here too, the latest asked for, so a burst reads each block once. */
+const BLOCKS_HELD = 16;
+
+type Read = (url: string, range: readonly [number, number]) => Promise<Fetched>;
+
+/** A pack's bytes read a block at a time. */
+export class PackBlocks {
+  private readonly read: Read;
+  private readonly held = new Map<string, Promise<{ readonly start: number; readonly bytes: ArrayBuffer }>>();
+
+  constructor(read: Read = contentBytes) {
+    this.read = read;
+  }
+
+  /** Bytes `first` to `last` (both included) of the pack at `url`, from the blocks they lie in. */
+  async bytes(url: string, first: number, last: number): Promise<ArrayBuffer> {
+    const wanted = new Uint8Array(last - first + 1);
+    for (let block = Math.floor(first / BLOCK_BYTES); block <= Math.floor(last / BLOCK_BYTES); block++) {
+      const { start, bytes } = await this.block(url, block);
+      const [from, to] = [Math.max(first, block * BLOCK_BYTES), Math.min(last + 1, (block + 1) * BLOCK_BYTES)];
+      if (from < start || to > start + bytes.byteLength)
+        throw new Error(`${url} sent ${bytes.byteLength} bytes from ${start}, short of ${from}-${to - 1}`);
+      wanted.set(new Uint8Array(bytes, from - start, to - from), from - first);
+    }
+    return wanted.buffer;
+  }
+
+  private block(url: string, block: number) {
+    const key = `${url} ${block}`;
+    const kept = this.held.get(key);
+    this.held.delete(key);
+    const reading =
+      kept ??
+      this.read(url, [block * BLOCK_BYTES, (block + 1) * BLOCK_BYTES - 1]).then(({ bytes, total }) => ({
+        // A server that sent the whole pack for the range sent it from its start.
+        start: bytes.byteLength === total ? 0 : block * BLOCK_BYTES,
+        bytes,
+      }));
+    this.held.set(key, reading);
+    // One that failed is asked for afresh the next time.
+    reading.catch(() => this.held.get(key) === reading && this.held.delete(key));
+    for (const oldest of this.held.keys()) {
+      if (this.held.size <= BLOCKS_HELD) break;
+      this.held.delete(oldest);
+    }
+    return reading;
+  }
+}
+
+const blocks = new PackBlocks();
+
+/** A picture's bytes from where it lies in its pack, not yet decoded. */
+export function stripBytes(where: StripWhere): Promise<ArrayBuffer> {
+  const [first, last] = rangeOf(where.range);
+  return blocks.bytes(where.url, first, last);
 }
 
 /** A picture's bytes, fetched as `stripBytes` fetches them, decoded to RGBA. */
@@ -115,7 +164,7 @@ export class ForgeStore {
   }
 
   static async open(manifest: Manifest = renders): Promise<ForgeStore> {
-    const index = (await (await fetched(manifest.base + manifest.index)).json()) as PackIndex;
+    const index = await jsonAt<PackIndex>(manifest.base + manifest.index);
     return new ForgeStore(manifest, index);
   }
 
@@ -123,7 +172,7 @@ export class ForgeStore {
   async table<T>(name: string): Promise<T> {
     const key = this.manifest.tables[name];
     if (!key) throw new Error(`the forge publishes no table named ${name}`);
-    return (await (await fetched(this.manifest.base + key)).json()) as T;
+    return jsonAt<T>(this.manifest.base + key);
   }
 
   /** Where a strip by the forge's path lies; null where nothing was rendered there. */
