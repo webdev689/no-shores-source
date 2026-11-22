@@ -85,8 +85,8 @@ pointer picks the nearest.
 
 Each port city's harbour has a Playlist mark beside its port's (`<city>-playlist`, a list in amber), at sea within the
 port's sight and over the island's side, open whether or not the city's social space is. At sea it is laid beside
-the port's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left, and never
-thinned away by it. Choosing it opens the Playlist screen ([[Interface]], "The Playlist") rather than sailing there
+the port's mark, as far apart as the two are drawn, to its right or, at the picture's right edge, its left, never
+thinned away by it, and shown while its port's mark is. Choosing it opens the Playlist screen ([[Interface]], "The Playlist") rather than sailing there
 or landing.
 
 A locked node's mark ([[World Map]], "Seen whole, reached by nodes") is grey, with a lock for its glyph and "Locked"

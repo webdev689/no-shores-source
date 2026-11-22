@@ -80,3 +80,17 @@ fn a_playlist_clear_pays_the_daily_once_a_day_and_counts_toward_the_weekly_once_
     }
     assert_eq!(kept.vestiges.len(), 3, "the daily's once, then the weekly's two at the third");
 }
+
+#[test]
+fn a_run_opened_before_the_day_turns_pays_no_daily_after_it_but_still_counts_toward_the_week() {
+    let of = RunOf::Playlist { place: "coral-halls".into(), foes_at: 23 };
+    let mut room =
+        Room::dungeon_run(&of, Difficulty::Abyss, FRIDAY_NINE - 1).expect("opened on Thursday's last minute");
+    let player = kept_in(&mut room, &at_level(20), "one").expect("in its band");
+    room.set_minute(FRIDAY_NINE);
+    room.pay_clear(player, 23);
+    let paid = &room.players[&player].character;
+    assert!(!paid.playlist_taken(20_777, Playlist::Abyss) && !paid.playlist_taken(20_778, Playlist::Abyss));
+    assert_eq!(paid.playlist_clears(2_968, Playlist::Abyss), 1, "the same week");
+    assert!(paid.vestiges.is_empty());
+}

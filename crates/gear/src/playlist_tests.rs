@@ -78,6 +78,10 @@ fn a_playlists_first_clear_each_day_pays_a_boss_captains_worth_at_its_tier_and_a
     assert_eq!(character.playlist_of_the_day(DAY, Playlist::Abyss, 23, &DICE), None, "once a day");
     assert!(character.playlist_of_the_day(DAY, Playlist::Elite, 12, &DICE).is_some());
     assert_eq!(character.playlist_of_the_day(DAY - 1, Playlist::Elite, 12, &DICE), None, "never a day behind");
+    let mut fresh = Character::starting();
+    fresh.activity.today(DAY);
+    assert_eq!(fresh.playlist_of_the_day(DAY - 1, Playlist::Elite, 12, &DICE), None, "nothing taken, still behind");
+    assert!(!fresh.activity.today.elite_playlist, "and nothing written");
     assert!(!character.playlist_taken(DAY + 1, Playlist::Abyss), "the next day reads not taken");
     assert!(character.playlist_of_the_day(DAY + 1, Playlist::Abyss, 23, &DICE).is_some(), "the next day anew");
 }
@@ -125,4 +129,15 @@ fn the_playlists_records_are_written_only_once_touched_and_read_from_a_save_that
     assert_eq!(read, activity);
     let old: Activity = serde_json::from_value(plain).expect("an older save reads");
     assert_eq!((old.today.abyss_playlist, old.this_week.elite_playlist), (false, 0));
+}
+
+#[test]
+fn a_clear_paying_the_daily_and_the_weekly_at_once_pays_vestiges_on_dice_of_their_own() {
+    let mut character = Character::starting();
+    character.activity.this_week(WEEK).abyss_playlist = 2;
+    let daily = character.playlist_of_the_day(DAY, Playlist::Abyss, 23, &DICE).expect("the daily");
+    let weekly = character.playlist_of_the_week(WEEK, Playlist::Abyss, 23, &DICE);
+    let drawn = |vestige: &crate::character::Vestige| (vestige.rarity, vestige.slot);
+    assert_eq!(weekly.len(), 2);
+    assert!(weekly.iter().all(|vestige| drawn(vestige) != drawn(&daily)), "{daily:?} {weekly:?}");
 }

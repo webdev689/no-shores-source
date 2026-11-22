@@ -36,8 +36,9 @@ export function bandOf(level: number): number {
 }
 
 /** The run's base a Find a Company request is for, `/v1/find/<base>` by WebSocket: an Elite Dungeon at Normal
- *  (`node-<id>`), the week's at Elite (`node-<id>--elite`) or a playlist (`playlist-elite`, `playlist-abyss`), short enough that its run's name fits 64; never the
- *  Abyss Dungeon of the week, a patrol's dungeon or a run. Null for any other request. */
+ *  (`node-<id>`), the week's at Elite (`node-<id>--elite`) or a playlist (`playlist-elite`, `playlist-abyss`), short
+ *  enough that its run's name fits 64; never the Abyss Dungeon of the week, a patrol's dungeon or a run. Null for any
+ *  other request. */
 export function findingAt(request: Request): string | null {
   if (request.headers.get('Upgrade') !== 'websocket') return null;
   const base = FINDING.exec(new URL(request.url).pathname)?.[1];

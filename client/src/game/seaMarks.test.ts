@@ -76,3 +76,21 @@ test('a port city’s Playlist stands beside its port at sea, never covering it 
     'shown over the side, though Sunspire’s social space is shut',
   );
 });
+
+test('a Playlist shows at sea only while its port’s mark does, so a port thinned away takes its Playlist with it', () => {
+  const ashore = (east: number): Mark['at'] => [ship[0] + east, ship[1] - 900, 2];
+  const marks: Mark[] = [
+    { id: 'near-port', kind: 'port', name: 'Near', at: ashore(0), edge: true },
+    { id: 'near-playlist', kind: 'playlist', name: 'Playlist', at: ashore(0), edge: true },
+    { id: 'far-port', kind: 'port', name: 'Far', at: ashore(1), edge: true },
+    { id: 'far-playlist', kind: 'playlist', name: 'Playlist', at: ashore(1), edge: true },
+  ];
+  const pose = poseOf(eyeFor([ship[0], ship[1], 0], 0, TILT.initial, 260));
+  const shown = seaMarks('sail', marks, [], ship, pose, viewport, null).placed.map((mark) => mark.id);
+  assert.equal(shown.filter((id) => id.endsWith('-port')).length, 1, 'one port of two a metre apart');
+  const port = shown.find((id) => id.endsWith('-port'))?.replace('-port', '');
+  assert.deepEqual(
+    shown.filter((id) => id.endsWith('-playlist')),
+    [`${port}-playlist`],
+  );
+});

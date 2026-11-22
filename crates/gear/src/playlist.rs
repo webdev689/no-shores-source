@@ -5,7 +5,7 @@
 //! Abyss Playlist the day's and one more of another kind. Each playlist's first clear each day pays as the dungeon of
 //! the day does, and its third clear each week pays Essence and Vestiges, once.
 
-use crate::activities::{MODIFIER_KINDS, Modifier, burning, drawn, modifier_of_the_day};
+use crate::activities::{MODIFIER_KINDS, Modifier, PLAYLIST_MODIFIER, burning, drawn, modifier_of_the_day};
 use crate::character::{Character, Stuff, Vestige};
 use crate::dice::Dice;
 use crate::kinds::Stock;
@@ -18,8 +18,6 @@ use crate::world::Difficulty;
 pub const BAND_LEVELS: u8 = 5;
 /// The clears in a week that pay its weekly reward.
 pub const WEEK_CLEARS: u8 = 3;
-/// The kind of draw the Abyss Playlist's second modifier is, apart from every other draw (`activities::drawn`).
-const PLAYLIST_MODIFIER: u64 = 5;
 /// A Boss's rank, whose kill the daily pays as and whose colours its Vestiges take, as the dungeon of the day's.
 const BOSS: u8 = 5;
 
@@ -206,8 +204,8 @@ impl Character {
         }
         (0..playlist.week_vestiges())
             .map(|nth| {
-                // Each on dice of its own, so the Abyss's two are not one Vestige twice.
-                let dice = Dice { tick: dice.tick ^ (u64::from(nth) << 48), ..*dice };
+                // Each on dice of its own, apart from the daily's too, so no two of a clear's Vestiges are one twice.
+                let dice = Dice { tick: dice.tick ^ (u64::from(nth + 1) << 48), ..*dice };
                 let (rarity, slot, level) = of_colours(colours(BOSS), level, &dice);
                 Vestige::new(self.take_id(), rarity, slot, level)
             })

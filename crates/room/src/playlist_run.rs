@@ -1,6 +1,6 @@
 //! A playlist's run: one of the 18 Elite Dungeons at the playlist's tier, every foe at its band's level, with the
-//! day's modifiers and at Abyss its revives (`gear::playlist`). Its clear pays the playlist's daily reward in the day the
-//! run was opened for, and counts toward its weekly reward in that week, once a run for each account.
+//! day's modifiers and at Abyss its revives (`gear::playlist`). Its clear pays the playlist's daily reward in the day
+//! the run was opened for, and counts toward its weekly reward in that week, once a run for each account.
 
 use super::{Pays, Run};
 use crate::{PlayerId, Room};
@@ -9,6 +9,9 @@ use gear::clock::week_of;
 use gear::gate::Place;
 use gear::playlist::Playlist;
 
+/// What a run is laid with: its foes' levels, the run and its gate.
+pub(super) type RunLaid = (Option<(u8, u8)>, Run, Place);
+
 /// A playlist's run at `tier` with its foes at `foes_at`, opened on `day` in `week`: the foes' levels, the run and its
 /// gate; none at Normal, or for a level no band of the playlist's stands its foes at.
 pub(super) fn playlist_run(
@@ -16,7 +19,7 @@ pub(super) fn playlist_run(
     foes_at: u8,
     (day, week): (u64, u64),
     revives: Option<u8>,
-) -> Option<(Option<(u8, u8)>, Run, Place)> {
+) -> Option<RunLaid> {
     let playlist = Playlist::ALL.into_iter().find(|playlist| playlist.tier() == tier)?;
     playlist.band_at(foes_at)?;
     let modifiers = playlist.modifiers(day);

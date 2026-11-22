@@ -1,7 +1,8 @@
 // The marks the sea's view shows: a port's icon over its harbour once the ship is near, the Playlist's beside it, and a
-// mark for each hostile ship within its sight; or the landings over the island's side the view stands over. Laid on the picture, a crowd of
-// ports thinned to the nearest (a hostile ship's mark is never thinned away), and each named where its name fits. A
-// locked node's mark still shows, so the player sees what lies ahead, but a click on it never lands.
+// mark for each hostile ship within its sight; or the landings over the island's side the view stands over. Laid on
+// the picture, a crowd of ports thinned to the nearest (a hostile ship's mark is never thinned away), and each named
+// where its name fits. A locked node's mark still shows, so the player sees what lies ahead, but a click on it never
+// lands.
 import type { SeenPirate } from '../network/messages.ts';
 import type { CameraPose, Viewport } from '../overworld/overworldCamera.ts';
 import { type Mark, type PlacedMark, placeMarks } from '../overworld/overworldMarks.ts';
@@ -105,17 +106,16 @@ export function seaMarks(
   const edges = view === 'sail' ? MARK_EDGES.sea : MARK_EDGES.side;
   const laid = besidePorts(placeMarks(marks, pose, viewport, edges), viewport.width);
   const ships = view === 'sail' ? placeMarks(hostileMarks(hostiles, ship), pose, viewport, edges) : [];
-  // The Playlist stands beside its port, never thinned away by it.
-  const ports =
+  // The Playlist stands beside its port, never thinned away by it, and shows while its port does.
+  const kept =
     view === 'sail'
-      ? [
-          ...declutter(
-            laid.filter((mark) => mark.kind !== 'playlist'),
-            MARK_GAP_PX,
-          ),
-          ...laid.filter((mark) => mark.kind === 'playlist'),
-        ]
+      ? declutter(
+          laid.filter((mark) => mark.kind !== 'playlist'),
+          MARK_GAP_PX,
+        )
       : laid;
+  const beside = (mark: PlacedMark) => kept.some((port) => port.id === `${playlistPort(mark.id)}-port`);
+  const ports = view === 'sail' ? [...kept, ...laid.filter((mark) => mark.kind === 'playlist' && beside(mark))] : kept;
   const placed = [...ports, ...ships].sort((one, other) => other.distance - one.distance);
   const named = namesShown(placed);
   const shown = placed.map((each): ScreenMark => {

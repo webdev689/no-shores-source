@@ -266,6 +266,8 @@ const WEEK_DUNGEONS: u64 = 2;
 const WEEK_MODIFIERS: u64 = 3;
 /// The board's bounties.
 pub(crate) const BOUNTY_DRAWS: u64 = 4;
+/// The Abyss Playlist's second modifier (`playlist::Playlist::modifiers`).
+pub(crate) const PLAYLIST_MODIFIER: u64 = 5;
 
 /// The number the draws roll by, their place among a kind's added: any would do, as their own seed keeps them apart
 /// from every room's dice.

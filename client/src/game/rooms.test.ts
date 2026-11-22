@@ -163,6 +163,12 @@ test('a dungeon at Elite or Abyss and every Elite Dungeon is a run, joined where
     run: 'k3j4h5g6',
     playlist: 28,
   });
+  for (const name of [
+    'node-krakens-grotto--playlist-12--run-k3j4h5g6',
+    'node-krakens-grotto--elite--playlist-12',
+    'node-saltgrass-downs--elite--dungeon-1--playlist-12--run-k3j4h5g6',
+  ])
+    assert.equal(nodeOfRoom(name), null, name);
   assert.deepEqual(nodeOfRoom('node-krakens-grotto--run-k3j4h5g6'), {
     id: 'krakens-grotto',
     seas: 'normal',

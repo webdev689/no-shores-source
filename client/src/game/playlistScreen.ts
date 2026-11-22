@@ -209,7 +209,8 @@ export class PlaylistView {
     const view = ui.size;
     const size = sizesOf(view.width, view.height, 1).label;
     const finding = search.finding !== null;
-    // As many tiles across as fit, four at most, the rest on lines below, scrolled where they stand taller than the screen.
+    // As many tiles across as fit, four at most, the rest on lines below, scrolled where they stand taller than the
+    // screen.
     const wide = Math.min(view.width - 32, WINDOW_MOST);
     const inside = wide - 48;
     const across = Math.max(

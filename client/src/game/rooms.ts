@@ -87,6 +87,8 @@ export function nodeOfRoom(room: string): {
   const dungeon = found[3] === undefined ? null : Number(found[3]);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
   const playlist = found[4] === undefined ? null : Number(found[4]);
+  // A playlist's run is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it (`roomNames.ts`).
+  if (playlist !== null && (dungeon !== null || found[5] === undefined || seas === 'normal')) return null;
   return { id: found[1], seas, dungeon, run: found[5] ?? null, playlist };
 }
 

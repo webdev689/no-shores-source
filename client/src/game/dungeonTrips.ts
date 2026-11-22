@@ -1,7 +1,7 @@
 // Going into a dungeon and out again: a patrol's or an Elite Dungeon's from its node's entrance, back out before the
 // door the player went in by, facing away from it; a sea island's from its door on the sea, back out onto the island;
-// and a run launched or found from the Playlist, from the sea and back out onto it where the ship lies. Every dungeon at
-// Elite or Abyss and every Elite Dungeon is a run: the company's where a member is in one.
+// and a run launched or found from the Playlist, from the sea and back out onto it where the ship lies. Every dungeon
+// at Elite or Abyss and every Elite Dungeon is a run: the company's where a member is in one.
 import { seaDungeonRoom } from '../../../server/roomNames.ts';
 import { activitiesAt, eliteRun } from './activities.ts';
 import { askLayout, type DungeonAsk, type DungeonLayout, type StyleKey } from './dungeonLayout.ts';
