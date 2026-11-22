@@ -1,308 +1,280 @@
 // The Reckoning: a boss's score in C minor and a clock. Its motif is a quarter chime struck in the minor and broken:
 // its fourth change ends on F sharp, the tritone of home, where the hour should strike. A harpsichord ticks an
-// escapement in eighths and sixteenths over the chord, wood blocks tick and tock on the beat, tubular bells toll the
-// chime; the harmony turns on the augmented triad (A-flat, C, E: the minor's own third undone) and the Neapolitan
-// D-flat; the theme is on the brass and the horns, low. Three phases at 136, 142 and 152 beats a minute, the second
-// a canon (the theme on the brass, its echo two beats behind on the strings an octave down, over E major against C
-// minor); the last, at 160, C minor and D-flat a bar each with the bell counting every bar. When the boss falls the
-// chime is mended: the quarters in C major, ending home.
+// escapement over the chord, wood blocks tick and tock, tubular bells toll the chime; the harmony turns on the
+// augmented triad and the Neapolitan D-flat; the theme is on the brass and the horns, low (reckoningParts.ts). Three
+// phases at 136, 142 and 152, the second a canon, and a last stand at 160, each written in takes of eight bars
+// (form.ts): the clock alone, the theme, the theme answered, the theme in full, the theme over turned chords, the
+// clock stopped to its woods and its chime; each in one of the clock's three feels. When the boss falls the chime is
+// mended: the quarters in C major, ending home.
 
-import { type Press, type Song, type Tune, type Writer, lay, makeSong, midiNote, tune } from './score.ts';
+import { type TakeSpec, makeForm } from './form.ts';
+import {
+  BROKEN,
+  CANON,
+  CHORDS,
+  type ChordName,
+  type Drum,
+  FALL_HARP,
+  FIRST,
+  LAST,
+  MENDED,
+  SPEC,
+  THEME_ONE,
+  THEME_THREE,
+  THEME_TWO,
+  THIRD,
+  type Track,
+  type Write,
+  chimeBar,
+  escapement,
+  floorBar,
+  notes,
+  press,
+  progression,
+  theme,
+  warKit,
+} from './reckoningParts.ts';
+import { type Song, type Tune, makeSong, midiNote } from './score.ts';
 
-type Track =
-  'clock' | 'bass' | 'strings' | 'brass' | 'choir' | 'organ' | 'timpani' | 'chime' | 'bells' | 'horn' | 'harp' | 'hit';
-type Drum =
-  | 'kick'
-  | 'snare'
-  | 'lowTom'
-  | 'highFloorTom'
-  | 'tom'
-  | 'lowMidTom'
-  | 'hiMidTom'
-  | 'crash'
-  | 'chinese'
-  | 'rideBell'
-  | 'claves'
-  | 'tick'
-  | 'tock'
-  | 'surdo';
-type Write = Writer<Track, Drum>;
-
-/** The escapement left, the chime further left, the bells and the strings right: a clock's face across the stereo. */
-const TRACKS = {
-  clock: { program: 6, volume: 100, pan: 44, role: 'pulse' },
-  bass: { program: 32, volume: 98, pan: 64, role: 'bed' },
-  strings: { program: 48, volume: 104, pan: 84, role: 'bed' },
-  brass: { program: 61, volume: 120, pan: 58, role: 'lead' },
-  choir: { program: 52, volume: 110, pan: 72, role: 'peak' },
-  organ: { program: 19, volume: 84, pan: 64, role: 'bed' },
-  timpani: { program: 47, volume: 112, pan: 64, role: 'combat' },
-  chime: { program: 10, volume: 106, pan: 34, role: 'tension' },
-  bells: { program: 14, volume: 98, pan: 92, role: 'tension' },
-  horn: { program: 60, volume: 112, pan: 70, role: 'peak' },
-  harp: { program: 46, volume: 94, pan: 40, role: 'bed' },
-  hit: { program: 55, volume: 106, pan: 64, role: 'peak' },
-} as const;
-
-/** The clock's woods (the tick, the tock) and the surdo are the tension's; the rest of the kit is the fight's. */
-const KIT = {
-  volume: 112,
-  role: 'combat',
-  roles: { tick: 'tension', tock: 'tension', surdo: 'tension' },
-  keys: {
-    kick: 36,
-    snare: 38,
-    lowTom: 41,
-    highFloorTom: 43,
-    tom: 45,
-    lowMidTom: 47,
-    hiMidTom: 48,
-    crash: 49,
-    chinese: 52,
-    rideBell: 53,
-    claves: 75,
-    tick: 76,
-    tock: 77,
-    surdo: 87,
-  },
-} as const;
-
-/** A gentle compressor (4:1 over a wide knee) and a soft ceiling three decibels under the clip; DRIVE sets the first
- *  phase at -18.5 dBFS, the others keeping their rise over it. */
-const PRESS = { threshold: -18, knee: 12, ratio: 4, attack: 0.003, release: 0.25, ceiling: -3 } as const;
-const DRIVE = 0.36;
-const press = (out: number): Press => ({ ...PRESS, out: out * DRIVE });
-const SPEC = { tracks: TRACKS, kit: KIT, edge: { wrap: true, clip: false, hold: false, restrike: false } } as const;
-
-const notes = (text: string): readonly string[] => text.split(' ');
-
-/** The chime, a change a bar: broken, and mended. */
-const BROKEN = ['Eb5 D5 C5 G4', 'C5 Eb5 D5 G4', 'Eb5 C5 D5 G4', 'G4 D5 Eb5 F#5'].map(notes);
-const MENDED = ['E5 D5 C5 G4', 'C5 E5 D5 G4', 'E5 C5 D5 G4', 'G4 D5 E5 C5'].map(notes);
-
-/** A chord's bass and timpani, its pad (the organ), the strings' and the choir's voicings, its escapement (eight
- *  eighths, the root's swing against its fifth and a turn at the end), its stab, and the fall's harp, up and back. */
-const chord = (bass: string, timp: string, pad: string, str: string, choir: string, clock: string, stab: string) => ({
-  bass,
-  timp,
-  pad: notes(pad),
-  str: notes(str),
-  choir: notes(choir),
-  clock: notes(clock),
-  stab: notes(stab),
-});
-const CHORDS = {
-  Cm: chord('C2', 'C2', 'C3 G3 C4', 'C4 Eb4 G4', 'C3 G3 Eb4', 'C4 G3 Eb4 G3 C4 G3 D4 G3', 'C3 G3 C4'),
-  Aaug: chord('Ab1', 'C2', 'Ab2 E3 C4', 'C4 E4 Ab4', 'Ab2 E3 C4', 'C4 Ab3 E4 Ab3 C4 Ab3 E4 Ab3', 'Ab2 E3 C4'),
-  Fm: chord('F1', 'F2', 'F2 C3 F3', 'C4 F4 Ab4', 'F2 C3 Ab3', 'C4 F3 Ab3 F3 C4 F3 Bb3 F3', 'F2 C3 F3'),
-  G: chord('G1', 'G2', 'G2 D3 G3', 'B3 D4 G4', 'G2 D3 B3', 'B3 G3 D4 G3 B3 G3 F4 G3', 'G2 D3 G3'),
-  Db: chord('Db2', 'Ab2', 'Db3 Ab3 Db4', 'Db4 F4 Ab4', 'Db3 Ab3 F4', 'Db4 Ab3 F4 Ab3 Db4 Ab3 C4 Ab3', 'Db3 Ab3 Db4'),
-  Bbm: chord('Bb1', 'F2', 'Bb2 F3 Bb3', 'Db4 F4 Bb4', 'Bb2 F3 Db4', 'Db4 Bb3 F4 Bb3 Db4 Bb3 C4 Bb3', 'Bb2 F3 Bb3'),
-  E: chord('E2', 'B2', 'E3 B3 E4', 'E4 G#4 B4', 'E3 B3 G#4', 'E4 B3 G#4 B3 E4 B3 F#4 B3', 'E3 B3 E4'),
-  Ab: chord('Ab1', 'Eb2', 'Ab2 Eb3 Ab3', 'C4 Eb4 Ab4', 'Ab2 Eb3 C4', 'C4 Ab3 Eb4 Ab3 C4 Ab3 Bb3 Ab3', 'Ab2 Eb3 Ab3'),
-  C: chord('C2', 'C2', 'C3 G3 E4', 'C4 E4 G4', 'C3 G3 E4', 'C4 G3 E4 G3 C4 G3 D4 G3', 'C4 E4 G4'),
+type Section = 'tick' | 'theme' | 'answer' | 'full' | 'turn' | 'stop';
+/** The sections a take may lead to, and those a phase may open on: the clock alone, or the clock stopped. */
+const SECTIONS: Readonly<Record<Section, { readonly next: readonly Section[]; readonly opens?: boolean }>> = {
+  tick: { next: ['theme', 'answer', 'turn'], opens: true },
+  theme: { next: ['answer', 'full', 'turn', 'stop'] },
+  answer: { next: ['theme', 'full', 'stop'] },
+  full: { next: ['theme', 'turn', 'stop'] },
+  turn: { next: ['answer', 'full', 'stop'] },
+  stop: { next: ['tick', 'theme', 'answer'], opens: true },
 };
-type ChordName = keyof typeof CHORDS;
-const FALL_HARP = notes('C3 G3 C4 E4 G4 E4 C4 G3');
+/** Each phase's takes: a section, the clock's feel it keeps (no two of a section in one), and which of its leads. */
+const PHASE_TAKES: readonly (readonly [Section, number, number])[] = [
+  ['tick', 0, 0],
+  ['tick', 2, 1],
+  ['theme', 1, 0],
+  ['theme', 2, 1],
+  ['answer', 0, 0],
+  ['answer', 1, 1],
+  ['full', 2, 0],
+  ['full', 0, 1],
+  ['turn', 1, 0],
+  ['turn', 0, 1],
+  ['stop', 2, 0],
+  ['stop', 1, 1],
+];
 
-/** The progressions, a chord a bar: the first phase's (C minor, the augmented, the minor four, the dominant, the
- *  Neapolitan), the canon's (to E major, a third apart), the third's, and the last's. */
-const progression = (text: string): readonly ChordName[] => text.split(' ') as ChordName[];
-const FIRST = progression('Cm Aaug Fm G Cm Db G G');
-const CANON = progression('Cm E Cm Ab Fm Db G G');
-const THIRD = progression('Cm Db Bbm Db Fm Aaug G G');
-const LAST = progression('Cm Db Cm Db Cm Db G G');
+/** A phase: its tempo, level and press, its progression and the same turned under its theme, and its own theme. */
+interface Phase {
+  readonly number: 1 | 2 | 3;
+  readonly bpm: number;
+  readonly level: number;
+  readonly out: number;
+  readonly harmony: readonly ChordName[];
+  readonly turn: readonly ChordName[];
+  readonly theme: Tune;
+}
+const PHASES: readonly Phase[] = [
+  {
+    number: 1,
+    bpm: 136,
+    level: 1.42,
+    out: 5.2,
+    harmony: FIRST,
+    turn: progression('Cm Aaug Db G Ab Bbm G G'),
+    theme: THEME_ONE,
+  },
+  {
+    number: 2,
+    bpm: 142,
+    level: 1.55,
+    out: 5.2,
+    harmony: CANON,
+    turn: progression('Ab E Cm Fm Db Bbm G G'),
+    theme: THEME_TWO,
+  },
+  {
+    number: 3,
+    bpm: 152,
+    level: 1.62,
+    out: 5.6,
+    harmony: THIRD,
+    turn: progression('Ab Bbm Db Fm Fm Aaug G G'),
+    theme: THEME_THREE,
+  },
+];
 
-/** The theme three ways: opening on the chime's own first notes, low, leaning on E natural against E-flat; dotted and
- *  climbing for the canon; in eighths, up the chord and down, for the third phase. */
-const THEME_ONE = tune(
-  'C4:1 G3:1 Eb4:1.5 D4:.5 | C4:2 E4:1 Ab4:1 | F4:1.5 Ab4:.5 G4:1 F4:1 | D4:2 B3:1 G3:1 | Eb4:1 D4:1 C4:1 G3:1 | Db4:2 F4:1 Ab4:1 | G4:1.5 F4:.5 Eb4:1 D4:1 | D4:2 G3:1 B3:1',
-);
-const THEME_TWO = tune(
-  'G4:.75 G4:.25 Eb4:1 C4:1 G4:1 | G#4:.75 G#4:.25 B4:1 E5:2 | G4:.75 Eb4:.25 C5:1 Bb4:1 G4:1 | Ab4:2 C5:1 Eb5:1 | F4:.75 F4:.25 Ab4:1 C5:1 Db5:1 | Db5:1.5 C5:.5 Ab4:1 F4:1 | G4:1 B4:1 D5:1 F5:1 | Eb5:2 D5:1 B4:1',
-);
-const THEME_THREE = tune(
-  'C5:.5 C5:.5 D5:.5 Eb5:.5 G5:1 C5:1 | Db5:1 F5:.5 Ab5:.5 F5:1 Db5:1 | Bb4:.5 Bb4:.5 Db5:.5 F5:.5 Bb5:1 F5:1 | Ab5:1 F5:1 Db5:1 Ab4:1 | F5:.5 G5:.5 Ab5:.5 G5:.5 F5:1 C5:1 | E5:1 Ab5:1 C6:1 Ab5:1 | B4:.5 D5:.5 F5:.5 Ab5:.5 G5:1 F5:1 | G5:2 F#5:1 G5:1',
-);
-/** A theme's eight bars, `late` beats behind for the canon's echo (which runs round the loop's seam). */
-const theme = (w: Write, first: number, bars: Tune, track: Track, velocity: number, octave = 0, late = 0) =>
-  lay(w, track, first, bars, velocity, { octave, late, accent: 10 });
-
-/** A change of the chime on a track, a note a beat. */
-function chimeBar(w: Write, bar: number, change: readonly string[], track: Track, velocity: number, octave = 0): void {
-  change.forEach((n, i) => w.note(track, bar, i, 0.95, midiNote(n) + 12 * octave, velocity - i * 3));
+/** The broken chime in a feel: a change at the take's head (each half's in the third phase), the same half a take
+ *  later, or its four notes tolled slowly, a bar each. */
+function tolled(w: Write, bar: number, number: number, feel: number, change: number): void {
+  const [track, octave, every] =
+    number === 2 ? (['chime', 0, 8] as const) : (['bells', -1, number === 3 ? 4 : 8] as const);
+  const notesOf = BROKEN[(change + Math.floor(bar / every)) % 4] ?? [];
+  if ((feel === 0 && bar % every === 0) || (feel === 1 && bar % every === every / 2))
+    chimeBar(w, bar, notesOf, track, 98, octave);
+  if (feel === 2) w.note(track, bar, 0, 2, midiNote(notesOf[bar % 4] ?? 'G4') + 12 * octave, 90);
 }
 
-/** The escapement under a chord for a bar, in eighths or sixteenths, the bar's first and each half's first accented. */
-function escapement(w: Write, bar: number, name: ChordName, { fast = false, vel = 1 } = {}): void {
-  const clock = CHORDS[name].clock;
-  if (fast)
-    for (let sixteenth = 0; sixteenth < 16; sixteenth++)
-      w.note(
-        'clock',
-        bar,
-        sixteenth * 0.25,
-        0.2,
-        clock[sixteenth % 8],
-        (sixteenth % 8 === 0 ? 100 : sixteenth % 4 === 0 ? 88 : 72) * vel,
-      );
-  else clock.forEach((n, i) => w.note('clock', bar, i * 0.5, 0.42, n, (i === 0 ? 98 : i === 4 ? 88 : 74) * vel));
+/** The leads over a take: the clock alone, or the brass striking the chime into it; the phase's theme on the brass
+ *  (its canon on the strings in the second), or the first theme with the horn over it; the theme answered, half and
+ *  half; in full; over the turned chords, on the brass or the horn; the stopped clock's chime, or the theme's head. */
+function leads(w: Write, { number, theme: own }: Phase, section: Section, lead: number): void {
+  const low = number === 3 ? -1 : 0;
+  const echo = number === 2 ? 2 : 0;
+  if (section === 'tick') {
+    if (lead) [0, 1].forEach((change) => chimeBar(w, 4 + change * 2, BROKEN[change] ?? [], 'brass', 108, -1));
+  } else if (section === 'stop') {
+    if (lead) theme(w, 4, own, 'horn', 96, { octave: low, to: 2 });
+    else for (const bar of [0, 4]) chimeBar(w, bar, BROKEN[3] ?? [], 'brass', 100 + bar, -1);
+  } else if (section === 'theme' && lead) {
+    theme(w, 0, THEME_ONE, 'brass', 114);
+    theme(w, 0, THEME_ONE, 'horn', 102, { octave: 1, late: echo });
+  } else if (section === 'theme') {
+    theme(w, 0, own, 'brass', 112, { octave: low });
+    if (number === 2) theme(w, 0, own, 'strings', 92, { octave: -1, late: 2 });
+  } else if (section === 'answer' && number === 2) {
+    theme(w, 0, own, lead ? 'strings' : 'brass', 116, { octave: -lead });
+    theme(w, 0, own, lead ? 'brass' : 'strings', 96, { octave: lead - 1, late: 2 });
+  } else if (section === 'answer') {
+    const [call, reply] = lead
+      ? (['strings', 'brass'] as const)
+      : (['brass', number === 3 ? 'strings' : 'horn'] as const);
+    theme(w, 0, own, call, 116, { octave: call === 'brass' ? low : number === 1 ? 1 : 0, to: 4 });
+    theme(w, 4, own, reply, 110, { octave: reply === 'brass' ? low : number === 1 ? 1 : 0, from: 4 });
+  } else if (section === 'full') {
+    theme(w, 0, own, lead ? 'horn' : 'brass', 120, { octave: low });
+    theme(w, 0, own, lead ? 'brass' : 'horn', 104, { octave: lead ? -1 : low, late: echo });
+    if (number === 3) theme(w, 0, own, 'strings', 100, { from: lead ? 4 : 0 });
+    else theme(w, 0, own, 'choir', 98, { octave: number === 2 ? -1 : 0 });
+  } else {
+    theme(w, 0, own, lead ? 'horn' : 'brass', 114, { octave: lead && number === 1 ? 1 : low });
+    if (number === 2) theme(w, 0, own, 'strings', 94, { octave: -1, late: 2 });
+  }
 }
 
-/** The chord's floor for a bar: its bass twice, its pad, and if asked its strings and its choir. */
-function floorBar(w: Write, bar: number, name: ChordName, { strings = false, choir = false, organ = 1, vel = 1 } = {}) {
-  const tones = CHORDS[name];
-  w.note('bass', bar, 0, 1.8, tones.bass, 104 * vel);
-  w.note('bass', bar, 2, 1.8, tones.bass, 96 * vel);
-  if (organ > 0) for (const n of tones.pad) w.note('organ', bar, 0, 4, n, 80 * organ);
-  if (strings) for (const n of tones.str) w.note('strings', bar, 0, 4, n, 90 * vel);
-  if (choir) for (const n of tones.choir) w.note('choir', bar, 0, 4, n, 96 * vel);
-}
-
-/** The war's drums for a bar: half time, `full`, or the kick on `every` beat; the clock's woods ticking and tocking
- *  through all of it; the ride bell's gears on the offbeats; the claves `racing` in sixteenths; a fill into every
- *  fourth bar. */
-function warKit(w: Write, bar: number, { full = false, every = false, gears = false, racing = false } = {}): void {
-  w.hit('surdo', bar, 0, 106);
-  if (every) for (let beat = 0; beat < 4; beat++) w.hit('kick', bar, beat, beat === 0 ? 112 : 98);
-  else
-    for (const beat of full ? [0, 0.75, 1.5, 2, 2.75, 3.5] : [0, 0.75, 1.5])
-      w.hit('kick', bar, beat, beat === 0 ? 110 : 94);
-  for (const beat of full || every ? [1, 3] : [2]) w.hit('snare', bar, beat, 108);
-  for (let beat = 0; beat < 4; beat++) w.hit(beat % 2 === 0 ? 'tick' : 'tock', bar, beat, 84 - (beat % 2) * 8);
-  if (gears) for (let beat = 0; beat < 4; beat++) w.hit('rideBell', bar, beat + 0.5, 70);
-  if (racing)
-    for (let sixteenth = 0; sixteenth < 16; sixteenth++)
-      w.hit('claves', bar, sixteenth * 0.25, sixteenth % 4 === 0 ? 80 : 60);
-  if (bar % 4 === 3)
-    (['hiMidTom', 'lowMidTom', 'tom', 'highFloorTom', 'lowTom'] as const).forEach((k, i) =>
-      w.hit(k, bar, 2.75 + i * 0.25, 88 + i * 5),
-    );
-  if (bar % 4 === 0) w.hit('crash', bar, 0, 96);
-}
-
-/** Phase one: the escapement in eighths, sixteenths into every fourth bar and through the last eight, the brass's
- *  stabs, the theme from the ninth bar, then the horns and the choir; a change of the broken chime each section. */
-function phaseOne(): Song {
-  return makeSong({ ...SPEC, name: 'reckoning-1', bpm: 136, bars: 32, level: 1.42, press: press(5.2) }, (w) => {
-    for (let bar = 0; bar < 32; bar++) {
-      const name = FIRST[bar % 8];
-      const tones = CHORDS[name];
-      floorBar(w, bar, name, { strings: true, choir: bar >= 16 });
-      escapement(w, bar, name, { fast: bar % 4 === 3 || bar >= 24 });
-      w.note('timpani', bar, 0, 1, tones.timp, 110);
-      w.note('timpani', bar, 1.5, 0.5, tones.timp, 94);
-      if (bar < 8 || bar % 2 === 0)
-        for (const n of tones.stab) {
-          w.note('brass', bar, 0, 0.9, n, 112);
-          w.note('brass', bar, 1.5, 0.45, n, 98);
-        }
-      if (bar % 4 === 0) for (const n of tones.stab) w.note('hit', bar, 0, 1, n, 102);
-      if (bar % 8 === 0) chimeBar(w, bar, BROKEN[(bar / 8) % 4], 'bells', 96, -1);
-      warKit(w, bar, { gears: bar >= 16 });
-    }
-    theme(w, 8, THEME_ONE, 'brass', 112);
-    theme(w, 16, THEME_ONE, 'brass', 116);
-    theme(w, 16, THEME_ONE, 'horn', 100, 1);
-    theme(w, 24, THEME_ONE, 'brass', 120);
-    theme(w, 24, THEME_ONE, 'horn', 106);
-    theme(w, 24, THEME_ONE, 'choir', 100);
-  });
-}
-
-/** Phase two, the canon: the theme on the brass, its echo on the strings two beats behind and an octave down, over the
- *  escapement driving every other bar; the bells struck in pairs; the kit in full time. */
-function phaseTwo(): Song {
-  return makeSong({ ...SPEC, name: 'reckoning-2', bpm: 142, bars: 32, level: 1.55, press: press(5.2) }, (w) => {
-    for (let bar = 0; bar < 32; bar++) {
-      const name = CANON[bar % 8];
-      const tones = CHORDS[name];
-      floorBar(w, bar, name, { choir: true, organ: 1.1 });
-      escapement(w, bar, name, { fast: bar % 2 === 1 });
-      w.note('timpani', bar, 0, 1, tones.timp, 110);
-      w.note('timpani', bar, 1.5, 0.5, tones.timp, 94);
-      w.note('timpani', bar, 2, 1, tones.timp, 104);
-      for (const n of tones.stab) {
-        w.note('hit', bar, 0, 1, n, 102);
-        if (bar % 2 === 1) w.note('hit', bar, 2.5, 0.5, n, 96);
-      }
-      if (bar % 4 === 0) {
-        w.note('bells', bar, 0, 2, tones.pad[0], 94);
-        w.note('bells', bar, 0.5, 2, tones.pad[1], 86);
-      }
-      if (bar % 8 === 0) chimeBar(w, bar, BROKEN[(bar / 8) % 4], 'chime', 100);
-      warKit(w, bar, { full: true, gears: true });
-      if (bar % 8 === 7) w.hit('chinese', bar, 3, 96);
-    }
-    theme(w, 0, THEME_TWO, 'brass', 112);
-    theme(w, 0, THEME_TWO, 'strings', 92, -1, 2);
-    theme(w, 8, THEME_TWO, 'brass', 116);
-    theme(w, 8, THEME_TWO, 'strings', 96, -1, 2);
-    theme(w, 16, THEME_ONE, 'brass', 114);
-    theme(w, 16, THEME_ONE, 'horn', 102, 1, 2);
-    theme(w, 24, THEME_TWO, 'brass', 120);
-    theme(w, 24, THEME_TWO, 'horn', 104, 0, 2);
-    theme(w, 24, THEME_TWO, 'choir', 96, -1);
-  });
-}
-
-/** Phase three: the escapement in sixteenths through every bar, the claves racing, the kick on every beat, the choir
- *  chanting the beat, the theme in eighths over it all, the broken chime tolled every fourth bar. */
-function phaseThree(): Song {
-  return makeSong({ ...SPEC, name: 'reckoning-3', bpm: 152, bars: 32, level: 1.62, press: press(5.6) }, (w) => {
-    for (let bar = 0; bar < 32; bar++) {
-      const name = THIRD[bar % 8];
-      const tones = CHORDS[name];
-      floorBar(w, bar, name, { strings: true, organ: 1.2, vel: 1.05 });
-      escapement(w, bar, name, { fast: true, vel: 1.05 });
-      for (let beat = 0; beat < 4; beat++)
-        for (const n of tones.choir) w.note('choir', bar, beat, 0.9, n, beat === 0 ? 106 : 92);
+/** A take of a phase: the floor in the feel, the escapement (racing more as the phases climb), the timpani, the
+ *  stabs, the hits and the third's choir on the beat, the bells and the chime, the war's drums (stopped to the woods
+ *  and the surdo in the breakdown); and its leads. */
+function phaseTake(w: Write, phase: Phase, section: Section, feel: number, lead: number): void {
+  const { number } = phase;
+  const chords = section === 'turn' ? phase.turn : phase.harmony;
+  const stop = section === 'stop';
+  // The organ follows the section: lowest with the clock stopped or alone, fullest under the theme in full.
+  const swell = { tick: 0.85, theme: 1, answer: 0.92, full: 1.12, turn: 1.05, stop: 0.75 }[section];
+  for (let bar = 0; bar < 8; bar++) {
+    const name: ChordName = chords[bar] ?? 'Cm';
+    const tones = CHORDS[name];
+    if (number === 1)
+      floorBar(w, bar, name, {
+        strings: true,
+        choir: !['stop', 'tick', 'theme'].includes(section),
+        organ: swell,
+        feel,
+      });
+    else if (number === 2) floorBar(w, bar, name, { choir: !stop, organ: 1.1 * swell, feel });
+    else floorBar(w, bar, name, { strings: true, organ: 1.2 * swell, vel: 1.05, feel });
+    const fast = !stop && (number === 3 || (number === 2 ? bar % 2 === 1 : bar % 4 === 3 || section === 'full'));
+    escapement(w, bar, name, { fast, vel: number === 3 ? 1.05 : 1, feel });
+    if (stop) {
+      if (bar % 2 === 0) w.note('timpani', bar, 0, 1, tones.timp, 88);
+    } else if (number === 3)
       for (let i = 0; i < 8; i++)
         w.note('timpani', bar, i * 0.5, 0.4, i % 4 === 3 ? 'G2' : tones.timp, i === 0 ? 110 : 96);
+    else
+      for (const [beat, beats, velocity] of number === 2
+        ? [
+            [0, 1, 110],
+            [1.5, 0.5, 94],
+            [2, 1, 104],
+          ]
+        : [
+            [0, 1, 110],
+            [1.5, 0.5, 94],
+          ])
+        w.note('timpani', bar, beat ?? 0, beats ?? 1, tones.timp, velocity ?? 100);
+    if (!stop && (section === 'tick' || (number === 1 && bar % 2 === 0)))
       for (const n of tones.stab) {
-        w.note('hit', bar, 0, 1, n, 104);
-        w.note('hit', bar, 2.5, 0.5, n, 98);
+        w.note('brass', bar, 0, 0.9, n, 112);
+        w.note('brass', bar, 1.5, 0.45, n, 98);
       }
-      if (bar % 4 === 0) chimeBar(w, bar, BROKEN[(bar / 4) % 4], 'bells', 98, -1);
-      warKit(w, bar, { every: true, racing: true });
-      if (bar % 2 === 0) w.hit('crash', bar, 0, 96);
+    if (!stop && (number > 1 || bar % 4 === 0))
+      for (const n of tones.stab) {
+        w.note('hit', bar, 0, 1, n, 102);
+        if (number === 3 || (number === 2 && bar % 2 === 1)) w.note('hit', bar, 2.5, 0.5, n, 96);
+      }
+    if (!stop && number === 3)
+      for (let beat = 0; beat < 4; beat++)
+        for (const n of tones.choir) w.note('choir', bar, beat, 0.9, n, beat === 0 ? 106 : 92);
+    if (number === 2 && bar % 4 === 0) {
+      w.note('bells', bar, 0, 2, tones.pad[0] ?? 'C3', 94);
+      w.note('bells', bar, 0.5, 2, tones.pad[1] ?? 'G3', 86);
     }
-    theme(w, 0, THEME_THREE, 'brass', 114, -1);
-    theme(w, 8, THEME_THREE, 'brass', 118, -1);
-    theme(w, 8, THEME_THREE, 'strings', 96);
-    theme(w, 16, THEME_ONE, 'brass', 116);
-    theme(w, 16, THEME_ONE, 'horn', 104, 1);
-    theme(w, 24, THEME_THREE, 'brass', 122, -1);
-    theme(w, 24, THEME_THREE, 'horn', 106, -1);
-    theme(w, 24, THEME_THREE, 'strings', 100);
-  });
+    tolled(w, bar, number, feel, Object.keys(SECTIONS).indexOf(section));
+    const gears = number === 2 || (number === 1 && section !== 'tick');
+    warKit(w, bar, { full: number === 2, every: number === 3, gears, racing: number === 3, stopped: stop, feel });
+    if (!stop && number === 2 && bar === 7) w.hit('chinese', bar, 3, 96);
+    if (!stop && number === 3 && bar % 2 === 0) w.hit('crash', bar, 0, 96);
+  }
+  leads(w, phase, section, lead);
 }
 
-/** The last stand: C minor and the Neapolitan a bar each, the bell tolling every bar and louder each time, the broken
- *  change hammered on the brass and the horns in octaves, the escapement and the claves in sixteenths. */
-function lastStand(): Song {
-  return makeSong({ ...SPEC, name: 'reckoning-last', bpm: 160, bars: 16, level: 1.66, press: press(5.8) }, (w) => {
-    for (let bar = 0; bar < 16; bar++) {
-      const name = LAST[bar % 8];
-      const tones = CHORDS[name];
-      floorBar(w, bar, name, { strings: true, choir: true, organ: 1.2, vel: 1.05 });
-      escapement(w, bar, name, { fast: true, vel: 1.1 });
-      w.note('bells', bar, 0, 3.5, bar % 8 >= 6 ? 'F#4' : 'C4', 100 + Math.min(20, bar));
-      for (let i = 0; i < 8; i++) w.note('timpani', bar, i * 0.5, 0.4, tones.timp, i === 0 ? 114 : 96);
-      if (bar % 2 === 0) {
-        chimeBar(w, bar, BROKEN[3], 'brass', 118, -1);
-        chimeBar(w, bar, BROKEN[3], 'horn', 108, -2);
-      } else
-        for (const n of tones.stab) {
-          w.note('brass', bar, 0, 0.9, n, 114);
-          w.note('brass', bar, 2, 0.9, n, 108);
-          w.note('hit', bar, 0, 1, n, 106);
-        }
-      warKit(w, bar, { every: true, racing: true });
-      w.hit('crash', bar, 0, bar % 2 === 0 ? 100 : 86);
-    }
-  });
+/** A phase, in takes. */
+const phaseSong = (phase: Phase): Song =>
+  makeForm(
+    { ...SPEC, name: `reckoning-${phase.number}`, bpm: phase.bpm, level: phase.level, press: press(phase.out) },
+    PHASE_TAKES.map(([section, feel, lead]): TakeSpec<Track, Drum> => {
+      const { next, opens } = SECTIONS[section];
+      return { section, bars: 8, next, opens, write: (w) => phaseTake(w, phase, section, feel, lead) };
+    }),
+  );
+
+type Stand = 'count' | 'toll' | 'hammer';
+/** The last stand's sections: C minor and D-flat counted, the same with the bell louder and the changes struck in
+ *  turn, and the half step hammered from D-flat. */
+const STAND: Readonly<Record<Stand, { harmony: readonly ChordName[]; next: readonly Stand[]; opens?: boolean }>> = {
+  count: { harmony: LAST, next: ['toll', 'hammer'], opens: true },
+  toll: { harmony: LAST, next: ['count', 'hammer'] },
+  hammer: { harmony: progression('Db Cm Db Cm Bbm Db G G'), next: ['count', 'toll'], opens: true },
+};
+
+/** A take of the last stand: the floor and the escapement racing in the feel, the bell counting every bar (louder
+ *  in the toll, twice a bar in the hammer, F sharp in the last two), the timpani in eighths, a change of the chime
+ *  hammered on the brass and the horns every other bar and stabs between, the drums at their hardest. */
+function standTake(w: Write, section: Stand, feel: number): void {
+  const { harmony } = STAND[section];
+  for (let bar = 0; bar < 8; bar++) {
+    const name: ChordName = harmony[bar] ?? 'Cm';
+    const tones = CHORDS[name];
+    floorBar(w, bar, name, { strings: true, choir: true, organ: 1.2, vel: 1.05, feel });
+    escapement(w, bar, name, { fast: true, vel: 1.1, feel });
+    const bell = bar >= 6 ? 'F#4' : 'C4';
+    if (section === 'hammer') for (const beat of [0, 2]) w.note('bells', bar, beat, 1.8, beat ? 'F#4' : 'C4', 104);
+    else w.note('bells', bar, 0, 3.5, bell, section === 'toll' ? 108 + bar : 100 + bar);
+    for (let i = 0; i < 8; i++) w.note('timpani', bar, i * 0.5, 0.4, tones.timp, i === 0 ? 114 : 96);
+    if (bar % 2 === (section === 'hammer' ? 1 : 0)) {
+      const change = BROKEN[section === 'toll' ? (bar / 2) % 4 : 3] ?? [];
+      chimeBar(w, bar, change, 'brass', 118, -1);
+      chimeBar(w, bar, change, 'horn', 108, -2);
+    } else
+      for (const n of tones.stab) {
+        w.note('brass', bar, 0, 0.9, n, 114);
+        w.note('brass', bar, 2, 0.9, n, 108);
+        w.note('hit', bar, 0, 1, n, 106);
+      }
+    warKit(w, bar, { every: true, racing: true, feel });
+    w.hit('crash', bar, 0, bar % 2 === 0 ? 100 : 86);
+  }
 }
+
+/** The last stand, in takes. */
+const lastStand = (): Song =>
+  makeForm(
+    { ...SPEC, name: 'reckoning-last', bpm: 160, level: 1.66, press: press(5.8) },
+    (['count', 'toll', 'hammer'] as const).flatMap((section, nth) =>
+      [0, 1, 2].map((shift): TakeSpec<Track, Drum> => {
+        const { next, opens } = STAND[section];
+        return { section, bars: 8, next, opens, write: (w) => standTake(w, section, (nth + shift) % 3) };
+      }),
+    ),
+  );
 
 /** The fall: a timpani roll into C major, the mended chime on the brass and the strings over the bells' four
  *  quarters, the choir; five bars, the hour struck at last, then quiet. */
@@ -320,8 +292,8 @@ function fallen(): Song {
       [1, MENDED[0]],
       [2, MENDED[3]],
     ] as const) {
-      chimeBar(w, bar, change, 'brass', 122, -1);
-      chimeBar(w, bar, change, 'strings', 100);
+      chimeBar(w, bar, change ?? [], 'brass', 122, -1);
+      chimeBar(w, bar, change ?? [], 'strings', 100);
     }
     w.note('brass', 3, 0, 4, 'C4', 122);
     w.note('horn', 3, 0, 4, 'G3', 112);
@@ -348,7 +320,7 @@ function fallen(): Song {
 
 /** The Reckoning's songs: its three phases, its last stand and its fall. */
 export const reckoningScore = (): { readonly phases: readonly Song[]; readonly last: Song; readonly fallen: Song } => ({
-  phases: [phaseOne(), phaseTwo(), phaseThree()],
+  phases: PHASES.map(phaseSong),
   last: lastStand(),
   fallen: fallen(),
 });
