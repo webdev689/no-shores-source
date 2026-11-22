@@ -47,6 +47,8 @@ code:
   - crates/room/src/power.rs#empower
   - crates/room/src/power.rs#pay_kill
   - crates/room/src/drops.rs#drop_spoils
+  - client/src/combat/drops.ts#motionAt
+  - client/src/combat/vestigeCrystal.ts#crystalFrame
   - crates/room/src/drops.rs#mail_lying
   - crates/gear/src/mail.rs#Letter
   - crates/gear/src/mail.rs#carry_or_post
@@ -292,8 +294,8 @@ DFO's spoils ([[Pick - Loot Drops]]).
 - **Thrown out.** The pieces leave the body in a fan toward the player, each its own slot of it, 1.2 radians either
   side, and come to rest 2 m out, on the ground or a block's top there; or at the body where a block more than a step
   high stands anywhere in the throw's way, the ground there lies more than a step below, or the spot lies past the
-  section's ring, so a piece never rests out of its player's reach. A piece flies 0.6 s and is taken only once its
-  rests.
+  section's ring, so a piece never rests out of its player's reach. A piece is taken only once it has had time to
+  settle, the longest it can bounce: a Vestige 94 ticks (about 1.6 s) after it is thrown, ammunition 60 (1 s).
 - **Taken.** Walking within 1.5 m of a piece at rest takes it: a Vestige while fewer than ten are carried, a box while
   the ammunition is not full, a crate while fewer than five are carried. A piece not taken stays two minutes; then
   the room sends the player's gear again without it, so their page stops showing it, and a Vestige among them goes
@@ -303,10 +305,30 @@ DFO's spoils ([[Pick - Loot Drops]]).
   The page works this out from what it holds (where the player stands, their drops and the share of ammunition kept) and
   says "Ammo full" on the player, once each time they step within reach of such a box at rest, never again while they
   stand there ([[Interface]], "A blow's words"; `DropsShown`).
-- **Seen.** Each piece arcs out of the body and bounces twice to rest, then stands upright as its own picture, the
-  Vestige glyph in its rarity's colours, an Ammo box or an Ammo crate. A thin line rises from its top as it rests:
-  Normal 0.7 m, Magic 1 m, Rare 1.4 m, Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs
-  it, a Legendary's and an Atheric's pulse, and a Rare or finer chimes as it comes to rest ([[Interface]]).
+- **Seen** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]],
+  [[Pick - project-final Drops]]). Each piece pops up out of the body, falls, and bounces until it lands slower than it
+  settles, coming down on the room's spot; one thrown up to a spot over the body pops at least high enough to land
+  there. Settled, it rises to hover, bobbing and turning:
+
+  | | A Vestige | Ammunition |
+  |---|---|---|
+  | Leaves the body, its middle over the feet | 1.15 m | 1.01 m |
+  | Pops up at | 4.4 to 5.4 m/s | 2.8 to 3.4 m/s |
+  | Falls under | 16 m/s² | 16 m/s² |
+  | Keeps of each bounce's speed, and of its way along the ground | 0.4, 0.55 | 0.3, 0.55 |
+  | Settles once it lands slower than | 1.1 m/s | 1.6 m/s |
+  | Its middle over the ground bouncing, then hovering | 0.23 m, then 0.42 m | 0.31 m, then 0.5 m |
+  | Rises to hover over | 0.35 s | 0.28 s |
+  | Bobs | 5 cm | 6 cm |
+  | Turns in the air, then at rest | 7, then 2.4 radians a second | 5, then 2.4 radians a second |
+  | Is drawn as | its crystal, 12 frames of 27 pixels for 0.7 m | its Blender model, 12 frames of 0.038 m a pixel |
+
+  The heights keep every frame's lowest pixel over the ground. A Vestige's crystal is a faceted gem crusted with
+  shards, in its rarity's white, green, yellow, red or cyan blue, each frame baked as its turn first reaches it,
+  cel-shaded in five bands, its outline darkened and a halo of its glow round it, added light. An Ammo box or crate is
+  its model ([[Item Pictures]]). A thin line rises from its top as it settles: Normal 0.7 m, Magic 1 m, Rare 1.4 m,
+  Legendary 1.9 m, Atheric 2.5 m, ammunition's white at 0.7 m. A glint climbs it, a Legendary's and an Atheric's
+  pulse, and a Rare or finer chimes as it settles ([[Interface]]).
 
 ## The mail
 

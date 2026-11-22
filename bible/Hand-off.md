@@ -65,6 +65,9 @@ each part works is in its system note.
   ([[The Server Is the Authority Over Everything]]); the Postmaster's mailbox for what a player would lose
   ([[A Mail Vendor Keeps Lost Items and the Game's Mail]]); areas loaded in chunks and kept by the browser
   ([[Areas Load in Chunks With Proper Caching]]).
+- **Vestiges as project-final's crystals**, every drop popping, bouncing, settling and hovering as its loot, and the
+  item pictures baked in Blender (`tools/item-pictures/`), a first pass for the owner to judge
+  ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]], [[Item Pictures]]).
 - **Not yet seen or heard.** Sessions test offline and picture headless, and headless Chromium in a cloud session now
   loses the game's WebGPU device about 2 s in, so these wait on a real GPU, an ear or a hand:
   - Timed on a real GPU: the game in and out of its worker, the hub with some 125 figures, the wreck with every fire,
@@ -88,10 +91,10 @@ The decisions in [[Open Questions]] are not repeated here.
 
 - **The codebase audit** (branch `ccr-e6d5616d-oe5iwr`), for the owner's yes to merge: its fixes and what it left
   are in its pull request's description and under Next ("The audit's findings left").
-- **Open pull requests.** For the owner's yes once their checks pass: #143 (Vestiges as project-final's crystals),
-  #141 (the balance pass halfway back), #125 (main's screens: the Harbourmaster's rows, the menu under 600 px), #124
-  (public events on Saltmere). Drafts: #77 (lore), #82 (the owner's loop); #93 and #114 sit on the merged
-  `claude/waters-from-islands`. Whether to close #112, which #127 holds.
+- **Open pull requests.** For the owner's yes once their checks pass: #141 (the balance pass halfway back), #125 (main's
+  screens: the Harbourmaster's rows, the menu under 600 px), #124 (public events on Saltmere). Drafts: #77 (lore), #82
+  (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
+  holds.
 - **The combat notes' open points** (#135): whether the one-second reset of the swings' chain and the foes' pace feel
   right in play; whether a stroke that would not reach the locked foe is passed over, as now (at the edge of reach
   every swing thrusts), or the chain kept strictly and a short stroke left to miss, asked and not yet answered.

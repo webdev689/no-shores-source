@@ -3,7 +3,8 @@ whatever is drawn, and rows of letters out (a the outline, then each tone of the
 
 import math
 
-LETTERS = 'abcdefghijklmnop'
+from pixels import LETTERS
+
 N = 24
 
 
@@ -82,16 +83,6 @@ def ramp(t, tones):
     """A tone along a ramp, t from 0 (lit) to 1 (shade)."""
     t = min(max(t, 0.0), 0.999)
     return tones[int(t * len(tones))]
-
-
-def dither(x, y, t, tones):
-    """A ramp with a checker between neighbouring tones, for a softer turn."""
-    t = min(max(t, 0.0), 0.999) * len(tones)
-    low = int(t)
-    frac = t - low
-    if frac > 0.5 and (x + y) % 2 == 0 and low + 1 < len(tones):
-        return tones[low + 1]
-    return tones[low]
 
 
 def lit(x, y, cx, cy, r):
