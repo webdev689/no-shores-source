@@ -144,6 +144,10 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **The rooms' worker tests wait for what they check** (#159, branch `claude/confident-allen-o1ktrh`), waiting on the
+  owner's yes to merge: `roomThread.test.ts` waits, two seconds at most, until the worker's word has come back, in
+  place of one 5 ms wait a full check's load once outran. Tested offline: the full check, and the file 20 of 20 runs
+  under `cargo test`'s load.
 - **The owner's bugs and polish** (#148, branch `claude/prologue-bugs-polish-lphicj`), merged with the owner's yes ("Merge and deploy"), which
   deploys the page and the rooms;, the owner's six points and "The entire prolouge honestly needs a detailed pass", each recorded with Claude's
   calls: [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]] (the aim looks square off the held side from a
