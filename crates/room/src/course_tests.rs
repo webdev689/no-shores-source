@@ -247,3 +247,39 @@ fn the_rim_round_the_wreck_holds_its_blocks_cell_for_cell_as_the_page_s_does() {
     let held = open as f64 * course::RIM_CELL_M * course::RIM_CELL_M;
     assert!((held - area).abs() < 1.0, "the rim holds {held:.0} m2 of the blocks' {area:.0}");
 }
+
+#[test]
+fn the_frigate_s_waist_pistoleer_fights_on_at_a_player_close_by_on_ground_its_routes_do_not_reach() {
+    let mut room = Room::over_sea(wreck_course(), (-28.9, -7.6));
+    room.story_wreck();
+    let player = room.join().expect("a room with space");
+    // Where the wreck's file stands it on the Frigate's waist, facing 180 degrees.
+    let pistoleer = room.stand_foe_at(9, 2, (1.15, 6.75), core::f64::consts::PI, 1).expect("a pistoleer");
+    let fighter = &mut room.foes.get_mut(&pistoleer).unwrap().fighter;
+    fighter.health = 0.6 * fighter.health_max;
+    // 0.9 m from its post, among the waist's clutter, where the routes from its post come no nearer than 1.5 m.
+    assert!(room.put_player(player, 2.0, 7.0));
+    let feet = room.players[&player].fighter.body;
+    let home = room.foes[&pistoleer].brain.home().unwrap().at;
+    let near = room.nav.nearest_point_from(home, [feet.x, feet.y, feet.z]);
+    assert!(near.is_none_or(|near| combat::sight::apart([near[0], near[1]], [feet.x, feet.y]) > 1.5));
+    let (mut fought, mut health) = (false, room.foes[&pistoleer].fighter.health);
+    for tick in 0..600 {
+        let found = &mut room.players.get_mut(&player).unwrap().fighter;
+        found.health = found.health_max;
+        if tick == 300 {
+            // The player's ball through its chest, its wound kept as any foe fighting keeps one.
+            let body = room.foes[&pistoleer].fighter.body;
+            let from = [body.x, body.y + 1.0, body.z + combat::tuning::CHEST];
+            room.shots.push((combat::shots::loose(player, combat::Ranged::Pistolet, from, 0.0, 0.0, 1.0), None));
+        }
+        room.tick();
+        let foe = &room.foes[&pistoleer];
+        assert!(!foe.brain.returning(), "tick {tick}: it gave up on the player and walked home");
+        assert!(foe.fighter.health <= health, "tick {tick}: it healed");
+        fought |= foe.brain.target() == Some(player);
+        health = foe.fighter.health;
+    }
+    assert!(fought, "it fought the player");
+    assert!(health < 0.6 * room.foes[&pistoleer].fighter.health_max, "the ball struck it");
+}

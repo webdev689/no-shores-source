@@ -34,9 +34,6 @@ const SPAWN_AHEAD: f64 = 5.0;
 const CREW_BESIDE: f64 = 1.5;
 const CALLED_BEHIND: f64 = 3.0;
 pub const CLEAR_FOES: u8 = 255;
-/// A body this near the navmesh's nearest point to it, across, stands on the mesh: the margin its erosion trims by a
-/// wall.
-const ON_MESH: f64 = 1.5;
 /// A telegraphed blow is judged against every player within its shape's reach and this much more.
 const SHAPE_MARGIN: f64 = 2.0;
 /// An aimed shot strikes harder than a plain one.
@@ -155,12 +152,6 @@ impl ::foes::Routes for MeshRoutes<'_> {
 
     fn length(&self, from: [f64; 3], to: [f64; 3]) -> Option<f64> {
         self.mesh.path_length(from, to)
-    }
-
-    fn walkable(&self, from: [f64; 3], point: [f64; 3]) -> bool {
-        // Placed on the part of the mesh `from` stands on: a joined mesh walks no way between its parts.
-        let near = self.mesh.nearest_point_from(from, point);
-        near.is_some_and(|near| combat::sight::apart([near[0], near[1]], [point[0], point[1]]) <= ON_MESH)
     }
 }
 

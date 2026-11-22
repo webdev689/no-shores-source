@@ -244,7 +244,7 @@ fn on_saltmeres_real_grounds_the_fissure_opens_and_its_foes_hunt_a_player_by_its
 }
 
 #[test]
-fn a_garrison_foe_never_chases_a_player_standing_on_an_event_grounds_own_square_of_navmesh() {
+fn a_garrison_foe_goes_for_a_player_close_by_on_an_event_grounds_own_square_of_navmesh() {
     // A room whose garrison's mesh, baked 35 m round a point 20 m in from its spawn, ends 2 m short of the Fissure's
     // square (its 25 m and 16 m past).
     let section = crate::Section {
@@ -281,5 +281,7 @@ fn a_garrison_foe_never_chases_a_player_standing_on_an_event_grounds_own_square_
     };
     let was = near(&room);
     ticks(&mut room, 3 * 60);
-    assert!(near(&room) >= was - 0.5, "it walked from {was} m to {} m at a player it has no way to", near(&room));
+    // No way joins the parts, yet the player is within its leash: it walks for them as near as it gets.
+    assert!(!room.foes[&foe].brain.returning() && room.foes[&foe].brain.target() == Some(player), "it fights on");
+    assert!(near(&room) < was - 0.5, "it walked from {was} m to {} m", near(&room));
 }

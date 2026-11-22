@@ -150,17 +150,17 @@ strikes ([[Public Events]]).
   as far as the walk to it, so a foe beneath a ledge goes up to it rather than swing at it from below.
 - **The leash.** A garrison foe ([[Enemies]]) is leashed to its place in its group, at its post or on its beat, which
   holds still while the group fights ([[Foes Leash to Their Posts and Fall With Their Boss]]). Once its target stands
-  50 m from that place, or off the room's navmesh (more than 1.5 m across from the mesh's nearest point, or on no level
-  it has), it gives its fight up once no wind-up of its own is under way: its target, its turn, the blow it saw coming
-  and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for. It sheds its Expose
-  and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing each tick the share of what it
-  lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m, about 12 s), then turns to face
-  as its place does and stands idle. Walking back it heeds nothing it sees or hears and shows as idle, so the one it
-  gave up on cannot draw it out again at once. A blow on it brings it back, alert with the striker as its target; one
-  struck from past its leash it gives up again. A foe a player asked for, or one a Boss called, has no post and never
-  leashes. A foe a page playing a course alone stands where it wants it ([[Server]], "A course a page plays alone") is
-  posted where it stands and leashes to it; a Boss stood so calls no one in its phases, so a scene that places its own
-  foes keeps them as it placed them.
+  50 m from that place, it gives its fight up once no wind-up of its own is under way: its target, its turn, the blow
+  it saw coming and its answer, its hunt, its search, its awareness, and a roar its health no longer calls for. Nearer,
+  it never does, wherever its target stands: on ground the room's routes do not reach, it fights from as near as they
+  take it. It sheds its Expose and its Charge ([[Combat]], "Statuses") and walks back by the room's routes, healing
+  each tick the share of what it lacks that a tick's walk is of the way left, so it is whole as it arrives (from 40 m,
+  about 12 s), then turns to face as its place does and stands idle. Walking back it heeds nothing it sees or hears
+  and shows as idle, so the one it gave up on cannot draw it out again at once. A blow on it brings it back, alert
+  with the striker as its target; one struck from past its leash it gives up again. A foe a player asked for, or one a
+  Boss called, has no post and never leashes. A foe a page playing a course alone stands where it wants it
+  ([[Server]], "A course a page plays alone") is posted where it stands and leashes to it; a Boss stood so calls no one
+  in its phases, so a scene that places its own foes keeps them as it placed them.
 - **Home after a search.** A garrison foe whose search finds no one (its look about ends, or its awareness bleeds
   back first) walks home the same way, healing (from 20 m, about 6 s). On this walk it heeds what it sees and hears
   as ever: they raise its awareness, and once it is alert it takes its target or searches again; short of that it
