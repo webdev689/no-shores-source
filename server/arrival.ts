@@ -84,7 +84,8 @@ export function arrives(room: string, from: string | null, ship: Point | null, r
     // Normal) from its node at any, as its tier is its own whatever the seas; out of the node's own dungeon or run at
     // the seas it was gone into at.
     if (inside(to)) return !inside(was) && (was.seas === to.seas || (to.dungeon === null && to.run !== null));
-    if (inside(was)) return was.seas === to.seas;
+    // A playlist's run is left back to the sea it was launched from, never onto its dungeon's island.
+    if (inside(was)) return was.seas === to.seas && was.playlist === null;
   }
   if (inside(to)) return false;
   // Through a gate, from a node whose gate leads here, at the same seas.

@@ -6,7 +6,7 @@ use crate::encounters::SealState;
 use crate::encounters::encounters_tests::{elite_room, hardy, put, ticks, told};
 use crate::{How, PlayerId};
 use combat::judge::{Blow, BlowKind};
-use combat::{Stroke, Verdict};
+use combat::{Action, Stroke, Verdict};
 
 /// A room whose seals are broken and whose Boss has woken, a hardy player in it, its waves and band gone.
 fn court() -> (Room, PlayerId, FighterId) {
@@ -113,9 +113,11 @@ fn the_reckoning_comes_from_the_second_ward_and_harms_only_those_outside_its_lig
     let whole = room.players[&player].fighter.health_max;
     let healths = |room: &Room| [room.players[&player].fighter.health, room.players[&other].fighter.health];
     let before = healths(&room);
+    // By the Boss's post, in the Court but at least ANCHOR_FROM_POST_M from every anchor's light.
+    let post = room.garrison[0].at;
     for _ in 0..RECKONING_WARNING {
         put(&mut room, player, light);
-        put(&mut room, other, [light[0] + 3.0, light[1], 0.0]);
+        put(&mut room, other, post);
         room.tick();
     }
     let after = healths(&room);
@@ -161,4 +163,41 @@ fn fury_weighs_the_foes_blows_a_tenth_more_every_thirty_seconds_from_eight_minut
     assert_eq!(room.encounter_seen().expect("seen").fury, 20);
     let swing = Blow { striker: player, ..blow };
     assert_eq!(room.modded_blow(&swing, boss), 1.0, "a player's blow is not the Boss's company's");
+}
+
+#[test]
+fn a_fallen_boss_never_stands_again_in_its_run() {
+    let (mut room, player, boss) = court();
+    let found = room.foes.get_mut(&boss).expect("standing");
+    (found.fighter.health, found.fighter.action) = (0.0, Action::Dead { elapsed: 0 });
+    room.tick();
+    assert!(room.boss().is_none(), "fallen");
+    // No player near its post, as a company farming the other rooms leaves it.
+    room.leave(player);
+    ticks(&mut room, crate::garrison::GREAT_STAND_AGAIN + 60);
+    let standing = &room.garrison[0].standing;
+    assert!(standing.iter().all(|id| room.foes.get(id).is_none_or(|foe| foe.fighter.dead())), "never again");
+}
+
+#[test]
+fn the_reckoning_reaches_only_the_courts_room() {
+    let (mut room, player, boss) = court();
+    let elsewhere = hardy(&mut room);
+    let most = room.foes[&boss].fighter.health_max;
+    strike(&mut room, player, boss, most);
+    room.tick();
+    stand_anchors(&mut room, player);
+    strike(&mut room, player, boss, most);
+    room.tick();
+    let (_, at) = room.reckoning_seen().expect("shown at the second ward");
+    let light = anchors(&room)[usize::from(at)];
+    // A seal's room lies outside the Court, as the way in a player stands again at does.
+    let away = room.encounters.as_ref().expect("encounters").plan.seals[0].pieces[0];
+    let before = room.players[&elsewhere].fighter.health;
+    for _ in 0..RECKONING_WARNING {
+        put(&mut room, player, light);
+        put(&mut room, elsewhere, away);
+        room.tick();
+    }
+    assert_eq!(room.players[&elsewhere].fighter.health, before, "not reached outside the Court");
 }

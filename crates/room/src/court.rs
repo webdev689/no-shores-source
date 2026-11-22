@@ -115,17 +115,19 @@ impl Room {
         (into < RECKONING_WARNING).then(|| (u32::try_from(RECKONING_WARNING - into).unwrap_or(u32::MAX), at))
     }
 
-    /// As a Reckoning's warning runs out it lands: every living player outside its ring of light loses
-    /// RECKONING_SHARE of their health, a blow from the Boss.
+    /// As a Reckoning's warning runs out it lands: every living player in the Court's room outside its ring of light
+    /// loses RECKONING_SHARE of their health, a blow from the Boss; one elsewhere in the dungeon is not reached.
     fn keep_reckoning(&mut self) {
         let Some((RECKONING_WARNING, at)) = self.reckoning_round() else { return };
         let Some(boss) = self.boss() else { return };
-        let anchors = self.encounters.as_ref().map(|encounters| encounters.plan.anchors.clone()).unwrap_or_default();
-        let Some(light) = anchors.get(usize::from(at)).copied() else { return };
+        let Some(encounters) = self.encounters.as_ref() else { return };
+        let Some(light) = encounters.plan.anchors.get(usize::from(at)).copied() else { return };
+        let in_court =
+            |x: f64, y: f64| encounters.plan.cell_at([x, y]).is_some_and(|cell| encounters.court_cells.contains(&cell));
         let outside: Vec<crate::PlayerId> = self
             .players
             .iter()
-            .filter(|(_, found)| found.living())
+            .filter(|(_, found)| found.living() && in_court(found.fighter.body.x, found.fighter.body.y))
             .filter(|(_, found)| {
                 let body = found.fighter.body;
                 libm::hypot(body.x - light[0], body.y - light[1]) > LIGHT_REACH_M

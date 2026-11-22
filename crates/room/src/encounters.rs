@@ -75,13 +75,15 @@ pub(crate) struct Encounters {
     pub seals: Vec<Seal>,
     pub court: Court,
     pub levels: Option<(u8, u8)>,
+    /// The end room's cells, where the Court is fought and the Reckoning reaches.
+    pub court_cells: Vec<usize>,
 }
 
 impl Encounters {
     pub(crate) fn new(plan: EncounterPlan, levels: Option<(u8, u8)>) -> Self {
         let seals = plan.seals.iter().map(|seal| Seal::waiting(seal.pieces.len())).collect();
         let court = Court { anchors: vec![0; plan.anchors.len()], ..Court::default() };
-        Self { plan, seals, court, levels }
+        Self { plan, seals, court, levels, court_cells: Vec::new() }
     }
 
     /// Whether every seal is broken.
@@ -129,7 +131,12 @@ impl Room {
     pub(crate) fn lay_encounters(&mut self, plan: EncounterPlan, levels: Option<(u8, u8)>) {
         let sealed = !plan.seals.is_empty();
         self.encounters = Some(Box::new(Encounters::new(plan, levels)));
-        if sealed { self.hold_boss() } else { self.wake_boss() }
+        if sealed {
+            self.hold_boss();
+        } else if let Some(encounters) = self.encounters.as_mut() {
+            // No seal holds it: the Boss its garrison stood is awake already, and no second one stands.
+            encounters.court.woke_at = Some(self.clock);
+        }
     }
 
     /// The Boss's post emptied: its foe sent away, never counted cleared while its seals hold (`held_back`).
@@ -151,6 +158,11 @@ impl Room {
             encounters.court.woke_at = Some(clock);
         }
         self.tell_all(EventKind::BossWoke, 0.0);
+    }
+
+    /// Whether a fallen garrison post may stand again: never an Elite Dungeon's Boss, whose Court is fought once a run.
+    pub(crate) fn stands_again(&self, post: usize) -> bool {
+        post != 0 || self.encounters.is_none()
     }
 
     /// Whether a garrison post is held back: an Elite Dungeon's Boss's while a seal holds.

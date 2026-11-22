@@ -35,6 +35,16 @@ pub const HOLDFAST_TICKS: u64 = 45 * 60;
 pub const HOLDFAST_WAVE_TICKS: u64 = 12 * 60;
 pub const RELIC_DRAIN: f64 = 1.0 / (20.0 * 60.0);
 
+/// How long a plate stays held after its last player steps off: PLATE_LINGER_TICKS, and for a lone player the walk
+/// between its two plates besides, so one player walking, not only sprinting, can hold both.
+pub(crate) fn plate_linger(players: usize, plates: &[[f64; 3]]) -> u64 {
+    let walk = match plates {
+        [first, second, ..] if players < 2 => near(*first, *second) / movement::TUNING.walk,
+        _ => 0.0,
+    };
+    PLATE_LINGER_TICKS + libm::ceil(walk * 60.0) as u64
+}
+
 /// The plates in play: three, or two in a run of fewer than ALL_PLATES_FROM players.
 pub(crate) const fn plates_for(players: usize) -> usize {
     if players >= ALL_PLATES_FROM { 3 } else { 2 }
@@ -116,8 +126,8 @@ impl Room {
         done
     }
 
-    /// A Weighing's tick: held while every plate in play is stood on by a living player, or was within
-    /// PLATE_LINGER_TICKS; a wave at its doorways every WEIGHING_WAVE_TICKS. Broken once held WEIGHING_TICKS in all.
+    /// A Weighing's tick: held while every plate in play is stood on by a living player, or was within its linger
+    /// (`plate_linger`); a wave at its doorways every WEIGHING_WAVE_TICKS. Broken once held WEIGHING_TICKS in all.
     fn keep_weighing(
         &mut self,
         encounters: &mut Encounters,
@@ -126,13 +136,14 @@ impl Room {
         standing: &[[f64; 3]],
     ) -> bool {
         let (in_play, clock) = (plates_for(self.players.len()), self.clock);
+        let linger = plate_linger(self.players.len(), &plan.pieces);
         let found = &mut encounters.seals[seal];
         for (plate, pressed) in plan.pieces[..in_play].iter().zip(&mut found.pressed) {
             if standing.iter().any(|&at| near(at, *plate) <= PLATE_REACH_M) {
                 *pressed = Some(clock);
             }
         }
-        let held = |pressed: &Option<u64>| pressed.is_some_and(|at| clock - at <= PLATE_LINGER_TICKS);
+        let held = |pressed: &Option<u64>| pressed.is_some_and(|at| clock - at <= linger);
         let on: Vec<bool> = found.pressed[..in_play].iter().map(held).collect();
         if on.iter().all(|held| *held) {
             found.held += 1;

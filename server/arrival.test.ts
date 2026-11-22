@@ -94,6 +94,7 @@ test('a playlist’s run is launched from the sea, from beside any port, and lef
   assert.equal(arrives(run, null, null, null), false);
   assert.equal(arrives(run, run, null, null), true, 'a rejoin');
   assert.equal(cameOutOf('node-krakens-grotto--elite', run, 0), false, 'it leaves to the sea, not the door');
+  assert.equal(arrives('node-krakens-grotto--elite', run, null, null), false, 'nor onto its dungeon’s island');
   assert.equal(
     arrives('node-saltworm-warrens--abyss--run-k3j4h5g6', 'sea', null, null),
     true,

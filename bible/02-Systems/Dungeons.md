@@ -322,8 +322,9 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   it; one stepping on any rune further on darkens them all, starts the show again two seconds on and stands two of the
   dungeon's foes at its doorways (`RuneWrong`). It never harms anyone itself. Every rune lit breaks it.
 - **The Weighing** (split up): three plates as far apart as the room allows, or the two farthest in a run of fewer
-  than three players. A plate stood on by a living player within 1 m stays held 3 s after the last steps off, so one
-  player can hold two. It is held each tick every plate in play is, and broken once held 6 s in all; while it runs a
+  than three players. A plate stood on by a living player within 1 m stays held 3 s after the last steps off, and in a
+  run of one player the walk between its two plates besides (`plate_linger`), so a lone player walking, not only
+  sprinting, can hold both. It is held each tick every plate in play is, and broken once held 6 s in all; while it runs a
   wave comes every 15 s at its doorways.
 - **The Ascent** (a climb): the longest line of free cells one beside the next from the doorway a company comes in by,
   three to six, a pad on each: 1.6 m square, the first 0.4 m high and reaching back to the doorway's cell, each 0.4 m
@@ -347,10 +348,13 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   broken; then it stands (`BossWoke`). At two thirds of its health, and again at one third, a blow that would take it
   past is held there and the Boss is warded (`WardRaised`), two of the dungeon's foes standing at its anchors. Its
   three anchors stand in the end room 2.4 m or more from its post, each the spot farthest from the post and those taken
-  before. A living player within 1 m of an anchor fills it; each filled for 3 s, the ward breaks (`WardBroken`).
+  before. A living player within 1 m of an anchor fills it; each filled for 3 s, the ward breaks (`WardBroken`). A
+  fallen Boss never stands again in its run, though the other posts do, so its Court is fought once a run
+  (`stands_again`).
 - **The Reckoning.** From the second ward on, while the Boss stands, every 50 s: a ring of light 2.5 m wide at one
-  anchor, in turn, shown 12 s, then 70% of their health from every living player outside it, a blow from the Boss
-  (`ReckoningLanded`).
+  anchor, in turn, shown 12 s, then 70% of their health from every living player in the end room outside it, a blow
+  from the Boss (`ReckoningLanded`); a player elsewhere in the dungeon, as one standing again at the way in, is not
+  reached.
 - **Fury.** From 8 minutes after the Boss woke, every foe's blow on a player weighs a tenth more, one more tenth every
   30 s, to three times (`modded_blow`).
 - **Harm** from the drowned floor and the Reckoning is settled as a foe's blow is (`settle`), unguarded and

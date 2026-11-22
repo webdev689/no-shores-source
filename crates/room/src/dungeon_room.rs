@@ -165,6 +165,10 @@ impl Room {
         room.stand_dungeon_garrison(dungeon, levels, end);
         if let Some(plan) = plan {
             room.lay_encounters(plan, levels);
+            let end = dungeon.rooms.get(dungeon.end()).map(|end| end.cells.clone()).unwrap_or_default();
+            if let Some(encounters) = room.encounters.as_mut() {
+                encounters.court_cells = end;
+            }
         }
         Some(room)
     }

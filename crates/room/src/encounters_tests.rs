@@ -166,3 +166,17 @@ fn leaving_and_coming_back_keeps_the_seals_as_they_stand() {
     room.tick();
     assert_eq!(room.encounters.as_ref().expect("encounters").seals[0].state, SealState::Broken);
 }
+
+#[test]
+fn with_no_seal_the_boss_its_garrison_stood_is_awake_and_stands_alone() {
+    let of = RunOf::Elite { place: "pearl-tomb".into() };
+    let mut room = Room::dungeon_run(&of, gear::Difficulty::Normal, FRIDAY_NINE).expect("a run");
+    // As a garrison stands its Boss before any encounter is laid.
+    room.stand_post(0);
+    let standing = room.living_foes();
+    let mut plan = room.encounters.as_ref().expect("encounters").plan.clone();
+    plan.seals.clear();
+    room.lay_encounters(plan, None);
+    assert_eq!((room.living_foes(), room.garrison[0].standing.len()), (standing, 1), "no second Boss");
+    assert!(room.boss().is_some(), "awake");
+}

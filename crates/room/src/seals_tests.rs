@@ -117,7 +117,7 @@ fn a_weighing_holds_three_plates_together_or_two_under_three_players_and_holds_n
 }
 
 #[test]
-fn a_plate_stays_held_three_seconds_after_its_player_steps_off_so_one_player_can_hold_two() {
+fn a_plate_stays_held_after_its_player_steps_off_so_one_player_can_hold_two() {
     let mut room = elite_room("pale-undercroft");
     let player = hardy(&mut room);
     let seal = seal_of(&room, SealKind::Weighing);
@@ -128,10 +128,37 @@ fn a_plate_stays_held_three_seconds_after_its_player_steps_off_so_one_player_can
     ticks(&mut room, 100);
     assert_eq!(state(&room, seal).held, 100, "the first plate still held as the second is stood on");
     assert_eq!(room.encounter_seen().expect("seen").seals[seal].marks, vec![1, 1]);
+    // Alone, a plate lingers its three seconds and the walk between the two plates besides.
+    let linger = plate_linger(1, &laid.pieces);
+    let walk = libm::hypot(laid.pieces[0][0] - laid.pieces[1][0], laid.pieces[0][1] - laid.pieces[1][1]);
+    assert!(linger > PLATE_LINGER_TICKS + (walk / movement::TUNING.walk * 59.0) as u64, "{linger}");
+    assert_eq!(plate_linger(2, &laid.pieces), PLATE_LINGER_TICKS, "two players stand on one each");
     ticks(&mut room, PLATE_LINGER_TICKS);
-    let held = state(&room, seal).held;
-    assert!(held < 100 + PLATE_LINGER_TICKS, "the first let go three seconds after it was left: {held}");
-    assert_eq!(room.encounter_seen().expect("seen").seals[seal].marks, vec![0, 1]);
+    assert_eq!(state(&room, seal).held, 100 + PLATE_LINGER_TICKS, "the first still held past three seconds");
+    assert_eq!(room.encounter_seen().expect("seen").seals[seal].marks, vec![1, 1]);
+}
+
+#[test]
+fn one_player_holds_a_weighing_walking_between_its_two_plates() {
+    let mut room = elite_room("cinder-deep");
+    let player = hardy(&mut room);
+    let seal = seal_of(&room, SealKind::Weighing);
+    let laid = plan(&room, seal);
+    let [first, second] = [laid.pieces[0], laid.pieces[1]];
+    let apart = libm::hypot(first[0] - second[0], first[1] - second[1]);
+    let walk = (apart / movement::TUNING.walk * 60.0) as u64;
+    // Walked to and fro, a second on each plate: never held at a run alone with three seconds' linger.
+    for crossing in 0..12 {
+        put(&mut room, player, if crossing % 2 == 0 { first } else { second });
+        ticks(&mut room, 60);
+        // Walking between them, on neither.
+        put(&mut room, player, [(first[0] + second[0]) / 2.0, (first[1] + second[1]) / 2.0, 0.0]);
+        ticks(&mut room, walk);
+        if state(&room, seal).state == SealState::Broken {
+            return;
+        }
+    }
+    panic!("a lone walker never broke the Weighing: held {}", state(&room, seal).held);
 }
 
 #[test]
