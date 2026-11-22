@@ -228,8 +228,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   [[Sprite Forge]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), every resource at one scale,
   before the place its resource comes from, while the room stands it for the player, and as it looks spent once they
   gathered it, until its turn comes round; a place resting its turn shows only its dressing. The picture alone marks a
-  node: no ring, no beam, no mark over it. Each drop lying for them stands as its own picture under its rarity's line
-  (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
+  node: no ring, no beam, no mark over it. Each drop lying for them hovers, a Vestige as its crystal, under its
+  rarity's line (`combat/drops.ts`; [[Gear]], "Drops"), taken by walking over it.
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"), and at the bounty board its bounties, offered as "The Bounty Board:

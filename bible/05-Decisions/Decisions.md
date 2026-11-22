@@ -248,6 +248,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Server Is the Authority Over Everything]]
 - [[A Mail Vendor Keeps Lost Items and the Game's Mail]]
 - [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]
+- [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

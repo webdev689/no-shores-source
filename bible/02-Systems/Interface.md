@@ -676,8 +676,8 @@ never while a press is held. Each press is an ask the room answers.
 
 - **The footer** is one: the room's answer to the last press, read aloud as it comes, then what the presses and keys
   do here; at its right an item's presses on its page, Back while a flyout is open, else Close.
-- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped.
-  A loadout is the forge's large picture of what its hands hold
+- **Pictures.** Every item is drawn from the forge: the figure dressed with it, less the figure without it, cropped. A
+  loadout is the forge's large picture of what its hands hold
   ([[Weapons Are Forged Large for the Weapon Rows and Gear Screens]]): the right hand's level, its business end to the
   right, and a shield or a pair's second behind it at its left, at three quarters of its size, its middle on the
   first's top edge a fifth of the way along it. Each is dyed as the figure's layer is, a faction's colour too, and
@@ -685,15 +685,19 @@ never while a press is held. Each press is an ask the room answers.
   loadout in one hand is its own layer drawn alone in the pose that holds it, so no hand hides its grip, and one in
   both (a pair, a weapon and shield) is what the figure gains holding it, on guard. Each is fitted to its place as
   Enhanced Plus fits its icons, and one larger than its place is shrunk by an area average, each screen pixel the mean
-  of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny
-  lays weapons, so it reads. Where the forge draws nothing of a piece, its slot shows its
-  name's initials. Currencies, materials, Vestiges, nodes and elements are small pixel glyphs; each material is drawn as what it
-  is, mostly in its island's colour. The ship's glyphs (its materials, its modules and its officers' posts) are drawn
-  at 24 by 24, as the Arts' emblems are, so a module shows a picture where a piece shows the forge's: shaded lit from
-  the top left, and shown only at whole multiples of their cells (24, 48, 96, 264). `tools/ship-glyphs/` draws them.
-- **Rarity.** Normal white, Magic blue, Rare yellow, Legendary gold, Atheric cyan blue; a Normal piece's frame is the
-  kit's plain stone. A tile is Enhanced Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a
-  card or page takes its rarity's band; pips mark it.
+  of the pixels it covers, a weapon's large picture then cut at half cover and snapped to the palette again; an icon
+  long and thin (a blade, a staff, a gun) is laid on its tile's diagonal, as Destiny lays weapons, so it reads. Where
+  the forge draws nothing of a piece, its slot shows its name's initials. A Vestige is its crystal, still and turned
+  broadside, 18 pixels square (12 where it is drawn at 24), its halo see-through ([[Gear]], "Drops"). Each island's
+  resource, the Ammo box and the Ammo crate are baked from Blender models at 18 cells, each resource mostly in its
+  island's colour ([[Item Pictures]]). Currencies, nodes and elements are small pixel glyphs drawn by hand. The ship's
+  glyphs are 24 by 24, as the Arts' emblems are, so a module shows a picture where a piece shows the forge's: its
+  materials and modules baked as the resources are, its officers' posts drawn by hand, all lit from the top left. A
+  baked or ship glyph shows only at whole multiples of its cells (36 for 18; 24, 48, 96 and 264 for 24).
+- **Rarity** ([[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]). Normal white, Magic green,
+  Rare yellow, Legendary red, Atheric cyan blue; a Normal piece's frame is the kit's plain stone. A tile is Enhanced
+  Plus's dark well, its bevel in its rarity's tones and its glow sunk inside; a card or page takes its rarity's band;
+  pips mark it.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.

@@ -118,6 +118,7 @@ decision, made in the same change as its entry here.
 | `.claude/settings.json` | The repository's Claude Code settings: a hook that says, as a session starts, when the toolkit is not installed in its container ([[Toolkit]]) |
 | `tools/forge/` | DFO's [[Sprite Forge]], kept as shipped in DFO's own layout ([[DFO's Sprite Forge Comes Over Exactly]]) |
 | `tools/forge_publish.py` | Publishes the forge's renders and tables to R2, and pulls them back |
+| `tools/item-pictures/` | Bakes the item pictures from Blender models into the client, and draws the officers' posts by hand ([[Item Pictures]]) |
 | `tools/islands/` | Builds the sea islands' modules in Blender from `content/islands/kits.json`, checks, packs and publishes them ([[Island Modules]]) |
 | `tools/r2.py` | R2 access for the publishers: objects named by their hash, uploaded once and checked when fetched |
 | `tools/ships/shape_ship.py` | Shapes the owner's Sloop, its parts painted already: its size, and the gap and steps down from its quarterdeck ([[Sailing]]) |
