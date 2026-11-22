@@ -423,7 +423,10 @@ impl Room {
     /// A player's character as it is kept between sessions.
     #[must_use]
     pub fn kept_character(&self, player: PlayerId) -> Option<String> {
-        self.players.get(&player).map(|found| found.character.to_json())
+        let found = self.players.get(&player)?;
+        let mut character = found.character.clone();
+        character.left = Some(self.left_of(found));
+        Some(character.to_json())
     }
 
     /// Why the room's gate shuts to a character (`gear::gate`), or none when it may enter.
@@ -472,6 +475,7 @@ impl Room {
         if let Some(found) = self.players.get_mut(&player) {
             found.fighter = found.armed(found.fighter);
         }
+        self.give_left_back(player);
         true
     }
 
