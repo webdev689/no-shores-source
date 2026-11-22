@@ -16,7 +16,7 @@ import { GLANCE_FLOATS, UNTRIMMED_FLOATS } from '../rules/fighters.ts';
 import type { Body, Controls, MovementRules } from '../rules/movementRules.ts';
 import { ASKS, type GearState } from '../network/gearMessages.ts';
 import { KINDS, WORN } from '../player/gear.ts';
-import { type FightButtons, Fighting, strokesReaching } from './fighting.ts';
+import { CHAIN, type FightButtons, Fighting, chained, strokesReaching } from './fighting.ts';
 import { KIND, wear } from './wornForTests.ts';
 
 /** A room's snapshot for a player made whole, as a page's link makes it; null for one passed over. */
@@ -303,6 +303,53 @@ test('a swing rolls among the strokes that reach its target, and among all six w
   assert.deepEqual(strokesReaching(2.3, reach), [1, 6]);
   assert.deepEqual(strokesReaching(3, reach), [1, 2, 3, 4, 5, 6]);
   assert.deepEqual(strokesReaching(null, reach), [1, 2, 3, 4, 5, 6]);
+});
+
+test('the chain goes side cut, overhead, thrust and round, passing over a stroke that does not reach', () => {
+  const all = [1, 2, 3, 4, 5, 6];
+  assert.deepEqual(CHAIN, [3, 1, 6]);
+  assert.equal(chained(null, all), 3, 'it starts with the side cut');
+  assert.equal(chained(3, all), 1);
+  assert.equal(chained(1, all), 6);
+  assert.equal(chained(6, all), 3, 'and goes round');
+  assert.equal(chained(6, [1, 2, 5, 6]), 1, 'past the side cut, which reaches least');
+  assert.equal(chained(1, [6]), 6);
+  assert.equal(chained(6, [6]), 6, 'the thrust again where only it reaches');
+});
+
+test('held, the swings chain side cut, overhead and thrust, and start over after a second without one', () => {
+  let fight: Fighting | null = null;
+  const room = LocalRoom.open(compiled, course.start, course.blocks, (snapshot: Snapshot) => fight?.receive(snapshot));
+  const rules = startCombatRules(compiled);
+  rules.setCourse(course.blocks);
+  const fighting = new Fighting(rules, room);
+  fight = fighting;
+  fighting.arms = rules.armsCode('sword_iron', null, true);
+  room.pump(TICK);
+  const steps = fighting.steps(movement);
+  const still = { forward: 0, sideways: 0, yaw: 0, run: false, jump: false, crouch: false, mounted: false };
+  let body = {} as Body;
+  const strokes: number[] = [];
+  const hold = (ticks: number, swing: boolean) => {
+    for (let tick = 0; tick < ticks; tick += 1) {
+      fighting.press({ swing, shoot: false, guard: false, dodge: false, pitch: 0 });
+      body = steps.step(body, still);
+      const action = fighting.own?.action;
+      if (fighting.swingsBegun > 0 && action?.kind === 'attack') strokes.push(action.stroke);
+      fighting.swingsBegun = 0;
+      room.pump(TICK);
+    }
+  };
+  hold(150, true);
+  assert.ok(strokes.length >= 4, `${strokes.length} swings`);
+  assert.deepEqual(strokes.slice(0, 4), [3, 1, 6, 3]);
+  strokes.length = 0;
+  hold(120, false);
+  hold(1, true);
+  hold(50, false);
+  hold(1, true);
+  hold(60, false);
+  assert.deepEqual(strokes, [3, 1], 'after a rest the side cut first; a swing soon after takes the overhead');
 });
 
 test('a foe’s two glances are as many ticks apart as the snapshots that brought them', () => {

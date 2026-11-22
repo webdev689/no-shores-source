@@ -1,4 +1,5 @@
 import type { Dress } from './dressing.ts';
+import { RUNNING } from './others.ts';
 import type { Doing, Fight } from './playerMoves.ts';
 import { type Action, type FighterView, type Shape, actionProgress, directionOf } from '../rules/fighters.ts';
 
@@ -31,8 +32,8 @@ const TELEGRAPH_STROKE: Readonly<Record<Exclude<Shape, 'aimed'>, string>> = {
   charge: 'thrust',
   leap: 'chop',
 };
-/** Faster than this on foot, a figure runs. */
-const RUNNING = 5.5;
+/** A foe's pace, a share of a player's, as the foes crate's `FOE_PACE`: it runs faster than its share of `RUNNING`. */
+const FOE_PACE = 0.75;
 /** The movement rules' going over a lip: it takes (0.25 + 0.22 × rise) × 1.05 seconds; a mantle rises to the lip over
  *  the first 1 / 1.6 of that, and a vault's arc tops the lip by 0.2 m halfway. */
 const OVER = { seconds: 0.25, perMetre: 0.22, pace: 1.05, rising: 1.6, clears: 0.2 } as const;
@@ -101,7 +102,7 @@ export function foeDoing(view: FighterView, before: FighterView | null, dress: D
   return {
     mode: view.mode,
     moving: speed > 0.2 || climbing,
-    running: speed > RUNNING,
+    running: speed > (view.side === 'players' ? RUNNING : RUNNING * FOE_PACE),
     crouched: view.crouched,
     mounted: false,
     speed,

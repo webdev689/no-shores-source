@@ -264,6 +264,16 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Waiting on the owner
 
+- **#135, the owner's combat notes** (`ccr-f16389bc-x9znfv`), merged with the owner's yes ("Lets go ahead and queue up
+  the deploy"), which deploys the page and the rooms; audited (an independent read-only audit and a ponytail review,
+  their fixes in 50c45ef4: a running foe no longer pushed past its own run, the chain started over after a death),
+  tested offline (`cargo xtask check`). The player's melee swings chain side cut, overhead and thrust, starting over
+  after a second without a swing ([[The Player's Swings Chain Side Cut, Overhead and Thrust]]); foes walk and run at
+  three quarters of a player's pace ([[Foes Walk and Run at Three Quarters of a Player's Pace]]); the prologue's parry
+  freeze reads the player's aim, as the rules judge a guard. Not yet played live or seen in a browser. Its open points:
+  whether the one-second reset and the pace feel right in play; whether a stroke that would not reach the locked foe is
+  passed over, as now (at the edge of reach every swing thrusts), or the chain kept strictly and a short stroke left to
+  miss, asked and not yet answered; the raised shield's walk, deferred by the owner (Next).
 - **The controls and the marks are on `main`**, merged with the owner's yes ("Yes start the merges and deploys"),
   each after an independent audit whose findings were all fixed ("Fix all"): the key strip that follows the moment and
   K's sheet of every control (#130, [[The Key Strip Follows the Moment, and K Opens Every Control]]); every control
@@ -580,6 +590,10 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 ## Next
 
+- **A raised shield's walk**, which the owner asked for and chose to defer: walking with the guard up shows the still
+  `block` frame. It needs a `blockwalk` from the forge (the block's arms and shield over the shield march's legs, as
+  `onthemove.py` lays an action over a walk, held for the stride's four frames) for every body and gear layer that
+  draws the block, published to R2, then the figure's guard on the move playing it (`playerMoves.ts` `fightMove`).
 - **Areas in chunks, after the recordings** ([[Areas Load in Chunks With Proper Caching]]): the forge's picture packs
   read in fixed blocks kept in Cache Storage (at the intro's start some 60 range requests went to one pack within
   2 ms; one block holds them all), through `contentCache.ts`; the next area's land, pictures and sounds fetched ahead
