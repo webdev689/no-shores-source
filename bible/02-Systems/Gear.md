@@ -541,11 +541,12 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
 
 - **Normal** pieces are clothes: a shirt, breeches, trousers or a skirt, and shoes, dyed in the rarity's plain dyes;
   a Normal head or arms piece shows nothing.
-- **Each content's sets and metals** (`content/gear/looks.json`, in `Source`'s order): the world leather, the
-  thieves', chain, iron and steel, in iron and steel; a dungeon the knights' and dwarven, in dwarven; an Elite Dungeon
-  silver and orcish, in silver and orcish; an Abyss Dungeon adamantium and ebony, in adamantium and ebony; a sea
-  dungeon elven and mithril, in elven and mithril; a Breach daedric, in daedric; a faction its guild set. No armour set
-  is two contents'; a faction's weapons share a metal with another content's but wear their faction's colour.
+- **Each content's sets and metals** (`content/gear/looks.json`, in `Source`'s order), each wholly above the one
+  before on the ladders by worth: the world leather, the thieves', chain, iron and steel, in iron and steel; a dungeon
+  the knights' and silver, in silver; a sea dungeon elven and dwarven, in elven and dwarven; an Elite Dungeon orcish
+  and mithril, in orcish and mithril; an Abyss Dungeon adamantium and ebony, in adamantium and ebony; a Breach
+  daedric, in daedric; a faction its guild set. No armour set is two contents'; a faction's weapons share a metal with
+  another content's but wear their faction's colour.
 - **Magic** pieces are light armour or clothes by the item's own number (its name while it has none, a smith's ware
   before it is bought): the head and arms its content's lightest sets (the world's leather or the thieves', another
   content's first), the torso and legs clothes (a shirt with a tunic or vest over it, breeches, trousers or a skirt,
