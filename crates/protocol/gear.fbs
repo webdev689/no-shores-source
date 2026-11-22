@@ -232,6 +232,12 @@ table Gear {
   bounty_aurem: uint;
   // The game's letters waiting for them at the mail counter, oldest first.
   mail: [GearLetter];
+  // Each playlist's record as kept with their character: the Elite's and the Abyss's daily reward taken on
+  // activity_day, and their clears counted in activity_week, to three (the third pays the weekly reward).
+  elite_playlist_taken: bool;
+  abyss_playlist_taken: bool;
+  elite_playlist_clears: ubyte;
+  abyss_playlist_clears: ubyte;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

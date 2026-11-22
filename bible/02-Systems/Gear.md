@@ -522,7 +522,7 @@ Dungeon, a sea dungeon or a Breach. Its looks follow it ("Looks", below), and it
   dungeon's; every other room the world's, the sea's flotsam among them.
 - **What carries it**: a kill's Vestiges and items, a clear's and a cache's (`loot_kill`, `reward_clear`), from the
   room's content; the dungeon of the day's first clear a dungeon's, the week's two an Elite's and an Abyss's
-  (`gear::clears`); the smiths' wares, a faction's packages, the public events' chests and the Test Ground's the
+  (`gear::clears`), and each playlist's daily and weekly its tier's (`gear::playlist`); the smiths' wares, a faction's packages, the public events' chests and the Test Ground's the
   world's; a faction's ware the faction's; Shape's each its own.
 - **A Vestige opened** makes its item from its own content: a rolled one keeps it; a named one is drawn among its
   content's named items of its slot and colour (`source` in `content/gear/items.json`, by the content its look

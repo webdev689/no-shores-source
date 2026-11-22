@@ -3,6 +3,7 @@ type: system
 status: built
 code:
   - crates/dungeon/src/lib.rs#of_patrol
+  - crates/room/src/playlist_run.rs#playlist_run
   - crates/dungeon/src/lib.rs#style_of
   - crates/dungeon/src/lib.rs#name
   - crates/dungeon/src/styles.rs#STYLES
@@ -219,6 +220,7 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 | A patrol's dungeon (an island's patrol, numbers 0 to 2) | `<patrol>--dungeon-<n>` | its island's band | the Reeve, a Miniboss | the day's, that day, when it opened as the day's | the day's, at Elite or Abyss when it opened as the day's | a patrol's dungeon |
 | An Elite Dungeon at Normal | `<place>--elite-dungeon` | its island's band | its Boss | nothing more | none | an Elite Dungeon |
 | An Elite Dungeon at Elite or Abyss, only this week's of that tier | the same | every foe at 26 or 30 | its Boss | the week's | the week's | the week's dungeon |
+| A playlist's run of any Elite Dungeon, at Elite or Abyss | the same | every foe at one of its bands' levels | its Boss | the playlist's daily, and a clear toward its weekly, once a run | the day's (and at Abyss one more) | the playlist's band |
 | A sea island's (its style known, its continent of a band) | `sea-dungeon-<continent>-<style>-<seed 8 hex>` | its continent's band | the Reeve, a Miniboss | nothing more | none | by its tier alone |
 
 - **An Elite Dungeon's room** lays its dungeon from its place (`elite_laid`: the seed `elite:<place>` and the style

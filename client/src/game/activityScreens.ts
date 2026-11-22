@@ -1,7 +1,7 @@
-// The activities' screens, wired by the game: what the menu's Journal reads for its timers, quests and bounties, and
-// the card E opens at a dungeon's entrance, drawn as a layer of the interface. It keeps the last word of the character
-// any room sent, so the screens read the same at sea as ashore, and builds their words from the rules
-// (`activityWords.ts`), never judging a rule itself.
+// The activities' screens, wired by the game: what the menu's Journal reads for its timers, quests and bounties, the
+// card E opens at a dungeon's entrance and the Playlist a port's mark opens, drawn as a layer of the interface. It
+// keeps the last word of the character any room sent, so the screens read the same at sea as ashore, and builds their
+// words from the rules (`activityWords.ts`), never judging a rule itself.
 import type { Layer } from '../ui/stack.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { activitiesAt, gatesAt } from './activities.ts';
@@ -23,6 +23,7 @@ import { setGearScreenOpen } from './gearScreen.ts';
 import type { AccountLink } from '../network/accounts.ts';
 import type { GearState } from '../network/gearMessages.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
+import { startPlaylists } from './playlistScreens.ts';
 import { companyPlaces, sharedRun } from './rooms.ts';
 import type { NodeInfo } from './worldData.ts';
 
@@ -55,7 +56,9 @@ export interface ActivityScreens {
   /** Why each tier's seas are shut to the player by their level, by tier (null where open); none before a room's
    *  word. */
   seasShut(): readonly (string | null)[];
-  /** The entrance's card as the interface draws it, while it stands. */
+  /** A press on mark `id`: true, its Playlist screen opened, where it is a Playlist's mark. */
+  playlist(id: string): boolean;
+  /** The entrance's card or the Playlist as the interface draws it, while one stands. */
   readonly layer: Layer;
 }
 
@@ -69,7 +72,7 @@ export function startActivityScreens(
   module: Promise<WebAssembly.Module>,
   nodes: readonly NodeInfo[],
   foot: () => ScreensFoot | null,
-  trips: { enter(number: number, name: string, run?: string): void },
+  trips: { enter(number: number, name: string, run?: string): void; intoRun?(node: NodeInfo, run: string): void },
   link: Pick<AccountLink, 'token' | 'finderAt'> | null,
   clock: ScreensClock = PAGE_CLOCK,
   atSea: () => GearState | null = () => null,
@@ -156,9 +159,19 @@ export function startActivityScreens(
     if (search && search.base !== card.finds) stopSearch();
     render();
   };
+  const playlists = startPlaylists({
+    module: () => compiled,
+    nodes,
+    kept: () => kept,
+    intoRun: (node, run) => trips.intoRun?.(node, run),
+    link,
+    now: clock.now,
+    ...(clock.open && { open: clock.open }),
+  });
   const look = () => {
     const here = foot();
     kept = here?.gear?.gear ?? atSea() ?? kept;
+    playlists.look();
     if (!opened || !compiled) return;
     if (!here || here.fallen || here.dungeon || here.node !== opened.entrance.node) return close();
     if (opened.minute !== Math.floor(clock.now() / 60_000) || opened.gear !== kept) showCard(compiled, opened.entrance);
@@ -168,7 +181,8 @@ export function startActivityScreens(
   };
   clock.every(look);
   return {
-    layer: view.layer,
+    layer: (ui) => view.layer(ui) ?? playlists.layer(ui),
+    playlist: (id) => playlists.open(id),
     week: () => {
       const laying = compiled;
       if (!laying) return null;

@@ -20,6 +20,9 @@ fn each_dungeons_room_gives_from_its_own_content() {
     assert_eq!(run(patrol, Difficulty::Abyss), Source::Dungeon, "a patrol's dungeon at any tier");
     assert_eq!(run(elite("krakens-grotto"), Difficulty::Normal), Source::Elite);
     assert_eq!(run(elite("saltworm-warrens"), Difficulty::Abyss), Source::Abyss, "the week's Abyss Dungeon");
+    let playlist = |foes_at| RunOf::Playlist { place: "pearl-tomb".into(), foes_at };
+    assert_eq!(run(playlist(22), Difficulty::Elite), Source::Elite, "the Elite Playlist");
+    assert_eq!(run(playlist(23), Difficulty::Abyss), Source::Abyss, "the Abyss Playlist");
     assert_eq!(run(sea.clone(), Difficulty::Normal), Source::Sea);
     assert_eq!(run(sea, Difficulty::Elite), Source::Sea);
     assert_eq!(Room::dungeon("saltgrass-downs", 0, None).expect("shared").source, Source::Dungeon);

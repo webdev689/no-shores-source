@@ -5,16 +5,20 @@ const DUNGEON = /^dungeon-([0-2])$/;
 /** A run's instance: eight lowercase letters or digits, after `--run-` at a room name's end. */
 export const RUN_ENDING = /--run-[a-z0-9]{8}$/;
 const RUN = /^run-([a-z0-9]{8})$/;
+/** A playlist's run's foes' level, before its instance: `playlist-12`. */
+const PLAYLIST = /^playlist-([1-9][0-9]?)$/;
 
 /** A node's room by the name after `node-`: `<id>` at Normal, `<id>--elite` or `<id>--abyss`; a patrol's dungeon's
  *  room with `--dungeon-<number>` after that; and a run with `--run-<instance>` last. A patrol's dungeon is one shared
- *  room at Normal and only a run at Elite or Abyss. Null for any other spelling, so no one opens a fresh copy of a
- *  shared room to gather or loot again, nor a shared copy of a private run. */
+ *  room at Normal and only a run at Elite or Abyss. A playlist's run of an Elite Dungeon at Elite or Abyss names its
+ *  foes' level before its instance, `--playlist-<level>`. Null for any other spelling, so no one opens a fresh copy of
+ *  a shared room to gather or loot again, nor a shared copy of a private run. */
 export function nodeRoom(name: string): {
   readonly id: string;
   readonly seas: number;
   readonly dungeon: number | null;
   readonly run: string | null;
+  readonly playlist: number | null;
 } | null {
   const parts = name.split('--');
   // A run's and a dungeon's endings only after `--`: a node may itself be called `dungeon-0`.
@@ -22,13 +26,17 @@ export function nodeRoom(name: string): {
   if (last.startsWith('run-') && !RUN.test(last)) return null;
   const run = RUN.exec(last)?.[1] ?? null;
   if (run !== null) parts.pop();
-  const number = parts.length > 1 ? DUNGEON.exec(parts.at(-1) ?? '')?.[1] : undefined;
+  const listed = run !== null && parts.length > 2 ? PLAYLIST.exec(parts.at(-1) ?? '')?.[1] : undefined;
+  if (listed !== undefined) parts.pop();
+  const number = listed === undefined && parts.length > 1 ? DUNGEON.exec(parts.at(-1) ?? '')?.[1] : undefined;
   if (number !== undefined) parts.pop();
   const [id = '', seas, ...more] = parts;
   const difficulty = seas === undefined ? 0 : SEAS.indexOf(seas);
   if (id === '' || more.length > 0 || difficulty < 0 || seas === SEAS[0]) return null;
   if (number !== undefined && (difficulty === 0) !== (run === null)) return null;
-  return { id, seas: difficulty, dungeon: number === undefined ? null : Number(number), run };
+  if (listed !== undefined && difficulty === 0) return null;
+  const playlist = listed === undefined ? null : Number(listed);
+  return { id, seas: difficulty, dungeon: number === undefined ? null : Number(number), run, playlist };
 }
 
 /** A sea island's dungeon's room: its continent's layout id, its style's key, its seed as 8 lowercase hex digits,
@@ -68,7 +76,8 @@ export function runAsk(room: string, minute: number): string | null {
   const named = room.startsWith('node-') ? nodeRoom(room.slice('node-'.length)) : null;
   if (!named || named.run === null) return null;
   const dungeon = named.dungeon === null ? { place: named.id } : { patrol: named.id, number: named.dungeon };
-  return JSON.stringify({ dungeon, tier: named.seas, minute });
+  const playlist = named.playlist === null ? {} : { playlist: named.playlist };
+  return JSON.stringify({ dungeon, tier: named.seas, minute, ...playlist });
 }
 
 /** The letters a run's instance is drawn from: 36, so each of its 8 random bytes is taken modulo 36. */

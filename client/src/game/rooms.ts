@@ -69,21 +69,27 @@ export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficu
 const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
 
 /** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`), the patrol's dungeon it is
- *  (`--dungeon-<number>` after those, never a node's own name), and its run's instance (`--run-<instance>` last);
- *  null for any other room. */
+ *  (`--dungeon-<number>` after those, never a node's own name), a playlist's run's foes' level (`--playlist-<level>`),
+ *  and its run's instance (`--run-<instance>` last); null for any other room. */
 export function nodeOfRoom(room: string): {
   readonly id: string;
   readonly seas: Difficulty;
   readonly dungeon: number | null;
   readonly run: string | null;
+  readonly playlist: number | null;
 } | null {
   const found =
-    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--run-([a-z0-9]{8}))?$/.exec(room);
+    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?))?(?:--run-([a-z0-9]{8}))?$/.exec(
+      room,
+    );
   if (!found?.[1]) return null;
   const named = found[2];
   const dungeon = found[3] === undefined ? null : Number(found[3]);
   const seas = named === undefined ? 'normal' : (OLD_NAMES[named] ?? (named as Difficulty));
-  return { id: found[1], seas, dungeon, run: found[4] ?? null };
+  const playlist = found[4] === undefined ? null : Number(found[4]);
+  // A playlist's run is an Elite Dungeon's alone, at Elite or Abyss, as the rooms read it (`roomNames.ts`).
+  if (playlist !== null && (dungeon !== null || found[5] === undefined || seas === 'normal')) return null;
+  return { id: found[1], seas, dungeon, run: found[5] ?? null, playlist };
 }
 
 // A run's instance is drawn as the server's Find a Company draws one, by one rule.

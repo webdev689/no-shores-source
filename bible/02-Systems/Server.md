@@ -466,8 +466,10 @@ so every decision is Rust and the shell only carries bytes and time.
   room and loads again. A name is 64 characters at most.
 - **Runs** (`roomNames.ts`): a name ending `--run-<instance>`, eight lowercase letters or digits, is a private room,
   a run ([[Activities]]): `node-<patrol>--elite--dungeon-<n>--run-<i>` or `--abyss--` a patrol's dungeon at Elite or
-  Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, and `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
-  the week's two. A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
+  Abyss, `node-<Elite Dungeon>--run-<i>` an Elite Dungeon, `node-<Elite Dungeon>--elite--run-<i>` or `--abyss--`
+  the week's two, and `node-<Elite Dungeon>--elite--playlist-<foes' level>--run-<i>` or `--abyss--` a playlist's run
+  (`nodeRoom`'s `playlist`, which `runAsk` hands the room module as the ask's `playlist`; [[Activities]], "The
+  Playlist"). A sea island's dungeon is `sea-dungeon-<continent>-<style>-<seed, 8 hex digits>`, shared at
   Normal, with `--elite--run-<i>` or `--abyss--run-<i>` after it a run (`seaDungeonRoom`). No name opens a shared
   Elite or Abyss dungeon, a private Normal one, or a run without its whole instance. A run and a sea island's
   dungeon (on its sea's word, "The sea") open from their name: `runAsk` makes the ask the room module's `open_run` takes, at the minute the first
@@ -527,7 +529,8 @@ so every decision is Rust and the shell only carries bytes and time.
   the page offers it; that comes through a gate from a node whose gate leads there, at the same seas (the bake's
   `gates`); or that comes out of the node's own dungeon or run, at the seas it went in at. A dungeon's room or a run
   takes one from its node's room at its seas, and an Elite Dungeon's run (at Normal, or the week's at its own tier)
-  from its node at any seas. A character that came by none of these ways may still join one of its company who plays
+  from its node at any seas. A playlist's run takes one from the sea alone, and a run of the week's two from the sea
+  too, as the Playlist beside a port launches them; neither leads out to its node. A character that came by none of these ways may still join one of its company who plays
   in the room, as the Roster's "Go to them" does (`companions`). Any other is let go untouched, and the socket closed with 4003 and "You cannot reach
   this place from where you were.", so the page takes the player back to their ship, saying so. A player unkept is
   not judged, as they keep nothing. The sea, its islands and their dungeons keep their own rules ("The sea").

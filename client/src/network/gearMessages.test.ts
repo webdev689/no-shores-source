@@ -23,7 +23,10 @@ test('a players own gear the server wrote reads back whole, every column spelled
   assert.equal(gear?.kind, 'gear');
   if (gear?.kind !== 'gear') return;
   assert.equal(gear.prologueDone, false, 'a new character');
-  const nothing = { day: 0, cleared: [], week: 0, elite: false, abyss: false, boon: false };
+  const nothing = {
+    ...{ day: 0, cleared: [], week: 0, elite: false, abyss: false, boon: false },
+    ...{ playlistTaken: [false, false], playlistClears: [0, 0] },
+  };
   assert.deepEqual(gear.activity, nothing, 'a character that has done nothing yet');
   assert.equal(gear.bounties?.length, 6, 'the day’s board');
   assert.equal(

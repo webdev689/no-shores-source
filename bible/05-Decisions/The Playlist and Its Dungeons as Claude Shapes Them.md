@@ -47,6 +47,13 @@ Claude's choices for [[Armour and Weapon Looks Belong to the Content That Gives 
 | Launch | Find a Company, or Launch to enter a fresh run alone, which a company's members join | Destiny's playlists start with a fireteam or matchmake |
 | The Abyss Dungeon of the week | Still never matched: Launch only, with a company | The owner's Nightfall, as Destiny 1's |
 | Coming back | Out of a run to the sea beside the port it was launched from | Destiny returns a player to orbit |
+| The weekly's record | Its clears counted to three, the third paying; a clear counts toward the week its run was opened in, and the daily only on the day it was opened | A run opened before a reset is paid as the period it was opened for, as the week's two are |
+| The mark | A ☰ in amber (#e0a458), "Elite and Abyss dungeons", beside the port's own mark; the screen says "Beside <city>" | One mark a port, read apart from the port's |
+| The screen | Four tiles across where they fit, else two rows of two, scrolled when taller than the screen; each with its level, rules, modifiers, rewards and resets; "Every clear pays its kills and its cache, as any run does." once beneath | Every playlist's state at a glance, as Destiny's director shows its nodes |
+| Launch's dungeon | Drawn by the page for a run alone; Find a Company's by the server. The room takes any of the 18 for a playlist | An Elite Dungeon at Normal is chosen freely already; the owner may want the server to draw Launch's too |
+| The week's two from the Playlist | Entered from the sea and left back to it, as a playlist's run is | One way in from every port |
+| A Roster join | A company member may join a playlist's run from another island; leaving puts them on the sea | Companies play together wherever they stood |
+| Below a playlist's level | The finder closes the queue with the gate's words | The rooms would refuse the run anyway |
 
 ### Encounters
 

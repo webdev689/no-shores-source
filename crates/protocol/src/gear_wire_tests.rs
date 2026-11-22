@@ -495,6 +495,20 @@ fn a_players_gear_carries_their_days_and_weeks_record_as_kept() {
 }
 
 #[test]
+fn a_players_gear_carries_each_playlists_daily_and_weekly_record_as_kept() {
+    let mut room = Room::new(Vec::new(), (0.0, 0.0));
+    let player = room.join().expect("a room with space");
+    let mut character = room.player(player).expect("in the room").character.clone();
+    character.activity.today = gear::activity::Today { day: 20_778, abyss_playlist: true, ..Default::default() };
+    character.activity.this_week = gear::activity::ThisWeek { week: 2_968, elite_playlist: 2, ..Default::default() };
+    assert!(room.restore_character(player, &character.to_json()));
+    let bytes = gear_bytes(&room, player).expect("written");
+    let gear = messages::root_as_from_room(&bytes).expect("read").gear().expect("gear");
+    assert_eq!((gear.elite_playlist_taken(), gear.abyss_playlist_taken()), (false, true));
+    assert_eq!((gear.elite_playlist_clears(), gear.abyss_playlist_clears()), (2, 0));
+}
+
+#[test]
 fn a_players_gear_carries_its_day_and_board_and_no_bounty_held_from_another_day() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     room.furnish(Some([0.0, 0.0]), Vec::new());

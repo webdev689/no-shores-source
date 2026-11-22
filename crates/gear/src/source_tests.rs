@@ -123,6 +123,15 @@ fn first_clears_pay_vestiges_of_their_content() {
     let weekly = |weekly| Character::starting().clear_of_the_week(2_968, weekly, &dice(1)).expect("the week's").source;
     assert_eq!(weekly(crate::activities::Weekly::Elite), Source::Elite);
     assert_eq!(weekly(crate::activities::Weekly::Abyss), Source::Abyss);
+    use crate::playlist::Playlist;
+    for (playlist, source) in [(Playlist::Elite, Source::Elite), (Playlist::Abyss, Source::Abyss)] {
+        let mut character = Character::starting();
+        let daily = character.playlist_of_the_day(20_778, playlist, 22, &dice(1)).expect("the day's");
+        assert_eq!(daily.source, source);
+        let weekly: Vec<Vestige> =
+            (0..3).flat_map(|_| character.playlist_of_the_week(2_968, playlist, 22, &dice(2))).collect();
+        assert!(!weekly.is_empty() && weekly.iter().all(|vestige| vestige.source == source));
+    }
 }
 
 #[test]

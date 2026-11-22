@@ -584,6 +584,10 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         bounty_xp,
         bounty_aurem,
         mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
+        elite_playlist_taken: today.elite_playlist,
+        abyss_playlist_taken: today.abyss_playlist,
+        elite_playlist_clears: this_week.elite_playlist,
+        abyss_playlist_clears: this_week.abyss_playlist,
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

@@ -350,7 +350,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (playing.flow.mode === 'foot' && playing.foot?.fallen)
       return 'You are in their company. Go to them once you respawn.';
     const where = nodeOfRoom(place);
-    const node = where && playing.landmass.nodes.find((each) => each.id === where.id);
+    const node = where && (where.playlist ? world.nodes : playing.landmass.nodes).find((each) => each.id === where.id);
     if (!where || !node)
       return place === 'sea' ? 'They are at sea: meet them where they land.' : 'They are across the sea.';
     const facing = arrivalFacing(node, playing.landmass.plan, null);
@@ -518,7 +518,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
 
   const respawn = () => (playing.foot ?? playing.sea?.boarding.foot)?.respawn();
 
-  hud.onMark(choose);
+  hud.onMark((id) => (screens.playlist(id) ? undefined : choose(id))); // a Playlist's mark opens its screen
   hud.onRespawn(respawn);
   hud.onPace((direction) => playing.sea?.stepPace(direction));
   hud.onVoyage(stopOrResume);

@@ -22,6 +22,11 @@ code:
   - client/src/game/activityWords.ts#entranceCardOf
   - server/accounts/finding.ts#Queue
   - client/src/game/companyFinder.ts#findCompany
+  - crates/gear/src/playlist.rs#Playlist
+  - crates/room/src/playlist_run.rs#playlist_run
+  - server/accounts/playlists.ts#playlistRun
+  - client/src/game/playlistWords.ts#playlistScreenOf
+  - client/src/game/playlistScreens.ts#startPlaylists
 ---
 # Activities
 
@@ -77,6 +82,8 @@ Company]]).
 | Elite Dungeons | The 18 named dungeons | Normal, at their island's band | After the prologue |
 | Elite Dungeon of the week | One of the 18, with one modifier | Elite, foes at 26 | Campaign's end, level 24 |
 | Abyss Dungeon of the week | Another of the 18, with three modifiers | Abyss, foes at 30 | Campaign's end, level 28 |
+| Elite Playlist | Any of the 18, drawn as each run starts, with the day's modifier | Elite, by bands of five levels | After the prologue, level 10 |
+| Abyss Playlist | Any of the 18, with the day's modifier and one more | Abyss, by bands of five levels | After the prologue, level 20 |
 | Breaches | Later | | Campaign's end |
 
 - **Draws** are `gear::activities`, seeded by the clock's day or week number alone, so every room and page sees the
@@ -114,11 +121,60 @@ Company]]).
   room keeps their character, a player's inputs are taken in their order and stand still (`Room::hold`). It is forgotten
   a minute after its last player leaves.
 - **Find a Company** queues a player for an Elite Dungeon or the Elite Dungeon of the week, by level band (tens of
-  levels, from the level their room last kept), from the entrance's card. A run starts with four, or with fewer after
+  levels, from the level their room last kept), from the entrance's card, and for each playlist by its own bands
+  from the Playlist ("The Playlist"). A run starts with four, or with fewer after
   a minute's wait, never with two where one blocks the other, and those found go into it together ([[Accounts]],
   "Find a Company"). A group found is no company: it shares that one run alone.
 - **The Abyss Dungeon of the week is never matched**, as Destiny 1's hardest weekly strike was not: a company forms
   it.
+
+## The Playlist
+
+The owner's decision is [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]]; how it is shaped is
+Claude's, recorded in [[The Playlist and Its Dungeons as Claude Shapes Them]].
+
+- **Where.** A Playlist mark stands beside the harbour of each port city, Overlook, Sunspire and Rimeholt, at sea and
+  over the island's side, open whether or not the city's social space is ([[Overworld]], "Marks"). Choosing it opens
+  the Playlist screen for that port ([[Interface]], "The Playlist") rather than sailing or landing. The screen and
+  its queues are the same from every port.
+- **What it holds.** The Elite Playlist and the Abyss Playlist, then the Elite Dungeon of the week and the Abyss
+  Dungeon of the week. The Journal's lines for the week's two say they are queued from the Playlist beside any port.
+- **A playlist's run** (`gear::playlist`, `room::playlist_run`) is one of the 18 Elite Dungeons, laid as its run at
+  Normal is, at the playlist's tier, every foe at its band's level. It carries the day's modifiers: the Elite
+  Playlist the day's modifier, the Abyss Playlist the day's and one more of another kind drawn for the day (its own
+  kind of draw, its Burn naming an Art as the day's does), and at Abyss Abyss's rules below. Its room is named
+  `node-<Elite Dungeon>--<elite|abyss>--playlist-<foes' level>--run-<instance>` ([[Server]]); one naming a level no
+  band of its tier stands its foes at, or at Normal, opens no room.
+- **Bands.** Five levels each from the level it opens at; the band's foes stand at its first level raised by the tier,
+  never past 32:
+
+  | Playlist | Opens | Bands | Foes at |
+  |---|---|---|---|
+  | Elite | 10 | 10 to 14, 15 to 19, 20 to 24, 25 to 29, 30 | 12, 17, 22, 27, 32 |
+  | Abyss | 20 | 20 to 24, 25 to 29, 30 | 23, 28, 32 |
+
+- **Its gate** (`Place::Playlist`): the prologue first, then the playlist's level ("The Elite Playlist opens at
+  level 10.", "The Abyss Playlist opens at level 20."), then the character's band: a run takes no one below its
+  band's first level or above its last ("This run is for levels 15 to 19.", "This run is for level 30.").
+- **Starting one.** Find a Company searches the playlist's one queue for the whole game ([[Accounts]], "Find a
+  Company"); the server draws the Elite Dungeon as the company is found. Launch starts a fresh run alone, which the
+  player's company joins by the Roster; the page draws its Elite Dungeon. The Elite Dungeon of the week is found or
+  launched; the Abyss Dungeon of the week is launched only, never matched. Offline the page launches alone.
+- **Going and coming back.** A run found or launched is gone into from the sea or over the island's side, through a
+  voyage's veil; out of it by its door, its portal or a wipe, the player is back on the sea where the ship lies,
+  beside the port it was launched from, as a sea island's dungeon leaves back to the sea. The rooms take a player
+  into a playlist's run, or into a run of the week's two, from the sea ([[Server]], "Where a character comes from").
+- **What it pays.** Every clear pays its kills, its cache and a dungeon's clear, as any run. Beside them:
+  - **Daily:** each playlist's first clear each day, a Boss Captain's kill at the run's level and tier (as the dungeon
+    of the day pays) and a sure Vestige in a Boss's colours.
+  - **Weekly:** each playlist's third clear each week, Essence of each stock (Elite 2, Abyss 3) and Vestiges in a
+    Boss's colours (Elite one, Abyss two).
+  - A clear counts once a run for each account (`Run::playlist_counted`), however often its cache opens. The daily pays
+    only in the day the run was opened for, its modifiers fixed then; a clear counts toward the weekly only in the
+    week it was opened in.
+- **The records.** `today` keeps whether each playlist's daily is taken (`elite_playlist`, `abyss_playlist`), and
+  `this_week` each playlist's clears counted, to three, three meaning the weekly is paid; each is written only once
+  touched, so an older save reads as none. The gear message carries them at the end of its table.
 
 ## Abyss's rules
 
@@ -297,7 +353,8 @@ each Elite Dungeon's Boss are among Claude's calls.
 Each is Claude's, open to the owner's change: the resets at 09:00 UTC and Tuesday; a dungeon of the day on each island
 rather than one, with three rewards a day across them; Elite and Abyss seas opening at levels 10 and 20; the week's two
 with foes at 26 and 30, opening at 24 and 28; private runs at Elite and Abyss; a run starting short after a minute, Find
-a Company's bands of ten levels, and a group found sharing one run without becoming a company; five shared revives,
+a Company's bands of ten levels, and a group found sharing one run without becoming a company; the Playlist's shape,
+its bands, modifiers, rewards and screen ([[The Playlist and Its Dungeons as Claude Shapes Them]]); five shared revives,
 restored by a wipe; the modifier set; the rewards above and the quarter-more boon; a foe felled on a ship's deck
 counting toward no bounty and earning no Abyss boon; six bounties a day paying XP and Aurem; and the screen's names,
 Find a Company and the Journal's Timers.

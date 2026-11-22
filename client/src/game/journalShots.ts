@@ -7,7 +7,7 @@ import { roomNow } from '../sky/worldClock.ts';
 import type { Node } from '../ui/node.ts';
 import type { Layer } from '../ui/stack.ts';
 import type { Interface } from '../ui/ui.ts';
-import type { EntranceCard, KeyedModifier, ThisWeek, WeekRow } from './activityWords.ts';
+import { type EntranceCard, type KeyedModifier, QUEUED, type ThisWeek, type WeekRow } from './activityWords.ts';
 import { EntranceCardView } from './entranceCard.ts';
 import { openGearWindow, type View } from './gearScreen.ts';
 import { startGearWindow } from './gearWindow.ts';
@@ -107,6 +107,7 @@ function weekOf(now: number, untilDay = 20 * HOUR + 55 * 60_000, untilWeek = 2 *
           modifiers: [BRAWLER],
           pays: 'Once a week: a Legendary Vestige and Essence.',
           rewards: ['legendary-vestige', 'essence'],
+          queued: QUEUED,
         },
         {
           ...row('saltworm-warrens', { about: 'Abyss Dungeon of the week · Level 30', ...shut }),
@@ -117,6 +118,7 @@ function weekOf(now: number, untilDay = 20 * HOUR + 55 * 60_000, untilWeek = 2 *
           modifiers: [LIGHTSWITCH, BURN, JUGGLER],
           pays: 'Once a week: a Legendary or Atheric Vestige, Essence, and the Abyss boon.',
           rewards: ['atheric-vestige', 'essence', 'boon'],
+          queued: QUEUED,
         },
       ],
       boon: 'Abyss boon: 25% more XP until the week turns.',
