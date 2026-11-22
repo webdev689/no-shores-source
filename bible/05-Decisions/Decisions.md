@@ -245,6 +245,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Foes Walk and Run at Three Quarters of a Player's Pace]]
 - [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
 - [[The Crew Still Standing Regroup Ahead]]
+- [[The Server Is the Authority Over Everything]]
+- [[The Asset Workflows Publish to R2 With a Token for R2 Alone]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

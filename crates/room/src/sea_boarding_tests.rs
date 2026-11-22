@@ -108,7 +108,7 @@ fn a_boarders_deck_inputs_stand_no_foe_replay_nothing_reach_no_other_player_and_
 fn two_boarders_one_beaten_both_take_its_hold_when_its_crew_falls_and_both_step_off_after_it() {
     let (mut sea, one) = met(20.0, Rank::Minor);
     let two = sea.join();
-    sea.course(two, &[[50_010.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(two, &[[50_010.0, 50_000.0]], 10).unwrap();
     sea.tick();
     assert!(sea.fights.fighting(two), "joined");
     strike(&mut sea, one);
@@ -255,7 +255,7 @@ fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
     let mut sea = super::tests::sea();
     let player = sea.join();
     on_road(&mut sea, player, 3, 5);
-    sea.course(player, &[[50_000.0, 50_000.0]], 10).unwrap();
+    sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
     let standing = crate::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
     sea.pirates.sailing.push(crate::pirates::Pirate { level: 9, ..standing });

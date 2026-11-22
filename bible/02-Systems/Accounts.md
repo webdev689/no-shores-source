@@ -25,6 +25,7 @@ code:
   - server/accounts/finding.ts#Finder
   - server/accounts/finder.ts#CompanyFinder
   - server/accounts/migrations/20261120181039_found_runs.sql
+  - server/accounts/migrations/20261121120000_character_rooms.sql
   - client/src/network/accounts.ts#AccountLink
   - server/accounts/binds.ts#bindsAsk
   - server/accounts/migrations/20261121180000_binds.sql
@@ -106,7 +107,11 @@ they play in holds it while they are there.
 - **Moving between rooms.** A claim waits up to three seconds for the room the player left to let go, then takes the
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room (4001),
-  and that page joins no more ([[Server]], "Joining again").
+  and that page joins no more ([[Server]], "Joining again"). Each claim keeps the room that claims it (`room`, from
+  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]), and a look answers
+  the room that last held it; a room that lets a character go untouched (its gate shut, or it never gave it) was never
+  where it was, so the room before is its last again. The rooms judge where a character comes from by these alone
+  ([[Server]], "Where a character comes from").
 - **Gated.** Before giving a character, the room asks its gate ([[Activities]]). It judges the character with the
   story the player already holds in the room carried forward, since the page may tell the room the prologue is done
   before the accounts answer; the story only moves forward. One the gate shuts, or a new one where the prologue is
@@ -124,9 +129,10 @@ they play in holds it while they are there.
   as the boarder leaves it ([[Naval Combat]], "How a fight ends"). Before the claim is answered the sea plays a new
   character whose ship has the hurts it keeps.
 - **What is not kept.** A character the room cannot read is left as it was, untouched, and the player plays one
-  that is not kept, or in a run, which keeps no one unkept, is sent away. The Test Ground's room grants gear to try
-  it, so it keeps no characters, nor does a fleet room; nor does a page with no session, playing alone, or on a local
-  room server with no `?accounts=`.
+  that is not kept, or in a run, which keeps no one unkept, is sent away. A socket with no session, its token none in
+  five seconds or no session at all, is sent away from any room that keeps characters ([[Server]], "The host"). The
+  Test Ground's room grants gear to try it, so it keeps no characters, nor does a fleet room; nor does a page playing
+  alone. A page on a local room server with no `?accounts=` holds no session, so a node's room there sends it away.
 
 ## The Roster
 

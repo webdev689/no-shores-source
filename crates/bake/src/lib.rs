@@ -44,6 +44,9 @@ pub struct NodeFile {
     /// Whether its room takes no player: a patrol area or mission until a pass is done on it ([`lock`]), or a social
     /// space still locked (`city::social_open`).
     pub locked: bool,
+    /// The nodes its layout's gates and way in lead to, each one laid: a patrol area's instances, an instance's patrol
+    /// area. The server lets a player through into a node only from one whose gate leads there.
+    pub gates: Vec<String>,
     /// In a patrol area, its layout's resource places, where its room's nodes stand, in the layout's order.
     pub resources: Vec<[f64; 2]>,
     /// The places the houses' roads name: each of its layout's areas, and each run at its mouth.
@@ -80,7 +83,7 @@ pub struct Counter {
     pub at: [f64; 2],
 }
 
-/// What a node's index lists of it.
+/// What a node's index lists of it: the server reads where each node's gates lead from it.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 pub struct Listed {
     pub id: String,
@@ -88,12 +91,14 @@ pub struct Listed {
     pub name: String,
     pub continent: String,
     pub bounds: [f64; 4],
+    pub gates: Vec<String>,
 }
 
 impl From<&NodeFile> for Listed {
     fn from(node: &NodeFile) -> Self {
-        let NodeFile { id, kind, name, continent, bounds, .. } = node;
-        Listed { id: id.clone(), kind: *kind, name: name.clone(), continent: continent.clone(), bounds: *bounds }
+        let NodeFile { id, kind, name, continent, bounds, gates, .. } = node;
+        let (id, name, continent, gates) = (id.clone(), name.clone(), continent.clone(), gates.clone());
+        Listed { id, kind: *kind, name, continent, bounds: *bounds, gates }
     }
 }
 
@@ -185,6 +190,7 @@ pub fn nodes_of(
             board: None,
             shape_spots,
             locked: false,
+            gates: Vec::new(),
             resources: Vec::new(),
             places,
             paths,
@@ -198,6 +204,9 @@ pub fn nodes_of(
             || (whole(&node.ring), whole(&node.spawns)),
             |layout| (layout.ring.clone(), layout.spawns.clone()),
         );
+        // As the page's passages go: through an area that leads to a node with a layout of its own.
+        let leading = laid.into_iter().flat_map(|layout| &layout.areas).filter_map(|area| area.leads_to.as_ref());
+        let gates = leading.filter(|to| layouts.iter().any(|layout| &&layout.id == to)).cloned().collect();
         let resources = laid.map_or_else(Vec::new, |layout| {
             let places = layout.sites.iter().filter(|site| site.kind == layout::sites::SiteKind::Resource);
             places.filter_map(|site| site.node).collect()
@@ -205,7 +214,7 @@ pub fn nodes_of(
         let places = laid.map(places_of).unwrap_or_default();
         let paths =
             laid.map(|layout| layout.paths.iter().map(|path| path.points.clone()).collect()).unwrap_or_default();
-        NodeFile { resources, places, paths, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
+        NodeFile { gates, resources, places, paths, ..cut(node.id.clone(), node.kind, node.name.clone(), ring, spawns) }
     });
     let social = plan.as_ref().map(|plan| {
         let (id, social) = (city::social_id(&plan.id), &plan.social);
@@ -352,6 +361,22 @@ mod tests {
         let node = nodes_of(&layout.continents[0], edits, &Blocks::default(), &builders).unwrap().remove(0);
         let named = |name: &str| node.places.iter().filter(|place| place.name == name).count();
         assert_eq!((named("The Keep"), named("The Cut")), (1, 1), "the area alone, and the run of its own name");
+    }
+
+    #[test]
+    fn a_patrol_area_s_gate_leads_to_its_instance_and_the_instance_s_way_in_back_and_the_index_says_so() {
+        const GLADE_AND_GROVE: &str = r#"{ "strokes": [], "nodes": [{ "id": "glade", "kind": "patrol",
+            "name": "The Glade", "ring": [[260000, 360000], [261000, 360000], [261000, 361000], [260000, 361000]],
+            "spawns": [[260500, 360500]] }, { "id": "grove", "kind": "mission", "name": "The Grove",
+            "ring": [[262000, 360000], [263000, 360000], [263000, 361000], [262000, 361000]],
+            "spawns": [[262500, 360500]] }] }"#;
+        let layout = world::layout::parse(SQUARE).unwrap();
+        let edits = land::edits::parse(GLADE_AND_GROVE).unwrap();
+        let nodes = nodes_of(&layout.continents[0], edits, &Blocks::default(), &Builders::default()).unwrap();
+        let gates = |id: &str| nodes.iter().find(|node| node.id == id).map(|node| node.gates.clone());
+        assert_eq!(gates("glade"), Some(vec!["grove".to_owned()]));
+        assert_eq!(gates("grove"), Some(vec!["glade".to_owned()]));
+        assert!(nodes.iter().all(|node| Listed::from(node).gates == node.gates), "the index lists them");
     }
 
     #[test]

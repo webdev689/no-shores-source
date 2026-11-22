@@ -107,7 +107,7 @@ company that fell); each mode is its own module.
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
 | On foot | M, then Return to ship | The veil, "Returning to your ship", then at sea |
-| On foot, or behind the veil to land | The room's gate shuts to the character | The veil, the gate's reason and "Returning to your ship", then at sea |
+| On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
 | Over the side | Escape | At sea |
@@ -135,7 +135,9 @@ is `<city id>-social`): a way to look round the world. An id the world does not 
 does a social space still locked: only Overlook's opens for now ([[Cities]], "Open and locked"), so a ruined city's is
 never arrived at. Should one open, it is named "Ruins of" and the city's name ([[Cities]], "Ruins"), on the veil too
 (the game waits for the rules' module to say which cities are ports, `mainPortsOf`), and on foot the line under its
-name says "Ruins" (`placeWords`). With
+name says "Ruins" (`placeWords`). Online, a node's room lets a kept character in only by a way that leads there
+([[Server]], "Where a character comes from"; [[The Server Is the Authority Over Everything]]), so any other room than
+Overlook's sends it back to its ship, the veil saying "You cannot reach this place from where you were.". With
 `&spawn=<east>,<south>[,<bearing in degrees>]` too, the player stands at that point instead of the node's spawn,
 offline: a way to look at one place.
 
@@ -283,7 +285,8 @@ node's entrances, and a sea island's from its door at sea, each through the Game
   room's far wall while it stands open (while the cache does, once the end foe has fallen). Taken, the veil says
   "Leaving" the dungeon, by the way out kept as the player went in: the node's room is joined at the entrance the
   player went in by, online its address with `?entrance=<number>`, alone the node's room opened again in the page and
-  joined with `room_join_at`. The player stands 1.5 m before the entrance's door, facing away from it.
+  joined with `room_join_at`. The player stands 1.5 m before the entrance's door, facing away from it; online the
+  room keeps them there once it keeps their character as come out of that dungeon, else it stands them at a spawn.
 - **An Abyss run.** The place line ends with the revives the company has left, from each snapshot ("5 revives
   left", "1 revive left", "No revives left"). When the room says this player's company fell (`Wiped`, `heardRun`),
   the page takes them out by the way they came in, even with the menu open, the veil saying "Your company fell.
@@ -524,7 +527,9 @@ With `?room=` in the address the game plays online (`roomsFrom`): a whole addres
   to the player's character ([[Activities]]) sends them back to their ship, the veil saying why, as "Abyss seas open
   at level 20. Returning to your ship".
   With accounts ([[Accounts]]; the deployed rooms use the deployed accounts, a local server `?accounts=`), the game
-  makes the player a guest or keeps their session, and the node's room keeps their character. Their gear shows in
+  makes the player a guest or keeps their session, and the node's room keeps their character. A page with no session
+  (the accounts out of reach, or a local server with no `?accounts=`) is sent away by each room that keeps characters
+  five seconds after it joins, as from a shut gate: "Sign in to play online.". Their gear shows in
   the menu ([[Interface]]), I for Character and O for Inventory, and its presses ride their inputs as asks. Played
   alone, the room in the game's worker keeps no gear.
 - **A run's room** ([[Activities]]) is its dungeon's room's name and an instance (`runOf`): eight letters or digits

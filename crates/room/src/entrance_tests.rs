@@ -130,6 +130,21 @@ fn a_player_joins_before_an_entrances_door_facing_away_from_it() {
     assert_eq!(plain.join_at(0), None, "no patrol, no entrance");
 }
 
+#[test]
+fn a_player_joined_before_an_entrance_may_be_stood_at_the_next_spawn_as_a_join_stands_them() {
+    let mut room = patrol(Floor::Flat);
+    let first = room.join().expect("room for a player");
+    let at_door = room.join_at(0).expect("an entrance");
+    assert!(room.stand_at_spawn(at_door));
+    let [one, two] = [first, at_door].map(|player| room.players[&player].fighter.body);
+    assert_eq!([one.x, one.y], SPAWNS[0], "the first join stands at the first spawn");
+    assert_eq!([two.x, two.y], SPAWNS[1], "and the one stood out of the door at the next");
+    assert!(!room.stand_at_spawn(at_door + 1), "no such player");
+    let third = room.join().expect("room for a player");
+    let body = room.players[&third].fighter.body;
+    assert_eq!([body.x, body.y], SPAWNS[0], "the turn goes on from there");
+}
+
 /// A content file's JSON.
 fn content(path: &str) -> serde_json::Value {
     let file = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../content").join(path);

@@ -48,8 +48,8 @@ pub enum CourseRefused {
     NoSuchPlayer,
     /// A pace that is not one of the steps.
     BadPace,
-    /// Too many points, a point that is not a number or lies outside the world's frame, or no point at all for a ship
-    /// not yet at sea.
+    /// Too many points, a point that is not a number or lies outside the world's frame, or for a ship not yet at sea no
+    /// point at all or a first point off every port city's roadstead.
     BadCourse,
     /// A point on a continent, or a leg that meets a coast.
     CrossesLand,
@@ -263,11 +263,12 @@ impl Sea {
     }
 
     /// Sets a player's course: the points their ship sails through in turn, to the nearest whole metre, at `pace`. A
-    /// ship not yet at sea puts to sea at the first point; one at sea starts it from where it is, to the nearest
-    /// metre, so the legs it sails are the legs judged. An empty course brings a ship at sea to rest. A course is
-    /// refused whole when any point lies on a continent or any leg meets a coast. A player sets one course a tick. Off
-    /// the helm, only one that keeps its way is taken: its helmsman sails on, at the pace the page eases it to. One
-    /// asked before the keeper answered for the player's character waits for it (`hold_course`).
+    /// ship not yet at sea puts to sea at the first point, by a port city's roadstead alone; one at sea starts it from
+    /// where it is, to the nearest metre, so the legs it sails are the legs judged. An empty course brings a ship at
+    /// sea to rest. A course is refused whole when any point lies on a continent or any leg meets a coast. A player
+    /// sets one course a tick. Off the helm, only one that keeps its way is taken: its helmsman sails on, at the pace
+    /// the page eases it to. One asked before the keeper answered for the player's character waits for it
+    /// (`hold_course`).
     pub fn course(&mut self, player: PlayerId, points: &[[f64; 2]], pace: u16) -> Result<(), CourseRefused> {
         let clock = self.clock;
         if self.hold_course(player, points, pace) {
@@ -299,7 +300,8 @@ impl Sea {
         }
         let start = match at_sea {
             Some(ship) => whole(&ports::in_frame([ship.x, ship.y])).ok_or(CourseRefused::BadCourse)?,
-            None => whole_points[0],
+            None if self.harbour.harbours.puts_to_sea(whole_points[0]) => whole_points[0],
+            None => return Err(CourseRefused::BadCourse),
         };
         let legs = std::iter::once(start).chain(whole_points.iter().copied());
         let path: Vec<Point> = legs.collect();
@@ -588,9 +590,8 @@ pub mod islands;
 mod ports;
 
 #[cfg(test)]
-#[path = "sea_tests.rs"]
-mod sea_tests;
-
-#[cfg(test)]
 #[path = "fight_measure_tests.rs"]
 pub(crate) mod fight_measure_tests;
+#[cfg(test)]
+#[path = "sea_tests.rs"]
+mod sea_tests;

@@ -301,11 +301,10 @@ impl Player {
     }
 
     /// Makes the dress others are shown again (`gear::cosmetics::dressed`) from the browser's dress and the gear worn,
-    /// so no page shows a piece its player does not keep; whether it changed.
+    /// so no page shows a piece its player does not wear or keep; whether it changed.
     pub(crate) fn dress_again(&mut self) -> bool {
         self.dress_stale = false;
-        let shown = gear::cosmetics::colours_shown(&self.character);
-        let dress = gear::cosmetics::dressed(&self.dress_sent, &self.character.cosmetics, &shown);
+        let Some(dress) = gear::cosmetics::dressed(&self.dress_sent, &self.character) else { return false };
         let changed = dress != self.dress;
         if changed {
             self.dress = dress;

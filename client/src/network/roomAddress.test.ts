@@ -2,9 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fleetAddress, LIVE_ROOMS, roomAddress } from './roomAddress.ts';
 
-test('a room’s name alone is that room on the deployed rooms, whatever its case', () => {
-  assert.equal(roomAddress('playtest'), `${LIVE_ROOMS}/room/playtest`);
-  assert.equal(roomAddress('Sea-Trial-2'), `${LIVE_ROOMS}/room/sea-trial-2`);
+test('a name alone is that Test Ground room on the deployed rooms, whatever its case', () => {
+  assert.equal(roomAddress('playtest'), `${LIVE_ROOMS}/room/test-playtest`);
+  assert.equal(roomAddress('Sea-Trial-2'), `${LIVE_ROOMS}/room/test-sea-trial-2`);
+  assert.equal(roomAddress('node-overlook-social'), `${LIVE_ROOMS}/room/test-node-overlook-social`, 'never a node’s');
 });
 
 test('a whole address is kept as it is, so a room can be local', () => {
@@ -14,10 +15,8 @@ test('a whole address is kept as it is, so a room can be local', () => {
 test('what is neither a name nor an address is no room', () => {
   assert.equal(roomAddress(''), null);
   assert.equal(roomAddress('play test'), null);
-  assert.equal(roomAddress('a'.repeat(65)), null);
-  const longest = 'node-thunderhoof-grasslands--abyss--dungeon-2';
-  assert.equal(roomAddress(longest), `${LIVE_ROOMS}/room/${longest}`, 'a dungeon’s room, past 40 characters');
-  assert.equal(roomAddress('a'.repeat(64)), `${LIVE_ROOMS}/room/${'a'.repeat(64)}`);
+  assert.equal(roomAddress('a'.repeat(60)), null, 'too long a name for its room');
+  assert.equal(roomAddress('a'.repeat(59)), `${LIVE_ROOMS}/room/test-${'a'.repeat(59)}`);
   assert.equal(roomAddress('https://example.com/room/x'), null);
 });
 

@@ -286,7 +286,8 @@ Where the work stands now, for the next session. Each session rewrites this note
 - **The dungeons-to-mail stack** (#72 → #88 → #97 → #122 → #123): a second and third audit's findings are all fixed,
   and each layer passes the full check on its head (64ca61c6, 4878453b, ad1c2084, 1b7dab08, b87ffb3e). It conflicts
   with `main` since #118, #126, #119, #130, #133, #134 and #136 to #138, so it needs a catch-up before it merges,
-  with the owner's yes. #122's move of the asset workflows to `R2_TOKEN` waits on the owner's named yes. Meeting #134,
+  with the owner's yes. #122's move of the asset workflows to `R2_TOKEN` has the owner's named yes
+  ([[The Asset Workflows Publish to R2 With a Token for R2 Alone]]). Meeting #134,
   the Postmaster's letter mark should beat while mail waits (his ring did), the board wear a gold "!", an entrance a
   door.
 - **The picture driver and the game's worker**: main draws in a worker, so `webgpu-shot.cjs` fails headless ("A valid
@@ -564,11 +565,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   effects stay, and at what settings, is the owner's to say; each is one line in `combat/attackFeel.ts` (`FEEL`).
 - A drawn sword, dagger or mace still changes hands in a mirrored view through the walk, the rest and a blow: the forge
   draws none in the left fist there. Whether the forge should, is the owner's to say.
-- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `ships` and `rooms` workflows
-  read; the one the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy
-  writes the stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into
-  `main` that changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run
-  by hand.
+- The Cloudflare token is the repository's Actions secret `CLOUDFLARE_TOKEN`, which the `rooms` workflow alone reads;
+  the workflows that publish to R2 read `R2_TOKEN`, a token for R2 alone, already among the secrets. The one
+  the owner gave in the chat should be rotated. A cloud session cannot deploy the rooms itself: its proxy writes the
+  stored token over the upload token Cloudflare hands back. The rooms deploy from CI after a merge into `main` that
+  changes their code ([[The Rooms Deploy When Their Code Changes]]); the `rooms` workflow can still be run by hand.
 - #62's: no weapon is seen through a roll, as DFO drew none in it; the forge's index has grown to 13.3 MB, and
   `r2.dev` limits its rate.
 - #59's open choices: the keys (B, H, E), the stand-ins' number and dress, Manage's view, what a walker who goes

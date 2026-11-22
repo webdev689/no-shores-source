@@ -1,6 +1,7 @@
 //! A dungeon for a browser, a patrol's, an Elite Dungeon's or one laid by a seed: its layout as the `dungeon` crate
 //! lays it, so a page draws it and predicts a body on it from the rules rather than from a copy of them. And the
-//! dungeon's room: opened from its patrol's node file, and a node's room joined before one of its entrances.
+//! dungeon's room: opened from its patrol's node file, and a node's room joined before one of its entrances (or stood
+//! at its spawn after all, when the server learns the player did not come out of that entrance's dungeon).
 
 use crate::{NodeFile, Opened, keep, with_open};
 use dungeon::{BLOCKS, Cell, Dungeon, ELITE_BLOCKS, Side};
@@ -205,6 +206,16 @@ pub extern "C" fn room_join_at(number: u32) -> PlayerId {
     })
     .flatten()
     .unwrap_or(0)
+}
+
+/// Stands a player who joined before an entrance at the room's next spawn, as an ordinary join; whether one was.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_stand_at_spawn(player: PlayerId) -> bool {
+    with_open(|opened| match opened {
+        Opened::Land { room, .. } => room.stand_at_spawn(player),
+        Opened::Sea(_) | Opened::Fleet(_) => false,
+    })
+    .unwrap_or(false)
 }
 
 #[cfg(test)]

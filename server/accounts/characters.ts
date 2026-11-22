@@ -3,6 +3,7 @@
  * when they join, saves it while they play, and lets it go when they leave. A hold lapses once its room stops saving,
  * and a claim waits a moment for another room to let go (a player moving between rooms leaves one as they join the
  * next) before taking it anyway, so the room that held it learns from its next save that the player went elsewhere.
+ * Each claim says which room held the character before, so the room judges where it came from.
  */
 
 import { companionsOf } from './companies.ts';
@@ -18,10 +19,12 @@ const LOOK_MS = 250;
 /** The longest character kept: far past any the gear's limits allow. */
 const BODY_MOST = 1_000_000;
 
-/** A claim answered: the account, and its character as last kept (null before a room first keeps one). */
+/** A claim answered: the account, its character as last kept (null before a room first keeps one), and the room
+ *  that held it before (null before any did). */
 export interface Claimed {
   readonly account: string;
   readonly body: string | null;
+  readonly from: string | null;
 }
 
 /** The account a session's token is for, seen at `now`; null when the token is no session, or one that lapsed. */
@@ -49,18 +52,16 @@ export interface Characters {
 
 /** The characters on a database, with a clock and a way to wait. */
 export function characters(database: Db, now: () => number, wait: (millis: number) => Promise<void>): Characters {
+  // A holder is its room's name, then `:`; the room held before is read as the row was, before this claim.
+  const holding = `UPDATE characters SET holder = ?1, held_until = ?2, came_from = room,
+    room = substr(?1, 1, instr(?1, ':') - 1) WHERE account_id = ?3`;
   const take = (account: string, holder: string, anyway: boolean) =>
     (anyway
-      ? database
-          .prepare('UPDATE characters SET holder = ?1, held_until = ?2 WHERE account_id = ?3 RETURNING body')
-          .bind(holder, now() + HOLD_MS, account)
+      ? database.prepare(`${holding} RETURNING body, came_from`).bind(holder, now() + HOLD_MS, account)
       : database
-          .prepare(
-            `UPDATE characters SET holder = ?1, held_until = ?2 WHERE account_id = ?3
-             AND (holder IS NULL OR holder = ?1 OR held_until < ?4) RETURNING body`,
-          )
+          .prepare(`${holding} AND (holder IS NULL OR holder = ?1 OR held_until < ?4) RETURNING body, came_from`)
           .bind(holder, now() + HOLD_MS, account, now())
-    ).first<{ body: string | null }>();
+    ).first<{ body: string | null; came_from: string | null }>();
   const live = (token: string) => liveAccount(database, token, now());
   return {
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
@@ -74,16 +75,16 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
       await present(database, account, room, now());
       return true;
     },
-    /** The account a session's token is for and its character as last kept, taken from no room that holds it; null
-     *  when the token is no session, or one that lapsed. */
+    /** The account a session's token is for, its character as last kept and the room that last held it, taken from
+     *  no room that holds it; null when the token is no session, or one that lapsed. */
     async look(token) {
       const account = await live(token);
       if (account === null) return null;
       const kept = await database
-        .prepare('SELECT body FROM characters WHERE account_id = ?1')
+        .prepare('SELECT body, room FROM characters WHERE account_id = ?1')
         .bind(account)
-        .first<{ body: string | null }>();
-      return { account, body: kept?.body ?? null };
+        .first<{ body: string | null; room: string | null }>();
+      return { account, body: kept?.body ?? null, from: kept?.room ?? null };
     },
     /** The account a session's token is for, its character held for `holder`; null when the token is no session, or
      *  one that lapsed. */
@@ -93,7 +94,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
       await database.prepare('INSERT OR IGNORE INTO characters (account_id) VALUES (?1)').bind(account).run();
       for (let waited = 0; ; waited += LOOK_MS) {
         const held = await take(account, holder, waited >= WAIT_MS);
-        if (held) return { account, body: held.body };
+        if (held) return { account, body: held.body, from: held.came_from };
         await wait(LOOK_MS);
       }
     },
@@ -108,12 +109,17 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
         .run();
       return saved.meta.changes === 1;
     },
-    /** Lets a character go, saving it last if the room has it to give; false if another had already taken it. */
+    /** Lets a character go, saving it last if the room has it to give; false if another had already taken it. Let go
+     *  with nothing (the room turned it away, or never gave it), it was never there: the room before still held it
+     *  last. */
     async release(account, holder, body) {
       const statement =
         body === null || body.length > BODY_MOST
           ? database
-              .prepare('UPDATE characters SET holder = NULL, held_until = 0 WHERE account_id = ?1 AND holder = ?2')
+              .prepare(
+                `UPDATE characters SET holder = NULL, held_until = 0, room = came_from
+                 WHERE account_id = ?1 AND holder = ?2`,
+              )
               .bind(account, holder)
           : database
               .prepare(

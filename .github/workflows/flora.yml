@@ -1,7 +1,7 @@
 name: flora
 
 # Grows every plant of every biome in Blender, bakes each into a near mesh and impostor sprites, and publishes them
-# to R2 with the repository's Cloudflare token whenever the flora tools change. R2's objects are named by their
+# to R2 with the repository's R2 token whenever the flora tools change. R2's objects are named by their
 # hashes, so a run changes nothing already published; the log ends with the manifest, which a commit then takes into
 # content/nature/flora.json.
 on:
@@ -26,10 +26,10 @@ jobs:
       - name: Check the token is set
         id: token
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: |
           if [ -n "$CLOUDFLARE_API_TOKEN" ]; then echo "set=true" >> "$GITHUB_OUTPUT"
-          else echo "::warning::the repository has no CLOUDFLARE_TOKEN secret: nothing is published"; fi
+          else echo "::warning::the repository has no R2_TOKEN secret: nothing is published"; fi
       # The generator's check runs with or without the token.
       - name: Install Blender's module
         run: pip install bpy==5.3.0
@@ -38,7 +38,7 @@ jobs:
       - name: Bake and publish the flora
         if: steps.token.outputs.set == 'true'
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.R2_TOKEN }}
         run: |
           python -I tools/flora/publish.py
           cat content/nature/flora.json

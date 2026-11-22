@@ -112,7 +112,10 @@ sea's soundscape ([[Ambience]]), once the owner has picked their recordings.
   against the ship's hull's box and its sails' boxes out to the laid gun's longest throw and 60 m, the nearest entry taken.
   The side is laid on that point, its range out along the fire and its own height. A look on the ship's canvas lays chain
   for that very point and every other load for its hull's middle. The point is led along the fire by the ship's way over the
-  ball's flight there. A look that meets no part of the ship lays for the water's range. A release fires that same lay.
+  ball's flight there. A look that meets no part of the ship lays for the water's range, and so does a ray from an eye
+  more than 100 m from the player's own ship (`LOOK_EYE_M`: the fight camera's 75 m out from 6 m over it, and the way
+  the ship makes meanwhile), so no page lays on a ship by looking from beside it ([[The Server Is the Authority Over Everything]]). Whatever the ray meets, the side fires
+  square to the hull, its elevation within its guns' carriage. A release fires that same lay.
 - **The aim shows each gun's end**: its ball, unscattered, flown by the same law a fired ball flies by (in the fight's
   ticks) with the target where its way will have carried it by then, to where it stops. The lay is on target only when one
   of those balls meets the target, canvas or hull. Its landing zone's radius is DFO's: half the width the crew scatters the
