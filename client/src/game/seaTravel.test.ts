@@ -170,3 +170,14 @@ test('a travel waits to be asked until the room has the ship at sea, as a tierâ€
   travel.step(0.1, room);
   assert.deepEqual(asked, ['travel'], 'asked once it has');
 });
+
+test('a travel asked of a link that joined its sea again since is asked again', () => {
+  const { travel, asked, room, toFade } = travelling();
+  Object.assign(room, { joins: 1 });
+  toFade();
+  travel.step(0.1, room);
+  assert.deepEqual(asked, ['travel']);
+  Object.assign(room, { joins: 2 });
+  travel.step(0.1, room);
+  assert.deepEqual(asked, ['travel', 'travel']);
+});

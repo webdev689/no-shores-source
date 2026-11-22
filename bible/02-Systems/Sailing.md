@@ -310,7 +310,7 @@ player elsewhere (the company's Go to them waits); a travel left behind any othe
    words, "Sailing for <water>", come up in its last 0.7 s. The travel is asked of the sea room as the fade begins
    ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
    other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
-   since is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
+   since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
    answered); one that gives no answer in 10 s is given up, and courses are sent again. A yes in a fight
    sails the course as Set sail does.
 3. Black for at least 1.5 s, and longer until the room has answered and no continent near the ship's new place is

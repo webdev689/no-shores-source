@@ -96,6 +96,11 @@ export class SeaRoom {
     [this.waitingFacing, this.leaveWaiting, this.travelAsked] = [false, false, false];
   }
 
+  /** How many times the link has joined its sea, as its last word showed: a join since drops what was sent. */
+  get joins(): number {
+    return this.joined;
+  }
+
   /** Whether the player joined the sea again since this was last asked, after its socket closed: their ship is to be
    *  put to sea again where it lies. */
   rejoined(): boolean {

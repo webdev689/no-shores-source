@@ -32,9 +32,11 @@ export class SeaTravel {
   private readonly end: Point2;
   private readonly passage: Passage;
   private readonly ready: () => boolean;
-  /** Seconds since the travel was asked, and the sea room it was sent to: one joined since is asked again. */
+  /** Seconds since the travel was asked, and the sea room it was sent to and its joins then: a room joined since, or
+   *  the same joined again (which drops what was sent), is asked again. */
   private asked: number | null = null;
   private sentTo: SeaRoom | null = null;
+  private sentJoins: number | undefined;
 
   /** Travels for `end`, in the water named `water`: `ready` says when the new waters round the ship have loaded. */
   constructor(water: string, end: Point2, passage: Passage, ready: () => boolean) {
@@ -54,7 +56,7 @@ export class SeaTravel {
     // A room that has no ship of the player's yet (a tier's, just joined, before its keeper put it to sea) would take
     // it for a course with nowhere to start: it is asked once the room has it.
     const room = this.passage.room;
-    this.sentTo = room?.ownShip ? room : null;
+    [this.sentTo, this.sentJoins] = [room?.ownShip ? room : null, room?.joins];
     if (this.sentTo) this.passage.travel();
   }
 
@@ -76,7 +78,8 @@ export class SeaTravel {
     this.asked += seconds;
     const answer = room?.takeTravelled() ?? null;
     const moved = room?.ownShip;
-    if (answer === TOO_SOON || (room && room !== this.sentTo)) this.ask();
+    const joined = room && (room !== this.sentTo || room.joins !== this.sentJoins);
+    if (answer === TOO_SOON || joined) this.ask();
     else if (answer === TAKEN && moved) {
       // Laid where the room has it, with no easing across the way it did not sail.
       this.passage.placeAt({ x: moved.x, y: moved.y, heading: moved.heading });
