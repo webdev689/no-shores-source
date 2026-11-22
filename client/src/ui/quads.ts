@@ -78,31 +78,28 @@ export class QuadList {
       grown.set(this.floats);
       this.floats = grown;
     }
-    const start = this.count * QUAD_FLOATS;
-    const right = (rect: Box) => rect.x + rect.width;
-    const bottom = (rect: Box) => rect.y + rect.height;
-    this.floats.set(
-      [
-        box.x,
-        box.y,
-        box.width,
-        box.height,
-        texels?.x ?? 0,
-        texels?.y ?? 0,
-        texels?.width ?? 0,
-        texels?.height ?? 0,
-        ...colour,
-        clip.x,
-        clip.y,
-        right(clip),
-        bottom(clip),
-        texels?.tile ?? 0,
-        texels?.layer ?? 0,
-        turn,
-        0,
-      ],
-      start,
-    );
+    // Every glyph and box of the interface every frame: written in place, in the order the shader reads them.
+    const [floats, start] = [this.floats, this.count * QUAD_FLOATS];
+    floats[start] = box.x;
+    floats[start + 1] = box.y;
+    floats[start + 2] = box.width;
+    floats[start + 3] = box.height;
+    floats[start + 4] = texels?.x ?? 0;
+    floats[start + 5] = texels?.y ?? 0;
+    floats[start + 6] = texels?.width ?? 0;
+    floats[start + 7] = texels?.height ?? 0;
+    floats[start + 8] = colour[0];
+    floats[start + 9] = colour[1];
+    floats[start + 10] = colour[2];
+    floats[start + 11] = colour[3];
+    floats[start + 12] = clip.x;
+    floats[start + 13] = clip.y;
+    floats[start + 14] = clip.x + clip.width;
+    floats[start + 15] = clip.y + clip.height;
+    floats[start + 16] = texels?.tile ?? 0;
+    floats[start + 17] = texels?.layer ?? 0;
+    floats[start + 18] = turn;
+    floats[start + 19] = 0;
     this.count += 1;
   }
 }
