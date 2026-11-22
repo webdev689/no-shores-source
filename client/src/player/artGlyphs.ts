@@ -41,8 +41,13 @@ export function mapSvg(rows: readonly string[] | undefined, element: number): st
 const drawnSvgs = new WeakMap<readonly string[], Map<number, string>>();
 
 function svgOf(rows: readonly string[] | undefined, element: number): string {
-  const colours = artPalette(element);
-  if (!rows || colours.length === 0) return '';
+  return rows ? paletteSvg(rows, artPalette(element)) : '';
+}
+
+/** A map as an SVG picture in `colours`, its letters each the colour at that place (`PALETTE_LETTERS`), crisp at any
+ *  whole size, each run of one colour along a row one rect; empty for no colours. */
+export function paletteSvg(rows: readonly string[], colours: readonly string[]): string {
+  if (colours.length === 0) return '';
   const rects: string[] = [];
   rows.forEach((row, line) => {
     for (let column = 0; column < row.length;) {

@@ -27,11 +27,13 @@ export const COMPASS = { top: 18, width: 520, share: 0.6, height: 26, rule: 2, g
 /** How far down the first thing under the compass stands, in CSS pixels. */
 export const UNDER_COMPASS = COMPASS.top + COMPASS.height + COMPASS.rule + COMPASS.gap;
 
-/** What a ship is to the player, which colours its mark: one that would take the player, another player's, one whose
- *  colours are down, or a friendly merchantman in Overlook's blue. */
-export type ShipMarkKind = 'hostile' | 'ship' | 'struck' | 'friendly';
+/** What a ship is to the player, which colours its mark: one that would take the player, one with a battery run out at
+ *  them (lit, as the broadside warning names it), another player's, one whose colours are down, or a friendly
+ *  merchantman in Overlook's blue. */
+export type ShipMarkKind = 'hostile' | 'firing' | 'ship' | 'struck' | 'friendly';
 export const SHIP_MARK_COLOURS: Readonly<Record<ShipMarkKind, string>> = {
   hostile: '#ee5745',
+  firing: '#ffc2b8',
   ship: '#ebe0c2',
   struck: '#8f8f8f',
   friendly: '#2f5d9a',

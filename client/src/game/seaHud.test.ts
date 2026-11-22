@@ -9,7 +9,7 @@ import { hideSeaHud, seaPlace, type SeaHudState, seaShipMarks, showSeaHud } from
 import { seaFightQuest } from './seaPanel.ts';
 
 const captain = (x: number, y: number, state: ShipState, hostile: boolean): FightCaptain =>
-  ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile }) as unknown as FightCaptain;
+  ({ ship: [x, y, 0], pose: [0, 0, 0], state, hostile, run_out: [] }) as unknown as FightCaptain;
 
 test('out of a fight the compass marks every other player’s ship in bone and every hostile one in red', () => {
   const others = [{ player: 4, x: 10, y: -20, heading: 0, pace: 1 }];
@@ -39,6 +39,22 @@ test('in a fight it marks its captains: red while it would take the player, grey
     { x: 0, y: 100, kind: 'ship' },
     { x: 50, y: 50, kind: 'struck' },
   ]);
+});
+
+test('in a fight a captain with a battery run out at the player’s ship is lit on the compass, as its warning names it', () => {
+  const running = (x: number, side: 'port' | 'starboard') =>
+    ({ ...captain(x, 0, 'afloat', true), run_out: [side] }) as FightCaptain;
+  const marks = seaShipMarks(
+    [running(200, 'port'), running(-200, 'port'), captain(0, 100, 'afloat', true)],
+    null,
+    [0, 0, 0],
+  );
+  assert.deepEqual(
+    marks.map((mark) => mark.kind),
+    ['firing', 'hostile', 'hostile'],
+    'its port side bears on the player from the east, not from the west',
+  );
+  assert.equal(seaShipMarks([running(200, 'port')], null)[0]?.kind, 'hostile', 'with no ship of the player’s, none');
 });
 
 test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing there', () => {
@@ -73,6 +89,7 @@ test('in a fight the sea bar goes: its map, pace, Manage and Leave do nothing th
     messages: () => [],
     readout: () => ({ left: 1, men: 0 }),
     captains: [],
+    vessel: { ship: [0, 0, 0] },
     aimingNow: false,
     view: { lay: null, captain: { name: 'Pirate Brig' } },
     display: () => null,
@@ -116,6 +133,7 @@ test("in a fight the readout stands over the sea: the ship's plate, rose, card a
     messages: () => [],
     readout: () => ({ left: 1, men: 0 }),
     captains: [],
+    vessel: { ship: [0, 0, 0] },
     aimingNow: false,
     view: { lay: null, captain: { name: 'Pirate Brig' } },
     display: () => model,
@@ -154,7 +172,15 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   const view = { lay: null, captain: { name: 'Pirate Brig' }, others: [] };
   const messages = () => ['The Pirate Brig surrenders!'];
   const readout = () => ({ left: 2, men: 9 });
-  const fight = { messages, readout, captains: [], aimingNow: false, view, display: () => null };
+  const fight = {
+    messages,
+    readout,
+    captains: [],
+    vessel: { ship: [0, 0, 0] },
+    aimingNow: false,
+    view,
+    display: () => null,
+  };
   const sea = {
     view: { helmView: false },
     aboard: { walking: false, managing: false, active: false, atWheel: false, where: {} },

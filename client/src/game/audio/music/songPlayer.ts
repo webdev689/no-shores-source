@@ -1,13 +1,15 @@
 // The song player: a score's notes onto the audio clock. It wakes on a coarse timer and schedules every note falling
 // in the next quarter second at its exact time, so a stalled page never makes a note late (a stall past the window
-// skips the gap rather than playing the past all at once). A song loops on its bar line, to the tick. Each note is
-// built from the FM bank: a modulator sine bending a carrier's pitch, its brightness settling as a real instrument's
-// does, in unison copies for a song's own ensembles; each drum a falling sine or a band of noise, with a beater's click
-// and a skin's body where the song asks. Each layer role plays through a gain of its own, so the director brings
-// layers in and out on a bar line; a note is only built while its layer plays. Under the song's own level, its press
-// and a fader for fades, the whole stands at MUSIC_GAIN in the music's bus.
+// skips the gap rather than playing the past all at once). A song loops on its bar line, to the tick; a song written
+// as takes plays the take its arranger chooses at each seam, also to the tick. Each note is built from the FM bank: a
+// modulator sine bending a carrier's pitch, its brightness settling as a real instrument's does, in unison copies for
+// a song's own ensembles; each drum by drumVoice.ts. Each layer role plays through a gain of its own, so the director
+// brings layers in and out on a bar line; a note is only built while its layer plays. Under the song's own level, its
+// press and a fader for fades, the whole stands at MUSIC_GAIN in the music's bus.
 
-import { type FmVoice, PERCUSSION_CHANNEL, drumOf, fmVoice, noteToHz, panPosition, velocityGain } from './fmBank.ts';
+import { type Sounding, buildDrum } from './drumVoice.ts';
+import { type FmVoice, PERCUSSION_CHANNEL, fmVoice, noteToHz, panPosition, velocityGain } from './fmBank.ts';
+import { Arranger } from './form.ts';
 import { type Note, type Press, ROLES, type Role, type Song, TICKS_PER_BEAT, type Track } from './score.ts';
 
 /** How far ahead each wake schedules, and how often it wakes: the window must outlast the wait. */
@@ -118,15 +120,9 @@ class Ramp {
   }
 }
 
-/** A built note, to stop early and to let go of once it has ended. */
-interface Sounding {
-  readonly endsAt: number;
-  stop(): void;
-}
-
 /**
- * Plays one song at a time into `out`, looping it, or once. In the game a timer pumps it; for a render, the caller
- * pumps it with the times it will reach.
+ * Plays one song at a time into `out`, looping it, or once; a song written as takes, take by take as `arranger`
+ * chooses them. In the game a timer pumps it; for a render, the caller pumps it with the times it will reach.
  */
 export class SongPlayer {
   private readonly audio: BaseAudioContext;
@@ -140,26 +136,34 @@ export class SongPlayer {
   private press: { comp: DynamicsCompressorNode; drive: GainNode; top: GainNode } | null = null;
   private floor: BiquadFilterNode | null = null;
   private levelTo: AudioNode | null = null;
-  private noise: AudioBuffer | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
   private readonly timed: boolean;
   private readonly clock: () => number;
+  private readonly arranger: Arranger;
   private playing: Song | null = null;
   private tracks: (Track | undefined)[] = [];
   private looping = true;
+  /** When the song's tick 0 would sound, the take playing laid where it falls in the song; and the take playing. */
   private origin = 0;
   private cursor = 0;
+  private take: number | null = null;
   private sounding: Sounding[] = [];
   /** The layers each stretch of time plays, from each change's time on. */
   private changes: { readonly at: number; readonly roles: ReadonlySet<Role> }[] = [];
   private stopAt: number | null = null;
   private startedAt = 0;
 
-  /** `timed`: pumped by its own timer, as in the game; `clock`: the time it schedules against (a render's own). */
-  constructor(audio: BaseAudioContext, out: AudioNode, { timed = true, clock = () => audio.currentTime } = {}) {
+  /** `timed`: pumped by its own timer, as in the game; `clock`: the time it schedules against (a render's own);
+   *  `arranger`: who chooses the takes, shared by players that should remember the same fights. */
+  constructor(
+    audio: BaseAudioContext,
+    out: AudioNode,
+    { timed = true, clock = () => audio.currentTime, arranger = new Arranger() } = {},
+  ) {
     this.audio = audio;
     this.timed = timed;
     this.clock = clock;
+    this.arranger = arranger;
     this.master = audio.createGain();
     this.master.gain.value = MUSIC_GAIN;
     this.master.connect(out);
@@ -235,7 +239,10 @@ export class SongPlayer {
     this.panned.clear();
     this.level.gain.value = song.level;
     this.route(song.press);
-    [this.looping, this.origin, this.startedAt, this.cursor, this.stopAt] = [loop, when, when, 0, null];
+    this.take = loop ? this.arranger.opening(song) : null;
+    const first = this.take === null ? 0 : (song.form?.takes[this.take]?.first ?? 0) * song.ticksPerBar;
+    [this.looping, this.startedAt, this.cursor, this.stopAt] = [loop, when, first, null];
+    this.origin = when - first * song.secondsPerTick;
     const now = this.clock();
     this.changes = [{ at: -Infinity, roles }];
     for (const [role, layer] of this.layers) layer.ramp.to(roles.has(role) ? 1 : 0, now, 0.005, now);
@@ -286,7 +293,9 @@ export class SongPlayer {
     const song = this.playing;
     if (!song) return;
     if (this.stopAt !== null && now >= this.stopAt) return this.stop();
-    const { secondsPerTick: tickSeconds, durationTicks: length } = song;
+    const { secondsPerTick: tickSeconds, ticksPerBar } = song;
+    const take = this.take === null ? null : song.form?.takes[this.take];
+    const length = take ? (take.first + take.bars) * ticksPerBar : song.durationTicks;
     const ahead = LOOKAHEAD_S / tickSeconds;
     const nowTick = (now - this.origin) / tickSeconds;
     const toTick = Math.min(nowTick + ahead, length);
@@ -299,9 +308,14 @@ export class SongPlayer {
       }
       this.cursor = toTick;
     }
-    if (this.cursor >= length && this.looping) {
-      // The next pass begins where this one ends, to the tick: a song written as whole bars loops on its bar line.
-      [this.origin, this.cursor] = [this.origin + length * tickSeconds, 0];
+    // A seam the song fades out before is never heard: nothing is arranged past it.
+    const fadesFirst = this.stopAt !== null && this.origin + length * tickSeconds >= this.stopAt;
+    if (this.cursor >= length && this.looping && !fadesFirst) {
+      // The next pass, or the next take, begins where this one ends, to the tick: written as whole bars, a song loops
+      // on its bar line and its takes meet on one.
+      const next = this.take === null ? null : this.arranger.after(song, this.take);
+      const begins = next === null ? 0 : (song.form?.takes[next]?.first ?? 0) * ticksPerBar;
+      [this.origin, this.cursor, this.take] = [this.origin + (length - begins) * tickSeconds, begins, next];
       return this.pump(now);
     }
     const current = this.changes.findLastIndex((change) => change.at <= now);
@@ -392,16 +406,6 @@ export class SongPlayer {
     return gain;
   }
 
-  /** One second of white noise, made once and shared by every drum. */
-  private noiseBuffer(): AudioBuffer {
-    if (this.noise) return this.noise;
-    const length = Math.floor(this.audio.sampleRate);
-    this.noise = this.audio.createBuffer(1, length, this.audio.sampleRate);
-    const samples = this.noise.getChannelData(0);
-    for (let i = 0; i < length; i++) samples[i] = Math.random() * 2 - 1;
-    return this.noise;
-  }
-
   /** Builds one note and schedules it. */
   private voice(note: Note, when: number, seconds: number): void {
     const amp = velocityGain(note.velocity);
@@ -473,89 +477,9 @@ export class SongPlayer {
     this.sounding.push({ endsAt: end, stop: () => oscillators.forEach((oscillator) => oscillator.stop()) });
   }
 
-  /** Builds one drum hit: a falling sine or a band of noise, and a song's own drum's click and body over it. */
+  /** Builds one drum hit: the bank's, under the song's own drum for its key where its kit has one. */
   private drum(note: Note, when: number, amp: number): void {
-    const audio = this.audio;
     const own = this.playing?.kit.drums.get(note.note);
-    const drum = { ...drumOf(note.note), ...own };
-    const gain = audio.createGain();
-    let source: AudioScheduledSourceNode;
-    if (drum.kind === 'noise') {
-      const noise = audio.createBufferSource();
-      noise.buffer = this.noiseBuffer();
-      // Looped, so a cymbal longer than the second of noise rings to its end.
-      noise.loop = true;
-      const band = audio.createBiquadFilter();
-      band.type = 'bandpass';
-      band.frequency.value = drum.hz;
-      band.Q.value = drum.q ?? 1.2;
-      noise.connect(band).connect(gain);
-      source = noise;
-    } else {
-      const tone = audio.createOscillator();
-      tone.frequency.setValueAtTime(drum.hz, when);
-      // A skin falls in pitch, which is what makes it a drum; metal and wood hold theirs.
-      if (drum.drop !== 1) tone.frequency.exponentialRampToValueAtTime(drum.hz * drum.drop, when + drum.decay);
-      tone.connect(gain);
-      source = tone;
-    }
-    const peak = amp * drum.gain;
-    const ends = when + drum.attack + drum.decay;
-    gain.gain.setValueAtTime(0, when);
-    gain.gain.linearRampToValueAtTime(peak, when + drum.attack);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ends);
-    const out = this.connect(gain, 0, note);
-    source.start(when);
-    source.stop(ends + 0.02);
-    const layers = own ? this.drumLayers(drum, when, peak, note) : [];
-    source.onended = () => out.disconnect();
-    this.sounding.push({ endsAt: ends, stop: () => [source, ...layers].forEach((each) => each.stop()) });
-  }
-
-  /** A song's own drum's layers: the beater's click (noise about 3.2 kHz, gone in 15 ms) and a skin's body (a tone
-   *  falling a third over the first of the decay). */
-  private drumLayers(
-    drum: { readonly click?: number; readonly body?: number; readonly decay: number },
-    when: number,
-    peak: number,
-    note: Note,
-  ): AudioScheduledSourceNode[] {
-    const audio = this.audio;
-    const made: AudioScheduledSourceNode[] = [];
-    if ((drum.click ?? 0) > 0) {
-      const noise = audio.createBufferSource();
-      const band = audio.createBiquadFilter();
-      const gain = audio.createGain();
-      noise.buffer = this.noiseBuffer();
-      band.type = 'bandpass';
-      band.frequency.value = 3200;
-      band.Q.value = 0.8;
-      gain.gain.setValueAtTime(peak * (drum.click ?? 0), when);
-      gain.gain.exponentialRampToValueAtTime(0.0001, when + 0.015);
-      noise.connect(band).connect(gain);
-      const out = this.connect(gain, 0, note);
-      noise.onended = () => out.disconnect();
-      noise.start(when);
-      noise.stop(when + 0.03);
-      made.push(noise);
-    }
-    const body = drum.body ?? 0;
-    if (body > 0) {
-      const tone = audio.createOscillator();
-      const gain = audio.createGain();
-      const length = Math.max(0.03, drum.decay * 0.6);
-      tone.frequency.setValueAtTime(body, when);
-      tone.frequency.exponentialRampToValueAtTime(body * 0.66, when + length);
-      gain.gain.setValueAtTime(0.0001, when);
-      gain.gain.linearRampToValueAtTime(peak * 0.7, when + 0.002);
-      gain.gain.exponentialRampToValueAtTime(0.0001, when + length);
-      tone.connect(gain);
-      const out = this.connect(gain, 0, note);
-      tone.onended = () => out.disconnect();
-      tone.start(when);
-      tone.stop(when + length + 0.02);
-      made.push(tone);
-    }
-    return made;
+    this.sounding.push(buildDrum(this.audio, note.note, own, when, amp, (gain) => this.connect(gain, 0, note)));
   }
 }

@@ -23,6 +23,8 @@ const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 const STAND_S = 10.5;
 const LEAVE_S = 13;
 const CONTROL_S = LEAVE_S + 2.5;
+/** How far out of the eyes the camera stands before the player's own figure is drawn, metres. */
+const SEEN_FROM_M = 1;
 
 /** A shot as a camera rail's key: its eye, a point ahead along its look, and its lens. */
 function restingKey(shot: Shot): Pick<RailKey, 'eye' | 'look' | 'fov'> {
@@ -39,7 +41,14 @@ export class Wake implements Beat {
   private readonly scenery: WreckScenery;
   private readonly cues: Cues;
   private back: RailKey[];
+  /** The run once it has opened, whose resting shot the camera eases out to, taken as it leaves the eyes. */
+  private run: WreckRun | null = null;
+  private shouldered = false;
+  /** Whether the run's camera has worked out its course: once, while the player still lies on the deck. */
+  private warmed = false;
   private since = 0;
+  /** Set once skipped: its moments left still change the world, but none sounds. */
+  private skipped = false;
   /** How long the heart has beaten, seconds: on with the wake, never held while the wreck comes. */
   private heart = 0;
   done = false;
@@ -57,14 +66,15 @@ export class Wake implements Beat {
     screen.blur(blurAt(0, 0));
     screen.fade(0, 1.4);
     this.back = this.backKeys(null);
-    // The camera ends where the run's own takes the player standing, so play begins without a cut; a run that fails
-    // to open is the fight's to tell.
+    // The camera ends where the run's own takes the player standing, so play begins without a cut: taken as the
+    // camera leaves the eyes, once the wreck's mesh has come, as the run's camera keeps clear of what it draws. A run
+    // that fails to open is the fight's to tell.
     void run.then(
-      (opened) => (this.back = this.backKeys(opened.restingShot())),
+      (opened) => (this.run = opened),
       () => undefined,
     );
     this.cues = new Cues([
-      [0.4, () => ambience.thud()],
+      [0.4, () => this.skipped || ambience.thud()],
       [STAND_S, () => ambience.heartbeat(false)],
     ]);
   }
@@ -95,6 +105,7 @@ export class Wake implements Beat {
   }
 
   skip(): void {
+    this.skipped = true;
     this.cues.finish();
     const { screen } = this.story.stage.parts;
     screen.lids(0);
@@ -111,8 +122,14 @@ export class Wake implements Beat {
 
   frame(tick: Tick): StoryFrame {
     const { stage } = this.story;
-    // The eyes stay shut until the wreck they open on has come.
+    // Held lying on the deck, a second before the eyes open for good, until the wreck they open on has come.
     if (!(this.scenery.coming && this.since >= OPEN_S - 1)) this.since += tick.seconds;
+    // The camera's course is long to work out: done as soon as the wreck is drawn, while the player still lies there,
+    // never as the camera leaves the eyes and the music begins.
+    if (this.run && !this.scenery.coming && !this.warmed) {
+      this.run.restingShot();
+      this.warmed = true;
+    }
     this.heart += tick.seconds;
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
@@ -139,13 +156,20 @@ export class Wake implements Beat {
     return { id: YOU_ID, dress: unarmed(this.story.dress), anim: 'idle', x, y, z, facing };
   }
 
-  /** Whether the player's own figure shows: once the camera has left their eyes. */
+  /** Whether the player's own figure shows: once the camera stands a metre out of their eyes, so the back of their
+   *  head never fills the view. */
   get thirdPerson(): boolean {
-    return this.since >= LEAVE_S + 0.6;
+    if (this.since < LEAVE_S) return false;
+    const [eye, stand] = [this.shotAt(this.since).eye, this.eyeAt(1.65)];
+    return Math.hypot(eye[0] - stand[0], eye[1] - stand[1], eye[2] - stand[2]) >= SEEN_FROM_M;
   }
 
   private shotAt(since: number): Shot {
     const facing = this.layout.wake.facing;
+    if (since >= LEAVE_S && !this.shouldered && this.run) {
+      this.back = this.backKeys(this.run.restingShot());
+      this.shouldered = true;
+    }
     if (since >= LEAVE_S) return { ...LENS, ...railShot(this.back, since, LENS.fov, 'both') };
     // Lying: looking up into the storm, the head lolling; sitting up; standing and looking round.
     const rise = Math.min(1, Math.max(0, (since - OPEN_S) / (STAND_S - OPEN_S)));

@@ -460,7 +460,7 @@ export class Sea {
     return {
       shot: shown,
       ships: combat
-        ? combat.ships(dt, time, windBearing, scale)
+        ? combat.ships(dt, time, windBearing, scale, this.boarding.boardedCaptain)
         : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, pirates, scale, this.water),
       shipScale: scale,
       hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, pirates, scale),

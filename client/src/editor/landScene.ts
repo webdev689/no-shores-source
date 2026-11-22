@@ -419,7 +419,7 @@ export class LandScene {
       else sailing.press(key);
     }
     if (this.naval.busy) {
-      const look = frame.aiming ? this.naval.look(orbit, sailing, view) : null;
+      const look = frame.aiming ? this.naval.look() : null;
       const input = {
         held: frame.held,
         // A rung press waits with its helm until the fight that takes it is on.
@@ -454,7 +454,7 @@ export class LandScene {
       else if (key === 'x') call = 'send off';
       else if (isRungKey(key)) climbs.push(helmOf(new Set(), key).climb);
     }
-    const look = frame.aiming ? fleet.look(orbit, view) : null;
+    const look = frame.aiming ? fleet.look() : null;
     const { steer } = helmOf(frame.held, undefined);
     const brace = frame.held.has('c');
     const input = { steer, climbs, look, fire: frame.fires > 0, brace, loadSteps: frame.loadSteps, call };
