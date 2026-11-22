@@ -15,7 +15,7 @@ import type { ShipCamera } from '../ships/shipView.ts';
 import type { HullMask } from '../water/hullMask.ts';
 import type { Afloat } from './afloat.ts';
 import { lookBearing } from './aim.ts';
-import { AimCamera, type AimHull, aimHullOf, type AimShip, type Laid } from './aimCamera.ts';
+import { AimCamera, type AimShip, type Laid } from './aimCamera.ts';
 import { type FightInput, type FightSource, Fighting, sideReady } from './fighting.ts';
 import { cameraOf, type Orbit } from './orbit.ts';
 import { SAILS_RUNG, type Sailing } from './sailing.ts';
@@ -203,25 +203,12 @@ export class Naval {
     return this.aimed;
   }
 
-  /** The camera `seconds` on (`easedAimOf`): eased out to its battery while `aiming` and its guns can speak, short
-   *  of its captain's hull, and home again; the look it lays is kept for the next step (`look`). */
+  /** The camera `seconds` on (`easedAimOf`): eased to its battery while `aiming` and its guns can speak, and home
+   *  again; the look it lays is kept for the next step (`look`). */
   aimCamera(orbit: Orbit, sailing: Aboard, view: Window, shown: number, aiming: boolean, seconds: number): Orbit {
     const answer = this.fight?.view;
-    const captain = answer?.captain;
-    const alongside =
-      captain && captain.state !== 'sunk'
-        ? [aimHullOf(captain.ship, captain.pose[0] ?? 0, this.shown(hullOfCaptain(captain)))]
-        : [];
     const speaks = aiming && answer?.player.state === 'afloat';
-    const aimed = easedAimOf(
-      this.aimEye,
-      orbit,
-      sailing,
-      view,
-      { shown, aiming: speaks, alongside },
-      answer?.lay ?? null,
-      seconds,
-    );
+    const aimed = easedAimOf(this.aimEye, orbit, sailing, view, { shown, aiming: speaks }, answer?.lay ?? null, seconds);
     this.aimed = aimed.look;
     return aimed.orbit;
   }
@@ -363,27 +350,27 @@ function aimShipOf(ship: Aboard, view: Window): AimShip {
   return { x: place.x + view.leftM, y: place.y + view.topM, heading, heave: place.z, pitch, roll, hull: SLOOP_HULL };
 }
 
-/** The aim camera while laying from a Sloop (`AimCamera`): `orbit`'s eye eased out to its battery's station on the
- *  side looked at while `aiming`, short of each hull `alongside`, looking at the water its guns are laid on (`lay`,
+/** The aim camera while laying from a Sloop (`AimCamera`): `orbit`'s eye eased to its battery's station on the
+ *  side looked at while `aiming`, looking at the water its guns are laid on (`lay`,
  *  the rules' last answer), and home again once let go; heights drawn `shown` times their own. Answers the orbit
- *  drawn and the look laid. */
+ *  drawn, the look laid and how long it has been laid on its side. */
 export function easedAimOf(
   camera: AimCamera,
   orbit: Orbit,
   ship: Aboard,
   view: Window,
-  how: { readonly shown: number; readonly aiming: boolean; readonly alongside: readonly AimHull[] },
+  how: { readonly shown: number; readonly aiming: boolean },
   lay: Laid | null,
   seconds: number,
-): { readonly orbit: Orbit; readonly look: FightLook | null } {
+): { readonly orbit: Orbit; readonly look: FightLook | null; readonly heldS: number } {
   const lying = aimShipOf(ship, view);
   const [eastM, southM, upM] = cameraOf(orbit).eye;
   const eye = [eastM + view.leftM, southM + view.topM, upM / how.shown] as const;
   const want: 1 | -1 | null = how.aiming ? (lookBearing(orbit.yaw, lying.heading) >= 0 ? 1 : -1) : null;
   const home = { eye, yaw: orbit.yaw, pitch: orbit.pitch };
-  const ask = { home, want, ship: lying, pitch: orbit.pitch, lay, alongside: how.alongside };
+  const ask = { home, want, ship: lying, pitch: orbit.pitch, lay };
   const aimed = camera.frame(ask, seconds);
-  if (aimed.eye === eye) return { orbit, look: null };
+  if (aimed.eye === eye) return { orbit, look: null, heldS: 0 };
   const ahead = 3;
   const flat = Math.cos(aimed.pitch) * ahead;
   const drawn = {
@@ -395,12 +382,13 @@ export function easedAimOf(
     targetZ: (aimed.eye[2] - Math.sin(aimed.pitch) * ahead) * how.shown,
     distance: ahead,
   };
-  return { orbit: drawn, look: aimed.look };
+  return { orbit: drawn, look: aimed.look, heldS: aimed.heldS };
 }
 
-/** What the aim shows of a lay (DFO's drawn aim): each gun's unscattered flight to where the rules stop it, where the
- *  volley falls on the sea and where it meets it, the landing ring (never under DFO's least), and its tone: grey while
- *  the side laid cannot fire (loading, braced, its guns silent), red while it can and would strike it, else brass. */
+/** What the aim shows of a lay (DFO's drawn aim): each gun's unscattered flight to where the rules stop it, fanned out
+ *  as wide as it scatters while it is newly held, where the volley falls on the sea and where it meets it, the landing
+ *  ring (never under DFO's least), and its tone: grey while the side laid cannot fire (loading, braced, its guns
+ *  silent), red while it can and would strike it, else brass. */
 export function aimOf(
   lay: FightLay | null,
   player: Parameters<typeof sideReady>[0],
@@ -410,19 +398,33 @@ export function aimOf(
   if (!lay) return null;
   const placed = ([x, y, z]: readonly [number, number, number] | readonly number[]) =>
     [(x ?? 0) - view.leftM, (y ?? 0) - view.topM, (z ?? 0) * shown] as const;
-  const arcs = lay.launches.map(([x = 0, y = 0, z = 0, east = 0, south = 0, up = 0], index) => {
+  const flights = lay.launches.map(([x = 0, y = 0, z = 0, east = 0, south = 0, up = 0], index) => {
     const last = lay.ends[index]?.time ?? ARC_LONGEST_S;
     return Array.from({ length: ARC_PIECES + 1 }, (_unused, piece) => {
       const time = (last * piece) / ARC_PIECES;
-      return placed([x + east * time, y + south * time, z + up * time - (9.81 * time * time) / 2]);
+      return [x + east * time, y + south * time, z + up * time - (9.81 * time * time) / 2] as const;
     });
   });
-  const ends = lay.ends.filter((end) => end !== null);
+  // A lay just taken fans out as wide as it scatters, narrowing as it is held (`spread`, Black Flag's focus): each
+  // arc bent out from the volley's middle fall in step with how far it has flown, its fall with it.
+  const falls = flights.map((flight) => flight[flight.length - 1] ?? ([0, 0, 0] as const));
+  const middle = [0, 1].map((axis) => falls.reduce((sum, fall) => sum + (fall[axis] ?? 0), 0) / (falls.length || 1));
+  const wider = Math.max(0, lay.spread - 1);
+  const fanned = (point: readonly number[], fall: readonly number[], share: number) =>
+    placed([
+      (point[0] ?? 0) + wider * share * ((fall[0] ?? 0) - (middle[0] ?? 0)),
+      (point[1] ?? 0) + wider * share * ((fall[1] ?? 0) - (middle[1] ?? 0)),
+      point[2] ?? 0,
+    ]);
+  const arcs = flights.map((flight, index) =>
+    flight.map((point, piece) => fanned(point, falls[index] ?? point, piece / ARC_PIECES)),
+  );
+  const ends = lay.ends.flatMap((end, index) => (end ? [{ end, fall: falls[index] ?? end.point }] : []));
   const ready = sideReady(player, lay.side);
   return {
     arcs,
-    zone: ends.filter((end) => end.water && !end.strike).map((end) => placed(end.point)),
-    strikes: ends.flatMap((end) => (end.strike ? [placed(end.strike)] : [])),
+    zone: ends.filter(({ end }) => end.water && !end.strike).map(({ end, fall }) => fanned(end.point, fall, 1)),
+    strikes: ends.flatMap(({ end }) => (end.strike ? [placed(end.strike)] : [])),
     radius: Math.max(LEAST_RING_M, lay.radius),
     tone: !ready ? 'idle' : lay.on_target ? 'hot' : 'laid',
   };

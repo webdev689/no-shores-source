@@ -180,6 +180,7 @@ fn lay_json(fight: &Fight, aim: Option<&Aim>, waters: &impl Waters, time: f64) -
             "time": stop.time, "point": stop.point, "water": stop.water, "strike": stop.strike,
         }))).collect::<Vec<_>>(),
         "radius": shown.radius,
+        "spread": shown.spread,
         "on_target": shown.on_target,
     })
 }

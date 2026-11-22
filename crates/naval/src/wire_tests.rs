@@ -77,8 +77,8 @@ fn a_fights_view_holds_its_clock_both_ships_its_captain_and_counts_for_the_rest(
         view_numbers(&fight, PLAYER, &[Event::RunOut { ship: CAPTAIN, side: Side::Port }], Some(&aim), &Open, 0.0);
     let lay_at = 2 + 2 * VESSEL_NUMBERS + 4 + 2;
     assert_eq!(laid[lay_at..lay_at + 2], [1.0, 1.0], "a lay on its starboard side");
-    assert_eq!(laid[lay_at + 6], 3.0, "three guns a side");
-    assert_eq!(laid.len(), lay_at + 7 + 3 * (6 + STOP_NUMBERS) + 3);
+    assert_eq!(laid[lay_at + 7], 3.0, "three guns a side");
+    assert_eq!(laid.len(), lay_at + 8 + 3 * (6 + STOP_NUMBERS) + 3);
     assert_eq!(laid[laid.len() - 3..], [1.0, 5.0, 0.0], "one event: its port guns run out");
 }
 
@@ -91,10 +91,10 @@ fn a_lay_crosses_as_the_fight_shows_it_each_gun_with_its_launch_and_its_stop() {
     assert!(shown.on_target, "laid on it, close abeam");
     let numbers = view_numbers(&fight, PLAYER, &[], Some(&aim), &Open, 0.0);
     let lay_at = 2 + 2 * VESSEL_NUMBERS + 4 + 2;
-    let head = [1.0, 1.0, shown.lay.elevation, shown.lay.reach, shown.radius, 1.0, 3.0];
-    assert_eq!(numbers[lay_at..lay_at + 7], head);
+    let head = [1.0, 1.0, shown.lay.elevation, shown.lay.reach, shown.radius, shown.spread, 1.0, 3.0];
+    assert_eq!(numbers[lay_at..lay_at + 8], head);
     for (index, (launch, stop)) in shown.launches.iter().zip(&shown.ends).enumerate() {
-        let at = lay_at + 7 + index * (6 + STOP_NUMBERS);
+        let at = lay_at + 8 + index * (6 + STOP_NUMBERS);
         assert_eq!(numbers[at..at + 6], *launch);
         let stop = stop.expect("each ball stops");
         let strike = stop.strike.map_or([0.0; 4], |[x, y, z]| [1.0, x, y, z]);

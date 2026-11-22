@@ -278,6 +278,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]
 - [[A Mark Over What a Player Can Use Is Seen Through Walls]]
 - [[The Wreck's Arms Lie Farther Out, as a Loot Drop]]
+- [[Aiming a Ship Follows Black Flag, From Its Deck]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]

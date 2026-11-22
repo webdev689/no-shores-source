@@ -6,6 +6,8 @@ export interface FleetLook {
   readonly bearing: number;
   readonly range: number;
   readonly ray?: readonly number[];
+  /** How long the page has held the look on its side, seconds, as the room counts it: its lay's spread. */
+  readonly heldS?: number;
 }
 
 /** A ship as a lay sees it: its number, its flag (0 a player's, else its faction's number), its hull (0 the Sloop to
@@ -37,6 +39,8 @@ export interface FleetLay {
   readonly elevation: number;
   readonly reach: number;
   readonly radius: number;
+  /** How much wider than its gun's own it scatters, as long as it has been held: 2 just taken, 1 settled. */
+  readonly spread: number;
   readonly onTarget: boolean;
   readonly launches: readonly (readonly number[])[];
   readonly ends: readonly (LayEnd | null)[];
@@ -71,6 +75,8 @@ interface FleetExports {
 const SHIP_FLOATS = 8;
 const POSE_FLOATS = 4;
 const GUN_FLOATS = 16;
+/** A lay's answer before its guns: 1, its side, elevation, reach, zone's radius, spread and whether on target. */
+const LAY_HEAD = 7;
 
 const sightedFloats = (ship: LaySighted): number[] => [
   ship.id,
@@ -120,15 +126,15 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
         ray ? 1 : 0,
         ...(ray ?? [0, 0, 0, 0, 0, 0]),
       ];
-      request.push(time, ...others.flatMap(sightedFloats));
+      request.push(time, look.heldS ?? 0, ...others.flatMap(sightedFloats));
       const out = ask(exports.fleet_lay, request);
       if (out[0] !== 1) return null;
       const numberAt = (index: number) => out[index] ?? 0;
-      const guns = Math.floor((out.length - 6) / GUN_FLOATS);
+      const guns = Math.floor((out.length - LAY_HEAD) / GUN_FLOATS);
       const launches: number[][] = [];
       const ends: (LayEnd | null)[] = [];
       for (let gun = 0; gun < guns; gun++) {
-        const from = 6 + gun * GUN_FLOATS;
+        const from = LAY_HEAD + gun * GUN_FLOATS;
         launches.push(Array.from(out.subarray(from, from + 6)));
         const point: Point = [numberAt(from + 8), numberAt(from + 9), numberAt(from + 10)];
         const strike: Point | null =
@@ -144,7 +150,8 @@ export function startFleetRules(module: WebAssembly.Module): FleetRules {
         elevation: numberAt(2),
         reach: numberAt(3),
         radius: numberAt(4),
-        onTarget: numberAt(5) === 1,
+        spread: numberAt(5),
+        onTarget: numberAt(6) === 1,
         launches,
         ends,
       };

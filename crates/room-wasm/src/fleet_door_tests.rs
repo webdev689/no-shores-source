@@ -142,7 +142,8 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
         let mut request: Vec<f64> = sighted(&own).collect();
         request.extend([1.0, aim.bearing_deg, aim.range_m, 1.0]);
         request.extend(ray.iter().flatten());
-        request.push(time);
+        // Held no time yet, as the fight's own lay is: neither has taken an order holding it.
+        request.extend([time, 0.0]);
         request.extend(sighted(&other));
         (shown, request)
     })
@@ -150,17 +151,18 @@ fn a_look_lays_through_the_door_as_the_fight_lays_it() {
     let answer = lay(&request);
     let shown = fight_preview.unwrap_or_else(|| panic!("a side bears on it"));
     assert_eq!(
-        answer[..6],
+        answer[..7],
         [
             1.0,
             shown.lay.side.index() as f64,
             shown.lay.elevation,
             shown.lay.reach,
             shown.radius,
+            shown.spread,
             f64::from(u8::from(shown.on_target))
         ]
     );
-    assert_eq!(answer.len(), 6 + 3 * 16);
-    assert_eq!(answer[6..12], shown.launches[0]);
+    assert_eq!(answer.len(), 7 + 3 * 16);
+    assert_eq!(answer[7..13], shown.launches[0]);
     assert!(lay(&request[..10]).is_empty(), "a request cut short");
 }

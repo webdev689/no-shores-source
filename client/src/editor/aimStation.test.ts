@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HULL_NAMES, hullBox, hullMouths, hullSails } from '../ships/hulls.ts';
 import { SailRig } from '../ships/sails.ts';
-import { aimStation } from './aimStation.ts';
+import { HULL_DECKS, cellHeight } from '../ships/deck.ts';
+import { aimStation, inItsRig } from './aimStation.ts';
 
 const HULLS = HULL_NAMES.map((_name, hull) => hull);
 
@@ -26,16 +27,23 @@ function nearestCanvas(hull: number, eye: readonly number[]): number {
   return nearest;
 }
 
-test("every hull's aim eye stands out past its hull and its guns' mouths, abreast its battery's middle", () => {
+test("every hull's aim eye stands aboard, over its deck and rail near its battery, the nearest lay seen over its rail", () => {
   for (const hull of HULLS) {
-    const { eye, ports } = aimStation(hull);
-    const [low, high] = hullBox(hull);
-    const mouths = hullMouths(hull);
-    const widest = Math.max(Math.abs(low[1]), Math.abs(high[1]), ...mouths.map((mouth) => Math.abs(mouth[1])));
-    assert.ok(eye[1] >= widest + 1.5 - 1e-9, `${HULL_NAMES[hull]}: ${eye[1]} m out, its side ${widest} m`);
-    assert.ok(eye[0] > low[0] && eye[0] < high[0], 'along its own length');
-    assert.ok(eye[2] > ports[2] + 3, 'over its gun line');
-    assert.ok(ports[1] <= widest && ports[1] > 0, 'going out from its ports');
+    const { eye, ports, onDeck, nearestM } = aimStation(hull);
+    const deck = HULL_DECKS[hull];
+    assert.ok(onDeck && deck, `${HULL_NAMES[hull]} stands its eye aboard`);
+    const under = cellHeight(deck, eye[1], -eye[0]);
+    assert.ok(under !== null && eye[2] >= under + 1.7, `${HULL_NAMES[hull]}: ${eye[2]} m up, its deck ${under} m`);
+    const across = Array.from({ length: deck.columns }, (_unused, column) => deck.west + (column + 0.5) * deck.cell);
+    const rail = Math.max(...across.map((x) => cellHeight(deck, x, -eye[0]) ?? -Infinity));
+    assert.ok(eye[2] > rail + 0.3, `over its rail at ${rail} m`);
+    const halfBeam = Math.abs(hullBox(hull)[1][1]);
+    const overRail = eye[2] - (eye[2] * (halfBeam - eye[1])) / (nearestM - eye[1]);
+    assert.ok(overRail > rail, `the water ${nearestM.toFixed(1)} m out shows over its rail`);
+    const battery = hullMouths(hull).map((mouth) => mouth[0]);
+    assert.ok(eye[0] > Math.min(...battery) - 4.01 && eye[0] < Math.max(...battery) + 4.01, 'by its battery');
+    assert.ok(Math.abs(eye[1]) < halfBeam && ports[1] > 0, 'inboard of its side, its ports outboard');
+    assert.ok(!inItsRig(hull, eye), 'clear of its rig');
   }
 });
 
