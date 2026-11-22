@@ -124,11 +124,11 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.seaDungeon(room), '');
   }
 
-  /** Whether the sea has `account` landed on its island `id` of `seed`, for that island's room: its ship at rest at
-   *  the island's anchorage when last at sea. */
-  async landed(id: number, seed: string, account: string): Promise<boolean> {
-    if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
-    return this.guarded(() => this.room.seaLanded(id, seed, account), false);
+  /** The number of the sea's landing of `account` on its island `id` of `seed`, for that island's room (its ship at
+   *  rest at the island's anchorage when last at sea), or 0 if it is not landed there. */
+  async landed(id: number, seed: string, account: string): Promise<number> {
+    if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return 0;
+    return this.guarded(() => this.room.seaLanded(id, seed, account), 0);
   }
 
   /** Holds the sea's island `id` of `seed` while players stand ashore on it: whether it stands. */
@@ -328,9 +328,10 @@ export class RoomHost extends DurableObject<Env> {
     return true;
   }
 
-  /** Asks the sea whether a player's account is landed on this room's island: landed, they may scavenge, and in its
-   *  dungeon play; not, they are let go. A sea that does not answer lets nobody go from the island, and lands nobody;
-   *  its dungeon lets them go to join again, as it plays no one the sea has not answered for. */
+  /** Asks the sea whether a player's account is landed on this room's island: landed, they may scavenge and gather, a
+   *  new landing a new visit, and in its dungeon play; not, they are let go. A sea that does not answer lets nobody go
+   *  from the island, and lands nobody; its dungeon lets them go to join again, as it plays no one the sea has not
+   *  answered for. */
   private async landOn(
     island: { readonly id: number; readonly seed: string; readonly sea: string },
     player: number,
@@ -339,15 +340,15 @@ export class RoomHost extends DurableObject<Env> {
     const landed = await this.env.ROOMS.getByName(island.sea)
       .landed(island.id, island.seed, account)
       .catch(() => null);
-    if (landed === true) {
+    if (landed !== null && landed > 0) {
       this.ashore.add(player);
       this.guarded(() => this.room.hold(player, false), false);
-      this.guarded(() => this.room.land(account), false);
+      this.guarded(() => this.room.land(account, landed), false);
       return;
     }
     const dungeon = this.name.startsWith('sea-dungeon-');
     const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
-    if (socket && landed === false) this.dismiss(socket, 1008, 'your ship does not lie at this island');
+    if (socket && landed === 0) this.dismiss(socket, 1008, 'your ship does not lie at this island');
     else if (socket && dungeon) this.dismiss(socket, AGAIN, 'the sea did not answer');
   }
 
@@ -376,8 +377,9 @@ export class RoomHost extends DurableObject<Env> {
       return;
     }
     held.count = count;
-    // At sea an input before any token sails at once; a token after it still gives the ship back where it was kept.
-    if (seaRoom(this.name) !== null && !held.signed && !held.spoke) {
+    // An input before any token plays unkept: at sea the ship sails at once (a token after it still gives the ship back
+    // where it was kept), and on land the character the room holds is the player's own.
+    if (!held.signed && !held.spoke) {
       held.spoke = true;
       this.guarded(() => this.room.noneKept(player), undefined);
     }
@@ -457,16 +459,16 @@ export class RoomHost extends DurableObject<Env> {
         this.guarded(() => this.room.tick(), undefined);
         this.ticks++;
       }
-      // Taken once, then cut for each player: what the sea tells one goes to them alone.
+      // Taken once, then cut for each player: on land what changed since the snapshot their screen last showed, and at
+      // sea what the sea tells one goes to them alone.
       this.guarded(() => this.room.snapshotPrepare(), undefined);
       for (const socket of this.open()) {
         const held = this.players.get(socket);
-        const snapshot = held
-          ? this.guarded(() => this.room.snapshotFor(held.player), new Uint8Array())
-          : new Uint8Array();
+        if (!held) continue;
+        const snapshot = this.guarded(() => this.room.snapshotFor(held.player), new Uint8Array());
         // Each player's own gear goes to them alone, when it changed.
-        const gear = held ? this.guarded(() => this.room.gear(held.player), new Uint8Array()) : new Uint8Array();
-        if (held && gear.length > 0) this.keeper?.changed(held.player);
+        const gear = this.guarded(() => this.room.gear(held.player), new Uint8Array());
+        if (gear.length > 0) this.keeper?.changed(held.player);
         try {
           // Gear first, so the browser predicts a change of trim or arms from this snapshot on.
           if (gear.length > 0) socket.send(gear);

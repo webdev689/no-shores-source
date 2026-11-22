@@ -7,7 +7,9 @@ code:
   - client/src/player/playerCamera.ts#cameraOrbit
   - client/src/player/boom.ts#boomReach
   - client/src/player/playerMoves.ts#shownMove
-  - client/src/player/input.ts#BINDINGS
+  - client/src/player/input.ts#Input
+  - client/src/player/binds.ts#CONTROLS
+  - client/src/player/pad.ts#PadReader
   - client/src/player/cards.ts#Cards
   - client/src/player/cards.ts#CardMaker
   - client/src/player/figures.ts#viewOf
@@ -68,7 +70,9 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
   rarities' colours, its nodes, what the hands hold (`gearHands`) and what the figure wears (`gearOutfit`, [[Gear]]).
   An item's own picture is the pixels its layers add to the figure, less any speck apart from the piece (`addedBy`).
 - **The crosshair** (`crosshair.ts`) finds where a shot would strike, over the ground and the bodies.
-- **The input** (`Input`) reads the keys and the mouse on the page's canvas, with the pointer locked to look round.
+- **The input** (`Input`) reads the keys and the mouse on the page's canvas, with the pointer locked to look round,
+  and the pad each frame (`PadReader`), each through the player's binds (`binds.ts`, [[Interface]], "The pad" and
+  "Binding a control"): a stick moves and turns as far as it leans, as the keys move and turn the whole way.
 
 ## Limits
 

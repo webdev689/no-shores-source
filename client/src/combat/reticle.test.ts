@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import type { FightEvent } from '../network/messages.ts';
 import type { Action, FighterView } from '../rules/fighters.ts';
 import { EVENT, HOW } from './cues.ts';
-import { findAll, onFakePage } from './page.test.ts';
+import { allOf } from './nodes.test.ts';
 import { Crosshair, crosshairOf, type CrosshairFrame, landedBy, MARK_SECONDS, reticleOf } from './reticle.ts';
 
 const PLAYER = 1;
@@ -66,61 +66,83 @@ test("a shot's mark is the strongest way the player's shots landed: a kill, a cr
 });
 
 test('the crosshair goes red on a foe, rings a reload as it runs and shows a fading mark as a shot lands', () => {
-  onFakePage((root) => {
-    const crosshair = new Crosshair(root);
-    const [node] = findAll(root, 'crosshair');
-    const [mark] = findAll(root, 'landed');
-    crosshair.update(null, standing(0), null, [], PLAYER, 1 / 60);
-    assert.equal(node?.hidden, true);
-    crosshair.update(PISTOLET, standing(0), standing(10), [], PLAYER, 1 / 60);
-    assert.deepEqual(
-      [node?.hidden, node?.dataset['reticle'], node?.classList.contains('foe')],
-      [false, 'pistolet', true],
-    );
-    crosshair.update(PISTOLET, standing(0, { kind: 'reload', left: 60 }), null, [shot(EVENT.hit)], PLAYER, 1 / 60);
-    assert.deepEqual([node?.classList.contains('foe'), node?.classList.contains('reloading')], [false, true]);
-    assert.deepEqual([node?.style['--fill'], mark?.hidden, mark?.dataset['landed']], ['0deg', false, 'hit']);
-    crosshair.update(PISTOLET, standing(0, { kind: 'reload', left: 30 }), null, [], PLAYER, MARK_SECONDS);
-    assert.deepEqual([node?.style['--fill'], mark?.hidden], ['180deg', true], 'half reloaded; the mark gone');
-    crosshair.update(PISTOLET, standing(0), null, [], PLAYER, 1 / 60);
-    assert.equal(node?.classList.contains('reloading'), false);
-  });
+  const crosshair = new Crosshair();
+  crosshair.update(null, standing(0), null, [], PLAYER, 1 / 60);
+  assert.equal(crosshair.look === null, true);
+  assert.equal(crosshair.node(), null, 'hidden, nothing drawn');
+  crosshair.update(PISTOLET, standing(0), standing(10), [], PLAYER, 1 / 60);
+  assert.deepEqual([crosshair.look?.reticle, crosshair.look?.ink], ['pistolet', 'foe']);
+  crosshair.update(PISTOLET, standing(0, { kind: 'reload', left: 60 }), null, [shot(EVENT.hit)], PLAYER, 1 / 60);
+  assert.deepEqual(crosshair.look?.ink, 'reloading');
+  assert.deepEqual(
+    [crosshair.look?.ring, crosshair.look?.mark],
+    [
+      { fill: 0, ink: 'reload' },
+      { kind: 'hit', opacity: 1 },
+    ],
+  );
+  crosshair.update(PISTOLET, standing(0, { kind: 'reload', left: 30 }), null, [], PLAYER, MARK_SECONDS);
+  assert.deepEqual([crosshair.look?.ring?.fill, crosshair.look?.mark], [0.5, null], 'half reloaded; the mark gone');
+  crosshair.update(PISTOLET, standing(0), null, [], PLAYER, 1 / 60);
+  assert.deepEqual([crosshair.look?.ink, crosshair.look?.ring], ['plain', null]);
+});
+
+test("a shot's mark fades over its quarter second, drawn over the crosshair in its own picture", () => {
+  const crosshair = new Crosshair();
+  crosshair.update(PISTOLET, standing(0), null, [shot(EVENT.hit, { crit: true })], PLAYER, 1 / 60);
+  crosshair.update(PISTOLET, standing(0), null, [], PLAYER, MARK_SECONDS / 2);
+  const drawn = allOf(crosshair.node());
+  const mark = drawn.find((node) => node.picture?.key === 'reticle mark crit');
+  assert.ok(mark, 'a crit marked in gold');
+  assert.ok(Math.abs((mark.opacity ?? 1) - 0.5) < 0.1, `half faded (${mark.opacity})`);
+  assert.equal(drawn[0]?.float?.to, 'screen', 'the crosshair stands on the view');
+  assert.deepEqual(
+    [drawn[0]?.float?.at, drawn[0]?.float?.anchor],
+    [
+      [0.5, 0.5],
+      [0.5, 0.5],
+    ],
+    'at its middle',
+  );
+});
+
+test('a draw or a reload is drawn in two-degree steps, so it makes few pictures, and a full draw glows', () => {
+  const crosshair = new Crosshair();
+  const keyAt = (charge: number) => {
+    crosshair.update({ reticle: 'bow', charge, reach: null }, standing(0), null, [], PLAYER, 1 / 60);
+    return allOf(crosshair.node())[0]?.picture?.key;
+  };
+  assert.equal(keyAt(0.5), keyAt(0.501), 'a step held');
+  assert.notEqual(keyAt(0.5), keyAt(0.52));
+  assert.match(keyAt(1) ?? '', /charge 180 full/);
+  assert.equal(crosshair.look?.full, true);
 });
 
 test('the melee reticle closes into brackets over a foe within its reach, and is never turned red out of it', () => {
-  onFakePage((root) => {
-    const crosshair = new Crosshair(root);
-    const [node] = findAll(root, 'crosshair');
-    crosshair.update(MELEE, standing(0), standing(2.2), [], PLAYER, 1 / 60);
-    assert.deepEqual([node?.dataset['reticle'], node?.classList.contains('reach')], ['melee', true]);
-    crosshair.update(MELEE, standing(0), standing(4), [shot(EVENT.hit)], PLAYER, 1 / 60);
-    assert.deepEqual([node?.classList.contains('reach'), node?.classList.contains('foe')], [false, false]);
-    assert.equal(findAll(root, 'landed')[0]?.hidden, true, 'no shot mark on the melee reticle');
-  });
+  const crosshair = new Crosshair();
+  crosshair.update(MELEE, standing(0), standing(2.2), [], PLAYER, 1 / 60);
+  assert.deepEqual([crosshair.look?.reticle, crosshair.look?.reach], ['melee', true]);
+  crosshair.update(MELEE, standing(0), standing(4), [shot(EVENT.hit)], PLAYER, 1 / 60);
+  assert.deepEqual([crosshair.look?.reach, crosshair.look?.ink], [false, 'plain']);
+  assert.equal(crosshair.look?.mark, null, 'no shot mark on the melee reticle');
 });
 
 test("a double pistolet's wait between barrels is no reload, a new reload is read from its start, and a shot landing unseen marks nothing", () => {
-  onFakePage((root) => {
-    const crosshair = new Crosshair(root);
-    const [node] = findAll(root, 'crosshair');
-    const reloading = (left: number) => standing(0, { kind: 'reload', left });
-    crosshair.update(PISTOLET, reloading(30), null, [], PLAYER, 1 / 60);
-    assert.equal(node?.classList.contains('reloading'), false, 'the brace gap');
-    crosshair.update(PISTOLET, reloading(171), null, [], PLAYER, 1 / 60);
-    crosshair.update(PISTOLET, reloading(1), null, [], PLAYER, 1 / 60);
-    crosshair.update(PISTOLET, reloading(100), null, [], PLAYER, 1 / 60);
-    assert.equal(node?.style['--fill'], '0deg', 'the next reload, its idle tick unseen, starts empty');
-    crosshair.update(null, standing(0), null, [shot(EVENT.hit)], PLAYER, 1 / 60);
-    crosshair.update(PISTOLET, standing(0), null, [], PLAYER, 1 / 60);
-    assert.equal(findAll(root, 'landed')[0]?.hidden, true, 'fired with no crosshair: no mark when it shows');
-  });
+  const crosshair = new Crosshair();
+  const reloading = (left: number) => standing(0, { kind: 'reload', left });
+  crosshair.update(PISTOLET, reloading(30), null, [], PLAYER, 1 / 60);
+  assert.equal(crosshair.look?.ring === null, true, 'the brace gap');
+  crosshair.update(PISTOLET, reloading(171), null, [], PLAYER, 1 / 60);
+  crosshair.update(PISTOLET, reloading(1), null, [], PLAYER, 1 / 60);
+  crosshair.update(PISTOLET, reloading(100), null, [], PLAYER, 1 / 60);
+  assert.equal(crosshair.look?.ring?.fill, 0, 'the next reload, its idle tick unseen, starts empty');
+  crosshair.update(null, standing(0), null, [shot(EVENT.hit)], PLAYER, 1 / 60);
+  crosshair.update(PISTOLET, standing(0), null, [], PLAYER, 1 / 60);
+  assert.equal(crosshair.look?.mark, null, 'fired with no crosshair: no mark when it shows');
 });
 
 test('the melee reticle closes on no foe above or below a stroke’s height, as no blow reaches it', () => {
-  onFakePage((root) => {
-    const crosshair = new Crosshair(root);
-    const [node] = findAll(root, 'crosshair');
-    crosshair.update(MELEE, standing(0), { ...standing(2.2), z: 2 }, [], PLAYER, 1 / 60);
-    assert.equal(node?.classList.contains('reach'), false, 'on a ledge 2 m up');
-  });
+  const crosshair = new Crosshair();
+  crosshair.update(MELEE, standing(0), { ...standing(2.2), z: 2 }, [], PLAYER, 1 / 60);
+  assert.equal(crosshair.look?.reach, false, 'on a ledge 2 m up');
 });

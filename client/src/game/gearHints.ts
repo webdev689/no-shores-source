@@ -1,5 +1,6 @@
 // What the menu's footer says each view's presses and keys do, an item's page's, and each inventory shelf's cells'.
-import { DISMANTLE_KEY, type Hint } from './gearDom.ts';
+import { DISMANTLE_KEY } from './gearHold.ts';
+import type { Hint } from './gearNodes.ts';
 import type { View } from './gearScreen.ts';
 
 /** What the footer says each view's presses and keys do, and an item's page's. */

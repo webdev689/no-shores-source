@@ -4,6 +4,7 @@ import { LightLayer } from '../combat/lightLayer.ts';
 import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { fromEyeMatrix, type Shot } from './camera.ts';
 import { DepthCopy } from './depthCopy.ts';
+import { DrainView } from './drain.ts';
 import type { Drawer } from './scene.ts';
 import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { ShadowMap } from '../shadow.ts';
@@ -16,28 +17,33 @@ export class DungeonScene {
   private readonly gpu: Gpu;
   private readonly copy: DepthCopy;
   private readonly light: LightLayer;
+  private readonly drain: DrainView;
   private targets: { colour: GPUTexture; multidepth: GPUTexture; depth: GPUTexture } | null = null;
 
   constructor(gpu: Gpu) {
     this.gpu = gpu;
     this.copy = new DepthCopy(gpu);
     this.light = new LightLayer(gpu, 'float');
+    this.drain = new DrainView(gpu);
   }
 
   /** Draws one frame from `shot` into the canvas: each drawer into one pass, measured from the eye as the game's
    *  scene measures it, under no sun's shadow; then each drawer's over the picture (the blows' arcs, the see-through
-   *  marks) and its light; `after` may draw over the finished picture (the first person's hands). */
+   *  marks) and its light; `after` may draw over the finished picture (the first person's hands), and all of it
+   *  drains toward grey by `drain` (0 to 1), as the game's scene does. */
   draw(
     shot: Shot,
     size: { width: number; height: number },
     time: number,
     drawers: readonly Drawer[],
     after?: (encoder: GPUCommandEncoder, view: GPUTextureView) => void,
+    drain = 0,
   ): void {
     const { device } = this.gpu;
     const fromEye = fromEyeMatrix(shot, size.width / Math.max(1, size.height));
     const targets = this.targetsOf(size.width, size.height);
-    const target = this.gpu.context.getCurrentTexture().createView();
+    const canvas = this.gpu.context.getCurrentTexture();
+    const target = canvas.createView();
     const encoder = device.createCommandEncoder();
     const pass = encoder.beginRenderPass({
       colorAttachments: [
@@ -66,6 +72,7 @@ export class DungeonScene {
         for (const drawer of drawers) drawer.lightInto?.(light, fromEye, targets.depth);
       });
     after?.(encoder, target);
+    this.drain.encode(encoder, canvas, drain);
     device.queue.submit([encoder.finish()]);
   }
 

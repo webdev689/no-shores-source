@@ -16,6 +16,7 @@ import { prologuePlayed } from '../prologue/beat.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
 import { Objective } from '../prologue/objective.ts';
 import { worldOutput } from '../uiSounds.ts';
+import type { Stack } from '../../ui/stack.ts';
 import type { NodeInfo } from '../worldData.ts';
 import {
   Welcome,
@@ -111,23 +112,30 @@ export class AfterStory {
     this.arrived = false;
   }
 
+  /** Whether the story's last moment and the welcome are past: neither plays, nor waits for an arrival. */
+  get past(): boolean {
+    const kept = this.parts.kept;
+    const waiting = welcomeDue(kept) || (prologuePlayed(kept) && welcomeUnmarked(kept));
+    return !this.epilogue && !this.welcome && !this.asked && !waiting;
+  }
+
   /** The menu opens at `view`, as a counter opens it: her own counter's ends her walk. */
   counterOpened(view: string): void {
     this.welcome?.counterOpened(view);
   }
 }
 
-/** What the story leaves on the game's own page: the welcome's words read from content/story/, its speech on the
- *  HUD, kept in the browser, and the development switch read from the address. */
+/** What the story leaves on the game's own page: the welcome's words read from content/story/, its speech drawn on
+ *  the game's interface, kept in the browser, and the development switch read from the address. */
 export function afterStoryOn(
-  hudRoot: HTMLElement,
+  stack: Stack,
   forge: Cards,
   groundAt: (x: number, y: number) => number | null,
 ): AfterStory {
   const read = castOf(cast);
   const voice = () => ({
-    dialogue: new DialogueBox(hudRoot, worldOutput),
-    objective: new Objective(hudRoot),
+    dialogue: new DialogueBox(stack, worldOutput),
+    objective: new Objective(stack),
   });
   // A built page served on this machine honours it too, for the headless pictures taken of a built page.
   const here = import.meta.env.DEV || location.hostname === 'localhost';

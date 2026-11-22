@@ -8,6 +8,8 @@ import type { Point2 } from '../overworld/ground.ts';
 import type { Use } from './footGear.ts';
 import type { IsleHeld } from './isles.ts';
 import type { NodeInfo } from './worldData.ts';
+import type { IslePlan } from '../islands/islePlan.ts';
+import resources from '../../../content/gear/resources.json' with { type: 'json' };
 
 /** How far past its coast's reach a ship is offered to go ashore on an island, metres. */
 export const ISLE_OFFER_M = 700;
@@ -143,11 +145,12 @@ export function isleWords(seen: SeenIsle): string {
  *  rolled it. */
 export function isleNode(
   seen: SeenIsle,
-  ring: readonly Point2[],
-  spawns: readonly Point2[],
+  { ring, spawns, nodes }: Pick<IslePlan, 'ring' | 'spawns' | 'nodes'>,
   { continent, seas }: { readonly continent: string; readonly seas: Difficulty },
 ): NodeInfo {
   const place = ([x, y]: Point2): Point2 => [x + seen.at[0], y + seen.at[1]];
+  // Its nodes give the resource of the island whose waters it lies in.
+  const holds = resources.resources.find((each) => each.continent === continent)?.id;
   return {
     id: isleRoomName(seen, seas),
     kind: 'patrol',
@@ -156,6 +159,7 @@ export function isleNode(
     ring: ring.map(place),
     spawns: spawns.map(place),
     centre: seen.at,
+    resources: holds ? nodes.map((spot) => ({ at: place(spot), holds })) : [],
   };
 }
 
@@ -187,7 +191,7 @@ const DOOR_WORDS: Readonly<Record<string, string>> = {
   mines: 'Enter the mine',
 };
 
-/** What E does on an island where the player stands: a wreck the room has not told them is spent (`gear.spent`, for
+/** What E does on an island where the player stands: a wreck the room has not told them is spent (`gear.scavenged`, for
  *  their account, however often they come), and not asked of and still unanswered; else the door. */
 export function isleUses(
   held: IsleHeld,
@@ -199,7 +203,7 @@ export function isleUses(
   // Each wreck asked of, and how many asks the room had answered then.
   const asked = new Map<number, number>();
   const spent = (index: number) =>
-    (gear.gear?.spent.includes(index) ?? false) || asked.get(index) === (gear.gear?.answered ?? 0);
+    (gear.gear?.scavenged?.includes(index) ?? false) || asked.get(index) === (gear.gear?.answered ?? 0);
   return (x, y, ask) => {
     const wreck = held.plan.wrecks.findIndex(
       ([wreckX, wreckY], index) => !spent(index) && Math.hypot(wreckX + atX - x, wreckY + atY - y) <= ISLE_USE_M,

@@ -4,7 +4,6 @@ import { SKY_NOW } from '../../../sky/skyDriver.ts';
 import type { Landmass } from '../../landmass.ts';
 import type { NodeInfo } from '../../worldData.ts';
 import { Ambience } from './ambience.ts';
-import { Bank } from './bank.ts';
 import { seeded } from './dsp.ts';
 import { CROSSFADE_S } from './law.ts';
 import { MOST_THUNDERS, ScapePlayer } from './player.ts';
@@ -77,22 +76,6 @@ function fakeAudio() {
   return { audio: audio as unknown as BaseAudioContext, made, out: node(made) as unknown as AudioNode };
 }
 
-// A page's buffers, as the bank makes them, in a test that has none.
-Object.assign(globalThis, {
-  AudioBuffer: class {
-    readonly length: number;
-    readonly sampleRate: number;
-    readonly numberOfChannels = 1;
-    constructor(shape: { length: number; sampleRate: number }) {
-      [this.length, this.sampleRate] = [shape.length, shape.sampleRate];
-    }
-    get duration() {
-      return this.length / this.sampleRate;
-    }
-    copyToChannel() {}
-  },
-});
-
 const world = { continents: [{ id: 'continent-3', climate: 'woodland' }] };
 const land = {
   heightAt: (x: number, y: number) => (y > 3000 ? -5 : 5),
@@ -111,7 +94,7 @@ const ear = { eye: [0, 0, 6.7] as const, yaw: 0 };
 test('a place fades in over the crossfade, the next crossfades over it, and the last is let go once silent', () => {
   const fake = fakeAudio();
   let live = true;
-  const ambience = new Ambience(world, () => (live ? fake : null), { random: seeded(9), bank: new Bank(() => null) });
+  const ambience = new Ambience(world, () => (live ? fake : null), { random: seeded(9) });
   const step = (seconds: number, hear: () => void) => {
     for (let time = 0; time < seconds; time += 0.1) {
       hear();
@@ -122,7 +105,6 @@ test('a place fades in over the crossfade, the next crossfades over it, and the 
   step(1, () => ambience.onFoot(patrol, land, ear));
   assert.equal(ambience.stats.places, 1);
   step(CROSSFADE_S + 30, () => ambience.onFoot(patrol, land, ear));
-  assert.ok(ambience.stats.sources > 0, 'the woods have their beds once made');
   const voyage = { sailing: true, pace: 60, deck: true };
   step(CROSSFADE_S / 2, () => ambience.atSea(land, [0, 4000], ear, voyage, 0.1));
   assert.equal(ambience.stats.places, 2, 'the woods fade while the sea comes in');
@@ -136,6 +118,32 @@ test('a place fades in over the crossfade, the next crossfades over it, and the 
   assert.equal(ambience.stats.places, 0, 'silenced, it stops at once');
 });
 
+test('beds whose recordings have not come make no new nodes while they wait', (context) => {
+  const fake = fakeAudio();
+  // A page's own context, where recordings play, as Node has none.
+  class PageAudio {}
+  const kept = Object.getOwnPropertyDescriptor(globalThis, 'AudioContext');
+  Object.defineProperty(globalThis, 'AudioContext', { value: PageAudio, configurable: true });
+  context.after(() =>
+    kept ? Object.defineProperty(globalThis, 'AudioContext', kept) : Reflect.deleteProperty(globalThis, 'AudioContext'),
+  );
+  Object.setPrototypeOf(fake.audio, PageAudio.prototype);
+  // The beds alone: a call's recording not come is asked for again only every few seconds, and let go at once.
+  context.mock.method(ScapePlayer.prototype as unknown as { voiceTurn: () => void }, 'voiceTurn', () => undefined);
+  const ambience = new Ambience(world, () => fake, { random: seeded(5) });
+  const step = (seconds: number) => {
+    for (let time = 0; time < seconds; time += 0.1) {
+      ambience.onFoot(patrol, land, ear);
+      ambience.frame(0.1);
+      (fake.audio as { currentTime: number }).currentTime += 0.1;
+    }
+  };
+  step(CROSSFADE_S + 2);
+  const waiting = fake.made.count;
+  step(20);
+  assert.equal(fake.made.count, waiting, 'twenty seconds with no recording made nothing more');
+});
+
 test('each strike thunders once, as its sound arrives; a strike past hearing never does', (context) => {
   const thundered = mock.method(ScapePlayer.prototype, 'thunder', () => undefined);
   context.after(() => {
@@ -143,7 +151,7 @@ test('each strike thunders once, as its sound arrives; a strike past hearing nev
     SKY_NOW.current = { ...SKY_NOW.current, strikes: [], worldS: 0 };
   });
   const fake = fakeAudio();
-  const ambience = new Ambience(world, () => fake, { random: seeded(3), bank: new Bank(() => null) });
+  const ambience = new Ambience(world, () => fake, { random: seeded(3) });
   const strikes = [
     { x: 3430, y: 0, atS: 1000, toGround: true, power: 1 },
     { x: 30_000, y: 0, atS: 1000, toGround: true, power: 1 },
@@ -163,7 +171,7 @@ test("the player's own steps are heard on its deck as they walk it, a step a str
   const stepped = mock.method(ScapePlayer.prototype, 'footstep', () => undefined);
   context.after(() => stepped.mock.restore());
   const fake = fakeAudio();
-  const ambience = new Ambience(world, () => fake, { random: seeded(4), bank: new Bank(() => null) });
+  const ambience = new Ambience(world, () => fake, { random: seeded(4) });
   const walk = (from: number, metres: number, mode: string) => {
     for (let walked = 0; walked <= metres; walked += 0.5) {
       const voyage = { sailing: true, pace: 60, deck: true, feet: { x: from + walked, y: 2, mode } };
@@ -186,7 +194,7 @@ test('in a dungeon none of the open air is heard: the island fades out and no st
     SKY_NOW.current = { ...SKY_NOW.current, strikes: [], worldS: 0 };
   });
   const fake = fakeAudio();
-  const ambience = new Ambience(world, () => fake, { random: seeded(6), bank: new Bank(() => null) });
+  const ambience = new Ambience(world, () => fake, { random: seeded(6) });
   const step = (seconds: number, underground: boolean) => {
     for (let time = 0; time < seconds; time += 0.1) {
       ambience.onFoot(patrol, land, ear, [], underground);
@@ -213,7 +221,7 @@ test('a strike still on its way thunders though the strikes heard before it are 
     SKY_NOW.current = { ...SKY_NOW.current, strikes: [], worldS: 0 };
   });
   const fake = fakeAudio();
-  const ambience = new Ambience(world, () => fake, { random: seeded(5), bank: new Bank(() => null) });
+  const ambience = new Ambience(world, () => fake, { random: seeded(5) });
   const far = Array.from({ length: 100 }, (unused, nth) => ({ x: 30_000, y: nth, atS: 0, toGround: true, power: 1 }));
   const coming = { x: 10_000, y: 0, atS: 1, toGround: false, power: 1 };
   for (let worldS = 1; worldS < 40; worldS += 0.1) {
@@ -224,17 +232,25 @@ test('a strike still on its way thunders though the strikes heard before it are 
   assert.equal(thundered.mock.callCount(), 1);
 });
 
-test("a storm's thunder never takes the calls' room, and its rolls are held to a few at once", () => {
+test("a storm's thunder never takes the calls' room, and its rolls are held to a few at once", (context) => {
+  // Each thunder's recording sounds, and stays sounding through the test.
+  const played = mock.method(
+    ScapePlayer.prototype as unknown as { recorded: (...args: unknown[]) => boolean },
+    'recorded',
+    (...args: unknown[]) => {
+      (args[6] as { count: number }).count++;
+      return true;
+    },
+  );
+  context.after(() => played.mock.restore());
   const fake = fakeAudio();
-  const buffer = new AudioBuffer({ length: 80_000, sampleRate: 8000 });
-  const bank = { want: () => undefined, buffer: () => buffer } as unknown as Bank;
   const calls = { count: 0 };
-  const player = new ScapePlayer(fake.audio, fake.out, 'sea', bank, seeded(4), calls);
+  const player = new ScapePlayer(fake.audio, fake.out, 'sea', seeded(4), calls);
   const heard = { ear: [0, 0, 2], origin: [0, 0, 0] } as unknown as Parameters<ScapePlayer['thunder']>[1];
   const thunder = (sound: 'thunder.roll' | 'thunder.crack') => {
-    const before = fake.made.count;
+    const before = played.mock.callCount();
     player.thunder({ sound, arrivesS: 0, gain: 0.3, corner: 2000, pitch: 1, toward: [1, 0] }, heard, 0);
-    return fake.made.count > before;
+    return played.mock.callCount() > before;
   };
   const rolled = Array.from({ length: 20 }, () => thunder('thunder.roll'));
   assert.equal(rolled.filter(Boolean).length, MOST_THUNDERS, 'a few rolls at once, the rest let pass');

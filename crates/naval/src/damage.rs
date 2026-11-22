@@ -85,7 +85,7 @@ pub(crate) fn men(count: f64, roll: f64, tough: f64) -> f64 {
     if count > 0.0 { (count / tough + roll.clamp(0.0, 0.999_999)).floor() } else { 0.0 }
 }
 
-/// How much harder every blow one ship strikes another lands than DFO's numbers, her balls and her ram alike: half
+/// How much harder every blow one ship strikes another lands than DFO's numbers, its balls and its ram alike: half
 /// again, at the owner's word.
 pub const FIGHT_HARM: f64 = 1.5;
 

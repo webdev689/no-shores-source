@@ -41,21 +41,21 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   const walk = { forward: 1, sideways: 0, yaw: 0.3, run: false, jump: false, crouch: false, mounted: false };
   for (let tick = 0; tick < 30; tick++) walked = rules.step(walked, walk);
   assert.equal(snapshot.tick, 1234n);
+  const read = snapshot.players.map(({ player, acknowledged, body, anim, frame, facing, standing }) => ({
+    seen: [player, acknowledged, anim, frame, facing, standing],
+    body: floatsOf(body),
+  }));
   assert.deepEqual(
-    snapshot.players.map(({ player, acknowledged, body, anim, frame, facing, standing }) => [
-      player,
-      acknowledged,
-      floatsOf(body),
-      anim,
-      frame,
-      facing,
-      standing,
-    ]),
+    read.map((each) => each.seen),
     [
-      [7, 0, floatsOf(rules.standing(1.5, -2.25)), '', 0, 0, { kind: 'inside' }],
-      [9, 30, floatsOf(walked), 'attack_sword', 4, 0.75, { kind: 'warned', ticks: 432 }],
+      [7, 0, '', 0, 0, { kind: 'inside' }],
+      [9, 30, 'attack_sword', 4, 0.75, { kind: 'warned', ticks: 432 }],
     ],
   );
+  // The snapshot is player 9's: theirs crosses whole, and player 7's packed, each number within half a thousandth.
+  assert.deepEqual(read[1]?.body, floatsOf(walked));
+  const stood = floatsOf(rules.standing(1.5, -2.25));
+  assert.ok(read[0]?.body.every((number, index) => Math.abs(number - (stood[index] ?? 0)) <= 0.0005 + 1e-9));
   assert.deepEqual([snapshot.dressed, snapshot.ships], [dressed, []]);
   // The second player's fighter: a sword drawn, its lock on foe 12, stamina spent.
   const fighting = fighterView(snapshot.players[1]?.fighter ?? []);
@@ -89,10 +89,11 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
       event.stroke,
       event.crit,
       event.element,
+      event.from,
     ]),
     [
-      [1233n, 3, 1, 12, 9, 0, 0, false, 0],
-      [1234n, 1, 2, 9, 12, 35, 3, true, 2],
+      [1233n, 3, 1, 12, 9, 0, 0, false, 0, 0],
+      [1234n, 1, 8, 9, 12, 35, 3, true, 2, 14],
     ],
   );
   const [arrow] = snapshot.shots;

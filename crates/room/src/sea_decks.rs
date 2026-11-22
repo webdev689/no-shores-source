@@ -142,10 +142,9 @@ impl Sea {
         if let (Some(mut character), Some(held)) = (kept, self.harbour.characters.get(&player)) {
             (character.ship, character.ship_at) = (held.ship, held.ship_at);
             // What only the sea changes while they fight on foot: their ship's experience, materials and crew, and
-            // the ships sunk in a fight they sailed in, counted toward their bounties and quests (a deck counts none).
+            // the ships sunk in a fight they sailed in, counted toward their bounties (a deck counts none).
             (character.ship_xp, character.materials.ship) = (held.ship_xp, held.materials.ship);
             character.activity.clone_from(&held.activity);
-            character.story.clone_from(&held.story);
             // An officer who joined at sea while they fought here took the sea's next id, which an item picked up on
             // the deck may hold too: they sign on again here, under an id of this character's.
             let joined: Vec<_> = held
@@ -176,8 +175,8 @@ impl Sea {
         }
     }
 
-    /// Each deck's tick: its room steps; a crew all fallen opens its hold for its boarders, once; boarders all down
-    /// wash up at the nearest port city and leave their fight.
+    /// Each deck's tick: its room steps; a crew all fallen opens its hold for its boarders, once, each boarder's quest
+    /// log told its deck was taken; boarders all down wash up at the nearest port city and leave their fight.
     pub(super) fn tick_decks(&mut self) {
         let mut index = 0;
         while index < self.decks.boarded.len() {
@@ -195,7 +194,12 @@ impl Sea {
                 deck.won_at = Some(self.clock);
                 // Its hold is its boarders', on top of the lot each who fought it takes when it goes down.
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
-                let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind };
+                let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind, struck: true };
+                if let Some(side) = crate::quests::side_of(deck.pirate.commission.faction) {
+                    for boarder in deck.aboard.values() {
+                        deck.room.tell_quest(*boarder, &gear::quests::Event::Sea { side, how: "board" });
+                    }
+                }
                 self.lay_flotsam(&sank, (2, 1));
                 let joined = crate::ship_power::officers_join(&sank, self.clock, &mut self.harbour.characters);
                 self.harbour.changed.extend(joined);

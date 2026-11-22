@@ -1,76 +1,66 @@
 // The notices in the Plus kit, after DFO's toasts (ui/enhanced/enhancedNotice.js, its sheet in enhancedStyle.js
 // `.notice.notice-toast`): a line of what happened, in a panel against the screen's right edge, sliding in from it.
 // The words' own model keeps their time (the fight's messages, editor/fighting.ts): the stack shows what it is given
-// and drops what it is no longer given, so it holds no timer of its own.
-import { ROLES } from './kit.ts';
-import { HALO } from './tones.ts';
+// and drops what it is no longer given, so it holds no timer of its own, only when each row came, which its slide
+// reads. The game draws it (`noticesNode`, game/hudPieces.ts).
 
 /** The most notices shown at once, the newest kept: clear of the Acquired feed under them at the right. */
 export const NOTICES_MOST = 3;
 
+/** The stack's look, as DFO's sheet stood it: under the status line at the top right, each notice a panel hugging its
+ *  line, its edge in the toast's yellow (lengths CSS pixels, its widest the less of `most` and `mostShare` of the
+ *  view); sliding in from the right in `inSteps` steps over `inSeconds`. */
+export const NOTICE_LOOK = {
+  right: 28,
+  top: 64,
+  gap: 6,
+  most: 420,
+  mostShare: 0.6,
+  /** Inside its edge: top, right, bottom, left. */
+  padding: [6, 18, 6, 12],
+  /** Its edge: top, right, bottom, left. */
+  edge: [2, 0, 2, 4],
+  edgeColour: 'rgba(243,239,44,0.55)',
+  colour: 'rgb(243,239,44)',
+  inSeconds: 0.26,
+  inSteps: 4,
+} as const;
+
+/** A notice shown: its words and when its row came, seconds. */
+export interface NoticeRow {
+  readonly text: string;
+  readonly since: number;
+}
+
 /** The stack: made once, given its lines each frame. */
 export class NoticeStack {
-  readonly root: HTMLElement;
-  private readonly rows = new Map<string, HTMLElement>();
+  private shown: NoticeRow[] = [];
 
-  constructor(parent: HTMLElement) {
-    const page = parent.ownerDocument;
-    this.root = page.createElement('div');
-    this.root.className = 'plus-notices';
-    this.root.setAttribute('role', 'log');
-    this.root.setAttribute('aria-label', 'Notices');
-    parent.append(this.root);
-    wearNotices(page);
+  /** The rows standing, the newest last. */
+  get rows(): readonly NoticeRow[] {
+    return this.shown;
   }
 
-  /** Shows `lines`, the newest last: a line still given keeps its row, a new one slides in, one gone leaves. */
-  show(lines: readonly string[]): void {
-    const kept = new Set(lines.slice(-NOTICES_MOST));
-    for (const [text, row] of this.rows)
-      if (!kept.has(text)) {
-        row.remove();
-        this.rows.delete(text);
-      }
-    const order = [...kept].map((text) => this.rows.get(text) ?? this.made(text));
+  /** Shows `lines` at `clock`, the newest last: a line still given keeps its row, a new one slides in (and is `told`,
+   *  for a screen reader to say), one gone leaves. */
+  show(lines: readonly string[], clock: number, told: (text: string) => void = () => undefined): void {
+    const kept = [...new Set(lines.slice(-NOTICES_MOST))];
+    const staying = this.shown.filter((row) => kept.includes(row.text));
     // In the order given, a line said again standing newest, last, as the fight's messages keep it; rows already in
-    // order are left where they are, so none slides in again.
-    const shown = [...this.root.children];
-    const first = order.findIndex((row, index) => shown[index] !== row);
-    if (first >= 0) this.root.append(...order.slice(first));
-    this.root.hidden = this.rows.size === 0;
-  }
-
-  /** A new notice's row, kept by its words. */
-  private made(text: string): HTMLElement {
-    const row = this.root.ownerDocument.createElement('div');
-    row.className = `plus-notice ${ROLES.panel}`;
-    row.textContent = text;
-    this.rows.set(text, row);
-    return row;
+    // order are left where they are, so none slides in again, and those moved after them slide in anew.
+    const first = kept.findIndex((text, index) => staying[index]?.text !== text);
+    this.shown = kept.map((text, index) => {
+      const had = staying.find((row) => row.text === text);
+      if (!had) told(text);
+      return had && (first < 0 || index < first) ? had : { text, since: clock };
+    });
   }
 }
 
-/** The stack's sheet: under the status line at the top right, each notice a panel hugging its line, its edge in the
- *  toast's yellow, sliding in from the right in steps (none with less motion asked for). */
-export function noticesCss(): string {
-  return `
-.plus-notices { position: absolute; right: 28px; top: 64px; display: flex; flex-direction: column; align-items: flex-end;
-  gap: 6px; pointer-events: none; }
-.plus-notice { max-width: min(420px, 60vw); padding: 6px 18px 6px 12px; border-style: solid; border-width: 2px 0 2px 4px;
-  border-left-color: rgba(243,239,44,0.55); font-size: 14px; color: rgb(243,239,44); text-shadow: ${HALO};
-  animation: plus-notice-in 0.26s steps(4, end); }
-@keyframes plus-notice-in { from { transform: translateX(110%); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .plus-notice { animation: none; } }
-`;
-}
-
-const SHEET_ID = 'plus-notices';
-
-/** Lays the stack's sheet on `page`, once. */
-function wearNotices(page: Document): void {
-  if (page.getElementById(SHEET_ID)) return;
-  const sheet = page.createElement('style');
-  sheet.id = SHEET_ID;
-  sheet.textContent = noticesCss();
-  page.head.append(sheet);
+/** How far a row that came at `since` has slid in at `clock`, 0 to 1, in the look's steps; whole at once while motion
+ *  is reduced (`still`). */
+export function slidIn(since: number, clock: number, still: boolean): number {
+  if (still) return 1;
+  const share = Math.max(0, clock - since) / NOTICE_LOOK.inSeconds;
+  return Math.min(1, Math.floor(share * NOTICE_LOOK.inSteps) / NOTICE_LOOK.inSteps);
 }

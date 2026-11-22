@@ -1,23 +1,18 @@
 // A social space's station's screen in the menu, and its title: a keeper's (npc/npcScreen.ts), the pledged faction's
 // with its muster of officers under its wares, or the Harbourmaster's stall of the Shipwright's modules (shipPages.ts);
 // and the bounty board's title, whose screen the menu builds with the board's clock (bountyBoard.ts).
-import type { Cards } from '../player/cards.ts';
+import type { Node } from '../ui/node.ts';
 import { BOARD_TITLE } from './bountyBoard.ts';
-import type { PageContext } from './characterPage.ts';
 import type { Station } from './gearScreen.ts';
 import { HARBOURMASTER, KEEPERS } from './keepers.ts';
+import type { MenuContext } from './menuPage.ts';
 import { npcPage } from './npc/npcScreen.ts';
 import { harbourPage, musterAt } from './shipPages.ts';
 
-/** A station's screen, built anew each time the gear changes; `redraw` asks the menu to build it again. */
-export function stationPage(
-  context: PageContext,
-  view: Exclude<Station, 'board'>,
-  forge: Cards | null,
-  redraw: () => void,
-): HTMLElement {
+/** A station's screen, drawn each frame from the gear the room last sent. */
+export function stationPage(context: MenuContext, view: Exclude<Station, 'board'>): Node {
   if (view === 'harbourmaster') return harbourPage(context);
-  return npcPage(context, view, forge, redraw, musterAt(context, KEEPERS[view].faction));
+  return npcPage(context, view, musterAt(context, KEEPERS[view].faction));
 }
 
 /** A station's screen's title, where the menu's tabs stand. */

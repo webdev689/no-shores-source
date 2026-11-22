@@ -75,7 +75,7 @@ pub fn make(id: u32, rarity: Rarity, slot: Slot, level: u8, dice: &Dice) -> Opti
 }
 
 /// A named item from the catalogue, carried with `bucket`'s items: a cloak at level 1, anything else at 20, its traits
-/// copied so it stays what it was.
+/// copied from its entry, which a kept one follows as it is read (`old_hands::unfit`).
 #[must_use]
 pub fn named_item(id: u32, named: &NamedDef, bucket: Slot) -> Item {
     let level = if named.kind == Kind::Cloak { 1 } else { NAMED_LEVEL };

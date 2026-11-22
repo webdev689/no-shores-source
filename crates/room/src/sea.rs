@@ -192,10 +192,7 @@ impl Sea {
                 ..Default::default()
             },
             decks: decks::Decks::default(),
-            islands: islands::Islands::new(
-                seed,
-                layout.continents.iter().map(|continent| continent.climate.clone().unwrap_or_default()).collect(),
-            ),
+            islands: islands::Islands::new(seed, layout.continents.iter().map(islands::climate_and_resource).collect()),
             minute: 0,
         }
     }

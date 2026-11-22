@@ -7,11 +7,13 @@ code:
   - client/src/testground/testgroundMain.ts
   - client/src/combat/reticle.ts#Crosshair
   - client/src/combat/worldSounds.ts#WorldSounds
-  - client/src/testground/aimPanel.ts
-  - client/src/testground/statusPanel.ts#startStatusPanel
-  - client/src/testground/artsPanel.ts#startArtsPanel
+  - client/src/testground/aimPanel.ts#AimPanel
+  - client/src/testground/gearPanel.ts#GearPanel
+  - client/src/testground/panelKit.ts#panels
+  - client/src/testground/statusPanel.ts#statusNodes
+  - client/src/testground/artsPanel.ts#artsNodes
   - client/src/combat/attackFeel.ts#AttackFeel
-  - client/src/testground/feelPanel.ts#startFeelPanel
+  - client/src/testground/feelPanel.ts#FeelPanel
   - client/src/combat/swingArcs.ts#SwingArcs
   - client/src/combat/swingCourse.ts#courseOf
   - client/src/combat/swingMesh.ts#layStreak
@@ -34,10 +36,10 @@ code:
   - client/src/forge/dyes.ts#PaletteSnap
   - client/src/forge/store.ts#ForgeStore
   - client/src/combat/fightBlood.ts#FightBlood
-  - client/src/testground/panel.ts#startPanel
+  - client/src/testground/panel.ts#Panel
   - client/src/player/foeDress.ts#foeDress
   - client/src/combat/foeBars.ts#FoeBars
-  - client/src/combat/hudSheet.ts#wearFightSheet
+  - client/src/combat/hud.ts#Hud
   - client/src/combat/vitals.ts#Vitals
   - client/src/combat/tracers.ts#Tracers
   - client/src/combat/gunLooks.ts#GunLooks
@@ -57,6 +59,11 @@ it ([[The Player Plays as in DFO]]), the same [[Player]] the [[Game]] plays. It 
 
 ## Playing
 
+The page is one canvas: the view, with a panel either side of it drawn by the game ([[Interface]], "Drawn by the
+game"). The panels scroll under the wheel, and while the mouse is free their controls take Tab, the arrows and Enter,
+and a field takes the keys typed into it. The pad is theirs only while one of their controls has focus or a field is
+typed in, as the game's is a window's; otherwise its stick walks the player.
+
 Click the view to play; Escape frees the mouse. The body moves by the [[Movement]] rules, and the controls are DFO's:
 
 | Control | Does |
@@ -69,6 +76,7 @@ Click the view to play; Escape frees the mouse. The body moves by the [[Movement
 | Hanging: `A` `D`, `W` | Shimmy along the lip; climb over it |
 | `Z` | Ready the weapon or put it away |
 | `1`, `2` | Draw the Melee loadout, or the Ranged ([[Gear]], "Loadouts"); a swap between them takes 0.4 s |
+| `3` | Drink a healing charge: 40% of your most health, after a second's walk with the weapon put away ([[Combat]], "Healing charges"; [[Three Healing Charges, Refilled by Blows and Kills]]) |
 | Right click, held | Swing; holding swings again. A swing readies a weapon put away. With a bow, a crossbow or a gun drawn: aim, over the shoulder or down the weapon's side, a bow charging |
 | Left click, held | Guard; pressed just as a blow lands, parry. With a bow, a crossbow or a gun drawn: fire, a quick shot at the locked foe, or the aimed shot onto the crosshair; holding fires again as it reloads |
 | `V` or Mouse5 | Dodge the way you move, or straight back |
@@ -251,7 +259,7 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   with `?room=`, "Reconnecting…" while the page joins its room again, or that the room sent the player away and why.
 - **Presses.** Every press of the swing, the guard or the dodge reaches the fight's rules, even one let go within a
   frame; a press of one guard key while the other is held is a fresh press, so it can parry. The swing's stroke is
-  rolled among those that reach the locked foe. Alone, Escape pauses the fight.
+  the chain's next that reaches the locked foe ([[Combat]], "Swings"). Alone, Escape pauses the fight.
 - **Others.** Foes and other players are drawn between the room's snapshots along a clock that runs at the frames'
   pace, a snapshot's span and a tick behind the newest (two ticks while the room sends one a tick), so a frame that
   takes no new snapshot, or two, still moves them on at their own pace, whatever the screen's rate.
@@ -268,10 +276,11 @@ Vestiges, those lying for them on the ground, and the vault; and the answer to t
   an item by holding its button. While the mouse is free the room in the page waits, but an ask still goes: the room
   runs on, the player standing still, until it has answered, a second of its time at most, so each answer shows at
   once. A refusal says why.
-- **The stall** stands south-east of the start, ringed in brass on the ground: within 4 m of it a Vestige opens and
-  the vault is reached, as in a social space.
-- **Resource nodes** stand west of the start, ringed in sea green, two of Saltmere's Brineglass and one of
-  Cairnwatch's Cairn Iron; within 2.5 m one is gathered, and dims once spent.
+- **The stall** stands south-east of the start, a sealed Vestige's mark over it as over a keeper ([[Game]], "Over
+  what a player can use"): within 4 m of it a Vestige opens and the vault is reached, as in a social space.
+- **Resource nodes** stand west of the start, each with its resource's mark over it as the course's marker (the
+  game's nodes wear none), two of Saltmere's Brineglass and one of Cairnwatch's Cairn Iron; within 2.5 m one is
+  gathered two seconds after its panel's press, the player standing still, and its mark goes once it is spent.
 - **Drops** a kill leaves (a Vestige, an Ammo box, an Ammo crate) are thrown out of the foe and stand as their own
   pictures under their lines, as in the game ([[Gear]], "Drops"), and are taken by walking over them.
 - **The hands** hold what the gear wears: the room takes no other arms. So the player's own hands in the dress
@@ -306,7 +315,8 @@ are the room's, the same for everyone in it, and fight whoever is near. Every ot
 room stands where the room last saw them, dressed as they dress themselves, showing the move and frame their own
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
-which player this is. A foe an older room sends with no type is drawn as the pirates' type in its role.
+which player this is, the room's name, and the link's lag (how much it strays) and the share of
+snapshots lost, as the page measures them. A foe an older room sends with no type is drawn as the pirates' type in its role.
 
 When the room's socket closes, for a deploy or a dropped network, the page joins the room again by itself ([[Server]],
 "The browser's side"): a new player there, standing where the room puts them, their dress and what their hands hold
@@ -349,17 +359,17 @@ weapon keeps its own moves and the left hand's thing is worn.
 
 In any move, a weapon or shield the forge does not draw in hand is worn on the body for that move.
 
-Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep
-to the ground; never shorter. Running frames last 0.125 s and crouching 0.5 s. Each figure plays its loops on from
-the frame it shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s,
-so a tick the rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge
-the weapon is worn, since both hands hold on. The figure faces where it moves and keeps that facing when still. While
-the soft lock holds a foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting,
-it faces where it runs, and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It
-Sprints]]). Swinging, casting or aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the
-Figure Faces Straight Ahead]]). Dodging, a figure (the player's, another player's or a foe's) faces the way its hop
-goes, so its roll is drawn going that way, though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls
-the Way It Goes]]).
+Walking frames last 0.25 s at a full walk, 4.43 m/s, and as much longer as a walk is slower, so a stroll's feet keep to
+the ground; never shorter. Running frames last 0.125 s at a full run, 7.59 m/s, and as much longer as a run is slower,
+so a foe's run keeps to the ground too; crouching frames last 0.5 s. Each figure plays its loops on from the frame it
+shows, so a walk that slows never jumps a frame. On the ground a foe's pace is read over its last 0.1 s, so a tick the
+rules hold it still between steps shows no stand. A sword's swing lasts 0.75 s. On a wall or a ledge the weapon is worn,
+since both hands hold on. The figure faces where it moves and keeps that facing when still. While the soft lock holds a
+foe, a figure on foot faces it, walking or still, so walking away backs off from it; sprinting, it faces where it runs,
+and its foe again once the sprint ends ([[Locked On, the Figure Faces Its Foe Unless It Sprints]]). Swinging, casting or
+aiming a ranged weapon, it turns to face where the camera looks ([[Aiming, the Figure Faces Straight Ahead]]). Dodging,
+a figure (the player's, another player's or a foe's) faces the way its hop goes, so its roll is drawn going that way,
+though the rules keep the fighter facing its foe ([[A Locked-On Dodge Rolls the Way It Goes]]).
 
 ## Dressing
 
@@ -386,7 +396,8 @@ The figure is dressed as DFO's game dresses it ([[DFO's Sprite Forge Comes Over 
 
 ## How it draws
 
-The page reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
+A lost GPU device stops the Test Ground, the page saying so and asking for a reload (`stopWhenLost`). The page
+reads `content/forge/renders.json` and fetches the forge's index and tables from R2. Each strip is read from
 its pack by its byte range; a body shorter than its range is fetched once more past the cache, never decoded. One that
 fails to arrive is asked for again 5 s later, not every frame. Decoded strips are kept while there is room: 128 MB in
 the worker that composes the figures, 96 MB on the page, the least lately asked for let go and fetched again if asked.

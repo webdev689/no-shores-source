@@ -4,8 +4,8 @@ status: live
 code:
   - content/arts/arts.json
   - client/src/game/artsPage.ts#artsPage
-  - client/src/game/artsPage.ts#artDiamond
-  - client/src/game/artsPage.ts#ArtsPageContext
+  - client/src/game/artsPage.ts#ArtsState
+  - client/src/game/artsRows.ts#artsRows
   - client/src/game/gearWindow.ts#startGearWindow
   - client/src/game/artsCards.ts#ArtsAsk
   - client/src/game/artsCards.ts#coreChoices
@@ -18,7 +18,6 @@ code:
   - client/src/game/artStage.ts#artStage
   - client/src/game/artsCards.ts#rechargeWords
   - client/src/game/artFragments.ts#FRAGMENT_MAPS
-  - client/src/game/arts.css
   - client/src/combat/abilityBar.ts#AbilityBar
   - client/src/combat/abilityBar.ts#abilityBarOf
   - crates/gear/src/arts.rs#WornArts
@@ -49,14 +48,15 @@ code:
   - client/src/combat/casting.ts#daggersAim
   - client/src/player/cardLooks.ts#STATUS_WGSL
   - client/src/forge/compose.ts#composeFrame
-  - client/src/testground/artsPanel.ts#startArtsPanel
+  - client/src/testground/artsPanel.ts#artsNodes
 ---
 # Arts
 
 The Arts are Overlook's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, Divine and Shadow, each with an
 Anima, two Tenets and a Core of fragments ([[Arts and Loadouts as Claude Shapes Them]]). Every name, word and number
 the client shows comes from `content/arts/arts.json`, the file the rules read too, the fragments' numbers with it.
-This note covers what the player sees (the Art's screen in the menu, the Art's diamond on the Character page, the
+An Art, its Anima and each Tenet are earned on its house's road ([[Quests]]): a new character wears none until
+then, and a character made before earns them all. This note covers what the player sees (the Art's screen in the menu, the Art's diamond on the Character page, the
 ability bar on the HUD), how the rules cast each spell, how the browser asks for a cast, and how each spell looks.
 
 ## How it works
@@ -100,9 +100,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   a bell, as a gain chimes.
 - **Asks.** The screen changes nothing itself. It asks the room `{ kind: 'wearArt', art }` or
   `{ kind: 'setCore', art, slot, fragment }`, and shows the Art and Core the room last sent.
-- **Keys.** The footer lists them: Click, the arrows, Enter and Escape. The arrows move to the nearest tile that way,
-  and within an open flyout only among its fragments. Enter chooses. Escape closes the flyout, then the screen, and the
-  focus goes back to what opened it. The screen is a region named by the Art's name, so a screen reader reads it first.
+- **Keys.** The footer lists them: Click, the arrows, Enter and Escape. The arrows move to the nearest tile that way.
+  Enter chooses. Escape closes the flyout, then the screen, and the
+  focus goes back to what opened it. The screen is named by the Art's name, so a screen reader reads it first.
 - **Sizes.** The face keeps its grid: 11 for words, 22 for headings, words and keycaps where the menu is wide, 33 for
   the Art's name (55 where wide). The pictures stand at whole multiples of their cells: the large emblem's 24 cells
   and its 32-cell frame at 8 (7 on a short screen, 11 on a wide one, 10 where wide but under 1000 px tall), the three
@@ -124,8 +124,7 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   stands in the room right of the rows, and it fades out toward the left in a dither. Its still cells are worked out
   only when the Art or the screen's size changes; it steps six times a second round a loop of 48 steps, only while
   shown. With less motion asked for, it stands still.
-- **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle as a diamond and its glow swells
-  once, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
+- **Motion**, in steps: opening, the scene fades in, the emblem opens from its middle, and the rows rise in turn, all within 0.4 s; wearing another Art flashes the screen in its colour and opens
   its emblem again. The Anima's tile breathes. With less motion asked for, none of it plays.
 - **The ability bar** stands at the bottom left, left of the weapons, after Destiny's abilities ([[Interface]], "The
   Arts and weapons"). The Anima's own icon, the one the Art's screen shows, stands in a diamond 68 px across: unlit but
@@ -134,9 +133,10 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   wedge that sweeps away clockwise from the top in 6-degree steps; with 9 seconds or fewer left, the seconds stand in
   it, rounded up, the icon stepping back so they read. Ready, its ring is lit in the element. Each key (R, Q, G) stands
   on a keycap under its icon. A spell just cast flashes its frame white for 0.5 s; while the player cannot cast
-  (staggered, down or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and up) the
+  (staggered, down, drinking or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and
+  up) the
   diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and
-  each Tenet's recharge, as shares, and each frame writes only what changed. With no Art worn it is not shown.
+  each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown.
 
 ## In the rules
 
@@ -168,11 +168,11 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   so no recharge runs at another Art's pace.
 - **Casting.** An input names a spell by its number: its Art's number less one, times three, plus its ability (0 the
   Anima, 1 and 2 the Tenets), plus one, so 1 Tempest to 9 Vanish. The room takes it only if it is the worn Art's,
-  its share is full, no other cast is on its way, and the player is on foot and not staggered, Charged, dead or dead
-  past a section's edge. It releases 18 ticks (0.3 s) after the tick that took it. If the player is staggered,
-  Charged, dead or dead past the edge by then, it is lost and costs nothing; else its share empties and the spell is
-  cast. Casting is attacking: any spell but Vanish ends the caster's veil as it is cast, though a spell already out,
-  a raven's bolt or a ring, does not.
+  its share is full, no other cast is on its way, and the player is on foot and not staggered, Charged, drinking
+  ([[Three Healing Charges, Refilled by Blows and Kills]]), dead or dead past a section's edge. It releases 18 ticks
+  (0.3 s) after the tick that took it. If the player is staggered, Charged, drinking, dead or dead past the edge by
+  then, it is lost and costs nothing; else its share empties and the spell is cast. Casting is attacking: any spell
+  but Vanish ends the caster's veil as it is cast, though a spell already out, a raven's bolt or a ring, does not.
 - **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from a
   matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the Ranged
   one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is
@@ -219,9 +219,10 @@ The numbers are an Art's at level 5.
 ## In the browser
 
 - **Keys.** `R` casts the Anima, `Q` the first Tenet and `G` the second. A press is sent only while the bar shows its
-  ability ready, the pointer held and the player on foot, not staggered, down or dead; then no other is sent until the
-  room's word shows that ability spent (its share under full) or another Art worn, 2 s at most (a cast the room lets
-  fall sends no word). Any other word from the room in between leaves the keys waiting. Crouching stays on `C`, and the
+  ability ready, the pointer held and the player on foot, not staggered, down, drinking or dead; then no other is
+  sent until the room's word shows that ability spent (its share under full) or another Art worn, 2 s at most (a cast
+  the room lets fall sends no word). Any other word from the room in between leaves the keys waiting. Crouching stays
+  on `C`, and the
   guard on the left button or `F`, as DFO has them. With the menu open the game takes no keys, so `F` still dismantles a
   piece there.
 - **Dusk Daggers.** Pressed, `Q` aims: the input asks for the crosshair's point as it is, and a faint ring in

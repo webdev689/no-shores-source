@@ -133,6 +133,10 @@ pub enum Action {
     Reload {
         left: u32,
     },
+    /// A healing charge drunk: ticks since it began. Its health comes as it ends; a blow cuts it short.
+    Drink {
+        elapsed: u32,
+    },
     Dead {
         elapsed: u32,
     },
@@ -145,10 +149,12 @@ pub struct Held {
     pub guard: bool,
     pub dodge: bool,
     pub shoot: bool,
+    pub heal: bool,
 }
 
 /// Presses not yet acted on, each kept PRESS_KEPT ticks, so one made while the fighter is busy is acted on as soon
-/// as it can be: ticks left for the attack (and its stroke), the guard, the dodge, and a trigger pulled in a swap.
+/// as it can be: ticks left for the attack (and its stroke), the guard, the dodge, a trigger pulled in a swap, and a
+/// drink asked.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Kept {
     pub attack: u8,
@@ -156,6 +162,7 @@ pub struct Kept {
     pub guard: u8,
     pub dodge: u8,
     pub shoot: u8,
+    pub heal: u8,
 }
 
 /// A fighter and everything a fight keeps for it.
@@ -208,6 +215,10 @@ pub struct Fighter {
     /// Whether it is driven by the rules on the players' side, as the Brig's crew are: it fights by a foe's rules (its
     /// reach, parry window and telegraphed blows) while no player strikes it, nor it a player.
     pub ally: bool,
+    /// The healing charges it holds (a player's, 0 to `CHARGES`; a foe never has one), and how far its blows have
+    /// filled the next, 0 to 1.
+    pub charges: u8,
+    pub meter: f64,
 }
 
 /// What a player's controls or a foe's brain asks of a fighter in a tick: the movement's controls and the fight's.
@@ -220,7 +231,7 @@ pub struct Intent {
 /// The fight's buttons: the stroke a swing would take while the attack button is held (the player's page rolls it, as
 /// Daggerfall Unity's click to attack does), the guard held, the dodge held, the shot's trigger held, the look's pitch
 /// for a shot, a ranged weapon held up to aim, the point an aimed shot is laid on (the crosshair's; along the look if
-/// none), and for a foe a telegraphed blow its brain begins.
+/// none), a healing charge asked for, and for a foe a telegraphed blow its brain begins.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct CombatInput {
     pub attack: Option<Stroke>,
@@ -230,6 +241,7 @@ pub struct CombatInput {
     pub pitch: f64,
     pub aim: bool,
     pub mark: Option<[f64; 3]>,
+    pub heal: bool,
     pub telegraph: Option<TelegraphOrder>,
 }
 
@@ -268,13 +280,16 @@ pub fn fighter(side: Side, body: Body, arms: Arms, weight: Weight, health: f64, 
         statuses: crate::status::Statuses::NONE,
         ammo: None,
         ally: false,
+        charges: 0,
+        meter: 0.0,
     }
 }
 
-/// A player's fighter, as one joins a room or stands again.
+/// A player's fighter, as one joins a room or stands again: every healing charge full.
 #[must_use]
 pub fn player(body: Body, arms: Arms) -> Fighter {
-    fighter(Side::Players, body, arms, Weight::Medium, PLAYER_HEALTH, PLAYER_POISE)
+    let fresh = fighter(Side::Players, body, arms, Weight::Medium, PLAYER_HEALTH, PLAYER_POISE);
+    Fighter { charges: crate::tuning::CHARGES, ..fresh }
 }
 
 impl Fighter {

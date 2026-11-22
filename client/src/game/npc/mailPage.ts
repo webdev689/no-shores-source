@@ -1,31 +1,39 @@
-// The Postmaster's letters, where a keeper's wares stand (npcScreen.ts): every letter the game wrote, oldest first,
-// each a well holding the tile of what it holds (an item's picture, a module's or a Vestige's glyph, framed in its
-// rarity, its card on hover or focus), its name and words (`letterWords`), and its Take press; Take all over them. A
-// click or E takes one. Nothing here judges a rule: the room refuses what there is no room for, and the menu's footer says why.
-import { make } from '../../editor/dom.ts';
-import { ASKS, type GearAsk, type GearState, type GearVestige } from '../../network/gearMessages.ts';
+// The Postmaster's letters, where a keeper's wares stand (npcScreen.ts), drawn by the game: their count of the most
+// kept at the heading's right, Take all under it, then every letter the game wrote, oldest first, each in a well: the
+// tile of what it holds (an item's picture, a module's or a Vestige's glyph, framed in its rarity, its card under the
+// pointer or the focus), its name and words (`letterWords`), and its Take press. A click or E on a letter's tile or
+// press takes it. Where the column is narrow, as on a phone, a letter stands in one column. Nothing here judges a
+// rule: the room refuses what there is no room for, and the menu's footer says why.
+import { ASKS, type GearAsk, type GearState } from '../../network/gearMessages.ts';
 import type { GearLetter } from '../../network/mailMessages.ts';
 import { RARITIES, SLOTS } from '../../player/gear.ts';
-import { ROLES } from '../../plus/kit.ts';
-import type { PageContext } from '../characterPage.ts';
+import type { Child, Node } from '../../ui/node.ts';
+import { cardFrame, cardName, cardNode, rarityTone } from '../gearCard.ts';
 import { cardOf } from '../gearCards.ts';
 import {
   type Hint,
-  cardNode,
-  glyphImage,
-  hintLine,
-  itemIcon,
+  INK,
+  focusRing,
+  glyphNode,
+  itemIconNode,
   itemMarks,
-  pressOf,
-  rarityOf,
+  label,
+  pressNode,
   tileLabel,
-} from '../gearDom.ts';
+  tileNode,
+  words,
+} from '../gearNodes.ts';
+import type { MenuContext } from '../menuPage.ts';
 import { gearName, moduleGlyph } from '../shipGear.ts';
+import type { KeeperLook } from './npcTiles.ts';
 
 /** How many letters a mailbox keeps (the gear crate's `MAIL_MOST`). */
 export const MAIL_MOST = 50;
-/** A tile's picture box, in pixels. */
+/** A tile and its picture box, in pixels, as the inventory's cells are. */
+const TILE = 64;
 const TILE_PX = 48;
+/** Narrower than this, in pixels, a letter stands in one column. */
+const NARROW = 420;
 const TAKE_HINTS: readonly Hint[] = [['Click / E', 'Take']];
 /** Each source's words, by its name in the gear crate's `mail::Source` and in its numbers' order: where what a letter
  *  holds came from. */
@@ -73,106 +81,154 @@ export function letterRows(gear: GearState): { readonly rows: readonly LetterRow
   return { rows, takeAll: rows.length > 0 ? { kind: ASKS.takeAllLetters } : null };
 }
 
-/** A Vestige's card: its name, and the slot and level of what it holds. */
-function vestigeCard(holds: string, vestige: GearVestige): HTMLElement {
-  const card = make('div', '', `gear-card ${ROLES.panel}`);
-  rarityOf(card, vestige.rarity);
-  const head = make('div', '', 'gear-card-head');
-  head.append(make('h3', holds));
-  const body = make('div', '', 'gear-card-body');
-  const words = `For the ${SLOTS[vestige.slot] ?? ''}, level ${vestige.level}. Open it at the Mage.`;
-  body.append(make('p', words, 'gear-card-words'));
-  card.append(head, body, hintLine(TAKE_HINTS, 'gear-card-hint'));
-  return card;
+/** A letter's tile's id, and its Take press's. */
+const tileId = (letter: GearLetter) => `letter-${letter.id}`;
+const takeId = (letter: GearLetter) => `npc-take-${letter.id}`;
+const holdsAny = (letter: GearLetter) => letter.item !== null || letter.vestige !== null;
+
+/** The letters' presses as the keeper's screen moves the focus among them: their Take presses in one row, their tiles
+ *  in another, so the focus on a letter taken goes to the same press of the letter after it, else the one before. */
+export const letterPresses = (gear: GearState): string[][] => {
+  const letters = gear.mail ?? [];
+  return [letters.map(takeId), letters.filter(holdsAny).map(tileId)];
+};
+
+/** The letters asked for since the room last answered: the page is drawn each frame from the gear the room last sent,
+ *  so a second press before its answer would ask for a letter already taken, and be refused. */
+let asked = { answered: -1, letters: new Set<number>() };
+
+/** `ask` for `letters`, unless every one of them was asked for since the room last answered. */
+function askOnce(context: MenuContext, letters: readonly number[], ask: GearAsk): void {
+  const { answered } = context.gear;
+  if (asked.answered !== answered) asked = { answered, letters: new Set() };
+  if (letters.every((letter) => asked.letters.has(letter))) return;
+  for (const letter of letters) asked.letters.add(letter);
+  context.ask(ask);
 }
 
-/** The tile of what a letter holds, its card on hover or focus; a click takes the letter. */
-function heldTile(context: PageContext, row: LetterRow): HTMLElement {
+/** A Vestige's card: its name, and the slot and level of what it holds. */
+function vestigeCard(context: MenuContext, row: LetterRow, slot: number, level: number): Node {
+  const { sizes } = context;
+  const said = `For the ${SLOTS[slot] ?? ''}, level ${level}. Open it at the Mage.`;
+  return cardFrame(
+    sizes,
+    rarityTone(row.rarity),
+    [cardName(row.holds, row.rarity)],
+    [{ width: 'grow', text: { words: said, size: sizes.label, colour: INK.faint } }],
+    TAKE_HINTS,
+  );
+}
+
+/** The tile of what a letter holds, in its rarity with its pips, its card under the pointer or the focus; none for a
+ *  letter holding nothing. */
+function heldTile(context: MenuContext, row: LetterRow): Node | null {
+  const { ui, sizes } = context;
   const { item, vestige } = row.letter;
-  const tile = make('button', '', `gear-cell ${ROLES.tile}`);
-  rarityOf(tile, row.rarity);
+  if (!holdsAny(row.letter)) return null;
+  const id = tileId(row.letter);
   // A module is no figure's to wear: its glyph stands for it, as on the ship's tab.
   const module = item ? moduleGlyph(item.kind) : null;
-  tile.append(
-    item && !module
-      ? itemIcon(context.picture(item), row.holds, TILE_PX)
-      : glyphImage(module ?? 'vestige', row.rarity ?? 0),
+  context.card(id, () =>
+    item
+      ? cardNode(cardOf(item), module ? null : context.picture(item), TAKE_HINTS, sizes)
+      : vestigeCard(context, row, vestige?.slot ?? 0, vestige?.level ?? 0),
   );
-  if (item) itemMarks(tile, item);
+  const icon = module
+    ? glyphNode(module)
+    : item
+      ? itemIconNode(context.picture(item), row.holds, TILE_PX, sizes, item.rarity)
+      : glyphNode('vestige', 36, row.rarity ?? 0);
+  const { marks, gilded } = item ? itemMarks(item) : { marks: [], gilded: false };
   const pips = row.rarity === null ? '' : (RARITIES[row.rarity]?.pips ?? '');
-  if (pips) tile.append(make('span', pips, 'gear-pips'));
-  tile.dataset['key'] = `letter-${row.letter.id}`;
-  tile.setAttribute('aria-label', tileLabel(row.holds, row.rarity, 'in the mail'));
-  context.tip.over(tile, () => {
-    if (item) return cardNode(cardOf(item), module ? null : context.picture(item), TAKE_HINTS);
-    return vestige ? vestigeCard(row.holds, vestige) : make('div');
+  const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
+  return tileNode(TILE, row.rarity, lit ? 'lit' : 'rest', [icon], {
+    id,
+    press: true,
+    keys: ['e'],
+    label: tileLabel(row.holds, row.rarity, 'in the mail'),
+    gilded,
+    marks: [
+      ...marks,
+      pips !== '' && {
+        text: { words: pips, colour: RARITIES[row.rarity ?? 0]?.colour ?? INK.word, edge: 'shadow' },
+        float: { to: 'parent', clipped: true, anchor: [0, 1], at: [0, 1], x: 4, y: -5 },
+      },
+      ui.focused(id) && ui.keyFocused && focusRing(TILE, TILE),
+    ],
   });
-  tile.addEventListener(
-    'click',
-    once(() => {
-      context.tip.hide();
-      context.ask(row.take);
-    }),
-  );
-  return tile;
 }
 
-/** A letter's take asked once: the page is drawn anew as the gear changes, so a second click before then would ask
- *  for a letter already taken, and be refused. */
-function once(run: () => void): () => void {
-  let asked = false;
-  return () => {
-    if (asked) return;
-    asked = true;
-    run();
+/** One letter in its well: its tile, its name in its rarity's colour and its words, and its Take press; in one column
+ *  where `narrow`, its words the well's whole width and its press at its end. */
+function letterNode(context: MenuContext, row: LetterRow, among: string, look: KeeperLook, narrow: boolean): Node {
+  const { ui } = context;
+  const { letter } = row;
+  const [tile, take] = [tileId(letter), takeId(letter)];
+  const keyed = [tile, take].some((id) => ui.keysOn(id).includes('e'));
+  if (ui.clicked(tile) || ui.clicked(take) || keyed) askOnce(context, [letter.id], row.take);
+  const found = row.rarity === null ? undefined : RARITIES[row.rarity];
+  const name: Child = row.holds !== '' && {
+    width: 'grow',
+    text: { words: row.holds, size: look.text, colour: (row.rarity === 0 ? found?.colour : found?.lit) ?? INK.word },
   };
+  const said: Node = { width: 'grow', text: { words: row.words, size: look.text, colour: INK.faint } };
+  const press = pressNode(take, 'Take', 'button', '', look.text, {
+    keys: ['e'],
+    label: `Take ${row.holds || 'the letter'}, ${among}`,
+  });
+  const well = { role: 'well', width: 'grow', padding: [8, 11], gap: 11 } as const;
+  return narrow
+    ? {
+        ...well,
+        direction: 'column',
+        children: [
+          { width: 'grow', gap: 11, alignY: 'center', children: [heldTile(context, row), name] },
+          said,
+          { width: 'grow', alignX: 'end', children: [press] },
+        ],
+      }
+    : {
+        ...well,
+        alignY: 'center',
+        children: [
+          heldTile(context, row),
+          { width: 'grow', direction: 'column', gap: 3, children: [name, said] },
+          press,
+        ],
+      };
 }
 
-/** The Postmaster's letters: their count of the most kept, Take all, and each letter's row. */
-export function mailPage(context: PageContext): HTMLElement {
+/** The Postmaster's letters, in a column `width` pixels wide: their heading with their count of the most kept at its
+ *  right, Take all while any waits, and each letter's well. */
+export function mailPage(context: MenuContext, look: KeeperLook, width: number): Node {
   const { rows, takeAll } = letterRows(context.gear);
-  const page = make('section', '', 'npc-row npc-mail');
-  const heading = make('h3', '', `gear-heading ${ROLES.rule}`);
-  heading.append(make('span', 'Letters'), make('span', `${rows.length}/${MAIL_MOST}`));
-  heading.setAttribute('aria-label', `Letters, ${rows.length} of ${MAIL_MOST} kept`);
-  page.append(heading);
-  if (takeAll) {
-    const all = pressOf('Take all', () => context.ask(takeAll), 'primary');
-    all.classList.add('npc-take-all');
-    all.dataset['key'] = 'npc-take-all';
-    page.append(all);
-  } else page.append(make('p', 'No letters wait for you.', 'gear-hint npc-empty'));
-  const letters = make('div', '', 'npc-letters');
-  for (const [place, row] of rows.entries()) {
-    const line = make('div', '', `npc-letter ${ROLES.well}`);
-    if (row.holds) line.append(heldTile(context, row));
-    const words = make('div', '', 'npc-letter-words');
-    if (row.holds) {
-      const name = make('b', row.holds);
-      name.style.color = row.rarity === null ? '' : (RARITIES[row.rarity]?.colour ?? '');
-      words.append(name);
-    }
-    words.append(make('p', row.words, 'gear-hint'));
-    const take = pressOf(
-      'Take',
-      once(() => context.ask(row.take)),
-      'button',
-    );
-    take.classList.add('npc-take');
-    take.dataset['key'] = `npc-take-${row.letter.id}`;
-    take.setAttribute('aria-label', `Take ${row.holds || 'the letter'}, ${place + 1} of ${rows.length}`);
-    line.append(words, take);
-    letters.append(line);
-  }
-  page.append(letters);
-  // E takes the letter whose tile or Take press holds the focus, as at the bounty board.
-  page.addEventListener('keydown', (event) => {
-    if (event.key.toLowerCase() !== 'e' || event.repeat || event.ctrlKey || event.altKey || event.metaKey) return;
-    const line = event.target instanceof Element ? event.target.closest('.npc-letter') : null;
-    const press = line?.querySelector<HTMLButtonElement>('.npc-take');
-    if (!press) return;
-    event.preventDefault();
-    press.click();
-  });
-  return page;
+  const letters = rows.map((row) => row.letter.id);
+  if (takeAll && context.ui.clicked('npc-take-all')) askOnce(context, letters, takeAll);
+  return {
+    width: 'grow',
+    direction: 'column',
+    gap: 11,
+    children: [
+      {
+        width: 'grow',
+        direction: 'column',
+        gap: 4,
+        label: `Letters, ${rows.length} of ${MAIL_MOST} kept`,
+        children: [
+          {
+            width: 'grow',
+            children: [
+              { width: 'grow', children: [label('Letters', look.text)] },
+              words(`${rows.length}/${MAIL_MOST}`, look.text, INK.faint),
+            ],
+          },
+          { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
+        ],
+      },
+      takeAll
+        ? pressNode('npc-take-all', 'Take all', 'primary', '', look.text)
+        : words('No letters wait for you.', look.text, INK.faint),
+      ...rows.map((row, place) => letterNode(context, row, `${place + 1} of ${rows.length}`, look, width < NARROW)),
+    ],
+  };
 }

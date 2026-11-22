@@ -1,17 +1,17 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
-import { bannerFor, bannerUrl } from '../plus/journalArt.ts';
-import { poolMarkUrl } from './journalIcons.ts';
+import type { QuestState } from '../network/questMessages.ts';
+import { bannerFor, bannerSvg } from '../plus/journalArt.ts';
+import type { Node } from '../ui/node.ts';
+import type { Interface, UiEvent } from '../ui/ui.ts';
+import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
 import type { ThisWeek } from './activityWords.ts';
-import { STEP_BACK } from './gearScreen.ts';
-import { type JournalSource, startJournal } from './journalPage.ts';
-import type { WrittenQuest } from './journalWords.ts';
-import { type FakeElement, FakeEvent, fakePage } from './pageForTests.ts';
+import { sizesOf } from './gearNodes.ts';
+import { HOURGLASS, Journal, type JournalSource } from './journalPage.ts';
+import { QUESTS } from './quests/questBook.ts';
 
 const FRIDAY_AT = 29_919_420 * 60_000;
-const keyed = (root: FakeElement, key: string) => root.all().find((node) => node.dataset['key'] === key);
-const classed = (root: FakeElement, name: string) => root.all().filter((node) => node.classList.contains(name));
 const bounty = (words: string, target: number, count = 0, held = false, paid = false, pool = 0) => ({
   words,
   target,
@@ -29,196 +29,159 @@ const BOARD = [
   bounty('Clear 2 dungeons.', 2, 0, false, false, 2),
   bounty('Clear 3 dungeons.', 3, 0, false, false, 2),
 ];
-const sample = (id: string, kind: string): WrittenQuest => ({
-  id,
-  kind,
-  name: `Sample ${kind} quest ${id}`,
-  tale: 'A sample line of its tale.',
-  steps: [{ name: 'Sample first step' }, { name: 'Sample second step' }],
+/** Where a character stands on the houses' roads: walking quest `quest` (from 1, 0 none) at `task`, `done` by place. */
+const roads = (quest: number, task: number, done: readonly number[] = [0, 0, 0, 0]): QuestState => ({
+  ...{ quest, task, counts: [], done, choices: [], at: null },
 });
-const geared = (quests: readonly { id: string; step: number; done: boolean }[], bounties = BOARD) =>
-  ({ prologueDone: true, day: 20_778, bounties, quests, bountyXp: 3_500, bountyAurem: 210 }) as unknown as GearState;
+const geared = (quest: QuestState | null, bounties = BOARD) =>
+  ({ prologueDone: true, day: 20_778, bounties, quest, bountyXp: 3_500, bountyAurem: 210 }) as unknown as GearState;
 /** A day's and a week's word with nothing on but their resets. */
 const weekEnding = (endsAt: number, day = 20_778): ThisWeek => ({
   today: { day, endsAt, pays: '', rewards: [], modifier: null, tiers: [], dungeons: [] },
   week: { endsAt: endsAt + 3 * 86_400_000, dungeons: [], boon: null },
 });
-function journalOf(source: JournalSource, now = () => FRIDAY_AT) {
-  const { root, window } = fakePage();
-  const journal = startJournal(source, now);
-  root.append(journal.hourglass as never, journal.page() as never);
-  return { root, window, journal, page: journal.page() as unknown as FakeElement };
+
+/** The Journal drawn frame by frame as the menu frames it: its hourglass over its page, the last tree built, a step of
+ *  frames hearing `events`, and a click on what an id names. */
+function journalOf(source: JournalSource, now = () => FRIDAY_AT, width = 1280) {
+  const { ui, step } = fakeInterface(width, 900);
+  const journal = new Journal(source, now);
+  const sizes = sizesOf(width, 900, 1);
+  let built: Node = {};
+  const page = () => journal.page({ ui, sizes, room: { width: width - 120, height: 700 }, holds: null as never });
+  const tree = (): Node => ({ width: 'grow', direction: 'column', children: [journal.hourglass(ui), page()] });
+  const frame = (events: UiEvent[] = []) => step(() => (built = tree()), events);
+  const click = (id: string) => {
+    const box = ui.boxOf(id);
+    assert.ok(box, `${id} is laid`);
+    const [x, y] = [box.x + box.width / 2, box.y + box.height / 2];
+    frame([
+      { kind: 'pointer', x, y },
+      { kind: 'down', x, y, button: 0 },
+      { kind: 'up', x, y, button: 0 },
+    ]);
+    frame();
+  };
+  frame();
+  frame();
+  return { ui, journal, frame, click, tree: () => built };
 }
 
-test('with no quest written the Journal says so plainly, the bounties at its side, and its timers wait above', () => {
+/** What `id` names, its words. */
+const wordsOf = (tree: Node, id: string) => wordsIn(byId(tree, id));
+const keyed = (ui: Interface, id: string) => ui.boxOf(id) !== null;
+
+test('with no road walked the Journal says so plainly, the bounties at its side, and its timers wait above', () => {
   const open = BOARD.map((one) => ({ ...one, held: false, paid: false, count: 0 }));
-  const { root } = journalOf({ week: () => null, kept: () => geared([], open), written: [] });
-  assert.ok(root.find('No quests yet. The story’s missions and side quests come later.'));
-  assert.equal(
-    root.all().some((node) => node.textContent.startsWith('Page ')),
-    false,
-    'no pages to turn',
-  );
-  assert.ok(root.find('0/6'));
-  assert.equal(classed(root, 'journal-slot').length, 6, 'six empty frames');
-  assert.ok(root.find('None taken yet. Take them at the bounty board in Overlook’s plaza.'));
-  assert.equal(keyed(root, 'timers')?.hidden, true);
-  assert.equal(root.find('This Week'), undefined);
+  const { ui, tree } = journalOf({ week: () => null, kept: () => geared(roads(0, 0), open) });
+  const said = wordsIn(tree());
+  assert.ok(said.includes('No quests held. Quests you take up are kept here.'));
+  assert.ok(!keyed(ui, 'quests-back') && !keyed(ui, 'quests-next'), 'no pages to turn');
+  assert.ok(said.includes('0/6'));
+  const slots = nodesOf(byId(tree(), 'journal-bounties')).filter((node) => node.role === 'well');
+  assert.equal(slots.length, 6, 'six empty frames');
+  assert.ok(said.includes('None taken yet. Take them at the bounty board in Overlook’s plaza.'));
+  assert.ok(!keyed(ui, 'journal-timers'), 'the timers wait above');
+  assert.ok(!said.includes('This Week'));
 });
 
-test('the quests held are cards six a page, story missions first, each at its step, with the page and arrows to turn it', () => {
-  const written = ['side', 'story', 'side', 'story', 'side', 'story', 'a-kind-to-come', 'side'].map((kind, index) =>
-    sample(String.fromCharCode(97 + index), kind),
-  );
-  const held = written.map(({ id }, index) => ({ id, step: index % 2, done: id === 'd' }));
-  const { root } = journalOf({ week: () => null, kept: () => geared(held), written });
-  const cards = () => classed(root, 'journal-card');
-  assert.ok(root.find('1/2') && root.find('8'), 'the page among its arrows, and how many are held by the title');
-  assert.ok(root.find('8 held') && root.find('Page 1 of 2'), 'each read in words to a reader');
-  const seen = root.find('8');
-  assert.equal(seen?.getAttribute('aria-hidden'), 'true', 'the shown number hidden from a reader, who hears its words');
-  assert.deepEqual(
-    cards().map((card) => card.dataset['key']),
-    ['quest-b', 'quest-d', 'quest-f', 'quest-a', 'quest-c', 'quest-e'],
-  );
-  const first = cards()[0];
-  assert.equal(
-    first?.all().find((node) => node.tagName === 'IMG')?.['src' as never],
-    bannerUrl(bannerFor('story', 'b')),
-  );
-  assert.ok(first?.find('2') && first.find('Sample second step'), 'its step’s number, from one, and its name');
+test('the Journal shows the houses’ roads: the opening at its task before the pledge, each road begun and each done', () => {
+  const [opening, storm] = [QUESTS[0], QUESTS[1]];
+  assert.ok(opening && storm);
+  const before = journalOf({ week: () => null, kept: () => geared(roads(1, 0)) });
+  assert.ok(keyed(before.ui, `quest-${opening.id}`), 'the opening, walked before any pledge');
+  const card = wordsIn(byId(before.tree(), `quest-${opening.id}`));
+  for (const words of [opening.name, '1', opening.tasks[0]?.task ?? ''])
+    assert.ok(card.includes(words), `${words} on its card`);
   assert.ok(
-    cards()[1]
-      ?.all()
-      .some((node) => node.tagName === 'IMG' && node['alt' as never] === 'Done'),
-    'every step done, waiting to be finished: its tick',
+    card.includes('Hear all three houses before you choose. Start with the loudest.'),
+    'a line of its tale: the opening line its first scene says',
   );
-  assert.equal(keyed(root, 'quests-back')?.getAttribute('aria-disabled'), 'true');
-  keyed(root, 'quests-next')?.click();
-  assert.ok(root.find('2/2'));
+  const banner = nodesOf(byId(before.tree(), `quest-${opening.id}`)).find((node) => node.picture)?.picture;
+  assert.deepEqual(banner?.source, { svg: bannerSvg(bannerFor('story', opening.id)) }, 'a story mission’s banner');
+  const pledged = journalOf({ week: () => null, kept: () => geared(roads(2, 3, [1, 0, 0, 0])) });
+  const cards = nodesOf(pledged.tree()).filter((node) => node.id?.startsWith('quest-'));
   assert.deepEqual(
-    cards().map((card) => card.dataset['key']),
-    ['quest-h', 'quest-g'],
-    'a kind to come after the side quests',
+    cards.map((one) => one.id),
+    [`quest-${opening.id}`, `quest-${storm.id}`],
+    'the opening done, the house’s road at its task',
   );
-  assert.equal(
-    cards()[1]
-      ?.all()
-      .find((node) => node.tagName === 'IMG')?.['src' as never],
-    bannerUrl(bannerFor('a-kind-to-come', 'g')),
-  );
-  assert.equal(keyed(root, 'quests-next')?.getAttribute('aria-disabled'), 'true');
+  const done = nodesOf(byId(pledged.tree(), `quest-${opening.id}`));
+  assert.equal(done.filter((node) => node.picture).length, 2, 'its banner, and a tick once done');
+  assert.ok(wordsIn(byId(pledged.tree(), `quest-${storm.id}`)).includes(storm.tasks[3]?.task ?? ''), 'its task now');
+  assert.ok(wordsIn(pledged.tree()).includes('2'), 'how many show, by the title');
+  const unclaimed = journalOf({ week: () => null, kept: () => geared({ ...roads(1, 0), claimed: false }) });
+  assert.ok(!keyed(unclaimed.ui, `quest-${opening.id}`), 'nothing from a word not on the player’s own character');
 });
 
-test('a long name or tale stands whole in its card’s words and title, the card cutting short only what it shows', () => {
-  const name = 'A sample story mission whose name runs far past the edge of any card it could stand on';
-  const tale = 'A sample tale line long enough to wrap twice on the narrowest card, so the card cuts it short there.';
-  const written = [{ ...sample('long', 'story'), name, tale }];
-  const { root } = journalOf({ week: () => null, kept: () => geared([{ id: 'long', step: 0, done: false }]), written });
-  const [shown] = classed(root, 'journal-card-name');
-  const [told] = classed(root, 'journal-card-tale');
+test('each bounty taken is a tile, its state its look; the rest empty frames; its card under them, with no press', () => {
+  const { ui, frame, tree } = journalOf({ week: () => null, kept: () => geared(roads(0, 0)) });
   assert.deepEqual(
-    [shown?.textContent, shown?.['title' as never], told?.textContent, told?.['title' as never]],
-    [name, name, tale, tale],
+    [0, 1, 2, 3, 4, 5].map((place) => keyed(ui, `bounty-${place}`)),
+    [false, true, true, true, false, false],
+    'those taken, done and turned in',
   );
-});
-
-test('each bounty taken is a tile marked where it counts, its state its look; the rest empty frames; its card under them', () => {
-  const { root } = journalOf({ week: () => null, kept: () => geared([]), written: [] });
-  const tiles = classed(root, 'bounty-tile');
-  assert.deepEqual(
-    tiles.map((tile) => tile.dataset['key']),
-    ['bounty-1', 'bounty-2', 'bounty-3'],
-  );
-  assert.deepEqual(
-    tiles.map((tile) => ['held', 'done', 'paid'].find((state) => tile.classList.contains(`bounty-tile-${state}`))),
-    ['held', 'done', 'paid'],
-  );
-  assert.deepEqual(
-    tiles.map((tile) => tile.all().find((node) => node.tagName === 'IMG')?.['src' as never]),
-    [poolMarkUrl(0), poolMarkUrl(1), poolMarkUrl(1)],
-  );
-  assert.equal(classed(root, 'journal-slot').length, 3);
-  assert.ok(root.find('3/6'));
-  const said = () => keyed(root, 'bounty-said');
-  assert.ok(said()?.find('Defeat 2 foes of Miniboss rank or higher.') && said()?.find('1/2'), 'the first at first');
-  assert.ok(said()?.find('Land bounty') && said()?.find('+3,500'), 'its kind, and its XP by its glyph');
-  tiles[1]?.dispatchEvent(new FakeEvent('pointerenter'));
-  assert.ok(said()?.find('Sink or take 3 ships.') && said()?.find('Done. Turn it in at the board.'));
-  tiles[2]?.dispatchEvent(new FakeEvent('focus'));
-  assert.ok(said()?.find('Turned in'));
-  const presses = root.all().filter((node) => node.tagName === 'BUTTON' && node.textContent.startsWith('T'));
-  assert.deepEqual(presses, [], 'taken and turned in at the board alone');
+  const wells = nodesOf(byId(tree(), 'journal-bounties')).filter((node) => node.role === 'well');
+  assert.equal(wells.length, 3);
+  const said = () => wordsOf(tree(), 'bounty-card');
+  assert.ok(wordsIn(tree()).includes('3/6'));
+  assert.ok(said().includes('Defeat 2 foes of Miniboss rank or higher.') && said().includes('1/2'), 'the first first');
+  assert.ok(said().includes('LAND BOUNTY') && said().includes('+3,500'), 'its kind, and its XP by its glyph');
+  ui.focusOn('bounty-2');
+  frame();
+  assert.ok(said().includes('Sink or take 3 ships.') && said().includes('Done. Turn it in at the board.'));
+  ui.focusOn('bounty-3');
+  frame();
+  assert.ok(said().includes('Turned in'));
+  assert.equal(byId(tree(), 'board-press'), undefined, 'taken and turned in at the board alone');
 });
 
 test('gear of another day’s board, kept at sea through the reset, shows no bounty until a room sends today’s', () => {
-  const { root } = journalOf({ week: () => weekEnding(FRIDAY_AT, 20_779), kept: () => geared([]), written: [] });
-  assert.equal(classed(root, 'bounty-tile').length, 0);
-  assert.ok(root.find('Six a day, from the board in Overlook’s plaza.'));
-  assert.equal(root.find('0/0'), undefined, 'no count without a board to count');
+  const { ui, tree } = journalOf({ week: () => weekEnding(FRIDAY_AT, 20_779), kept: () => geared(null) });
+  assert.ok(!keyed(ui, 'bounty-1'));
+  assert.ok(wordsIn(tree()).includes('Six a day, from the board in Overlook’s plaza.'));
+  assert.ok(!wordsIn(tree()).includes('0/0'), 'no count without a board to count');
 });
 
-test('the hourglass or T drops the timers from the top; Escape, Close or the hourglass take them up, the focus going back', () => {
-  const { root, window, journal, page } = journalOf({ week: () => null, kept: () => null, written: [] });
-  const timers = () => keyed(root, 'timers');
-  journal.hourglass.click();
-  assert.equal(timers()?.hidden, false);
-  assert.equal(journal.hourglass.getAttribute('aria-expanded'), 'true');
-  assert.equal(document.activeElement, keyed(root, 'timers-close'), 'the focus goes in');
-  assert.ok([...classed(root, 'journal-quests'), ...classed(root, 'journal-bounties')].every((node) => node.inert));
-  const step = new FakeEvent(STEP_BACK);
-  page.dispatchEvent(step);
-  assert.equal(step.defaultPrevented, true, 'Escape takes the timers up before the menu steps back');
-  assert.equal(timers()?.hidden, true);
-  assert.equal(document.activeElement, journal.hourglass);
-  const press = (key: string) => {
-    const event = new FakeEvent('keydown', { key });
-    event.target = root;
-    window.dispatchEvent(event);
-  };
-  press('t');
-  assert.equal(timers()?.hidden, false);
-  keyed(root, 'timers-close')?.click();
-  assert.equal(timers()?.hidden, true);
-  const again = new FakeEvent(STEP_BACK);
-  page.dispatchEvent(again);
-  assert.equal(again.defaultPrevented, false, 'with them up, Escape is the menu’s');
+test('the hourglass drops the timers over the page, the focus going in; Close takes them up and the focus back', () => {
+  const { ui, journal, click, frame, tree } = journalOf({ week: () => weekEnding(FRIDAY_AT), kept: () => null });
+  click(HOURGLASS);
+  frame();
+  assert.equal(journal.down, true);
+  assert.ok(keyed(ui, 'journal-timers'));
+  assert.equal(ui.focusedId, 'timers-close', 'the focus goes in');
+  assert.equal(byId(tree(), 'journal-timers')?.modal, true, 'the page under it out of the keys’ reach');
+  const glass = nodesOf(byId(tree(), HOURGLASS)).find((node) => node.picture);
+  assert.equal(glass?.picture?.turn, 180, 'the hourglass turned');
+  click('timers-close');
+  frame();
+  assert.ok(!keyed(ui, 'journal-timers'));
+  assert.equal(ui.focusedId, HOURGLASS);
+  journal.toggle();
+  frame();
+  assert.equal(journal.up(), true, 'taken up as Escape steps back or the Journal is left');
+  assert.equal(journal.up(), false, 'with them up, Escape is the menu’s');
 });
 
-test('the timers stay down and the focus stays put as the minute, the day and the gear change under them', () => {
-  let [now, week, gear] = [FRIDAY_AT - 2_000, weekEnding(FRIDAY_AT), geared([])];
-  const { root, journal } = journalOf({ week: () => week, kept: () => gear, written: [] }, () => now);
-  journal.hourglass.click();
-  journal.page();
-  assert.equal(keyed(root, 'timer-day-reset')?.textContent, '0:02');
+test('the timers stay down as the minute, the day and the gear change under them', () => {
+  let [now, week, gear] = [FRIDAY_AT - 2_000, weekEnding(FRIDAY_AT), geared(null)];
+  const { journal, frame, tree } = journalOf({ week: () => week, kept: () => gear }, () => now);
+  journal.toggle();
+  frame();
+  assert.equal(wordsOf(tree(), 'timer-day-reset')[0], '0:02');
   now = FRIDAY_AT + 1_000;
-  journal.page();
-  assert.equal(keyed(root, 'timer-day-reset')?.textContent, '0:00', 'never below nothing until the new day comes');
-  [week, gear] = [weekEnding(FRIDAY_AT + 86_400_000, 20_779), { ...geared([]), day: 20_779 } as GearState];
-  journal.page();
-  assert.equal(keyed(root, 'timer-day-reset')?.textContent, '23:59:59');
-  assert.equal(keyed(root, 'timers')?.hidden, false, 'still down');
-  assert.equal(document.activeElement, keyed(root, 'timers-close'), 'the focus where it was');
-  journal.hourglass.click();
-  keyed(root, 'bounty-1')?.focus();
-  const more = BOARD.map((one, place) => (place === 1 ? { ...one, target: 30, count: 13 } : one));
-  gear = { ...geared([], more), day: 20_779 } as GearState;
-  journal.page();
-  assert.equal((document.activeElement as unknown as FakeElement).dataset['key'], 'bounty-1');
-  assert.ok(keyed(root, 'bounty-said')?.find('13/30'), 'rebuilt with its new count');
+  frame();
+  assert.equal(wordsOf(tree(), 'timer-day-reset')[0], '0:00', 'never below nothing until the new day comes');
+  [week, gear] = [weekEnding(FRIDAY_AT + 86_400_000, 20_779), { ...geared(null), day: 20_779 } as GearState];
+  frame();
+  assert.equal(wordsOf(tree(), 'timer-day-reset')[0], '23:59:59');
+  assert.equal(journal.down, true, 'still down');
 });
 
-test('a focused tile gone as the day turns leaves the focus on the page, not lost; T with Ctrl is the browser’s', () => {
-  let week = weekEnding(FRIDAY_AT);
-  const { root, window, journal } = journalOf({ week: () => week, kept: () => geared([]), written: [] });
-  keyed(root, 'bounty-1')?.focus();
-  week = weekEnding(FRIDAY_AT + 86_400_000, 20_779);
-  journal.page();
-  assert.equal(document.activeElement, journal.hourglass, 'no tile left, so the hourglass');
-  const key = new FakeEvent('keydown', { key: 't' });
-  Object.assign(key, { ctrlKey: true });
-  key.target = root;
-  window.dispatchEvent(key);
-  assert.equal(keyed(root, 'timers')?.hidden, true);
-  assert.equal(key.defaultPrevented, false);
+test('two columns of cards where the page is wide, one where it is not', () => {
+  const wide = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) });
+  const narrow = journalOf({ week: () => null, kept: () => geared(roads(2, 0, [1, 0, 0, 0])) }, () => FRIDAY_AT, 800);
+  const [first, second] = [`quest-${QUESTS[0]?.id}`, `quest-${QUESTS[1]?.id}`];
+  assert.equal(wide.ui.boxOf(first)?.y, wide.ui.boxOf(second)?.y, 'side by side');
+  assert.ok((narrow.ui.boxOf(first)?.y ?? 0) < (narrow.ui.boxOf(second)?.y ?? 0), 'one over the other');
 });

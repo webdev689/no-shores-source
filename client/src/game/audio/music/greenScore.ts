@@ -1,10 +1,10 @@
 // Green: the fight on the windswept coast, the highland and the woodland. E Dorian (E minor with a raised sixth, the
 // piper's C sharp) in 6/8 at a dotted quarter of 104: a war jig. The fiddle's tune runs over the cellos' gallop with
 // the horn's counter-line under it, and a bodhran and a big drum drive it. Danger near is rhythm, not a held chord:
-// strings gated in sixteenths over a low heartbeat. The peak puts the tune on the whistle an octave up, the choir and
-// the low brass's stabs under it, and swells a reverse cymbal into each section. The plan: a vamp, the tune, the
-// horn's tune under the fiddle's descant, a break of drums and horn calls, the tune and the horn's again. The cadence
-// turns the tune's hemiola home, the victory ends it in E major, the defeat lets the call fall to the low strings.
+// strings gated in sixteenths over a low heartbeat. The peak sets the choir and the low brass's stabs under the tune,
+// and swells noise into each section, as a reverse cymbal does. The plan: a vamp, the tune, the horn's tune under the
+// fiddle's descant, a break of drums and horn calls, the tune and the horn's again. The cadence turns the tune's
+// hemiola home, the victory ends it in E major, the defeat lets the call fall to the low strings.
 
 import { chordAt, type Held, keys, measured, plan, progression, roll, runsOf } from './craft.ts';
 import { type Edge, type Song, type Writer, lay, makeSong, midiNote } from './score.ts';
@@ -54,7 +54,6 @@ const TRACKS = {
     role: 'lead',
     voice: { attack: 0.06, index: 2.3, idxDecay: 0.6, unison: 2, cents: 6, spread: 0.25 },
   },
-  whistle: { program: 78, volume: 104, pan: 82, role: 'peak' },
   choir: {
     program: 52,
     volume: 91,
@@ -69,13 +68,6 @@ const TRACKS = {
     role: 'peak',
     voice: { attack: 0.03, index: 3.2, idxDecay: 0.4, sub: 0.2 },
   },
-  swell: {
-    program: 119,
-    volume: 110,
-    pan: 64,
-    role: 'peak',
-    voice: { mod: 3.73, index: 6, idxDecay: 4, attack: 1.6, decay: 0.02, sustain: 1, release: 0.05, gain: 0.45 },
-  },
 } as const;
 type Track = keyof typeof TRACKS;
 
@@ -84,8 +76,19 @@ type Track = keyof typeof TRACKS;
 const KIT = {
   volume: 92,
   role: 'combat',
-  roles: { heart: 'tension' },
-  keys: { kick: 36, snare: 38, bodhran: 41, bodhranTop: 45, lowTom: 43, midTom: 47, highTom: 50, crash: 49, heart: 87 },
+  roles: { heart: 'tension', riser: 'peak' },
+  keys: {
+    kick: 36,
+    snare: 38,
+    bodhran: 41,
+    bodhranTop: 45,
+    lowTom: 43,
+    midTom: 47,
+    highTom: 50,
+    crash: 49,
+    heart: 87,
+    riser: 55,
+  },
   drums: {
     kick: { hz: 54, decay: 0.34, gain: 1.1, click: 0.45 },
     snare: { hz: 2200, q: 0.8, decay: 0.16, gain: 0.75, body: 200 },
@@ -96,6 +99,8 @@ const KIT = {
     highTom: { hz: 164, decay: 0.32, click: 0.3 },
     crash: { decay: 1.8, q: 0.5, gain: 0.7 },
     heart: { hz: 58, decay: 0.5, gain: 1.1, drop: 0.75, click: 0.15 },
+    // A swell of noise rising into the bar line, a reverse cymbal: noise, so it never whines as a pitched sweep does.
+    riser: { hz: 2600, q: 0.6, attack: 1.6, decay: 0.12, gain: 0.6 },
   },
 } as const;
 type Drum = keyof typeof KIT.keys;
@@ -260,7 +265,8 @@ function underneath(w: Write): void {
     for (const [beat, lift, velocity] of GALLOP)
       w.note('ostinato', bar, beat, 0.42, CHORDS[chordAt(held, beat)].ost + lift, velocity);
     drums(w, bar, drive, inBar % 4 === 3);
-    if (inBar % 8 >= 6) for (const n of CHORDS[chordAt(held, 0)].trem) w.note('trem', bar, 0, 3, n, 58);
+    // Two octaves under their voicing: held high, these strings were a whine.
+    if (inBar % 8 >= 6) for (const n of CHORDS[chordAt(held, 0)].trem) w.note('trem', bar, 0, 3, n - 24, 58);
     if (inBar % 8 === 7) {
       roll(
         (beat, velocity) => w.note('timpani', bar, beat, 0.22, CHORDS[chordAt(held, 1.5)].timp, velocity),
@@ -269,8 +275,7 @@ function underneath(w: Write): void {
         50,
         96,
       );
-      if ((PLAN[bar + 1]?.inBar ?? 0) === 0)
-        for (const n of keys('E5 B5')) w.note('swell', bar + 1, -(1.6 * BPM) / 60, (1.6 * BPM) / 60, n, 84);
+      if ((PLAN[bar + 1]?.inBar ?? 0) === 0) w.hit('riser', bar + 1, -(1.6 * BPM) / 60, 84);
     }
     if (inBar === 0) w.hit('crash', bar, 0, 100);
     if (inBar % 2 === 0 && section !== 'vamp') {
@@ -295,7 +300,6 @@ function tunes(w: Write): void {
     if (section === 'a') {
       lay(w, 'fiddle', bar, THEME, 98 + pass * 4, { legato: 0.9 });
       lay(w, 'horn', bar, COUNTER, 80, { legato: 0.96, accent: 4 });
-      lay(w, 'whistle', bar, THEME, 76, { octave: 1, legato: 0.9, accent: 4 });
     } else if (section === 'b') {
       lay(w, 'horn', bar, HORN_TUNE, 96 + pass * 4, { legato: 0.97 });
       HARMONY.b.forEach((held, inB) => {
@@ -303,7 +307,6 @@ function tunes(w: Write): void {
       });
       if (pass > 0) {
         lay(w, 'fiddle', bar + 8, HORN_TUNE, 94, { octave: 1, legato: 0.95, from: 8 });
-        lay(w, 'whistle', bar + 8, HORN_TUNE, 76, { octave: 1, legato: 0.95, accent: 4, from: 8 });
       }
     } else if (section === 'break') {
       lay(w, 'horn', bar, CALL, 96);
@@ -350,7 +353,6 @@ const victory = (): Song =>
     const call = tune('E4:1 E4:.5 B4:1 A4:.5 | B4:1.5 A4:1.5 | G#4:3 | G#4:3');
     lay(w, 'horn', 0, call, 104);
     lay(w, 'fiddle', 0, call, 102, { octave: 1 });
-    lay(w, 'whistle', 0, call, 80, { octave: 1 });
     for (let bar = 0; bar < 2; bar++) drums(w, bar, 2, bar === 1);
     roll((beat, velocity) => w.note('timpani', 1, beat, 0.22, 'B2', velocity), 1.5, 1.5, 60, 104);
     w.note('timpani', 2, 0, 0.9, 'E2', 112);

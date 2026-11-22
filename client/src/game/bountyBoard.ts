@@ -1,16 +1,15 @@
-// The bounty board's screen in the menu, opened at its counter in Overlook's plaza, after Destiny's Bounty Tracker:
-// the day's six as tiles in a row a kind, a bar counting to the next board, and the card of the tile chosen, each
-// bounty taken and turned in there by the day of the board shown. Nothing here judges a rule: the room refuses what
-// the board no longer offers.
-import { make } from '../editor/dom.ts';
+// The bounty board's screen in the menu, drawn by the game, opened at its counter in Overlook's plaza, after
+// Destiny's Bounty Tracker: the day's six as tiles in a row a kind, a bar counting to the next board, and the card of
+// the tile chosen, each bounty taken and turned in there by the day of the board shown. Nothing here judges a rule:
+// the room refuses what the board no longer offers.
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
-import { ROLES } from '../plus/kit.ts';
+import type { Child, Node } from '../ui/node.ts';
 import { roomNow } from '../sky/worldClock.ts';
-import { bountyCard, bountyTile, chooseTile, focusUnderPointer, moveAmongTiles } from './bountyTiles.ts';
-import type { PageContext } from './characterPage.ts';
-import { pressOf } from './gearDom.ts';
-import { iconImage } from './journalIcons.ts';
+import { TileChoice, bountyCardNode, bountyTileNode, stateLine } from './bountyTiles.ts';
+import { INK, pressNode, words } from './gearNodes.ts';
+import { iconNode } from './journalIcons.ts';
 import { countdownWords } from './journalWords.ts';
+import type { MenuContext } from './menuPage.ts';
 
 const SHUT = 'The bounty board opens after the prologue.';
 /** The board's screen's name, as the menu's header shows it: no keeper keeps it. */
@@ -67,89 +66,97 @@ export function bountyWords(row: BountyRow): string {
   return row.state === 'held' ? row.progress : said[row.state];
 }
 
-/** The board's card before the prologue: its padlock, and why. */
-function shutCard(): HTMLElement {
-  const card = make('div', '', `bounty-card bounty-card-shut ${ROLES.panel}`);
-  const said = make('p', '', 'bounty-card-state');
-  said.append(iconImage('locked', '', 24), make('span', SHUT));
-  card.append(said);
-  return card;
+/** The tile last chosen on the board, kept as the screen is built again each frame. */
+const choice = new TileChoice();
+
+/** The next board: the rising sun and the time left, over a bar filling as the day goes. */
+function nextBoard(until: number | null, size: number): Node {
+  const share = until === null ? 0 : Math.min(1, Math.max(0, 1 - until / DAY_MS));
+  const left = until === null ? '' : countdownWords(until);
+  return {
+    width: 'grow',
+    direction: 'column',
+    gap: 8,
+    padding: [4, 0, 0, 0],
+    label: until === null ? 'New bounties at the daily reset' : `New bounties in ${left}`,
+    children: [
+      { gap: 8, alignY: 'center', children: [iconNode('dawn', 24), words(left, size + 1, INK.gain)] },
+      {
+        role: 'track',
+        width: 'grow',
+        height: 8,
+        bevel: 1,
+        padding: 1,
+        children: [{ width: `${Math.round(share * 100)}%`, height: 'grow', fill: '#7a5424' }],
+      },
+    ],
+  };
 }
 
-/** The tile last chosen on the board, kept as the screen is built again for the room's word. */
-let chosenPlace = 0;
-
 /** The bounty board's screen: one line, the day's six in a row a kind, the bar counting to the next board, and the
- *  chosen tile's card with its press (E or a click), the arrows moving between tiles. */
-export function boardPage(context: PageContext, resetAt: () => number | null, now = roomNow): HTMLElement {
-  const page = make('div', '', `gear-board ${ROLES.panel}`);
-  const { gear } = context;
+ *  chosen tile's card with its press, E, Enter or a click on a tile taking or turning it in; the arrows move between
+ *  tiles. Before the prologue the tiles rest grey and the card says why. */
+export function boardPage(context: MenuContext, resetAt: () => number | null, now = roomNow): Node {
+  const { gear, ui, sizes } = context;
   const rows = bountyRows(gear);
   const shut = gear.prologueDone === false;
-  page.append(make('p', 'Bounties for XP and Aurem, posted each day.', 'gear-hint gear-board-line'));
-  const grid = make('div', '', 'gear-board-grid');
-  const card = make('div', '', 'gear-board-card');
-  const pay = payOf(gear);
-  const footOf = (row: BountyRow): HTMLElement => {
-    if (!row.press) {
-      const state = make('p', '', 'bounty-card-state');
-      if (row.state === 'paid') state.append(iconImage('taken', '', 24), make('span', 'Turned in'));
-      return state;
-    }
-    const { ask, label } = row.press;
-    const press = pressOf(label, () => context.ask(ask), label === 'Turn in' ? 'primary' : 'button', 'E');
-    press.setAttribute('aria-label', `${label}: ${row.name}`);
-    return press;
+  const ids = new Map(rows.map((row) => [row.place, `bounty-${row.place}`]));
+  const chosenPlace = choice.choose(ui, ids);
+  for (const row of rows) if (!shut && row.press && ui.clicked(`bounty-${row.place}`)) context.ask(row.press.ask);
+  const chosen = rows.find((row) => row.place === chosenPlace) ?? null;
+  // E on any tile takes or turns in the one whose card shows, as the card's keycap says.
+  const keyed = [...ids.values()].some((id) => ui.keysOn(id).includes('e'));
+  if (!shut && chosen?.press && (keyed || ui.clicked('board-press'))) context.ask(chosen.press.ask);
+  const foot = (row: BountyRow): Child => {
+    if (!row.press) return row.state === 'paid' ? stateLine('Turned in', 'taken', sizes.label) : null;
+    const { label } = row.press;
+    const role = label === 'Turn in' ? 'primary' : 'button';
+    return pressNode('board-press', label, role, 'E', sizes.label, { label: `${label}: ${row.name}` });
   };
-  const show = (row: BountyRow) => {
-    chosenPlace = row.place;
-    chooseTile(tiles, row.place);
-    card.replaceChildren(shut ? shutCard() : bountyCard(row, pay, footOf(row)));
+  const card: Node = shut
+    ? { id: 'bounty-card', role: 'panel', width: 260, padding: [12, 14], children: [stateLine(SHUT, 'locked')] }
+    : chosen
+      ? bountyCardNode(chosen, payOf(gear), foot(chosen), 260, sizes.label)
+      : { width: 260, text: { words: 'Six a day, from the board in Overlook’s plaza.', colour: INK.faint } };
+  const tiles = [0, 1, 2].map((pool): Node => ({
+    gap: 8,
+    children: rows
+      .filter((row) => row.pool === pool)
+      .map((row) => {
+        const id = `bounty-${row.place}`;
+        const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
+        return bountyTileNode(row, id, 80, row.place === chosenPlace, lit, shut);
+      }),
+  }));
+  const reset = resetAt();
+  return {
+    width: 'grow',
+    alignX: 'center',
+    padding: [24, 0],
+    children: [
+      {
+        id: 'board',
+        role: 'panel',
+        direction: 'column',
+        gap: 8,
+        padding: [18, 22],
+        children: [
+          { padding: [0, 0, 6, 0], text: { words: 'Bounties for XP and Aurem, posted each day.', colour: INK.faint } },
+          {
+            gap: 24,
+            wrap: true,
+            children: [
+              {
+                direction: 'column',
+                gap: 8,
+                opacity: shut ? 0.5 : 1,
+                children: [...tiles, nextBoard(reset === null ? null : reset - now(), sizes.label)],
+              },
+              card,
+            ],
+          },
+        ],
+      },
+    ],
   };
-  const tiles: HTMLElement[] = [];
-  for (const pool of [0, 1, 2]) {
-    const line = make('div', '', `gear-board-row bounty-pool-${pool}`);
-    for (const row of rows.filter((one) => one.pool === pool)) {
-      const tile = bountyTile(row);
-      if (shut) tile.setAttribute('aria-disabled', 'true');
-      tile.addEventListener('click', (event) => {
-        show(row);
-        // A double click's second click asks nothing more: the room has the first.
-        if (!shut && row.press && !((event as MouseEvent).detail > 1)) context.ask(row.press.ask);
-      });
-      for (const chosen of ['pointerenter', 'focus']) tile.addEventListener(chosen, () => show(row));
-      focusUnderPointer(tile);
-      line.append(tile);
-      tiles.push(tile);
-    }
-    grid.append(line);
-  }
-  grid.addEventListener('keydown', (event) => moveAmongTiles(tiles, event as KeyboardEvent));
-  // The next board: the rising sun and the time left, the bar under them filling as the day goes.
-  const bar = make('div', '', `gear-board-bar ${ROLES.track}`);
-  const fill = make('div', '', ROLES.meter);
-  bar.append(fill);
-  const left = make('span', '', 'gear-board-time');
-  const next = make('div', '', 'gear-board-next');
-  next.setAttribute('role', 'timer');
-  next.append(iconImage('dawn', '', 24), left);
-  const write = () => {
-    const reset = resetAt();
-    const until = reset === null ? null : reset - now();
-    left.textContent = until === null ? '' : countdownWords(until);
-    next.setAttribute(
-      'aria-label',
-      until === null ? 'New bounties at the daily reset' : `New bounties in ${left.textContent}`,
-    );
-    fill.style.width = until === null ? '0%' : `${Math.round(100 * Math.min(1, Math.max(0, 1 - until / DAY_MS)))}%`;
-  };
-  write();
-  const timer = setInterval(() => (page.isConnected ? write() : clearInterval(timer)), 1_000);
-  const side = make('div', '', `gear-board-side${shut ? ' gear-board-shut' : ''}`);
-  side.append(grid, next, bar);
-  page.append(side, card);
-  const first = rows.find((row) => row.place === chosenPlace) ?? rows[0];
-  if (first) show(first);
-  else card.append(make('p', 'Six a day, from the board in Overlook’s plaza.', 'gear-hint'));
-  return page;
 }

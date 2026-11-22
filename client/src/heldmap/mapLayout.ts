@@ -61,6 +61,8 @@ export interface MapLetter {
   readonly y: number;
   readonly kind: string;
   readonly chosen: boolean;
+  /** A place the quest walked names, ringed. */
+  readonly quest?: boolean;
   readonly side: 'right' | 'left' | 'centre' | null;
   /** How far a place's name stands from its mark's middle, units: past its mark, or past the ship's arrow where that
    *  stands on it. */
@@ -102,7 +104,7 @@ export interface LayoutAsk {
   readonly scale: number;
   /** What the hands cover, ink pixels (`handsCover`). */
   readonly covers: readonly Rect[];
-  readonly places: readonly { text: string; x: number; y: number; kind: string; chosen: boolean }[];
+  readonly places: readonly { text: string; x: number; y: number; kind: string; chosen: boolean; quest?: boolean }[];
   /** Each water in view: its name, its continent's index, its colour, and the spots its name may stand at, ink pixels,
    *  the likeliest first (`HeldMapWaters.letters`). */
   readonly waters: readonly {
@@ -291,6 +293,7 @@ type Asked = {
   y: number;
   kind: string;
   chosen: boolean;
+  quest?: boolean;
   continent: number;
   colour?: string | undefined;
   spots: readonly { x: number; y: number }[];
@@ -351,7 +354,8 @@ function laidOut(ask: LayoutAsk, asked: readonly Asked[], blocked: readonly Rect
       };
       continue;
     }
-    const place = { text: letter.text, x: letter.x, y: letter.y, kind: letter.kind, chosen: letter.chosen };
+    const { text, x, y, kind, chosen, quest } = letter;
+    const place = { text, x, y, kind, chosen, ...(quest ? { quest } : {}) };
     const spot = besideSpots(place, ask.ship, scale).find((each) => clear(nameBox(each, each.side, width, scale)));
     if (spot) keep(nameBox(spot, spot.side, width, scale), index, letter.kind);
     laid[index] = spot ?? { ...place, side: null };

@@ -21,6 +21,8 @@ export const TONES = {
   groundTrack: 'rgba(6,7,9,0.8)',
   groove: 'rgba(163,152,128,0.26)',
   word: '#fbf8f0',
+  /** The HUD's own words, over the world. */
+  ink: '#f2efe6',
   wordDim: '#e2dccd',
   /** DFO's hourglass glass. */
   glass: '#d8cfae',
@@ -34,23 +36,7 @@ export const TONES = {
   ally: '#9fd4ff',
 } as const;
 
-/** Words over the world or a bar's fill: a hard 1 px outline all round, as a ship's plate strokes its words, and a soft
- *  shade past it, so they read over bright sky and every fill. */
-export const HALO = [
-  ...[
-    [1, 0],
-    [-1, 0],
-    [0, 1],
-    [0, -1],
-    [1, 1],
-    [-1, -1],
-    [1, -1],
-    [-1, 1],
-  ].map(([across, down]) => `${across}px ${down}px 0 ${TONES.outline}`),
-  '0 0 4px rgba(0,0,0,0.6)',
-].join(', ');
-
-/** The four edges of a bevel, as `border-color` takes them: top, right, bottom, left. */
+/** The four edges of a bevel in one string, their colours apart by spaces: top, right, bottom, left. */
 export const BEVELS = {
   raised: `${TONES.stoneLit} ${TONES.stoneDim} ${TONES.stoneDark} ${TONES.stoneMid}`,
   raisedSoft: `${TONES.stoneMid} #2e2a21 ${TONES.stoneDark} ${TONES.stoneLo}`,

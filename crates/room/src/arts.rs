@@ -103,11 +103,13 @@ pub(crate) fn spell_power(character: &Character) -> (u32, Slot) {
         .unwrap_or((0, Slot::Melee))
 }
 
-/// Whether a player may act on a cast: neither dead (nor dead past the section's edge), staggered nor Charged.
+/// Whether a player may act on a cast: neither dead (nor dead past the section's edge), staggered, Charged nor
+/// drinking.
 fn able(found: &Player) -> bool {
     let fighter = &found.fighter;
     let fallen = matches!(found.standing, Standing::Dead { .. });
-    !fallen && !fighter.dead() && !fighter.staggered() && !fighter.statuses.has(Status::Charge)
+    let drinking = matches!(fighter.action, combat::Action::Drink { .. });
+    !fallen && !fighter.dead() && !fighter.staggered() && !fighter.statuses.has(Status::Charge) && !drinking
 }
 
 impl Room {
@@ -124,23 +126,27 @@ impl Room {
         self.arts
     }
 
-    /// A cast a player's input asks for, taken to release once its time comes if it is the worn Art's, charged, no
-    /// other is on its way, and the player may act; else let go. The room is given none from a player on horseback.
+    /// A cast a player's input asks for, taken to release once its time comes if it is the worn Art's, earned (the
+    /// Anima with the Art, each Tenet its own), charged, no other is on its way, and the player may act; else let go.
+    /// The room is given none from a player on horseback.
     pub(crate) fn ask_cast(&mut self, player: PlayerId, cast: Option<Cast>) {
         let release = ticks(arts().cast.release_s);
         if !self.arts {
             return;
         }
         let Some((cast, found)) = cast.zip(self.players.get_mut(&player)) else { return };
-        let known = cast.spell >= 1 && cast.art() == found.character.art().id;
+        let character = &found.character;
+        let known = cast.spell >= 1
+            && Some(cast.art()) == character.worn_art().map(|art| art.id)
+            && character.ability_earned(cast.art(), cast.ability());
         let ready = found.casting.releasing.is_none() && found.casting.share(cast.ability()) >= 1.0;
         if known && ready && able(found) {
             found.casting.releasing = Some((cast, release));
         }
     }
 
-    /// One tick of every player's Arts: each charges, a cast whose time has come is released (cut short, it costs
-    /// nothing), the veil Hunt watches ending lets it go, and every spell steps.
+    /// One tick of every player's Arts: each worn charges, a cast whose time has come is released (cut short, it costs
+    /// nothing) and its player's quest log told, the veil Hunt watches ending lets it go, and every spell steps.
     pub(crate) fn step_arts(&mut self) {
         if !self.arts {
             return;
@@ -148,7 +154,7 @@ impl Room {
         let mut due = Vec::new();
         let slower = self.recharge_times();
         for (id, found) in &mut self.players {
-            let art = found.character.art();
+            let Some(art) = found.character.worn_art() else { continue };
             let casting = &mut found.casting;
             casting.anima = filled(casting.anima, tick_of(art.anima.recharge_s * slower));
             for (share, tenet) in casting.tenets.iter_mut().zip(&art.tenets) {
@@ -170,6 +176,9 @@ impl Room {
             found.gear_changed = true;
             found.gear_urgent = true;
             self.cast_spell(id, cast);
+            if let Some(spell) = arts().art(cast.art()).and_then(|art| art.spell(cast.ability())) {
+                self.tell_quest(id, &gear::quests::Event::Cast(&spell.name));
+            }
         }
         self.step_spells();
     }
@@ -220,12 +229,12 @@ impl Room {
     /// Answers a player's ask of their Arts: 0 done, else the refusal's number.
     pub(crate) fn ask_art(&mut self, player: PlayerId, ask: ArtAsk) -> u8 {
         let Some(found) = self.players.get_mut(&player) else { return 0 };
-        let worn = found.character.art().id;
+        let worn = found.character.arts.worn;
         if let Err(refusal) = found.character.ask_art(ask) {
             return refusal as u8;
         }
         // A new Art starts empty, as a new subclass does in Destiny: else its charge would fill at another Art's pace.
-        if found.character.art().id != worn {
+        if found.character.arts.worn != worn {
             found.casting = Casting { anima: 0.0, tenets: [0.0, 0.0], releasing: None, hunting: false };
         }
         0
@@ -244,7 +253,7 @@ impl Room {
         {
             kept.remove(&oldest);
         }
-        kept.insert(owner, (gone.casting, gone.character.art().id, clock));
+        kept.insert(owner, (gone.casting, gone.character.arts.worn, clock));
     }
 
     /// An account's Anima and Tenets given back as it rejoins within `KEPT_TICKS`: as it left them, or empty if it
@@ -255,7 +264,7 @@ impl Room {
         let Some(found) = self.players.get_mut(&player).filter(|_| clock < left.saturating_add(KEPT_TICKS)) else {
             return;
         };
-        let same = found.character.art().id == art;
+        let same = found.character.arts.worn == art;
         found.casting.anima = if same { casting.anima } else { 0.0 };
         found.casting.tenets = if same { casting.tenets } else { [0.0; 2] };
         found.gear_changed = true;

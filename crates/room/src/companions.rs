@@ -155,7 +155,7 @@ impl Room {
             return;
         };
         let wanted = place_behind(&at, place, count);
-        let spot = self.nav.nearest_point(wanted).unwrap_or(wanted);
+        let spot = self.mesh_at(wanted).nearest_point(wanted).unwrap_or(wanted);
         let id = self.stand_foe(foe_type, Rank::Major, spot, at.aim, Some(leader));
         let has = |id: &str| officer.active_traits().any(|own| own == id);
         let (weathered, brawler, steady) = (has("weathered"), has("brawler"), has("steady_nerve"));
@@ -187,7 +187,7 @@ impl Room {
         }
         let Some(at) = self.fighter(leader).copied() else { return };
         let wanted = place_behind(&at, place, count);
-        let spot = self.nav.nearest_point(wanted).unwrap_or(wanted);
+        let spot = self.mesh_at(wanted).nearest_point(wanted).unwrap_or(wanted);
         let (blocks, floor) = (&self.blocks, &self.floor);
         let Some(foe) = self.foes.get_mut(&id) else { return };
         foe.level = level;

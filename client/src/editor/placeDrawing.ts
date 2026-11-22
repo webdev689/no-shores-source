@@ -1,5 +1,6 @@
 import { type Camera, worldToScreen } from './camera.ts';
 import type { Places } from './marks.ts';
+import type { Ink } from './strokes.ts';
 
 export type Spot = readonly [number, number];
 /** The lists of an edits file that hold places. */
@@ -96,32 +97,23 @@ export function insideRing(ring: readonly Spot[], [x, y]: Spot): boolean {
   return inside;
 }
 
-/** Draws the place being drawn over the 2D map: its points so far, a line on to the cursor, and a closing line for
- *  an area. Adds to what the overlay holds; nothing when there is no draft. */
-export function drawDraft(
-  svg: SVGSVGElement,
+/** The place being drawn over the 2D map: its points so far, a line on to the cursor, and a closing line for an
+ *  area, filled; nothing when there is no draft. */
+export function draftInks(
   view: { readonly camera: Camera; readonly width: number; readonly height: number },
   draft: { readonly kind: 'river' | 'road' | 'town' | 'node'; readonly points: readonly Spot[] } | null,
   cursor: Spot | null,
   nodeColour = '#5cc96b',
-): void {
-  if (!draft || draft.points.length === 0) return;
+): Ink[] {
+  if (!draft || draft.points.length === 0) return [];
   const colour = { river: '#5aa6ff', road: '#e0b070', town: '#ff8a6a', node: nodeColour }[draft.kind];
   const area = draft.kind === 'town' || draft.kind === 'node';
   const screen = [...draft.points, ...(cursor ? [cursor] : [])].map(([x, y]) =>
     worldToScreen(view.camera, view.width, view.height, x, y),
   );
-  const line = document.createElementNS('http://www.w3.org/2000/svg', area ? 'polygon' : 'polyline');
-  line.setAttribute('points', screen.map(({ x, y }) => `${x},${y}`).join(' '));
-  line.setAttribute('fill', area ? `${colour}33` : 'none');
-  line.setAttribute('stroke', colour);
-  line.setAttribute('stroke-width', '2');
-  svg.append(line);
-  for (const { x, y } of screen.slice(0, draft.points.length)) {
-    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-    Object.entries({ cx: x, cy: y, r: 3, fill: colour }).forEach(([key, value]) =>
-      dot.setAttribute(key, String(value)),
-    );
-    svg.append(dot);
-  }
+  return [
+    ...(area ? [{ kind: 'fill', ring: screen, colour: `${colour}33` } as const] : []),
+    { kind: 'stroke', runs: [screen], closed: area, colour, width: 2 },
+    ...screen.slice(0, draft.points.length).map(({ x, y }) => ({ kind: 'disc', x, y, radius: 3, colour }) as const),
+  ];
 }

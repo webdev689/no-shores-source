@@ -75,12 +75,13 @@ function pixelSvg(pixels: Pixels): string {
   return `<svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}' viewBox='0 0 ${width} ${height}' shape-rendering='crispEdges'>${rects.join('')}</svg>`;
 }
 
-export const urlOf = (pixels: Pixels) => `data:image/svg+xml,${encodeURIComponent(pixelSvg(pixels))}`;
+/** A pixel picture as SVG markup, each pixel a rect, crisp at any whole size: the Journal's art is laid from it. */
+export const svgOf = pixelSvg;
 
-/** A faction's emblem as a picture's address (an SVG's data URL), or null for a faction with none. */
-export function emblemUrl(faction: number): string | null {
+/** A faction's emblem as SVG markup, or null for a faction with none. */
+export function emblemSvg(faction: number): string | null {
   const emblem = EMBLEMS[faction];
-  return emblem ? urlOf(emblem) : null;
+  return emblem ? pixelSvg(emblem) : null;
 }
 
 /** A faction's emblem as its rows and tones, for a picture drawn elsewhere (a ship's flag); null for one with none. */
@@ -91,8 +92,8 @@ export function emblemPixels(faction: number): Pixels | null {
 /** The factions that have an emblem, by number. */
 export const EMBLEM_FACTIONS: readonly number[] = Object.keys(EMBLEMS).map(Number);
 
-/** A rank's mark as a picture's address, and its size in pixels. */
-export function markPicture(mark: RankMarkName): { url: string; width: number; height: number } {
+/** A rank's mark as SVG markup, and its size in pixels. */
+export function markPicture(mark: RankMarkName): { svg: string; width: number; height: number } {
   const pixels = MARKS[mark];
-  return { url: urlOf(pixels), width: pixels.rows[0]?.length ?? 0, height: pixels.rows.length };
+  return { svg: pixelSvg(pixels), width: pixels.rows[0]?.length ?? 0, height: pixels.rows.length };
 }

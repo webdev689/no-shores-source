@@ -49,9 +49,9 @@ impl Character {
         (levels.power.get(at).copied().unwrap_or(1.0), levels.lasting.get(at).copied().unwrap_or(1.0))
     }
 
-    /// A kill's XP to the worn Art, until its bar is full.
+    /// A kill's XP to the worn Art, until its bar is full; none with no Art worn.
     pub(crate) fn earn_art_xp(&mut self, xp: u32) {
-        let worn = self.art().id;
+        let Some(worn) = self.worn_art().map(|art| art.id) else { return };
         let most = bar(self.art_level(worn));
         self.arts = std::mem::take(&mut self.arts).kept();
         if let Some(held) = place(worn).and_then(|at| self.arts.xp.get_mut(at)) {
@@ -124,7 +124,7 @@ impl Character {
     }
 
     /// Refuses a fragment the Art has not, or one already owned.
-    fn fragment_free(&self, art: u8, fragment: u8) -> Result<(), Refusal> {
+    pub(crate) fn fragment_free(&self, art: u8, fragment: u8) -> Result<(), Refusal> {
         if usize::from(fragment) >= FRAGMENTS {
             return Err(Refusal::NoSuchFragment);
         }
@@ -134,7 +134,7 @@ impl Character {
         Ok(())
     }
 
-    fn own_fragment(&mut self, at: usize, fragment: u8) {
+    pub(crate) fn own_fragment(&mut self, at: usize, fragment: u8) {
         if let Some(owned) = self.arts.owned.as_mut().and_then(|owned| owned.get_mut(at)) {
             *owned |= 1 << fragment;
         }

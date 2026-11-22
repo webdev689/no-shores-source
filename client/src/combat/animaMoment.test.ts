@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { SPELLS } from '../network/artMessages.ts';
-import { animaOf, animaScreen, pushedIn, sunAbove } from './animaMoment.ts';
+import { animaEdgeNode, animaOf, animaScreen, pushedIn, QUIET, showAnimaEdge, sunAbove } from './animaMoment.ts';
+import { coloursDrawn } from './nodes.test.ts';
 
 test('the Animas are Tempest, the Sunwell and the Duskraven, each in its Art and element', () => {
   assert.deepEqual(animaOf(SPELLS.tempest), { art: 1, look: 2 });
@@ -33,4 +34,17 @@ test("the Sunwell's sun stands 3.5 m up and 1.5 m along its caster's aim", () =>
   const [x, y, z] = sunAbove([2, 2, 1], Math.PI / 2);
   assert.ok(Math.abs(x - 3.5) < 1e-9 && Math.abs(y - 2) < 1e-9, 'aiming east, east of the well');
   assert.equal(z, 4.5);
+});
+
+test('the caster’s screen takes a frame of the element round its edge at the release’s opacity, and none when quiet', () => {
+  assert.equal(animaEdgeNode(QUIET), null);
+  const screen = animaScreen(2, 0);
+  const edge = animaEdgeNode(screen);
+  assert.equal(edge?.opacity, 0.25);
+  const drawn = edge ? coloursDrawn({ width: 'grow', height: 'grow', children: [edge] }, 200, 100) : new Set();
+  assert.deepEqual([...drawn], ['rgba(159,227,255,0.25)', 'rgba(70,190,255,0.25)'], 'Volt’s light outside its body');
+  showAnimaEdge(screen);
+  assert.equal(animaEdgeNode()?.opacity, 0.25, 'shown from now on');
+  showAnimaEdge(QUIET);
+  assert.equal(animaEdgeNode(), null);
 });

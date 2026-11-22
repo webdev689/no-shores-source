@@ -6,6 +6,7 @@ import type { GearOfficer as GearOfficerTable } from '../../../generated/message
 import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
+import { type QuestState, questOf } from './questMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -37,6 +38,8 @@ export const ASKS = {
   train: 61,
   chooseOfficer: 62,
   gather: 20,
+  /** A gather let go of before it is done: E released. */
+  stopGather: 67,
   grantVestige: 30,
   grantNamed: 31,
   grantItem: 32,
@@ -59,12 +62,6 @@ export const ASKS = {
   grantOfficers: 43,
   /** A sea island's wreck scavenged, by its place in the island's list in `node`. */
   scavenge: 63,
-  /** The prologue played, which the room keeps with the character. */
-  finishPrologue: 64,
-  /** A bounty of the day's board taken, or one done turned in: its place on the board in `node` and the day of the
-   *  board shown in `item` (the gear's `day`): at the bounty board. */
-  takeBounty: 65,
-  turnInBounty: 66,
   /** An Art, its number in `column`, set at `level` (1 to 5) owning all its fragments: the Test Ground's grant. */
   grantArtLevel: 42,
   /** A faction's asks, its number in `column`: pledging, one of its wares (its place among them in `node`),
@@ -81,9 +78,22 @@ export const ASKS = {
   buyCosmetic: 56,
   /** One of Shape's wares of the week, by its place in `node`. */
   buyFromShape: 57,
+  /** The houses' roads: a keeper spoken with (`column` a house's number, or 10 the Mage, 11 the vault, 12 the
+   *  Armorsmith, 13 the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), and a fragment chosen
+   *  (`column` the Art, `node` the fragment's place in its Art's list). */
+  speakWith: 64,
+  chooseFragment: 65,
+  /** A puzzle's point used, by its place among its goal's points in `column`. */
+  usePoint: 66,
+  /** The prologue played, which the room keeps with the character. */
+  finishPrologue: 68,
+  /** A bounty of the day's board taken, or one done turned in: its place on the board in `node` and the day of the
+   *  board shown in `item` (the gear's `day`): at the bounty board. */
+  takeBounty: 69,
+  turnInBounty: 70,
   /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
-  takeLetter: 67,
-  takeAllLetters: 68,
+  takeLetter: 71,
+  takeAllLetters: 72,
 } as const;
 
 /** Shape's place while he is away. */
@@ -191,6 +201,8 @@ export interface GearState {
   readonly vestiges: readonly GearVestige[];
   readonly drops: readonly GearDrop[];
   readonly spent: readonly number[];
+  /** On a sea island, the wrecks they have scavenged there, by their places in its list. */
+  readonly scavenged?: readonly number[];
   /** Whether they stand where a Vestige opens: the Mage's counter, or the Test Ground's stall. */
   readonly atMage: boolean;
   readonly answer: number;
@@ -241,6 +253,8 @@ export interface GearState {
   /** The clock's day the room's word is of, each beginning at 09:00 UTC (`gear::clock::day_of`): the smiths' wares
    *  are its, and a smith's ware and a bounty's ask are asked by it, so the room refuses one shown before it turned. */
   readonly day?: number;
+  /** Where they stand on the houses' roads; none from a room that sends none. */
+  readonly quest?: QuestState;
   /** In a patrol, its dungeons' entrances, five numbers each: x, y, the ground's height, the model's yaw and which
    *  of the six entrance models it is (0 to 5). */
   readonly dungeons?: readonly number[];
@@ -252,8 +266,6 @@ export interface GearState {
   readonly bounties?: readonly GearBounty[];
   readonly bountyXp?: number;
   readonly bountyAurem?: number;
-  /** The quests they hold that the content still has, in the order written, each at the step it stands at. */
-  readonly quests?: readonly GearQuest[];
   /** The game's letters waiting at the mail counter, oldest first. */
   readonly mail?: readonly GearLetter[];
 }
@@ -269,13 +281,6 @@ export interface GearBounty {
   readonly pool: number;
   /** Its short name, as its card heads it. */
   readonly name: string;
-}
-
-/** A quest the player holds (protocol's `GearQuest`): its id, the step it stands at from 0, and whether all are done. */
-export interface GearQuest {
-  readonly id: string;
-  readonly step: number;
-  readonly done: boolean;
 }
 
 /** Their day's and week's record, as kept with their character (`Gear`'s comment says each field): the day it is for
@@ -326,7 +331,7 @@ export interface GearOfficer {
 
 /** The ship's part of the gear message: its experience, level, Prestige, Attack and Defense and how far to its next;
  *  Timber, Canvas, Iron and Heartwood in `stocks`; its hands of its complement; its officers, the officers of the
- *  day at a pledged faction's counter, and its trim at sea. */
+ *  day at a pledged faction's counter, and its trim at sea (the gear crate's `ShipTrim::to_floats`, in its order). */
 export interface GearShip {
   readonly xp: bigint;
   readonly level: number;
@@ -442,6 +447,7 @@ export function gearOf(gear: Gear): GearState {
     vestiges,
     drops,
     spent: Array.from(gear.spentArray() ?? []),
+    scavenged: Array.from(gear.scavengedArray() ?? []),
     atMage: gear.atMage(),
     answer: gear.answer(),
     identified: gear.identified(),
@@ -486,6 +492,7 @@ export function gearOf(gear: Gear): GearState {
           },
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
     day: gear.day(),
+    quest: questOf(gear),
     dungeons: Array.from(gear.dungeonsArray() ?? []),
     prologueDone: gear.prologueDone(),
     activity: {
@@ -505,10 +512,6 @@ export function gearOf(gear: Gear): GearState {
     }),
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
-    quests: Array.from({ length: gear.questsLength() }, (unusedQuest, place) => {
-      const quest = gear.quests(place);
-      return { id: quest?.id() ?? '', step: quest?.step() ?? 0, done: quest?.done() ?? false };
-    }),
     mail: mailOf(gear, itemOf),
   };
 }

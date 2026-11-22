@@ -17,9 +17,9 @@ code:
   TypeScript 7, the faster native compiler, is not yet supported by the TypeScript lint tooling; we move when it is.
 - **Two configurations**: `tsconfig.json` for the client (browser types, no Node types) and `tsconfig.node.json` for
   the tests and the build configuration (with Node's types, and Vite's, since a test can reach client code that
-  imports a stylesheet).
-- **Node 22.18 or later** runs the tests (`node --test`). `tools/testStyles.mjs` reads a stylesheet a module imports
-  as an empty module, so a test can load the client's interface code as Vite would build it.
+  reads `import.meta.env`).
+- **Node 22.18 or later** runs the tests (`node --test`). `tools/testStyles.mjs` reads a `.css` a module imports as
+  an empty module; the html check refuses any in the client ([[Checks]]), so none of the tests' modules imports one.
 - **Vite 8** serves and builds the client from `client/` into `dist/`. CI publishes the client to GitHub Pages after
   `cargo xtask check` passes on a merge into `main` ([[The World Editor Is on GitHub Pages]]).
 - **ESLint 10** with `typescript-eslint`: spelled-out names, no `any`, type-only imports marked.
@@ -83,7 +83,7 @@ For the ship export (`tools/ships/export_ship.py`, [[Sailing]]): `pip install bp
 and rigging that take no balls ([[Naval Combat]]). `tools/r2.py` holds the R2 access the publishers use. In CI each
 workflow that publishes to R2 hands it the repository's `R2_TOKEN` secret, a token for R2 alone, since those workflows
 run on a push to any branch; only the `rooms` workflow holds `CLOUDFLARE_TOKEN`, which deploys the Workers and the
-accounts' database.
+accounts' database ([[The Asset Workflows Publish to R2 With a Token for R2 Alone]]).
 
 For the flora (`tools/flora/`, [[Flora]]): `pip install bpy==5.3.0` on Python 3.13, nothing else (numpy comes with
 it). Cycles renders on the CPU, so it bakes anywhere: `python -I tools/flora/bake.py <folder>` bakes every biome,

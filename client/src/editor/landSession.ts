@@ -3,7 +3,7 @@ import type { Brush, Helm, LandPatch, LandView, ShipFloats } from '../rules/land
 import type { CloseGround, LandWorker, Sailed } from '../terrain/landClient.ts';
 import type { LandTexts } from '../terrain/landTexts.ts';
 import type { LayoutMarks } from '../terrain/layoutMarks.ts';
-import { downloadJson } from './dom.ts';
+import { saveFile } from '../ui/page.ts';
 import type { LandState } from './landPanel.ts';
 import { markCells, type Places } from './marks.ts';
 
@@ -270,7 +270,7 @@ export class LandSession {
     const url = `${import.meta.env.BASE_URL}world/land/${encodeURIComponent(id)}.json`;
     const answer = import.meta.env.DEV ? await fetch(url, { method: 'PUT', body: text }).catch(() => null) : null;
     if (answer?.ok) return `Saved content/world/land/${id}.json.`;
-    downloadJson(text, `${id}.json`);
+    saveFile(text, `${id}.json`);
     return `Downloaded ${id}.json. Put it in content/world/land/ to keep it.`;
   }
 

@@ -1,31 +1,34 @@
-// The ship's tab of the menu and the harbourmaster's counter, in the Enhanced Plus kit. Manage: its papers (what the
-// naval rules say it is), its power with a meter to its next level, its four modules and those carried, each a tile
+// The ship's tab of the menu and the harbourmaster's counter, drawn by the game. Manage: its papers (what the naval
+// rules say it is), its power with a meter to its next level, its four modules and those carried, each a tile
 // opening the module's page with its node grid, its materials and its hands. Crew: each officer by name, post and
 // grade, their level's meter, their duty and the presses that change it, paying them off, and their node grid on a
 // page of their own. The harbourmaster's counter: the Shipwright's wares. The muster of the officers of the day
 // stands on the screen of the faction pledged to's keeper, whose counter signs them on.
 
-import './shipScreen.css';
-import { make } from '../editor/dom.ts';
 import type { GearItem, GearOfficer } from '../network/gearMessages.ts';
 import { WORN } from '../player/gear.ts';
-import { ROLES } from '../plus/kit.ts';
-import type { PageContext } from './characterPage.ts';
+import type { Child, Drawing, Node } from '../ui/node.ts';
+import { colourOf } from '../ui/quads.ts';
+import { cardNode, traitNode } from './gearCard.ts';
 import { cardOf, traitsShown } from './gearCards.ts';
+import { fillNode, quiver, washNode } from './gearHold.ts';
 import {
-  cardNode,
-  glyphImage,
-  heldPress,
-  itemIcon,
+  INK,
+  focusRing,
+  glyphNode,
+  itemIconNode,
   itemMarks,
-  pressOf,
-  rarityOf,
+  label,
+  rarityRgb,
   tileLabel,
-  traitNode,
-} from './gearDom.ts';
+  tileNode,
+  words,
+} from './gearNodes.ts';
 import { WARES, tileOf, vendorsOf } from './gearScreen.ts';
+import { shelvesNode } from './inventoryPage.ts';
 import { bar, nodeGrid } from './itemPage.ts';
-import { shipPage } from './menuPages.ts';
+import type { MenuContext } from './menuPage.ts';
+import { headingNode, hintNode, shipPage } from './menuPages.ts';
 import {
   NO_OFFERS,
   type OfficerShown,
@@ -41,9 +44,20 @@ import {
 } from './shipGear.ts';
 import type { ShipPanel } from './shipPanel.ts';
 
-/** The Shipwright's number among the vendors (`Vendor::ALL`), and a ware's picture box in pixels. */
+/** The Shipwright's number among the vendors (`Vendor::ALL`). */
 const SHIPWRIGHT = 2;
-const WARE_PX = 64;
+/** A tile and the glyph or picture in it, a module's press, and an officer's emblem small and on their page, in
+ *  pixels; the narrowest an officer's panel stands, and the gaps between the roster's panels and Manage's columns. */
+const TILE = 64;
+const TILE_PX = 48;
+const MODULE_WIDTH = 143;
+const EMBLEM = 56;
+const EMBLEM_LARGE = 108;
+const OFFICER_LEAST = 374;
+const ROSTER_GAP = 10;
+const MANAGE_GAP = 18;
+/** The papers' share of Manage's width against its power's 1.4. */
+const PAPERS_SHARE = 1 / 2.4;
 
 /** The ship tab's parts, as the inventory's shelves are chosen. */
 export const SHIP_PARTS = [
@@ -51,250 +65,521 @@ export const SHIP_PARTS = [
   { id: 'crew', name: 'Crew' },
 ] as const;
 
-const heading = (words: string) => make('h3', words, `gear-heading ${ROLES.rule}`);
+/** A heading over its rule, 4 px clear above and 10 px below, unless `padding` says. */
+const heading = (said: string, padding: readonly [number, number, number, number] = [4, 0, 10, 0]): Node => ({
+  width: 'grow',
+  padding,
+  children: [headingNode(said)],
+});
+
+/** A press's padding here, as the kit's presses stand. */
+const PRESS = [9, 14] as const;
+
+/** What the kit's press leaves of itself on a module's press, which wears no ground or bevel: its 1 px outline and its
+ *  hard drop to the right and below. */
+const pressShade: Drawing = (renderer, { x, y, width, height }, scale, clip, shown) => {
+  const drop = [0, 0, 0, 0.45 * shown] as const;
+  renderer.quads.add({ x: x + width, y: y + scale, width: 3 * scale, height: height + 2 * scale }, drop, clip);
+  renderer.quads.add({ x: x + scale, y: y + height, width: width - scale, height: 3 * scale }, drop, clip);
+  const [red, green, blue] = colourOf(INK.outline);
+  const ring = [red, green, blue, shown] as const;
+  for (const line of [
+    { x: x - scale, y: y - scale, width: width + 2 * scale, height: scale },
+    { x: x - scale, y: y + height, width: width + 2 * scale, height: scale },
+    { x: x - scale, y, width: scale, height },
+    { x: x + width, y, width: scale, height },
+  ])
+    renderer.quads.add(line, ring, clip);
+};
+
+/** Whether the pointer is over press `id`, or the keys gave it the focus. */
+const litOf = ({ ui }: MenuContext, id: string): boolean => ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
 
 /** A module's tile: its glyph framed in its rarity, its name and main number; a click opens its page. */
-function moduleTile(context: PageContext, item: GearItem): HTMLElement {
+function moduleTile(context: MenuContext, item: GearItem): Node {
+  const { ui } = context;
   const tile = tileOf(item);
-  const press = pressOf('', () => context.inspect(item));
-  press.classList.add('ship-module');
-  press.dataset['key'] = `item-${item.id}`;
-  const cell = make('div', '', `gear-cell ${ROLES.tile}`);
-  rarityOf(cell, item.rarity);
-  const glyph = glyphImage(moduleGlyph(item.kind) ?? 'empty');
-  glyph.classList.add('ship-glyph');
-  cell.append(glyph);
-  const name = make('b', tile.name);
-  name.style.color = tile.colour;
-  press.append(cell, name, make('span', `Level ${item.level}`, 'gear-hint'), make('span', tile.power, 'gear-hint'));
-  press.setAttribute('aria-label', tileLabel(tile.name, item.rarity, `level ${item.level} ${tile.power}`.trim()));
-  return press;
+  const id = `item-${item.id}`;
+  if (ui.clicked(id)) context.inspect(item);
+  context.details(id, item);
+  const { marks, gilded } = itemMarks(item);
+  return {
+    id,
+    press: true,
+    label: tileLabel(tile.name, item.rarity, `level ${item.level} ${tile.power}`.trim()),
+    width: MODULE_WIDTH,
+    direction: 'column',
+    alignX: 'center',
+    gap: 2,
+    padding: 4,
+    draw: pressShade,
+    children: [
+      tileNode(TILE, item.rarity, litOf(context, id) ? 'lit' : 'rest', [glyphNode(moduleGlyph(item.kind) ?? 'empty')], {
+        gilded,
+        marks: [...marks, ui.focused(id) && ui.keyFocused && focusRing(TILE, TILE)],
+      }),
+      words(tile.name, 1, tile.colour),
+      words(`Level ${item.level}`, 1, INK.faint),
+      words(tile.power, 1, INK.faint),
+    ],
+  };
 }
 
 /** A slot with nothing fitted: its glyph sunk in a vacant tile. */
-function emptySlot(name: string, glyph: Parameters<typeof glyphImage>[0]): HTMLElement {
-  const slot = make('div', '', 'ship-module ship-module-empty');
-  const cell = make('div', '', `gear-cell ${ROLES.tile} gear-vacant`);
-  cell.append(glyphImage(glyph));
-  slot.append(cell, make('b', name), make('span', 'None fitted', 'gear-hint'));
-  return slot;
+function emptySlot(name: string, glyph: Parameters<typeof glyphNode>[0]): Node {
+  return {
+    width: MODULE_WIDTH,
+    direction: 'column',
+    alignX: 'center',
+    gap: 2,
+    padding: 4,
+    children: [
+      tileNode(TILE, null, 'rest', [{ ...glyphNode(glyph), opacity: 0.35 }], { faded: 0.55 }),
+      words(name, 1, INK.faint),
+      words('None fitted', 1, INK.faint),
+    ],
+  };
 }
 
-/** Manage: its papers beside its power, its modules, its materials and its hands. */
-function managePart(context: PageContext, panel: ShipPanel | null): HTMLElement {
-  const part = make('div', '', 'ship-manage');
-  const papers = shipPage(panel);
-  const ship = context.gear.ship;
-  if (!ship) {
-    part.append(papers);
-    return part;
-  }
-  // Its stores beside its papers: its materials and its hands.
-  const materials = make('div', '', 'gear-currencies ship-materials');
-  SHIP_MATERIALS.forEach(({ name, glyph }, index) => {
-    const shown = make('div', '', `gear-currency ${ROLES.chip}`);
-    const words = make('div', '', 'gear-currency-words');
-    words.append(make('b', (ship.stocks[index] ?? 0).toLocaleString()), make('span', name, 'gear-currency-name'));
-    shown.append(glyphImage(glyph), words);
-    materials.append(shown);
-  });
-  const hands = make('div', '', 'gear-ship-row');
-  hands.append(make('span', 'Hands aboard', 'gear-hint'), make('b', `${ship.hands} / ${ship.handsMost}`));
-  papers.append(heading('Materials'), materials, heading('Crew'), hands);
-  // Its power over its modules: its level with its meter, and its numbers beside it.
-  const side = make('div', '', `ship-power ${ROLES.panel}`);
+/** Its four materials in one row, each glyph at twice its cells so its grain and rings read, its count and name under
+ *  it; then its hands of its complement. */
+function storesOf(ship: NonNullable<MenuContext['gear']['ship']>, width: number, size: number): Child[] {
+  const chip = Math.floor((width - 3 * 6) / 4);
+  return [
+    heading('Materials'),
+    {
+      width: 'grow',
+      gap: 6,
+      padding: [0, 0, 6, 0],
+      children: SHIP_MATERIALS.map(({ name, glyph }, index): Node => {
+        const count = (ship.stocks[index] ?? 0).toLocaleString('en');
+        return {
+          role: 'chip',
+          width: chip,
+          direction: 'column',
+          alignX: 'center',
+          gap: 2,
+          padding: [6, 6, 8, 6],
+          label: `${count} ${name}`,
+          children: [
+            glyphNode(glyph),
+            { gap: 5, alignY: 'end', children: [words(count, size, INK.word), words(name, 1, INK.faint)] },
+          ],
+        };
+      }),
+    },
+    heading('Crew'),
+    {
+      width: 'grow',
+      padding: [3, 0],
+      children: [
+        { width: 'grow', ...words('Hands aboard', 1, INK.faint) },
+        words(`${ship.hands} / ${ship.handsMost}`, 1, INK.word),
+      ],
+    },
+  ];
+}
+
+/** Its power: its level with its meter, its numbers beside it; then its modules fitted and carried. */
+function powerPanel(context: MenuContext, ship: NonNullable<MenuContext['gear']['ship']>): Node {
   const power = shipPowerOf(ship);
-  const level = make('div', '', 'ship-level');
-  level.append(make('span', 'Ship level', 'gear-power-label'), make('strong', String(power.level), 'gear-power-level'));
-  const numbers = make('div', '', 'ship-numbers');
-  for (const [label, value] of [
+  const numbers: readonly (readonly [string, number])[] = [
     ['Attack', power.attack],
     ['Defense', power.defense],
     ['Prestige', power.prestige],
-  ] as const)
-    numbers.append(make('span', label, 'gear-hint'), make('b', String(value)));
-  const progress = make('div', '', 'ship-progress');
-  progress.append(bar('Toward the next level', power.toNext), make('span', power.toNextWords, 'gear-hint'));
-  const head = make('div', '', 'ship-power-head');
-  head.append(level, numbers, progress);
-  const fitted = make('div', '', 'ship-modules');
-  for (const slot of fittedOf(context.gear))
-    fitted.append(slot.item ? moduleTile(context, slot.item) : emptySlot(slot.name, slot.key));
+  ];
   const carried = carriedModules(context.gear);
-  const spare = make('div', '', 'ship-modules');
-  spare.append(...carried.map((item) => moduleTile(context, item)));
-  if (carried.length === 0) spare.append(make('p', 'None carried. The Shipwright sells them.', 'gear-hint'));
-  side.append(head, heading('Fitted'), fitted, heading('Carried'), spare);
-  part.append(papers, side);
-  return part;
+  const modules = (children: readonly Child[]): Node => ({
+    width: 'grow',
+    gap: 10,
+    wrap: true,
+    padding: [0, 0, 6, 0],
+    children,
+  });
+  return {
+    role: 'panel',
+    width: 'grow',
+    direction: 'column',
+    gap: 4,
+    padding: [6, 20, 13, 20],
+    children: [
+      {
+        width: 'grow',
+        gap: 22,
+        alignY: 'center',
+        children: [
+          {
+            direction: 'column',
+            alignX: 'center',
+            children: [label('Ship level', 1), words(String(power.level), 5, INK.brassLit)],
+          },
+          {
+            gap: 33,
+            children: numbers.map(([said, value]): Node => ({
+              direction: 'column',
+              gap: 2,
+              children: [words(said, 1, INK.faint), words(String(value), 2, INK.word)],
+            })),
+          },
+          {
+            width: 'grow',
+            direction: 'column',
+            gap: 4,
+            children: [
+              bar(context, 'Toward the next level', power.toNext),
+              { width: 'grow', text: { words: power.toNextWords, colour: INK.faint } },
+            ],
+          },
+        ],
+      },
+      heading('Fitted', [4, 0, 4, 0]),
+      modules(
+        fittedOf(context.gear).map((slot) =>
+          slot.item ? moduleTile(context, slot.item) : emptySlot(slot.name, slot.key),
+        ),
+      ),
+      heading('Carried', [4, 0, 4, 0]),
+      modules(
+        carried.length > 0
+          ? carried.map((item) => moduleTile(context, item))
+          : [hintNode('None carried. The Shipwright sells them.')],
+      ),
+    ],
+  };
 }
 
-/** An officer's post's emblem framed in their grade, beside their name in its colour and what they are: post,
- *  grade and level. */
-function officerHead(shown: OfficerShown, duty = ''): HTMLElement {
-  const head = make('div', '', 'ship-officer-head');
-  const emblem = make('div', '', `gear-cell ship-emblem ${ROLES.tile}`);
-  rarityOf(emblem, shown.rarity);
-  emblem.append(glyphImage(shown.glyph));
-  const words = make('div', '', 'ship-officer-words');
-  const name = make('b', shown.name, 'ship-officer-name');
-  name.style.color = shown.colour;
+/** Manage: its papers, with its materials and hands, beside its power. Without the room's word on the ship, its papers
+ *  alone in their column. */
+function managePart(context: MenuContext, panel: ShipPanel | null): Node {
+  const { gear, sizes, room } = context;
+  const left = Math.floor((room.width - MANAGE_GAP) * PAPERS_SHARE);
+  const ship = gear.ship;
+  // The papers' panel leaves its own frame and padding round what it holds.
+  const stores = ship ? storesOf(ship, left - 48, sizes.name) : [];
+  return {
+    width: 'grow',
+    gap: MANAGE_GAP,
+    children: [{ width: left, children: [shipPage(panel, sizes, stores, true)] }, ship && powerPanel(context, ship)],
+  };
+}
+
+/** An officer's post's emblem framed in their grade, beside their name in its colour at the names' `size` and what
+ *  they are at `hint`'s: post, grade and level, and with `duty` their duty; on their own page (`large`) at four times
+ *  its cells. */
+function officerHead(shown: OfficerShown, size: number, duty = '', large = false, hint = 1): Node {
   const what = [shown.post, shown.grade, `level ${shown.level}`, duty.toLowerCase()].filter(Boolean).join(' · ');
-  words.append(name, make('span', what, 'gear-hint'));
-  head.append(emblem, words);
-  return head;
+  const side = large ? EMBLEM_LARGE : EMBLEM;
+  return {
+    width: 'grow',
+    gap: 12,
+    alignY: 'center',
+    children: [
+      tileNode(side, shown.rarity, 'rest', [glyphNode(shown.glyph, large ? 96 : TILE_PX)]),
+      {
+        width: 'grow',
+        direction: 'column',
+        gap: 2,
+        children: [
+          words(shown.name, large ? 2 : size, shown.colour),
+          { width: 'grow', text: { words: what, size: hint, colour: INK.faint } },
+        ],
+      },
+    ],
+  };
 }
 
-/** One officer's row on the roster: who they are, their level's meter, their duty, and its presses. */
-function officerRow(context: PageContext, officer: GearOfficer, open: (id: number) => void): HTMLElement {
+/** A press that acts once held, in `role`, its fill showing how long is left; flat, and never acting, while it cannot
+ *  be had (`short`). */
+function heldPress(
+  context: MenuContext,
+  id: string,
+  said: string,
+  act: () => void,
+  more: Partial<Node> = {},
+  size = 1,
+): Node {
+  const { ui, holds } = context;
+  const short = more.state === 'disabled';
+  const charged = short ? 0 : holds.press(ui, id, act);
+  return {
+    id,
+    press: true,
+    role: 'button',
+    label: said,
+    padding: PRESS,
+    alignX: 'center',
+    alignY: 'center',
+    ...more,
+    children: [words(said, size, INK.word), fillNode(charged, more.role === 'warn')],
+  };
+}
+
+/** One officer's panel on the roster: who they are, their level's meter, their duty, and its presses. */
+function officerRow(context: MenuContext, officer: GearOfficer, open: (id: number) => void, width: number): Node {
+  const { ui } = context;
   const shown = officerShown(officer);
-  const row = make('div', '', `ship-officer ${ROLES.panel}`);
-  row.setAttribute('role', 'listitem');
-  const duties = make('div', '', 'ship-duties');
-  duties.setAttribute('role', 'group');
-  duties.setAttribute('aria-label', `${shown.name}'s duty`);
-  for (const duty of shown.duties) {
-    const press = pressOf(duty.label, () => context.ask(duty.ask), duty.chosen ? 'primary' : 'button');
-    press.classList.toggle('gear-chosen', duty.chosen);
-    press.dataset['key'] = `duty-${officer.id}-${duty.ask.slot ?? 0}`;
-    press.setAttribute('aria-pressed', String(duty.chosen));
-    duties.append(press);
-  }
-  const nodes = pressOf('Nodes', () => open(officer.id));
-  nodes.dataset['key'] = `officer-${officer.id}`;
-  // Paying off is held, as dismantling is: an officer paid off is gone, and nothing is given back.
-  const payOff = heldPress('Hold to pay off', () => context.ask(shown.dismiss), 'warn');
-  payOff.dataset['key'] = `dismiss-${officer.id}`;
-  payOff.setAttribute('aria-label', `Hold to pay off ${shown.name}: they leave, and nothing is given back`);
-  const actions = make('div', '', 'ship-officer-actions');
-  actions.append(nodes, payOff);
-  row.append(officerHead(shown, shown.duty), bar('Toward their next level', shown.toNext), duties, actions);
-  return row;
+  const inner = width - 32;
+  const nodes = `officer-${officer.id}`;
+  if (ui.clicked(nodes)) open(officer.id);
+  const duties = shown.duties.map((duty): Node => {
+    const id = `duty-${officer.id}-${duty.ask.slot ?? 0}`;
+    if (ui.clicked(id)) context.ask(duty.ask);
+    return {
+      id,
+      press: true,
+      role: duty.chosen ? 'primary' : 'button',
+      label: duty.chosen ? `${duty.label}, chosen` : duty.label,
+      width: Math.floor((inner - 12) / 3),
+      padding: PRESS,
+      alignX: 'center',
+      alignY: 'center',
+      children: [
+        words(duty.label, 1, duty.chosen ? INK.brassLit : INK.word),
+        // The duty they hold is lit, as a chosen shelf is.
+        duty.chosen && {
+          width: 'grow',
+          height: 2,
+          fill: INK.brassLit,
+          float: { to: 'parent', clipped: true, anchor: [0, 1], at: [0, 1], y: -2 },
+        },
+      ],
+    };
+  });
+  return {
+    role: 'panel',
+    width,
+    direction: 'column',
+    gap: 8,
+    padding: [14, 16],
+    children: [
+      officerHead(shown, context.sizes.name, shown.duty),
+      bar(context, 'Toward their next level', shown.toNext),
+      { width: 'grow', gap: 6, children: duties },
+      {
+        width: 'grow',
+        gap: 6,
+        children: [
+          {
+            id: nodes,
+            press: true,
+            role: 'button',
+            label: 'Nodes',
+            padding: PRESS,
+            children: [words('Nodes')],
+          },
+          // Paying off is held, as dismantling is: an officer paid off is gone, and nothing is given back.
+          heldPress(context, `dismiss-${officer.id}`, 'Hold to pay off', () => context.ask(shown.dismiss), {
+            role: 'warn',
+            width: 'grow',
+            label: `Hold to pay off ${shown.name}: they leave, and nothing is given back`,
+          }),
+        ],
+      },
+    ],
+  };
 }
 
-/** One officer's page: who they are, and their node grid, trained and chosen as an item's nodes are. */
-function officerPage(context: PageContext, officer: GearOfficer): HTMLElement {
-  const page = make('div', '', `ship-officer-page ${ROLES.panel}`);
-  rarityOf(page, officer.grade);
-  page.append(officerHead(officerShown(officer)));
+/** One officer's page: who they are, the perks they give, and their node grid, trained and chosen as an item's nodes
+ *  are. */
+function officerPage(context: MenuContext, officer: GearOfficer): Node {
+  const size = context.sizes.label;
   const perks = traitsShown(officer);
-  if (perks.length > 0) page.append(heading('Perks'), ...perks.map((perk) => traitNode(perk)));
-  page.append(heading('Nodes'), nodeGrid(context, officerAsItem(officer), officerColumns(officer)));
-  return page;
+  return {
+    role: 'panel',
+    width: 'grow',
+    direction: 'column',
+    gap: 8,
+    padding: [14, 16],
+    children: [
+      officerHead(officerShown(officer), context.sizes.name, '', true),
+      ...(perks.length > 0 ? [heading('Perks'), ...perks.map((perk) => traitNode(perk, size))] : []),
+      heading('Nodes'),
+      nodeGrid(context, { ...officerAsItem(officer), rarity: officer.grade }, officerColumns(officer)),
+    ],
+  };
 }
 
-/** Crew: the roster, or one officer's page. */
-function crewPart(context: PageContext, officer: number | null, open: (id: number | null) => void): HTMLElement {
+/** Crew: the roster, as many panels a row as fit 374 px wide, or one officer's page. */
+function crewPart(context: MenuContext, officer: number | null, open: (id: number | null) => void): Node {
   const officers = context.gear.ship?.officers ?? [];
   const chosen = officers.find((each) => each.id === officer);
   if (chosen) return officerPage(context, chosen);
-  const roster = make('div', '', 'ship-roster');
-  roster.setAttribute('role', 'list');
-  roster.append(...officers.map((each) => officerRow(context, each, open)));
+  const width = context.room.width;
+  const across = Math.max(1, Math.floor((width + ROSTER_GAP) / (OFFICER_LEAST + ROSTER_GAP)));
+  const each = Math.floor((width - (across - 1) * ROSTER_GAP) / across);
+  // With none, the words stand where the first officer's panel would, in the middle of its column.
   if (officers.length === 0)
-    roster.append(make('p', "No officers yet. Sign them on at your faction's counter.", 'gear-hint gear-empty'));
-  return roster;
+    return {
+      width: Math.min(each, 420),
+      padding: [48, 0],
+      children: [
+        {
+          width: 'grow',
+          text: {
+            words: "No officers yet. Sign them on at your faction's counter.",
+            size: context.sizes.name,
+            colour: INK.faint,
+            align: 'center',
+          },
+        },
+      ],
+    };
+  const rows: Node[] = [];
+  for (let start = 0; start < officers.length; start += across)
+    rows.push({
+      gap: ROSTER_GAP,
+      children: officers.slice(start, start + across).map((one) => officerRow(context, one, open, each)),
+    });
+  return { width: 'grow', direction: 'column', gap: ROSTER_GAP, children: rows };
 }
 
 /** The ship tab: Manage or Crew, chosen as the inventory's shelves are, and on Crew the officer whose page is open;
  *  `choose` moves to another part, or another officer's page. */
 export function shipTab(
-  context: PageContext,
+  context: MenuContext,
   panel: ShipPanel | null,
   [part, officer]: readonly [string, number | null],
   choose: (part: string, officer: number | null) => void,
-): HTMLElement {
-  const open = (id: number | null) => choose('crew', id);
-  const page = make('div', '', 'ship-tab');
-  const parts = make('div', '', `gear-shelves ${ROLES.well}`);
-  parts.setAttribute('role', 'tablist');
+): Node {
   const shown = part === 'crew' ? 'crew' : 'manage';
-  for (const each of SHIP_PARTS) {
-    const press = make('button', '', 'gear-shelf');
-    press.dataset['key'] = `ship-${each.id}`;
-    press.setAttribute('role', 'tab');
-    press.setAttribute('aria-selected', String(each.id === shown));
-    press.classList.toggle('gear-chosen', each.id === shown);
-    press.append(make('span', each.name));
-    press.addEventListener('click', () => choose(each.id, null));
-    parts.append(press);
-  }
-  page.append(parts, shown === 'crew' ? crewPart(context, officer, open) : managePart(context, panel));
-  return page;
+  return {
+    width: 'grow',
+    direction: 'column',
+    gap: 6,
+    children: [
+      { children: [shelvesNode(context, SHIP_PARTS, shown, (chosen) => choose(chosen, null), 'ship')] },
+      shown === 'crew' ? crewPart(context, officer, (id) => choose('crew', id)) : managePart(context, panel),
+    ],
+  };
+}
+
+/** A price in Aurem: its glyph and amount, and when it cannot be met, saying so, its words at `size`. */
+function priceNode(amount: number, affordable: boolean, size = 1): Node {
+  return {
+    gap: 4,
+    alignY: 'end',
+    children: [
+      glyphNode('aurem', 36),
+      words(amount.toLocaleString('en'), size, INK.word),
+      !affordable && words('Not enough Aurem', size, INK.loss),
+    ],
+  };
 }
 
 /** The officers of the day, each held to sign on, on the screen of the keeper of `faction`'s counter: none but at the
  *  faction pledged to's. */
-export function musterAt(context: PageContext, faction: number | undefined): HTMLElement[] {
+export function musterAt(context: MenuContext, faction: number | undefined): Node[] {
   const pledge = context.gear.ship?.pledge ?? 0;
   if (pledge === 0 || faction !== pledge) return [];
-  const muster = make('section', '', `ship-muster ${ROLES.panel}`);
-  muster.append(heading('The muster'));
   const offered = musterOf(context.gear, pledge);
-  for (const offer of offered) {
-    const row = make('div', '', 'ship-offer');
-    const sign = heldPress('Hold to sign on', () => context.ask(offer.ask));
-    sign.setAttribute('aria-label', `Hold to sign on ${offer.officer.name} for ${offer.wage.toLocaleString()} Aurem`);
-    sign.dataset['key'] = `recruit-${offer.ask.node ?? 0}`;
-    if (!offer.affordable) sign.setAttribute('aria-disabled', 'true');
-    const price = make('span', '', `gear-price${offer.affordable ? '' : ' gear-short'}`);
-    price.append(glyphImage('aurem'), make('b', offer.wage.toLocaleString()));
-    if (!offer.affordable) price.append(make('span', 'Not enough Aurem', 'gear-hint'));
-    row.append(officerHead(offer.officer), price, sign);
-    muster.append(row);
-  }
-  if (offered.length === 0) muster.append(make('p', NO_OFFERS, 'gear-hint'));
-  return [muster];
+  // Its words stand at the keeper's screen's size, as the rest of its side does.
+  const size = context.sizes.label;
+  const rows = offered.map((offer): Node => ({
+    width: 'grow',
+    gap: 12,
+    alignY: 'center',
+    padding: [6, 0],
+    children: [
+      officerHead(offer.officer, context.sizes.name, '', false, size),
+      priceNode(offer.wage, offer.affordable, size),
+      heldPress(
+        context,
+        `recruit-${offer.ask.node ?? 0}`,
+        'Hold to sign on',
+        () => context.ask(offer.ask),
+        {
+          label: `Hold to sign on ${offer.officer.name} for ${offer.wage.toLocaleString('en')} Aurem`,
+          ...(!offer.affordable && { state: 'disabled' }),
+        },
+        size,
+      ),
+    ],
+  }));
+  return [
+    {
+      width: 'grow',
+      padding: [0, 18, 14, 18],
+      children: [
+        {
+          role: 'panel',
+          width: 'grow',
+          direction: 'column',
+          padding: [14, 20],
+          children: [
+            { width: 'grow', padding: [4, 0, 10, 0], children: [headingNode('The muster', null, size)] },
+            ...(rows.length > 0
+              ? rows
+              : [{ width: 'grow', text: { words: NO_OFFERS, size, colour: INK.faint } } satisfies Node]),
+          ],
+        },
+      ],
+    },
+  ];
 }
 
 /** The Harbourmaster's counter: the Shipwright's modules of the day, each held to buy, as Destiny's vendors sell. */
-export function harbourPage(context: PageContext): HTMLElement {
-  const page = make('div', '', 'ship-harbour gear-vendor');
-  const stall = vendorsOf(context.gear)[SHIPWRIGHT];
-  if (!stall) return page;
-  const wares = make('div', '', 'gear-wares');
-  stall.wares.forEach((ware, place) => {
+export function harbourPage(context: MenuContext): Node {
+  const { ui, holds, gear, sizes } = context;
+  const stall = vendorsOf(gear)[SHIPWRIGHT];
+  const wares = (stall?.wares ?? []).map((ware, place): Node => {
     const nth = SHIPWRIGHT * WARES + place;
-    const item = context.gear.wares[nth];
+    const item = gear.wares[nth];
+    const id = `buy-${nth}`;
+    const rgb = rarityRgb(item?.rarity ?? null);
     // One the player cannot pay for says so, and cannot be held; its picture charges as it is held.
-    const block = heldPress('', () => context.ask(ware.press.ask), 'button', { charges: () => cell });
-    block.classList.add('gear-ware');
-    block.dataset['key'] = `buy-${nth}`;
-    if (!ware.affordable) block.setAttribute('aria-disabled', 'true');
-    const cell = make('div', '', `gear-cell ${ROLES.tile}`);
-    rarityOf(cell, item?.rarity ?? null);
+    const charged = ware.affordable ? holds.press(ui, id, () => context.ask(ware.press.ask), { rgb }) : 0;
+    if (item) {
+      const worn = gear.items.find((each) => each.at === WORN + item.bucket) ?? null;
+      context.card(id, () => cardNode(cardOf(item, worn), context.picture(item), [['Hold', 'Buy']], sizes));
+    }
     // A module's glyph stands for its picture.
     const glyph = item ? moduleGlyph(item.kind) : null;
-    const drawn = glyph ? glyphImage(glyph) : null;
-    drawn?.classList.add('ship-glyph');
-    cell.append(drawn ?? (item ? itemIcon(context.picture(item), ware.tile.name, WARE_PX) : glyphImage('empty')));
-    if (item) itemMarks(cell, item);
-    const words = make('div', '', 'gear-ware-words');
-    const name = make('b', ware.tile.name);
-    name.style.color = ware.tile.colour;
-    words.append(name, make('span', `${ware.kind} · level ${ware.level}`, 'gear-hint'));
-    if (ware.tile.power) words.append(make('span', ware.tile.power, 'gear-ware-power'));
-    const price = make('span', '', `gear-price${ware.affordable ? '' : ' gear-short'}`);
-    price.append(glyphImage('aurem'), make('b', ware.price.toLocaleString()));
-    if (!ware.affordable) price.append(make('span', 'Not enough Aurem', 'gear-hint'));
-    words.append(price);
-    block.append(cell, words);
+    const icon = glyph
+      ? glyphNode(glyph)
+      : item
+        ? itemIconNode(context.picture(item), ware.tile.name, TILE_PX, sizes, item.rarity)
+        : glyphNode('empty');
+    const shaken = quiver(charged);
+    const { marks, gilded } = item ? itemMarks(item) : { marks: [], gilded: false };
     // Said as it reads: the kind already names its rarity.
-    const said = [
-      ware.tile.name,
-      ware.kind,
-      `level ${ware.level}`,
-      ware.tile.power,
-      `${ware.price.toLocaleString()} Aurem`,
-    ];
-    said.push(ware.affordable ? 'hold to buy' : 'not enough Aurem');
-    block.setAttribute('aria-label', said.filter(Boolean).join(', '));
-    if (item) {
-      const worn = context.gear.items.find((each) => each.at === WORN + item.bucket) ?? null;
-      context.tip.over(block, () => cardNode(cardOf(item, worn), context.picture(item), [['Hold', 'Buy']]));
-    }
-    wares.append(block);
+    const said = [ware.tile.name, ware.kind, `level ${ware.level}`, ware.tile.power];
+    said.push(`${ware.price.toLocaleString('en')} Aurem`, ware.affordable ? 'hold to buy' : 'not enough Aurem');
+    return {
+      id,
+      press: true,
+      role: 'button',
+      ...(!ware.affordable && { state: 'disabled' as const }),
+      label: said.filter(Boolean).join(', '),
+      // The tile, and under it a line of its words, as the stall stood them.
+      padding: [8, 14],
+      direction: 'column',
+      gap: 8,
+      children: [
+        tileNode(
+          TILE,
+          item?.rarity ?? null,
+          litOf(context, id) ? 'lit' : 'rest',
+          [shaken ? { ...icon, offset: shaken } : icon],
+          { gilded, marks: [...marks, washNode(charged, rgb)] },
+        ),
+        {
+          gap: 6,
+          alignY: 'end',
+          children: [
+            words(ware.tile.name, 1, ware.tile.colour),
+            words(`${ware.kind} · level ${ware.level}`, 1, INK.faint),
+            ware.tile.power !== '' && words(ware.tile.power, 1, INK.word),
+            priceNode(ware.price, ware.affordable),
+          ],
+        },
+        fillNode(charged),
+      ],
+    };
   });
-  page.append(wares);
-  return page;
+  return {
+    width: 'grow',
+    direction: 'column',
+    gap: 12,
+    children: [{ width: 'grow', wrap: true, children: wares }],
+  };
 }

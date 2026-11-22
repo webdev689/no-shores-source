@@ -53,8 +53,8 @@ pub extern "C" fn room_qa_move(x: f64, y: f64) {
     });
 }
 ''')
-edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, .. } => room.join(),',
-     '        Opened::Land { room, .. } => dungeon_door::qa_entrance().and_then(|number| room.join_at(number)).or_else(|| room.join()),')
+edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, refusal: None, .. } => room.join(),',
+     '        Opened::Land { room, refusal: None, .. } => dungeon_door::qa_entrance().and_then(|number| room.join_at(number)).or_else(|| room.join()),')
 if os.environ.get('QA_NOFOES') == '1':
     edit('crates/room/src/dungeon_room.rs', '        room.stand_dungeon_garrison(&dungeon, levels);', '        let _ = levels;')
 PY

@@ -12,7 +12,7 @@ export const BODY_MOST = 2048;
 export const HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'Authorization, Content-Type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, OPTIONS',
 };
 
 export const json = (body: unknown, status = 200): Response =>
@@ -79,9 +79,9 @@ export async function signedIn(request: Request, database: Db, now: number): Pro
   return found === LAPSED ? null : found;
 }
 
-/** A request's body as text, read only up to `BODY_MOST` bytes however it is sent; null past that. */
-async function textOf(request: Request): Promise<string | null> {
-  if (Number(request.headers.get('Content-Length') ?? 0) > BODY_MOST) return null;
+/** A request's body as text, read only up to `most` bytes however it is sent; null past that. */
+async function textOf(request: Request, most: number): Promise<string | null> {
+  if (Number(request.headers.get('Content-Length') ?? 0) > most) return null;
   const reader = request.body?.getReader();
   if (!reader) return '';
   const read: Uint8Array[] = [];
@@ -89,7 +89,7 @@ async function textOf(request: Request): Promise<string | null> {
   try {
     for (let chunk = await reader.read(); !chunk.done; chunk = await reader.read()) {
       size += chunk.value.byteLength;
-      if (size > BODY_MOST) {
+      if (size > most) {
         await reader.cancel();
         return null;
       }
@@ -103,9 +103,10 @@ async function textOf(request: Request): Promise<string | null> {
   return new TextDecoder().decode(whole);
 }
 
-/** A request's JSON body, read only up to `BODY_MOST` bytes; null if it is longer or not JSON. */
-export async function bodyOf(request: Request): Promise<Record<string, unknown> | null> {
-  const text = await textOf(request);
+/** A request's JSON body, read only up to `most` bytes (`BODY_MOST` unless said); null if it is longer or not
+ *  JSON. */
+export async function bodyOf(request: Request, most = BODY_MOST): Promise<Record<string, unknown> | null> {
+  const text = await textOf(request, most);
   if (text === null) return null;
   try {
     const read: unknown = JSON.parse(text);

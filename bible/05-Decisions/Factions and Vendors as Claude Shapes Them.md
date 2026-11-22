@@ -109,8 +109,8 @@ oldest giving way unsaid as more came. Everything below is Claude's.
 | A letter | Where what it holds came from, which the page says in words with why it came by mail, and the Vestige or the item; a module keeps its item, nodes and all |
 | How many | 50 letters, more than the carried ten and the vault's twenty Vestiges together, few enough that a save stays far under the accounts' million characters. A 51st lets go the letter holding the least, the oldest of those, and the newest letter kept says so ("Your mailbox was full, so the oldest letter holding the least was let go."), the one before the 51st when the 51st held the least and went; a letter kept comes with its row in the Acquired feed |
 | Taking | At his counter only, free: Take moves a letter's Vestige into the carried ten or its item into its slot's nine, numbered anew; refused with the game's own words while there is no room. Take all takes, oldest first, every letter there is room for and leaves the rest |
-| His screen | LETTERS and how many of the 50 wait, Take all, then each letter: the tile of what it holds with its card, its name in its rarity's colour, its words, and Take |
-| The mark | His counter's brass ring beats while letters wait, as a node's does; a letter coming is a row "Sent to the mail" under his mark in the Acquired feed |
+| His screen | Drawn by the game: LETTERS with how many of the 50 wait at its right, Take all, then each letter: the tile of what it holds with its card, its name in its rarity's colour, its words, and Take; in one column on a phone |
+| The mark | His sealed letter over him beats while letters wait, as the owner chose in place of his ring ([[What a Player Can Use Wears Its Mark Over It]]); a letter coming is a row "Sent to the mail" under his mark in the Acquired feed |
 
 ## Shape and Shapes
 

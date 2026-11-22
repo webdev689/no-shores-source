@@ -2,6 +2,7 @@
 // dungeon's exit door, and the place a dungeon is played as.
 import { runAsk } from '../../../server/roomNames.ts';
 import { EVENT } from '../combat/cues.ts';
+import type { GearAsk } from '../network/gearMessages.ts';
 import { LocalRoom } from '../network/localRoom.ts';
 import type { FightEvent } from '../network/messages.ts';
 import { askDungeon, type DungeonAsk, type DungeonLayout } from './dungeonLayout.ts';
@@ -9,7 +10,7 @@ import { DOOR_REACH_M, type Entrance, entranceAt, entrancesOf } from './entrance
 import type { PropTable } from '../models/tables.ts';
 import type { CombatRules } from '../rules/combatRules.ts';
 import type { MovementRules } from '../rules/movementRules.ts';
-import { type Use, useAt } from './footGear.ts';
+import { type Speak, type Use, useAt } from './footGear.ts';
 import type { GearHere } from './gearScreen.ts';
 import type { Heard } from './footPlace.ts';
 import type { NodeInfo } from './worldData.ts';
@@ -158,8 +159,9 @@ export function tripAt(
   return { words: `Enter ${name}`, run: () => trips.enter(number, name) };
 }
 
-/** What E does at (x, y) on foot: the place's own use, else a counter's within reach (the board's among them), else
- *  a way in or out of a dungeon. */
+/** What E does at (x, y) on foot: the place's own use, else a counter's within reach (the board's among them; its
+ *  keeper spoken with where `speak` says so) or a node's, none on horseback (`mounted`), else a way in or out of a
+ *  dungeon. */
 export function useOnFoot(
   x: number,
   y: number,
@@ -168,6 +170,12 @@ export function useOnFoot(
   gear: GearHere | null,
   here: Parameters<typeof tripAt>[2],
   trips: Trips,
+  speak?: Speak,
+  mounted = false,
 ): Use | null {
-  return place ?? useAt(x, y, counters, gear?.gear ?? null, (asked) => gear?.ask(asked)) ?? tripAt(x, y, here, trips);
+  const ask = (asked: GearAsk) => gear?.ask(asked);
+  return place ?? useAt(x, y, counters, gear?.gear ?? null, ask, speak, mounted) ?? tripAt(x, y, here, trips);
 }
+
+/** What a room has said of a place before it says anything: no entrances, no cache, no run. */
+export const unheard = () => ({ entrances: new Entrances(), cache: null, revives: -1, wiped: false });

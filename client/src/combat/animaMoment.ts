@@ -10,6 +10,8 @@ import { BLAZE, COSMIC, type Frame, type Point, VOLT, apartFrom, seenFrom, shoul
 import { sigilSprite, sigilState } from './spellPictures.ts';
 import { BODY, CELL_M, LIGHT, groundSprite } from './spellPixels.ts';
 import { motionReduced } from '../plus/kit.ts';
+import type { Node } from '../ui/node.ts';
+import { paintBox } from './barDraw.ts';
 
 /** Each Anima's Art (1 Storm, 2 Divine, 3 Shadow) and element, by its spell. */
 const ANIMAS: ReadonlyMap<number, { readonly art: number; readonly look: GlowElement }> = new Map([
@@ -138,26 +140,52 @@ export class AnimaMoments {
   }
 }
 
-/** The edge frame over the page, made the first time it shows. */
-let edgeFrame: HTMLElement | null = null;
-let edgeShown = '';
+/** The caster's screen as it was last shown. */
+let edgeShown: AnimaScreen = QUIET;
 const cssOf = ([red, green, blue]: readonly number[]) =>
-  `rgb(${Math.round((red ?? 0) * 255)} ${Math.round((green ?? 0) * 255)} ${Math.round((blue ?? 0) * 255)})`;
+  `rgb(${Math.round((red ?? 0) * 255)}, ${Math.round((green ?? 0) * 255)}, ${Math.round((blue ?? 0) * 255)})`;
 
-/** Shows `screen`'s edge frame over the page: hard bands 8 pixels each round its edge, the element's light outside its
- *  body, at the screen's opacity; none when it has none. */
+/** Shows `screen`'s edge frame over the view from now on (`animaEdgeNode` draws it). */
 export function showAnimaEdge(screen: AnimaScreen): void {
-  const shown = screen.look && screen.edge > 0 ? `${screen.look}:${screen.edge}` : '';
-  if (shown === edgeShown) return;
-  edgeShown = shown;
-  if (!edgeFrame) {
-    edgeFrame = document.createElement('div');
-    Object.assign(edgeFrame.style, { position: 'fixed', inset: '0', pointerEvents: 'none', zIndex: '5' });
-    document.body.append(edgeFrame);
-  }
-  edgeFrame.hidden = !screen.look;
-  if (!screen.look) return;
+  edgeShown = screen;
+}
+
+/** The edge frame as it was last shown: hard bands 8 pixels each round the view's edge, the element's light outside
+ *  its body, at the screen's opacity; none when it has none. */
+export function animaEdgeNode(screen: AnimaScreen = edgeShown): Node | null {
+  if (!screen.look || screen.edge <= 0) return null;
   const ramp = GLOW_RAMPS[screen.look];
-  edgeFrame.style.boxShadow = `inset 0 0 0 8px ${cssOf(ramp[LIGHT])}, inset 0 0 0 16px ${cssOf(ramp[BODY])}`;
-  edgeFrame.style.opacity = String(screen.edge);
+  const bands = [cssOf(ramp[LIGHT]), cssOf(ramp[BODY])] as const;
+  return {
+    width: 'grow',
+    height: 'grow',
+    opacity: screen.edge,
+    float: { to: 'screen', z: 1 },
+    draw: (ui, box, scale, clip, fade) => {
+      const pen = { ui, box, scale, clip, fade };
+      bands.forEach((colour, index) => {
+        const step = 8 * scale;
+        const inner = {
+          x: box.x + index * step,
+          y: box.y + index * step,
+          width: box.width - 2 * index * step,
+          height: box.height - 2 * index * step,
+        };
+        paintBox(pen, { ...inner, height: step }, colour);
+        paintBox(pen, { ...inner, y: inner.y + inner.height - step, height: step }, colour);
+        paintBox(pen, { ...inner, y: inner.y + step, width: step, height: inner.height - 2 * step }, colour);
+        paintBox(
+          pen,
+          {
+            ...inner,
+            x: inner.x + inner.width - step,
+            y: inner.y + step,
+            width: step,
+            height: inner.height - 2 * step,
+          },
+          colour,
+        );
+      });
+    },
+  };
 }

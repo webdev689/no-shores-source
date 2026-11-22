@@ -1,16 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { GearState } from '../network/gearMessages.ts';
+import type { QuestState } from '../network/questMessages.ts';
 import { BANNER_KEYS, bannerFor } from '../plus/journalArt.ts';
 import { bountyWords } from './bountyBoard.ts';
-import {
-  QUESTS_WRITTEN,
-  type WrittenQuest,
-  bountyColumnOf,
-  countdownWords,
-  questCardsOf,
-  whenWords,
-} from './journalWords.ts';
+import { bountyColumnOf, countdownWords, questCardsOf, whenWords } from './journalWords.ts';
+import type { QuestLine } from './quests/questBook.ts';
 
 const bounty = (words: string, target: number, count = 0, held = false, paid = false, pool = 0) => ({
   words,
@@ -29,13 +24,20 @@ const BOARD = [
   bounty('Clear 2 dungeons.', 2, 0, false, false, 2),
   bounty('Clear 3 dungeons.', 3, 0, false, false, 2),
 ];
-const sample = (id: string, kind: string, banner?: string): WrittenQuest => ({
+/** A sample road of two tasks, its opening scene one of the story's own. */
+const sample = (id: string): QuestLine => ({
   id,
-  kind,
-  name: `Sample ${kind} quest`,
-  tale: 'A sample line of its tale.',
-  ...(banner ? { banner } : {}),
-  steps: [{ name: 'Sample first step' }, { name: 'Sample second step' }],
+  name: `Sample quest ${id}`,
+  faction: 0,
+  begin: 'houseBegin',
+  tasks: [
+    { id: 'first', task: 'Sample first task', goals: [] },
+    { id: 'second', task: 'Sample second task', goals: [] },
+  ],
+});
+/** Where a character stands on the roads: walking quest `quest` (from 1) at `task`, each in `done` done. */
+const walking = (quest: number, task: number, done: readonly number[], claimed = true): QuestState => ({
+  ...{ quest, task, counts: [], done, choices: [], at: null, claimed },
 });
 
 test('a countdown reads in days and hours, then h:mm:ss, then m:ss, rounded up and never below nothing', () => {
@@ -50,23 +52,26 @@ test('a moment reads in the player’s own clock: the time today, the weekday wi
   assert.equal(whenWords(new Date(2026, 9, 18, 18, 0).getTime(), today), 'Sun 18 Oct 18:00');
 });
 
-test('the quests held are cards, story missions first, each at its step from one under its banner, none the page lacks', () => {
-  const written = [sample('side', 'side'), sample('story', 'story', 'side'), sample('to-come', 'a-kind-to-come')];
-  const held = [
-    { id: 'side', step: 1, done: false },
-    { id: 'not-on-this-page', step: 0, done: false },
-    { id: 'to-come', step: 7, done: false },
-    { id: 'story', step: 0, done: true },
-  ];
+test('the roads are cards: the one walked at its task from one, each done at its last, all story missions in order', () => {
+  const roads = [sample('opening'), sample('first-house'), sample('second-house')];
+  const cards = questCardsOf(walking(3, 0, [1, 0, 0]), roads);
   assert.deepEqual(
-    questCardsOf(held, written).map((card) => [card.id, card.banner, card.step, card.stepName, card.done]),
+    cards.map((card) => [card.id, card.kind, card.banner, card.step, card.stepName, card.done]),
     [
-      ['story', 'side', 1, 'Sample first step', true],
-      ['side', bannerFor('side', 'side'), 2, 'Sample second step', false],
-      ['to-come', bannerFor('a-kind-to-come', 'to-come'), 2, 'Sample second step', false],
+      ['opening', 'story', bannerFor('story', 'opening'), 2, 'Sample second task', true],
+      ['second-house', 'story', bannerFor('story', 'second-house'), 1, 'Sample first task', false],
     ],
+    'the opening done, the house walked; the house not begun shows nothing',
   );
-  assert.deepEqual(questCardsOf([], written), []);
+  assert.equal(cards[0]?.tale, 'Hear all three houses before you choose. Start with the loudest.', 'its opening line');
+  assert.deepEqual(
+    questCardsOf(walking(1, 0, [0, 0, 0]), roads).map((card) => card.id),
+    ['opening'],
+    'a new one',
+  );
+  assert.deepEqual(questCardsOf(walking(1, 0, [], false), roads), [], 'nothing from a word not on their character');
+  assert.deepEqual(questCardsOf(null, roads), [], 'nothing before any room’s word');
+  assert.deepEqual(questCardsOf(walking(0, 0, [0, 0, 0]), roads), [], 'none walked and none done');
 });
 
 test('the bounties taken stand in the board’s order, each with its count, done or turned in, the rest slots', () => {
@@ -91,9 +96,11 @@ test('the bounties taken stand in the board’s order, each with its count, done
   );
 });
 
-test('every banner a quest written names is drawn, and every quest written has a step to show', () => {
-  for (const quest of QUESTS_WRITTEN) {
-    assert.ok(quest.banner === undefined || BANNER_KEYS.includes(quest.banner), `${quest.id}’s banner is drawn`);
-    assert.ok(quest.steps.length > 0, `${quest.id} has a step`);
+test('every road the rules keep has a card to show: its banner drawn, a line of its tale and a task', () => {
+  const cards = questCardsOf(walking(0, 0, [1, 1, 1, 1]));
+  assert.equal(cards.length, 4, 'the opening and the three houses’ roads');
+  for (const card of cards) {
+    assert.ok(BANNER_KEYS.includes(card.banner), `${card.id}’s banner is drawn`);
+    assert.ok(card.tale !== '' && card.stepName !== '', `${card.id} has a tale and a task`);
   }
 });

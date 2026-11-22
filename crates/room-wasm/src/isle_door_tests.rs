@@ -15,6 +15,7 @@ fn the_page_is_given_the_islands_plan_and_the_ground_its_room_stands_on() {
     assert_eq!(json["dungeon"], "crypt");
     assert_eq!(json["placements"].as_array().map(Vec::len), Some(plan.placements.len()));
     assert_eq!(json["wrecks"].as_array().map(Vec::len), Some(plan.sites.wrecks.len()));
+    assert_eq!(json["nodes"].as_array().map(Vec::len), Some(plan.sites.nodes.len()), "where its nodes stand");
     let at = [512_000.5, 301_000.25];
     let floats: Vec<f64> = heights_bytes(seed, "tundra", at)
         .chunks_exact(8)
@@ -35,6 +36,20 @@ fn an_islands_room_opens_on_the_seas_word_with_its_guards() {
         _ => 0,
     });
     assert!(foes.unwrap_or(0) >= 6, "an isle's guards stand");
+    // As a newcomer finds them: every node standing, none yet gathered.
+    let nodes = || {
+        let count = with_open(|opened| match opened {
+            Opened::Land { room, .. } => room.nodes_for(u32::MAX).filter(|(_, node)| node.resource == 6).count(),
+            _ => 0,
+        });
+        count.unwrap_or(0)
+    };
+    assert_eq!(nodes(), 0, "with no resource in its word, no node stands");
+    let word =
+        format!(r#"{{"seed":"{seed}","climate":"steppe","at":[400000,300000],"guards":0,"levels":null,"resource":6}}"#);
+    assert!(open_island(word.as_bytes()));
+    let plan = Plan::new(seed, "steppe").expect("steppe dresses islands");
+    assert_eq!(nodes(), plan.sites.nodes.len(), "its water's resource stands in each of its nodes");
     assert!(!open_island(br#"{"seed":"x","climate":"steppe","at":[0,0],"guards":0,"levels":null}"#));
     assert!(!open_island(br#"{"seed":"5","climate":"temperate-coast","at":[0,0],"guards":0,"levels":null}"#));
 }
@@ -50,7 +65,7 @@ fn with_no_sea_open_there_is_no_word_on_an_island() {
 /// module, block and post stands where the room has it on every machine, not only the ground.
 const PLANS_PINNED: [(u64, &str); 2] = [(41, "desert"), (QUARRY_SEED, "rainforest")];
 const QUARRY_SEED: u64 = 2;
-const PLANS: &str = "5c5af7813ea5353d";
+const PLANS: &str = "b34441b512d89694";
 
 #[test]
 fn the_plans_bits_are_the_ones_the_page_pins() {
@@ -66,8 +81,8 @@ fn the_plans_bits_are_the_ones_the_page_pins() {
 fn an_islands_room_checks_landings_and_only_a_sea_answers_one() {
     assert!(open_island(br#"{"seed":"5","climate":"desert","at":[0,0],"guards":0,"levels":null}"#));
     assert!(isle_landing(None), "an island's room checks landings");
-    assert!(isle_landing(Some("anchored")));
-    assert!(!sea_landed(1, 5, "anchored"), "an island's room is no sea");
+    assert!(isle_landing(Some(("anchored", 1))));
+    assert_eq!(sea_landed(1, 5, "anchored"), 0, "an island's room is no sea");
 }
 
 #[test]

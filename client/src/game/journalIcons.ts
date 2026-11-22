@@ -3,7 +3,8 @@
 // of each tier and how a character stands with them, what a run pays, the Abyss's rules, and each modifier.
 import arts from '../../../content/arts/arts.json' with { type: 'json' };
 import { ELEMENTS } from '../player/gear.ts';
-import { type Pixels, urlOf } from '../plus/emblems.ts';
+import { type Pixels, svgOf } from '../plus/emblems.ts';
+import type { Node } from '../ui/node.ts';
 import { TONES } from '../plus/tones.ts';
 import { ICONS } from './journalIconMaps.ts';
 
@@ -12,21 +13,28 @@ export type IconName = keyof typeof ICONS;
 /** The pixels a side of an icon. */
 export const ICON_PIXELS = 12;
 
-/** An icon as a picture's address (an SVG's data URL), some of its colours swapped where `tones` gives them. */
-export function iconUrl(name: IconName, tones: Readonly<Record<string, string>> = {}): string {
+/** An icon as SVG markup, some of its colours swapped where `tones` gives them. */
+export function iconSvg(name: IconName, tones: Readonly<Record<string, string>> = {}): string {
   const icon: Pixels = ICONS[name];
-  return urlOf({ rows: icon.rows, tones: { ...icon.tones, ...tones } });
+  return svgOf({ rows: icon.rows, tones: { ...icon.tones, ...tones } });
 }
 
-/** An icon as an image `size` pixels square (a whole multiple of its twelve), naming itself in `words` to a reader
- *  and under the pointer. */
-export function iconImage(name: IconName, words: string, size: number, tones?: Readonly<Record<string, string>>) {
-  const image = document.createElement('img');
-  image.className = 'journal-icon';
-  image.src = iconUrl(name, tones);
-  [image.width, image.height, image.alt] = [size, size, words];
-  if (words) image.title = words;
-  return image;
+/** A pixel picture laid `width` by `height` (a whole multiple of its pixels), each of its pixels a whole block. */
+export function pixelNode(
+  key: string,
+  svg: string,
+  pixels: readonly [number, number],
+  width: number,
+  height = width,
+): Node {
+  return { width, height, picture: { key, source: { svg }, pixel: { width: pixels[0], height: pixels[1] } } };
+}
+
+/** An icon laid `size` pixels square (a whole multiple of its twelve), some of its colours swapped where `tones`
+ *  gives them. */
+export function iconNode(name: IconName, size: number, tones?: Readonly<Record<string, string>>): Node {
+  const key = `journal icon ${name} ${tones ? Object.values(tones).join(' ') : ''}`;
+  return pixelNode(key, iconSvg(name, tones), [ICON_PIXELS, ICON_PIXELS], size);
 }
 
 /** Each pool's mark, by the board's numbers: 0 land, 1 the sea, 2 dungeons. */
@@ -34,9 +42,9 @@ const POOLS: readonly IconName[] = ['land', 'sea', 'dungeon'];
 
 /** The mark of where a bounty counts: a peak on land, a wave at sea, an arched door in a dungeon; null for a pool the
  *  board does not have. */
-export function poolMarkUrl(pool: number): string | null {
+export function poolMarkSvg(pool: number): string | null {
   const name = POOLS[pool];
-  return name ? iconUrl(name) : null;
+  return name ? iconSvg(name) : null;
 }
 
 /** The ground each pool's tiles stand on: stone for land, deep water for the sea, blood for dungeons. */

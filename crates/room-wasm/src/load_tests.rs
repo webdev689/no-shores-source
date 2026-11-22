@@ -1,6 +1,8 @@
 //! The sea room under load, measured as the host drives it: each tick, then every player's snapshot cut for them, at
-//! 1, 8 and 16 players at sea among hostile ships, in one fight, and on boarded decks. Run by hand, in release, to print
-//! the numbers (median, p99 and slowest milliseconds a tick, and bytes a player a tick):
+//! 1, 8 and 16 players at sea among hostile ships, in one fight, and on boarded decks; and each road's group standing
+//! in its patrol's room for the first time, its place's mesh baked then, from the bake's files. Run by hand, in
+//! release, to print the numbers (median, p99 and slowest milliseconds a tick, and bytes a player a tick; milliseconds
+//! an opening and a standing):
 //! `cargo test -p room-wasm --release load -- --ignored --nocapture`.
 
 use super::*;
@@ -154,4 +156,125 @@ fn load_on_decks() {
             "ON DECKS {count:>2} players ({boarded} boarded): {median:.3} / {p99:.3} / {most:.3} ms; {bytes:.0} B"
         );
     }
+}
+
+#[test]
+#[ignore = "a measurement, run by hand in release, after `npm run bake`"]
+// The wall clock is what this measures; the rules themselves never read it.
+#[allow(clippy::disallowed_methods)]
+fn load_of_a_roads_groups_standing() {
+    use gear::quests::{Goal, Slay, quests};
+    for (quest, def) in quests().quests.iter().enumerate() {
+        for (task, goals) in def.tasks.iter().map(|task| &task.goals).enumerate() {
+            for goal in goals {
+                let Goal::Kill(Slay { node: Some(id), place: Some(place), spawn, .. }) = &goal.goal else { continue };
+                if spawn.is_empty() {
+                    continue;
+                }
+                let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/nodes/").to_owned() + id + ".json";
+                let text = std::fs::read_to_string(path).unwrap();
+                let start = Instant::now();
+                assert!(open_node(text.as_bytes()));
+                let opening = start.elapsed().as_secs_f64() * 1000.0;
+                let character = on_road(quest, task);
+                let ticks = with_open(|opened| {
+                    let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+                    let player = room.join().unwrap();
+                    assert!(room.restore_character(player, &character.to_json()));
+                    let node: serde_json::Value = serde_json::from_str(&text).unwrap();
+                    let at = node["places"].as_array().unwrap().iter().find(|it| it["name"] == place.as_str()).unwrap();
+                    let [x, y] = [at["at"][0].as_f64().unwrap(), at["at"][1].as_f64().unwrap()];
+                    assert!(room.put_player(player, x, y + 140.0));
+                    let timed = |room: &mut room::Room| {
+                        let start = Instant::now();
+                        room.tick();
+                        start.elapsed().as_secs_f64() * 1000.0
+                    };
+                    let standing = timed(room);
+                    assert!(room.place_grounds() <= 1, "its place's mesh, baked as it first stands, or the node's own");
+                    (standing, timed(room))
+                });
+                let (standing, after) = ticks.unwrap();
+                eprintln!(
+                    "STAND {id} '{place}': opens in {opening:.1} ms; stands in {standing:.1} ms; then {after:.2} ms a tick"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+#[ignore = "a measurement, run by hand in release, after `npm run bake`"]
+// The wall clock is what this measures; the rules themselves never read it.
+#[allow(clippy::disallowed_methods)]
+fn load_of_a_roads_steps() {
+    use gear::quests::{Goal, GoalKind, quests};
+    // The file's first escort, defence, puzzle, tail and unseen step; a player on each.
+    for kind in [GoalKind::Escort, GoalKind::Defend, GoalKind::Puzzle, GoalKind::Tail, GoalKind::Unseen] {
+        let follow = matches!(kind, GoalKind::Escort | GoalKind::Tail);
+        let mut found = quests().quests.iter().enumerate().flat_map(|(quest, def)| {
+            def.tasks
+                .iter()
+                .enumerate()
+                .flat_map(move |(task, at)| at.goals.iter().map(move |goal| (quest, task, goal)))
+        });
+        let (quest, task, goal) = found.find(|(_, _, goal)| goal.kind() == kind).unwrap();
+        let id = goal.goal.node().unwrap();
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/../../generated/nodes/").to_owned() + id + ".json";
+        assert!(open_node(std::fs::read_to_string(path).unwrap().as_bytes()));
+        let character = on_road(quest, task);
+        let times = with_open(|opened| {
+            let Opened::Land { room, .. } = opened else { panic!("a node's room") };
+            let player = room.join().unwrap();
+            let idle = (0..300).map(|_| tick_timed(room)).fold(0.0, f64::max);
+            assert!(room.restore_character(player, &character.to_json()));
+            let first = match &goal.goal {
+                Goal::Escort(escort) => &escort.from,
+                Goal::Tail(tail) => &tail.from,
+                _ => goal.goal.place().unwrap(),
+            };
+            let start = room.place_grounds();
+            let at = room_place(room, first);
+            assert!(room.put_player(player, at[0], at[1] + if follow { 10.0 } else { 0.0 }));
+            let begun = tick_timed(room);
+            let mut ticks: Vec<f64> = (0..600)
+                .map(|_| {
+                    let seen = room.step_seen(player).figures;
+                    if follow && seen.len() == 6 {
+                        let back = seen[4] + core::f64::consts::PI;
+                        let [x, y] = [seen[1] + back.sin() * 12.0, seen[2] - back.cos() * 12.0];
+                        room.put_player(player, x, y);
+                    }
+                    tick_timed(room)
+                })
+                .collect();
+            ticks.sort_by(f64::total_cmp);
+            (idle, begun, ticks[300], ticks[594], room.place_grounds() - start)
+        });
+        let (idle, begun, median, p99, baked) = times.unwrap();
+        eprintln!(
+            "STEP {kind:?} on {id}: slowest idle tick {idle:.2} ms; the tick it begins {begun:.1} ms ({baked} mesh baked); then {median:.2} ms a tick (p99 {p99:.2})"
+        );
+    }
+}
+
+/// A character on a quest's task: pledged to its house, every quest before it done.
+fn on_road(quest: usize, task: usize) -> gear::Character {
+    let mut character = gear::Character::starting();
+    character.allegiance.pledge = gear::quests::quests().quests[quest].faction;
+    character.quests.set_task(quest, task);
+    character
+}
+
+/// A tick of the open room, timed in milliseconds.
+#[allow(clippy::disallowed_methods)]
+fn tick_timed(room: &mut room::Room) -> f64 {
+    let start = Instant::now();
+    room.tick();
+    start.elapsed().as_secs_f64() * 1000.0
+}
+
+/// A place's middle in the open room, by its name.
+fn room_place(room: &room::Room, name: &str) -> [f64; 2] {
+    room.place(name).map(|place| place.at).unwrap()
 }

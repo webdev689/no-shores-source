@@ -31,6 +31,8 @@ export interface QaHost {
   readonly node: () => NodeInfo | null;
   readonly arrive: (node: NodeInfo, facing: number) => Promise<void>;
   readonly walker: { player: Player };
+  /** Whether the player lies dead. */
+  readonly dead?: () => boolean;
 }
 
 /** Puts `__qaView(view)` and `__qaWhere()` on `target` for the picture driver, when the page plays alone (`offline`)
@@ -49,6 +51,6 @@ export function installQaViews(target: object, search: string, offline: boolean,
   };
   hook.__qaWhere = () => {
     const { body } = host.walker.player;
-    return { x: body.x, y: body.y, dead: Boolean(document.querySelector('canvas.dead')) };
+    return { x: body.x, y: body.y, dead: host.dead?.() ?? false };
   };
 }

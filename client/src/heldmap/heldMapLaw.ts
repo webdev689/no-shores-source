@@ -96,6 +96,9 @@ export interface View {
 }
 
 type Size = { readonly width: number; readonly height: number };
+/** What a view is held to: the world it shows, and the most it zooms in, screen pixels a metre (`SCALE_MOST` unless
+ *  said, as on land, where the sheet is a few hundred metres across). */
+export type Extent = Size & { readonly most?: number };
 
 /** The least scale: the whole world fits the map. */
 export function leastScale(ink: Size, world: Size): number {
@@ -104,8 +107,8 @@ export function leastScale(ink: Size, world: Size): number {
 
 /** A view held to its limits: the scale between the whole world and the closest, and on each axis the world centred
  *  where it is narrower than the map, else kept filling it. */
-export function clampView(view: View, ink: Size, world: Size): View {
-  const scale = Math.min(SCALE_MOST, Math.max(leastScale(ink, world), view.scale));
+export function clampView(view: View, ink: Size, world: Extent): View {
+  const scale = Math.min(world.most ?? SCALE_MOST, Math.max(leastScale(ink, world), view.scale));
   const along = (origin: number, inkSize: number, worldSize: number) => {
     const seen = inkSize / scale;
     return seen >= worldSize ? (worldSize - seen) / 2 : Math.min(worldSize - seen, Math.max(0, origin));
@@ -117,9 +120,9 @@ export function clampView(view: View, ink: Size, world: Size): View {
   };
 }
 
-/** The view a map opens on: centred on `focus`, `FIRST_SPAN_M` across. */
-export function viewOn(focus: readonly [number, number], ink: Size, world: Size): View {
-  const scale = ink.width / FIRST_SPAN_M;
+/** The view a map opens on: centred on `focus`, `span` metres across (at sea `FIRST_SPAN_M`). */
+export function viewOn(focus: readonly [number, number], ink: Size, world: Extent, span = FIRST_SPAN_M): View {
+  const scale = ink.width / span;
   return clampView(
     { left: focus[0] - ink.width / 2 / scale, top: focus[1] - ink.height / 2 / scale, scale },
     ink,
@@ -138,7 +141,7 @@ export function toWorld(view: View, inkX: number, inkY: number): readonly [numbe
 }
 
 /** The view zoomed by `factor` about a point on the map, which stays under the cursor where the limits allow. */
-export function zoomAt(view: View, inkX: number, inkY: number, factor: number, ink: Size, world: Size): View {
+export function zoomAt(view: View, inkX: number, inkY: number, factor: number, ink: Size, world: Extent): View {
   const scale = clampView({ ...view, scale: view.scale * factor }, ink, world).scale;
   const [x, y] = toWorld(view, inkX, inkY);
   return clampView({ left: x - inkX / scale, top: y - inkY / scale, scale }, ink, world);

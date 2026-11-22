@@ -1,9 +1,8 @@
-//! The one engine the bounties and the side quests share: an objective is a count of something a room sees happen, and
-//! each feat a room sees counts toward the bounties a character holds today and the side quests it holds.
+//! What the bounties count: an objective is a count of something a room sees happen, and each feat a room sees counts
+//! toward the bounties a character holds today.
 
 use crate::bounties::board;
 use crate::character::Character;
-use crate::quests::{Quest, quests};
 use crate::world::Difficulty;
 use serde::Deserialize;
 
@@ -13,7 +12,7 @@ pub const ELITE_RANK: u8 = 3;
 pub const MINIBOSS_RANK: u8 = 4;
 
 /// What an objective counts: one each time the room sees its feat. Each none is any; a rank counts it and every rank
-/// above. Read from the board's table and the quests' data, never kept with a character.
+/// above. Read from the board's table, never kept with a character.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Objective {
@@ -85,30 +84,17 @@ impl Objective {
 }
 
 impl Character {
-    /// Counts a feat toward each bounty held today, up to its target, and each side quest held: whether a count moved.
-    /// A room whose day is not the record's counts no bounty: before it the board was another, after it they ended.
+    /// Counts a feat toward each bounty held today, up to its target: whether a count moved. A room whose day is not
+    /// the record's counts no bounty: before it the board was another, after it they ended.
     pub fn saw(&mut self, feat: &Feat<'_>, day: u64) -> bool {
-        self.saw_with(feat, day, &quests().quests)
-    }
-
-    /// `saw`, over the side quests given.
-    pub(crate) fn saw_with(&mut self, feat: &Feat<'_>, day: u64, written: &[Quest]) -> bool {
-        let mut moved = false;
-        if day == self.activity.today.day {
-            let on = board(day);
-            for (place, count) in &mut self.activity.today.bounties {
-                let Some(bounty) = on.get(usize::from(*place)) else { continue };
-                if *count < bounty.target && bounty.objective.counts(feat) {
-                    *count += 1;
-                    moved = true;
-                }
-            }
+        if day != self.activity.today.day {
+            return false;
         }
-        for (id, count) in &mut self.story.quests {
-            let Some(quest) = written.iter().find(|quest| quest.id == *id) else { continue };
-            // A quest's steps count in turn: a feat counts only toward the step its count stands at.
-            let (place, done) = quest.step_at(*count);
-            if !done && quest.steps.get(place).is_some_and(|step| step.objective.counts(feat)) {
+        let on = board(day);
+        let mut moved = false;
+        for (place, count) in &mut self.activity.today.bounties {
+            let Some(bounty) = on.get(usize::from(*place)) else { continue };
+            if *count < bounty.target && bounty.objective.counts(feat) {
                 *count += 1;
                 moved = true;
             }

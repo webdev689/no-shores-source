@@ -176,7 +176,7 @@ test("in a fight the hints are the fight's keys alone, as on foot, and the sea's
   assert.deepEqual(tasks, [seaFightQuest('Sea fight', 2, 9)]);
 });
 
-test("on land the sea's own pieces go: the ships' plates, the readout and its task, the sea bar, Manage's panel and the wheel", () => {
+test("on land the sea's own pieces go: the ships' plates, the sight, the readout, the sea bar, Manage's panel and the wheel", () => {
   const said: Record<string, unknown[]> = {};
   const hud = new Proxy(
     {},
@@ -188,10 +188,11 @@ test("on land the sea's own pieces go: the ships' plates, the readout and its ta
     },
   );
   hideSeaHud(hud as unknown as Hud);
-  assert.equal(said['tasks']?.[0], null, "no fight's task stands on land");
+  assert.equal(said['tasks'], undefined, "the tracker is left to the land, which shows the roads' quest there");
   assert.deepEqual(said['shipBars']?.[0], [], "no ship's plate stands over the land");
   assert.equal(said['seaFight']?.[0], null);
   assert.equal(said['seaBar']?.[0], null);
   assert.equal(said['shipPanel']?.[0], null);
   assert.equal(said['wheelOffer']?.[0], false);
+  assert.equal(said['sight']?.[0], false, 'no sight on land');
 });

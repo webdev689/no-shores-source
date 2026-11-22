@@ -1,18 +1,22 @@
-// What the player gained between two words from the room on their gear: Aurem and Shapes, fragments, essence and
-// Fruit of Dagon, each island's resource, ammunition from an Ammo box, Ammo crates, and every item, Vestige, emblem
-// and cosmetic new to them; and the letters sent to their mail. What they spent or moved is not a gain, nor the
-// ammunition a crate they used gave back.
+// What the player gained between two words from the room on their gear: Aurem and Shapes, XP, each faction's
+// reputation, each Art's progress and fragments, fragments, essence and Fruit of Dagon, each island's resource, the
+// ship's materials and XP, ammunition from an Ammo box, Ammo crates, every item, Vestige, emblem and cosmetic new to
+// them, and the letters sent to their mail. What they spent or moved is not a gain, nor the ammunition a crate they
+// used gave back. Currency, XP, reputation and an Art's progress are short lines, as Destiny shows them over the
+// items' rows. Prestige is not a gain: it is what the armour worn is worth.
 // The feed at the right of the screen shows these as Destiny shows what is picked up.
 
 import cosmetics from '../../../content/gear/cosmetics.json' with { type: 'json' };
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import { RARITIES, STOCK_NAMES, resourceName } from '../player/gear.ts';
-import { gearName, moduleGlyph } from './shipGear.ts';
+import { ARTS, emblemSvg } from './artsCards.ts';
+import { gearName, moduleGlyph, SHIP_MATERIALS } from './shipGear.ts';
 import { cosmeticRamp } from '../forge/cosmetics.ts';
 import { GAME_PALETTE } from './appearance/gamePalette.ts';
 import { EMBLEMS } from './emblemArt.ts';
 import type { Glyph } from './gearCards.ts';
-import { bardingSvg, keeperMarkSvg, shapesSvg, svgUrl } from './npc/npcMarks.ts';
+import { bardingSvg, keeperMarkSvg, shapesSvg } from './npc/npcMarks.ts';
 import { rarityNamed } from './npc/npcWares.ts';
 
 /** One gain: what merges with the same gain shown already, its name, how many, and how it is drawn. */
@@ -28,8 +32,13 @@ export interface Gain {
   readonly item: GearItem | null;
   /** An emblem's place in the catalogue, drawn as its own icon. */
   readonly emblem: number | null;
-  /** The picture of what has no glyph of the menu's: Shapes' mark, a cosmetic's colours or its barding's mark. */
+  /** The picture of what has no glyph of the menu's, as SVG markup: Shapes' mark, a cosmetic's colours or its
+   *  barding's mark, an Art's or its faction's emblem. */
   readonly icon: string | null;
+  /** Whether it stands as a short line, a count beside its icon (and its word, where the icon alone is not enough),
+   *  over the items' rows: currency, XP, reputation, an Art's progress. */
+  readonly compact: boolean;
+  readonly word: string | null;
 }
 
 /** Each stock's glyph, in `stocks`' order. */
@@ -51,8 +60,58 @@ const gain = (key: string, name: string, count: number, fields: Partial<Gain> = 
   item: null,
   emblem: null,
   icon: null,
+  compact: false,
+  word: null,
   ...fields,
 });
+
+/** The factions, in the order a player's reputation is told. */
+const FACTIONS = factions.factions;
+
+/** A short line's gain: currency, XP, reputation or an Art's progress. */
+const line = (key: string, name: string, count: number, fields: Partial<Gain> = {}): Gain =>
+  gain(key, name, count, { compact: true, ...fields });
+
+/** What grew from `before` to `after`, place by place. */
+const grown = (before: readonly number[] = [], after: readonly number[] = []) =>
+  after.map((count, place) => count - (before[place] ?? 0));
+
+/** XP, each faction's reputation, each Art's progress and fragments, and the ship's materials and XP. */
+function standingGains(before: GearState, after: GearState): Gain[] {
+  const gains: Gain[] = [];
+  const earned = Number(after.xp - before.xp);
+  if (earned > 0) gains.push(line('xp', 'XP', earned, { glyph: 'xp', word: 'XP' }));
+  const [was, now] = [before.standing, after.standing];
+  grown(was?.reputation, now?.reputation).forEach((count, place) => {
+    const faction = FACTIONS[place];
+    const art = ARTS.find((each) => each.id === faction?.art);
+    if (count > 0 && faction && art)
+      gains.push(
+        line(`rep-${place}`, `${faction.name} reputation`, count, { icon: emblemSvg(art), word: 'Reputation' }),
+      );
+  });
+  ARTS.forEach((art, place) => {
+    const [level, levelBefore] = [now?.artLevels[place] ?? 0, was?.artLevels[place] ?? 0];
+    const xpGrown = (now?.artXp[place] ?? 0) - (was?.artXp[place] ?? 0);
+    if (level > levelBefore)
+      gains.push(gain(`art-level-${place}`, `${art.name} level ${level}`, 1, { icon: emblemSvg(art) }));
+    else if (xpGrown > 0)
+      gains.push(line(`art-${place}`, `${art.name} XP`, xpGrown, { icon: emblemSvg(art), word: 'XP' }));
+    const [owned, ownedBefore] = [now?.artOwned[place] ?? 0, was?.artOwned[place] ?? 0];
+    const fresh = art.core.filter((unused, bit) => (owned & (1 << bit)) !== 0 && (ownedBefore & (1 << bit)) === 0);
+    for (const fragment of fresh)
+      gains.push(gain(`fragment-${place}-${fragment.name}`, fragment.name, 1, { icon: emblemSvg(art) }));
+  });
+  // A word on the gear with no ship, then one with it, gained none of its stock.
+  if (before.ship)
+    grown(before.ship.stocks, after.ship?.stocks).forEach((count, place) => {
+      const material = SHIP_MATERIALS[place];
+      if (count > 0 && material) gains.push(gain(`ship-${place}`, material.name, count, { glyph: material.glyph }));
+    });
+  const shipXp = Number((after.ship?.xp ?? 0n) - (before.ship?.xp ?? 0n));
+  if (before.ship && shipXp > 0) gains.push(line('ship-xp', 'Ship XP', shipXp, { glyph: 'xp', word: 'Ship XP' }));
+  return gains;
+}
 
 /** A dye's or a coat's colours as a picture: a band of each, darkest first, on the palette as the figure draws them. */
 function bandsSvg(id: string): string {
@@ -68,16 +127,17 @@ function bandsSvg(id: string): string {
 function cosmeticGain(number: number): Gain[] {
   const cosmetic = cosmetics.cosmetics[number];
   if (!cosmetic) return [];
-  const icon = svgUrl(cosmetic.kind === 'barding' ? bardingSvg() : bandsSvg(cosmetic.id));
+  const icon = cosmetic.kind === 'barding' ? bardingSvg() : bandsSvg(cosmetic.id);
   return [gain(`cosmetic-${number}`, cosmetic.name, 1, { rarity: rarityNamed(cosmetic.rarity), icon })];
 }
 
 /** What `after` holds that `before` did not: counts grown, and items, Vestiges and emblems new. */
 export function gainsOf(before: GearState, after: GearState): Gain[] {
   const gains: Gain[] = [];
-  if (after.aurem > before.aurem) gains.push(gain('aurem', 'Aurem', after.aurem - before.aurem, { glyph: 'aurem' }));
+  if (after.aurem > before.aurem) gains.push(line('aurem', 'Aurem', after.aurem - before.aurem, { glyph: 'aurem' }));
   const [shapes, shapesBefore] = [after.shapes ?? 0, before.shapes ?? 0];
-  if (shapes > shapesBefore) gains.push(gain('shapes', 'Shapes', shapes - shapesBefore, { icon: svgUrl(shapesSvg()) }));
+  if (shapes > shapesBefore) gains.push(line('shapes', 'Shapes', shapes - shapesBefore, { icon: shapesSvg() }));
+  gains.push(...standingGains(before, after));
   after.stocks.forEach((count, index) => {
     const grown = count - (before.stocks[index] ?? 0);
     if (grown > 0)
@@ -120,6 +180,6 @@ export function gainsOf(before: GearState, after: GearState): Gain[] {
   // What went to the mail rather than being lost is told as it goes, under the Postmaster's mark.
   const posted = new Set((before.mail ?? []).map((letter) => letter.id));
   const sent = (after.mail ?? []).filter((letter) => !posted.has(letter.id)).length;
-  if (sent > 0) gains.push(gain('mail', 'Sent to the mail', sent, { icon: svgUrl(keeperMarkSvg('mail')) }));
+  if (sent > 0) gains.push(gain('mail', 'Sent to the mail', sent, { icon: keeperMarkSvg('mail') }));
   return gains;
 }
