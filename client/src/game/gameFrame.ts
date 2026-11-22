@@ -279,7 +279,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // Walking its deck, what the player carries lights round them as it does ashore.
     const carried = shown.feet ? { left: walker.you.dress.outfit.left, feet: shown.feet } : undefined;
     const more = {
-      ...{ hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share },
+      ...{ hulls: fleet.hulls, after, focus: shown.focus, atSea: true, carried, drain: drain.share, dark: shown.dark },
       ...(swell ? { swell } : {}),
     };
     const drawers = standing([...shown.ships, ...fleet.ships], shown.figures, herDeck);

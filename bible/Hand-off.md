@@ -268,9 +268,11 @@ Where the work stands now, for the next session. Each session rewrites this note
   merge ([[Players Arrive as Destiny's Transmat Does, Unexplained]]). Every spawn into a place and every respawn builds
   the figure from the feet up in 2 by 2 cells, each white as it lands, seen by everyone; the arriving player's own view
   goes dark and blinks open (`arrivals.ts`, the cards' dissolve shader's fifth look, the drain pass's dark). On foot,
-  on boarded decks and at the prologue's checkpoints; why the player comes back stays unexplained. Tested offline (the
-  full check); not yet seen in a browser. Read "a translator from destiny" as Destiny's transmat: the owner may say
-  otherwise.
+  on boarded decks (boarding too) and at the prologue's checkpoints; why the player comes back stays unexplained. An
+  audit's fixes are in it: the room now tells a respawn after a fall or past the edge, a deck's respawn blinks the view,
+  an arriving figure throws no shadow, and the player's own figure begins once their view is first open. Tested
+  offline (the full check); not yet seen in a browser. Read "a translator from destiny" as Destiny's transmat: the
+  owner may say otherwise.
 
 - **The intro's freeze and the game's memory, two pull requests waiting on the owner's yes to merge**
   ([[Areas Load in Chunks With Proper Caching]]). The owner saw the intro's picture freeze at random; the source map

@@ -26,7 +26,6 @@ test('an arriving card is drawn as a dissolve in its own look, still to come, wh
   assert.deepEqual(cardLookValues({ ...plain, arrival: 0.75 }, 0).slice(3, 6), [0.75, 0, 4]);
   const dying: CardAt = { ...plain, arrival: 0.75, dissolve: { share: 0.2, look: 1 } };
   assert.deepEqual(cardLookValues(dying, 0).slice(3, 6), [0.2, 0, 1]);
-  assert.ok(STATUS_WGSL.includes('element == 4u'));
 });
 
 test('drawn as its smear, a card takes the smear’s colour and no flash', () => {

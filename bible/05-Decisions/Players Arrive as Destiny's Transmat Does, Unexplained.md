@@ -30,9 +30,10 @@ status: in force
 | Call | Chosen | Why |
 |---|---|---|
 | "A translator from destiny" | Destiny's transmat, its arrival in light | The owner's word for the effect a Guardian spawns and respawns with |
-| The figure | Built from the feet up in 2 by 2 cells over 0.6 s, each white as it lands; its weapon's glow shows once it is whole | A plain death's crumble run the other way, in the figures' own pixels and the same shader |
+| The figure | Built from the feet up in 2 by 2 cells over 0.6 s, each white as it lands; no shadow, and its weapon's glow shows, once it is whole | A plain death's crumble run the other way, in the figures' own pixels and the same shader |
+| The player's own figure | Begins once their view is first open, 0.5 s in | Begun at once, the blink and the veil hid it from the one arriving |
 | The view | Dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, open by 1 s; the interface over it stays lit | Two blinks, over before the figure has stood a second |
 | Who and where | Players only, never foes: on foot, on a boarded deck and at the prologue's checkpoints | "Everything you respawn or spawn"; a ship arriving at sea is not a player spawning |
-| When | As the veil lifts on a place, on each respawn, and for another player first seen after the player arrived | The veil hides anything sooner; players already there when one arrives were not spawning |
+| When | As the veil lifts on a place, as the player boards a deck, on each respawn, and for another player first seen after the player arrived | The veil hides anything sooner; boarding stands the player on another ship's deck; players already there when one arrives were not spawning |
 
 Links: [[Game]], [[Prologue]], [[Reach]].

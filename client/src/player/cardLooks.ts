@@ -1,6 +1,6 @@
 // How a figure's card shows what befalls it, in its own pixels: struck (a stepped flash), Charged, Exposed, Veiled,
-// shaken, smeared by its own swing, and dissolving as it dies. Both scenes that draw cards (the Test Ground's and the
-// game's) write the same numbers and read them with the same WGSL.
+// shaken, smeared by its own swing, dissolving as it dies, and built as it arrives. Both scenes that draw cards (the
+// Test Ground's and the game's) write the same numbers and read them with the same WGSL.
 import { GLOW_RAMPS, type Rgb, wgslRgb } from '../elementGlow.ts';
 import type { CardAt } from './cards.ts';
 import { PX_PER_M } from './figures.ts';
@@ -19,8 +19,9 @@ export const FLASH = { off: 0, whole: 1, outline: 2 } as const;
 const ARRIVING = 4;
 
 /** The numbers a card's look is drawn with at `time` (the status clock): Veiled, Exposed, the clock and how far it
- *  has dissolved (or is still to come, arriving); Charged, the element it dissolves in (or arriving), how far it is shaken (figure pixels) and its flash's stage;
- *  then its flash's colour. Drawn as its smear (`smear`), the tint is the smear's colour, marked so. */
+ *  has dissolved (or is still to come, arriving); Charged, the element it dissolves in (or arriving), how far it is
+ *  shaken (figure pixels) and its flash's stage; then its flash's colour. Drawn as its smear (`smear`), the tint is
+ *  the smear's colour, marked so. */
 export function cardLookValues(shown: CardAt, time: number, smear = false): number[] {
   const flash = shown.flash;
   const colour = smear && shown.smear ? shown.smear.colour : (flash?.colour ?? [1, 1, 1]);
@@ -44,10 +45,11 @@ const ramps = (looks: readonly (readonly Rgb[])[]) => looks.flatMap((ramp) => ra
 
 /**
  * A card's look in WGSL, from its uniform's `status` (Veiled, Exposed, the clock, the dissolve's share), `look`
- * (Charged, the dissolve's element, the shake in pixels, the flash's stage) and `tint` (the flash's colour; w 1 for a
- * smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic death, drawn in toward the
- * chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none. Everything is drawn on the
- * figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades through a ghost.
+ * (Charged, the dissolve's element or 4 for arriving, the shake in pixels, the flash's stage) and `tint` (the flash's
+ * colour; w 1 for a smear). `card_texel` is the picture's texel a fragment shows, shaken and, for a Cosmic death,
+ * drawn in toward the chest in four whole steps; `card_shade` the colour it shows there, alpha 0 for none. Everything
+ * is drawn on the figure's own pixels, so a Charge's arcs never leave its outline and a flash never fades through a
+ * ghost.
  */
 export const STATUS_WGSL = /* wgsl */ `
 const STATUS_ORDER = array<f32, 16>(0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0);

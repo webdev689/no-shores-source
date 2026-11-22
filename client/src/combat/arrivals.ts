@@ -5,12 +5,15 @@ import type { FightEvent } from '../network/messages.ts';
 import { EVENT } from './cues.ts';
 import { dissolveShare } from './flashes.ts';
 
+/** When the arriving player's view is first open, seconds after they arrive: their own figure begins building then,
+ *  so they see it built. */
+const FIRST_OPEN_S = 0.5;
 /** The arriving player's view, dark (1) to open (0), at each time (seconds after they arrive): held dark, opened,
  *  shut once more, and open. */
 const BLINK: readonly (readonly [number, number])[] = [
   [0, 1],
   [0.3, 1],
-  [0.5, 0.15],
+  [FIRST_OPEN_S, 0.15],
   [0.6, 0.9],
   [1, 0],
 ];
@@ -64,6 +67,11 @@ export class Arrivals {
     if (began === undefined) return undefined;
     const left = 1 - dissolveShare(0, clock - began);
     return left > 0 ? left : undefined;
+  }
+
+  /** As `shareOf`, for the player's own figure: it begins once their view is first open. */
+  ownShareOf(id: number, clock: number): number | undefined {
+    return this.shareOf(id, clock - FIRST_OPEN_S);
   }
 
   /** How dark `id`'s own view is at `clock` as they arrive, 1 dark to 0 open. */

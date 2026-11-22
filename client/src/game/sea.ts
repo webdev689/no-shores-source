@@ -455,6 +455,7 @@ export class Sea {
           ? this.aboard.figures(aboard, shown.eye, time, own.underWay && !combat, view.helmShare > 0.5)
           : [],
       firstPerson: boarded ? boarded.firstPerson : !combat && this.aboard.firstPerson,
+      dark: boarded?.dark ?? 0,
       feet: combat ? null : this.aboard.feetOn(lying),
       stirs: combat ? combat.stirs() : own.underWay ? this.wake.stirs(lying, this.hull.waterline, dt) : [],
       focus: combat ? [combat.lying.x, combat.lying.y] : [ship.x, ship.y],

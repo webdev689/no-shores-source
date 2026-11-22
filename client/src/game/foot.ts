@@ -392,7 +392,7 @@ export class Foot {
     if (own) {
       const looks = {
         ...{ veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player) },
-        arrival: this.arrivals.shareOf(fight.player, clock),
+        arrival: this.arrivals.ownShareOf(fight.player, clock),
       };
       figures.push({ ...own, ...looks, facesEye: walker.fall !== null });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];

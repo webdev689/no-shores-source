@@ -29,9 +29,9 @@ export interface Card {
  *  stage, `FLASH` in cardLooks.ts, and colour), how many times life size it stands (1 unless said: a figure aboard a
  *  ship drawn larger than life is drawn as large as it is), its statuses that show (Veiled, Exposed, Charged), how
  *  many pixels it is shaken across, how far it has dissolved as it dies and in which element, how much of it is still
- *  to come as it arrives (1 none to 0 whole, `arrivals.ts`), the smear its own
- *  swing leaves behind it (figure pixels across the eye's right and up, and its colour; only the Test Ground draws
- *  one), and how hard its weapon's glow surges (1 at rest). */
+ *  to come as it arrives (1 none to 0 whole, `arrivals.ts`), the smear its own swing leaves behind it (figure pixels
+ *  across the eye's right and up, and its colour; only the Test Ground draws one), and how hard its weapon's glow
+ *  surges (1 at rest). */
 export interface CardAt {
   readonly card: Card;
   readonly x: number;

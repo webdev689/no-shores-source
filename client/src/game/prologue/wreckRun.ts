@@ -414,7 +414,7 @@ export class WreckRun {
     const statuses = fight.own?.statuses;
     const [charged, exposed] = [(statuses?.charge ?? 0) > 0, (statuses?.expose ?? 0) > 0];
     if (own) {
-      const arrival = this.arrivals.shareOf(fight.player, clock);
+      const arrival = this.arrivals.ownShareOf(fight.player, clock);
       const looks = { veiled: veiledIn(fight, fight.player), charged, exposed, smear: smear(fight.player), arrival };
       figures.push({ ...own, ...looks });
       const feet: Vector = [body.x + ownShift[0], body.y + ownShift[1], body.z + ownShift[2]];
