@@ -82,7 +82,8 @@ loop, the rules' prediction, the room's connection and every draw, WebGPU drawin
 it (`transferControlToOffscreen`). The page keeps what a browser allows nowhere else (`PageHost`): the player's keys,
 pointer, wheel and pad, the pointer's lock and capture, typing through `EditContext`, sound, storage, the address and
 the screen reader's announcements. The canvas draws at its size on the page times the screen's pixel ratio, shrunk,
-keeping its shape, to 8192 pixels a side, the widest texture every GPU device draws into (`canvasSize`).
+keeping its shape, to 8192 pixels a side, the widest texture every GPU device draws into (`canvasSize`); its
+interface, the Test Ground's and the editors' panels too, is laid at the ratio it was shrunk to.
 
 - **What the page hears** it sends on as it comes: the interface's input as plain events (`CanvasEvents`), and every
   key, pointer and wheel event the game's code listens for, made again in the worker on the canvas or the window. The
