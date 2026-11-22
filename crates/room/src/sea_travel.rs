@@ -4,8 +4,9 @@
 //! course that ends in the water the ship is in. Taken, the ship lies on the course's last leg short of its end,
 //! heading along it, and sails the rest; the player's next roll for a hostile ship waits its first wait again.
 
-use super::{CourseRefused, Sea};
+use super::{Coast, CourseRefused, Sea, leg_meets_land, on_land};
 use crate::PlayerId;
+use world::geometry::Point;
 
 /// What the sea tells a player of their travel: the code, the tick, and its outcome (0 taken, else
 /// `TravelRefused::number`).
@@ -70,8 +71,11 @@ impl Sea {
         if self.chart.water_id(asked) == self.chart.water_id([ship.x, ship.y]) {
             return Err(TravelRefused::OwnWater);
         }
+        let before = self.berths.get(&player).and_then(|berth| berth.sailing.as_ref());
+        let before = before.map(|sailing| (sailing.ship, sailing.course.clone()));
         self.course(player, points, pace).map_err(TravelRefused::Course)?;
-        // The course as the room took it, to the whole metre, from where the ship lay.
+        // The last leg lies in waters the player was never told of: it is judged against every standing island.
+        let islands: Vec<&Coast> = self.islands.coasts().collect();
         let sailing = self.berths.get_mut(&player).and_then(|berth| berth.sailing.as_mut());
         let sailing = sailing.ok_or(TravelRefused::Course(CourseRefused::NoSuchPlayer))?;
         let held = &sailing.course;
@@ -80,7 +84,17 @@ impl Sea {
         let (east, south) = (end[0] - start[0], end[1] - start[1]);
         let length = (east * east + south * south).sqrt();
         let short = if length > SHORT_OF_END_M { SHORT_OF_END_M / length } else { 1.0 };
-        (sailing.ship.x, sailing.ship.y) = (end[0] - east * short, end[1] - south * short);
+        let placed = [end[0] - east * short, end[1] - south * short];
+        let whole = |at: [f64; 2]| super::whole(&at).unwrap_or(Point::new(0, 0));
+        let leg = [whole(start), whole(end)];
+        if on_land(islands.iter().copied(), whole(placed)) || leg_meets_land(islands.iter().copied(), leg[0], leg[1]) {
+            // Refused whole: the ship keeps the course it sailed.
+            if let Some((ship, course)) = before {
+                (sailing.ship, sailing.course) = (ship, course);
+            }
+            return Err(TravelRefused::Course(CourseRefused::CrossesLand));
+        }
+        (sailing.ship.x, sailing.ship.y) = (placed[0], placed[1]);
         sailing.ship.heading = libm::atan2(east, -south).rem_euclid(core::f64::consts::TAU);
         sailing.course.drain(..sailing.course.len() - 1);
         self.pirates.wait_first(player);

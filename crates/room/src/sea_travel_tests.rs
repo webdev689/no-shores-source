@@ -127,3 +127,28 @@ fn a_travel_is_refused_as_any_course_is() {
     ticks(&mut sea, COURSE_EVERY_TICKS);
     assert_eq!(sea.travel(player, &[[550_000.0, 150_000.0]], 7), Err(TravelRefused::Course(CourseRefused::BadPace)));
 }
+
+#[test]
+fn a_travel_whose_last_leg_meets_an_island_never_told_is_refused_and_leaves_the_ship_as_it_was() {
+    // Home waters to the west, where the traveller lies; a desert's to the east, where another player's ship has
+    // islands rolled round it, out of the traveller's sight.
+    let text = r#"{ "continents": [
+        { "id": "continent-1", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+        { "id": "continent-5", "climate": "desert", "outline": [[600000, 100000], [700000, 100000], [700000, 200000], [600000, 200000]] }
+    ], "isles": [] }"#;
+    let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
+    let traveller = at_sea(&mut sea);
+    let other = sea.join();
+    sea.course_anywhere(other, &[[550_000.0, 40_000.0]], 10).unwrap();
+    while sea.islands().standing().next().is_none() {
+        assert!(sea.clock() < 60 * 60 * 10, "no island in ten minutes");
+        sea.tick();
+    }
+    let [x, y] = sea.islands().standing().next().unwrap().at;
+    assert_eq!(sea.islands().told(traveller, [250_000.0, 150_000.0]).count(), 0, "never told to the traveller");
+    ticks(&mut sea, COURSE_EVERY_TICKS);
+    let before = ship(&sea, traveller);
+    let across = sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10);
+    assert_eq!(across, Err(TravelRefused::Course(CourseRefused::CrossesLand)));
+    assert_eq!(ship(&sea, traveller), before, "the ship as it was");
+}
