@@ -1,4 +1,4 @@
-//! A foe's answers to blows at it, the fight Overlook adds to DFO's brain. Seeing a swing begin or a shot loosed at
+//! A foe's answers to blows at it, the fight the game adds to DFO's brain. Seeing a swing begin or a shot loosed at
 //! it, a foe waits its reaction time (a swing's at the fight's pace), then parries (pressing its guard so the parry
 //! window spans the landing), blocks, dodges aside, or takes it, by its shares and what its stamina and its own action
 //! allow. And the openings a fight gives it: the riposte a parry earned, the counter a perfect dodge earned, and a

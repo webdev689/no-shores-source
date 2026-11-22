@@ -83,7 +83,7 @@ they play in holds it while they are there.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no
   page acts as a player without holding their token. A write that fails is logged and answered like any other: 409
   when another ask changed the same rows first, 500 otherwise. Discord sends players back only to pages under those listed in
-  the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/overlook-source/`, and
+  the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/no-shores-source/`, and
   under `npm run accounts` the dev server's.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
   rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is

@@ -1,4 +1,4 @@
-"""Exports a ship modelled in Blender to Overlook's mesh, and publishes the model and the mesh to R2.
+"""Exports a ship modelled in Blender to the game's mesh, and publishes the model and the mesh to R2.
 
     <python with bpy> tools/ships/export_ship.py /path/to/Ship.blend <name> --waterline <metres> [--dry-run]
 

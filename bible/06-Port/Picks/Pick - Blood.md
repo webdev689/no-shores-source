@@ -32,9 +32,9 @@ taken from Daggerfall's blood texture ([[Struck Figures Flash, and DFO's Blood C
 
 - `src/scenes/hitEffects.js` and its one-shot splash from TEXTURE.380 (a Daggerfall Unity translation), and every
   picture of Daggerfall's: a chunk wears the generated splat art instead.
-- Daggerfall Unity's `bloodIndex`: every Overlook body bleeds.
+- Daggerfall Unity's `bloodIndex`: every No Shores body bleeds.
 - The prefs shelf, the overkill and screen-blood switches, blood on the lens, and the enhanced lighting lane's wet
-  sheen: Overlook has one lighting, and DFO's classic pass is what comes over.
+  sheen: No Shores has one lighting, and DFO's classic pass is what comes over.
 - The streaming world's origin shifts and moving surfaces: the Test Ground has neither.
 
 ## Our version

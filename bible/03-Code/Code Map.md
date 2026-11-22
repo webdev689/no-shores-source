@@ -31,6 +31,7 @@ decision, made in the same change as its entry here.
 | `client/src/soundSamples.ts` | The recorded sounds the owner picked from Freesound, fetched as they are wanted (long ones a chunk at a time), held within a budget, levelled and played for the [[Interface]]'s cues and the world's, with their credits |
 | `client/src/soundMeasure.ts` | How loud a recording is, measured once where it is decoded: its level, its rush and its loudness over each window the game asks |
 | `client/src/contentCache.ts` | R2's files and ranges of them, kept in the browser's own storage within 1 GB, since a file named by its hash never changes |
+| `client/src/keptNames.ts` | Moves what a browser kept under the game's former name (`overlook.`) to `noshores.`, once, before any page reads it ([[The Game Is Named No Shores]]) |
 | `client/src/elementGlow.ts` | The [[Weapon Glow]]'s colours, outline field, shader and bursts, which the figures, the first person and the fight's effects draw with |
 | `client/editor/`, `client/src/editor/` | The [[World Editor]]: its page, and the layer that paints the continents and shapes the land, in 2D, in 3D and close up, and sails the Sloop alone or, through what its page offers, in a fleet room |
 | `client/src/terrain/` | The terrain layer: the land drawn in rings round the eye on WebGPU, and the land crate's worker, for the [[World Editor]] and the game |
@@ -128,7 +129,7 @@ decision, made in the same change as its entry here.
 | `tools/ships/shape_ship.py` | Shapes the owner's Sloop, its parts painted already: its size, and the gap and steps down from its quarterdeck ([[Sailing]]) |
 | `tools/ships/paint_ship.py` | Sorts a ship's faces into its parts and lays their UVs in metres, for the procedural painter's pictures ([[Sailing]]) |
 | `tools/ships/deck.py` | Measures a ship's deck from its published mesh, a grid of heights with walls where a body cannot walk, and the spot behind its wheel ([[Sailing]], "Its deck") |
-| `tools/ships/export_ship.py` | Exports a ship's `.blend` to Overlook's mesh, with its waterline, guns, the boxes a ball can strike, its sails' corners and its deck, and publishes the model and mesh to R2 ([[Sailing]], [[Naval Combat]]) |
+| `tools/ships/export_ship.py` | Exports a ship's `.blend` to the game's mesh, with its waterline, guns, the boxes a ball can strike, its sails' corners and its deck, and publishes the model and mesh to R2 ([[Sailing]], [[Naval Combat]]) |
 | `tools/ships/build_ship.py`, `ship_hull.py`, `ship_rig.py`, `ship_fittings.py`, `ship_details.py`, `ship_mesh.py` | Build a new hull's model in the Sloop's style from its numbers: its shell, rig, fittings, finer work and rigging, the Sloop's guns, and its companionway into the cabin ([[Hulls]]) |
 | `tools/ships/build_cabin.py`, `cabin_props.py` | Build the one cabin every ship opens into, and furnish it along its walls and stern ([[Hulls]]) |
 | `tools/ships/ship_pictures.ts` | Writes the pictures a ship's parts wear, from the procedural painter, for `paint_ship.py` to pack into its model |

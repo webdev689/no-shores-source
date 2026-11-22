@@ -12,7 +12,7 @@ its 102.4 m blocks with them, and the forged models stand on the placements: `co
 `props.json` are keyed by the same Daggerfall model ids.
 
 The table comes from the freeware data, read once with DFO's readers outside the repository, under the owner's
-exception to [[Own Work]] ([[Every Island Is Seen Whole and Reached by Nodes]]). Overlook holds no reader of
+exception to [[Own Work]] ([[Every Island Is Seen Whole and Reached by Nodes]]). No Shores holds no reader of
 Daggerfall's files and no exporter ([[Readers of Our Own Formats Only]]): the table is the blocks.
 
 ## Files

@@ -10,7 +10,7 @@ export class GpuUnavailable extends Error {
   override readonly name = 'GpuUnavailable';
 }
 
-/** Starts WebGPU on a canvas. Overlook draws with WebGPU only, so a browser without it gets a clear reason. */
+/** Starts WebGPU on a canvas. The game draws with WebGPU only, so a browser without it gets a clear reason. */
 export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
   if (!('gpu' in navigator)) {
     throw new GpuUnavailable('This browser does not support WebGPU. Try a current Chrome, Edge or Safari.');

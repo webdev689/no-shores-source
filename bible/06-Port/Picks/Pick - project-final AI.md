@@ -39,7 +39,7 @@ fight presses. The owner approved it on top of DFO's Enhanced AI ([[project-fina
 
 ## What stays behind
 
-- project-final's navmesh itself: Overlook's is DFO's port of it, with DFO's fixes ([[Navmesh]]).
+- project-final's navmesh itself: the game's is DFO's port of it, with DFO's fixes ([[Navmesh]]).
 - Its attack tokens: DFO's board of turns already holds them ([[Foes]]).
 - Halo's and Bungie's names in its comments and notes, and the crystal faction's bodies, whose coming is still open
   ([[Enemy Factions Start With the Grey Tithe]]).

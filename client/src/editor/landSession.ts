@@ -9,7 +9,7 @@ import { markCells, type Places } from './marks.ts';
 
 const EMPTY_EDITS = '{ "strokes": [] }';
 /** Where this browser keeps a landmass's unsaved edits between visits. */
-const keptKey = (id: string) => `overlook.worldEditor.land.${id}`;
+const keptKey = (id: string) => `noshores.worldEditor.land.${id}`;
 /** Undo reaches this many changes back. */
 const HISTORY = 100;
 

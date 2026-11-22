@@ -1,7 +1,8 @@
-// The first thing the page shows: black, the game's name, and a prompt to tap or press, while the world loads behind
+// The first thing the page shows: black, the game's logo, and a prompt to tap or press, while the world loads behind
 // it, drawn by the game as a layer of its interface over every other. The tap is what lets the browser play sound, so
 // it is heard from the page's own pointer and keys, and the intro begins heard.
 import { breath, dropped, Eased, pageClock } from '../../cinema/cinemaParts.ts';
+import { logoNode, logoScale } from '../../cinema/logo.ts';
 import { playedByTouch, SCREEN_Z, TITLE } from '../../cinema/screen.ts';
 import { motionReduced } from '../../plus/kit.ts';
 import { announce } from '../../ui/announce.ts';
@@ -44,8 +45,8 @@ export function tapNode(
     label: `${TITLE}. ${words.press}`,
     float: { to: 'screen', z: TAP_Z },
     children: [
-      // min(44px, 8vw), in the face's whole steps of 11 px.
-      said(TITLE, Math.max(1, Math.min(4, Math.floor((width * 0.08) / 11))), '#b9a37a', 8),
+      // The logo across 45% of the view at most, twice its cells at most.
+      logoNode(logoScale(width * 0.45, 2)),
       { opacity: motionReduced() ? 1 : breath(now), children: [said(words.press, 2, '#efe6cf', 5)] },
       { minHeight: 11, children: [words.loading !== '' && said(words.loading, 1, '#6f6656', 2)] },
     ],

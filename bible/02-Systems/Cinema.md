@@ -6,6 +6,7 @@ code:
   - client/src/cinema/cues.ts#Cues
   - client/src/cinema/cues.ts#HoldToSkip
   - client/src/cinema/screen.ts#Screen
+  - client/src/cinema/logo.ts#logoNode
   - client/src/cinema/eyelids.ts#lidOf
   - client/src/game/blur.ts#BlurView
   - client/src/cinema/lightning.ts#Lightning
@@ -46,7 +47,8 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   the hint shows faintly at the bottom right while a cutscene can be skipped, and brightens with its share filled.
 - **The screen** (`Screen`), drawn by the game as a layer of its interface over every other, the HUD's and the
   menu's: fades to black or white over any time, a white flash, the letterbox's bars, eyelids that close from above
-  and below for waking, the title (the game's name over a brass rule, sized to fit a phone's width) and a prompt that
+  and below for waking, the title (the owner's logo over a brass rule, at a whole multiple of its cells within half
+  the view's width) and a prompt that
   breathes under it. Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`), except the eyelids, which
   the story sets frame by frame, with the light through them (`lidOf`, [[The Wreck Opens by Teaching the Player]]): each lid's edge curves away
   from the eye's middle, so the opening between them is an almond, widest a little off the middle and closing from
@@ -59,6 +61,11 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or pulls it to reload
   and a held touch is never cut short. Once the story's black has gone after its end, the screen is taken away and the
   canvas has its own touches back.
+- **The logo** (`logo.ts`) is the owner's ([[The Game Is Named No Shores]]), as a pixel picture of 255 by 64 cells
+  in 11 colours (`logoPicture.ts`), written from the owner's PNG by `python3 -I tools/logo/write.py <logo.png>`: each
+  cell the mean of 8 by 8 of its pixels, kept where half covered, its colours cut by median cut. The PNG is not in
+  git; its C2PA credentials say it was made with ChatGPT. The tap to start shows it too, within 45% of the view's
+  width and at twice its cells at most; the title, within half and at three times.
 - **Lightning** (`Lightning`). Strikes come by themselves at seeded moments, 4 to 11 s apart, 0.4 to 4.5 km round the
   eye, or where a story calls one. Each is two flashes and a fading glow over a second, brighter the nearer it falls,
   its bolt shown for 0.22 s, and its thunder heard as late as its distance makes it.
@@ -176,4 +183,4 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
   six fires' height burns thinner and is lit only at those points.
 - Fire does not spread, die down or burn anything: a fire burns as it was lit until it is put out.
 - Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.
-- Past the picture's edge the blur takes the edge's own pixels, so a blurred view keeps its brightness to the edge. The title's and the prompt's soft dark glow is not drawn, only their hard shadow under them.
+- Past the picture's edge the blur takes the edge's own pixels, so a blurred view keeps its brightness to the edge. The prompt's soft dark glow is not drawn, only its hard shadow under it.

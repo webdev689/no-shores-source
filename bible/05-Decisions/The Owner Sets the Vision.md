@@ -11,7 +11,7 @@ status: in force
 
 ## What it settles
 
-- Only the owner writes what the game is ([[Overlook]]) and decides its design. Claude proposes engineering, never
+- Only the owner writes what the game is ([[No Shores]]) and decides its design. Claude proposes engineering, never
   game design, and records a design decision only once the owner makes it ([[Recording a Decision]]).
 - No speculative systems: code and notes appear when the work reaches them.
 - What is built is built properly: tested, documented and held to the [[Rules]].

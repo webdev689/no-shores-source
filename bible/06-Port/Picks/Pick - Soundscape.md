@@ -22,7 +22,7 @@ dfo_commit: 1c0fd681
 # Pick - Soundscape
 
 DFO's soundscape: the sea's air on a deck, the shore's surf, the wild by climate and hour, and a town's street, from
-beds and calls its own synthesiser made off the main thread. The owner chose it as the root of Overlook's ambience
+beds and calls its own synthesiser made off the main thread. The owner chose it as the root of the game's ambience
 ([[Music and Ambience Come From DFO's Synthesiser]]).
 
 ## What comes over

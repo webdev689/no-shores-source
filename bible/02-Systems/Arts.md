@@ -52,7 +52,7 @@ code:
 ---
 # Arts
 
-The Arts are Overlook's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, Divine and Shadow, each with an
+The Arts are the game's subclasses ([[Arts Are Overlook's Subclasses]]): Storm, Divine and Shadow, each with an
 Anima, two Tenets and a Core of fragments ([[Arts and Loadouts as Claude Shapes Them]]). Every name, word and number
 the client shows comes from `content/arts/arts.json`, the file the rules read too, the fragments' numbers with it.
 An Art, its Anima and each Tenet are earned on its house's road ([[Quests]]): a new character wears none until

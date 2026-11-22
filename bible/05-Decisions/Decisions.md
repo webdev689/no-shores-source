@@ -274,11 +274,11 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Prologue Is Passed Over, Its Camera and Footing Clear]]
 - [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
 - [[The Audit's Leftovers Are Fixed as Claude Suggested]]
+- [[The Game Is Named No Shores]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
 - [[Built From What DFO Taught Us]]
-- [[Private Repo overlook-source]]
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
 - [[What a Player Can Use Wears Its Mark Over It]]
@@ -296,3 +296,4 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Player's Display Takes DFO's Compass and Bar Layout]], by [[The Vitals Keep Their Panel Under DFO's Compass]]
 - [[The Rooms Deploy on Each Merge]], by [[The Rooms Deploy When Their Code Changes]]
 - [[The Seas Chosen Bring Their Weather, and a Storm Is the Mystery's]], by [[The Tiers Are Normal, Elite and Abyss]]
+- [[Private Repo overlook-source]], by [[The Game Is Named No Shores]]
