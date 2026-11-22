@@ -239,11 +239,14 @@ const SHIPS: [(PlayerId, Ship); 2] = [
 /// The room's middle the test snapshot measures others from, as a node's rect (-1, -4, 3, 0) floors it.
 const MIDDLE: [f64; 2] = [1.0, -2.0];
 
+/// What the test snapshot carries of what happened: its shots, its lines and the plates changed.
+type Happened<'snapshot> = (&'snapshot [Shot], &'snapshot [(u64, Line)], &'snapshot [(PlayerId, room::Plate)]);
+
 /// The test snapshot, for player 9: whole, building on nothing.
 fn snapshot<'snapshot>(
     players: &'snapshot [Seen],
     foes: &'snapshot [FoeSeen],
-    (shots, lines, plates): (&'snapshot [Shot], &'snapshot [(u64, Line)], &'snapshot [(PlayerId, room::Plate)]),
+    (shots, lines, plates): Happened<'snapshot>,
     public: &'snapshot room::public::PublicSeen,
 ) -> Snapshot<'snapshot> {
     Snapshot {
