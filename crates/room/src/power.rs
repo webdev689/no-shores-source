@@ -187,14 +187,16 @@ impl Room {
     }
 
     /// Pays a foe's kill to every player who struck it within its last ten seconds, or whose companion did, throwing
-    /// out what it drops for each; on land its XP pays their officers ashore too. On a boarded deck a kill drops no
-    /// Vestige or item: the ship's hold is the boarding's loot. Each player paid has fought the room's garrison, for its
-    /// clear (`clears.rs`).
+    /// out what it drops for each, and tells each one's quest log; on land its XP pays their officers ashore too. On a
+    /// boarded deck, or from a defence tried again, a kill drops no Vestige or item: the hold, or the first try, is the
+    /// loot. Each player paid has fought the room's garrison, for its clear (`clears.rs`).
     pub(crate) fn pay_kill(&mut self, defender: FighterId) {
         let Some(Foe { fighter, brain, level, struck_by, .. }) = self.foes.get(&defender).cloned() else { return };
         let Some(worth) = worth_of(brain.role() as u8) else { return };
         let at = [fighter.body.x, fighter.body.y, fighter.body.z];
         let deck = matches!(self.floor, crate::Floor::Deck(_));
+        // A defence tried again stands foes that drop nothing (`steps.rs`).
+        let spoilless = self.quests.spoilless.contains(&defender);
         let rank = brain.rank as u8;
         for (player, (tick, hand)) in struck_by {
             if self.clock.saturating_sub(tick) > SHARE_TICKS {
@@ -204,13 +206,17 @@ impl Room {
             let Some(found) = self.players.get_mut(&player) else { continue };
             let character = &mut found.character;
             let reward = character.reward_kill(worth, rank, level, Some(hand), self.difficulty);
-            let vestiges = if deck { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, &dice) };
+            let looted = deck || spoilless;
+            let vestiges = if looted { Vec::new() } else { character.loot_kill(rank, level, self.difficulty, &dice) };
             if !deck {
                 character.earn_officer_xp(reward.xp, false);
             }
             found.gear_changed = true;
             self.fought_garrison(player);
-            self.drop_spoils(player, vestiges, rank, at, &dice);
+            if !spoilless {
+                self.drop_spoils(player, vestiges, rank, at, &dice);
+            }
+            self.tell_kill(player, brain.foe_type.name, rank, [at[0], at[1]]);
         }
     }
 }

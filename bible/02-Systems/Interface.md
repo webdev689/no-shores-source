@@ -126,7 +126,10 @@ code:
   - client/src/game/gains.ts#gainsOf
   - client/src/game/uiSounds.ts#play
   - client/src/soundSamples.ts#playSample
+  - client/src/soundSamples.ts#Samples
   - client/src/soundSamples.ts#soundCredits
+  - client/src/soundMeasure.ts#measuredOf
+  - client/src/contentCache.ts#contentBytes
   - client/src/game/uiSounds.ts#worldOutput
   - client/src/combat/worldSounds.ts#WorldSounds
   - client/src/combat/worldCues.ts#eventCues
@@ -731,13 +734,18 @@ never while a press is held. Each press is an ask the room answers.
   piece last pointed at or focused; with Ctrl, Cmd or Alt it is the browser's key. Moving the pointer off the piece,
   or leaving the window, lets go.
 - **Acquired.** What the player gains shows at the right of the screen, in play and over the menu alike, as Destiny
-  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; Shapes gained and every
-  dye, coat or barding newly kept among them. Rows slide in, stay four
+  shows a pickup: a row each, its picture in a well of its rarity, its name and how many; every dye, coat or barding
+  newly kept among them. Rows slide in, stay four
   and a half seconds and fade; a gain like one still shown adds to its row; six stand at most. Each batch chimes
   once, for its rarest gain. Over the menu the rows stand low, above its footer and under a hover card. A room's first
   word on the gear is not a gain, nor what changes in the ten seconds after it, while the player's own character is
   claimed. Ammunition an Ammo box gives back shows as "Ammo" and its shots, and Ammo crates gained as theirs; a crate
-  used is spent, not gained.
+  used is spent, not gained. Currency, XP, each faction's reputation ("Reputation") and an Art's XP ([[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]) stand as short
+  lines over the rows, as Destiny shows them: the count, its word where the icon alone is not enough, and its icon,
+  with no band; five stand at most, apart from the rows' six, so a kill's lines never push its drops out. An Art's
+  level, a fragment of its Core, the ship's materials and a module gained are rows. Prestige is not a gain: it is
+  what the armour worn is worth. At sea the feed reads the gear the sea sends (`Sea.gear`), which the menu there does
+  not show: what a piece gathered held, the ship's XP from a sinking, an officer won, and a boarder's kills.
 - **The ammunition counter.** While the Ranged loadout is drawn, its shots left stand beside the crosshair whenever
   that shows (aiming, or in first person, the pointer held or not), counted as the fight's rules count them on the
   player's own fighter, so a shot takes one at once: 22 px with the HUD's outline, in brass at a fifth of the capacity
@@ -819,6 +827,19 @@ facing its yaw. At most 16 play at once: the farthest gives way to a nearer one.
 already doing. In the game they play through the interface's engine at the World volume, beside the interface's in
 Settings (80% at first); nothing new plays while a menu is open on foot or the page is hidden, and nothing at sea.
 The Test Ground makes its own sound at full volume on the first click into its view.
+
+## How recordings load
+
+Recordings come as they are wanted, as the owner decided areas load ([[Areas Load in Chunks With Proper Caching]]):
+the short sounds of play (every cue but the ambience's and the story's) once the page's sound wakes, the ambience's and
+the story's the first time each is asked for, silent until it has come (`soundSamples.ts`, `Samples`). A recording
+longer than a chunk (1 MB, about a minute) is fetched a chunk at a time, a stretch of its bytes that decodes on its
+own, and the next chunk fetched as one plays, so a bed's minutes are never held at once, two chunks at most. The page
+decodes each and keeps it; the worker holds only its shape and how it measures, its level and its loudness over each
+window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
+played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
+fetched is kept in the browser's own storage under its address (`contentCache.ts`): named by its hash, it never
+changes, so one let go comes back from the disk.
 
 ## The sea fight's readout
 
@@ -993,7 +1014,7 @@ button's corner and screen, and the Tailor's wares.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play only once picked, on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.
-- The Acquired feed shows what is counted in the gear; XP and levels are not shown there.
+- The Acquired feed shows no level of the player's own gained, only an Art's.
 - The Art's, Appearance and keepers' screens draw no soft glow: the Art's emblem opens without the glow that swelled
   round it, the Anima breathes as a ring, a fragment just set flares as a white ring and wash, and the worn Art's and
   the focused one's outlines are drawn diamonds round their emblems. A fragment not owned and a ware not had stand

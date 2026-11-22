@@ -16,7 +16,7 @@ import { LocalRoom } from '../../network/localRoom.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
 import { crosshairPoint } from '../../player/crosshair.ts';
 import type { Dress } from '../../player/dressing.ts';
-import type { InputFrame } from '../../player/input.ts';
+import { IDLE, type InputFrame } from '../../player/input.ts';
 import { newPlayer, playerCamera, shownBody } from '../../player/player.ts';
 import type { Walker } from '../../player/walker.ts';
 import { type CombatRules, startCombatRules } from '../../rules/combatRules.ts';
@@ -24,7 +24,7 @@ import type { FighterView } from '../../rules/fighters.ts';
 import type { Block, MovementRules } from '../../rules/movementRules.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { type Shot, shotOfOrbit } from '../camera.ts';
-import { IDLE, type FootFight, type FootFrame } from '../foot.ts';
+import type { FootFight, FootFrame } from '../foot.ts';
 import { footHints, onFoot } from '../hints.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { GearHere } from '../gearScreen.ts';
@@ -336,13 +336,10 @@ export class WreckRun {
     for (const zone of asks.open) this.openGate(zone);
     if (asks.checkpoint) room.setSpawn(...asks.checkpoint);
     if (asks.bringBack) room.putPlayer(...asks.bringBack);
-    this.crew.stand(asks.stand, {
-      room,
-      figures: this.foes,
-      foes: this.fight.foes,
-      layout: this.layout,
-      level: this.level,
-    });
+    const crewRun = { room, figures: this.foes, foes: this.fight.foes, layout: this.layout, level: this.level };
+    this.crew.stand(asks.stand, crewRun);
+    // The crew still standing regroup at each zone the player reaches, but the arena's: the boss fight is one on one.
+    if (asks.checkpoint && this.progress.zone < this.layout.arena.zone) this.crew.regroup(this.progress.zone, crewRun);
     for (const foe of asks.stand) {
       const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level);
       if (id === 0) continue;

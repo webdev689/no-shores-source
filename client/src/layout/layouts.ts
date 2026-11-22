@@ -48,13 +48,16 @@ export interface LaidSite {
   readonly at: Point;
   readonly radius: number;
   readonly holds?: string;
+  /** Where a resource's node stands: before its dressing, toward its path; none off the section's floor. */
+  readonly node?: Point;
 }
 
-/** A run breaking off a patrol area, as the layout crate writes it: its kind, its line and its beats. */
+/** A run breaking off a patrol area, as the layout crate writes it: its kind, its mouth, its line and its beats. */
 export interface LaidRun {
   readonly name: string;
   readonly kind: string;
   readonly place: string;
+  readonly mouth: Point;
   readonly line: readonly Point[];
   readonly beats: readonly { readonly at: Point; readonly radius: number; readonly level: number }[];
   readonly door: Point;
@@ -91,15 +94,36 @@ export interface NodeLayout {
 /** The track's and the footpath's widths, metres, as the layout crate lays them. */
 export const PATH_WIDTH_M = { track: 4.5, footpath: 2.6 } as const;
 
-/** A node as the game holds it: its id, its section, its spawns and its section's middle. */
+/** A place a quest names in a node: one of its areas, or one of its runs at its mouth. */
+export interface NodePlace {
+  readonly name: string;
+  readonly at: Point;
+  readonly radius: number;
+}
+
+/** How far a run's place reaches round its mouth, metres, as the bake has it. */
+export const RUN_REACH_M = 25;
+
+/** A layout's places, as its node file names them for the rules: each area within its radius, then each run within
+ *  `RUN_REACH_M` of its mouth, but a run whose name an area has already (Moorhold is both), which the area keeps. */
+export function placesOf(layout: Pick<NodeLayout, 'areas' | 'runs'>): NodePlace[] {
+  const areas = layout.areas.map(({ name, at, radius }) => ({ name, at, radius }));
+  const runs = (layout.runs ?? []).filter((run) => !areas.some((area) => area.name === run.name));
+  return [...areas, ...runs.map(({ name, mouth }) => ({ name, at: mouth, radius: RUN_REACH_M }))];
+}
+
+/** A node as the game holds it: its id, its section, its spawns, its section's middle and its places. */
 interface Placed {
   readonly id: string;
   readonly ring: readonly Point[];
   readonly spawns: readonly Point[];
   readonly centre: Point;
+  readonly resources?: readonly { readonly at: Point; readonly holds?: string }[];
+  readonly places?: readonly NodePlace[];
 }
 
-/** The drawn nodes with each laid node's section and spawns in place of the ring it was drawn with. */
+/** The drawn nodes with each laid node's section, spawns and places in place of the ring it was drawn with, and its
+ *  resource places, where its room's nodes stand, in the layout's order (as the bake writes them). */
 export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: readonly NodeLayout[]): Node[] {
   const byId = new Map(layouts.map((layout) => [layout.id, layout]));
   return drawn.map((node) => {
@@ -109,7 +133,10 @@ export function laidNodes<Node extends Placed>(drawn: readonly Node[], layouts: 
       0, 0,
     ] as const);
     const centre = [sum[0] / laid.ring.length, sum[1] / laid.ring.length] as const;
-    return { ...node, ring: laid.ring, spawns: laid.spawns, centre };
+    const resources = laid.sites.flatMap(({ kind, node, holds }) =>
+      kind === 'resource' && node ? [{ at: node, holds }] : [],
+    );
+    return { ...node, ring: laid.ring, spawns: laid.spawns, centre, resources, places: placesOf(laid) };
   });
 }
 

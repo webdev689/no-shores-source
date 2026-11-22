@@ -89,6 +89,20 @@ test("leaving the wreck hands the HUD back clean: no death, hints, prompt or fig
   assert.ok(calls.includes('stage.parts.hud.tasks.show()') && calls.includes('stage.parts.screen.bars(false)'));
 });
 
+test('a wreck run that opens after its beat was left is let go at once, its edges and heights not left set', async () => {
+  const { story } = recorded();
+  let opened: (run: WreckRun) => void = () => undefined;
+  const fight = new WreckFight(story, layout, scenery, new Promise((resolve) => (opened = resolve)), {
+    hide: () => undefined,
+  } as unknown as Nameplate);
+  fight.leave();
+  let left = 0;
+  opened({ leave: () => left++ } as unknown as WreckRun);
+  await Promise.resolve();
+  assert.equal(left, 1);
+  assert.equal(fight.playing, false);
+});
+
 test('the throw overboard begins black, as the fight faded out, and only then fades in', () => {
   const { story, calls } = recorded();
   const beat = new Overboard(story, layout, scenery);
@@ -397,7 +411,7 @@ function taughtRun(state: {
     fight: {
       player: 1,
       parryOpen: true,
-      own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0 },
+      own: { action: { kind: 'idle' }, mode: 'ground', health: 50, stamina: 50, x: 0, y: 0, facing: 0, aim: 0 },
     },
     armedDress: (dress: Dress) => ({
       ...dress,

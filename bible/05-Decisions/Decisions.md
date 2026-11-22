@@ -137,6 +137,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Ships Have Their Own Upgrade Materials, From Ships and Island Wreckage]]
 - [[The Held Map Colours Each Water's Name by Its Difficulty]]
 - [[The Held Map Comes to the Social Spaces and Every Land Area]]
+- [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]
 - [[The Sea as Claude Shapes It]]
 - [[The Sea Fight Looks and Aims as DFO's Does]]
 - [[A Ship's Level Raises Its Strength, and the Tiers Reach the Sea]]
@@ -225,6 +226,10 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[The Key Strip Follows the Moment, and K Opens Every Control]]
 - [[Every Control Can Be Rebound, and the Pad Plays as Destiny's]]
 - [[The Pad Moves a Cursor in Windows, and the Gauntlet Is the Pointer]]
+- [[Areas Load in Chunks With Proper Caching]]
+- [[Foes Walk and Run at Three Quarters of a Player's Pace]]
+- [[The Player's Swings Chain Side Cut, Overhead and Thrust]]
+- [[The Crew Still Standing Regroup Ahead]]
 - [[The Balance Pass Goes Halfway Back, and Loot Follows Destiny 1's Order]]
 - [[Bosses and Dungeons Drop Items, Clears Pay, and Shapes Come From the Week's Abyss]]
 
@@ -234,6 +239,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Private Repo overlook-source]]
 - [[The Bible Is an Obsidian Vault]]
 - [[Organised and Tested Without Overburden]]
+- [[What a Player Can Use Wears Its Mark Over It]]
 
 ## Replaced
 

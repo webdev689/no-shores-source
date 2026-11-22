@@ -118,6 +118,32 @@ test('a place fades in over the crossfade, the next crossfades over it, and the 
   assert.equal(ambience.stats.places, 0, 'silenced, it stops at once');
 });
 
+test('beds whose recordings have not come make no new nodes while they wait', (context) => {
+  const fake = fakeAudio();
+  // A page's own context, where recordings play, as Node has none.
+  class PageAudio {}
+  const kept = Object.getOwnPropertyDescriptor(globalThis, 'AudioContext');
+  Object.defineProperty(globalThis, 'AudioContext', { value: PageAudio, configurable: true });
+  context.after(() =>
+    kept ? Object.defineProperty(globalThis, 'AudioContext', kept) : Reflect.deleteProperty(globalThis, 'AudioContext'),
+  );
+  Object.setPrototypeOf(fake.audio, PageAudio.prototype);
+  // The beds alone: a call's recording not come is asked for again only every few seconds, and let go at once.
+  context.mock.method(ScapePlayer.prototype as unknown as { voiceTurn: () => void }, 'voiceTurn', () => undefined);
+  const ambience = new Ambience(world, () => fake, { random: seeded(5) });
+  const step = (seconds: number) => {
+    for (let time = 0; time < seconds; time += 0.1) {
+      ambience.onFoot(patrol, land, ear);
+      ambience.frame(0.1);
+      (fake.audio as { currentTime: number }).currentTime += 0.1;
+    }
+  };
+  step(CROSSFADE_S + 2);
+  const waiting = fake.made.count;
+  step(20);
+  assert.equal(fake.made.count, waiting, 'twenty seconds with no recording made nothing more');
+});
+
 test('each strike thunders once, as its sound arrives; a strike past hearing never does', (context) => {
   const thundered = mock.method(ScapePlayer.prototype, 'thunder', () => undefined);
   context.after(() => {

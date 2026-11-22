@@ -31,13 +31,16 @@ mod perks;
 pub mod pirates;
 mod players;
 mod power;
+mod quests;
 mod recharge;
+mod routes;
 pub mod sea;
 pub mod sea_weather;
 pub mod ship_power;
 pub mod sighting;
 mod spells;
 mod statuses;
+mod steps;
 mod story;
 pub mod threat;
 pub mod winds;
@@ -56,6 +59,7 @@ pub use players::{
 };
 pub use power::{allowed_arms, arms_allowed, loadout_arms};
 pub use spells::{BOLT, SpellSeen};
+pub use steps::{StepSeen, way_between, way_length};
 
 use combat::arms::{Arms, BARE_HANDS};
 use combat::fighter::{FighterId, player};
@@ -162,9 +166,11 @@ pub struct Room {
     pub(crate) resource_nodes: Vec<ResourceNode>,
     pub(crate) drops: Vec<Drop>,
     pub(crate) spells: spells::Spells,
-    /// The difficulty its voyage set out at, and, in a patrol, the foes and nodes it keeps (`patrol.rs`).
+    /// The difficulty its voyage set out at; whether it is a patrol, whose nodes take turns (`patrol.rs`); and the
+    /// nodes each account's character gathered here (in a patrol, this turn), kept past a player's leaving.
     pub(crate) difficulty: gear::Difficulty,
-    pub(crate) patrol: Option<patrol::Patrol>,
+    pub(crate) patrol: bool,
+    pub(crate) gathered: std::collections::BTreeMap<String, Vec<u8>>,
     pub(crate) ashore: companions::Ashore,
     pub(crate) isle: Option<island::Isle>,
     /// A mission's, a dungeon's or a world boss's garrison's clear (`clears.rs`).
@@ -172,6 +178,8 @@ pub struct Room {
     /// The minute it is, counted from the epoch (`set_minute`), whose day's wares and week's Shape it shows.
     pub minute: u64,
     pub shape_spots: Vec<[f64; 2]>,
+    /// Its node and places, and the groups the houses' roads stood here (`quests.rs`).
+    pub(crate) quests: quests::QuestGround,
 }
 
 impl Room {
@@ -228,12 +236,14 @@ impl Room {
             drops: Vec::new(),
             spells: spells::Spells::default(),
             difficulty: gear::Difficulty::Normal,
-            patrol: None,
+            patrol: false,
+            gathered: std::collections::BTreeMap::new(),
             ashore: companions::Ashore::default(),
             isle: None,
             clearing: None,
             minute: 0,
             shape_spots: Vec::new(),
+            quests: quests::QuestGround::default(),
         }
     }
 
@@ -270,11 +280,13 @@ impl Room {
             story::wake_for_story(&mut joined);
         }
         self.players.insert(id, joined);
+        self.arrived(id);
         Some(id)
     }
 
     /// The player leaves: blows waiting on them are dropped, each telegraphed one counted as judged so it still ends.
     pub fn leave(&mut self, player: PlayerId) {
+        self.steps_left(player);
         self.part(player);
         self.drops.retain(|drop| drop.player != player);
         let (gone, kept): (Vec<Pending>, Vec<Pending>) =
@@ -321,6 +333,7 @@ impl Room {
         self.step_players();
         self.spawn_asked();
         self.keep_patrol();
+        self.keep_gathering();
         self.keep_companions();
         self.step_foes();
         self.keep_on_course();
@@ -332,6 +345,8 @@ impl Room {
         self.fall_with_callers();
         self.raise_the_dead();
         self.keep_garrison();
+        self.keep_quests();
+        self.keep_steps();
         self.pick_up_drops();
         self.past.push_back((self.clock, self.fighters()));
         while self.past.len() > usize::try_from(VIEW_LAG).unwrap_or(24) + 1 {
@@ -358,6 +373,9 @@ impl Room {
             while taken < CATCH_UP {
                 let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
+                if let Some(found) = self.players.get_mut(&id) {
+                    found.mounted = input.intent.controls.mounted;
+                }
                 if let Some(asked) = input.ask.take() {
                     self.take_ask(id, asked);
                 }

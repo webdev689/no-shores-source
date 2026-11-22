@@ -344,6 +344,10 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     patrol["continent"] = json!("continent-1");
     patrol["ring"] = json!([[-400.0, -400.0], [400.0, -400.0], [400.0, 400.0], [-400.0, 400.0]]);
     patrol["bounds"] = json!([-500.0, -500.0, 500.0, 500.0]);
+    // Its layout's twelve resource places, as the bake writes them.
+    let places: Vec<[f64; 2]> =
+        (0..12).map(|at| [f64::from(at % 4) * 80.0 - 120.0, f64::from(at / 4) * 80.0 - 80.0]).collect();
+    patrol["resources"] = json!(places);
     assert!(open_node(patrol.to_string().as_bytes()));
     assert!(set_difficulty(2), "Abyss");
     assert!(!set_difficulty(3), "no such seas");
@@ -359,7 +363,7 @@ fn a_patrol_on_overlooks_island_stands_its_foes_at_the_voyages_seas_and_sends_it
     }
     let sent = gear(player);
     let nodes: Vec<f64> = messages::root_as_from_room(&sent).unwrap().gear().unwrap().nodes().unwrap().iter().collect();
-    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve spots, four numbers each");
+    assert_eq!(nodes.len(), 4 * 4, "a third of its twelve places, four numbers each");
     assert!(nodes.chunks(4).all(|node| node[3] == 0.0), "Brineglass, the island's own");
 }
 

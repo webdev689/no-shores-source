@@ -171,8 +171,8 @@ impl Sea {
         }
     }
 
-    /// Each deck's tick: its room steps; a crew all fallen opens its hold for its boarders, once; boarders all down
-    /// wash up at the nearest port city and leave their fight.
+    /// Each deck's tick: its room steps; a crew all fallen opens its hold for its boarders, once, each boarder's quest
+    /// log told its deck was taken; boarders all down wash up at the nearest port city and leave their fight.
     pub(super) fn tick_decks(&mut self) {
         let mut index = 0;
         while index < self.decks.boarded.len() {
@@ -188,7 +188,12 @@ impl Sea {
                 deck.won_at = Some(self.clock);
                 // Its hold is its boarders', on top of the lot each who fought it takes when it goes down.
                 let players: Vec<PlayerId> = deck.aboard.keys().copied().collect();
-                let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind };
+                let sank = Sank { pirate: deck.pirate, at: deck.at, players, wind: deck.wind, struck: true };
+                if let Some(side) = crate::quests::side_of(deck.pirate.commission.faction) {
+                    for boarder in deck.aboard.values() {
+                        deck.room.tell_quest(*boarder, &gear::quests::Event::Sea { side, how: "board" });
+                    }
+                }
                 self.lay_flotsam(&sank, (2, 1));
                 let when = (self.clock, self.pirates.difficulty);
                 let joined = crate::ship_power::officers_join(&sank, when, &mut self.harbour.characters);

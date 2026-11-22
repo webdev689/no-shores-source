@@ -5,6 +5,7 @@ import type { GearItem as GearItemTable } from '../../../generated/messages/ts/o
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
 import type { GearShip as GearShipTable } from '../../../generated/messages/ts/overlook/wire/gear-ship.ts';
 import { type ArtState, artsOf } from './artMessages.ts';
+import { type QuestState, questOf } from './questMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -36,6 +37,8 @@ export const ASKS = {
   train: 61,
   chooseOfficer: 62,
   gather: 20,
+  /** A gather let go of before it is done: E released. */
+  stopGather: 67,
   grantVestige: 30,
   grantNamed: 31,
   grantItem: 32,
@@ -74,6 +77,13 @@ export const ASKS = {
   buyCosmetic: 56,
   /** One of Shape's wares of the week, by its place in `node`. */
   buyFromShape: 57,
+  /** The houses' roads: a keeper spoken with (`column` a house's number, or 10 the Mage, 11 the vault, 12 the
+   *  Armorsmith, 13 the Weaponsmith, 14 the Tailor, 15 the Tack, 16 the Harbourmaster), and a fragment chosen
+   *  (`column` the Art, `node` the fragment's place in its Art's list). */
+  speakWith: 64,
+  chooseFragment: 65,
+  /** A puzzle's point used, by its place among its goal's points in `column`. */
+  usePoint: 66,
 } as const;
 
 /** Shape's place while he is away. */
@@ -181,6 +191,8 @@ export interface GearState {
   readonly vestiges: readonly GearVestige[];
   readonly drops: readonly GearDrop[];
   readonly spent: readonly number[];
+  /** On a sea island, the wrecks they have scavenged there, by their places in its list. */
+  readonly scavenged?: readonly number[];
   /** Whether they stand where a Vestige opens: the Mage's counter, or the Test Ground's stall. */
   readonly atMage: boolean;
   readonly answer: number;
@@ -231,6 +243,8 @@ export interface GearState {
   /** The day, counted from the epoch, whose smiths' wares these are: a smith's ware is asked by it, so the room
    *  refuses one shown before the day turned. */
   readonly day?: number;
+  /** Where they stand on the houses' roads; none from a room that sends none. */
+  readonly quest?: QuestState;
 }
 
 /** Where a player stands with the factions and their Arts: the faction pledged (0 none); for each faction in
@@ -385,6 +399,7 @@ export function gearOf(gear: Gear): GearState {
     vestiges,
     drops,
     spent: Array.from(gear.spentArray() ?? []),
+    scavenged: Array.from(gear.scavengedArray() ?? []),
     atMage: gear.atMage(),
     answer: gear.answer(),
     identified: gear.identified(),
@@ -429,6 +444,7 @@ export function gearOf(gear: Gear): GearState {
           },
     factionWares: listed(gear.factionWaresLength(), (index) => gear.factionWares(index), 'faction ware'),
     day: gear.day(),
+    quest: questOf(gear),
   };
 }
 

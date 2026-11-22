@@ -108,8 +108,13 @@ The sea room holds its islands (`sea_islands.rs`):
   Heartwood 5 times in a hundred and a module 8 (less than a Minor ship's whole lot, as the owner chose); an isle's
   three of three to six, Heartwood 15 times in a hundred and a module one time in five; each chance raised by the
   room's tier. It is rolled at the middle of the island's water's band raised by the room's seas, and paid
-  straight into the player's ship materials, a module carried as any item. The wrecks spent for them are told them as
-  a gathered node is (their gear's `spent`), so the page offers them no more.
+  straight into the player's ship materials, a module carried as any item. The wrecks spent for them are told them in
+  their gear's `scavenged`, so the page offers them no more.
+- **Resource nodes.** Each island carries the resource of the island whose waters it lies in ([[Gear]], [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]): two to four
+  nodes inland, a third to three fifths of the way from its middle to its coast on gentle shores, 20 m apart and 15 m
+  from every other place, laid on a draw of their own and kept clear by the dressing. Its room stands them all at once;
+  each is gathered by holding E as a patrol's is, by a player landed there, once by each account a landing, and stands
+  again for it on its next. They are drawn as the resource's picture alone, with no place built round them.
 - **The door** stands where the dungeon of its style is entered: E there gives the dungeons' trip its room,
   `sea-dungeon-<continent>-<style>-<the island's seed folded to 32 bits, 8 hex digits>` and the sea's tier
   (`--elite`, `--abyss`), and the door's place in the world and the bearing its front faces (`isleLaw.ts`,

@@ -37,6 +37,7 @@ pub mod fleet;
 pub mod gear_wire;
 pub mod land;
 pub mod pack;
+mod quest_wire;
 mod sea_snapshot;
 pub mod ship_wire;
 pub use sea_snapshot::{IsleSeen, SeaHarbour, sea_snapshot_bytes};

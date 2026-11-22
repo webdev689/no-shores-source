@@ -137,13 +137,13 @@ fn by_a_ledge(number: u8, foe_at: [f64; 3], facing: f64) -> (Room, PlayerId, Fig
 fn a_foe_beneath_a_player_at_a_ledge_s_edge_goes_up_rather_than_swing_at_them_from_below() {
     // Across, the player stands within a sword's reach of the foot of the ledge; up, out of any blow's.
     let (mut room, player, foe) = by_a_ledge(SWORDSMAN, [2.95, 3.7, 0.0], 0.0);
-    let up = (1..=60 * 4).find(|&sequence| {
+    let up = (1..=60 * 5).find(|&sequence| {
         room.input(player, swinging(&room, sequence)).unwrap();
         room.tick();
         let body = room.foes[&foe].fighter.body;
         body.mode == Mode::Ground && body.z == 2.3
     });
-    assert!(up.is_some(), "still beneath it after 4 s: {:?}", room.foes[&foe].fighter.body);
+    assert!(up.is_some(), "still beneath it after 5 s: {:?}", room.foes[&foe].fighter.body);
 }
 
 #[test]

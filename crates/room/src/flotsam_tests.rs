@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 fn sank(rank: Rank, players: Vec<PlayerId>) -> Sank {
     let pirate = crate::pirates::Pirate { level: 12, ..at_sea(4, Commission { faction: PIRATES, rank }, 0.0, true) };
-    Sank { pirate, at: [1_000.0, 2_000.0], players, wind: [3.0, 4.0] }
+    Sank { pirate, at: [1_000.0, 2_000.0], players, wind: [3.0, 4.0], struck: false }
 }
 
 #[test]

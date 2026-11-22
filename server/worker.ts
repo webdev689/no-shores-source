@@ -80,11 +80,11 @@ export class RoomHost extends DurableObject<Env> {
     return this.guarded(() => this.room.seaIsland(id), '');
   }
 
-  /** Whether the sea has `account` landed on its island `id` of `seed`, for that island's room: its ship at rest at
-   *  the island's anchorage when last at sea. */
-  async landed(id: number, seed: string, account: string): Promise<boolean> {
-    if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return false;
-    return this.guarded(() => this.room.seaLanded(id, seed, account), false);
+  /** The number of the sea's landing of `account` on its island `id` of `seed`, for that island's room (its ship at
+   *  rest at the island's anchorage when last at sea), or 0 if it is not landed there. */
+  async landed(id: number, seed: string, account: string): Promise<number> {
+    if (seaRoom(this.name) === null || !(await (this.opened ?? Promise.resolve(false)))) return 0;
+    return this.guarded(() => this.room.seaLanded(id, seed, account), 0);
   }
 
   /** Holds the sea's island `id` of `seed` while players stand ashore on it: whether it stands. */
@@ -197,8 +197,8 @@ export class RoomHost extends DurableObject<Env> {
     return opened && this.room.reseed([lootLow, lootHigh, worldLow, worldHigh]);
   }
 
-  /** Asks the sea whether a player's account is landed on this room's island: landed, they may scavenge; not, they
-   *  are let go. A sea that does not answer lets nobody go, and lands nobody. */
+  /** Asks the sea whether a player's account is landed on this room's island: landed, they may scavenge and gather,
+   *  a new landing a new visit; not, they are let go. A sea that does not answer lets nobody go, and lands nobody. */
   private async landOn(
     island: { readonly id: number; readonly seed: string; readonly sea: string },
     player: number,
@@ -207,8 +207,8 @@ export class RoomHost extends DurableObject<Env> {
     const landed = await this.env.ROOMS.getByName(island.sea)
       .landed(island.id, island.seed, account)
       .catch(() => null);
-    if (landed === true) this.guarded(() => this.room.land(account), false);
-    else if (landed === false) {
+    if (landed !== null && landed > 0) this.guarded(() => this.room.land(account, landed), false);
+    else if (landed === 0) {
       const socket = [...this.players].find(([, held]) => held.player === player)?.[0];
       if (socket) this.dismiss(socket, 1008, 'your ship does not lie at this island');
     }
@@ -238,8 +238,9 @@ export class RoomHost extends DurableObject<Env> {
       return;
     }
     held.count = count;
-    // At sea an input before any token sails at once; a token after it still gives the ship back where it was kept.
-    if (seaRoom(this.name) !== null && !held.signed && !held.spoke) {
+    // An input before any token plays unkept: at sea the ship sails at once (a token after it still gives the ship back
+    // where it was kept), and on land the character the room holds is the player's own.
+    if (!held.signed && !held.spoke) {
       held.spoke = true;
       this.guarded(() => this.room.noneKept(player), undefined);
     }
