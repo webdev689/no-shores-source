@@ -45,7 +45,7 @@ const RING = {
 const PILLAR = { heightM: 7, colour: [1, 0.28, 0.36] as const, strength: 0.9, least: 0.35, liftM: 0.5 } as const;
 /** Where a carried shard is held, metres, from the carrier's feet (third person: out to the off hand's side and
  *  before the figure's card, toward the eye, the drawer adding its own height), or from the eye in first person (forward, left, down, low in the view's left). */
-const HAND = { left: 0.32, before: 0.25 } as const;
+const HAND = { left: 0.42, before: 0.3 } as const;
 const HAND_FIRST = { forward: 0.55, left: 0.3, down: 0.42 } as const;
 /** How near a chest the player stands to open it (crates/room/src/public/chest.rs CHEST_REACH, CHEST_HEIGHT). */
 const CHEST_REACH_M = 2.5;

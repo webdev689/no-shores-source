@@ -175,17 +175,21 @@ async function main() {
       const headers = plan.anyPort ? { ...route.request().headers(), origin: 'http://localhost:5173' } : undefined;
       while (fetching >= MOST_FETCHING) await new Promise((wake) => waiting.push(wake));
       fetching += 1;
+      // A read that throws (a timeout) is asked again as a 429 or a 5xx is; one never answered is aborted.
+      const asked = () => route.fetch({ headers }).catch(() => null);
+      const again = (response) => !response || response.status() === 429 || response.status() >= 500;
       let response;
       try {
-        response = await route.fetch({ headers });
-        for (let again = 0; again < 8 && (response.status() === 429 || response.status() >= 500); again++) {
-          await new Promise((wake) => setTimeout(wake, Math.min(8000, 500 * 2 ** again)));
-          response = await route.fetch({ headers });
+        response = await asked();
+        for (let time = 0; time < 8 && again(response); time++) {
+          await new Promise((wake) => setTimeout(wake, Math.min(8000, 500 * 2 ** time)));
+          response = await asked();
         }
       } finally {
         fetching -= 1;
         waiting.shift()?.();
       }
+      if (!response) return route.abort();
       const open = plan.anyPort ? { 'access-control-allow-origin': '*' } : {};
       await route.fulfill({ response, headers: { ...response.headers(), ...open } });
     },
