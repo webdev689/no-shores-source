@@ -1,5 +1,5 @@
 ---
-id: 0132
+id: 136
 title: "run-worker.sh puts a worker's inbox under <worktree>/../reports whatever reports folder the brief names, so items written elsewhere never arrive"
 status: open
 type: internal
