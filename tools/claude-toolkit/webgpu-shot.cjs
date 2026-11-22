@@ -291,7 +291,10 @@ async function main() {
   await browser.close();
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+// The stall probe (webgpu-stall.cjs) puts the same patches in the game's worker.
+module.exports = { OWN_TEXTURE, SHADER_ERRORS };
+if (require.main === module)
+  main().catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });
