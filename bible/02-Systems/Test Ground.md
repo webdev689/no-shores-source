@@ -322,7 +322,7 @@ room stands where the room last saw them, dressed as they dress themselves, show
 screen shows: their weapon drawn or worn, their swings, their casts, the moves played from the panel, and their horse.
 Where the forge does not draw that move for their figure, it plays the move their body is in. The status line says
 which player this is, the room's name, and the link's lag (how much it strays) and the share of
-snapshots lost, as the page measures them. A foe an older room sends with no type is drawn as the crew's own type in its role.
+snapshots lost, as the page measures them. A foe an older room sends with no type is drawn as the Grey Tithe's type in its role.
 
 When the room's socket closes, for a deploy or a dropped network, the page joins the room again by itself ([[Server]],
 "The browser's side"): a new player there, standing where the room puts them, their dress and what their hands hold
