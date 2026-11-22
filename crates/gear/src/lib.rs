@@ -40,6 +40,7 @@ pub mod shape;
 pub mod ship;
 pub mod shown;
 pub mod story;
+mod vault;
 pub mod vendor;
 pub mod vestige;
 pub mod world;
