@@ -4,7 +4,7 @@ use crate::PlayerId;
 use crate::harbour::{Harbours, SUNK_KEPT, WASHED_UP};
 
 /// A square continent 100 km a side, its north-west corner 100 km from the frame's. Of `id` and `climate`: the
-/// fourth, a desert, sets the sea round it the hostiles'; the first, Overlook's, makes it home waters.
+/// fourth, a desert, sets the sea round it the Grey Tithe's; the first, Overlook's, makes it home waters.
 fn sea_round(id: &str, climate: &str) -> Sea {
     let text = format!(
         r#"{{ "continents": [{{ "id": "{id}", "climate": "{climate}", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }}], "isles": [] }}"#

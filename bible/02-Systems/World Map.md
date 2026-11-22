@@ -111,23 +111,23 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 | Continent | Holder | Name |
 |---|---|---|
 | continent-1 | Home: no hostile ship | The Lantern Sea |
-| continent-2 | Contested | The Cairn Straits |
-| continent-3 | Grey Tithe | The Elmwater |
-| continent-4 | Pirates | The Sunscorch Coves |
-| continent-5 | Pirates | The Gilded Reach |
-| continent-6 | Pirates | The Mistwrack |
-| continent-7 | Grey Tithe | The Windward Levy |
-| continent-8 | Grey Tithe | The Fen Deeps |
+| continent-2 | The Lattice | The Cairn Straits |
+| continent-3 | The Lattice | The Elmwater |
+| continent-4 | Grey Tithe | The Sunscorch Coves |
+| continent-5 | The Lattice | The Gilded Reach |
+| continent-6 | The Lattice | The Mistwrack |
+| continent-7 | The Lattice | The Windward Levy |
+| continent-8 | The Lattice | The Fen Deeps |
 | continent-9 | Grey Tithe | The Rimeholt Deep |
 
-- The contested seam: a point whose nearest coast is continent-4's or continent-8's, and which is at most 200 km
-  farther from the other one's coast than from its own (about 100 km either side of their border), is contested
-  whatever its water's holder. It keeps its water's name.
+- The six ruined cities' waters (Cairnwatch's, Elmhaven's, Goldreach's, Mistfall's, Windmere's and Fenhallow's) are
+  the Lattice's, and the Grey Tithe's ships sail them; the Grey Tithe holds the two living ports' waters past home,
+  Sunspire's and Rimeholt's ([[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]). Every
+  point of a water is held as its island's water is. The doors name a holder "home", "grey-tithe" or "lattice".
 - `borders()` says which waters touch: the pairs whose sea cells lie side by side on a 10 km grid. On today's layout
-  there are 17: 1-2, 1-3, 1-4, 1-5, 1-8, 1-9, 2-5, 2-6, 2-9, 3-7, 3-8, 3-9, 4-5, 4-8, 5-6, 7-8 and 7-9. 4-8 is the
-  only border between a pirate water and a Tithe water.
+  there are 17: 1-2, 1-3, 1-4, 1-5, 1-8, 1-9, 2-5, 2-6, 2-9, 3-7, 3-8, 3-9, 4-5, 4-8, 5-6, 7-8 and 7-9.
 - `grid(cell_m)` judges the frame at each cell's middle, row by row from the north-west: one byte a cell, the
-  continent's index for sea with bit 0x80 set on the seam, 255 for land. The [[Held Map]] tints from it.
+  continent's index for sea, 255 for land. The [[Held Map]] tints from it.
 - Speed: a bucket grid of 32 km cells lists, for each bucket, every coast edge that can be nearest to some point in it,
   so a query looks at a few dozen edges; each bucket lists the isles that can be nearest the same way. `water_at`
   takes about 0.4 µs natively; `grid(4_800.0)`, 1024 × 640 cells, about 80 ms natively in release and 100 ms in
@@ -139,7 +139,7 @@ The sea is split into nine waters, one an island ([[The Waters Come From the Isl
 Friendly ships sail between the port cities all the time, seen from land and sea (`traffic.rs`, `traffic_routes.rs`).
 The numbers are Claude's, under the owner's "Friendly ships should dynamically travel. Visible on land and sea".
 
-- **Main ports.** Three port cities remain: Overlook, Sunspire and Rimeholt, one for each holder of the waters
+- **Main ports.** Three port cities remain: Overlook in home waters, Sunspire and Rimeholt in the Grey Tithe's
   ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]). `ports.rs` holds the list
   (`MAIN_PORTS`, `is_main_port`) for the traffic, the city crate and the page; the other six cities are no ports.
 - **Ports.** The caller passes in the cities (the crate reads no files); the traffic keeps those that are port cities,

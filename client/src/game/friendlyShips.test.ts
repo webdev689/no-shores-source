@@ -221,3 +221,17 @@ test('a ship at anchor at its roadstead lies with its sails furled; one under wa
   assert.equal(furled(lying), true, 'at anchor: furled');
   assert.equal(furled(under), false, 'under way: set');
 });
+
+test('a ship the room has taken off its route is drawn on it no more', () => {
+  const fleet = new FriendlyShips(() => [shipAt(2, [100, 0], [0, -1]), shipAt(5, [40, 0], [1, 0])], 5);
+  assert.deepEqual(
+    fleet.near([0, 0], 10_000, 100, 0, new Set([5])).map((ship) => ship.id),
+    [2],
+    'the room keeps the other',
+  );
+  assert.deepEqual(
+    fleet.near([0, 0], 10_000, 100.5, 0.5).map((ship) => ship.id),
+    [5, 2],
+    'let go, both on their routes',
+  );
+});

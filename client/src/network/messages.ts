@@ -59,7 +59,7 @@ export interface SeenShip {
   readonly pace: number;
 }
 
-/** A captain's ship at sea, a hostile's or the Grey Tithe's: its number, where it is, its heading in radians clockwise
+/** A hostile ship at sea, the Grey Tithe's: its number, where it is, its heading in radians clockwise
  *  from north, its faction (1 the Grey Tithe), its rank (1 Minor to 5 Boss), its hull (0 the Sloop to 3
  *  the Frigate), its level (0 none), the distance it is sighted from, metres (0 from a room that sends none), and its
  *  way at sea, metres a second at the world's own time. */

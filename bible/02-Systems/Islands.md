@@ -80,7 +80,7 @@ The sea room holds its islands (`sea_islands.rs`):
   of it: a course that crosses an island in sight of the ship, or one they found, is refused, as the page bends its
   voyages round those alone; and the hostile ships' chart keeps them off every one. A ship a fight or a roll left within
   an island's land is not held by it: it sails out.
-- **Whose guards**: its water's holder, the Grey Tithe or the pirates; on the contested seam, by its seed.
+- **Whose guards**: the Grey Tithe's, in every water but home.
 - **Washing up.** A player who loses a fight washes up at the nearest port city, or at the nearest island they have
   found that still stands where that is nearer: their ship lies at its anchorage with a sunk ship's hurts, unrepaired
   (only a port city repairs), and once the fight's view has panned home they walk ashore on its beach.
@@ -93,8 +93,8 @@ The sea room holds its islands (`sea_islands.rs`):
   it holds that island, by its number and seed, each minute, until the sea says it no longer stands. Its ground and blocks
   stand in the world's metres, the island's own moved to its place, as a node's do, so the page predicts the player on
   the room's own ground to the bit.
-- **Guards.** An isle stands three groups of its holder's foes at its water's levels: one led by a Reeve or a pirate
-  Captain at its Elite rank at the landmark, a band at the door and two to four at the camp, on a navmesh baked over
+- **Guards.** An isle stands three groups of the Grey Tithe's foes at its water's levels: one led by a Reeve at its
+  Elite rank at the landmark, a band at the door and two to four at the camp, on a navmesh baked over
   their posts. A cove holds none.
 - **Landing.** The sea lands an account on an island while its ship lies at rest within 40 m of the island's
   anchorage (the page anchors within 30 m), and keeps it landed while the player stands ashore, until its ship is at

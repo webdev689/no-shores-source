@@ -16,6 +16,8 @@ export const SHIP_FACTIONS = [
   { faction: 0, name: 'Merchants', ship: 'Merchant Sloop' },
   { faction: 1, name: 'The Grey Tithe', ship: 'Tithe Sloop' },
 ] as const;
+/** The faction a friendly ship of the traffic fights under: the players'. */
+const FRIENDLY = 0;
 /** The ranks by their numbers, 1 to 5. */
 export const RANKS = ['Minor', 'Major', 'Elite', 'Miniboss', 'Boss'] as const;
 const BOSS = 5;
@@ -137,7 +139,8 @@ export function placeShipBars(
     name: bar.name,
     faction: bar.faction,
     rank: bar.rank,
-    colour: rankColour(bar.rank),
+    // A friendly ship fights on the players' side: its plate theirs, whatever its rank.
+    colour: bar.faction === FRIENDLY ? FILLS.ally : rankColour(bar.rank),
     share: Math.max(0, Math.min(1, bar.share)),
   });
   const bossWidth = Math.min(BOSS_PLATE.width, BOSS_PLATE.share * width);

@@ -1,12 +1,11 @@
 //! Hostile ships at sea, the Grey Tithe's, from DFO's director trimmed to them alone. Each player at sea rolls for a
 //! ship half a minute after reaching the water and then every minute to two and a half; the water at their ship
-//! decides whether a roll that draws a hostile ship sends one, at which rank and level (`sighting`). It comes near its
-//! sight's distance ahead of them, clear of every player, nearest a lane and heading along it, else nearest a coast.
-//! Its commission is drawn as it comes and kept, and its rank picks its hull and its way. It sails on the clock of the
-//! player it sails by (their voyage's pace, real time where another player shares those waters), never into home
-//! waters, and goes once no player is within 1.1 times its sight. A bold one within `ENGAGE_RANGE` of a player takes
-//! them on, and of a friendly ship attacks it (`friendlies`). One stream, seeded as the sea opens, draws every chance
-//! in a fixed order.
+//! decides whether a roll sends one, at which rank and level (`sighting`). It comes near its sight's distance ahead,
+//! clear of every player, nearest a lane and heading along it, else nearest a coast. Its commission is drawn as it
+//! comes and kept; its rank picks its hull and its way. It sails on the clock of the player it sails by (real time
+//! where another shares those waters), never into home waters, and goes once no player is within 1.1 times its sight.
+//! A bold one within `ENGAGE_RANGE` of a player takes them on, and of a friendly ship attacks it (`friendlies`). One
+//! stream, seeded as the sea opens, draws every chance in a fixed order.
 
 use crate::PlayerId;
 use crate::sea::SHIP_SPEED_M_S;

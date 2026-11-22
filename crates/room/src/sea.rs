@@ -1,12 +1,10 @@
 //! The sea room's law: each player's ship sails the course they set, a line of world points, at one of a ship's pace
 //! steps, and no course crosses a continent's coast. It moves ships by + - * / and square root, finds a heading with
-//! the pure-Rust arctangent, and judges a course against the coasts in whole metres, so every machine agrees. Hostiles
-//! sail among the ships (`hostiles`); a bold one that meets a player fights them, at true scale, by the naval crate's
-//! law, on waters made from the coasts, until it sinks or is gone, while the player's orders steer and fire. One that
-//! meets a friendly ship of the traffic attacks it there with no player (`clash`, `friendlies`), and a player who
-//! comes near that fight joins it beside the friendly ship. A player
-//! may leave the helm and walk their ship's deck (`deck`), its helmsman keeping its course, and take it again at the
-//! wheel.
+//! the pure-Rust arctangent, and judges a course against the coasts in whole metres, so every machine agrees. Hostile
+//! ships sail among them (`hostiles`); a bold one that meets a player fights them at true scale by the naval crate's
+//! law, on waters made from the coasts, while the player's orders steer and fire. One that meets a friendly ship of
+//! the traffic attacks it with no player (`clash`, `friendlies`), and a player who comes near joins beside the friendly
+//! ship. A player may leave the helm and walk their ship's deck (`deck`), its helmsman keeping its course.
 
 use crate::PlayerId;
 use crate::battle::Fights;
@@ -143,7 +141,7 @@ pub(crate) fn whole(&[x, y]: &[f64; 2]) -> Option<Point> {
 }
 
 impl Sea {
-    /// An empty sea round the layout's continents, every ship with `deck`, its hostiles' chances drawn from `seed`, the
+    /// An empty sea round the layout's continents, every ship with `deck`, its hostile ships' chances drawn from `seed`, the
     /// Grey Tithe patrolling the lanes between those of `ports` that are port cities.
     #[must_use]
     pub fn new(layout: &Layout, deck: Deck, seed: u32, ports: &[Port]) -> Self {

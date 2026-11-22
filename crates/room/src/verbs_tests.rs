@@ -42,7 +42,7 @@ fn wear(room: &mut Room, player: PlayerId, id: u32, kind: Kind, perk: &str) {
 
 fn stand(room: &mut Room, x: f64, y: f64) -> FighterId {
     let id = room.next_id();
-    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the hostiles' swordsman");
+    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the Tithe's Collector");
     let (fighter, brain) = ::foes::spawn(foe_type, ::foes::Rank::Major, x, y, 0.0);
     let fighter = Fighter { health: 1000.0, health_max: 1000.0, ..fighter };
     room.foes.insert(id, Foe { fighter, brain, caller: None, level: 0, struck_by: BTreeMap::new(), shield: None });

@@ -129,6 +129,14 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   assert.ok(ball?.muzzle);
 });
 
+test('the sea’s snapshot the server wrote reads back the traffic ids its room took and the friendly ships it keeps', async () => {
+  const sea = readFromRoom(await written('sea.bin'));
+  assert.equal(sea?.kind, 'snapshot');
+  if (sea?.kind !== 'snapshot') return;
+  assert.deepEqual(sea.taken, [2_605, 777]);
+  assert.deepEqual(sea.friendlies, [{ traffic: 2_605, x: 1_500.5, y: 2_200.25, heading: 0.75, hull: 1 }]);
+});
+
 test('the sea’s snapshot the server wrote reads back as its ships, its hostiles, its fights and its walkers on deck', async () => {
   const sea = readFromRoom(await written('sea.bin'));
   const walker = sea?.kind === 'snapshot' ? sea.players[0] : undefined;
@@ -174,8 +182,8 @@ test('the sea’s snapshot the server wrote reads back as its ships, its hostile
   const other = fightViewOf(fights[0]?.view ?? [], named, (faction) => `of ${faction}`).others?.[0];
   assert.deepEqual(
     [other?.name, other?.faction, other?.rank, other?.ship.slice(0, 3), other?.mode],
-    ['of 2', 2, 3, [400, -700, 0.5], 'cruise'],
-    'a hostiles’ Elite fights too',
+    ['of 0', 0, 2, [400, -700, 0.5], 'cruise'],
+    'a friendly Major fights too, beside the player',
   );
   // The same fight without it, as a room from before other captains sends any fight: no others, the rest alike.
   const alone = fightViewOf(fights[1]?.view ?? [], named);

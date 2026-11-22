@@ -47,7 +47,7 @@ fn a_fight_begins_with_a_captain_on_the_ring_round_the_sloop() {
     let (x, y) = (captain[0].as_f64().unwrap_or(0.0) - 180_000.0, captain[1].as_f64().unwrap_or(0.0) - 360_000.0);
     assert!((650.0..=1000.0).contains(&(x * x + y * y).sqrt()));
     assert_eq!(begun["captain"]["name"], "Tithe Sloop");
-    assert_eq!(begun["captain"]["faction"], 2, "the hostiles");
+    assert_eq!(begun["captain"]["faction"], 1, "the Grey Tithe");
     assert_eq!(begun["captain"]["rank"], 2, "a Major");
     assert_eq!(begun["player"]["max_hull"], 240.0);
     assert_eq!(begun["over"], Value::Null);
@@ -159,7 +159,7 @@ fn a_fight_steps_to_its_pinned_fingerprint() {
     // Each leg's: the balls aloft at a leg's end are in it, and the captain's commission and strike share.
     assert_eq!(
         prints.join(" "),
-        "b14f9598cbf5b61b e397e5f02e7a84cc 2ad50820d6be449b 1317600c5c5fbd17 5528fe740d7fac46 d804cb133e9748c9 02caed3cd7fd035f a5ab81f02b0b956c f10178758430a2b5"
+        "e454e050d99fa04e 4e45e8c4510d7789 5e4368a929d3e57e f346355ac1464dd2 a367899ebf6f896f 57367ddfff1fc024 4d74479c465fc08e 3674caafaa897bf9 896c9ea4b9acae3c"
     );
 }
 
@@ -208,7 +208,7 @@ fn fought_with(rank: u8) -> Vec<String> {
 /// Each hull's fight (a Major's Sloop, an Elite's Schooner, a Miniboss's Brig and a Boss's Frigate): its last leg's
 /// fingerprint, which the browser's test (client/src/rules/fightRules.test.ts) fights to through WebAssembly.
 pub const HULL_FIGHTS: [(u8, u8, &str); 4] =
-    [(2, 0, "f10178758430a2b5"), (3, 1, "9ec9292317147a0b"), (4, 2, "0ea01ead5260b810"), (5, 3, "651f5825a886c74a")];
+    [(2, 0, "896c9ea4b9acae3c"), (3, 1, "8228aad2d3c4ddea"), (4, 2, "f56ba4f8a141b009"), (5, 3, "239869e9d951c4cf")];
 
 #[test]
 fn a_fight_against_each_hull_steps_to_its_pinned_fingerprint() {
@@ -269,8 +269,8 @@ fn a_fight_begun_with_captains_sets_each_where_it_is_given_and_shows_the_rest_in
     opened();
     let begun = answer(&fight_begin_json(
         br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
-            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 1 },
-            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 3 },
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 1, "rank": 1 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 1, "rank": 3 },
             { "x": 180000, "y": 359500, "heading": 3.1, "faction": 1, "rank": 2 } ] }"#,
     ));
     assert!(begun.get("error").is_none(), "{begun}");
@@ -294,9 +294,9 @@ fn a_fight_begun_without_captains_has_no_others_and_bad_captains_are_refused() {
         answer(&fight_begin_json(request.as_bytes()))["error"].as_str().map(str::to_owned)
     };
     assert!(refused("[]").is_some(), "no captains in the list");
-    assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 2, "rank": 9 }]"#).is_some(), "no such rank");
+    assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 1, "rank": 9 }]"#).is_some(), "no such rank");
     assert!(refused(r#"[{ "x": 1, "y": 1, "heading": 0, "faction": 0, "rank": 1 }]"#).is_some(), "no such faction");
-    assert!(refused(r#"[{ "x": "a", "y": 1, "heading": 0, "faction": 2, "rank": 1 }]"#).is_some(), "not a number");
+    assert!(refused(r#"[{ "x": "a", "y": 1, "heading": 0, "faction": 1, "rank": 1 }]"#).is_some(), "not a number");
 }
 
 #[test]
@@ -304,7 +304,7 @@ fn a_captain_set_aground_is_refused() {
     opened();
     let refused = answer(&fight_begin_json(
         br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
-            { "x": 260000, "y": 360000, "heading": 0, "faction": 2, "rank": 1 } ] }"#,
+            { "x": 260000, "y": 360000, "heading": 0, "faction": 1, "rank": 1 } ] }"#,
     ));
     assert!(refused["error"].as_str().is_some_and(|error| error.contains("does not float")), "{refused}");
 }
@@ -314,8 +314,8 @@ fn every_captain_shows_how_far_her_hurts_have_settled_her() {
     opened();
     let begun = answer(&fight_begin_json(
         br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
-            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 2 },
-            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 2 } ] }"#,
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 1, "rank": 2 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 1, "rank": 2 } ] }"#,
     ));
     for captain in [&begun["captain"], &begun["others"][0]] {
         assert_eq!(captain["founder"], serde_json::json!([0.0, 0.0, 0.0]), "a sound ship is not settled: {captain}");
@@ -334,7 +334,8 @@ impl Waters for Deep {
 #[test]
 fn an_ambush_whose_captains_have_all_struck_or_sunk_is_over_beaten() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("hostiles sail Majors"));
+    let major =
+        Commission::of(naval::ranks::GREY_TITHE, Rank::Major).unwrap_or_else(|| panic!("the Tithe sails Majors"));
     let mut fight = Fight::ambush(at(0.0), &[(at(500.0), major, 1), (at(-500.0), major, 2)], 3, &Deep, 0.0)
         .unwrap_or_else(|error| panic!("{error}"));
     assert_eq!(over_name(&fight), None);
@@ -347,7 +348,8 @@ fn an_ambush_whose_captains_have_all_struck_or_sunk_is_over_beaten() {
 #[test]
 fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("hostiles sail Majors"));
+    let major =
+        Commission::of(naval::ranks::GREY_TITHE, Rank::Major).unwrap_or_else(|| panic!("the Tithe sails Majors"));
     let mut fight =
         Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
     let damage = &mut fight.ships.get_mut(&CAPTAIN).unwrap_or_else(|| panic!("the captain")).damage;
@@ -365,7 +367,8 @@ fn a_captain_going_down_shows_how_far_she_has_settled_and_her_trim_and_list() {
 #[test]
 fn a_captain_going_down_shows_how_it_will_lie_once_sunk_and_how_soon() {
     let at = |x: f64| Ship { x, y: 0.0, heading: 0.0, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 };
-    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("hostiles sail Majors"));
+    let major =
+        Commission::of(naval::ranks::GREY_TITHE, Rank::Major).unwrap_or_else(|| panic!("the Tithe sails Majors"));
     let mut fight =
         Fight::ambush(at(0.0), &[(at(500.0), major, 1)], 3, &Deep, 0.0).unwrap_or_else(|error| panic!("{error}"));
     assert!(view(&fight, &[], None, &Deep, 0.0)["captain"].get("sunk_founder").is_none(), "afloat, it is not going");
@@ -387,8 +390,8 @@ fn a_captain_given_its_way_comes_on_under_sail_and_one_without_lies_at_rest() {
     opened();
     let begun = answer(&fight_begin_json(
         br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
-            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 2, "way": 5 },
-            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 2, "rank": 2 } ] }"#,
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 1, "rank": 2, "way": 5 },
+            { "x": 179600, "y": 360100, "heading": 1.5, "faction": 1, "rank": 2 } ] }"#,
     ));
     assert!(begun.get("error").is_none(), "{begun}");
     let (coming, resting) = (&begun["captain"]["ship"], &begun["others"][0]["ship"]);
@@ -396,7 +399,7 @@ fn a_captain_given_its_way_comes_on_under_sail_and_one_without_lies_at_rest() {
     assert_eq!((resting[3].as_f64(), resting[7].as_f64()), (Some(0.0), Some(0.0)), "{resting}");
     let refused = answer(&fight_begin_json(
         br#"{ "ship": [180000, 360000, 0, 0, 0, 0, 0, 0], "seed": 4, "time": 1000, "captains": [
-            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 2, "rank": 2, "way": 99 } ] }"#,
+            { "x": 180400, "y": 360000, "heading": 4.7, "faction": 1, "rank": 2, "way": 99 } ] }"#,
     ));
     assert!(refused["error"].as_str().is_some(), "{refused}");
 }

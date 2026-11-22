@@ -29,7 +29,7 @@ fn load_of(code: u8) -> Result<Option<Shot>, String> {
 pub const CALL_CAPTAIN: u8 = 1;
 pub const CALL_SEND_OFF: u8 = 255;
 
-/// The faction and rank a call names: 0 for either is a Major of the hostiles' part of it; any other number must name
+/// The faction and rank a call names: 0 for either is a Major of the Grey Tithe; any other number must name
 /// a faction whose captains sail, or a rank.
 fn commission_of(faction: u8, rank: u8) -> Result<Commission, String> {
     let rank =

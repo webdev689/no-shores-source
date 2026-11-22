@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { SeenHostile, SeenShip } from '../network/messages.ts';
+import type { SeenFriendly } from '../network/seaHarbour.ts';
 import { hullOfCaptain, hullSails, hullWaterline, SLOOP_HULL } from '../ships/hulls.ts';
 import { SailRig, windOff } from '../ships/sails.ts';
 import { captainAtSea, plainCrew } from '../ships/shipCrew.ts';
@@ -128,4 +129,14 @@ test("every other ship carries its people: a player's Sloop its plain crew, a ca
     [undefined, plainCrew('player-2'), captainAtSea('hostile-3', 1, 3)],
     "the player's own carries none here: its people are its own",
   );
+});
+
+test('a friendly ship the room keeps at sea is drawn where the room has it, in its own hull and friendly colours', () => {
+  const friend: SeenFriendly = { traffic: 2_605, x: 600, y: -200, heading: 0.5, hull: 2 };
+  const ships = new SeaShips(undefined, FAIR_LINES);
+  const [, drawn] = ships.ships(1 / 60, 10, 0.4, OWN, [], [], 4, WATER, [friend]);
+  assert.deepEqual([drawn?.hull, drawn?.look.side], [2, 'friendly'], 'never as a hostile ship');
+  assert.deepEqual([drawn?.place.x, drawn?.place.y, drawn?.place.heading], [600, -200, 0.5]);
+  const [, footprint] = ships.hulls(OWN.lies, [], [], 4, [friend]);
+  assert.equal(footprint?.halfLength, (hullWaterline(2).lengthM / 2) * 4);
 });

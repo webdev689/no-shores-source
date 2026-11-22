@@ -62,7 +62,7 @@ out) and its kind:
 | `kill` | Foes falling that the player struck, as a kill's reward is shared | `node`, `place` (within its reach and 40 m past it), `types` (the roster's names), `rank` (this or higher), `island` (`cove` or `isle`), `spawn` (below) |
 | `gather` | A resource node gathered, anywhere | |
 | `cast` | A spell cast | `spell`: its name in `content/arts/arts.json` |
-| `sea` | A hostile ship beaten at sea: sunk, struck or its deck taken | `side` (`tithe` or `pirates`), `how` (`sink`, `strike` or `board`) |
+| `sea` | A hostile ship beaten at sea: sunk, struck or its deck taken | `side` (`tithe`, the Grey Tithe's), `how` (`sink`, `strike` or `board`) |
 | `land` | Landing on a sea island | `island` (`cove` or `isle`) |
 | `scavenge` | A wreck searched on a sea island | |
 | `enter` | Arriving in a node | `node` |

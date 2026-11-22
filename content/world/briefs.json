@@ -1394,7 +1394,7 @@
   ]
  },
  "cutthroat-landing": {
-  "theme": "A pirate landing where no one comes ashore twice.",
+  "theme": "A Grey Tithe landing where no one comes ashore twice.",
   "areas": [
    {
     "kind": "entrance",
@@ -1406,7 +1406,7 @@
    },
    {
     "kind": "camp",
-    "name": "Pirate Camp"
+    "name": "Tithe Camp"
    },
    {
     "kind": "arena",

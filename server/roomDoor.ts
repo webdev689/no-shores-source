@@ -55,7 +55,7 @@ export interface RoomDoor {
   /** Opens a captain's deck as a room alone, as the sea holds one boarded: its hull's number, its faction, its rank
    *  (1 Minor to 5 Boss) and level; false if the hull or the rank is not one. */
   openDeck(hull: number, faction: number, rank: number, level: number): boolean;
-  /** Opens the sea round the continents of a layout file's text, its hostiles' chances drawn from `seed`, its clock
+  /** Opens the sea round the continents of a layout file's text, its hostile ships' chances drawn from `seed`, its clock
    *  started at `worldStartS` (seconds since the Unix epoch, which sets its fights' weather); false if the text is not
    *  a layout. */
   openSea(layoutText: string, seed: number, worldStartS?: number): boolean;

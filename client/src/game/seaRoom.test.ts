@@ -38,6 +38,8 @@ async function joined() {
       told: told.map((numbers) => ({ player: 1, numbers })),
       decks: [],
       islands: [],
+      taken: [],
+      friendlies: [],
     } as unknown as Snapshot);
   return { room, sent, atTick, link };
 }

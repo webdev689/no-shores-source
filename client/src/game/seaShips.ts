@@ -3,6 +3,7 @@
 // and filled by the weather's wind, each in its own hull and its side's colours; and each one's footprint on the
 // water, which the sea leaves out along its own hull line and foams along, its wake and bow wave behind it.
 import type { SeenHostile, SeenShip } from '../network/messages.ts';
+import type { SeenFriendly } from '../network/seaHarbour.ts';
 import { SHIP_SPEED } from '../overworld/voyage.ts';
 import type { Swell } from '../rules/landRules.ts';
 import { factionSide, type ShipSide } from '../ships/dress.ts';
@@ -73,11 +74,13 @@ interface Sailing {
   readonly crew?: ShipCrew;
 }
 
-/** Every ship at sea but the player's: each other player's Sloop, then each captain's ship. */
+/** Every ship at sea but the player's: each other player's Sloop, then each captain's ship, then each friendly ship
+ *  the room keeps off its route, where the room has it. */
 function round(
   others: readonly SeenShip[],
   hostiles: readonly SeenHostile[],
   shown: (hull: number) => number,
+  friendlies: readonly SeenFriendly[],
 ): Sailing[] {
   return [
     ...others.map((ship) => ({
@@ -93,6 +96,13 @@ function round(
       hull: shown(hullOfCaptain(hostile)),
       side: factionSide(hostile.faction),
       crew: captainAtSea(`hostile-${hostile.id}`, hostile.faction, hostile.rank),
+    })),
+    ...friendlies.map((friend) => ({
+      who: `friendly-${friend.traffic}`,
+      lies: { ...friend, underWay: true },
+      hull: shown(friend.hull),
+      side: 'friendly' as const,
+      crew: plainCrew(`friendly-${friend.traffic}`),
     })),
   ];
 }
@@ -188,6 +198,7 @@ export class SeaShips {
     hostiles: readonly SeenHostile[],
     scale: number,
     water: SeaWater,
+    friendlies: readonly SeenFriendly[] = [],
   ): SeaShip[] {
     const riding = ({ who, lies, hull, side, crew }: Sailing, place: ShipPlace | null): SeaShip => {
       const wind = { offDeg: windOff(lies.heading, windBearing), set: lies.underWay };
@@ -202,7 +213,7 @@ export class SeaShips {
       const placed = place ?? this.placeOf(who, lies, scale, water, seconds, time, hull);
       return { hull, place: placed, rig: rigged.rig, look: { side }, ...(crew ? { crew } : {}) };
     };
-    const ships = round(others, hostiles, this.shown);
+    const ships = round(others, hostiles, this.shown, friendlies);
     const sailing = new Set(['own', ...ships.map((ship) => ship.who)]);
     for (const who of this.rigs.keys()) if (!sailing.has(who)) this.rigs.delete(who);
     for (const who of this.swings.keys()) if (!sailing.has(who)) this.swings.delete(who);
@@ -214,7 +225,13 @@ export class SeaShips {
   /** Each ship's footprint on the water, drawn `scale` times its size, in its own hull's line, with its way for its
    *  wake and its bow's spray: the player's first, then every other player's and every hostile's, nearest its first,
    *  as many as the water holds (`HULLS`). */
-  hulls(own: Lies, others: readonly SeenShip[], hostiles: readonly SeenHostile[], scale: number): HullMask[] {
+  hulls(
+    own: Lies,
+    others: readonly SeenShip[],
+    hostiles: readonly SeenHostile[],
+    scale: number,
+    friendlies: readonly SeenFriendly[] = [],
+  ): HullMask[] {
     const footprint = (who: string, lies: Lies, hull: number): HullMask => {
       const { x, y, heading } = lies;
       const { lengthM, beamM } = hullWaterline(hull);
@@ -223,7 +240,9 @@ export class SeaShips {
       const line = this.lines.line(hull);
       return { x, y, heading, halfLength, halfBeam, way: lies.underWay ? UNDER_WAY : 0, line, scale, spray };
     };
-    const near = round(others, hostiles, this.shown).map((ship) => footprint(ship.who, ship.lies, ship.hull));
+    const near = round(others, hostiles, this.shown, friendlies).map((ship) =>
+      footprint(ship.who, ship.lies, ship.hull),
+    );
     const away = (mask: HullMask) => Math.hypot(mask.x - own.x, mask.y - own.y);
     return [footprint('own', own, SLOOP_HULL), ...near.sort((one, other) => away(one) - away(other))].slice(0, HULLS);
   }

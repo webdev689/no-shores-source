@@ -95,7 +95,7 @@ pub enum SpawnAsk {
 
 impl SpawnAsk {
     /// A foe asked for by its role alone (1 skirmisher to 5 captain, no type), as a page from before the roster asks:
-    /// the hostiles' type in that role, a Major, or at its first rank if it comes in none (their Captain an Elite).
+    /// the crew's own type in that role, a Major, or at its first rank if it comes in none (their Captain an Elite).
     #[must_use]
     pub fn by_role(role: u8, shield: u8) -> Option<Self> {
         let foe_type = ::foes::in_role(::foes::factions::CREW, ::foes::Role::from_number(role)?)?;

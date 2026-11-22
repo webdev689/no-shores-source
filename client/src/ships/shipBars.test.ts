@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { startWatersRules } from '../rules/watersRules.ts';
 import { BarLayout } from '../plus/barLayout.ts';
+import { FILLS } from '../plus/tones.ts';
 import {
   barOver,
   flashLeft,
@@ -23,15 +24,15 @@ test('a bar is red for a Minor, orange for a Major and yellow for an Elite, a Mi
   assert.match(major ?? '', /^#e07a/, 'orange');
 });
 
-test('a captain’s Sloop is named for its faction', () => {
-  assert.deepEqual([shipName(1), shipName(2)], ['Tithe Sloop', 'Tithe Sloop']);
+test('a captain’s Sloop is named for its faction: the Tithe’s, else a friendly merchant’s', () => {
+  assert.deepEqual([shipName(1), shipName(0)], ['Tithe Sloop', 'Merchant Sloop']);
   assert.deepEqual(
-    [0, 1, 2, 3].map((hull) => [shipName(1, hull), shipName(2, hull)]),
+    [0, 1, 2, 3].map((hull) => [shipName(1, hull), shipName(0, hull)]),
     [
-      ['Tithe Sloop', 'Tithe Sloop'],
-      ['Tithe Schooner', 'Tithe Schooner'],
-      ['Tithe Brig', 'Tithe Brig'],
-      ['Tithe Frigate', 'Tithe Frigate'],
+      ['Tithe Sloop', 'Merchant Sloop'],
+      ['Tithe Schooner', 'Merchant Schooner'],
+      ['Tithe Brig', 'Merchant Brig'],
+      ['Tithe Frigate', 'Merchant Frigate'],
     ],
     'named for its faction and its hull, as the rules name it',
   );
@@ -41,7 +42,7 @@ test('its bar carries its number and faction, for its emblem; a fight’s one ca
   const sailing = { name: 'Tithe Sloop', faction: 1, rank: 3, hull: 50, maxHull: 200, state: 'sailing' };
   const place = { ship: [100, 40], pose: [1] };
   const bar = barOver({ ...sailing, ...place, id: 7 }, { leftM: 0, topM: 0 }, 1);
-  assert.deepEqual(bar && [bar.key, bar.faction, bar.share], [7, 2, 0.25]);
+  assert.deepEqual(bar && [bar.key, bar.faction, bar.share], [7, 1, 0.25]);
   assert.equal(barOver({ ...sailing, ...place }, { leftM: 0, topM: 0 }, 1)?.key, 0);
   assert.equal(barOver({ ...sailing, ...place, state: 'sunk' }, { leftM: 0, topM: 0 }, 1), null, 'none once sunk');
 });
@@ -143,5 +144,21 @@ test('every ship is named as the rules name it: each faction, each hull', async 
   shipNames.forEach((hulls, faction) =>
     hulls.forEach((name, hull) => assert.equal(shipName(faction, hull), name, `faction ${faction}, hull ${hull}`)),
   );
-  assert.equal(shipNames.length, 3, 'the players’, the Tithe’s and the hostiles’');
+  assert.equal(shipNames.length, 2, 'a friendly merchant’s and the Tithe’s');
+});
+
+test('a friendly ship’s plate is in the players’ side’s blue, whatever its rank', () => {
+  const over = [20, 30, 16] as const;
+  const placed = placeShipBars(
+    [
+      { key: 2, name: 'Merchant Brig', faction: 0, rank: 2, share: 1, over },
+      { key: 1, name: 'Tithe Sloop', faction: 1, rank: 2, share: 1, over: [60, 30, 16] },
+    ],
+    ([x, y]) => ({ x: x * 10, y: y * 10, depth: 100 }),
+    800,
+    new BarLayout(),
+    Infinity,
+  );
+  const colourOf = (key: number) => placed.find((bar) => bar.key === key)?.colour;
+  assert.deepEqual([colourOf(2), colourOf(1)], [FILLS.ally, rankColour(2)]);
 });

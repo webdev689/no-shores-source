@@ -11,7 +11,7 @@ fn sailed(fight: &Fight, id: naval::shots::ShipId) -> sailing::ship::Ship {
 }
 
 /// One square continent, 100 km a side, its north-west corner 100 km from the frame's: the fourth island, so the sea
-/// round it is the hostiles'.
+/// round it is the Grey Tithe's.
 fn sea() -> Sea {
     let text = r#"{ "continents": [{ "id": "continent-4", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] }], "isles": [] }"#;
     Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[])
@@ -671,7 +671,7 @@ fn a_fight_with_a_chased_wary_ship_who_will_not_engage_ends_once_it_is_out_of_re
     assert!(lasted.is_some(), "it broke off within its give-up time and the fight ended for the player too");
 }
 
-/// Overlook's island west and the hostiles' east, home waters giving way to theirs about 300 km east: a point 200 m
+/// Overlook's island west and the Grey Tithe's east, home waters giving way to theirs about 300 km east: a point 200 m
 /// inside their edge, and one 400 m outside it.
 fn by_home_waters() -> (Sea, [f64; 2], [f64; 2]) {
     let text = r#"{ "continents": [

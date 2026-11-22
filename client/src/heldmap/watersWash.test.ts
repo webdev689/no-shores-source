@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { CRYSTAL } from '../city/crystal.ts';
 import { ruinedPlaces } from './heldMapWaters.ts';
 import {
   chartedWaters,
@@ -180,17 +179,9 @@ test('the holders’ washes are told apart on the parchment, by colour or by the
   }
 });
 
-test('the Lattice’s waters are washed in its crystal’s red, and no holder is the hostiles’ or contested', () => {
-  const srgb = (linear: number) =>
-    Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));
-  const lit = CRYSTAL.red.map((channel) =>
-    srgb((channel * 4) / 3)
-      .toString(16)
-      .padStart(2, '0'),
-  );
-  assert.equal(HOLDER_COLOURS.lattice, `#${lit.join('')}`, 'the crystal’s red, lit a third again');
+test('no holder is but home, the Grey Tithe and the Lattice, and the Lattice and the Tithe are hatched', () => {
   assert.deepEqual(Object.keys(HOLDER_COLOURS).sort(), ['grey-tithe', 'home', 'lattice']);
-  assert.deepEqual(Object.keys(HATCHES).sort(), ['grey-tithe', 'lattice'], 'the Lattice hatched as the Tithe is');
+  assert.deepEqual(Object.keys(HATCHES).sort(), ['grey-tithe', 'lattice']);
 });
 
 test('a holder’s wash as the map shows it is its colour at the wash’s strength over the parchment', () => {

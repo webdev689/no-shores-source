@@ -20,7 +20,7 @@ fn room_with_foe(rank: Rank) -> (Room, PlayerId, FighterId) {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let player = room.join().expect("a room with space");
     let id = room.next_id();
-    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the hostiles' swordsman");
+    let foe_type = ::foes::foe_type(SWORDSMAN).expect("the Tithe's Collector");
     let (fighter, mut brain) = ::foes::spawn(foe_type, rank, 0.0, -1.5, 0.0);
     brain.rank = rank;
     let fighter = Fighter { health: 1000.0, health_max: 1000.0, ..fighter };

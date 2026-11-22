@@ -106,7 +106,7 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `intro` | First light over the cloud; then down through it to Saltmere, ships under sail off its harbour and gulls over it, the title, "Press any key to begin" ("Tap to begin" on a touch screen, "Press A to begin" on the pad, A being the jump's button as bound; Space begins too) | shown |
 | `storm` | The camera pulls up and away over the sea as the storm comes on; a strike's flash covers the leap far out; low over the swell to the Brig, then well out along its port side (16 m and more, past its yards and its spanker's swing), its crew at work across its deck, and in under the spanker's boom to the helm's own shot off its port side, outboard of its rail ([[The Prologue's Camera Flights Stand Clear and Go Slower]]), where it ends riding its deck as the helm's camera does (all its rise and fall at the helm, a quarter of its pitch and roll about it), so the cut never jumps; skipped, it leaves the full storm and its lightning without a sound or a flash | shown |
 | `creation` | At the helm in the storm: the account, then the look, the whole figure in armour, sword sheathed and shield slung | played |
-| `sighted` | From the shot the creation last drew (framed for the screen it was framed for), the camera turns from the player to look down its deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over its stern as three pirate Sloops come out of the dark, and comes down behind it through the fight's own lens | shown |
+| `sighted` | From the shot the creation last drew (framed for the screen it was framed for), the camera turns from the player to look down its deck; the lookout and the bosun cry out and the mate and the gunner speak; the camera pulls out over its stern as three Grey Tithe Sloops come out of the dark, and comes down behind it through the fight's own lens | shown |
 | `battle` | The sea's own fight against the three, every ship taken up under the sail and way it was sighted with and sailing in the story's storm wind, never the world's, the Brig drawn as its own, the crew crying out at hits and sinkings; the tracker's task "Defeat their crews", the ships fighting the player still afloat and "No need to sink them", until every one is beaten, sunk or struck; the fight's readout, its keys and DFO's messages as toasts | played |
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them (whichever shoulder leaves it the more room from the foremast and its shrouds), then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
@@ -186,9 +186,9 @@ scene of its own (`calmCutOff`): the calm ends 1.3 s into it and the ram's first
 nearest gentle strand to the plaza, low by the water, clear of the city's pads and 260 m from its harbour
 (`findBeach`), found on the exact ground behind the deep's black.
 
-**Who is aboard the other ships** ([[Game]], "At sea"). The three pirate Sloops carry their people from the sighting
-on, as the sea's ships do: each pirate Major's Captain at its wheel, and its Brute, Skirmisher and Swordsman about its
-deck; in the fight they follow its men left and its sides run out ([[Naval Combat]], "How it looks"). Each wreck in the
+**Who is aboard the other ships** ([[Game]], "At sea"). The three Sloops that attack first, Majors of the Grey Tithe
+(`tithe-1` to `tithe-3`), carry their people from the sighting on, as the sea's ships do: each one's Tithe-Mate at its
+wheel, and its Bosun, Deckhand and Hookman about its deck; in the fight they follow its men left and its sides run out ([[Naval Combat]], "How it looks"). Each wreck in the
 calm and the ram keeps the hands the fight left it, its captain stood off the wheel; one going down carries none, and a
 story begun at the calm lays each struck with its crew whole. Thule's Frigate comes with Captain Brannoc Thule at its
 wheel and six of his deck's hands about it. The stage draws them (`Stage.draw`); the Brig's own crew the story places
@@ -213,7 +213,7 @@ the clouds and the decks, and its thunder comes as late as its distance makes it
 
 **The music** is the game's own director playing the story's songs ([[Music]]), one theme told through them. Every
 frame each beat asks for its moment (`music()`): the title, whole, over the intro; the storm's song without its peak
-as the storm comes on, only its floor and tension at the helm, whole as the pirates come; the sea's own fight song once
+as the storm comes on, only its floor and tension at the helm, whole as the Grey Tithe come; the sea's own fight song once
 the fight is on; the calm's flute; the ram's swell, which the crash cuts off with everything else. The wake is silent
 over the ringing and the heart until the camera leaves the eyes. Then the Boarding's first phase plays, tense, and
 grows with each fight; Thule's cry wakes his own score, and losing to him plays its end, which rings over the throw.
@@ -263,8 +263,8 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   turned about its far end and settled a little lower at its break. Its mainmast is down, its waist on the struck
   side fallen into its hold, its foremast standing with its canvas burnt to rags. The Frigate's bowsprit is torn
   away and its mizzen down; its deck is burnt through over its gun deck, its side stove in amidships and abreast its
-  gun deck to port, and its port bulwark broken forward. A pirate Sloop sunk in the fight at sea floats on its beam
-  ends east of the Frigate's bow, high enough that its side stays out of the swell.
+  gun deck to port, and its port bulwark broken forward. A Sloop sunk in the fight at sea floats on its beam ends
+  east of the Frigate's bow, high enough that its side stays out of the swell.
 - **The wreckage** (`wreck_fields.py`). Six wide rafts of torn decking, each laid within an ellipse a little over the
   sea, on lengths of mast and casks: the wreckage of the Brig's waist and its torn deck between its halves, one beside
   its fore deck, the wreckage the Sloop drifted into, and two off the Frigate's port bow and port quarter. Broken
@@ -303,8 +303,9 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   its port bow, its gun deck and the wreckage off its port quarter, and its quarterdeck. Each is an area with a
   checkpoint; entered, its checkpoint is where the next respawn stands the player. The first, where the player
   wakes, is quiet: no wave, nothing across its way on, room for the teaching. Each between it and the arena
-  holds a wave of Grey Tithe crew and pirates, Minor and Major, and the Tithe-Mates and pirate Captains that come only
-  as Elites, all boarding as one side against the player and the Brig's crew ([[The Wreck's Boarders Are One Side]]),
+  holds a wave of the Grey Tithe's deck crew (Deckhands, Hookmen, Pistoleers and Bosuns), Minor and Major, and the
+  Tithe-Mates that come only as Elites, all boarding against the player and the Brig's crew
+  ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]),
   each below Thule as hard to bring down as a Major ([[The Prologue's Elites Are as Hard to Bring Down as a Major]]),
   stood as the player enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
   reaches it; and three spots near the wave on open deck where the Brig's crew stand (`crew`). At most 6 of the

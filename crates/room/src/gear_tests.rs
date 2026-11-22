@@ -501,7 +501,7 @@ fn the_test_grounds_hands_pass_over_a_carried_atheric_while_another_loadout_wear
 
 #[test]
 fn a_kills_pay_by_rank_is_its_ranks_health_against_a_majors() {
-    let foe_type = ::foes::foe_type(14).expect("the hostiles' swordsman");
+    let foe_type = ::foes::foe_type(::foes::roster::COLLECTOR).expect("the Tithe's Collector");
     let major = foe_type.numbers(::foes::Rank::Major, 1).health;
     for (rank, pay) in ::foes::Rank::ALL.into_iter().zip(gear::rewards::RANK_PAY) {
         assert!((foe_type.numbers(rank, 1).health / major - pay).abs() < 1e-12, "{rank:?}");

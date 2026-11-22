@@ -16,7 +16,7 @@ use std::collections::BTreeMap;
 /// A brute standing as a foe of a rank at (0, y), struck by the player in the last moment, and paid.
 fn kill(room: &mut Room, player: PlayerId, rank: ::foes::Rank, y: f64) {
     let id = room.next_id();
-    let (foe_type, _) = hostile_in(::foes::Role::Brute).expect("the hostiles' brute");
+    let (foe_type, _) = hostile_in(::foes::Role::Brute).expect("the Tithe's Enforcer");
     let (fighter, mut brain) = ::foes::spawn(foe_type, rank, 0.0, y, 0.0);
     // Its type may not come in every rank: what it drops is the rank's alone.
     brain.rank = rank;

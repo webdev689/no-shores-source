@@ -171,7 +171,6 @@ picture's grain, the picture's lightness about its mean kept:
 | A player's | As painted | None | As painted | Overlook's blue |
 | A friendly ship (merchantmen) | Natural timber, as painted | Overlook's blue | White | Overlook's blue |
 | The Grey Tithe | Slate grey | Bone | Grey | Its canvas grey, the balance in dark slate |
-| The pirates | Black | Red | Dark | Black, the skull |
 
 - **Its hull's paint** covers the outside of its shell, tagged when its model loads (`tagShip`). Its breadth is
   sampled across its hull's faces in slices 0.25 m along it and 0.1 m deep, taken from its planks and wales (its
@@ -189,10 +188,10 @@ picture's grain, the picture's lightness about its mean kept:
   length long and two thirds as deep, its hoist down the mast. It streams the way the wind blows and waves along its
   length, a crest and a half on it, running at 1.4 a second. Its picture is `flagPictures`, bearing the faction's
   emblem where the [[Interface]]'s plates have one, in its own tones or, on the Grey Tithe's, shaded from its dark
-  slate, so its grey flag never reads as the pirates' black at a fight's range.
+  slate.
 
 Which hull a ship sails is the wire's word, a number (0 the Sloop, 1 the Schooner, 2 the Brig, 3 the Frigate,
-`hullName`): a `Pirate`'s `hull` at sea and a fleet vessel's, a captain's `hull_kind` in a fight's view, where `hull`
+`hullName`): a `Hostile`'s `hull` at sea, a friendly ship's the room keeps, and a fleet vessel's, a captain's `hull_kind` in a fight's view, where `hull`
 is its hull points (`hullOfCaptain`). A number with no model, or none sent, is drawn as the Sloop.
 
 ## Its sails

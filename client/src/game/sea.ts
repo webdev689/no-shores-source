@@ -134,6 +134,11 @@ export class Sea {
     return this.passage.position;
   }
 
+  /** The traffic ids the room has taken off their routes: the friendly ships it draws where it has them. */
+  get taken(): ReadonlySet<number> {
+    return this.room?.taken ?? new Set();
+  }
+
   /** The landmass drawn and charted from now on. */
   setLandmass(landmass: Landmass): void {
     this.landmass = landmass;
@@ -439,6 +444,7 @@ export class Sea {
     }
     const others = this.room?.others ?? [];
     const hostiles = this.room?.hostiles ?? [];
+    const friendlies = this.room?.friendlies ?? [];
     const aboard = combat ? combat.ownAt(scale) : lying;
     const kind = view.kind === 'sail' || view.kind === 'landing' ? view.kind : 'other';
     const marks = seaMarks(
@@ -461,9 +467,19 @@ export class Sea {
       shot: shown,
       ships: combat
         ? combat.ships(dt, time, windBearing, scale, this.boarding.boardedCaptain)
-        : this.drawn.ships(dt, time, windBearing, { lies: own, place }, others, hostiles, scale, this.water),
+        : this.drawn.ships(
+            dt,
+            time,
+            windBearing,
+            { lies: own, place },
+            others,
+            hostiles,
+            scale,
+            this.water,
+            friendlies,
+          ),
       shipScale: scale,
-      hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, hostiles, scale),
+      hulls: combat ? combat.hulls(scale) : this.drawn.hulls(own, others, hostiles, scale, friendlies),
       bars: combat?.bars(scale) ?? [],
       marks: marks.shown,
       figures: boarded

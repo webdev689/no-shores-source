@@ -1,7 +1,7 @@
 use super::*;
 use crate::sea::Coast;
 
-/// Overlook's island, home waters, 100 km a side west, and the fourth island, the hostiles', 100 km a side east,
+/// Overlook's island, home waters, 100 km a side west, and the fourth island, the Grey Tithe's, 100 km a side east,
 /// 200 km of sea between.
 fn layout() -> Layout {
     let text = r#"{ "continents": [

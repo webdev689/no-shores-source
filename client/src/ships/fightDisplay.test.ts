@@ -199,3 +199,16 @@ test("the burst on the bar is the player's own, from the rules' view", () => {
   const burst = model.ship?.abilities.find((ability) => ability.id === 'burst');
   assert.deepEqual([burst?.state, burst?.running], ['active', 0.5]);
 });
+
+test("a friendly ship's card is the players' side's, and a Tithe ship's its rank's though it fights the friendly one", () => {
+  const card = (near: FightCaptain) =>
+    fightDisplay({ ...VIEW, captain: near, others: [] }, new FightFeel(1), 0, {
+      boardable: false,
+      boardKey: 'E',
+      braceKey: 'C',
+    }).card;
+  const friendly = card(captain('Merchant Schooner', 90, { faction: 0, hostile: false }));
+  assert.deepEqual([friendly?.band, friendly?.hostile], ['ally', false]);
+  const tithe = card(captain('Tithe Sloop', 90, { hostile: false }));
+  assert.notEqual(tithe?.band, 'ally', 'the Tithe fights the players, whichever ship it marks now');
+});

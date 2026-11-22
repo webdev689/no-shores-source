@@ -19,6 +19,9 @@ const wrapped = (radians: number) => Math.atan2(Math.sin(radians), Math.cos(radi
 const bearingOf = (from: readonly number[], to: readonly number[], heading: number) =>
   wrapped(Math.atan2((to[0] ?? 0) - (from[0] ?? 0), (from[1] ?? 0) - (to[1] ?? 0)) - heading);
 
+/** The faction a friendly ship of the traffic fights under: the players' (crates/naval/src/ranks.rs PLAYERS). */
+const FRIENDLY = 0;
+
 /** The sides `captain` has run out at `ship`: afloat, hostile, and the ship within its tell's reach of that beam. */
 export function runOutAt(captain: FightCaptain, ship: readonly number[]): SideName[] {
   if (captain.state !== 'afloat' || !captain.hostile) return [];
@@ -109,7 +112,8 @@ export function fightDisplay(
           hostile: near.hostile,
           boardKey: state === 'struck' && board.boardable ? board.boardKey : null,
           faction: near.faction,
-          band: near.hostile ? rankBand(near.rank) : 'ally',
+          // A friendly ship fights for the players; a Tithe ship against them, whichever ship it marks now.
+          band: near.faction === FRIENDLY ? 'ally' : rankBand(near.rank),
         }
       : null,
     tally: feel.tally(now),

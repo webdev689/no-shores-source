@@ -3,8 +3,6 @@
 // the sea cell of it farthest from land and from other waters. Worked out on the grid the waters' rules judge, which
 // the game hands over in the map's own terms (`MapWaters`); nothing here draws.
 
-import { CRYSTAL } from '../city/crystal.ts';
-
 /** Who holds a water, as the waters' rules name them. */
 export type WaterHolder = 'home' | 'grey-tithe' | 'lattice';
 
@@ -28,27 +26,15 @@ export interface MapWaters {
   readonly mainPorts: readonly string[];
 }
 
-/** A linear colour as `#rrggbb`. */
-const hexOf = (linear: readonly number[]) =>
-  `#${linear
-    .map((channel) => {
-      const encoded = channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055;
-      return Math.round(255 * encoded)
-        .toString(16)
-        .padStart(2, '0');
-    })
-    .join('')}`;
-
-/** The Lattice's crystal's red lit a third again, so its wash darkens the parchment no more than the others'. */
-const LATTICE_LIT = 4 / 3;
-
 /** Each holder's colour on the map, and the word its key names it by. Washed over the parchment at `WASH_STRENGTH`,
  *  none darkens it by more than 6 in lightness; two washes that are not told apart by at least 10 in CIEDE2000 are by
  *  their hatching (`HATCHES`). The Grey Tithe is the slate its ships are, the Lattice its crystal's red, lit. */
 export const HOLDER_COLOURS: Readonly<Record<WaterHolder, string>> = {
   home: '#3f7f6f',
   'grey-tithe': '#6b7785',
-  lattice: hexOf(CRYSTAL.red.map((channel) => channel * LATTICE_LIT)),
+  // The crystal's red (city/crystal.ts `CRYSTAL.red`) lit a third again, so its wash darkens the parchment no more
+  // than the others' (the game's test holds the two alike).
+  lattice: '#de3d49',
 };
 /** How strongly the holders' colours are washed over the charted sea; and the level lines laid over the Grey Tithe's
  *  wash in a dark slate and over the Lattice's in a dark crystal red, each line's colour, strength and spacing, device

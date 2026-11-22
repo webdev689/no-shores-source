@@ -199,8 +199,8 @@ fn fights_seen() -> Vec<room::battle::FightSeen> {
         sail_way: 0.0,
         rung: 2,
     };
-    let hostile_elite = Commission { faction: naval::ranks::GREY_TITHE, rank: naval::ranks::Rank::Elite };
-    let captains = [(at(0.0, -700.0, 3.0), TITHE_MINIBOSS, 7), (at(400.0, -700.0, 0.5), hostile_elite, 8)];
+    let friendly = Commission { faction: naval::ranks::PLAYERS, rank: naval::ranks::Rank::Major };
+    let captains = [(at(0.0, -700.0, 3.0), TITHE_MINIBOSS, 7), (at(400.0, -700.0, 0.5), friendly, 8)];
     let aim = naval::fight::Aim { bearing_deg: 90.0, range_m: 80.0, ray: None };
     let (player, captain) = (naval::fight::PLAYER, naval::fight::CAPTAIN);
     let events = [
@@ -328,7 +328,7 @@ fn a_foe_asked_for_by_its_role_alone_is_the_hostiles_type_in_that_role() {
         read_input(builder.finished_data()).unwrap().spawn
     };
     let foe = |foe_type, rank| Some(SpawnAsk::Foe { foe_type, rank, shield: 0 });
-    // The hostiles' Skirmisher to their Brute and Archer as Majors; their Captain at his first rank, an Elite.
+    // The crew's Skirmisher to their Brute and Archer as Majors; their Captain at his first rank, an Elite.
     let roles: Vec<_> = (1..=5).map(asked).collect();
     assert_eq!(roles, [foe(13, 2), foe(14, 2), foe(15, 2), foe(16, 2), foe(17, 3)]);
     assert_eq!((asked(0), asked(6), asked(CLEAR_FOES)), (None, None, Some(SpawnAsk::Clear)));
@@ -415,7 +415,7 @@ fn a_welcome_and_snapshots_read_back_to_the_bit() {
     assert_eq!(foe.id(), 12);
     assert!(near(&foes[0].fighter.glance(), glance), "a foe's glance crosses packed");
     // Its role, type, rank, faction, phase, alertness and level; its shield; its debuffs' ticks; no one's companion.
-    assert_eq!(rest, [3.0, 15.0, 3.0, 2.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0]);
+    assert_eq!(rest, [3.0, 4.0, 3.0, 1.0, 1.0, 2.0, 7.0, 3.0, 40.0, 40.0, 200.0, 0.0, 90.0, 0.0, 0.0, 0.0, 0.0]);
     assert_eq!(foe.name(), Some("The Warden of the Fissure"), "the name it stands under crosses");
     let event = read.public_event().unwrap();
     let counts = (event.kind(), event.phase(), event.ticks_left(), event.next_kind(), event.next_ticks());
@@ -560,7 +560,19 @@ fn the_bytes_for_the_clients_test_are_written() {
     std::fs::write(format!("{folder}/joined.bin"), joined_bytes(7, &DRESSED, Some(NODE), 1_234_567.25)).unwrap();
     let snapshot = snapshot_bytes(&snapshot(&players, &foes, (&shots, &lines), &public));
     std::fs::write(format!("{folder}/snapshot.bin"), snapshot).unwrap();
-    let sea = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &SeaHarbour::default());
+    let friend = room::friendlies::Friendly {
+        traffic: 2_605,
+        hull: sailing::HullKind::Schooner,
+        seed: 3,
+        level: 9,
+        sight_m: 5e3,
+        x: 1_500.5,
+        y: 2_200.25,
+        heading: 0.75,
+        to: [0.0; 2],
+    };
+    let harbour = SeaHarbour { taken: vec![2_605, 777], friendlies: vec![friend], ..SeaHarbour::default() };
+    let sea = sea_snapshot_bytes(77, &SHIPS, &HOSTILES, &fights_seen(), &aboard_seen(), &harbour);
     std::fs::write(format!("{folder}/sea.bin"), sea).unwrap();
 }
 
