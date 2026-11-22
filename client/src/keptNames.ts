@@ -10,7 +10,7 @@ const former = (key: string): boolean => key.startsWith(`${FORMER}.`) || key ===
 
 /** Moves a storage's keys kept under the former name to the game's own; one already kept there stays as it is. */
 export function moveKept(storage: Storage): void {
-  const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index)).filter(
+  const keys = Array.from({ length: storage.length }, (unused, index) => storage.key(index)).filter(
     (key): key is string => key !== null && former(key),
   );
   for (const key of keys) {
