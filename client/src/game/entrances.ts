@@ -66,9 +66,12 @@ export function standOf(entrance: Entrance): [number, number, number] {
   return [entrance.x, entrance.y, entrance.ground + (ENTRANCE_LIFTS_M[entrance.model] ?? 0)];
 }
 
-/** An entrance's door: its quad's middle in the world and the way its face looks out, across the ground; null where
- *  the props' table gives its model no door. */
-export function doorOf(entrance: Entrance, props: PropTable): { middle: Point; out: readonly [number, number] } | null {
+/** An entrance's door: its quad's middle in the world, the way its face looks out, across the ground, and the height
+ *  of its lintel; null where the props' table gives its model no door. */
+export function doorOf(
+  entrance: Entrance,
+  props: PropTable,
+): { middle: Point; out: readonly [number, number]; top: number } | null {
   const door = props[ENTRANCE_MODELS[entrance.model] ?? -1]?.doors?.[0];
   if (!door) return null;
   const middle = turned(
@@ -81,6 +84,7 @@ export function doorOf(entrance: Entrance, props: PropTable): { middle: Point; o
   return {
     middle: [stand[0] + middle[0], stand[1] + middle[1], stand[2] + middle[2]],
     out: [outX / length, outY / length],
+    top: stand[2] + Math.max(door.a[1], door.b[1], door.c[1]),
   };
 }
 

@@ -12,7 +12,8 @@ the owner), the owner answered: "In general".
 
 ## What it settles
 
-- "Avoid HTML when possible", in general: not only in a page made to test or measure something, but in the game's
-  interface and in what is shared with the owner.
+- "Avoid HTML when possible", in general: in a page made to test or measure something, and in what is shared with
+  the owner.
+- The game's interface goes further, with no HTML at all ([[The Interface Uses No HTML, Now or Later]]).
 
 [[Interface]], [[Toolkit]].

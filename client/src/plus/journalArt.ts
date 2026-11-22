@@ -1,6 +1,6 @@
 // The Journal's small pictures, drawn pixel for pixel as the emblems are: DFO's timer hourglass, in the kit's brass,
 // and the quests' banners, each a shape in brass bearing a charge on a field of its own.
-import { type Pixels, urlOf } from './emblems.ts';
+import { type Pixels, svgOf } from './emblems.ts';
 import { TONES } from './tones.ts';
 
 /** DFO's hourglass, its sand run through the neck. */
@@ -23,7 +23,7 @@ const HOURGLASS: Pixels = {
 };
 
 /** DFO's timer hourglass, nine by twelve: brass caps, glass sides and the sand running through its neck. */
-export const HOURGLASS_URL = urlOf(HOURGLASS);
+export const HOURGLASS_SVG = svgOf(HOURGLASS);
 
 /** A story mission's swallowtail pennant, sixteen by twenty-four: a brass hem, blood shaded at its right. */
 const PENNANT: readonly string[] = [
@@ -311,7 +311,7 @@ const BANNERS: ReadonlyMap<string, string> = new Map(
   BANNER_LIST.map(([key, charge, field]) => {
     const pennant = key.startsWith('story');
     const rows = charged(pennant ? PENNANT : SHIELD, CHARGES[charge], pennant ? 10.5 : 11.5);
-    return [key, urlOf({ rows, tones: { ...BRASS_EDGE, ...CHARGE_TONES, ...field } })];
+    return [key, svgOf({ rows, tones: { ...BRASS_EDGE, ...CHARGE_TONES, ...field } })];
   }),
 );
 
@@ -319,7 +319,7 @@ const BANNERS: ReadonlyMap<string, string> = new Map(
 export const BANNER_KEYS: readonly string[] = [...BANNERS.keys()];
 
 /** A banner by its key, sixteen by twenty-four; a key not drawn (a kind to come) wears the side quest's. */
-export function bannerUrl(key: string): string {
+export function bannerSvg(key: string): string {
   return BANNERS.get(key) ?? BANNERS.get('side') ?? '';
 }
 

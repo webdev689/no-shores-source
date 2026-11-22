@@ -51,6 +51,10 @@ fn a_node_gathered_and_a_dungeon_cleared_count_on_the_island_the_room_stands_on(
     room.furnish(None, vec![ResourceNode { x: 1.0, y: 0.0, resource: 0 }]);
     let gatherer = holding(&mut room, &[0]);
     room.answer(gatherer, Asked::Gather { node: 0 });
+    assert_eq!(count(&room, gatherer, 0), Some(0), "not until it is gathered");
+    for _ in 0..=crate::asks::GATHER_TICKS {
+        room.tick();
+    }
     assert_eq!(count(&room, gatherer, 0), Some(1));
     let mut dungeon = Room::dungeon("gullwing-vale", 0, Some((1, 4))).expect("a patrol's dungeon");
     assert_eq!(dungeon.island, Some("continent-1"));

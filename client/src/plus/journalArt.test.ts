@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BANNER_KEYS, HOURGLASS_URL, bannerFor, bannerUrl } from './journalArt.ts';
+import { BANNER_KEYS, HOURGLASS_SVG, bannerFor, bannerSvg } from './journalArt.ts';
 import { pixelsOf } from './pixelsForTests.ts';
 import { TONES } from './tones.ts';
 
 test('the hourglass is DFO’s, nine by twelve: brass caps, glass sides and the sand running through', () => {
-  const { width, height, pixels, svg } = pixelsOf(HOURGLASS_URL);
+  const { width, height, pixels, svg } = pixelsOf(HOURGLASS_SVG);
   assert.deepEqual([width, height], [9, 12]);
   assert.match(svg, /shape-rendering='crispEdges'/);
   assert.equal(pixels.size, 56);
@@ -20,9 +20,9 @@ test('the banners are six story pennants and six side shields, each its own, and
   const story = BANNER_KEYS.filter((key) => key.startsWith('story'));
   const side = BANNER_KEYS.filter((key) => key.startsWith('side'));
   assert.deepEqual([story.length, side.length, BANNER_KEYS.length], [6, 6, 12]);
-  assert.equal(new Set(BANNER_KEYS.map(bannerUrl)).size, 12, 'no two banners alike');
+  assert.equal(new Set(BANNER_KEYS.map(bannerSvg)).size, 12, 'no two banners alike');
   for (const key of BANNER_KEYS) {
-    const { width, height, pixels } = pixelsOf(bannerUrl(key));
+    const { width, height, pixels } = pixelsOf(bannerSvg(key));
     assert.deepEqual([width, height], [16, 24], key);
     assert.equal(pixels.get('0,0') === TONES.brassHi, key.startsWith('story'), `${key}: a pennant's brass hem`);
     assert.equal(
@@ -32,8 +32,8 @@ test('the banners are six story pennants and six side shields, each its own, and
     );
   }
   // The shields' fields each a tone of their own: the colour at the middle of the left of each field.
-  assert.equal(new Set(side.map((key) => pixelsOf(bannerUrl(key)).pixels.get('1,5'))).size, 6);
-  assert.equal(bannerUrl('a-kind-to-come'), bannerUrl('side'));
+  assert.equal(new Set(side.map((key) => pixelsOf(bannerSvg(key)).pixels.get('1,5'))).size, 6);
+  assert.equal(bannerSvg('a-kind-to-come'), bannerSvg('side'));
 });
 
 test('a quest naming no banner wears one of its kind’s by its id, the same each time, and quests differ', () => {

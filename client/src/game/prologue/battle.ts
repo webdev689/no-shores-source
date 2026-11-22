@@ -19,7 +19,7 @@ import { fought, sung } from './music.ts';
 import type { Founder, Sailed, ShipDraw } from './sailing.ts';
 import { INBOUND_WAY_M_S, STORM_SOUND } from './sighted.ts';
 import { STORM } from './skies.ts';
-import { QUEST } from './lessons.ts';
+import { QUEST } from './tutorial.ts';
 import { headOnView, type StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 
@@ -237,7 +237,7 @@ export class Battle implements Beat {
     const heads = own ? brig.heads(own) : undefined;
     if (heads) this.sayCries(shown.shot, heads, tick.viewport);
     const { hud } = stage.parts;
-    hud.hints(HINTS.fight);
+    hud.hints(fight.aiming ? HINTS.aim : HINTS.fight);
     hud.seaFight(shown.over ? null : shown.display);
     hud.tasks.show(seaFightQuest(QUEST, shown.readout.left, shown.readout.men));
     hud.toast(...shown.readout.said);

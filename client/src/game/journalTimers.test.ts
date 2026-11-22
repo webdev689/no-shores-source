@@ -1,10 +1,13 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import type { Node } from '../ui/node.ts';
+import { byId, fakeInterface, nodesOf, wordsIn } from '../ui/uiForTests.ts';
+import type { Interface, UiEvent } from '../ui/ui.ts';
 import { activitiesAt, gatesAt } from './activities.ts';
-import { thisWeekOf } from './activityWords.ts';
-import { timersPanel } from './journalTimers.ts';
-import { type FakeElement, FakeEvent, fakePage } from './pageForTests.ts';
+import { type ThisWeek, thisWeekOf } from './activityWords.ts';
+import { sizesOf } from './gearNodes.ts';
+import { timersNode } from './journalTimers.ts';
 
 const bytes = await readFile(
   new URL('../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url),
@@ -15,138 +18,136 @@ const module = WebAssembly.compile(bytes);
 const FRIDAY_NINE = 29_919_420;
 const FRIDAY_AT = FRIDAY_NINE * 60_000;
 const named = { dungeon: (patrol: string, number: number) => `${patrol} ${number}`, place: (id: string) => id };
-const keyed = (root: FakeElement, key: string) => root.all().find((node) => node.dataset['key'] === key);
+const SIZES = sizesOf(1280, 900, 1);
 
-const labelled = (root: FakeElement) => root.all().flatMap((node) => node.getAttribute('aria-label') ?? []);
-
-async function opened() {
-  const { root } = fakePage();
-  const record = { day: 20_778, cleared: [1], week: 2_968, elite: false, abyss: false, boon: true };
-  const week = thisWeekOf(activitiesAt(await module, FRIDAY_NINE), gatesAt(await module, 26, true), record, named);
-  const panel = timersPanel(() => undefined);
-  root.append(panel.node as never);
-  panel.show(week, FRIDAY_AT + 1_000);
-  return { root, panel };
+/** The timers drawn for `week`, frame by frame: the last tree built, and a step of frames hearing `events`. */
+function timers(week: () => ThisWeek | null, now: () => number) {
+  const { ui, step } = fakeInterface(1280, 900);
+  let built: Node = {};
+  const panel = () => timersNode(ui, week(), now(), SIZES, 720);
+  const frame = (events: UiEvent[] = []) => step(() => (built = { width: 'grow', children: [panel()] }), events);
+  frame();
+  frame();
+  return { ui, frame, tree: () => built };
 }
 
-const classed = (root: FakeElement, name: string) => root.all().filter((node) => node.classList.contains(name));
+async function opened() {
+  const record = { day: 20_778, cleared: [1], week: 2_968, elite: false, abyss: false, boon: true };
+  const week = thisWeekOf(activitiesAt(await module, FRIDAY_NINE), gatesAt(await module, 26, true), record, named);
+  return timers(
+    () => week,
+    () => FRIDAY_AT + 1_000,
+  );
+}
+
+/** The middle of what `id` was laid as last frame. */
+const middleOf = (ui: Interface, id: string): { x: number; y: number } => {
+  const box = ui.boxOf(id);
+  assert.ok(box, `${id} is laid`);
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+};
 
 test('Today and This week each carry their reset’s icon and its one countdown; every row its icon and its name', async () => {
-  const { root } = await opened();
-  for (const words of ['Timers', 'Today', 'This week', 'Later', 'Dungeon of the day', 'Bounties'])
-    assert.ok(root.find(words), words);
+  const { tree } = await opened();
+  const said = wordsIn(tree());
+  for (const words of ['Timers', 'TODAY', 'THIS WEEK', 'LATER', 'Dungeon of the day', 'Bounties'])
+    assert.ok(said.includes(words), words);
   for (const words of ['forsaken-cistern', 'saltworm-warrens', 'Abyss boon', 'Breaches'])
-    assert.ok(root.find(words), words);
+    assert.ok(said.includes(words), words);
   assert.deepEqual(
-    ['timer-day-reset', 'timer-week-reset'].map((key) => keyed(root, key)?.textContent),
+    ['timer-day-reset', 'timer-week-reset'].map((id) => wordsIn(byId(tree(), id))[0]),
     ['23:59:59', '3d 23h'],
   );
-  const heads = classed(root, 'journal-timers-group');
-  assert.deepEqual(
-    heads.map((head) => head.all().filter((node) => node.tagName === 'IMG').length),
-    [1, 1, 0],
-    'the sun over Today, the page of the week over This week, nothing over Later',
-  );
-  const wells = classed(root, 'journal-timer-well');
-  assert.equal(wells.length, 6, 'a well a row: the day’s dungeon, the bounties, the week’s two, the boon, Breaches');
-  assert.ok(wells.every((well) => well.all().some((node) => node.tagName === 'IMG')));
-  assert.equal(classed(root, 'journal-timer-count').length, 2, 'one countdown a reset, written once');
-  assert.equal(root.find('Now'), undefined, 'every row is under way, so none says it');
-  assert.equal(root.find('This Week'), undefined, 'no title but the panel’s own');
+  assert.equal(byId(tree(), 'timer-later-reset'), undefined, 'no countdown over Later');
+  const rows = nodesOf(tree()).filter((node) => node.id?.startsWith('timer-row-'));
+  assert.equal(rows.length, 6, 'a row each: the day’s dungeon, the bounties, the week’s two, the boon, Breaches');
+  const drawn = (row: Node) =>
+    nodesOf(row).some((node) => node.role === 'well' && nodesOf(node).some((inner) => inner.picture));
+  assert.ok(rows.every(drawn), 'each its icon in a well');
+  assert.equal(said.filter((words) => words === '23:59:59').length, 1, 'one countdown a reset, written once');
+  assert.ok(!said.includes('Now') && !said.includes('This Week'), 'every row under way; no title but the panel’s');
 });
 
 test('what each row stands for is drawn, not written: the seas and how they stand, the modifiers, the pay', async () => {
-  const { root } = await opened();
-  const labels = labelled(root);
+  const { tree } = await opened();
+  const said = wordsIn(tree());
+  const labels = nodesOf(tree()).flatMap((node) => node.label ?? []);
   const burn =
     'At Elite and Abyss seas, Burn (Shadow): Shadow spells deal double damage. Wearing Shadow, you take double.';
-  // The day's flame read with the seas it burns on, as one picture is read once.
-  for (const words of ['Normal seas: Not taken', `Elite seas: Taken. ${burn}`, `Abyss seas: Not taken. ${burn}`])
-    assert.ok(labels.includes(words), words);
-  for (const words of ['Pays once: a Vestige.', 'Pays once: a richer cache.', 'Pays once: a Legendary Vestige.'])
-    assert.ok(labels.includes(words), words);
-  assert.ok(labels.includes('5 revives for the company.') && labels.includes('A wipe starts the run over.'));
-  assert.ok(root.find('+25%'), 'the boon by XP’s glyph and what it adds');
-  assert.deepEqual(
-    classed(root, 'journal-level').map((level) => level.textContent),
-    ['Lv26', 'Lv30'],
-    'each level as its number',
-  );
   assert.ok(
-    labels.some((label) => label.startsWith('Lightswitch: ')),
-    'a week’s modifier by its icon, its name and words read and said',
+    labels.some((label) => label.startsWith('Dungeon of the day. Once a day at each tier')),
+    'read in full',
   );
-  assert.equal(root.find('Lightswitch'), undefined, 'and not written on the row');
+  assert.ok(said.includes('+25%'), 'the boon by XP’s glyph and what it adds');
+  assert.ok(said.includes('26') && said.includes('30') && said.includes('Lv'), 'each level as its number');
   for (const sentence of [
     'Once a day at each tier, on any island: a Vestige and a richer cache.',
     'Once a week: a Legendary Vestige and Essence.',
     '5 revives for the company. A wipe starts the run over.',
-    'Elite Dungeon of the week · Level 26',
     'Burn (Shadow)',
+    burn,
   ])
-    assert.equal(root.find(sentence), undefined, `${sentence} is not written on the row`);
+    assert.ok(!said.includes(sentence), `${sentence} is not written on the rows`);
 });
 
 test('the foot says in words whatever is pointed at or focused, and is empty at rest', async () => {
-  const { root, panel } = await opened();
-  const foot = () => keyed(root, 'timers-said')?.textContent;
+  const { ui, frame, tree } = await opened();
+  const foot = () => wordsIn(byId(tree(), 'timers-said')).join('');
   assert.equal(foot(), '');
-  const flame = root.all().find((node) => node.classList.contains('journal-on-seas'));
-  flame?.dispatchEvent(new FakeEvent('pointerenter'));
+  // The day's seas at Elite: taken, the day's flame on them, read as one.
+  frame([{ kind: 'pointer', ...middleOf(ui, 'mark-day-0-1') }]);
+  frame();
   assert.equal(
     foot(),
-    'At Elite and Abyss seas, Burn (Shadow): Shadow spells deal double damage. Wearing Shadow, you take double.',
+    'Elite seas: Taken. At Elite and Abyss seas, Burn (Shadow): Shadow spells deal double damage. Wearing Shadow, you take double.',
   );
-  (panel.list as unknown as FakeElement).dispatchEvent(new FakeEvent('pointerleave'));
-  assert.equal(foot(), '');
-  classed(root, 'journal-timers-clock')[0]?.dispatchEvent(new FakeEvent('pointerenter'));
+  frame([{ kind: 'pointer', ...middleOf(ui, 'timer-day-reset') }]);
+  frame();
   assert.equal(foot(), 'The day turns at this time, in your local time.');
-  const rows = classed(root, 'journal-timer-row');
-  assert.deepEqual(
-    rows.map((row) => row.tabIndex),
-    [0, -1, -1, -1, -1, -1],
-    'one row a stop for Tab',
-  );
-  rows[0]?.focus();
-  const down = new FakeEvent('keydown', { key: 'ArrowDown' });
-  (panel.list as unknown as FakeElement).dispatchEvent(down);
-  assert.equal(document.activeElement, rows[1], 'the arrows step between the rows');
-  assert.deepEqual([rows[0]?.tabIndex, rows[1]?.tabIndex, down.defaultPrevented], [-1, 0, true]);
-  rows[0]?.dispatchEvent(new FakeEvent('focus'));
-  assert.match(foot() ?? '', /^Dungeon of the day\. Once a day at each tier/);
+  frame([{ kind: 'leave' }]);
+  frame();
+  assert.equal(foot(), '');
+  ui.focusOn('timer-row-day');
+  frame();
+  assert.match(foot(), /^Dungeon of the day\. Once a day at each tier/);
+  frame([{ kind: 'key', key: 'ArrowDown' }]);
+  frame();
+  assert.equal(ui.focusedId, 'timer-row-bounties', 'the arrows step between the rows');
 });
 
 test('as the reset passes with the timers open the count stops at nothing, then the new day’s rows count anew', async () => {
-  const { root } = fakePage();
-  const panel = timersPanel(() => undefined);
-  root.append(panel.node as never);
   const before = thisWeekOf(activitiesAt(await module, FRIDAY_NINE - 1), null, null, named);
-  panel.show(before, FRIDAY_AT - 2_000);
-  assert.equal(keyed(root, 'timer-day-reset')?.textContent, '0:02');
-  const counted = keyed(root, 'timer-day-reset');
-  panel.show(before, FRIDAY_AT + 500);
-  assert.equal(keyed(root, 'timer-day-reset'), counted, 'the same word keeps its rows, rewriting only the count');
-  assert.equal(counted?.textContent, '0:00', 'never below nothing while the new day is drawn');
   const after = thisWeekOf(activitiesAt(await module, FRIDAY_NINE), null, null, named);
-  panel.show(after, FRIDAY_AT + 1_000);
-  assert.equal(keyed(root, 'timer-day-reset')?.textContent, '23:59:59');
+  let [week, now] = [before, FRIDAY_AT - 2_000];
+  const { frame, tree } = timers(
+    () => week,
+    () => now,
+  );
+  const count = () => wordsIn(byId(tree(), 'timer-day-reset'))[0];
+  assert.equal(count(), '0:02');
+  now = FRIDAY_AT + 500;
+  frame();
+  assert.equal(count(), '0:00', 'never below nothing while the new day is drawn');
+  [week, now] = [after, FRIDAY_AT + 1_000];
+  frame();
+  assert.equal(count(), '23:59:59');
   assert.ok(
-    after.today.dungeons.every((row) => root.find(row.name)),
+    after.today.dungeons.every((row) => wordsIn(tree()).includes(row.name)),
     'the new day’s dungeons',
   );
 });
 
-test('a row focused as the rows are written again keeps the focus; the island of the character’s level says so', async () => {
-  const { root, panel } = await opened();
-  const second = () => classed(root, 'journal-timer-row')[1];
-  const key = second()?.dataset['key'];
-  second()?.focus();
+test('the island of the character’s level says so, and stands lit among the day’s islands', async () => {
   const record = { day: 20_778, cleared: [1, 2], week: 2_968, elite: true, abyss: false, boon: true };
   const week = thisWeekOf(activitiesAt(await module, FRIDAY_NINE), gatesAt(await module, 12, true), record, named, 12);
-  panel.show(week, FRIDAY_AT + 2_000);
-  const focused = document.activeElement as unknown as FakeElement;
-  assert.equal(focused.dataset['key'], key, 'the same row, written again, holds the focus');
-  assert.equal(focused.tabIndex, 0, 'and is the one Tab comes back to');
-  const yours = classed(root, 'journal-isle-yours');
-  assert.ok(yours.length > 0 && yours.every((isle) => isle.dataset['say']?.endsWith('Your level is in its band.')));
+  const { ui, frame, tree } = timers(
+    () => week,
+    () => FRIDAY_AT,
+  );
+  const yours = week.today.dungeons.findIndex((row) => row.yours);
+  assert.ok(yours >= 0);
+  assert.ok(byId(tree(), `isle-${yours}`)?.fill, 'lit');
+  frame([{ kind: 'pointer', ...middleOf(ui, `isle-${yours}`) }]);
+  frame();
+  assert.match(wordsIn(byId(tree(), 'timers-said')).join(''), /Your level is in its band\.$/);
 });

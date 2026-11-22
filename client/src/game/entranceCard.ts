@@ -1,8 +1,11 @@
-// The card E opens at a dungeon's entrance, in the menu's window: what the run it opens is, and the way in.
-import { make } from '../editor/dom.ts';
-import { ROLES } from '../plus/kit.ts';
+// The card E opens at a dungeon's entrance, drawn by the game in a window of the menu's kit: what the run it opens is,
+// and the way in.
+import { motionReduced } from '../plus/kit.ts';
+import type { Child, Node } from '../ui/node.ts';
+import type { Layer } from '../ui/stack.ts';
+import type { Interface } from '../ui/ui.ts';
 import type { EntranceCard } from './activityWords.ts';
-import { pressOf } from './gearDom.ts';
+import { INK, pressNode, words } from './gearNodes.ts';
 import { setGearScreenOpen } from './gearScreen.ts';
 import { play } from './uiSounds.ts';
 
@@ -22,57 +25,34 @@ export interface CardSearch {
 }
 
 const NO_SEARCH: CardSearch = { canFind: false, finding: null, said: null };
+/** The presses' ids, which the keys and the pointer press alike. */
+const ENTER = 'card-enter';
+const FIND = 'card-find';
+const STOP = 'card-stop';
+const CLOSE = 'card-close';
+/** How wide the card stands at most. */
+const WIDE = 520;
 
-/** The card E opens at a dungeon's entrance, in the kit's window: the dungeon's name under its header; its tier and
- *  level, its rules, its modifiers and what it pays; why it is shut, if it is; Find a Company where it matches, and the
- *  wait while it finds; and Enter (E), Find a Company or Stop finding (F) and Close (Esc) on its footer. While it
- *  stands, the pointer is free and the game's keys rest, as under the menu. */
+/** The card E opens at a dungeon's entrance, in the kit's window over the dimmed world: the dungeon's name at its head;
+ *  its tier and level, its rules, its modifiers and what it pays; why it is shut, if it is; the wait while Find a
+ *  Company finds; and Enter (E), Find a Company or Stop finding (F) and Close (Esc) on its footer. While it stands the
+ *  pointer is free and the game's keys rest, as under the menu; its `layer` draws it. */
 export class EntranceCardView {
-  private readonly scrim: HTMLElement;
-  private readonly window: HTMLElement;
-  private readonly title: HTMLElement;
-  private readonly body: HTMLElement;
-  private readonly enterPress: HTMLButtonElement;
-  private readonly findPress: HTMLButtonElement;
-  private readonly stopPress: HTMLButtonElement;
-  private readonly closePress: HTMLButtonElement;
-  private readonly actions: HTMLElement;
+  private card: EntranceCard | null = null;
   private search: CardSearch = NO_SEARCH;
-  /** The presses the footer was last laid with. */
-  private laid: string | null = null;
-  private shown = false;
+  /** The press to give the focus to on the next frame: Enter as it opens (Close on a shut card), the search's press
+   *  as one takes the other's place. */
+  private focusNext: string | null = null;
 
-  constructor(root: HTMLElement, presses: CardPresses) {
-    this.scrim = make('div', '', 'gear-scrim');
-    this.window = make('div', '', `gear-screen entrance-card ${ROLES.window}`);
-    this.window.setAttribute('role', 'dialog');
-    this.window.setAttribute('aria-modal', 'true');
-    this.window.setAttribute('aria-labelledby', 'entrance-card-name');
-    const header = make('div', '', `gear-head ${ROLES.header}`);
-    this.title = make('h2', '', 'gear-station-name');
-    this.title.id = 'entrance-card-name';
-    this.title.tabIndex = -1;
-    header.append(this.title);
-    this.body = make('div', '', 'gear-body entrance-card-body');
-    this.enterPress = pressOf('Enter', () => presses.enter(), 'primary', 'E');
-    this.enterPress.dataset['key'] = 'card-enter';
-    this.findPress = pressOf('Find a Company', () => presses.find(), 'button', 'F');
-    this.findPress.dataset['key'] = 'card-find';
-    this.stopPress = pressOf('Stop finding', () => presses.stop(), 'button', 'F');
-    this.stopPress.dataset['key'] = 'card-stop';
-    this.closePress = pressOf('Close', () => presses.close(), 'button', 'Esc');
-    this.closePress.dataset['key'] = 'card-close';
-    this.actions = make('div', '', 'gear-actions');
-    const footer = make('div', '', `gear-foot ${ROLES.footer}`);
-    footer.append(make('div', '', 'gear-said'), this.actions);
-    this.window.append(header, this.body, footer);
-    this.scrim.hidden = this.window.hidden = true;
-    root.append(this.scrim, this.window);
+  private readonly presses: CardPresses;
+
+  constructor(presses: CardPresses) {
+    this.presses = presses;
     // Heard before the game and the menu, so while the card stands no key of theirs acts behind it.
     addEventListener(
       'keydown',
       (event) => {
-        if (!this.shown) return;
+        if (!this.card) return;
         event.stopImmediatePropagation();
         const key = event.key.toLowerCase();
         if (event.repeat || (key !== 'e' && key !== 'f' && key !== 'escape')) return;
@@ -80,7 +60,7 @@ export class EntranceCardView {
         if (key === 'escape') presses.close();
         else if (key === 'f' && this.search.finding !== null) presses.stop();
         else if (key === 'f' && this.search.canFind) presses.find();
-        else if (key === 'e' && !this.enterPress.disabled) presses.enter();
+        else if (key === 'e' && this.card.shut === null) presses.enter();
       },
       { capture: true },
     );
@@ -88,60 +68,109 @@ export class EntranceCardView {
 
   /** Shows the card, or builds it again where it stands, with Find a Company as `search` says. */
   show(card: EntranceCard, search: CardSearch = NO_SEARCH): void {
-    this.search = search;
-    this.title.textContent = card.name;
-    const parts = [make('p', card.tier, 'entrance-card-tier')];
-    for (const rule of card.rules) parts.push(make('p', rule, 'entrance-card-rule'));
-    for (const modifier of card.modifiers) {
-      const line = make('p', '', 'gear-week-modifier');
-      line.append(make('b', modifier.name), make('span', modifier.words, 'gear-hint'));
-      parts.push(line);
-    }
-    parts.push(make('p', card.pays, 'gear-hint'));
-    if (card.shut !== null) parts.push(make('p', card.shut, 'entrance-card-shut'));
-    if (search.finding !== null)
-      parts.push(
-        make('p', search.finding, 'entrance-card-finding'),
-        make('p', 'A run starts with four, or with fewer after a minute.', 'gear-hint'),
-      );
-    else if (search.said !== null) parts.push(make('p', search.said, 'entrance-card-shut'));
-    this.body.replaceChildren(...parts);
-    this.enterPress.disabled = card.shut !== null;
-    this.layPresses();
+    const opening = this.card === null;
+    const searching = (shown: CardSearch) => (shown.finding !== null ? STOP : shown.canFind ? FIND : null);
+    if (!opening && searching(search) !== searching(this.search)) this.focusNext = searching(search) ?? CLOSE;
+    [this.card, this.search] = [card, search];
     setGearScreenOpen(true);
-    if (this.shown) return;
-    this.shown = true;
-    this.scrim.hidden = this.window.hidden = false;
+    if (!opening) return;
     document.exitPointerLock();
     play('open');
-    (this.enterPress.disabled ? this.title : this.enterPress).focus();
-  }
-
-  /** The footer's presses: Enter, then Find a Company or Stop finding where they stand, then Close; laid again only
-   *  when that changes, the focus kept on the search's press as one takes the other's place. */
-  private layPresses(): void {
-    const { canFind, finding } = this.search;
-    const search = finding !== null ? [this.stopPress] : canFind ? [this.findPress] : [];
-    const laid = search.map((press) => press.dataset['key']).join();
-    if (laid === this.laid) return;
-    this.laid = laid;
-    const focused = document.activeElement;
-    const onSearch = focused === this.findPress || focused === this.stopPress;
-    this.actions.replaceChildren(this.enterPress, ...search, this.closePress);
-    if (onSearch) (search[0] ?? this.closePress).focus();
+    this.focusNext = card.shut === null ? ENTER : CLOSE;
   }
 
   hide(): void {
-    if (!this.shown) return;
-    this.shown = false;
-    if (document.activeElement instanceof HTMLElement && this.window.contains(document.activeElement))
-      document.activeElement.blur();
-    this.scrim.hidden = this.window.hidden = true;
+    if (!this.card) return;
+    this.card = null;
     setGearScreenOpen(false);
     play('close');
   }
 
   get open(): boolean {
-    return this.shown;
+    return this.card !== null;
   }
+
+  /** The card this frame over the dimmed world, its presses heard; nothing while it is shut. */
+  readonly layer: Layer = (ui: Interface) => {
+    if (!this.card) return null;
+    if (ui.clicked(CLOSE)) this.presses.close();
+    else if (ui.clicked(ENTER) && this.card.shut === null) this.presses.enter();
+    else if (ui.clicked(FIND)) this.presses.find();
+    else if (ui.clicked(STOP)) this.presses.stop();
+    const { card, search } = this;
+    if (!card) return null;
+    if (this.focusNext && ui.boxOf(this.focusNext)) [this.focusNext] = [null, ui.focusOn(this.focusNext)];
+    const view = ui.size;
+    const line = (said: string, colour: string = INK.word): Node => ({ width: 'grow', text: { words: said, colour } });
+    const finding = search.finding !== null;
+    const body: Child[] = [
+      line(card.tier, INK.brassLit),
+      ...card.rules.map((rule) => line(rule)),
+      ...card.modifiers.map((modifier): Node => ({
+        width: 'grow',
+        gap: 8,
+        wrap: true,
+        children: [
+          words(modifier.name, 1, INK.word),
+          { width: 'grow', text: { words: modifier.words, colour: INK.faint } },
+        ],
+      })),
+      line(card.pays, INK.faint),
+      card.shut !== null && line(card.shut, INK.loss),
+      finding && line(search.finding ?? '', INK.gain),
+      finding && line('A run starts with four, or with fewer after a minute.', INK.faint),
+      !finding && search.said !== null && line(search.said, INK.loss),
+    ];
+    return {
+      width: 'grow',
+      height: 'grow',
+      children: [
+        {
+          id: 'card-scrim',
+          width: view.width,
+          height: view.height,
+          solid: true,
+          fill: 'rgba(5,7,10,0.6)',
+          float: { to: 'screen', z: 19 },
+        },
+        {
+          id: 'entrance-card',
+          role: 'window',
+          label: card.name,
+          solid: true,
+          modal: true,
+          direction: 'column',
+          width: Math.min(WIDE, view.width - 32),
+          padding: 2,
+          opacity: motionReduced() ? 1 : Math.min(1, 0.25 + ui.age('entrance-card') * 4),
+          float: { to: 'screen', anchor: [0.5, 0.5], at: [0.5, 0.5], z: 20 },
+          children: [
+            {
+              width: 'grow',
+              height: 48,
+              alignX: 'center',
+              alignY: 'center',
+              children: [words(card.name.toUpperCase(), 2, INK.brassLit, { tracking: 3 })],
+            },
+            { width: 'grow', direction: 'column', gap: 10, padding: [10, 20, 14, 20], children: body },
+            { width: 'grow', height: 1, fill: 'rgba(163,152,128,0.26)' },
+            {
+              width: 'grow',
+              padding: [8, 16],
+              gap: 8,
+              alignX: 'end',
+              wrap: true,
+              children: [
+                pressNode(ENTER, 'Enter', 'primary', 'E', 1, { disabled: card.shut !== null }),
+                finding
+                  ? pressNode(STOP, 'Stop finding', 'button', 'F')
+                  : search.canFind && pressNode(FIND, 'Find a Company', 'button', 'F'),
+                pressNode(CLOSE, 'Close', 'button', 'Esc'),
+              ],
+            },
+          ],
+        },
+      ],
+    };
+  };
 }

@@ -330,7 +330,7 @@ impl Room {
                 self.tell_all(by, Seen::Loosed { by, speed });
                 self.hear(foes::noises::shot(&self.fighter(by), shot.ranged));
             }
-            Happening::Feinted(_) | Happening::Dodged | Happening::Guarded { .. } => {}
+            Happening::Feinted(_) | Happening::Dodged | Happening::Guarded { .. } | Happening::Drank(_) => {}
         }
     }
 

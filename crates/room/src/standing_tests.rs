@@ -106,9 +106,12 @@ fn shape_stands_on_the_plaza_from_friday_to_sunday_and_sells_there() {
     let character = &mut room.players.get_mut(&player).expect("in").character;
     character.add_shapes(20);
     character.xp = gear::power::xp_for_level(20);
-    assert_eq!(ask(&mut room, player, 1, Ask::BuyFromShape { ware: 0 }), answer_code(Err(Refusal::NotHere)));
+    assert_eq!(
+        ask(&mut room, player, 1, Ask::BuyFromShape { ware: 0, shown: gear::shape::shown(week, 0) }),
+        answer_code(Err(Refusal::NotHere))
+    );
     move_to(&mut room, player, [spot[0] + 1.0, spot[1]]);
-    assert_eq!(ask(&mut room, player, 2, Ask::BuyFromShape { ware: 0 }), 0);
+    assert_eq!(ask(&mut room, player, 2, Ask::BuyFromShape { ware: 0, shown: gear::shape::shown(week, 0) }), 0);
     assert_eq!(room.player(player).expect("in").character.materials.shapes, 13);
     room.counters = None;
     assert_eq!(room.shape_at(), None, "he keeps to a social space");
@@ -316,7 +319,8 @@ fn shape_sells_nowhere_outside_his_days_and_his_going_is_sent() {
     move_to(&mut room, player, spot);
     room.players.get_mut(&player).expect("in").character.add_shapes(20);
     room.set_minute(THURSDAY);
-    assert_eq!(ask(&mut room, player, 1, Ask::BuyFromShape { ware: 0 }), answer_code(Err(Refusal::NotHere)));
+    let shown = gear::shape::shown(gear::clock::week_of(FRIDAY_NOON), 0);
+    assert_eq!(ask(&mut room, player, 1, Ask::BuyFromShape { ware: 0, shown }), answer_code(Err(Refusal::NotHere)));
     // Sunday 21:00, the Friday's week: he goes, and every player is told.
     room.set_minute(FRIDAY_NOON);
     room.take_gear_change(player);

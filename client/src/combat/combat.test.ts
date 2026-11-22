@@ -50,7 +50,10 @@ test('a telegraphed blow is marked on the ground where its shape lies, filling a
     vertices(late).every((vertex) => (vertex[6] ?? 0) >= 1),
     'every part of it solid',
   );
-  const arrow = marksMesh([], [{ owner: 3, ranged: 1, at: [0, 0, 1], velocity: [45, 0, 0], age: 0, muzzle: null }]);
+  const arrow = marksMesh(
+    [],
+    [{ owner: 3, ranged: 1, at: [0, 0, 1], velocity: [45, 0, 0], age: 0, muzzle: null, stopped: 0n }],
+  );
   assert.equal(
     arrow.length,
     3 * 12 * MARK_FLOATS,

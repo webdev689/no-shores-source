@@ -1,27 +1,47 @@
-// What the player's worn gear looks like on their figure: every garment is armour, so a Normal or Magic piece is drawn
-// as clothes and a Rare or finer one as an armour set, the finer the rarer; the cloak is a cloak, a faction's cape the
-// formal cloak in its faction's dye; a faction's armour and weapons are its own set and metal in its own colour; the
-// hands hold what the gear wears; the dye, coat and barding worn ride along. Each item keeps its look by its own name.
+// What the player's worn gear looks like on their figure: every garment is armour, so a Normal piece is drawn as
+// clothes, a Magic one as clothes or light armour and a Rare or finer one as an armour set, finer as it climbs; the
+// cloak is a cloak, a faction's cape the formal cloak in its faction's dye; a faction's armour and weapons are its own
+// set and metal in its own colour; the hands hold what the gear wears; the dye, coat and barding worn ride along. A
+// named item wears the look written on it; a rolled one keeps its own by its level, name and number.
 
 import factions from '../../../content/gear/factions.json' with { type: 'json' };
 import items from '../../../content/gear/items.json' with { type: 'json' };
 import { wornCosmetic } from '../forge/cosmetics.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { ArmourPiece, Outfit } from '../forge/outfit.ts';
-import type { Cards } from './cards.ts';
 import type { Wardrobe } from './dressing.ts';
-import { MELEE, RANGED_SLOT, gearHands, heldElements, worn } from './gear.ts';
-import type { Walker } from './walker.ts';
+import { MELEE, RANGED_SLOT, gearHands, nearest, numberOf, rung, worn, writtenLook } from './gear.ts';
 
 const [HEAD, TORSO, ARMS, LEGS, CLOAK] = [2, 3, 4, 5, 6];
-const RARE = 2;
 const MAGIC = 1;
+const RARE = 2;
 
-/** The sets a rarity's armour is drawn in, best liked first; a set the forge does not draw is passed over. */
-const SETS: Readonly<Record<number, readonly string[]>> = {
-  2: ['chain', 'steel', 'iron', 'leather'],
-  3: ['silver', 'elven', 'dwarven', 'knights', 'steel'],
-  4: ['daedric', 'ebony', 'adamantium', 'mithril', 'knights'],
+/** The forge's armour sets by their worth, the guilds' lighter ones among them: a rolled Rare piece climbs it from
+ *  chain, nine rungs over its level and up to two more by its name (`rung`), and a set the forge does not draw falls
+ *  to the nearest. */
+const SETS = [
+  'leather',
+  'thieves',
+  'chain',
+  'iron',
+  'steel',
+  'knights',
+  'silver',
+  'elven',
+  'dwarven',
+  'orcish',
+  'mithril',
+  'adamantium',
+  'ebony',
+  'daedric',
+];
+/** A Magic piece's set by its number: leather or the thieves' on the head and arms, and on the torso and legs clothes
+ *  (none) besides. */
+const MAGIC_SETS: Readonly<Record<number, readonly (string | null)[]>> = {
+  [HEAD]: ['leather', 'thieves'],
+  [ARMS]: ['leather', 'thieves'],
+  [TORSO]: [null, 'leather', 'thieves'],
+  [LEGS]: [null, 'leather', 'thieves'],
 };
 /** Each armour slot's pieces of a set. */
 const PIECES: Readonly<Record<number, readonly ArmourPiece[]>> = {
@@ -50,8 +70,6 @@ const CLOTHES: Readonly<Record<number, readonly (readonly (readonly string[])[])
     ],
   ],
 };
-/** A Magic head or arms piece is leather; a Normal one shows nothing over the figure. */
-const MAGIC_SET = 'leather';
 /** The dyes a rarity's clothes and cloak take, one by each item's name. */
 const DYES: Readonly<Record<number, readonly string[]>> = {
   0: ['White', 'LightBrown', 'DarkBrown', 'Grey'],
@@ -75,16 +93,20 @@ const factionLook = (item: GearItem | undefined) => FACTION_LOOKS.get(item?.name
 
 const pick = <T>(choices: readonly T[], item: GearItem): T | undefined => choices[item.name % choices.length];
 
-/** The set an armour piece of this item is drawn in, among those the forge draws for every piece of its slot: a
- *  faction's piece its faction's set first. */
+/** The set an armour piece of this item is drawn in, among those the forge draws for its slot (a torso's cuirass, its
+ *  pauldrons where drawn): a faction's piece its faction's set first, a named piece its own; null for clothes. */
 function setOf(item: GearItem, slot: number, wardrobe: Wardrobe): string | null {
-  const pieces = PIECES[slot] ?? [];
-  const drawn = (set: string) => pieces.every((piece) => wardrobe.sets[piece].includes(set));
-  const own = factionLook(item)?.armour;
+  const needed = slot === TORSO ? ['cuirass' as const] : (PIECES[slot] ?? []);
+  const drawn = (set: string) => needed.every((piece) => wardrobe.sets[piece].includes(set));
+  const choices = item.rarity === MAGIC ? (MAGIC_SETS[slot] ?? []) : [];
+  const magic = choices[numberOf(item) % choices.length];
+  // A Magic torso or legs piece numbered for clothes wears no set.
+  if (magic === null) return null;
+  const own = factionLook(item)?.armour ?? writtenLook(item)?.look ?? magic;
   if (own && drawn(own)) return own;
-  const sets = item.rarity >= RARE ? (SETS[item.rarity] ?? []).filter(drawn) : drawn(MAGIC_SET) ? [MAGIC_SET] : [];
-  // A named item is one look; a rolled one takes its own among its rarity's best.
-  return (item.named ? sets[0] : pick(sets.slice(0, 2), item)) ?? null;
+  // A look the forge does not draw for this body falls to the nearest it does, as a rolled piece's rung does.
+  const ownRung = own ? SETS.indexOf(own) : -1;
+  return nearest(SETS, ownRung >= 0 ? ownRung : rung(item, 2, 9, 3)).find(drawn) ?? null;
 }
 
 /** The outfit the gear worn makes of `outfit`: its armour and garments the gear's, and its hands the drawn loadout's
@@ -102,11 +124,10 @@ export function gearOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit,
   for (const slot of [TORSO, LEGS, HEAD, ARMS]) {
     const item = worn(state, slot);
     if (!item) continue;
-    const leather = item.rarity === MAGIC && (slot === HEAD || slot === ARMS);
-    const set = item.rarity >= RARE || leather ? setOf(item, slot, wardrobe) : null;
+    const set = item.rarity >= MAGIC ? setOf(item, slot, wardrobe) : null;
     if (set) {
       const own = factionLook(item)?.key;
-      for (const piece of PIECES[slot] ?? []) {
+      for (const piece of (PIECES[slot] ?? []).filter((each) => wardrobe.sets[each].includes(set))) {
         armour[piece] = set;
         // A faction's piece wears its own colour, which the outfit keeps by the layer's name.
         if (own) dyes[`${piece}_${set}`] = own;
@@ -152,17 +173,3 @@ export function spareOutfit(state: GearState, wardrobe: Wardrobe, outfit: Outfit
 
 /** The loadout a swap from `loadout` takes up. */
 export const otherLoadout = (loadout: number): number => (loadout === MELEE ? RANGED_SLOT : MELEE);
-
-/** Dresses the walker's figure in `gear` as worn, its hands the loadout drawn and its spare the other, and its weapons
- *  glowing in their element. */
-export function dressInGear(walker: Walker, forge: Cards, gear: GearState): void {
-  const { loadout } = walker.player;
-  const wardrobe = forge.wardrobe(walker.you.dress.body);
-  if (wardrobe) {
-    const outfit = gearOutfit(gear, wardrobe, walker.you.dress.outfit, loadout);
-    walker.you.dress = { ...walker.you.dress, outfit };
-    walker.spare = spareOutfit(gear, wardrobe, outfit, loadout);
-  }
-  walker.glow = heldElements(gear, loadout);
-  walker.spareGlow = heldElements(gear, otherLoadout(loadout))[0];
-}

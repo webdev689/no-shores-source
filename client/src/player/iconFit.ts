@@ -141,15 +141,15 @@ export function shrunk(
 }
 
 /** A canvas of `own`'s pixels shrunk to `width` by `height` (`shrunk`); given a palette's `snap`, cut at half cover and
- *  snapped to it, so a picture that keeps to a palette still shows only its colours. */
+ *  snapped to it, so a picture that keeps to a palette still shows only its colours. An offscreen canvas, so it is
+ *  drawn wherever the game runs. */
 export function shrunkCanvas(
-  own: HTMLCanvasElement,
+  own: OffscreenCanvas,
   width: number,
   height: number,
   snap?: (pixels: Uint8ClampedArray) => void,
-): HTMLCanvasElement {
-  const canvas = document.createElement('canvas');
-  [canvas.width, canvas.height] = [width, height];
+): OffscreenCanvas {
+  const canvas = new OffscreenCanvas(width, height);
   const pixels = own.getContext('2d')?.getImageData(0, 0, own.width, own.height).data ?? [];
   const small = shrunk(own.width, own.height, pixels, width, height);
   if (snap) {

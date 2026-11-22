@@ -12,6 +12,8 @@ import type { Walker } from '../player/walker.ts';
 import type { Block, MovementRules } from '../rules/movementRules.ts';
 import type { LandWorker } from '../terrain/landClient.ts';
 import type { InDungeon } from './footTrips.ts';
+import type { Speak } from './footGear.ts';
+import type { UsePrompt } from './usePrompt.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -28,6 +30,10 @@ export interface FootContext {
   readonly foesAsked: readonly FoeAsk[];
   readonly session: () => Promise<string | null>;
   readonly trips: Trips;
+  /** What E does where the player stands, drawn low in the middle of the view. */
+  readonly usePrompt: UsePrompt;
+  /** What E does at a counter a quest names: speaks with its keeper. */
+  readonly speak?: Speak;
   /** What the third-person camera keeps a clear line past, beside the place's boxes: a ship's masts and spars. */
   readonly cameraBlocks?: readonly Block[];
 }

@@ -198,6 +198,9 @@ pub struct Character {
     /// The dyes, coats and bardings kept, and the one of each worn (`cosmetics.rs`).
     #[serde(default)]
     pub cosmetics: crate::cosmetics::Cosmetics,
+    /// Their place in every quest, and the fragment choices their roads gave (`quests.rs`).
+    #[serde(default, deserialize_with = "crate::quests::lenient")]
+    pub quests: crate::quests::QuestLog,
     /// Keys this room does not know, from a later room's save, written back as read, so a room rolled back to
     /// this one or later keeps them.
     #[serde(flatten)]
@@ -249,7 +252,7 @@ impl Character {
             next_id: 1,
             emblems: Vec::new(),
             emblem: crate::emblems::starting(),
-            arts: crate::arts::WornArts::default(),
+            arts: crate::arts::WornArts::unearned(),
             ammo: crate::ammo::AMMO_FULL,
             activity: crate::activity::Activity::default(),
             story: crate::story::Story::default(),
@@ -261,6 +264,7 @@ impl Character {
             scavenged: Vec::new(),
             allegiance: crate::factions::Allegiance::default().kept(),
             cosmetics: crate::cosmetics::Cosmetics::default(),
+            quests: crate::quests::QuestLog::default().kept(),
             unknown: UnknownKeys::new(),
         };
         for (kind, slot) in [
@@ -346,6 +350,7 @@ impl Character {
         character.crew = std::mem::take(&mut character.crew).kept();
         character.fit_first_modules();
         character.allegiance = std::mem::take(&mut character.allegiance).kept();
+        character.quests = std::mem::take(&mut character.quests).kept();
         character.materials.shapes = character.materials.shapes.min(STOCK_MOST);
         character.earn_due();
         Some(character)

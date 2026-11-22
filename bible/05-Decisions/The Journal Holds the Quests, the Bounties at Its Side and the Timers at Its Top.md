@@ -34,10 +34,19 @@ Looking over the next pictures, the owner wrote:
 
 > "Its much better. But keep pushing those better and more.varied quest banners, better bounty glyphs, etc"
 
+Where the Journal met the houses' roads ([[Quests]]), an engine of quests as named steps over one count, which held
+no quests, stood beside the roads. Asked "How should they come together?", the owner chose
+"Journal shows main's (Recommended)":
+
+> "Drop #97's empty quest engine; the Journal's quest cards show main's quests (the opening and the houses' roads) as
+> story missions. #97's bounties keep their own engine."
+
 ## What it settles
 
 - **The Journal is built in full now.**
-- **Its main section holds the quests**: story missions, side quests and quests of kinds to come.
+- **Its main section holds the quests**: story missions, side quests and quests of kinds to come. The quests there are
+  the houses' roads, the opening among them, shown as story missions; no engine of quests stands beside them.
+- **The bounties keep their own engine** (`gear::objectives`).
 - **Its right side holds the bounties.**
 - **Its top holds a detailed timer drop-down.**
 - **On the Journal tab, DFO's timer hourglass stands in the account portrait's place.**
@@ -51,10 +60,13 @@ Looking over the next pictures, the owner wrote:
 |---|---|---|
 | The quest grid | Two columns of three cards a page, how many are held beside the title and the page between its drawn arrows at the right; one column of cards under 900 px, the bounties staying beside it down to 600 px | Destiny's grid, folded where two columns do not fit |
 | A card | Its banner, its name, a line of its tale, and its step's number in a brass badge and its name; a brass tick once every step is done | What Destiny's card shows, and no more; the face has no italic of its own, so the tale is set apart by its colour |
+| The roads on the cards | A card for the road walked (the opening until the pledge, then the pledged house's) and one for each road done, in the roads' file's order; none from a word not on the player's own character | The page knows those from the gear (`quest`, `quests_done`); a road left by a change of pledge keeps its place in the rules and shows again once walked or done |
+| A road's step | Its task now, by its number from 1 and its tracker words; a road done stands at its last task with the tick | A road's tasks are its steps, as the tracker shows them |
+| A road's tale | The first line its opening scene says (its `begin` in the story's scenes) | The roads write no tale line of their own, and that line says what the road is about in the roads' own words |
+| A road's banner | A story mission's pennant, chosen by its id | Every road is a story mission; none names a banner |
 | The banners | A story mission's swallowtail in blood and brass, a side quest's shield (a kind to come wears a side quest's), each of six charges, the shields each of six fields; a quest wears the banner it names, else one of its kind's chosen by its id | Two kinds told apart at a glance, and quests side by side apart: "better and more.varied quest banners" |
 | The order | Story missions first, then side quests, then kinds to come | The story leads |
-| Steps | Each step asks its own feat and counts in turn, over the one count kept | Missions need steps that ask different things, and nothing new is saved |
-| The empty lines | "No quests yet. The story’s missions and side quests come later." and "No quests held. Quests you take up are kept here." | The page says plainly why it is empty |
+| The empty line | "No quests held. Quests you take up are kept here.", before any room's word or on a word not the player's own | The page says plainly why it is empty |
 | The tiles | A square tile a bounty, bearing its bounty's own glyph (a bounty not drawn, the mark of where it counts) on its kind's ground: stone for land, deep water for the sea (a tone the kit gains), blood for dungeons | Destiny's rows of colour, in the kit's tones; each bounty its own glyph, as each of Destiny's wears its own: "better bounty glyphs" |
 | The tiles' states | Open, plain; taken, a gauge of its count along its foot; done, a gold edge; turned in, dimmed with a check | A state read from the tile, with no words on it |
 | The card | The bounty's name, its kind in small type under it, its words, a gauge with its count, its rewards, and at the board its press | Destiny's card on the tile under the pointer |

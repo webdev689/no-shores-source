@@ -1,7 +1,8 @@
 // The activities' screens, wired by the game: what the menu's Journal reads for its timers, quests and bounties, and
-// the card E opens at a dungeon's entrance. It keeps the last word of the character any room sent, so the screens read
-// the same at sea as ashore, and builds their words from the rules (`activityWords.ts`), never judging a rule itself.
-import './activityScreens.css';
+// the card E opens at a dungeon's entrance, drawn as a layer of the interface. It keeps the last word of the character
+// any room sent, so the screens read the same at sea as ashore, and builds their words from the rules
+// (`activityWords.ts`), never judging a rule itself.
+import type { Layer } from '../ui/stack.ts';
 import { roomNow } from '../sky/worldClock.ts';
 import { activitiesAt, gatesAt } from './activities.ts';
 import {
@@ -54,6 +55,8 @@ export interface ActivityScreens {
   /** Why each tier's seas are shut to the player by their level, by tier (null where open); none before a room's
    *  word. */
   seasShut(): readonly (string | null)[];
+  /** The entrance's card as the interface draws it, while it stands. */
+  readonly layer: Layer;
 }
 
 /** How often the screens look again, in milliseconds. */
@@ -63,7 +66,6 @@ const WEEK_TURNED = 'The week turned. Try again.';
 const PAGE_CLOCK: ScreensClock = { now: roomNow, every: (run) => void setInterval(run, LOOK_MS) };
 
 export function startActivityScreens(
-  root: HTMLElement,
   module: Promise<WebAssembly.Module>,
   nodes: readonly NodeInfo[],
   foot: () => ScreensFoot | null,
@@ -131,7 +133,7 @@ export function startActivityScreens(
     search = findCompany(link.finderAt(finds), finds, token, heard, clock.now, clock.open);
     render();
   };
-  const view = new EntranceCardView(root, {
+  const view = new EntranceCardView({
     enter: () => {
       const entrance = opened?.entrance;
       close();
@@ -166,6 +168,7 @@ export function startActivityScreens(
   };
   clock.every(look);
   return {
+    layer: view.layer,
     week: () => {
       const laying = compiled;
       if (!laying) return null;
@@ -199,7 +202,6 @@ export function startActivityScreens(
  *  and what a frame on foot heeds first: a room whose gate shuts sends the player back to their ship (`shut`), and
  *  nothing more of it is drawn (true), and a company fallen goes out by the way in. */
 export function startActivities(
-  root: HTMLElement,
   nodes: readonly NodeInfo[],
   link: AccountLink | null,
   game: Omit<TripGame, 'foot' | 'companyPlaces'> & {
@@ -214,7 +216,7 @@ export function startActivities(
   heed(here: { readonly shut: string | null; readonly held: { wiped: boolean } }, shut: (why: string) => void): boolean;
 } {
   const trips = dungeonTrips({ ...game, companyPlaces: () => companyPlaces(link) });
-  const screens = startActivityScreens(root, game.module, nodes, game.foot, trips, link, PAGE_CLOCK, game.atSea);
+  const screens = startActivityScreens(game.module, nodes, game.foot, trips, link, PAGE_CLOCK, game.atSea);
   // The keepers' countdowns turn on the same clock, so they read the same rules.
   countBy(game.module);
   return {

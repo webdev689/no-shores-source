@@ -48,6 +48,15 @@ pub fn price(rarity: Rarity) -> u16 {
     if rarity == Rarity::Atheric { 15 } else { 7 }
 }
 
+/// The place in the catalogue's items of the named piece Shape shows at a place in a week, as a page names it when
+/// it buys there (`Ask::BuyFromShape`); `u32::MAX` past his six.
+#[must_use]
+pub fn shown(week: u64, ware: u8) -> u32 {
+    let named = wares(week).into_iter().nth(usize::from(ware)).and_then(|item| item.named);
+    let place = crate::catalogue::catalogue().items.iter().position(|entry| named.as_ref() == Some(&entry.id));
+    place.and_then(|place| u32::try_from(place).ok()).unwrap_or(u32::MAX)
+}
+
 /// What he sells in a week: Legendary then Atheric pieces at level 20, no piece twice, by the week's dice. Their
 /// numbers are none until bought.
 #[must_use]
@@ -100,12 +109,17 @@ impl Character {
     }
 
     /// Buys one of Shape's pieces of the week, at his place, for Shapes, carried with its slot's: each made at its own
-    /// level, as a faction's are, and sold to none who could not wear it yet.
-    pub(crate) fn buy_from_shape(&mut self, ware: u8, here: Here) -> Result<Option<Done>, Refusal> {
+    /// level, as a faction's are, and sold to none who could not wear it yet. A page shown another piece at that place
+    /// (his wares drawn again since, as the catalogue grew) is told it is not sold here, as a smith's ware of another day.
+    pub(crate) fn buy_from_shape(&mut self, ware: u8, shown: u32, here: Here) -> Result<Option<Done>, Refusal> {
         if !here.social {
             return Err(Refusal::NotHere);
         }
         let mut item = wares(here.week).into_iter().nth(usize::from(ware)).ok_or(Refusal::NoSuchItem)?;
+        let place = crate::catalogue::catalogue().items.iter().position(|entry| item.named.as_ref() == Some(&entry.id));
+        if place.and_then(|place| u32::try_from(place).ok()) != Some(shown) {
+            return Err(Refusal::NotSold);
+        }
         if self.level() < item.level {
             return Err(Refusal::TooLow);
         }

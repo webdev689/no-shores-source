@@ -25,16 +25,38 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
     throw new GpuUnavailable('The page could not open a WebGPU drawing surface.');
   }
   const format = navigator.gpu.getPreferredCanvasFormat();
-  context.configure({ device, format, alphaMode: 'opaque' });
+  // Copied from as well as drawn into: the death's drain copies the finished picture aside to draw it back grey.
+  context.configure({
+    device,
+    format,
+    alphaMode: 'opaque',
+    usage: TEXTURE_USAGE.renderAttachment | TEXTURE_USAGE.copySource,
+  });
   return { device, context, format };
 }
 
 /** WebGPU's usage flags we use, by the specification's values: TypeScript's DOM types declare no constants for them. */
 export const TEXTURE_USAGE = {
+  copySource: 0x01,
   copyDestination: 0x02,
   textureBinding: 0x04,
   storageBinding: 0x08,
   renderAttachment: 0x10,
 } as const;
-export const BUFFER_USAGE = { copyDestination: 0x08, index: 0x10, vertex: 0x20, uniform: 0x40, storage: 0x80 } as const;
+export const BUFFER_USAGE = {
+  mapRead: 0x01,
+  copyDestination: 0x08,
+  index: 0x10,
+  vertex: 0x20,
+  uniform: 0x40,
+  storage: 0x80,
+} as const;
 export const SHADER_STAGE = { vertex: 0x1, fragment: 0x2, compute: 0x4 } as const;
+
+/** Says so through `stop` once `device` is lost (a driver's reset, the GPU taken away), which leaves nothing to draw
+ *  with; a device destroyed on purpose says nothing. */
+export function stopWhenLost(device: Pick<GPUDevice, 'lost'>, stop: (message: string) => void): void {
+  void device.lost.then((lost) => {
+    if (lost.reason !== 'destroyed') stop(`The graphics device was lost (${lost.message}). Reload the page.`);
+  });
+}

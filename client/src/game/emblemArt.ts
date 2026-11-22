@@ -36,7 +36,7 @@ export function emblemOf(which: number | string | null | undefined): Emblem {
 /** The sign's square and the nameplate's length, in cells; and a band's, a nameplate run on behind a long row. */
 export const SIGN_CELLS = 24;
 export const PLATE_CELLS = 120;
-const BAND_CELLS = 320;
+export const BAND_CELLS = 320;
 
 /** How an emblem is drawn: its sign alone; its nameplate, framed all round; a band, the nameplate run on unframed at
  *  its end, behind a row of any length, which the colour it ends in fills on past it; or a banner, as Destiny 2 heads
@@ -145,28 +145,9 @@ export function emblemPixels(emblem: Emblem, shape: Shape, cells = WIDTHS[shape]
   return pixels;
 }
 
-const drawn = new Map<string, string>();
-
-/** An emblem in its shape as an image's address, drawn once a page; a banner at the cells it is asked for, the last
- *  kept. */
-export function emblemImage(emblem: Emblem, shape: Shape, cells = WIDTHS[shape]): string {
-  const key = `${emblem.id}:${shape}:${cells}`;
-  const known = drawn.get(key);
-  if (known) return known;
-  const canvas = document.createElement('canvas');
-  const pixels = emblemPixels(emblem, shape, cells);
-  [canvas.width, canvas.height] = [pixels.length / 4 / SIGN_CELLS, SIGN_CELLS];
-  canvas.getContext('2d')?.putImageData(new ImageData(pixels, canvas.width, canvas.height), 0, 0);
-  const address = canvas.toDataURL();
-  // A banner is drawn to whatever width the window gives it, so only the last one is kept, not one a width.
-  if (shape === 'banner') for (const old of drawn.keys()) if (old.includes(':banner:')) drawn.delete(old);
-  drawn.set(key, address);
-  return address;
-}
-
 /** The colour a band ends in, which a row longer than it is filled with. */
 export function plateEnd(emblem: Emblem): string {
   const pixels = emblemPixels(emblem, 'band');
   const end = (SIGN_CELLS / 2) * BAND_CELLS * 4 + (BAND_CELLS - 1) * 4;
-  return `rgb(${pixels[end] ?? 0} ${pixels[end + 1] ?? 0} ${pixels[end + 2] ?? 0})`;
+  return `rgb(${pixels[end] ?? 0},${pixels[end + 1] ?? 0},${pixels[end + 2] ?? 0})`;
 }

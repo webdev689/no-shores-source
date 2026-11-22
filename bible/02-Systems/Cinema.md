@@ -6,10 +6,11 @@ code:
   - client/src/cinema/cues.ts#Cues
   - client/src/cinema/cues.ts#HoldToSkip
   - client/src/cinema/screen.ts#Screen
+  - client/src/cinema/eyelids.ts#lidOf
+  - client/src/game/blur.ts#BlurView
   - client/src/cinema/lightning.ts#Lightning
   - client/src/cinema/ambience.ts#Ambience
   - client/src/cinema/ambienceShapes.ts#thunderShape
-  - client/src/cinema/ambienceVoices.ts#crashVoice
   - client/src/cinema/weather.ts#Weather
   - client/src/cinema/weather.ts#mixWeather
   - client/src/cinema/weather.ts#swellGained
@@ -43,36 +44,42 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   order, exactly once, however long the frames are; a skipped cutscene runs every moment left at once, so the world
   is left as its end would leave it. Holding Space (or a touch anywhere on the view) for a second skips (`HoldToSkip`):
   the hint shows faintly at the bottom right while a cutscene can be skipped, and brightens with its share filled.
-- **The screen** (`Screen`), laid over the canvas: fades to black or white over any time, a white flash, the
-  letterbox's bars, eyelids that close from above and below for waking, a blur over the whole view, the title (the
-  game's name over a brass rule, sized to fit a phone's width) and a prompt that breathes under it. Each layer eases
-  by its own transition except the eyelids and the blur, which the story sets frame by frame: while the screen stands
-  the canvas's own ease (kept for the death's grey) is held off, so the blur follows each frame and clears at once.
-  While it stands a touch on the canvas or the HUD is the story's (`touch-action: none`), so no drag pans the page or
-  pulls it to reload and a held touch is never cut short. Once the story's black has gone after its end, the screen
-  is taken away and the canvas and the HUD have their own ease and touches back.
+- **The screen** (`Screen`), drawn by the game as a layer of its interface over every other, the HUD's and the
+  menu's: fades to black or white over any time, a white flash, the letterbox's bars, eyelids that close from above
+  and below for waking, the title (the game's name over a brass rule, sized to fit a phone's width) and a prompt that
+  breathes under it. Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`), except the eyelids, which
+  the story sets frame by frame, with the light through them (`lidOf`, [[The Wreck Opens by Teaching the Player]]): each lid's edge curves away
+  from the eye's middle, so the opening between them is an almond, widest a little off the middle and closing from
+  its corners, its edge fading softly into the eye; the upper lid leads and the lower lags, and shut each stands past
+  its own edge's depth (`lidDrop`), so no crack is left; an uneven fringe of lashes along each edge shows as the lids
+  come down and goes as they meet; shut, a warm red light comes through them, as far as the story says, more toward
+  the eye than at the brow. The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
+  the interface, as death's grey is, so the words over it stay sharp: a Gaussian whose deviation is the blur's CSS
+  pixels, set each frame, so it follows each frame and clears at once.
+  While it stands a touch on the canvas is the story's (`touchesHeld`), so no drag pans the page or pulls it to reload
+  and a held touch is never cut short. Once the story's black has gone after its end, the screen is taken away and the
+  canvas has its own touches back.
 - **Lightning** (`Lightning`). Strikes come by themselves at seeded moments, 4 to 11 s apart, 0.4 to 4.5 km round the
   eye, or where a story calls one. Each is two flashes and a fading glow over a second, brighter the nearer it falls,
   its bolt shown for 0.22 s, and its thunder heard as late as its distance makes it.
 
 ### Sound
 
-`Ambience` makes the sea's and the storm's sounds in the browser, all synthesised from noise, filters and
-oscillators, none recorded. It plays through the world's output, so the world's volume governs it; nothing plays
-until that output answers, and while it is gone the levels keep gliding, so the sound picks up where they stand.
+`Ambience` plays the sea's and the storm's sounds, each the owner's Freesound pick
+([[Every Sound Comes From Freesound, and the Music Rests Between Pieces]]), silent until its recording has come. It
+plays through the world's output, so the world's volume governs it; nothing plays until that output answers, and while
+it is gone the levels keep gliding, so the sound picks up where they stand.
 
-- **Beds.** Seven: rain (a hiss over a roar of drops), wind (a gale whose pitch and strength wander at unrelated slow
-  rates, so the gusts never repeat), waves (the sea swelling round the hull), fire (a low roar under crackle), the
-  deep (a muffled pressure), gulls and creaking timbers. A scene sets each from 0 to 1 and it glides there, eased at
-  both ends. The noise is made once for each audio context and folded at its ends, so a loop has no seam. A bed is
-  built only once it is first heard.
-- **Spot sounds.** Gull cries, timbers creaking, waves breaking on the hull, pops in the blaze and groans in the deep
-  ride on their beds, at random gaps that shorten as the bed grows louder and stop when it falls silent.
-- **One-shots.** Thunder arrives a second for every 0.343 km, duller and quieter the farther it is: within 0.5 km a
-  tearing crack, by 2.5 km only a roll. Then the crash of two hulls (timber splitting, a deep boom, debris after), a
-  splash from a plank to a body, a body hitting the deck, the ears ringing, a heartbeat, the deep's bright flash (a
-  glassy swell rising an octave) and the whoosh of a fast camera move. Each lets go of its nodes once played.
-- **Levels.** The storm's rain is the loudest bed and the crash the loudest sound; nothing reaches full scale.
+- **Beds.** Seven: rain (the sea's rain), wind (a gale), waves (the storm's sea), fire (a wreck burning), the deep,
+  gulls and creaking timbers. A scene sets each from 0 to 1 and it glides there, eased at both ends. Each play of a
+  bed's recording fades into the next at equal power. A bed is built only once it is first heard.
+- **Gulls.** The sea's gull cries at random gaps that shorten as the gulls' level grows and stop when it falls silent.
+- **One-shots.** Thunder arrives a second for every 0.343 km, quieter the farther it is: within 2.5 km the weather's
+  crack, past it its roll. Then the crash of two hulls, a splash from a plank to a body, a body hitting the deck, the
+  ears ringing, a heartbeat, the deep's bright flash and the rush of a fast camera move. Each lets go of its nodes once
+  played.
+- **Levels.** Each recording is as loud as the sound it took the place of, measured offline: the storm's rain is the
+  loudest bed and the crash the loudest sound; nothing reaches full scale.
 
 ### Weather
 
@@ -168,3 +175,4 @@ starts at any beat with `?prologue=<beat>` ([[Prologue]]), each in its own weath
   six fires' height burns thinner and is lit only at those points.
 - Fire does not spread, die down or burn anything: a fire burns as it was lit until it is put out.
 - Ships are posed on the rules' swell, so in a storm's gained sea a hull may sit into a drawn crest.
+- Past the picture's edge the blur takes the edge's own pixels, so a blurred view keeps its brightness to the edge. The title's and the prompt's soft dark glow is not drawn, only their hard shadow under them.

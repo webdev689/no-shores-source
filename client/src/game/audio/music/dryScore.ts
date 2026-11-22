@@ -1,10 +1,10 @@
 // Dry: the fight in the desert, on the savanna and across the steppe. A Phrygian with its major third (A, B flat, C
 // sharp, D, E, F, G) in 7/8, two, two and three, at a quarter of 150: a caravan riding hard. A double reed's tune over
 // an oud's ostinato and a darbuka's doum and tek, the strings' counter-line slow under it. The danger near is the
-// cellos rubbing A against B flat in sixteenths over a frame drum and a hiss of sand. The peak lays the brass under
-// the tune, the choir in open fifths and stabs on the bar, and swells into each section. The plan: a vamp, the tune,
-// the steppe's gallop rising F, G, A, a break of calls and drums, the tune again. The cadence falls D, C, B flat, A;
-// the victory rises F, G, A into a held A major; the defeat leaves the reed alone over the rubbing cellos.
+// cellos rubbing A against B flat in sixteenths over a frame drum and a hiss of sand. The peak lays the brass under the
+// tune, the choir in open fifths and stabs on the bar, and noise swelling into each section. The plan: a vamp, the
+// tune, the steppe's gallop rising F, G, A, a break of calls and drums, the tune again. The cadence falls D, C, B flat,
+// A; the victory rises F, G, A into a held A major; the defeat leaves the reed alone over the rubbing cellos.
 
 import { chordAt, type Held, keys, measured, plan, progression, roll, runsOf } from './craft.ts';
 import { type Edge, type Song, type Writer, lay, makeSong } from './score.ts';
@@ -68,13 +68,6 @@ const TRACKS = {
     role: 'peak',
     voice: { mod: 1, index: 1.1, idxDecay: 2, attack: 0.35, release: 0.7, unison: 2, cents: 12, spread: 0.45 },
   },
-  swell: {
-    program: 119,
-    volume: 120,
-    pan: 64,
-    role: 'peak',
-    voice: { mod: 3.73, index: 6, idxDecay: 4, attack: 1.6, decay: 0.02, sustain: 1, release: 0.05, gain: 0.45 },
-  },
 } as const;
 type Track = keyof typeof TRACKS;
 
@@ -83,8 +76,8 @@ type Track = keyof typeof TRACKS;
 const KIT = {
   volume: 92,
   role: 'combat',
-  roles: { heart: 'tension', sand: 'tension' },
-  keys: { kick: 36, frame: 41, doum: 64, tek: 37, ka: 39, riq: 54, crash: 49, heart: 87, sand: 82 },
+  roles: { heart: 'tension', sand: 'tension', riser: 'peak' },
+  keys: { kick: 36, frame: 41, doum: 64, tek: 37, ka: 39, riq: 54, crash: 49, heart: 87, sand: 82, riser: 55 },
   drums: {
     kick: { hz: 52, decay: 0.32, gain: 1.05, click: 0.4 },
     frame: { hz: 66, decay: 0.5, gain: 1.05, drop: 0.75, click: 0.25 },
@@ -94,6 +87,8 @@ const KIT = {
     riq: { hz: 7600, q: 1.4, decay: 0.12, gain: 0.32 },
     crash: { decay: 1.8, q: 0.5, gain: 0.7 },
     heart: { hz: 70, decay: 0.42, gain: 1, drop: 0.75, click: 0.12 },
+    // A swell of noise rising into the bar line, a reverse cymbal: noise, so it never whines as a pitched sweep does.
+    riser: { hz: 2600, q: 0.6, attack: 1.6, decay: 0.12, gain: 0.6 },
     sand: { hz: 6200, q: 1.6, decay: 0.06, gain: 0.28 },
   },
 } as const;
@@ -243,8 +238,7 @@ function underneath(w: Write): void {
         50,
         96,
       );
-      if ((PLAN[bar + 1]?.inBar ?? 0) === 0)
-        for (const n of keys('A5 Bb5')) w.note('swell', bar + 1, -(1.6 * BPM) / 60, (1.6 * BPM) / 60, n, 84);
+      if ((PLAN[bar + 1]?.inBar ?? 0) === 0) w.hit('riser', bar + 1, -(1.6 * BPM) / 60, 84);
     }
     if (section !== 'vamp')
       for (const beat of inBar % 2 ? [2] : GROUPS)

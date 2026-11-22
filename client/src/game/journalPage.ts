@@ -1,241 +1,303 @@
-// The menu's Journal: the quests held as cards in its middle, the bounties taken as tiles at its right, and the
-// timers dropping from its top when DFO's hourglass (in the account mark's place) or T is pressed. It reads the rules'
-// draws and the last word of the character any room sent, so it reads the same at sea; it judges no rule.
-import { make } from '../editor/dom.ts';
+// The menu's Journal, drawn by the game: the houses' roads as cards in its middle, the bounties taken as tiles at its
+// right, and the timers dropping from its top when DFO's hourglass (in the account mark's place) or T is pressed. It
+// reads the rules' draws and the last word of the character any room sent, so it reads the same at sea; it judges no
+// rule.
 import type { GearState } from '../network/gearMessages.ts';
-import { HOURGLASS_URL, bannerUrl } from '../plus/journalArt.ts';
-import { ROLES } from '../plus/kit.ts';
+import { HOURGLASS_SVG, bannerSvg } from '../plus/journalArt.ts';
 import { roomNow } from '../sky/worldClock.ts';
+import type { Child, Node } from '../ui/node.ts';
+import type { Interface } from '../ui/ui.ts';
 import type { ThisWeek } from './activityWords.ts';
 import { type BountyRow, bountyWords, payOf } from './bountyBoard.ts';
-import { bountyCard, bountyTile, chooseTile, focusUnderPointer, moveAmongTiles } from './bountyTiles.ts';
-import { iconImage } from './journalIcons.ts';
-import { pressOf } from './gearDom.ts';
-import { STEP_BACK } from './gearScreen.ts';
-import { timersPanel } from './journalTimers.ts';
-import {
-  CARDS_A_PAGE,
-  QUESTS_WRITTEN,
-  type QuestCard,
-  type WrittenQuest,
-  bountyColumnOf,
-  questCardsOf,
-} from './journalWords.ts';
-import { pagesOf } from './rosterRows.ts';
+import { TileChoice, bountyCardNode, bountyTileNode, stateLine } from './bountyTiles.ts';
+import { INK, type Sizes, words } from './gearNodes.ts';
+import { iconNode, pixelNode } from './journalIcons.ts';
+import { timersNode } from './journalTimers.ts';
+import { CARDS_A_PAGE, type QuestCard, bountyColumnOf, questCardsOf } from './journalWords.ts';
+import type { PlainContext } from './menuPage.ts';
 
-/** What the Journal reads: the day's and the week's activities, the last word of the character any room sent, and
- *  the quests written (the content's, unless a harness gives its own). */
+/** What the Journal reads: the day's and the week's activities, and the last word of the character any room sent. */
 export interface JournalSource {
   week(): ThisWeek | null;
   kept(): GearState | null;
-  readonly written?: readonly WrittenQuest[];
 }
 
-export interface Journal {
-  /** DFO's hourglass, which stands in the account mark's place on the Journal: pressed, it drops the timers. */
-  readonly hourglass: HTMLButtonElement;
-  /** The Journal's one page, brought up to date: its quests, its bounties and, while dropped, its timers. */
-  page(): HTMLElement;
-}
+/** The hourglass's id, where the focus goes back as the timers go up. */
+export const HOURGLASS = 'hourglass';
+/** The hourglass's pixels, and the press it stands in, as the account mark's. */
+const GLASS: readonly [number, number] = [9, 12];
+const MARK_PX = 48;
+/** A banner's pixels. */
+const BANNER: readonly [number, number] = [16, 24];
+/** What the page says with no card: before any room's word, or with none of the roads walked or done. */
+const NO_QUESTS = 'No quests held. Quests you take up are kept here.';
 
-/** A quest's card: its banner, its name, a line of its tale, and its step's number and name, marked Done once all
- *  are; a name or tale its card cuts short is kept whole in its title. */
-/** `shown` read as `words`: its own text hidden from a reader, and the words in its place hidden from sight. */
-function heard(shown: HTMLElement, words: string): HTMLElement {
-  const seen = make('span', shown.textContent ?? '');
-  seen.setAttribute('aria-hidden', 'true');
-  shown.replaceChildren(seen, make('span', words, 'journal-unseen'));
-  return shown;
-}
-
-function questCard(card: QuestCard): HTMLElement {
-  const item = make('li', '', `journal-card ${ROLES.panel}`);
-  item.dataset['key'] = `quest-${card.id}`;
-  const banner = make('img', '', 'journal-banner');
-  [banner.src, banner.alt] = [bannerUrl(card.banner), ''];
-  const words = make('div', '', 'journal-card-words');
-  const name = make('b', card.name, 'journal-card-name');
-  const tale = make('p', card.tale, 'journal-card-tale');
-  [name.title, tale.title] = [card.name, card.tale];
-  const step = make('p', '', 'journal-card-step');
-  step.append(make('span', String(card.step), 'journal-step-number'), make('span', card.stepName));
-  if (card.done) step.append(iconImage('taken', 'Done', 24));
-  words.append(name, tale, step);
-  item.append(banner, words);
-  return item;
-}
-
-export function startJournal(source: JournalSource | null, now: () => number = roomNow): Journal {
-  const node = make('div', '', 'journal');
-  node.dataset['key'] = 'journal';
-  const quests = make('section', '', 'journal-quests');
-  const bounties = make('section', '', `journal-bounties ${ROLES.panel}`);
-  const hourglass = make('button', '', 'gear-hourglass');
-  hourglass.type = 'button';
-  hourglass.dataset['key'] = 'hourglass';
-  hourglass.setAttribute('aria-label', 'Timers');
-  hourglass.title = 'Timers';
-  hourglass.setAttribute('aria-controls', 'journal-timers');
-  hourglass.setAttribute('aria-expanded', 'false');
-  hourglass.hidden = true;
-  const glass = make('img');
-  [glass.src, glass.alt, glass.width, glass.height] = [HOURGLASS_URL, '', 27, 36];
-  hourglass.append(glass);
-  const drop = (down: boolean) => {
-    const inPanel = panel.node.contains(document.activeElement);
-    panel.node.hidden = !down;
-    hourglass.setAttribute('aria-expanded', String(down));
-    quests.inert = bounties.inert = down;
-    if (down) {
-      panel.list.scrollTop = 0;
-      panel.close.focus();
-    } else if (inPanel) hourglass.focus();
+/** A quest's card: its banner, its name, a line of its tale, and its task's number in a brass badge and its words,
+ *  marked by a tick once the quest is done; a name or tale it cuts short is read whole to a screen reader. */
+function questCard(card: QuestCard, wide: boolean): Node {
+  const [bannerWidth, bannerHeight] = wide ? [80, 120] : [64, 96];
+  return {
+    id: `quest-${card.id}`,
+    focusable: true,
+    label: `${card.name}. ${card.tale} Step ${card.step}: ${card.stepName}${card.done ? '. Done' : ''}`,
+    role: 'panel',
+    width: 'grow',
+    gap: 12,
+    padding: [6, 14, 6, 8],
+    alignY: 'center',
+    children: [
+      pixelNode(`banner ${card.banner}`, bannerSvg(card.banner), BANNER, bannerWidth, bannerHeight),
+      {
+        width: 'grow',
+        direction: 'column',
+        gap: 4,
+        children: [
+          { width: 'grow', text: { words: card.name, size: wide ? 2 : 1, colour: INK.word, ellipsis: true } },
+          { width: 'grow', maxHeight: 40, clip: true, text: { words: card.tale, colour: INK.faint } },
+          {
+            width: 'grow',
+            gap: 6,
+            alignY: 'center',
+            children: [
+              {
+                minWidth: 22,
+                padding: [0, 4],
+                alignX: 'center',
+                fill: 'rgba(122,84,36,0.25)',
+                children: [words(String(card.step), 1, INK.brassLit)],
+              },
+              { width: 'grow', text: { words: card.stepName, colour: INK.word, ellipsis: true } },
+              card.done && iconNode('taken', 24),
+            ],
+          },
+        ],
+      },
+    ],
   };
-  const panel = timersPanel(() => drop(false));
-  hourglass.addEventListener('click', () => drop(panel.node.hidden !== false));
-  node.append(quests, bounties, panel.node);
-  node.addEventListener(STEP_BACK, (event) => {
-    if (panel.node.hidden) return;
-    event.preventDefault();
-    drop(false);
-  });
-  addEventListener(
-    'keydown',
-    (event) => {
-      const typing = event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement;
-      const held = event.ctrlKey || event.metaKey || event.altKey;
-      if (event.key.toLowerCase() !== 't' || event.repeat || held || typing || !node.isConnected) return;
-      event.preventDefault();
-      hourglass.click();
-    },
-    { capture: true },
-  );
-  let [pageAt, built, chosen] = [0, '', -1];
-  const keyed = new Map<string, HTMLElement>();
-  /** Keeps a control by its key, so a rebuild finds the focus again. */
-  const keep = <Kept extends HTMLElement>(element: Kept, key: string): Kept => {
-    element.dataset['key'] = key;
-    keyed.set(key, element);
-    return element;
-  };
-  const buildQuests = (cards: readonly QuestCard[], written: number) => {
-    const count = pagesOf(cards, CARDS_A_PAGE);
-    pageAt = Math.min(pageAt, count - 1);
-    const head = make('div', '', 'journal-quests-head');
-    head.append(make('h3', 'Quests', 'journal-title'));
-    quests.replaceChildren(head);
-    if (cards.length === 0) {
-      const said =
-        written === 0
-          ? 'No quests yet. The story’s missions and side quests come later.'
-          : 'No quests held. Quests you take up are kept here.';
-      // The two banners a quest wears stand over the line, resting, so the page reads as waiting rather than empty.
-      const empty = make('div', '', 'journal-empty');
-      const banners = make('div', '', 'journal-empty-banners');
-      for (const key of ['story', 'side']) {
-        const banner = make('img', '', 'journal-banner');
-        [banner.src, banner.alt] = [bannerUrl(key), ''];
-        banners.append(banner);
-      }
-      empty.append(banners, make('p', said, 'gear-hint'));
-      quests.append(empty);
-      return;
-    }
-    // How many are held, beside the title as the bounties' count is; the pages to turn, together at the right.
-    head.append(heard(make('span', String(cards.length), `gear-chip ${ROLES.chip}`), `${cards.length} held`));
-    const pager = make('div', '', 'journal-pager');
-    const [back, next] = (
-      [
-        ['◂', -1, 'back', 'the page before', pageAt === 0],
-        ['▸', 1, 'next', 'the next page', pageAt >= count - 1],
-      ] as const
-    ).map(([, step, key, words, none]) => {
-      const turn = () => ((pageAt = Math.max(0, Math.min(count - 1, pageAt + step))), journal.page());
-      const arrow = keep(pressOf('', turn), `quests-${key}`);
-      arrow.append(iconImage(key, '', 24));
-      arrow.setAttribute('aria-label', `Quests: ${words}`);
-      arrow.setAttribute('aria-disabled', String(none));
-      // One page has no other to turn to, so its arrows are not stops for Tab.
-      if (count === 1) arrow.tabIndex = -1;
-      return arrow;
-    });
-    const pageWords = heard(
-      make('span', `${pageAt + 1}/${count}`, 'journal-page-at'),
-      `Page ${pageAt + 1} of ${count}`,
-    );
-    pager.append(...(back ? [back] : []), pageWords, ...(next ? [next] : []));
-    head.append(pager);
-    const list = make('ol', '', 'journal-cards');
-    list.append(...cards.slice(pageAt * CARDS_A_PAGE, (pageAt + 1) * CARDS_A_PAGE).map(questCard));
-    quests.append(list);
-  };
-  const buildBounties = (gear: GearState | null, day: number | null) => {
-    const column = bountyColumnOf(gear, day);
-    const head = make('div', '', 'journal-bounties-head');
-    head.append(make('h3', 'Bounties', 'journal-title'));
-    // How many are taken of the board's, once there is a board to count.
-    if (column.slots > 0)
-      head.append(make('span', `${column.taken.length}/${column.slots}`, `gear-chip ${ROLES.chip}`));
-    const grid = make('div', '', 'journal-tiles');
-    const said = make('div', '', 'journal-bounty-said');
-    said.dataset['key'] = 'bounty-said';
-    said.setAttribute('aria-live', 'polite');
-    const pay = gear ? payOf(gear) : { xp: 0, aurem: 0 };
-    const tiles: HTMLElement[] = [];
-    const show = (row: BountyRow) => {
-      chosen = row.place;
-      chooseTile(tiles, row.place);
-      const word = row.state === 'held' ? null : make('p', '', 'bounty-card-state');
-      word?.append(iconImage('taken', '', 24), make('span', bountyWords(row)));
-      said.replaceChildren(bountyCard(row, pay, word));
+}
+
+/** The Journal: its state between frames (whether the timers are down, the page of quests turned to, the bounty
+ *  chosen), and each frame's nodes. */
+export class Journal {
+  /** Whether the timers are down over the page. */
+  down = false;
+  private pageAt = 0;
+  private readonly choice = new TileChoice();
+  /** Where the focus goes once laid: to the timers' Close as they drop, back to the hourglass as they go up. */
+  private focusing: string | null = null;
+
+  private readonly source: JournalSource | null;
+  private readonly now: () => number;
+
+  constructor(source: JournalSource | null, now: () => number = roomNow) {
+    [this.source, this.now] = [source, now];
+  }
+
+  /** Drops the timers, or takes them up. */
+  toggle(): void {
+    this.down = !this.down;
+    this.focusing = this.down ? 'timers-close' : HOURGLASS;
+  }
+
+  /** Takes the timers up, as the Journal is left or Escape steps back from them: whether they were down. */
+  up(): boolean {
+    const was = this.down;
+    this.down = false;
+    return was;
+  }
+
+  /** DFO's hourglass, in the account mark's place on the Journal: pressed, it drops the timers; turned and lit while
+   *  they are down. */
+  hourglass(ui: Interface): Node {
+    if (ui.clicked(HOURGLASS)) this.toggle();
+    const lit = this.down || ui.hovered(HOURGLASS) || (ui.focused(HOURGLASS) && ui.keyFocused);
+    return {
+      id: HOURGLASS,
+      press: true,
+      label: this.down ? 'Timers: close' : 'Timers',
+      role: 'well',
+      width: MARK_PX,
+      height: MARK_PX,
+      alignX: 'center',
+      alignY: 'center',
+      ...(lit && { outline: { width: 1, colour: INK.brass } }),
+      children: [
+        {
+          width: 27,
+          height: 36,
+          opacity: lit ? 1 : 0.85,
+          picture: {
+            key: 'hourglass',
+            source: { svg: HOURGLASS_SVG },
+            pixel: { width: GLASS[0], height: GLASS[1] },
+            turn: this.down ? 180 : 0,
+          },
+        },
+      ],
     };
-    for (const row of column.taken) {
-      const tile = keep(bountyTile(row), `bounty-${row.place}`);
-      for (const choosing of ['pointerenter', 'focus', 'click']) tile.addEventListener(choosing, () => show(row));
-      focusUnderPointer(tile);
-      tiles.push(tile);
-      grid.append(tile);
-    }
+  }
+
+  /** The page: the quests, the bounties at their right, and while dropped the timers over them, the page dimmed. */
+  page(plain: PlainContext): Node {
+    const { ui, sizes, room } = plain;
+    const [week, gear] = [this.source?.week() ?? null, this.source?.kept() ?? null];
+    if (this.down && ui.clicked('timers-close')) this.toggle();
+    if (this.focusing && ui.boxOf(this.focusing)) [this.focusing] = [null, ui.focusOn(this.focusing)];
+    const wide = sizes.name > 1;
+    const cards = questCardsOf(gear?.quest);
+    const page: Node = {
+      id: 'journal',
+      width: 'grow',
+      gap: 16,
+      wrap: room.width < 600,
+      children: [this.quests(ui, cards, room.width >= 900, wide), this.bounties(ui, gear, week, sizes)],
+    };
+    if (!this.down) return page;
+    return {
+      width: 'grow',
+      direction: 'column',
+      children: [
+        { ...page, opacity: 0.35 },
+        { width: 'grow', height: 'grow', fill: 'rgba(8,10,15,0.72)', solid: true, float: { to: 'parent' } },
+        {
+          width: 'grow',
+          alignX: 'end',
+          float: { to: 'parent', anchor: [1, 0], at: [1, 0], z: 1 },
+          children: [timersNode(ui, week, this.now(), sizes, Math.min(720, room.width))],
+        },
+      ],
+    };
+  }
+
+  /** The quests: their head with how many are held and the page between its arrows, and the cards six a page, two
+   *  columns of three where `twoColumns`; with none, the banners a quest wears resting over the line saying why. */
+  private quests(ui: Interface, cards: readonly QuestCard[], twoColumns: boolean, wide: boolean): Node {
+    const count = Math.max(1, Math.ceil(cards.length / CARDS_A_PAGE));
+    if (ui.clicked('quests-back')) this.pageAt -= 1;
+    if (ui.clicked('quests-next')) this.pageAt += 1;
+    this.pageAt = Math.max(0, Math.min(count - 1, this.pageAt));
+    const arrow = (id: string, icon: 'back' | 'next', none: boolean, said: string): Node => ({
+      id,
+      press: true,
+      disabled: none,
+      label: `Quests: ${said}`,
+      role: 'button',
+      width: 33,
+      height: 33,
+      alignX: 'center',
+      alignY: 'center',
+      children: [{ ...iconNode(icon, 24), opacity: none ? 0.4 : 1 }],
+    });
+    const head: Node = {
+      width: 'grow',
+      gap: 10,
+      alignY: 'center',
+      padding: [0, 0, 8, 0],
+      children: [
+        words('Quests', 2, INK.word),
+        cards.length > 0 && {
+          role: 'chip',
+          padding: [1, 8],
+          label: `${cards.length} held`,
+          children: [words(String(cards.length))],
+        },
+        { width: 'grow' },
+        cards.length > 0 && {
+          gap: 8,
+          alignY: 'center',
+          children: [
+            arrow('quests-back', 'back', this.pageAt === 0, 'the page before'),
+            words(`${this.pageAt + 1}/${count}`, 1, INK.faint),
+            arrow('quests-next', 'next', this.pageAt >= count - 1, 'the next page'),
+          ],
+        },
+      ],
+    };
+    if (cards.length === 0)
+      return {
+        width: 'grow',
+        direction: 'column',
+        children: [
+          head,
+          {
+            width: 'grow',
+            direction: 'column',
+            alignX: 'center',
+            gap: 18,
+            padding: [56, 16, 24, 16],
+            children: [
+              {
+                gap: 20,
+                opacity: 0.32,
+                children: [
+                  pixelNode('banner story', bannerSvg('story'), BANNER, 64, 96),
+                  pixelNode('banner side', bannerSvg('side'), BANNER, 64, 96),
+                ],
+              },
+              { maxWidth: 440, text: { words: NO_QUESTS, colour: INK.faint, align: 'center' } },
+            ],
+          },
+        ],
+      };
+    const shown = cards.slice(this.pageAt * CARDS_A_PAGE, (this.pageAt + 1) * CARDS_A_PAGE);
+    const perRow = twoColumns ? 2 : 1;
+    const rows: Child[] = [];
+    for (let first = 0; first < shown.length; first += perRow)
+      rows.push({
+        width: 'grow',
+        gap: 16,
+        children: shown.slice(first, first + perRow).map((card) => questCard(card, wide)),
+      });
+    return { width: 'grow', direction: 'column', gap: 10, children: [head, ...rows] };
+  }
+
+  /** The bounties taken: six slots three to a row under "Bounties" with how many are taken, each taken a tile with no
+   *  press, the chosen one's card under them; with none to show, why. */
+  private bounties(ui: Interface, gear: GearState | null, week: ThisWeek | null, sizes: Sizes): Node {
+    const column = bountyColumnOf(gear, week?.today.day ?? null);
+    const tile = sizes.name > 1 ? 88 : 64;
+    const ids = new Map(column.taken.map((row) => [row.place, `bounty-${row.place}`]));
+    const chosenPlace = this.choice.choose(ui, ids);
+    const slots: Node[] = column.taken.map((row) => {
+      const id = `bounty-${row.place}`;
+      const lit = ui.hovered(id) || (ui.focused(id) && ui.keyFocused);
+      return bountyTileNode(row, id, tile, row.place === chosenPlace, lit);
+    });
     for (let slot = column.taken.length; slot < column.slots; slot += 1)
-      grid.append(make('span', '', `journal-slot ${ROLES.well}`));
-    grid.addEventListener('keydown', (event) => moveAmongTiles(tiles, event as KeyboardEvent, 3));
-    bounties.replaceChildren(head, grid, said);
-    const first = column.taken.find((row) => row.place === chosen) ?? column.taken[0];
-    if (first) show(first);
-    else said.append(make('p', column.said ?? '', 'gear-hint'));
-  };
-  const journal: Journal = {
-    hourglass,
-    page() {
-      if (!node.isConnected && !panel.node.hidden) {
-        panel.node.hidden = true;
-        hourglass.setAttribute('aria-expanded', 'false');
-        quests.inert = bounties.inert = false;
-      }
-      const [week, gear] = [source?.week() ?? null, source?.kept() ?? null];
-      const written = source?.written ?? QUESTS_WRITTEN;
-      const cards = questCardsOf(gear?.quests ?? [], written);
-      const day = week?.today.day ?? null;
-      const column = [gear?.bounties, gear?.day, gear?.prologueDone, gear?.bountyXp, gear?.bountyAurem, day];
-      const word = JSON.stringify([cards, pageAt, written.length, column]);
-      if (word !== built) {
-        built = word;
-        const active = document.activeElement;
-        const within = quests.contains(active) || bounties.contains(active);
-        const focused = within && active instanceof HTMLElement ? active.dataset['key'] : undefined;
-        keyed.clear();
-        buildQuests(cards, written.length);
-        buildBounties(gear, day);
-        // A control gone (a tile as the day turns, an arrow as the last quest goes) leaves the focus on the hourglass.
-        const again = focused ? keyed.get(focused) : undefined;
-        const other = keyed.get(focused === 'quests-next' ? 'quests-back' : 'quests-next');
-        // An arrow that turned to the last page it can rests: the focus goes to the arrow that turns back.
-        const resting = again?.getAttribute('aria-disabled') === 'true' && other ? other : again;
-        if (focused) (resting ?? hourglass).focus();
-      }
-      panel.show(week, now());
-      return node;
-    },
-  };
-  return journal;
+      slots.push({ role: 'well', width: tile, height: tile });
+    const lines: Child[] = [];
+    for (let first = 0; first < slots.length; first += 3)
+      lines.push({ gap: 8, children: slots.slice(first, first + 3) });
+    const chosen = column.taken.find((row) => row.place === chosenPlace);
+    const foot = (row: BountyRow): Child =>
+      row.state === 'held' ? null : stateLine(bountyWords(row), 'taken', sizes.label);
+    const said: Child = chosen
+      ? bountyCardNode(chosen, gear ? payOf(gear) : { xp: 0, aurem: 0 }, foot(chosen), 'grow', sizes.label)
+      : column.said !== null && { width: 'grow', text: { words: column.said, colour: INK.faint } };
+    return {
+      id: 'journal-bounties',
+      role: 'panel',
+      width: 3 * tile + 2 * 8 + 24,
+      direction: 'column',
+      gap: 10,
+      padding: 12,
+      children: [
+        {
+          width: 'grow',
+          gap: 10,
+          alignY: 'center',
+          children: [
+            { width: 'grow', ...words('Bounties', 2, INK.word) },
+            column.slots > 0 && {
+              role: 'chip',
+              padding: [1, 8],
+              children: [words(`${column.taken.length}/${column.slots}`)],
+            },
+          ],
+        },
+        ...lines,
+        { width: 'grow', direction: 'column', children: [said] },
+      ],
+    };
+  }
 }

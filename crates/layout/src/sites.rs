@@ -4,7 +4,7 @@
 
 use crate::areas::Area;
 use crate::brief::AreaKind;
-use crate::field::{Field, Water, distance};
+use crate::field::{Field, distance};
 use crate::paths::Path;
 use crate::seat::Seating;
 use land::exact::rand01;
@@ -22,7 +22,7 @@ pub enum SiteKind {
     Event,
     /// A patrol beacon.
     Beacon,
-    /// A resource node: ore, herbs, timber or salvage.
+    /// A place the island's resource comes from, dressed as a pile of it, its node standing before it.
     Resource,
     /// Where foes hold ground.
     Foes,
@@ -40,6 +40,10 @@ pub struct Site {
     pub radius: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub holds: Option<String>,
+    /// Where a resource's node stands: `NODE_FRONT_M` before its dressing, toward the path it lies off; none where that
+    /// is off the section's floor.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub node: Option<[f64; 2]>,
 }
 
 /// How far apart resource nodes stand along the paths, metres, and how far off a path they lie at most.
@@ -47,6 +51,38 @@ const RESOURCE_EVERY_M: f64 = 180.0;
 /// The most resource nodes a layout holds.
 const RESOURCE_MOST: usize = 16;
 const RESOURCE_OFF_M: f64 = 55.0;
+/// How far before its dressing, toward its path, a resource's node stands, metres: past the dressing's widest pieces
+/// (`marks`), so its picture stands clear of them.
+pub const NODE_FRONT_M: f64 = 5.0;
+/// How clear of every piece standing over the floor, and of every planting, a resource's node stands, metres.
+pub const NODE_CLEAR_M: f64 = 1.0;
+const NODE_PLANTING_M: f64 = 1.5;
+/// How far apart resource places stand from each other and from beacons, metres: each place's pieces clear of the
+/// other's.
+const RESOURCE_APART_M: f64 = 12.0;
+
+/// Whether a resource's node can stand at `node` once the layout is laid: inside its ring (the room's bounds), on dry
+/// floor, and clear of every solid taller than a step and of every planting; one that cannot has none, and its place
+/// is only dressed.
+#[must_use]
+pub fn node_stands(
+    node: [f64; 2],
+    ring: &[[f64; 2]],
+    field: &Field,
+    (solids, plantings): (&[city::solids::Solid], &[crate::plantings::Planting]),
+) -> bool {
+    let [x, y] = node;
+    let dry = field.water[field.nearest(x, y)] == crate::field::Water::Dry;
+    let blocked = solids.iter().any(|solid| {
+        let [west, north, east, south, bottom, top] = solid.bounds();
+        let near =
+            x > west - NODE_CLEAR_M && x < east + NODE_CLEAR_M && y > north - NODE_CLEAR_M && y < south + NODE_CLEAR_M;
+        near && top - bottom > 0.3
+    });
+    let planted =
+        plantings.iter().flat_map(|planting| &planting.points).any(|&point| distance(point, node) < NODE_PLANTING_M);
+    crate::field::ring_holds(ring, x, y) && dry && !blocked && !planted
+}
 
 /// Whether a point is clear to stand a site on: walkable land not under a building or within a metre of one.
 fn clear(field: &Field, seating: &Seating, at: [f64; 2]) -> bool {
@@ -71,9 +107,19 @@ fn off_paths(paths: &[Path], at: [f64; 2]) -> bool {
 }
 
 #[must_use]
-pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, seed: u32) -> Vec<Site> {
+/// Marks a layout's sites; each resource site holds `resource`, its island's (content/gear/resources.json), or nothing
+/// on land that has none.
+pub fn mark(
+    field: &Field,
+    areas: &[Area],
+    paths: &[Path],
+    seating: &Seating,
+    seed: u32,
+    resource: Option<&str>,
+) -> Vec<Site> {
     let mut sites = Vec::new();
-    let site = |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site { kind, at, radius, holds };
+    let site =
+        |kind: SiteKind, at: [f64; 2], radius: f64, holds: Option<String>| Site { kind, at, radius, holds, node: None };
     for (number, area) in areas.iter().enumerate() {
         match area.kind {
             AreaKind::Landing | AreaKind::Entrance => sites.push(site(SiteKind::Landing, area.at, area.radius, None)),
@@ -131,29 +177,22 @@ pub fn mark(field: &Field, areas: &[Area], paths: &[Path], seating: &Seating, se
             let off = 18.0 + rand01(seed, &[count, 5]) * (RESOURCE_OFF_M - 18.0);
             let at = [pair[1][0] - south / length * off * side, pair[1][1] + east / length * off * side];
             let resources = sites.iter().filter(|other| other.kind == SiteKind::Resource).count();
+            let apart = sites
+                .iter()
+                .filter(|other| matches!(other.kind, SiteKind::Resource | SiteKind::Beacon))
+                .all(|other| distance(other.at, at) > RESOURCE_APART_M);
             if resources < RESOURCE_MOST
+                && apart
                 && clear(field, seating, at)
                 && off_paths(paths, at)
                 && areas.iter().all(|area| distance(area.at, at) > area.radius * 0.6)
             {
-                sites.push(site(SiteKind::Resource, at, 2.0, Some(resource_at(field, at).to_owned())));
+                let back = NODE_FRONT_M / off;
+                let node = [at[0] + (pair[1][0] - at[0]) * back, at[1] + (pair[1][1] - at[1]) * back];
+                let holds = resource.map(str::to_owned);
+                sites.push(Site { node: Some(node), ..site(SiteKind::Resource, at, 2.0, holds) });
             }
         }
     }
     sites
-}
-
-/// What a resource node at a point holds, by the land there: ore on steep or rocky ground, salvage by the sea, herbs
-/// by fresh water, timber elsewhere.
-fn resource_at(field: &Field, at: [f64; 2]) -> &'static str {
-    let cell = field.nearest(at[0], at[1]);
-    if field.slope[cell] > 0.3 {
-        "ore"
-    } else if field.to_sea[cell] < 60.0 {
-        "salvage"
-    } else if field.to_fresh[cell] < 60.0 || field.water[cell] != Water::Dry {
-        "herbs"
-    } else {
-        "timber"
-    }
 }

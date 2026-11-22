@@ -90,43 +90,77 @@ function rgbOf(hex: string): [number, number, number] {
 /** Each rarity's line colour, read once. */
 const LINE_COLOURS = RARITIES.map((rarity) => rgbOf(rarity.colour));
 
-/** The numbers of a run of one colour along a picture's rows (as many rows as repeat it): its left and right (metres
- *  off its middle), its foot and its top (metres over the ground), and its red, green and blue. */
-const RUN = 7;
-const runsKept = new WeakMap<PixelPicture, readonly number[]>();
+/** The numbers of a rectangle of one colour: its left and right (metres off the picture's middle), its foot and its
+ *  top (metres over the ground), its red, green and blue, and its layer. */
+const RUN = 8;
+/** How much nearer the eye each layer of a picture stands than the one under it, metres: far more than the depth
+ *  buffer tells apart wherever a picture is seen, far less than the eye does. */
+const LAYER_M = 0.002;
+/** Each picture's rectangles, laid flat and in layers, worked out the first time it is laid so. */
+const runsKept = [new WeakMap<PixelPicture, readonly number[]>(), new WeakMap<PixelPicture, readonly number[]>()];
 
-/** A picture's runs, worked out the first time it is laid. */
-function runsOf(picture: PixelPicture): readonly number[] {
-  const kept = runsKept.get(picture);
+/**
+ * A picture's rectangles of one colour, each as far across and down as it may run. Laid in layers, its colours go on
+ * in turn, the one spread widest first, each running under the colours laid after it, so a diamond inside a diamond
+ * is a rectangle a step rather than a run a row. Laid flat, for a picture seen through, where one layer would show
+ * through another, no rectangle covers another.
+ */
+function runsOf(picture: PixelPicture, layered: boolean): readonly number[] {
+  const kept = runsKept[Number(layered)]?.get(picture);
   if (kept) return kept;
+  const { rows } = picture;
+  const [width, height] = [rows[0]?.length ?? 0, rows.length];
   const colours = picture.colours.map(rgbOf);
-  const width = picture.rows[0]?.length ?? 0;
+  const colourOf = (letter: string) => colours['abcdef'.indexOf(letter)];
+  // Each drawn letter's spread: the area of the box round its cells.
+  const boxes = new Map<string, [number, number, number, number]>();
+  rows.forEach((row, line) =>
+    [...row].forEach((letter, column) => {
+      if (!colourOf(letter)) return;
+      const [left, top, right, bottom] = boxes.get(letter) ?? [column, line, column, line];
+      boxes.set(letter, [Math.min(left, column), top, Math.max(right, column), Math.max(bottom, line)]);
+    }),
+  );
+  const spread = (letter: string) => {
+    const [left, top, right, bottom] = boxes.get(letter) ?? [0, 0, -1, -1];
+    return (right - left + 1) * (bottom - top + 1);
+  };
+  const letters = [...boxes.keys()].sort((one, other) => spread(other) - spread(one));
+  const layerAt = (column: number, line: number) => letters.indexOf(rows[line]?.charAt(column) ?? '');
   const runs: number[] = [];
-  // A run open from the row above, by its columns and letter: where its foot is in `runs`.
-  let open = new Map<string, number>();
-  picture.rows.forEach((row, line) => {
-    const foot = (picture.rows.length - line - 1) * PIXEL_M + LIFT_M;
-    const next = new Map<string, number>();
-    for (let column = 0; column < row.length;) {
-      const letter = row[column] ?? '';
-      let end = column + 1;
-      while (end < row.length && row[end] === letter) end++;
-      const colour = colours['abcdef'.indexOf(letter)];
-      const key = `${column}:${end}:${letter}`;
-      const above = open.get(key);
-      if (colour && above !== undefined) {
-        // The same run as the row above: that one reaches down to here.
-        runs[above] = foot;
-        next.set(key, above);
-      } else if (colour) {
-        next.set(key, runs.length + 2);
-        runs.push((column - width / 2) * PIXEL_M, (end - width / 2) * PIXEL_M, foot, foot + PIXEL_M, ...colour);
+  letters.forEach((letter, layer) => {
+    const [red, green, blue] = colourOf(letter) ?? [0, 0, 0];
+    const laid = new Set<number>();
+    const owed = (column: number, line: number) =>
+      rows[line]?.charAt(column) === letter && !laid.has(line * width + column);
+    const under = layered ? (column: number, line: number) => layerAt(column, line) >= layer : owed;
+    const along = (line: number, left: number, right: number, test: typeof owed) =>
+      Array.from({ length: right - left + 1 }, (unused, step) => test(left + step, line));
+    for (let line = 0; line < height; line += 1)
+      for (let column = 0; column < width; column += 1) {
+        if (!owed(column, line)) continue;
+        // Across as far as it may run and back to its last cell owed; then down the same.
+        let [right, bottom] = [column, line];
+        while (under(right + 1, line)) right += 1;
+        while (!owed(right, line)) right -= 1;
+        while (along(bottom + 1, column, right, under).every(Boolean)) bottom += 1;
+        while (!along(bottom, column, right, owed).some(Boolean)) bottom -= 1;
+        for (let row = line; row <= bottom; row += 1)
+          for (let cell = column; cell <= right; cell += 1) laid.add(row * width + cell);
+        const [foot, top] = [(height - bottom - 1) * PIXEL_M + LIFT_M, (height - line) * PIXEL_M + LIFT_M];
+        runs.push(
+          (column - width / 2) * PIXEL_M,
+          (right + 1 - width / 2) * PIXEL_M,
+          foot,
+          top,
+          red,
+          green,
+          blue,
+          layer,
+        );
       }
-      column = end;
-    }
-    open = next;
   });
-  runsKept.set(picture, runs);
+  runsKept[Number(layered)]?.set(picture, runs);
   return runs;
 }
 
@@ -160,18 +194,31 @@ function acrossFrom(eye: Point, base: Point): [number, number] {
   return [-south / length, east / length];
 }
 
-/** A picture standing on `base`, turned to the eye, each run of one colour along a row two triangles, as marks'
- *  vertices into `out`. */
-export function markPicture(out: number[], picture: PixelPicture, base: Point, eye: Point): void {
+/** A picture standing on `base`, turned to the eye, each rectangle of one colour two triangles, as marks' vertices
+ *  into `out`: its pixels `scale` times a drop's, at `opacity` (below 1 seen through, and laid flat). */
+export function markPicture(
+  out: number[],
+  picture: PixelPicture,
+  base: Point,
+  eye: Point,
+  scale = 1,
+  opacity = 1,
+): void {
   const [right, ahead] = acrossFrom(eye, base);
-  const runs = runsOf(picture);
-  const [x, y, z] = base;
+  const runs = runsOf(picture, opacity >= 1);
+  // Each layer stands a little nearer the eye than the one under it, so it covers it.
+  const far = Math.hypot(eye[0] - base[0], eye[1] - base[1], eye[2] - base[2]) || 1;
+  const [nearX, nearY, nearZ] = [0, 1, 2].map((axis) => (((eye[axis] ?? 0) - (base[axis] ?? 0)) / far) * LAYER_M);
   let next = out.length;
   for (let start = 0; start < runs.length; start += RUN) {
-    const left = runs[start] ?? 0;
-    const end = runs[start + 1] ?? 0;
-    const foot = z + (runs[start + 2] ?? 0);
-    const top = z + (runs[start + 3] ?? 0);
+    const layer = runs[start + 7] ?? 0;
+    const x = base[0] + (nearX ?? 0) * layer;
+    const y = base[1] + (nearY ?? 0) * layer;
+    const z = base[2] + (nearZ ?? 0) * layer;
+    const left = (runs[start] ?? 0) * scale;
+    const end = (runs[start + 1] ?? 0) * scale;
+    const foot = z + (runs[start + 2] ?? 0) * scale;
+    const top = z + (runs[start + 3] ?? 0) * scale;
     const red = runs[start + 4] ?? 0;
     const green = runs[start + 5] ?? 0;
     const blue = runs[start + 6] ?? 0;
@@ -179,12 +226,12 @@ export function markPicture(out: number[], picture: PixelPicture, base: Point, e
     const leftY = y + ahead * left;
     const endX = x + right * end;
     const endY = y + ahead * end;
-    next = put(out, next, leftX, leftY, foot, red, green, blue, 1);
-    next = put(out, next, endX, endY, foot, red, green, blue, 1);
-    next = put(out, next, endX, endY, top, red, green, blue, 1);
-    next = put(out, next, leftX, leftY, foot, red, green, blue, 1);
-    next = put(out, next, endX, endY, top, red, green, blue, 1);
-    next = put(out, next, leftX, leftY, top, red, green, blue, 1);
+    next = put(out, next, leftX, leftY, foot, red, green, blue, opacity);
+    next = put(out, next, endX, endY, foot, red, green, blue, opacity);
+    next = put(out, next, endX, endY, top, red, green, blue, opacity);
+    next = put(out, next, leftX, leftY, foot, red, green, blue, opacity);
+    next = put(out, next, endX, endY, top, red, green, blue, opacity);
+    next = put(out, next, leftX, leftY, top, red, green, blue, opacity);
   }
 }
 
@@ -236,10 +283,26 @@ export function markLine(
   }
 }
 
+/** The line of light a drop at rest stands under, in its rarity's colour and height, rising from `over` metres above
+ *  `place`: for a piece of gear the world lays down itself, drawn as it is. */
+export function markDropLine(
+  out: number[],
+  { place, rarity, over }: { readonly place: Point; readonly rarity: number; readonly over: number },
+  seconds: number,
+  eye: Point,
+): void {
+  const crown: Point = [place[0], place[1], place[2] + over + LIFT_M];
+  markLine(out, crown, LINE_M[rarity] ?? AMMO_LINE_M, LINE_COLOURS[rarity] ?? WHITE, 1, seconds, eye);
+}
+
 /** How near the player's feet come to a drop to take it, across and up, metres (crates/room/src/drops.rs
  *  PICK_UP_REACH). */
 const REACH_M = 1.5;
 const REACH_UP_M = 2;
+
+/** Whether feet at `feet` are near enough a drop resting at `rest` to take it. */
+export const inReach = (feet: Point, rest: Point): boolean =>
+  Math.hypot(feet[0] - rest[0], feet[1] - rest[1]) <= REACH_M && Math.abs(feet[2] - rest[2]) <= REACH_UP_M;
 
 /** A drop's key among the others: what it is and its number. */
 const keyOf = (drop: GearDrop) => `${drop.kind}-${drop.id}`;
@@ -307,8 +370,7 @@ export class DropsShown {
    *  after `frame`, which knows which drops rest. */
   ammoFull(drops: readonly GearDrop[], feet: Point, full: boolean): boolean {
     const was = this.refused;
-    const under = (drop: GearDrop) =>
-      Math.hypot(feet[0] - drop.at[0], feet[1] - drop.at[1]) <= REACH_M && Math.abs(feet[2] - drop.at[2]) <= REACH_UP_M;
+    const under = (drop: GearDrop) => inReach(feet, drop.at);
     const boxes = drops.filter((drop) => drop.kind === DROPPED.ammoBox && this.rested.has(keyOf(drop)) && under(drop));
     this.refused = new Set(full ? boxes.map(keyOf) : []);
     return [...this.refused].some((key) => !was.has(key));

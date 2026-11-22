@@ -5,7 +5,7 @@ import { SPELLS } from '../network/artMessages.ts';
 import type { FightEvent } from '../network/messages.ts';
 import type { Action, StatusName } from '../rules/fighters.ts';
 import type { Block, Mode } from '../rules/movementRules.ts';
-import { EVENT, HOW } from './cues.ts';
+import { EVENT, HOW, landsAsSpell } from './cues.ts';
 import type { Surface } from './shotMarks.ts';
 
 type Point = readonly [number, number, number];
@@ -71,8 +71,8 @@ export interface EventCue {
 /**
  * The cues a fight's event calls for: a blow landing by what struck it (a blade, something blunt, an arrow or bolt, a
  * ball; a spell is heard as its own cast), a crit, the element it burst in (`look`, as its picture bursts) and a kill
- * in an element's finisher; a blow met by a shield or a blade, a parry, a guard broken, a kill, and a foe's shield
- * struck or broken.
+ * in an element's finisher; a blow met by a shield or a blade, a parry, a guard broken, a kill, a foe's shield
+ * struck or broken, and a drink's heal (the sound of standing again whole: there is no drinking sound).
  */
 export function eventCues(
   event: FightEvent,
@@ -83,7 +83,7 @@ export function eventCues(
   switch (event.kind) {
     case EVENT.hit: {
       const cues: EventCue[] = [];
-      if (event.how !== HOW.spell) cues.push(atDefender(hitCue(event.how, striker)));
+      if (!landsAsSpell(event)) cues.push(atDefender(hitCue(event.how, striker)));
       if (event.crit) cues.push(atDefender('crit'));
       if (element && event.how !== HOW.spell) cues.push(atDefender(`element.${element}`));
       return cues;
@@ -100,6 +100,8 @@ export function eventCues(
       return [atDefender('shield.hit')];
     case EVENT.shieldBroken:
       return [atDefender('shield.break')];
+    case EVENT.healed:
+      return [atDefender('respawn')];
     default:
       return [];
   }

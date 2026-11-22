@@ -35,6 +35,7 @@ obs "$T/C/task-observer/skill-observations/observation-log/0001-one.md" open
 run A save; run B save
 echo "a's scan" >> "$A/checkpoints.log"; echo "b's scan" >> "$B/checkpoints.log"
 obs "$A/observation-log/0004-from-a.md" open; obs "$B/observation-log/0004-from-b.md" open
+mkdir -p "$B/observation-log/archive/.id-claims"; : > "$B/observation-log/archive/.id-claims/0004"
 run A save; run B save
 git fetch -q origin toolkit-data; tip=$(git rev-parse FETCH_HEAD)
 show checkpoints.log | grep -q "a's scan" && show checkpoints.log | grep -q "b's scan" ||
@@ -42,6 +43,9 @@ show checkpoints.log | grep -q "a's scan" && show checkpoints.log | grep -q "b's
 show observation-log/0004-from-a.md >/dev/null && show observation-log/0005-from-b.md | grep -q '^id: 5$' ||
   fail "a number both sessions took was not moved on: $(git ls-tree -r --name-only "$tip" | grep 000[45] | tr '\n' ' ')"
 [ -f "$B/observation-log/0005-from-b.md" ] || fail "the moved number did not come back to its container"
+# A number's claim marker (new-observation.sh) is no observation: it keeps its name.
+show observation-log/archive/.id-claims/0004 >/dev/null && ! git ls-tree -r --name-only "$tip" | grep -q -- '-$' ||
+  fail "a claim marker was moved as an observation: $(git ls-tree -r --name-only "$tip" | grep -- '-$' | tr '\n' ' ')"
 # An origin out of reach: the restore restores nothing and says so, and a save with nothing restored saves nothing.
 git clone -q "$T/origin.git" "$T/far"; git -C "$T/far" remote set-url origin "$T/nowhere.git"
 far() { SHARED_DIR="$T/D" REPO_DIR="$T/far" bash "$KIT/toolkit-data.sh" "$1" 2>&1; }

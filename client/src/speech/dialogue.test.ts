@@ -1,86 +1,87 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import cast from '../../../content/story/cast.json' with { type: 'json' };
+import { Stack } from '../ui/stack.ts';
+import { fakeInterface, laidOf, wordsOf } from '../ui/uiForTests.ts';
 import { castOf } from './cast.ts';
-import { DialogueBox } from './dialogue.ts';
+import { DialogueBox, dialogueNode, speaking, typedSpans } from './dialogue.ts';
 
-/** A stand-in element with only what the box reads and writes: children, classes, attributes, text. */
-class Fake {
-  readonly children: Fake[] = [];
-  parent: Fake | null = null;
-  readonly attributes = new Map<string, string>();
-  className = '';
-  id = '';
-  hidden = false;
-  data = '';
-  private text = '';
-  readonly ownerDocument: unknown;
-  constructor(page: unknown) {
-    this.ownerDocument = page;
-  }
-  get textContent(): string {
-    return this.text + this.data + this.children.map((child) => child.textContent).join('');
-  }
-  set textContent(text: string) {
-    this.children.length = 0;
-    this.text = text;
-  }
-  get isConnected(): boolean {
-    return this.parent !== null;
-  }
-  setAttribute(name: string, value: string): void {
-    this.attributes.set(name, value);
-  }
-  getAttribute(name: string): string | null {
-    return this.attributes.get(name) ?? null;
-  }
-  append(...more: Fake[]): void {
-    for (const child of more) [child.parent, this.children[this.children.length]] = [this, child];
-  }
-  prepend(...more: Fake[]): void {
-    for (const child of more) child.parent = this;
-    this.children.unshift(...more);
-  }
-  remove(): void {
-    const siblings = this.parent?.children ?? [];
-    siblings.splice(siblings.indexOf(this), 1);
-    this.parent = null;
-  }
-  all(): Fake[] {
-    return this.children.flatMap((child) => [child, ...child.all()]);
-  }
+const read = castOf(cast);
+const named = Object.entries(read.speakers).find(([, speaker]) => speaker.name !== '');
+const nameless = Object.entries(read.speakers).find(([, speaker]) => speaker.name === '');
+
+/** What the page's announcement was told, in turn. */
+function heard(): string[] {
+  const said: string[] = [];
+  Object.assign(globalThis, { document: { ariaNotify: (words: string) => said.push(words) } });
+  return said;
 }
 
-function fakeRoot(): Fake {
-  const page = {
-    head: null as Fake | null,
-    createElement: () => new Fake(page),
-    createTextNode: (data: string) => Object.assign(new Fake(page), { data }),
-    getElementById: () => null,
-  };
-  page.head = new Fake(page);
-  const root = new Fake(page);
-  root.parent = new Fake(page);
-  return root;
-}
-
-test('a screen reader hears each line from a polite copy, whole and under its speaker’s name, never as it types', () => {
-  const root = fakeRoot();
-  const box = new DialogueBox(root as unknown as HTMLElement, () => null);
-  const read = castOf(cast);
-  void box.play([{ who: 'maren', say: 'There you are.' }], read, { auto: false });
-  const heard = root.all().find((node) => node.getAttribute('aria-live') === 'polite');
-  assert.ok(heard, 'a live copy');
-  assert.equal(heard.hidden, false, 'never hidden, as the box is between lines');
+test('a screen reader hears each line whole and under its speaker’s name, never as it types', () => {
+  const said = heard();
+  const box = new DialogueBox(new Stack(), () => null);
+  const [who, speaker] = named ?? ['', { name: '' }];
+  void box.play([{ who, say: 'There you are.' }], read, { auto: false });
   box.frame(0.05);
-  assert.equal(heard.textContent, '', 'nothing while it types');
+  assert.deepEqual(said, [], 'nothing while it types');
   for (let step = 0; step < 200; step++) box.frame(0.05);
-  assert.equal(heard.textContent, `${read.speakers.maren?.name}: There you are.`);
-  const typed = root.all().filter((node) => node.className.startsWith('speech-words'));
-  assert.ok(
-    typed.every((node) => node.getAttribute('aria-hidden') === 'true'),
-    'the typing is not read',
-  );
+  assert.deepEqual(said, [`${speaker.name}: There you are.`], 'once, whole');
   box.remove();
-  assert.equal(heard.isConnected, false);
+  Object.assign(globalThis, { document: undefined });
+});
+
+test('the box is drawn on the stack while a named speaker talks, and the HUD hears that someone speaks', () => {
+  const stack = new Stack();
+  const { ui } = fakeInterface();
+  const box = new DialogueBox(stack, () => null);
+  assert.equal(speaking(), false);
+  const [who, speaker] = named ?? ['', { name: '' }];
+  void box.play([{ who, say: 'Up. Now.' }], read);
+  assert.equal(speaking(), true);
+  assert.ok(wordsOf(laidOf(stack.node(ui))).includes(speaker.name), 'the name over the words');
+  box.skip();
+  assert.equal(speaking(), false, 'gone between plays');
+  assert.deepEqual(wordsOf(laidOf(stack.node(ui))), []);
+  box.remove();
+});
+
+test('a voice from nowhere is its words alone, mid-screen, and holds no box the HUD gives way to', () => {
+  const stack = new Stack();
+  const { ui } = fakeInterface();
+  const box = new DialogueBox(stack, () => null);
+  void box.play([{ who: nameless?.[0] ?? '', say: 'Below.' }], read);
+  box.frame(5);
+  assert.equal(speaking(), false);
+  const laid = laidOf(stack.node(ui));
+  const words = laid.find((each) => each.node.text);
+  assert.ok(words);
+  assert.ok(Math.abs(words.box.y + words.box.height / 2 - 360) <= 1, 'in the middle');
+  assert.ok(!laid.some((each) => each.node.role === 'window'));
+  box.remove();
+});
+
+test('the words still to type are laid unseen, so the typed never reflow', () => {
+  const half = laidOf(dialogueNode('Kael', typedSpans('Hold fast', ' to the rail'), 1280));
+  const whole = laidOf(dialogueNode('Kael', typedSpans('Hold fast to the rail', ''), 1280));
+  const box = (laid: ReturnType<typeof laidOf>) => laid.find((each) => each.node.role === 'window')?.box;
+  assert.deepEqual(box(half), box(whole));
+});
+
+test('the box keeps to the middle over the sea bar, clear of the vitals, and never narrower than 330 px', () => {
+  for (const [width, wide] of [
+    [1920, 660],
+    [1280, 520],
+    [800, 330],
+  ] as const) {
+    const laid = laidOf(
+      { width: 'grow', height: 'grow', children: [dialogueNode('Kael', typedSpans('Up.', ''), width)] },
+      width,
+      720,
+    );
+    const box = laid.find((each) => each.node.role === 'window')?.box;
+    assert.ok(box);
+    assert.equal(box.width, wide, `${width} px`);
+    assert.equal(box.x + box.width / 2, width / 2);
+    assert.equal(box.y + box.height, 720 - 104);
+  }
 });

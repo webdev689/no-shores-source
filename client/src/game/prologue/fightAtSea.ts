@@ -2,6 +2,7 @@
 // sea fight (SeaCombat, the World Editor's aim, lay, effects and panel) on the land worker's fight door. The rules
 // sail every ship as a Sloop; the player's is drawn as the Brig, and every ship is posed on the swell the story
 // hands it (a storm's, maybe), for the drawing only.
+import type { InputFrame } from '../../player/input.ts';
 import type { FightSource } from '../../editor/fighting.ts';
 import type { SeaFightModel } from '../../plus/seaFight.ts';
 import type { MarkDrawer } from '../../editor/naval.ts';
@@ -280,12 +281,22 @@ export class StoryFight {
     return this.combat.key(key, down);
   }
 
+  /** The pad's part of a frame (SeaCombat.padFrame). */
+  padFrame(pad: InputFrame, seconds: number): void {
+    this.combat.padFrame(pad, seconds);
+  }
+
   drag(right: number, down: number): void {
     this.combat.drag(right, down);
   }
 
   aim(held: boolean): void {
     this.combat.aim(held);
+  }
+
+  /** Whether the guns are being aimed, for the keys shown. */
+  get aiming(): boolean {
+    return this.combat.aimingNow;
   }
 
   holdFire(): void {

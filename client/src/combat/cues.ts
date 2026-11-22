@@ -12,16 +12,33 @@ export const EVENT = {
   perfect: 6,
   staggered: 7,
   killed: 8,
+  respawned: 9,
   feinted: 10,
   shielded: 12,
   shieldBroken: 13,
+  healed: 14,
   /** Every player in an Abyss run fell at once: told to each, the run starting over. */
-  wiped: 14,
+  wiped: 15,
 } as const;
-export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7 } as const;
+export const HOW = { riposte: 2, counter: 3, shot: 6, spell: 7, leap: 8, burst: 9, bite: 10 } as const;
 
-/** The element a blow burns in where it lands: a spell's in its caster's Art's, the player's own blow or shot in their
- *  weapon's glow as their page shows it, and any other in what the room says it carried. */
+/** Whether a blow lands as a spell's does, no weapon's swing behind it: a spell, or an Atheric's leap or burst. */
+export const landsAsSpell = (event: FightEvent): boolean =>
+  event.how === HOW.spell || event.how === HOW.leap || event.how === HOW.burst;
+
+/** The fighter a blow came from, which way it pushes its defender and throws its motes: a leap's or a burst's source
+ *  foe, else its striker. */
+export const cameFrom = (event: FightEvent): number =>
+  (event.how === HOW.leap || event.how === HOW.burst) && event.from ? event.from : event.striker;
+
+/** Whether a blow is no weapon's own swing or shot on its foe: a shot, a blow that lands as a spell's, or an Atheric's
+ *  bite back on a block, which flashes on the foe bitten but neither kicks the view, holds the fight nor flares the arc. */
+export const notABlow = (event: FightEvent): boolean =>
+  event.how === HOW.shot || event.how === HOW.bite || landsAsSpell(event);
+
+/** The element a blow burns in where it lands: a spell's in its caster's Art's, an Atheric's leap or burst in its
+ *  perk's own, the player's own blow or shot in their weapon's glow as their page shows it, and any other in what the
+ *  room says it carried. */
 export function blowLook(
   event: FightEvent,
   {
@@ -32,13 +49,14 @@ export function blowLook(
 ): GlowLook {
   const carried = event.element === 1 || event.element === 2 || event.element === 3 ? event.element : 0;
   if (event.how === HOW.spell) return carried || (spellLook?.(event.striker) ?? 0);
+  if (event.how === HOW.leap || event.how === HOW.burst) return carried;
   if (event.striker === player && own) return own;
   return carried;
 }
 
-/** A word's tone: a great or a good turn for the player, the player's own damage, a bad turn for them, a warning, or
- *  one of no side of theirs. */
-export type Tone = 'great' | 'good' | 'dealt' | 'taken' | 'warn' | 'plain' | 'shield';
+/** A word's tone: a great or a good turn for the player, the player's own damage, a bad turn for them, a warning, one
+ *  of no side of theirs, a shield's, or the health a drink gave the player back. */
+export type Tone = 'great' | 'good' | 'dealt' | 'taken' | 'warn' | 'plain' | 'shield' | 'healed';
 
 /** What each event says, and whether it goes the striker's way (else the defender's) and how loudly when it is the
  *  player's: a great turn or a good one. */
@@ -64,6 +82,9 @@ export function wordOf(event: FightEvent, player: number): { readonly text: stri
     return strikerWins === (side === 'striker') ? good : 'taken';
   };
   if (event.kind === EVENT.feinted) return { text: 'Feint', tone: 'plain' };
+  // A drink's heal says what it gave back, in green over the player who drank.
+  if (event.kind === EVENT.healed)
+    return { text: `+${Math.max(1, Math.round(event.amount))}`, tone: side === null ? 'plain' : 'healed' };
   const special = event.how === HOW.riposte ? 'Riposte' : event.how === HOW.counter ? 'Counter' : null;
   const numbered = (amount: number) => (special ? `${special} ${amount}` : String(amount));
   // What a shield takes is said in its element's colour, for the player's own blows; a blow it held whole reaches no

@@ -1,7 +1,7 @@
 use super::{Problem, is_script};
 
 /// A part of the client and the parts it may import. Every folder directly under `client/src` is one, declared here
-/// on purpose when its first file arrives, with its entry in the Code Map note.
+/// on purpose when its first file arrives, so no folder becomes a layer unnoticed.
 #[derive(Debug)]
 pub struct Layer {
     pub name: &'static str,
@@ -13,7 +13,10 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "rules", may_import: &[] },
     Layer { name: "sky", may_import: &[] },
     Layer { name: "network", may_import: &["rules", "sky"] },
-    Layer { name: "editor", may_import: &["rules", "water", "terrain", "ships", "islands", "city", "layout", "sky"] },
+    Layer {
+        name: "editor",
+        may_import: &["rules", "water", "terrain", "ships", "islands", "city", "layout", "sky", "ui"],
+    },
     Layer { name: "terrain", may_import: &["rules", "water", "sky"] },
     Layer {
         name: "game",
@@ -40,6 +43,7 @@ pub const LAYERS: &[Layer] = &[
             "cinema",
             "speech",
             "sky",
+            "ui",
         ],
     },
     Layer { name: "water", may_import: &["rules", "sky"] },
@@ -48,9 +52,9 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "player", may_import: &["rules", "network", "forge", "editor", "firstperson"] },
     Layer {
         name: "testground",
-        may_import: &["rules", "network", "forge", "editor", "firstperson", "player", "combat"],
+        may_import: &["rules", "network", "forge", "editor", "firstperson", "player", "combat", "ui"],
     },
-    Layer { name: "combat", may_import: &["rules", "network", "plus", "player", "editor", "sky"] },
+    Layer { name: "combat", may_import: &["rules", "network", "plus", "player", "editor", "sky", "ui"] },
     Layer { name: "firstperson", may_import: &["forge"] },
     Layer { name: "overworld", may_import: &[] },
     Layer { name: "textures", may_import: &[] },
@@ -58,16 +62,27 @@ pub const LAYERS: &[Layer] = &[
     Layer { name: "nature", may_import: &["rules", "water", "sky"] },
     Layer { name: "city", may_import: &["models", "textures", "rules", "water", "sky"] },
     Layer { name: "layout", may_import: &["city"] },
-    Layer { name: "heldmap", may_import: &["editor", "overworld", "forge", "firstperson", "plus"] },
+    Layer { name: "heldmap", may_import: &["overworld", "forge", "firstperson", "plus", "ui"] },
     Layer { name: "plus", may_import: &[] },
+    Layer { name: "ui", may_import: &["plus"] },
+    Layer { name: "thread", may_import: &["ui"] },
     Layer { name: "islands", may_import: &["rules", "water", "textures", "models", "sky"] },
-    Layer { name: "speech", may_import: &["plus"] },
-    Layer { name: "cinema", may_import: &["water", "combat"] },
+    Layer { name: "speech", may_import: &["plus", "ui"] },
+    Layer { name: "cinema", may_import: &["water", "combat", "plus", "ui"] },
 ];
 
-/// The file that wires the layers together. The other files beside it (the GPU, the canvas size) are groundwork
-/// that any layer may import; the entry point itself sits above every layer, so none may import it.
-const ENTRY_POINT: &str = "client/src/main.ts";
+/// The files a page or a worker starts from: the game's page, the game's worker the page starts, and the World
+/// Editor's page. The other files beside them (the GPU, the canvas size) are groundwork that any layer may import;
+/// an entry point sits above every layer and the groundwork, so nothing imports it but another entry point, as the
+/// page names the game's worker.
+const ENTRY_POINTS: [&str; 3] = ["client/src/main.ts", "client/src/gameWorker.ts", "client/src/editorPage.ts"];
+
+/// Whether `target`, resolved from an import, is an entry point: named with or without its extension or a query
+/// (`?worker`).
+fn is_entry_point(target: &str) -> bool {
+    let named = target.split(['?', '#']).next().unwrap_or(target);
+    ENTRY_POINTS.iter().any(|entry| named == *entry || entry.strip_suffix(".ts") == Some(named))
+}
 
 /// Node's modules: the game runs in the browser, so only tests and build config may reach them.
 const NODE_MODULES: [&str; 12] =
@@ -108,7 +123,7 @@ fn layer_folder(path: &str) -> Option<&str> {
 }
 
 /// Resolves `./x.ts` or `../y/z.ts` against the importing file's folder.
-fn resolve(from_file: &str, specifier: &str) -> String {
+pub fn resolve(from_file: &str, specifier: &str) -> String {
     let mut parts: Vec<&str> = from_file.split('/').collect();
     parts.pop();
     for piece in specifier.split('/') {
@@ -147,14 +162,20 @@ pub fn check(sources: &[(String, String)]) -> Vec<Problem> {
                 continue;
             }
             let target = resolve(path, &specifier);
-            let Some(from) = own_layer else { continue };
-            let (allowed, to) = match layer_folder(&target) {
-                Some(to) => {
-                    (from == to || LAYERS.iter().any(|layer| layer.name == from && layer.may_import.contains(&to)), to)
+            if is_entry_point(&target) {
+                if !ENTRY_POINTS.contains(&path.as_str()) {
+                    let from = own_layer.unwrap_or(path);
+                    problems.push(Problem::new(
+                        "layers",
+                        path,
+                        Some(line),
+                        format!("{from} may not import an entry point"),
+                    ));
                 }
-                None => (target != ENTRY_POINT, "the entry point"),
-            };
-            if !allowed {
+                continue;
+            }
+            let (Some(from), Some(to)) = (own_layer, layer_folder(&target)) else { continue };
+            if from != to && !LAYERS.iter().any(|layer| layer.name == from && layer.may_import.contains(&to)) {
                 problems.push(Problem::new("layers", path, Some(line), format!("{from} may not import {to}")));
             }
         }
@@ -214,7 +235,28 @@ mod tests {
         assert!(run("client/src/editor/editorMain.ts", "import { startGpu } from '../gpu.ts';\n").is_empty());
         let problems = run("client/src/editor/editorMain.ts", "import { fitCanvas } from '../main.ts';\n");
         assert_eq!(problems.len(), 1);
-        assert_eq!(problems[0].message, "editor may not import the entry point");
+        assert_eq!(problems[0].message, "editor may not import an entry point");
+    }
+
+    #[test]
+    fn nothing_imports_an_entry_point_but_the_page_starting_its_worker() {
+        for (path, text) in [
+            ("client/src/rules/landRules.ts", "import '../gameWorker.ts';\n"),
+            ("client/src/game/game.ts", "const worker = new Worker(new URL('../gameWorker.ts', import.meta.url));\n"),
+            ("client/src/game/game.ts", "import GameWorker from '../gameWorker.ts?worker';\n"),
+            ("client/src/combat/fleet.ts", "await import('../editorPage');\n"),
+            ("client/src/gpu.ts", "import './main.ts';\n"),
+            ("client/src/canvasSize.test.ts", "import './editorPage.ts';\n"),
+        ] {
+            assert_eq!(run(path, text).len(), 1, "{path}: {text}");
+        }
+        let started = "const worker = new Worker(new URL('./gameWorker.ts', import.meta.url), { type: 'module' });\n";
+        assert!(run("client/src/main.ts", started).is_empty());
+    }
+
+    #[test]
+    fn the_held_map_reaches_no_editor() {
+        assert_eq!(run("client/src/heldmap/heldMap.ts", "import { panel } from '../editor/panelKit.ts';\n").len(), 1);
     }
 
     #[test]

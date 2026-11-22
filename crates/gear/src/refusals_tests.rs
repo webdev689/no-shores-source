@@ -159,9 +159,14 @@ fn shapes_piece_is_refused_with_its_slot_full() {
     let bucket = crate::shape::wares(here.week)[0].bucket;
     while character.carried_in(bucket) < CARRIED_MOST {
         character.add_shapes(200);
-        assert!(character.ask(Ask::BuyFromShape { ware: 0 }, here, &DICE).is_ok());
+        assert!(
+            character.ask(Ask::BuyFromShape { ware: 0, shown: crate::shape::shown(here.week, 0) }, here, &DICE).is_ok()
+        );
     }
     let shapes = character.materials.shapes;
-    assert_eq!(character.ask(Ask::BuyFromShape { ware: 0 }, here, &DICE), Err(Refusal::CarriedFull));
+    assert_eq!(
+        character.ask(Ask::BuyFromShape { ware: 0, shown: crate::shape::shown(here.week, 0) }, here, &DICE),
+        Err(Refusal::CarriedFull)
+    );
     assert_eq!(character.materials.shapes, shapes, "nothing spent");
 }

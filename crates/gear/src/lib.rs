@@ -2,8 +2,8 @@
 //! their nodes unlocked by XP and bought with Aurem, fragments, island resources and Essence; Prestige carried by
 //! armour raising a player past level 20; a weapon's Attack and armour's Defense against a foe's level; Vestiges, the
 //! sealed drops, opened in a social space; weapons' elements and foes' shields; emblems and cosmetics; the factions
-//! and the Arts' levels; Shape and his Shapes; everything a player holds; the game's one clock, its day and week;
-//! what is on, drawn by the day and the week; and the bounties and side quests, one engine counting both.
+//! and the Arts' levels; Shape and his Shapes; the houses' roads; everything a player holds; the game's one clock,
+//! its day and week; what is on, drawn by the day and the week; and the bounties.
 
 pub mod activities;
 pub mod activity;
@@ -29,6 +29,8 @@ pub mod kinds;
 pub mod objectives;
 mod old_hands;
 pub mod power;
+mod quest_defs;
+mod quest_goals;
 pub mod quests;
 pub mod rarity;
 pub mod rewards;
@@ -82,6 +84,10 @@ mod objectives_tests;
 mod old_hands_tests;
 #[cfg(test)]
 mod power_tests;
+#[cfg(test)]
+mod quest_defs_tests;
+#[cfg(test)]
+mod quests_tests;
 #[cfg(test)]
 mod refusals_tests;
 #[cfg(test)]

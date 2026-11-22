@@ -115,9 +115,11 @@ test("a door's dungeon room is named by its continent, style and the island's se
 test("an island's room is named by its number and its seed in 16 hex digits, and it stands in world metres", () => {
   const island = seen(7, [5000, 6000], 'ruin');
   assert.equal(isleRoomName(island), 'isle-7-00000000000000ff');
-  const node = isleNode(island, [[1, 2]], [[3, 4]], { continent: 'continent-4', seas: 'normal' });
+  const plan = { ring: [[1, 2]], spawns: [[3, 4]], nodes: [[10, 20]] } as const;
+  const node = isleNode(island, plan, { continent: 'continent-4', seas: 'normal' });
   assert.equal(isleRoomName(island, 'abyss'), 'isle-7-00000000000000ff--abyss');
   assert.deepEqual([node.ring, node.spawns, node.name], [[[5001, 6002]], [[5003, 6004]], 'A ruined isle']);
+  assert.deepEqual(node.resources, [{ at: [5010, 6020], holds: 'sunstone' }], "its nodes give Sunspire's resource");
 });
 
 test('E scavenges a wreck within reach until the room says it is spent, else opens the door, else nothing', () => {
@@ -133,7 +135,7 @@ test('E scavenges a wreck within reach until the room says it is spent, else ope
   } as unknown as IsleHeld;
   const asked: GearAsk[] = [];
   const doors: DungeonDoor[] = [];
-  const gear = { gear: { spent: [] as number[], answered: 5 } as unknown as GearState };
+  const gear = { gear: { scavenged: [] as number[], answered: 5 } as unknown as GearState };
   const where = { continent: 'continent-4', seas: 'elite' } as const;
   const uses = isleUses(held, (door) => doors.push(door), gear, where);
   const ask = (each: GearAsk) => asked.push(each);
@@ -142,9 +144,9 @@ test('E scavenges a wreck within reach until the room says it is spent, else ope
   atWreck?.run();
   assert.deepEqual(asked, [{ kind: ASKS.scavenge, node: 0 }]);
   assert.equal(uses(1011, 2000, ask), null, 'asked: nothing more there until the room answers');
-  gear.gear = { spent: [], answered: 6 } as unknown as GearState;
+  gear.gear = { scavenged: [], answered: 6 } as unknown as GearState;
   assert.equal(uses(1011, 2000, ask)?.words, 'Scavenge the wreck', 'refused, it is offered again');
-  gear.gear = { spent: [0], answered: 7 } as unknown as GearState;
+  gear.gear = { scavenged: [0], answered: 7 } as unknown as GearState;
   assert.equal(uses(1011, 2000, ask), null, 'spent for their account');
   assert.equal(isleUses(held, () => undefined, gear, where)(1011, 2000, ask), null, 'spent on a later visit too');
   assert.deepEqual([uses(1040, 2001, ask)?.words], ['Scavenge the wreck']);

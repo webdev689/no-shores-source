@@ -1,6 +1,8 @@
 import type { ArtState } from './artMessages.ts';
 import { type FromRoomMessage, type JoinedNode, type PlayerDress, courseBytes, readFromRoom } from './messages.ts';
 import { ROOM_TICK_S, WORLD_CLOCK } from '../sky/worldClock.ts';
+import { LinkMeasure, type Measured } from './linkMeasure.ts';
+import { SnapshotKeeper } from './snapshots.ts';
 import { PROTOCOL } from '../../../generated/messages/ts/version.ts';
 
 /** A room's snapshot, as a link hands it on. */
@@ -31,6 +33,10 @@ export interface RoomLink {
   readonly arts?: ArtState | null;
   /** Why the room's gate shut to the player, in its words; null while it is open, and always for a room alone. */
   readonly shut?: string | null;
+  /** How many inputs before each go with it, on a link that may lose one; none on a WebSocket, which loses none. */
+  readonly resend?: number;
+  /** Told each input's number as it is sent, for a link that measures its lag (`linkMeasure.ts`). */
+  readonly inputSent?: (sequence: number) => void;
 }
 
 /** Opens a WebSocket to a room's address: the browser's own, or a test's stand-in. */
@@ -57,16 +63,22 @@ interface Heard {
   readonly welcomed: (welcome: Welcome) => void;
   readonly snapshot: (snapshot: Snapshot) => void;
   readonly gear: (gear: GearMessage) => void;
+  /** Each snapshot as it came, and whether it was made whole and handed on, for the link's measure. */
+  readonly came?: (snapshot: Snapshot, kept: boolean) => void;
 }
 
 /** Hands on a socket's messages to `heard`. */
 function hear(socket: WebSocket, heard: Heard): void {
   socket.binaryType = 'arraybuffer';
+  // Each socket is one join: the snapshots it holds to build on start with it.
+  const kept = new SnapshotKeeper();
   socket.addEventListener('message', (event: MessageEvent<unknown>) => {
     if (!(event.data instanceof ArrayBuffer)) return;
     const message = readFromRoom(new Uint8Array(event.data));
+    const whole = message?.kind === 'snapshot' ? kept.whole(message) : null;
+    if (message?.kind === 'snapshot') heard.came?.(message, whole !== null);
     if (message?.kind === 'joined') heard.welcomed(message);
-    else if (message?.kind === 'snapshot') heard.snapshot(message);
+    else if (whole) heard.snapshot(whole);
     else if (message?.kind === 'gear') heard.gear(message);
   });
 }
@@ -102,6 +114,7 @@ export class RoomConnection implements RoomLink {
   arts: ArtState | null = null;
   private tries = 0;
   private closed = false;
+  private readonly measure = new LinkMeasure();
   private waiting: ReturnType<typeof setTimeout> | null = null;
 
   private constructor(
@@ -148,7 +161,8 @@ export class RoomConnection implements RoomLink {
         resolve(made);
       };
       const told = (shot: Snapshot) => (made ? made.snapshot(shot) : snapshot(shot));
-      hear(socket, { welcomed, snapshot: told, gear: (sent) => (made ? made.heard(sent) : gear(sent)) });
+      const came = (shot: Snapshot, kept: boolean) => made?.came(shot, kept);
+      hear(socket, { welcomed, snapshot: told, gear: (sent) => (made ? made.heard(sent) : gear(sent)), came });
       socket.addEventListener('error', () => reject(new Error(`the room at ${url} could not be reached`)));
       socket.addEventListener('close', (event) =>
         reject(new Error(`the room at ${url} closed: ${event.reason || 'it gave no reason'}`)),
@@ -175,7 +189,7 @@ export class RoomConnection implements RoomLink {
     const socket = this.connect(this.url);
     this.socket = socket;
     const welcomed = (welcome: Welcome) => this.welcomed(socket, welcome);
-    hear(socket, { welcomed, snapshot: this.snapshot, gear: (sent) => this.heard(sent) });
+    hear(socket, { welcomed, snapshot: this.snapshot, gear: (sent) => this.heard(sent), came: this.came });
     this.watch(socket);
   }
 
@@ -192,6 +206,7 @@ export class RoomConnection implements RoomLink {
     if (this.session !== null) socket.send(this.session);
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
+    this.measure.clear();
   }
 
   /** The room's word on the player's gear: its trim and arms kept, and the whole handed on. */
@@ -206,6 +221,18 @@ export class RoomConnection implements RoomLink {
   send(bytes: Uint8Array<ArrayBuffer>): void {
     if (this.socket.readyState === WebSocket.OPEN) this.socket.send(bytes);
   }
+
+  /** The link's lag and loss as the page measures them. */
+  get measured(): Measured {
+    return this.measure.measured;
+  }
+
+  readonly inputSent = (sequence: number): void => this.measure.sent(sequence, performance.now());
+
+  private readonly came = (snapshot: Snapshot, kept: boolean): void => {
+    const own = snapshot.players.find((seen) => seen.player === this.player);
+    if (own) this.measure.snapshot(own.acknowledged, kept, performance.now());
+  };
 
   /** Sends the sea room the player's ship's course and pace; while the socket is not open, nothing is sent. */
   sendCourse(points: readonly (readonly [number, number])[], pace: number): void {

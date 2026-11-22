@@ -187,30 +187,44 @@ impl Room {
 /// room has; a course's room over its blocks and the open ground round them, or over the sea, its blocks' tops alone;
 /// a dungeon's over the whole dungeon (`dungeon_room.rs`).
 pub(crate) fn baked(floor: &Floor, blocks: &[Block], first: (f64, f64), section: Option<&Section>) -> NavMesh {
-    if let (Floor::Dungeon(_), Some(section)) = (floor, section) {
+    let Some(section) = section else {
+        return over(floor, blocks, ground_around(blocks, first, GROUND_AROUND));
+    };
+    if let Floor::Dungeon(_) = floor {
         return crate::dungeon_room::baked(floor, first, section);
     }
-    let (walked, bounds): (Vec<Block>, navmesh::Bounds) = match section {
-        Some(section) => {
-            let bounds = ground_around(&[], ground_middle(section, first), NODE_AROUND);
-            let inside = |block: &&Block| {
-                block.min_x < bounds.max_x
-                    && block.max_x > bounds.min_x
-                    && block.min_y < bounds.max_y
-                    && block.max_y > bounds.min_y
-            };
-            (blocks.iter().filter(inside).copied().collect(), bounds)
-        }
-        None => (blocks.to_vec(), ground_around(blocks, first, GROUND_AROUND)),
-    };
-    match (floor, section) {
-        (Floor::Flat, _) => NavMesh::bake(&walked, bounds, &navmesh::AGENT),
-        (Floor::Sea(_), _) => NavMesh::bake_over_sea(&walked, bounds, &navmesh::AGENT),
+    let (bounds, walked) = square_of(blocks, ground_middle(section, first));
+    match floor {
         // A deck's mesh covers its ring alone: its planks and the walls round them.
-        (Floor::Deck(_), Some(section)) => {
-            NavMesh::bake_on(&walked, floor, ring_bounds(&section.ring), &navmesh::AGENT)
-        }
-        _ => NavMesh::bake_on(&walked, floor, bounds, &navmesh::AGENT),
+        Floor::Deck(_) => NavMesh::bake_on(&walked, floor, ring_bounds(&section.ring), &navmesh::AGENT),
+        _ => over(floor, &walked, bounds),
+    }
+}
+
+/// A square round a place and its navmesh, baked as a node's own is round its first spawn.
+pub(crate) fn square(floor: &Floor, blocks: &[Block], middle: (f64, f64)) -> (navmesh::Bounds, NavMesh) {
+    let (bounds, walked) = square_of(blocks, middle);
+    (bounds, over(floor, &walked, bounds))
+}
+
+/// The square NODE_AROUND each way round `middle`, and the blocks that reach into it.
+pub(crate) fn square_of(blocks: &[Block], middle: (f64, f64)) -> (navmesh::Bounds, Vec<Block>) {
+    let bounds = ground_around(&[], middle, NODE_AROUND);
+    let inside = |block: &&Block| {
+        block.min_x < bounds.max_x
+            && block.max_x > bounds.min_x
+            && block.min_y < bounds.max_y
+            && block.max_y > bounds.min_y
+    };
+    (bounds, blocks.iter().filter(inside).copied().collect())
+}
+
+/// A navmesh over `bounds`: on open ground, over the sea, or on the floor's own ground.
+fn over(floor: &Floor, walked: &[Block], bounds: navmesh::Bounds) -> NavMesh {
+    match floor {
+        Floor::Flat => NavMesh::bake(walked, bounds, &navmesh::AGENT),
+        Floor::Sea(_) => NavMesh::bake_over_sea(walked, bounds, &navmesh::AGENT),
+        _ => NavMesh::bake_on(walked, floor, bounds, &navmesh::AGENT),
     }
 }
 
@@ -305,6 +319,7 @@ impl Room {
         (id, levels): (&str, Option<(u8, u8)>),
     ) -> Self {
         let mut room = Self::node(floor, blocks, section);
+        (room.quests.node, room.quests.levels) = (Some(id.to_owned()), levels);
         room.world_seed = node_seed(id);
         room.foes_most = NODE_FOES_MOST;
         room.place = Some(place_of(kind));
@@ -368,7 +383,8 @@ impl Room {
         (section, lattice): (&Section, &[(f64, f64)]),
         (draws, beats): (&mut Mulberry32, &mut Mulberry32),
     ) -> Option<Post> {
-        let at = self.nav.nearest_point([x, y, self.floor.height_at(x, y)])?;
+        let mesh = self.mesh_at([x, y, 0.0]);
+        let at = mesh.nearest_point([x, y, self.floor.height_at(x, y)])?;
         let round = &group.members[usize::from(group.leads)..];
         let start = draws.draw() * TAU;
         let mut members = Vec::new();
@@ -380,13 +396,12 @@ impl Room {
         for (turn, &(number, rank)) in round.iter().enumerate() {
             let outward = start + TAU * turn as f64 / round.len() as f64;
             let place = [at[0] + libm::sin(outward) * SPREAD, at[1] - libm::cos(outward) * SPREAD, at[2]];
-            members.push((number, rank, self.nav.nearest_point(place)?, outward));
+            members.push((number, rank, mesh.nearest_point(place)?, outward));
         }
         // A Boss's or a Miniboss's group, at the farthest post, holds it: the one fight a player seeks out there.
-        let beat =
-            (!group.farthest).then(|| Beat::drawn((&self.nav, &self.floor), at, lattice, section, beats)).flatten();
+        let beat = (!group.farthest).then(|| Beat::drawn((mesh, &self.floor), at, lattice, section, beats)).flatten();
         if let Some(beat) = &beat {
-            let places = beat.places((&self.nav, &self.floor), members.len(), false);
+            let places = beat.places((mesh, &self.floor), members.len(), false);
             for (member, (place, facing)) in members.iter_mut().zip(places) {
                 (member.2, member.3) = (place, facing);
             }
@@ -518,7 +533,7 @@ impl Room {
                 near && foe.brain.alertness() == Alertness::Idle && !foe.brain.returning()
             });
             let marching = beat.step(self.clock, ready);
-            let places = beat.places((&self.nav, &self.floor), living.len(), marching);
+            let places = beat.places((self.mesh_at(self.garrison[post].at), &self.floor), living.len(), marching);
             for (id, (place, facing)) in living.iter().zip(places) {
                 if let Some(foe) = self.foes.get_mut(id) {
                     foe.brain.keep_to(place, facing, marching);

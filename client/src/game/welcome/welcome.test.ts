@@ -125,6 +125,7 @@ test('once the stranger has gone she comes, her counter empty; the player follow
   const { kept, said, prompts, removed, after } = page();
   const welcome = after();
   welcome.storyEnded(stranger(3));
+  assert.equal(welcome.past, false, 'the story is not past while its last moment plays');
   assert.equal(await frames(welcome, 2, () => ARRIVAL), 0, 'the stranger first');
   assert.equal(kept.get(WELCOME_KEY), 'due', 'due from the story’s end');
   assert.equal(await frames(welcome, 2, () => ARRIVAL), 1, 'Elder Maren Hale comes');
@@ -142,6 +143,7 @@ test('once the stranger has gone she comes, her counter empty; the player follow
     [MET_SCENE, ...STOPS.map((stop) => stop.scene)].map((scene) => SCENES[scene]?.[0]?.say).sort(),
   );
   assert.equal(kept.get(WELCOME_KEY), 'played', 'played once every stop is said');
+  assert.equal(welcome.past, true, 'the houses’ roads may begin');
   assert.equal(prompts.at(-1), 'cleared');
   assert.ok(!awayFromCounters.has('lamplighters'), 'her own figure is back behind her counter');
   assert.equal(removed(), 1);
@@ -150,6 +152,7 @@ test('once the stranger has gone she comes, her counter empty; the player follow
 test('it plays never twice, and not without the story; the development switch plays it at once', async () => {
   const played = page(true);
   const again = played.after();
+  assert.equal(again.past, true, 'played before');
   again.storyEnded(stranger(1));
   assert.equal(await frames(again, 5, () => ARRIVAL), 0, 'played before');
   assert.equal(await frames(page().after(), 5, () => ARRIVAL), 0, 'no story played, or ?at=');
@@ -166,6 +169,7 @@ test('a browser that has played the story and holds no mark of the welcome is we
   assert.equal(before.said.length, 1, 'met');
   assert.equal(before.kept.get(WELCOME_KEY), 'due', 'and due until given');
   welcome.leave();
+  assert.equal(welcome.past, false, 'still due once left');
   const forgone = page(
     false,
     new Map([

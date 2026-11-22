@@ -1,3 +1,4 @@
+import { SIGN_INS } from '../../ui/page.ts';
 import type { Account, AccountLink, Kept } from '../../network/accounts.ts';
 
 /** How the account step ends: an account (by its username, or none for one Discord alone keeps), a guest, or playing
@@ -25,7 +26,9 @@ export async function askAccounts(
 ): Promise<AccountOutcome | string> {
   if (ask === 'sign in') {
     const answer = await link.login(username, password);
-    return typeof answer === 'string' ? answer : { kind: 'account', username: answer.username ?? username };
+    if (typeof answer === 'string') return answer;
+    await SIGN_INS.keep({ id: username, password });
+    return { kind: 'account', username: answer.username ?? username };
   }
   // A username is given to a session, so the guest is made first.
   const session = await link.session();
@@ -33,7 +36,10 @@ export async function askAccounts(
   if (ask === 'guest')
     return session.username === null ? { kind: 'guest' } : { kind: 'account', username: session.username };
   const answer = await link.register(username, password);
-  return typeof answer === 'string' ? answer : { kind: 'account', username: answer.username ?? username };
+  if (typeof answer === 'string') return answer;
+  // A sign-in that worked is offered to the browser's own password store, as a page's form would be.
+  await SIGN_INS.keep({ id: username, password });
+  return { kind: 'account', username: answer.username ?? username };
 }
 
 /** What the step offers past its form, once the accounts have said who the player is: going on as the account signed

@@ -29,7 +29,8 @@ export const KEEPER_KINDS = [
 ] as const;
 export type KeeperKind = (typeof KEEPER_KINDS)[number];
 
-const dressed = (
+/** A figure's dress: its body, race and tone, its hair, its garments with their dyes, and any armour. */
+export const dressed = (
   body: 'male' | 'female',
   race: Race,
   tone: number,
