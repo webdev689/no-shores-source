@@ -42,3 +42,21 @@ test("each parameter starts where a page's node of its kind starts it", () => {
   assert.equal(paramDefault('listener', 'forwardZ'), -1);
   assert.equal(paramDefault('createStereoPanner', 'pan'), 0);
 });
+
+test('a parameter eased toward a new target every frame keeps a short course, and reads as the specification runs it', () => {
+  const course = new ParamCourse(0.5);
+  const constant = 0.1;
+  let [expected, last] = [0.5, 0];
+  for (let frame = 1; frame <= 60 * 60; frame++) {
+    const time = frame / 60;
+    const target = Math.sin(frame / 50);
+    course.add({ kind: 'target', time, value: target, constant }, time);
+    near(course.valueAt(time), expected);
+    // Between two frames the value eases from where it stood toward this frame's target.
+    near(course.valueAt(time + 1 / 120), target + (expected - target) * Math.exp(-1 / 120 / constant));
+    expected = target + (expected - target) * Math.exp(-1 / 60 / constant);
+    last = time;
+  }
+  near(course.valueAt(last + 1 / 60), expected);
+  assert.ok((course as unknown as { changes: unknown[] }).changes.length <= 3, 'a minute of frames keeps no history');
+});
