@@ -215,7 +215,7 @@ fn the_room_keeps_the_swings_chain_side_cut_overhead_thrust_whatever_stroke_the_
     let player = room.join().expect("a room with space");
     // Asks a swing once the last has ended, and answers the stroke it took.
     let swing = |room: &mut Room, sequence: &mut u32, asked: Stroke| {
-        let mut step = |room: &mut Room, sequence: &mut u32, attack: Option<Stroke>| {
+        let step = |room: &mut Room, sequence: &mut u32, attack: Option<Stroke>| {
             *sequence += 1;
             room.input(player, asking(*sequence, room.clock(), CombatInput { attack, ..CombatInput::default() }))
                 .unwrap();
