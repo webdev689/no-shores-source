@@ -664,7 +664,7 @@ DFO's `aimCamera.js`, `navalRender.js`, `navalHud.js`, `navalLoads.js` and `seaZ
   the HUD's outline: the side and its shot, the range the guns are laid to (the mean of where each gun stops, out
   along the fire from the ship's ports), "(longest)" within a metre of their longest throw, " - on target" in red while the
   side can fire, or dimmed " - reloading 4.2 s", " - braced" or " - guns silent".
-- **What the aim shows** (`aimOf`, drawn by `AimView`): each gun's unscattered flight to where the rules stop it, a
+- **What the aim shows** (`aimOf`, drawn by `AimView`, one a GPU that every fight draws with, `aimViewOf`): each gun's unscattered flight to where the rules stop it, a
   ribbon 0.003 of the view's height across at any distance, dashed every 6 m of flight (the second half 0.35 as
   strong) and marching out at 9 m/s; each splash a ring flat on the sea, at least 1.6 m across its radius, and a post
   of light 3.4 m tall over it, the ring DFO's foam ring (brightest at 0.7 of its radius, lit from 0.42 to 0.98 of
