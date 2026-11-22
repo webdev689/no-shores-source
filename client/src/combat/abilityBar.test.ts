@@ -45,6 +45,15 @@ test('a Tenet counts its last seconds, rounded up so it never reads 0 before it 
   assert.equal(tenetShown(0.999, 38).sweep, 6, 'a sliver left still shows one step of the wedge');
 });
 
+test("under a run's Trickle the bar's spoken words count the longer recharge", () => {
+  const bar = new AbilityBar(() => null);
+  // Vanish recharges over 38 s; half way, 19 s are left, and half again as long under Trickle: 28.5, said as 29.
+  bar.update({ art: SHADOW, animaShare: 0, tenets: [1, 0.5], recharge: 1.5 });
+  assert.equal(bar.words()[2], 'Vanish (G), 29 s to recharge');
+  bar.update({ art: SHADOW, animaShare: 0, tenets: [1, 0.5] });
+  assert.equal(bar.words()[2], 'Vanish (G), 19 s to recharge');
+});
+
 test('shares out of range or unknown are held to the bar', () => {
   const shown = abilityBarOf({ art: STORM, animaShare: 1.4, tenets: [-1, Number.NaN] });
   assert.equal(shown.animaRows, ANIMA_ROWS);

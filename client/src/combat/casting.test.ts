@@ -65,6 +65,7 @@ test('the bar runs each share on at the room’s recharge: half again as long un
   assert.ok(after);
   assert.ok(Math.abs(after.animaShare - 50 / 750) < 1e-9, 'Tempest recharges over 750 s');
   assert.ok(Math.abs(after.tenets[0] - (0.2 + 50 / 136.5)) < 1e-9);
+  assert.equal(after.recharge, 1.5, 'the bar is told it too, for the seconds it counts');
 });
 
 test('a press casts its ability only when it is ready, then waits for the room’s word before another', () => {
