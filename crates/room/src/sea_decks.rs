@@ -87,6 +87,7 @@ impl Sea {
             boarded.room.board_hands(boarder, count, character.ship_level());
         }
         boarded.aboard.insert(player, boarder);
+        self.fights.stand_down(player);
         // The boarders already aboard are drawn in their dress by the one just come, who had no welcome to carry it.
         boarded.room.announce_dresses();
         let told = naval::wire::told_numbers(&naval::fight::Event::Boarding { ship }, self.clock as f64);
@@ -213,6 +214,12 @@ impl Sea {
     pub(super) fn deck_character(&self, player: PlayerId) -> Option<gear::Character> {
         let deck = self.decks.boarded.iter().find(|deck| deck.aboard.contains_key(&player))?;
         gear::Character::from_json(&deck.room.kept_character(deck.aboard[&player])?)
+    }
+
+    /// The hands of a player's who fell on the deck they stand on: men their ship has lost once they step off.
+    pub(super) fn fallen_on_deck(&self, player: PlayerId) -> u8 {
+        let deck = self.decks.boarded.iter().find(|deck| deck.aboard.contains_key(&player));
+        deck.map_or(0, |deck| deck.room.fallen_hands(deck.aboard[&player]))
     }
 
     /// A deck whose ship went down under its boarders: each goes back to their own ship.

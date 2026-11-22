@@ -89,8 +89,8 @@ fn a_ship_finds_an_island_it_sails_near_and_is_told_of_those_in_sight() {
         (island.id, island.anchorage, island.at)
     };
     assert!(apart(at, [50_000.0, 50_000.0]) <= SIGHT_M);
-    assert_eq!(sea.islands().sighted([50_000.0, 50_000.0]).count(), sea.islands().standing.len());
     assert!(!sea.islands().found(player, id), "found from afar");
+    assert_eq!(sea.islands().told(player, [50_000.0, 50_000.0]).count(), sea.islands().standing.len(), "all in sight");
     ticks(&mut sea, 30);
     sea.course(player, &round_to(at, anchorage, [50_000.0, 50_000.0]), 100).expect("the way in is open sea");
     for _ in 0..60 * 60 {

@@ -226,3 +226,18 @@ fn an_ambush_sets_every_captain_on_the_player_at_once_and_each_closes_and_fires_
         assert!(fired.get(id).copied().unwrap_or(0) >= 1, "{id} fired on it: {fired:?}");
     }
 }
+
+#[test]
+fn its_hands_mend_its_canvas_to_half_of_what_its_standing_sails_hold() {
+    let mut fight = fleet(300.0, 5000.0, Temper::Bold);
+    let far = fight.ships.get_mut(&SECOND).unwrap_or_else(|| panic!("second"));
+    let max_sail = far.damage.max_sail;
+    far.rigging.struck(0, max_sail * 2.0, max_sail);
+    let standing = far.rigging.standing();
+    assert!(standing < 0.9, "a sail torn away: {standing}");
+    far.damage.sail = (max_sail * standing * 0.5).floor() + 1.0;
+    let before = far.damage.sail;
+    run(&mut fight, &idle_both(), 60 * 5);
+    let sail = fight.vessel(SECOND).map_or(-1.0, |vessel| vessel.damage.sail);
+    assert_eq!(sail, before, "past half of its standing canvas, its hands mend no more");
+}

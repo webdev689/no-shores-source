@@ -40,7 +40,7 @@ fn run(fight: &mut Fight, ticks: u32) -> Vec<Event> {
 
 fn hit(target: ShipId, zone: Zone, point: [f64; 3], sail: Option<usize>, harm: f64) -> ShotEvent {
     let gun = crate::guns::Gun { hull: harm, sail: harm, ..crate::guns::SWIVEL };
-    ShotEvent::Hit { shooter: PLAYER, target, zone, point, flight: 0.5, gun, shot: Shot::Round, sail }
+    ShotEvent::Hit { shooter: PLAYER, target, zone, point, flight: 0.5, gun, shot: Shot::Round, sail, rigged: false }
 }
 
 fn strike_it(fight: &mut Fight) {

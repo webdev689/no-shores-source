@@ -232,7 +232,9 @@ impl Pirates {
         self.sailing.retain(|pirate| ships.iter().any(|ship| pirate.kept_by(ship.at)));
         let mut met = Vec::new();
         for ship in ships {
-            if ship.fighting || met.iter().any(|&(taken, _)| taken == ship.player) {
+            // Overlook's home waters hold no hostile ship: one by their edge meets no player inside them.
+            let home = chart.water(ship.at).is_some_and(|water| water.holder == world::waters::Holder::Home);
+            if ship.fighting || home || met.iter().any(|&(taken, _)| taken == ship.player) {
                 continue;
             }
             let chased = self.chasing.get(&ship.player).copied();

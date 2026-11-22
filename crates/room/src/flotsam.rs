@@ -155,18 +155,6 @@ impl Flotsam {
         });
         gathered
     }
-
-    /// Each piece floating for a player.
-    pub fn for_player(&self, player: PlayerId) -> impl Iterator<Item = &Floating> {
-        self.pieces.iter().filter(move |piece| piece.player == player)
-    }
-}
-
-/// The chance a ship of `rank` leaves a Vestige at `difficulty`: a foe's of its rank on land, raised as a harder voyage
-/// raises a kill's.
-#[must_use]
-pub fn vestige_chance(rank: Rank, difficulty: gear::Difficulty) -> f64 {
-    (gear::vestige::chance(rank.number()) * difficulty.reward()).min(1.0)
 }
 
 /// A piece opened into a character: its salvage, and for the piece holding the kill's drop, what a foe of that rank

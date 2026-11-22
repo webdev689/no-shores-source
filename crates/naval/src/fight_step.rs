@@ -244,7 +244,7 @@ impl Fight {
     /// A ball's strike: its harm by zone (grape's men by its flight), rolled; the struck grace for the rest of the
     /// volley that made a captain strike; and a captain struck by a ship in the fight is provoked by it.
     pub(super) fn strike(&mut self, hit: &ShotEvent, events: &mut Vec<Event>) {
-        let ShotEvent::Hit { shooter, target, zone, point, flight, gun, shot, sail } = *hit else {
+        let ShotEvent::Hit { shooter, target, zone, point, flight, gun, shot, sail, rigged } = *hit else {
             if let ShotEvent::Splash { point, .. } = *hit {
                 events.push(Event::Splash { at: [point[0], point[1]] });
             }
@@ -313,7 +313,7 @@ impl Fight {
         if let Some(state) = state {
             events.push(Event::State { ship: target, state });
         }
-        self.struck_by(shooter, target, zone, state);
+        self.struck_by(shooter, target, (zone, rigged), state);
     }
 
     /// Each player's hands mend their ship if nothing hurt it lately and no captain who would take it lies near.
@@ -331,7 +331,7 @@ impl Fight {
             });
             let clock = self.clock;
             let Some(player) = self.ships.get_mut(&id) else { continue };
-            player.damage.mend(TICK_SECONDS, clock, hostile_near);
+            player.damage.mend(TICK_SECONDS, clock, hostile_near, player.rigging.standing());
             player.damage.sail = player.damage.sail.min((player.damage.max_sail * player.rigging.standing()).floor());
         }
     }

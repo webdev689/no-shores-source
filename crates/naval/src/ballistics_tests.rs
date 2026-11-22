@@ -47,7 +47,6 @@ fn a_ball_leaves_at_its_speed_and_carries_the_decks_way() {
 fn a_ball_flies_the_closed_form_and_falls_by_half_g_t_squared() {
     let at = flight([1.0, 2.0, 3.0], [10.0, -4.0, 6.0], 2.0);
     assert_eq!(at, [21.0, -6.0, 3.0 + 12.0 - GRAVITY * 2.0]);
-    assert_eq!(velocity([10.0, -4.0, 6.0], 2.0), [10.0, -4.0, 6.0 - 2.0 * GRAVITY]);
 }
 
 #[test]

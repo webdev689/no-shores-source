@@ -42,6 +42,7 @@ fn ball(shooter: ShipId, target: ShipId, zone: Zone) -> ShotEvent {
         gun: SWIVEL,
         shot: Shot::Round,
         sail: None,
+        rigged: false,
     }
 }
 
@@ -269,4 +270,26 @@ fn a_ball_in_the_rigging_takes_the_canvas_and_crew_perks_and_not_the_hull_ones()
     assert!(canvas.0 < plain.0 * 0.6, "canvas perks reach a rigging hit: {canvas:?} against {plain:?}");
     assert!((hull.0 - plain.0).abs() < plain.0 * 0.05, "hull perks do not: {hull:?} against {plain:?}");
     assert!(men.1 < plain.1 * 0.7, "crew perks reach it too: {men:?} against {plain:?}");
+}
+
+#[test]
+fn a_ball_through_a_squall_ships_canvas_into_its_hull_fills_it_once() {
+    let mut fight = abeam(80.0, Some(Trim { squall: 0.03, ..Trim::default() }));
+    let way = |fight: &Fight| fight.fitting(PLAYER).expect("fitted").way_share(1.0);
+    let hit = |zone: Zone, sail: Option<usize>, rigged: bool| ShotEvent::Hit {
+        shooter: CAPTAIN,
+        target: PLAYER,
+        zone,
+        point: [0.0, 0.0, 1.0],
+        flight: 0.0,
+        gun: SWIVEL,
+        shot: Shot::Round,
+        sail,
+        rigged,
+    };
+    let mut events = Vec::new();
+    // As `step_balls` tells one ball through its canvas and on into its hull.
+    fight.strike(&hit(Zone::Rig, Some(0), false), &mut events);
+    fight.strike(&hit(Zone::Holed, None, true), &mut events);
+    assert!((way(&fight) - 1.03).abs() < 1e-12, "one ball, one squall: {}", way(&fight));
 }

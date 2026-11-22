@@ -20,14 +20,6 @@ pub const STOP_NUMBERS: usize = 10;
 /// The farthest a look may lay, metres: past every gun's reach.
 const MOST_RANGE_M: f64 = 1e5;
 
-/// Each event's kind and how many numbers follow it: muzzle (ship, point, launch), hit (ship struck, by, zone,
-/// point), splash and land (point), run-out (side), state (ship, state), refused (why, side, seconds left), no-sail
-/// (always 0), load (shot), ram (ship struck, by, point, hull dealt); then, each naming the fight's tick it happened on
-/// first: splash (x, y), hit (ship, point in its frame, part: 0 hull, 1 sail, 2 rig), sail lost (ship, sail), mast
-/// fell (ship, mast), struck (ship), sinking (ship), flotsam (its number, x, y, kind: 0 crate, 1 barrel, 2 chest),
-/// gathered (its number, the player), boarding (ship).
-pub const EVENT_NUMBERS: [usize; 19] = [7, 6, 3, 3, 1, 2, 3, 1, 1, 6, 3, 6, 3, 3, 2, 2, 5, 3, 2];
-
 /// Orders from their numbers, or why they are not orders. They come from a player's machine.
 pub fn orders_from(numbers: &[f64]) -> Result<Orders, String> {
     let numbers: [f64; ORDERS] =
@@ -118,6 +110,11 @@ fn vessel_numbers(vessel: &Vessel) -> Vec<f64> {
 }
 
 /// An event's numbers in a view of the fight's tick `tick`, its ships as the view numbers them (`seen`).
+/// Each begins with its kind: muzzle (ship, point, launch), hit (ship struck, by, zone, point), splash and land
+/// (point), run-out (side), state (ship, state), refused (why, side, seconds left), no-sail, load (shot), ram (ship
+/// struck, by, point, hull dealt); then, each naming the fight's tick it happened on first: splash (x, y), hit (ship,
+/// point in its frame, part), sail lost (ship, sail), mast fell (ship, mast), struck (ship), sinking (ship), flotsam
+/// (its number, x, y, kind), gathered (its number, the player), boarding (ship).
 fn event_numbers(event: &Event, tick: f64, seen: &impl Fn(ShipId) -> f64) -> Option<Vec<f64>> {
     let point = |at: [f64; 3]| at.to_vec();
     let part = |part: Part| f64::from(part.number());
@@ -231,7 +228,12 @@ pub fn view_numbers(
     let mut numbers = vec![fight.clock, over];
     numbers.extend(vessel_numbers(player));
     numbers.extend(vessel_numbers(captain));
-    numbers.extend(captain_numbers(&command.mind, me));
+    let mut mind = captain_numbers(&command.mind, me);
+    // Gone from the fight, the first captain keeps its place (and every ship its number) but is no foe left to beat.
+    if !captain.in_fight() {
+        mind[1] = 0.0;
+    }
+    numbers.extend(mind);
     let others: Vec<(ShipId, &Vessel, &Captain)> = fight
         .ships
         .iter()

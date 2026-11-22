@@ -245,6 +245,7 @@ fn a_balls_hit_tells_where_on_the_ship_it_struck_and_the_sea_fights_own_events_a
         gun,
         shot,
         sail: None,
+        rigged: false,
     };
     let events = [
         Event::Hit { ship: 1, at: [4.0, -1.0, 2.0], part: Part::Hull },

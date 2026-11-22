@@ -180,11 +180,6 @@ impl Islands {
         self.standing.iter().map(|island| &island.coast)
     }
 
-    /// The islands within `SIGHT_M` of a point, in the order they were rolled.
-    pub fn sighted(&self, at: [f64; 2]) -> impl Iterator<Item = &SeaIsland> {
-        self.standing.iter().filter(move |island| apart(island.at, at) <= SIGHT_M)
-    }
-
     /// The islands a player at `at` is told of: those in sight, and those they have found, wherever they lie.
     pub fn told(&self, player: PlayerId, at: [f64; 2]) -> impl Iterator<Item = &SeaIsland> {
         self.standing.iter().filter(move |island| apart(island.at, at) <= SIGHT_M || self.found(player, island.id))

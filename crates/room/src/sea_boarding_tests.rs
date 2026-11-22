@@ -1,4 +1,4 @@
-use super::tests::{met, ticks, vessel_mut};
+use super::tests::{floating_for, met, ticks, vessel_mut};
 use super::*;
 use crate::battle::BoardRefused;
 use crate::players::{Input, SpawnAsk};
@@ -126,7 +126,7 @@ fn two_boarders_one_beaten_both_take_its_hold_when_its_crew_falls_and_both_step_
         foe.fighter.action = combat::Action::Dead { elapsed: 0 };
     }
     sea.tick();
-    assert_eq!((sea.flotsam_for(one).count(), sea.flotsam_for(two).count()), (6, 6), "its hold for each");
+    assert_eq!((floating_for(&sea, one).count(), floating_for(&sea, two).count()), (6, 6), "its hold for each");
     ticks(&mut sea, HOLD_TICKS as usize + 1);
     assert!(!sea.on_deck(one) && !sea.on_deck(two));
 }
@@ -140,7 +140,7 @@ fn a_ship_going_down_under_its_boarders_sends_them_home_with_what_floats_once_an
     vessel_mut(&mut sea, player, CAPTAIN).damage.sink_t = naval::damage::SINK_SECONDS - 0.5;
     ticks(&mut sea, 60 * 60);
     assert!(!sea.on_deck(player));
-    assert_eq!(sea.flotsam_for(player).count(), 3, "what floats once, no hold");
+    assert_eq!(floating_for(&sea, player).count(), 3, "what floats once, no hold");
 }
 
 #[test]
@@ -394,4 +394,45 @@ fn a_boarder_kept_while_still_aboard_keeps_what_the_sea_gave_them_meanwhile() {
     let kept = gear::Character::from_json(&sea.kept_character(player).expect("kept")).expect("read");
     assert_eq!(kept.crew.officers.len(), 1, "the officer who joined");
     assert_eq!(kept.ship_xp, 500, "the ship's experience");
+}
+
+#[test]
+fn a_boarders_own_ship_takes_no_helm_brace_or_sail_while_they_stand_on_the_struck_deck() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    strike(&mut sea, player);
+    let steer = naval::fight::Orders {
+        helm: sailing::ship::Helm { steer: 0.5, climb: 0 },
+        brace: true,
+        ..crate::battle::QUIET
+    };
+    sea.orders(player, steer).unwrap();
+    let own = vessel_mut(&mut sea, player, PLAYER);
+    (own.ship.rung, own.ship.ahead) = (1, 1.5);
+    sea.board(player).unwrap();
+    let was = vessel_mut(&mut sea, player, PLAYER).ship;
+    // Six seconds on the deck: the helm and the sail it had would have it turning past 3 m/s by then.
+    ticks(&mut sea, 360);
+    assert!(sea.on_deck(player), "still on the deck");
+    let own = vessel_mut(&mut sea, player, PLAYER);
+    let moved = libm::hypot(own.ship.x - was.x, own.ship.y - was.y);
+    assert!(moved < 6.0 && libm::hypot(own.ship.ahead, own.ship.abeam) < 1.0, "it drifts to a stop, {moved} m");
+    assert!((own.ship.heading - was.heading).abs() < 0.05, "it holds its heading");
+    assert!(!own.guns.braced, "its brace let go");
+}
+
+#[test]
+fn a_boarder_who_leaves_the_sea_from_the_deck_keeps_the_hands_who_fell_there_lost() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    sea.board(player).unwrap();
+    let crew = |sea: &Sea| gear::Character::from_json(&sea.kept_character(player).unwrap()).unwrap().ship[2];
+    let before = crew(&sea);
+    let room = &mut sea.decks.boarded[0].room;
+    let hand = *room.ashore.hands.keys().next().expect("its hands boarded with it");
+    room.foes.get_mut(&hand).unwrap().fighter.action = combat::Action::Dead { elapsed: 0 };
+    sea.tick();
+    assert!(sea.on_deck(player), "still fighting on the deck");
+    let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
+    assert!(crew(&sea) + man <= before + 1, "the hand who fell is lost: {before} to {}", crew(&sea));
 }

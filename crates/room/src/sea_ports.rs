@@ -94,6 +94,7 @@ impl Sea {
                 piece.player = player;
             }
         }
+        self.fights.owe_to(&before, player);
         // A player gone is forgotten once nothing they fought or left floating needs their account, so the map holds
         // only those still at sea or still owed.
         let (berths, fights, pieces) = (&self.berths, &self.fights, &self.harbour.flotsam.pieces);
@@ -270,11 +271,6 @@ impl Sea {
         &self.harbour.flotsam.pieces
     }
 
-    /// Each piece floating for a player.
-    pub fn flotsam_for(&self, player: PlayerId) -> impl Iterator<Item = &crate::flotsam::Floating> {
-        self.harbour.flotsam.for_player(player)
-    }
-
     /// A player's character as it is kept between sessions, their ship's hurts in it: a new one, with its hurts, until
     /// the accounts gave theirs; none for no player at sea.
     #[must_use]
@@ -290,11 +286,15 @@ impl Sea {
         // In a fight, the ship is kept as the fight has it, and lies at the port city it would wash up at, as one who
         // lost does: a player who leaves mid-fight comes back there.
         let (kept, at) = match self.fights.hurts_of(player) {
-            // Leaving a fight under a third of its hull counts as sunk: never more than it had.
-            Some((kept, at)) => (
-                if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
-                in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
-            ),
+            // Leaving a fight under a third of its hull counts as sunk: never more than it had. Its hands who fell on
+            // a deck it stands on are lost as they are stepping off.
+            Some((mut kept, at)) => {
+                kept[2] = (kept[2] - f64::from(self.fallen_on_deck(player)) / naval::arms::LARGE_BOAT.crew).max(0.0);
+                (
+                    if kept[0] < LEFT_AS_SUNK { std::array::from_fn(|at| kept[at].min(SUNK_KEPT[at])) } else { kept },
+                    in_frame(self.harbour.harbours.nearest(at).map_or(at, |port| self.harbour.harbours.ports[port].1)),
+                )
+            }
             None => {
                 (berth.kept, berth.sailing.as_ref().map_or([f64::NAN; 2], |sailing| [sailing.ship.x, sailing.ship.y]))
             }
