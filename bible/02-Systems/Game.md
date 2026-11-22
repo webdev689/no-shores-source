@@ -17,6 +17,8 @@ code:
   - client/src/game/gameFrame.ts#startFrames
   - client/src/game/pageWaters.ts#watersOnce
   - client/src/game/flow.ts#next
+  - client/src/game/travel.ts#startTravel
+  - client/src/game/tripBack.ts#tripOrBack
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
   - client/src/game/swingView.ts#SwingView
@@ -106,9 +108,9 @@ the screen reader's announcements.
 `flow.ts` holds where the player is: loading behind a veil, on foot in a node, at sea, or over an island's side
 choosing a landing; on foot and at sea a menu may be open. It is pure: the game hands it what happened and draws what
 it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
-`game.ts` keeps the flow, the travel between places and the player's actions, and `gameFrame.ts` draws each frame of
-the mode the flow is in, a frame on foot first heeding the activities' word (`startActivities`: a gate that shut, a
-company that fell); each mode is its own module.
+`game.ts` keeps the flow, the ways into each place and the player's actions, `travel.ts` the travel between places
+behind the veil, and `gameFrame.ts` draws each frame of the mode the flow is in, a frame on foot first heeding the
+activities' word (`startActivities`: a gate that shut, a company that fell); each mode is its own module.
 
 | From | Happening | To |
 |---|---|---|
@@ -126,7 +128,16 @@ A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at
 only say it is locked.
 
 The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
-A way that fails stays on the veil, saying why, and Enter tries it again.
+
+A trip that fails, its room full or out of reach, puts the player back where they stood before it, joined again:
+aboard their ship, on the island's beach, in the dungeon, or in the node at its arrival spot
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
+the trip be one that sent them out of where they stood (a gate shut on them, their company fallen), they are taken
+to the hub, Overlook's social space, its landmass opened first where another is. The veil says why while they go
+("You could not reach The Saltgrass Downs:" and the reason), and once it lifts the same words stand as a toast for
+8 s. Only when the hub fails too does the trip stay on the veil, saying why, and Enter tries it again; so does the
+first arrival, which has nowhere to go back to. A room past its 64 sockets turns the join away before it opens (503),
+which a browser's WebSocket tells only as a room that could not be reached.
 
 ## Arriving
 

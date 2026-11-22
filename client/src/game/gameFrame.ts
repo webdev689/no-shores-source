@@ -46,6 +46,7 @@ import type { AfterStory } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
+import { TOLD_MS } from './tripBack.ts';
 import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
 import { nodeCardsAt } from './nodeCards.ts';
@@ -76,6 +77,8 @@ export interface Playing {
   drawers: LandDrawers;
   ready: boolean;
   waited: number;
+  /** Why the player is not where their last trip went, shown until `until` (ms, `performance.now`). */
+  told: { readonly words: string; readonly until: number } | null;
   shipScale: number;
 }
 
@@ -162,6 +165,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
+  /** The words that tell why the player is not where they went, while they stand. */
+  const toldNow = () => (playing.told && performance.now() < playing.told.until ? [playing.told.words] : []);
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
@@ -257,7 +262,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The quest's mark gives way to the map, as the fight's display does.
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     hud.tasks.show(quests.tracked);
-    hud.toast(...quests.toasts);
+    hud.toast(...toldNow(), ...quests.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
@@ -292,7 +297,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     });
     playing.shipScale = shown.shipScale;
     playing.quests.frame(seconds, playing.after.past, paused);
-    hud.toast(...playing.quests.toasts);
+    hud.toast(...toldNow(), ...playing.quests.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);
@@ -414,6 +419,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (settled || playing.waited > GROUND_WAIT_S) {
         playing.flow = next(playing.flow, { kind: 'loaded' });
         hud.veil(null);
+        // Why the player is not where they went stays its whole time once the veil has lifted.
+        if (playing.told) playing.told = { ...playing.told, until: performance.now() + TOLD_MS };
         // The player arrives on foot as the veil lifts, so their arrival is seen.
         if (playing.flow.mode === 'foot') playing.foot?.arrive(clock);
         parts.syncMenu();
