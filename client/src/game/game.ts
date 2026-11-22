@@ -335,12 +335,12 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   };
 
   /** Whether the player may be taken elsewhere: on foot or on deck with nothing else under way, never under the map,
-   *  on the way to the helm, walking the deck, landing, or while another landmass opens. */
+   *  on the way to the helm, walking the deck, sailing away to other waters, landing, or while another landmass opens. */
   const free = () =>
     (playing.flow.mode === 'foot' || playing.flow.mode === 'sea') &&
     !playing.flow.menu &&
     !playing.helmMap.busy &&
-    !playing.sea?.aboard.active &&
+    !playing.sea?.busy &&
     !charting.busy;
 
   /** Joins a company member where they play, a node of this landmass or its dungeon, at their seas; the ship stays. */
@@ -550,7 +550,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     playing.flow.mode === 'foot' ? (playing.foot?.gear ?? null) : storyMode() ? (story?.gear ?? null) : null;
   const fighting = () => footView.shown.fight;
   const fed = () => (playing.flow.mode === 'sea' ? (playing.sea?.gear ?? null) : gearHere());
-  const resting = () => storyMode() && !story?.gear;
+  const resting = () => (storyMode() && !story?.gear) || Boolean(playing.sea?.travelling);
   stack.add(startGearWindow(fighting, link, gearHere, shipNow, joinAt, resting, fed, screens));
   stack.add(screens.layer); // the card E opens at a dungeon's entrance, over the menu's layer
   addEventListener('keyup', (event) => void (playing.flow.mode === 'story' && story?.key(keyUpNameOf(event), false)));

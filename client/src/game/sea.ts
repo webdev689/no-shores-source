@@ -344,8 +344,16 @@ export class Sea {
     return true;
   }
 
-  /** The player is back aboard: the view stands over the ship, whatever it showed when they landed. */
+  /** Whether the ship holds the player: down aboard it, or sailing away to other waters. Nothing takes them elsewhere
+   *  meanwhile. */
+  get busy(): boolean {
+    return this.aboard.active || this.travelling !== null;
+  }
+
+  /** The player is back aboard: the view stands over the ship, whatever it showed when they landed, and a travel left
+   *  under way is over. */
   cameAboard(): void {
+    this.endTravel();
     this.view.sail();
     this.view.chosen = null;
     this.press = null;

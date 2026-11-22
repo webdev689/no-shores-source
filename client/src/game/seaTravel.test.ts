@@ -142,3 +142,19 @@ test('while a travel is under way Stop and the pace dial do nothing, whoever pre
   sea.stepPace(1);
   assert.deepEqual(done, ['stop', 'pace'], 'and they act once it is over');
 });
+
+test('a travel under way holds the player at sea, and coming back aboard ends any travel left from before', async () => {
+  const { Sea } = await import('./sea.ts');
+  const done: string[] = [];
+  const sea = Object.create(Sea.prototype) as InstanceType<typeof Sea>;
+  Object.assign(sea, {
+    aboard: { active: false },
+    view: { kind: 'travel', sail: () => done.push('view sails'), chosen: null },
+    room: null,
+    travelling: { cut: () => done.push('cut') },
+  });
+  assert.equal(sea.busy, true, 'held while it sails away');
+  sea.cameAboard();
+  assert.deepEqual([sea.travelling, sea.busy], [null, false]);
+  assert.ok(done.includes('cut'), 'the travel is cut, its room told to forget it');
+});
