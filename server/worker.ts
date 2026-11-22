@@ -95,6 +95,8 @@ export class RoomHost extends DurableObject<Env> {
       token: string | null;
       /** The entrance a player was joined before, until the room learns whether they came out of its dungeon. */
       door: number | null;
+      /** At sea, the water their ship lay in as the accounts were last told, which the chat's Region is. */
+      water?: string | null;
     }
   >();
   private keeper: Keeper | null = null;
@@ -373,7 +375,7 @@ export class RoomHost extends DurableObject<Env> {
       // At sea the room also says who is there, for the Roster.
       if (seaRoom(this.name) !== null) {
         held.token = message;
-        void this.env.ACCOUNTS.present(message, this.name).catch(() => false);
+        void this.env.ACCOUNTS.present(message, this.name, null).catch(() => false);
       }
       return;
     }
@@ -479,12 +481,18 @@ export class RoomHost extends DurableObject<Env> {
         }
       }
       const now = Date.now();
-      // Said again before the last word lapses, for each player at sea.
-      if (now - this.lastPresent >= PRESENT_EVERY_MS) {
-        this.lastPresent = now;
-        for (const held of this.players.values())
-          if (held.token) void this.env.ACCOUNTS.present(held.token, this.name).catch(() => false);
-      }
+      // Said again before the last word lapses, for each player at sea, and at once when their ship crosses into
+      // another water.
+      const again = now - this.lastPresent >= PRESENT_EVERY_MS;
+      if (again) this.lastPresent = now;
+      if (now - this.lastKept >= 1000 || again)
+        for (const held of this.players.values()) {
+          if (!held.token) continue;
+          const water = this.guarded(() => this.room.water(held.player), null);
+          if (!again && water === (held.water ?? null)) continue;
+          held.water = water;
+          void this.env.ACCOUNTS.present(held.token, this.name, water).catch(() => false);
+        }
       if (this.island && now - this.island.told >= ASHORE_EVERY_MS) {
         this.island.told = now;
         // An island the sea no longer holds (it faded, or the sea restarted) is not held again, whatever has its

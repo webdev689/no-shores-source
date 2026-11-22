@@ -33,5 +33,13 @@ Claude's, with its reason. The owner can change any.
 | The chat's key | Enter, on foot | DFO's key; Enter does nothing else on foot |
 | The panel | Bottom left, over the Arts; Tab turns Local and World, the arrows read back | Destiny's chat stands low at the left; DFO's tabs, cut to two |
 | A Whisper's colour | `#ffaad4` | A hue of DFO's chat no channel kept here uses |
+| Region's reach | Every ship in the same water of the same sea room, each line marked with the water's name; Local refused at sea, Region on land | The sea's waters are its regions ([[World Map]]); no figures stand at sea to be heard near |
+| Region's colour | `#8fe28f` | DFO's Region green |
+| How a mute works | One way, hiding only their chat lines and Whispers, a Whisper to a muter answered as sent; from the menu's Mute row, `/mute` and `/unmute`, and Settings' list of the muted; 200 at most | DFO's `/mute` was a moderator's, so a player's own mute is new: it hides less than a block, which stays the way to keep a player away; what is hidden follows the Roster's block law |
+| What Inspect leaves out | Hints, the XP meter, Fruit and Appearance; Back returns to their menu | What only the player's own character can do |
 
 Links: [[Interface]], [[Chat]], [[Accounts]], [[Server]].
+
+Replaced in part by [[Inspect Opens the Character Tab]]: Inspect shows the player as the Character tab does. By
+[[The Sea Has the Chat, Each Water a Region Channel]]: T opens the chat, on foot, at the helm and in a sea fight. By
+[[A Player May Mute Another]]: the menu has a sixth row, Mute.

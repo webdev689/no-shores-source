@@ -35,7 +35,9 @@ test('a stranger may be asked as a friend and invited to the company; the guild 
     ['Invite to guild', 'You are in no guild'],
     ['Whisper', ''],
     ['Inspect', ''],
+    ['Mute', 'mute'],
   ]);
+  assert.deepEqual(shown(interactRows(roster({ muted: ['Ben'] }), person('Ben'), '')).at(-1), ['Unmute', 'unmute']);
 });
 
 test('what cannot be done now stands greyed with why', () => {

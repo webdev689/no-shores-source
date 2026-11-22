@@ -1,10 +1,12 @@
 // Pictures of the plates over other players, the interact menu and the chat, headless (`tools/uiShot.mjs`), over a
 // plain dusk in place of the world. The game never imports it.
+import type { Details } from '../../network/accounts.ts';
 import type { PlayerPlate } from '../../network/plateMessages.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
 import { ChatLog } from './chatLog.ts';
 import { ChatPanel } from './chatPanel.ts';
+import { InspectWindow } from './inspectWindow.ts';
 import { interactNode, interactRows } from './interactMenu.ts';
 import { type PlatedPlayer, PlayerPlates } from '../../combat/playerPlates.ts';
 
@@ -73,6 +75,7 @@ export function interactShot(ui: Interface): Node {
     player,
     rows,
     said,
+    false,
     () => undefined,
     () => undefined,
   );
@@ -87,6 +90,13 @@ log.heard({ channel: 'local', from: 'WoodenOsprey782', text: 'Nice cloak. Where 
 log.heard({ channel: 'local', from: 'Ada', text: 'The Tailor, this morning.' }, 0, 'Ada', near);
 log.heard({ channel: 'whisper', from: 'xDR_EXOx', to: 'Ada', text: 'Invite me when you go?' }, 0, 'Ada', near);
 log.heard({ channel: 'whisper', from: 'Ada', to: 'xDR_EXOx', text: 'Sure, in five.' }, 0, 'Ada', near);
+log.heard(
+  { channel: 'region', from: 'ChiefKabr', region: 'The Lantern Sea', text: 'Grey Tithe frigate off the reef' },
+  0,
+  'Ada',
+  near,
+);
+log.heard({ channel: 'local', from: 'WoodenOsprey782', text: `look${'o'.repeat(60)}ut!` }, 0, 'Ada', near);
 const relation = (name: string) =>
   name === 'Ada' ? 'mine' : name === 'ChiefKabr' ? 'company' : name === 'xDR_EXOx' ? 'friend' : 'other';
 
@@ -103,4 +113,50 @@ const shut = new ChatPanel();
 export function chatShutShot(ui: Interface): Node {
   const chat = shut.node(ui, log, 17_000, ui.size, relation, () => 'keep');
   return { width: 'grow', height: 'grow', fill: DUSK, children: [chat] };
+}
+
+/** The chat open at sea in the Lantern Sea, on Region. */
+const atSea = new ChatPanel();
+atSea.place(true, 'The Lantern Sea');
+atSea.show();
+export function chatAtSeaShot(ui: Interface): Node {
+  const chat = atSea.node(ui, log, 0, ui.size, relation, () => 'keep');
+  return { width: 'grow', height: 'grow', fill: DUSK, children: [chat] };
+}
+
+/** Inspect on a player past level 20 wearing two kept pieces, one gilded, and an Art; no forge, so no pictures. */
+const piece = (slot: number, gilded: boolean) => ({
+  slot,
+  kind: 2,
+  rarity: 3,
+  level: 22,
+  name: 4,
+  element: 1,
+  attack: slot === 0 ? 310 : 0,
+  defense: slot === 0 ? 0 : 60,
+  gilded,
+});
+const inspected: Details = {
+  name: 'ChiefKabr',
+  tag: 'SWK',
+  emblem: 'overlook',
+  level: 24,
+  place: null,
+  playing: true,
+  guild: null,
+  shown: {
+    level: 24,
+    defense: 60,
+    attack: 310,
+    emblem: 'overlook',
+    worn: [piece(0, true), piece(3, false)],
+    prestige: 84,
+    art: 1,
+    art_level: 4,
+  },
+};
+const inspect = new InspectWindow(() => null);
+export function inspectShot(ui: Interface): Node {
+  const window = inspect.node(ui, ui.size, { name: 'ChiefKabr', details: inspected, dress: null }, () => undefined);
+  return { width: 'grow', height: 'grow', fill: DUSK, children: [window] };
 }

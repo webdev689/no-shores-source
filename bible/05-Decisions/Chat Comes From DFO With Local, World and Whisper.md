@@ -21,3 +21,6 @@ rules, the owner wrote:
 
 Links: [[Interface]], [[Accounts]], [[Pick List - Network and Platform]],
 [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]].
+
+Replaced in part by [[The Sea Has the Chat, Each Water a Region Channel]]: at sea each water is a Region channel, beside
+World. By [[A Player May Mute Another]]: a player may mute another.

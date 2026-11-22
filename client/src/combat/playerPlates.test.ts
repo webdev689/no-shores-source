@@ -31,6 +31,7 @@ test('the player under the crosshair within reach is aimed at, the nearest of se
   const own = [-2, 0, 0] as const;
   assert.equal(aimedPlayer([placed(1, 2), placed(2, 3)], camera, own)?.id, 1, 'the nearest the eye');
   assert.equal(aimedPlayer([placed(1, 2, { name: '' })], camera, own), null, 'a guest has no name to be asked by');
+  assert.equal(aimedPlayer([placed(1, 2, { name: '' }), placed(2, 3)], camera, own), null, 'nor may one be aimed past');
   assert.equal(aimedPlayer([placed(1, own[0] + SOCIAL_REACH_M + 0.5)], camera, own), null, 'past reach');
   const aside: PlatedPlayer = { ...placed(1, 2), feet: [2, 4, 0] };
   assert.equal(aimedPlayer([aside], camera, own), null, 'off the crosshair');

@@ -92,6 +92,11 @@ export class OtherPlayers {
     }
   }
 
+  /** Another player's dress as their figure wears it now; null for one not placed. */
+  dressOf(number: number): Dress | null {
+    return this.figures.get(number)?.dress ?? null;
+  }
+
   /** What another player's plate says, as the room last sent it; null before it has. */
   plateOf(number: number): PlayerPlate | null {
     return this.plates.get(number) ?? null;

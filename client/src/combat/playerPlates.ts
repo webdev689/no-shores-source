@@ -23,6 +23,8 @@ const PLATE_OVER_M = 1.9;
 const HEAD_M = 1.8;
 /** The square's side over a figure whole, in CSS pixels: a foe's level square's. */
 const SIDE = EMBLEM_PIXELS * 2 + 4;
+/** The interact mark's least and most side, and the steps it grows in, in CSS pixels. */
+const MARK = { least: 8, most: 480, step: 8 } as const;
 /** About how wide a letter of a name stands at the plates' size, in CSS pixels: enough to lay plates apart. */
 const LETTER_PX = 7;
 /** The plate's square and name colours: the company's green, everyone else's blue. */
@@ -66,16 +68,22 @@ export function aimedPlayer(
   let least = Infinity;
   for (const player of players) {
     const [x, y] = player.feet;
-    if (player.plate.name === '' || Math.hypot(x - own[0], y - own[1]) > SOCIAL_REACH_M) continue;
+    if (Math.hypot(x - own[0], y - own[1]) > SOCIAL_REACH_M) continue;
     if (bodyDegrees(camera, player.feet, HEAD_M) > 0) continue;
     const depth = Math.hypot(x - camera.eye[0], y - camera.eye[1]);
     if (depth < least) [nearest, least] = [player, depth];
   }
-  return nearest;
+  // A guest nearer on the line stands in the way of one behind them, as a body does.
+  return nearest?.plate.name === '' ? null : nearest;
 }
+
+/** Each colour's speech bubble, made once. */
+const BUBBLES = new Map<string, string>();
 
 /** The speech bubble a player with a menu open wears in place of their square: its three dots, and its tail. */
 function bubble(fill: string, edge: string): string {
+  const made = BUBBLES.get(fill);
+  if (made) return made;
   const rows = [
     'BBBBBBBBBBBBBB',
     ...Array.from({ length: 4 }, () => 'BFFFFFFFFFFFFB'),
@@ -87,17 +95,20 @@ function bubble(fill: string, edge: string): string {
     '.BFB..........',
     '.BB...........',
   ];
-  return svgOf({ rows, tones: { B: edge, F: fill, W: TONES.word } });
+  const svg = svgOf({ rows, tones: { B: edge, F: fill, W: TONES.word } });
+  BUBBLES.set(fill, svg);
+  return svg;
 }
 
-/** The interact mark round a player's body: a thin diamond, a chevron in each of its corners pointing out, drawn in
- *  lines that stay thin at any size. */
+/** The interact mark round a player's body: a thin diamond, a chevron in each of its corners pointing out. */
 const DIAMOND = (() => {
-  const line = "fill='none' stroke='rgba(244,241,232,0.85)' stroke-width='1.2' stroke-linejoin='miter'";
+  // Its lines stand 1.5 px wide however large it is drawn.
+  const line =
+    "fill='none' stroke='rgba(244,241,232,0.85)' stroke-width='1.5' vector-effect='non-scaling-stroke' stroke-linejoin='miter'";
   const chevrons = ['M14 44 L8 50 L14 56', 'M86 44 L92 50 L86 56', 'M44 14 L50 8 L56 14', 'M44 86 L50 92 L56 86'];
   const paths = chevrons.map((way) => `<path d='${way}' ${line}/>`).join('');
   const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><path d='M50 1 L99 50 L50 99 L1 50 Z' ${line}/>${paths}</svg>`;
-  return { svg, size: 100 };
+  return { svg };
 })();
 
 /** One plate as drawn this frame: its player, where its foot stands, its size, and its place front to back. */
@@ -143,7 +154,8 @@ export class PlayerPlates {
       x,
       y,
       depth,
-      width: (SIDE + 6 + player.plate.name.length * LETTER_PX) * scale,
+      // The name's letters are drawn whole at any distance: only the square shrinks.
+      width: (SIDE + 6) * scale + player.plate.name.length * LETTER_PX,
       height: SIDE * scale,
     }));
     const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
@@ -151,8 +163,9 @@ export class PlayerPlates {
       const place = laid.get(player.id) ?? { lift: 0, front: 0 };
       return { player, x, y: y - place.lift, scale, front: place.front };
     });
+    const seen = new Set(shown.map((each) => each.player.id));
     const aimed = aimedPlayer(
-      players.filter((player) => shown.some((each) => each.player.id === player.id)),
+      players.filter((player) => seen.has(player.id)),
       camera,
       viewing.own,
     );
@@ -172,17 +185,14 @@ export class PlayerPlates {
       float: { to: 'screen', anchor: [0.5, 1], x, y: y - 4, z: 1 },
     }));
     const mark = this.markAt;
-    if (!mark || mark.height < 8 || !this.offer) return plates;
-    const side = Math.round(mark.height);
+    if (!mark || mark.height < MARK.least || !this.offer) return plates;
+    // Drawn at its own size, so its lines stay thin; in steps, so a body walking near draws it again only now and then.
+    const side = Math.min(MARK.most, Math.round(mark.height / MARK.step) * MARK.step);
     const diamond: Node = {
       width: side,
       height: side,
       through: true,
-      picture: {
-        key: 'interact mark',
-        source: { svg: DIAMOND.svg },
-        pixel: { width: DIAMOND.size, height: DIAMOND.size },
-      },
+      picture: { key: 'interact mark', source: { svg: DIAMOND.svg } },
       float: { to: 'screen', anchor: [0.5, 0.5], x: mark.x, y: mark.y, z: 1 },
     };
     return [diamond, ...plates];

@@ -512,7 +512,7 @@ export function startGearWindow(
 }
 
 /** The hover card beside what it describes, kept on the screen and above the footer, whose keys stay readable. */
-function cardFloat(
+export function cardFloat(
   ui: Interface,
   card: { readonly beside: string; readonly content: () => Node },
   width: number,

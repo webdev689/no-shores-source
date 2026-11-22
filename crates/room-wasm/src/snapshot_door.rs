@@ -210,12 +210,13 @@ pub fn snapshot(player: PlayerId) -> Vec<u8> {
 }
 
 /// A room on land's snapshot after its last tick for each boarder, by their number at sea, each whole (built on none)
-/// with their own fighter whole and the rest packed, taking the dresses and plates changed, what happened and its
-/// lines since the last: a deck boarded at sea, whose snapshot rides in the sea's own, so each goes once.
+/// with their own fighter whole and the rest packed, taking the dresses changed, what happened and its lines since the
+/// last: a deck boarded at sea, whose snapshot rides in the sea's own, so each goes once.
 fn whole_for_each(room: &mut Room, aboard: &[(PlayerId, PlayerId)]) -> Vec<(PlayerId, Vec<u8>)> {
     let changed = room.take_dress_changes();
     let dressed: Vec<(PlayerId, &str)> = changed.iter().map(|(player, dress)| (*player, dress.as_str())).collect();
-    let plates = room.take_plate_changes();
+    // A deck draws no plates: the sea names no one.
+    let plates: Vec<(PlayerId, room::Plate)> = Vec::new();
     let (tick, events) = (room.clock(), room.take_events());
     let lines: Vec<(u64, Line)> = room.take_lines().into_iter().map(|line| (tick, line)).collect();
     let players: Vec<Seen> = room.seen().collect();

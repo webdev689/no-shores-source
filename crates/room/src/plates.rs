@@ -31,9 +31,14 @@ fn named(name: &str) -> bool {
 }
 
 fn plate_of(found: &Player) -> Plate {
+    let (level, prestige) = numbers_of(found);
+    Plate { name: found.plate.name.clone(), level, prestige, menu: found.plate.menu }
+}
+
+/// A player's level and Prestige, as their plate carries them.
+fn numbers_of(found: &Player) -> (u8, u16) {
     let character = &found.character;
-    let prestige = u16::try_from(character.prestige()).unwrap_or(u16::MAX);
-    Plate { name: found.plate.name.clone(), level: character.level(), prestige, menu: found.plate.menu }
+    (character.level(), u16::try_from(character.prestige()).unwrap_or(u16::MAX))
 }
 
 impl Room {
@@ -54,20 +59,17 @@ impl Room {
     pub fn take_plate_changes(&mut self) -> Vec<(PlayerId, Plate)> {
         let mut changed = Vec::new();
         for (&player, found) in &mut self.players {
-            let plate = plate_of(found);
-            if found.plate.sent.as_ref() != Some(&plate) {
+            // Compared field by field, so a plate is made, its name copied, only when it changed.
+            let numbers = numbers_of(found);
+            let same = found.plate.sent.as_ref().is_some_and(|sent| {
+                (sent.level, sent.prestige) == numbers && sent.menu == found.plate.menu && sent.name == found.plate.name
+            });
+            if !same {
+                let plate = plate_of(found);
                 found.plate.sent = Some(plate.clone());
                 changed.push((player, plate));
             }
         }
         changed
-    }
-
-    /// Every plate is sent to everyone once more with the next changes, for one who joined with no welcome to carry
-    /// them (a boarder come over a ship's side).
-    pub fn announce_plates(&mut self) {
-        for found in self.players.values_mut() {
-            found.plate.sent = None;
-        }
     }
 }

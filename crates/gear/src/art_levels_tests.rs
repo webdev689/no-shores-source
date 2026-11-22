@@ -141,3 +141,15 @@ fn an_old_save_with_a_full_core_still_reaches_the_highest_level() {
     }
     assert_eq!(character.art_level(1), LEVEL_MOST);
 }
+
+#[test]
+fn what_others_see_holds_the_worn_arts_level_and_none_without_one() {
+    let mut character = Character::starting();
+    assert_eq!((character.shown().art, character.shown().art_level), (0, 0), "none worn: none shown");
+    let art = arts().arts[0].id;
+    character.arts = crate::arts::WornArts::mastered();
+    character.arts.worn = art;
+    character.arts.levels[0] = 4;
+    assert_eq!((character.shown().art, character.shown().art_level), (art, 4));
+    assert_eq!(character.shown().prestige, character.prestige());
+}

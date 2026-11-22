@@ -89,7 +89,6 @@ impl Sea {
         boarded.aboard.insert(player, boarder);
         // The boarders already aboard are drawn in their dress by the one just come, who had no welcome to carry it.
         boarded.room.announce_dresses();
-        boarded.room.announce_plates();
         let told = naval::wire::told_numbers(&naval::fight::Event::Boarding { ship }, self.clock as f64);
         self.harbour.told.push((player, told.unwrap_or_default()));
         Ok(())

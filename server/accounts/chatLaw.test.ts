@@ -51,3 +51,21 @@ test('what crosses between the page and the hall reads back, and what does not i
   assert.deepEqual(fromHallOf(JSON.stringify({ welcome: { name: null } })), { welcome: { name: null } });
   assert.equal(fromHallOf(JSON.stringify({ line: { channel: 'lobby', from: 'Ada', text: 'hi' } })), null);
 });
+
+test('a line of nothing to see is empty, marks stacked on a letter are held to two, and half a pair is taken out', () => {
+  assert.equal(cleanLine('‍‍ㅤ ⠀'), '');
+  assert.equal(cleanLine(`a${'́'.repeat(40)}b`), `á́b`);
+  assert.equal(cleanLine('x\udc00y'), 'xy');
+});
+
+test('Region is said with /sea, and a player is muted and unmuted by name', () => {
+  assert.deepEqual(readTyped('/sea ahoy', 'local'), { kind: 'say', channel: 'region', words: 'ahoy' });
+  assert.deepEqual(readTyped('/region', 'world'), { kind: 'switch', channel: 'region' });
+  assert.deepEqual(readTyped('/mute Ben', 'local'), { kind: 'mute', name: 'Ben' });
+  assert.deepEqual(readTyped('/unmute Ben', 'local'), { kind: 'unmute', name: 'Ben' });
+  const empty = readTyped('/mute', 'local');
+  if (empty.kind === 'empty') assert.equal(refusedWords(empty), "/mute needs a player's name.");
+  else assert.fail('a mute names a player');
+  const line = { channel: 'region', from: 'Cal', region: 'The Lantern Sea', text: 'ahoy' };
+  assert.deepEqual(fromHallOf(JSON.stringify({ line })), { line });
+});

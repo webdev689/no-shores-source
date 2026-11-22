@@ -187,6 +187,8 @@ code:
   - client/src/combat/playerPlates.ts#squareNumber
   - client/src/game/social/interactMenu.ts#interactRows
   - client/src/game/social/social.ts#holdOnPlayer
+  - client/src/game/social/inspectWindow.ts#InspectWindow
+  - client/src/game/social/inspectGear.ts#inspectedGear
 ---
 # Interface
 
@@ -329,8 +331,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
   each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
-  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card. A shot may hear its events on a later
-  frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
+  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card.
+  `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut. A shot may
+  hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
 
 ## How it works
@@ -1109,18 +1112,25 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   the foes' plates' law (`plateScale`) and laid so none covers another (`BarLayout`); not the cone the foes' plates
   keep. They stand under the foes' plates, 1.9 m over the feet.
 - **Interact** ([[Holding Use on a Player Opens Their Interact Menu]]): the named player the crosshair rests on within
-  6.4 m of the player's own feet, the nearest of several (`aimedPlayer`), wears a thin diamond round their body, a
-  chevron in each corner, with Use's key and "Interact" beside it, wherever Use offers nothing else and no menu or the
-  held map is up. Holding Use 0.45 s, its key ringed as it fills and the menus' hold sounding, opens their menu; a tap
-  does nothing.
-- **Their menu** stands over the view with their plate at its head and five rows: Add friend (or Accept friend, or
-  Cancel friend ask, as the Roster would offer it), Invite to company, Invite to guild, Whisper and Inspect. Each asks
-  the Roster as its row in the Social tab does ([[Accounts]], "The Roster"); one that cannot be done now stands greyed
-  with why ("Already friends", "In your company", "Only the leader invites", "You are in no guild", and so on), and
-  without a Roster (a guest, or a page playing alone) only Whisper and Inspect are offered. What an ask answered stands
-  under the rows. Whisper opens the chat's field to them ([[Chat]]); Inspect shows their details as the Roster's
-  Details page does, over the view; Close or Escape shuts either. While either is up the player stands as in a menu,
-  the pointer free.
+  6.4 m of the player's own feet, the nearest of several (`aimedPlayer`), a guest nearer in the line hiding one
+  behind, wears a thin diamond round their body, a chevron in each corner, with Use's key and "Interact" beside it,
+  kept on the screen, wherever Use offers nothing else and no menu, gate's offer or the held map is up. Holding Use
+  0.45 s, its key ringed as it fills and the menus' hold sounding, opens their menu; a tap does nothing. The hold
+  outlasts the crosshair slipping off them for under 0.2 s, and lets go if the frames stop for a quarter second.
+- **Their menu** stands over the view with their plate at its head and six rows: Add friend (or Accept friend, or
+  Cancel friend ask, as the Roster would offer it), Invite to company, Invite to guild, Whisper, Inspect and Mute (or
+  Unmute). Each asks the Roster as its row in the Social tab does ([[Accounts]], "The Roster"); one that cannot be
+  done now stands greyed with why ("Already friends", "In your company", "Only the leader invites", "You are in no
+  guild", and so on), still reached by the keys and read by a screen reader, and without a Roster (a guest, or a page
+  playing alone) only Whisper and Inspect are offered. While an ask is out every row waits, and what it answered stands
+  under the rows. Whisper opens the chat's field to them ([[Chat]]); Mute hides their chat lines
+  ([[A Player May Mute Another]]); Close or Escape shuts the menu. While it is up the player stands as in a menu, the
+  pointer free and the keys the menu's alone.
+- **Inspect** ([[Inspect Opens the Character Tab]]) shows the player as the Character tab shows the player's own: their
+  plate over their figure in the dress they wear here, each piece they wear in its slot with its card, their level,
+  power and the Art they wear, from what their room kept for others to see. Nothing on it can be asked or changed: no
+  hints, no XP meter, no Fruit and no Appearance. Back or Escape goes back to their menu.
+- **Settings** lists the muted under the blocked, each with Unmute.
 
 ## Emblems
 

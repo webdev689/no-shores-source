@@ -62,17 +62,23 @@ export async function blocks(database: Db, blocker: string, blocked: string): Pr
   return found !== null;
 }
 
-/** Notes that a player is in a room that keeps no character, for a while; or, with no room, that they left it now.
- *  The row stays, to say when they were last seen. */
-export async function present(database: Db, account: string, room: string | null, now: number): Promise<void> {
+/** Notes that a player is in a room that keeps no character, for a while, and at sea the water their ship lies in
+ *  (the chat's Region); or, with no room, that they left it now. The row stays, to say when they were last seen. */
+export async function present(
+  database: Db,
+  account: string,
+  room: string | null,
+  now: number,
+  water: string | null = null,
+): Promise<void> {
   await (
     room === null
       ? database.prepare('UPDATE presence SET until = min(until, ?2) WHERE account_id = ?1').bind(account, now)
       : database
           .prepare(
-            `INSERT INTO presence (account_id, room, until) VALUES (?1, ?2, ?3)
-           ON CONFLICT (account_id) DO UPDATE SET room = ?2, until = ?3`,
+            `INSERT INTO presence (account_id, room, until, water) VALUES (?1, ?2, ?3, ?4)
+           ON CONFLICT (account_id) DO UPDATE SET room = ?2, until = ?3, water = ?4`,
           )
-          .bind(account, room, now + PRESENCE_MS)
+          .bind(account, room, now + PRESENCE_MS, water)
   ).run();
 }

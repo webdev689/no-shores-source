@@ -16,6 +16,8 @@ code:
   - crates/room/src/players.rs#WAITING_LIMIT
   - crates/room/src/sea.rs#Sea
   - crates/room/src/sea.rs#PACES
+  - crates/room/src/plates.rs#take_plate_changes
+  - crates/room/src/sea_waters.rs#water_name
   - crates/room/src/fleet.rs#Fleet
   - crates/room/src/fleet.rs#CAPTAINS_MOST
   - crates/protocol/src/fleet.rs#read_orders
@@ -387,8 +389,8 @@ an older reader skips them.
 **Plates.** On land each player's plate, what others read over their head ([[Interface]], "Players"), crosses as a
 table of its own: their number, their username (none for a guest), their level, the Prestige of the armour they wear,
 and whether a menu is open on their screen, as their last input said. Every plate goes in the welcome, and a plate that
-changed goes in every snapshot until a later one is shown, as a dress does (`plates.rs`, `take_plate_changes`); a
-boarder come over a ship's side is sent every plate once more.
+changed goes in every snapshot until a later one is shown, as a dress does, the newest of each player's alone
+(`plates.rs`, `take_plate_changes`). At sea no plate crosses: a deck draws none, and the sea names no one.
 
 **Each player's own snapshot.** On land a snapshot is written for each player. Their own fighter crosses whole, as
 they predict from it; everyone else's numbers, and every foe's, cross packed: each in thousandths, a whole number
@@ -515,7 +517,9 @@ so every decision is Rust and the shell only carries bytes and time.
   and in each item and Vestige, so a room that knows fewer fields carries the newer ones through; a room built before
   this keeping drops them, so a rollback to one loses them. A new value of a kind the room knows (a slot, a rarity)
   reads as a broken save, which is left untouched, and a list longer than the room's Arts or factions is cut to them. At
-  sea the room also tells the accounts the player is there, again every 30 seconds, and that they left, for the Roster.
+  sea the room also tells the accounts the player is there and the water their ship is in (`room_water`, by the
+  chart's waters, `sea_waters.rs`), again every 30 seconds and as soon as the water changes, and that they left, for
+  the Roster and the chat ([[Chat]]).
   A second text message, or any other, closes the socket.
 - **Where a character comes from** ([[The Server Is the Authority Over Everything]]): each claim says which room held
   the character before ([[Accounts]], "Moving between rooms"), and a node's room, its dungeons' and its runs' judge by

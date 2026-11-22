@@ -43,8 +43,8 @@ export class CharacterKeeper extends WorkerEntrypoint<Env> implements Characters
     return this.kept.release(account, holder, body);
   }
 
-  present(token: string, room: string | null): Promise<boolean> {
-    return this.kept.present(token, room);
+  present(token: string, room: string | null, water: string | null = null): Promise<boolean> {
+    return this.kept.present(token, room, water);
   }
 
   companions(account: string, room: string): Promise<string[]> {

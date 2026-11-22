@@ -20,7 +20,7 @@ Destiny's Light reads."
 - **Every other player wears a nameplate over their head**: a square and their name, as the pictures show.
 - **The square shows their level**, and from level 20, the most XP gives, the Prestige total of what they wear
   ([[Prestige Stays as Built, With a Costly Infusion]]).
-- **A player in a menu shows three dots** in the square's place.
+- **A player in a menu shows three dots.**
 - **Blue for a player not in the viewer's company, green for one in it** ([[A Group of Players Is a Company]]).
 
 Links: [[Interface]], [[Game]], [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]].

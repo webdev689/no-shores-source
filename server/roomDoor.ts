@@ -144,6 +144,8 @@ export interface RoomDoor {
   own(player: number, account: string): boolean;
   /** Names a player by their account's username, for the plate others read over their head; false on no land. */
   name(player: number, name: string): boolean;
+  /** At sea, the name of the water a player's ship lies in; null off the sea or before it puts to sea. */
+  water(player: number): string | null;
   /** Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still. */
   hold(player: number, held: boolean): boolean;
   /** The open sea keeps characters from now on: a player's courses wait for the keeper's word on theirs (a character
@@ -238,6 +240,7 @@ interface RoomExports {
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
   room_name(player: number, address: number, length: number): number;
+  room_water(player: number): bigint;
   room_hold(player: number, held: number): number;
   room_keep_characters(): number;
   room_none_kept(player: number): void;
@@ -395,6 +398,10 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),
+    water: (player) => {
+      const bytes = take(exports.room_water(player));
+      return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
+    },
     hold: (player, held) => exports.room_hold(player, held ? 1 : 0) === 1,
     shut: (player, kept) => {
       const bytes = new TextEncoder().encode(kept ?? '');

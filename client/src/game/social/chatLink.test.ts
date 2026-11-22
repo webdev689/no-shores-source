@@ -40,7 +40,7 @@ test('the link signs in with the token, is named by the welcome, and says lines 
   link.close();
 });
 
-test("a close with the hall's reason is told and not joined again; a page with no session joins nothing", async () => {
+test("a close with the hall's reason is told and not joined again", async () => {
   const fake = fakeSocket();
   const heard: FromHall[] = [];
   let opened = 0;
@@ -57,13 +57,40 @@ test("a close with the hall's reason is told and not joined again; a page with n
   await link.start();
   fake.fire('close', { code: 4003, reason: 'Sign in to chat.' });
   assert.deepEqual(heard, [{ told: 'Sign in to chat.' }]);
+  assert.equal(link.state, 'refused');
   assert.equal(opened, 1);
-  const alone = new ChatLink(
+});
+
+test('a page with no session yet tries again later; an account changed meanwhile opens one socket, not two', async (context) => {
+  context.mock.timers.enable({ apis: ['setTimeout'] });
+  const fake = fakeSocket();
+  let opened = 0;
+  let token: string | null = null;
+  const open = () => {
+    opened += 1;
+    return fake.socket;
+  };
+  const link = new ChatLink(
     'ws://a.test/v1/chat',
-    async () => null,
+    async () => token,
     () => undefined,
     open,
+    () => 0.5,
   );
-  await alone.start();
-  assert.equal(opened, 1);
+  await link.start();
+  assert.equal(opened, 0, 'no session, no socket');
+  token = 'a'.repeat(64);
+  context.mock.timers.tick(2_000);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(opened, 1, 'tried again once the wait was over');
+  let answer: (given: string) => void = () => undefined;
+  const asked = () => new Promise<string>((resolve) => (answer = resolve));
+  const slow = new ChatLink('ws://a.test/v1/chat', asked, () => undefined, open);
+  void slow.start();
+  slow.restart();
+  answer('a'.repeat(64));
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(opened, 2, 'the start overtaken opens nothing');
+  link.close();
+  slow.close();
 });

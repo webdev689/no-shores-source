@@ -588,6 +588,8 @@ pub mod decks;
 pub mod islands;
 #[path = "sea_ports.rs"]
 mod ports;
+#[path = "sea_waters.rs"]
+mod waters;
 
 #[cfg(test)]
 #[path = "fight_measure_tests.rs"]

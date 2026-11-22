@@ -48,7 +48,7 @@ export interface Characters {
   claim(token: string, holder: string): Promise<Claimed | null>;
   save(account: string, holder: string, body: string): Promise<boolean>;
   release(account: string, holder: string, body: string | null): Promise<boolean>;
-  present(token: string, room: string | null): Promise<boolean>;
+  present(token: string, room: string | null, water?: string | null): Promise<boolean>;
   companions(account: string, room: string): Promise<string[]>;
 }
 
@@ -76,12 +76,12 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */
     companions: (account, room) => companionsOf(database, account, room, now()),
-    /** Notes that a session's player is in a room that keeps no character, or with none that they left it; false
-     *  when the token is no live session. */
-    async present(token, room) {
+    /** Notes that a session's player is in a room that keeps no character, at sea in which water, or with none that
+     *  they left it; false when the token is no live session. */
+    async present(token, room, water = null) {
       const account = await live(token);
       if (account === null) return false;
-      await present(database, account, room, now());
+      await present(database, account, room, now(), water);
       return true;
     },
     /** The account a session's token is for, its character as last kept and the room that last held it, taken from

@@ -206,6 +206,4 @@ fn a_plate_carries_its_players_name_level_prestige_and_menu_and_goes_once_each_t
     room.players.get_mut(&first).unwrap().character.xp = 190_000;
     let raised = room.take_plate_changes();
     assert_eq!(raised.iter().map(|(player, plate)| (*player, plate.level)).collect::<Vec<_>>(), vec![(first, 20)]);
-    room.announce_plates();
-    assert_eq!(room.take_plate_changes().len(), 2, "a boarder is sent every plate once more");
 }

@@ -21,6 +21,8 @@ code:
   - server/accounts/social.ts#socialAsk
   - server/accounts/names.ts#refusalOf
   - server/accounts/people.ts#PERSON
+  - server/accounts/chat.ts#ChatHall
+  - server/accounts/chatDeps.ts#hallDeps
   - server/keeping.ts#Keeper
   - server/accounts/finding.ts#Finder
   - server/accounts/finder.ts#CompanyFinder
@@ -143,8 +145,9 @@ username, as a player is found by theirs; a guest is told to add one in Settings
 
 - **A player as shown**: their name, their guild's tag, the emblem they wear and their level (from what their room kept
   of their character, `shown`), and where they play: the room that holds their character, or, at sea, the room's word
-  that they are there, said every 30 seconds and kept a minute. Leaving the sea ends that word at once, and it is kept
-  as when they were last seen.
+  that they are there and in which water, said every 30 seconds and as soon as the water changes, and kept a minute
+  (`presence`). Leaving the sea ends that word at once, and it is kept as when they were last seen. The water is for
+  the chat alone ([[Chat]]); the Roster shows the room.
 - **Friends**, by username: asked, accepted or declined, and ended by either. One row a pair, whoever asked, held so by
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
@@ -167,6 +170,9 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   as sent and never arrives. A block either way between a player and anyone in a company keeps them out of it, by
   joining or by an invite, answered as a company closed to them. The one blocked sees the blocker's details as a
   stranger does, so the block shows nowhere. A blocked player is unblocked from Settings.
+- **Muting** ([[A Player May Mute Another]]) hides only a player's chat lines and Whispers, one way: nothing else
+  changes, and the one muted is never told. `POST /v1/social/mute` and `unmute` with a name; the Roster lists the
+  muted (`muted`), 200 at most, kept in the `mutes` table, each unmuted from Settings.
 - **Reporting** keeps a player's name, who reported them and why (cheating, a name, harassment, something else) for
   the owner to read in the database, ten a day a player. [[Names]] says how the owner reads and acts on a name.
 - **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
@@ -206,8 +212,10 @@ never the Abyss Dungeon of the week, whose company forms it.
 
 ## Chat
 
-The chat's one hall is a Durable Object of this Worker too, reached at `/v1/chat` by WebSocket ([[Chat]]): it signs a
-socket in with its session's token, places Local by the Roster's `place`, and keeps blocks as the Roster does.
+The chat's one hall is a Durable Object of this Worker too, `ChatHall`, reached at `/v1/chat` by WebSocket ([[Chat]]):
+it signs a socket in with its session's token, asking again once a minute; places Local by the room in `presence` and
+Region by its water; keeps blocks as the Roster does, and mutes; and holds each account to four sockets and two lines a
+second across them. Its questions of the database are `hallDeps`.
 
 ## Binds
 

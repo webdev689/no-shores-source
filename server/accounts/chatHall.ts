@@ -1,32 +1,44 @@
 /**
  * The chat's hall: every page's chat socket, and where each line goes. A socket's first message is its session's
- * token; a guest hears Local and World but has no name to speak with. Local goes to everyone whose character the same
- * room holds (each page keeps only the lines of those near enough to hear), World to everyone, and a Whisper to one
- * player by name; each also back to the one who said it. A line never reaches anyone who blocks its speaker or whom
- * its speaker blocks, and a Whisper to one who blocks the speaker is answered as sent and never arrives, as the
- * Roster's asks are. Lines are cleaned, a blocked word starred letter for letter, and held to two a second.
+ * token; a guest hears but has no name to speak with. Local goes to everyone whose character the same room holds
+ * (each page keeps only the lines of those near enough to hear), Region to every ship in the same water at sea, World
+ * to everyone, and a Whisper to one player by name; each also back to the one who said it. A line never reaches anyone
+ * who blocks its speaker, whom its speaker blocks, or who mutes its speaker; a Whisper to one of them is answered as
+ * sent and never arrives, as the Roster's asks are. Lines are cleaned, a blocked word starred letter for letter, and
+ * each account held to two a second, however many sockets it opens.
  */
 
-import { type ChatLine, LINES_A_SECOND, cleanLine, saidOf } from './chatLaw.ts';
+import { type ChatLine, LINES_A_SECOND, NAME_MOST, cleanLine, saidOf } from './chatLaw.ts';
+import { starred } from './chatWords.ts';
 import { TOKEN, TOKEN_WAIT_MS } from '../keeping.ts';
-import { blocked } from './names.ts';
 
-/** How many sockets the hall holds, signed in or not, and how many lines the whole of World carries a second. */
+/** How many sockets the hall holds signed in, and silent beside them; how many one account may hold; and how many
+ *  lines the whole of World carries a second. */
 export const HALL_MOST = 2048;
+export const SILENT_MOST = 256;
+export const ACCOUNT_SOCKETS_MOST = 4;
 export const WORLD_A_SECOND = 20;
-/** How many lines in a row may come too fast before the socket is let go. */
+/** How many lines in a row may come too fast before the account's sockets are let go. */
 export const STRIKES_MOST = 20;
-/** How long where each player plays, and whom each player is kept apart from, are kept before they are asked again. */
+/** How long where each player plays, and whom each is kept apart from, are kept before they are asked again; and how
+ *  often each socket's session is asked again, so one signed out everywhere stops speaking. */
 export const PLACES_KEPT_MS = 5_000;
 export const APART_KEPT_MS = 30_000;
+export const SESSION_KEPT_MS = 60_000;
 /** The longest message a page sends: a line and its channel, far past any line's most. */
 const MESSAGE_MOST = 2_048;
+/** A room at sea's name: the sea, at any difficulty. */
+const AT_SEA = /^sea(?:--[a-z]+)?$/;
 
 export const SIGN_IN = 'Sign in to chat.';
 export const NAME_FIRST = 'Add a username in Settings to chat.';
 export const TOO_FAST = 'You are sending lines too quickly.';
 export const NOT_ALLOWED = 'That line is not allowed.';
 export const NOWHERE = 'You are not in a place to speak in yet.';
+export const NOT_AT_SEA = 'Region is heard at sea.';
+export const ON_LAND = 'Local is heard on land. At sea, say it to your water with /sea.';
+export const BUSY = 'World is busy. Try again in a moment.';
+export const TOO_MANY = 'You are chatting in too many tabs.';
 
 /** A page's chat socket, as the hall speaks to it. */
 export interface HallSocket {
@@ -40,13 +52,19 @@ export interface Speaker {
   readonly name: string | null;
 }
 
+/** Where a player plays: the room that holds their character or last said they were there, and at sea the water. */
+export interface Place {
+  readonly room: string | null;
+  readonly water: string | null;
+}
+
 /** What the hall asks the accounts, and its clock. */
 export interface HallDeps {
   speaker(token: string): Promise<Speaker | null>;
-  /** Where each account plays now: its room, or null while it plays nowhere. */
-  places(accounts: readonly string[]): Promise<ReadonlyMap<string, string | null>>;
-  /** The accounts one blocks or is blocked by. */
+  places(accounts: readonly string[]): Promise<ReadonlyMap<string, Place>>;
+  /** The accounts one blocks or is blocked by, and those who mute it. */
   apart(account: string): Promise<readonly string[]>;
+  mutedBy(account: string): Promise<readonly string[]>;
   /** The account a username names, however it is typed, and the name as it is kept. */
   named(name: string): Promise<{ readonly account: string; readonly name: string } | null>;
   /** Whether `blocker` blocks `blocked`. */
@@ -54,23 +72,17 @@ export interface HallDeps {
   readonly now: () => number;
 }
 
-/** A line's words with each word that holds a blocked root starred letter for letter, so it is never longer; null
- *  where the words still spell one across them. */
-export function starred(text: string): string | null {
-  const shown = text
-    .split(' ')
-    .map((word) => (blocked(word) ? word.replace(/[\p{L}\p{N}]/gu, '*') : word))
-    .join(' ');
-  return blocked(shown) ? null : shown;
-}
-
 interface Held {
   readonly socket: HallSocket;
   readonly since: number;
   speaker: Speaker | null;
-  heard: boolean;
-  /** Lines it may send now, as a bucket fills, and when it was last filled; and lines in a row sent too fast. */
-  allowance: number;
+  token: string;
+  checked: number;
+}
+
+/** Lines an account may send now, as a bucket fills, when it was last filled, and lines in a row sent too fast. */
+interface Allowance {
+  lines: number;
   filled: number;
   strikes: number;
 }
@@ -78,10 +90,12 @@ interface Held {
 export class Hall {
   private readonly deps: HallDeps;
   private readonly sockets = new Map<number, Held>();
+  private readonly allowances = new Map<string, Allowance>();
   private next = 1;
-  private places: { at: number; of: ReadonlyMap<string, string | null> } = { at: -Infinity, of: new Map() };
-  private readonly apart = new Map<string, { at: number; of: ReadonlySet<string> }>();
-  private world = { allowance: WORLD_A_SECOND, filled: 0 };
+  private places: { at: number; of: ReadonlyMap<string, Place> } = { at: -Infinity, of: new Map() };
+  private placing: Promise<ReadonlyMap<string, Place>> | null = null;
+  private readonly kept = new Map<string, { at: number; apart: ReadonlySet<string>; muters: ReadonlySet<string> }>();
+  private world = { lines: WORLD_A_SECOND, filled: 0 };
 
   constructor(deps: HallDeps) {
     this.deps = deps;
@@ -90,16 +104,7 @@ export class Hall {
   /** A socket opened: its number. */
   opened(socket: HallSocket): number {
     const number = this.next++;
-    const now = this.deps.now();
-    this.sockets.set(number, {
-      socket,
-      since: now,
-      speaker: null,
-      heard: false,
-      allowance: 2,
-      filled: now,
-      strikes: 0,
-    });
+    this.sockets.set(number, { socket, since: this.deps.now(), speaker: null, token: '', checked: this.deps.now() });
     return number;
   }
 
@@ -108,49 +113,65 @@ export class Hall {
     const held = this.sockets.get(number);
     if (!held) return;
     if (typeof message !== 'string' || message.length > MESSAGE_MOST) return this.letGo(number, 1008, 'not a line');
-    if (!held.heard) {
-      if (!TOKEN.test(message)) return this.letGo(number, 1008, 'not a token');
-      held.heard = true;
-      const speaker = await this.deps.speaker(message).catch(() => undefined);
-      if (this.sockets.get(number) !== held) return;
-      if (speaker === undefined) return this.letGo(number, 1011, 'the accounts did not answer');
-      if (speaker === null) return this.letGo(number, 4003, SIGN_IN);
-      held.speaker = speaker;
-      return this.tell(held, { welcome: { name: speaker.name } });
-    }
+    if (held.token === '') return this.signIn(number, held, message);
     const said = saidOf(message);
-    if (!said || !held.speaker) return this.letGo(number, 1008, 'not a line');
-    if (held.speaker.name === null) return this.tell(held, { told: NAME_FIRST });
-    if (!this.allowed(held)) return;
+    const speaker = held.speaker;
+    if (!said || !speaker) return this.letGo(number, 1008, 'not a line');
+    if (!this.allowed(speaker.account, held)) return;
+    if (speaker.name === null) return this.tell(held, { told: NAME_FIRST });
     const text = cleanLine(said.say);
     if (text === '') return;
     const shown = starred(text);
     if (shown === null) return this.tell(held, { told: NOT_ALLOWED });
-    const from = { account: held.speaker.account, name: held.speaker.name };
+    const from = { account: speaker.account, name: speaker.name };
     if (said.channel === 'whisper') return this.whisper(held, from, said.to ?? '', shown);
     if (said.channel === 'world') {
-      if (!this.worldAllows()) return;
+      if (!this.worldAllows()) return this.tell(held, { told: BUSY });
       return this.toEach({ channel: 'world', from: from.name, text: shown }, from.account, () => true);
     }
-    const places = await this.placesNow(from.account);
-    const here = places.get(from.account) ?? null;
-    if (here === null) return this.tell(held, { told: NOWHERE });
+    const [own, places] = await Promise.all([this.deps.places([from.account]), this.listeners()]);
+    const here = own.get(from.account) ?? { room: null, water: null };
+    const atSea = here.room !== null && AT_SEA.test(here.room);
+    if (said.channel === 'region') {
+      if (!atSea || here.water === null) return this.tell(held, { told: NOT_AT_SEA });
+      const line: ChatLine = { channel: 'region', from: from.name, region: here.water, text: shown };
+      return this.toEach(line, from.account, (account) => {
+        const there = places.get(account);
+        return there?.water === here.water && there.room !== null && AT_SEA.test(there.room);
+      });
+    }
+    if (here.room === null) return this.tell(held, { told: NOWHERE });
+    if (atSea) return this.tell(held, { told: ON_LAND });
     const line: ChatLine = { channel: 'local', from: from.name, text: shown };
-    return this.toEach(line, from.account, (account) => places.get(account) === here);
+    return this.toEach(line, from.account, (account) => places.get(account)?.room === here.room);
   }
 
-  /** A socket closed; whom its account is kept apart from is forgotten once it holds no other. */
+  /** A socket closed; what its account is kept by is forgotten once it holds no other. */
   closed(number: number): void {
     const account = this.sockets.get(number)?.speaker?.account;
     this.sockets.delete(number);
-    if (account && ![...this.sockets.values()].some((each) => each.speaker?.account === account))
-      this.apart.delete(account);
+    if (account && !this.holds(account)) {
+      this.kept.delete(account);
+      this.allowances.delete(account);
+    }
   }
 
-  /** Lets go each socket that sent no token in time. */
+  /** Each second: lets go each socket that sent no token in time, and each whose session has ended since it signed
+   *  in, as its session is asked again once a minute. */
   tick(): void {
-    const late = this.deps.now() - TOKEN_WAIT_MS;
-    for (const [number, held] of this.sockets) if (!held.heard && held.since <= late) this.letGo(number, 4003, SIGN_IN);
+    const now = this.deps.now();
+    for (const [number, held] of this.sockets) {
+      if (held.token === '' && held.since <= now - TOKEN_WAIT_MS) this.letGo(number, 4003, SIGN_IN);
+      else if (held.speaker && now - held.checked >= SESSION_KEPT_MS) {
+        held.checked = now;
+        void this.deps
+          .speaker(held.token)
+          .then((still) => {
+            if (still === null && this.sockets.get(number) === held) this.letGo(number, 4003, SIGN_IN);
+          })
+          .catch(() => undefined);
+      }
+    }
   }
 
   /** How many sockets it holds. */
@@ -158,91 +179,129 @@ export class Hall {
     return this.sockets.size;
   }
 
+  /** Whether it holds as many sockets signed in as it takes, or as many in all with the silent beside them. */
   get full(): boolean {
-    return this.sockets.size >= HALL_MOST;
+    const signedIn = [...this.sockets.values()].filter((held) => held.speaker).length;
+    return signedIn >= HALL_MOST || this.sockets.size >= HALL_MOST + SILENT_MOST;
   }
 
-  /** A Whisper to the player named `to`: to every socket of theirs and back to the speaker's, unless one blocks the
-   *  other. One who blocks the speaker is answered as sent; one the speaker blocks, or who is not online, is told. */
+  private holds(account: string): boolean {
+    return [...this.sockets.values()].some((held) => held.speaker?.account === account);
+  }
+
+  /** A socket's token: its player welcomed, or the socket let go when it is no session, or its account already holds
+   *  as many sockets as one may. */
+  private async signIn(number: number, held: Held, message: string): Promise<void> {
+    if (!TOKEN.test(message)) return this.letGo(number, 1008, 'not a token');
+    held.token = message;
+    const speaker = await this.deps.speaker(message).catch(() => undefined);
+    if (this.sockets.get(number) !== held) return;
+    if (speaker === undefined) return this.letGo(number, 1011, 'the accounts did not answer');
+    if (speaker === null) return this.letGo(number, 4003, SIGN_IN);
+    const theirs = [...this.sockets.values()].filter((each) => each.speaker?.account === speaker.account).length;
+    if (theirs >= ACCOUNT_SOCKETS_MOST) return this.letGo(number, 4003, TOO_MANY);
+    [held.speaker, held.checked] = [speaker, this.deps.now()];
+    this.tell(held, { welcome: { name: speaker.name } });
+  }
+
+  /** A Whisper to the player named `to`: to every socket of theirs and back to the speaker's. One who blocks or mutes
+   *  the speaker is answered as sent; one the speaker blocks, or who is not online, is told. */
   private async whisper(held: Held, from: { account: string; name: string }, to: string, text: string): Promise<void> {
-    const found = await this.deps.named(to).catch(() => null);
-    const online = found && [...this.sockets.values()].some((each) => each.speaker?.account === found.account);
-    if (!found || !online) return this.tell(held, { told: `${found?.name ?? to} is not online.` });
+    const found = to.length > NAME_MOST ? null : await this.deps.named(to).catch(() => null);
+    if (!found || !this.holds(found.account)) return this.tell(held, { told: `${found?.name ?? to} is not online.` });
     if (found.account === from.account) return this.tell(held, { told: 'You cannot whisper to yourself.' });
     if (await this.deps.blocks(from.account, found.account).catch(() => true))
       return this.tell(held, { told: `You blocked ${found.name}. Unblock them in Settings to whisper.` });
+    const { apart, muters } = await this.keptFrom(from.account);
+    const heard = !apart.has(found.account) && !muters.has(found.account);
     const line: ChatLine = { channel: 'whisper', from: from.name, to: found.name, text };
-    const theirs = !(await this.deps.blocks(found.account, from.account).catch(() => true));
+    const said = JSON.stringify({ line });
     for (const each of this.sockets.values()) {
       const account = each.speaker?.account;
-      if (account === from.account || (theirs && account === found.account)) this.tell(each, { line });
+      if (account === from.account || (heard && account === found.account)) this.send(each, said);
     }
   }
 
-  /** `line` to every signed-in socket whose account `hears`, never one kept apart from the speaker's, and always
-   *  back to the speaker's own. */
+  /** `line` to every signed-in socket whose account `hears`, never one kept apart from or muting the speaker's, and
+   *  always back to the speaker's own. */
   private async toEach(line: ChatLine, speaker: string, hears: (account: string) => boolean): Promise<void> {
-    const apart = await this.apartFrom(speaker);
+    const { apart, muters } = await this.keptFrom(speaker);
+    const said = JSON.stringify({ line });
     for (const each of this.sockets.values()) {
       const account = each.speaker?.account;
       if (account === undefined) continue;
-      if (account === speaker || (!apart.has(account) && hears(account))) this.tell(each, { line });
+      if (account === speaker || (!apart.has(account) && !muters.has(account) && hears(account))) this.send(each, said);
     }
   }
 
-  /** Whether `held` may say a line now: two a second, a burst of two; one past that is refused, and twenty in a row
-   *  let the socket go. */
-  private allowed(held: Held): boolean {
+  /** Whether `account` may say a line now: two a second, a burst of two, across all its sockets; one past that is
+   *  refused, and twenty refused in a row let every socket of it go. */
+  private allowed(account: string, held: Held): boolean {
     const now = this.deps.now();
-    held.allowance = Math.min(LINES_A_SECOND, held.allowance + ((now - held.filled) / 1000) * LINES_A_SECOND);
-    held.filled = now;
-    if (held.allowance >= 1) {
-      held.allowance -= 1;
-      held.strikes = 0;
+    const allowance = this.allowances.get(account) ?? { lines: LINES_A_SECOND, filled: now, strikes: 0 };
+    this.allowances.set(account, allowance);
+    allowance.lines = Math.min(LINES_A_SECOND, allowance.lines + ((now - allowance.filled) / 1000) * LINES_A_SECOND);
+    allowance.filled = now;
+    if (allowance.lines >= 1) {
+      allowance.lines -= 1;
+      allowance.strikes = 0;
       return true;
     }
-    held.strikes += 1;
-    if (held.strikes > STRIKES_MOST) {
-      for (const [number, each] of this.sockets) if (each === held) this.letGo(number, 1008, 'too many lines');
-    } else this.tell(held, { told: TOO_FAST });
+    allowance.strikes += 1;
+    if (allowance.strikes < STRIKES_MOST) this.tell(held, { told: TOO_FAST });
+    else
+      for (const [number, each] of this.sockets)
+        if (each.speaker?.account === account) this.letGo(number, 1008, 'too many lines');
     return false;
   }
 
-  /** Whether World carries one more line now: twenty a second across everyone; one past it is dropped. */
+  /** Whether World carries one more line now: twenty a second across everyone. */
   private worldAllows(): boolean {
     const now = this.deps.now();
     const world = this.world;
-    world.allowance = Math.min(WORLD_A_SECOND, world.allowance + ((now - world.filled) / 1000) * WORLD_A_SECOND);
+    world.lines = Math.min(WORLD_A_SECOND, world.lines + ((now - world.filled) / 1000) * WORLD_A_SECOND);
     world.filled = now;
-    if (world.allowance < 1) return false;
-    world.allowance -= 1;
+    if (world.lines < 1) return false;
+    world.lines -= 1;
     return true;
   }
 
-  /** Where everyone signed in plays, asked again once it is older than PLACES_KEPT_MS; the speaker's always fresh. */
-  private async placesNow(speaker: string): Promise<ReadonlyMap<string, string | null>> {
+  /** Where everyone signed in plays, asked again once older than PLACES_KEPT_MS, one ask at a time. */
+  private async listeners(): Promise<ReadonlyMap<string, Place>> {
     const now = this.deps.now();
-    const fresh = now - this.places.at < PLACES_KEPT_MS && this.places.of.has(speaker);
-    if (!fresh) {
+    if (now - this.places.at < PLACES_KEPT_MS) return this.places.of;
+    this.placing ??= (async () => {
       const accounts = [...new Set([...this.sockets.values()].flatMap((each) => each.speaker?.account ?? []))];
-      this.places = { at: now, of: await this.deps.places(accounts).catch(() => new Map()) };
-    }
-    return this.places.of;
+      const found = await this.deps.places(accounts).catch(() => new Map<string, Place>());
+      this.places = { at: this.deps.now(), of: found };
+      this.placing = null;
+      return found;
+    })();
+    return this.placing;
   }
 
-  /** The accounts kept apart from `account`, asked again once older than APART_KEPT_MS. */
-  private async apartFrom(account: string): Promise<ReadonlySet<string>> {
+  /** Those kept apart from `account` and those who mute it, asked again once older than APART_KEPT_MS; kept only
+   *  while it holds a socket. */
+  private async keptFrom(account: string): Promise<{ apart: ReadonlySet<string>; muters: ReadonlySet<string> }> {
     const now = this.deps.now();
-    const kept = this.apart.get(account);
-    if (kept && now - kept.at < APART_KEPT_MS) return kept.of;
-    const others = new Set(await this.deps.apart(account).catch(() => []));
-    this.apart.set(account, { at: now, of: others });
-    return others;
+    const kept = this.kept.get(account);
+    if (kept && now - kept.at < APART_KEPT_MS) return kept;
+    const [apart, muters] = await Promise.all([
+      this.deps.apart(account).catch(() => []),
+      this.deps.mutedBy(account).catch(() => []),
+    ]);
+    const fresh = { at: now, apart: new Set(apart), muters: new Set(muters) };
+    if (this.holds(account)) this.kept.set(account, fresh);
+    return fresh;
   }
 
   private tell(held: Held, message: unknown): void {
+    this.send(held, JSON.stringify(message));
+  }
+
+  private send(held: Held, said: string): void {
     try {
-      held.socket.send(JSON.stringify(message));
+      held.socket.send(said);
     } catch {
       // A socket that throws as it is spoken to has closed already.
     }

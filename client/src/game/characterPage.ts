@@ -211,7 +211,8 @@ function slotNode(
     if (ui.rightClicked(id)) context.inspect(worn);
     context.details(id, worn);
     // An open slot's flyout stands where its card would, so the card waits until it closes.
-    if (open !== slot) context.card(id, () => cardNode(cardOf(worn), context.picture(worn), SLOT_HINTS, sizes));
+    const hints = context.inspected ? [] : SLOT_HINTS;
+    if (open !== slot) context.card(id, () => cardNode(cardOf(worn), context.picture(worn), hints, sizes));
   }
   const { marks, gilded } = worn ? itemMarks(worn) : { marks: [], gilded: false };
   const tile = tileNode(
@@ -304,21 +305,23 @@ function noArtNode(context: MenuContext, open: () => void): Node {
 /** The worn Art's diamond, which opens its screen, its name in its element and its level's pips beside it; while none
  *  is worn, the row saying how one is had. */
 function artNode(context: MenuContext): Node | null {
-  const { gear, ui, sizes } = context;
-  if (!gear.arts || !context.arts) return null;
+  const { gear, ui, sizes, inspected } = context;
+  const open = context.arts;
+  if (!gear.arts || (!open && !inspected)) return null;
   const art = artOf(gear.arts.art) ?? null;
-  if (!art) return noArtNode(context, context.arts);
+  if (!art) return open ? noArtNode(context, open) : null;
   const level = levelOf(gear.standing, art.id).level;
-  if (ui.clicked(ART_DIAMOND_KEY)) context.arts();
+  if (open && ui.clicked(ART_DIAMOND_KEY)) open();
   context.card(ART_DIAMOND_KEY, () =>
-    cardNode(artCard(art, false, level), null, [['Click', 'Open its screen']], sizes, {
+    cardNode(artCard(art, false, level), null, open ? [['Click', 'Open its screen']] : [], sizes, {
       tone: elementTone(art.element),
       icon: svgNode(`art ${art.id}`, emblemSvg(art), 96),
     }),
   );
   const diamond: Node = {
     id: ART_DIAMOND_KEY,
-    press: true,
+    press: Boolean(open),
+    focusable: true,
     label: `Art: ${art.name}, level ${level}`,
     width: 96,
     height: 96,
@@ -408,7 +411,7 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
     ['Ranged', shown(ranged)],
     ['Defense', String(character.defense)],
     ['Prestige', String(character.prestige)],
-    ['Fruit of Dagon', String(character.fruit)],
+    ...(context.inspected ? [] : [['Fruit of Dagon', String(character.fruit)] as [string, string]]),
   ];
   const tall = sizes.label > 1;
   return {
@@ -426,7 +429,8 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
         children: [
           label('Level', sizes.label),
           words(String(character.level), 5, INK.brassLit),
-          {
+          // How far another player is to their next level is theirs alone to see.
+          !context.inspected && {
             width: 'grow',
             height: 10,
             padding: 2,
@@ -434,7 +438,7 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
             label: 'Toward the next level',
             children: [{ width: `${Math.round(character.toNext * 100)}%`, height: 'grow', fill: '#d9d0ae' }],
           },
-          words(character.toNextWords, sizes.label, INK.faint),
+          !context.inspected && words(character.toNextWords, sizes.label, INK.faint),
         ],
       },
       {
@@ -494,7 +498,7 @@ export function characterPage(context: MenuContext, open: number | null, choose:
       heading('Weapons', sizes.label, true),
       { height: sizes.short ? SLOT_TILE_SHORT : SLOT_TILE, alignY: 'center', children: [art] },
       ...WEAPONS.map((slot, place) => slotNode(context, slot, open, choose, true, place >= WEAPONS.length - 1)),
-      appearanceNode(context),
+      !context.inspected && appearanceNode(context),
     ],
   };
   const right: Node = {

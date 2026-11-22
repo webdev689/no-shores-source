@@ -32,9 +32,10 @@ export class CompanyHud {
     let unnamed = false;
     const show = (roster: Roster | string) => {
       heardAt = performance.now();
-      // A guest has no Roster: asked again only once the account changes.
+      // A guest has no Roster: asked again only once the account changes. Accounts out of reach a moment keep the last
+      // one heard, so the company's plates do not turn blue meanwhile.
       unnamed = typeof roster === 'string' && roster.startsWith('Add a username');
-      this.roster = typeof roster === 'string' ? null : roster;
+      this.roster = typeof roster !== 'string' ? roster : unnamed ? null : this.roster;
       heardRoster = this.roster;
     };
     const look = () => {
@@ -47,6 +48,7 @@ export class CompanyHud {
     addEventListener(ROSTER_HEARD, (event) => show((event as CustomEvent<Roster | string>).detail));
     addEventListener(ACCOUNT_CHANGED, () => {
       unnamed = false;
+      [this.roster, heardRoster] = [null, null];
       look();
     });
   }

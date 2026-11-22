@@ -1,6 +1,7 @@
-//! The door that names a player by their account's username, for the plate others read over their head.
+//! The doors for what others read of a player: their account's username on the plate over their head, and at sea the
+//! water their ship lies in, which the chat's Region channel is.
 
-use crate::{Opened, with_open};
+use crate::{Opened, hand_over, with_open};
 use room::PlayerId;
 
 /// Names a player by the username written in `bytes` (`Room::name_player`); false if it is not text, no username could
@@ -22,4 +23,15 @@ pub fn name(player: PlayerId, bytes: &[u8]) -> bool {
 pub unsafe extern "C" fn room_name(player: PlayerId, address: *const u8, length: usize) -> u32 {
     // SAFETY: the caller gives `length` readable bytes at `address`.
     u32::from(name(player, unsafe { std::slice::from_raw_parts(address, length) }))
+}
+
+/// The name of the water a player's ship lies in at sea, as its bytes, packed as `hand_over` packs; empty off the sea
+/// or before the ship puts to sea.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_water(player: PlayerId) -> u64 {
+    let name = with_open(|opened| match opened {
+        Opened::Sea(sea) => sea.water_name(player),
+        Opened::Land { .. } | Opened::Fleet(_) => None,
+    });
+    hand_over(name.flatten().unwrap_or_default().as_bytes().to_vec())
 }

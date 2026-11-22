@@ -270,6 +270,9 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Holding Use on a Player Opens Their Interact Menu]]
 - [[Chat Comes From DFO With Local, World and Whisper]]
 - [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]
+- [[The Sea Has the Chat, Each Water a Region Channel]]
+- [[A Player May Mute Another]]
+- [[Inspect Opens the Character Tab]]
 
 ## Replaced
 

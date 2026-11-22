@@ -149,12 +149,11 @@ impl Sent {
             .filter(|(at, ..)| *at > since)
             .map(|(_, player, dress)| (*player, dress.as_str()))
             .collect();
-        let plates: Vec<(PlayerId, Plate)> = self
-            .plates
-            .iter()
-            .filter(|(at, ..)| *at > since)
-            .map(|(_, player, plate)| (*player, plate.clone()))
-            .collect();
+        // Only each player's newest plate since: a plate that changed every tick goes once, not once a tick.
+        let newest: BTreeMap<PlayerId, &Plate> =
+            self.plates.iter().filter(|(at, ..)| *at > since).map(|(_, player, plate)| (*player, plate)).collect();
+        let plates: Vec<(PlayerId, Plate)> =
+            newest.into_iter().map(|(player, plate)| (player, plate.clone())).collect();
         let lines: Vec<(u64, Line)> = self.lines.iter().filter(|(at, _)| *at > since).copied().collect();
         snapshot_bytes(&Snapshot {
             tick: now.tick,

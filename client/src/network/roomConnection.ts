@@ -122,6 +122,8 @@ export class RoomConnection implements RoomLink {
   private closed = false;
   private readonly measure = new LinkMeasure();
   private waiting: ReturnType<typeof setTimeout> | null = null;
+  /** The last welcome, until a snapshot after it carries its dresses and plates on. */
+  private welcomeUnheard: Welcome | null = null;
 
   private constructor(
     url: string,
@@ -130,15 +132,19 @@ export class RoomConnection implements RoomLink {
     socket: WebSocket,
     welcome: Welcome,
   ) {
-    // Each snapshot's tick says the room's world time, which keeps the page's clock in step with the room's.
+    // Each snapshot's tick says the room's world time, which keeps the page's clock in step with the room's. The last
+    // welcome's dresses and plates go under the first snapshot after it, so what is newer is never undone by them.
     const told = (shot: Snapshot) => {
       WORLD_CLOCK.heard(this.epoch + Number(shot.tick) * ROOM_TICK_S);
-      heard.snapshot(shot);
+      const welcome = this.welcomeUnheard;
+      this.welcomeUnheard = null;
+      const dressed = welcome ? [...welcome.dressed, ...shot.dressed] : shot.dressed;
+      heard.snapshot(welcome ? { ...shot, dressed, plates: [...welcome.plates, ...shot.plates] } : shot);
     };
     [this.url, this.snapshot, this.gear, this.session] = [url, told, heard.gear, heard.session];
     [this.connect, this.socket] = [connect, socket];
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
-    this.plates = welcome.plates;
+    [this.plates, this.welcomeUnheard] = [welcome.plates, welcome];
     this.watch(socket);
   }
 
@@ -212,7 +218,7 @@ export class RoomConnection implements RoomLink {
     }
     if (this.session !== null) socket.send(this.session);
     [this.player, this.dressed, this.node, this.epoch] = [welcome.player, welcome.dressed, welcome.node, welcome.epoch];
-    this.plates = welcome.plates;
+    [this.plates, this.welcomeUnheard] = [welcome.plates, welcome];
     [this.joins, this.tries, this.rejoining] = [this.joins + 1, 0, false];
     this.measure.clear();
   }

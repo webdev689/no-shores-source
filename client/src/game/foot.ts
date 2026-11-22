@@ -133,8 +133,6 @@ export class Foot {
   private readonly arrivals = new Arrivals();
   /** The player arrives as the veil lifts on the place: their figure builds and their view blinks open. */
   readonly arrive = (clock: number): void => this.arrivals.arriveHere(this.fight.player, clock);
-  /** The link's welcomes followed: one more means the player joined the room again. */
-  private joined = 1;
   /** What the room last said of the player's gear and the place, and the gear the figure was last dressed in. */
   readonly held: Held;
   private readonly dressed: Dressed = { gear: null, loadout: 0 };
@@ -288,9 +286,8 @@ export class Foot {
     const fight = new Fighting(rules.combat, opened.link);
     hearer.fight = fight;
     if (!opened.dungeon) for (const foe of asked) fight.ask(foe);
-    // The player starts at the first spawn, where the room stands its first to join; the room's word moves a later
-    // one to the spawn its turn gives, which its number does not tell, since the garrison's foes are numbered too.
-    players.take(opened.link);
+    // The welcome's dresses and plates come with the first snapshot after it (`RoomConnection`), so none newer is
+    // undone by the welcome taken late.
     return new Foot(
       context,
       node,
@@ -402,11 +399,6 @@ export class Foot {
     dressInGear(walker, forge, this.held.gear, this.dressed);
     this.tellPrologue();
     this.plaza?.frame(WORLD_CLOCK.seconds(), this.gear?.gear ?? null);
-    if (this.link.joins !== this.joined) {
-      // A link that joined its room again brings every dress there with its welcome.
-      this.joined = this.link.joins;
-      this.otherPlayers.take(this.link);
-    }
     const standing = [...foes.placed.values(), ...this.otherPlayers.placed.values()];
     const bodies = standing.map((placed) => [placed.x, placed.y, placed.z] as const);
     const { feel } = this;

@@ -1,7 +1,7 @@
 /**
  * The Roster's routes: the Roster itself, another player's details, and every ask of it: of friends (`friends.ts`),
- * the company (`companies.ts`), the guild (`guilds.ts`), and blocking and reporting a player. Each needs a username, as a
- * player is found by theirs.
+ * the company (`companies.ts`), the guild (`guilds.ts`), and blocking, muting and reporting a player. Each needs a
+ * username, as a player is found by theirs.
  */
 
 import type { Db } from './database.ts';
@@ -13,6 +13,8 @@ import { detailsOf, rosterOf } from './roster.ts';
 
 /** Why a player may be reported. */
 export const REASONS = ['cheating', 'name', 'abuse', 'other'] as const;
+/** The most players one may mute. */
+export const MUTES_MOST = 200;
 
 /** Blocks a player, ending what is between them: a friendship or its ask, and invites either way. */
 async function block(database: Db, own: string, them: string, now: number): Promise<void> {
@@ -47,7 +49,7 @@ export async function socialAsk(
     return friendAsk(database, own, asked, given?.['name'], now);
   if (group === 'company') return companyAsk(database, own, asked, given, now);
   if (group === 'guild') return guildAsk(database, own, asked, given, now);
-  // Blocking, unblocking and reporting take nothing after them, so no other path escapes their limit.
+  // Blocking, muting and reporting take nothing after them, so no other path escapes their limit.
   if (asked !== '') return said(404, 'No such page.');
   const them = await accountNamed(database, given?.['name']);
   if (!them || them.id === own) return said(404, 'No one by that name is there.');
@@ -57,6 +59,21 @@ export async function socialAsk(
       return done;
     case 'unblock':
       await database.prepare('DELETE FROM blocks WHERE blocker_id = ?1 AND blocked_id = ?2').bind(own, them.id).run();
+      return done;
+    case 'mute': {
+      const kept = await database
+        .prepare('SELECT count(*) AS count FROM mutes WHERE muter_id = ?1')
+        .bind(own)
+        .first<{ count: number }>();
+      if ((kept?.count ?? 0) >= MUTES_MOST) return said(409, `You mute ${MUTES_MOST} players already.`);
+      await database
+        .prepare('INSERT OR IGNORE INTO mutes (muter_id, muted_id, created_at) VALUES (?1, ?2, ?3)')
+        .bind(own, them.id, now)
+        .run();
+      return done;
+    }
+    case 'unmute':
+      await database.prepare('DELETE FROM mutes WHERE muter_id = ?1 AND muted_id = ?2').bind(own, them.id).run();
       return done;
     case 'report': {
       const reason = given?.['reason'];

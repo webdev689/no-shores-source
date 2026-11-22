@@ -1,6 +1,7 @@
-// The menu holding Use on another player opens: their plate over the five things the owner named (add them as a
-// friend, invite them to the company, invite them to the guild, whisper to them, and inspect their character), each
-// done as the Roster does it and offered as the Roster would offer it; what cannot be done now stands greyed with why.
+// The menu holding Use on another player opens: their plate over what one player may do with another (add them as a
+// friend, invite them to the company or the guild, whisper to them, inspect their character, and mute their chat),
+// each done as the Roster does it and offered as the Roster would offer it; what cannot be done now stands greyed
+// with why, and every row waits while an ask is out.
 import type { Person, Roster } from '../../network/accounts.ts';
 import type { Node } from '../../ui/node.ts';
 import type { Interface } from '../../ui/ui.ts';
@@ -11,7 +12,7 @@ import { type PlatedPlayer, plateNode } from '../../combat/playerPlates.ts';
 /** One of the menu's rows: its words, the Roster's ask it makes (none for one that opens something), or why it cannot
  *  be done now. */
 export interface InteractRow {
-  readonly key: 'friend' | 'company' | 'guild' | 'whisper' | 'inspect';
+  readonly key: 'friend' | 'company' | 'guild' | 'whisper' | 'inspect' | 'mute';
   readonly label: string;
   readonly path?: string;
   readonly body?: Readonly<Record<string, string | number>>;
@@ -35,6 +36,7 @@ export function interactRows(roster: Roster | null, person: Person | null, none:
       greyed('guild', 'Invite to guild'),
       whisper,
       inspect,
+      greyed('mute', 'Mute'),
     ];
   }
   const actions = actionsFor(roster, person);
@@ -51,7 +53,11 @@ export function interactRows(roster: Roster | null, person: Person | null, none:
   const guild: InteractRow = guilding
     ? { key: 'guild', label: guilding.label, ...askOf(guilding) }
     : { key: 'guild', label: 'Invite to guild', why: guildWhy(roster, person) };
-  return [friend, company, guild, whisper, inspect];
+  // A mute hides only their chat lines, so it is undone as easily as it is done, unheld.
+  const mute: InteractRow = roster.muted?.includes(person.name)
+    ? { key: 'mute', label: 'Unmute', path: 'unmute', body: { name: person.name } }
+    : { key: 'mute', label: 'Mute', path: 'mute', body: { name: person.name } };
+  return [friend, company, guild, whisper, inspect, mute];
 }
 
 const askOf = (action: { readonly path?: string; readonly body?: Readonly<Record<string, string | number>> }) => ({
@@ -78,31 +84,35 @@ function guildWhy(roster: Roster, person: Person): string {
 }
 
 /** The menu's presses, by row. */
-const pressOf = (key: InteractRow['key']) => `interact-${key}`;
+export const pressOf = (key: InteractRow['key']): string => `interact-${key}`;
 export const INTERACT_CLOSE = 'interact-close';
 
-/** The menu over the view: `player`'s plate, the rows, and what the last ask answered (`said`). A press of a row that
- *  can be done goes to `chosen`; Close or Escape to `close`. */
+/** The menu over the view: `player`'s plate, the rows (all waiting while `busy`), and what the last ask answered
+ *  (`said`). A press of a row that can be done goes to `chosen`; Close or Escape to `close`. */
 export function interactNode(
   ui: Interface,
   player: PlatedPlayer,
   rows: readonly InteractRow[] | null,
   said: string,
+  busy: boolean,
   chosen: (row: InteractRow) => void,
   close: () => void,
 ): Node {
   if (ui.clicked(INTERACT_CLOSE) || ui.escaped) close();
-  for (const row of rows ?? []) if (!row.why && ui.clicked(pressOf(row.key))) chosen(row);
+  for (const row of rows ?? []) if (!row.why && !busy && ui.clicked(pressOf(row.key))) chosen(row);
   const presses = (rows ?? []).map((row): Node =>
     row.why
       ? {
+          id: pressOf(row.key),
+          focusable: true,
+          label: `${row.label}, unavailable: ${row.why}`,
           width: 'grow',
           padding: [9, 16],
           gap: 10,
           alignY: 'center',
           children: [words(row.label, 1, INK.faint), { width: 'grow' }, words(row.why, 1, INK.faint)],
         }
-      : pressNode(pressOf(row.key), row.label, 'button', '', 1, { width: 'grow' }),
+      : pressNode(pressOf(row.key), row.label, 'button', '', 1, { width: 'grow', disabled: busy }),
   );
   return {
     width: 'grow',
@@ -116,7 +126,8 @@ export function interactNode(
         id: 'interact',
         role: 'panel',
         modal: true,
-        width: 340,
+        label: `${player.plate.name}'s menu`,
+        width: 360,
         direction: 'column',
         gap: 6,
         padding: [16, 16],

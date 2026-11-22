@@ -404,3 +404,15 @@ test('a player’s companions in a run are their company, and those found for th
   assert.deepEqual(await kept.companions(cal, 'node-krakens-grotto--run-a1b2c3d4'), [cal], 'for one run alone');
   assert.deepEqual(await kept.companions(ada, 'node-krakens-grotto--run-k3j4h5g6'), [ada, ben], 'not found for it');
 });
+
+test('a player mutes another and unmutes them, kept with the account', async () => {
+  const { player } = await world('Ada', 'Ben');
+  const ada = player('Ada');
+  assert.equal((await ada.ask('mute', { name: 'Ben' })).status, 200);
+  assert.deepEqual((await ada.roster()).muted, ['Ben']);
+  assert.equal((await ada.ask('mute', { name: 'Ben' })).status, 200, 'muted again changes nothing');
+  assert.equal((await ada.ask('unmute', { name: 'Ben' })).status, 200);
+  assert.deepEqual((await ada.roster()).muted, []);
+  assert.equal((await ada.ask('mute', { name: 'Nobody' })).status, 404);
+  assert.equal((await ada.ask('mute', { name: 'Ada' })).status, 404, 'not oneself');
+});

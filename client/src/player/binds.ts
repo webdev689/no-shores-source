@@ -85,8 +85,8 @@ export const CONTROLS = {
   inventory: control(['o'], [], EVERYWHERE),
   details: control(['x'], [], ['menu']),
   controls: control(['k'], ['View'], EVERYWHERE),
-  // The chat's field opens on Enter, as DFO's did; on foot alone, where Enter does nothing else.
-  chat: control(['enter'], [], FOOT),
+  // The chat's field opens on T wherever the player plays, the owner's choice: at the helm Enter sets sail.
+  chat: control(['t'], [], ['foot', 'dead', 'helm', 'fight']),
   steerLeft: control(['a'], ['LS left'], HELM),
   steerRight: control(['d'], ['LS right'], HELM),
   sailOn: control(['w'], ['LS up'], HELM),

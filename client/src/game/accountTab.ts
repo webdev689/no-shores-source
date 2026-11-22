@@ -1,6 +1,6 @@
 // The account on the Settings page, drawn by the game: who the player is, a username and password to keep a guest by
 // or sign in with, typed in the interface's own fields, Discord, and signing out, here or everywhere, each held as
-// Destiny holds what cannot be undone; and under it the players blocked, each with a press to unblock them.
+// Destiny holds what cannot be undone; and under it the players blocked and muted, each with a press to undo it.
 
 import type { Account, AccountLink } from '../network/accounts.ts';
 import { button } from '../ui/controls.ts';
@@ -33,14 +33,16 @@ export class AccountPanel {
   /** The account, null with the accounts out of reach, undefined while they are asked. */
   private account: Account | null | undefined = undefined;
   private said = '';
-  /** The players blocked, or why they could not be listed; null while they are asked. */
+  /** The players blocked and those muted, or why they could not be listed; null while they are asked. */
   private blocked: readonly string[] | string | null = null;
+  private muted: readonly string[] | string | null = null;
   private blockedSaid = '';
+  private saidFor: 'unblock' | 'unmute' = 'unblock';
   private unblocking = false;
   /** Whether the fields have been emptied since the panel was made, so they start empty. */
   private emptied = false;
-  /** The place in the list whose press takes the focus once the list comes again, after an unblock. */
-  private focusAt: number | null = null;
+  /** The press that takes the focus once the lists come again, after an unblock or unmute: its list and place. */
+  private focusAt: { readonly ask: 'unblock' | 'unmute'; readonly index: number } | null = null;
   /** The sign-in the browser keeps, asked for a guest's form once it shows, to fill its fields while they are empty. */
   private kept: KeptSignIn | null = null;
   private keptAsked = false;
@@ -63,10 +65,11 @@ export class AccountPanel {
     if (said) announce(said);
   }
 
-  /** Asks for the players blocked; with `focusAt`, the press at that place takes the focus once they come. */
-  private listBlocked(focusAt: number | null = null): void {
+  /** Asks for the players blocked and muted; with `focusAt`, the press there takes the focus once they come. */
+  private listBlocked(focusAt: AccountPanel['focusAt'] = null): void {
     void this.link.roster().then((roster) => {
       this.blocked = typeof roster === 'string' ? roster : roster.blocked;
+      this.muted = typeof roster === 'string' ? roster : (roster.muted ?? []);
       this.focusAt = focusAt;
     });
   }
@@ -214,51 +217,57 @@ export class AccountPanel {
           answerNode(this.said),
         ],
       },
-      this.blockedNodes(context),
+      this.peopleNodes(context, 'unblock'),
+      this.peopleNodes(context, 'unmute'),
     ];
   }
 
-  /** The players blocked, each with a press to unblock them; blocking is done from the Roster. */
-  private blockedNodes({ ui }: PlainContext): Node {
-    const blocked = this.blocked;
-    const list = Array.isArray(blocked) ? (blocked as readonly string[]) : [];
-    const unblock = (name: string, index: number) => {
+  /** The players blocked, or muted, each with a press to unblock or unmute them; blocking is done from the Roster,
+   *  muting from a player's menu or the chat. */
+  private peopleNodes({ ui }: PlainContext, ask: 'unblock' | 'unmute'): Node {
+    const listed = ask === 'unblock' ? this.blocked : this.muted;
+    const list = Array.isArray(listed) ? (listed as readonly string[]) : [];
+    const undo = (name: string, index: number) => {
       if (this.unblocking) return;
       this.unblocking = true;
-      void this.link.social('unblock', { name }).then((why) => {
+      void this.link.social(ask, { name }).then((why) => {
         this.unblocking = false;
-        this.blockedSaid = why ?? `${name} is unblocked.`;
+        [this.blockedSaid, this.saidFor] = [why ?? `${name} is ${ask === 'unblock' ? 'unblocked' : 'unmuted'}.`, ask];
         announce(this.blockedSaid);
-        this.listBlocked(index);
+        this.listBlocked({ ask, index });
       });
     };
-    // The list come again after an unblock, the focus stays in it, on the press now at the same place.
-    if (this.focusAt !== null && Array.isArray(blocked)) {
-      const place = list[Math.min(this.focusAt, list.length - 1)];
-      if (place !== undefined) ui.focusOn(`unblock-${place}`);
+    // The lists come again after an unblock or unmute, the focus stays in its list, on the press at the same place.
+    if (this.focusAt?.ask === ask && Array.isArray(listed)) {
+      const place = list[Math.min(this.focusAt.index, list.length - 1)];
+      if (place !== undefined) ui.focusOn(`${ask}-${place}`);
       this.focusAt = null;
     }
+    const [heading, none, said] =
+      ask === 'unblock'
+        ? ['Blocked players', 'None. Block a player from the Roster.', 'Unblock']
+        : ['Muted players', 'None. Mute a player from their menu, or with /mute in the chat.', 'Unmute'];
     return {
       width: 'grow',
       direction: 'column',
       padding: [18, 0, 0, 0],
       gap: 6,
       children: [
-        headingNode('Blocked players'),
-        typeof blocked === 'string' && hintNode(blocked),
-        Array.isArray(blocked) && list.length === 0 && hintNode('None. Block a player from the Roster.'),
+        headingNode(heading),
+        typeof listed === 'string' && hintNode(listed),
+        Array.isArray(listed) && list.length === 0 && hintNode(none),
         ...list.map((name, index): Node => ({
           width: 'grow',
           alignY: 'center',
           children: [
             { width: 'grow', ...words(name, 1, INK.word) },
-            button(ui, `unblock-${name}`, 'Unblock', () => unblock(name, index), {
+            button(ui, `${ask}-${name}`, said, () => undo(name, index), {
               padding: PRESS_PADDING,
-              label: `Unblock ${name}`,
+              label: `${said} ${name}`,
             }),
           ],
         })),
-        answerNode(this.blockedSaid),
+        this.saidFor === ask && answerNode(this.blockedSaid),
       ],
     };
   }
