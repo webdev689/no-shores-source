@@ -411,6 +411,17 @@ Where the work stands now, for the next session. Each session rewrites this note
   for the caverns and the mines. Tested offline: `cargo xtask check`, and headless pictures of every room of six
   dungeons, one of each style. Two reviews' findings are fixed, each with a test; #72 lists them. Not tested live: a
   deployed dungeon room.
+
+- **#88, the dungeon modules, stacked on #72, waits on the owner's yes after #72**: each style's own pieces built
+  by script in Blender, a kit of eighteen and three landmarks
+  ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]], [[Dungeon Modules]], Claude's calls in
+  [[Dungeons as Claude Builds Them]], "The modules"). The rules place the landmarks; the page places the kits and
+  draws both from packs the `dungeon-modules` workflow publishes to R2. Tested offline: `cargo xtask check`, the
+  packs built twice to the same bytes here and by the workflow, four code reviews and five rounds of headless
+  pictures of over a dozen dungeons that hold every style and landmark, every finding fixed at its cause with a test.
+  The last two fixes (rock hiding a flame from still water, the mines' drifts strewing rock) are not yet pictured.
+  Not tested live.
+
 - **The houses' roads and the varied missions, on branch `ccr-3320a365-bzwp4s`, in #131, tested offline (the full
   check, with real-node tests over the baked first landmass) and live headless against a local rooms server without an
   account (the opening's task shown)**: after the intro the player pledges to a house, and each house's road of eleven
@@ -599,6 +610,9 @@ Where the work stands now, for the next session. Each session rewrites this note
 
 - **#72 once the owner says yes**: squash-merge it, which deploys the page and the rooms, then play a dungeon in a
   deployed room (tested live): a band's fight, the Reeve's fall, the cache's Vestige and the portal out.
+- **#88 once #72 is in and the owner says yes**: retarget it to `main`, merge main in, run `cargo xtask check`, and
+  merge; then play a dungeon of each style in a deployed room. A change to `tools/dungeon/` or the contracts
+  publishes new packs: take the manifest line from the workflow's log into `content/dungeon/modules.json`.
 - **Picturing a dungeon headless** needs no walk: `tools/claude-toolkit/dungeon-qa-build.sh` and
   `dungeon-plan.ts` picture every room of one dungeon in a page load ([[Toolkit]], Browser QA), once `webgpu-shot`
   can picture the game again: since #127 the game draws in its worker, which it cannot read (above).

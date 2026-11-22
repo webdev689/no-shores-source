@@ -5,7 +5,8 @@
 // face names its picture by Daggerfall's archive and record, a dungeon set's by its role, and every UV runs in world
 // metres, one picture to 3.2 m, so faces side by side meet without a seam.
 import { type ForgedModel, type MeshBuilder, meshBuilder } from '../models/model.ts';
-import { besideOf, caveWall, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
+import { ARCH_M, caveWall, type FlatSpan } from './dungeonCaveWall.ts';
+import { besideOf, ceilingHeights, closeEdge, curvedCeiling, isCave } from './dungeonCeilings.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 import { uvOf } from './dungeonUv.ts';
 
@@ -15,8 +16,18 @@ export const HEAD_M = 0.3;
 /** The record each face takes in a dungeon set, by its role. */
 export const ROLE = { wall: 0, wallAlt: 1, floor: 2, ceiling: 3, trim: 4 } as const;
 /** Archives that stand for no picture of their own: a flame's glow, drawn as a colour; the portal's face, which wears
- *  the end room's wall; candle wax; and an ember's, a lantern's glass a crystal's and a fungus cap's glow. */
-export const COLOUR = { glow: -2, portal: -3, wax: -4, ember: -5, lanternGlass: -6, crystal: -7, fungus: -8 } as const;
+ *  the end room's wall; candle wax; an ember's, a lantern's glass a crystal's and a fungus cap's glow; and still water,
+ *  dark and catching the lights. */
+export const COLOUR = {
+  glow: -2,
+  portal: -3,
+  wax: -4,
+  ember: -5,
+  lanternGlass: -6,
+  crystal: -7,
+  fungus: -8,
+  water: -9,
+} as const;
 /** The textures' ironwork (archive 93), for the torches' brackets and the cache's bands. */
 export const IRON: Picture = [93, 0];
 /** The portal's arch, metres: each post's width, the lintel's height, how far both stand off the wall, and how far
@@ -226,8 +237,14 @@ function doorFrame(
   );
 }
 
-/** A torch's iron bracket on its wall, the edge of its cell on its side, and its flame. */
-function torch(mesh: MeshBuilder, [x, y, z, side]: readonly [number, number, number, number], cell: number): void {
+/** A torch's iron bracket on its wall, the edge of its cell on its side, unless its style's sconce holds it; and its
+ *  flame. */
+function torch(
+  mesh: MeshBuilder,
+  [x, y, z, side]: readonly [number, number, number, number],
+  cell: number,
+  bracket: boolean,
+): void {
   const [east, south] = SIDE_STEPS[side] ?? [0, 0];
   const edge = (along: number, step: number) =>
     step === 0 ? along : (Math.floor(along / cell) + 0.5 + step / 2) * cell;
@@ -241,9 +258,11 @@ function torch(mesh: MeshBuilder, [x, y, z, side]: readonly [number, number, num
       [Math.max(fromX, toX) + half * Math.abs(south), Math.max(fromY, toY) + half * Math.abs(east), z + high],
     );
   const plate = [wallX - east * PLATE.thick, wallY - south * PLATE.thick] as const;
-  across(PLATE.half, plate[0], plate[1], wallX, wallY, PLATE.low, PLATE.high);
-  across(ARM.half, x, y, plate[0], plate[1], ARM.low, ARM.high);
-  box(mesh, iron, [x - CUP.half, y - CUP.half, z + CUP.low], [x + CUP.half, y + CUP.half, z + CUP.high]);
+  if (bracket) {
+    across(PLATE.half, plate[0], plate[1], wallX, wallY, PLATE.low, PLATE.high);
+    across(ARM.half, x, y, plate[0], plate[1], ARM.low, ARM.high);
+    box(mesh, iron, [x - CUP.half, y - CUP.half, z + CUP.low], [x + CUP.half, y + CUP.half, z + CUP.high]);
+  }
   const glow: Picture = [COLOUR.glow, 0];
   const ring: Point[] = [
     [x - FLAME.half, y, z + FLAME.waist],
@@ -302,9 +321,9 @@ function doorFace(mesh: MeshBuilder, { x, y, width, height }: Opening, side: num
   mesh.quad(picture, corners, [-east, -south, 0], mapping);
 }
 
-/** The return portal: a stone arch, two posts and a lintel standing off the end room's wall in its trim, round a face
- *  the shader shows dark while it is shut and glowing while it is open. */
-function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
+/** The return portal: a stone arch, two posts and a lintel standing off the end room's wall in its trim (unless its
+ *  style's own arch stands there), round a face the shader shows dark while it is shut and glowing while it is open. */
+function portal(mesh: MeshBuilder, layout: DungeonLayout, arch: boolean): void {
   const opening = layout.portal;
   const [east, south] = SIDE_STEPS[opening.side] ?? [0, 0];
   const trim: Picture = [lookOf(layout, layout.end, layout.rooms[layout.end]?.look ?? 0).set, ROLE.trim];
@@ -323,18 +342,40 @@ function portal(mesh: MeshBuilder, layout: DungeonLayout): void {
     );
   };
   const half = opening.width / 2;
-  piece(-half - ARCH.post, -half, 0, opening.height + ARCH.lintel);
-  piece(half, half + ARCH.post, 0, opening.height + ARCH.lintel);
-  piece(-half, half, opening.height, opening.height + ARCH.lintel);
+  if (arch) {
+    piece(-half - ARCH.post, -half, 0, opening.height + ARCH.lintel);
+    piece(half, half + ARCH.post, 0, opening.height + ARCH.lintel);
+    piece(-half, half, opening.height, opening.height + ARCH.lintel);
+  }
   const face = { ...opening, x: opening.x - east * ARCH.face, y: opening.y - south * ARCH.face };
   doorFace(mesh, face, opening.side, [COLOUR.portal, 0]);
 }
 
-/** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it. */
+/** What a dungeon's kits draw in the mesh's place: the pillars and the torches (by their number in the layout) whose
+ *  pillar and bracket a kit piece stands instead, whether one stands for the portal's arch, the cells whose floor a
+ *  landmark lays itself, and the stretches of a cave's walls, by `cell * 4 + side`, that pieces stand against. */
+export type Kitted = {
+  readonly pillars: ReadonlySet<number>;
+  readonly torches: ReadonlySet<number>;
+  readonly portal: boolean;
+  readonly floorless: ReadonlySet<number>;
+  readonly flats: ReadonlyMap<number, readonly FlatSpan[]>;
+};
+const UNKITTED: Kitted = {
+  pillars: new Set(),
+  torches: new Set(),
+  portal: false,
+  floorless: new Set(),
+  flats: new Map(),
+};
+
+/** The whole floor's mesh, the exit door wearing `door`, and the return portal; `furnish` lays what stands in it,
+ *  and `kitted` says what it draws instead of the mesh. */
 export function dungeonMesh(
   layout: DungeonLayout,
   door: Picture,
   furnish: (mesh: MeshBuilder) => void = () => undefined,
+  kitted: Kitted = UNKITTED,
 ): ForgedModel {
   const mesh = meshBuilder();
   const { cell, columns, rows, cells, ceilings } = layout;
@@ -345,6 +386,15 @@ export function dungeonMesh(
     const form = room >= 0 ? layout.rooms[room]?.ceiling : undefined;
     return form === 'vault' || form === 'dome' || isCave(layout, index);
   };
+  // The portal's and the exit door's walls, as `cell * 4 + side`: in a cave they stand flat under their arches, each
+  // in the middle of its wall.
+  const [portalEast, portalSouth] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
+  const portalCell =
+    Math.floor((layout.portal.y - portalSouth * 0.5) / cell) * columns +
+    Math.floor((layout.portal.x - portalEast * 0.5) / cell);
+  const arched = new Set([portalCell * 4 + layout.portal.side, layout.wayIn.cell * 4 + layout.wayIn.side]);
+  const arch: FlatSpan = { from: cell / 2 - ARCH_M.half, to: cell / 2 + ARCH_M.half, top: ARCH_M.top };
+  const flatsOf = (key: number) => [...(kitted.flats.get(key) ?? []), ...(arched.has(key) ? [arch] : [])];
   for (let row = 0; row < rows; row++)
     for (let column = 0; column < columns; column++) {
       const index = row * columns + column;
@@ -359,7 +409,7 @@ export function dungeonMesh(
         [west + cell, north + cell, z],
         [west, north + cell, z],
       ];
-      face(mesh, [look.set, ROLE.floor], square(0), [0, 0, 1], 0);
+      if (!kitted.floorless.has(index)) face(mesh, [look.set, ROLE.floor], square(0), [0, 0, 1], 0);
       if (curved(index)) curvedCeiling(mesh, [look.set, ROLE.ceiling], west, north, cell, height);
       else face(mesh, [look.set, ROLE.ceiling], square(ceiling), [0, 0, -1], ceiling);
       SIDE_STEPS.forEach(([east, south], side) => {
@@ -374,7 +424,7 @@ export function dungeonMesh(
         };
         const next = besideOf(layout, column, row, side);
         if (next === null) {
-          if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling);
+          if (isCave(layout, index)) caveWall(mesh, [look.set, look.wall], where, ceiling, flatsOf(index * 4 + side));
           else wall(mesh, look, where, [0, ceiling], trims);
           // Over the wall's head, up to a vault, a dome or a cave's rock.
           return closeEdge(mesh, [look.set, look.wall], { ...edge, top: ceiling }, () => ceiling, height);
@@ -391,19 +441,13 @@ export function dungeonMesh(
     const look = lookAt(layout, frameCell);
     doorFrame(mesh, look, layout.boxes.slice(index * 2, index * 2 + 2), layout.doorway.lintel, height);
   });
-  for (const [x, y, height] of layout.pillars) {
-    pillar(
-      mesh,
-      lookAt(layout, Math.floor(y / cell) * columns + Math.floor(x / cell)),
-      x,
-      y,
-      height,
-      layout.pillarHalf,
-    );
-  }
-  for (const each of layout.torches) torch(mesh, each, cell);
+  const cellOf = (x: number, y: number) => Math.floor(y / cell) * columns + Math.floor(x / cell);
+  layout.pillars.forEach(([x, y, height], index) => {
+    if (!kitted.pillars.has(index)) pillar(mesh, lookAt(layout, cellOf(x, y)), x, y, height, layout.pillarHalf);
+  });
+  layout.torches.forEach((each, index) => torch(mesh, each, cell, !kitted.torches.has(index)));
   doorFace(mesh, layout.exitDoor, layout.wayIn.side, door);
-  portal(mesh, layout);
+  portal(mesh, layout, !kitted.portal);
   furnish(mesh);
   return mesh.model();
 }

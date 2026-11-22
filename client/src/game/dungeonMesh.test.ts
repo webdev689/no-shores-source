@@ -49,6 +49,8 @@ const layout: DungeonLayout = {
     [3.2, 0, 3.5, 0.7, 3.2],
     [3.2, 2.5, 3.5, 3.2, 3.2],
   ],
+  landmarks: [],
+  glows: [],
 };
 
 type Corner = readonly [number, number, number];
@@ -210,4 +212,34 @@ test("the return portal is a face on the end room's wall inside an arch of its t
   );
   const heights = arch.flatMap(({ corners }) => corners.map(([, , z]) => z));
   assert.ok(near(Math.max(...heights), 2.7), 'a lintel over it');
+});
+
+test("where its kit pieces stand, the mesh leaves out the pillars, the brackets and the portal's arch", () => {
+  const pillared: DungeonLayout = { ...layout, pillars: [[1.6, 1.6, 4]] };
+  const kitted = {
+    pillars: new Set([0]),
+    torches: new Set([0]),
+    portal: true,
+    floorless: new Set([0]),
+    flats: new Map(),
+  };
+  const plain = trianglesOf(dungeonMesh(pillared, [56, 2]));
+  const dressed = trianglesOf(dungeonMesh(pillared, [56, 2], undefined, kitted));
+  const pillar = ({ corners }: Triangle) =>
+    corners.every(([x, y]) => Math.abs(x - 1.6) < 0.36 && Math.abs(y - 1.6) < 0.36);
+  const arch = ({ picture, corners }: Triangle) =>
+    picture === '123.4' && corners.every(([, y]) => y >= 3.18 - 0.18 - EPS && y <= 3.18 + EPS);
+  const count = (list: Triangle[], picture: string) => list.filter((triangle) => triangle.picture === picture).length;
+  assert.ok(plain.some(pillar) && !dressed.some(pillar), 'no code-built pillar');
+  assert.ok(plain.some(arch) && !dressed.some(arch), 'no code-built arch');
+  assert.equal(count(dressed, `${IRON[0]}.${IRON[1]}`), 0, 'no bracket');
+  assert.equal(count(dressed, `${COLOUR.glow}.0`), 8, 'the flame burns');
+  assert.equal(count(dressed, `${COLOUR.portal}.0`), 2, "the portal's face");
+  assert.equal(count(dressed, '56.2'), 2, "the exit door's face");
+  const jambs = (list: Triangle[]) =>
+    list.filter(
+      ({ picture, corners }) => picture === '123.0' && corners.every(([x]) => x >= 3.2 - EPS && x <= 3.5 + EPS),
+    );
+  assert.equal(jambs(dressed).length, jambs(plain).length, 'the jambs');
+  assert.equal(count(dressed, '123.2'), count(plain, '123.2') - 2, "a landmark's cell lays no code-built floor");
 });

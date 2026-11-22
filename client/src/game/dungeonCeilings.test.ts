@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { meshBuilder } from '../models/model.ts';
-import { caveWall, ceilingHeights, closeEdge, isCave, roughness } from './dungeonCeilings.ts';
+import { caveWall } from './dungeonCaveWall.ts';
+import { ceilingHeights, closeEdge, isCave, roughness } from './dungeonCeilings.ts';
 import type { CeilingForm, DungeonLayout } from './dungeonLayout.ts';
 
 /** A room three cells east-west by two north-south, 4 m to its walls' heads, with rock round it. */

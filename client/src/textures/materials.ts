@@ -100,6 +100,7 @@ const PALETTE_RUNS: Readonly<Record<string, readonly PaletteRun[]>> = {
   clothYellow: [[ylw, 1, 13]],
   clothPurple: [[mau, 2, 15]],
   parchment: [[snd, 0, 9], [pch, 0, 8]],
+  ivory: [[snd, 0, 5]],
   slime: [[ylw, 5, 15], [grs, 6, 12]],
   black: [[org, 8, 12]],
   rubbleWarm: [[snd, 6, 15], [gry, 7, 15], [lav, 12, 15, 0.12], [tea, 14, 15, 0.04]],

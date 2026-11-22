@@ -1,6 +1,7 @@
 //! The patrol areas' dungeons, laid as DFO's Forge lays them: blocks of 16 by 16 cells of 3.2 m, each block's rooms
 //! carved by a seeded split and joined through the rock by the cheapest ways, the blocks grown from the way in's and
-//! joined at their shared edges, in six styles. Each room has a purpose that furnishes and lights it. One floor:
+//! joined at their shared edges, in six styles. Each room has a purpose that furnishes and lights it, and one or two
+//! rooms a landmark. One floor:
 //! rooms and corridors stand at 0 m, under ceilings of their own heights. The same seed lays the same dungeon on
 //! every machine: the maths is + - * / and comparisons, and every draw is made on a lane of its own (`lane`).
 
@@ -9,6 +10,7 @@ mod block;
 mod dungeon;
 mod fixtures;
 mod furnish;
+mod landmarks;
 pub mod lane;
 pub mod models;
 mod props;
@@ -25,6 +27,7 @@ pub use dungeon::{
 pub use fixtures::{
     BRAZIER_HALF_M, BRAZIER_TOP_M, CANDLES_OVER_M, CRYSTALS_TOP_M, FUNGUS_TOP_M, Fixture, Kind, LANTERN_M,
 };
+pub use landmarks::{LANDMARKS, Landmark, Placed, turned, turned_box};
 pub use models::{Piece, PropModel, prop_model};
 pub use props::{HUNG_M, POSTS_A_ROOM, Prop, posts_for};
 pub use purposes::{Bank, Facing, Lay, Light, Lit, Pattern, Purpose};
@@ -72,6 +75,17 @@ impl Side {
         }
     }
 
+    /// The side a quarter turn clockwise seen from above: north's is east.
+    #[must_use]
+    pub const fn clockwise(self) -> Self {
+        match self {
+            Side::North => Side::East,
+            Side::East => Side::South,
+            Side::South => Side::West,
+            Side::West => Side::North,
+        }
+    }
+
     #[must_use]
     pub const fn opposite(self) -> Self {
         match self {
@@ -101,6 +115,13 @@ impl Side {
     }
 }
 
+/// The style a key names (crypt, halls, cells, sanctum, caverns or mines), for a dungeon laid by a seed where there is
+/// no patrol, as on a sea island.
+#[must_use]
+pub fn style_of(key: &str) -> Option<Style> {
+    STYLES.into_iter().find(|style| style.key == key)
+}
+
 /// A patrol's dungeon by its number: its seed, from the patrol's id, and its style. A patrol's dungeons take three
 /// different styles of the six, shuffled by the patrol's id.
 #[must_use]
@@ -127,8 +148,12 @@ mod dungeon_tests;
 #[cfg(test)]
 mod fixtures_tests;
 #[cfg(test)]
+mod landmarks_tests;
+#[cfg(test)]
 mod props_tests;
 #[cfg(test)]
 mod purposes_tests;
 #[cfg(test)]
 mod shapes_tests;
+#[cfg(test)]
+mod torches_tests;

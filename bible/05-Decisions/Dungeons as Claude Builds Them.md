@@ -30,7 +30,7 @@ change any of them.
 | What of the Forge comes | Its block of 16 by 16 cells of 3.2 m; rooms carved by a seeded split, in its styles' sizes and shapes; corridors by the cheapest way through the rock; each room's doorways framed; pillars in great rooms; torches on room walls and every fourth corridor cell; the way in's exit door; the check that every block is one walk, with a failed seed taking the next; and its heart's way back to the start, as the return portal | The generator the owner's Patrol asks for, as DFO built it |
 | One floor | A dungeon is one floor; the Forge's stacked storeys and their stairs stay behind | [[Movement]] and the [[Navmesh]] stand one floor at a point |
 | A run, not a maze | A block's rooms joined one after another, from the doorway in to the doorway on, never by the Forge's spanning tree and loops; a block opens only onto the blocks before and after it in the chain, by one doorway. The end is the last room of the last block | The owner: "a slighty linear thing with a clear beginning, middle, end"; about one loop in a dungeon, where the Forge's law made five |
-| The return portal | On the end room's wall farthest from the way in, a doorway of light as wide and high as the exit door, open while the Reeve lies fallen, as the cache is | The owner's "easy navigation path out of the dungeon, like a return portal", and DFO's heart, which carried the player back to the way in |
+| The return portal | On the end room's wall farthest from the way in, first one that holds its two torches clear of the corners, on it or on a corner's side wall, a doorway of light as wide and high as the exit door, open while the Reeve lies fallen, as the cache is | The owner's "easy navigation path out of the dungeon, like a return portal", and DFO's heart, which carried the player back to the way in |
 | Props | Each style's own forged props laid as the Forge laid its scenery, one for each ten cells of a room, against its walls: the Tithe's crates, cabinets, shelves, tables and racks in the Halls; beds, benches and a trough in the Cells; coffins, tomb markers and broken columns in the Crypt; statues, pedestals, a lectern and a throne in the Sanctum. Each is a solid. They keep clear of the doorways, the way in, the portal, the torches and where the foes and the Reeve stand | The owner asked that props be laid; the forged props come over with the rest of the branch's models |
 | What stays behind | Doors and locks, traps, scenery sprites (forged props stand in their place), the blocks' people, riddle vaults, last fire, light hues, block names, the director, DELVE II's encounters, and the cave and mine styles | Each needs a system Overlook does not have (lockpicking, Luck, magicka, poison, rest, Daggerfall's light table and sprites), or nothing in Overlook asks for it (block names, the director, beside the garrison's own hearing and standing again); caves and mines need a rock picture the painter does not paint |
 | Dungeons in a patrol area | Three, each behind its own entrance | A patrol is about 1.6 km across: three give a route between them and its resource spots |
@@ -78,3 +78,23 @@ The purposes, by style (the way in's room first, the end room last):
 | Sanctum | the Narthex; the Nave, the Reliquary, the Scriptorium, the Cloister, the Shrine, the Vestry; the High Altar |
 | Caverns | the Cave Mouth; the Crystal Hollow, the Dripping Gallery, the Bone Pit, the Fungus Grove, the Squatters' Den, the Echoing Chamber; the Deep Cavern |
 | Mines | the Adit; the Gallery, the Stope, the Ore Store, the Miners' Rest, the Collapsed Drift, the Winch Room; the Motherlode |
+
+## The modules
+
+> "I want you to do everything and be as detailed as possible. Return when everything is 100%"
+> ([[Each Dungeon Style Has Its Own Pieces, Built in Blender]])
+
+Claude's choices for the pieces built in Blender ([[Dungeon Modules]]), each open to change.
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What a module is | Both: a kit of eighteen pieces for each style that dresses every room, and three landmarks a style, set pieces a dungeon is remembered by | A landmark alone stands on samey bones; a kit alone gives handsome rooms nobody remembers |
+| Who places them | The page places the kits from the layout, since they stand where nobody walks; the rules place the landmarks, since they have solids the server, the browser and the navmesh must all know | Only what a body meets is the rules' to know |
+| How many landmarks | One a dungeon of two or three blocks, two of four or five, never twice, never in the way in's room or the end room | Each run has a room to remember, and the end stays the Reeve's |
+| Where a landmark stands | Clear of the room's walls where a spot fits, else with its edges on them; never on a doorway, a torch's cell, the way in or the portal; the room still one walk with room for its band. A pillar under it goes | Rooms are small; a landmark against a wall still reads, and nobody is walled in |
+| Their sizes | Two cells by two at most, but the Oubliette one by one and the Gibbets, the Rack, the Ore Cart and the Great Hearth two by one | At three by three the Ritual Circle found a room in 52 of 346 sanctum dungeons |
+| Their names | Their own, never a room purpose's: the Charnel Pit and the Broken Vault in the crypt, not the Bone Pit and the Collapsed Vault | A name taken twice would read "the Old Collapsed Vault" |
+| Low solids | Every solid, however low, is a wall to the navmesh as it is to a body | Otherwise a foe would walk across the Reflecting Pool and over grave slabs a player cannot cross |
+| The pictures | Each part wears the room's own pictures, the climate's timber, the iron, a new dressing set (bone, carving, cloth, rope, ore, brass) or a glow | The pieces belong to the room they stand in, in every climate |
+| The kits' spacing | A wall set every two cells in the crypt, the halls and the sanctum, every three in the cells and the hewn caverns, every cell of the mines with a beam over it | The mines are shored timber; the halls are colonnaded |
+| Their cost | A budget for each kind of piece, the most repeated the least; faces against a wall or the floor are left off | A dungeon lays up to some 320 kit pieces |

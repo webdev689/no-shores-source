@@ -1,5 +1,6 @@
-// A dungeon drawn on WebGPU: its floor's mesh and its cache in its pictures, painted by the city's painter, lit by
-// the torches nearest the eye. A Drawer the dungeon's scene draws into its pass.
+// A dungeon drawn on WebGPU: its floor's mesh, dressed in its styles' pieces and landmarks, and its cache in its
+// pictures, painted by the city's painter, lit by the lights nearest the eye. A Drawer the dungeon's scene draws into
+// its pass.
 import { CITY_BUFFER_USAGE } from '../city/cityGpu.ts';
 import { modelBuffers } from '../city/cityModels.ts';
 import { CityPainter } from '../city/painter.ts';
@@ -9,18 +10,19 @@ import { REVERSED_DEPTH } from '../editor/orbit.ts';
 import { type Gpu, SHADER_STAGE } from '../gpu.ts';
 import type { ForgedModel } from '../models/model.ts';
 import { SAMPLES } from '../water/waterView.ts';
-import { PORTAL_FLAG, smallBook, type SmallBook, type Wanted } from './dungeonBook.ts';
+import { dungeonBook, type SmallBook } from './dungeonBook.ts';
+import { propPlans } from './dungeonCells.ts';
 import { type Cache, chestMesh } from './dungeonChest.ts';
-import type { DungeonLayout } from './dungeonLayout.ts';
-import { FIXTURE_KINDS, LIGHT_KINDS, type Light, lightAt, moodLooks, MOODS } from './dungeonLight.ts';
-import { COLOUR, dungeonMesh, IRON, lookOf, ROLE } from './dungeonMesh.ts';
+import { type DungeonLayout, SIDE_STEPS, type StyleKey } from './dungeonLayout.ts';
+import { dressingOf } from './dungeonDressing.ts';
+import { burningOf, cellWords, LIGHT_KINDS, type Light, lightAt, MOODS } from './dungeonLight.ts';
+import { dungeonMesh } from './dungeonMesh.ts';
+import type { ModulePack } from './dungeonModules.ts';
 import { bedOf, fixtureMesh } from './dungeonFixtures.ts';
 import { layModel } from './entrances.ts';
 import { propModel } from '../models/props.ts';
 import type { PropTable } from '../models/tables.ts';
-import type { PictureUse } from '../textures/picture.ts';
-import { SIDE_STEPS } from './dungeonLayout.ts';
-import { DUNGEON_SHADER, LIGHT_FLOATS, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
+import { DUNGEON_SHADER, LIGHT_FLOATS, lightFloats, MOST_LIGHTS, MOST_LOOKS, VIEW_FLOATS } from './dungeonShaders.ts';
 
 /** How far out from its face the open portal's light stands, metres. */
 const PORTAL_OUT_M = 0.6;
@@ -90,6 +92,8 @@ type Drawn = {
   readonly floor: Buffers;
   chest: Buffers | null;
   shown: Cache | null;
+  /** The lights the walls were last drawn by, the nearest the eye: the figures are lit by the same. */
+  nearest: readonly Light[] | null;
 };
 
 export class DungeonView {
@@ -123,38 +127,34 @@ export class DungeonView {
   }
 
   /** Draws this dungeon from now on, in the island's climate: its exit door in `door`, its cache's wood the
-   *  climate's timber. */
-  set(layout: DungeonLayout, climate: CityClimate, door: readonly [number, number], props: PropTable): void {
+   *  climate's timber, and each style's pieces and landmarks from its pack in `packs`. */
+  set(
+    layout: DungeonLayout,
+    climate: CityClimate,
+    door: readonly [number, number],
+    props: PropTable,
+    packs: ReadonlyMap<StyleKey, ModulePack> = new Map(),
+  ): void {
     this.clear();
     const { device } = this.gpu;
-    const [timberArchive, timberRecord, timberUse, timberTint] = MATERIALS[climate.climate].timber;
+    const [timberArchive, timberRecord] = MATERIALS[climate.climate].timber;
     const wood = [timberArchive, timberRecord] as const;
-    const model = dungeonMesh(layout, door, (mesh) => {
-      for (const [id, x, y, z, yaw] of layout.props) {
-        const forged = propModel(props, id);
-        if (forged) layModel(mesh, forged, [x, y, z], yaw);
-      }
-      for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
-    });
-    const end = lookOf(layout, layout.end, layout.rooms[layout.end]?.look ?? 0);
-    const sets = new Set(layout.looks.flatMap((look) => look.pictures));
-    // A set's record by its role; the exit door's picture as a door; the props' and the iron as a prop's.
-    const useOf = (archive: number, record: number): PictureUse => {
-      if (!sets.has(archive)) return archive === door[0] && record === door[1] ? 'door' : 'prop';
-      return record === ROLE.floor ? 'floor' : record === ROLE.ceiling ? 'ceiling' : 'wall';
-    };
-    const wanted: Wanted[] = [
-      [timberArchive, timberRecord, timberUse, timberTint],
-      [...IRON, 'prop'],
-      [end.set, end.wall, 'wall'],
-      ...model.parts.map((part): Wanted => [part.archive, part.record, useOf(part.archive, part.record)]),
-    ];
-    const plain = smallBook(climate, wanted);
-    const book: SmallBook = {
-      pictures: plain.pictures,
-      layerOf: (archive, record) =>
-        archive === COLOUR.portal ? PORTAL_FLAG | plain.layerOf(end.set, end.wall) : plain.layerOf(archive, record),
-    };
+    const forged = layout.props.map(([id]) => propModel(props, id));
+    const dressing = dressingOf(layout, packs, climate.climate, propPlans(layout, forged));
+    const model = dungeonMesh(
+      layout,
+      door,
+      (mesh) => {
+        layout.props.forEach(([, x, y, z, yaw], index) => {
+          const prop = forged[index];
+          if (prop) layModel(mesh, prop, [x, y, z], yaw);
+        });
+        for (const fixture of layout.fixtures) fixtureMesh(mesh, fixture, bedOf(layout, fixture));
+        dressing.lay(mesh);
+      },
+      dressing,
+    );
+    const book = dungeonBook(layout, climate, door, model.parts);
     const painter = new CityPainter(this.gpu, book, () => undefined);
     const view = device.createBuffer({
       size: VIEW_FLOATS.all * 4,
@@ -164,7 +164,7 @@ export class DungeonView {
       size: MOST_LIGHTS * LIGHT_FLOATS * 4,
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
     });
-    const looks = moodLooks(layout);
+    const looks = cellWords(layout);
     const cellLooks = device.createBuffer({
       size: Math.max(16, looks.byteLength),
       usage: CITY_BUFFER_USAGE.storage | CITY_BUFFER_USAGE.copyDestination,
@@ -187,15 +187,7 @@ export class DungeonView {
         { binding: 4, resource: { buffer: cellLooks } },
       ],
     });
-    const torch = { ...LIGHT_KINDS.torch, reach: layout.torchReach };
-    const burning: Light[] = [
-      ...layout.torches.map(([x, y, z], number): Light => ({ at: [x, y, z], number, burning: torch })),
-      ...layout.fixtures.map(([x, y, z, kind], index): Light => ({
-        at: [x, y, z],
-        number: layout.torches.length + index,
-        burning: FIXTURE_KINDS[kind] ?? torch,
-      })),
-    ];
+    const burning = burningOf(layout);
     const [east, south] = SIDE_STEPS[layout.portal.side] ?? [0, 0];
     const { x, y, height } = layout.portal;
     const portalLight: Light = {
@@ -218,6 +210,7 @@ export class DungeonView {
       floor,
       chest: null,
       shown: null,
+      nearest: null,
     };
   }
 
@@ -234,8 +227,8 @@ export class DungeonView {
     drawn.chest = cache ? this.buffersOf(chestMesh(cache, drawn.wood), drawn.book) : null;
   }
 
-  /** The light a figure standing at a point is lit by at `time`, as the walls round it are: its lights and the mood
-   *  of the cell it stands in. */
+  /** The light a figure standing at a point is lit by at `time`, as the walls round it are: the lights they were last
+   *  drawn by and the mood of the cell it stands in. */
   lightAt(point: readonly [number, number, number], time: number): [number, number, number] {
     const drawn = this.drawn;
     if (!drawn) return [1, 1, 1];
@@ -243,7 +236,7 @@ export class DungeonView {
     const [column, row] = [Math.floor(point[0] / layout.cell), Math.floor(point[1] / layout.cell)];
     const inside = column >= 0 && row >= 0 && column < layout.columns && row < layout.rows;
     const look = layout.looks[Math.max(0, inside ? (layout.cellLooks[row * layout.columns + column] ?? 0) : 0)];
-    return lightAt(this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
+    return lightAt(drawn.nearest ?? this.lights(drawn), point, time, MOODS[look?.style ?? layout.style]);
   }
 
   /** The torches and the fixtures, and the portal while it stands open, which is while the cache does. */
@@ -264,10 +257,9 @@ export class DungeonView {
     // Nearest by how far each reaches past the eye, so a brazier's wide light outranks a candle's at one distance.
     const away = ({ at: [x, y, z], burning }: Light) => Math.hypot(x - eye[0], y - eye[1], z - eye[2]) - burning.reach;
     const nearest = [...this.lights(drawn)].sort((a, b) => away(a) - away(b)).slice(0, MOST_LIGHTS);
+    drawn.nearest = nearest;
     const lights = new Float32Array(MOST_LIGHTS * LIGHT_FLOATS);
-    nearest.forEach(({ at, number, burning }, index) =>
-      lights.set([...at, number, ...burning.colour, burning.reach, burning.flicker, 0, 0, 0], index * LIGHT_FLOATS),
-    );
+    nearest.forEach((light, index) => lights.set(lightFloats(light), index * LIGHT_FLOATS));
     device.queue.writeBuffer(drawn.lights, 0, lights);
     const { layout } = drawn;
     const view = new Float32Array(VIEW_FLOATS.all);

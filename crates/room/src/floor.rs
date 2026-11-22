@@ -27,6 +27,15 @@ impl Floor {
     pub fn of_dungeon(dungeon: &dungeon::Dungeon) -> Option<Self> {
         DungeonGround::of(dungeon).map(|ground| Floor::Dungeon(Box::new(ground)))
     }
+
+    /// How deep a point lies inside a solid nobody may stand on, metres: a dungeon's, since its ground walls every
+    /// solid however low; 0 elsewhere, where a body climbs a low block.
+    pub(crate) fn depth_in_solid(&self, x: f64, y: f64) -> f64 {
+        match self {
+            Floor::Dungeon(ground) => ground.depth_in_solid(x, y),
+            _ => 0.0,
+        }
+    }
 }
 
 impl Terrain for Floor {

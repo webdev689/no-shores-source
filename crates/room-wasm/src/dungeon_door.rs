@@ -8,12 +8,16 @@ use room::{NodeKind, PlayerId, Room};
 use serde::Deserialize;
 use serde_json::{Value, json};
 
-/// Which dungeon: its patrol's id and name, and its number among the patrol's.
+/// Which dungeon: its place's name, and either its patrol's id and its number among the patrol's, or the seed and the
+/// style's key it is laid by where no patrol lays it (a sea island's).
 #[derive(Deserialize)]
 struct Asked {
-    patrol: String,
+    patrol: Option<String>,
     name: String,
+    #[serde(default)]
     number: usize,
+    seed: Option<u32>,
+    style: Option<String>,
 }
 
 const fn side_number(side: Side) -> u8 {
@@ -25,11 +29,17 @@ const fn side_number(side: Side) -> u8 {
     }
 }
 
-/// The seed and style of the dungeon an ask names, or None for an ask that does not read or a number past the
-/// patrol's dungeons.
+/// The seed and style of the dungeon an ask names, or None for an ask that does not read, a number past the patrol's
+/// dungeons, or a seed without a style that is one.
 pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
     let asked = serde_json::from_slice::<Asked>(text).ok()?;
-    (asked.number < dungeon::PER_PATROL).then(|| dungeon::of_patrol(&asked.patrol, asked.number))
+    match (asked.patrol, asked.seed, asked.style) {
+        (_, Some(seed), Some(key)) => Some((seed, dungeon::style_of(&key)?)),
+        (Some(patrol), None, None) => {
+            (asked.number < dungeon::PER_PATROL).then(|| dungeon::of_patrol(&patrol, asked.number))
+        }
+        _ => None,
+    }
 }
 
 /// The dungeon asked for as JSON, or null for an ask that does not read. Its return portal stands on the end room's
@@ -37,8 +47,9 @@ pub(crate) fn asked(text: &[u8]) -> Option<(u32, dungeon::Style)> {
 /// or its room's number, and wears a look by its number (-1 for rock); sides are 0 east, 1 south, 2 west, 3 north;
 /// points are x east, y south, z up from the dungeon's north-west corner at its floor; a bearing is radians clockwise
 /// from north. Each prop is its forged model's id, where its origin stands (x, y, z) and its yaw, which turns its +z
-/// as an RMB block's yaw does; each fixture where its light burns and its kind. The boxes are the jambs, the pillars,
-/// the props' solids (a hanging has none) and the fixtures' solids, in that order.
+/// as an RMB block's yaw does; each fixture where its light burns and its kind; each landmark its module, its turned
+/// footprint's north-west corner (x, y) and its quarter turns clockwise; each glow x, y, z and its kind. The boxes
+/// are the jambs, the pillars, then the props', the fixtures' and the landmarks' solids (a hanging has none).
 #[must_use]
 pub fn dungeon_json(text: &[u8]) -> String {
     let (Ok(found), Some((seed, style))) = (serde_json::from_slice::<Asked>(text), asked(text)) else {
@@ -65,7 +76,7 @@ pub fn dungeon_json(text: &[u8]) -> String {
                 "depth": room.depth,
                 "height": room.height,
                 "walk": room.walk,
-                "role": room.purpose.role,
+                "role": room.role,
                 "name": room.name,
                 "ceiling": room.ceiling.key(),
                 "look": room.look,
@@ -92,6 +103,12 @@ pub fn dungeon_json(text: &[u8]) -> String {
         .collect();
     let props: Vec<[f64; 5]> =
         laid.props.iter().map(|prop| [f64::from(prop.model), prop.at[0], prop.at[1], prop.at[2], prop.yaw]).collect();
+    let landmarks: Vec<Value> = laid
+        .landmarks
+        .iter()
+        .map(|placed| json!([placed.landmark.module, placed.origin[0], placed.origin[1], placed.turns]))
+        .collect();
+    let glows: Vec<[f64; 4]> = laid.landmarks.iter().flat_map(|placed| placed.glows.iter().copied()).collect();
     let frames: Vec<[f64; 3]> =
         laid.frames.iter().map(|frame| [frame.cell as f64, f64::from(side_number(frame.side)), frame.height]).collect();
     json!({
@@ -126,6 +143,8 @@ pub fn dungeon_json(text: &[u8]) -> String {
         "pillarHalf": dungeon::PILLAR_HALF_M,
         "boxes": laid.boxes(),
         "props": props,
+        "landmarks": landmarks,
+        "glows": glows,
     })
     .to_string()
 }
@@ -200,13 +219,16 @@ mod tests {
     }
 
     /// The asks the browser's agreement test makes too (client/src/rules/dungeonRules.test.ts), and the FNV-1a hash of
-    /// their answers' text, one after another: a dungeon laid anywhere is these bytes.
-    const AGREED_ASKS: [&[u8]; 3] = [
+    /// their answers' text, one after another: a dungeon laid anywhere is these bytes. The fourth lays five blocks, its
+    /// last a style deeper, and the fifth is laid by a seed and a style where no patrol lays it.
+    const AGREED_ASKS: [&[u8]; 5] = [
         br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":0}"#,
         br#"{"patrol":"highwater-glen","name":"The Highwater Glen","number":1}"#,
         br#"{"patrol":"aurora-wastes","name":"The Aurora Wastes","number":2}"#,
+        br#"{"patrol":"gullwing-vale","name":"The Gullwing Vale","number":0}"#,
+        br#"{"seed":4242,"style":"caverns","name":"The Gull Cove"}"#,
     ];
-    const AGREED_HASH: u64 = 0x59a0_33c6_4d95_5038;
+    const AGREED_HASH: u64 = 0x77bb_f751_6bd7_1735;
 
     #[test]
     fn the_agreed_dungeons_read_as_the_bytes_the_browser_checks() {
@@ -224,7 +246,7 @@ mod tests {
 
     #[test]
     fn a_dungeon_answers_every_field_of_the_pages_layout_each_consistent_with_the_rest() {
-        let mut deeper = 0;
+        let (mut deeper, mut placing) = (0, 0);
         for nth in 0..60 {
             for number in 0..dungeon::PER_PATROL {
                 let patrol = format!("patrol-{nth}");
@@ -243,6 +265,8 @@ mod tests {
                     "exitDoor",
                     "fixtures",
                     "frames",
+                    "glows",
+                    "landmarks",
                     "looks",
                     "name",
                     "pictures",
@@ -292,14 +316,41 @@ mod tests {
                 }
                 assert_eq!(laid["boxes"].as_array().unwrap().len(), native.boxes().len());
                 assert_eq!(laid["props"].as_array().unwrap().len(), native.props.len());
+                let landmarks = laid["landmarks"].as_array().unwrap();
+                assert_eq!(landmarks.len(), native.landmarks.len());
+                for (read, placed) in landmarks.iter().zip(&native.landmarks) {
+                    let want =
+                        serde_json::json!([placed.landmark.module, placed.origin[0], placed.origin[1], placed.turns]);
+                    assert_eq!(*read, want, "a landmark is its module, its corner and its turns");
+                    assert_eq!(laid["rooms"][placed.room]["role"], placed.landmark.role, "its room takes its role");
+                }
+                let glows: usize = native.landmarks.iter().map(|placed| placed.glows.len()).sum();
+                assert_eq!(laid["glows"].as_array().unwrap().len(), glows);
+                placing += usize::from(!landmarks.is_empty());
             }
         }
         assert!(deeper > 30 && deeper < 150, "{deeper} of 180 break into the style below");
+        assert!(placing > 170, "{placing} of 180 place a landmark");
     }
 
     #[test]
     fn an_ask_that_does_not_read_or_names_no_dungeon_is_null() {
         assert_eq!(dungeon_json(b"not json"), "null");
         assert_eq!(dungeon_json(br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":3}"#), "null");
+        assert_eq!(dungeon_json(br#"{"name":"The Cove","number":0}"#), "null", "neither a patrol nor a seed");
+        assert_eq!(dungeon_json(br#"{"name":"The Cove","seed":7}"#), "null", "a seed with no style");
+        assert_eq!(dungeon_json(br#"{"name":"The Cove","seed":7,"style":"grotto"}"#), "null", "no such style");
+    }
+
+    #[test]
+    fn a_dungeon_asked_by_its_seed_and_style_is_the_one_a_patrol_lays_by_them() {
+        let (seed, style) = dungeon::of_patrol("saltgrass-downs", 1);
+        let by_patrol = br#"{"patrol":"saltgrass-downs","name":"The Saltgrass Downs","number":1}"#;
+        let by_seed = format!(r#"{{"name":"The Saltgrass Downs","seed":{seed},"style":"{}"}}"#, style.key);
+        assert_eq!(dungeon_json(by_seed.as_bytes()), dungeon_json(by_patrol));
+        let cove = dungeon_json(br#"{"name":"The Gull Cove","seed":4242,"style":"caverns"}"#);
+        let laid: Value = serde_json::from_str(&cove).unwrap();
+        assert_eq!(laid["style"], "caverns");
+        assert!(laid["name"].as_str().unwrap().ends_with(" of the Gull Cove"));
     }
 }

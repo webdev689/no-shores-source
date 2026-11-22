@@ -1,8 +1,8 @@
 // What rises over a dungeon's walls: a room's ceiling flat, a barrel vault across its narrower side, a dome over its
-// middle, or rough rock over a cave; and the rock walls of a cave, bulging in and out. Each cell's ceiling is a height
-// over every point of it, never below the cell's own ceiling, where its walls end; where two cells' ceilings differ
-// along their edge, the higher one's side is closed up to it. Every shape is drawn from where it stands, so every
-// machine draws the same.
+// middle, or rough rock over a cave, whose walls bulge as `dungeonCaveWall.ts` draws them. Each cell's ceiling is a
+// height over every point of it, never below the cell's own ceiling, where its walls end; where two cells' ceilings
+// differ along their edge, the higher one's side is closed up to it. Every shape is drawn from where it stands, so
+// every machine draws the same.
 import type { MeshBuilder } from '../models/model.ts';
 import { CORRIDOR, type DungeonLayout, openAt, SIDE_STEPS } from './dungeonLayout.ts';
 import { TILE_M, uvOf } from './dungeonUv.ts';
@@ -11,7 +11,7 @@ type Point = readonly [number, number, number];
 type Picture = readonly [number, number];
 type Height = (x: number, y: number) => number;
 
-/** How many strips a curved cell's ceiling is cut into each way, and an edge's closing and a cave's wall. */
+/** How many strips a curved cell's ceiling is cut into each way, and an edge's closing. */
 const CUTS = 4;
 /** The highest a vault or a dome rises over its walls, and how much of its half span it rises at most. */
 const RISE_M = { vault: 1.6, dome: 2.2 };
@@ -167,41 +167,6 @@ export function closeEdge(
     ];
     mesh.quad(picture, corners, edge.facing, corners.map(uvOf(edge.facing, edge.top)));
   }
-}
-
-/** A cave cell's rock wall on its side from the floor to its ceiling, facing into the cell, bulging in and out by the
- *  lattice and never at its edges, so it meets the floor, the ceiling and the next wall without a gap. */
-export function caveWall(
-  mesh: MeshBuilder,
-  picture: Picture,
-  where: { readonly column: number; readonly row: number; readonly side: number; readonly cell: number },
-  high: number,
-): void {
-  const [east, south] = SIDE_STEPS[where.side] ?? [0, 0];
-  const half = where.cell / 2;
-  const [edgeX, edgeY] = [
-    (where.column + 0.5) * where.cell + east * half,
-    (where.row + 0.5) * where.cell + south * half,
-  ];
-  const [leftX, leftY] = [edgeX - south * half, edgeY + east * half];
-  const [rightX, rightY] = [edgeX + south * half, edgeY - east * half];
-  const point = (along: number, up: number): Point => {
-    const [x, y] = [leftX + (rightX - leftX) * along, leftY + (rightY - leftY) * along];
-    const bulge =
-      (roughness(x, y + up * 7, 11) * 2 - 1) * CAVE_BULGE_M * Math.sin(Math.PI * along) * Math.sin(Math.PI * up);
-    return [x + east * bulge, y + south * bulge, high * up];
-  };
-  const facing: Point = [-east, -south, 0];
-  for (let row = 0; row < CUTS; row++)
-    for (let column = 0; column < CUTS; column++) {
-      const corners = [
-        point(column / CUTS, row / CUTS),
-        point((column + 1) / CUTS, row / CUTS),
-        point((column + 1) / CUTS, (row + 1) / CUTS),
-        point(column / CUTS, (row + 1) / CUTS),
-      ];
-      mesh.quad(picture, corners, facing, corners.map(uvOf(facing, high)));
-    }
 }
 
 /** Whether a cell's neighbour on `side` is open, and its index. */

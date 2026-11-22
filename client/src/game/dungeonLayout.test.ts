@@ -1,7 +1,20 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { askDungeon, ceilingAt, courseOf, type DungeonLayout, seenBlocks } from './dungeonLayout.ts';
+import { dressingOf } from './dungeonDressing.ts';
+import { placedLandmarks } from './dungeonLandmarks.ts';
+import {
+  askDungeon,
+  askDungeonOf,
+  ceilingAt,
+  courseOf,
+  type DungeonLayout,
+  readDungeon,
+  seenBlocks,
+} from './dungeonLayout.ts';
+import { burningOf } from './dungeonLight.ts';
+import { dungeonMesh } from './dungeonMesh.ts';
+import { FULL_PACKS, propPlansOf } from './dungeonPacks.test.ts';
 
 /** A room's cell and a corridor's in a row of three, rock past them. */
 const small = {
@@ -48,7 +61,60 @@ test("a patrol's dungeon is read from the room module's own rules, the same each
   const furnished = laid.frames.length * 2 + laid.pillars.length;
   assert.ok(laid.boxes.length >= furnished, 'two jambs a frame, then the pillars, then the props’ solids');
   assert.equal(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 0), laid, 'laid once, kept');
+  const again = askDungeon(
+    await WebAssembly.compile(new Uint8Array(bytes)),
+    'saltgrass-downs',
+    'The Saltgrass Downs',
+    0,
+  );
+  assert.ok(again !== laid, 'laid again by another module, whose rules may lay it otherwise');
+  assert.deepEqual(again, laid);
+  assert.ok(laid.landmarks.length > 0, 'a landmark stands in it');
+  for (const [piece, x, y, turns] of laid.landmarks) {
+    assert.match(piece, /^(crypt|halls|cells|sanctum|caverns|mines)\.[a-z-]+$/);
+    assert.ok(x >= 0 && y >= 0 && [0, 1, 2, 3].includes(turns), 'its corner on the grid, a whole quarter turn');
+  }
+  assert.ok(
+    laid.glows.every((glow) => glow.length === 4 && Number.isInteger(glow[3])),
+    'each glow x, y, z, kind',
+  );
   assert.notEqual(askDungeon(module, 'saltgrass-downs', 'The Saltgrass Downs', 1), laid);
+  // A sea island's: laid by a seed and a style where no patrol lays it, the same as a patrol's laid by them.
+  const cove = askDungeonOf(module, 4242, 'caverns', 'The Gull Cove');
+  assert.equal(cove.style, 'caverns');
+  assert.match(cove.name, / of the Gull Cove$/);
+  assert.equal(askDungeonOf(module, 4242, 'caverns', 'The Gull Cove'), cove, 'laid once, kept');
+  assert.throws(() => askDungeonOf(module, 4242, 'grotto' as never, 'The Gull Cove'), /no grotto dungeon/);
+});
+
+test('an older room module that answers no landmarks or glows is read as standing none', async (context) => {
+  let bytes: Buffer;
+  try {
+    bytes = readFileSync('client/public/room.wasm');
+  } catch {
+    context.skip('room.wasm is not built: run `npm run wasm`');
+    return;
+  }
+  const laid = askDungeon(
+    await WebAssembly.compile(new Uint8Array(bytes)),
+    'saltgrass-downs',
+    'The Saltgrass Downs',
+    0,
+  );
+  assert.ok(laid.landmarks.length > 0 && laid.glows.length > 0);
+  const older: Record<string, unknown> = { ...laid };
+  delete older.landmarks;
+  delete older.glows;
+  const read = readDungeon(JSON.stringify(older));
+  assert.ok(read);
+  assert.deepEqual([read.landmarks, read.glows], [[], []]);
+  assert.deepEqual(placedLandmarks(read), []);
+  assert.equal(burningOf(read).length, laid.torches.length + laid.fixtures.length);
+  assert.ok(
+    dungeonMesh(read, [56, 2], dressingOf(read, FULL_PACKS, 'temperate', propPlansOf(read)).lay).indices.length > 0,
+  );
+  assert.deepEqual(readDungeon(JSON.stringify(laid)), laid, 'a newer one is read whole');
+  assert.equal(readDungeon('null'), null);
 });
 
 test("the ceiling over a point is its open cell's, and none over rock or off the grid", () => {

@@ -326,7 +326,10 @@ impl Dungeon {
     /// Reeve's post if he stands in it.
     fn fitting(&self, room: usize, kept: &[usize], post: Option<usize>, steps: &[u32]) -> Fitting {
         let found = &self.rooms[room];
-        let open: Vec<usize> = found.quiet.iter().copied().filter(|cell| !kept.contains(cell)).collect();
+        // A landmark's footprint takes no piece, and walls the walk round it as a solid would.
+        let under: Vec<usize> = found.cells.iter().copied().filter(|&cell| self.under_landmark(cell)).collect();
+        let open: Vec<usize> =
+            found.quiet.iter().copied().filter(|cell| !kept.contains(cell) && !under.contains(cell)).collect();
         let mut walls = vec![(self.way_in.cell, self.way_in.side), (self.portal.cell, self.portal.side)];
         walls.extend(self.torches.iter().map(|torch| (self.cell_at([torch.at[0], torch.at[1]]), torch.wall)));
         let flames = self.torches.iter().map(|torch| [torch.at[0], torch.at[1]]).collect();
@@ -347,7 +350,7 @@ impl Dungeon {
             height: found.height,
             open,
             taken: Vec::new(),
-            solid: Vec::new(),
+            solid: under,
             walls,
             flames,
             post: post.filter(|_| room == self.end).map(|cell| self.centre(cell)),

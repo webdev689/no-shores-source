@@ -9,7 +9,7 @@ use crate::{Input, standing_on};
 use combat::fighter::Action;
 use combat::sight::{apart, off};
 use combat::{FighterId, Intent};
-use dungeon::{DOORWAY_HALF_M, Side};
+use dungeon::{Cell, DOORWAY_HALF_M, SIDES, Side};
 use movement::{Controls, Mode, TUNING};
 
 const PATROLS: [&str; 3] = ["saltgrass-downs", "thunderhoof-grasslands", "whitewind-tundra"];
@@ -48,6 +48,23 @@ fn room_at(dungeon: &Dungeon, at: [f64; 3]) -> Option<usize> {
 }
 
 #[test]
+fn a_dungeon_laid_by_a_seed_and_a_style_stands_as_a_patrols_does() {
+    // A sea island's: no patrol, a seed and a style by its key.
+    for (seed, key) in [(4242, "caverns"), (77, "crypt"), (9001, "mines")] {
+        let style = dungeon::style_of(key).expect("a style");
+        let room = Room::dungeon_of("isle-test--dungeon", seed, style, LEVELS).expect("an island's dungeon");
+        let (arrival, _) = Dungeon::forge(seed, style).arrival();
+        assert_eq!(room.section.as_ref().map(|section| section.spawns.clone()), Some(vec![arrival]));
+        assert!(room.garrison.len() > 1 && room.cache().is_some(), "{key}: its bands and its cache");
+        assert_eq!(room.garrison[0].members[0].1, Miniboss, "{key}: its Reeve");
+    }
+    let (seed, style) = dungeon::of_patrol(PATROLS[0], 0);
+    let by_patrol = Room::dungeon(PATROLS[0], 0, LEVELS).expect("a patrol's dungeon");
+    let by_seed = Room::dungeon_of(&format!("{}--dungeon-0", PATROLS[0]), seed, style, LEVELS).expect("the same");
+    assert_eq!(by_patrol.living_foes(), by_seed.living_foes(), "the same dungeon, the same garrison");
+}
+
+#[test]
 fn a_dungeons_room_stands_its_reeve_alone_in_the_end_room_and_its_bands_past_the_way_in() {
     for patrol in PATROLS {
         for number in 0..dungeon::PER_PATROL {
@@ -83,6 +100,74 @@ fn a_dungeons_room_stands_its_reeve_alone_in_the_end_room_and_its_bands_past_the
         }
     }
     assert!(Room::dungeon(PATROLS[0], dungeon::PER_PATROL, LEVELS).is_none(), "a patrol has three");
+}
+
+#[test]
+fn no_foe_the_cache_or_the_arrival_stands_on_a_landmark() {
+    let mut landmarks = 0;
+    for nth in 0..30 {
+        let patrol = format!("patrol-{nth}");
+        for number in 0..dungeon::PER_PATROL {
+            let room = Room::dungeon(&patrol, number, LEVELS).expect("a patrol's dungeon");
+            let dungeon = forged(&patrol, number);
+            let under = |at: [f64; 2]| {
+                dungeon.under_landmark((at[1] / CELL_M) as usize * dungeon.columns + (at[0] / CELL_M) as usize)
+            };
+            for member in room.garrison.iter().flat_map(|post| post.members.iter()) {
+                assert!(!under([member.2[0], member.2[1]]), "{patrol} {number}: a foe's post on a landmark");
+            }
+            for foe in room.foes.values() {
+                assert!(!under([foe.fighter.body.x, foe.fighter.body.y]), "{patrol} {number}: a foe on a landmark");
+            }
+            let [x, y, ..] = room.cache().expect("its cache");
+            assert!(!under([x, y]) && !under(dungeon.arrival().0), "{patrol} {number}: the cache or the arrival");
+            landmarks += dungeon.landmarks.len();
+        }
+    }
+    assert!(landmarks > 90, "{landmarks} landmarks among 90 dungeons");
+}
+
+#[test]
+fn the_navmesh_leads_round_a_landmark_never_through_its_solids() {
+    let mut routes = 0;
+    for patrol in PATROLS {
+        for number in 0..dungeon::PER_PATROL {
+            let room = Room::dungeon(patrol, number, LEVELS).expect("a patrol's dungeon");
+            let dungeon = &forged(patrol, number);
+            for placed in &dungeon.landmarks {
+                // The free cells of its room beside the footprint: a route from the first to the farthest.
+                let beside: Vec<[f64; 2]> = placed
+                    .cells
+                    .iter()
+                    .flat_map(|&cell| SIDES.into_iter().filter_map(move |side| dungeon.beside(cell, side)))
+                    .filter(|&cell| dungeon.room_at(cell) == Some(placed.room) && !dungeon.holds_solid(cell))
+                    .map(|cell| dungeon.centre(cell))
+                    .collect();
+                let Some(&from) = beside.first() else { continue };
+                let to =
+                    beside.iter().copied().max_by(|first, second| apart(from, *first).total_cmp(&apart(from, *second)));
+                let Some(to) = to else { continue };
+                let route = room.nav.find_path([from[0], from[1], 0.0], [to[0], to[1], 0.0]).expect("a way round");
+                for pair in route.windows(2) {
+                    let looks =
+                        (apart([pair[0][0], pair[0][1]], [pair[1][0], pair[1][1]]) / 0.05).ceil().max(1.0) as u32;
+                    for look in 0..=looks {
+                        let share = f64::from(look) / f64::from(looks);
+                        let (x, y) = (
+                            pair[0][0] + (pair[1][0] - pair[0][0]) * share,
+                            pair[0][1] + (pair[1][1] - pair[0][1]) * share,
+                        );
+                        let inside = placed.solids.iter().any(|&[min_x, min_y, max_x, max_y, _]| {
+                            x > min_x + 1e-6 && x < max_x - 1e-6 && y > min_y + 1e-6 && y < max_y - 1e-6
+                        });
+                        assert!(!inside, "{patrol} {number}: the route through {}", placed.landmark.module);
+                    }
+                }
+                routes += 1;
+            }
+        }
+    }
+    assert!(routes >= 9, "{routes} routes round a landmark");
 }
 
 #[test]
@@ -177,9 +262,6 @@ fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_sh
     assert!((apart([x, y], [post[0], post[1]]) - CACHE_FROM_POST_M).abs() < 1e-9 && open == 0.0, "shut by the Reeve");
     assert!((facing - bearing([x, y], [post[0], post[1]])).abs() < 1e-12, "facing the Reeve's post");
     let Floor::Dungeon(ground) = &room.floor else { panic!("a dungeon's ground") };
-    assert!(ground.solids().iter().all(|&[min_x, min_y, max_x, max_y, _]| {
-        apart([x, y], [x.clamp(min_x, max_x), y.clamp(min_y, max_y)]) >= CACHE_CLEAR_M
-    }));
     assert!(ground.clear_between([post[0], post[1]], [x, y], 0.0), "nothing between the Reeve and the cache");
     let players: Vec<PlayerId> = (0..2).map(|_| room.join().expect("room")).collect();
     run(&mut room, 1);
@@ -209,6 +291,43 @@ fn the_cache_opens_with_a_vestige_for_each_player_in_when_the_reeve_falls_and_sh
     run(&mut room, STAND_AGAIN);
     assert!(room.garrison[0].cleared_at.is_none(), "the Reeve stands again");
     assert_eq!(room.cache().map(|cache| cache[4]), Some(0.0), "shut");
+}
+
+#[test]
+fn every_dungeons_cache_stands_by_its_reeve_its_open_chest_off_rock_every_solid_and_the_portals_arch() {
+    for seed in 0..150 {
+        for style in dungeon::STYLES {
+            let dungeon = Dungeon::forge(seed, style);
+            let floor = Floor::of_dungeon(&dungeon).expect("a dungeon's ground");
+            let [post_x, post_y] = dungeon.centre(dungeon.nearest_middle(dungeon.end(), 1)[0]);
+            let cache = cache_by(&floor, &dungeon, [post_x, post_y, 0.0]).expect("its cache");
+            let [x, y, _] = cache.at;
+            let (key, Floor::Dungeon(ground)) = (style.key, &floor) else { panic!("a dungeon's ground") };
+            assert!((apart([x, y], [post_x, post_y]) - CACHE_FROM_POST_M).abs() < 1e-9, "{seed} {key}: by the Reeve");
+            let [toward_x, toward_y] = dungeon.portal.side.unit();
+            let [portal_x, portal_y] = dungeon.centre(dungeon.portal.cell);
+            // Every 2 cm of the chest, from its lock in front to its open lid behind, across its width.
+            let (back_x, back_y) = (-libm::sin(cache.facing), libm::cos(cache.facing));
+            for step_across in 0..=45 {
+                for step_back in 0..=42 {
+                    let (across, back) = (f64::from(step_across) * 0.02 - 0.45, f64::from(step_back) * 0.02 - 0.03);
+                    let (at_x, at_y) = (x - back_y * across + back_x * back, y + back_x * across + back_y * back);
+                    let (column, row) = ((at_x / CELL_M).floor(), (at_y / CELL_M).floor());
+                    let cell = (column >= 0.0 && row >= 0.0).then(|| row as usize * dungeon.columns + column as usize);
+                    let open = cell.and_then(|cell| dungeon.cells.get(cell)).is_some_and(|&kind| kind != Cell::Rock);
+                    assert!(open, "{seed} {key}: the chest in rock");
+                    let in_solid = ground.solids().iter().any(|&[min_x, min_y, max_x, max_y, _]| {
+                        (min_x..=max_x).contains(&at_x) && (min_y..=max_y).contains(&at_y)
+                    });
+                    assert!(!in_solid, "{seed} {key}: the chest in a solid");
+                    let out = (portal_x - at_x) * toward_x + (portal_y - at_y) * toward_y + CELL_M / 2.0;
+                    let along = (at_x - portal_x) * toward_y - (at_y - portal_y) * toward_x;
+                    let before_arch = (0.0..=CELL_M / 2.0).contains(&out) && along.abs() <= ARCH_HALF_M;
+                    assert!(!before_arch, "{seed} {key}: the chest before the portal's arch");
+                }
+            }
+        }
+    }
 }
 
 #[test]
@@ -292,4 +411,37 @@ fn a_band_foe_never_sees_a_player_beyond_the_rock_but_sees_one_in_its_own_room()
         }
     }
     assert!(cases >= 3, "{cases} dungeons with a band foe that faces the rock");
+}
+
+#[test]
+fn a_cache_on_the_reeves_post_throws_its_vestige_onto_clear_floor() {
+    // Posts where a body stands by rock or a solid and no way round them fits a chest, as a post on odd floor would.
+    let style = dungeon::style_of("halls").expect("a style");
+    let dungeon = Dungeon::forge(1, style);
+    let floor = Floor::of_dungeon(&dungeon).expect("a dungeon's ground");
+    let Floor::Dungeon(ground) = &floor else { panic!("a dungeon's ground") };
+    let mut room = Room::dungeon_of("isle-test--dungeon", 1, style, LEVELS).expect("an island's dungeon");
+    let player = room.join().expect("room");
+    room.garrison[0].cleared_at = Some(0);
+    let mut on_post = 0;
+    for cell in (0..dungeon.cells.len()).filter(|&cell| dungeon.cells[cell] != Cell::Rock) {
+        let [x, y] = dungeon.centre(cell);
+        for step in 0..64 {
+            let post = [x - 1.4 + f64::from(step % 8) * 0.4, y - 1.4 + f64::from(step / 8) * 0.4];
+            if !ground.clear_between(post, post, TUNING.radius) {
+                continue;
+            }
+            let cache = cache_by(&floor, &dungeon, [post[0], post[1], 0.0]).expect("its cache");
+            if apart([cache.at[0], cache.at[1]], post) > 1e-9 {
+                continue;
+            }
+            on_post += 1;
+            room.cache = Some(cache);
+            room.keep_cache();
+            let vestige = room.drops_for(player).last().expect("its Vestige");
+            let lies = [vestige.at[0], vestige.at[1]];
+            assert!(ground.clear_between(post, lies, 0.0), "{post:?}: its Vestige thrown into rock or a solid");
+        }
+    }
+    assert!(on_post > 0, "some post where no way round fits");
 }

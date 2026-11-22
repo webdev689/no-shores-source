@@ -3,6 +3,7 @@ type: system
 status: built
 code:
   - crates/dungeon/src/lib.rs#of_patrol
+  - crates/dungeon/src/lib.rs#style_of
   - crates/dungeon/src/lib.rs#name
   - crates/dungeon/src/styles.rs#STYLES
   - crates/dungeon/src/dungeon.rs#Dungeon
@@ -14,6 +15,9 @@ code:
   - crates/dungeon/src/models.rs#PropModel
   - crates/dungeon/src/furnish.rs#furnish
   - crates/dungeon/src/fixtures.rs#Fixture
+  - crates/dungeon/src/landmarks.rs#place_landmarks
+  - crates/dungeon/src/landmarks.rs#LANDMARKS
+  - crates/dungeon/build.rs
   - crates/dungeon/src/props.rs#nearest_middle
   - crates/dungeon/src/torches.rs#Torch
   - crates/room-wasm/src/dungeon_door.rs#dungeon_json
@@ -21,6 +25,7 @@ code:
   - crates/room-wasm/src/fighter_door.rs#set_dungeon
   - client/src/rules/dungeonRules.test.ts
   - crates/room/src/dungeon_room.rs#dungeon
+  - crates/room/src/dungeon_room.rs#dungeon_of
   - crates/room/src/dungeon_room.rs#band_rooms
   - crates/room/src/dungeon_room.rs#keep_cache
   - crates/room/src/floor.rs#Floor
@@ -33,12 +38,14 @@ code:
   - crates/room-wasm/src/dungeon_door.rs#room_join_at
   - server/roomNames.ts#nodeRoom
   - client/src/game/dungeonLayout.ts#askDungeon
+  - client/src/game/dungeonLayout.ts#askDungeonOf
   - client/src/game/dungeonMesh.ts#dungeonMesh
   - client/src/game/dungeonView.ts#DungeonView
   - client/src/game/dungeonLight.ts#lightAt
   - client/src/game/dungeonLight.ts#LIGHT_KINDS
   - client/src/game/dungeonLight.ts#MOODS
   - client/src/game/dungeonCeilings.ts#ceilingHeights
+  - client/src/game/dungeonCaveWall.ts#caveWall
   - client/src/game/dungeonFixtures.ts#fixtureMesh
   - client/src/game/footTrips.ts#roomNameAt
   - client/src/game/dungeonChest.ts#chestMesh
@@ -61,6 +68,9 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **A patrol's three.** `of_patrol` gives each its seed, from the patrol's id and its number, and its style; the
   three take three different styles of the six, shuffled by the patrol's id. `name` names one for its first style
   and its patrol: The Crypt of the Saltgrass Downs, The Caverns of the Sunken Fen.
+- **Laid where no patrol is.** A place that is no patrol, as a sea island, lays its dungeon by its own seed and a
+  style by its key (`style_of`): `Room::dungeon_of` stands its room, the room module answers its layout to an ask by
+  seed and style, and the page reads it with `askDungeonOf`. A patrol's dungeon is the same laid by `of_patrol`'s.
 - **The styles**, each with its two dungeon picture sets ([[Procedural Textures]]). The first four are the Forge's
   crypt, hall, cells and temple; the Caverns and the Mines are its cave and mine. Each style also names the style
   below it, which its last block may break into, and its entrances, the forged mounds or cave mouths with a door:
@@ -108,18 +118,22 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 - **The way in** is in the first room of the way in's block that has a cell with rock beside it, at the cell nearest
   its middle, its quiet cells first: the exit door stands on that rock (never a stone), 1.4 m wide and 2.4 m high, and
   a body arrives 0.4 m past that cell's middle, about 2 m in from the door, facing into the room.
-- **The return portal** stands on the end room's wall like the exit door, as wide and as high: on the room's cell
-  farthest from the way in by walk that has rock beside it that is no stone, its quiet cells first, never on the exit
-  door's wall. It takes a player back out to the dungeon's entrance once the Reeve has fallen ("In the Game").
+- **The return portal** stands on the end room's wall like the exit door, as wide and as high, on rock that is no
+  stone, never on the exit door's wall. Of the room's cells, its quiet cells first, it takes the one farthest from
+  the way in by walk that has the best wall for its torches: one that runs on past the cell both ways (four portals
+  in five), else one that runs on or ends in the room's corner each way, else any. It takes a player back out to the
+  dungeon's entrance once the Reeve has fallen ("In the Game").
 - **Ceilings** (`ceiling`): a room's form, only a look; it stands at its own height whatever its form. Under an
   arched roof a square room or an octagon takes a dome, and a hall of alcoves or a rectangle whose longer side is at
   least half again its shorter a vault along it; a cave and every cavern takes rough rock; any other room is flat.
-- **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m: on each room's quiet cells on every third
+- **Torches**, 2.1 m up a wall and 0.35 m off it, each lighting 8 m. Two flank the portal first, so the end of the
+  way is lit and marked before it opens: on its wall 1.55 m either side of its middle, past its arch (1.3 m) and a
+  sconce's reach (0.2 m), or, where its cell is the room's corner that way, in the middle of that side wall. Then on each room's quiet cells on every third
   diagonal, one for every sixteen cells of its rectangle, and on any of its cells where none of those has a wall; and
-  on every fourth corridor cell of a block, row by row. None stands over the exit door or the portal, and two stand on
-  the portal's wall, 1.15 m either side of its middle, so the end of the way is lit and marked before it opens.
+  on every fourth corridor cell of a block, row by row. Each of these stands in the middle of its cell's wall, none
+  over the exit door or the portal, and none within 2.4 m of another of its room's, which would read as a pair.
 - **Doorways.** Where a room's cell meets a corridor, two jambs 0.3 m deep stand in the corridor and narrow the edge
-  to 1.8 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
+  to 1.6 m, up to the lower of the two ceilings, under a lintel at 2.8 m. A hewn room (no cave) at least 4 cells each
   way stands a pillar 0.7 m square at every second inner corner whose four cells are its own.
 - **Purposes** (`name_rooms`). Every room has a purpose from its block's style's bank
   ([[The Dungeons Are Perfect and Insanely Varied]]; [[Dungeons as Claude Builds Them]], "The varied dungeons"): the
@@ -149,21 +163,37 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   tops; crystals against the caverns' walls (a solid 0.6 m by 0.4 m, 0.9 m high), and glowing fungus in a Fungus
   Grove or a Dripping Gallery (the same, 0.5 m high); lanterns 2 m up on the mines' walls and posts; and a fire in
   each hearth. A fixture with a solid stands as a piece does. Every room has a light.
+- **Landmarks** (`place_landmarks`): set pieces a dungeon is remembered by, three a style, each with its solids and
+  glows (`content/dungeon/landmarks.json`, which the crate's `build.rs` reads as it builds). A dungeon of
+  two or three blocks stands one, of four or five two, none twice, each in a room of its look's style but never the
+  way in's or the end. Rooms are tried from the middle of the walk outward, each style's landmarks in an order drawn
+  on the lane `landmark:<seed>`.
+- **A landmark's place.** It covers whole cells of its room. A free one stands nearest the room's middle at a drawn
+  quarter turn, clear of the room's rim where any spot is, else with its edges on the rock. A wall one stands its
+  back row on rock along its whole width, faces away from it with its other sides in the room, nearest that wall's
+  middle. None covers a torch's cell, or covers or touches a doorway, the way in or the portal; the room's other
+  cells stay one walk and as many as its band.
+- **A landmark's room** takes its role and name, a name taken again taking a word before it. Its purpose furnishes it
+  round the piece: no prop, fixture or foe stands on its cells, which wall the walk as a solid does, and no pillar
+  whose box would meet it is stood.
 - **Where foes stand** (`nearest_middle`): a room's free cells nearest its middle, its quiet cells first and then the
   rest, so a smaller band's cells are always the first of a larger's.
 - **The walk.** Each room's walk is the fewest cells crossed from the way in's cell; every room of the way in's block
   lies nearer than the end.
 - **What a body stands on** (`heights`, `boxes`): one floor at 0 m, each open cell's height and none for rock, in
   cells of 3.2 m, and as boxes (min x, min y, max x, max y, top) the jambs, then the pillars, then the props' solids,
-  then the fixtures'.
+  then the fixtures', then the landmarks'.
 - **For a browser,** the `room-wasm` door's `room_dungeon` answers a patrol's dungeon as JSON, from its patrol's id and
   name and its number, as the page's `DungeonLayout` reads it: its name, first style and pictures; its looks (each a
   style and its pictures) and each cell's look (-1 for rock); its cells (-2 rock, -1 corridor, or a room's number),
   ceilings, rooms (each its rectangle, height, walk, role, name, ceiling form and look), end, way in, arrival, exit
   door, portal, torches, fixtures (each where its light burns and its kind: 0 brazier, 1 candles, 2 crystals, 3
-  lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw) and boxes; null for a number
-  past the patrol's three. The room door's `dungeon` asks it. Three dungeons' answers are pinned by their hash,
-  natively and through WebAssembly, so a dungeon is the same bytes on every machine.
+  lantern, 4 hearth), frames, pillars, props (each its model, its origin and its yaw), boxes, landmarks (each its
+  module, its turned footprint's north-west corner and its quarter turns clockwise) and glows (each x, y, z and its
+  kind: the fixtures' kinds, then 6 spirit, 7 daylight, 8 water, 9 rune); null for a number
+  past the patrol's three. The room door's `dungeon` asks it. Five dungeons' answers are pinned by their hash,
+  natively and through WebAssembly, so a dungeon is the same bytes on every machine: four patrols', one of five
+  blocks whose last is a style deeper, and one laid by a seed and a style.
 
 ## In the rooms
 
@@ -186,20 +216,25 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
   below its top, as a block meets a line; a line looks only at the solids by the cells it crosses. A foe's eyes, a
   soft lock, a blow, a telegraphed shape, a charge's lane and a shooter's cover are stopped by them and see over a
   low coffin or table. A noise through them carries half as loud and half as far. A kill's drop thrown across a wall
-  or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top. A shot stops where it first
+  or a tall solid rests where its foe fell; one thrown onto a low solid rests on its top, unless it would lie so deep
+  in it (a lake, a dais, a pool) that no body standing off it reaches it, when it too rests where its foe fell. A
+  shot stops where it first
   enters rock, the grid's edge or a solid below its top (`wall_entry`), however far it flies in a tick, passes over a
   solid lower than itself, and falls onto the floor alone (`floor_at`).
 - **Its navmesh** is baked over the whole dungeon in cells of 0.4 m, on the cells' heights alone with every solid as
-  its colliders, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It
+  its colliders, each a body's height at least, since the ground walls a solid however low, and kept to the floor joined to the arrival ([[Navmesh]]), so the rock's flat tops are left out. It
   lays no links: a body climbs nothing in a dungeon, so no foe paths up a solid's side or off its top.
 - **Its garrison** ([[Enemies]]): the Reeve, a Miniboss, alone on the end room's cell nearest its middle; a band of
   two to four in each other room past the way in's, one foe for each ten of its cells (`posts_for`), on its free cells
   nearest its middle, its quiet cells first, round its props. When the bands and the Reeve would pass the room's 24 foes, the most rooms that
   fit stand one, spread evenly along the walk from the way in to the end.
-- **The cache** stands 1.6 m from the Reeve's post, the first of the eight ways round it, north first, that is open
-  floor clear of every jamb, pillar, prop and fixture, facing the post. Shut while the Reeve stands; when he falls it opens and every
-  player then in the room finds a Vestige 0.8 m before it ([[Gear]]); it shuts when he stands again. Each snapshot
-  carries it.
+- **The cache** stands 1.6 m from the Reeve's post, facing it, the first of the eight ways round it, north first,
+  that is open floor with nothing between where the whole chest the page draws keeps clear: 0.9 m wide and reaching
+  0.82 m behind its front with its lid thrown open, it keeps off rock and every solid, and out of the portal's cell
+  from its wall to its middle within 1.3 m of the arch's middle. Where no way fits, it stands at the post itself, so
+  every dungeon has its cache, facing the first way with open floor 0.8 m off and nothing between. Shut while the
+  Reeve stands; when he falls it opens and every player then in the room finds a Vestige 0.8 m before it ([[Gear]]),
+  or on the post where no way has such floor; it shuts when he stands again. Each snapshot carries it.
 - **The entrances**: a patrol's room lays its three dungeons' entrances as it starts ([[Server]], "A patrol"), from
   the node's id, drawn apart from its resource spots. Each is one of its style's entrances that its dungeon's seed
   draws (`model_of`): a mound with a door, 43601 or 43602, for a built dungeon, and a cave mouth, 43603 or 43604, for
@@ -223,24 +258,74 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 ## In the Game
 
 The page reads a dungeon from the room module's own `room_dungeon` (`askDungeon`) and plays it as [[Game]] says ("A
-dungeon").
+dungeon"). A module older than the landmarks answers no landmarks or glows, and is read as standing none
+(`readDungeon`).
 
 - **Its look** (`dungeonMesh`) is a port of DFO's Forge mesh for one floor, in the dungeon's own frame: floors,
   ceilings, walls with trim at foot and head, walls up from a lower ceiling, doorways' frames whose jambs are the
   layout's `boxes`, trimmed pillars, torches' brackets and flames, the exit door and the return portal. Each cell
   wears its look (`cellLooks`): the style of its floor of the dungeon, with that style's two sets of pictures by role.
+  Where a pillar's, a torch's or the portal's kit pieces are laid (`kitsOf`), the mesh leaves out its own pillar,
+  bracket or arch, and draws its own wherever they are not; the jambs, the flames, the portal's face and the exit
+  door stay the mesh's.
+- **Its packs** (`dungeonModules.ts`, [[Dungeon Modules]]): the packs of every style its looks wear are fetched behind the veil before it
+  is first drawn (`stylePacks`). A style whose pack is not published, or fails to come within 15 s, is drawn as
+  above, with one warning; a pack that failed is asked for again when the next dungeon is entered.
+- **Its kits** (`dungeonKits.ts`) are placed from the layout alone, as `content/dungeon/kits.json` says: a door in
+  every doorway, one taller than its frame (the lower of its two ceilings) squeezed above 2.4 m so its top meets the
+  frame, what stands under 2.4 m as built and none stretched up; a pillar's base, its shaft stretched to its capital,
+  whose top is where the ceiling of the cells round the pillar's corner comes lowest over it, so under a dome or a
+  vault it holds the curve up; wall sets every `wallEvery` cells along a straight wall where `wallIn` says, the cap's
+  top where the ceiling comes lowest over it, and in the mines a timber set on both walls of a way with a beam
+  across; up to `features` a room on its quiet cells' walls; and a sconce at every torch, round the code-built flame,
+  and arches round the portal and the exit door. Only the caverns stand sets on a cave's rock (`cave rooms`). A set
+  or a feature on a cave's rock stands with its back on the wall's line, and the kits pass each piece's span along
+  the wall and its top to the mesh (`flats`), which draws the rock flat behind it (`caveWall`). A set's cap rises to
+  where the rock comes highest over it, so it meets the rock all over.
+- **Overhead and underfoot**, by the style's `ceiling` and `floor`: a boss at a dome's top and every second cell of a
+  vault's ridge; a beam across the way on every flat cell; stalactites from one cave cell in six, where its rock comes
+  lowest, their roots in the rock; slabs on one quiet cell in four, a runner (`floor.a`, unbroken) or rails along the
+  straight corridors, the runner's medallion (`floor.b`) a room, a drain a room or a circle in a room of 3 × 3 cells
+  or more, each on the clear cell nearest the room's middle (which mostly holds a prop or a pillar), or scree on one
+  cell in five. No ceiling piece hangs below 2.4 m.
+- **Where kits never go.** A cell with a doorway, a torch, the exit or the portal holds only their own pieces, its
+  floor's and a boss. No wall piece stands within 0.05 m of a prop as its forged model is drawn (`propPlans`), a
+  picture hung on the wall among them. No floor piece lies under a solid,
+  on the arrival's cell, in the end room, where the cache stands, or in an alcove. Nothing stands on a landmark.
+  Variants are drawn by `kitHash`: FNV-1a over the dungeon's name, the cell and a salt, then murmur3's fmix32, so
+  a cell's variant, turn and draw are each its own.
+- **Its landmarks** (`dungeonDressing.ts`): each is laid from its style's pack, turned within its footprint, and lays
+  its own floor, so the mesh lays none on its cells. Without a pack its floor stays and its solids stand as plain stone
+  boxes. Its glows burn as lights beside the torches and the fixtures (`burningOf`).
 - **Its ceilings** (`dungeonCeilings.ts`): a room's ceiling is flat, a barrel vault across its narrower side, a dome
   over its middle, or rough rock over a cave. A vault rises up to 1.6 m and a dome up to 2.2 m, each at most 0.6 of
-  its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m.
+  its half span. A cave's ceiling stands 0.25 m to 1.1 m over its walls, and its rock walls bulge up to 0.22 m
+  (`dungeonCaveWall.ts`). Behind what stands against a rock wall the rock is drawn flat, from the floor up to its
+  top and along its span and 0.15 m past either end, easing back to its bulge over a further 0.3 m: each kit piece,
+  and the portal's and the exit door's arches (±1.3 m of the wall's middle, 3.1 m high, the most an arch spans and
+  rises). The wall is cut at those edges, each piece within one of its lattice's triangles, so everywhere else the
+  rock bulges exactly as its lattice lays it.
   Where two cells' ceilings differ along an edge, the higher one's side is closed up to it.
-- **Its light** (`dungeonLight.ts`): each torch and fixture burns in its own colour, reach and flicker (`LIGHT_KINDS`):
-  a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus. Each look has its own faint light,
+- **Its light** (`dungeonLight.ts`): each torch, fixture and landmark's glow burns in its own colour, reach and
+  flicker (`LIGHT_KINDS`): a torch to `torchReach`, a brazier, candles, crystals, a lantern, a hearth and fungus, and a
+  glow's spirit, daylight, water and rune. Each look has its own faint light,
   its mood (`MOODS`), enough that a room past every light's reach still shows its walls. The shader takes the 32
-  lights nearest the eye, and the shader and the figures sum the same light (`lightAt`).
+  lights nearest the eye, and the figures are lit by the same 32, so the walls and the figures sum the same light
+  (`lightAt`). Each channel of the sum
+  stays as it is up to 0.8 and past that eases toward 1.4 (`shoulder`), so a room lit by many lights at once keeps
+  its walls' colour and pictures rather than clipping to flat.
 - **Its fixtures** (`dungeonFixtures.ts`): a brazier on three legs with embers and flames, a cluster of three to five
   candles, five to eight glowing crystals, a lantern on its chain, a hearth's fire, and six to ten fungi, each a pale
   stalk under a glowing cap. Each is shaped by where it
   stands, so no two are alike.
+- **Glows and water** (`dungeonShaders.ts`): a crystal's and a lantern's glass glow by each triangle's own facing,
+  from 0.55 of their glow edge on to all of it square to the eye, lifted a little toward it by the lights round them,
+  so a crystal's faces differ. Their glows peak at 1, so no facet clips. Still water lies over its bed, its cell's
+  floor picture (`WATER_FLAG`): through it the bed, darker and bluer, lit as a floor is; in it the room, brighter
+  toward its lights, and each light's flame but the water's own glow, which lies on it, all by Fresnel (2% square
+  on, all of it edge on). A flame mirrored is as bright however far it burns and as small as it looks from there
+  (`flame_image`), so a dark lake still shows the far torches, unless rock stands between: the line to each is
+  walked cell by cell (`rock_between`). A slow ripple moves it all.
 - **Its rooms' names**: the room the player stands in names the place on the screen, before the patrol's own
   (`roomNameAt`, `placeWords`).
 - **The cache** (`chestMesh`): a chest of wood and iron at the room's `Snapshot.cache`, its lid shut or thrown back.
@@ -248,7 +333,8 @@ dungeon").
   `boxes` past the jambs and pillars are their solids, which the camera keeps short of and nothing draws.
 - **Its pictures**, every one painted by the procedural textures: each look's sets (records 0 to 4, each turned by
   the island's climate), the textures' ironwork (93, record 0), the
-  entrance's door picture (56 or 331, record 2), the climate's timber and the props' own.
+  entrance's door picture (56 or 331, record 2), the climate's timber, the dressing set the pieces wear (1021, turned
+  by the climate) and the props' own.
 - **The entrances** (`entrances.ts`, `EntranceView`): the model each entrance names of the six above, lifted as the
   table says, turned by the room's yaw; E reaches a door within 2.5 m of its quad's middle.
 - **The ground inside**: the fight's door predicts on the dungeon's own ground (`fighter_dungeon`), as the room
@@ -264,6 +350,8 @@ dungeon").
 - A room can lay no props where nothing of its purpose fits: over 2,000 dungeons, 31 end rooms and 28 of 20,037 other
   rooms lay none; over the 27 patrols' 81 dungeons, 1 end room and 1 other room.
 - No fountain or cart is laid: each is wider than a cell.
+- A caverns wall set spans most of its wall and its whole height, so wherever one stands, at most every third cell
+  along a cave room's straight walls, that wall is drawn as flat rock.
 - Movement has no ceilings: a dungeon's are never reached because nothing in it can be climbed, and a jump rises
   about half a metre.
 - A body stops short of a wall by up to one tick's run (13 cm) past its half-width, since a move that would end

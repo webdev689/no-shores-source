@@ -60,6 +60,31 @@ test('a trip into a dungeon and out again keeps the seas of the room the player 
   );
 });
 
+test('the veil stays until the dungeon is shown, its styles’ pieces come', async () => {
+  const onPatrol = { node: patrol, text: '', dungeon: null, seas: 'calm' as Difficulty };
+  const here = { foot: { ...onPatrol, held: { entrances: { entrances: [] } } } as object | null };
+  let shown = () => undefined as void;
+  const showing = new Promise<void>((done) => (shown = done));
+  const travels: Promise<void>[] = [];
+  const game: TripGame = {
+    foot: () => here.foot as TripFoot | null,
+    travel: (_happening, work) => travels.push(work()),
+    module,
+    intoDungeon: async () => undefined,
+    ontoPatrol: async () => undefined,
+    drawers: { props: null, show: () => showing },
+  };
+  dungeonTrips(game).enter(0, 'The Crypt');
+  await module;
+  let finished = false;
+  const travelled = Promise.all(travels).then(() => (finished = true));
+  await new Promise((done) => setImmediate(done));
+  assert.equal(finished, false, 'still behind the veil');
+  shown();
+  await travelled;
+  assert.equal(finished, true);
+});
+
 test("a company member in a patrol's dungeon is joined in that dungeon, at their seas, named on the veil", async () => {
   const { trips, happenings, ways, settled } = recorded({ foot: null });
   trips.join(patrol, 2, 'elite');

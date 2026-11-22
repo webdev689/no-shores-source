@@ -107,15 +107,14 @@ impl Purpose {
 }
 
 impl Dungeon {
-    /// Gives each room its purpose and its name, room after room along the walk from the way in, each look's draws on
-    /// a lane of its own: the purposes its shape suits that its look's other rooms have taken least, one drawn.
+    /// Gives each room its purpose, room after room along the walk from the way in, each look's draws on a lane of its
+    /// own: the purposes its shape suits that its look's other rooms have taken least, one drawn.
     pub(crate) fn name_rooms(&mut self, seed: u32) {
         let mut order: Vec<usize> = (0..self.rooms.len()).collect();
         order.sort_by_key(|&room| (self.rooms[room].walk, room));
         let mut lanes: Vec<Lane> =
             (0..self.looks.len()).map(|look| Lane::named(&format!("purposes:{seed}:{look}"))).collect();
         let mut uses: Vec<Vec<usize>> = self.looks.iter().map(|look| vec![0; look.purposes.rooms.len()]).collect();
-        let mut names: Vec<&'static str> = Vec::new();
         for room in order {
             let (look, shape) = (self.rooms[room].look, self.rooms[room].shape);
             let bank = self.looks[look].purposes;
@@ -131,10 +130,29 @@ impl Dungeon {
                 uses[look][nth] += 1;
                 &bank.rooms[nth]
             };
-            let times = names.iter().filter(|&&name| name == purpose.name).count();
-            names.push(purpose.name);
             self.rooms[room].purpose = purpose;
-            self.rooms[room].name = named(purpose.name, times);
+        }
+    }
+
+    /// Gives each room its role and name, along the walk from the way in: its landmark's where one stands in it, else
+    /// its purpose's; a name taken again takes a word before it.
+    pub(crate) fn give_names(&mut self) {
+        let mut order: Vec<usize> = (0..self.rooms.len()).collect();
+        order.sort_by_key(|&room| (self.rooms[room].walk, room));
+        let mut names: Vec<&'static str> = Vec::new();
+        for room in order {
+            let purpose = self.rooms[room].purpose;
+            let (role, name) = match self.landmarks.iter().find(|placed| placed.room == room) {
+                Some(placed) => {
+                    let landmark = placed.landmark;
+                    (landmark.role, landmark.name.strip_prefix("the ").unwrap_or(landmark.name))
+                }
+                None => (purpose.role, purpose.name),
+            };
+            let times = names.iter().filter(|&&taken| taken == name).count();
+            names.push(name);
+            self.rooms[room].role = role;
+            self.rooms[room].name = named(name, times);
         }
     }
 }

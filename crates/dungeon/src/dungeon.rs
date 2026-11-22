@@ -1,11 +1,13 @@
 //! A whole dungeon: two to five blocks in a chain from the way in's, each next one beside the one before and sharing
 //! one doorway with it, so the way runs from a beginning through a middle to an end; in about half of them the last
 //! block is laid in the style below the first. With it, what the rooms and the Game read: the way in's exit door, the
-//! return portal in the end room, each room's walk from the way in, purpose, name and ceiling, and what a body runs
-//! into beside the rock, the doorways' jambs, the great rooms' pillars, the props and the fixtures.
+//! return portal in the end room, each room's walk from the way in, purpose, name and ceiling, its landmarks, and what
+//! a body runs into beside the rock, the doorways' jambs, the great rooms' pillars, the props, the fixtures and the
+//! landmarks.
 
 use crate::block::{BLOCK_CELLS, BlockLayout, Ends, OPENING_FIRST, OPENING_LAST, Opening};
 use crate::fixtures::Fixture;
+use crate::landmarks::Placed;
 use crate::lane::Lane;
 use crate::purposes::Purpose;
 use crate::shapes::{Ceiling, Shape, ceiling};
@@ -18,7 +20,7 @@ use crate::{CELL_M, Cell, SIDES, Side};
 pub const BLOCKS: (usize, usize) = (2, 5);
 const DEEPER_SHARE: f64 = 0.5;
 /// A doorway's frame: the opening's half width, the jambs' depth into the corridor, and the lintel's underside (m).
-pub const DOORWAY_HALF_M: f64 = 0.9;
+pub const DOORWAY_HALF_M: f64 = 0.8;
 pub const JAMB_DEPTH_M: f64 = 0.3;
 pub const LINTEL_M: f64 = 2.8;
 /// A pillar's half width, and the room that stands them: at least this many cells each way.
@@ -35,7 +37,8 @@ const ARRIVE_PAST_MIDDLE_M: f64 = 0.4;
 
 /// A room: its rectangle in the dungeon's cells, its cells and those of them no side of which meets a corridor (row
 /// by row), the rock standing inside it, its ceiling's height and form, its shape, how many cells' walk it lies from
-/// the way in, its look (by its number among the dungeon's), and its purpose and name.
+/// the way in, its look (by its number among the dungeon's), its purpose, and its role and name: its purpose's, or
+/// its landmark's where one stands in it.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Room {
     pub x: usize,
@@ -51,6 +54,7 @@ pub struct Room {
     pub walk: u32,
     pub look: usize,
     pub purpose: &'static Purpose,
+    pub role: &'static str,
     pub name: String,
 }
 
@@ -99,6 +103,8 @@ pub struct Dungeon {
     /// The props its rooms are furnished with, and the lights that are not torches (`furnish`, `fixtures`).
     pub props: Vec<crate::Prop>,
     pub fixtures: Vec<Fixture>,
+    /// The set pieces its rooms are remembered by (`landmarks`).
+    pub landmarks: Vec<Placed>,
 }
 
 /// The squares of the blocks, in a chain: the first at the start, each next one beside the one before, drawn from
@@ -172,6 +178,7 @@ impl Dungeon {
             pillars: Vec::new(),
             props: Vec::new(),
             fixtures: Vec::new(),
+            landmarks: Vec::new(),
         };
         let blocks: Vec<BlockLayout> = openings
             .iter()
@@ -198,11 +205,14 @@ impl Dungeon {
         dungeon.end = first_of_last + blocks[last].order.last().copied().unwrap_or(0);
         let steps = dungeon.walk();
         dungeon.portal = dungeon.portal_spot(&steps);
+        // The portal's torches first: the rooms' keep clear of them.
+        dungeon.flank_portal();
         for (number, block) in blocks.iter().enumerate() {
             dungeon.light(squares[number], block);
         }
-        dungeon.flank_portal();
         dungeon.name_rooms(seed);
+        dungeon.place_landmarks(seed);
+        dungeon.give_names();
         dungeon.furnish(seed, &steps);
         dungeon.frame();
         dungeon
@@ -290,6 +300,7 @@ impl Dungeon {
                 look,
                 // Each room's own purpose and name are given once the walk is known (`name_rooms`).
                 purpose: &style.purposes.way_in,
+                role: style.purposes.way_in.role,
                 name: String::new(),
             };
             self.pillars.extend(self.pillars_of(&placed, first + number));
@@ -356,23 +367,42 @@ impl Dungeon {
         steps
     }
 
-    /// Where the return portal stands: on a wall of the end room that is no stone, at its cell farthest from the way
-    /// in by walk (its quiet cells first), the first such wall; on the way in's own wall only where the end room has
-    /// no other.
+    /// Where the return portal stands: on a wall of the end room that is no stone, at the cell farthest from the way
+    /// in by walk (its quiet cells first) that has the best such wall, the first of them. Best is a wall that runs on
+    /// past its cell both ways, so its torches stand on it; then one whose every end is that or the room's corner,
+    /// where a torch stands on the side wall; then any. On the way in's own wall only where the end room has no other.
     fn portal_spot(&self, steps: &[u32]) -> WallDoor {
         let room = self.end();
         let found = &self.rooms[room];
-        for cells in [&found.quiet, &found.cells] {
-            let mut deepest = cells.clone();
-            deepest.sort_by_key(|&cell| (core::cmp::Reverse(steps[cell]), cell));
-            for cell in deepest {
-                let door = (self.way_in.cell, self.way_in.side);
-                let wall = |side: Side| {
-                    let stone = self.beside(cell, side).is_some_and(|next| found.stones.contains(&next));
-                    self.rock_beside(cell, side) && !stone && (cell, side) != door
-                };
-                if let Some(side) = SIDES.into_iter().find(|&side| wall(side)) {
-                    return WallDoor { cell, side, room };
+        let door = (self.way_in.cell, self.way_in.side);
+        let wall = |cell: usize, side: Side| {
+            let stone = self.beside(cell, side).is_some_and(|next| found.stones.contains(&next));
+            self.rock_beside(cell, side) && !stone && (cell, side) != door
+        };
+        let runs_on = |cell: usize, side: Side, along: Side| {
+            self.beside(cell, along).is_some_and(|next| self.room_at(next) == Some(room) && wall(next, side))
+        };
+        let cornered = |cell: usize, along: Side| self.rock_beside(cell, along) && (cell, along) != door;
+        // How well a wall holds the portal's torches: 2 on it both ways, 1 on it or a corner's side wall, 0 neither.
+        let holds = |cell: usize, side: Side| {
+            let ends = [side.clockwise(), side.clockwise().opposite()];
+            if ends.into_iter().all(|along| runs_on(cell, side, along)) {
+                2
+            } else if ends.into_iter().all(|along| runs_on(cell, side, along) || cornered(cell, along)) {
+                1
+            } else {
+                0
+            }
+        };
+        for least in [2, 1, 0] {
+            for cells in [&found.quiet, &found.cells] {
+                let mut deepest = cells.clone();
+                deepest.sort_by_key(|&cell| (core::cmp::Reverse(steps[cell]), cell));
+                for cell in deepest {
+                    let fits = |&side: &Side| wall(cell, side) && holds(cell, side) >= least;
+                    if let Some(side) = SIDES.into_iter().find(fits) {
+                        return WallDoor { cell, side, room };
+                    }
                 }
             }
         }
@@ -422,7 +452,8 @@ impl Dungeon {
     }
 
     /// What a body runs into beside the rock, each (min x, min y, max x, max y, top): every doorway's two jambs, up
-    /// to its ceiling, then every pillar, then every prop's solid (a hanging has none), then every fixture's.
+    /// to its ceiling, then every pillar, then every prop's solid (a hanging has none), then every fixture's, then
+    /// every landmark's.
     #[must_use]
     pub fn boxes(&self) -> Vec<[f64; 5]> {
         let half = CELL_M / 2.0;
@@ -451,6 +482,7 @@ impl Dungeon {
         }
         boxes.extend(self.props.iter().filter_map(|prop| prop.solid));
         boxes.extend(self.fixtures.iter().filter_map(|fixture| fixture.solid));
+        boxes.extend(self.landmarks.iter().flat_map(|placed| placed.solids.iter().copied()));
         boxes
     }
 }

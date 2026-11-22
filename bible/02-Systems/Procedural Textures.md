@@ -15,6 +15,7 @@ code:
   - client/src/textures/recipes/things.ts#paintThing
   - client/src/textures/recipes/dungeons.ts#paintDungeon
   - client/src/textures/recipes/dungeonRock.ts#paintDungeonRock
+  - client/src/textures/recipes/dressing.ts#paintDressing
   - client/src/textures/rock.ts#hewn
   - client/src/textures/recipes/ground.ts#paintTerrain
   - client/src/textures/shipPictures.ts#shipPictures
@@ -44,7 +45,7 @@ and record, at Daggerfall's sizes and in its palette, so every model's mapping h
   on a flag half again as long as it is deep.
 - `pictureSize(archive, record)` gives a record's size and frames from the catalog; `climateArchive` moves an
   archive to a climate (desert, mountain, temperate, swamp) and season (summer, winter, rain); `PALETTE_RGB` holds
-  the 256 colours.
+  the 256 colours; `DRESSING_ARCHIVE` names the dressing in the desert's numbering.
 
 ## How a picture is painted
 
@@ -76,12 +77,24 @@ timber in the mountains, warm rubble and brown timber in temperate lands, green 
 caverns' veins are red in the desert, white in the mountains, rust in temperate lands and teal in the swamp, and
 only the swamp's streaks run with slime.
 
+Set 21, the dressing, is what the dungeons' built pieces wear: six pictures 64 by 64, as dense as a dungeon floor.
+Record 0 is bones and skulls heaped over dark gaps, ivory to yellowed. Record 1 is carved stone: a band of runes between
+two fillets over a panel of knotwork. Record 2 is a plain weave with an undyed border stripe, faded in patches and
+frayed. Record 3 is rope, its strands laid on the diagonal. Record 4 is dark hewn rock with black coal seams and glints
+of ore. Record 5 is hammered gilt brass, tarnished in the hollows. Each climate carves its own stone and holds the
+caverns' vein as its ore. The cloth takes a dye of its land that stands off its stone: indigo in the desert, madder red
+in the mountains, weld green in temperate lands, lichen purple in the swamp.
+
+Daggerfall's archives 121 and 321 are arches, so Overlook files its own sets 1000 further on. The dressing is 1021 in
+the desert, 1121 in the mountains, 1321 in temperate lands and 1421 in the swamp, and `climateArchive` turns it as it
+turns a dungeon set.
+
 ## Same bytes everywhere
 
 The maths is IEEE arithmetic only. Sine, cosine, exp, log, atan2, pow and hypot are written out (`portableMath.ts`)
 as V8 computes them, since ECMAScript lets each engine round its own. The pictures DFO Online also paints are the
-bytes its own painter gives: the tests pin 78 of them. The mines and the caverns are Overlook's own: the tests pin
-all 40 of their pictures.
+bytes its own painter gives: the tests pin 78 of them. The mines, the caverns and the dressing are Overlook's own: the
+tests pin all 64 of their pictures.
 
 ## Limits
 

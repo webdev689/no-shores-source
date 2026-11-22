@@ -1,9 +1,18 @@
-use crate::dungeon::{DOORWAY_HALF_M, EXIT_WIDTH_M, JAMB_DEPTH_M};
+use crate::dungeon::{DOORWAY_HALF_M, JAMB_DEPTH_M};
 use crate::shapes::Ceiling;
 use crate::torches::TORCH_M;
 use crate::{
     BLOCK_CELLS, BLOCKS, CELL_M, Cell, Dungeon, PER_PATROL, Room, SIDES, STYLES, Shape, Side, WallDoor, name, of_patrol,
 };
+
+#[test]
+fn every_style_is_found_by_its_key_and_no_other_key_names_one() {
+    for style in STYLES {
+        assert_eq!(crate::style_of(style.key).map(|found| found.key), Some(style.key));
+    }
+    assert!(crate::style_of("grotto").is_none());
+    assert!(crate::style_of("").is_none());
+}
 
 fn every_dungeon(count: u32) -> impl Iterator<Item = Dungeon> {
     (0..count).map(|seed| Dungeon::forge(seed.wrapping_mul(2_654_435_761), STYLES[seed as usize % STYLES.len()]))
@@ -115,7 +124,8 @@ fn a_doorway_narrows_to_its_frame_and_its_jambs_stand_in_the_corridor() {
         let boxes = dungeon.boxes();
         let props = dungeon.props.iter().filter(|prop| prop.solid.is_some()).count();
         let fixtures = dungeon.fixtures.iter().filter(|fixture| fixture.solid.is_some()).count();
-        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len() + props + fixtures);
+        let landmarks: usize = dungeon.landmarks.iter().map(|placed| placed.solids.len()).sum();
+        assert_eq!(boxes.len(), dungeon.frames.len() * 2 + dungeon.pillars.len() + props + fixtures + landmarks);
         for (frame, pair) in dungeon.frames.iter().zip(boxes.chunks(2)) {
             assert!(dungeon.room_at(frame.cell).is_some());
             assert_eq!(dungeon.cells[dungeon.beside(frame.cell, frame.side).unwrap()], Cell::Corridor);
@@ -188,6 +198,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         walk: 0,
         look: 0,
         purpose: &STYLES[0].purposes.way_in,
+        role: STYLES[0].purposes.way_in.role,
         name: String::new(),
     };
     let (rock, corridor) = (Cell::Rock, Cell::Corridor);
@@ -222,6 +233,7 @@ fn a_rooms_walk_is_the_fewest_cells_crossed_from_the_way_in() {
         pillars: Vec::new(),
         props: Vec::new(),
         fixtures: Vec::new(),
+        landmarks: Vec::new(),
     };
     let _ = laid.walk();
     assert_eq!(laid.rooms.iter().map(|room| room.walk).collect::<Vec<_>>(), [0, 3, u32::MAX]);
@@ -251,6 +263,12 @@ fn pillars_stand_on_every_second_inner_corner_of_a_great_hewn_room_four_of_its_o
     let mut stood = 0;
     for dungeon in every_dungeon(300) {
         let own = |x: usize, y: usize| dungeon.room_at(y * dungeon.columns + x);
+        // A landmark stands in place of the pillars whose boxes would meet it: those at its footprint's corners.
+        let under = |x: usize, y: usize| {
+            [(x, y), (x - 1, y), (x, y - 1), (x - 1, y - 1)]
+                .iter()
+                .any(|&(column, row)| dungeon.under_landmark(row * dungeon.columns + column))
+        };
         for (number, room) in dungeon.rooms.iter().enumerate() {
             let mut want = Vec::new();
             if room.width >= 4 && room.depth >= 4 && room.shape != Shape::Cave {
@@ -259,6 +277,7 @@ fn pillars_stand_on_every_second_inner_corner_of_a_great_hewn_room_four_of_its_o
                         if [own(x, y), own(x - 1, y), own(x, y - 1), own(x - 1, y - 1)]
                             .iter()
                             .all(|&at| at == Some(number))
+                            && !under(x, y)
                         {
                             want.push([x as f64 * CELL_M, y as f64 * CELL_M, room.height]);
                         }
@@ -438,28 +457,13 @@ fn a_dungeon_is_a_run_with_few_loops_not_a_maze() {
 }
 
 #[test]
-fn the_return_portal_stands_on_a_rock_wall_of_the_end_room_between_two_torches() {
+fn the_return_portal_stands_on_a_rock_wall_of_the_end_room() {
     for dungeon in every_dungeon(600) {
         let portal = dungeon.portal;
         assert_eq!(portal.room, dungeon.end());
         assert_eq!(dungeon.room_at(portal.cell), Some(portal.room));
         assert!(dungeon.beside(portal.cell, portal.side).is_none_or(|next| dungeon.cells[next] == Cell::Rock));
         assert_ne!((portal.cell, portal.side), (dungeon.way_in.cell, dungeon.way_in.side));
-        let [door_x, door_y] = dungeon.portal_door();
-        let flanking: Vec<f64> = dungeon
-            .torches
-            .iter()
-            .filter(|torch| {
-                let cell = (torch.at[0] / CELL_M) as usize + (torch.at[1] / CELL_M) as usize * dungeon.columns;
-                (cell, torch.wall) == (portal.cell, portal.side)
-            })
-            .map(|torch| {
-                (torch.at[0] - door_x) * -portal.side.unit()[1] + (torch.at[1] - door_y) * portal.side.unit()[0]
-            })
-            .collect();
-        assert_eq!(flanking.len(), 2, "two torches on the portal's wall");
-        assert!(flanking.iter().all(|along| along.abs() > EXIT_WIDTH_M / 2.0), "beside the portal, not over it");
-        assert!(flanking[0] * flanking[1] < 0.0, "one either side");
         let [x, y] = dungeon.portal_door();
         let [middle_x, middle_y] = dungeon.centre(portal.cell);
         let [dx, dy] = portal.side.unit();
