@@ -97,13 +97,15 @@ each part works is in its system note.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
   owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
-  Square]] (level, from 20 the Prestige total, three dots in a menu, green company, blue others),
+  Square]] (level, 21 to 30 in gold, three dots in a menu, green company, blue others;
+  [[A Player's Square Shows Their Level, Gold Past 20]]),
   [[Holding Use on a Player Opens Their Interact Menu]] (Add friend, Invite to company, Invite to guild, Whisper,
   Inspect, Mute), [[Chat Comes From DFO With Local, World and Whisper]] ([[Chat]], [[Pick - Chat]]), and the owner's
   second-pass answers: [[The Sea Has the Chat, Each Water a Region Channel]] (T opens the chat everywhere),
   [[A Player May Mute Another]], [[Inspect Opens the Character Tab]] under their emblem's banner
   ([[Inspect Shows the Player's Emblem Banner]]), and Prestige beside the level on the Character tab
-  ([[Prestige Stands Beside Level on the Character Tab]]); Claude's calls in
+  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]),
+  with no Fruit of Dagon stat ([[The Character Tab Shows No Fruit of Dagon]]); Claude's calls in
   [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]]. A full audit of the first pass was folded in (the
   hall's limits per account, look-alike letters, the welcome race, plates deduped and none at sea, the menu's keys and
   waits). Tested offline (the room, the wire, the hall and its queries, the panel's law, the menus) and pictured

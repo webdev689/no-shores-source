@@ -184,7 +184,7 @@ code:
   - client/src/trueType.ts#trueType
   - client/src/combat/playerPlates.ts#PlayerPlates
   - client/src/combat/playerPlates.ts#aimedPlayer
-  - client/src/combat/playerPlates.ts#squareNumber
+  - client/src/combat/playerPlates.ts#levelInk
   - client/src/game/social/interactMenu.ts#interactRows
   - client/src/game/social/social.ts#holdOnPlayer
   - client/src/game/social/inspectWindow.ts#InspectWindow
@@ -718,8 +718,8 @@ never while a press is held. Each press is an ask the room answers.
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
 - **Character.** The player's figure large in the middle, under two plaques side by side
-  ([[Prestige Stands Beside Level on the Character Tab]]): the level in brass, "of 30" under it, and Prestige in pale
-  steel, each armour piece's share under it (head, torso, arms, legs), and under both the meter to the next level and
+  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]):
+  the level in brass and Prestige in pale steel, each its number alone, and under both the meter to the next level and
   what it takes; under the figure the Melee and Ranged loadouts' Attack and Defense
   ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and Ranged loadouts, the cloak and the
   Appearance button stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
@@ -1102,14 +1102,14 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
 
 ## Players
 
-- **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]]):
-  a square and their username beside it, after the owner's pictures of Destiny's. The square shows their level, 1 to
-  19, and from level 20, the most XP gives, the Prestige total of the armour they wear (`squareNumber`); while a menu
-  is open on their screen (the pause menu, the menu's window, a player's menu or Inspect) a speech bubble's three dots
-  stand in its place. Square and name are the company's green (`FILLS.green`, `TONES.company`) for a member of the
-  viewer's company, by the Roster the company's display last heard, and the players' blue (`FILLS.ally`,
-  `TONES.ally`) for anyone else; a guest shows the square alone. The room sends each plate once as it changes
-  ([[Server]], "Messages").
+- **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]],
+  [[A Player's Square Shows Their Level, Gold Past 20]]): a square and their username beside it, after the owner's
+  pictures of Destiny's. The square shows their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`,
+  `TONES.brassHi`); while a menu is open on their screen (the pause menu, the menu's window, a player's menu or Inspect)
+  a speech bubble's three dots stand in its place. Square and name are the company's green (`FILLS.green`,
+  `TONES.company`) for a member of the viewer's company, by the Roster the company's display last heard, and the
+  players' blue (`FILLS.ally`, `TONES.ally`) for anyone else; a guest shows the square alone. The room sends each plate
+  once as it changes ([[Server]], "Messages").
 - **Which show**: as DFO showed names over players, every other player within 60 m across the ground whose head the
   place's blocks and land do not hide, the line tried as a foe's plate's is (`PlateSight`), shrinking with distance by
   the foes' plates' law (`plateScale`) and laid so none covers another (`BarLayout`); not the cone the foes' plates
@@ -1132,9 +1132,9 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
 - **Inspect** ([[Inspect Opens the Character Tab]], [[Inspect Shows the Player's Emblem Banner]]) shows the player as
   the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
   and Defense over it, and under it the Character tab: their plate over their figure in the dress they wear here, each
-  piece they wear in its slot with its card, their level and Prestige (Prestige whole, as their room keeps no piece's
-  share), their power and the Art they wear, from what their room kept for others to see. Nothing on it can be asked or
-  changed: no hints, no XP meter and no Appearance. Back or Escape goes back to their menu.
+  piece they wear in its slot with its card, their level and Prestige, their power and the Art they wear, from what
+  their room kept for others to see. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance.
+  Back or Escape goes back to their menu.
 - **Settings** lists the muted under the blocked, each with Unmute.
 
 ## Emblems

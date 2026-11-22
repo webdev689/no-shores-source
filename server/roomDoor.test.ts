@@ -51,7 +51,7 @@ test('a room welcomes players, takes the inputs a browser writes in order, and i
   const [first, second] = [room.join(), room.join()];
   // The room speaks the protocol the page was built from: the same schema's hash.
   const protocol = PROTOCOL;
-  const plate = (player: number, more = {}) => ({ player, name: '', level: 1, prestige: 0, menu: false, ...more });
+  const plate = (player: number, more = {}) => ({ player, name: '', level: 1, menu: false, ...more });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,
@@ -202,7 +202,7 @@ test('a node’s room warns a player past its edge, kills them 60 m out, and res
   assert.equal(room.openNode(text), true);
   const [first, second] = [room.join(), room.join()];
   const node = { id: 'glade', bounds: [-150, -150, 150, 150] };
-  const plate = (player: number) => ({ player, name: '', level: 1, prestige: 0, menu: false });
+  const plate = (player: number) => ({ player, name: '', level: 1, menu: false });
   assert.deepEqual(readFromRoom(room.joined(first)), {
     kind: 'joined',
     player: first,

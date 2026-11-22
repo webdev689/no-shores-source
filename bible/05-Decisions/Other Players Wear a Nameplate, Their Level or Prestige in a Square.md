@@ -24,3 +24,6 @@ Destiny's Light reads."
 - **Blue for a player not in the viewer's company, green for one in it** ([[A Group of Players Is a Company]]).
 
 Links: [[Interface]], [[Game]], [[Nameplates, the Interact Menu and Chat as Claude Shapes Them]].
+
+Replaced in part by [[A Player's Square Shows Their Level, Gold Past 20]]: the square shows the level always, levels
+21 to 30 in gold.

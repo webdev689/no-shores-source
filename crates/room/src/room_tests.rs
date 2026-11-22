@@ -185,10 +185,10 @@ fn a_held_players_inputs_are_taken_in_order_and_stand_still_until_they_are_let_p
 }
 
 #[test]
-fn a_plate_carries_its_players_name_level_prestige_and_menu_and_goes_once_each_time_it_changes() {
+fn a_plate_carries_its_players_name_level_and_menu_and_goes_once_each_time_it_changes() {
     let mut room = room();
     let (first, second) = (room.join().expect("a room with space"), room.join().expect("a room with space"));
-    let plate = |name: &str, menu| Plate { name: name.to_owned(), level: 1, prestige: 0, menu };
+    let plate = |name: &str, menu| Plate { name: name.to_owned(), level: 1, menu };
     assert_eq!(room.take_plate_changes(), vec![(first, plate("", false)), (second, plate("", false))]);
     assert_eq!(room.take_plate_changes(), vec![], "a plate goes once");
     assert!(room.name_player(first, "Wooden_Osprey"));

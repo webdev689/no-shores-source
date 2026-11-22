@@ -1,6 +1,5 @@
-// The plates over other players' heads, as the owner's pictures of Destiny's show them: a square with their level, or
-// from level 20 the Prestige of what they wear, or a speech bubble's three dots while a menu is open on their screen;
-// and their name beside it. Green for the viewer's company, blue for anyone else. They show as DFO showed names over
+// The plates over other players' heads, as the owner's pictures of Destiny's show them: a square with their level, in
+// gold past level 20, or a speech bubble's three dots while a menu is open on their screen; and their name beside it. Green for the viewer's company, blue for anyone else. They show as DFO showed names over
 // players: every player within the plates' reach whose head the place's blocks and land do not hide, shrinking with
 // distance as a foe's plate does, laid so none covers another. The player under the crosshair within a person's reach
 // wears the interact mark round their body while Use is offered on them (the game's social layer says so beside it).
@@ -9,13 +8,12 @@ import { BarLayout } from '../plus/barLayout.ts';
 import { EMBLEM_PIXELS, svgOf } from '../plus/emblems.ts';
 import { motionReduced } from '../plus/kit.ts';
 import { FILLS, TONES } from '../plus/tones.ts';
+import { LEVEL_BY_XP } from '../rules/fleetRules.ts';
 import { bodyDegrees, PLATE_RANGE_M, PlateSight, plateScale } from './plateSight.ts';
 import type { Node } from '../ui/node.ts';
 
 type Point = readonly [number, number, number];
 
-/** The level XP raises a player to at most; past it, their square shows their Prestige (crates/gear/src/power.rs). */
-export const XP_LEVEL_MOST = 20;
 /** How near another player must stand to be interacted with, in metres: DFO's reach for a person. */
 export const SOCIAL_REACH_M = 6.4;
 /** How high over a player's feet their plate's foot stands, and their head, in metres. */
@@ -51,10 +49,8 @@ export interface PlayersViewing {
   readonly own: Point | null;
 }
 
-/** The number a plate's square shows: the level, or from level 20, the most XP gives, the Prestige. */
-export function squareNumber(plate: PlayerPlate): number {
-  return plate.level >= XP_LEVEL_MOST ? plate.prestige : plate.level;
-}
+/** The colour of a plate's level: gold for the levels past 20, which Prestige raises, else the words' own. */
+export const levelInk = (level: number): string => (level > LEVEL_BY_XP ? TONES.brassHi : TONES.word);
 
 /** The player the crosshair rests on within a person's reach of `own`, the nearest the eye of several; null for none.
  *  Only a player with a name can be interacted with: a guest has no username to be asked by. */
@@ -222,7 +218,7 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
         outline: { width: 1, colour: colours.edge },
         alignX: 'center',
         alignY: 'center',
-        children: [{ text: { words: String(squareNumber(plate)), colour: TONES.word, edge: 'halo', wrap: false } }],
+        children: [{ text: { words: String(plate.level), colour: levelInk(plate.level), edge: 'halo', wrap: false } }],
       };
   return {
     direction: 'row',

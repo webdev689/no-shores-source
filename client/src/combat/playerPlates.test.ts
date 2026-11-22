@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { PlayerPlate } from '../network/plateMessages.ts';
-import { type PlatedPlayer, SOCIAL_REACH_M, aimedPlayer, plateNode, squareNumber } from './playerPlates.ts';
+import { TONES } from '../plus/tones.ts';
+import type { Node } from '../ui/node.ts';
+import { type PlatedPlayer, SOCIAL_REACH_M, aimedPlayer, levelInk, plateNode } from './playerPlates.ts';
 
 const plate = (more: Partial<PlayerPlate> = {}): PlayerPlate => ({
   player: 7,
   name: 'Mariner',
   level: 6,
-  prestige: 0,
   menu: false,
   ...more,
 });
@@ -20,11 +21,16 @@ const placed = (id: number, x: number, more: Partial<PlayerPlate> = {}, company 
 /** A camera at the origin's west, 1.6 m up, looking east along the ground. */
 const camera = { eye: [-3, 0, 1.6] as const, forward: [1, 0, 0] as const, focal: 1.7 };
 
-test('the square shows the level, and from level 20 the Prestige of what is worn', () => {
-  assert.equal(squareNumber(plate({ level: 6, prestige: 40 })), 6);
-  assert.equal(squareNumber(plate({ level: 19, prestige: 90 })), 19);
-  assert.equal(squareNumber(plate({ level: 20, prestige: 84 })), 84);
-  assert.equal(squareNumber(plate({ level: 27, prestige: 101 })), 101);
+test('the square shows the level, gold for the levels past 20 that Prestige raises', () => {
+  assert.deepEqual(
+    [6, 20, 21, 30].map((level) => levelInk(level)),
+    [TONES.word, TONES.word, TONES.brassHi, TONES.brassHi],
+  );
+  const words = (node: Node): string[] =>
+    [node.text?.words, ...(node.children ?? []).flatMap((child) => (child ? words(child) : []))].filter(
+      (each): each is string => typeof each === 'string',
+    );
+  assert.deepEqual(words(plateNode(placed(1, 2, { level: 27 }), 1)), ['27', 'Mariner']);
 });
 
 test('the player under the crosshair within reach is aimed at, the nearest of several, never a guest', () => {

@@ -6,8 +6,7 @@
 // opens the item's page.
 
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { ELEMENTS, RANGED_SLOT, RARITIES, SLOTS, capital, itemName, worn } from '../player/gear.ts';
-import { LEVEL_MOST } from '../rules/fleetRules.ts';
+import { ELEMENTS, RANGED_SLOT, RARITIES, SLOTS, capital, itemName } from '../player/gear.ts';
 import { LARGE_CAP } from '../player/iconFit.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { rarityNumber } from './appearance/appearanceModel.ts';
@@ -403,41 +402,21 @@ function heading(said: string, size: number, end: boolean): Node {
 /** Prestige's own colour beside the level's brass: a pale steel. */
 const PRESTIGE_INK = '#d3e4f2';
 
-/** One of the two plaques over the figure: its name, its number large, and what makes it up under it. */
-function plaqueNode(name: string, value: number, colour: string, detail: Child, sizes: MenuContext['sizes']): Node {
+/** One of the two plaques over the figure: its name over a rule, and its number large. */
+function plaqueNode(name: string, value: number, colour: string, sizes: MenuContext['sizes']): Node {
   return {
     width: 'grow',
     direction: 'column',
     alignX: 'center',
     gap: 4,
-    padding: [8, 10],
+    padding: [8, 10, 10, 10],
     role: 'well',
     label: `${name} ${value}`,
     children: [
       label(name, sizes.label),
       { width: 'grow', height: 1, fill: 'rgba(192,138,62,0.45)' },
       words(String(value), 5, colour, { edge: 'shadow', edgeColour: '#000' }),
-      detail,
     ],
-  };
-}
-
-/** What each armour piece worn gives of `prestige`, where the pieces are known to make it up (another player's
- *  room keeps only the whole); else that it is the armour's. */
-export function piecesNode(gear: GearState, prestige: number): Node {
-  const pieces = ['Head', 'Torso', 'Arms', 'Legs'].map((name, place) => ({
-    name,
-    each: worn(gear, 2 + place)?.prestige ?? 0,
-  }));
-  if (prestige === 0 || pieces.reduce((sum, { each }) => sum + each, 0) !== prestige)
-    return label('From the armour worn', 1);
-  return {
-    gap: 8,
-    children: pieces.map(({ name, each }): Node => ({
-      direction: 'column',
-      alignX: 'center',
-      children: [label(name, 1), words(String(each), 1, each ? PRESTIGE_INK : INK.faint)],
-    })),
   };
 }
 
@@ -472,8 +451,8 @@ function middleNode(context: MenuContext, width: number, hidden: boolean): Node 
             width: 'grow',
             gap: 8,
             children: [
-              plaqueNode('Level', character.level, INK.brassLit, label(`of ${LEVEL_MOST}`, 1), sizes),
-              plaqueNode('Prestige', character.prestige, PRESTIGE_INK, piecesNode(gear, character.prestige), sizes),
+              plaqueNode('Level', character.level, INK.brassLit, sizes),
+              plaqueNode('Prestige', character.prestige, PRESTIGE_INK, sizes),
             ],
           },
           // How far another player is to their next level is theirs alone to see.

@@ -1,5 +1,4 @@
-//! What others read over a player's head: their username, their level, the Prestige of what they wear, and whether a
-//! menu is open on their screen. Sent to everyone once as it changes, as a dress is.
+//! What others read over a player's head: their username, their level, and whether a menu is open on their screen. Sent to everyone once as it changes, as a dress is.
 
 use crate::players::Player;
 use crate::{PlayerId, Room};
@@ -12,7 +11,6 @@ pub const NAME_MOST: usize = 20;
 pub struct Plate {
     pub name: String,
     pub level: u8,
-    pub prestige: u16,
     pub menu: bool,
 }
 
@@ -31,14 +29,7 @@ fn named(name: &str) -> bool {
 }
 
 fn plate_of(found: &Player) -> Plate {
-    let (level, prestige) = numbers_of(found);
-    Plate { name: found.plate.name.clone(), level, prestige, menu: found.plate.menu }
-}
-
-/// A player's level and Prestige, as their plate carries them.
-fn numbers_of(found: &Player) -> (u8, u16) {
-    let character = &found.character;
-    (character.level(), u16::try_from(character.prestige()).unwrap_or(u16::MAX))
+    Plate { name: found.plate.name.clone(), level: found.character.level(), menu: found.plate.menu }
 }
 
 impl Room {
@@ -60,9 +51,9 @@ impl Room {
         let mut changed = Vec::new();
         for (&player, found) in &mut self.players {
             // Compared field by field, so a plate is made, its name copied, only when it changed.
-            let numbers = numbers_of(found);
+            let level = found.character.level();
             let same = found.plate.sent.as_ref().is_some_and(|sent| {
-                (sent.level, sent.prestige) == numbers && sent.menu == found.plate.menu && sent.name == found.plate.name
+                sent.level == level && sent.menu == found.plate.menu && sent.name == found.plate.name
             });
             if !same {
                 let plate = plate_of(found);

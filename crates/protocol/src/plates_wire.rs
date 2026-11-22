@@ -15,13 +15,7 @@ pub(crate) fn plates_vector<'built>(
         .iter()
         .map(|(player, plate)| {
             let name = (!plate.name.is_empty()).then(|| builder.create_string(&plate.name));
-            let args = messages::PlateArgs {
-                player: *player,
-                name,
-                level: plate.level,
-                prestige: plate.prestige,
-                menu: plate.menu,
-            };
+            let args = messages::PlateArgs { player: *player, name, level: plate.level, menu: plate.menu };
             messages::Plate::create(builder, &args)
         })
         .collect();
@@ -39,7 +33,7 @@ pub fn plates_of(
                 .iter()
                 .map(|plate| {
                     let name = plate.name().unwrap_or_default().to_owned();
-                    let read = Plate { name, level: plate.level(), prestige: plate.prestige(), menu: plate.menu() };
+                    let read = Plate { name, level: plate.level(), menu: plate.menu() };
                     (plate.player(), read)
                 })
                 .collect()

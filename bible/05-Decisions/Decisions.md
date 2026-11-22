@@ -276,6 +276,8 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Inspect Shows the Player's Emblem Banner]]
 - [[Prestige Stands Beside Level on the Character Tab]]
 - [[The Character Tab Shows No Fruit of Dagon]]
+- [[A Player's Square Shows Their Level, Gold Past 20]]
+- [[The Level and Prestige Plaques Show Their Numbers Alone]]
 
 ## Replaced
 

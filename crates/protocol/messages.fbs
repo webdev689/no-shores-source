@@ -162,13 +162,12 @@ table Dressed {
   dress: string;
 }
 
-// What others read over a player's head: their username (none for a guest), their level, the Prestige of what they
-// wear, and whether a menu is open on their screen.
+// What others read over a player's head: their username (none for a guest), their level, and whether a menu is open
+// on their screen.
 table Plate {
   player: uint;
   name: string;
   level: ubyte;
-  prestige: ushort;
   menu: bool;
 }
 
