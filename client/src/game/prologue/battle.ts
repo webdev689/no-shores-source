@@ -16,6 +16,7 @@ import type { Hearing } from '../audio/music/directorLaw.ts';
 import { hearSea, heardSky } from '../audio/music/hearing.ts';
 import { STORY_FIGHT_GAIN } from './fightSound.ts';
 import { fought, sung } from './music.ts';
+import type { ShipCrew } from '../../ships/shipCrew.ts';
 import type { Founder, Sailed, ShipDraw } from './sailing.ts';
 import { INBOUND_WAY_M_S, STORM_SOUND } from './sighted.ts';
 import { STORM } from './skies.ts';
@@ -63,23 +64,27 @@ export interface Wreck {
   readonly going: Going | null;
 }
 
-/** A beaten Sloop lying where it is, struck, as a story begun after the fight lays it. */
+/** A beaten Sloop lying where it is, struck, as a story begun after the fight lays it: its people, if it carries
+ *  any, standing struck. */
 export function asWreck(
-  ship: { readonly x: number; readonly y: number; readonly heading: number },
+  ship: { readonly x: number; readonly y: number; readonly heading: number; readonly crew?: ShipCrew },
   index: number,
 ): Wreck {
   const { x, y, heading } = ship;
   const lying: Sailed = { who: `wreck-${index}`, hull: 'sloop', x, y, heading, underWay: false, shade: WRECK_SHADE };
-  return { ship: { ...lying, founder: [0, 0, 0] }, going: null };
+  const crew = ship.crew ? { crew: { ...ship.crew, state: 'struck' as const } } : {};
+  return { ship: { ...lying, founder: [0, 0, 0], ...crew }, going: null };
 }
 
-/** The beaten captains' Sloops where the fight left them, in its own pose: struck ones lying still, ones going down
- *  with what the rules last sent of how they go on under. The sunk are gone. */
+/** The beaten captains' Sloops where the fight left them, in its own pose and with the people it left aboard: struck
+ *  ones lying still, ones going down with what the rules last sent of how they go on under. The sunk are gone. */
 export function wrecksOf(frame: StoryFightFrame | null): Wreck[] {
   return (frame?.ships ?? []).flatMap((ship, index) => {
     if (ship.hull !== 'captain' || (ship.state !== 'struck' && ship.state !== 'sinking')) return [];
     const wreck = asWreck(ship.place, index);
-    return [{ ship: { ...wreck.ship, founder: ship.founder }, going: ship.state === 'sinking' ? ship.going : null }];
+    const aboard = ship.crew ? { crew: ship.crew } : {};
+    const going = ship.state === 'sinking' ? ship.going : null;
+    return [{ ship: { ...wreck.ship, founder: ship.founder, ...aboard }, going }];
   });
 }
 
@@ -231,6 +236,7 @@ export class Battle implements Beat {
         place: ship.place,
         shade: ship.shade,
         rig: ship.rig,
+        ...(ship.crew ? { crew: ship.crew } : {}),
       }));
     const own = shown.ships[0]?.place;
     if (own) Object.assign(brig, { x: own.x, y: own.y, heading: own.heading });
@@ -238,6 +244,7 @@ export class Battle implements Beat {
     if (heads) this.sayCries(shown.shot, heads, tick.viewport);
     const { hud } = stage.parts;
     hud.hints(fight.aiming ? HINTS.aim : HINTS.fight);
+    hud.sight(fight.aiming && !shown.over, fight.aimLine);
     hud.seaFight(shown.over ? null : shown.display);
     hud.tasks.show(seaFightQuest(QUEST, shown.readout.left, shown.readout.men));
     hud.toast(...shown.readout.said);
@@ -275,9 +282,9 @@ export class Battle implements Beat {
     const { hud } = this.story.stage.parts;
     hud.tasks.show(null);
     hud.seaFight(null);
+    hud.sight(false, null);
     hud.toast();
     hud.hints([]);
-    hud.seaFight(null);
     hud.shipBars([], poseOf({ eye: [0, 0, 0], forward: [0, 1, 0] }, 1));
     // The calm draws its sails, and each wreck's, on from where the fight left them.
     const { sailing } = this.story;

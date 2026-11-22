@@ -435,7 +435,7 @@ function toneSlider(ui: Interface, tone: number): { node: Node; value: number } 
 
 /**
  * The second step: the body, the race, a human's skin tone, the hair, turning the figure, and Done. Every change
- * calls `changed` at once, so the figure at the helm is redressed as the player watches; `turn` turns the camera.
+ * calls `changed` at once, so the figure at the helm is redressed as the player watches; `turn` turns the figure.
  */
 export function lookStep(
   stack: Stack,

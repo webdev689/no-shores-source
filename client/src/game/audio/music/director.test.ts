@@ -39,7 +39,7 @@ function fakeAudio() {
 }
 
 /** A director over a fake output, run frame by frame on its own clock; what it lowered the ambience to, each time. */
-function directed(made: () => Scores = () => scores) {
+function directed(made: () => Scores = () => scores, random: () => number = Math.random) {
   const { audio, starts } = fakeAudio();
   const ducks: number[] = [];
   let now = 0;
@@ -50,6 +50,7 @@ function directed(made: () => Scores = () => scores) {
     timed: false,
     clock: () => now,
     scores: made,
+    random,
   });
   const frames = (hearing: Hearing, seconds: number, band: BandHeard | null = null) => {
     for (let spent = 0; spent < seconds; spent += 0.1) {
@@ -160,6 +161,26 @@ test("a boss plays its own score from its wake, lowering the ambience most, and 
   frames({ ...island, foes: [{ ...thule, health: 0 }] }, 0.5);
   frames(island, 4);
   assert.ok(starts.length > before, 'the hymn plays as he falls');
+});
+
+test('a fight opens on a take other than the one the last fight opened on', () => {
+  let state = 1;
+  const die = () => (state = (state * 16807) % 2147483647) / 2147483647;
+  const { frames, starts, clock } = directed(() => scores, die);
+  const fight: Hearing = { ...island, foes: [brute({ engaged: true })], struck: true };
+  /** What the fight strikes in its first two seconds, in hundredths from its first note. */
+  const opening = () => {
+    const begun = clock();
+    frames(fight, 4);
+    const struck = starts.filter((when) => when > begun);
+    const first = Math.min(...struck);
+    return [...new Set(struck.map((when) => Math.round((when - first) * 100)))]
+      .filter((offset) => offset < 200)
+      .sort((one, other) => one - other);
+  };
+  const first = opening();
+  frames(island, 30);
+  assert.notDeepEqual(opening(), first);
 });
 
 test('with nowhere to play (no sound woken, or the music silenced) the director plays nothing and fails nothing', () => {

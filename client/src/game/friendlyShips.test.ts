@@ -7,6 +7,7 @@ import type { Swell } from '../rules/landRules.ts';
 import { startWatersRules, type TrafficShip } from '../rules/watersRules.ts';
 import { hullWaterline } from '../ships/hulls.ts';
 import { poseOnSwell } from '../ships/swellPose.ts';
+import { plainCrew } from '../ships/shipCrew.ts';
 import type { DrawnShip } from '../ships/shipModels.ts';
 import { ASK_EVERY_S, friendlyFrame, FriendlyShips, friendlyMarks, reckoned } from './friendlyShips.ts';
 import { mapWatersOf } from './pageWaters.ts';
@@ -123,6 +124,11 @@ test('at sea they are drawn as their hulls in friendly colours, sails set, at th
       [2, 6, 'friendly'],
     ],
     'nearest first, each in its own hull',
+  );
+  assert.deepEqual(
+    frame.ships.map((ship) => ship.crew),
+    [plainCrew('friendly-5'), plainCrew('friendly-2')],
+    'each with its plain crew aboard',
   );
   for (const ship of frame.ships) assert.ok(ship.rig && ship.rig.sails.length > 0);
   assert.deepEqual(frame.hulls[0], own, 'its own footprint stays first');

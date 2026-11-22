@@ -1,7 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { courseOf, readWreck, topAt } from './wreckLayout.ts';
-import { ALIVE_MOST, BOSS_SECONDS, BROUGHT_BACK_S, IN_THE_SEA_M, type Seen, WreckProgress } from './wreckProgress.ts';
+import {
+  ARENA_CLEAR_M,
+  ALIVE_MOST,
+  BOSS_SECONDS,
+  BROUGHT_BACK_S,
+  IN_THE_SEA_M,
+  type Seen,
+  WreckProgress,
+} from './wreckProgress.ts';
 
 const layout = readWreck();
 const middle = (zone: number) => {
@@ -213,4 +221,22 @@ test('while held, a zone reached keeps its wave waiting and its way on shut; let
   progress.held = false;
   const wave = (layout.zones[1]?.wave ?? []).map((foe) => ({ ...foe, zone: 1 }));
   assert.deepEqual(progress.frame(standing(1, { alive }), 0.016).stand, wave);
+});
+
+test("the arena is reached only once the player stands clear of its heap's place, room for the camera behind them", () => {
+  const progress = new WreckProgress(layout);
+  for (let zone = 0; zone < layout.arena.zone; zone++) {
+    const alive = layout.zones.map(() => 0);
+    progress.frame(standing(zone, { alive }), 0.016);
+    progress.frame(standing(zone, { alive }), 0.016);
+  }
+  const { gate, thule } = layout.arena;
+  const x = (gate.minX + gate.maxX) / 2;
+  const stepIn = (y: number) => progress.frame({ ...standing(layout.arena.zone), x, y }, 0.016);
+  stepIn(gate.maxY + 0.5);
+  assert.equal(progress.arena, false, 'just over the heap, not yet');
+  assert.equal(stepIn(gate.maxY + ARENA_CLEAR_M - 0.05).bringBack, null, 'nor brought back while stepping in');
+  stepIn(gate.maxY + ARENA_CLEAR_M + 0.05);
+  assert.equal(progress.arena, true);
+  assert.ok(thule[1] - (gate.maxY + ARENA_CLEAR_M) > 1.5, 'and Thule still stands well before them');
 });

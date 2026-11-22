@@ -106,6 +106,9 @@ Done for the Schooner, the Brig and the Frigate:
   yards braced round ([[Sailing]], "Square sails"); a hull with no model yet is drawn as the Sloop.
 - **Its drawn size**: every hull grows by one law as the view comes in, never under its true size ([[Game]], "Its
   size coming in").
+- **Its people**: every hull but the player's own carries its captain behind its wheel, where its export measures its
+  helm, and its own number of hands about its deck: the Sloop 3, the Schooner 4, the Brig 5, the Frigate 6 ([[Game]],
+  "At sea").
 
 Left:
 

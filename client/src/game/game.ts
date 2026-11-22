@@ -21,6 +21,7 @@ import { startActivities } from './activityScreens.ts';
 import { HelmMap } from './helmMap.ts';
 import { foesAsked } from './foesAsked.ts';
 import { FriendlyTraffic, waterOf } from './friendlyShips.ts';
+import { shipPeopleOf } from './shipPeople.ts';
 import { Isles } from './isles.ts';
 import { islePlanWorker } from '../network/islePlans.ts';
 import { ISLE_MANIFEST, islePacksPrefix } from '../islands/isleManifest.ts';
@@ -586,7 +587,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
   startFrames(
     {
       ...{ gpu, canvas, hud, input, scene, walker, firstPerson, footView, shipModels, figureView, traffic },
-      ...{ ui, stack, drain },
+      ...{ ui, stack, drain, crews: shipPeopleOf(roomModule, forge) },
       ...{ discovered, charting, seaWeather: boot.seaWeather, seaView: boot.seaView, waterline: sloop.waterline },
       ...{ builtSloop, closeSource, waterHere, syncMenu, travel, goFoot, isleFrame, groundAt, story, arrive },
       isles: islesDrawer,

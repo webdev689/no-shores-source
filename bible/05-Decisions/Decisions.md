@@ -252,6 +252,12 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Vestiges Are project-final's Crystals, and Physical Pictures Are Baked]]
 - [[Players Arrive as Destiny's Transmat Does, Unexplained]]
 - [[First Person Widens and Its Weapon Sways, and the Parry Ring Reads Bolder]]
+- [[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]]
+- [[A Ship's Abilities Stand at the Bottom Left, as the Arts Do]]
+- [[Ships Show Their People, and Captains' Gunners Misjudge]]
+- [[The Fight Music Varies, Recombined From Takes]]
+- [[The Prologue Is Passed Over, Its Camera and Footing Clear]]
+- [[The Broadside Warning Is Written Over the Sea, Not a Panel]]
 - [[The Audit's Leftovers Are Fixed as Claude Suggested]]
 
 - [[Overlook Is Our Own Game]]

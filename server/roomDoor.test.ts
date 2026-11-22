@@ -329,7 +329,7 @@ test('a sea where rivals clash and a player joins them snapshots to the fingerpr
     if (fight) others = Math.max(others, fightViewOf(fight.view).others?.length ?? 0);
   }
   assert.equal(others, 1, 'the player fights both rivals');
-  assert.equal(hash.toString(16).padStart(16, '0'), '931bb63be1946e30');
+  assert.equal(hash.toString(16).padStart(16, '0'), '1234e219d09eb4d9');
 });
 
 test('a fleet room sails the ships a browser orders, and the browser predicts its own to the bit', () => {

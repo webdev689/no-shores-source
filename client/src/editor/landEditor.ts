@@ -493,7 +493,7 @@ export function startLandEditor(
       if (dragging.button === 0 && tool !== 'look' && !walking && !sailing) return;
       const orbiting = walking || sailing || dragging.button === 0 || (dragging.button === 2 && tool !== 'look');
       if (viewMode === '2d') camera = pan(camera, moveX, moveY);
-      else if (orbiting) orbit = rotateOrbit(orbit, moveX * 0.005, -moveY * 0.005, lowestLook());
+      else if (orbiting) orbit = rotateOrbit(orbit, aim.aiming ? 0 : moveX * 0.005, -moveY * 0.005, lowestLook());
       else orbit = panOrbit(orbit, moveX, moveY, canvas.clientHeight);
     }
     if (dragging) dragging = { ...dragging, ...spot };
