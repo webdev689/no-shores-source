@@ -74,3 +74,9 @@ test('the veil’s words say where the ship sails for while the picture is black
   away.advance(SAIL_AWAY.outS + SAIL_AWAY.fadeS - 0.1, true);
   assert.equal(away.veil, 'Sailing for The Elmwater');
 });
+
+test('the black waits on the waters no longer than its most, then arrives', () => {
+  const { steps, control } = run('taken', () => false, 60);
+  assert.deepEqual(steps, ['out', 'fade', 'black', 'arrive', 'back', 'done']);
+  assert.ok(control !== null && control <= SAIL_AWAY.outS + SAIL_AWAY.fadeS + SAIL_AWAY.blackMostS + 6, `${control}`);
+});

@@ -130,3 +130,17 @@ test('a travel waits its turn as a course does, no course takes its place, and t
   atTick(1095);
   assert.deepEqual(sent.at(-1), courseBytes([[60_000, 150_000]], 10), 'courses are sent again once it is answered');
 });
+
+test('a travel given up lets courses through again and forgets any answer, as a new travel does', async () => {
+  const { room, sent, atTick } = await joined();
+  atTick(1000);
+  room.travel([[550_000, 150_000]], 10);
+  atTick(1045);
+  room.forgetTravel();
+  room.course([[60_000, 150_000]], 10);
+  atTick(1090);
+  assert.deepEqual(sent.at(-1), courseBytes([[60_000, 150_000]], 10), 'the course is sent');
+  atTick(1100, [], [[24, 1099, 0]]);
+  room.travel([[550_000, 150_000]], 10);
+  assert.equal(room.takeTravelled(), null, 'a late answer is no answer to the new travel');
+});

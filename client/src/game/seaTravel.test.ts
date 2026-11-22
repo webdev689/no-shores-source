@@ -13,6 +13,7 @@ function travelling() {
   const room = {
     takeTravelled: () => [answer, (answer = null)][0],
     ownShip: { x: 549_600, y: 150_000, heading: Math.PI / 2 },
+    forgetTravel: () => asked.push('forget'),
   } as unknown as SeaRoom;
   const passage = {
     travel: () => asked.push('travel'),
@@ -47,7 +48,7 @@ test('refused, the ship heaves to and its line says why; too soon, the travel is
   assert.deepEqual(asked, ['travel', 'travel'], 'asked again');
   answer(3);
   travel.step(0.1, room);
-  assert.deepEqual(asked.slice(2), ['stop', 'say No travel with a hostile ship giving chase.']);
+  assert.deepEqual(asked.slice(2), ['forget', 'stop', 'say No travel with a hostile ship giving chase.']);
   assert.equal(travel.away.refused, 'No travel with a hostile ship giving chase.');
 });
 
@@ -55,7 +56,7 @@ test('a travel the room never answers is given up', () => {
   const { travel, asked, room, toFade } = travelling();
   toFade();
   for (let second = 0; second < 12; second++) travel.step(1, room);
-  assert.deepEqual(asked.slice(1), ['stop', 'say The sea did not answer.']);
+  assert.deepEqual(asked.slice(1), ['forget', 'stop', 'say The sea did not answer.']);
 });
 
 test('a travel asked while the ship changed sea rooms is asked again of the room it joined', () => {
@@ -63,4 +64,12 @@ test('a travel asked while the ship changed sea rooms is asked again of the room
   toFade();
   travel.step(0.1, { ...room, takeTravelled: () => null } as unknown as SeaRoom);
   assert.deepEqual(asked, ['travel', 'travel']);
+});
+
+test('no answer is taken before the travel is asked', () => {
+  const { travel, asked, room, answer } = travelling();
+  answer(0);
+  travel.step(1, room);
+  assert.deepEqual(asked, [], 'the stale answer is left alone');
+  assert.equal(travel.away.answered, false);
 });

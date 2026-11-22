@@ -6,13 +6,14 @@
 // view back. Every rail is eased (rail.ts), and the picture is never cut but at black.
 import { around, lookAt, type Point3, type RailKey, type RailShot, railShot, smooth } from './rail.ts';
 
-/** Each step's seconds: the rail out, the fade, the least the black waits, the arrival, the lift of the black within
+/** Each step's seconds: the rail out, the fade, the least the black waits and the most it waits on the waters, the arrival, the lift of the black within
  *  it, the way back to the usual view, and the last of the fade the veil's words stand in (the veil's own fade,
  *  hud.ts `VEIL_S`). */
 export const SAIL_AWAY = {
   outS: 3,
   fadeS: 2,
   blackLeastS: 1.5,
+  blackMostS: 15,
   arriveS: 4,
   liftS: 1.5,
   backS: 1.5,
@@ -100,7 +101,8 @@ export class SailAway {
 
   /** The step's length; the black's until the room has answered and the waters are ready. */
   private length(ready: boolean): number {
-    if (this.step === 'black') return this.answered && (ready || this.refused) ? SAIL_AWAY.blackLeastS : Infinity;
+    const loaded = ready || this.refused !== null || this.time >= SAIL_AWAY.blackMostS;
+    if (this.step === 'black') return this.answered && loaded ? SAIL_AWAY.blackLeastS : Infinity;
     const lengths = { out: SAIL_AWAY.outS, fade: SAIL_AWAY.fadeS, arrive: SAIL_AWAY.arriveS, back: SAIL_AWAY.backS };
     return this.step === 'done' ? Infinity : lengths[this.step];
   }

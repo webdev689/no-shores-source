@@ -266,7 +266,13 @@ export class SeaRoom {
    *  in its place until the room answers. */
   travel(points: readonly Point2[], pace: SailedPace): void {
     [this.waitingCourse, this.waitingFacing, this.travelAsked] = [courseBytes(points, pace, true), false, true];
+    this.travelled = null;
     this.sendCourse();
+  }
+
+  /** A travel given up: courses are sent again, and an answer that comes late is no answer. */
+  forgetTravel(): void {
+    [this.travelAsked, this.travelled] = [false, null];
   }
 
   /** The room's answer to the travel asked, taken once: 0 taken, else why it was refused; null before. */

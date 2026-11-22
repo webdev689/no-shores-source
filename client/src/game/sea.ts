@@ -289,12 +289,14 @@ export class Sea {
   }
 
   /** Travels to `point` in the water named `water`, seen sailing away: under way for it from the helm, the room asked
-   *  as the picture fades; `ready` says when the waters round the ship have loaded. */
-  travelTo(point: Point2, water: string, ready: () => boolean): void {
-    if (this.combat || this.travelling) return;
+   *  as the picture fades; `ready` says when the waters round the ship have loaded. Answers whether it set off: not
+   *  in a fight, nor on a travel already. */
+  travelTo(point: Point2, water: string, ready: () => boolean): boolean {
+    if (this.combat || this.travelling) return false;
     this.sailTo(point);
     this.travelling = new SeaTravel(water, point, this.passage, ready);
     this.view.travel();
+    return true;
   }
 
   /** One step of the pace dial: -1 slower, +1 faster. */

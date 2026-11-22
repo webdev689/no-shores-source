@@ -54,17 +54,19 @@ export class SeaTravel {
 
   /** The room's answer, while none has come. */
   private answer(seconds: number, room: SeaRoom | null): void {
-    if (this.asked !== null) this.asked += seconds;
+    if (this.asked === null) return;
+    this.asked += seconds;
     const answer = room?.takeTravelled() ?? null;
     const moved = room?.ownShip;
-    if (answer === TOO_SOON || (this.asked !== null && room && room !== this.sentTo)) this.ask();
+    if (answer === TOO_SOON || (room && room !== this.sentTo)) this.ask();
     else if (answer === TAKEN && moved) {
       // Laid where the room has it, with no easing across the way it did not sail.
       this.passage.placeAt({ x: moved.x, y: moved.y, heading: moved.heading });
       this.passage.sailAlong([this.end]);
       this.away.answer(null);
-    } else if (answer !== null || (this.asked !== null && this.asked > ANSWER_WITHIN_S)) {
+    } else if (answer !== null || this.asked > ANSWER_WITHIN_S) {
       const why = answer !== null && answer !== TAKEN ? travelRefusal(answer) : 'The sea did not answer.';
+      room?.forgetTravel();
       this.passage.stop();
       this.passage.say(why);
       this.away.answer(why);
@@ -76,6 +78,5 @@ export class SeaTravel {
  *  `ready` saying when the waters round the ship have loaded. */
 export function sailOrTravel(sea: Sea, to: Point2, travel: boolean, ready: () => boolean): void {
   const water = travel ? sea.waterAt?.(to)?.name : null;
-  if (water) sea.travelTo(to, water, ready);
-  else sea.sailTo(to);
+  if (!water || !sea.travelTo(to, water, ready)) sea.sailTo(to);
 }
