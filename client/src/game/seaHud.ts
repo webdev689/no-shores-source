@@ -38,11 +38,11 @@ export interface SeaHudState {
 
 /** The ships the compass marks at sea, as DFO's helm marks them: in a fight its captains, grey once its colours are
  *  down, red while it would take the player and lit while a battery of its stands run out at the player's ship
- *  (`own`), none going down; out of one, every other player's ship in bone and every hostile one in red, marked as far
- *  off as it is sighted. */
+ *  (`own`), none going down; out of one, every other player's ship in bone, every hostile one in red, marked as far
+ *  off as it is sighted, and every friendly ship the room keeps as the traffic's are. */
 export function seaShipMarks(
   captains: readonly FightCaptain[] | null,
-  sighted: Pick<SeaRoom, 'others' | 'hostiles'> | null,
+  sighted: (Pick<SeaRoom, 'others' | 'hostiles'> & Partial<Pick<SeaRoom, 'friendlies'>>) | null,
   own: readonly number[] | null = null,
 ): ShipMark[] {
   if (captains)
@@ -60,6 +60,7 @@ export function seaShipMarks(
       kind: 'hostile',
       rangeM: sightOf(hostile),
     })),
+    ...(sighted?.friendlies ?? []).map((friend): ShipMark => ({ x: friend.x, y: friend.y, kind: 'friendly' })),
   ];
 }
 

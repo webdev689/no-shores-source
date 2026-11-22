@@ -247,3 +247,10 @@ test('while the ship sails away to other waters the sea bar goes, so nothing on 
   assert.notEqual(bars[0], null, 'at sea the bar stands');
   assert.equal(bars[1], null, 'sailing away it is hidden');
 });
+
+test('a friendly ship the room keeps at sea keeps its friendly mark on the compass', () => {
+  const friendlies = [{ traffic: 2_605, x: 300, y: -40, heading: 0, hull: 1 }];
+  assert.deepEqual(seaShipMarks(null, { others: [], hostiles: [], friendlies }), [
+    { x: 300, y: -40, kind: 'friendly' },
+  ]);
+});
