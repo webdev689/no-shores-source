@@ -67,6 +67,11 @@ export class Boarding {
     return this.shown !== null;
   }
 
+  /** The number in the fight of the captain whose deck the player stands on; none off it. */
+  get boardedCaptain(): number | null {
+    return this.shown?.captain.id ?? null;
+  }
+
   /** Whether its crew has fallen: the player may go back aboard their own ship (E). */
   get won(): boolean {
     return this.shown !== null && this.shown.fight.holdLeft !== null;

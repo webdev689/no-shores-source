@@ -363,3 +363,19 @@ test("the pad's brace tapped braces for that tap alone, and held braces until it
   await frames(1);
   assert.equal(orders.at(-1)?.brace, false);
 });
+
+test("each captain's ship carries its people as the fight leaves its men; the player's own and one boarded carry none", () => {
+  const struck: FightCaptain = { ...captain, crew: 6, max_crew: 12, state: 'struck', run_out: ['port'] };
+  const fight = new SeaCombat(ROOM, { ...FIRST, captain: struck }, MARKS, 0);
+  const [own, theirs] = fight.ships(0.1, 0, 0, 1);
+  assert.equal(own?.crew, undefined);
+  assert.deepEqual(theirs?.crew, {
+    key: 'fight-1',
+    faction: 2,
+    rank: 2,
+    share: 0.5,
+    state: 'struck',
+    runOut: ['port'],
+  });
+  assert.equal(fight.ships(0.1, 0, 0, 1, 1)[1]?.crew, undefined, "boarded, its crew is the fight on foot's");
+});

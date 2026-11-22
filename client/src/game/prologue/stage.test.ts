@@ -3,6 +3,8 @@ import { mock, test } from 'node:test';
 import type { Line } from '../../speech/cast.ts';
 import { CLEAR } from '../../cinema/weather.ts';
 import type { ToldSky } from '../../sky/skyDriver.ts';
+import { plainCrew } from '../../ships/shipCrew.ts';
+import type { SailRig } from '../../ships/sails.ts';
 import { WRECK } from './skies.ts';
 import { HUD_VEIL_S, headOnView, Stage, type StageParts } from './stage.ts';
 import { STORY_DAY_S } from './storySky.ts';
@@ -229,4 +231,37 @@ test("every step of the stage lets the figures' frames past the most kept go, as
   const stage = new Stage(parts);
   for (let frame = 0; frame < 3; frame++) stage.step(0.016);
   assert.equal(pumped, 3);
+});
+
+test('the stage draws the people aboard each ship it is handed that carries any, and none on the Brig', () => {
+  const carded: number[] = [];
+  const parts = {
+    scene: { draw: () => undefined },
+    figures: {},
+    forge: {
+      card: (id: number) => (carded.push(id), { texture: {}, width: 12, height: 24, root: [6, 24] }),
+      frames: () => 4,
+      forget: () => undefined,
+    },
+    roster: [],
+    hulls: {},
+    birds: {},
+    flames: {},
+    overheads: { frame: () => undefined },
+    dialogue: { frame: () => undefined },
+    screen: { blurPixels: 0 },
+    canvas: { clientWidth: 960, clientHeight: 540 },
+    landDrawers: () => null,
+    ambience: { handOver: () => undefined },
+  } as unknown as StageParts;
+  const stage = new Stage(parts);
+  const place = { x: 0, y: 40, z: 0, heading: 0, pitch: 0, roll: 0, scale: 1 };
+  const rig = {} as SailRig;
+  const ships = [
+    { hull: 'brig' as const, place: { ...place, y: -40 }, shade: 1, rig },
+    { hull: 'sloop' as const, place, shade: 0.5, rig, crew: plainCrew('wreck-1') },
+  ];
+  const shot = { eye: [20, 40, 6], yaw: 0, pitch: 0, fov: 1, near: 0.1, far: 100 } as const;
+  stage.draw({ shot, ships }, { width: 960, height: 540 }, 0, 0.1);
+  assert.equal(carded.length, 4, "the Sloop's master and its three hands");
 });

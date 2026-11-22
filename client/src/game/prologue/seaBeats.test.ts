@@ -11,6 +11,7 @@ import { Calm, DECK_VIEW, onBrig } from './calm.ts';
 import { BRACED_S, IMPACT_S, Ram, RAMMER_SHADE, rammerAway } from './ram.ts';
 import { onDeck } from './sailing.ts';
 import { CRY_S, inboundAt, Sighted } from './sighted.ts';
+import { captainAtSea } from '../../ships/shipCrew.ts';
 import { headOnView } from './stage.ts';
 import { FROM, lying, sayingS, speakers, STEP_S, storied, turnBetween, unseen, VIEW, viewOf } from './seaStory.test.ts';
 
@@ -57,6 +58,11 @@ test('the inbound ships are where they would be sighted, without playing the sig
     assert.ok(ship.y < 200, 'ahead of it (north)');
     assert.ok(turnBetween(ship.heading, Math.atan2(100 - ship.x, ship.y - 200)) < 1e-9, 'each heads for it');
   }
+  assert.deepEqual(
+    ships.map((ship) => ship.crew),
+    [1, 2, 3].map((number) => captainAtSea(`pirate-${number}`, 2, 2)),
+    "each with its pirate Major's people aboard, named as the fight numbers its captains",
+  );
 });
 
 test('the calm comes down from the fight camera without a snap, and its crew are on the view as they talk', () => {
@@ -191,6 +197,8 @@ test("the larger ship is Thule's Frigate at its own size, lighter than a captain
   const [own, rammer] = [drawn[0]?.place, drawn[1]];
   assert.ok(own && rammer);
   assert.equal(rammer.hull, 'frigate');
+  assert.deepEqual(rammer.crew, captainAtSea('rammer', 1, 5), 'Thule at its wheel, his crew aboard');
+  assert.equal(drawn[0]?.crew, undefined, "the Brig's crew the story places itself");
   assert.equal(rammer.place.scale, 1);
   assert.equal(rammer.shade, RAMMER_SHADE);
   // The head of its stem, the fore end of its hull's box, is at the Brig's side where its hull is broadest.
@@ -238,6 +246,11 @@ test('the fight begins on the story clock, tasks the player with the ships left,
   assert.equal(battle.done, true, 'over once every captain is beaten');
   assert.equal(battle.wrecks?.length, 3);
   assert.ok(battle.wrecks?.every((wreck) => !wreck.ship.underWay));
+  assert.deepEqual(
+    battle.wrecks?.map((wreck) => [wreck.ship.crew?.key, wreck.ship.crew?.state]),
+    [1, 2, 3].map((number) => [`pirate-${number}`, 'struck']),
+    'each with the people the fight left aboard, struck',
+  );
 });
 
 test('a fight that cannot begin is thrown from the frame after, for the director to go on past it', async () => {

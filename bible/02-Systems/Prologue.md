@@ -178,6 +178,14 @@ scene of its own (`calmCutOff`): the calm ends 1.3 s into it and the ram's first
 nearest gentle strand to the plaza, low by the water, clear of the city's pads and 260 m from its harbour
 (`findBeach`), found on the exact ground behind the deep's black.
 
+**Who is aboard the other ships** ([[Game]], "At sea"). The three pirate Sloops carry their people from the sighting
+on, as the sea's ships do: each pirate Major's Captain at its wheel, and its Brute, Skirmisher and Swordsman about its
+deck; in the fight they follow its men left and its sides run out ([[Naval Combat]], "How it looks"). Each wreck in the
+calm and the ram keeps the hands the fight left it, its captain stood off the wheel; one going down carries none, and a
+story begun at the calm lays each struck with its crew whole. Thule's Frigate comes with Captain Brannoc Thule at its
+wheel and six of his deck's hands about it. The stage draws them (`Stage.draw`); the Brig's own crew the story places
+itself.
+
 **The intro** ([[The Intro Goes Straight to Saltmere]]) rises at first light over the cloud above Saltmere, goes
 down into the cloud with a rush of air, the white whole for a second, and lifts on Saltmere's glide in from the sea to
 the title, each shot laid on the island's own town and harbour (`islandFrame`). Saltmere is the land the game opened,
