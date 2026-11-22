@@ -311,7 +311,7 @@ player elsewhere (the company's Go to them waits); a travel left behind any othe
    ([[Server]], "The sea"): a course into other waters with the travel flag, sent in its turn as any course is, and no
    other course sent in its place until the room answers. Too soon after a course, it is asked again; a room joined
    since, or the same link joined again (which drops what it was sent), is asked again, once it has the ship at sea (a tier's room just joined puts it there when its keeper has
-   answered); one that gives no answer in 10 s is given up, and courses are sent again. A yes in a fight
+   answered); one that gives no answer in 10 s, or whose room never shows the ship, is given up, and courses are sent again. A yes in a fight
    sails the course as Set sail does.
 3. Black for at least 1.5 s, and longer until the room has answered and no continent near the ship's new place is
    still to open (`Charting.waiting`), the land waited on 15 s at most; the sea, its islands and the sky come with the room's word and the land.

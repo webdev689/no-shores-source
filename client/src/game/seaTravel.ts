@@ -81,13 +81,15 @@ export class SeaTravel {
     const answer = room?.takeTravelled() ?? null;
     const moved = room?.ownShip;
     const joined = room && (room !== this.sentTo || room.joins !== this.sentJoins);
-    if (answer === TOO_SOON || joined) this.ask();
+    // The wait runs over every asking again: a room that never shows the ship is given up, never left black.
+    const waiting = this.asked <= ANSWER_WITHIN_S;
+    if (waiting && (answer === TOO_SOON || joined)) this.ask();
     else if (answer === TAKEN && moved) {
       // Laid where the room has it, with no easing across the way it did not sail.
       this.passage.placeAt({ x: moved.x, y: moved.y, heading: moved.heading });
       this.passage.sailAlong([this.sentEnd]);
       this.away.answer(null);
-    } else if (answer !== null || this.asked > ANSWER_WITHIN_S) {
+    } else if (answer !== null || !waiting) {
       const why = answer !== null && answer !== TAKEN ? travelRefusal(answer) : 'The sea did not answer.';
       room?.forgetTravel();
       this.passage.stop();

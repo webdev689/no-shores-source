@@ -152,3 +152,22 @@ fn a_travel_whose_last_leg_meets_an_island_never_told_is_refused_and_leaves_the_
     assert_eq!(across, Err(TravelRefused::Course(CourseRefused::CrossesLand)));
     assert_eq!(ship(&sea, traveller), before, "the ship as it was");
 }
+
+#[test]
+fn a_travel_refused_over_an_island_spends_no_course_turn() {
+    let text = r#"{ "continents": [
+        { "id": "continent-1", "climate": "desert", "outline": [[100000, 100000], [200000, 100000], [200000, 200000], [100000, 200000]] },
+        { "id": "continent-5", "climate": "desert", "outline": [[600000, 100000], [700000, 100000], [700000, 200000], [600000, 200000]] }
+    ], "isles": [] }"#;
+    let mut sea = Sea::new(&world::layout::parse(text).unwrap(), crate::deck::test_deck(), 7, &[]);
+    let traveller = at_sea(&mut sea);
+    let other = sea.join();
+    sea.course_anywhere(other, &[[550_000.0, 40_000.0]], 10).unwrap();
+    while sea.islands().standing().next().is_none() {
+        sea.tick();
+    }
+    let [x, y] = sea.islands().standing().next().unwrap().at;
+    ticks(&mut sea, COURSE_EVERY_TICKS);
+    assert!(sea.travel(traveller, &[[x - 20_000.0, y], [x + 20_000.0, y]], 10).is_err());
+    assert_eq!(sea.course(traveller, &[[260_000.0, 150_000.0]], 10), Ok(()), "a course at once after it");
+}

@@ -143,7 +143,7 @@ on ([[The Held Map Comes to the Social Spaces and Every Land Area]]).
   parchment's light and its edge with the other waters softly lined in the ink, where its cells' share crosses a half
   (`litCells`, on the page's grid of the waters, the world crate's rule judged once a 4.8 km cell). Its name, holder
   and level band are written small where the pointer came into it, kept inside the map ("The Elmwater · Grey Tithe ·
-  levels 8-14"), and painted again only as another water is lit, never at each move within one; they give way to the
+  levels 8-14"), and painted again only as another water is lit, never at each move within one (they stand anew once the map is panned, zoomed or resized); they give way to the
   prompt while it asks. The ship's own water
   and land light nothing. Which water the ship and a course's end lie in is the exact rule's, the room's own
   (`WaterJudge`), never the grid's, which reads a coast's sea as land a cell from it. A course chosen whose planned end

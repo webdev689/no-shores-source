@@ -137,6 +137,8 @@ export class MapAsk {
   private lit: number | null = null;
   /** The pointer's words as they stand: where the pointer came into the water lit, until another is. */
   private said: HoverSaid | null = null;
+  /** The map's view and place the words were stood by: once it moves, they stand anew by the pointer. */
+  private seenOn = '';
 
   /** The water under the pointer on the map `ink` (screen pixels) showing `view`, the ship at `ship`: the cells to
    *  light when the water lit changes (null when it has not), and the pointer's words, standing where it came in. */
@@ -152,11 +154,13 @@ export class MapAsk {
     const world: Point2 | null = onMap ? [view.left + inked.x / view.scale, view.top + inked.y / view.scale] : null;
     const water = world && otherWater(waters, world, judge(ship));
     const lit = water?.continent ?? null;
-    if (lit === this.lit) return { cells: null, said: this.said };
-    this.lit = lit;
+    const seenOn = JSON.stringify([view, ink]);
+    if (lit === this.lit && seenOn === this.seenOn) return { cells: null, said: this.said };
+    const cells = lit === this.lit ? null : litCells(waters, lit);
+    [this.lit, this.seenOn] = [lit, seenOn];
     // Painted once as the pointer comes into a water, not again at each move within it.
     this.said = water && inked ? { line: hoverLine(water), x: inked.x, y: inked.y } : null;
-    return { cells: litCells(waters, lit), said: this.said };
+    return { cells, said: this.said };
   }
 
   /** A course chosen (`course`, from the ship at `ship`): it asks to travel when its end lies in another water than

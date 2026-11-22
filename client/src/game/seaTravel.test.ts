@@ -18,7 +18,14 @@ function travelling() {
   } as unknown as SeaRoom;
   const passage = {
     // The course the room is sent ends where the planned route ends, short of the place chosen.
-    travel: () => [asked.push('travel'), [[400_000, 150_000], [549_000, 151_000]]][1],
+    travel: () =>
+      [
+        asked.push('travel'),
+        [
+          [400_000, 150_000],
+          [549_000, 151_000],
+        ],
+      ][1],
     placeAt: (lie: { x: number; y: number }) => asked.push(`placed ${lie.x},${lie.y}`),
     sailAlong: (points: readonly (readonly number[])[]) => asked.push(`along ${points.join(' ')}`),
     stop: () => asked.push('stop'),
@@ -181,4 +188,13 @@ test('a travel asked of a link that joined its sea again since is asked again', 
   Object.assign(room, { joins: 2 });
   travel.step(0.1, room);
   assert.deepEqual(asked, ['travel', 'travel']);
+});
+
+test('a travel whose room never shows the ship is given up, never left black for good', () => {
+  const { travel, asked, room, toFade } = travelling();
+  Object.assign(room, { ownShip: null });
+  toFade();
+  for (let second = 0; second < 12; second++) travel.step(1, room);
+  assert.equal(travel.away.refused, 'The sea did not answer.');
+  assert.deepEqual(asked, ['forget', 'stop', 'say The sea did not answer.']);
 });

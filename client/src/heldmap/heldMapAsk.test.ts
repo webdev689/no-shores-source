@@ -126,3 +126,13 @@ test('the pointer’s words stand where it came into the water, so moving within
 test('the prompt names the key that answers no as the last device used names it', () => {
   assert.deepEqual(askLines(waters.waters[1]!, 'A', 'B').at(-1), 'Yes  A      No  B');
 });
+
+test('the pointer’s words stand anew once the map has moved under them', () => {
+  const ask = new MapAsk();
+  const ink = { x: 10, y: 20, width: 400, height: 300 };
+  ask.pointer = { x: 10 + 350, y: 20 + 150 };
+  ask.hover(waters, exact, { left: 0, top: 0, scale: 0.1 }, ink, WEST);
+  ask.pointer = { x: 10 + 300, y: 20 + 100 };
+  const panned = ask.hover(waters, exact, { left: 100, top: 0, scale: 0.1 }, ink, WEST);
+  assert.deepEqual([panned.cells, panned.said?.x, panned.said?.y], [null, 300, 100], 'by the pointer, the wash kept');
+});
