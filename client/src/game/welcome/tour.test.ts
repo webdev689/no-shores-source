@@ -58,6 +58,9 @@ test("each place is framed from above, on the plaza's side of its counters, ever
   assert.equal(hall?.high, true);
   const over = framing(PLAZA, hall?.kinds ?? [], OWN, ground, true);
   assert.ok(over && over.eye[2] >= GROUND + 30, 'high over the Hall');
+  const hallMiddle = PLAZA.filter((station) => hall?.kinds.includes(station.kind))[0]?.counter ?? [0, 0];
+  const toward = (point: readonly number[]) => Math.hypot((point[0] ?? 0) - OWN.eye[0], (point[1] ?? 0) - OWN.eye[1]);
+  assert.ok(over && toward(over.eye) < toward(hallMiddle), "seen from the player's side, clear of its walls");
   // A group is framed round its first counter: another of a kind nearer the player but far from it is passed over.
   const far: StationInfo = { kind: 'weaponsmith', keeper: [1000, 2040], counter: [1000, 2038] };
   const pair = framing([...PLAZA, far], ['armorsmith', 'weaponsmith'], OWN, ground);

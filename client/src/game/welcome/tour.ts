@@ -7,7 +7,7 @@ import { type Shot, panShot } from '../camera.ts';
 import type { StationInfo } from '../nodes.ts';
 
 /** One step of her welcome: the scene she says, and the counters the camera frames meanwhile, by their station's
- *  kind (none keeps the view on the player), seen from `high` over a building that stands round them. */
+ *  kind (none keeps the view on the player), seen from `high` over a building or walls that stand round them. */
 export interface TourStep {
   readonly scene: string;
   readonly kinds: readonly string[];
@@ -20,7 +20,7 @@ export const TOUR: readonly TourStep[] = [
   { scene: 'tourMage', kinds: ['mage'] },
   { scene: 'tourVault', kinds: ['vault'] },
   { scene: 'tourTailor', kinds: ['tailor'] },
-  { scene: 'tourTack', kinds: ['tack'] },
+  { scene: 'tourTack', kinds: ['tack'], high: true },
   { scene: 'tourPost', kinds: ['mail'] },
   { scene: 'tourHarbour', kinds: ['harbourmaster'] },
   { scene: 'tourHall', kinds: ['stormcallers', 'lamplighters', 'veiled'], high: true },
@@ -33,9 +33,10 @@ export const FLY_S = 2.4;
  *  spread widens both, so every counter of it stays in the view. */
 const BACK_M = 11;
 const HEIGHT_M = 7;
-/** How far out and up a place inside a building is seen from, clear of its roof, metres. */
-const HIGH_BACK_M = 40;
-const HIGH_M = 30;
+/** How far out and up a place inside a building or a walled court is seen from, toward the player, clear of its
+ *  walls, metres. */
+const HIGH_BACK_M = 70;
+const HIGH_M = 50;
 const SPREAD_BACK = 1.3;
 const SPREAD_HEIGHT = 0.35;
 /** The height over the ground the eye looks at: over a keeper's head, so their stall's roof is in the view. */
@@ -62,11 +63,10 @@ export function framing(
   const mean = (value: (station: StationInfo) => number) =>
     found.reduce((sum, each) => sum + value(each), 0) / found.length;
   const [x, y] = [mean((each) => each.counter[0]), mean((each) => each.counter[1])];
-  // A counter faces the plaza from its keeper: the eye stands out that way.
-  let [outX, outY] = [
-    mean((each) => each.counter[0] - each.keeper[0]),
-    mean((each) => each.counter[1] - each.keeper[1]),
-  ];
+  // A counter faces the plaza from its keeper: the eye stands out that way, or, over walls round it, the player's way.
+  let [outX, outY] = high
+    ? [own.eye[0] - x, own.eye[1] - y]
+    : [mean((each) => each.counter[0] - each.keeper[0]), mean((each) => each.counter[1] - each.keeper[1])];
   const out = Math.hypot(outX, outY) || 1;
   [outX, outY] = [outX / out, outY / out];
   const spread = Math.max(...found.map((each) => Math.hypot(each.counter[0] - x, each.counter[1] - y)));
