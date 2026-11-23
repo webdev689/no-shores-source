@@ -22,4 +22,4 @@ status: in force
 - With the pirates replaced ([[Pirates Are Replaced by the Grey Tithe]]), the Grey Tithe holds the two living ports'
   waters past home: Sunspire's and Rimeholt's.
 
-How it is built: [[World Map]], [[Cities]], [[Lattice]].
+How it is built: [[World Map]], [[Cities]], [[Lattice]]; Claude's choices: [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]].

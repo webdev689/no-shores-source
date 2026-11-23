@@ -29,4 +29,4 @@ status: in force
   hostile ship ([[The Waters Come From the Islands]]).
 
 Which waters the Tithe holds now: [[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]].
-How it is built: [[Naval Combat]], [[Sailing]], [[Enemies]].
+How it is built: [[Naval Combat]], [[Sailing]], [[Enemies]]; Claude's choices: [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]].

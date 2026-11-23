@@ -16,4 +16,4 @@ status: in force
 - **Travelling**, the camera pans in a cinematic view of the ship sailing away as the game fades and loads, then shows
   it arriving in the new waters.
 
-How it is built: [[Sailing]], [[World Map]].
+How it is built: [[Sailing]], [[World Map]]; Claude's choices: [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]].

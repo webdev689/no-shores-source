@@ -276,6 +276,7 @@ a decision is a record. How to add one: [[Recording a Decision]].
 - [[Pirates Are Replaced by the Grey Tithe]]
 - [[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]]
 - [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]
+- [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]]
 
 - [[Overlook Is Our Own Game]]
 - [[The Owner Sets the Vision]]
