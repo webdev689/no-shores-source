@@ -192,22 +192,30 @@ each part works is in its system note.
 
 The decisions in [[Open Questions]] are not repeated here.
 
+- **A ship's wake follows the track it sailed** (#177, branch `ccr-836ab6ff-vgzmxg`), for the owner's yes to merge,
+  which deploys the page. The owner: "the waves that follow behind the ship dont animate when you turn your ship. They
+  are always straight". The water drew every wake straight aft of the heading the ship had that frame; it now keeps
+  where each ship's stern has been and lays the arms and the wash along it ([[Water]], "Its wake"; the numbers in [[The
+  Sea as Claude Shapes It]]). Tested offline (`wakes.test.ts`: a turn's wash where it sailed, no wake ahead of the bow
+  after a stop or going astern, a ship drawn 5x in a hard turn, the wake's box holding all of it); a read-only review's
+  five findings fixed with those tests. Not seen on a real GPU: how the curved wake looks, and the shader's cost while a
+  ship turns (unmeasured; a straight course takes the old path).
 - **The wreck's R2 tools after #172**, which no session may edit: `tools/wreck/wreck_level.py`'s waves still list the
   Tithe-Mates and Bosuns at rank 1; to match `content/prologue/wreck.json` each `(11, 1, ...)` becomes `(11, 2, ...)`
   and each `(10, 1, ...)` `(10, 2, ...)`, and `export_wreck.py` should write the quiet deck's `masts` (added to
   wreck.json by hand), or the next export drops them. A horse's card names no content it came from, as a ship's
   module's does not (Claude's call in the merge, the owner's to change).
-- **The ship aim under the crosshair, and the ship steady in it** (#168), merged; `cargo xtask check`
-  passed on its head. The owner: "The aim UI needs to be
-  center on the camera and its currently offset. Ship geometry in the aim jitters" ([[Aiming a Ship Looks Square Off Its
-  Side, Clear of Its Rig]], its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving
-  `SeaCombat` on the wasm rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the
-  rules laid for a sea at rest at the ship's heave; it now stands within about 4 px settled, the rules laying where the
-  look's ray meets the swell (`on_water`), the view held at the guns' real nearest (`laidNearest`) and turned over the
-  fall (`laidAlong`). The eye stood 0 to 13 cm off its place on the drawn ship from frame to frame when answers came
-  unevenly, placed from the answer before the one the ship was drawn from; it now stands on it. Not yet seen on a real
-  GPU: how the aim feels and looks in the game. Left: answers that come unevenly still move the ship and the eye
-  together in uneven steps against the sea.
+- **The ship aim under the crosshair, and the ship steady in it** (#168), merged with the owner's yes ("Deploy 168 when
+  ready"), which deployed the page and the rooms. The owner: "The aim UI needs to be center on the camera and its
+  currently offset. Ship geometry in the aim jitters" ([[Aiming a Ship Looks Square Off Its Side, Clear of Its Rig]],
+  its calls). Measured offline on the rules' own swell (`seaAim.test.ts`, and a probe driving `SeaCombat` on the wasm
+  rules): the volley's fall stood 90 to 100 px past the crosshair on a 1080-line screen, as the rules laid for a sea at
+  rest at the ship's heave; it now stands within about 4 px settled, the rules laying where the look's ray meets the
+  swell (`on_water`), the view held at the guns' real nearest (`laidNearest`) and turned over the fall (`laidAlong`).
+  The eye stood 0 to 13 cm off its place on the drawn ship from frame to frame when answers came unevenly, placed from
+  the answer before the one the ship was drawn from; it now stands on it. Not yet seen on a real GPU: how the aim feels
+  and looks in the game. Left: answers that come unevenly still move the ship and the eye together in uneven steps
+  against the sea.
 - **The owner's bugs from two rounds of play** (#163), merged, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
   that fails without it. Elder Maren Hale's welcome was left to the session reworking it (#172, where her walk is
   gone):

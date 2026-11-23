@@ -125,6 +125,7 @@ export class FleetScene {
         const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = vessel.ship;
         const waterline = hullWaterline(this.hullOf(vessel));
         return {
+          id: `fleet ${vessel.id}`,
           x: x - view.leftM,
           y: y - view.topM,
           heading,
