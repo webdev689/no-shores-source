@@ -24,6 +24,10 @@ export const AUTO = {
   gpuUnder: 0.7,
   intervalOver: 1.25,
   intervalMet: 1.1,
+  /** Without the clock, a step down is kept only if the frames come this much quicker for it; else the steps down
+   *  wait heldS, twice as long after each that did not help, up to upMostS. */
+  helped: 0.9,
+  heldS: 30,
   refreshMs: [1000 / 360, 1000 / 50],
 } as const;
 
@@ -51,6 +55,10 @@ export class AutoScale {
   /** Whether the window now heard follows a step, and is not judged: its targets are made again in it, and the GPU
    *  times that come back in it are partly the last tier's. */
   private settling = false;
+  /** The interval before a step down taken without the clock, judged once that step has settled. */
+  private trial: number | null = null;
+  private heldUntil = -Infinity;
+  private holdS: number = AUTO.heldS;
 
   /** Hears a frame `intervalMs` after the last and the GPU's totals for the frames whose times came back since (null
    *  without its clock); answers the tier to draw. */
@@ -82,11 +90,21 @@ export class AutoScale {
     const grown = ((SCALES[this.tier - 1] ?? 1) / (SCALES[this.tier] ?? 1)) ** 2;
     const over = clocked ? gpu > AUTO.gpuOver * refresh : interval > AUTO.intervalOver * refresh;
     const under = clocked ? gpu * grown < AUTO.gpuUnder * refresh : interval <= AUTO.intervalMet * refresh;
+    // Frames late for the CPU's sake come no quicker for fewer pixels: a step down that did not help is taken back.
+    const tried = this.trial;
+    this.trial = null;
+    if (tried !== null && !clocked && interval > tried * AUTO.helped) {
+      this.tier--;
+      [this.heldUntil, this.settling] = [this.clock + this.holdS, true];
+      this.holdS = Math.min(AUTO.upMostS, this.holdS * 2);
+      return;
+    }
     if (over) {
       this.underS = 0;
-      if (this.tier === SCALES.length - 1) return;
+      if (this.tier === SCALES.length - 1 || (!clocked && this.clock < this.heldUntil)) return;
       this.tier++;
       this.settling = true;
+      if (!clocked) this.trial = interval;
       if (this.clock - this.raisedAt < AUTO.undoneS) this.waitS = Math.min(AUTO.upMostS, this.waitS * 2);
     } else if (under && this.tier > 0) {
       this.underS += seconds;

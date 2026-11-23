@@ -46,6 +46,15 @@ const texelOf = (cascade: Cascade): number => (2 * cascade.reachM) / SHADOW_SIZE
 /** How far the far square's middle may fall behind where the eye would set it before it is set again: 32 of its
  *  texels, 37.5 m, so only its rim, where its shadows have faded out, moves that far. */
 export const FAR_HOLD_M = 32 * texelOf(FAR);
+
+/** Where a caster lies as the far map can show it, for its signature: its metres in far texels, its turns in the
+ *  angle that moves a point `reachM` from its middle by a far texel. A ship riding the swell moves less than that,
+ *  and leaves the map kept. */
+export function farPlace(metres: readonly number[], turns: readonly number[], reachM: number): number[] {
+  const texel = texelOf(FAR);
+  const angle = texel / Math.max(reachM, texel);
+  return [...metres.map((value) => Math.round(value / texel)), ...turns.map((value) => Math.round(value / angle))];
+}
 /** How far the key light may turn from the way the far map was cast along before it is cast again, radians: a texel
  *  at its square's corner. */
 export const FAR_TURN = 2 / SHADOW_SIZE / Math.SQRT2;

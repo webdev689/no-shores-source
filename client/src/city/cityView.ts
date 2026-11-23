@@ -52,8 +52,9 @@ const VIEW_BYTES = 96;
 /** How long a frame may spend building a city while an older one stands drawn, milliseconds: the old is drawn until
  *  the new is whole, so no one waits on it. Overlook's takes about a second of steps, so about 500 frames. */
 export const CITY_SLICE_MS = 2;
-/** How long a frame may spend building a city while none stands: the player waits on this one. */
-export const CITY_FIRST_SLICE_MS = 6;
+/** How long a frame may spend building a city while none stands: the player waits on this one behind the veil, which
+ *  shows nothing it would cost, so Overlook's stands in about 40 frames while the veil keeps moving. */
+export const CITY_FIRST_SLICE_MS = 24;
 
 /** Whatever of the GPU's a city makes, let go with it. */
 type Owned = { destroy(): void };

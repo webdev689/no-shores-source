@@ -10,6 +10,7 @@ import {
   FAR,
   FAR_HOLD_M,
   FAR_TURN,
+  farPlace,
   heldToward,
   heldView,
   NEAR,
@@ -288,4 +289,12 @@ test("the far map is drawn from its casters' recorded calls, into its own layer'
   ]);
   assert.notEqual(groups[0], groups[1]);
   assert.equal(map.cascade, NEAR);
+});
+
+test("a ship's place as the far map keeps it: the swell's rise and roll leave it, a sail past a texel changes it", () => {
+  const [heading, pitch, roll] = [1.2, 0.01, 0.02];
+  const lies = farPlace([1000.3, -500.2, 0.1], [heading, pitch, roll], 60);
+  assert.deepEqual(farPlace([1000.5, -500.4, 0.4], [heading, pitch + 0.004, roll - 0.005], 60), lies, 'the swell');
+  assert.notDeepEqual(farPlace([1003, -500.2, 0.1], [heading, pitch, roll], 60), lies, 'sailed 3 m');
+  assert.notDeepEqual(farPlace([1000.3, -500.2, 0.1], [heading + 0.05, pitch, roll], 60), lies, 'turned 3 degrees');
 });

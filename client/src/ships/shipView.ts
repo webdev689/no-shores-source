@@ -1,6 +1,6 @@
 import { sphereAround } from '../frustum.ts';
 import { BUFFER_USAGE, type Gpu } from '../gpu.ts';
-import { ShadowMap } from '../shadow.ts';
+import { farPlace, ShadowMap } from '../shadow.ts';
 import { skyUniformFor } from '../sky/skyUniform.ts';
 import { SHIP_PARTS } from '../textures/shipPictures.ts';
 import { DRESSES, PLAYER_LOOK, SHIP_SIDES, type ShipLook } from './dress.ts';
@@ -335,10 +335,11 @@ export class ShipView {
     // The sphere the main pass culls it by, wide enough for a mast falling flat about its foot.
     const [middleX, middleY, middleZ, radius] = sphereAt(this.sphere, place, camera.eye);
     if (!shadow.sphereReaches([middleX, middleY, middleZ], radius)) return;
-    // Where it lies and how its canvas is set, which its draws do not show: a far map it casts into is drawn again
-    // when they change.
+    // Where it lies, as the far map can show it, and how its canvas is set, which its draws do not show: a far map it
+    // casts into is drawn again when they change. Its canvas's billow is finer than the far map's texels.
     const { x, y, z, heading, pitch, roll, scale = 1 } = place;
-    shadow.tally(x, y, z, heading, pitch, roll, scale, rig?.changes ?? -1, rig?.harm.changes ?? -1, rig?.time ?? -1);
+    const lies = farPlace([x, y, z], [heading, pitch, roll], radius);
+    shadow.tally(...lies, scale, rig?.changes ?? -1, rig?.harm.changes ?? -1);
     const canvas = this.prepare(place, camera, slot, look, rig);
     if (canvas !== null) this.encode(pass, slot, canvas, this.kit.cast, shadow.casterGroup(this.kit.cast));
   }

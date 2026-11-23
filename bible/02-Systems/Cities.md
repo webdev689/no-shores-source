@@ -210,7 +210,7 @@ precision 3 km out.
 **Built a few steps a frame.** The game hands a city over with `beginCity`: its drawing is worked out in small steps
 (`cityBuildSteps`: a cell's pieces, a model forged, a piece's masses, a solid, 4,096 vertices laid) and put on the
 GPU a buffer a step, and before each frame is recorded (`prepare`) the build takes steps for 2 ms while an older city
-stands drawn, 6 ms while none does. The city drawn before is drawn, lit and kept clear until the new one is whole,
+stands drawn, 24 ms while none does (behind the veil, which waits on it). The city drawn before is drawn, lit and kept clear until the new one is whole,
 then the new one in its place, so nothing half-built shows. A landmass's city is built so once it opens, and its
 layouts' city again whenever the layouts within 4 km change ([[Layouts]]). A city begun again before it is whole is
 let go. The [[World Editor]] builds in one go (`setCity`); either way the same city is made, to the byte.
@@ -282,8 +282,8 @@ whose shadow at the far map's 1.2 m texels is the same; every face and plate is 
 Winter takes each picture's snowed turn where its set has one, unlightened.
 
 **What it costs.** Cells are grouped by 4 x 4 into chunks, culled against the view; consecutive chunks are one draw
-call. Overlook's build is about 0.8 to 1 s of work in Node, some 118,000 steps: about 500 frames at 2 ms, 150 at
-6 ms. Most steps take microseconds; a model's forging is one step, the largest about 10 ms in Node. Its 157
+call. Overlook's build is about 0.8 to 1 s of work in Node, some 118,000 steps: about 500 frames at 2 ms, 40 at
+24 ms. Most steps take microseconds; a model's forging is one step, the largest about 10 ms in Node. Its 157
 pictures are painted in about 5 s on three workers. In headless
 SwiftShader at 1280 x 720:
 

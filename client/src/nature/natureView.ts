@@ -80,14 +80,16 @@ interface Meshes {
 
 /** Biomes' flora kept on the GPU once made, by device, shared by every view drawing the biome. A biome's is about
  *  60 MB (five or six 1024-pixel layers with their mips, albedo and normal), so of the biomes no view draws only the
- *  last left is kept: a landmass sailed back to reads, decodes and copies none of its flora again. */
+ *  last left is kept: a landmass sailed back to reads, decodes and copies none of its flora again. A machine that says
+ *  it has under 8 GB (`navigator.deviceMemory`, its most) keeps none, as those 60 MB cost it more than the wait. */
 const FLORA_KEPT = new WeakMap<GPUDevice, Kept<Cast, Meshes>>();
-const FLORA_IDLE = 1;
+const floraIdle = (): number =>
+  ((globalThis.navigator as { readonly deviceMemory?: number } | undefined)?.deviceMemory ?? 8) >= 8 ? 1 : 0;
 
 function floraKept(device: GPUDevice): Kept<Cast, Meshes> {
   let kept = FLORA_KEPT.get(device);
   if (!kept) {
-    kept = new Kept(FLORA_IDLE, (meshes) => {
+    kept = new Kept(floraIdle(), (meshes) => {
       for (const owned of [meshes.vertices, meshes.blocks, meshes.albedo, meshes.normal]) owned.destroy();
     });
     FLORA_KEPT.set(device, kept);

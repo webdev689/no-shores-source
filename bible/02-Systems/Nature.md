@@ -104,7 +104,8 @@ width, and from the exact close patch where it reaches, eased in over its outer 
   a landmass of it is drawn; until they have come its plants are not drawn. Its pictures are two texture arrays,
   albedo with coverage and normal with leaf share, 1024 px layers with six mip levels, about 60 MB a biome. Once on
   the GPU they are shared by every view drawing the biome, and the last biome no view draws is kept besides
-  (`Kept`), so a landmass sailed back to fetches, decodes and copies none of its flora again.
+  (`Kept`), so a landmass sailed back to fetches, decodes and copies none of its flora again; on a machine that says
+  it has under 8 GB (`navigator.deviceMemory`), none is kept besides, as its 60 MB cost more than the wait.
 - **Detail.** Near, a plant is its baked mesh: trunks and limbs as rings wearing the bark picture, which repeats round
   and along them, and foliage as crossed cards cut out by their pictures' coverage, an edge smoothed across the
   pixel's samples. Its normal map bends the light across each card and up each furrow, and the ambient occlusion

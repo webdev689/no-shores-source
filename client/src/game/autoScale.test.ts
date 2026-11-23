@@ -106,3 +106,16 @@ test('a page hidden a while, its one long frame, closes a window like any other 
   assert.equal(auto.tier, 0);
   assert.ok(Math.abs((auto.refreshMs ?? 0) - REFRESH_MS) < 0.01);
 });
+
+test('without the GPU’s clock, frames late for the CPU’s sake leave the picture whole: a step down that did not help is taken back', () => {
+  const auto = learnt();
+  // As late at every tier: fewer pixels make them no quicker.
+  const heard = run(auto, 600, () => ({ intervalMs: 25, gpuMs: null }));
+  assert.ok(
+    heard.every((each) => each.tier <= 1),
+    'never lower than a tier, and only while it is tried',
+  );
+  const atFull = heard.filter((each) => each.tier === 0).length / heard.length;
+  assert.ok(atFull > 0.9, `whole most of the time: ${(atFull * 100).toFixed(0)}%`);
+  assert.equal(auto.tier, 0);
+});

@@ -770,8 +770,9 @@ blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, op
 - The land is drawn a little off the ground bodies stand on, so the fight's marks and blood are drawn 0.12 m over
   where they lie. A telegraphed blow's mark is flat: on a slope, part of it lies under the land.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
-- Without the GPU's clock Auto cannot tell frames held back by the script from frames held back by the GPU, so frames
-  slow for the script's sake lower the resolution too. A browser may round its timestamps: Chrome rounds them to
+- Without the GPU's clock Auto cannot tell frames held back by the script from frames held back by the GPU, so it
+  tries each step down: one that leaves the frames no 10% quicker is taken back, and steps down then wait 30 s, twice
+  as long after each that did not help, up to 160 s. A browser may round its timestamps: Chrome rounds them to
   0.1 ms unless its WebGPU developer features are on, so a short pass reads 0 or 0.1 ms and only the means hold.
 - The people seen aboard another ship are drawn, not the room's: another player's Sloop shows plain people, not that
   player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships moored by a
