@@ -58,8 +58,7 @@ import { ceilingAt, type DungeonAsk, type DungeonLayout, openAt, seenBlocks } fr
 import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
-import type { FootAsk } from './footFigures.ts';
-import type { AtEntrance, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
+import type { AtEntrance, FootAsk, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
 import { stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 

@@ -155,17 +155,6 @@ export function ownCard(
 }
 
 /** What the player's figure was last dressed in: their gear and the loadout drawn. */
-/** What a frame on foot is asked: whether play is paused or the map is looked at, whether the hands are free, the
- *  view's aspect, and the eye of a cutscene's shot shown in place of the player's own (the stranger's welcome), which
- *  the figures are then drawn for. */
-export interface FootAsk {
-  readonly paused: boolean;
-  readonly looking?: boolean;
-  readonly hands: boolean;
-  readonly aspect: number;
-  readonly eye?: readonly [number, number, number] | null;
-}
-
 export interface Dressed {
   gear: GearState | null;
   loadout: number;
