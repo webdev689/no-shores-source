@@ -168,7 +168,8 @@ character, so a second hearing, a rejoin or a second tab gives none. Leaving the
 view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next
 frame in a social space with no welcome to hear (a reload, or a browser that played the story before). Either way the
 room is asked once a page, and only once its word on the player's own character (not a room's starting one) shows her
-task waiting.
+task waiting. Under `npm run dev`, `?arrival=1` ends the story as the shore does, so the arrival and her welcome
+play at once.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
 swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is
