@@ -180,7 +180,7 @@ export class WreckRun {
         walker.ridesIn(sent);
       },
     );
-    // The prologue's player has no Art yet (one comes after it, with the factions), wakes hurt without the sword and
+    // The prologue's player has no Art until the wisp gives them the Storm, wakes hurt without the sword and
     // shield the story dressed them in, and meets the boarders as one side: asked before the room's first tick.
     void room.story({ ask: 'wreck' });
     fight = new Fighting(combat, room);

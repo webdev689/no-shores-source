@@ -22,7 +22,7 @@
       { "who": "tailor", "say": "Dyes and emblems. Nobody should meet the Tithe looking drab." }
     ],
     "roundTack": [
-      { "who": "tack", "say": "Four horses a day, and the Bay always. Barding too, once you ride." }
+      { "who": "tack", "say": "The Bay is always in the stable. Four more a day, horses or barding." }
     ],
     "roundMail": [
       { "who": "postmaster", "say": "Letters for you wait here until you take them." }

@@ -101,8 +101,8 @@ impl Room {
     }
 }
 
-/// A player as the wreck wakes them: no weapon (the sword a new player starts with gone; the story's lies on the
-/// deck), dressed in the story's steel in place of what they wore, and `WOKE_HEALTH` of their health, the ram's harm.
+/// A player as the wreck wakes them: no weapon (the story's sword and shield lie on the deck), dressed in the story's
+/// steel in place of what they wore, and `WOKE_HEALTH` of their health, the ram's harm.
 pub(crate) fn wake_for_story(player: &mut crate::players::Player) {
     let character = &mut player.character;
     character.items.retain(|_, (item, at)| *at == At::Vault || !STRIPPED.contains(&item.bucket));

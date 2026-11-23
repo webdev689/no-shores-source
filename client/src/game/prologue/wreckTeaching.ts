@@ -25,7 +25,7 @@ export const BOARDER = { type: 8, rank: 1 } as const;
 
 /** The gear crate's number for a Sword & Shield. */
 export const SWORD_AND_SHIELD = KINDS.indexOf('sword_and_shield');
-/** The item the room gives the player (`Room::story_take_arms`) as it lies on the deck: a Normal Sword & Shield of
+/** The item the room gives the player (`Room::story_take`) as it lies on the deck: a Normal Sword & Shield of
  *  level 1, carried, for its picture, which the item's kind and rarity alone choose. */
 export const ARMS_ITEM: GearItem = {
   id: 0,
