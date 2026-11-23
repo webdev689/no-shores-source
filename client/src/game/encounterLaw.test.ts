@@ -493,9 +493,9 @@ test('a beam beside the eye fades away, so it never stands across the view, whil
         .filter((mark) => mark.at[2]! > 1)
         .map((mark) => mark.alpha),
     );
-  const at = (away: number) => [anchor[0]! + away, anchor[1]!, 1.7] as const;
-  assert.ok(beam(null) > 0 && beam(at(10)) === beam(null), 'whole from afar');
-  assert.equal(beam(at(0.5)), 0, 'none with the eye beside it');
-  assert.ok(beam(at(2.75)) > 0 && beam(at(2.75)) < beam(null), 'fading between');
-  assert.ok(anchorMarks(at(0.5)).length > 0, 'its ring on the floor still shown');
+  const eyeAt = (away: number) => [anchor[0]! + away, anchor[1]!, 1.7] as const;
+  assert.ok(beam(null) > 0 && beam(eyeAt(10)) === beam(null), 'whole from afar');
+  assert.equal(beam(eyeAt(0.5)), 0, 'none with the eye beside it');
+  assert.ok(beam(eyeAt(2.75)) > 0 && beam(eyeAt(2.75)) < beam(null), 'fading between');
+  assert.ok(anchorMarks(eyeAt(0.5)).length > 0, 'its ring on the floor still shown');
 });
