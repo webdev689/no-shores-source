@@ -115,6 +115,8 @@ export interface FightLay {
   readonly reach: number;
   readonly ends: readonly (FightEnd | null)[];
   readonly radius: number;
+  /** How much wider than its gun's own it scatters, as long as it has been held: 2 just taken, 1 settled. */
+  readonly spread: number;
   readonly on_target: boolean;
 }
 

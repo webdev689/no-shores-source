@@ -396,15 +396,22 @@ export function markLine(
 }
 
 /** The line of light a drop at rest stands under, in its rarity's colour and height, rising from `over` metres above
- *  `place`: for a piece of gear the world lays down itself, drawn as it is. */
+ *  `place`: for a piece of gear the world lays down itself, drawn as it is; `share` of it risen, as a drop's line rises
+ *  once it settles. */
 export function markDropLine(
   out: number[],
-  { place, rarity, over }: { readonly place: Point; readonly rarity: number; readonly over: number },
+  {
+    place,
+    rarity,
+    over,
+    share = 1,
+  }: { readonly place: Point; readonly rarity: number; readonly over: number; readonly share?: number },
   seconds: number,
   eye: Point,
 ): void {
   const crown: Point = [place[0], place[1], place[2] + over + LIFT_M];
-  markLine(out, crown, LINE_M[rarity] ?? AMMO_LINE_M, LINE_COLOURS[rarity] ?? WHITE, 1, seconds, eye);
+  const tall = (LINE_M[rarity] ?? AMMO_LINE_M) * share;
+  markLine(out, crown, tall, LINE_COLOURS[rarity] ?? WHITE, share, seconds, eye);
 }
 
 /** How near the player's feet come to a drop to take it, across and up, metres (crates/room/src/drops.rs

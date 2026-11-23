@@ -94,6 +94,8 @@ export class Samples {
   private readonly lastPlayed = new Map<string, Held>();
   /** When each file and chunk that failed to come failed, on the audio clock. */
   private readonly failed = new Map<string, number>();
+  /** The cues fetched ahead of their first play, held whatever the budget (`prefetch`). */
+  private readonly kept = new Set<string>();
   private audio: BaseAudioContext | null = null;
 
   constructor(sounds: Bank, read: Read = contentBytes, most = HELD_BYTES) {
@@ -105,6 +107,21 @@ export class Samples {
     if (this.audio) return;
     this.audio = audio;
     for (const id of Object.keys(this.bank.sounds)) if (fetchedAtWake(id)) this.want(id);
+  }
+
+  /** Fetches `ids` on `audio` now, ahead of their first play, and holds them whatever the budget: a one-shot heard
+   *  once (a story's crash or splash) would otherwise go unheard while its own fetch was on its way. */
+  prefetch(audio: BaseAudioContext, ids: readonly string[]): void {
+    this.audio ??= audio;
+    for (const id of ids) {
+      this.kept.add(id);
+      this.want(id);
+    }
+  }
+
+  /** `ids` held under the budget again, as any other: their story is over. */
+  release(ids: readonly string[]): void {
+    for (const id of ids) this.kept.delete(id);
   }
 
   /** Fetches each of `id`'s files not held or on its way. */
@@ -221,13 +238,15 @@ export class Samples {
     if (over <= 0) return;
     const now = this.audio?.currentTime ?? 0;
     const all = [...this.held.entries()]
-      .filter(([id]) => !fetchedAtWake(id))
+      .filter(([id]) => !fetchedAtWake(id) && !this.kept.has(id))
       .flatMap(([id, variants]) => variants.map((sound) => ({ id, sound })));
     for (const { id, sound } of all.sort((one, other) => one.sound.playedAt - other.sound.playedAt)) {
       if (over <= 0 || now - sound.playedAt < KEPT_PLAYED_S) return;
       const variants = (this.held.get(id) ?? []).filter((each) => each !== sound);
       if (variants.length > 0) this.held.set(id, variants);
       else this.held.delete(id);
+      // Nothing else may hold it, or its samples (and the page's decoded copy) are never let go.
+      if (this.lastPlayed.get(id) === sound) this.lastPlayed.delete(id);
       over -= sound.bytes;
     }
   }
@@ -239,6 +258,16 @@ const samples = new Samples(bank);
 /** Starts fetching the recordings, once the page's sound has woken. */
 export function loadSamples(audio: BaseAudioContext): void {
   samples.wake(audio);
+}
+
+/** Fetches the recordings of `ids` now, ahead of their first play, and holds them (`Samples.prefetch`). */
+export function prefetchSamples(audio: BaseAudioContext, ids: readonly string[]): void {
+  samples.prefetch(audio, ids);
+}
+
+/** Holds `ids` under the budget again (`Samples.release`). */
+export function releaseSamples(ids: readonly string[]): void {
+  samples.release(ids);
 }
 
 /** Plays a recorded sound into `out`, its pitch at `rate`, answering it as it plays; null where it has not come. */

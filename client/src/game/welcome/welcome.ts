@@ -7,6 +7,7 @@
 // next arrival; played once every stop is said, or once her counter is opened.
 import type { CardAt, Cards } from '../../player/cards.ts';
 import type { Dress } from '../../player/dressing.ts';
+import { walkFrameSeconds } from '../../player/playerMoves.ts';
 import type { Cast, Line } from '../../speech/cast.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { KEEPERS } from '../keepers.ts';
@@ -15,7 +16,7 @@ import { ACTOR_IDS, actorCards, overHead } from '../prologue/actors.ts';
 import { headOnView } from '../prologue/stage.ts';
 import { awayFromCounters, plazaFrameOf, plazaOf } from '../townsfolk.ts';
 import type { NodeInfo } from '../worldData.ts';
-import { HER_COUNTER, WelcomeWalk } from './walk.ts';
+import { HER_COUNTER, WALK_M_S, WelcomeWalk } from './walk.ts';
 
 /** Where the browser keeps that the welcome has been played, beside the story's own mark (`noshores.prologue`), and
  *  the scenes said in a walk ended early, by name. */
@@ -23,6 +24,8 @@ export const WELCOME_KEY = 'noshores.welcome';
 export const WELCOME_SAID_KEY = 'noshores.welcome.said';
 /** Her figure's number among the story's placed figures, clear of the stranger's. */
 const MAREN_ID = ACTOR_IDS + 90;
+/** Her walk's frames a second at her pace, as a walker's are paced, so her feet keep to the ground. */
+const WALK_FPS = 1 / walkFrameSeconds(WALK_M_S);
 
 /** The welcome's mark in the browser: due once the story ends, played once given, forgone once left before it. */
 type WelcomeMark = 'due' | 'played' | 'forgone';
@@ -141,9 +144,10 @@ export class Welcome {
     const { maren } = this.walk;
     this.z = this.parts.groundAt(maren.x, maren.y) ?? this.z;
     this.voice.dialogue.frame(passed);
-    const anim = maren.walking && !held ? 'walk' : 'idle';
+    const walking = maren.walking && !held;
+    const anim = walking ? 'walk' : 'idle';
     return actorCards(
-      [{ id: MAREN_ID, dress: this.dress, anim, ...maren, z: this.z }],
+      [{ id: MAREN_ID, dress: this.dress, anim, ...maren, z: this.z, fps: walking ? WALK_FPS : undefined }],
       this.parts.forge,
       shot.eye,
       clock,

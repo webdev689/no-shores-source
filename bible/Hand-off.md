@@ -144,6 +144,24 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
+- **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
+  `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which deploys the page and the rooms (the naval rules
+  and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn behind the wake's shut lids)
+  and its room opened and ticked in the rooms' worker ([[The Wreck's Room Runs in the Rooms' Worker Too]]); the
+  ship's aim after Black Flag from its own deck with a lay that narrows as it is held
+  ([[Aiming a Ship Follows Black Flag, From Its Deck]]); the wreck's arms 8 m out as a loot drop
+  ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]); the story's one-shots (the crash, the splash) fetched as its
+  sound wakes; the Boarding playing on through a death before Thule; Maren at three quarters of a walk
+  ([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]); the marks seen faded through walls
+  ([[A Mark Over What a Player Can Use Is Seen Through Walls]]), beside main's lit marks. Then the owner's
+  "comprehensive audit on everything": six read-only auditors (the aim and the naval rules, sound and music, the
+  marks, arms and welcome, the prologue end to end, the bible against the code, the room's move), every finding fixed
+  with a test or written down as a limit in #161's description; among the fixes, the pad has the game's controls
+  without the pointer (a pad alone could not fight on foot), a cut sting no longer holds back the song behind it, and
+  the protocol's version covers the sea fight's numbers. Tested offline (the full check at abd1ad14); the deck eye's
+  framing on each hull, the faded marks, the arms' pop and the sounds are not yet seen on a real GPU, heard or played.
+  Open for the owner: whether each hull's eye frames well (the Brig's stands on its quarterdeck, aft of its battery;
+  the Schooner's under its main boom), and the narrowing's 2x and 1.5 s.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
   owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
@@ -352,9 +370,11 @@ The decisions in [[Open Questions]] are not repeated here.
   migration of each character's room. Known, small: before any gear has come a tier's seas show open, the server
   still refusing them. A change to `tools/dungeon/` or the contracts publishes new packs: take the manifest line from
   the workflow's log into `content/dungeon/modules.json`.
-- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is
-  opened on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
-  difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
+- **Hitching in the prologue, left by #161**: the aim's view (`AimView`) is made again for every sea fight; the shore's
+  return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the
+  room's standing orders while their page keeps counting.
+- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, no veil when
+  a voyage's difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
   `cityView.ts`); flora is decoded and its mips made again on every switch; a landmass cannot be prepared before it
   opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
   R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,
