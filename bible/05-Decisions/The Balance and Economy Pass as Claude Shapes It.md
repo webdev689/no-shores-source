@@ -123,8 +123,9 @@ Measured, a level 1 player with the starting sword swinging once a second and ne
 | Boss (Thule) | 59 blows, 112.3 s | 18.4 s |
 
 The Miniboss's and the Boss's times move by a few seconds from run to run as the dice fall; each is one fight. The
-page's two scripted sword players now hold the heroic raid, whose third and fourth waves are led by Reeves; they ran
-out its clock in its third wave before (`server/public.test.ts`). Whether a pair should hold it stays the owner's.
+page's two scripted sword players still run out the heroic raid's clock (`server/public.test.ts`), though its last
+waves' Reeves defend less; on the branch before `main`'s later events work came in they held it, so the pair stands
+near the line. Whether a pair should hold it stays the owner's.
 
 ## Left as it was
 

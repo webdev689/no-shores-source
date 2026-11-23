@@ -446,9 +446,9 @@ The decisions in [[Open Questions]] are not repeated here.
   Exploit ×1.25, no crit; companions with the land's ease. Measured with `economy_tests.rs` (six pace tests and the
   ledger), `balance_tests.rs` (`measure_ranks`), `measure_blows` and `measure_fights_by_rank`. Destiny 1's numbers
   came from search summaries; the proxy refused every page, so they are unchecked against the pages. Tested offline:
-  `cargo xtask check` on its tree (5b9a2b87); not played. The page's two scripted sword players now hold the heroic
-  raid, whose last waves' Reeves defend less; whether a pair should stays the owner's. Its other open points are in
-  [[Open Questions]], "The balance pass's open points".
+  `cargo xtask check` on its head; not played. The page's two scripted sword players stand near the line of holding
+  the heroic raid (they held it before `main`'s later events work, and fail it after); whether a pair should stays the
+  owner's. Its other open points are in [[Open Questions]], "The balance pass's open points".
 
 ## Next
 
