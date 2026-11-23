@@ -159,7 +159,7 @@ the one of its kind nearest the player, each other the one of its kind nearest t
 interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then 9 m) and up under its 14 m roof (10,
 11, 8, 12 then 7 m), down the nave toward the Lamplighters' chapel with a wider lens (1.35 radians), the first eye that
 sees all three keepers and their banners clear of the columns; as she names a house the camera turns from there to its
-chapel. Her farewell is seen from 3.2 m to the side of the pair, level with their faces, on the side nearer the player's
+chapel. Her farewell is seen from 4.5 m to the side of the pair, level with their faces, on the side nearer the player's
 view unless a solid stands between. Each view looks a fifth of its lens below its target, so what it frames stands in its upper part, clear of the dialogue box over its lower middle. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
 view where it is, her words said all the same. From her first word to her farewell no game key acts (no move or
 look, no use, map, menu, chat, character page or respawn) and the view is hers; Space (or the pad's jump or confirm)

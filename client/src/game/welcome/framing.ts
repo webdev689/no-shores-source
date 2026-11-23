@@ -45,7 +45,7 @@ const BANNER_M = 5;
  *  clear of the dialogue box over its lower middle. */
 const RAISE = 0.2;
 /** How far from the pair the farewell's eye stands. */
-const FACES_M = 3.2;
+const FACES_M = 4.5;
 /** The view a framing is checked against: the widest screen the game is laid out for. */
 const CHECKED = { width: 16, height: 9 };
 

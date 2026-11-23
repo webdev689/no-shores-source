@@ -110,7 +110,7 @@ test('her farewell is seen from the side, both faces in the view', () => {
   for (const [east, south, up] of [stranger, player])
     assert.ok(seen(shot, [east, south, up + HEAD_M]), 'a face in the view');
   const away = Math.hypot(shot.eye[0] - 1000, shot.eye[1] - 2028.9);
-  assert.ok(away > 2 && away < 6 && Math.abs(shot.eye[2] - (GROUND + HEAD_M)) < 1, `close and level: ${away}`);
+  assert.ok(away > 4 && away < 6 && Math.abs(shot.eye[2] - (GROUND + HEAD_M)) < 1, `close and level: ${away}`);
   const walled = facesShot(OWN, stranger, player, [box(1003.5, 2029, 0.5, 4, 4)]);
   assert.ok(walled.eye[0] < 1000, 'from the side a wall leaves clear');
 });
