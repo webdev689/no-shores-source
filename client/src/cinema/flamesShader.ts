@@ -7,6 +7,7 @@
 // it by how near it stands to the fire, so only what stands round a fire is lit, never the sea or the sky past it.
 import { LIGHT } from '../combat/lightLayer.ts';
 import { FIRE_TEXELS_PER_METRE } from './flameParts.ts';
+import { NEAR_FADE_WGSL } from './nearFade.ts';
 
 /** Each part's kind. */
 export const PART = { smoke: 0, tongue: 1, ember: 2, glow: 3, wisp: 4 } as const;
@@ -16,6 +17,7 @@ export const NOISE_SEEDS = 997;
 
 export const FLAMES_WGSL = /* wgsl */ `
 struct View { from_eye: mat4x4f, to_eye: mat4x4f, time: vec4f }
+${NEAR_FADE_WGSL}
 @group(0) @binding(0) var<uniform> view: View;
 
 struct Part {
@@ -29,7 +31,7 @@ struct Out {
   @location(1) colour: vec4f,
   @location(2) @interpolate(flat) kind_seed: vec2f,
   @location(3) @interpolate(flat) light: vec4f, // a glow's fire, from the eye, then its reach
-  @location(4) @interpolate(flat) form: vec4f,  // a tongue's width, height, seen length and end-on share; smoke's ups
+  @location(4) @interpolate(flat) form: vec4f,  // a tongue's width, height, seen length and end-on share; smoke's ups, near fade
 }
 
 const CORNERS = array<vec2f, 6>(vec2f(-1.0, -1.0), vec2f(1.0, -1.0), vec2f(1.0, 1.0),
@@ -118,7 +120,8 @@ fn light_rect(centre: vec3f, reach: f32) -> vec4f {
     // A spark never shrinks below about a pixel and a half, so one far off still shows.
     half = vec2f(max(part.shape.x, length(middle) * 0.0007));
   } else if (kind == ${PART.smoke}u) {
-    out.form = vec4f(right.z, up.z, -normalize(middle).z, 0.0);
+    // Last, how much of it shows as the eye comes to it, so a camera in a column never sees a sheet of it.
+    out.form = vec4f(right.z, up.z, -normalize(middle).z, near_fade(length(middle) - half.x));
   }
   let world = middle + (across * corner.x * half.x + upward * corner.y * half.y);
   out.position = matrix * vec4f(world, 1.0);
@@ -197,7 +200,7 @@ fn shaded(in: Out) -> vec4f {
   let rolled = mat2x2f(cos(turn), sin(turn), -sin(turn), cos(turn)) * across;
   let edge = 0.68 + 0.32 * noise2(rolled * 2.4 + vec2f(seed * 1.7, 0.0), seed);
   let reach = length(across) / edge;
-  let cover = floor(in.colour.b * 3.0 + 0.5) / 3.0;
+  let cover = floor(in.colour.b * 3.0 + 0.5) / 3.0 * in.form.w;
   if (reach >= 1.0 || cover <= 0.0) { return vec4f(0.0); }
   let facing = sqrt(max(0.0, 1.0 - reach * reach));
   let normal = across / edge;

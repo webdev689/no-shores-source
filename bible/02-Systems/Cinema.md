@@ -139,7 +139,9 @@ edge, its flames, smoke and embers spread over its length; without it a fire is 
 
 A fire is drawn in the game's pixel look. Every part is laid out on a grid of 48 texels a metre, between the ships' 40
 and the figures' 62, and coloured from a stepped palette: deep red at the rim, red, orange, yellow and a pale heart.
-Nothing in it is a smooth gradient; smoke's cover comes in three steps. Its flicker is held in frames, ten a second as a
+Nothing in it is a smooth gradient; smoke's cover comes in three steps. Only as the eye comes to a puff of smoke does
+it fade softly to nothing, over the last 2.5 to 0.3 m to its near side (`nearFade.ts`), so a camera in or against a
+column never sees it as a flat sheet over the whole view. Its flicker is held in frames, ten a second as a
 sprite's are, and each fire turns its frames at a moment of its own, so a deck of fires never flickers in step.
 
 Each frame of a fire comes from its seed and the clock. Its tongues of flame wander in height within a band, sway and
