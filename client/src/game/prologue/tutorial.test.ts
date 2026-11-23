@@ -22,6 +22,11 @@ const STILL: Done = {
   boarder: 'none',
   foes: 0,
   boss: false,
+  bow: 'none',
+  ranged: false,
+  loosed: false,
+  storm: false,
+  cast: [],
 };
 
 const ticked = (tutorial: Tutorial, done: Done) =>
@@ -47,15 +52,28 @@ const MEETS: Readonly<Record<string, readonly Partial<Done>[]>> = {
     { arms: 'worn', action: 'guard' },
     { arms: 'worn', healed: true },
   ],
+  duel: [
+    { arms: 'worn', boarder: 'standing', parried: true, dodged: true },
+    { arms: 'worn', boarder: 'fallen' },
+  ],
+  bow: [
+    { arms: 'worn', bow: 'carried' },
+    { arms: 'worn', bow: 'worn', ranged: true },
+    { arms: 'worn', bow: 'worn', ranged: true, loosed: true },
+    { arms: 'worn', bow: 'worn' },
+  ],
+  wisp: [{ arms: 'worn', bow: 'worn', storm: true }],
 };
 
 /** A teaching brought on to `stage` by meeting each stage before it, the player placed as `extra` says. */
 function broughtTo(stage: Tutorial['stage'], tutorial = new Tutorial(), extra: Partial<Done> = {}): Tutorial {
   while (tutorial.stage !== stage) {
-    const frames = MEETS[tutorial.stage] ?? [];
-    assert.ok(frames.length > 0, `no way on from ${tutorial.stage}`);
+    const from = tutorial.stage;
+    const frames = MEETS[from] ?? [];
+    assert.ok(frames.length > 0, `no way on from ${from}`);
     for (const each of frames) tutorial.frame({ ...STILL, ...extra, ...each });
-    onFrom(tutorial, { ...STILL, ...extra, ...frames.at(-1) });
+    // The wisp's stage ends at once, with no task to see ticked.
+    if (tutorial.stage === from) onFrom(tutorial, { ...STILL, ...extra, ...frames.at(-1) });
   }
   return tutorial;
 }
@@ -161,11 +179,70 @@ test('the duel: a boarder stands, the parry taught first, then the dodge, then t
     'Dodge a blow',
     'Bring the boarder down',
   ]);
+  assert.ok(tutorial.bowDrops, 'the boarder that fell drops the bow');
   onFrom(tutorial, { ...worn, boarder: 'fallen' });
-  assert.ok(!tutorial.holding, 'the waves come');
-  assert.equal(tutorial.frame({ ...worn, foes: 4 }).task, 'Fight your way through the wreck');
-  assert.deepEqual(tutorial.frame({ ...worn, foes: 4 }).steps, [{ text: 'Foes standing', count: 4 }]);
-  assert.deepEqual(tutorial.frame(worn).steps, [], 'between waves');
+  assert.equal(tutorial.stage, 'bow');
+  assert.ok(tutorial.holding, 'the waves still wait');
+});
+
+test('the bow the boarder dropped is taught: taken up, equipped, drawn, an arrow loosed, and the sword back', () => {
+  const tutorial = broughtTo('bow');
+  const worn = { ...STILL, arms: 'worn' } as const;
+  const quest = tutorial.frame({ ...worn, bow: 'lying' });
+  assert.equal(quest.task, 'Arm yourself with the bow');
+  assert.deepEqual(
+    quest.steps.map((step) => step.text),
+    ['Take up the bow', 'Equip it', 'Switch to the bow', 'Loose an arrow', 'Back to your sword'],
+  );
+  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'carried' }), ['Take up the bow']);
+  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn' }), ['Take up the bow', 'Equip it']);
+  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn', loosed: true }).length, 2, 'no arrow before the bow drawn');
+  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn', ranged: true }).at(-1), 'Switch to the bow');
+  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn', ranged: true, loosed: true }).at(-1), 'Loose an arrow');
+  assert.equal(tutorial.stage, 'bow');
+  assert.deepEqual(ticked(tutorial, { ...worn, bow: 'worn' }).at(-1), 'Back to your sword');
+  onFrom(tutorial, { ...worn, bow: 'worn' });
+  assert.equal(tutorial.stage, 'wisp', 'then the wisp comes');
+  assert.ok(tutorial.holding, 'and the waves wait for it');
+});
+
+test('a boarder that falls before both lessons drops no bow, and once one has dropped it none is wanted', () => {
+  const tutorial = broughtTo('duel');
+  const worn = { ...STILL, arms: 'worn' } as const;
+  tutorial.frame({ ...worn, boarder: 'standing', parried: true });
+  tutorial.frame({ ...worn, boarder: 'fallen' });
+  assert.ok(!tutorial.bowDrops, 'fallen before the dodge');
+  const met = broughtTo('bow');
+  assert.ok(met.bowDrops, 'the one that fell once both were met drops it');
+  assert.ok(!met.wantsBoarder('fallen') && !met.wantsBoarder('none'), 'and no boarder comes after it');
+});
+
+test('the wisp gives the Storm, and the next fight teaches each of its abilities in turn as each is cast', () => {
+  const tutorial = broughtTo('wisp');
+  const worn = { ...STILL, arms: 'worn', bow: 'worn' } as const;
+  assert.ok(tutorial.wantsWisp);
+  tutorial.frame({ ...worn, storm: true });
+  assert.equal(tutorial.stage, 'storm');
+  assert.ok(!tutorial.wantsWisp);
+  assert.ok(!tutorial.holding, 'the next wave comes');
+  const storm = { ...worn, storm: true, foes: 3 } as const;
+  const quest = tutorial.frame(storm);
+  assert.equal(quest.task, 'Call the Storm');
+  assert.deepEqual(
+    quest.steps.map((step) => step.text),
+    ['Cast Arc Lash', 'Cast Quicken', 'Release Tempest'],
+  );
+  assert.equal(tutorial.spell, 'arcLash', 'Arc Lash first');
+  assert.deepEqual(ticked(tutorial, { ...storm, cast: ['quicken'] }), ['Cast Quicken'], 'one cast early counts');
+  assert.equal(tutorial.spell, 'arcLash');
+  ticked(tutorial, { ...storm, cast: ['arcLash'] });
+  assert.equal(tutorial.spell, 'tempest');
+  assert.deepEqual(ticked(tutorial, { ...storm, cast: ['tempest'] }).length, 3);
+  assert.equal(tutorial.spell, null);
+  onFrom(tutorial, storm);
+  assert.equal(tutorial.frame(storm).task, 'Fight your way through the wreck');
+  assert.deepEqual(tutorial.frame(storm).steps, [{ text: 'Foes standing', count: 3 }]);
+  assert.deepEqual(tutorial.frame({ ...storm, foes: 0 }).steps, [], 'between waves');
 });
 
 test('a boarder brought down before both lessons are learned is followed by another', () => {
@@ -345,4 +422,40 @@ test('the steps and the reminder name each control as bound now, on the keys or 
     BINDS.device = 'keys';
     BINDS.set(DEFAULTS);
   }
+});
+
+test('the bow’s and the Storm’s steps name their controls as bound now', () => {
+  const keysOf = (stage: Tutorial['stage'], done: Partial<Done>) =>
+    broughtTo(stage)
+      .frame({ ...STILL, arms: 'worn', ...done })
+      .steps.map((step) => [step.text, step.keys ?? []]);
+  BINDS.set(rebind(DEFAULTS, { id: 'anima', device: 'keys', place: 0 }, 'y').binds ?? DEFAULTS);
+  try {
+    assert.deepEqual(keysOf('bow', { bow: 'lying' }), [
+      ['Take up the bow', []],
+      ['Equip it', ['I']],
+      ['Switch to the bow', ['2']],
+      ['Loose an arrow', ['Left button', 'F']],
+      ['Back to your sword', ['1']],
+    ]);
+    BINDS.device = 'pad';
+    const loose = keysOf('bow', { bow: 'lying' }).find(([text]) => text === 'Loose an arrow');
+    assert.deepEqual(loose, ['Loose an arrow', ['pad:RT']], 'the bow drawn turns the triggers round: RT fires');
+    BINDS.device = 'keys';
+    assert.deepEqual(keysOf('storm', { bow: 'worn', storm: true }), [
+      ['Cast Arc Lash', ['G']],
+      ['Cast Quicken', ['Q']],
+      ['Release Tempest', ['Y']],
+    ]);
+  } finally {
+    BINDS.device = 'keys';
+    BINDS.set(DEFAULTS);
+  }
+});
+
+test('a teaching begun at the wisp passes every stage before it over', () => {
+  const tutorial = new Tutorial('wisp');
+  assert.ok(tutorial.wantsWisp && tutorial.holding);
+  tutorial.frame({ ...STILL, storm: true });
+  assert.equal(tutorial.stage, 'storm');
 });

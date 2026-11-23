@@ -10,6 +10,7 @@ code:
   - client/src/water/seaWeather.ts#SeaWeather
   - client/src/ships/hullLines.ts#waterlineOf
   - client/src/water/wakes.ts#wakeAt
+  - client/src/water/wakes.ts#WakeTracks
   - crates/land/src/exact.rs#sin_cos
   - client/src/water/shore.ts#shoreField
   - client/src/water/swimming.ts#bodyStep
@@ -132,7 +133,10 @@ its gunwale. Under way:
 - **Foam along its hull line**, 0.8 m wide at its true size, most at its bow, whole at 2 m/s.
 - **Its wake**: the Kelvin wake's two arms from its quarters, 19.5 degrees either side of its track, laid as foam and
   a crest 0.18 m high at its full way, widening as they spread; inside the V the water is stirred, outside it still.
-  It runs a minute of its way aft and fades over it. Its track's wash churns white for 20 s.
+  It runs a minute of its way aft and fades over it. Its track's wash churns white for 20 s. Its track is the way it
+  sailed: the water keeps where each ship's stern has been, so its wake bends round every turn it made, and runs
+  straight aft only on a straight course. A ship at rest, or carried somewhere, not sailed there, begins its track
+  again, and one going astern lays none over where it backs.
 - **Its bow wave**: two short, steep arms from its stem, a crest and foam, reaching 1.2 of its lengths aft.
 - **Spray** round its bow: a little at way, more the rougher the sea, and a burst with each slam that fades in
   0.8 s.

@@ -7,7 +7,7 @@ import type { ForgeStore } from '../forge/store.ts';
 import type { GearItem } from '../network/gearMessages.ts';
 import { Cards, type CardMaker } from './cards.ts';
 import { plainDress } from './dressing.ts';
-import { KINDS, WORN } from './gear.ts';
+import { HORSE, KINDS, MOUNT_SLOT, WORN } from './gear.ts';
 import type { Picture } from './picture.ts';
 import { ItemPictures, PICTURES_KEPT } from './itemPictures.ts';
 
@@ -219,5 +219,28 @@ test('pictures past the most kept are let go, those asked for least lately first
     pictures.pictureOf(sword, wornBy(1), () => {}),
     null,
     'the one asked for least lately was let go',
+  );
+});
+
+test('a horse is drawn as its own layer in its coat, from the side, standing, on the body asked', async () => {
+  const asked: unknown[][] = [];
+  const horseForge = {
+    picture: (...args: unknown[]) => {
+      asked.push(args);
+      return Promise.resolve({ width: 1, height: 1, pixels: new Uint8ClampedArray([1, 2, 3, 255]) });
+    },
+    wardrobe: () => assert.fail('a horse needs no wardrobe'),
+  } as unknown as Cards;
+  const pictures = new ItemPictures(horseForge);
+  const body = plainDress('human', 0.3);
+  const chestnut = { ...item('sword', 0), kind: HORSE, name: 1, bucket: MOUNT_SLOT };
+  await new Promise<void>((done) => pictures.pictureOf(chestnut, body, done));
+  const [dress, anim, view, , alone] = asked[0] ?? [];
+  assert.deepEqual([anim, view, alone], ['horseidle', 2, 'horse']);
+  assert.equal((dress as typeof body).outfit.coat, 'chestnut');
+  assert.equal((dress as typeof body).outfit.barding, null, 'its tile shows the horse, never a barding');
+  assert.ok(
+    pictures.pictureOf(chestnut, body, () => {}),
+    'kept once drawn',
   );
 });

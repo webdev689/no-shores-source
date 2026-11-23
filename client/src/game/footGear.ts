@@ -8,8 +8,9 @@
 import type { DropsShown } from '../combat/drops.ts';
 import { markRing } from '../combat/marks.ts';
 import { ASKS, type GearAsk, type GearState } from '../network/gearMessages.ts';
+import { RoomConnection, type RoomLink } from '../network/roomConnection.ts';
 import { resourceName } from '../player/gear.ts';
-import { openGearWindow } from './gearScreen.ts';
+import { type GearHere, openGearWindow } from './gearScreen.ts';
 import { SERVED_M, offerAt } from './plazaLife.ts';
 import { KEEPERS } from './keepers.ts';
 import { goalOf, puzzlePoints } from './quests/questBook.ts';
@@ -172,4 +173,16 @@ export function tellPrologue(gear: GearState | null, told: GearState | null, her
   if (!tellsPrologue(gear, STORY_BEHIND_ON_FOOT, told)) return told;
   here?.ask({ kind: ASKS.finishPrologue });
   return gear;
+}
+
+/** The player's gear in their room, asked of through `ask`, with what draws it for the screens (`shown`); null offline
+ *  or once the room is lost. */
+export function gearInRoom(
+  link: RoomLink,
+  gear: GearState | null,
+  ask: (asked: GearAsk) => void,
+  shown: Pick<GearHere, 'forge' | 'dress'>,
+): GearHere | null {
+  if (!(link instanceof RoomConnection) || !link.open) return null;
+  return { gear, ask, ...shown };
 }

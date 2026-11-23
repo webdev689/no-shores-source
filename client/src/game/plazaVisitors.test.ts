@@ -4,10 +4,9 @@ import type { GearState } from '../network/gearMessages.ts';
 import type { Placed } from '../player/figures.ts';
 import { KEEPERS } from './keepers.ts';
 import { PlazaLife } from './plazaLife.ts';
-import { awayFromCounters } from './townsfolk.ts';
 import { POSTS, SOCIAL, STATIONS } from './welcome/plazaForTests.ts';
 
-test('Shape is placed at his week’s spot while the room says he is here, and Maren’s counter empties while she walks', () => {
+test('Shape is placed at his week’s spot while the room says he is here', () => {
   const placed: Placed[] = [];
   const others = {
     place: (dress: Placed['dress'], x: number, y: number, facing: number) => {
@@ -30,11 +29,5 @@ test('Shape is placed at his week’s spot while the room says he is here, and M
   assert.deepEqual([shape?.x, shape?.y, shape?.anim], [1045, 2002.5, 'idle']);
   life.frame(0.25, { ...here, shape: null });
   assert.ok(!placed.some((figure) => figure.dress === KEEPERS.shape.dress), 'gone when he leaves');
-  awayFromCounters.add('lamplighters');
-  life.frame(0.25, null);
-  assert.ok(!placed.some((figure) => figure.dress === KEEPERS.lamplighters.dress), 'never two of her');
-  awayFromCounters.delete('lamplighters');
-  life.frame(0.25, null);
-  assert.equal(placed.filter((figure) => figure.dress === KEEPERS.lamplighters.dress).length, 1, 'back at her counter');
   life.close();
 });

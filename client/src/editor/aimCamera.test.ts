@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { lookReach } from './aim.ts';
 import { AIM_CAM_TAU, type AimAsk, AimCamera, type AimShip, type Laid } from './aimCamera.ts';
-import { aimStation, inItsRig } from './aimStation.ts';
+import { aimStation, inItsRig, LOWEST_ELEVATION } from './aimStation.ts';
 import { orbitClearance } from './shipClear.ts';
 import { hullBox, SLOOP_HULL } from '../ships/hulls.ts';
 
@@ -127,26 +127,52 @@ test('the view looks square off the side taken at the water its guns are laid on
   assert.ok(port.look && port.look.bearing === -90 && near(onSea(port)[0], SHIP.x - range, 1e-6));
 });
 
-test("the view follows the lay's drift along the keel, the ship's own way carried by its balls", () => {
+test("the view turns along the keel to stand over the volley's fall, the ship's own way carried by its balls", () => {
+  const fall = [SHIP.x + 40, SHIP.y - 1 - 4, 0] as const;
   const lay: Laid = {
     side: 'starboard',
     launches: [[SHIP.x + 3, SHIP.y - 1, 2, 50, -5, 3]],
-    ends: [{ point: [SHIP.x + 40, SHIP.y - 1 - 4, 0] }],
+    ends: [{ point: fall }],
+    elevation: 0,
     reach: 300,
   };
   const aimed = settled(new AimCamera(), asked(1, { lay }));
-  assert.ok(near(onSea(aimed)[1], SHIP.y - STATION.ports[0] - 4, 1e-3), 'four metres on toward the bow');
+  const bearing = (to: readonly number[]) => Math.atan2((to[0] ?? 0) - aimed.eye[0], aimed.eye[1] - (to[1] ?? 0));
+  assert.ok(near(aimed.yaw, bearing(fall), 1e-6), 'its middle looks over the fall');
+  assert.ok(near(bearing(onSea(aimed)), bearing(fall), 1e-6), 'and meets the water on that line');
   const otherSide = settled(new AimCamera(), asked(-1, { lay }));
   assert.ok(near(onSea(otherSide)[1], SHIP.y - STATION.ports[0], 1e-6), "the other side's lay does not move it");
 });
 
 test("a look past the guns' longest throw or short of their nearest is held there, and its pitch with it", () => {
-  const lay: Laid = { side: 'starboard', launches: [[SHIP.x + 3, SHIP.y, 2, 0, 0, 0]], ends: [], reach: 60 };
+  const lay: Laid = {
+    side: 'starboard',
+    launches: [[SHIP.x + 3, SHIP.y, 2, 0, 0, 0]],
+    ends: [],
+    elevation: 0.2,
+    reach: 60,
+  };
   const far = settled(new AimCamera(), asked(1, { lay, pitch: -0.15 }));
   assert.ok(far.look && near(far.look.range, 63), `held at ${far.look?.range} m`);
   assert.ok(near(STATION.eye[1] + lookReach(-far.heldPitch, STATION.eye[2]), 63, 1e-6), 'its pitch held to match');
   const close = settled(new AimCamera(), asked(1, { pitch: 1.2 }));
   assert.ok(close.look && near(close.look.range, STATION.nearestM), `held at ${close.look?.range} m`);
+});
+
+test('with its guns at their lowest, the view goes no nearer than where their balls fall as the ship lies now', () => {
+  // A crest under the ship and a trough out there carry the lowest lay past its nearest at rest.
+  const lay: Laid = {
+    side: 'starboard',
+    launches: [[SHIP.x + 3, SHIP.y, 3, 0, 0, 0]],
+    ends: [{ point: [SHIP.x + 21, SHIP.y - 2, -0.7] }],
+    elevation: -LOWEST_ELEVATION,
+    reach: 150,
+  };
+  const close = settled(new AimCamera(), asked(1, { lay, pitch: 1.2 }));
+  assert.ok(close.look && near(close.look.range, 21, 1e-9), `held at ${close.look?.range} m`);
+  assert.ok(near(onSea(close)[0], SHIP.x + 21, 1e-6), 'and the sight stands there');
+  const lower = settled(new AimCamera(), asked(1, { lay: { ...lay, elevation: 0.05 - LOWEST_ELEVATION }, pitch: 1.2 }));
+  assert.ok(lower.look && near(lower.look.range, STATION.nearestM), 'guns that could go lower hold it at rest');
 });
 
 test("a ship drawn as one hull and firing another's guns lays no nearer than those guns reach", () => {

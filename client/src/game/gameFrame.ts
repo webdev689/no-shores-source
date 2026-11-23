@@ -46,7 +46,7 @@ import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
-import type { AfterStory } from './welcome/afterStory.ts';
+import { type AfterStory, clearOfEye, heldHud } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
@@ -78,7 +78,7 @@ export interface Playing {
   sea: Sea | null;
   /** The held map at the helm, made when it is first asked for. */
   readonly helmMap: HelmMap;
-  /** The story's last moment, played on foot once it has ended, and the elder's welcome after it. */
+  /** The story's last moment, played on foot once it has ended: the stranger's welcome to Overlook. */
   readonly after: AfterStory;
   /** The houses' roads, shown once the story and the welcome are past. */
   readonly quests: Quests;
@@ -184,8 +184,14 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
-  /** The words that tell why the player is not where they went, while they stand. */
-  const toldNow = () => (playing.told && performance.now() < playing.told.until ? [playing.told.words] : []);
+  /** What the mount key says with no horse worn in the Mount slot. */
+  const NO_HORSE = 'You have no horse.';
+  /** The words that tell why the player is not where they went, or that the mount key found no horse, while they
+   *  stand: said by the frame the key was pressed in, ashore or at sea. */
+  const toldNow = () => {
+    if (walker.takeNoHorse()) playing.told = { words: NO_HORSE, until: performance.now() + TOLD_MS };
+    return playing.told && performance.now() < playing.told.until ? [playing.told.words] : [];
+  };
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
@@ -201,7 +207,17 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       eyesBeforeMap = looking ? walker.player.view.firstPerson : null;
       walker.player = { ...walker.player, view: { ...walker.player.view, firstPerson } };
     }
-    const shown = here.frame(controls, seconds, clock, { paused, looking, hands: handsFree(controls, paused), aspect });
+    // While the stranger speaks her welcome no key moves or acts (Space moves her words on, `gameKeys`), and the view
+    // is hers.
+    const told = playing.after.holding;
+    const turned = playing.after.takeTurn();
+    // The figure kept still keeps its facing, so it is turned with the view.
+    if (turned !== null) walker.player = { ...walker.player, yaw: turned, facing: turned };
+    const heard = playing.after.heard(controls);
+    // While she speaks the figures are drawn for the tour's eye (last frame's), not the player's own camera.
+    const eye = playing.after.seen?.eye ?? null;
+    const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
+    const shown = { ...own, shot: playing.after.shot(own.shot, seconds) };
     // A public event's beat is the music's moment, its props the drawer's, its steps the tracker's.
     if (shown.sting) parts.music.moment(shown.sting);
     const listener = [walker.player.body.x, walker.player.body.y] as const;
@@ -226,10 +242,11 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       heading: walker.player.yaw,
       lit: (glyph) => keeperLit(here.gear?.gear ?? null, glyph, (counter) => playing.quests.wants(counter)),
     });
-    // The held map, or the player's own hands in first person, over the finished picture.
+    // The held map, or the player's own hands in first person, over the finished picture; while she speaks the view
+    // is the tour's, never through the player's eyes.
     const hands =
       mapDraw ??
-      (walker.inFirstPerson
+      (walker.inFirstPerson && !told
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined);
     parts.isleFrame();
@@ -245,24 +262,23 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
     // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
     const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
-    holdOnPlayer(footView.playerPlates, offered, controls.held('use'), clock, {
+    holdOnPlayer(footView.playerPlates, offered, heard.held('use'), clock, {
       width: size.width / uiScale(devicePixelRatio),
     });
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
     const fleet = traffic.onFoot(shown.shot.eye, water, seconds, clock);
-    // The story's last moment, on foot once the veil is gone: the stranger before the player, then the elder's welcome.
-    const met = playing.after.frame(
-      shown.shot,
-      viewport,
-      seconds,
-      clock,
-      walker.you,
-      flow.mode !== 'foot',
-      here,
-      paused,
-    );
+    // The story's last moment, on foot once the veil is gone: the stranger before the player, her welcome, and her
+    // gift asked of this room.
+    const met = playing.after.frame(shown.shot, viewport, seconds, clock, walker.you, flow.mode !== 'foot', {
+      node: here.node,
+      floor: here.floor,
+      blocks: here.boxes,
+      held: paused,
+      gear: here.gear?.gear ?? null,
+      ask: (asked) => here.gear?.ask(asked),
+    });
     const carried = { left: walker.you.dress.outfit.left, feet: [body.x, body.y, body.z] as const };
     const moorings = here.node.kind === 'social' ? (playing.landmass.plan?.social.moorings ?? []) : [];
     const moored = mooredShips(moorings, clock, water);
@@ -282,7 +298,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
-    const cards = [...shown.figures, ...met, ...nodes, ...walking, ...crews];
+    // While she speaks, none but her and the player stands within reach of the tour's eye.
+    const near = [...shown.figures, ...nodes, ...walking, ...crews];
+    const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
@@ -300,6 +318,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
+    heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player and its
@@ -311,6 +330,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const { flow, helmMap } = playing;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen() || socialUp();
+    // Her welcome is ashore only: a place left mid-welcome leaves nothing of the HUD set aside at sea.
+    hud.quiet = false;
     chatAtSea(here.waterAt?.(here.position)?.name ?? null);
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
@@ -417,6 +438,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   ) => {
     host.padFrame(input.padAlone, seconds);
     const left = host.frame(controls, seconds, size);
+    // The story's player rides no horse and is told nothing of one: a press there is dropped with nothing said.
+    walker.takeNoHorse();
     if (!left) return;
     playing.after.storyEnded(left.epilogue);
     walker.you.dress = left.dress;

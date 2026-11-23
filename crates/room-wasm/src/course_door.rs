@@ -86,11 +86,18 @@ pub extern "C" fn room_put_player(player: u32, x: f64, y: f64) -> u32 {
     u32::from(put_player(player, x, y))
 }
 
-/// The story's sword and shield taken from the deck into a player's pack (`Room::story_take_arms`); 1 if given, 0 if
-/// not.
+/// The story's sword and shield or its bow, by the gear's kind number, taken from the deck into a player's pack
+/// (`Room::story_take`); 1 if given, 0 if not.
 #[unsafe(no_mangle)]
-pub extern "C" fn room_story_take_arms(player: u32) -> u32 {
-    u32::from(on_land(|room| room.story_take_arms(player)).unwrap_or(false))
+pub extern "C" fn room_story_take(player: u32, kind: u32) -> u32 {
+    let kind = u8::try_from(kind).ok().and_then(gear::Kind::from_number);
+    u32::from(kind.and_then(|kind| on_land(|room| room.story_take(player, kind))).unwrap_or(false))
+}
+
+/// The wisp gives a player the Storm for the rest of the prologue (`Room::story_storm`); 1 if given, 0 if not.
+#[unsafe(no_mangle)]
+pub extern "C" fn room_story_storm(player: u32) -> u32 {
+    u32::from(on_land(|room| room.story_storm(player)).unwrap_or(false))
 }
 
 /// The story sends a foe at a player (`Room::story_hunt`); 1 if sent, 0 if not.

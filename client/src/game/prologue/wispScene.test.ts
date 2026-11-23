@@ -1,0 +1,89 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import type { Shot } from '../camera.ts';
+import type { Story } from './story.ts';
+import { wispAt, wispCourse } from './wispCourse.ts';
+import { ENGULF_AT_S, FLASH_IN_S, WISP_LENGTH_S } from './wisp.ts';
+import { WispScene } from './wispScene.ts';
+import { courseOf, readWreck, topAt } from './wreckLayout.ts';
+
+const layout = readWreck();
+const [x, y] = layout.wake.at;
+const feet = [x, y, topAt(courseOf(layout), x, y)] as const;
+const story = {
+  stage: {
+    parts: { ambience: { flash: () => undefined, thunder: () => undefined }, flames: { wind: [0, 0] } },
+    play: async () => undefined,
+    wind: () => [0, 0],
+  },
+} as unknown as Story;
+/** The player's own shot over their shoulder, as the wisp's coming begins from it. */
+const theirs: Shot = { eye: [x, y + 2, feet[2] + 2], yaw: 0, pitch: 0.2, fov: 0.87, near: 0.1, far: 60000 };
+
+test('the wisp is seen near from its first moment, out over the sea: the camera cuts to it, not a pan from the player', () => {
+  const scene = new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => undefined);
+  const course = wispCourse(feet, layout.wake.facing, layout);
+  let before = 0;
+  for (const seconds of [0.05, 0.3, 0.6, 1]) {
+    const { shot } = scene.frame(seconds - before, seconds, theirs, feet);
+    before = seconds;
+    const { at } = wispAt(course, seconds);
+    const apart = Math.hypot(at[0] - shot.eye[0], at[1] - shot.eye[1], at[2] - shot.eye[2]);
+    assert.ok(apart < 5, `${apart.toFixed(1)} m from it at ${seconds} s`);
+  }
+});
+
+test('its camera keeps out of the smoke as it is drawn, leaning in the fires’ own wind, not the weather’s', () => {
+  const told = (weather: readonly [number, number], smoke: readonly [number, number]) =>
+    ({
+      stage: {
+        parts: { ambience: { flash: () => undefined, thunder: () => undefined }, flames: { wind: smoke } },
+        play: async () => undefined,
+        wind: () => weather,
+      },
+    }) as unknown as Story;
+  const [stormy, calm] = [told([14, 6], [0, 0]), told([0, 0], [0, 0])].map(
+    (each) => new WispScene(each, layout, { feet, facing: layout.wake.facing }, theirs, () => undefined, 5),
+  );
+  for (let seconds = 5; seconds < 10; seconds += 0.25) {
+    const [one, two] = [stormy, calm].map((scene) => scene?.frame(0.25, seconds, theirs, feet).shot.eye);
+    assert.deepEqual(one, two, `the same shot at ${seconds.toFixed(2)} s`);
+  }
+});
+
+test('begun past its flash, as a page under development may begin it, it still gives the player the Storm, once', () => {
+  let given = 0;
+  const scene = new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => given++, 12);
+  for (let seconds = 12; seconds < 13; seconds += 0.25) scene.frame(0.25, seconds, theirs, feet);
+  assert.equal(given, 1);
+});
+
+test('played from its start, the Storm is given as the flash comes, never before it', () => {
+  const given: number[] = [];
+  let seconds = 0;
+  const scene = new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => given.push(seconds));
+  const flashAt = ENGULF_AT_S + FLASH_IN_S;
+  let flashed = 0;
+  for (; seconds < WISP_LENGTH_S; seconds += 0.05) {
+    const { flash } = scene.frame(0.05, seconds, theirs, feet);
+    if (flash > 0 && flashed === 0) flashed = seconds;
+  }
+  assert.equal(given.length, 1, 'given once');
+  assert.ok(
+    Math.abs((given[0] ?? 0) - flashAt) < 0.06,
+    `given at ${given[0]?.toFixed(2)} s, the flash at ${flashAt} s`,
+  );
+  assert.equal(given[0], flashed, 'on the frame the flash comes');
+});
+
+test('held while its course plays, a drift of a few centimetres underfoot never lays it again: its shots stand', () => {
+  const [held, drifting] = [0, 1].map(
+    () => new WispScene(story, layout, { feet, facing: layout.wake.facing }, theirs, () => undefined),
+  );
+  for (let seconds = 0; seconds < WISP_LENGTH_S; seconds += 0.1) {
+    const drift = [feet[0] + 0.06 * Math.sin(seconds), feet[1] + 0.06 * Math.cos(seconds), feet[2]] as const;
+    const one = held?.frame(0.1, seconds, theirs, feet).shot.eye;
+    const two = drifting?.frame(0.1, seconds, theirs, drift).shot.eye;
+    assert.deepEqual(two, one, `${seconds.toFixed(1)} s`);
+  }
+});

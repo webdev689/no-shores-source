@@ -218,7 +218,7 @@ fn the_rest_of_the_volley_that_made_it_strike_cannot_sink_it() {
 fn a_look_lays_its_range_out_from_its_middle() {
     let fight = alongside(500.0, Temper::Wary);
     let aim = Aim { bearing_deg: 90.0, range_m: 60.0, ray: None };
-    let laid = fight.laid(PLAYER, &aim).map_or(f64::NAN, |lay| lay.elevation);
+    let laid = fight.laid(PLAYER, &aim, &Open, 0.0).map_or(f64::NAN, |lay| lay.elevation);
     let own = player(&fight);
     let out = SLOOP_ARMS.battery(Side::Starboard)[1][1];
     let from_guns = lay(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, 60.0 - out, None);
@@ -229,7 +229,7 @@ fn a_look_lays_its_range_out_from_its_middle() {
 fn the_lay_reads_on_target_only_where_its_balls_would_strike_it() {
     let fight = alongside(50.0, Temper::Wary);
     let on = |range_m: f64| {
-        let laid = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None });
+        let laid = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None }, &Open, 0.0);
         laid.is_some_and(|laid| ends(&fight, &laid).iter().flatten().any(|stop| stop.strike.is_some()))
     };
     assert!(on(50.0));
@@ -255,7 +255,7 @@ fn a_look_on_its_hull_lays_on_that_point_and_its_unscattered_volley_strikes_it()
     let met = [0, 1, 2].map(|axis| eye[axis] + (far[axis] - eye[axis]) * share);
     let own = player(&fight);
     let on = lay_on(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, met);
-    let laid = fight.laid(PLAYER, &aim);
+    let laid = fight.laid(PLAYER, &aim, &Open, 0.0);
     // The look's point and the test's differ in their last bits, so the elevation is held to a hair of it.
     let same = laid.clone().is_some_and(|laid| {
         (laid.elevation - on.elevation).abs() < 1e-12 && Lay { elevation: on.elevation, ..laid } == on
@@ -267,10 +267,44 @@ fn a_look_on_its_hull_lays_on_that_point_and_its_unscattered_volley_strikes_it()
 }
 
 #[test]
-fn a_look_past_it_lays_for_the_water() {
+fn a_look_past_it_lays_where_its_ray_meets_the_water() {
     let fight = alongside(50.0, Temper::Wary);
     let aim = looked(&fight, [50.0, -60.0, 0.0]);
-    assert_eq!(fight.laid(PLAYER, &aim), fight.laid(PLAYER, &Aim { ray: None, ..aim }));
+    let own = player(&fight);
+    let on = lay_on(&own.ship, &own.pose, &SLOOP_ARMS, Side::Starboard, Shot::Round, [50.0, -60.0, 0.0]);
+    let laid = fight.laid(PLAYER, &aim, &Open, 0.0).expect("the starboard side bears");
+    // The look is met within a centimetre of the water, a hair over it at 60 m.
+    assert!((laid.elevation - on.elevation).abs() < 1e-4, "laid for the water under the look: {laid:?} against {on:?}");
+    assert_ne!(Some(laid), fight.laid(PLAYER, &Aim { ray: None, ..aim }, &Open, 0.0), "not the water's 300 m");
+}
+
+/// A swell standing still: ridges 0.8 m high every 40 m, running north and south.
+struct Ridged;
+
+impl Waters for Ridged {
+    fn at(&self, x: f64, _y: f64, _time: f64) -> Spot {
+        Spot { bed: -50.0, surface: Some(0.8 * libm::sin(x * TAU / 40.0)) }
+    }
+}
+
+#[test]
+fn on_a_swell_a_look_at_the_water_brings_its_balls_down_under_the_look() {
+    let fight = alongside(400.0, Temper::Wary);
+    let own = player(&fight);
+    let middle = SLOOP_ARMS.battery(Side::Starboard).iter().map(|mouth| mouth[0]).sum::<f64>() / 3.0;
+    for out in [16.0, 24.0, 45.0, 90.0] {
+        let aim = looked(&fight, [out, -middle, 0.0]);
+        let [eye, look] = aim.ray.unwrap_or_default();
+        let laid = fight.laid(PLAYER, &aim, &Ridged, 0.0).expect("the starboard side bears");
+        let stops = crate::laying::ends_of(&Sighted::of(PLAYER, own), &laid, &fight.sighted(), &Ridged, 0.0);
+        let splashes: Vec<[f64; 3]> = stops.iter().flatten().filter(|stop| stop.water).map(|stop| stop.point).collect();
+        assert_eq!(splashes.len(), 3, "{out} m: {stops:?}");
+        let east = splashes.iter().map(|point| point[0]).sum::<f64>() / 3.0;
+        // Where the look, read at the volley's own fall, stands over the water it fell on.
+        let along = (east - eye[0]) / look[0];
+        let over = eye[2] + look[2] * along - Ridged.at(east, 0.0, 0.0).surface.unwrap_or(0.0);
+        assert!(over.abs() < 0.05, "{out} m: the look stands {over} m over the volley's fall at {east}");
+    }
 }
 
 #[test]
@@ -280,9 +314,13 @@ fn a_look_from_an_eye_past_the_fight_cameras_boom_lays_for_the_water_whatever_it
     // An eye 150 m beyond the captain, looking back through its hull: no camera of the player's stands there.
     let beyond = [hull.centre[0] + 150.0, hull.centre[1], hull.centre[2]];
     let aim = Aim { bearing_deg: 90.0, range_m: 300.0, ray: Some([beyond, [-1.0, 0.0, 0.0]]) };
-    let water = fight.laid(PLAYER, &Aim { ray: None, ..aim });
-    assert_eq!(fight.laid(PLAYER, &aim), water);
-    assert_ne!(fight.laid(PLAYER, &looked(&fight, hull.centre)), water, "from its own aim eye the look lays on it");
+    let water = fight.laid(PLAYER, &Aim { ray: None, ..aim }, &Open, 0.0);
+    assert_eq!(fight.laid(PLAYER, &aim, &Open, 0.0), water);
+    assert_ne!(
+        fight.laid(PLAYER, &looked(&fight, hull.centre), &Open, 0.0),
+        water,
+        "from its own aim eye the look lays on it"
+    );
 }
 
 #[test]
@@ -291,8 +329,8 @@ fn a_look_on_a_ship_off_its_bow_lays_its_guns_square_to_their_side_within_their_
     captain_mut(&mut fight).ship = sloop_at(10.0, -60.0);
     let hull = Sighted::of(CAPTAIN, captain(&fight)).target().hull;
     let aim = looked(&fight, hull.centre);
-    let square = fight.laid(PLAYER, &Aim { ray: None, ..aim }).expect("the starboard side bears");
-    let laid = fight.laid(PLAYER, &aim).expect("the starboard side bears");
+    let square = fight.laid(PLAYER, &Aim { ray: None, ..aim }, &Open, 0.0).expect("the starboard side bears");
+    let laid = fight.laid(PLAYER, &aim, &Open, 0.0).expect("the starboard side bears");
     let (low, high) = (laid.gun.min_el_deg.to_radians(), laid.gun.max_el_deg.to_radians());
     assert_ne!(laid.elevation, square.elevation, "laid on the ship its ray meets, not the water's 300 m");
     assert_eq!((laid.side, laid.dir), (square.side, square.dir), "its guns fire square to their side");
@@ -303,7 +341,7 @@ fn a_look_on_a_ship_off_its_bow_lays_its_guns_square_to_their_side_within_their_
 fn each_gun_ends_where_an_unscattered_ball_fired_by_the_fight_stops() {
     let fight = alongside(50.0, Temper::Wary);
     for range_m in [50.0, 30.0] {
-        let Some(laid) = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None }) else {
+        let Some(laid) = fight.laid(PLAYER, &Aim { bearing_deg: 90.0, range_m, ray: None }, &Open, 0.0) else {
             panic!("the starboard side bears");
         };
         let ends = ends(&fight, &laid);

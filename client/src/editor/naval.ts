@@ -228,6 +228,7 @@ export class Naval {
     const [x = 0, y = 0, heading = 0, ahead = 0, abeam = 0] = captain.ship;
     const waterline = hullWaterline(this.shown(hullOfCaptain(captain)));
     return {
+      id: `captain ${captain.id}`,
       x: x - view.leftM,
       y: y - view.topM,
       heading,

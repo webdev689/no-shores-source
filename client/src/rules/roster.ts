@@ -1,8 +1,8 @@
 import { startRoomDoor } from '../../../server/roomDoor.ts';
 
 /** An enemy type as the rules' roster has it: its number, the name over its bar, its faction's number and name, where
- *  it is met (land or deck), its role's number, the ranks it comes in (their numbers, its plainest first), and the
- *  forge layers in its right and left hands (null for none). */
+ *  it is met (land or deck), its role's number, the ranks it comes in (their numbers, the one it takes when none is
+ *  asked for first), and the forge layers in its right and left hands (null for none). */
 export interface FoeType {
   readonly type: number;
   readonly name: string;
@@ -95,5 +95,6 @@ export function factionsOf(roster: readonly FoeType[]): [number, string][] {
 
 /** The ranks a type may be asked for, as `[number, name]` options, its plainest first. */
 export function rankChoices(type: FoeType): [string, string][] {
-  return type.ranks.map((rank) => [String(rank), RANK_NAMES[rank] ?? `Rank ${rank}`]);
+  const plainestFirst = [...type.ranks].sort((a, b) => a - b);
+  return plainestFirst.map((rank) => [String(rank), RANK_NAMES[rank] ?? `Rank ${rank}`]);
 }

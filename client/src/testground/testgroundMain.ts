@@ -289,6 +289,7 @@ async function start(): Promise<void> {
   };
   const gearReceived = (message: GearMessage) => {
     gear = message;
+    walker?.ridesIn(message);
   };
   const link = roomUrl
     ? await RoomConnection.open(roomUrl, received, gearReceived)
@@ -525,6 +526,7 @@ async function start(): Promise<void> {
         lost: link.lost,
         rejoining: link.rejoining,
         parryOpen: fighting.parryOpen,
+        parryWindow: fighting.parryWindow,
         abilities: fighting.abilities,
         // The shots left stand beside the crosshair while the Ranged loadout is drawn.
         ammo: sights && shown.rangedDrawn ? (own?.ammo ?? null) : null,

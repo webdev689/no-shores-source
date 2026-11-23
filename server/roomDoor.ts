@@ -87,8 +87,8 @@ export interface RoomDoor {
   /** Lets the open room take players' asks for foes, as a course's room does: a node's room takes none until told.
    *  Only a page playing alone tells it; a server never does. */
   takeFoeAsks(): void;
-  /** Plays the prologue's wreck: no Art (the player has none yet), the player waking hurt with no weapon, and every
-   *  boarder on one side, held to a Major (`Room::story_wreck`). */
+  /** Plays the prologue's wreck: no Art until the Storm is given, the player waking hurt in the story's steel with no
+   *  weapon, and every boarder on one side (`Room::story_wreck`). */
   storyWreck(): void;
   /** A new player's number, or 0 when the room is full or its node locked. */
   join(): number;
@@ -138,6 +138,8 @@ export interface RoomDoor {
   /** A player's character as it is kept between sessions (JSON), at sea with their ship's hurts (a new one until the
    *  accounts gave theirs); null in a fleet or for no such player. */
   character(player: number): string | null;
+  /** A new character wearing a plain sword and armour (JSON): what scripted players start from. */
+  kitted(): string;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
   restoreCharacter(player: number, kept: string): boolean;
   /** Why the open room's gate shuts to a player's kept character (JSON), or to a new one (null), in its words, with
@@ -187,9 +189,11 @@ export interface RoomDoor {
   setSpawn(x: number, y: number): boolean;
   /** A page alone: stands a player at once on the top under (x, y), keeping their health; false for no such player. */
   putPlayer(player: number, x: number, y: number): boolean;
-  /** The story's sword and shield taken from the deck into `player`'s pack, unworn (`Room::story_take_arms`):
-   *  whether they were given. */
-  storyTakeArms(player: number): boolean;
+  /** The story's sword and shield or its bow, by the gear's kind number, taken from the deck into `player`'s pack,
+   *  unworn (`Room::story_take`): whether it was given. */
+  storyTake(player: number, kind: number): boolean;
+  /** On the wreck, the wisp gives `player` the Storm, worn, earned and charged (`Room::story_storm`): whether it did. */
+  storyStorm(player: number): boolean;
   /** On the wreck, sends a foe at a player, alert, as a foe called to a fight is sent; whether it was. */
   storyHunt(foe: number, player: number): boolean;
   /** On the wreck, moves one of the Brig's crew's post, where he walks and keeps; whether it was. */
@@ -260,6 +264,7 @@ interface RoomExports {
   room_snapshot_for(player: number): bigint;
   room_gear(player: number): bigint;
   room_character(player: number): bigint;
+  room_kitted(): bigint;
   room_mail_lying(player: number): void;
   room_shut(player: number, address: number, length: number): bigint;
   room_difficulty(seas: number): number;
@@ -284,7 +289,8 @@ interface RoomExports {
   room_clear_foes(): number;
   room_set_spawn(x: number, y: number): number;
   room_put_player(player: number, x: number, y: number): number;
-  room_story_take_arms(player: number): number;
+  room_story_take(player: number, kind: number): number;
+  room_story_storm(player: number): number;
   room_story_hunt(foe: number, player: number): number;
   room_story_post(crew: number, x: number, y: number, facing: number): number;
   room_stand_block(minX: number, minY: number, maxX: number, maxY: number, top: number, bottom: number): number;
@@ -430,6 +436,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       const bytes = take(exports.room_character(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);
     },
+    kitted: () => new TextDecoder().decode(take(exports.room_kitted())),
     restoreCharacter: (player, kept) =>
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
@@ -462,7 +469,8 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
     clearFoes: () => exports.room_clear_foes() === 1,
     setSpawn: (x, y) => exports.room_set_spawn(x, y) === 1,
     putPlayer: (player, x, y) => exports.room_put_player(player, x, y) === 1,
-    storyTakeArms: (player) => exports.room_story_take_arms(player) === 1,
+    storyTake: (player, kind) => exports.room_story_take(player, kind) === 1,
+    storyStorm: (player) => exports.room_story_storm(player) === 1,
     storyHunt: (foe, player) => exports.room_story_hunt(foe, player) === 1,
     storyPost: (crew, x, y, facing) => exports.room_story_post(crew, x, y, facing) === 1,
     standBlock: ({ minX, minY, maxX, maxY, top, bottom }) =>

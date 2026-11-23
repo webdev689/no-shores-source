@@ -1,5 +1,5 @@
-//! What an item is and where it is worn: the Melee and Ranged loadouts, the four armour pieces, the cloak and the four
-//! modules a ship is fitted with; the slot each is worn in; which hold a shield or leave a hand free; and which
+//! What an item is and where it is worn: the Melee and Ranged loadouts, the four armour pieces, the cloak, the horse
+//! and the four modules a ship is fitted with; the slot each is worn in; which hold a shield or leave a hand free; and which
 //! materials it is made and unmade with.
 
 use serde::{Deserialize, Serialize};
@@ -39,6 +39,8 @@ pub enum Kind {
     Hull = 25,
     Sails = 26,
     Rigging = 27,
+    /// A horse, ridden (`horses.rs`).
+    Horse = 28,
 }
 
 /// Where a player wears an item: a loadout, an armour piece or the cloak; or where their ship is fitted with a module.
@@ -56,6 +58,8 @@ pub enum Slot {
     Hull = 8,
     Sails = 9,
     Rigging = 10,
+    /// The horse ridden.
+    Mount = 11,
 }
 
 /// Which pair of materials an item is upgraded and dismantled with.
@@ -77,7 +81,7 @@ pub enum Group {
 
 impl Kind {
     /// Every kind: the Melee loadouts, the Ranged, the armour and the cloak.
-    pub const ALL: [Self; 27] = [
+    pub const ALL: [Self; 28] = [
         Self::SwordAndShield,
         Self::DaggerAndShield,
         Self::DoubleDaggers,
@@ -101,6 +105,7 @@ impl Kind {
         Self::Arms,
         Self::Legs,
         Self::Cloak,
+        Self::Horse,
         Self::Guns,
         Self::Hull,
         Self::Sails,
@@ -119,7 +124,8 @@ impl Kind {
     /// A weapon: a loadout, which carries Attack.
     #[must_use]
     pub fn weapon(self) -> bool {
-        !matches!(self, Self::Head | Self::Torso | Self::Arms | Self::Legs | Self::Cloak) && !self.module()
+        !matches!(self, Self::Head | Self::Torso | Self::Arms | Self::Legs | Self::Cloak | Self::Horse)
+            && !self.module()
     }
 
     /// One of a ship's modules: guns, hull, sails or rigging.
@@ -179,6 +185,7 @@ impl Kind {
             Self::Arms => Slot::Arms,
             Self::Legs => Slot::Legs,
             Self::Cloak => Slot::Cloak,
+            Self::Horse => Slot::Mount,
             Self::Guns => Slot::Guns,
             Self::Hull => Slot::Hull,
             Self::Sails => Slot::Sails,
@@ -195,7 +202,7 @@ impl Kind {
     }
 
     /// The materials it is upgraded and dismantled with: a weapon's are Weapon Fragments and Weapon Essence; armour's
-    /// and a cloak's, Armor.
+    /// and a cloak's, Armor. A horse is neither, but is kept in the vault among the armour.
     #[must_use]
     pub fn stock(self) -> Stock {
         if self.module() {
@@ -226,7 +233,7 @@ impl Kind {
 }
 
 impl Slot {
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 12] = [
         Self::Melee,
         Self::Ranged,
         Self::Head,
@@ -234,6 +241,7 @@ impl Slot {
         Self::Arms,
         Self::Legs,
         Self::Cloak,
+        Self::Mount,
         Self::Guns,
         Self::Hull,
         Self::Sails,

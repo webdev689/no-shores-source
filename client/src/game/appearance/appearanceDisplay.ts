@@ -1,7 +1,8 @@
 // The Appearance screen's display, after Destiny's: the player's figure large, turning slowly a whole view at a time
-// (still where less motion is asked for), and their horse beside it in its coat and barding. Shown a dress, it draws
+// (still where less motion is asked for), with no horse: a horse is worn in the Mount slot. Shown a dress, it draws
 // that one: the player's own, or with the hovered piece worn. Pictures come from the forge, composed once and kept;
-// each frame shows what has come, the last view drawn standing until the next one has.
+// each frame shows what has come, the last view drawn standing until the next one has. The horse's own picture, which
+// a barding's tile is cut from, is drawn here too (`horseOf`).
 
 import { HORSE_LAYER } from '../../forge/looks.ts';
 import { bardingLayer } from '../../forge/cosmetics.ts';
@@ -109,21 +110,21 @@ export const pixelsOf = (picture: Picture): Node['picture'] => ({
 });
 
 /** The whole multiple a picture is drawn at to stand within `box`, at least one: its height, and its width each way
- *  from its feet (`root`), or with `centred` its width, fit. */
-function scaleIn(picture: Picture, box: readonly [number, number], centred = false): number {
+ *  from its feet (`root`), fit. */
+function scaleIn(picture: Picture, box: readonly [number, number]): number {
   const [west, , wide, tall] = boundsOf(picture);
   const rootX = picture.root?.[0] ?? picture.width / 2;
-  const across = centred ? wide : 2 * Math.max(rootX - west, west + wide - rootX);
+  const across = 2 * Math.max(rootX - west, west + wide - rootX);
   return Math.max(1, Math.min(Math.floor(box[1] / Math.max(1, tall)), Math.floor(box[0] / Math.max(1, across))));
 }
 
-/** A picture in a box `box` pixels at `scale` texels a pixel, standing on the box's foot: centred on its feet
- *  (`root`), so a turning figure stays where it stands, or with `centred` on what it draws (the horse). */
-function stood(picture: Picture | null, scale: number, box: readonly [number, number], centred = false): Node {
+/** A picture in a box `box` pixels at `scale` texels a pixel, standing on the box's foot, centred on its feet
+ *  (`root`), so a turning figure stays where it stands. */
+function stood(picture: Picture | null, scale: number, box: readonly [number, number]): Node {
   const holder: Node = { width: box[0], height: box[1], clip: true };
   if (!picture) return holder;
-  const [west, north, wide, tall] = boundsOf(picture);
-  const middle = centred ? west + wide / 2 : (picture.root?.[0] ?? picture.width / 2);
+  const [, north, , tall] = boundsOf(picture);
+  const middle = picture.root?.[0] ?? picture.width / 2;
   const [left, top] = [Math.round(box[0] / 2 - middle * scale), box[1] - (north + tall) * scale];
   return {
     ...holder,
@@ -140,11 +141,11 @@ function stood(picture: Picture | null, scale: number, box: readonly [number, nu
 
 /** What the display last drew, so a view or a dress still drawn leaves the last one standing; and the scale each
  *  dress's figure is drawn at, fixed by its first view so a turn never jumps. */
-const shown = { figure: null as Picture | null, scale: 1, horse: null as Picture | null };
+const shown = { figure: null as Picture | null, scale: 1 };
 const scales = new Map<string, number>();
 
-/** The display of `dress` in a box `width` by `height` pixels at `millis` on the clock: the figure in most of its
- *  height, the horse under it. Null with no forge or no dress yet. */
+/** The display of `dress` in a box `width` by `height` pixels at `millis` on the clock: the figure alone, in its whole
+ *  height. Null with no forge or no dress yet. */
 export function displayNode(
   forge: Cards | null,
   dress: Dress | null,
@@ -154,24 +155,16 @@ export function displayNode(
   still: boolean,
 ): Node | null {
   if (!forge || !dress) return null;
-  const figureBox = [width, Math.round(height * 0.55)] as const;
-  const horseBox = [width, height - figureBox[1]] as const;
+  const figureBox = [width, height] as const;
   const [view, flip] = TURN[still ? 0 : Math.floor(millis / TURN_MS) % TURN.length] ?? [0, false];
   const standing = unhorsed(dress);
   const dressKey = JSON.stringify(standing);
   const figure = pictureOf(forge, standing, 'idle', view, flip);
   if (figure) {
-    const scale = scales.get(dressKey) ?? scaleIn(figure, figureBox);
+    // Scaled to nine tenths of the height, so its head stands clear of the frame.
+    const scale = scales.get(dressKey) ?? scaleIn(figure, [width, Math.round(height * 0.9)]);
     scales.set(dressKey, scale);
     [shown.figure, shown.scale] = [figure, scale];
   }
-  const horse = horseOf(forge, dress);
-  if (horse) shown.horse = horse;
-  return {
-    direction: 'column',
-    children: [
-      stood(shown.figure, shown.scale, figureBox),
-      stood(shown.horse, shown.horse ? scaleIn(shown.horse, horseBox, true) : 1, horseBox, true),
-    ],
-  };
+  return { direction: 'column', children: [stood(shown.figure, shown.scale, figureBox)] };
 }

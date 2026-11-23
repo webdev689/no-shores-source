@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { addressKey, guestKey } from './accounts.ts';
+import { addressKey, guestKey } from '../address.ts';
 import { HOLD_MS, characters } from './characters.ts';
 import { SESSION_IDLE_MS } from './database.ts';
 import { backTo } from './discord.ts';

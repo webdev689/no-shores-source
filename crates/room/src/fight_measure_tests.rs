@@ -19,6 +19,15 @@ const FIGHTS_A_ROW: usize = 12;
 const FIGHTS_A_LEVEL: usize = 6;
 const LONGEST_S: f64 = 900.0;
 
+/// Still water: the plain player's look has no ray, so its lay never feels the sea.
+struct Still;
+
+impl sailing::waters::Waters for Still {
+    fn at(&self, _x: f64, _y: f64, _time: f64) -> sailing::waters::Spot {
+        sailing::waters::Spot { bed: -50.0, surface: Some(0.0) }
+    }
+}
+
 fn struck(vessel: &naval::fight::Vessel) -> bool {
     vessel.command().is_some_and(|command| command.struck_at.is_some())
 }
@@ -66,7 +75,7 @@ pub(crate) fn plain_orders(fight: &Fight, me: ShipId, tick: u64, close: f64) -> 
     };
     let steer = ((off - side * want_deg.to_radians()) / 30_f64.to_radians()).clamp(-1.0, 1.0);
     let aim = Aim { bearing_deg: off.to_degrees(), range_m: range, ray: None };
-    let laid = fight.laid(me, &aim).is_some();
+    let laid = fight.laid(me, &aim, &Still, 0.0).is_some();
     let fire = laid && range < 260.0 && tick.is_multiple_of(15);
     let brace = !laid && range < 400.0;
     Orders { helm: Helm { steer, climb }, aim: Some(aim), fire, brace, load: None, boost: false }
