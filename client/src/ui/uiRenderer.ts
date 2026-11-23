@@ -1,12 +1,14 @@
 // The interface's renderer: its atlas of glyphs, tiles and pictures, and each frame's quads drawn in one pass over
 // whatever the frame drew before it, at the frame's end, on the canvas's own texture.
 import { BUFFER_USAGE, type Gpu, TEXTURE_USAGE } from '../gpu.ts';
+import { PERF, perfZone, timedEncoder } from '../perfMeter.ts';
+import { TONES } from '../plus/tones.ts';
 import { ATLAS_SIZE, Layers, type Placed } from './atlas.ts';
 import type { Glyph } from './glyphs.ts';
 import type { Picture } from './node.ts';
 import { Pictures } from './pictures.ts';
 import { type Box, type Colour, colourOf, QUAD_FLOATS, QuadList, UNCLIPPED } from './quads.ts';
-import { type Face, layLine, widthOf } from './text.ts';
+import { type Face, layLine, lineHeight, widthOf } from './text.ts';
 import { UI_SHADER } from './uiShader.ts';
 
 /** Device pixels a CSS pixel of the interface takes: the screen's ratio to a whole pixel, so every cell and edge
@@ -181,9 +183,11 @@ export class UiRenderer {
     draw(0, ink.colour);
   }
 
-  /** Draws the frame's quads over what the canvas holds, and starts the next frame's list. */
+  /** Draws the frame's quads over what the canvas holds, the measuring readout's lines (`?perf`) last, and starts the
+   *  next frame's list. */
   present(width: number, height: number): void {
     const { device, context } = this.gpu;
+    this.readout();
     const data = this.quads.data;
     if (this.quads.count > 0) {
       if (!this.instances || this.instances.size < data.byteLength) {
@@ -195,7 +199,8 @@ export class UiRenderer {
       }
       device.queue.writeBuffer(this.instances, 0, data);
       device.queue.writeBuffer(this.view, 0, new Float32Array([width, height, 0, 0]));
-      const encoder = device.createCommandEncoder();
+      const encoder = timedEncoder(device);
+      perfZone('interface');
       const pass = encoder.beginRenderPass({
         colorAttachments: [{ view: context.getCurrentTexture().createView(), loadOp: 'load', storeOp: 'store' }],
       });
@@ -237,6 +242,17 @@ export class UiRenderer {
     if (!texels) return;
     const [red, green, blue, alpha] = picture.tint ? colourOf(picture.tint) : [1, 1, 1, 1];
     this.quads.add(box, [red, green, blue, alpha * fade], clip, texels, ((picture.turn ?? 0) * Math.PI) / 180);
+  }
+
+  /** The measuring readout's lines in the top left corner, over everything, each with a hard shadow. */
+  private readout(): void {
+    const lines = PERF.current?.lines ?? [];
+    if (lines.length === 0) return;
+    const scale = uiScale(devicePixelRatio);
+    const ink = { colour: TONES.ink, shadow: { colour: TONES.outline, step: 1 } };
+    lines.forEach((line, index) =>
+      this.text(line, { x: 8 * scale, y: (8 + index * lineHeight(1)) * scale, size: 1, scale }, ink),
+    );
   }
 
   private write(box: Placed, pixels: Uint8Array): void {

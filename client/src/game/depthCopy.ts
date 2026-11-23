@@ -1,6 +1,7 @@
 // A scene's depth, kept many samples a pixel, averaged into one float a pixel: what is drawn over a finished picture
 // (the blows' arcs, the see-through marks) and the light layer read it from.
 import type { Gpu } from '../gpu.ts';
+import { perfZone } from '../perfMeter.ts';
 import { SAMPLES } from '../water/waterView.ts';
 
 export const DEPTH_COPY = /* wgsl */ `
@@ -32,6 +33,7 @@ export class DepthCopy {
 
   /** Writes the depth of `from` (many samples a pixel) into `into` (one float a pixel), averaged over its samples. */
   encode(encoder: GPUCommandEncoder, from: GPUTexture, into: GPUTexture): void {
+    perfZone('depth');
     const pass = encoder.beginRenderPass({
       colorAttachments: [{ view: into.createView(), loadOp: 'clear', storeOp: 'store', clearValue: [0, 0, 0, 0] }],
     });
@@ -45,5 +47,25 @@ export class DepthCopy {
     );
     pass.draw(3);
     pass.end();
+  }
+
+  /** Records `reading` (what may read the copy) on `later`, an encoder submitted after `encoder`, and the copy on
+   *  `encoder` only if `reading` began a pass: the copy reads every sample of the scene's depth, and on most frames
+   *  nothing that reads it has anything to draw. */
+  encodeIfRead(
+    encoder: GPUCommandEncoder,
+    later: GPUCommandEncoder,
+    depths: { readonly from: GPUTexture; readonly into: GPUTexture },
+    reading: () => void,
+  ): void {
+    const begin = later.beginRenderPass.bind(later);
+    let read = false;
+    later.beginRenderPass = (descriptor) => ((read = true), begin(descriptor));
+    try {
+      reading();
+    } finally {
+      later.beginRenderPass = begin;
+    }
+    if (read) this.encode(encoder, depths.from, depths.into);
   }
 }

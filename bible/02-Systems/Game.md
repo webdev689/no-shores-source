@@ -43,6 +43,12 @@ code:
   - client/src/game/groundTiles.ts#groundTiles
   - client/src/terrain/groundColour.ts#GROUND_COLOUR_WGSL
   - client/src/combat/lightLayer.ts#LightLayer
+  - client/src/game/depthCopy.ts#DepthCopy
+  - client/src/game/renderScale.ts#sceneSize
+  - client/src/game/autoScale.ts#AutoScale
+  - client/src/game/upscale.ts#Upscale
+  - client/src/perfMeter.ts#PerfMeter
+  - client/src/gpuTimer.ts#GpuTimer
   - client/src/shadow.ts#ShadowMap
   - client/src/game/figureView.ts#FigureView
   - client/src/combat/flashes.ts#Flashes
@@ -609,9 +615,46 @@ the ship, every drawer into the same pass, then the water's sky, haze and surfac
 what a drawer draws over the water: on foot, the blows' arcs, then the fight's see-through marks far to near, each
 tested by hand against the scene's depth, so the water's sky and its surface near a coast never cover them.
 
-The fight's solid marks write depth in the pass with the figures. Then, on foot, the light layer (`LightLayer`): the
-marks and arcs give their light, which is added over the picture in blocks of 4 screen pixels ([[Test Ground]], "The
-attack feel"), under the first person's hands. Off foot, or with no mark or arc to draw, it is not run.
+The fight's solid marks write depth in the pass with the figures. Then the light layer (`LightLayer`): on foot the
+marks and arcs give their light, at sea a fight's puffs, which is added over the picture in blocks of 4 of the
+scene's pixels ([[Test Ground]], "The attack feel"), under the first person's hands. Its first pass is begun only once
+something draws light into it, so on a frame where nothing gives light none of its four passes is made.
+
+**The resolution.** The scene draws at the resolution chosen in Settings ([[Interface]], "Settings"): Auto (the
+first), or 100%, 85%, 75%, 67% or 50% of the canvas's pixels each way, and never more pixels than 3840 by 2160
+(`sceneSize`), so a 5120 by 2880 canvas draws at 3840 by 2160 even at 100%, its targets about 365 MB with four samples
+a pixel. Smaller than the canvas, the scene draws into a picture of its own, stretched over the canvas with each pixel
+blended from the four nearest (`Upscale`); the first person's hands and held map, the blur, the drain and the
+interface then draw at the canvas's own size, sharp. At the canvas's own size the scene draws straight onto it, with
+no picture and no stretch. A dungeon draws the same way.
+
+**Auto** (`AutoScale`) judges the frames 2 s at a time against the display's frame interval: the lowest median
+interval of any 2 s so far (the loading veil and the menus show it), held between 360 and 50 frames a second.
+
+| | With the GPU's clock | Without it |
+|---|---|---|
+| Steps down a tier | The GPU's mean time a frame is over 90% of the interval | The median time between frames is over 125% of it |
+| Steps up a tier | 10 s in which that time, grown by the larger tier's pixels, stays under 70% | 10 s in which the frames meet it (within 110%) |
+
+The 2 s after a step are not judged. A step up undone by a step down within 8 s doubles the wait before the next step
+up, to 160 s at most, so the tiers never flicker. It never draws below 50%. With the GPU's clock a raise is made only
+where it will fit; without it a raise is tried.
+
+**Measuring.** Where the adapter offers timestamps, the GPU device is made with them (`gpu.ts`). The page's address
+asks for a readout with `?perf`: the interface draws it in the top left corner, laid out again every 120 frames from
+their means. It says the frame's mean and worst time between frames, the script's mean time a frame, the GPU's mean
+time a frame and each zone's, heaviest first, and the scene's size and share of the canvas. The zones are the passes
+between the scene's marks: shadows, main, depth, water, over water, weather, light, atmosphere, upscale, hands, blur
+and drain, and the interface's own; in a dungeon main, over, light, depth, upscale, hands and drain. Each pass begun
+on a timed encoder writes the GPU's clock as it begins and ends (`GpuTimer`), at most 64 a frame; a frame's stamps are
+read back in one of a ring of three slots once the GPU has done them, never waited for, and a frame that finds all
+three out is not timed. Without timestamps the readout says the GPU was not timed and keeps the CPU's times. The GPU
+is timed while the readout shows or Auto is chosen; otherwise nothing is.
+
+**The scene's depth copied.** The scene's depth, many samples a pixel, is averaged into one float a pixel for what
+reads it after the pass (`DepthCopy`). In the game's scene the water's haze reads it every frame. In a dungeon it is
+copied only on a frame that something drawn over the picture, or its light, begins a pass: what reads it is recorded
+into a command buffer of its own after the scene's, and the copy goes into the scene's only if that one began a pass.
 
 The game adds the open landmass's drawers each frame (`landDrawers`). Its city is the city layer's `CityView`
 ([[Cities]]), drawn in its continent's climate once the forged models' tables and the RMB blocks its plan names have
@@ -690,6 +733,9 @@ blinks open: dark for 0.3 s, open to 15% dark by 0.5 s, shut to 90% by 0.6 s, op
 - The land is drawn a little off the ground bodies stand on, so the fight's marks and blood are drawn 0.12 m over
   where they lie. A telegraphed blow's mark is flat: on a slope, part of it lies under the land.
 - A frame counts for at most 0.1 s, so below 10 frames a second the world runs slower than real time.
+- Without the GPU's clock Auto cannot tell frames held back by the script from frames held back by the GPU, so frames
+  slow for the script's sake lower the resolution too. A browser may round its timestamps: Chrome rounds them to
+  0.1 ms unless its WebGPU developer features are on, so a short pass reads 0 or 0.1 ms and only the means hold.
 - The people seen aboard another ship are drawn, not the room's: another player's Sloop shows plain people, not that
   player's own look, and a captain's hands and captain are not its deck crew until it is boarded. Ships moored by a
   social space's pier carry no one. A captain's ship met at sea is known by its sea number and in its fight by its

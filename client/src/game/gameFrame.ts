@@ -19,6 +19,8 @@ import type { DungeonDrawers } from './dungeonDrawers.ts';
 import type { FigureView } from './figureView.ts';
 import { type Flow, type Happening, next } from './flow.ts';
 import { FrameGuard } from '../frameGuard.ts';
+import { PERF, perfOn, PerfMeter } from '../perfMeter.ts';
+import { autoChosen, heardFrame } from './renderScale.ts';
 import type { Foot } from './foot.ts';
 import type { FootView } from './footView.ts';
 import type { FriendlyTraffic, FriendlyWater } from './friendlyShips.ts';
@@ -411,8 +413,13 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   /** The GPU's work for the frame drawn last. */
   let inFlight = Promise.resolve();
   const guard = new FrameGuard();
+  const meter = new PerfMeter(gpu.device, perfOn(location.search));
+  PERF.current = meter;
   const frame = (now: number) => {
+    meter.start(now, autoChosen());
     guard.run(() => step(now));
+    const taken = meter.end();
+    heardFrame(taken.intervalMs, taken.gpuMs);
     // At most one frame waits on the GPU while the next is drawn, so a GPU that falls behind slows the frames.
     const previous = inFlight;
     inFlight = gpu.device.queue.onSubmittedWorkDone();

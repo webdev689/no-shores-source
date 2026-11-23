@@ -19,7 +19,10 @@ export async function startGpu(canvas: HTMLCanvasElement): Promise<Gpu> {
   if (!adapter) {
     throw new GpuUnavailable('WebGPU is on, but no graphics adapter is available. Update your graphics drivers.');
   }
-  const device = await adapter.requestDevice();
+  // The GPU's clock, where the adapter has one: the readout (`?perf`) times each pass with it, and the Auto resolution
+  // reads the frame's GPU time from it.
+  const requiredFeatures: GPUFeatureName[] = adapter.features.has('timestamp-query') ? ['timestamp-query'] : [];
+  const device = await adapter.requestDevice({ requiredFeatures });
   const context = canvas.getContext('webgpu');
   if (!(context instanceof GPUCanvasContext)) {
     throw new GpuUnavailable('The page could not open a WebGPU drawing surface.');
@@ -45,11 +48,13 @@ export const TEXTURE_USAGE = {
 } as const;
 export const BUFFER_USAGE = {
   mapRead: 0x01,
+  copySource: 0x04,
   copyDestination: 0x08,
   index: 0x10,
   vertex: 0x20,
   uniform: 0x40,
   storage: 0x80,
+  queryResolve: 0x200,
 } as const;
 export const SHADER_STAGE = { vertex: 0x1, fragment: 0x2, compute: 0x4 } as const;
 

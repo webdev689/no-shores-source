@@ -26,6 +26,7 @@ decision, made in the same change as its entry here.
 | `client/src/game/audio/ambience/dsp.ts` | The seeded die and the filters a place's room is cut from |
 | `client/src/player/` | The player layer: the [[Player]] as the Test Ground and the game both play it, with DFO's keys and Destiny's pad as the player binds them, the forge's figure and its frames; the fight's buttons and the moves a fight holds a figure to, the foes' dresses and figures, the crosshair, and the [[Arts]]' pictures |
 | `client/src/gpu.ts` | Starts WebGPU, or tells the player why it cannot ([[WebGPU Only]]) |
+| `client/src/perfMeter.ts`, `gpuTimer.ts` | What the game's frames cost: the time between them, the script's, each pass's on the GPU, and the `?perf` readout ([[Game]], "Drawing") |
 | `client/src/face.ts`, `trueType.ts` | The glyphs Pixelify Sans misreads or lacks, drawn in code on its grid for the interface to draw, and made into a font for the held map's lettering ([[Interface]], "The face") |
 | `client/src/shadow.ts` | The sun's shadow map round the eye, which every drawer of the [[Game]]'s scene casts into and reads |
 | `client/src/soundSamples.ts` | The recorded sounds the owner picked from Freesound, fetched as they are wanted (long ones a chunk at a time), held within a budget, levelled and played for the [[Interface]]'s cues and the world's, with their credits |
