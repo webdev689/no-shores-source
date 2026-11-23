@@ -24,7 +24,7 @@ import {
 import type { Press } from './gearScreen.ts';
 import { gearKindName, gearName } from './shipGear.ts';
 import type { ShipGlyph } from './shipGlyphs.ts';
-import { sourceLooks } from '../player/sourceLooks.ts';
+import { earnedFrom } from '../player/sourceLooks.ts';
 
 /** How many items a slot carries beside the one worn, how many Vestiges are carried, how many of each the vault
  *  keeps, and how many Ammo crates are carried (the gear crate's `CARRIED_MOST`, `VESTIGES_MOST`, `VAULT_MOST` and
@@ -123,7 +123,7 @@ export function cardOf(item: GearItem, worn: GearItem | null = null): Card {
   const rows: [string, string][] = [['Level', String(item.level)]];
   if (item.prestige) rows.push(['Prestige', String(item.prestige)]);
   // Where it was earned, which its look says too; a ship's module keeps no look of a content.
-  if (!isModule(item.kind)) rows.push(['From', capital(sourceLooks(item).name)]);
+  if (!isModule(item.kind)) rows.push(['From', capital(earnedFrom(item))]);
   const changes = (['attack', 'defense', 'prestige'] as const)
     .map((stat) => ({ label: capital(stat), from: worn?.[stat] ?? 0, to: item[stat] }))
     .filter((change) => change.from !== 0 || change.to !== 0);
@@ -255,7 +255,7 @@ export function inventoryPageOf(state: GearState): InventoryPage {
   const carried = state.vestiges
     .filter((each) => !each.vaulted)
     .map((each) =>
-      vestigeCell(each, `For the ${SLOTS[each.slot] ?? ''}, level ${each.level}.`, {
+      vestigeCell(each, vestigeHolds(each), {
         words: state.atMage ? 'Click to open it.' : 'Open it at the Mage.',
         press: state.atMage ? { label: 'Open', ask: { kind: ASKS.identify, item: each.id }, role: 'primary' } : null,
       }),
@@ -274,6 +274,10 @@ export function inventoryPageOf(state: GearState): InventoryPage {
 }
 
 type Vestige = GearState['vestiges'][number];
+
+/** What a Vestige holds, as its cell says: its slot, its level and where it was earned. */
+const vestigeHolds = (each: Vestige) =>
+  `For the ${SLOTS[each.slot] ?? ''}, level ${each.level}, from ${earnedFrom(each)}.`;
 
 /** A Vestige's cell: its rarity's name, what it holds, and `fields`' words and presses. */
 function vestigeCell(each: Vestige, holds: string, fields: Partial<Cell>): Cell {
@@ -325,7 +329,7 @@ export function vaultOf(state: GearState): Vault {
     const vestiges = state.vestiges
       .filter((each) => each.vaulted === (place === VAULTED))
       .map((each) =>
-        vestigeCell(each, `For the ${SLOTS[each.slot] ?? ''}, level ${each.level}.`, {
+        vestigeCell(each, vestigeHolds(each), {
           press: {
             label: moving,
             ask: { kind: place === VAULTED ? ASKS.withdrawVestige : ASKS.storeVestige, item: each.id },

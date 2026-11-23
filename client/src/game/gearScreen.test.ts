@@ -86,6 +86,7 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   assert.deepEqual(detail.numbers, [
     ['Attack', '248'],
     ['Level', '20'],
+    ['From', 'The world'],
   ]);
   const [upgrade, perk] = detail.columns;
   assert.equal(upgrade?.nodes[0]?.chosen, true);

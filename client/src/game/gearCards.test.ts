@@ -68,6 +68,8 @@ test('a card names the item and its kind, its main number, its chosen traits, an
   );
   const abyss = cardOf(item({ id: 9, rarity: 2, level: 20, source: 4 }));
   assert.deepEqual(abyss.rows.at(-1), ['From', 'An Abyss Dungeon'], 'where it was earned, which its look says');
+  const faction = cardOf(item({ id: 10, rarity: 3, level: 20, named: 'veiled_cape', source: 1 }));
+  assert.deepEqual(faction.rows.at(-1), ['From', 'The Veiled'], 'a faction’s piece names its faction');
   assert.equal(card.traits.length, 1, 'its chosen trait');
   assert.deepEqual(card.compare, { replaces: 'Harbourwarden', rows: [{ label: 'Attack', from: 248, to: 260 }] });
   assert.equal(cardOf(worn, worn).compare, null, 'no comparing a piece with itself');
@@ -114,6 +116,9 @@ test('the inventory: Aurem its one currency, stacks shown only while held, and V
   assert.equal(vestiges.cells.length, 10, 'ten places');
   assert.deepEqual([vestiges.held, vestiges.most], [1, 10]);
   assert.equal(vestiges.cells[0]?.press, null, 'not identified away from a social space');
+  assert.match(vestiges.cells[0]?.words ?? '', /^For the .+, level 20, from the world\. /, 'where it was earned');
+  const abyssVestige = inventoryPageOf(state({ vestiges: [{ ...vestige, source: 4 }] })).vestiges.cells[0];
+  assert.match(abyssVestige?.words ?? '', /, from an Abyss Dungeon\./);
   assert.deepEqual(
     away.tabs.map((each) => each.id),
     ['consumables', 'materials'],

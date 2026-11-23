@@ -2,6 +2,8 @@
 // content that drops it (`content/gear/looks.json`, numbered as the gear crate's `Source`), so what a player wears says
 // where it was earned. A rolled piece climbs its own content's sets and metals by its level and name.
 
+import factions from '../../../content/gear/factions.json' with { type: 'json' };
+import items from '../../../content/gear/items.json' with { type: 'json' };
 import looks from '../../../content/gear/looks.json' with { type: 'json' };
 import type { GearItem } from '../network/gearMessages.ts';
 
@@ -65,3 +67,16 @@ export function nearestOwnFirst(item: Pick<GearItem, 'source'>, set: string, lad
   const rest = from(ladder, Math.max(ladder.indexOf(set), 0)).filter((each) => !mine.includes(each));
   return [...mine, ...rest];
 }
+
+/** Each faction's named piece's faction, by the item's id, as a player reads it: "the Stormcallers", "the Veiled". */
+const FACTION_OF: ReadonlyMap<string, string> = new Map(
+  items.items.flatMap((item) => {
+    const faction = factions.factions.find((each) => 'faction' in item && each.key === item.faction);
+    return faction ? [[item.id, faction.name.replace(/^(The )?/, 'the ')] as const] : [];
+  }),
+);
+
+/** Where a piece or a Vestige was earned, in words: a faction's piece its faction ("the Stormcallers"), anything else
+ *  its content ("an Elite Dungeon"). */
+export const earnedFrom = (item: Pick<GearItem, 'source'> & { readonly named?: string | null }): string =>
+  FACTION_OF.get(item.named ?? '') ?? sourceLooks(item).name;
