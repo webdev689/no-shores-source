@@ -1,7 +1,7 @@
-// A ruin's crystal formations laid out as model instances, the way the city's GPU draws them: the great ones in one
-// run a formation, drawn at every distance; the middle distance's a formation at a time and a chunk at a time, so the
-// view draws only the chunks within `MIDDLE_M`, each formation's chunks joined into as few draws as run.
-import { type Chunk, type Range, runs as runsOf } from './cityBuild.ts';
+// A ruin's crystal formations laid out as model instances, the way the city's GPU draws them: a formation at a time
+// and a chunk at a time, so the view draws only the chunks it sees (the great ones at every distance, the middle
+// distance's within `MIDDLE_M`), each formation's chunks joined into as few draws as run.
+import type { Chunk, Range } from './cityBuild.ts';
 import { MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import type { CrystalPlace } from './overtaken.ts';
 import { boxReach } from './tiers.ts';
@@ -16,11 +16,11 @@ export const TIER_CRYSTAL = 8;
 /** A model drawn by instance: which, and its instances' run in the buffer. */
 export type InstancedDraw = { readonly model: number; readonly first: number; readonly count: number };
 
-/** The crystal's instances: their bytes, the great formations' draws, and each chunk's middle-distance runs (by
- *  formation, as `middle[chunk][formation]`). */
+/** The crystal's instances: their bytes, and each chunk's runs of them by formation, as `great[chunk][formation]`
+ *  (drawn wherever the chunk is seen) and `middle[chunk][formation]` (within `MIDDLE_M` of the eye). */
 export type CrystalInstances = {
   readonly bytes: ArrayBuffer;
-  readonly great: readonly InstancedDraw[];
+  readonly great: readonly (readonly Range[])[];
   readonly middle: readonly (readonly Range[])[];
 };
 
@@ -57,56 +57,65 @@ export function drawsByFormation(sorted: readonly CrystalPlace[], firstModel: nu
   return draws;
 }
 
-/** Lays the great and middle-distance formations out: the great by formation, the middle by formation then chunk. */
+/** A formation placed in a chunk. */
+type InChunk = { readonly chunk: number; readonly place: CrystalPlace };
+
+/** Lays the great and the middle-distance formations out, each a formation then a chunk at a time, and their runs. */
 export function crystalInstances(
-  great: readonly CrystalPlace[],
-  middle: readonly { readonly chunk: number; readonly place: CrystalPlace }[],
+  great: readonly InChunk[],
+  middle: readonly InChunk[],
   origin: readonly number[],
-  firstModel: number,
   formations: number,
   chunkCount: number,
 ): CrystalInstances {
-  const greatSorted = [...great].sort((a, b) => a.formation - b.formation);
-  const middleSorted = [...middle].sort((a, b) => a.place.formation - b.place.formation || a.chunk - b.chunk);
-  const bytes = new ArrayBuffer(Math.max(1, greatSorted.length + middleSorted.length) * MODEL_INSTANCE_BYTES);
-  writeInstances(greatSorted, origin, bytes);
+  const byFormation = (a: InChunk, b: InChunk) => a.place.formation - b.place.formation || a.chunk - b.chunk;
+  const sorted = [...great].sort(byFormation).concat([...middle].sort(byFormation));
+  const bytes = new ArrayBuffer(Math.max(1, sorted.length) * MODEL_INSTANCE_BYTES);
   writeInstances(
-    middleSorted.map((each) => each.place),
+    sorted.map((each) => each.place),
     origin,
     bytes,
-    greatSorted.length,
   );
-  const draws = drawsByFormation(greatSorted, firstModel);
-  const ranges = Array.from({ length: chunkCount }, () =>
-    Array.from({ length: formations }, (): Range => ({ first: 0, count: 0 })),
-  );
-  middleSorted.forEach(({ chunk, place }, index) => {
-    const range = ranges[chunk][place.formation];
-    if (range.count === 0) range.first = greatSorted.length + index;
+  const ranges = () =>
+    Array.from({ length: chunkCount }, () => Array.from({ length: formations }, (): Range => ({ first: 0, count: 0 })));
+  const [greatRanges, middleRanges] = [ranges(), ranges()];
+  sorted.forEach(({ chunk, place }, index) => {
+    const range = (index < great.length ? greatRanges : middleRanges)[chunk][place.formation];
+    if (range.count === 0) range.first = index;
     range.count++;
   });
-  return { bytes, great: draws, middle: ranges };
+  return { bytes, great: greatRanges, middle: middleRanges };
 }
 
-/** The middle distance's instance runs to draw for some chunks seen from `eye` (from the city's middle): those of
- *  the chunks within `MIDDLE_M`, a formation's chunks joined where their runs meet. */
-export function middleDraws(
-  chunks: readonly Chunk[],
-  middle: readonly (readonly Range[])[],
-  eye: readonly number[],
-  firstModel: number,
-): InstancedDraw[] {
-  const near = chunks.filter((chunk) => {
-    const low = [0, 1, 2].map((axis) => chunk.middlesLow[axis] - eye[axis]);
-    const high = [0, 1, 2].map((axis) => chunk.middlesHigh[axis] - eye[axis]);
-    return boxReach(low, high).nearest < MIDDLE_M;
-  });
+/** Whether a chunk's middle-distance crystal is drawn from `eye` (from the city's middle): within `MIDDLE_M`. */
+export const withinMiddle = (chunk: Chunk, eye: readonly number[]): boolean =>
+  boxReach(
+    [chunk.middlesLow[0] - eye[0], chunk.middlesLow[1] - eye[1], chunk.middlesLow[2] - eye[2]],
+    [chunk.middlesHigh[0] - eye[0], chunk.middlesHigh[1] - eye[1], chunk.middlesHigh[2] - eye[2]],
+  ).nearest < MIDDLE_M;
 
-  const draws: InstancedDraw[] = [];
-  const formations = middle[0]?.length ?? 0;
+/** The instance runs to draw of some chunks' crystal (`byChunk[chunk][formation]`), a formation's chunks joined
+ *  where their runs meet, laid into `into` (emptied first, so a view keeps one list a pass). */
+export function chunkDraws(
+  chunks: readonly Chunk[],
+  byChunk: readonly (readonly Range[])[],
+  firstModel: number,
+  into: InstancedDraw[],
+): InstancedDraw[] {
+  into.length = 0;
+  const formations = byChunk[0]?.length ?? 0;
   for (let formation = 0; formation < formations; formation++) {
-    const runs = runsOf(near.map((chunk) => middle[chunk.index]?.[formation] ?? { first: 0, count: 0 }));
-    for (const run of runs) draws.push({ model: firstModel + formation, first: run.first, count: run.count });
+    let [first, count] = [0, 0];
+    for (const chunk of chunks) {
+      const range = byChunk[chunk.index]?.[formation];
+      if (!range?.count) continue;
+      if (count && first + count === range.first) count += range.count;
+      else {
+        if (count) into.push({ model: firstModel + formation, first, count });
+        [first, count] = [range.first, range.count];
+      }
+    }
+    if (count) into.push({ model: firstModel + formation, first, count });
   }
-  return draws;
+  return into;
 }

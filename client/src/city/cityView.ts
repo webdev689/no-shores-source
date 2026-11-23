@@ -8,7 +8,7 @@ import { type Gpu, TEXTURE_USAGE } from '../gpu.ts';
 import { FAR, NEAR, ShadowMap } from '../shadow.ts';
 import type { RmbBlock } from './blocks.ts';
 import { buildCity, type Chunk, type CityData, type CityTables, detailRuns, type Range, runs } from './cityBuild.ts';
-import { drawsByFormation, type InstancedDraw, middleDraws, writeInstances } from './crystalInstances.ts';
+import { chunkDraws, drawsByFormation, type InstancedDraw, withinMiddle, writeInstances } from './crystalInstances.ts';
 import { wreckCrustAt } from './overtaken.ts';
 import {
   CITY_BUFFER_USAGE,
@@ -91,6 +91,9 @@ export class CityView implements CityDrawer {
   private seen: Seen | null = null;
   private onPainted: () => void = () => {};
 
+  /** Lists a pass's crystal draws are laid into, kept from pass to pass. */
+  private readonly draws: InstancedDraw[] = [];
+  private readonly middleChunks: Chunk[] = [];
   /** The size a ruin's wrecks are drawn at now (the ships': larger at sea, true size on foot), its crust's too. */
   private readonly wreckScale: () => number;
 
@@ -213,6 +216,8 @@ export class CityView implements CityDrawer {
   ): { draws: number; triangles: number } {
     const { data } = drawn;
     const drew = { draws: 0, triangles: 0 };
+    // a port city has no crystal of its own to draw
+    if (!data.ruined) return drew;
     const draw = (draws: readonly InstancedDraw[]) => {
       for (const { model, first, count } of draws) {
         const entry = data.models.entries[model];
@@ -225,8 +230,10 @@ export class CityView implements CityDrawer {
     pass.setVertexBuffer(0, drawn.modelVertices);
     pass.setIndexBuffer(drawn.modelIndices, 'uint32');
     pass.setVertexBuffer(1, drawn.crystal);
-    draw(data.crystal.great);
-    draw(middleDraws(chunks, data.crystal.middle, eye, data.firstFormation));
+    draw(chunkDraws(chunks, data.crystal.great, data.firstFormation, this.draws));
+    this.middleChunks.length = 0;
+    for (const chunk of chunks) if (withinMiddle(chunk, eye)) this.middleChunks.push(chunk);
+    draw(chunkDraws(this.middleChunks, data.crystal.middle, data.firstFormation, this.draws));
     const crust = drawn.wreckCrust;
     if (crust) {
       const scale = this.wreckScale();
