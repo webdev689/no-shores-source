@@ -144,31 +144,25 @@ each part works is in its system note.
 
 ## Waiting on the owner
 
-- **The owner's two bugs** (#163, branch `claude/zen-ritchie-u40hax`), for the owner's yes to merge, which deploys the
-  page and the rooms: Elder Maren Hale greets the player again when a walk is taken up after a reload (she came from
-  out of view and led off without a word, so "Follow" could not be followed and the house quests stayed hidden); and a
-  pad seam higher than a step no longer blends ([[Cities]]), so the floor beside the plaza's and the Walks' parapets no
-  longer dips and carries a body over them to fall. Tested offline (the full check, a hub test from every spawn into
-  the seaward parapet, the walk replayed on the real hub); not played by hand or in a deployed room. Left: the Walks'
-  parapet still stands 0.4 m off the raised cells' edge; walking into the plaza's west-end parapet still climbs it.
-- **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
-  `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which deploys the page and the rooms (the naval rules
-  and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn behind the wake's shut lids)
-  and its room opened and ticked in the rooms' worker ([[The Wreck's Room Runs in the Rooms' Worker Too]]); the
-  ship's aim after Black Flag from its own deck with a lay that narrows as it is held
-  ([[Aiming a Ship Follows Black Flag, From Its Deck]]); the wreck's arms 8 m out as a loot drop
-  ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]); the story's one-shots (the crash, the splash) fetched as its
-  sound wakes; the Boarding playing on through a death before Thule; Maren at three quarters of a walk
-  ([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]); the marks seen faded through walls
-  ([[A Mark Over What a Player Can Use Is Seen Through Walls]]), beside main's lit marks. Then the owner's
-  "comprehensive audit on everything": six read-only auditors (the aim and the naval rules, sound and music, the
-  marks, arms and welcome, the prologue end to end, the bible against the code, the room's move), every finding fixed
-  with a test or written down as a limit in #161's description; among the fixes, the pad has the game's controls
-  without the pointer (a pad alone could not fight on foot), a cut sting no longer holds back the song behind it, and
-  the protocol's version covers the sea fight's numbers. Tested offline (the full check at abd1ad14); the deck eye's
-  framing on each hull, the faded marks, the arms' pop and the sounds are not yet seen on a real GPU, heard or played.
-  Open for the owner: whether each hull's eye frames well (the Brig's stands on its quarterdeck, aft of its battery;
-  the Schooner's under its main boom), and the narrowing's 2x and 1.5 s.
+- **The owner's bugs from two rounds of play** (#163, branch `claude/zen-ritchie-u40hax`), for the owner's yes to
+  merge, which deploys the page and the rooms. Each fix was audited read-only, and every finding fixed with a test
+  that fails without it:
+  - Elder Maren Hale greets on every arrival, calling it from the lanes within 15 m; "Follow" shows only once she has
+    greeted; a player who leaves her behind a minute has the welcome given, so the houses' roads open. The owner said
+    to forget reworking the walk itself; a shorter greeting for a walk taken up would be the owner's to write.
+  - A pad seam blends toward a level at most a step off ([[Cities]]), so the floor beside the plaza's parapets no
+    longer dips and carries a body over them, and no ledge runs along a ramp's side.
+  - [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]: no foe starts a fight with a player within
+    15 m of a patrol zone's spawn until they strike from there; a fight brought in goes on; the guards stand where
+    they stood, 25 m or more off (`crates/room/src/landing.rs`, [[Enemies]]).
+  - [[Friendly Ships Take Several Courses, About Five in View, Sailing Visibly]]: three courses a pair, about five
+    in view near a port, 60 m/s, departures staggered across all nine courses ([[World Map]], "Traffic").
+  - Tested offline only. Unexplained, waiting on the owner's browser console: in the owner's patrol screenshot the
+    world stopped being drawn while the death veils stacked. Left: ships start and stop at 60 m/s at once, and lie on
+    one point at a roadstead; some retaining walls near Overlook's plaza may be dropped whole (low confidence, the
+    seam audit's).
+- **#161, merged**, leaves the owner two points: whether each hull's deck eye frames well (the Brig's on its
+  quarterdeck, aft of its battery; the Schooner's under its main boom), and the aim's narrowing's 2x and 1.5 s.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
   owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
