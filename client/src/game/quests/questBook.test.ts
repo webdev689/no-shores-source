@@ -6,11 +6,13 @@ import welcome from '../../../../content/story/welcome.json' with { type: 'json'
 import type { QuestState } from '../../network/questMessages.ts';
 import { castOf, scenesOf } from '../../speech/cast.ts';
 import { clockWords } from '../tasks.ts';
+import { TOUR } from '../welcome/tour.ts';
 import {
   COUNTERS,
   type Goal,
   QUESTS,
   beginOf,
+  buyAt,
   failLine,
   goalNodes,
   goalOf,
@@ -74,17 +76,41 @@ test('the tracker shows the quest walked: its name, its task, and each goal with
 });
 
 test("a counter answers the task's unmet talk goal that names it, and no other", () => {
-  const goals = goalsOf(1, 0);
+  const houses = taskOf(1, 'hear-three-houses');
+  const goals = goalsOf(1, houses);
   const [first, second] = [goals[0]?.to ?? '', goals[1]?.to ?? ''];
-  const hearing = onTask(1, 0, [1, 0, 0]);
+  const hearing = onTask(1, houses, [1, 0, 0]);
   assert.equal(talkAt(hearing, first), null, 'heard already');
   assert.equal(talkAt(hearing, second), goals[1]);
   assert.equal(talkAt(hearing, 'mage'), null, 'no goal names the Mage');
-  assert.equal(talkAt(onTask(1, 1), 'veiled'), null, 'choosing a house asks a pledge, not a word');
+  assert.equal(talkAt(onTask(1, taskOf(1, 'choose-house')), 'veiled'), null, 'choosing a house asks a pledge');
   assert.deepEqual(
     [COUNTERS.stormcallers, COUNTERS.lamplighters, COUNTERS.veiled, COUNTERS.mage, COUNTERS.harbourmaster],
     [1, 2, 3, 10, 16],
   );
+  assert.deepEqual([COUNTERS.mail, COUNTERS.stranger], [17, 18], "the Postmaster's and the stranger's");
+});
+
+test('the opening hears the stranger, then the round of the counters, each keeper with a scene of their own', () => {
+  assert.deepEqual(
+    QUESTS[0]?.tasks.map((task) => task.id),
+    ['hear-the-stranger', 'find-your-way', 'arm-yourself', 'wear-them', 'hear-three-houses', 'choose-house'],
+  );
+  assert.ok(talkAt(onTask(1, 0), 'stranger'), 'her task waits on her');
+  const round = goalsOf(1, taskOf(1, 'find-your-way'));
+  assert.ok(round.every((goal) => goal.kind === 'talk' && goal.scene && COUNTERS[goal.to ?? ''] !== undefined));
+});
+
+test('a smith whose ware a buy goal of the task asks is the one it lights, until it is bought', () => {
+  const arm = taskOf(1, 'arm-yourself');
+  const goals = goalsOf(1, arm);
+  const melee = goals.findIndex((goal) => goal.slot === 'melee');
+  assert.equal(buyAt(onTask(1, arm), 'weaponsmith'), true);
+  assert.equal(buyAt(onTask(1, arm), 'armorsmith'), true);
+  assert.equal(buyAt(onTask(1, arm), 'mage'), false);
+  const bought = goals.map((_goal, index) => (index === melee ? 1 : 0));
+  assert.equal(buyAt(onTask(1, arm, bought), 'weaponsmith'), false, 'bought');
+  assert.equal(buyAt(onTask(1, taskOf(1, 'wear-them')), 'armorsmith'), false, 'worn is no smith of theirs');
 });
 
 test("the HUD marks the task's first unmet goal standing somewhere in the node the player is in", () => {
@@ -215,7 +241,8 @@ test('no speaker says more than two lines in a row where one scene follows anoth
   const scenes = { ...scenesOf(welcome, cast), ...scenesOf(houses, cast) };
   const joined = (names: readonly (string | undefined)[]) =>
     names.flatMap((name) => (name === undefined ? [] : (scenes[name] ?? assert.fail(`${name} is not a scene`))));
-  const joins: (readonly (string | undefined)[])[] = [['welcomeLamplighters', 'houseBegin']];
+  // The stranger's welcome says its scenes in turn, and the opening's begin follows it.
+  const joins: (readonly (string | undefined)[])[] = [[...TOUR.map((step) => step.scene), QUESTS[0]?.begin]];
   for (const quest of QUESTS) {
     joins.push(beginOf(quest));
     quest.tasks.forEach((task, index) => {

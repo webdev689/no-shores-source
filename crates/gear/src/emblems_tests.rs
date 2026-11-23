@@ -101,7 +101,7 @@ fn a_character_kept_before_emblems_reads_with_the_starting_one_and_its_levels() 
 
 #[test]
 fn a_kept_character_carries_what_others_see_and_reads_back_past_it() {
-    let mut character = Character::starting();
+    let mut character = Character::kitted();
     character.earn_xp(u32::MAX, None);
     let kept = character.to_json();
     let shown: serde_json::Value = serde_json::from_str(&kept).expect("json");

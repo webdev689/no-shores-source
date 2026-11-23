@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ASKS, type GearItem, type GearState } from '../network/gearMessages.ts';
-import { characterOf, itemDetailOf, vendorsOf } from './gearScreen.ts';
+import { readFile } from 'node:fs/promises';
+import { STOCK, WARES, characterOf, itemDetailOf, vendorsOf } from './gearScreen.ts';
 
 const item = (fields: Partial<GearItem>): GearItem => ({
   id: 1,
@@ -115,15 +116,18 @@ test('an item’s detail lays out its nodes: bought, to buy once unlocked, and w
   assert.deepEqual(vaulted.presses[0]?.ask, { kind: ASKS.withdraw, item: legendary.id });
 });
 
-test('each vendor’s stall shows its six wares of the day, bought for their price in Aurem, the Shipwright’s last', () => {
+test('each vendor’s stall shows its six wares of the day and its starter stock, bought for their price in Aurem, the Shipwright’s last', () => {
   const six = (first: Partial<GearItem>, second: Partial<GearItem>) => [
     item({ id: 40, level: 9, price: 2_000, ...first }),
     item({ id: 40, level: 9, price: 600, ...second }),
     ...[2, 3, 4, 5].map(() => item({ id: 40, ...first })),
   ];
+  const plain = (kinds: number[]) => kinds.map((kind, place) => item({ id: 6 + place, kind, rarity: 0, price: 50 }));
   const wares = [
     ...six({ kind: 13, rarity: 2 }, { kind: 14, rarity: 1 }),
+    ...plain([13, 14, 15, 16]),
     ...six({ kind: 2, rarity: 2, attack: 120 }, { kind: 12, rarity: 1 }),
+    ...plain([12, 8]),
     ...six({ kind: 25, rarity: 1, bucket: 8, defense: 40 }, { kind: 24, rarity: 0, bucket: 7 }),
   ];
   const [armorsmith, weaponsmith, shipwright] = vendorsOf(state({ wares, aurem: 1_000, day: 20_400 }));
@@ -135,7 +139,12 @@ test('each vendor’s stall shows its six wares of the day, bought for their pri
       ['Magic Torso', true],
     ],
   );
-  assert.equal(armorsmith?.wares.length, 6);
+  assert.equal(armorsmith?.wares.length, 10, 'the day’s six, then four to start');
+  assert.deepEqual(
+    armorsmith?.wares.slice(6).map((ware) => [ware.starter, ware.price, ware.press.ask.node]),
+    [6, 7, 8, 9].map((node) => [true, 50, node]),
+  );
+  assert.equal(weaponsmith?.wares.length, 8);
   // Asked by its place, not the number it takes once bought, and by the day it was shown, so the room refuses it once
   // the day has turned.
   assert.deepEqual(weaponsmith?.wares[0]?.press.ask, { kind: ASKS.vend, column: 1, node: 0, item: 20_400 });
@@ -164,4 +173,18 @@ test("a module's page fits it in its own slot, never feeds it, and prices its no
     'no Fruit of Dagon for a module',
   );
   assert.equal(detail.columns[0]?.nodes[0]?.cost, 'Costs 200 Aurem, 4 Canvas, 2 Timber.');
+});
+
+test("each vendor's stock is the rules' own: the day's wares, then its starter pieces", async () => {
+  const vendor = await readFile(new URL('../../../crates/gear/src/vendor.rs', import.meta.url), 'utf8');
+  const starter = vendor.slice(vendor.indexOf('fn starter_kinds'));
+  const pieces = ['Armorsmith', 'Weaponsmith', 'Shipwright'].map(
+    (name) =>
+      (new RegExp(`Vendor::${name} => &\\[([^\\]]*)\\]`).exec(starter)?.[1] ?? '').match(/Kind::/g)?.length ?? 0,
+  );
+  assert.deepEqual(
+    STOCK,
+    pieces.map((count) => WARES + count),
+  );
+  assert.equal(Number(/pub const WARES: usize = (\d+);/.exec(vendor)?.[1]), WARES);
 });

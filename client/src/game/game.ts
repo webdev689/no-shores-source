@@ -33,7 +33,7 @@ import { IsleLanding, ashoreOn, ashoreWords } from './isleVisit.ts';
 import type { IsleHeld } from './isles.ts';
 import { FootView } from './footView.ts';
 import { bootGame, FIRST_NODE, SEA_SHIPS } from './gameBoot.ts';
-import { afterStoryOn } from './welcome/afterStory.ts';
+import { AfterStory } from './welcome/afterStory.ts';
 import { questsOn } from './quests/quests.ts';
 import { Lore } from './compendium/lore.ts';
 import { FIRST_LOOK, keptLook, plainDressOf } from './prologue/look.ts';
@@ -126,7 +126,7 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     flow: boot.flow,
     foot: null,
     sea: null,
-    after: afterStoryOn(stack, forge, (x, y) => scene.groundAt(x, y)),
+    after: new AfterStory(),
     quests,
     lore: new Lore(localStorage, () => link?.account?.id ?? null),
     through: null,

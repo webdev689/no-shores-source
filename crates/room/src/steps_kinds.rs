@@ -505,7 +505,9 @@ impl Room {
             | Goal::Sea(_)
             | Goal::Land(_)
             | Goal::Scavenge(_)
-            | Goal::Enter(_) => None,
+            | Goal::Enter(_)
+            | Goal::Buy(_)
+            | Goal::Wear(_) => None,
         }
     }
 }

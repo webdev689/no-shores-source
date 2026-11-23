@@ -58,7 +58,7 @@ pub fn loadout_arms(kind: Kind) -> Arms {
         Kind::Pistolet => (Fists, Some(Ranged::Pistolet), OffHand::Empty),
         Kind::DoublePistolet => (Fists, Some(Ranged::DoublePistolet), OffHand::Empty),
         Kind::Thunderlock => (Fists, Some(Ranged::Thunderlock), OffHand::Empty),
-        Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak => return BARE_HANDS,
+        Kind::Head | Kind::Torso | Kind::Arms | Kind::Legs | Kind::Cloak | Kind::Horse => return BARE_HANDS,
         Kind::Guns | Kind::Hull | Kind::Sails | Kind::Rigging => return BARE_HANDS,
     };
     Arms { melee, ranged, off_hand }

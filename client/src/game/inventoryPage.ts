@@ -8,7 +8,7 @@
 // Vestige opened at the Mage), a held one when held; a right press its other use.
 
 import { ASKS } from '../network/gearMessages.ts';
-import { CARRIED, RARITIES } from '../player/gear.ts';
+import { RARITIES, dismantlable } from '../player/gear.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { cardFrame, cardName, cardNode, rarityTone } from './gearCard.ts';
 import { type Cell, cardOf, inventoryPageOf } from './gearCards.ts';
@@ -75,8 +75,8 @@ export function cellNode(context: MenuContext, cell: Cell): Node {
   const item = cell.item;
   const rarity = cell.glyph === 'vestige' || item ? cell.rarity : null;
   const rgb = rarityRgb(rarity);
-  // A piece carried is dismantled by holding F over it, wherever its tile stands.
-  const carried = item?.at === CARRIED;
+  // A piece carried is dismantled by holding F over it, wherever its tile stands; never a horse.
+  const carried = !!item && dismantlable(item);
   const press = cell.press;
   let charged = 0;
   if (item && carried)

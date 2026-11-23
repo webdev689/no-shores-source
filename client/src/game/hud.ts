@@ -41,6 +41,7 @@ import {
 import { type Landfall, landfallWords } from './seaLaw.ts';
 import { SeaSight, type Sight } from './seaSight.ts';
 import type { ShipPanel } from './shipPanel.ts';
+import { gearScreenOpen } from './gearScreen.ts';
 import { TaskTracker } from './tasks.ts';
 import { drawToasts, keptToasts, layToasts, type Toast } from './toasts.ts';
 import { UsePrompt } from './usePrompt.ts';
@@ -124,6 +125,8 @@ export class Hud {
   private sea: (SeaBarState & { readonly landfall: Landfall }) | null = null;
   private panel: ShipPanel | null = null;
   private passage: string | null = null;
+  /** While a cutscene holds the view: the use prompt, the toasts and a gate's offer stand aside. */
+  quiet = false;
   private wheel = false;
   private besides: () => Besides = () => ({ fight: false, bossed: false, speaking: false, map: false });
   private respawnWanted: () => void = () => undefined;
@@ -377,14 +380,15 @@ export class Hud {
       ),
       // In a view too narrow for the tracker to stand clear of the compass's column, it gives way to a public event's
       // banner, which holds the same objective; the next event's line holds none, so the tracker stands beside it.
-      !(besides.banner && besides.banner !== 'next' && width < 1024) && this.tasks.node(view, clock, still),
+      !(besides.banner && besides.banner !== 'next' && width < 1024) &&
+        this.tasks.node(view, clock, still, gearScreenOpen() ? ui.boxOf('gear-foot') : null),
       {
         width: 'grow',
         height: 'grow',
         float: { to: 'screen' },
         draw: (renderer, box, scale) => {
           const shown = { width: box.width / scale, height: box.height / scale };
-          drawToasts(renderer, layToasts(renderer.face, this.toasts, shown, clock, still), scale);
+          drawToasts(renderer, layToasts(renderer.face, this.quiet ? [] : this.toasts, shown, clock, still), scale);
         },
       },
       statusNode(view, this.status),
@@ -401,7 +405,7 @@ export class Hud {
           this.landfallWanted(),
         ),
       this.wheel && offerNode(ui, 'hud:wheel', `Take the helm  ${boundWord('use')}`, () => this.wheelWanted()),
-      this.passage !== null && offerNode(ui, 'hud:passage', this.passage, () => this.passageWanted()),
+      !this.quiet && this.passage !== null && offerNode(ui, 'hud:passage', this.passage, () => this.passageWanted()),
       this.panel && shipPanelNode(ui, this.panel, () => this.manageWanted()),
       // Under the menu, death's words and the veil, which cover them.
       fight,
@@ -411,7 +415,7 @@ export class Hud {
         standing.told &&
         deathNode(ui, deathWords(standing.fell), standing.canRespawn, () => this.respawnWanted()),
       this.veilNode(width, clock, still),
-      this.usePrompt.node(view),
+      !this.quiet && this.usePrompt.node(view),
       this.seaSight.node(),
       // The page raised each mark over the rest of the display, so they stand over it here too.
       ...markNodes(ui, this.marksShown, (id) => this.markChosen(id)),

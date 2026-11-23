@@ -25,6 +25,9 @@ workflow ([[Item Pictures]]).
   `crates/protocol/src/protocol_tests.rs` writes a welcome and a snapshot into `target/protocol/`, and
   `client/src/network/messages.test.ts` reads them back to the bit; `server/roomDoor.test.ts` hands the room, in
   WebAssembly, the bytes the browser's own code writes, and reads its snapshots back with the browser's.
+- **Tests on the real world's data** read it as the page does: `client/src/game/welcome/overlookTour.test.ts` opens
+  continent-1 in the land's WebAssembly (`npm run -s wasm` first) and holds every stop of the stranger's tour to a clear
+  shot of its keepers on Overlook's own counters and solids, not on hand-laid boxes.
 - **GPU code** is checked in a browser with WebGPU; the pure parts around it (sizes, layouts, maths) are unit-tested.
 
 ## What a good test looks like

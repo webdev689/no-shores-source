@@ -156,3 +156,33 @@ export function fireParts(fire: Fire, seconds: number, wind: Wind): FireParts {
   });
   return { held, tongues, wisps, smoke, embers, glows };
 }
+
+/** Whether `point` stands within `margin` metres of `fire`'s smoke column in `wind`: of the room its puffs roll
+ *  through over their life, as `fireParts` lays them, each puff at its widest swirl. A camera keeps out of it. */
+export function inSmoke(fire: Fire, wind: Wind, point: Point, margin: number): boolean {
+  const { at, sizeM: size } = fire;
+  const along = fire.along ?? ([0, 0, 0] as Point);
+  const rise = 0.6 + 0.9 * Math.sqrt(size);
+  for (let age = 0; age <= 1.0001; age += 0.05) {
+    const aloft = age * SMOKE_LIFE_S;
+    // Its puff's middle at this age from the base's end nearest the point, the swirl and the wobble of a step between.
+    const [x, y, z] = [at[0] + wind[0] * aloft * 0.7, at[1] + wind[1] * aloft * 0.7, at[2] + size * 0.8 + aloft * rise];
+    const length2 = along[0] ** 2 + along[1] ** 2 + along[2] ** 2;
+    const share =
+      length2 > 0
+        ? Math.min(
+            1,
+            Math.max(0, ((point[0] - x) * along[0] + (point[1] - y) * along[1] + (point[2] - z) * along[2]) / length2),
+          )
+        : 0;
+    const apart = Math.hypot(
+      point[0] - x - along[0] * share,
+      point[1] - y - along[1] * share,
+      point[2] - z - along[2] * share,
+    );
+    const reach =
+      size * (0.3 + 1.1 * age) + size * 0.35 + (Math.hypot(wind[0], wind[1]) * 0.7 + rise) * 0.05 * SMOKE_LIFE_S;
+    if (apart <= reach + margin) return true;
+  }
+  return false;
+}

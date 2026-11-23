@@ -10,7 +10,7 @@ import type { Block } from '../rules/movementRules.ts';
 import type { Opening } from './gearScreen.ts';
 import { HARBOURMASTER, KEEPERS, KEEPER_KINDS } from './keepers.ts';
 import type { StationInfo } from './nodes.ts';
-import { Townsfolk, awayFromCounters, plazaOf, shapeSpot } from './townsfolk.ts';
+import { Townsfolk, plazaOf, shapeSpot } from './townsfolk.ts';
 import type { NodeInfo } from './worldData.ts';
 
 /** How near a counter a player stands to be served, metres. */
@@ -53,7 +53,6 @@ export const stationWords = (kind: string): string | null => OFFERS[kind]?.words
 export function offerAt(stations: readonly StationInfo[], x: number, y: number): Offer | null {
   for (const station of stations) {
     const offer = OFFERS[station.kind];
-    // A keeper away from their counter (the elder on her welcome) is called back to it as it is opened.
     if (offer && Math.hypot(station.counter[0] - x, station.counter[1] - y) <= SERVED_M) return offer;
   }
   return null;
@@ -104,11 +103,11 @@ export class PlazaLife {
   }
 
   /** Places everyone's figures where they are at world time `worldS`, seconds: Shape among them while the room's
-   *  `gear` says he is here, and a keeper away from their counter taken from it. */
+   *  `gear` says he is here. */
   frame(worldS: number, gear: GearState | null = null): void {
     const shape = shapeSpot(gear?.shape, this.visitorSpots);
     const here = new Set<number>();
-    for (const person of this.folk?.peopleAt(worldS, { away: awayFromCounters, shape }) ?? []) {
+    for (const person of this.folk?.peopleAt(worldS, { shape }) ?? []) {
       here.add(person.id);
       const placed = this.figures.get(person.id) ?? this.others.place(person.dress, person.x, person.y, person.facing);
       this.figures.set(person.id, placed);

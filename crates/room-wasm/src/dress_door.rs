@@ -18,6 +18,8 @@ struct Worn {
     level: u8,
     name: u8,
     named: Option<String>,
+    #[serde(default)]
+    story: bool,
 }
 
 #[derive(Deserialize)]
@@ -35,7 +37,7 @@ pub fn dressed(bytes: &[u8]) -> String {
     character.items.clear();
     for (id, worn) in (1..).zip(asked.worn) {
         let mut item = gear::item::Item::new(id, worn.kind, worn.rarity, worn.level, worn.kind.slot());
-        (item.source, item.name, item.named) = (worn.source, worn.name, worn.named);
+        (item.source, item.name, item.named, item.story) = (worn.source, worn.name, worn.named, worn.story);
         character.items.insert(id, (item, At::Worn(worn.kind.slot())));
     }
     gear::cosmetics::dressed(&asked.dress, &character).unwrap_or_default()

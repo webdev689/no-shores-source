@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { mock, test } from 'node:test';
 import type { Cards } from '../../player/cards.ts';
 import type { Shot } from '../camera.ts';
+import { blockReach } from '../../player/boom.ts';
 import { Epilogue } from './epilogue.ts';
 import { HUD_VEIL_S, headOnView, type Stage } from './stage.ts';
 
@@ -22,13 +23,14 @@ function epilogueOn(
   const said: { scene: string; finish: () => void }[] = [];
   const done: string[] = [];
   const heads: (readonly [number, number] | null)[] = [];
+  const typed: number[] = [];
   const stage = {
     parts: {
       overheads: {
         frame: (_seconds: number, map: Map<string, readonly [number, number] | null>) =>
           void heads.push(map.get('stranger') ?? null),
       },
-      dialogue: { frame: () => undefined },
+      dialogue: { frame: (seconds: number) => void typed.push(seconds) },
       scene: { groundAt },
       landmass: () => ({ plan: { centre: [0, 60] }, nodes: [] }),
     },
@@ -41,7 +43,9 @@ function epilogueOn(
     frames: () => 8,
     card: (_id: number, _dress: unknown, anim: string) => ({ anim }),
   } as unknown as Cards;
-  return { epilogue: new Epilogue(stage, forge), said, done, heads, stage: stage as unknown as FakeStage };
+  const epilogue = new Epilogue(stage, forge);
+  epilogue.words = () => epilogue.say('welcome');
+  return { epilogue, said, done, heads, typed, stage: stage as unknown as FakeStage };
 }
 
 const settled = () => new Promise((resolve) => setImmediate(resolve));
@@ -57,7 +61,7 @@ test('the stranger waits behind the veil, and speaks once it is wholly gone, in 
     lifted += STEP_S;
   }
   assert.ok(lifted >= HUD_VEIL_S, `she spoke ${lifted.toFixed(2)} s after the veil began to fall`);
-  assert.equal(said[0]?.scene, 'arrived');
+  assert.equal(said[0]?.scene, 'welcome', 'her words');
   assert.ok(headOnView(heads.at(-1) ?? null, VIEW), 'her head is in the view');
 });
 
@@ -174,4 +178,53 @@ test("she is let go in the end though she stands in sight, held at the water or 
     assert.equal(epilogue.done, true, `let go though seen, the middle at ${centre.join(', ')}`);
     assert.deepEqual(done, ['hushed']);
   }
+});
+
+test('a parapet before the player puts her at their side, on their own floor and in clear sight of them', () => {
+  const { epilogue, stage } = epilogueOn();
+  // A wall 1.5 m ahead and a drop of 20 m past it, as the arrival over Overlook's parapet faces.
+  stage.parts.scene.groundAt = (_east, y) => (y < -1.5 ? -19 : 1);
+  const wall = { minX: -10, maxX: 10, minY: -1.9, maxY: -1.5, bottom: 1, top: 2.2 };
+  epilogue.clear = (from, to) =>
+    blockReach(from, to, [wall], 0.05) >= Math.hypot(...from.map((each, axis) => each - (to[axis] ?? 0))) - 1e-6;
+  const [stranger] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  assert.ok(stranger, 'she stands');
+  assert.equal(stranger.z, 1, "on the player's own floor, not down past the wall");
+  assert.ok(stranger.y > -1.5, 'on their side of it');
+});
+
+test('she stands and walks on the floor a figure stands on, a paved walk over the ground, not sunk to the ground', async () => {
+  const { epilogue, said } = epilogueOn();
+  // A walk paved 0.9 m over the ground, as Overlook's parapet walk is, and the player on it.
+  epilogue.floor = (_east, y) => (y > 40 ? 1 : 1.9);
+  const onWalk = { ...YOU, z: 1.9 };
+  const [stranger] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, onWalk, false);
+  assert.equal(stranger?.z, 1.9, 'on the walk');
+  epilogue.frame(BEHIND, VIEW, HUD_VEIL_S, 0, onWalk, false);
+  said[0]?.finish();
+  await settled();
+  epilogue.frame(BEHIND, VIEW, STEP_S, 0, onWalk, false);
+  const [walking] = epilogue.frame(BEHIND, VIEW, STEP_S, 0, onWalk, false);
+  assert.equal(walking?.z, 1.9, 'walking along it');
+});
+
+test('she waits to speak while a menu is open over the view, and speaks once it is shut', () => {
+  const { epilogue, said } = epilogueOn();
+  for (let frames = 0; frames < 90; frames++) epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false, true);
+  assert.equal(said.length, 0, 'not under the menu');
+  epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  assert.equal(said.length, 1);
+});
+
+test('her words hold still under an open menu once she speaks, and go on once it is shut', () => {
+  const { epilogue, said, typed } = epilogueOn();
+  while (said.length === 0) epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  typed.length = 0;
+  for (let frames = 0; frames < 10; frames++) epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false, true);
+  assert.ok(
+    typed.every((seconds) => seconds === 0),
+    'no time passes for her words under the menu',
+  );
+  epilogue.frame(BEHIND, VIEW, STEP_S, 0, YOU, false);
+  assert.equal(typed.at(-1), STEP_S);
 });

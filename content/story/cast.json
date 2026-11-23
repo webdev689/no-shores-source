@@ -24,7 +24,8 @@
     "wren": { "name": "Wren", "voice": "wren" },
     "corvane": { "name": "High Assessor Corvane", "voice": "corvane" },
     "reeve": { "name": "Tithe Reeve", "voice": "reeve" },
-    "postmaster": { "name": "The Postmaster", "voice": "postmaster" }
+    "postmaster": { "name": "The Postmaster", "voice": "postmaster" },
+    "harbourmaster": { "name": "The Harbourmaster", "voice": "harbourmaster" }
   },
   "voices": {
     "mate": { "pitchHz": 176, "spreadHz": 22, "muffleHz": 1700, "volume": 0.34, "syllableS": 0.1 },
@@ -51,6 +52,7 @@
     "wren": { "pitchHz": 205, "spreadHz": 10, "muffleHz": 1300, "volume": 0.26, "syllableS": 0.09 },
     "corvane": { "pitchHz": 96, "spreadHz": 12, "muffleHz": 1200, "volume": 0.4, "syllableS": 0.14 },
     "reeve": { "pitchHz": 112, "spreadHz": 16, "muffleHz": 1400, "volume": 0.36, "syllableS": 0.11 },
-    "postmaster": { "pitchHz": 124, "spreadHz": 12, "muffleHz": 1500, "volume": 0.32, "syllableS": 0.1 }
+    "postmaster": { "pitchHz": 124, "spreadHz": 12, "muffleHz": 1500, "volume": 0.32, "syllableS": 0.1 },
+    "harbourmaster": { "pitchHz": 112, "spreadHz": 14, "muffleHz": 1400, "volume": 0.34, "syllableS": 0.11 }
   }
 }

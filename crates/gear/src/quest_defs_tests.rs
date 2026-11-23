@@ -28,7 +28,9 @@ fn places_of(goal: &GoalDef) -> Vec<&str> {
         | Goal::Sea(_)
         | Goal::Land(_)
         | Goal::Scavenge(_)
-        | Goal::Enter(_) => goal.goal.place().into_iter().collect(),
+        | Goal::Enter(_)
+        | Goal::Buy(_)
+        | Goal::Wear(_) => goal.goal.place().into_iter().collect(),
     }
 }
 
@@ -143,6 +145,12 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         (r#"{ "kind": "unseen", "node": "n", "place": "p", "within": 0, "text": "t" }"#, "within"),
         (r#"{ "kind": "unseen", "node": "n", "place": "p", "within": 40, "text": "t" }"#, "within"),
         (r#"{ "kind": "gather", "count": 0, "text": "t" }"#, "count"),
+        // Only a weapon's or armour's slot is ever told of a piece bought or worn.
+        (r#"{ "kind": "wear", "slot": "mount", "text": "t" }"#, "slot"),
+        (r#"{ "kind": "buy", "slot": "cloak", "text": "t" }"#, "slot"),
+        // A piece held is told again on every ask, so one piece would meet a count above one.
+        (r#"{ "kind": "wear", "slot": "head", "count": 2, "text": "t" }"#, "count"),
+        (r#"{ "kind": "buy", "slot": "melee", "count": 3, "text": "t" }"#, "count"),
     ] {
         let problem = goal(text).expect(text).problem();
         assert!(problem.as_deref().is_some_and(|said| said.contains(field)), "{text}: {problem:?}");
@@ -237,6 +245,10 @@ fn a_task_kept_by_an_id_it_had_before_reads_as_the_task_it_became() {
 
 /// Every task id the file has had, by its quest: one gone from the file must be an old id (`was`) of a task there.
 const TASK_IDS: &[(&str, &str)] = &[
+    ("house", "hear-the-stranger"),
+    ("house", "find-your-way"),
+    ("house", "arm-yourself"),
+    ("house", "wear-them"),
     ("house", "hear-three-houses"),
     ("house", "choose-house"),
     ("stormcallers", "climb-old-beacon"),
