@@ -67,7 +67,7 @@ export class Callout {
 
 /** Where a call's top stands in a view `height` tall at `zoom`: under the compass's column (its foot `under`), no higher
  *  than a quarter down the view, above the crosshair where it fits there; else under the crosshair, and under it too
- *  where above it would cover the Boss's figure (`boss`, the span down the view it stands in) and under it would not. */
+ *  where above it would cover more of the Boss's figure (`boss`, the span down the view it stands in). */
 export function callTop(
   height: number,
   under: number,
@@ -77,7 +77,7 @@ export function callTop(
   const tall = CALL_TALL * zoom;
   const above = Math.max(under + CALL_CLEAR * zoom, Math.round(height / 4));
   const below = Math.max(under + CALL_CLEAR * zoom, height / 2 + CROSSHAIR_CLEAR * zoom);
-  const covers = (top: number) => !!boss && top < boss.bottom && boss.top < top + tall;
+  const covers = (top: number) => (boss ? Math.max(0, Math.min(top + tall, boss.bottom) - Math.max(top, boss.top)) : 0);
   const fits = above + tall <= height / 2 - CROSSHAIR_CLEAR * zoom;
-  return fits && (!covers(above) || covers(below)) ? above : below;
+  return fits && covers(above) <= covers(below) ? above : below;
 }

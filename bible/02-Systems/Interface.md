@@ -556,8 +556,8 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   starts. White words three steps of the face tall on the red of the fight's own warnings, in a 2 px white edge; it
   slides in as the banner does at a beat, stands 1.8 s and fades over its last 0.4 s, and is read out. Its top stands
   16 px under the compass's column, no higher than a quarter down the view, or under the crosshair where above it
-  would cover the crosshair, or the Boss's figure standing within 200 px of the view's middle (and under it would
-  not). A view under 480 px tall has no room under the column: there the call, its words two steps tall,
+  would cover the crosshair, or more of the Boss's figure (standing within 200 px of the view's middle, at the
+  display's zoom) than under it would. A view under 480 px tall has no room under the column: there the call, its words two steps tall,
   stands in the banner's place while it shows. Each new call shows afresh; one held on (the slam still shown) shows
   once; once its mechanic ends (the slam landed) a call still standing fades at once.
 - **Foul water's edge.** While an Ascent's foul water harms the player (from the room's harm told to them, while

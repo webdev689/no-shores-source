@@ -291,7 +291,8 @@ test("the call stands above the crosshair, and under it where above it would cov
   // A 1280 by 720 view, the column's foot at 247: above stands at 263, under at 388.
   assert.equal(callTop(720, 247, 1, null), 263);
   assert.equal(callTop(720, 247, 1, { top: 250, bottom: 370 }), 388, 'the Boss stands where it would');
-  assert.equal(callTop(720, 247, 1, { top: 250, bottom: 500 }), 263, 'covering both, it keeps above');
+  assert.equal(callTop(720, 247, 1, { top: 250, bottom: 500 }), 263, 'covering both as much, it keeps above');
+  assert.equal(callTop(720, 247, 1, { top: 290, bottom: 400 }), 388, 'covering the head above, the feet below: below');
   assert.equal(callTop(600, 247, 1, null), 328, 'no room above the crosshair: under it');
 });
 
