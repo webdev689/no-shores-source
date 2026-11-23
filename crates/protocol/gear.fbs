@@ -234,6 +234,9 @@ table Gear {
   // this room's node that they have not, each its number, x and y.
   lore: [ushort];
   lore_here: [double];
+  // The number the next item they get takes (`Character::id_to_take`): a smith's ware is drawn by it, as the piece it
+  // becomes once bought.
+  next_id: uint;
 }
 
 // A named officer: their number, post (0 First Mate, 1 Gunner, 2 Bosun, 3 Carpenter, 4 Lookout), grade (a rarity),

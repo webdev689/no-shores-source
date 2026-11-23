@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import type { Outfit } from '../forge/outfit.ts';
 import type { GearItem, GearState } from '../network/gearMessages.ts';
 import type { Wardrobe } from './dressing.ts';
-import { MELEE, RANGED_SLOT } from './gear.ts';
+import { readFromRoom } from '../network/messages.ts';
+import { KINDS, MELEE, RANGED_SLOT, WORN, weaponLook } from './gear.ts';
 import { gearOutfit, spareOutfit } from './gearLooks.ts';
 import { COSMETICS } from '../forge/cosmetics.ts';
 
@@ -236,4 +238,31 @@ test("a faction's weapon is drawn in its faction's metal, its shield too, and ea
   assert.equal(plainBow.dyes['bow_long_iron'], undefined, 'a bow of no faction wears no colour of one');
   const squall = gearOutfit(state([item({ id: 1, kind: 12, rarity: 3, at: 2, named: 'squallbreak' })]), guilds, plain);
   assert.deepEqual([squall.left, squall.dyes['shield_kite_elven']], ['shield_kite_elven', 'stormcallers']);
+});
+
+test("a smith's ware is drawn as the piece it becomes once bought: its set or clothes, its metal and its make", async () => {
+  // gear_wire_tests.rs writes the player's gear at the stall, then again after each of the Armorsmith's and the
+  // Weaponsmith's six wares is bought in turn, each message its length in four bytes and then itself.
+  const bytes = await readFile(new URL('../../../target/protocol/gear_vended.bin', import.meta.url)).catch(() => {
+    throw new Error('gear_vended.bin is not written: run `cargo test -p protocol`');
+  });
+  const sent: GearState[] = [];
+  for (let at = 0; at < bytes.length; ) {
+    const length = bytes.readUInt32LE(at);
+    const read = readFromRoom(new Uint8Array(bytes.subarray(at + 4, at + 4 + length)));
+    if (read?.kind === 'gear') sent.push(read);
+    at += 4 + length;
+  }
+  assert.equal(sent.length, 13, 'before any is bought, and after each of twelve');
+  const looks = (piece: GearItem) => {
+    const slot = piece.bucket;
+    const wearing = state([{ ...piece, at: WORN + slot }]);
+    return { hands: weaponLook(piece), outfit: gearOutfit(wearing, every, plain, slot <= RANGED_SLOT ? slot : MELEE) };
+  };
+  for (const [place, before] of sent.slice(0, -1).entries()) {
+    const ware = before.wares[place];
+    const bought = sent[place + 1]?.items.find((each) => !before.items.some((held) => held.id === each.id));
+    assert.ok(ware && bought, `ware ${place} bought`);
+    assert.deepEqual(looks(ware), looks(bought), `ware ${place}, a ${KINDS[ware.kind]}`);
+  }
 });

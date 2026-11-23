@@ -587,6 +587,7 @@ pub fn gear_bytes(room: &Room, player: PlayerId) -> Option<Vec<u8>> {
         mail: Some(crate::mail_wire::mail_offset(&mut builder, character)),
         lore: Some(crate::lore_wire::found_of(&mut builder, room, player)),
         lore_here: Some(crate::lore_wire::here_of(&mut builder, room, player)),
+        next_id: character.id_to_take(),
     };
     let gear = messages::Gear::create(&mut builder, &args);
     let message =

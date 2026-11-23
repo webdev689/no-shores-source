@@ -317,8 +317,8 @@ const WRITTEN: ReadonlyMap<string, { readonly look?: string; readonly make?: str
 export const rung = (item: GearItem, start: number, climb: number, spread: number): number =>
   start + Math.round(((Math.min(Math.max(item.level, 1), 20) - 1) * climb) / 19) + (item.name % spread);
 
-/** The item's own number for a choice its name does not make: its name while it has none (a smith's ware), and a
- *  named piece's name, so a faction's piece always shows one make. */
+/** The item's own number for a choice its name does not make: its id (a smith's ware comes with the one it takes once
+ *  bought), its name while it has none, and a named piece's name, so a faction's piece always shows one make. */
 export const numberOf = (item: GearItem): number => (item.named ? item.name : item.id || item.name);
 
 /** The ladder sorted nearest first from rung `from`, the lesser first at one distance. */
