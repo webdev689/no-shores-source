@@ -170,7 +170,7 @@ test("the Court's banner tells Fury's weight once it begins and warns of it a mi
   const standing = [9, 1.6, 0] as const;
   const court = (more: Partial<EncounterSeen>) =>
     encounterBanner(layout, seen({ woken: true, boss: 7, ...more }), standing);
-  assert.deepEqual(court({ fury: 4 })?.bonus, { text: 'Fury ×1.4', state: 'lost' });
+  assert.deepEqual(court({ fury: 4 })?.bonus, { text: 'Fury ×1.4', state: 'warns' });
   assert.deepEqual(court({ furyTicks: 60 * 60 })?.bonus, { text: 'Fury in 1:00', state: 'holds' });
   assert.deepEqual(court({ furyTicks: 42 * 60 - 30 })?.bonus, { text: 'Fury in 0:42', state: 'holds' });
   assert.equal(court({ furyTicks: 61 * 60 })?.bonus, null, 'no word before its last minute');
@@ -182,7 +182,7 @@ test("a Holdfast's banner says its relic's strength, and an Ascent's how many st
   const held = encounterBanner(layout, seen({ seals: [holdfast, seen().seals[1]!] }), [2, 1.6, 0]);
   assert.deepEqual(held?.bonus, { text: 'Relic 40%', state: 'holds' });
   const low = encounterBanner(layout, seen({ seals: [{ ...holdfast, relic: 0.25 }, seen().seals[1]!] }), [2, 1.6, 0]);
-  assert.deepEqual(low?.bonus, { text: 'Relic 25%', state: 'lost' });
+  assert.deepEqual(low?.bonus, { text: 'Relic 25%', state: 'warns' });
   const ascent = { kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [2, 4], relic: 1 };
   const climbing = encounterBanner(layout, seen({ seals: [ascent, seen().seals[1]!] }), [2, 1.6, 0]);
   assert.equal(climbing?.bar?.label, '2 of 4');
@@ -339,5 +339,5 @@ test("an Ascent's pads are lit as its way up while it holds: each top's edge and
 test("an Ascent's banner warns that its foul water harms", () => {
   const ascent = { kind: SEAL_KIND.ascent, state: SEAL_STATE.running, progress: 0, marks: [0, 1], relic: 1 };
   const banner = encounterBanner(layout, seen({ seals: [ascent, seen().seals[1]!] }), [2, 1.6, 0]);
-  assert.deepEqual(banner?.bonus, { text: 'Foul water harms', state: 'lost' });
+  assert.deepEqual(banner?.bonus, { text: 'Foul water harms', state: 'warns' });
 });

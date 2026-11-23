@@ -72,6 +72,7 @@ code:
   - client/src/game/encounterCues.ts#EncounterCues
   - client/src/game/encounterMesh.ts#layEncounters
   - client/src/game/encounterMesh.ts#waterMesh
+  - client/src/game/encounterMesh.ts#ANCHOR_SLAB
 ---
 # Dungeons
 
@@ -332,8 +333,10 @@ lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea islan
   dark, the show starts again two seconds on, two of the dungeon's foes stand at its doorways (`RuneWrong`), and no step
   counts until the show starts again. After the first rune each next is stepped within 3 s, or every rune goes dark
   with no foes. It never harms anyone itself. Every rune lit breaks it.
-- **The Weighing** (split up): three plates as far apart as the room allows, or the two farthest while fewer than three
-  living players stand in its room. A plate stood on by a living player within 1 m stays held 3 s after the last steps
+- **The Weighing** (split up): three plates as far apart as the room allows among the spots in plain view from the
+  doorway its room is entered by (the one nearest the way in on the walk: no solid on the line from that doorway's
+  middle, a body's width and a hand wide), so the puzzle is seen on coming in; or the two farthest while fewer than
+  three living players stand in its room. A plate stood on by a living player within 1 m stays held 3 s after the last steps
   off, and for a lone player the walk between its two plates besides (`plate_linger`), so a lone player walking, not
   only sprinting, can hold both. It is held each tick every plate in play is, and broken once held 20 s in all; a wave
   comes at its doorways 3 s after it starts, then every 12 s.
@@ -496,20 +499,25 @@ or glows, and is read as standing none (`readDungeon`).
   snapshot's word: each Ascent's pads in its room's stone, its wall picture under a band of trim and its floor on top,
   the last with the seal stone glowing; the drowned floor as foul water over its cells while the seal holds, a sickly
   green over its bed whose glow breathes slowly (`FOUL_FLAG`), apart from the dungeon's plain still water, gone as it
-  breaks; a slab of the end room's trim under each anchor and a crystal over each relic. On the floor, rings: runes
+  breaks, seething with bubbles of a brighter bile that swell and burst so it reads as the floor that harms; a stepped
+  slab of the end room's trim under each anchor, 8 cm high, and a crystal over each relic. On the floor, rings: runes
   dim, lit gold under a beam while showing, green once stepped and red under a beam for a second when stepped wrong;
   plates dim under a beam, gold while held; the seal stone's ring, lighting as its players stand on it; the relic's
-  ring coloured by its strength, held or not, and its strength as an arc inside it; while a ward stands, each anchor
-  ringed under a beam and filling as it is stood on, a ring round the Boss and a dome of light over it; the slam's ring
+  ring coloured by its strength, held or not, and its strength as an arc inside it; while an Ascent holds, each pad's
+  top edge banded in the seal's blue with a glow fading down its faces, brightening pad by pad from the first to the
+  last in a slow wave, the last pad's in the stone's gold; each anchor ringed dim while the Boss stands (before it
+  wakes too, so the company learns where they are) and, while a ward stands, brighter under a beam and filling as it
+  is stood on, a ring round the Boss and a dome of light over it; the slam's ring
   4 m round the Boss, filling as it comes; a red ring round the Boss through Fury; a Reckoning's ring of light under a
   tall beam while it is shown, and a flash from the light as it lands. Under the compass the public event's banner
-  shows the seals broken of how many, the seal the player stands in (or the one running) with its task in a line
+  shows the seals broken of how many, the seal the player stands in (else the nearest unbroken one, by its room's
+  middle, as the next to go to) with its task in a line
   ("Step on the runes in the order they light", "Hold all three plates together" or "Hold both plates together",
   "Climb to the seal stone together", "Hold the relic's ring") and its progress (an Ascent's "2 of 4" on the stone, a
-  Holdfast's "Relic 40%"); once the Boss wakes, the Court ("Defeat the Boss", "Break the anchors" while warded, "Get
+  Holdfast's "Relic 40%"; an Ascent's "Foul water harms" in red); once the Boss wakes, the Court ("Defeat the Boss", "Break the anchors" while warded, "Get
   clear of the Boss" while its slam is shown, "Stand in the light" with the Reckoning's seconds left in the banner's
-  large clock, red and pulsing), "Fury in 1:00" in its last minute and "Fury ×1.4" once it begins; between seals only
-  the count; none once the Boss has fallen. The compass marks each unbroken seal's room, then the end room once the Boss
+  large clock, red and pulsing), "Fury in 1:00" in its last minute and "Fury ×1.4" once it begins, wherever the player
+  stands; with every seal broken and the Boss not yet up, only the count; none once the Boss has fallen. The compass marks each unbroken seal's room, then the end room once the Boss
   wakes, until it falls. It slides in afresh as the Boss wakes, a seal breaks or a ward rises or breaks; the music
   stings as a seal breaks or a ward is won and as the Boss wakes, its mood holds tense while a seal runs and at its peak
   in the Court, and the Boss's score plays its part by the wards broken (its last stand still by its health). A ward

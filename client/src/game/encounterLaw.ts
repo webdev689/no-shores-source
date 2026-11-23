@@ -47,7 +47,7 @@ const WARD_M = 1.3;
 /** An Ascent's pads lit as its way: the band along each top's edge, how far down each face its glow reaches, how far
  *  off the stone both stand (m), and how fast the brightening runs from the first pad to the last (radians a second,
  *  and between pads). */
-const PAD_EDGE = { band: 0.1, face: 0.45, off: 0.02, speed: 2.5, step: 1.1 } as const;
+const PAD_EDGE = { band: 0.12, face: 0.6, off: 0.02, speed: 2.5, step: 1.1 } as const;
 /** An anchor at rest, before or between wards: dim, so it is learnt, not called for. */
 const ANCHOR_RESTING = 0.3;
 /** The dome of light over the warded Boss: its reach round it and how many bands of light draw it. */
@@ -110,7 +110,7 @@ const minutes = (seconds: number): string => `${Math.floor(seconds / 60)}:${Stri
 
 /** The Court's Fury in the banner's bonus line: its weight once it has begun, its countdown in its last minute. */
 function furyOf(seen: EncounterSeen): Banner['bonus'] {
-  if (seen.fury > 0) return { text: `Fury ×${(1 + seen.fury / 10).toFixed(1)}`, state: 'lost' };
+  if (seen.fury > 0) return { text: `Fury ×${(1 + seen.fury / 10).toFixed(1)}`, state: 'warns' };
   const left = Math.ceil(seen.furyTicks / TICKS_PER_SECOND);
   return seen.furyTicks > 0 && left <= FURY_WARNED_S ? { text: `Fury in ${minutes(left)}`, state: 'holds' } : null;
 }
@@ -168,9 +168,9 @@ export function encounterBanner(layout: DungeonLayout, seen: EncounterSeen, feet
     bar: barOf(seal),
     bonus:
       seal.kind === SEAL_KIND.holdfast
-        ? { text: `Relic ${relic}%`, state: relic < 30 ? 'lost' : 'holds' }
+        ? { text: `Relic ${relic}%`, state: relic < 30 ? 'warns' : 'holds' }
         : seal.kind === SEAL_KIND.ascent
-          ? { text: 'Foul water harms', state: 'lost' }
+          ? { text: 'Foul water harms', state: 'warns' }
           : null,
   };
 }
@@ -285,7 +285,7 @@ function padMarks(out: number[], pads: SealLayout['pads'], seconds: number): voi
         [endX, endY, top - face],
         [startX, startY, top - face],
       ];
-      quad(out, sideways, colour, [alpha * 0.8, alpha * 0.8, 0, 0]);
+      quad(out, sideways, colour, [alpha, alpha, alpha * 0.15, alpha * 0.15]);
     }
   });
 }

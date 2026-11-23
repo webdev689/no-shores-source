@@ -1,8 +1,8 @@
 #!/bin/bash
 # Builds a scratch room.wasm for picturing dungeons headless (dungeon-plan.ts writes the plan): never committed, it
 # adds `room_qa_entrance(n)`, so a land room's next join stands before entrance n, `room_qa_move(x, y)`, which
-# stands every player of the open room there, `room_qa_freeze(on)`, which stops the open land room's clock (a moment
-# held for a picture), and `room_qa_encounter(what, a, b)`, which sets an Elite Dungeon's encounters to a moment
+# stands every player of the open room there, `room_qa_freeze(on)`, which holds the encounters' clock while the room
+# ticks on (a moment held for a picture), and `room_qa_encounter(what, a, b)`, which sets an Elite Dungeon's encounters to a moment
 # (`qa_encounter` below says each `what`). QA_NOFOES=1 also leaves a dungeon's garrison out but its Boss, and stands no
 # encounter's waves, which otherwise kill a headless player first. It builds from HEAD in a worktree under <out dir>,
 # which it removes again.
@@ -68,6 +68,25 @@ QA_ENCOUNTER = '''    pub fn qa_encounter(&mut self, what: u32, a: f64, b: f64) 
 
 '''
 
+# While frozen the encounters' clock is held: they are not kept, and each tick every time they were stamped with moves
+# on a tick, so a moment (a rune's flash, a slam shown, a Reckoning's count) stays as it is while the room ticks on.
+QA_HOLD = '''    pub(crate) fn qa_hold(encounters: &mut crate::encounters::Encounters) {
+        let later = |at: &mut u64| *at += 1;
+        for seal in &mut encounters.seals {
+            later(&mut seal.shown_from);
+            later(&mut seal.next_wave);
+            later(&mut seal.last_step);
+            seal.pressed.iter_mut().flatten().for_each(later);
+            if let Some((_, at)) = seal.wrong.as_mut() { later(at); }
+        }
+        let court = &mut encounters.court;
+        court.woke_at.iter_mut().chain(court.reckoning_from.iter_mut()).chain(court.fury_from.iter_mut()).for_each(later);
+        later(&mut court.ward_at);
+        court.anchors_left.iter_mut().for_each(later);
+    }
+
+'''
+
 def edit(path, old, new):
     file = pathlib.Path(path)
     text = file.read_text()
@@ -96,15 +115,9 @@ pub fn qa_entrance() -> Option<usize> {
     (number != u32::MAX).then(|| number as usize)
 }
 
-static QA_FROZEN: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
-
 #[unsafe(no_mangle)]
 pub extern "C" fn room_qa_freeze(on: u32) {
-    QA_FROZEN.store(on != 0, core::sync::atomic::Ordering::Relaxed);
-}
-
-pub fn qa_frozen() -> bool {
-    QA_FROZEN.load(core::sync::atomic::Ordering::Relaxed)
+    room::QA_FROZEN.store(on != 0, core::sync::atomic::Ordering::Relaxed);
 }
 
 #[unsafe(no_mangle)]
@@ -127,11 +140,25 @@ pub extern "C" fn room_qa_move(x: f64, y: f64) {
 ''')
 edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, refusal: None, .. } => room.join(),',
      '        Opened::Land { room, refusal: None, .. } => dungeon_door::qa_entrance().and_then(|number| room.join_at(number)).or_else(|| room.join()),')
-edit('crates/room-wasm/src/lib.rs', '        Opened::Land { room, .. } => room.tick(),',
-     '        Opened::Land { room, .. } => if !dungeon_door::qa_frozen() { room.tick() },')
+edit('crates/room/src/lib.rs', '    /// The player leaves: blows waiting on them are dropped',
+     QA_HOLD + '    /// The player leaves: blows waiting on them are dropped')
+pathlib.Path('crates/room/src/lib.rs').write_text(pathlib.Path('crates/room/src/lib.rs').read_text() +
+     '\npub static QA_FROZEN: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);\n')
+edit('crates/room/src/encounters.rs',
+     '        let Some(mut encounters) = self.encounters.take() else { return };\n        for seal in 0..encounters.seals.len() {',
+     '        let Some(mut encounters) = self.encounters.take() else { return };\n'
+     '        if crate::QA_FROZEN.load(core::sync::atomic::Ordering::Relaxed) {\n'
+     '            Self::qa_hold(&mut encounters);\n'
+     '            self.encounters = Some(encounters);\n'
+     '            return;\n'
+     '        }\n'
+     '        for seal in 0..encounters.seals.len() {')
 if os.environ.get('QA_NOFOES') == '1':
     edit('crates/room/src/dungeon_room.rs', '        room.stand_dungeon_garrison(dungeon, levels, end);',
-         '        room.stand_dungeon_garrison(dungeon, levels, end);\n        room.garrison.truncate(1);')
+         '        room.stand_dungeon_garrison(dungeon, levels, end);\n'
+         '        let gone: Vec<_> = room.garrison.iter().skip(1).flat_map(|post| post.standing.clone()).collect();\n'
+         '        room.send_away(&gone);\n'
+         '        room.garrison.truncate(1);')
     edit('crates/room/src/encounters.rs', '        let count = living.clamp(WAVE_FOES.0, WAVE_FOES.1);\n        self.stand_foes(encounters, seal, spots, count)',
          '        let _ = (encounters, seal, spots, living);\n        0')
 PY

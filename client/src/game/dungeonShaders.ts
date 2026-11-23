@@ -176,16 +176,20 @@ fn water_at(point: vec3f, normal: vec3f, time: f32, mood: vec3f, bed: vec3f) -> 
   return mix(through, mirrored, mirrors) + gleam * mirrors;
 }
 
-// How much of a foul water's bubble shows at a point: each square of the grid its own bubble from its own spot, a
-// ring swelling and fading on its own beat, so the water seethes and never reads as still.
+// How much of a foul water's bubble shows at a point: about half the squares of the grid rise a bubble at a time, each
+// from its own spot and to its own size, a ring swelling and bursting on its own beat, then still a while, so the
+// water seethes unevenly and never reads as a pattern laid on the floor.
 fn foul_bubbles(point: vec2f, time: f32) -> f32 {
   let grid = point / FOUL_BUBBLE_M;
   let square = floor(grid);
   let seed = fract(sin(dot(square, vec2f(12.9898, 78.233))) * 43758.547);
-  let age = fract(time * 0.45 + seed);
-  let spot = square + 0.5 + 0.5 * (vec2f(seed, fract(seed * 7.13)) - 0.5);
-  let edge = abs(length(grid - spot) - (0.05 + 0.3 * age));
-  return (1.0 - smoothstep(0.0, 0.07, edge)) * (1.0 - age);
+  let other = fract(seed * 7.13);
+  let beat = time * (0.3 + 0.3 * other) + seed * 5.0;
+  let age = fract(beat) * 2.0;
+  let rises = fract(sin(floor(beat) * 91.7 + seed * 13.0) * 4375.85) < 0.5;
+  let spot = square + 0.5 + 0.7 * (vec2f(seed, other) - 0.5);
+  let edge = abs(length(grid - spot) - (0.04 + (0.12 + 0.2 * other) * age));
+  return select(0.0, (1.0 - smoothstep(0.0, 0.06, edge)) * (1.0 - age), rises && age < 1.0);
 }
 
 // How much of a flame shows along a line whose cosine to it is \`cosine\`, \`distance\` from it: all on its line,

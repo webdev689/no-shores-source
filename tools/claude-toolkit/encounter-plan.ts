@@ -1,10 +1,14 @@
-// Writes a webgpu-shot plan picturing one Elite Dungeon's encounters: each seal from inside its doorway and beside its
-// first piece (an Ascent from across its room), and the Court's anchors, for a room module dungeon-qa-build.sh built
-// (QA_NOFOES=1), served by Vite in a worktree of its own; a port other than 5173 gives the plan "anyPort". Each move is
-// asked again until the page's own body (`__qaWhere`) stands there, or the run fails. The run loads in 150 s.
+// Writes a webgpu-shot plan picturing every moment of one Elite Dungeon's encounters a player meets, for a room module
+// dungeon-qa-build.sh built (QA_NOFOES=1), served by Vite in a worktree of its own; a port other than 5173 gives the
+// plan "anyPort". Each seal from the corridor outside the doorway its room is entered by and from inside, waiting
+// (the room's clock held, so it cannot start), then running, and its own moments: a Litany's show and a wrong rune's
+// flash, a Weighing's plates held, an Ascent's foul water harming and a body on a pad and on its stone, a Holdfast's
+// ring held, draining and drained. Then the Court: before the Boss wakes, awake, a ward with its dome, anchors filling,
+// the slam, Fury's warning and its weight, and the Reckoning's warning and light. Moments the QA hooks cannot reach
+// by walking are set with `room_qa_encounter` and held with `room_qa_freeze`. The run loads in 150 s.
 //
 //     node tools/claude-toolkit/encounter-plan.ts <room-qa.wasm> <elite place> <out dir> <plan.json> [port]
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { askLayout } from '../../client/src/game/dungeonLayout.ts';
 
 const [wasm, place, out, planPath, port = '5173'] = process.argv.slice(2);
@@ -12,16 +16,20 @@ if (!wasm || !place || !out || !planPath) throw new Error('name the room-qa.wasm
 const layout = askLayout(await WebAssembly.compile(readFileSync(wasm)), { place, name: place });
 const plan = layout.encounters;
 if (!plan) throw new Error(`${place} lays no encounters`);
+mkdirSync(out, { recursive: true });
 type Point = readonly number[];
+type Seal = NonNullable<typeof plan>['seals'][number];
 // Every room module made is kept, in the game's worker (its prediction) and in the rooms' worker the game's worker
-// starts (the room itself, which judges where the body stands), and each worker moves its own on a word over the `qa`
-// channel, so a step can stand the body anywhere. The rooms' worker is started from a script that runs the same
-// capture first and then imports the worker's own.
+// starts (the room itself, which judges where the body stands), and each worker acts on a word over the `qa` channel:
+// a point [x, y, z?] stands every body there (lifted to z, onto a pad) and heals it; {call, args} calls a QA hook.
+// The rooms' worker is started from a script that runs the same capture first and then imports the worker's own.
 const capture =
   'const Real=WebAssembly.Instance;self.__qa=[];const Made=function(module,imports){' +
   'const made=new Real(module,imports);if(made.exports.room_qa_move){self.__qa.push(made.exports);}return made;};' +
   'Made.prototype=Real.prototype;WebAssembly.Instance=Made;' +
-  "new BroadcastChannel('qa').onmessage=(word)=>self.__qa.forEach((room)=>room.room_qa_move(word.data[0],word.data[1]));";
+  "new BroadcastChannel('qa').onmessage=(word)=>{const asked=word.data;self.__qa.forEach((room)=>{" +
+  'if(asked.call){room[asked.call](...asked.args);return;}room.room_qa_move(asked[0],asked[1]);' +
+  'if(asked[2]!==undefined)room.room_qa_encounter(1,asked[2],0);room.room_qa_encounter(0,0,0);});};';
 const init =
   `(()=>{${capture}const Started=self.Worker;if(!Started)return;` +
   'self.Worker=function(url,options){const href=new URL(String(url),self.location.href).href;' +
@@ -29,83 +37,218 @@ const init =
   `const head=${JSON.stringify(`(()=>{${capture}})();`)};` +
   "const script=new Blob([head+'\\nimport '+JSON.stringify(href)+';'],{type:'text/javascript'});" +
   'return new Started(URL.createObjectURL(script),options);};})();';
-const steps: object[] = [{ wait: 150 }, { frames: 3 }, { shot: `${out}/00_arrived.png` }];
+const steps: object[] = [{ wait: 150 }, { frames: 2 }, { shot: `${out}/00_arrived.png` }];
+const sleep = (ms: number) => `await new Promise((done)=>setTimeout(done,${ms}));`;
 const bearing = ([fromX = 0, fromY = 0]: Point, [toX = 0, toY = 0]: Point) =>
   (Math.atan2(toX - fromX, -(toY - fromY)) * 180) / Math.PI;
 const middleOf = (points: readonly Point[]): Point => [
   points.reduce((sum, point) => sum + (point[0] ?? 0), 0) / points.length,
   points.reduce((sum, point) => sum + (point[1] ?? 0), 0) / points.length,
 ];
+const toward = (from: Point, to: Point, metres: number): Point => {
+  const [east, south] = [(to[0] ?? 0) - (from[0] ?? 0), (to[1] ?? 0) - (from[1] ?? 0)];
+  const length = Math.hypot(east, south) || 1;
+  return [(from[0] ?? 0) + (east / length) * metres, (from[1] ?? 0) + (south / length) * metres];
+};
+
+/** A QA hook called in every room module, then a moment for the rooms' worker to take it. */
+const call = (name: string, ...args: number[]) =>
+  steps.push({
+    eval: `(async()=>{new BroadcastChannel('qa').postMessage({call:'${name}',args:${JSON.stringify(args)}});${sleep(300)}})()`,
+  });
+const freeze = (on: boolean) => call('room_qa_freeze', on ? 1 : 0);
+const encounter = (what: number, first: number, second: number) => call('room_qa_encounter', what, first, second);
+const pause = (ms: number) => steps.push({ eval: `(async()=>{${sleep(ms)}})()` });
+/** Stands the body at `point` (on a pad's top at `lift`), asked again every `every` ms until the page's own body
+ *  stands there; the run fails if it never does. */
+const stand = ([east = 0, south = 0]: Point, lift?: number, every = 1000) =>
+  steps.push({
+    eval:
+      `(async()=>{const qa=new BroadcastChannel('qa');let at=null;for(let tries=0;tries<${(60000 / every) | 0};tries+=1){` +
+      `qa.postMessage([${east},${south}${lift === undefined ? '' : `,${lift}`}]);${sleep(every)}at=self.__qaWhere();` +
+      `if(Math.hypot(at.x-${east},at.y-${south})<1)return at;}` +
+      `throw new Error('never stood at ${east},${south}: '+JSON.stringify(at));})()`,
+  });
 let shot = 1;
-const picture = (stand: Point, facing: Point, camera: string, name: string) => {
-  const [east, south] = stand;
+/** Turns the camera from where the body stands toward `facing` and pictures it. */
+const picture = (standing: Point, facing: Point, camera: string, name: string) => {
+  const [east, south] = standing;
   steps.push(
-    {
-      eval:
-        `(async()=>{const qa=new BroadcastChannel('qa');let at=null;for(let tries=0;tries<60;tries+=1){` +
-        `qa.postMessage([${east},${south}]);await new Promise((done)=>setTimeout(done,1000));at=self.__qaWhere();` +
-        `if(Math.hypot(at.x-${east},at.y-${south})<1)return at;}` +
-        `throw new Error('never stood at ${east},${south}: '+JSON.stringify(at));})()`,
-    },
-    { frames: 3 },
-    { eval: `self.__qaLook([${east},${south},${bearing(stand, facing)},'${camera}'])` },
-    { frames: 3 },
+    { frames: 2 },
+    { eval: `self.__qaLook([${east},${south},${bearing(standing, facing)},'${camera}'])` },
+    { frames: 2 },
     { shot: `${out}/${String(shot++).padStart(2, '0')}_${name}.png` },
   );
 };
+
 const KINDS = ['', 'litany', 'weighing', 'ascent', 'holdfast'];
-const ASCENT = KINDS.indexOf('ascent');
-/** The middle of the seal's room's cell clear of its pads and every solid by a metre that stands farthest from its
- *  first doorway. */
-function floorAcross(seal: NonNullable<typeof plan>['seals'][number]): Point | null {
-  const [doorX = 0, doorY = 0] = seal.doors[0] ?? [];
-  const clear = ([x, y]: Point) =>
-    [...seal.pads, ...layout.boxes].every(
-      ([minX, minY, maxX, maxY]) =>
-        (x ?? 0) < minX - 1 || (x ?? 0) > maxX + 1 || (y ?? 0) < minY - 1 || (y ?? 0) > maxY + 1,
-    );
-  const cells = layout.cells.flatMap((room, cell) =>
-    room === seal.room
-      ? [[((cell % layout.columns) + 0.5) * layout.cell, (Math.floor(cell / layout.columns) + 0.5) * layout.cell]]
-      : [],
-  );
-  const far = (point: Point) => Math.hypot((point[0] ?? 0) - doorX, (point[1] ?? 0) - doorY);
-  return cells.filter(clear).sort((a, b) => far(b) - far(a))[0] ?? null;
-}
-for (const seal of plan.seals) {
-  const kind = KINDS[seal.kind] ?? 'seal';
-  const middle = middleOf(seal.pieces);
-  // Two metres into the room from its doorway, so the doorway's arch never stands between the camera and the seal.
-  const door = seal.doors[0] ?? [(middle[0] ?? 0) + 4, middle[1] ?? 0];
-  const inward = Math.hypot((middle[0] ?? 0) - (door[0] ?? 0), (middle[1] ?? 0) - (door[1] ?? 0)) || 1;
-  // An Ascent's first pad reaches back to its doorway, so it is seen from the doorway itself and from across the room;
-  // any other's, two metres in unless that is on a piece (a rune stepped there would count).
-  const step = seal.kind === ASCENT ? 0 : Math.min(2, inward / 2) / inward;
-  const inside = [
-    (door[0] ?? 0) + ((middle[0] ?? 0) - (door[0] ?? 0)) * step,
-    (door[1] ?? 0) + ((middle[1] ?? 0) - (door[1] ?? 0)) * step,
-  ];
-  const onPiece = seal.pieces.some((piece) => Math.hypot((piece[0] ?? 0) - (inside[0] ?? 0), (piece[1] ?? 0) - (inside[1] ?? 0)) < 1.5);
-  picture(onPiece ? door : inside, middle, 'third,8,45', `${kind}_from_door`);
-  const first = seal.pieces[0];
-  // An Ascent's one piece is the stone on its top pad, which a move on the floor never reaches: the climb is seen
-  // instead from the floor across the room, from the cell of its room clear of every pad farthest from its doorway.
-  const across = seal.kind === ASCENT ? floorAcross(seal) : null;
-  if (across) picture(across, middle, 'third,5,15', `${kind}_across`);
-  // Beside its first piece, a step and a half back toward its doorway, looking over it toward the rest.
-  else if (first) {
-    const back = Math.hypot((door[0] ?? 0) - (first[0] ?? 0), (door[1] ?? 0) - (first[1] ?? 0)) || 1;
-    const share = Math.min(1.5, back) / back;
-    const beside = [
-      (first[0] ?? 0) + ((door[0] ?? 0) - (first[0] ?? 0)) * share,
-      (first[1] ?? 0) + ((door[1] ?? 0) - (first[1] ?? 0)) * share,
-    ];
-    picture(beside, first, 'third,6,50', `${kind}_by_first`);
+const [LITANY, WEIGHING, ASCENT, HOLDFAST] = [1, 2, 3, 4];
+const centre = (cell: number): Point => [
+  ((cell % layout.columns) + 0.5) * layout.cell,
+  (Math.floor(cell / layout.columns) + 0.5) * layout.cell,
+];
+const cellOf = ([x = 0, y = 0]: Point) => Math.floor(y / layout.cell) * layout.columns + Math.floor(x / layout.cell);
+// Each cell's walk from the way in over the open cells, as the room's plan reads the doorway a room is entered by.
+const walks = layout.cells.map(() => Infinity);
+walks[layout.wayIn.cell] = 0;
+for (const todo = [layout.wayIn.cell]; todo.length > 0; ) {
+  const cell = todo.shift() ?? 0;
+  const [column, row] = [cell % layout.columns, Math.floor(cell / layout.columns)];
+  for (const [east, south] of [
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+    [0, -1],
+  ] as const) {
+    const [nextColumn, nextRow] = [column + east, row + south];
+    const next = nextRow * layout.columns + nextColumn;
+    if (nextColumn < 0 || nextRow < 0 || nextColumn >= layout.columns || nextRow >= layout.rows) continue;
+    if (layout.cells[next] === -2 || walks[next] !== Infinity) continue;
+    walks[next] = (walks[cell] ?? 0) + 1;
+    todo.push(next);
   }
 }
-const anchor = plan.anchors[0];
-// From the anchors' middle, off every wall they keep to, looking at the first.
-if (anchor) picture(middleOf(plan.anchors), anchor, 'third,8,45', 'court_anchors');
+/** A room's doorway cell it is entered by (nearest the way in on the walk), and the open cell outside it that the
+ *  company comes from. */
+function entry(room: number): { door: Point; outside: Point } {
+  const doors = (plan?.seals.find((seal) => seal.room === room)?.doors ?? []).map(cellOf);
+  const cells = doors.length > 0 ? doors : layout.cells.flatMap((found, cell) => (found === room ? [cell] : []));
+  const door = cells.reduce((best, cell) => ((walks[cell] ?? 0) < (walks[best] ?? 0) ? cell : best));
+  const columns = layout.columns;
+  const around = [door + 1, door - 1, door + columns, door - columns].filter(
+    (cell) => layout.cells[cell] !== undefined && layout.cells[cell] !== room && layout.cells[cell] !== -2,
+  );
+  const outside = around.reduce((best, cell) => ((walks[cell] ?? 0) < (walks[best] ?? 0) ? cell : best), door);
+  return { door: centre(door), outside: centre(outside) };
+}
+/** The middle of the seal's room's cell, clear of every pad and solid by a metre, farthest from `from`. */
+function floorAcross(seal: Seal, from: Point): Point {
+  const clear = ([x = 0, y = 0]: Point) =>
+    [...seal.pads, ...layout.boxes].every(
+      ([minX, minY, maxX, maxY]) => x < minX - 1 || x > maxX + 1 || y < minY - 1 || y > maxY + 1,
+    );
+  const far = (point: Point) => Math.hypot((point[0] ?? 0) - (from[0] ?? 0), (point[1] ?? 0) - (from[1] ?? 0));
+  const cells = layout.cells.flatMap((room, cell) => (room === seal.room ? [centre(cell)] : []));
+  return cells.filter(clear).sort((first, second) => far(second) - far(first))[0] ?? from;
+}
+
+plan.seals.forEach((seal, index) => {
+  const kind = KINDS[seal.kind] ?? 'seal';
+  const middle = middleOf(seal.pieces.length > 1 ? seal.pieces : [...seal.pieces, ...seal.doors]);
+  const { door, outside } = entry(seal.room);
+  // Waiting, from the corridor the company comes by, looking in through the doorway.
+  stand(outside);
+  picture(outside, middle, 'third,4,20', `${kind}_waiting_outside`);
+  // Waiting, from inside: the room's clock held, so standing in the room does not start it.
+  freeze(true);
+  const inside = seal.kind === ASCENT ? door : toward(door, middle, 2);
+  stand(inside);
+  picture(inside, middle, 'third,6,35', `${kind}_waiting_inside`);
+  freeze(false);
+  const first = seal.pieces[0] ?? middle;
+  if (seal.kind === LITANY) {
+    pause(400);
+    freeze(true);
+    picture(inside, first, 'third,6,35', 'litany_show');
+    freeze(false);
+    // A step on the second rune before the first is lit is wrong: it flashes red for a second.
+    const wrong = seal.pieces[1] ?? first;
+    stand(wrong, undefined, 150);
+    freeze(true);
+    picture(wrong, toward(wrong, inside, -1), 'third,6,50', 'litany_wrong');
+    freeze(false);
+  }
+  if (seal.kind === WEIGHING) {
+    pause(800);
+    freeze(true);
+    picture(inside, middle, 'third,6,35', 'weighing_running');
+    freeze(false);
+    const [plate, other] = [seal.pieces[0] ?? first, seal.pieces[1] ?? first];
+    stand(plate);
+    pause(800);
+    stand(other, undefined, 300);
+    freeze(true);
+    picture(other, plate, 'third,6,35', 'weighing_plates_held');
+    freeze(false);
+  }
+  if (seal.kind === ASCENT) {
+    const stone = seal.pads[seal.pads.length - 1];
+    const water = floorAcross(seal, door);
+    stand(water, undefined, 300);
+    pause(2500);
+    freeze(true);
+    picture(water, middleOf(seal.pads.map(([minX, minY, maxX, maxY]) => [(minX + maxX) / 2, (minY + maxY) / 2])), 'third,6,25', 'ascent_foul_water');
+    encounter(0, 0, 0);
+    freeze(false);
+    const pad = seal.pads[1] ?? stone;
+    if (pad && stone) {
+      const padMiddle = [(pad[0] + pad[2]) / 2, (pad[1] + pad[3]) / 2];
+      stand(padMiddle, pad[4] + 0.05, 300);
+      pause(600);
+      freeze(true);
+      picture(padMiddle, [(stone[0] + stone[2]) / 2, (stone[1] + stone[3]) / 2], 'third,6,25', 'ascent_on_pad');
+      freeze(false);
+      const top = [(stone[0] + stone[2]) / 2, (stone[1] + stone[3]) / 2];
+      stand(top, stone[4] + 0.05, 200);
+      freeze(true);
+      picture(top, door, 'third,7,20', 'ascent_on_stone');
+      // Off the stone before the clock runs again, so the seal stays for the Court's pictures.
+      stand(door);
+      freeze(false);
+    }
+  }
+  if (seal.kind === HOLDFAST) {
+    const ring = toward(first, door, 1.5);
+    stand(ring);
+    pause(800);
+    freeze(true);
+    picture(ring, first, 'third,6,40', 'holdfast_held');
+    encounter(2, index, 0.45);
+    picture(ring, first, 'third,6,40', 'holdfast_draining');
+    encounter(2, index, 0);
+    picture(ring, first, 'third,6,40', 'holdfast_drained');
+    encounter(2, index, 1);
+    freeze(false);
+  }
+});
+
+// The Court: the end room from inside the doorway it is entered by, looking over the anchors.
+const anchors = middleOf(plan.anchors);
+const court = entry(layout.end);
+const courtInside = toward(court.door, anchors, 2);
+stand(courtInside);
+picture(courtInside, anchors, 'third,7,35', 'court_before_wake');
+const [anchor0 = anchors, anchor1 = anchors, anchor2 = anchors] = plan.anchors;
+const byAnchor = toward(anchor2, anchors, -1.5);
+stand(byAnchor);
+picture(byAnchor, anchors, 'third,6,35', 'court_anchors_resting');
+encounter(3, 0, 0);
+pause(1500);
+freeze(true);
+picture(byAnchor, anchors, 'third,7,35', 'court_awake');
+freeze(false);
+encounter(4, 0, 0);
+pause(2500);
+encounter(0, 0, 0);
+freeze(true);
+picture(byAnchor, anchors, 'third,7,35', 'court_ward');
+encounter(5, 0, 1);
+encounter(5, 1, 0.5);
+stand(anchor1);
+picture(anchor1, anchor0, 'third,6,40', 'court_anchors_filling');
+encounter(6, 0, 50);
+picture(anchor1, anchors, 'third,8,40', 'court_slam');
+encounter(6, 0, 300);
+encounter(8, 0, 45 * 60);
+picture(anchor1, anchors, 'third,7,35', 'court_fury_warning');
+encounter(8, 0, -31 * 60);
+picture(anchor1, anchors, 'third,7,35', 'court_fury');
+freeze(false);
+for (const nth of [0, 1, 2]) encounter(5, nth, 1);
+pause(300);
+encounter(7, 0, 420);
+freeze(true);
+picture(anchor1, anchor0, 'third,8,35', 'court_reckoning');
 const url = `http://localhost:${port}/?at=1&spawn=&run=node-${place}--run-qaqa0001&view=third,7`;
 const anyPort = port !== '5173';
 writeFileSync(
