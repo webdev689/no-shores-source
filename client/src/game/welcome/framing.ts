@@ -47,8 +47,10 @@ const CHAPEL_UPS_M = [3.5, 4.5, 2.6];
 /** How far below its target the view looks, a share of its lens: what it frames stands in the view's upper part,
  *  clear of the dialogue box over its lower middle. */
 const RAISE = 0.2;
-/** How far from the pair the farewell's eye stands. */
-const FACES_M = 4.5;
+/** How far from the pair the face-to-face eye stands, and how far down the view the pair's feet stand (a share of
+ *  its height): above the dialogue box, whose top is 43% down at 960x540, their crowns still in. */
+const FACES_M = 6;
+const FEET_SHARE = 0.36;
 /** The view a framing is checked against: the widest screen the game is laid out for. */
 const CHECKED = { width: 16, height: 9 };
 
@@ -195,6 +197,11 @@ export function facesShot(own: Shot, stranger: Point3, player: Point3, blocks: r
   const toOwn = (eye: Point3) => Math.hypot(eye[0] - own.eye[0], eye[1] - own.eye[1]);
   sides.sort((one, two) => toOwn(one) - toOwn(two));
   const faces = [stranger, player].map((feet): Point3 => [feet[0], feet[1], feet[2] + HEAD_M]);
-  const shots = sides.map((eye) => looking(own, eye, [middle[0], middle[1], middle[2] + HEAD_M - 0.2]));
-  return firstSeeing(shots, faces, blocks) ?? looking(own, sides[0] as Point3, middle);
+  // The view looks below the pair's feet, so they stand at `FEET_SHARE` down it.
+  const below = Math.atan((1 - 2 * FEET_SHARE) * Math.tan(own.fov / 2));
+  const shots = sides.map((eye): Shot => {
+    const { yaw, pitch } = lookAt(eye, middle);
+    return { ...own, eye, yaw, pitch: pitch + below };
+  });
+  return firstSeeing(shots, faces, blocks) ?? (shots[0] as Shot);
 }

@@ -110,7 +110,7 @@ test('her farewell is seen from the side, both faces in the view', () => {
   for (const [east, south, up] of [stranger, player])
     assert.ok(seen(shot, [east, south, up + HEAD_M]), 'a face in the view');
   const away = Math.hypot(shot.eye[0] - 1000, shot.eye[1] - 2028.9);
-  assert.ok(away > 4 && away < 6 && Math.abs(shot.eye[2] - (GROUND + HEAD_M)) < 1, `close and level: ${away}`);
+  assert.ok(away > 4 && away < 7 &&Math.abs(shot.eye[2] - (GROUND + HEAD_M)) < 1, `close and level: ${away}`);
   const walled = facesShot(OWN, stranger, player, [box(1003.5, 2029, 0.5, 4, 4)]);
   assert.ok(walled.eye[0] < 1000, 'from the side a wall leaves clear');
 });
@@ -146,10 +146,14 @@ test('her face stands whole above the dialogue box, the eye beyond the near dith
   const stranger: [number, number, number] = [1001.8, 2029, GROUND];
   const player: [number, number, number] = [1000, 2030, GROUND];
   const shot = facesShot(OWN, stranger, player, []);
-  const crown = onScreen(shot, VIEW, [stranger[0], stranger[1], GROUND + HEAD_M + 0.2]);
-  const feet = onScreen(shot, VIEW, [stranger[0], stranger[1], GROUND]);
-  assert.ok(crown && crown[1] > 0, 'her crown in the view');
-  assert.ok(feet && feet[1] < VIEW.height * 0.62, `her figure above the box: ${feet?.[1]}`);
+  // At 960x540 the box's top is 43% down the view (its words wrap to four lines); at 1600x900 it is lower.
+  for (const view of [VIEW, { width: 960, height: 540 }])
+    for (const [east, south] of [stranger, player]) {
+      const crown = onScreen(shot, view, [east, south, GROUND + HEAD_M + 0.2]);
+      const feet = onScreen(shot, view, [east, south, GROUND]);
+      assert.ok(crown && crown[1] > 0, 'a crown in the view');
+      assert.ok(feet && feet[1] < view.height * 0.4, `a figure whole above the box: ${feet && feet[1] / view.height}`);
+    }
   for (const [east, south] of [stranger, player]) assert.ok(Math.hypot(shot.eye[0] - east, shot.eye[1] - south) > 3);
 });
 

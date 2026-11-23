@@ -160,8 +160,9 @@ interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then
 11, 8, 12 then 7 m), down the nave toward the Lamplighters' chapel with a wider lens (1.35 radians), the first eye that
 sees all three keepers and their banners clear of the columns; as she names a house the camera comes before its chapel
 (11, 13, 9 then 15 m out from its counter, 3.5, 4.5 then 2.6 m up, under the hung rings of light, through the
-player's own lens), its keeper and banner the picture. Her first lines and her farewell are seen from 4.5 m to the side of the pair, level with their faces, on the side nearer the player's
-view unless a solid stands between. Each view looks a fifth of its lens below its target, so what it frames stands in its upper part, clear of the dialogue box over its lower middle. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
+player's own lens), its keeper and banner the picture. Her first lines and her farewell are seen from 6 m to the side of the pair, from the height of their faces, on the side nearer the player's
+view unless a solid stands between, looking down so their feet stand 36% down the view, both figures whole above the dialogue box
+(whose top is 43% down at 960x540). Each other view looks a fifth of its lens below its target, so what it frames stands in its upper part, clear of the dialogue box over its lower middle. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
 view where it is, her words said all the same. From her first word to her farewell the view is hers and, as in the
 story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape, the menu's key and the
 pad's Start and View open the menu, the character page or the sheet, her words and their time holding still under it;
