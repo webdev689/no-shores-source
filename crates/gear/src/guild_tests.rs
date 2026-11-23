@@ -126,3 +126,15 @@ fn a_week_kept_by_a_later_build_keeps_what_this_one_does_not_know() {
     let written = serde_json::to_value(&week).unwrap();
     assert_eq!(written["streak"], 3);
 }
+
+#[test]
+fn the_war_horn_s_foe_pays_each_member_a_guild_package_once_a_week() {
+    let mut character = Character::starting();
+    character.xp = crate::power::xp_for_level(12);
+    assert_eq!(character.claim_horn_package(WEEK, &DICE), Ok(()));
+    assert_eq!(character.vestiges.len(), 1, "a Vestige");
+    assert_eq!(character.claim_horn_package(WEEK, &DICE), Err(Refusal::GuildBountyClaimed), "once that week");
+    assert_eq!(character.claim_horn_package(WEEK + 1, &DICE), Ok(()), "again the next");
+    let kept: crate::guild::GuildWeek = serde_json::from_str(r#"{"week":7}"#).unwrap();
+    assert!(!kept.horn, "a week kept before the horn's package was is unclaimed");
+}

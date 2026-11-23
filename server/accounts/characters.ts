@@ -60,9 +60,14 @@ export interface Characters {
   guild(account: string): ReturnType<typeof guildTold>;
   /** What an outpost's room asks for its players (`outpostStores.ts`). */
   deposit(account: string, amount: number, rid: string): Promise<Moved>;
-  deliver(account: string, room: string, given: { id: number; stuff: Stuff; amount: number }): Promise<number>;
-  takeStores(account: string, room: string, stuff: Stuff, amount: number): Promise<number>;
-  soundHorn(account: string, room: string): Promise<number>;
+  deliver(
+    account: string,
+    room: string,
+    given: { id: number; stuff: Stuff; amount: number },
+    rid?: string,
+  ): Promise<number>;
+  takeStores(account: string, room: string, stuff: Stuff, amount: number, rid?: string): Promise<number>;
+  soundHorn(account: string, room: string, rid?: string): Promise<number>;
   outpost(room: string): ReturnType<typeof outpostFor>;
 }
 
@@ -91,9 +96,9 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
     launched: (account, room) => launchedFor(database, account, room, now()),
     guild: (account) => guildTold(database, account, now()),
     deposit: (account, amount, rid) => deposit(database, account, amount, rid, now()),
-    deliver: (account, room, given) => deliver(database, account, room, given),
-    takeStores: (account, room, stuff, amount) => takeStores(database, account, room, stuff, amount, now()),
-    soundHorn: (account, room) => soundHorn(database, account, room, now()),
+    deliver: (account, room, given, rid) => deliver(database, account, room, given, now(), rid),
+    takeStores: (account, room, stuff, amount, rid) => takeStores(database, account, room, stuff, amount, now(), rid),
+    soundHorn: (account, room, rid) => soundHorn(database, account, room, now(), rid),
     outpost: (room) => outpostFor(database, room),
     /** Notes that a session's player is in a room that keeps no character, at sea in which water, or with none that
      *  they left it; false when the token is no live session. */

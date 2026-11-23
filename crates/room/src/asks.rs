@@ -78,6 +78,8 @@ pub enum Asked {
     ClaimGuild {
         slot: u8,
     },
+    /// An ask at one's guild's outpost (`outpost.rs`).
+    Outpost(crate::OutpostAsk),
 }
 
 /// Gear the Test Ground hands out, to try the loop without playing it through.
@@ -366,10 +368,14 @@ impl Room {
             Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
             Asked::ClaimGuild { slot } => self.claim_guild(player, slot),
+            Asked::Outpost(ask) => self.ask_outpost(player, ask),
         };
         if let Some(found) = self.players.get_mut(&player) {
-            found.answer = code;
-            found.answered = found.answered.wrapping_add(1);
+            // An errand with the accounts is answered once they answer (`outpost_answered`).
+            if code != crate::PENDING {
+                found.answer = code;
+                found.answered = found.answered.wrapping_add(1);
+            }
             found.gear_changed = true;
         }
         self.retrim(player);

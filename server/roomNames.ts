@@ -5,6 +5,8 @@ const DUNGEON = /^dungeon-([0-2])$/;
 /** A run's instance: eight lowercase letters or digits, after `--run-` at a room name's end. */
 export const RUN_ENDING = /--run-[a-z0-9]{8}$/;
 const RUN = /^run-([a-z0-9]{8})$/;
+/** A guild's outpost's room's ending: the guild's key, its id's 32 lowercase hex digits (`guildKey`). */
+const GUILD = /^guild-([0-9a-f]{32})$/;
 /** A playlist's run's foes' level, before its instance: `playlist-12`. */
 const PLAYLIST = /^playlist-([1-9][0-9]?)$/;
 
@@ -17,17 +19,24 @@ const SEA_STARTED = /--sea--run-[a-z0-9]{8}$/;
  *  room at Normal and only a run at Elite or Abyss. A playlist's run of an Elite Dungeon at Elite or Abyss names its
  *  foes' level before its instance, `--playlist-<level>`, and the week's run started from the Playlist `--sea`. Null
  *  for any other spelling, so no one opens a fresh copy of a shared room to gather or loot again, nor a shared copy of
- *  a private run. */
+ *  a private run. A guild's outpost's room is a bare node's with `--guild-<key>` last, and `guild` its key. */
 export function nodeRoom(name: string): {
   readonly id: string;
   readonly seas: number;
   readonly dungeon: number | null;
   readonly run: string | null;
   readonly playlist: number | null;
+  readonly guild: string | null;
 } | null {
   const parts = name.split('--');
   // A run's and a dungeon's endings only after `--`: a node may itself be called `dungeon-0`.
   const last = parts.length > 1 ? (parts.at(-1) ?? '') : '';
+  if (last.startsWith('guild-')) {
+    const key = GUILD.exec(last)?.[1];
+    // Only on a bare node: no difficulty, dungeon, run or playlist with it.
+    if (key === undefined || parts.length !== 2 || parts[0] === '') return null;
+    return { id: parts[0] ?? '', seas: 0, dungeon: null, run: null, playlist: null, guild: key };
+  }
   if (last.startsWith('run-') && !RUN.test(last)) return null;
   const run = RUN.exec(last)?.[1] ?? null;
   if (run !== null) parts.pop();
@@ -43,7 +52,7 @@ export function nodeRoom(name: string): {
   if (id === '' || more.length > 0 || difficulty < 0 || seas === SEAS[0]) return null;
   if (number !== undefined && (difficulty === 0) !== (run === null)) return null;
   const playlist = listed === undefined ? null : Number(listed);
-  return { id, seas: difficulty, dungeon: number === undefined ? null : Number(number), run, playlist };
+  return { id, seas: difficulty, dungeon: number === undefined ? null : Number(number), run, playlist, guild: null };
 }
 
 /** Whether a node's run was started at sea from the Playlist: a playlist's run, or the week's marked `--sea`. Such a
