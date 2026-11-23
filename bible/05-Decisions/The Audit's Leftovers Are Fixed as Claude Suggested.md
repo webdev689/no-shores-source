@@ -81,7 +81,8 @@ The numbers (500 an hour, 30 days, 2 minutes, 10 seconds, 1 GB) were Claude's, i
   character's last save and its making. A signed-out guest, which no one can reach again, goes the same way. Ten go at
   a time, as each new guest is made.
 - **5.** A horse is a coat worn, which every character starts with: the room now decides, and refuses riding on any
-  deck, a boarded one too.
+  deck, a boarded one too. Replaced in part by [[Horses Are Items Worn in a Mount Slot]]: riding needs a horse worn in
+  the Mount slot, and a new character has none.
 - **6.** One who left fallen comes back fallen, to stand again at a spawn. The two minutes are counted in whole minutes,
   the room's clock. A boarder comes onto a pirate's deck whole: they come from their own ship.
 - **7.** The room's chain is the page's, with a quarter of a metre either side of a stroke's reach taken as the page's

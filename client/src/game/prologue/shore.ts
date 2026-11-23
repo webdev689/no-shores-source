@@ -21,6 +21,7 @@ import { MORNING } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import { darkAt } from './waking.ts';
+import { seaTakenDress } from './look.ts';
 
 const LENS = { fov: 1.0, near: 0.05, far: 20_000 } as const;
 export const STRANGER_ID = ACTOR_IDS + 80;
@@ -258,7 +259,7 @@ export class Shore implements Beat {
     const youAt: [number, number] = [x + inlandX * together, y + inlandY * together];
     const you: Actor = {
       id: YOU_ID,
-      dress: this.story.dress,
+      dress: seaTakenDress(this.story.look),
       anim: walking ? 'walk' : 'idle',
       x: youAt[0],
       y: youAt[1],

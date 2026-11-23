@@ -35,14 +35,8 @@ export interface Plaza {
   readonly posts?: readonly Post[];
 }
 
-/** The keepers away from their counters while a scene of their own walks them round the plaza (the elder's welcome),
- *  by their station's kind: the plaza leaves their place empty, so no one is drawn twice. A page walks one plaza. */
-export const awayFromCounters = new Set<string>();
-
-/** What a plaza's people step by besides the time: the keepers away from their counters, and where Shape stands, if
- *  he is here. */
+/** What a plaza's people step by besides the time: where Shape stands, if he is here. */
 export interface PlazaNow {
-  readonly away?: ReadonlySet<string>;
   readonly shape?: Point | null;
 }
 
@@ -186,10 +180,10 @@ export class Townsfolk {
     return this.dresses.length;
   }
 
-  /** Where everyone stands and what they do at world time `worldS`, seconds: the keepers at their counters but those
-   *  away, the townsfolk, and Shape at his spot while he is here, idle, facing the plaza's middle. */
-  peopleAt(worldS: number, { away = new Set(), shape = null }: PlazaNow = {}): Townsperson[] {
-    const people = this.keepers.filter((keeper) => !away.has(keeper.kind)).map((keeper) => keeper.person);
+  /** Where everyone stands and what they do at world time `worldS`, seconds: the keepers at their counters, the
+   *  townsfolk, and Shape at his spot while he is here, idle, facing the plaza's middle. */
+  peopleAt(worldS: number, { shape = null }: PlazaNow = {}): Townsperson[] {
+    const people = this.keepers.map((keeper) => keeper.person);
     (this.life?.everyoneAt(worldS) ?? []).forEach(({ place, facing, anim }, index) => {
       const id = this.keepers.length + index;
       people.push({ id, x: place[0], y: place[1], facing, anim, dress: this.dresses[index] as Dress });

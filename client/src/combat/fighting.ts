@@ -306,6 +306,11 @@ export class Fighting {
     return ranged === 0 && (fighter[MISSED_PARRY_AT] ?? 0) === 0;
   }
 
+  /** How many ticks the parry window a press of the player's guard opens stays open, as the rules give it. */
+  get parryWindow(): number {
+    return this.rules.parryWindow(true);
+  }
+
   /** Where the soft lock's target stands, as last seen; null with no lock. */
   get targetAt(): { readonly x: number; readonly y: number } | null {
     const target = this.own?.target ?? null;

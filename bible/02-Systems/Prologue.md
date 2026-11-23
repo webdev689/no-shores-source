@@ -27,7 +27,15 @@ code:
   - client/src/game/prologue/tutorial.ts#Tutorial
   - client/src/game/prologue/tutorial.ts#Freeze
   - client/src/game/prologue/wreckTeaching.ts#LyingArms
-  - crates/room/src/story.rs#story_take_arms
+  - client/src/game/prologue/storyArms.ts#StoryArms
+  - client/src/game/prologue/wispCourse.ts#wispCourse
+  - client/src/game/prologue/wisp.ts#wispLight
+  - client/src/game/prologue/wreckDevStart.ts#devStart
+  - client/src/game/prologue/wispScene.ts#WispScene
+  - client/src/game/prologue/stormTeaching.ts#CastFreeze
+  - crates/room/src/story.rs#story_take
+  - crates/room/src/story.rs#story_storm
+  - crates/gear/src/story.rs#story_item
   - crates/room/src/story.rs#story_hunt
   - client/src/game/prologue/nameplate.ts#Nameplate
   - client/src/game/prologue/overboard.ts#Overboard
@@ -35,8 +43,11 @@ code:
   - client/src/game/prologue/shore.ts#Shore
   - client/src/game/prologue/beach.ts#findBeach
   - client/src/game/prologue/epilogue.ts#Epilogue
-  - client/src/game/welcome/welcome.ts#Welcome
-  - client/src/game/welcome/walk.ts#WelcomeWalk
+  - client/src/game/welcome/tour.ts#StrangerWelcome
+  - client/src/game/welcome/tour.ts#TOUR
+  - client/src/game/welcome/framing.ts#counterShot
+  - client/src/game/welcome/framing.ts#hallShot
+  - client/src/game/welcome/framing.ts#facesShot
   - client/src/game/welcome/afterStory.ts#AfterStory
   - content/story/welcome.json
   - client/src/game/prologue/brig.ts#Brig
@@ -67,7 +78,8 @@ The game's first story mission and the way into the game, as the owner set it
 ([[The Game Opens With a Story Mission at Sea]]): a tap to start, an intro over the islands, the title over
 Saltmere, a storm at sea aboard a brig, character creation at its helm, a fight at sea, a ram, a wreck fought through
 on foot to a boss who cannot be beaten, the deep, and waking on Saltmere's shore. Claude's calls are in
-[[The Prologue as Claude Shapes It]]; how it is drawn and heard is [[Cinema]] and [[Speech]].
+[[The Prologue as Claude Shapes It]] and, for its rework and the welcome to Overlook,
+[[The Prologue, Horses and the Welcome to Overlook as Claude Builds Them]]; how it is drawn and heard is [[Cinema]] and [[Speech]].
 
 ## How it works
 
@@ -124,9 +136,9 @@ player wears the look the game gave them. The player then arrives at Overlook.
 | `calm` | The wind drops, the rain eases, the camera eases down from the fight's to its deck; the beaten ships lie where and as the fight left them, each in its own settle, trim and list, and its sails furling on from where the fight left them; struck ones lie still, sinking ones go on under as the rules sink them and are gone once under; the crew talk, the camera looking out over the lookout's shoulder to the nearest wreck as he asks about them (whichever shoulder leaves it the more room from the foremast and its shrouds), then pushing in on it until it reads however far off it lies, until he cuts the mate off | shown |
 | `ram` | The lookout cries out on the deck the calm left, the wrecks still lying round it; the camera turns with him, then pulls sharply out as a larger ship comes out of the storm at its side at 6 m/s (about 12 knots), lightning striking past it at 2.3 s and 4.8 s so its masts and sails stand against it: Captain Brannoc Thule's Frigate at its own size, under sail, lighter than a captain's ship in the fight and darker than the Brig; the crash comes as the head of its stem first touches the Brig's side where its hull is broadest (each hull's box in the ships manifest); the crew brace; the impact; black | shown |
 | `wake` | First person on the deck ([[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]): the view darkening and lightening as the eyes blink slowly open, pulsing darker with each beat of the heart until they are open, the view swimming and clearing a step with each beat of the heart, the ringing; up on the feet, looking round; the camera eases out of the eyes to over the player's shoulder, the shot the run's camera takes as the camera leaves the eyes (a run that opens later is eased to from wherever the camera then is), their hands empty and their figure drawn once the camera stands a metre out of the eyes, where play begins 15.5 s in ([[The Wreck Opens by Teaching the Player]]) | shown |
-| `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
+| `wreck` | Taught on the quiet deck: the sword and shield found and equipped, the feet found, the player readied, a boarder met one on one, its bow taken up and taught; a wisp out of the storm that engulfs the player and gives them the Storm; the next fight teaching each of its abilities; then fought on foot through the wreck, each heap across the way clearing as its wave falls; at its end the push in to Captain Brannoc Thule, his nameplate and his cry; the fight one on one that cannot be won; a fade out | played |
 | `overboard` | In from black on the body thrown over the rail, Thule and his crew crying out and leaping on the drawn wreck, turned from the rail most of the way toward the camera; skipped, the screen is black at once, so the deep comes in from black | shown |
-| `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface; the view darkening as the eyes close; a flash; a voice; black | shown |
+| `deep` | Sinking past the fallen crew beside the wreck, its hulls and fires above the surface, the sea taking the story's steel and arms: from here on the player is drawn in the plain clothes a player with nothing wears in Overlook, nothing in hand or at the hip (`seaTakenDress`); the view darkening as the eyes close; a flash; a voice; black | shown |
 | `shore` | First person on Saltmere's shore; a stranger comes down the beach, kneels beside the player and speaks; the player takes her hand; up, and up the shore together | played |
 
 **The shore.** The player wakes lying on the strand, looking up at the sky while the view darkens and lightens as the eyes blink open. The stranger
@@ -146,39 +158,56 @@ played.
 
 **After the shore** the flow's `story-ended` takes the player through the veil to Overlook's social space, its
 loading screen ([[One Loading Screen Covers Every Trip Until the Place Is Ready]]). The story's
-black holds until the veil has risen under it (0.7 s), then goes. The stranger waits behind the veil; she stands 2.2 m ahead of the
-player and 1 m to their right (their left where the right is water), facing them, and says her last line once the
-veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's middle on dry ground only (she stands where the next step is water or
-unknown), and is let go once none of her, feet to head, is on the player's view, or a minute after she set off if she
-still stands in sight, held at the water or at the town's middle. Leaving Overlook's social space before then ends her
-part at once, her words with it. The game is the player's from there.
+black holds until the veil has risen under it (0.7 s), then goes. The stranger waits behind the veil; she stands before the
+player, facing them: 2.2 m ahead and 1 m to their right, else to their left, else nearer and more to the side (1.2 m
+ahead and 1.6 m out, then 0.3 m and 2 m), the first spot on the player's own floor (within 1 m of it) whose line to
+them clears the place's solids, so never past a parapet or a wall; where none is, the first on dry ground. Over dry ground
+she stands, and walks, on the floor a figure stands on there (a paved walk, a pier), never sunk to the ground under it. She begins her welcome
+once the veil has fallen, the story's black has gone and she is in the player's view. Then she walks toward the town's
+middle on dry ground only (she stands where the next step is water or unknown), and is let go once none of her, feet
+to head, is on the player's view, or a minute after she set off if she still stands in sight, held at the water or at
+the town's middle. Leaving Overlook's social space before then ends her part at once, her words with it. The game is
+the player's from there.
 
-**The elder's welcome** ([[Elder Maren Hale Welcomes the Player to Overlook]]). Once the stranger has gone, on that
-first arrival, Elder Maren Hale of the Lamplighters starts at a point of the townsfolk's ways at least 15 m from the
-player, and out of their view where one is, and comes to them by the ways at three quarters of a player's walk, about 3.3 m/s, her walk's frames paced to it
-([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]), on the floor the plaza's townsfolk stand on
-([[Game]]), up on a podium or a landing. She stops 1.8 m before a player on
-the ways, facing them; for a player off them, she stops at the point of the ways nearest them and greets them there once
-they are within 6 m, waiting until then with "Follow" shown. She leads them to the plaza's counters, the nearest stop
-first each time: the Mage, the Armorsmith and the Weaponsmith, the Tailor and the Tack, the vault, the Stormcallers, the
-Veiled and her own Lamplighters, then walks home. She keeps to the middle of the townsfolk's ways (`life/ways.ts`; the
-ways are the plan's), which keep clear of every solid and of Shape, and goes round her counter's end clear of the
-arcade's columns (`welcome/walk.ts`). Each stop is where customers stand before its counter (3.1 m out), a pair's the
-middle of the two. At each she waits until the player is within 6 m, then says its lines in the dialogue box, some of
-the keepers she names answering her, with no mark over a head ([[Speech Blurbs Show Their Text Without Glyphs]]); the
-HUD says "Follow" over her name past 6 m and clears it inside 5 m. The player walks freely the whole time: it is no
-cutscene. What she says (`content/story/welcome.json`) is the state of the world as Overlook's people know it and what
-the plaza offers: the Grey Tithe's tenth and the ships taken whole, Overlook paying the Tithe nothing, three ports
-standing and ruins no one agrees about ([[Three Port Cities Remain, and the Others Are Desolate and Destroyed]]), and
-the town's memory (three people name four builders of the beacon). It is due from the story's end until its last scene
-is said: the browser keeps the scenes said (`noshores.welcome.said`), so a reload or a leaving takes it up from there on
-the next arrival in Overlook's social space, without the greeting; leaving before the stranger has gone forgoes it. A
-browser that has played the story and holds no mark of the welcome is welcomed on its next arrival there. A player more
-than 40 m from her for a minute ends the walk: she goes home, and it stays due. While the menu or a keeper's screen is
-open she stands idle and no stop begins and the Follow prompt is hidden; opening her counter while she walks ends the
-welcome there and opens the Lamplighters' whole screen; at her own counter she is the one speaking, and no mark stands
-over its place. When it ends she is her counter's keeper again, never two of her at once. Under `npm run dev`, and on a
-built page served on `localhost`, `?welcome=1` plays it at once in the social space.
+**The stranger's welcome** ([[The Stranger Welcomes the Player, and a Quest Walks Them Round Overlook]]). Her words
+(`content/story/welcome.json`, said on the story's stage in the dialogue box, `welcome/tour.ts`) go in turn: a little
+of the world (the Grey Tithe's tenth, Overlook paying it nothing, three ports standing and the rest ruins grown over
+with something nobody names); then each place to visit, the camera flying to it as she names it and holding there
+while she and its keeper speak: the smiths' arcade, held on the Armorsmith's stall (whose keeper calls out before she
+names the arcade, as no one speaks three lines in a row) and then on the Weaponsmith's, the Mage, the Vault, the
+Tailor, the Tack, the Postmaster, the harbour's Harbourmaster for the Shipwright, and the Hall of the Arts, turning to
+each house's chapel as she names it (Arlo Kestrel, Sable and Elder Maren Hale answering); then her farewell face to
+face. A place's eye (`welcome/framing.ts`) frames one counter, the one of its kind nearest the player: the first of a
+set of candidates round it whose lines to its keeper's head and its stall's front clear the node's solids (the blocks
+the camera's boom keeps clear of), both in the view: 11, 8, 14 then 5.5 m out, turned 0, 20, 40, 60 then 80 degrees
+either side of the counter's facing, 2.6, 4.5, 7 then 10 m up (a stall's awning, drawn but no solid, hides its keeper
+from above); where none clears the keeper's head (the Vault's keeper stands behind its front wall, whose window is
+drawn but whose solid is whole), the first that sees the stall's front clear with the keeper's head in the view. Each
+looks at the counter 2.5 m over the ground through the player's own lens. The Hall of the Arts is an
+interior: it is seen from inside, a few metres in from its door (3, 2, 5, 7 then 9 m) and up under its 14 m roof (10,
+11, 8, 12 then 7 m), down the nave toward the Lamplighters' chapel with a wider lens (1.35 radians), the first eye that
+sees all three keepers and their banners clear of the columns; as she names a house the camera comes before its chapel
+(15, 13, 17 then 11 m out from its counter, 2.6, 3.5 then 4.5 m up, under the hung rings of light, straight before it
+first, then turned 25 then 35 degrees either side so it sees between the columns standing on a side chapel's axis,
+through the player's own lens), its keeper and banner the picture, the keeper's feet 36% down the view, whole above
+the dialogue box; the chapel's own hung light may be cut by the view's top. Her first lines and her farewell are seen from 6 m to the side of the pair, from the height of their faces, on the side nearer the player's
+view unless a solid stands between, looking down so their feet stand 36% down the view, both figures whole above the dialogue box
+(whose top is 43% down at 960x540). Each other view looks a fifth of its lens below its target, so what it frames stands in its upper part, clear of the dialogue box over its lower middle. A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
+view where it is, her words said all the same. From her first word to her farewell the view is hers and, as in the
+story's cutscenes, Space (or the pad's jump or confirm) moves her words on a line and Escape, the menu's key and the
+pad's Start and View open the menu, the character page or the sheet, her words and their time holding still under it;
+no other game key acts (no move or look, no use, map, chat or respawn). While she speaks every figure is drawn for the tour's own eye (the one last shown), not the player's camera, so each is turned and stands as that eye sees it; no townsman is drawn within 4 m of that eye (one walking past the camera would fill the view), the player and she always are (the pair stands 6 m off it, a keeper at least 5.5 m). While she speaks a soft warm lamp hangs 2.6 m over the middle of the pair, a lantern of the town's at seven tenths of its light, reaching 8 m: lit as the city's lamps are, only as the daylight fades, so the two of them are seen at any hour, and put out once the welcome ends. As her first lines and her farewell begin the player is turned to face her, as she faces them. As she walks off the player is turned toward a point 3 m along her way into the town and the
+view eases back over their shoulder, so she is seen going; the keys are theirs once it has. It is a cutscene: the HUD's
+bars, compass, tracker, marks and key strip, the use prompt, the toasts and a gate's offer are hidden while the keys are held, until the view is the player's again,
+the dialogue box hers. Her words wait while a menu is open over the view. A place no candidate eye sees clearly gives
+no shot: the view stays where it was. As she bids
+farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
+character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, its lamp put out, the
+view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next
+frame in a social space with no welcome to hear (a reload, or a browser that played the story before). Either way the
+room is asked once a page, and only once its word on the player's own character (not a room's starting one) shows her
+task waiting. Under `npm run dev`, `?arrival=1` ends the story as the shore does, so the arrival and her welcome
+play at once.
 
 **Where it happens.** The storm lies 24 km out past Saltmere's harbour (`stormPlaces`), the Brig heading across the
 swell. The sea is sounded every 150 m across the 3 km round it, where every ship of the story sails, and the place is
@@ -262,9 +291,13 @@ and never higher than 2.5 m over the deck, under the spanker's boom; it rides th
 
 **The player** is dressed for the story in steel with no helm, a steel sword sheathed at the hip and a kite shield
 slung on the back (`armouredDress`; [[The Player's Sword and Shield Are Holstered]]): they stand at the helm with
-their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`), and
-once they equip the story's there they hold the item as their gear has it and the Character page shows it, a Normal
-Sword & Shield drawn in iron (`holdingArms`), for the rest of the story; a swing draws them, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
+their hands free. The ram throws the sword and shield from them: they wake on the wreck without them (`unarmed`), in
+the story's steel, which is real gear from then on: the story's own Normal torso, arms and legs of level 1, worn in
+their slots and shown on the Character page and in the pack ("Steel Cuirass", "Steel Gauntlets", "Steel Greaves"),
+drawn in steel from the gear as the game's gear is drawn (`gearOutfit`, `STORY_SET`). On the wreck the figure is
+dressed from their gear as on foot (`dressInGear`): once they equip the story's sword and shield they hold the item as
+their gear has it, a Normal Sword & Shield drawn in iron, and once they equip its bow it is their other loadout; the
+Melee loadout put away is their dress for the rest of the story; a swing draws it, as the game's does. Their look is kept in the browser (`noshores.look`) and dresses them in the game afterwards.
 
 ## The wreck
 
@@ -320,10 +353,10 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   its port bow, the wreckage off its port quarter, and its quarterdeck. Each is an area with a
   checkpoint; entered, its checkpoint is where the next respawn stands the player. The first, where the player
   wakes, is quiet: no wave, nothing across its way on, room for the teaching. Each between it and the arena
-  holds a wave of the Grey Tithe's deck crew (Deckhands, Hookmen, Pistoleers and Bosuns), Minor and Major, and the
-  Tithe-Mates that come only as Elites, all boarding against the player and the Brig's crew
-  ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]),
-  each below Thule as hard to bring down as a Major ([[The Prologue's Elites Are as Hard to Bring Down as a Major]]),
+  holds a wave of the Grey Tithe's deck crew (Deckhands, Hookmen, Pistoleers, Bosuns and Tithe-Mates), Minors and
+  Majors only, at their own rank's strength, the Tithe-Mates as Majors: no Elite but Thule, the boss
+  ([[The Prologue Is Reworked With Real Armour, a Bow, the Storm and No Elites]]), all boarding against the player and
+  the Brig's crew ([[The Wreck's Boarders Are One Side]], [[Pirates Are Replaced by the Grey Tithe]]),
   stood as the player enters the zone and standing well across it from where they come in, so no foe of a zone fights before the player
   reaches it; and three spots near the wave on open deck where the Brig's crew stand (`crew`). At most 6 of the
   wreck's foes are alive at once.
@@ -428,7 +461,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     to rest, then hovering and bobbing as a Vestige's crystal does, with no shade under it, its Normal drop's line of
     light rising over it once it rests.
     Walked over, the room puts them in the pack
-    (`Room::story_take_arms`). Should they leave the pack (dismantled), they lie on the deck again.
+    (`Room::story_take`). Should they leave the pack (dismantled), they lie on the deck again.
   - "Equip your sword and shield": Open your Character page (I; ticked by the menu open once the arms are taken),
     Equip them from the Melee slot, Close it (Esc).
   - "Find your feet": Move (W A S D, 2 m walked from where they woke or last rose), Look round (Mouse, a radian
@@ -449,19 +482,77 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     again of the next. Once both are made, whichever came last, "F parries a blow as it lands; V dodges it" shows for 6
     s and the fight runs as any. A boarder brought down before both are made is followed by another. Steps: Parry a blow
     (F), Dodge a blow (V), Bring the boarder down.
-  - "Fight your way through the wreck", counting the hostile foes standing while any do. Until it, the zones' waves
-    wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).
+  - "Arm yourself with the bow": the boarder brought down once both lessons are made drops a bow where it fell, the
+    story's own Normal Bow of level 1, lying as the sword and shield lay (`LyingArms`: popped up, bouncing, hovering,
+    its line of light), drawn half again its true size so the thin bow reads where it fell until walked over, when the room puts it in the pack (`Room::story_take`); a boarder brought
+    down before then drops nothing, and none comes after. Steps: Take up the bow, Equip it (I, the Character page's
+    Ranged slot), Switch to the bow (2), Loose an arrow (Left button or F, an arrow gone from the bow), Back to your sword (1).
+  - The wisp ([[The Game Shows the Mystery and Explains Almost None of It]]): once the bow is taught, one of the
+    Stormcallers' hounds ("The Six Hounds") comes out of the storm, shown and never explained (`WispScene`), the
+    fight held and the tracker hidden: an apple's size of white-blue light in Volt's colours, a white-hot core in
+    steps, a soft halo laid as light (dithered far off, as six finer discs within 4 m), a trail of motes falling away (a mote near the eye laid no larger than it shows from 4 m) and small arcs crackling off it, its light a pool of Volt's white-blue on the wreck (`WreckLook.near`, part
+    of it added whole so orange timber goes pale rather than green) and as a lamp of the night on the figures and the
+    sea round it, reaching 2.5 to 3.5 m, falling softly to nothing, and brighter as its rings tighten; the flash lights
+    all within 9 m near white for an instant (`wispLight`), a low hum
+    trembling and a crackle now and then following it. Its course is laid on the layout for where the player
+    stands (`wispCourse`): it drifts in (2.6 s) from 32 m out over the sea, of the bearings round the quiet deck's
+    middle with nothing of the wreck within 3 m the one most nearly ahead of the player and to their left; wanders the
+    quiet deck (4.8 s) round its mast (the layout's `masts`: the Brig's mainmast, snapped to a stump in the fallen
+    waist), 2.4 m out and 3.2 to 4.6 m over its deck, then toward the player, the Lookout ("What is that?") and the
+    Bosun ("Don't touch it!") crying out; then circles them in rings tightening from 2.6 m to under half a metre,
+    faster and brighter (3.4 s), coming down as they tighten from where the wander left it to the chest (1.15 m) by
+    the end of the first ring, and swaying 0.08 m there to the engulfing. Every point of it is lifted 0.35 m clear of
+    the wreck's solids beside or under it (in its rings 0.05 m; none counts within 0.4 m of the player's feet) and
+    eased up and down at 7 m/s at most, so it goes over a rail or the wheel and never through one; its rings instead
+    close in to the first solid out from the player at their height (by a post close beside them, under half a
+    metre), so they keep round the chest wherever the player's body fits, and once joined they never widen. Down at the chest, its light's pool falls on the deck round the player. As it comes the camera cuts from the player's shot to stand
+    back 2 to 3.2 m along its level heading over the last second and 1.1 to 2.6 m over it, the first such place that
+    sees it clear, looking on past it toward the player so the wreck stands in the frame; for the rings it stands low
+    and near, a cutscene's shot (`ringEye`): of the places round the player 2.6 to 5.4 m out and 1 to 2.9 m over their
+    deck (nearest first to 4.2 m out to their right and 1.8 m up), the first from which the chest is seen clear, the
+    wisp at 95% of its moments, the two in one frame (never more than 0.75 rad apart), looking a little down between
+    them (`ringLook`); the player stands a third of the frame's height or more. The camera goes from one shot to the
+    next eased (`moveTo`): its eye straight along, or rising 1.5 m over the wreck between, its look never more than 60
+    degrees down; a cut where neither is clear. Every shot and move keeps out of the fires' smoke columns (`inSmoke`,
+    the room each fire's puffs roll through in the wind they are drawn leaning in, and 0.6 m more) where a place or way out of them
+    exists: following the wisp it takes the nearest of its places out of the smoke, and a move begun in smoke with no
+    clear way out cuts at once. Where the wisp itself flies through a column, the smoke near the eye fades away. It and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
+    pushing out 7 m over the deck, a thunderclap; and the camera eases back over the shoulder (1.2 s). With the flash
+    the room gives the player the Storm (`Room::story_storm`; [[Arts]]): worn, its Anima and both Tenets earned and
+    charged full, the ability bar shown, for the rest of the prologue. Under `npm run dev`, `?prologue=wreck&wisp=1`
+    begins the wreck at its coming, `&wisp=<n>` n - 1 seconds into it (past its flash, with the Storm given), `&bow=1` with the bow lying 2 to 3 m before the player on their own deck,
+    `&armed=1` the same with the sword and shield and the bow taken up and worn (asked of the room as the player's
+    own walking and the menu ask them), and `&lash=1` with the Storm given and the boarder stood 4 m before the player, in Arc Lash's cone and reach
+    (`wreckDevStart.ts`); `&view=first` begins any of them with the camera in the player's head.
+  - "Call the Storm": until the Storm is given, the waves wait; from then the next zone's wave comes, and its fight
+    teaches each ability as the parry is (`CastFreeze`): the fight frozen with its prompt breathing until its key is
+    pressed, and again at the next chance a second on should the press cast nothing, until it is cast: "Press G to cast Arc Lash" once a foe stands in its cone and reach (7 m), then "Press Q to cast
+    Quicken" and "Press R to release Tempest" once a foe stands within 12 m, each with its charge full. Each step is
+    ticked once cast, read from its charge spent: Cast Arc Lash (G), Cast Quicken (Q), Release Tempest (R); then the
+    fight runs as any.
+  - "Fight your way through the wreck", counting the hostile foes standing while any do. Until the Storm is given,
+    the zones' waves wait: a zone reached keeps its wave waiting and its way on shut (`WreckProgress.held`).
   - The boss fight's task is "Face Captain Brannoc Thule", whatever stands before. The tracker hides while a cutscene
-    holds the fight.
-- **The story's room.** Its room is told to play the story (`Room::story_wreck`): the player has no Art
-  ([[The Player Has No Art in the Prologue]]), so no ability bar shows and no cast is taken; every player wakes there,
-  or joins, with no Melee weapon carried or worn (the vault's kept) and at 55% of their health at most, the ram's
-  harm (`WOKE_HEALTH`), once, however often the story is told; the story's sword and shield, a Normal Sword & Shield
-  of level 1, is put in a player's pack when they take it up, while none is carried or worn, and worn by the gear's
-  own ask; a boarder is sent at a player (`Room::story_hunt`) only alive, on the boarders' side, at a player alive;
-  and every boarder the page stands fights on
-  the Grey Tithe's side, held below Thule to a Major's health, poise and defence (`Brain::held_to`), its own rank's
-  look and blows kept. The Brig's crew stay on the players' side.
+    holds the fight, and so do the fight's display (its bars and compass) and the key strip, the dialogue box
+    staying; all come back as play does. While a cutscene with its own eye holds the camera (the wisp, Thule's
+    coming) every figure, the player's own too, is drawn for that eye whatever the player's own view, and in first
+    person no hands show over it; the ending, which keeps the player's own camera, shows neither in first person.
+  - With the menu open the lesson goes on: the task over its next step (its keys and count beside) stand in the middle
+    of the menu's foot, over the menu and clear of its tiles and labels (`TaskTracker.inMenu`). The rest of the
+    display stays under the menu, as on foot.
+- **The story's room.** Its room is told to play the story (`Room::story_wreck`): the player has no Art until the
+  wisp gives them the Storm (`Room::story_storm`), so until then no ability bar shows and no cast is taken; every
+  player wakes there, or joins, with no Melee weapon or armour carried or worn (the vault's kept), wearing the story's
+  steel (torso, arms and legs, no helm), and at 55% of their health at most, the ram's harm (`WOKE_HEALTH`), once,
+  however often the story is told; the story's sword and shield, a Normal Sword & Shield of level 1, and its bow, a
+  Normal Bow of level 1, are each put in a player's pack when they take it up, while none of its kind is carried or
+  worn, and worn by the gear's own ask; a boarder is sent at a player (`Room::story_hunt`) only alive, on the
+  boarders' side, at a player alive; and every boarder the page stands fights on the Grey Tithe's side at its own
+  rank's strength. The Brig's crew stay on the players' side. Everything the story lends is its own
+  (`gear::story::story_item`, marked so on the item and on the wire): when a room is told the prologue is done
+  (`Ask::FinishPrologue`) it takes every story item back, worn, carried or in the vault, and the Storm, unearned and
+  unworn, from a character that had not finished it, so the player arrives in Overlook with nothing of the
+  prologue's; one that finished it before keeps what it has.
 - **Drawn** by `WreckScenery` with `WreckView`, shown by the wake, the fight, the throw overboard and, from below,
   the deep: the one mesh built in Blender, each face in its part's picture as a ship's. Its fires' light is baked into
   it there (`light_wreck.py`), with its shadows and what the timber throws back, flickering through space and time as

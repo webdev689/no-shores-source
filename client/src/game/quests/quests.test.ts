@@ -20,6 +20,9 @@ const CAST = castOf(cast);
 const SCENES = scenesOf(houses, CAST);
 const questOf = (id: string): number => QUESTS.findIndex((quest) => quest.id === id) + 1;
 const [STORM, LAMP, VEIL] = [questOf('stormcallers'), questOf('lamplighters'), questOf('veiled')];
+/** The opening's tasks by id: the houses heard, the smiths' wares bought. */
+const taskOf = (id: string): number => QUESTS[0]?.tasks.findIndex((task) => task.id === id) ?? -1;
+const [HEAR, ARM] = [taskOf('hear-three-houses'), taskOf('arm-yourself')];
 /** The first task of a road whose goals hold one of `kind`, and that goal. */
 function stepOf(quest: number, kind: string) {
   const task = QUESTS[quest - 1]?.tasks.findIndex((each) => each.goals.some((goal) => goal.kind === kind)) ?? -1;
@@ -90,8 +93,8 @@ const drawn = (quests: Quests) =>
 
 test('within reach of a counter a talk goal names, E asks the room to speak with its keeper; the scene comes as it is met', async () => {
   const { quests, said, frame } = roads();
-  const goals = QUESTS[0]?.tasks[0]?.goals ?? [];
-  quests.hear(gear(1, 0, { counts: [0, 1, 0] }));
+  const goals = QUESTS[0]?.tasks[HEAR]?.goals ?? [];
+  quests.hear(gear(1, HEAR, { counts: [0, 1, 0] }));
   await frame();
   const asked: GearAsk[] = [];
   const ask = (each: GearAsk) => void asked.push(each);
@@ -103,14 +106,14 @@ test('within reach of a counter a talk goal names, E asks the room to speak with
   await frame();
   assert.deepEqual(asked, [{ kind: ASKS.speakWith, column: 1 }]);
   assert.deepEqual(said, [], 'nothing said until the room meets it');
-  quests.hear(gear(1, 0, { counts: [1, 1, 0] }));
+  quests.hear(gear(1, HEAR, { counts: [1, 1, 0] }));
   await frame();
   assert.deepEqual(said, [opening(goals[0]?.scene)], 'met: its scene');
 });
 
 test('a keeper a talk goal names has something for the player, once the story and the welcome are past', async () => {
   const { quests, frame } = roads();
-  quests.hear(gear(1, 0, { counts: [0, 1, 0] }));
+  quests.hear(gear(1, HEAR, { counts: [0, 1, 0] }));
   await frame(false);
   assert.equal(quests.wants('stormcallers'), false, 'not before the welcome is past');
   await frame();
@@ -119,14 +122,30 @@ test('a keeper a talk goal names has something for the player, once the story an
     [true, true, false, false, false],
     'the two still to speak with; not one heard already, nor one no goal names',
   );
-  quests.hear(gear(1, 0, { counts: [1, 1, 1] }));
+  quests.hear(gear(1, HEAR, { counts: [1, 1, 1] }));
   await frame();
   assert.equal(quests.wants('stormcallers'), false, 'spoken with');
 });
 
+test('a smith whose ware is to be bought is lit', async () => {
+  const { quests, frame } = roads();
+  quests.hear(gear(1, ARM));
+  await frame();
+  assert.deepEqual(
+    ['weaponsmith', 'armorsmith', 'mage'].map((counter) => quests.wants(counter)),
+    [true, true, false],
+    'the two smiths, for the wares the task asks',
+  );
+  assert.equal(
+    quests.speak('weaponsmith', () => undefined),
+    null,
+    'their counter opens as before, to buy',
+  );
+});
+
 test('the talk offer stands where the counter would open; elsewhere the counter opens as before', () => {
   const { quests } = roads();
-  quests.hear(gear(1, 0));
+  quests.hear(gear(1, HEAR));
   quests.frame(0, true, false);
   const HALL: StationInfo[] = [
     { kind: 'stormcallers', keeper: [0, -2], counter: [0, 0] },
@@ -149,10 +168,10 @@ test('the talk offer stands where the counter would open; elsewhere the counter 
 
 test("lines are said one scene after another: a keeper's scene, then what the room's word begins", async () => {
   const { quests, said, frame, finish } = roads();
-  const goals = QUESTS[0]?.tasks[0]?.goals ?? [];
-  quests.hear(gear(1, 0, { counts: [1, 1, 0] }));
+  const goals = QUESTS[0]?.tasks[HEAR]?.goals ?? [];
+  quests.hear(gear(1, HEAR, { counts: [1, 1, 0] }));
   await frame();
-  quests.hear(gear(1, 1));
+  quests.hear(gear(1, HEAR + 1));
   await frame();
   quests.hear(gear(STORM, 0, { pledge: 1, done: [1, 0, 0, 0] }));
   await frame();

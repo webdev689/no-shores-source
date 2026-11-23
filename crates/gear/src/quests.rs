@@ -7,12 +7,13 @@ use crate::arts::{EARNED_ART, EARNED_TENET_ONE, EARNED_TENET_TWO, FRAGMENTS, art
 use crate::asks::{Done, Here, Refusal};
 use crate::character::{Character, UnknownKeys};
 use crate::factions::factions;
+use crate::kinds::Slot;
 pub use crate::quest_defs::{
-    KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, TaskDef, keeper_key, quests, speaker_place,
+    KEEPERS, PLACE_SQUARE, QuestDef, QuestsDef, RANKS, RewardDef, STRANGER, TaskDef, keeper_key, quests, speaker_place,
 };
 pub use crate::quest_goals::{
-    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, KILL_PAST, Landing, Plain, PointDef, Puzzle, Race,
-    Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
+    Arrival, Beaten, Defend, Escort, Foes, Goal, GoalDef, GoalKind, InSlot, KILL_PAST, Landing, Plain, PointDef,
+    Puzzle, Race, Reach, SPAWN_NEAR, Slay, Spell, Tail, Talk, UNSEEN_WITHIN, Unseen,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -69,6 +70,10 @@ pub enum Event<'told> {
     Scavenge,
     /// Arrived in a node, by its id.
     Enter(&'told str),
+    /// A smith's ware bought, by its slot.
+    Bought(Slot),
+    /// A piece worn in a slot.
+    Worn(Slot),
     /// A step the room ran met, of a kind, in a node, at its goal's anchor (`GoalDef::anchor`).
     Stepped {
         kind: GoalKind,
@@ -102,6 +107,10 @@ pub struct Road {
 pub struct QuestLog {
     pub roads: BTreeMap<String, Road>,
     pub choices: Vec<u8>,
+    /// The slots a smith has sold the player a piece for, each once, since the last task that asked for purchases was
+    /// met: a `buy` goal is met by one, however long before its task the piece was bought.
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub bought: Vec<Slot>,
     /// Keys this room does not know, from a later room's save, written back as read.
     #[serde(flatten)]
     pub unknown: UnknownKeys,
@@ -135,8 +144,8 @@ impl QuestLog {
     }
 
     /// As kept, made whole: a place in every quest (unbegun for one never walked), its task one of its quest's (one
-    /// kept by an id the task had before read as it; the first for a task the file no longer holds), a count for each
-    /// of that task's goals within the goal's own, and a choice count for every Art.
+    /// kept by an id the task had before read as it; the quest's `kept`, else its first, for a task the file does not
+    /// hold), a count for each of that task's goals within the goal's own, and a choice count for every Art.
     #[must_use]
     pub fn kept(self) -> Self {
         self.kept_in(quests())
@@ -146,13 +155,20 @@ impl QuestLog {
     #[must_use]
     pub fn kept_in(mut self, defs: &QuestsDef) -> Self {
         for quest in &defs.quests {
-            let road = self.roads.entry(quest.id.clone()).or_default();
+            // A quest a character holds no place in was laid out after it was kept: it reads at the quest's `kept`.
+            let road = self
+                .roads
+                .entry(quest.id.clone())
+                .or_insert_with(|| Road { task: quest.kept.clone().unwrap_or_default(), ..Road::default() });
             // A task kept by an old id starts afresh: its goals need not be the old task's.
             if let Some(now) = quest.tasks.iter().find(|task| task.was.contains(&road.task)) {
                 (road.task, road.counts, road.fought) = (now.id.clone(), Vec::new(), Vec::new());
             }
+            // A task this file does not hold (another build's) reads as a character kept before the quest's tasks
+            // did: a reward before `kept`, such as the stranger's gift, may already be paid.
             if !quest.tasks.iter().any(|task| task.id == road.task) {
-                road.task = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
+                let first = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
+                road.task = quest.kept.clone().unwrap_or(first);
                 road.counts.clear();
                 road.fought.clear();
             }
@@ -163,6 +179,17 @@ impl QuestLog {
         }
         self.choices.resize(arts().arts.len(), 0);
         self
+    }
+
+    /// A new character's: every quest at its first task.
+    #[must_use]
+    pub fn begun() -> Self {
+        let mut log = Self::default();
+        for quest in &quests().quests {
+            let task = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
+            log.roads.insert(quest.id.clone(), Road { task, ..Road::default() });
+        }
+        log.kept()
     }
 
     /// Sets a quest's place at one of its tasks, by their places in the file, its counts at nothing, and every quest
@@ -217,7 +244,9 @@ impl Character {
     pub fn quest_now(&self) -> Option<(usize, usize)> {
         let quest = self.quest_walked()?;
         let tasks = &quests().quests[quest].tasks;
-        let task = self.quests.road(quest).and_then(|road| tasks.iter().position(|task| task.id == road.task));
+        let def = &quests().quests[quest];
+        let held = self.quests.road(quest).map_or(def.kept.as_deref(), |road| Some(road.task.as_str()));
+        let task = held.and_then(|held| tasks.iter().position(|task| task.id == held));
         Some((quest, task.unwrap_or(0)))
     }
 
@@ -264,14 +293,42 @@ impl Character {
             }
             None => road.done = true,
         }
+        // The purchases a buy task counted are its own: a later buy goal counts only those made after it.
+        if goals.iter().any(|goal| goal.kind() == GoalKind::Buy) {
+            self.quests.bought.clear();
+        }
         self.reward(def.faction, def.tasks[task].reward);
         self.find_lore_due(crate::lore::lore());
         true
     }
 
-    /// A task's reward, of its house's Art: the Art earned and worn at once, a Tenet earned, fragments to choose. A
-    /// fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem instead.
+    /// Tells the quest walked of every piece worn, and of every slot a smith has sold a piece for, so a piece bought
+    /// or put on before its task was reached counts once it is.
+    pub(crate) fn tell_held(&mut self) {
+        // Told again until nothing more counts: a task met here may reach one the pieces held already meet.
+        loop {
+            let asks = |kind| self.goals_unmet().any(|(_, goal)| goal.kind() == kind);
+            let (wear, buy) = (asks(GoalKind::Wear), asks(GoalKind::Buy));
+            let mut told = false;
+            for slot in Slot::VESTIGE {
+                if wear && self.worn(slot).is_some() {
+                    told |= self.tell(&Event::Worn(slot));
+                }
+                if buy && self.quests.bought.contains(&slot) {
+                    told |= self.tell(&Event::Bought(slot));
+                }
+            }
+            if !told {
+                return;
+            }
+        }
+    }
+
+    /// A task's reward: its Aurem, and of its house's Art, the Art earned and worn at once, a Tenet earned, fragments
+    /// to choose. A fragment beyond those the Art has left unowned and unchosen is its price at the counter in Aurem
+    /// instead.
     fn reward(&mut self, faction: u8, reward: RewardDef) {
+        self.materials.add_aurem(reward.aurem);
         let Some(art) = factions().faction(faction).map(|found| found.art) else { return };
         let Some(at) = arts().arts.iter().position(|found| found.id == art) else { return };
         self.arts = std::mem::take(&mut self.arts).kept();

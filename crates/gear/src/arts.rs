@@ -11,6 +11,8 @@ pub const CORE_SLOTS: usize = 3;
 pub const FRAGMENTS: usize = 6;
 /// The Art a character kept before wears when theirs is none the rules know: Storm. A new player wears none (0).
 pub const FIRST_ART: u8 = 1;
+/// The Storm's number, the Art the prologue's wisp gives.
+pub const STORM: u8 = 1;
 /// An Art's earned bits: the Art (its Anima with it), its first Tenet and its second; and all three.
 pub const EARNED_ART: u8 = 1;
 pub const EARNED_TENET_ONE: u8 = 2;

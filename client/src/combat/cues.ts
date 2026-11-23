@@ -129,17 +129,15 @@ export function threatens(view: FighterView, player: number): boolean {
   return view.target === player && (kind === 'attack' || kind === 'telegraph' || kind === 'draw');
 }
 
-/** A player's press of the guard parries a blow landing within this many ticks of it (crates/combat/src/tuning.rs
- *  PARRY_WINDOW); a foe's guard opens a shorter window, which no cue times. */
-const PARRY_WINDOW = 12;
-
 /** The parry ring over a foe at a blow the player can parry: the share of its wind-up still to come (1 as it begins,
  *  0 as it lands), whether a press now would parry it, and the share at which the parry window opens (its band on the
- *  ring); a press never parries, and there is no window, while `open` is false (the player's guard could open none).
+ *  ring), the window being `window` ticks as the rules give a player's (`CombatRules.parryWindow`); a press never
+ *  parries, and there is no window, while `open` is false (the player's guard could open none).
  *  An iron blow must be dodged, so it shows no ring to time; a shot is never parried. Null for none. */
 export function parryCue(
   view: FighterView,
   player: number,
+  window: number,
   open = true,
 ): { share: number; now: boolean; window: number } | 'iron' | null {
   const { action } = view;
@@ -152,7 +150,7 @@ export function parryCue(
         ? [action.windup - action.elapsed, action.windup]
         : [0, 0];
   if (left <= 0 || lead <= 0) return null;
-  return { share: left / lead, now: open && left < PARRY_WINDOW, window: open ? Math.min(1, PARRY_WINDOW / lead) : 0 };
+  return { share: left / lead, now: open && left < window, window: open ? Math.min(1, window / lead) : 0 };
 }
 
 /** Where on the screen's edge an arrow points to a point off the screen, and its angle (0 to the right, a quarter turn

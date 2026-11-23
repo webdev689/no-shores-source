@@ -5,6 +5,7 @@
 
 use crate::arts::arts;
 use crate::factions::factions;
+use crate::kinds::Slot;
 use crate::quest_goals::{Defend, Escort, Goal, GoalDef, Puzzle, Race, Slay, Tail};
 use serde::Deserialize;
 use serde::de::{Deserializer, IgnoredAny, MapAccess, Visitor};
@@ -13,7 +14,7 @@ use std::sync::OnceLock;
 /// The ranks a goal names, lowest first: a foe's rank by its number (the foes crate's, 1 to 5) is its place plus one.
 pub const RANKS: [&str; 5] = ["Minor", "Major", "Elite", "Miniboss", "Boss"];
 /// The keepers spoken with that are not a house's, by the number ask 64 sends; a house's is its faction's number.
-pub const KEEPERS: [(u8, &str); 7] = [
+pub const KEEPERS: [(u8, &str); 9] = [
     (10, "mage"),
     (11, "vault"),
     (12, "armorsmith"),
@@ -21,7 +22,11 @@ pub const KEEPERS: [(u8, &str); 7] = [
     (14, "tailor"),
     (15, "tack"),
     (16, "harbourmaster"),
+    (17, "mail"),
+    (STRANGER, "stranger"),
 ];
+/// The stranger's number in ask 64: she keeps no counter, and is heard anywhere in a social space.
+pub const STRANGER: u8 = 18;
 /// How far each way from its middle a place's navmesh square reaches, metres: the room's own (its test holds them
 /// equal), within which a puzzle's points stand.
 pub const PLACE_SQUARE: f64 = 35.0;
@@ -29,10 +34,11 @@ const ISLANDS: [&str; 2] = ["cove", "isle"];
 const SIDES: [&str; 1] = ["tithe"];
 const HOWS: [&str; 3] = ["sink", "strike", "board"];
 
-/// What a task gives as it is done: its house's Art, a Tenet (1 or 2, 0 none), and fragments to choose.
+/// What a task gives as it is done: Aurem, its house's Art, a Tenet (1 or 2, 0 none), and fragments to choose.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct RewardDef {
+    pub aurem: u32,
     pub art: bool,
     pub tenet: u8,
     pub fragments: u8,
@@ -55,7 +61,8 @@ pub struct TaskDef {
 }
 
 /// One quest: its id, name, faction (0 the opening), the quests done before it is walked (by id), the scene played as
-/// it is first walked, and its tasks.
+/// it is first walked, its tasks, and the task a character kept before it held any place in it reads at (`kept`, its
+/// first when left out).
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct QuestDef {
@@ -66,6 +73,8 @@ pub struct QuestDef {
     pub after: Vec<String>,
     pub begin: String,
     pub tasks: Vec<TaskDef>,
+    #[serde(default)]
+    pub kept: Option<String>,
 }
 
 /// Everything in `content/quests/quests.json` the rules read.
@@ -105,6 +114,9 @@ impl QuestsDef {
             let ids = quest.tasks.iter().flat_map(|task| core::iter::once(&task.id).chain(&task.was));
             if !unique(ids) {
                 problems.push(format!("{}: a task's id or old id is empty or another's", quest.id));
+            }
+            if quest.kept.as_ref().is_some_and(|kept| !quest.tasks.iter().any(|task| task.id == *kept)) {
+                problems.push(format!("{}: kept names no task of its own", quest.id));
             }
             if let Some(after) = quest.after.iter().find(|after| !self.quests.iter().any(|it| it.id == **after)) {
                 problems.push(format!("{}: after names {after}, no quest", quest.id));
@@ -215,6 +227,8 @@ impl GoalDef {
                 (!(1..=u8::MAX).any(|keeper| keeper_key(keeper) == Some(talk.to.as_str()))).then_some("to")
             }
             Goal::Pledge(_) | Goal::Reach(_) | Goal::Gather(_) | Goal::Scavenge(_) | Goal::Enter(_) => None,
+            // Only a weapon's or armour's slot is ever told of a piece bought or worn (`QuestLog::tell_held`).
+            Goal::Buy(goal) | Goal::Wear(goal) => (!Slot::VESTIGE.contains(&goal.slot)).then_some("slot"),
             Goal::Kill(slay) => slain(slay),
             Goal::Cast(cast) => {
                 let spells = arts().arts.iter().flat_map(|art| [&art.anima, &art.tenets[0], &art.tenets[1]]);
@@ -235,11 +249,12 @@ impl GoalDef {
             Goal::Unseen(unseen) => (!(unseen.within > 0.0 && unseen.within <= PLACE_SQUARE)).then_some("within"),
             Goal::Race(race) => raced(race),
         };
-        let stepped = self.kind().stepped();
+        // A piece held is told again on every ask (`tell_held`), so one piece would meet a count above one.
+        let once = self.kind().stepped() || matches!(self.goal, Goal::Buy(_) | Goal::Wear(_));
         if let Some(field) = wrong.or((!ranks).then_some("rank")) {
             Some(format!("{text}: {field} holds a value none of its own"))
-        } else if self.count == 0 || stepped && self.count != 1 {
-            Some(format!("{text}: count must be 1 on a step, and 1 or more on any goal"))
+        } else if self.count == 0 || once && self.count != 1 {
+            Some(format!("{text}: count must be 1 on a step or a piece bought or worn, and 1 or more on any goal"))
         } else {
             None
         }

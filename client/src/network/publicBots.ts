@@ -171,7 +171,7 @@ export class BotPlay implements RoomPlay {
   open(door: RoomDoor, player: number): void {
     [this.door, this.player] = [door, player];
     this.bots = Array.from({ length: this.count }, () => door.join());
-    for (const each of [player, ...this.bots]) door.restoreCharacter(each, seasoned(door.character(each) ?? ''));
+    for (const each of [player, ...this.bots]) door.restoreCharacter(each, seasoned(door.kitted()));
   }
 
   inputs(door: RoomDoor): void {
