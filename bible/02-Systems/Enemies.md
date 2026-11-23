@@ -213,7 +213,8 @@ WebAssembly, so names, factions and weapons are read in one place.
   any foe's does ([[Gear]], "In the rooms").
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
-  farthest from the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+  farthest from the nearest spawn. Every foe stands at least 61.2 m from every spawn (a shooter's 51.2 m reach and 10 m
+  more), inside the section, idle, so a player lands out of every fight ([[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]).
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
   post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,
@@ -331,7 +332,8 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 ## Limits
 
-- A garrison stands within its room's navmesh, a 70 m square by the first spawn, never across the whole section:
+- A garrison stands within its room's navmesh, a 70 m square inland of the first spawn, its near edge 61.2 m from
+  it, so no foe walks or shoots into the landing; never across the whole section:
   baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
   leaves the mesh; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
 - A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
