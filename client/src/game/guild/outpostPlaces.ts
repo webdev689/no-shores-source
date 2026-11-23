@@ -7,7 +7,8 @@ import { CELL_M, DECOR_TURNS, type Decor, PLOT_M, type Plot, type Standing, foot
  * square to the world round its middle, which the bake gives with the level ground under it (the node's `outpost`
  * part). A structure is the module of its kind and tier, a scaffold while it is being built, and a standard the
  * module of its guild's staff; each stands at the middle of its cells, turned a quarter at a time. A module's frame is
- * x east, y south, z up from the middle of its foot, its front to the north, as `city/modules.ts` reads it.
+ * x east, y south, z up from the middle of its foot, as `city/modules.ts` reads it, its front to the south: unturned,
+ * a structure faces south, and each quarter turns it clockwise.
  */
 
 /** The ground an outpost's plot stands on: its middle and the height of its level ground. */
@@ -146,6 +147,6 @@ export function socketOf(standing: Standing, ground: Ground, staff: string, name
     (Listed & { readonly sockets?: readonly { readonly name: string; readonly at: readonly number[] }[] }) | undefined;
   const socket = listed?.sockets?.find((each) => each.name === name)?.at;
   const [down = 1] = (kindOf(standing.kind)?.cells ?? []).slice(1);
-  const [x, y] = quartered(socket?.[0] ?? 0, socket?.[1] ?? -(down * CELL_M) / 2 - 1, standing.turn);
+  const [x, y] = quartered(socket?.[0] ?? 0, socket?.[1] ?? (down * CELL_M) / 2 + 1, standing.turn);
   return [placed.at[0] + x, placed.at[1] + y];
 }

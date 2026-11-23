@@ -221,7 +221,7 @@ export function kindsNode(ui: Interface, plot: KeptPlot, state: PlanState, level
         gap: 10,
         alignY: 'center',
         children: [
-          pressNode(TURN_ID, `Turn it: ${['north', 'east', 'south', 'west'][state.turn]}`),
+          pressNode(TURN_ID, `Turn it: facing ${['south', 'west', 'north', 'east'][state.turn]}`),
           words('Press a cell for its corner.', 1, INK.faint),
         ],
       },

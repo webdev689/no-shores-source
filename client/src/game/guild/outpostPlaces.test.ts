@@ -48,8 +48,12 @@ test("a structure walls its own cells and no other's, turned or not", () => {
   }
 });
 
-test("a structure's use is where its module says, or just before its front", () => {
+test("a structure's use is where its module says, toward its front, which a quarter turn swings round", () => {
   const [x, y] = socketOf(standing('counting', 2, 2), GROUND, 'oak', 'use');
   assert.ok(x > WEST + 2 * CELL_M && x < WEST + 4 * CELL_M, 'within its cells across');
-  assert.ok(y < NORTH + 3 * CELL_M, 'toward its front, the north');
+  assert.ok(y > NORTH + 3 * CELL_M, 'toward its front, the south, unturned');
+  const [westward] = socketOf(standing('counting', 2, 2, 1), GROUND, 'oak', 'use');
+  assert.ok(westward < WEST + 3 * CELL_M, 'turned a quarter, toward the west');
+  const [, bare] = socketOf(standing('counting', 2, 2), GROUND, 'oak', 'none such');
+  assert.equal(bare, NORTH + 4 * CELL_M + 1, 'a metre before its front edge where its module has no such socket');
 });
