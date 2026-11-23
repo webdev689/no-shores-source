@@ -468,5 +468,10 @@ test("the player stands in foul water only on a running Ascent's drowned floor, 
   assert.equal(foulOf(drowned, running, [4.8, 1.6, 0], harm(7), 7), 'harmed');
   assert.equal(foulOf(drowned, running, [4.8, 1.6, 0], harm(8), 7), 'wet', "another's harm");
   assert.equal(foulOf(drowned, running, [4.8, 1.6, 0], [], 7), 'wet');
-  assert.equal(foulOf(drowned, running, [1.6, 1.6, 0], harm(7), 7), null, 'out of it');
+  assert.equal(foulOf(drowned, running, [1.6, 1.6, 0], [], 7), null, 'out of it');
+  assert.equal(
+    foulOf(drowned, running, [1.6, 1.6, 0], harm(7), 7),
+    'harmed',
+    "the room's word, though the page has the feet out",
+  );
 });

@@ -16,7 +16,7 @@ import { FoePlate } from './foePlate.ts';
 import { FoeTarget } from './foeTarget.ts';
 import { type Box, type Said, Words, wordsOf } from './hitWords.ts';
 import { RING, arrowNode, hurtNode, lockMarkNode, parryNode, veilNode } from './hudCues.ts';
-import { Callout } from './callout.ts';
+import { CALL_TALL, Callout } from './callout.ts';
 import { contactOf, strokeTravel } from './impacts.ts';
 import { type BannerTone, PublicBanner, type PublicShown, StoreBars } from './publicBanner.ts';
 import { cameraOf, landBlocks, PLATE_OVER_M, SIGHT_SKIN_M } from './plateSight.ts';
@@ -467,7 +467,11 @@ export class Hud {
       const box = { left: x - half, right: x + half, top: y - height - PLATE_CLEAR, bottom: y + PLATE_CLEAR };
       return this.tops.some((top) => meets(box, top));
     };
-    const banner = this.banner.node(room, zoom, this.view.height / zoom < SHORT_VIEW);
+    const short = this.view.height / zoom < SHORT_VIEW;
+    // A short view has no room under the column for a call: it stands in the banner's place while it shows, the
+    // banner's own words saying the same.
+    const inColumn = short && this.callout.shown;
+    const banner = inColumn ? this.callout.node(null, zoom, true) : this.banner.node(room, zoom, short);
     const boss = this.foeBars.bossNode(Math.round(Math.min(PLATES.boss.width, PLATES.boss.share * room) * zoom), zoom);
     const top: Node = {
       direction: 'column',
@@ -489,7 +493,8 @@ export class Hud {
           id: 'fight-compass',
         },
         // Under the compass, over the boss bar and the target's plate, so neither ever stands on it.
-        banner && { ...banner, id: 'fight-banner' },
+        banner && !inColumn && { ...banner, id: 'fight-banner' },
+        inColumn && banner,
         banner && boss && { height: BOSS_CLEAR * zoom },
         boss && { ...boss, id: 'fight-boss' },
         this.targetShare > 0 && this.targetNode(room, zoom),
@@ -519,7 +524,7 @@ export class Hud {
         this.crosshair.node(),
         ammoNode(this.ammo.ammo, this.ammo.most),
         top,
-        this.callout.node(this.callTop(column, zoom), zoom),
+        !inColumn && this.callout.node(this.callTop(column, zoom), zoom),
         this.veil && veilNode(this.veil),
         animaEdgeNode(),
       ],
@@ -531,7 +536,7 @@ export class Hud {
   private callTop(column: readonly Box[], zoom: number): number {
     const { height } = this.view;
     const under = Math.max(0, ...column.map((top) => top.bottom));
-    const tall = (3 * 11 + 12 + 4) * zoom;
+    const tall = CALL_TALL * zoom;
     const above = Math.max(under + CALL_CLEAR * zoom, Math.round(height / 4));
     return above + tall <= height / 2 - CROSSHAIR_CLEAR * zoom
       ? above

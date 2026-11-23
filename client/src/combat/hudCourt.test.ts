@@ -135,19 +135,37 @@ for (const [width, height] of [
     const laid = laidOf(hud.node(ui), width, height);
     const byId = (id: string) => laid.find((each) => each.node.id === id)?.box;
     const banner = byId('fight-banner');
+    console.log(
+      'BOX',
+      width,
+      height,
+      JSON.stringify(laid.filter((each) => each.node.id?.startsWith('fight')).map((each) => [each.node.id, each.box])),
+    );
     const bar = byId('fight-boss');
     const call = byId('fight-call');
     const dodge = laid.find((each) => wordsIn(each.node)[0] === 'Dodge!' && each.node.float)?.box;
     const target = byId('fight-target');
-    assert.ok(banner && bar && call && dodge && target, 'all five are laid');
-    const named = { banner, bar, call, dodge, target } as const;
+    // A short view (under 480 px) stands the call in the banner's place while it shows.
+    const short = height < 480;
+    assert.ok((short ? !banner : banner) && bar && call && dodge && target, 'all are laid');
+    const named = { ...(banner ? { banner } : {}), bar, call, dodge, target };
     const names = Object.keys(named) as (keyof typeof named)[];
-    for (const one of names)
+    for (const one of names) {
+      const box = named[one]!;
+      assert.ok(
+        box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height,
+        `${one} on the display`,
+      );
       for (const two of names)
-        if (one < two) assert.ok(!meets(named[one], named[two]), `${one} ${JSON.stringify(named[one])} meets ${two}`);
+        if (one < two) assert.ok(!meets(box, named[two]!), `${one} ${JSON.stringify(box)} meets ${two}`);
+    }
+    // As the short banner does, its foot 8 px over the crosshair at the least.
+    const crosshair = { x: width / 2 - 24, y: height / 2 - 8, width: 48, height: 16 };
+    assert.ok(!meets(call, crosshair), `the call ${JSON.stringify(call)} keeps clear of the crosshair`);
     // No plate over a figure shows through the banner or the Boss's bar, or stands so near either it reads as theirs.
+    const top = banner ?? call;
     for (const each of laid.filter((one) => one.node.float?.anchor?.[1] === 1 && one.node.direction === 'row'))
-      if (meets(grown(each.box), banner) || meets(grown(each.box), bar))
+      if (meets(grown(each.box), top) || meets(grown(each.box), bar))
         assert.equal(each.node.opacity, 0, `${wordsIn(each.node).join(' ')} hidden under the banner`);
   });
 }
@@ -240,4 +258,30 @@ test('a plate first shown under the banner is hidden on the frame it first shows
   );
   assert.ok(plate, 'shown');
   assert.equal(plate.opacity, 0, 'and unseen under the banner');
+});
+
+test("another player's plate under the banner is hidden as a foe's is", () => {
+  const [width, height] = [1280, 720];
+  const hud = new Hud();
+  const ui = fakeInterface(width, height);
+  const frame = courtFrame(width, height);
+  const archer = frame.foes.find((foe) => foe.id === 3)!.view;
+  const mariner = (z: number) => ({
+    id: 5,
+    feet: [archer.x, archer.y, z] as const,
+    plate: { player: 5, name: 'Mariner', level: 6, menu: false },
+    company: false,
+  });
+  const plate = () => allOf(hud.node(ui)).find((node) => node.id === 'player-plate-5');
+  for (let step = 0; step < 6; step++) {
+    hud.update({ ...frame, foes: [], players: [mariner(5.5)] }, 1 / 60);
+    ui.draw(hud.node(ui));
+  }
+  assert.equal(plate()?.opacity, 0, 'under the banner');
+  for (let step = 0; step < 6; step++) {
+    hud.update({ ...frame, foes: [], players: [mariner(0)] }, 1 / 60);
+    ui.draw(hud.node(ui));
+  }
+  assert.ok(plate(), 'shown');
+  assert.notEqual(plate()?.opacity, 0, 'on the floor, below it');
 });

@@ -274,10 +274,10 @@ picture(byAnchor, anchor2, 'third,6,45', 'court_anchors_resting');
 // the Boss (and its post, where a ward holds it) is stood 6.5 m ahead on the camera's line, past a warded Boss's reach
 // of the body, and the camera looks low enough that it stands in the middle of the frame, never behind the banner.
 encounter(10, 1, 0);
-const bossAhead = (from: Point, to: Point, metres = 4) => {
+const bossAhead = (from: Point, to: Point, metres: number) => {
   const [east = 0, south = 0] = toward(from, to, metres);
   encounter(11, east, south);
-  // Frames enough for the page's figure to follow it there (six were too few after a long move).
+  // Frames enough for the page's figure to follow it there after a long move.
   steps.push({ frames: 20 });
 };
 encounter(3, 0, 0);

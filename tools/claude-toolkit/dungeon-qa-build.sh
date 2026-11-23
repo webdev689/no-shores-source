@@ -4,9 +4,8 @@
 # `room_qa_move(x, y)`, which stands every player of the open room there, `room_qa_freeze(on)`, which holds the
 # encounters' clock while the room ticks on (a moment held for a picture), and `room_qa_encounter(what, a, b)`, which
 # sets an Elite Dungeon's encounters to a moment, holds the players' health or stands the Boss (`QA_ENCOUNTER` below
-# says each `what`). QA_NOFOES=1 also leaves a
-# dungeon's garrison out but its Boss, and stands no encounter's foes (waves, a wrong rune's, a ward's), which
-# otherwise kill a headless player first. It builds from HEAD in a worktree under <out dir>, which it removes again.
+# says each `what`). QA_NOFOES=1 also leaves a dungeon's garrison out but its Boss, and stands no encounter's foes
+# (waves, a wrong rune's, a ward's), which otherwise kill a headless player first. It builds from HEAD in a worktree under <out dir>, which it removes again.
 #
 #     QA_NOFOES=1 bash tools/claude-toolkit/dungeon-qa-build.sh <out dir>
 set -euo pipefail

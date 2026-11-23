@@ -539,25 +539,29 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   compass and its marks move only as the view turns.
 - **Its layers**, back to front: what stands over the world (the plates over figures, nearest in front, the parry
   rings, the words, the arrows), then the compass's column, then a raid's call, then the veil over the whole display:
-  blood while the player lies dead, plain while the link to the room is lost or joining again.
+  blood while the player lies dead, plain while the link to the room is lost or joining again. The display never
+  stands over the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just
+  below them, and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
 - **The top keeps clear.** The fight's words over the world (a number, "Dodge!") stand under the compass's column and
   a raid's call where they would fall on them, as they stand under the plates over figures; a plate over a figure
   that would stand on the compass, the banner, the boss bar, the target's plate or the call, or within 12 px of one so
   it reads as theirs, is laid unseen until it stands clear (judged at its foot this frame, so one first shown is hidden
-  at once), so nothing shows through the banner. Each keeps clear of where these were laid the frame before.
-  `hudCourt.test.ts` lays the Court's fullest banner, the boss bar, a "Dodge!" over the Boss and the call at 1600 by
-  900, 1280 by 720, 1024 by 600, 844 by 390 and 390 by 844 and finds no two overlapping.
+  at once), so nothing shows through the banner. Each keeps clear of where these were last laid (the words a frame
+  later than the plates), and a word pushed down past the display's foot stands at its foot again.
+  `hudCourt.test.ts` lays the Court's fullest banner, the boss bar, the target's plate, a "Dodge!" over the Boss and
+  the call at 1600 by 900, 1280 by 720, 1024 by 600, 844 by 390 and 390 by 844 and finds no two overlapping, each on
+  the display and the call clear of the crosshair.
 - **A raid's call** (`combat/callout.ts`): an Elite Dungeon's Court calls a few words over the middle of the view as
   its mechanic is shown: "Get clear!" as the warded Boss's slam is, "Into the light!" as the Reckoning's warning
   starts. White words three steps of the face tall on the red of the fight's own warnings, in a 2 px white edge; it
   slides in as the banner does at a beat, stands 1.8 s and fades over its last 0.4 s, and is read out. Its top stands
   16 px under the compass's column, no higher than a quarter down the view, or under the crosshair where above it
-  would cover it. Each new call shows afresh; one held on (the slam still shown) shows once; once its mechanic ends (the slam landed) a call still standing fades at once.
-- **Foul water's edge.** While an Ascent's foul water harms the player (the room's harm told to them, and their feet
-  on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
-  harm to the next (1.25 s), and fades over 0.6 s from the moment they leave it. The display never stands over
-  the game's own windows. An arrow to a threat off the screen that would fall on the vitals stands just below them,
-  and one that would fall on the Arts and weapons, or on the game's key strip, just above them.
+  would cover it. A view under 480 px tall has no room under the column: there the call, its words two steps tall,
+  stands in the banner's place while it shows. Each new call shows afresh; one held on (the slam still shown) shows
+  once; once its mechanic ends (the slam landed) a call still standing fades at once.
+- **Foul water's edge.** While an Ascent's foul water harms the player (from the room's harm told to them, while
+  their feet stay on its floor), the view's edge turns sick green, drawn as the struck edge is: it rises over 0.25 s, is held from one
+  harm to the next (1.25 s), and fades over 0.6 s from the moment they leave it.
 - **Words** over the world or a fill (plates' names, the vitals' words, the veil's) carry a hard 1 px outline all
   round (a word's `halo` edge, `ui/drawLaid.ts`), as a ship's plate strokes its words, so they read over bright sky. The
   [[Game]]'s place name and key strip, laid straight on the world too, carry the same outline.

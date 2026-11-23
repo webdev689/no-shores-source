@@ -220,8 +220,8 @@ export function encounterCall(seen: EncounterSeen): string | null {
   return seen.reckoningTicks > 0 ? 'Into the light!' : seen.slamTicks > 0 ? 'Get clear!' : null;
 }
 
-/** Foul water at the player's feet: 'harmed' on a frame the room tells them its harm (in `events`) while they stand
- *  in it, 'wet' while they stand in it otherwise, none elsewhere. */
+/** Foul water at the player's feet: 'harmed' on a frame the room tells them its harm (in `events`), which the page
+ *  never judges again; 'wet' while they stand in it otherwise, none elsewhere. */
 export function foulOf(
   layout: DungeonLayout,
   seen: EncounterSeen,
@@ -229,8 +229,8 @@ export function foulOf(
   events: readonly FightEvent[],
   player: number,
 ): 'harmed' | 'wet' | null {
-  if (!inFoulWater(layout, seen, feet)) return null;
-  return events.some((event) => event.kind === EVENT.drowned && event.defender === player) ? 'harmed' : 'wet';
+  if (events.some((event) => event.kind === EVENT.drowned && event.defender === player)) return 'harmed';
+  return inFoulWater(layout, seen, feet) ? 'wet' : null;
 }
 
 /** Whether `feet` stand in foul water that harms: on a cell of a running Ascent's drowned floor, no higher than the
