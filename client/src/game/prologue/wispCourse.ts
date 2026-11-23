@@ -5,6 +5,7 @@
 // Its cameras too: one following close behind it as it comes, looking on to the wreck before it, and one standing off
 // to watch it close on the player with nothing of the wreck between.
 import type { CourseBlock } from '../../../../server/roomDoor.ts';
+import { type Fire, inSmoke, type Wind } from '../../cinema/flameParts.ts';
 import { ENGULF_AT_S, FLASH_IN_S, WISP_S, type WispNow } from './wisp.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 
@@ -16,6 +17,8 @@ export interface WispCourse {
   readonly feet: Point;
   readonly facing: number;
   readonly blocks: readonly CourseBlock[];
+  /** Whether a camera at a point would stand in or against the smoke of the wreck's fires, which it keeps out of. */
+  readonly smoky: (point: Point) => boolean;
 }
 
 const SAMPLE_HZ = 60;
@@ -132,8 +135,13 @@ function along(points: readonly Point[], share: number): Point {
   return [axis(0), axis(1), axis(2)];
 }
 
-/** The course for a player standing at `feet` facing `facing` on `layout`'s wreck. */
-export function wispCourse(feet: Point, facing: number, layout: WreckLayout): WispCourse {
+/** How far a camera keeps from a smoke column's puffs, metres: where they have faded to nothing (`NEAR_FADE_M`) and
+ *  a little more. */
+const SMOKE_CLEAR_M = 0.6;
+
+/** The course for a player standing at `feet` facing `facing` on `layout`'s wreck, its fires' smoke leaning in
+ *  `wind`. */
+export function wispCourse(feet: Point, facing: number, layout: WreckLayout, wind: Wind = [0, 0]): WispCourse {
   const blocks = layout.course;
   const quiet = layout.zones[0]?.area ?? [feet[0] - 1, feet[1] - 1, feet[0] + 1, feet[1] + 1];
   const middle = [(quiet[0] + quiet[2]) / 2, (quiet[1] + quiet[3]) / 2] as const;
@@ -203,7 +211,14 @@ export function wispCourse(feet: Point, facing: number, layout: WreckLayout): Wi
   for (let index = count - 2; index >= 0; index--)
     heights[index] = Math.max(heights[index] ?? 0, (heights[index + 1] ?? 0) - CLIMB_M);
   const samples = points.map(([x, y], index): Point => [x, y, heights[index] ?? 0]);
-  return { samples, feet, facing, blocks: near };
+  const fires = layout.fires.map((fire, index): Fire => ({
+    at: fire.at,
+    sizeM: fire.size,
+    seed: index + 1,
+    ...(fire.along ? { along: fire.along } : {}),
+  }));
+  const smoky = (point: Point) => fires.some((fire) => inSmoke(fire, wind, point, SMOKE_CLEAR_M));
+  return { samples, feet, facing, blocks: near, smoky };
 }
 
 /** How fast its way may widen or close in as it joins its rings, metres a sixtieth of a second; and how far apart
@@ -275,9 +290,10 @@ const CHASE_BACK_M = 3.2;
 const CHASE_UP_M = 1.1;
 const CHASE_LEAN = 0.25;
 
-/** The following camera `seconds` in: behind the wisp along the level way it has come over the last second (or
- *  will go, as it sets out), a little over it, clear of the wreck, looking on past it to the player. */
-export function chaseShot(course: WispCourse, seconds: number): { readonly eye: Point; readonly look: Point } {
+/** Where the following camera may stand `seconds` in, nearest first: a few places behind the wisp along the level
+ *  way it has come over the last second (or will go, as it sets out), a little over it and clear of the wreck, that
+ *  see it clear; and where it is. */
+export function chasePlaces(course: WispCourse, seconds: number): { readonly now: Point; readonly places: Point[] } {
   const now = wispAt(course, seconds).at;
   const [x, y, z] = course.feet;
   const index = Math.min(course.samples.length - 1, Math.floor(seconds * SAMPLE_HZ));
@@ -291,17 +307,28 @@ export function chaseShot(course: WispCourse, seconds: number): { readonly eye: 
   ];
   const [wayX, wayY] = ways.find(([east, south]) => Math.hypot(east, south) > 0.5) ?? [0, 1];
   const length = Math.hypot(wayX, wayY) || 1;
-  // The nearest of a few places back along it and up that sees it clear; else where it was a second ago.
   const places = [CHASE_BACK_M, 2.6, 2].flatMap((back) =>
     [CHASE_UP_M, 1.8, 2.6].map((up): Point => {
       const [east, south] = [now[0] - (wayX / length) * back, now[1] - (wayY / length) * back];
       return [east, south, Math.max(now[2] + up, clearOver(course.blocks, course.feet, east, south) + 0.3)];
     }),
   );
-  const earlier = course.samples[Math.max(0, index - SAMPLE_HZ)] ?? now;
+  return {
+    now,
+    places: places.filter((place) => !solidAt(course.blocks, place) && clearBetween(course.blocks, place, now)),
+  };
+}
+
+/** The following camera `seconds` in: the nearest of its places (`chasePlaces`) out of the fires' smoke, else the
+ *  nearest, else where the wisp was a second ago; looking on past it to the player. */
+export function chaseShot(course: WispCourse, seconds: number): { readonly eye: Point; readonly look: Point } {
+  const { now, places } = chasePlaces(course, seconds);
+  const [x, y, z] = course.feet;
+  const earlier =
+    course.samples[Math.max(0, Math.min(course.samples.length - 1, Math.floor(seconds * SAMPLE_HZ)) - SAMPLE_HZ)] ??
+    now;
   const eye =
-    places.find((place) => !solidAt(course.blocks, place) && clearBetween(course.blocks, place, now)) ??
-    ([earlier[0], earlier[1], earlier[2] + 0.3] as Point);
+    places.find((place) => !course.smoky(place)) ?? places[0] ?? ([earlier[0], earlier[1], earlier[2] + 0.3] as Point);
   const lean = CHASE_LEAN * Math.hypot(now[0] - eye[0], now[1] - eye[1], now[2] - eye[2]);
   const apart = Math.hypot(x - now[0], y - now[1], z + CHEST_M - now[2]);
   return { eye, look: mix(now, [x, y, z + CHEST_M], Math.min(1, lean / Math.max(apart, 0.001))) };
@@ -355,6 +382,7 @@ export function ringEye(course: WispCourse): Point {
     seen.filter((point) => clearBetween(course.blocks, eye, point)).length >= seen.length * SEEN_SHARE;
   // Where no place frames them so, the nearest from which both are at least seen clear.
   const found =
+    candidates.find(({ eye }) => seen.every((point) => framed(eye, point)) && clear(eye) && !course.smoky(eye)) ??
     candidates.find(({ eye }) => seen.every((point) => framed(eye, point)) && clear(eye)) ??
     candidates.find(({ eye }) => clear(eye));
   return (found ?? candidates[0] ?? { eye: [x + 4.2, y, z + 1.8] }).eye;
@@ -380,10 +408,12 @@ const STEEPEST = Math.PI / 3;
 
 type Aim = { readonly eye: Point; readonly look: Point };
 
-/** The camera `share` of its way from the shot `from` to the shot `to` among `blocks`: its eye straight along, or
- *  rising a little over the wreck between, and its look eased between theirs, never through the wreck nor looking
- *  more than 60 degrees down; where neither way is so, a cut at the middle of its time. */
-export function moveTo(blocks: readonly CourseBlock[], from: Aim, to: Aim, share: number): Aim {
+/** The camera `share` of its way from the shot `from` to the shot `to` on `course`: its eye straight along, or rising
+ *  a little over the wreck between, and its look eased between theirs, never through the wreck or its fires' smoke
+ *  nor looking more than 60 degrees down; where neither way is so, a cut at the middle of its time, or at once from
+ *  smoke. */
+export function moveTo(course: Pick<WispCourse, 'blocks' | 'smoky'>, from: Aim, to: Aim, share: number): Aim {
+  const { blocks, smoky } = course;
   const along = (rise: number, part: number): Aim => {
     const [x, y, z] = mix(from.eye, to.eye, part);
     return { eye: [x, y, z + rise * Math.sin(Math.PI * part)], look: mix(from.look, to.look, part) };
@@ -392,9 +422,11 @@ export function moveTo(blocks: readonly CourseBlock[], from: Aim, to: Aim, share
     Array.from({ length: 41 }, (unused, step) => along(rise, step / 40)).every(
       ({ eye, look }) =>
         !solidAt(blocks, eye) &&
+        !smoky(eye) &&
         Math.atan2(eye[2] - look[2], Math.hypot(look[0] - eye[0], look[1] - eye[1])) <= STEEPEST,
     );
   const rise = RISES_M.find(fits);
-  if (rise === undefined) return share < 0.5 ? from : to;
+  // Begun in smoke with no clear way out, it cuts at once rather than holding there half its time.
+  if (rise === undefined) return share < 0.5 && !smoky(from.eye) ? from : to;
   return along(rise, share);
 }

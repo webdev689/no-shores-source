@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { FIELD_OF_VIEW } from '../../editor/orbit.ts';
 import { ENGULF_AT_S, FLASH_IN_S, WISP_LENGTH_S, WISP_S, wispLight } from './wisp.ts';
 import {
+  chasePlaces,
   chaseShot,
   clearBetween,
   moveTo,
@@ -191,7 +192,7 @@ test('the camera eases from following the wisp to watching the rings, never thro
     const to = ringEye(flown);
     const looked = ringLook(flown, circleAt, to);
     for (let share = 0; share <= 1; share += 0.02) {
-      const { eye, look } = moveTo(course, chase, { eye: to, look: looked }, share);
+      const { eye, look } = moveTo(flown, chase, { eye: to, look: looked }, share);
       assert.ok(!solidAt(course, eye), `inside the wreck ${share.toFixed(2)} of the way`);
       assert.ok(pitchOf(eye, look) <= Math.PI / 3, `never above 60 degrees down, ${share.toFixed(2)} of the way`);
     }
@@ -252,6 +253,32 @@ test('down at the chest, its light falls on the deck under the player through th
         reach < light.reachM,
         `the deck under them ${reach.toFixed(2)} m off, reach ${light.reachM.toFixed(2)}`,
       );
+    }
+  }
+});
+
+test('its camera keeps out of the fires’ smoke, following it, watching its rings and moving between', () => {
+  for (const wind of [
+    [0, 0],
+    [4, -2],
+  ] as const) {
+    for (const { feet, facing } of PLACES.filter((unused, index) => index % 2 === 0)) {
+      const flown = wispCourse(feet, facing, layout, wind);
+      const circleAt = WISP_S.drift + WISP_S.wander;
+      const where = `for feet ${feet.map((value) => value.toFixed(1))} facing ${facing.toFixed(2)} in wind ${wind}`;
+      // Following it, out of the smoke wherever one of its places is: where the wisp flies through a column, none is.
+      for (let seconds = 0; seconds <= circleAt; seconds += 0.1) {
+        const clearOne = chasePlaces(flown, seconds).places.some((place) => !flown.smoky(place));
+        const smoky = flown.smoky(chaseShot(flown, seconds).eye);
+        assert.ok(!(smoky && clearOne), `following it at ${seconds.toFixed(1)} s ${where}`);
+      }
+      const rings = ringEye(flown);
+      assert.ok(!flown.smoky(rings), `watching its rings ${where}`);
+      const begun = { eye: rings, look: ringLook(flown, circleAt, rings) };
+      for (let share = 0; share <= 1; share += 0.05) {
+        const { eye } = moveTo(flown, chaseShot(flown, circleAt), begun, share);
+        assert.ok(!flown.smoky(eye), `moving to the rings ${share.toFixed(2)} of the way ${where}`);
+      }
     }
   }
 });

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { isDeepStrictEqual } from 'node:util';
 import { lightLevel } from '../combat/lightLayer.ts';
-import { FIRE_FRAMES_PER_SECOND, type Fire, fireFrame, fireParts, GLOW_REACH } from './flameParts.ts';
+import { FIRE_FRAMES_PER_SECOND, type Fire, fireFrame, fireParts, GLOW_REACH, inSmoke } from './flameParts.ts';
 import { GLOW_COLOUR, MOST_PARTS, packFires } from './flames.ts';
 import { PART, PART_KINDS } from './flamesShader.ts';
 
@@ -208,4 +208,26 @@ test('a fire lit from any seed, even a negative or broken one, packs parts of kn
   const written = packFires([{ ...FIRE, seed: -7.5 }], 1, CALM, [0, 0, 0], into);
   for (let slot = 0; slot < written.shown + written.glows; slot++)
     assert.ok(Object.values(PART).includes(((into[slot * 12 + 3] ?? -1) % PART_KINDS) as 0));
+});
+
+test('its smoke column holds every puff it rolls up, for any wind, and nothing well clear of it', () => {
+  const fires: Fire[] = [
+    { at: [2, -3, 1], sizeM: 1.5, seed: 4 },
+    { at: [0, 0, 0], sizeM: 3, seed: 9, along: [4, 1, 0.5] },
+  ];
+  for (const fire of fires)
+    for (const wind of [
+      [0, 0],
+      [3, -2],
+      [-6, 1],
+    ] as const)
+      for (let seconds = 0; seconds < 9; seconds += 0.25)
+        for (const puff of fireParts(fire, seconds, wind).smoke)
+          assert.ok(
+            inSmoke(fire, wind, puff.position, 0),
+            `a puff at ${puff.position.map((value) => value.toFixed(2))}`,
+          );
+  const [round] = fires;
+  assert.ok(round && !inSmoke(round, [0, 0], [round.at[0] + 6, round.at[1], round.at[2] + 3], 1), 'well beside it');
+  assert.ok(round && !inSmoke(round, [0, 0], [round.at[0], round.at[1], round.at[2] - 2], 0), 'under the fire');
 });

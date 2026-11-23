@@ -10,7 +10,11 @@ const layout = readWreck();
 const [x, y] = layout.wake.at;
 const feet = [x, y, topAt(courseOf(layout), x, y)] as const;
 const story = {
-  stage: { parts: { ambience: { flash: () => undefined, thunder: () => undefined } }, play: async () => undefined },
+  stage: {
+    parts: { ambience: { flash: () => undefined, thunder: () => undefined } },
+    play: async () => undefined,
+    wind: () => [0, 0],
+  },
 } as unknown as Story;
 /** The player's own shot over their shoulder, as the wisp's coming begins from it. */
 const theirs: Shot = { eye: [x, y + 2, feet[2] + 2], yaw: 0, pitch: 0.2, fov: 0.87, near: 0.1, far: 60000 };

@@ -46,6 +46,7 @@ export class WispScene {
   private ringsFrom: Point;
   private backTo: Shot | null = null;
   private readonly facing: number;
+  private readonly wind: readonly [number, number];
   private readonly from: Shot;
   private readonly cues: Cues;
   private seconds = 0;
@@ -67,7 +68,9 @@ export class WispScene {
   ) {
     this.seconds = into;
     this.layout = layout;
-    this.course = wispCourse(feet, facing, layout);
+    // The fires' smoke leaning in the storm's wind as the wisp comes, which its camera keeps out of.
+    this.wind = story.stage.wind();
+    this.course = wispCourse(feet, facing, layout, this.wind);
     this.ringsFrom = ringEye(this.course);
     [this.facing, this.from] = [facing, from];
     const { ambience } = story.stage.parts;
@@ -94,7 +97,7 @@ export class WispScene {
     // Laid again only should the room stand the player elsewhere: it is worked out once for where they stand.
     const [x, y, z] = this.course.feet;
     if (Math.hypot(feet[0] - x, feet[1] - y, feet[2] - z) > 0.05) {
-      this.course = wispCourse(feet, this.facing, this.layout);
+      this.course = wispCourse(feet, this.facing, this.layout, this.wind);
       this.ringsFrom = ringEye(this.course);
     }
     this.cues.step(this.seconds);
@@ -136,7 +139,6 @@ export class WispScene {
       const clamped = Math.min(1, Math.max(0, share));
       return clamped * clamped * (3 - 2 * clamped);
     };
-    const { blocks } = this.course;
     // A cut to it out over the sea: a pan from the player's shoulder would cross 30 m with it a speck off the middle.
     if (into < circleAt) return aimed(chase.eye, chase.look);
     const end = ENGULF_AT_S + WISP_S.engulf;
@@ -146,7 +148,7 @@ export class WispScene {
       // From following it to watching its rings: eased, rising a little over the wreck between, or a cut, toward the
       // look the rings begin with, so the way is chosen once.
       const begun = { eye: this.ringsFrom, look: ringLook(this.course, circleAt, this.ringsFrom) };
-      const moved = moveTo(blocks, chase, begun, ease((into - circleAt) / LEAVE_S));
+      const moved = moveTo(this.course, chase, begun, ease((into - circleAt) / LEAVE_S));
       return aimed(moved.eye, moved.look);
     }
     if (into < end) return aimed(rings.eye, rings.look);
@@ -160,7 +162,7 @@ export class WispScene {
     ];
     const share = ease((into - end) / WISP_S.back);
     if (share >= 1) return this.backTo;
-    const moved = moveTo(blocks, rings, { eye, look: ahead }, share);
+    const moved = moveTo(this.course, rings, { eye, look: ahead }, share);
     return { ...this.backTo, eye: moved.eye, ...lookAt(moved.eye, moved.look) };
   }
 }
