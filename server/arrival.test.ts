@@ -210,10 +210,14 @@ test('a node’s room lets go a character that came by no way leading there, unl
 });
 
 test('a player walks between an outpost site’s wild ground and a guild’s plot on it, and no farther', () => {
-  const plot = 'node-oakfast-landing--guild-0a1b2c3d';
+  const plot = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
   assert.equal(arrives(plot, 'node-oakfast-landing', null, reach()), true);
   assert.equal(arrives('node-oakfast-landing', plot, null, reach()), true);
-  assert.equal(arrives(plot, 'node-oakfast-landing--guild-99999999', null, reach()), true, 'another guild’s, then');
+  assert.equal(
+    arrives(plot, 'node-oakfast-landing--guild-99999999999999999999999999999999', null, reach()),
+    true,
+    'another guild’s, then',
+  );
   assert.equal(arrives(plot, 'node-tidewall', null, reach()), false, 'from another node');
   assert.equal(arrives(plot, 'node-oakfast-landing--elite', null, reach()), false, 'from another tier');
 });

@@ -214,5 +214,31 @@ test("anyone signed in reads an outpost's plot and banner by its room, and none 
   } | null;
   assert.equal(outpost?.name, 'Salt Kings');
   assert.equal(outpost?.plot.structures.length, 2, 'its hall and standard');
-  assert.equal((await get('Ben', '/v1/outposts/node-other-outpost--guild-00000000'))['outpost'], null);
+  assert.equal(
+    (await get('Ben', '/v1/outposts/node-other-outpost--guild-00000000000000000000000000000000'))['outpost'],
+    null,
+  );
+});
+
+test('a delivery, a take and the horn asked again under the same id answer as they did and do nothing twice', async () => {
+  const { ask, standAt, fund, guild, kept, accountOf, clock, raiseXp } = await world();
+  await raiseXp(40_000);
+  await standAt('Ada');
+  await fund(40_000);
+  await ask('Ada', 'outpost/raise', { site: SITE, turn: 0 });
+  await ask('Ada', 'outpost/place', { site: SITE, kind: 'camp', x: 0, y: 0, turn: 0 });
+  const room = outpostRoom(SITE, (await guild()).id);
+  const ada = await accountOf('Ada');
+  assert.equal(await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 30 }, 'errand-1'), 30);
+  assert.equal(
+    await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 30 }, 'errand-1'),
+    30,
+    'the same answer',
+  );
+  assert.equal(await kept.deliver(ada, room, { id: 3, stuff: 'timber', amount: 30 }, 'errand-2'), 10, 'only ten more');
+  await kept.deliver(ada, room, { id: 3, stuff: 'canvas', amount: 20 }, 'errand-3');
+  clock.now += 2 * 24 * HOUR;
+  assert.equal(await kept.takeStores(ada, room, 'island', 12, 'errand-4'), 12);
+  assert.equal(await kept.takeStores(ada, room, 'island', 12, 'errand-4'), 12, 'the same answer');
+  assert.equal(await kept.takeStores(ada, room, 'island', 20, 'errand-5'), 8, "the day's most counts the first once");
 });

@@ -3,9 +3,10 @@
  * the page draws it (`outpostPlaces.ts` `plotBoxes`), and stands it anew each time the plot is read again: on a
  * player's word that it changed (at most once a second, which the room judges) and after every delivery the accounts
  * used. Each tick it takes the errands the room holds for its players' asks, asks the accounts, and gives each answer
- * back, so the room gives back what was not moved or used. An errand the accounts throw on is given back whole; a
- * deposit is asked again first, under the same id, so one that went through is never given back too. A leaving
- * player's last save waits for their errands in flight (`settled`).
+ * back, so the room gives back what was not moved or used. Each errand has an id of its own, under which the accounts
+ * keep their answer in the same write as the errand; one they throw on is asked again under it, so one that went
+ * through answers as it did and is never done or given back twice. Only one they throw on every time is given back
+ * whole. A leaving player's last save waits for their errands in flight (`settled`).
  */
 
 import type { Characters } from './accounts/characters.ts';
@@ -20,8 +21,8 @@ type OutpostDoor = Pick<RoomDoor, 'outpostErrands' | 'outpostAnswered' | 'outpos
 
 /** The staff a banner with none hangs from. */
 const DRIFTWOOD = 'driftwood';
-/** How long a deposit the accounts threw on waits before each try again, under its one id. */
-const DEPOSIT_WAITS_MS = [250, 1_000];
+/** How long an errand the accounts threw on waits before each try again, under its one id. */
+const AGAIN_WAITS_MS = [250, 1_000, 4_000];
 /** How long a leaving player's last save waits for their errands at most: past it, it is made all the same. */
 export const SETTLE_MOST_MS = 30_000;
 
@@ -115,34 +116,36 @@ export class OutpostHost {
     }
   }
 
-  /** What the accounts answer an errand: how many they moved, used or gave, or the horn's tier; null when they threw. */
-  private async answer(errand: Errand): Promise<number | null> {
+  /** What the accounts answer an errand: how many they moved, used or gave, or the horn's tier; null when they threw
+   *  on every try. */
+  private answer(errand: Errand): Promise<number | null> {
     const { account, amount = 0 } = errand;
     const stuff = (errand.stuff ?? 'timber') satisfies Stuff;
-    try {
-      switch (errand.kind) {
-        case 'deposit':
-          return await this.deposit(account, amount, `${this.room}:${this.began}:${errand.player}:${errand.id}`);
-        case 'deliver':
-          return await this.accounts.deliver(account, this.room, { id: errand.structure ?? 0, stuff, amount });
-        case 'take':
-          return await this.accounts.takeStores(account, this.room, stuff, amount);
-        case 'horn':
-          return await this.accounts.soundHorn(account, this.room);
-        default:
-          return null;
-      }
-    } catch {
-      return null;
+    const rid = `${this.room}:${this.began}:${errand.player}:${errand.id}`;
+    switch (errand.kind) {
+      case 'deposit':
+        return this.retried(async () =>
+          (await this.accounts.deposit(account, amount, rid)) === 'refused' ? 0 : amount,
+        );
+      case 'deliver':
+        return this.retried(() =>
+          this.accounts.deliver(account, this.room, { id: errand.structure ?? 0, stuff, amount }, rid),
+        );
+      case 'take':
+        return this.retried(() => this.accounts.takeStores(account, this.room, stuff, amount, rid));
+      case 'horn':
+        return this.retried(() => this.accounts.soundHorn(account, this.room, rid));
+      default:
+        return Promise.resolve(null);
     }
   }
 
-  /** A deposit, asked again under its one id while the accounts throw: all of it moved, or none. */
-  private async deposit(account: string, amount: number, rid: string): Promise<number | null> {
-    for (const millis of [0, ...DEPOSIT_WAITS_MS]) {
+  /** An errand asked again under its one id while the accounts throw: answered once, or null after every try. */
+  private async retried(ask: () => Promise<number>): Promise<number | null> {
+    for (const millis of [0, ...AGAIN_WAITS_MS]) {
       if (millis > 0) await new Promise((done) => setTimeout(done, millis));
-      const moved = await this.accounts.deposit(account, amount, rid).catch(() => null);
-      if (moved !== null) return moved === 'refused' ? 0 : amount;
+      const answered = await ask().catch(() => null);
+      if (answered !== null) return answered;
     }
     return null;
   }

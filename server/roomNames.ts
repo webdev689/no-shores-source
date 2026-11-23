@@ -5,8 +5,8 @@ const DUNGEON = /^dungeon-([0-2])$/;
 /** A run's instance: eight lowercase letters or digits, after `--run-` at a room name's end. */
 export const RUN_ENDING = /--run-[a-z0-9]{8}$/;
 const RUN = /^run-([a-z0-9]{8})$/;
-/** A guild's outpost's room's ending: the guild's key, its id's first eight lowercase hex digits (`guildKey`). */
-const GUILD = /^guild-([0-9a-f]{8})$/;
+/** A guild's outpost's room's ending: the guild's key, its id's 32 lowercase hex digits (`guildKey`). */
+const GUILD = /^guild-([0-9a-f]{32})$/;
 /** A playlist's run's foes' level, before its instance: `playlist-12`. */
 const PLAYLIST = /^playlist-([1-9][0-9]?)$/;
 

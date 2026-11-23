@@ -64,7 +64,7 @@ const outposts = (more: Partial<OutpostsFace> = {}): OutpostsFace => ({
   outposts: [
     {
       site: SITE,
-      room: `node-${SITE}--guild-0a1b2c3d`,
+      room: `node-${SITE}--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9`,
       raisedAt: NOW,
       plot: PLOT,
       strongbox: 240,

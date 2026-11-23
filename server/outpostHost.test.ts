@@ -5,7 +5,7 @@ import { plotBoxes } from '../client/src/game/guild/outpostPlaces.ts';
 import { type OutpostAccounts, OutpostHost, outpostGround } from './outpostHost.ts';
 import type { Errand } from './roomDoor.ts';
 
-const ROOM = 'node-oakfast-landing--guild-0a1b2c3d';
+const ROOM = 'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9';
 const GROUND = { plot: [100, 200], level: 12 } as const;
 const hall = (tier: number, building = 0) => ({ id: 1, kind: 'hall', tier, building, x: 6, y: 6, turn: 0 });
 const plotOf = (tier: number) => ({ structures: [{ ...hall(tier), spent: 0, delivered: {} }], decor: [] });
@@ -104,30 +104,36 @@ test('a plot the accounts cannot read leaves the plot standing as it was', async
   assert.equal(door.stood, 1);
 });
 
-test('a deposit is asked again under its one id while the accounts throw, and given back whole only if they never answer', async () => {
+test('an errand is asked again under its one id while the accounts throw, and given back whole only if they never answer', async () => {
   const door = doorOf();
   const { accounts, asked } = accountsOf({
-    deposit: [new Error('blip'), 'already', 'refused', ...Array(3).fill(new Error('down'))],
+    deposit: [new Error('blip'), 'already', 'refused', ...Array(4).fill(new Error('down'))],
+    deliver: [new Error('blip'), 6],
   });
   const host = new OutpostHost(door, accounts, ROOM, GROUND, guarded, 77);
   door.waiting.push(errand(1, 'deposit', { amount: 40 }));
   await host.settled(3);
   door.waiting.push(errand(2, 'deposit', { amount: 30 }), errand(3, 'deposit', { amount: 20 }));
   await host.settled(3);
+  door.waiting.push(errand(4, 'deliver', { structure: 2, stuff: 'iron', amount: 9 }));
+  await host.settled(3);
   assert.deepEqual(door.answered, [
     [1, 40],
     [2, 0],
     [3, null],
+    [4, 6],
   ]);
   const ids = asked.filter(([ask]) => ask === 'deposit').map((each) => each[3]);
   assert.deepEqual(ids.slice(0, 2), [`${ROOM}:77:3:1`, `${ROOM}:77:3:1`], 'the same id, asked again');
+  const delivered = asked.filter(([ask]) => ask === 'deliver').map((each) => each[4]);
+  assert.deepEqual(delivered, [`${ROOM}:77:3:4`, `${ROOM}:77:3:4`], 'a delivery too: the accounts keep its answer');
 });
 
 test('a delivery the accounts used reads the plot again; a take and the horn answer what the accounts say', async () => {
   const door = doorOf();
   const { accounts, asked } = accountsOf({
     plot: () => plotOf(1),
-    deliver: [5, new Error('down')],
+    deliver: [5, 0],
     takeStores: 2,
     soundHorn: 0,
   });
@@ -145,9 +151,9 @@ test('a delivery the accounts used reads the plot again; a take and the horn ans
     [1, 5],
     [2, 2],
     [3, 0],
-    [4, null],
+    [4, 0],
   ]);
-  assert.deepEqual(asked[0], ['deliver', 'salt', ROOM, { id: 4, stuff: 'canvas', amount: 9 }]);
+  assert.deepEqual(asked[0]?.slice(0, 4), ['deliver', 'salt', ROOM, { id: 4, stuff: 'canvas', amount: 9 }]);
   assert.ok(
     asked.some(([ask]) => ask === 'outpost'),
     'read again after the delivery',

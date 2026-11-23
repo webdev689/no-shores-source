@@ -346,25 +346,28 @@ test('a run takes twice a company of sockets at join, signed in or not, and any 
 });
 
 test('a guild’s outpost’s room is a bare node’s with its guild’s key last, and no other ending goes with it', () => {
-  assert.deepEqual(nodeRoom('oakfast-landing--guild-0a1b2c3d'), {
+  assert.deepEqual(nodeRoom('oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9'), {
     id: 'oakfast-landing',
     seas: 0,
     dungeon: null,
     run: null,
     playlist: null,
-    guild: '0a1b2c3d',
+    guild: '0a1b2c3d4e5f60718293a4b5c6d7e8f9',
   });
   for (const name of [
-    'oakfast-landing--guild-0A1B2C3D',
-    'oakfast-landing--guild-0a1b2c3',
-    'oakfast-landing--guild-0a1b2c3d4',
-    'oakfast-landing--elite--guild-0a1b2c3d',
-    'oakfast-landing--guild-0a1b2c3d--run-a1b2c3d4',
-    'oakfast-landing--dungeon-0--guild-0a1b2c3d',
-    'oakfast-landing--guild-0a1b2c3d--elite',
-    '--guild-0a1b2c3d',
+    'oakfast-landing--guild-0A1B2C3D4E5F60718293A4B5C6D7E8F9',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f94',
+    'oakfast-landing--elite--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--run-a1b2c3d4',
+    'oakfast-landing--dungeon-0--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
+    'oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9--elite',
+    '--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
   ])
     assert.equal(nodeRoom(name), null, name);
   assert.equal(nodeRoom('oakfast-landing')?.guild, null, 'the wild site is nobody’s plot');
-  assert.equal(canonicalRoom('node-oakfast-landing--guild-0a1b2c3d'), 'node-oakfast-landing--guild-0a1b2c3d');
+  assert.equal(
+    canonicalRoom('node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9'),
+    'node-oakfast-landing--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
+  );
 });

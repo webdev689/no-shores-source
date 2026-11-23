@@ -200,7 +200,7 @@ const OUTPOSTS: OutpostsFace = {
   outposts: [
     {
       site: 'gull-cove-outpost',
-      room: 'node-gull-cove-outpost--guild-0a1b2c3d',
+      room: 'node-gull-cove-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
       raisedAt: Date.now() - 120 * HOUR_MS,
       plot: {
         structures: [
@@ -220,7 +220,7 @@ const OUTPOSTS: OutpostsFace = {
     },
     {
       site: 'salt-hythe-outpost',
-      room: 'node-salt-hythe-outpost--guild-0a1b2c3d',
+      room: 'node-salt-hythe-outpost--guild-0a1b2c3d4e5f60718293a4b5c6d7e8f9',
       raisedAt: Date.now() - 20 * HOUR_MS,
       plot: { structures: [built(1, 'hall', 6, 6, 1), built(2, 'standard', 7, 11, 1)], decor: [] },
       strongbox: 0,

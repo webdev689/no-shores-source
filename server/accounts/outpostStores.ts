@@ -17,19 +17,19 @@ import {
   amountOf,
   kindOf,
 } from '../../client/src/game/guild/outpostLaw.ts';
-import type { Db } from './database.ts';
+import type { Db, Statement } from './database.ts';
 import { type Moved, move, treasuryOf } from './treasury.ts';
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 
-/** A guild's short key, as its outposts' rooms are named: its id's first eight hexadecimal digits. */
-export const guildKey = (guild: string) => guild.replaceAll('-', '').slice(0, 8).toLowerCase();
+/** A guild's key, as its outposts' rooms are named: its id's 32 hexadecimal digits, so no two guilds share one. */
+export const guildKey = (guild: string) => guild.replaceAll('-', '').toLowerCase();
 /** The room a guild's outpost at a site plays in. */
 export const outpostRoom = (site: string, guild: string) => `node-${site}--guild-${guildKey(guild)}`;
 /** The site and guild key an outpost room's name holds, or null for another room. */
 export function outpostOf(room: string): { site: string; key: string } | null {
-  const found = /^node-([a-z0-9-]{1,48})--guild-([0-9a-f]{8})$/.exec(room);
+  const found = /^node-([a-z0-9-]{1,48})--guild-([0-9a-f]{32})$/.exec(room);
   return found ? { site: found[1] ?? '', key: found[2] ?? '' } : null;
 }
 
@@ -112,6 +112,29 @@ async function memberOf(database: Db, account: string) {
     .first<{ guild_id: string; rank: number }>();
 }
 
+/** The answer kept for a room's errand under its id, or null for none kept: asked again, it is answered the same. */
+async function keptAnswer(database: Db, rid: string | undefined): Promise<number | null> {
+  if (rid === undefined) return null;
+  const row = await database
+    .prepare('SELECT answer FROM outpost_errands WHERE rid = ?1')
+    .bind(rid)
+    .first<{ answer: number }>();
+  return row?.answer ?? null;
+}
+
+/** An errand's write with its answer kept under the room's id for it: the work's statements, then the answer, written
+ *  only when the work's last statement changed a row. Answers a day old go first. */
+function withAnswer(database: Db, rid: string | undefined, now: number, work: Statement[], answer: number) {
+  if (rid === undefined) return work;
+  return [
+    database.prepare('DELETE FROM outpost_errands WHERE at < ?1').bind(now - DAY_MS),
+    ...work,
+    database
+      .prepare('INSERT INTO outpost_errands (rid, answer, at) SELECT ?1, ?2, ?3 WHERE changes() = 1')
+      .bind(rid, answer, now),
+  ];
+}
+
 /** Puts a member's Aurem into their guild's treasury, as their room took it from them, once for the room's id. */
 export async function deposit(database: Db, account: string, amount: number, rid: string, now: number): Promise<Moved> {
   const member = await memberOf(database, account);
@@ -120,13 +143,18 @@ export async function deposit(database: Db, account: string, amount: number, rid
 }
 
 /** Delivers a member's materials to a structure being built at the outpost their room is: answers how many it used, the
- *  rest for the room to give back; the last delivered stands the structure risen. */
+ *  rest for the room to give back; the last delivered stands the structure risen. Asked again under the room's id for
+ *  it (`rid`), it answers as it did the first time and delivers nothing more. */
 export async function deliver(
   database: Db,
   account: string,
   room: string,
   given: { id: number; stuff: Stuff; amount: number },
+  now: number,
+  rid?: string,
 ) {
+  const kept = await keptAnswer(database, rid);
+  if (kept !== null) return kept;
   const outpost = outpostOf(room);
   const member = await memberOf(database, account);
   if (!outpost || !member || guildKey(member.guild_id) !== outpost.key) return 0;
@@ -143,7 +171,7 @@ export async function deliver(
   if (used === 0) return 0;
   const after = { ...delivered, [given.stuff]: (delivered[given.stuff] ?? 0) + used };
   const whole = (Object.entries(needs) as [Stuff, number][]).every(([stuff, needed]) => (after[stuff] ?? 0) >= needed);
-  const written = await database
+  const update = database
     .prepare(
       `UPDATE outpost_structures SET delivered = ?4, tier = CASE WHEN ?5 THEN building ELSE tier END,
        building = CASE WHEN ?5 THEN 0 ELSE building END WHERE guild_id = ?1 AND site = ?2 AND id = ?3 AND delivered = ?6
@@ -157,13 +185,14 @@ export async function deliver(
       whole ? 1 : 0,
       row.delivered,
       row.building,
-    )
-    .run();
-  return written.meta.changes === 1 ? used : 0;
+    );
+  const written = await database.batch(withAnswer(database, rid, now, [update], used));
+  return written[rid === undefined ? 0 : 1]?.meta.changes === 1 ? used : 0;
 }
 
 /** Takes up to `amount` of a material from the stores of the outpost a member's room is, within what they may take a
- *  day; answers how many they took, for their room to give them. */
+ *  day; answers how many they took, for their room to give them. Asked again under the room's id for it, it answers as
+ *  it did and takes nothing more. */
 export async function takeStores(
   database: Db,
   account: string,
@@ -171,7 +200,10 @@ export async function takeStores(
   stuff: Stuff,
   amount: number,
   now: number,
+  rid?: string,
 ) {
+  const kept = await keptAnswer(database, rid);
+  if (kept !== null) return kept;
   const outpost = outpostOf(room);
   const member = await memberOf(database, account);
   if (!outpost || !member || guildKey(member.guild_id) !== outpost.key) return 0;
@@ -194,7 +226,7 @@ export async function takeStores(
   const give = Math.max(0, Math.min(amount, filled.stores[stuff] ?? 0, STORES_TAKE_A_DAY - (taken?.taken ?? 0)));
   if (give === 0) return 0;
   const after = JSON.stringify({ ...filled.stores, [stuff]: (filled.stores[stuff] ?? 0) - give });
-  const [written] = await database.batch([
+  const work = [
     database
       .prepare(
         'UPDATE outposts SET stores = ?3, stores_at = ?4 WHERE guild_id = ?1 AND site = ?2 AND stores = ?5 AND stores_at = ?6',
@@ -206,13 +238,16 @@ export async function takeStores(
          ON CONFLICT (account_id, day, stuff) DO UPDATE SET taken = taken + excluded.taken`,
       )
       .bind(account, day, stuff, give),
-  ]);
-  return written?.meta.changes === 1 ? give : 0;
+  ];
+  const written = await database.batch(withAnswer(database, rid, now, work, give));
+  return written[rid === undefined ? 0 : 1]?.meta.changes === 1 ? give : 0;
 }
 
 /** Sounds the War Horn of the outpost a member's room is, once a guild a week, by its founder or an admin: answers its
- *  tier, or 0 when it may not sound. */
-export async function soundHorn(database: Db, account: string, room: string, now: number): Promise<number> {
+ *  tier, or 0 when it may not sound. Asked again under the room's id for it, it answers as it did. */
+export async function soundHorn(database: Db, account: string, room: string, now: number, rid?: string) {
+  const kept = await keptAnswer(database, rid);
+  if (kept !== null) return kept;
   const outpost = outpostOf(room);
   const member = await memberOf(database, account);
   if (!outpost || !member || guildKey(member.guild_id) !== outpost.key || member.rank > 1) return 0;
@@ -221,11 +256,11 @@ export async function soundHorn(database: Db, account: string, room: string, now
   );
   if (!horn || horn.tier < 1) return 0;
   const week = weekOf(now);
-  const written = await database
+  const sound = database
     .prepare('UPDATE guilds SET horn_week = ?2 WHERE id = ?1 AND horn_week <> ?2')
-    .bind(member.guild_id, week)
-    .run();
-  return written.meta.changes === 1 ? horn.tier : 0;
+    .bind(member.guild_id, week);
+  const written = await database.batch(withAnswer(database, rid, now, [sound], horn.tier));
+  return written[rid === undefined ? 0 : 1]?.meta.changes === 1 ? horn.tier : 0;
 }
 
 /** The plot an outpost room stands, with its guild's banner and the guild's id, or null for none raised there. */
@@ -233,8 +268,8 @@ export async function outpostFor(database: Db, room: string) {
   const outpost = outpostOf(room);
   if (!outpost) return null;
   const guild = await database
-    .prepare("SELECT id, name, banner FROM guilds WHERE lower(replace(id, '-', '')) LIKE ?1")
-    .bind(`${outpost.key}%`)
+    .prepare("SELECT id, name, banner FROM guilds WHERE lower(replace(id, '-', '')) = ?1")
+    .bind(outpost.key)
     .first<{ id: string; name: string; banner: string }>();
   if (!guild) return null;
   const plot = await plotOf(database, guild.id, outpost.site);
