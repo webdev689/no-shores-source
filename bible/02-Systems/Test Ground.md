@@ -162,7 +162,10 @@ the player's fight (`PlayerFight`), the foes' figures (`FoeFigures`), the fight'
   splash and a ring on the sea. An arrow or a bolt stays stuck where it stopped for 8 s, in a body for as long as the
   body stands; the 24 newest are kept.
 - **How marks are drawn.** Solid marks (whole, or dithered whole on the ground) write depth, so a near one hides a
-  far one; the see-through rest is drawn after them, each triangle far to near from the eye.
+  far one; the see-through rest is drawn after them, each triangle far to near from the eye. The fight's marks are laid
+  each frame into arrays kept from frame to frame and grown to the most yet (`FightEffects.marks`, `MarkOrder`, the
+  marks over everything in `MarkDraw`), written over from the front and cut to their count, so laying them makes no
+  new array but the fight's own few.
 - **Blood.** Each hit sprays [[Blood]] from the struck body's chest onto the ground and the blocks, a player's swing
   throwing it the way the blade went; a wounded body drips a trail, and a dead one lies in a spreading pool.
   `?blood=off` draws none.

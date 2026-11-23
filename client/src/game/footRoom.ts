@@ -86,7 +86,7 @@ export function folkCards(
     const loop = loops.get(one) ?? new PlacedLoop();
     loops.set(one, loop);
     const frame = loop.frame(one, frames, seconds, clock + one.id * STRIDE_APART_S, OTHERS_FPS);
-    const card = forge.card(one.id, one.dress, one.anim, view, frame, flip);
+    const card = forge.card(one.id, one.dress, one.anim, view, frame, flip, 0, [one.x, one.y, one.z]);
     if (card) cards.push({ card, ...cardStand(one.x, one.y, eyeX, eyeY), z: one.z, flip });
   }
   return cards;

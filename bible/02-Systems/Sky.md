@@ -10,6 +10,7 @@ code:
   - client/src/water/skyDome.ts#SKY_DOME_WGSL
   - client/src/overworld/overworldCamera.ts#cloudBaseOf
   - client/src/sky/lamps.ts#lampsRound
+  - client/src/nearest.ts#Nearest
   - client/src/sky/skyUniform.ts#SKY_WGSL
   - client/src/sky/skyDriver.ts#SkyDriver
 ---
@@ -84,7 +85,9 @@ what show the ground there.
   the Sloop's deck, a lamp at their hand, in first person and third alike: a torch's reaches some eleven metres and
   flickers, a lantern's thirteen and is steadier.
 - **The nearest sixteen.** Each frame the carried light and the lamps nearest the eye (counting their reach) go to the
-  sky's uniform, at most sixteen, so the cost stays bounded. The last of them fade as the next lamp nears, so none
+  sky's uniform, at most sixteen, so the cost stays bounded. Every lamp is weighed once against the seventeen nearest
+  kept so far (`Nearest`), the city's lamps never all sorted, and nothing is made for them but the sixteen handed on:
+  1,500 lamps take about 0.1 ms a frame (tested offline, in Node). The last of them fade as the next lamp nears, so none
   switches on or off as the eye moves. Every lit surface (the land, the plants, the city, the ships, the marks and the
   figures) adds their light: each falls smoothly to nothing at its reach, brightest on a face turned to it, with no
   shadows. A figure by a lantern is lit warm.
