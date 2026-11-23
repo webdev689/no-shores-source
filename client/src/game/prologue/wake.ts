@@ -2,6 +2,7 @@
 // rising to the feet and looking round at two ships jammed into one and burning; then the camera eases out of the eyes
 // to over the player's shoulder, where their control begins, their sword and shield gone from them.
 import { Cues } from '../../cinema/cues.ts';
+import { motionReduced } from '../../plus/kit.ts';
 import { type Point3, type RailKey, railShot } from '../../cinema/rail.ts';
 import { frameOf, type Shot } from '../camera.ts';
 import type { Actor } from './actors.ts';
@@ -37,6 +38,8 @@ export class Wake implements Beat {
   readonly name = 'wake';
   readonly skippable = true;
   readonly fromBlack = true;
+  /** It fades in by its own darkening, the eyes blinking open. */
+  readonly fadeInS = 0;
   private readonly story: Story;
   private readonly layout: WreckLayout;
   private readonly scenery: WreckScenery;
@@ -50,7 +53,7 @@ export class Wake implements Beat {
   private since = 0;
   /** Set once skipped: its moments left still change the world, but none sounds. */
   private skipped = false;
-  /** How long the heart has beaten, seconds: on with the wake, never held while the wreck comes. */
+  /** How long the heart has beaten, seconds: from the wake's first frame, as its sound begins, so the two keep time. */
   private heart = 0;
   done = false;
 
@@ -61,7 +64,6 @@ export class Wake implements Beat {
     const { stage } = story;
     const { ambience, screen } = stage.parts;
     setAblaze(story, layout);
-    ambience.heartbeat(true);
     screen.bars(false);
     screen.darken(1);
     screen.blur(blurAt(0, 0));
@@ -127,8 +129,8 @@ export class Wake implements Beat {
 
   frame(tick: Tick): StoryFrame {
     const { stage } = this.story;
-    // Held lying on the deck, a second before the eyes open for good, until the wreck they open on has come.
-    if (!(this.scenery.coming && this.since >= OPEN_S - 1)) this.since += tick.seconds;
+    if (this.heart === 0 && !this.skipped) stage.parts.ambience.heartbeat(true);
+    this.since += tick.seconds;
     // The camera's course is long to work out: done as soon as the wreck is drawn, while the player still lies there,
     // never as the camera leaves the eyes and the music begins.
     if (this.run && !this.scenery.coming && !this.warmed) {
@@ -139,7 +141,7 @@ export class Wake implements Beat {
     this.cues.step(this.since);
     stage.stepWeather(tick.seconds);
     const { screen } = stage.parts;
-    screen.darken(darkAt(this.since, this.heart));
+    screen.darken(darkAt(this.since, motionReduced() ? undefined : this.heart));
     screen.blur(blurAt(this.since, this.heart));
     if (this.since >= CONTROL_S) this.done = true;
     const shot = this.shotAt(this.since);

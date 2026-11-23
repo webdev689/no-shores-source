@@ -42,11 +42,11 @@ interface Carried {
   run: Promise<WreckRun> | null;
 }
 
-/** A shot over the storm's sea for a beat begun with nothing before it (a page started at a later beat). */
 /** How many of a beat's frames are drawn under the black before it fades in: its pictures' and pipelines' first
  *  making falls there, unseen. */
 const WARM_FRAMES = 3;
 
+/** A shot over the storm's sea for a beat begun with nothing before it (a page started at a later beat). */
 function seaShot(story: Story): Shot {
   const { brig } = story;
   return { eye: [brig.x - 80, brig.y + 80, 40], yaw: brig.heading, pitch: 0.2, fov: 0.9, near: 0.3, far: 30_000 };
@@ -89,8 +89,16 @@ export class Prologue {
   /** Holds the black before the beat now begun, if it begins from black; one that does not, begun while the black
    *  still held (the beat before skipped under it), fades in at once. */
   private hold(): void {
-    if (this.held && !this.beat.fromBlack) this.story.stage.parts.screen.fade(0, SCENE.inS);
+    if (this.held && !this.beat.fromBlack) this.fadeIn();
     this.held = this.beat.fromBlack ? { seconds: 0, frames: 0 } : null;
+  }
+
+  /** The beat now begun fades in from black, over its own time or SCENE.inS; whatever fade the screen was easing
+   *  (a failed beat's clearing) gives way to it. */
+  private fadeIn(): void {
+    const { screen } = this.story.stage.parts;
+    screen.fade(1, 0);
+    screen.fade(0, this.beat.fadeInS ?? SCENE.inS);
   }
 
   /** The beat named, made from what the beats before it left. */
@@ -305,7 +313,7 @@ export class Prologue {
       stage.draw(shown, size, this.clock, passing);
     }
     if (held && shown && ++held.frames >= WARM_FRAMES) {
-      stage.parts.screen.fade(0, SCENE.inS);
+      this.fadeIn();
       this.held = null;
     }
     if (beat.done) this.next();

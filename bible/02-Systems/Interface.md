@@ -308,7 +308,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   copied, a file saved or opened from the player's chooser, a yes or no asked in the browser's dialog; each borrows the
   page for a moment, and nothing of them is drawn interface.
 - **The story's screens** are layers of their own, each where the page stood it: the tap to start over everything,
-  the cinema's screen (its veils, bars, darkening, flash, title, prompt and skip) over the HUD and the menu, a boss's
+  the cinema's screen (its veils, bars, darkening, flash, title, prompt, skip and loading screen) over the HUD and the menu, a boss's
   nameplate and the objective under it, the dialogue box and the barks over heads under every other layer, and the
   creation's two windows at the helm, whose fields are typed through the interface and whose keys are the
   interface's while either is up (`creationOpen`); each window, and the pause menu, is modal while up. Words over the world and the veils let the pointer through to the

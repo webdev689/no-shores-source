@@ -66,7 +66,8 @@ export const OVER_HEAD_M = 0.25;
 const RISE_S = 2.4;
 const RISEN_AT = 0.5;
 const TOGETHER_M_S = 1.15;
-const TOGETHER_S = 6.5;
+/** Walked together 4.9 s before the scene fades out. */
+const TOGETHER_S = 4.9 + SCENE.outS;
 
 type Phase = 'searching' | 'waking' | 'talking' | 'asking' | 'rising' | 'leaning' | 'walking' | 'gone';
 
@@ -85,6 +86,8 @@ export class Shore implements Beat {
   readonly name = 'shore';
   readonly skippable = false;
   readonly fromBlack = true;
+  /** It fades in by its own darkening, the eyes blinking open. */
+  readonly fadeInS = 0;
   private readonly story: Story;
   private beach: Beach | null = null;
   private phase: Phase = 'searching';

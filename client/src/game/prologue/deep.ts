@@ -2,6 +2,7 @@
 // the surface, the dead of their crew sinking round them; then through their own eyes, looking up as the light fails,
 // until a bright flash, a voice from nowhere, and black.
 import { Cues } from '../../cinema/cues.ts';
+import { motionReduced } from '../../plus/kit.ts';
 import { lookAt, type Point3 } from '../../cinema/rail.ts';
 import { type Dress, plainDress, type Race } from '../../player/dressing.ts';
 import type { Shot } from '../camera.ts';
@@ -14,6 +15,7 @@ import { DEEP } from './skies.ts';
 import type { StoryFrame } from './stage.ts';
 import type { Story } from './story.ts';
 import type { WreckLayout } from './wreckLayout.ts';
+import { pulseAt } from './waking.ts';
 import { lightFires, type WreckScenery } from './wreckScenery.ts';
 
 const LENS = { fov: 0.95, near: 0.1, far: 4_000 } as const;
@@ -21,7 +23,7 @@ const LENS = { fov: 0.95, near: 0.1, far: 4_000 } as const;
 const SINK_M_S = 1.1;
 const EYES_S = 9;
 const FLASH_S = 15.5;
-const DEEP_S = 21;
+const DEEP_S = 21.5;
 /** The voice from nowhere, after the flash has begun to fade. */
 const VOICE_S = FLASH_S + 1.6;
 /** How far east of where Thule stands the body went into the sea, thrown over the rail, metres. */
@@ -46,11 +48,17 @@ export class Deep implements Beat {
   readonly name = 'deep';
   readonly skippable = true;
   readonly fromBlack = true;
+  get ready(): boolean {
+    return !this.scenery.coming;
+  }
   private readonly story: Story;
   private readonly over: readonly [number, number];
   private readonly scenery: WreckScenery;
   private readonly cues: Cues;
   private since = 0;
+  /** How long the heart has beaten, seconds, from the first frame, as its sound begins; and whether it still beats. */
+  private heart = 0;
+  private beating = false;
   done = false;
 
   constructor(story: Story, layout: WreckLayout, scenery: WreckScenery) {
@@ -63,12 +71,17 @@ export class Deep implements Beat {
     story.lightning.striking = false;
     stage.weatherTowards(DEEP, 0);
     ambience.set({ deep: 1, rain: 0, wind: 0, waves: 0.15, fire: 0.1, creak: 0, gulls: 0 }, 1);
-    ambience.heartbeat(true);
     lightFires(flames, layout);
     this.cues = new Cues([
       [EYES_S - 0.4, () => screen.fade(0.6, 0.4)],
       [EYES_S, () => screen.fade(0, 0.8)],
-      [FLASH_S - 2.5, () => ambience.heartbeat(false)],
+      [
+        FLASH_S - 2.5,
+        () => {
+          ambience.heartbeat(false);
+          this.beating = false;
+        },
+      ],
       [FLASH_S, () => this.flash()],
       [VOICE_S, () => void stage.play('deep', true)],
       [DEEP_S - SCENE.outS, () => screen.fade(1, SCENE.outS)],
@@ -111,7 +124,12 @@ export class Deep implements Beat {
     const { stage } = this.story;
     // The director frames a beat once more after its skip: nothing of it may run then.
     if (!this.done) {
+      if (this.since === 0) {
+        stage.parts.ambience.heartbeat(true);
+        this.beating = true;
+      }
       this.since += tick.seconds;
+      this.heart += tick.seconds;
       this.cues.step(this.since);
     }
     // The fire above flickers through the water.
@@ -122,7 +140,10 @@ export class Deep implements Beat {
       glow: { colour: [1, 0.5, 0.18], strength: 0.8 * flicker },
     };
     const eyes = !this.done && this.since >= EYES_S && this.since < FLASH_S;
-    if (eyes) stage.parts.screen.darken(Math.min(0.85, (this.since - EYES_S) / (FLASH_S - EYES_S - 0.5)));
+    // The eyes closing, darker with each beat of the heart while it still beats.
+    const pulse = this.beating && !motionReduced() ? pulseAt(this.heart) : 0;
+    if (eyes)
+      stage.parts.screen.darken(Math.min(1, Math.min(0.85, (this.since - EYES_S) / (FLASH_S - EYES_S - 0.5)) + pulse));
     const body = this.body();
     const actors: Actor[] = FALLEN.map((one, index) => ({
       id: ACTOR_IDS + 70 + index,

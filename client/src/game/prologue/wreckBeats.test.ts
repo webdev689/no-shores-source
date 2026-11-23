@@ -13,6 +13,7 @@ import { figureOf } from '../../player/dressing.ts';
 import type { Actor } from './actors.ts';
 import { armouredDress, FIRST_LOOK } from './look.ts';
 import { onScreen, type Shot } from '../camera.ts';
+import type { Beat } from './beat.ts';
 import { Deep } from './deep.ts';
 import { YOU_ID } from './helm.ts';
 import type { Nameplate } from './nameplate.ts';
@@ -272,6 +273,35 @@ test('the wake cut short leaves the eyes open, though the director frames it onc
   beat.frame(tick(0.016));
   const dark = calls.filter((call) => call.startsWith('stage.parts.screen.darken')).at(-1);
   assert.match(dark ?? '', /^stage\.parts\.screen\.darken\(0\)/, `${dark}`);
+});
+
+test('the beats from black wait for the wreck, and the wake and the shore fade in by their own darkening', () => {
+  const coming = { ...scenery, coming: true } as unknown as WreckScenery;
+  const { story } = recorded();
+  const wake = new Wake(story, layout, coming, new Promise(() => undefined));
+  const overboard = new Overboard(story, layout, coming);
+  const deep = new Deep(story, layout, coming);
+  for (const beat of [wake, overboard, deep]) {
+    assert.ok(beat.fromBlack, beat.name);
+    assert.equal(beat.ready, false, `${beat.name} waits while the wreck comes`);
+  }
+  assert.ok(new Wake(story, layout, scenery, new Promise(() => undefined)).ready, 'ready once it is drawn');
+  assert.equal(wake.fadeInS, 0, 'the wake darkens itself awake');
+  assert.equal((overboard as Beat).fadeInS, undefined, 'the throw is faded in as every scene is');
+});
+
+test('the heart begins with the wake’s first frame, so its sound and the pulse keep time; the deep lays no fade in', () => {
+  const { story, calls } = recorded();
+  const wake = new Wake(story, layout, scenery, new Promise(() => undefined));
+  assert.ok(!calls.includes('stage.parts.ambience.heartbeat(true)'), 'not while the director holds the black');
+  wake.frame(tick(0.016));
+  assert.ok(calls.includes('stage.parts.ambience.heartbeat(true)'));
+  const deep = recorded();
+  const beat = new Deep(deep.story, layout, scenery);
+  assert.ok(!deep.calls.includes('stage.parts.ambience.heartbeat(true)'));
+  beat.frame(tick(0.5));
+  assert.ok(deep.calls.includes('stage.parts.ambience.heartbeat(true)'));
+  assert.ok(!deep.calls.some((call) => call.startsWith('stage.parts.screen.fade(0')), 'the director fades it in');
 });
 
 /** A run of the wreck that plays nothing: the player alive or dead as `own` says (their health as it holds), in the

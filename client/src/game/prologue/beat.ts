@@ -40,6 +40,9 @@ export interface Beat {
   readonly fromBlack?: boolean;
   /** Whether what it shows has come (the wreck's mesh, the beach); none said, it is ready. */
   readonly ready?: boolean;
+  /** How long the director fades it in from black, seconds: SCENE.inS unless said; a beat that darkens itself awake
+   *  takes none. */
+  readonly fadeInS?: number;
 }
 
 /** A change of scene through black, seconds: the fade out a beat ends with, the least the black holds between, and

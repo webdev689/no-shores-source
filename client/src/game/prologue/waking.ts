@@ -44,7 +44,12 @@ export function darkAt(time: number, heart?: number): number {
     }
   }
   if (heart === undefined || time >= OPEN_S) return dark;
-  return Math.min(1, dark + PULSE * throbAt(heart) * (1 - time / OPEN_S));
+  return Math.min(1, dark + pulseAt(heart) * (1 - time / OPEN_S));
+}
+
+/** How much darker a beat of the heart `heart` seconds into its beating takes the view, at its strongest. */
+export function pulseAt(heart: number): number {
+  return PULSE * throbAt(heart);
 }
 
 /** The heart's throb `heart` seconds into its beating, 0 to 1: up at each thump of a beat, gone within a fifth of a
@@ -58,7 +63,7 @@ export function throbAt(heart: number): number {
 
 /** How far the view is blurred `since` seconds into the wake, the heart `heart` seconds into its beating, CSS pixels:
  *  it clears a step just after each beat and holds between them, a beat behind the heart, clear soon after the eyes
- *  are open, and never ahead of `since`, which holds while the wreck the eyes open on is still coming. */
+ *  are open, and never ahead of `since`. */
 export function blurAt(since: number, heart: number): number {
   const beats = heart / HEART_BEAT_S;
   const stepped = Math.max(0, Math.floor(beats) - 1 + smooth((beats % 1) / STEP_SHARE)) * HEART_BEAT_S;

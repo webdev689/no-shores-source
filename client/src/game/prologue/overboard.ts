@@ -28,11 +28,13 @@ const CELEBRANTS: readonly {
   { type: 10, anim: 'jump', from: [1.2, 1.8] },
 ];
 /** The throw: when it starts, how long the body is in the air, how far it is thrown east over the rail and how high. */
-const THROW_AT_S = 1.6;
+/** When the scene is wholly faded in: its moments keep their time after that as before the fades were longer. */
+const LIT_S = SCENE.inS;
+const THROW_AT_S = LIT_S + 0.4;
 const FLIGHT_S = 1.5;
 const THROW_M = 9;
 const THROW_UP_M = 2.6;
-const OVER_S = 6.2;
+const OVER_S = LIT_S + 4 + SCENE.outS;
 
 /** Where a thrown body is `into` seconds after leaving the deck at `from`: up and over, down into the sea. */
 export function thrownAt(from: Point3, into: number): Point3 {
@@ -48,6 +50,9 @@ export class Overboard implements Beat {
   readonly name = 'overboard';
   readonly skippable = true;
   readonly fromBlack = true;
+  get ready(): boolean {
+    return !this.scenery.coming;
+  }
   private readonly story: Story;
   private readonly layout: WreckLayout;
   private readonly scenery: WreckScenery;
@@ -70,7 +75,7 @@ export class Overboard implements Beat {
     // The fight has faded out already; begun here, the beat starts as black as the fight left it.
     screen.fade(1, 0);
     this.cues = new Cues([
-      [1.1, () => this.skipped || void stage.play('overboard', true, { thule: 'thule', tithe: 'celebrant-1' })],
+      [LIT_S - 0.1, () => this.skipped || void stage.play('overboard', true, { thule: 'thule', tithe: 'celebrant-1' })],
       [THROW_AT_S + FLIGHT_S, () => this.skipped || ambience.splash(1)],
       [OVER_S - SCENE.outS, () => screen.fade(1, SCENE.outS)],
       [OVER_S, () => (this.done = true)],

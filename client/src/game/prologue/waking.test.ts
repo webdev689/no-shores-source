@@ -38,5 +38,5 @@ test('each beat of the heart pulses the view darker while the eyes open, less as
   assert.ok(lifted(5.2) < lifted(1.1), 'less as the eyes open');
   assert.ok(darkAt(1.1, 0.6) - darkAt(1.1) < 0.02, 'all but still between beats');
   assert.equal(darkAt(OPEN_S + 1, 0), 0, 'none once open');
-  assert.ok(darkAt(0.05, 0) <= 1, 'never past black');
+  assert.equal(darkAt(0.05, 0), 1, 'a beat at the start never takes it past black');
 });

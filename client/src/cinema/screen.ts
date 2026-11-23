@@ -5,6 +5,7 @@
 // While it stands, a touch on the view is the story's alone: no drag pans the page or pulls it to reload, so a held
 // touch is never cut short.
 import { motionReduced } from '../plus/kit.ts';
+import { announce } from '../ui/announce.ts';
 import type { Child, Node } from '../ui/node.ts';
 import { touchesHeld } from '../ui/page.ts';
 import type { Layer, Stack } from '../ui/stack.ts';
@@ -112,7 +113,10 @@ export class Screen {
   /** The logo and a breathing "Loading" over the black, while the next scene is still coming, or not. */
   showLoading(shown: boolean): void {
     const target = shown ? 1 : 0;
-    if (this.loading.target !== target) this.loading.set(target, 0.4, this.clock());
+    if (this.loading.target === target) return;
+    this.loading.set(target, 0.4, this.clock());
+    // Drawn, not written into the page: a screen reader is told as it shows.
+    if (shown) announce('Loading');
   }
 
   /** Lets every layer go: the view back as it was. */

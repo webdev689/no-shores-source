@@ -104,3 +104,26 @@ test('the bars slide in from the edges, and the view darkens as the story asks',
   screen.darken(0);
   assert.equal(laid().filter((each) => each.node.id === 'cinema-dark').length, 0, 'clear, none');
 });
+
+test('the loading screen stands over the black: the logo and LOADING, told to a screen reader once as it shows', () => {
+  const { screen, laid, clock } = made();
+  const said: string[] = [];
+  Object.assign(globalThis, { document: { ariaNotify: (words: string) => said.push(words) } });
+  try {
+    screen.fade(1, 0);
+    screen.showLoading(true);
+    screen.showLoading(true);
+    clock.now = 1;
+    const shown = laid();
+    const black = shown.findIndex((each) => each.node.fill === '#020305' && each.node.opacity === 1);
+    const logo = shown.findIndex((each) => each.node.picture?.key === 'logo');
+    assert.ok(black >= 0 && logo > black, 'the logo drawn after the black, over it');
+    assert.ok(wordsOf(shown).includes('LOADING'));
+    assert.deepEqual(said, ['Loading'], 'said once');
+    screen.showLoading(false);
+    clock.now = 2;
+    assert.ok(!laid().some((each) => each.node.picture?.key === 'logo'), 'gone once the scene has come');
+  } finally {
+    Object.assign(globalThis, { document: undefined });
+  }
+});

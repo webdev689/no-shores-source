@@ -98,11 +98,16 @@ makes it.
 
 **Between scenes** ([[The Prologue's Scenes Change Slower, Behind the Logo While They Load]]), the beats that begin
 from black (`fromBlack`: the wake, the throw overboard, the deep and the shore) lay no fade in of their own. The beat
-before ends in a fade out of 2 s (`SCENE`; the ram's crash cuts to black in 1 s), and the director holds the black
-at least 1 s more and until the next beat is `ready` (the wake once the wreck is drawn, the shore once its beach is
-found); past that second the owner's logo stands over the black with a breathing LOADING under it. The beat's
-first three frames are drawn under the black, so their first making is unseen, and it fades in over 2.5 s. A beat
-that does not begin from black, begun while the black still held, fades in at once.
+before ends in a fade out of 2 s (`SCENE`; the ram's crash cuts to black in 1 s, twice its half second before), and
+the director holds the black at least 1 s more and until the next beat is `ready` (the wake, the throw and the deep
+once the wreck is drawn, the shore once its beach is found); past that second the owner's logo stands over the black
+with a breathing LOADING under it. The beat's first three frames are drawn under the black, so their first making is
+unseen, and it fades in over 2.5 s; the wake and the shore take no fade (`fadeInS`), as their own darkening blinks
+them awake. Each beat's moments keep the time they were seen in before the fades grew: the throw overboard comes 1.3 s
+later and its scene runs 8.5 s, the deep runs 21.5 s, and the walk up the shore 6.9 s. A beat that does not begin from
+black, begun while the black still held (the one before skipped under it), fades in at once. The wake's heart, and
+the deep's, begin to beat with their first frame, so the darkening pulses in time with the beat heard; the deep's
+closing eyes pulse darker with it too, and with less motion asked for the view darkens without pulsing.
 
 A story that cannot begin at all (its cast or scenes refused, a ship's model not loaded, a part failing as it is made)
 gives back everything it took, the last first: the screen hands the page back its touches, the dialogue box, the
@@ -376,7 +381,7 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   rails hold them.
 - **A fight the player cannot win.** It ends when the player falls ("felled"), or when Thule is brought under a third
   of his health or 150 s have passed ("overpowered"); never with Thule dead. Stood by the page, he calls no crew in
-  his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 0.6 s.
+  his last phase, so it stays one on one. Once it ends, the fight holds still while the screen fades out over 2 s (`SCENE`).
   Felled there, the player is never told they will rise: that toast is for a death before the boss fight.
 - **The cries.** In the fight the first Grey Tithe foe on the view cries "Survivor! Get that one!", once; after it, the
   first time a Grey Tithe foe and one of the Brig's crew stand on the view together, they cry "For the Tithe!" and
@@ -456,10 +461,10 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
   it (`dryFitted`) and laid again in pieces no longer than 6 m along it, each piece's middle, length and outline
   station by station following its own ground: 44 footprints, of the water's 48. The sea under a fire burning on it
   is still drawn. Each heap is its own run of the mesh, drawn while it stands. The mesh and the
-  light (about 12 MB) are fetched once the story is past its intro; the wake holds the player lying on the deck, a second
-  before their eyes open for good, until they come, and a wake skipped before then leaves the fight holding the
-  picture until they come. The run's camera works out its
-  course (`cameraCourse`) the moment they have come, while the player still lies on the deck. The
+  light (about 12 MB) are fetched once the story is past its intro; the director holds the black before the wake, and
+  before the throw overboard and the deep, until they have come (`ready`, "Between scenes"), so each opens on the wreck
+  drawn. The run's camera works out its course (`cameraCourse`) on the wake's first frames, while the player still
+  lies on the deck. The
   fires burn in all four beats. Every figure they stand makes a move the forge draws its clothes in: the deep's
   fallen crew lie in `fallen`, Thule's crew leap and cry out. It lets go of its GPU buffers once the deep ends.
 - **Each beat sets its world** at its start (the wreck's storm, fires and sounds, no lightning; the deep's water), so

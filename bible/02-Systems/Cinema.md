@@ -46,8 +46,9 @@ What the [[Prologue]]'s cutscenes are made with: the camera on rails, the screen
   the hint shows faintly at the bottom right while a cutscene can be skipped, and brightens with its share filled.
 - **The screen** (`Screen`), drawn by the game as a layer of its interface over every other, the HUD's and the
   menu's: fades to black or white over any time, a white flash, the letterbox's bars, a darkening for waking, the
-  title (the owner's logo over a brass rule, at a whole multiple of its cells within half the view's width) and a
-  prompt that breathes under it. Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`),
+  title (the owner's logo over a brass rule, at a whole multiple of its cells within half the view's width), a
+  prompt that breathes under it, and over the black the loading screen (`showLoading`: the logo and a breathing
+  LOADING, said to a screen reader as it shows). Each layer eases over its own time on the interface's `ease` curve (`ui/ease.ts`),
   except the darkening, a black over the whole view, under the fades, that the story sets frame by frame
   (`darken`; [[The Prologue Wakes by Darkening and Pulsing, Not Eyelids]]). The blur over the whole view (`BlurView`) is drawn into the scene's own picture, under
   the interface, as death's grey is, so the words over it stay sharp: a Gaussian whose deviation is the blur's CSS
