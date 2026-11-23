@@ -3,8 +3,8 @@ import { LIVE_ROOMS } from '../network/roomAddress.ts';
 import type { Difficulty } from '../heldmap/heldMap.ts';
 
 /**
- * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, judging the edge
- * itself); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under `npm run server`),
+ * Where the game's rooms are, from its page's `?room=`: none without it (the game plays offline, the rooms' worker
+ * running each room); a whole `ws://` or `wss://` address names a server (`?room=ws://127.0.0.1:8787` under `npm run server`),
  * anything else the deployed rooms. The answer names each room's address: `node-<id>` for a node, `sea` for the sea.
  */
 export function roomsFrom(given: string | null): ((name: string) => string) | null {

@@ -1,8 +1,9 @@
 //! The houses' roads in a room: its node and the places its file names, and each player's quest log told what they do
 //! here (`gear::quests`): a place reached, checked each tick only for a player whose task waits on one in this node;
 //! a foe's fall they struck; a spell cast; the node arrived in, and the sea island landed on. A kill goal's group stands
-//! at its place for a player on it coming near, as a wave arrives, on a navmesh baked round that place the first time,
-//! and again `STAND_AGAIN` after it fell while the goal is unmet.
+//! at its place for a player on it coming near, as a wave arrives, on the node's own navmesh where its square holds
+//! that place and else on one baked round it the first time, and again `STAND_AGAIN` after it fell while the goal is
+//! unmet.
 
 use crate::garrison::{Post, SPREAD, STAND_AGAIN, draws_of, gird_of, ground_middle, square, square_of};
 use crate::players::Player;

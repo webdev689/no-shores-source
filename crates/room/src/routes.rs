@@ -1,5 +1,6 @@
 //! Which navmesh the room's foes find their way on, its routes and its firing spots (`foes.rs`). A node's room has its
-//! own mesh by its first spawn and one more round each place the houses' roads stand a group at (`quests.rs`); each
+//! own mesh by its first spawn and one more round each place a quest's step stands foes at that its own square does
+//! not hold: a road's group, a defence's waves, a puzzle's or an ambush's (`quests.rs`); each
 //! foe thinks on the mesh that holds its post, or else the one whose square holds where it stands, and on the node's
 //! own otherwise.
 

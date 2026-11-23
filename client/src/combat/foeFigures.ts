@@ -41,9 +41,9 @@ export interface FoeFeel {
   smear?(id: number): CardAt['smear'];
 }
 
-/** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
 /** How far past the Fissure's ground a foe coming still climbs out of it, metres. */
 const POUR_REACH_M = 10;
+/** A foe that dies dissolves once its fall is over (seconds after it died) when nothing gave its death an element. */
 const PLAIN_DISSOLVE_AFTER_S = (FIGHT_TICKS.death + 6) / 60;
 
 /** Foes' figures are numbered down from here, never twice in the page's life: the forge keeps each figure's last card

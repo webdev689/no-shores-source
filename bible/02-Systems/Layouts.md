@@ -52,8 +52,8 @@ something enormous, a causeway, a cave's mouth, and an instance's way in and the
 is open ground to arrive on and fight over. Every one of the 90 drawn nodes has its own. A brief may also carry hints:
 `rock`, the shape its outcrops stand in where its climate's would not suit it (the Saltgrass Downs' whalebacks, the
 Gullwing Vale's knolls, the Driftwood Moors' tors); `stone`, the stone its cliffs and rubble wear (the Downs' chalk);
-and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (the Vale's
-only for now, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's
+and `river`, that a river runs through it (the Vale), which carries the claim along the river (below). `heights` stands its places at heights (Saltmere's
+three zones, [[Zones Rise and Fall, Above and Below Ground]]), and an area's `level`, in hundredths of the massif's
 height, sets its own height in place of its kind's (the Vale's Water Meadows lie by the river at 0). A layout
 carries its `stone` out with it, and the client wears it (below).
 
@@ -263,7 +263,7 @@ combat areas that break off it, where missions will run later. Saltmere's three 
 out past its edge.
 
 - **Its line** (`runs::find`): from where an area's floor ends (not a gate's, landing's or dock's), a way into the
-  rock through three to five beats (small arenas 25 to 60 m across, fewer beats larger) to an end arena 40 to 54 m
+  rock through three to five beats (small arenas 26 to 56 m across, fewer beats larger) to an end arena 42 to 54 m
   across and its sealed door: 200 to 400 m in all. Each passage between beats runs out of one beat's rim, bends 26
   to 49 degrees at its elbow and turns back into the next, so one beat never sees the next whole. The first fit wins
   among 24 headings from each area, seeded; a run keeps 16 m and its half-width off every floor, twice the face's run
@@ -281,7 +281,7 @@ out past its edge.
   level ground. A climbing run ends at 0.55 so the face
   behind its door rises in ledges too steep to climb. A run past the edge has a wing that carries the claim out round
   it, and the section takes the run in. Its way is walked as a footpath, painted on the ground but not bedded as a
-  road. Foes hold its beats; its end arena is an objective's site and its door a door's.
+  road. Its beats are marked as foes' sites, which no room stands foes at yet; its end arena is an objective's site and its door a door's.
 - **What stands in it** (`run_kits`, `run_halls`, `halls`): its mouth marked so the zone sees where it goes (a fallen
   arch of rock, two standing stones, a broken gateway of towers, a gatehouse, a head-frame and its spoil, a ruined
   chapel); cover on every beat no more than 10 m from any point of its floor (rock, broken masonry, crates, stone

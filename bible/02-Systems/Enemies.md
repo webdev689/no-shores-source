@@ -339,7 +339,7 @@ WebAssembly, so names, factions and weapons are read in one place.
 
 - A garrison stands within its room's navmesh, a 70 m square by the first spawn, never across the whole section:
   baking a section's whole ring costs more time and memory than a room has. A garrison foe gives up a player who
-  leaves the mesh; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
+  leaves the mesh more than 14 m from it; a foe a player asked for, or one a Boss called, chases them off it and walks straight.
 - A cleared group stands again only while no player is within 40 m of its post, so a player waiting nearby holds it.
 - A wave stands from nowhere, at least 25 m from every player: a node's land has no ships to bring it, and its room's
   navmesh no ground beyond its square to walk it in from.

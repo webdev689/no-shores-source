@@ -2,7 +2,7 @@
 //! corner, its floor at 0 m), one spawn at the way in, and a navmesh over the whole dungeon kept to the floor joined to
 //! the way in. Its garrison is the Grey Tithe's dungeon garrison standing where the Forge puts foes: its end foe (the
 //! Reeve, a Miniboss, or an Elite Dungeon's own Boss) alone in the end room, and a band in each other room past the
-//! way in's, each room's on its free cells nearest its middle, its quiet cells first, round its props. Beside the end
+//! way in's as far as the room's most foes allow, each room's on its free cells nearest its middle, its quiet cells first, round its props. Beside the end
 //! foe's post stands the cache, shut while it stands; when it falls the cache opens and every player then in the room
 //! finds a Vestige before it, theirs alone, and a second where the run's first clear pays (`run_room.rs`).
 

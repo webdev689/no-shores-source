@@ -247,8 +247,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   their weapon's glow as their game shows it, any other as the room tells it) dissolves at once in it (Blaze burning up
   from the feet, Volt blinking out in 4 by 4 cells, Cosmic drawn in to the chest in four steps), its finisher round it.
   A player arriving, as they spawn into a place or respawn, is built from the feet up in 2 by 2 cells over 0.6 s, each
-  white as it lands, throwing no shadow until they stand whole, when their weapon glows ([[Players Arrive as Destiny's
-  Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and on each respawn, every other
+  white as it lands, throwing no shadow until they stand whole, when their weapon glows
+  ([[Players Arrive as Destiny's Transmat Does, Unexplained]]): the player as the veil lifts, as they board a deck and on each respawn, every other
   player on respawning or when first seen after the player arrived. The player sees their own figure begin once their
   view is first open, 0.5 s in. Foes never arrive so.
   A crit's flash keeps its two white frames, then its outline is gold for four. The statuses show on the figures as in

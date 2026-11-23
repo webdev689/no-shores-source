@@ -1,7 +1,7 @@
 //! A garrison group's beat: a round of points over its room's navmesh, drawn from the node's seed, that the group
 //! walks at a stroll, its leader on the way and the rest on a half ring behind it, pausing at each point and starting
-//! again from the first. The way between points is the navmesh's and keeps as clear of the spawns and the section's
-//! edge as the posts do. The group halts while any of its foes is stirred, fights or walks back to its place, and
+//! again from the first. The way between points is the navmesh's and keeps as clear of the spawns as the posts do,
+//! and SPREAD inside the section's edge. The group halts while any of its foes is stirred, fights or walks back to its place, and
 //! waits for one that has fallen behind.
 
 use super::{SPAWN_CLEAR, SPREAD};

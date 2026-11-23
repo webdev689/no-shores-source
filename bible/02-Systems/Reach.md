@@ -52,12 +52,13 @@ its inputs left it, once a tick, whether or not that player sent any; a fall is 
 last stood at, on the ground, a wall or a lip, never a jump's rise. A dead body is stepped with no controls of its
 own, so one that died in the air falls on and lies where it lands. An input asking to respawn is granted only once
 the standing offers it, and stands the body on the ground at the nearest spawn, its fall measured from there. Each snapshot carries every player's standing, with the ticks left of a warning or the ticks dead, and
-the browser shows what the room says; it does not judge. Playing alone, the [[Game]] runs the node's room in the
-page, so the same room judges.
+the browser shows what the room says; it does not judge. Playing alone, the [[Game]] runs the node's room in its
+rooms' worker, so the same room judges.
 
 ## Foes in a section
 
-A node's room stands its garrison inside its section, at least 25 m from every spawn and 10 m inside its edge, on the
+A node's room stands its garrison inside its section, its posts at least 25 m from every spawn and 10 m inside its
+edge (its beats' ways 2.5 m inside), on the
 navmesh it bakes by its first spawn; a cleared group stands again only once no player is within 40 m of its post
 ([[Enemies]]). Foes are never judged against the section: one that chases a player past the edge follows them.
 

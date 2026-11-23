@@ -768,13 +768,13 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under two plaques side by side ([[Prestige Stands Beside Level
-  on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
+- **Character.** The player's figure large in the middle, under two plaques side by side
+  ([[Prestige Stands Beside Level on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
   in pale steel, each its number alone, and under both the meter to the next level and what it takes; under the figure
   the Melee and Ranged loadouts' Attack and Defense ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and
   Ranged loadouts, the cloak and the Appearance button stand to its left, under the worn Art's diamond, the armour to
-  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading ([[The
-  Weapons Heading Stands Under the Art]]) level with the Armour heading across, under room as tall as the Art's row, so
+  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading
+  ([[The Weapons Heading Stands Under the Art]]) level with the Armour heading across, under room as tall as the Art's row, so
   each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
   ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
   it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the

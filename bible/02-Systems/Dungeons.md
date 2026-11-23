@@ -314,8 +314,8 @@ The patrol areas' dungeons: three in each patrol, each laid by DFO's Forge from 
 ## Encounters
 
 Every Elite Dungeon run, at Normal, as the week's two and from both playlists, is more than a run of fights: seals to
-break before its Boss stands, and a Court round the Boss ([[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and
-Raid Mechanics]]; Claude's calls in [[The Playlist and Its Dungeons as Claude Shapes Them]], "Encounters"). A room
+break before its Boss stands, and a Court round the Boss
+([[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]]; Claude's calls in [[The Playlist and Its Dungeons as Claude Shapes Them]], "Encounters"). A room
 lays them where its end foe is a Boss (`laid_dungeon`); no patrol's or sea island's dungeon has any.
 
 - **The plan** (`plan_encounters`) is laid from the dungeon alone, so the room and the page lay the same: its draws on
@@ -580,4 +580,4 @@ as standing none (`readDungeon`).
 - The third-person camera keeps short of the rock and under the ceiling, so in a narrow room, a corridor or a low room
   it sits close behind the player.
 - A player who joins a company member in a dungeon came by no entrance, so leaving by its door or portal stands them
-  at the patrol's first spawn.
+  at the patrol's spawns in turn, as any join does (its first, in a room just opened).

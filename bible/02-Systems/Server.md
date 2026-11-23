@@ -130,7 +130,8 @@ on Cloudflare.
   its allies' shouts, and keeps the fight's heat, fed where blows are settled.
 - **Foes of different factions** fight each other: a foe's swing, telegraphed blow or shot on a foe of another side
   is judged at once, as a player's blow on a foe is.
-- **A patrol** (a patrol node's room) fights its garrison alone ([[Enemies]]). Its island's resource stands where its
+- **A patrol** (a patrol node's room) stands no camps of its own: it fights its garrison ([[Enemies]]), and where they
+  come, its public events' foes and the groups the houses' roads stand ([[Public Events]], [[Quests]]). Its island's resource stands where its
   layout stands its nodes ([[Layouts]], "The sites";
   [[Material Nodes Stand Where They Are Dressed, Worked by Holding E]]), which the bake writes into the node's file
   (`resources`) and the room numbers in that order, as the page does; a third of them hold a node at once, the next
@@ -144,7 +145,8 @@ on Cloudflare.
   its floor, its one spawn at the way in, a body standing there facing into the room, and the patrol's island band
   for its garrison's levels. The Grey Tithe's dungeon garrison stands where the Forge puts foes ([[Enemies]]). Beside
   the Reeve's post stands its cache, shut while the Reeve stands; when he falls it opens, and every player then in the
-  room finds a Vestige lying before it for them alone ([[Gear]]); it shuts when he stands again.
+  room finds a dungeon's clear lying before it for them alone, a Vestige among it at a Miniboss's chance by the tier
+  ([[Gear]]); it shuts when he stands again.
 - **Blows, as each defender saw them:** a player's blow on a foe is judged at once against the foe where the player's
   screen showed it, up to 24 ticks back, but guarding, dodging and staggered as it is now, so a foe's answers count the
   same at any lag; a player's ball (a pistolet's, a thunderlock's) is judged the same way.
@@ -726,10 +728,11 @@ set no swing on: every difference came within 2 s of a blow by or on the player,
   block stood on the course after it opened, as a way closing; and a block it holds taken from it, as a way opening.
   The door keeps its own course for prediction in step with both. The foes' navmesh is not baked again for either. The
   [[Prologue]]'s wreck is played so.
-- A node's room bakes its foes' navmesh over a 70 m square of its land and its layout's boxes in it, never its whole
-  section or its city's boxes; a foe that chases a player off it walks straight. A node's room opens in 0.15 to
-  0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned nodes (tested
-  offline, on an idle machine).
+- A node's room bakes its foes' navmesh over a 70 m square of its land and every box in it, its layout's and its
+  city's where any reach in, never its whole section; a foe that chases a player off it walks straight. A node's room
+  opens in 0.15 to 0.34 s of WebAssembly, garrison and beats and all, 0.17 s at the median over the 90 garrisoned
+  nodes (tested offline, on an idle machine); Saltmere's three zones, baking their public events' grounds too, in
+  0.71 to 1.0 s ([[Public Events]]).
 - A node's room with one player and every group but a Boss's or a Miniboss's walking its beat ticks in 0.02 to 0.12 ms
   of WebAssembly at the median and in 0.65 ms at most at the 99th in a hundred, and its WebAssembly holds about 25 MB,
   the same after an hour open (tested offline).

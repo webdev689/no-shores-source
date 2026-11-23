@@ -189,9 +189,9 @@ The decisions in [[Open Questions]] are not repeated here.
 - **Looks by content, the Playlist and the matchmade dungeons' encounters** (#160), merged with the owner's yes ("Let's merge and deploy and talk about this
   after"), which deploys the page and the rooms. The owner's asks are recorded ([[Armour and Weapon Looks Belong to the Content That Gives Them]],
   [[Elite and Abyss Dungeons Are Queued From a Playlist Beside Each Port]],
-  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]], [[A Playlist's Launch Is Drawn by the
-  Server]], [[The Room Keeps Only Looks of a Piece's Own Content]], [[Faction Blades Wear Their Faction's Colour on
-  Hilt and Trim]]), every call of Claude's in [[The Playlist and Its Dungeons as Claude Shapes Them]].
+  [[Matchmade Dungeons Gain Encounters, Puzzles, Climbs and Raid Mechanics]],
+  [[A Playlist's Launch Is Drawn by the Server]], [[The Room Keeps Only Looks of a Piece's Own Content]],
+  [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]), every call of Claude's in [[The Playlist and Its Dungeons as Claude Shapes Them]].
   - Looks ([[Gear]], "Where it came from" and "Looks"): every item and Vestige keeps its content; each armour set and
     metal is one content's; past the world a piece's set and metal follow its name, so each content's every look is
     seen where it drops; "From" on the card, the page and a Vestige's line, a faction's piece naming its faction; the
