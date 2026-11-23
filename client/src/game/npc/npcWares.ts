@@ -2,7 +2,6 @@
 // headings, as Destiny 1's vendors lay out ARMOR, EMBLEMS and MATERIAL EXCHANGE, and the currencies the keeper deals
 // in. The page (npcScreen.ts) only draws these; a faction's rows are factionRows.ts's.
 import cosmetics from '../../../../content/gear/cosmetics.json' with { type: 'json' };
-import items from '../../../../content/gear/items.json' with { type: 'json' };
 import { cosmeticRamp } from '../../forge/cosmetics.ts';
 import { GAME_PALETTE } from '../appearance/gamePalette.ts';
 import { ASKS, type GearAsk, type GearItem, type GearState } from '../../network/gearMessages.ts';
@@ -253,9 +252,8 @@ function shapeRows(gear: GearState): Row[] {
   const wares = gear.shape.wares.map((item, place) => {
     // Each piece is made at its own level, and the room sells none to a player who could not wear it yet.
     const low = gear.level < item.level;
-    // The piece shown, by its place in the catalogue, so a room whose week drew another there refuses it.
-    const shown = items.items.findIndex((entry) => entry.id === item.named);
-    const ask = low ? null : { kind: ASKS.buyFromShape, node: place, item: shown };
+    // The piece shown, by the number the room sent with it, so a room whose week drew another there refuses it.
+    const ask = low ? null : { kind: ASKS.buyFromShape, node: place, item: item.id };
     const ware = itemWare(`shape-${place}`, item, { amount: item.price, currency: 'shapes' }, shapes < item.price, ask);
     return low ? { ...ware, short: false, note: `From level ${item.level}`, dim: true } : ware;
   });
