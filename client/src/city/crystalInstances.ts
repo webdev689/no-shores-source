@@ -5,11 +5,7 @@ import type { Chunk, Range } from './cityBuild.ts';
 import { MODEL_INSTANCE_BYTES } from './cityGpu.ts';
 import type { CrystalPlace } from './overtaken.ts';
 import type { Wreck } from './plan.ts';
-import { boxReach } from './tiers.ts';
-
-/** How far from the eye a chunk's middle-distance crystal is drawn, metres: past the near cells, to where a heavily
- *  overtaken building's crystal is a few pixels. */
-export const MIDDLE_M = 1200;
+import { boxReach, MIDDLE_M } from './tiers.ts';
 
 /** The tier the city's shaders keep a crystal formation in: never dithered (cityShaders.ts TIER_CRYSTAL). */
 export const TIER_CRYSTAL = 8;
@@ -38,7 +34,8 @@ export function writeInstances(
   places.forEach((place, index) => {
     const slot = (first + index) * stride;
     floats.set([place.at[0] - origin[0], place.at[1] - origin[1], place.at[2], place.yaw], slot);
-    whole[slot + 4] = 0;
+    // a middle-distance formation's shader fades it by its distance (its "cell" marks it so); a great one never
+    whole[slot + 4] = place.reach === 'middle' ? 1 : 0;
     whole[slot + 5] = TIER_CRYSTAL;
     floats[slot + 6] = 0;
     floats[slot + 7] = place.scale;

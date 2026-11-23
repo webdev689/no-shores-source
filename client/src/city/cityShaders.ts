@@ -5,7 +5,7 @@ import { SHADOW_CAST_WGSL, SHADOW_WGSL } from '../shadow.ts';
 import { SHARED_WGSL } from '../water/waterCommon.ts';
 import { CRYSTAL_WGSL } from './crystal.ts';
 import { CLOTH_COLOURS, COLOUR_LAYERS, PICTURE_LAYERS } from './pictures.ts';
-import { FAR_BAND_M, FAR_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
+import { FAR_BAND_M, FAR_M, MIDDLE_BAND_M, MIDDLE_M, NEAR_BAND_M, NEAR_M } from './tiers.ts';
 import { TEXELS_PER_METRE } from '../models/parts.ts';
 import { TILE_M } from './blocks.ts';
 import { PAVED_TILE } from './cityGround.ts';
@@ -103,6 +103,7 @@ fn kept(tier: u32, fades: vec2f, pixel: vec2f) -> bool {
     case TIER_WHOLE: { return threshold >= fades.x; }
     case TIER_MASSES: { return threshold < fades.x && threshold >= fades.y; }
     case TIER_HULLS: { return threshold < fades.y; }
+    case TIER_CRYSTAL: { return threshold >= fades.x; }
     default: { return true; }
   }
 }
@@ -273,6 +274,14 @@ fn turned(point: vec3f, yaw: f32) -> vec3f {
   return vec3f(point.x * cosine + point.z * sine, point.x * sine - point.z * cosine, point.y);
 }
 
+// How far a ruin's middle-distance crystal formation has faded out, by the distance of its foot (its "cell" 1 marks
+// it so; a great one, 0, never fades), over the band short of where it stops being drawn (crystalInstances.ts).
+fn crystal_fade(vertex: Vertex) -> vec2f {
+  let distance = length(vertex.place.xyz - view.eye.xyz);
+  let fade = clamp((distance - ${MIDDLE_M - MIDDLE_BAND_M}.0) / ${MIDDLE_BAND_M}.0, 0.0, 1.0);
+  return vec2f(select(0.0, fade, vertex.about.x == 1u), 0.0);
+}
+
 fn placed(vertex: Vertex) -> vec3f {
   let solid = vertex.about.y == 0u;
   return select(turned(vertex.position * vertex.scale, vertex.place.w), vertex.position, solid) + vertex.place.xyz;
@@ -302,7 +311,8 @@ fn model_vertex(vertex: Vertex) -> Surface {
   surface.uv = vertex.uv;
   surface.layer = vertex.layer;
   surface.tier = vertex.about.y;
-  surface.fades = select(fades_of(vertex.about.x), vec2f(0.0), solid || vertex.about.y == TIER_CRYSTAL);
+  let crystal = vertex.about.y == TIER_CRYSTAL;
+  surface.fades = select(fades_of(vertex.about.x), crystal_fade(vertex), solid || crystal);
   surface.ruin = select(vec2f(0.0), vec2f(vertex.position.y, vertex.cut), vertex.cut > 0.0);
   return surface;
 }

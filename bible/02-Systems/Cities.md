@@ -59,6 +59,7 @@ code:
   - client/src/city/crystalFormations.ts#FORMATIONS
   - client/src/city/crystalInstances.ts#crystalInstances
   - client/src/city/crystalInstances.ts#WreckCrust
+  - client/src/city/tiers.ts#middleFade
   - client/src/city/cityBuild.ts#detailRuns
   - client/src/game/wrecks.ts#withWrecks
 ---
@@ -409,7 +410,8 @@ building's place to the centimetre in the page, the same on every machine.
 - **Near and far.** Each formation is laid by chunk (`crystalInstances.ts`), and a pass draws only the chunks it
   sees (the view's, or a shadow cascade's), each formation's chunks joined into as few draws as run. The great
   formations are drawn at every distance; a heavy building's clusters and mass in the middle distance, the chunks
-  within 1 200 m of the eye (`MIDDLE_M`). A port city draws no crystal pass at all. Everything else the page grows is drawn in the near cells with the forged models, dithered as they
+  within 1 200 m of the eye (`MIDDLE_M`), each formation fading out by its own distance over the 300 m short of
+  that, dithered as the buildings' tiers are (`middleFade`), so none pops. A port city draws no crystal pass at all. Everything else the page grows is drawn in the near cells with the forged models, dithered as they
   are. The rubble's crust is drawn in the chunks within the near tier's reach (`detailRuns`). All of it casts into
   both shadows but the near cells' and the crust, which cast into the near one. A spire's body has no top meshed:
   its tip stands on it.

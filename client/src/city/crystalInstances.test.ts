@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { MODEL_INSTANCE_BYTES } from './cityGpu.ts';
-import { crustMoved, WreckCrust } from './crystalInstances.ts';
+import { crustMoved, WreckCrust, writeInstances } from './crystalInstances.ts';
+import { MIDDLE_BAND_M, MIDDLE_M, middleFade } from './tiers.ts';
 import { wreckCrust } from './overtaken.ts';
 
 const WRECK = { ship: 'schooner', at: [5000, 6000], heading: 1, heel: 0.4 } as const;
@@ -36,4 +37,28 @@ test("a wreck's crust is written where wreckCrustAt sets it out, into bytes kept
     );
     assert.ok(crust.draws.every((draw) => draw.model >= 7));
   }
+});
+
+test("the middle distance's crystal fades out over a band as the masses do, gone by MIDDLE_M, never popping", () => {
+  assert.equal(middleFade(MIDDLE_M - MIDDLE_BAND_M - 1), 0);
+  assert.equal(middleFade(MIDDLE_M), 1);
+  assert.ok(Math.abs(middleFade(MIDDLE_M - MIDDLE_BAND_M / 2) - 0.5) < 1e-9);
+  let last = 0;
+  for (let distance = 0; distance < MIDDLE_M + 100; distance += 10) {
+    assert.ok(middleFade(distance) >= last && middleFade(distance) - last < 0.1, `${distance}`);
+    last = middleFade(distance);
+  }
+  // a middle-distance formation is written for the shader to fade, a great one never
+  const bytes = new ArrayBuffer(2 * MODEL_INSTANCE_BYTES);
+  const place = { formation: 0, at: [1, 2, 3], yaw: 0, scale: 1 };
+  writeInstances(
+    [
+      { ...place, reach: 'middle' },
+      { ...place, reach: 'great' },
+    ],
+    [0, 0],
+    bytes,
+  );
+  const whole = new Uint32Array(bytes);
+  assert.deepEqual([whole[4], whole[MODEL_INSTANCE_BYTES / 4 + 4]], [1, 0]);
 });
