@@ -178,7 +178,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
-  /** What the mount key says with no horse worn in the Mount slot ([[Horses Are Items Worn in a Mount Slot]]). */
+  /** What the mount key says with no horse worn in the Mount slot. */
   const NO_HORSE = 'You have no horse.';
   /** The words that tell why the player is not where they went, or that the mount key found no horse, while they
    *  stand: said by the frame the key was pressed in, ashore or at sea. */
@@ -207,7 +207,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const turned = playing.after.takeTurn();
     // The figure kept still keeps its facing, so it is turned with the view.
     if (turned !== null) walker.player = { ...walker.player, yaw: turned, facing: turned };
-    const heard = told ? IDLE : controls;
+    const heard = playing.after.heard(controls);
     // While she speaks the figures are drawn for the tour's eye (last frame's), not the player's own camera.
     const eye = playing.after.seen?.eye ?? null;
     const own = here.frame(heard, seconds, clock, { paused, looking, hands: handsFree(heard, paused), aspect, eye });
@@ -290,9 +290,9 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     );
     const walking = quests.cards(shown.shot.eye, clock, parts.groundAt);
     const crews = parts.crews.cards(ships, shown.shot, viewport.height, seconds, clock);
-    // While she speaks, none but her stands within reach of the tour's eye.
+    // While she speaks, none but her and the player stands within reach of the tour's eye.
     const near = [...shown.figures, ...nodes, ...walking, ...crews];
-    const cards = [...(eye ? clearOfEye(near, eye) : near), ...met];
+    const cards = [...(eye ? clearOfEye(near, eye, here.ownFigure) : near), ...met];
     if (here.dungeon) parts.dungeons.draw(here, shown, size, clock, fight, hands, more.drain);
     else scene.draw(shown.shot, size, clock, seconds, standing(ships, cards, fight), more);
     showStanding(shown.standing);
@@ -309,7 +309,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
-    if (told) heldHud(hud, footView);
+    heldHud(hud, footView, told);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
@@ -320,6 +320,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     const { flow, helmMap } = playing;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
     const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen() || socialUp();
+    // Her welcome is ashore only: a place left mid-welcome leaves nothing of the HUD set aside at sea.
+    hud.quiet = false;
     chatAtSea(here.waterAt?.(here.position)?.name ?? null);
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;

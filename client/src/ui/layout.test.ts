@@ -128,6 +128,24 @@ test('a float stands on its target by its anchor, over the rest, out of the flow
   assert.equal(laid.at(-1)?.node.id, 'tip', 'drawn last');
 });
 
+test('a float kept on the screen is moved back inside it where it would run off an edge, and left where it fits', () => {
+  const near = (share: readonly [number, number], id: string): Node => ({
+    id: `${id}-holder`,
+    width: 10,
+    height: 10,
+    float: { to: 'screen', at: share, anchor: [0, 0] },
+    children: [{ id, width: 200, height: 300, float: { to: 'parent', at: [1, 1], kept: true } }],
+  });
+  const laid = lay({
+    id: 'root',
+    width: 100,
+    height: 50,
+    children: [near([0.9, 0.8], 'low'), near([0.1, 0.1], 'fits')],
+  });
+  assert.deepEqual(boxOf(laid, 'low'), { x: 600, y: 300, width: 200, height: 300 }, 'pushed up and left into view');
+  assert.deepEqual(boxOf(laid, 'fits'), { x: 90, y: 70, width: 200, height: 300 }, 'where it was put');
+});
+
 test('a scrolled column keeps its children whole, moves them by its scroll, clips them, and says how tall they are', () => {
   const rows = Array.from({ length: 5 }, (_unused, index): Node => ({ id: `row${index}`, width: 10, height: 20 }));
   const laid = lay({ id: 'list', direction: 'column', height: 50, scroll: true, children: rows }, () => 15);

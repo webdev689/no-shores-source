@@ -7,6 +7,10 @@ import { plainDress } from '../player/dressing.ts';
 import { HORSE, MOUNT_SLOT, WORN, coatOfHorse, dismantlable, itemName, slotOf, wearAsks } from '../player/gear.ts';
 import { Walker, mountAsked } from '../player/walker.ts';
 import type { Cards } from '../player/cards.ts';
+import { IDLE } from '../player/input.ts';
+import type { MovementRules } from '../rules/movementRules.ts';
+import { SLOOP_DECK } from '../ships/deck.ts';
+import { Aboard } from './aboard.ts';
 import { appearanceRows, previewDress } from './appearance/appearanceModel.ts';
 import { dressInGear } from './footFigures.ts';
 import { cardOf } from './gearCards.ts';
@@ -157,4 +161,18 @@ test('the Tack shows the Bay Horse first, at the cheapest horse price, from leve
   assert.equal(bay?.name, 'Bay Horse');
   assert.deepEqual(bay?.price, { amount: 1500, currency: 'aurem' });
   assert.deepEqual(bay?.ask, { kind: ASKS.buyCosmetic, item: numberOf('bay') });
+});
+
+test('at sea the horse worn is read from the gear the sea sends, on deck as ashore', () => {
+  const walker = Object.create(Walker.prototype) as Walker;
+  walker.player = { mounted: false } as Walker['player'];
+  walker.rides = false;
+  const horse = item({ kind: HORSE, bucket: MOUNT_SLOT, at: WORN + MOUNT_SLOT });
+  const room = { gearSent: state({ items: [horse] }), onDeck: null, words: 0, walk: () => undefined };
+  const helm = { ...room, leaveHelm: () => undefined, takeHelm: () => undefined };
+  const aboard = new Aboard({ movement: {} as MovementRules, walker, forge: {} as Cards }, SLOOP_DECK);
+  aboard.step(1 / 60, 0, IDLE, false, helm);
+  assert.equal(walker.rides, true, 'a horse worn');
+  aboard.step(1 / 60, 0, IDLE, false, { ...helm, gearSent: state({ items: [] }) });
+  assert.equal(walker.rides, false, 'and none once it is taken off');
 });

@@ -11,7 +11,16 @@ import type { Shot } from '../camera.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { Story } from './story.ts';
 import { ENGULF_AT_S, FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, wispLight, type WispNow } from './wisp.ts';
-import { chaseShot, ringEye, ringLook, moveTo, wispAt, wispCourse, type WispCourse } from './wispCourse.ts';
+import {
+  type Aim,
+  chaseShot,
+  ringEye,
+  ringLook,
+  wayBetween,
+  wispAt,
+  wispCourse,
+  type WispCourse,
+} from './wispCourse.ts';
 import type { WreckLayout } from './wreckLayout.ts';
 
 type Point = readonly [number, number, number];
@@ -29,6 +38,9 @@ const HUM_HZ = [110, 164.8] as const;
 const TREMBLE_HZ = 7;
 const HUM_GAIN = [0.04, 0.16] as const;
 const CRACKLE_S = 0.55;
+/** How far from where its course was laid the player must stand for it to be laid again, metres: the room standing
+ *  them elsewhere, not a drift of a few centimetres while they are held. */
+const RESTOOD_M = 0.3;
 
 /** What the wisp's coming shows this frame: the shot, its marks, the flash over the world, and whether it is over. */
 export interface WispFrame {
@@ -42,8 +54,11 @@ export interface WispFrame {
 export class WispScene {
   private readonly layout: WreckLayout;
   private course: WispCourse;
-  /** Where the ring camera stands for the course, worked out with it; and the shot it goes back to. */
-  private ringsFrom: Point;
+  /** Where the ring camera stands for the course, worked out a frame after it where it can; the camera's ways from following the
+   *  wisp to the rings and from the rings back, each worked out once; and the shot it goes back to. */
+  private ringsFrom: Point | null = null;
+  private leaving: ((share: number) => Aim) | null = null;
+  private easingBack: ((share: number) => Aim) | null = null;
   private backTo: Shot | null = null;
   private readonly facing: number;
   private readonly wind: readonly [number, number];
@@ -71,7 +86,6 @@ export class WispScene {
     // The fires' smoke as it is drawn, leaning in their own wind (not the weather's), which its camera keeps out of.
     this.wind = story.stage.parts.flames.wind;
     this.course = wispCourse(feet, facing, layout, this.wind);
-    this.ringsFrom = ringEye(this.course);
     [this.facing, this.from] = [facing, from];
     const { ambience } = story.stage.parts;
     // Begun partway in, what came before is passed over, the crew's cries with it; but begun past the flash, the
@@ -96,12 +110,14 @@ export class WispScene {
    *  a moment after the wisp begins); `back` is the shot over their shoulder it eases back to at its end. */
   frame(seconds: number, clock: number, back: Shot, feet: Point): WispFrame {
     this.seconds += seconds;
-    // Laid again only should the room stand the player elsewhere: it is worked out once for where they stand.
+    // Laid again only should the room stand the player elsewhere: it is worked out once for where they stand. The ring
+    // camera's place is worked out a frame after its course, so the two fall on one frame only where a course is
+    // laid again once the rings are watched.
     const [x, y, z] = this.course.feet;
-    if (Math.hypot(feet[0] - x, feet[1] - y, feet[2] - z) > 0.05) {
+    if (Math.hypot(feet[0] - x, feet[1] - y, feet[2] - z) > RESTOOD_M) {
       this.course = wispCourse(feet, this.facing, this.layout, this.wind);
-      this.ringsFrom = ringEye(this.course);
-    }
+      [this.ringsFrom, this.leaving, this.easingBack] = [null, null, null];
+    } else this.ringsFrom ??= ringEye(this.course);
     this.cues.step(this.seconds);
     this.flash = Math.max(0, this.flash - seconds * FLASH_FADE);
     const now = wispAt(this.course, this.seconds);
@@ -136,35 +152,39 @@ export class WispScene {
     const aimed = (eye: Point, target: Point): Shot => ({ ...this.from, eye, ...lookAt(eye, target) });
     const into = this.seconds;
     const circleAt = WISP_S.drift + WISP_S.wander;
-    const chase = chaseShot(this.course, Math.min(into, circleAt));
     const ease = (share: number) => {
       const clamped = Math.min(1, Math.max(0, share));
       return clamped * clamped * (3 - 2 * clamped);
     };
     // A cut to it out over the sea: a pan from the player's shoulder would cross 30 m with it a speck off the middle.
-    if (into < circleAt) return aimed(chase.eye, chase.look);
+    if (into < circleAt) {
+      const chase = chaseShot(this.course, into);
+      return aimed(chase.eye, chase.look);
+    }
+    const ringsFrom = (this.ringsFrom ??= ringEye(this.course));
     const end = ENGULF_AT_S + WISP_S.engulf;
-    const look = ringLook(this.course, Math.min(into, end), this.ringsFrom);
-    const rings = { eye: this.ringsFrom, look };
     if (into < circleAt + LEAVE_S) {
       // From following it to watching its rings: eased, rising a little over the wreck between, or a cut, toward the
       // look the rings begin with, so the way is chosen once.
-      const begun = { eye: this.ringsFrom, look: ringLook(this.course, circleAt, this.ringsFrom) };
-      const moved = moveTo(this.course, chase, begun, ease((into - circleAt) / LEAVE_S));
+      const begun = { eye: ringsFrom, look: ringLook(this.course, circleAt, ringsFrom) };
+      this.leaving ??= wayBetween(this.course, chaseShot(this.course, circleAt), begun);
+      const moved = this.leaving(ease((into - circleAt) / LEAVE_S));
       return aimed(moved.eye, moved.look);
     }
-    if (into < end) return aimed(rings.eye, rings.look);
+    const look = ringLook(this.course, Math.min(into, end), ringsFrom);
+    if (into < end) return aimed(ringsFrom, look);
     // Back over the shoulder as the shot stood as it began: the player stands held, so it holds.
     this.backTo ??= back;
     const { eye, yaw, pitch } = this.backTo;
+    const share = ease((into - end) / WISP_S.back);
+    if (share >= 1) return this.backTo;
     const ahead: Point = [
       eye[0] + Math.sin(yaw) * Math.cos(pitch) * 3,
       eye[1] - Math.cos(yaw) * Math.cos(pitch) * 3,
       eye[2] - Math.sin(pitch) * 3,
     ];
-    const share = ease((into - end) / WISP_S.back);
-    if (share >= 1) return this.backTo;
-    const moved = moveTo(this.course, rings, { eye, look: ahead }, share);
+    this.easingBack ??= wayBetween(this.course, { eye: ringsFrom, look }, { eye, look: ahead });
+    const moved = this.easingBack(share);
     return { ...this.backTo, eye: moved.eye, ...lookAt(moved.eye, moved.look) };
   }
 }

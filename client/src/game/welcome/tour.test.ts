@@ -24,7 +24,8 @@ test('the stranger speaks of the world, then names each place in turn, and last 
     TOUR.map((step) => [step.scene, step.kinds]),
     [
       ['strangerHistory', []],
-      ['tourSmiths', ['armorsmith', 'weaponsmith']],
+      ['tourSmiths', ['armorsmith']],
+      ['tourWeaponsmith', ['weaponsmith']],
       ['tourMage', ['mage']],
       ['tourVault', ['vault']],
       ['tourTailor', ['tailor']],
@@ -58,7 +59,7 @@ function framed(step: TourStep, stations: readonly StationInfo[] = PLAZA): Shot 
   const place = { stations, groundAt: ground, blocks: [] };
   if (step.faces) return facesShot(OWN, FACES.stranger, FACES.player, []);
   if (step.kinds.length === 0) return null;
-  return (step.hall ? hallShot : counterShot)(place, step.kinds, OWN);
+  return step.hall ? hallShot(place, step.kinds, OWN) : counterShot(place, step.kinds[0] ?? '', OWN);
 }
 
 /** A welcome over the plaza, each scene it says written down and finished at once, unless `hold` keeps them. */

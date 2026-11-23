@@ -6,7 +6,7 @@ import {
   chasePlaces,
   chaseShot,
   clearBetween,
-  moveTo,
+  wayBetween,
   ringEye,
   ringLook,
   SEEN_SHARE,
@@ -192,7 +192,7 @@ test('the camera eases from following the wisp to watching the rings, never thro
     const to = ringEye(flown);
     const looked = ringLook(flown, circleAt, to);
     for (let share = 0; share <= 1; share += 0.02) {
-      const { eye, look } = moveTo(flown, chase, { eye: to, look: looked }, share);
+      const { eye, look } = wayBetween(flown, chase, { eye: to, look: looked })(share);
       assert.ok(!solidAt(course, eye), `inside the wreck ${share.toFixed(2)} of the way`);
       assert.ok(pitchOf(eye, look) <= Math.PI / 3, `never above 60 degrees down, ${share.toFixed(2)} of the way`);
     }
@@ -276,7 +276,7 @@ test('its camera keeps out of the fires’ smoke, following it, watching its rin
       assert.ok(!flown.smoky(rings), `watching its rings ${where}`);
       const begun = { eye: rings, look: ringLook(flown, circleAt, rings) };
       for (let share = 0; share <= 1; share += 0.05) {
-        const { eye } = moveTo(flown, chaseShot(flown, circleAt), begun, share);
+        const { eye } = wayBetween(flown, chaseShot(flown, circleAt), begun)(share);
         assert.ok(!flown.smoky(eye), `moving to the rings ${share.toFixed(2)} of the way ${where}`);
       }
     }

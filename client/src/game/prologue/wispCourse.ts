@@ -406,13 +406,13 @@ export function ringLook(course: WispCourse, seconds: number, eye: Point): Point
 const RISES_M = [0, 1.5] as const;
 const STEEPEST = Math.PI / 3;
 
-type Aim = { readonly eye: Point; readonly look: Point };
+export type Aim = { readonly eye: Point; readonly look: Point };
 
-/** The camera `share` of its way from the shot `from` to the shot `to` on `course`: its eye straight along, or rising
- *  a little over the wreck between, and its look eased between theirs, never through the wreck or its fires' smoke
- *  nor looking more than 60 degrees down; where neither way is so, a cut at the middle of its time, or at once from
- *  smoke. */
-export function moveTo(course: Pick<WispCourse, 'blocks' | 'smoky'>, from: Aim, to: Aim, share: number): Aim {
+/** The camera's way from the shot `from` to the shot `to` on `course`, worked out once and then read at each `share`
+ *  of it: its eye straight along, or rising a little over the wreck between, and its look eased between theirs, never
+ *  through the wreck or its fires' smoke nor looking more than 60 degrees down; where neither way is so, a cut at the
+ *  middle of its time, or at once from smoke. */
+export function wayBetween(course: Pick<WispCourse, 'blocks' | 'smoky'>, from: Aim, to: Aim): (share: number) => Aim {
   const { blocks, smoky } = course;
   const along = (rise: number, part: number): Aim => {
     const [x, y, z] = mix(from.eye, to.eye, part);
@@ -427,6 +427,6 @@ export function moveTo(course: Pick<WispCourse, 'blocks' | 'smoky'>, from: Aim, 
     );
   const rise = RISES_M.find(fits);
   // Begun in smoke with no clear way out, it cuts at once rather than holding there half its time.
-  if (rise === undefined) return share < 0.5 && !smoky(from.eye) ? from : to;
-  return along(rise, share);
+  if (rise === undefined) return (share) => (share < 0.5 && !smoky(from.eye) ? from : to);
+  return (share) => along(rise, share);
 }

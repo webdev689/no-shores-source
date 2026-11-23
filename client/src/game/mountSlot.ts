@@ -1,6 +1,6 @@
-// The Mount slot's own part of its flyout on the Character page ([[Horses Are Items Worn in a Mount Slot]]): beneath
-// the horses it carries, every barding, worn over the horse with a click when kept, each tile the horse worn in it
-// (the bay's hide with none worn), as the Appearance screen draws its pieces.
+// The Mount slot's own part of its flyout on the Character page: beside the horses it carries, every barding, worn
+// over the horse with a click when kept, each tile the horse worn in it (the bay's hide with none worn), as the
+// Appearance screen draws its pieces.
 
 import type { Node } from '../ui/node.ts';
 import { tileOf } from './appearance/appearancePage.ts';

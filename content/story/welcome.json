@@ -6,9 +6,9 @@
     ],
     "tourSmiths": [
       { "who": "armorsmith", "say": "Steel that fits, for whoever walks in." },
-      { "who": "stranger", "say": "The smiths. You came ashore with nothing, so start with them." },
-      { "who": "weaponsmith", "say": "Plain pieces cost little here. Better ones come and go." }
+      { "who": "stranger", "say": "The smiths. You came ashore with nothing, so start with them." }
     ],
+    "tourWeaponsmith": [{ "who": "weaponsmith", "say": "Plain pieces cost little here. Better ones come and go." }],
     "tourMage": [
       { "who": "stranger", "say": "The Mage reads what the sea gives up." },
       { "who": "mage", "say": "Bring me what you find. Most of it is worth knowing." }

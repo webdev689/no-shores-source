@@ -433,15 +433,17 @@ export class Walker {
     return { attackHeld: false, attackPressed: fight.loosed, attackReleased: false, aimHeld: fight.aiming };
   }
 
-  /** The player's own figure as an eye at (eyeX, eyeY) sees it, or null in first person or before its first frame is
-   *  composed. Its card stands a body's radius toward the eye. */
+  /** The player's own figure as an eye at (eyeX, eyeY) sees it, or null before its first frame is composed, and in
+   *  first person unless `watched` (a cutscene's camera sees them whatever their own view). Its card stands a body's
+   *  radius toward the eye. */
   figure(
     eyeX: number,
     eyeY: number,
     flash?: CardAt['flash'],
     shift: readonly [number, number, number] = [0, 0, 0],
+    watched = false,
   ): CardAt | null {
-    if (this.inFirstPerson) return null;
+    if (this.inFirstPerson && !watched) return null;
     const { you, player } = this;
     const body = shownBody(player);
     const [x, y, z] = [body.x + shift[0], body.y + shift[1], body.z + shift[2]];

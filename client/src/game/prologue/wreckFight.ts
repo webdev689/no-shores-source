@@ -36,6 +36,7 @@ import { WispScene } from './wispScene.ts';
 import { topAt, type WreckLayout } from './wreckLayout.ts';
 import type { WreckRun } from './wreckRun.ts';
 import { fireLamps, setAblaze, type WreckScenery } from './wreckScenery.ts';
+import { FIRST_PERSON } from '../../player/playerCamera.ts';
 
 /** Captain Brannoc Thule's type in the roster, and his faction's. */
 const THULE = 12;
@@ -259,6 +260,8 @@ export class WreckFight implements Beat {
       this.devBegun = true;
       const { body, facing } = this.story.walker.player;
       beginAt(this.devStart, run, this.layout, { x: body.x, y: body.y, facing });
+      const { player } = this.story.walker;
+      if (this.devStart.firstPerson) this.story.walker.player = { ...player, view: FIRST_PERSON };
     }
     this.arming?.step(run);
     const { story } = this;
@@ -286,13 +289,15 @@ export class WreckFight implements Beat {
     const aspect = tick.size.width / Math.max(1, tick.size.height);
     // Over the menu the player's presses rest, though the room runs on, so what they equip is worn at once.
     const paused = held || gearScreenOpen();
+    // A cutscene with its own eye (Thule's coming, the wisp) has every figure and mark measured from it.
+    const watched = coming ? this.comingShot() : (wisp?.shot ?? null);
     const shown = run.frame(tick.controls, tick.seconds, this.playClock, {
       paused,
       hands: handsFree(tick.controls, paused) && !held,
       aspect,
       held,
       frozen,
-      ...(wisp && { cutscene: { eye: wisp.shot.eye, marks: wisp.marks } }),
+      ...(watched && { cutscene: { eye: watched.eye, marks: wisp?.marks ?? [] } }),
     });
     if (run.arena && !this.fought && !coming) this.bossComes(shown.shot);
     const [thuleX, thuleY] = this.layout.arena.thule;
@@ -301,8 +306,7 @@ export class WreckFight implements Beat {
     this.fallen(shown.fight.own?.action.kind === 'dead');
     this.end(tick.seconds, !!run.outcome);
     const { footView, hud, scene } = stage.parts;
-    // A cutscene's marks are measured from its own eye, so they are drawn from it.
-    const fight = footView.frame(run, wisp ? { ...shown, shot: wisp.shot } : shown, seconds, {
+    const fight = footView.frame(run, watched ? { ...shown, shot: watched } : shown, seconds, {
       size: tick.size,
       viewport: tick.viewport,
       groundAt: (x, y) => scene.groundAt(x, y),
@@ -325,7 +329,7 @@ export class WreckFight implements Beat {
         ? (encoder: GPUCommandEncoder, view: GPUTextureView, over: Overlay) => firstPerson.draw(encoder, view, over)
         : undefined;
     const heads = new Map([...run.heads(), ...(thule ? [['thule', [thule.x, thule.y, thule.z + 2.2]] as const] : [])]);
-    const shot = coming ? this.comingShot() : (wisp?.shot ?? shown.shot);
+    const shot = watched ?? shown.shot;
     const thuleHead = heads.get('thule');
     this.barks(
       shown.fight.own?.health ?? 0,

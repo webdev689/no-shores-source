@@ -1,5 +1,5 @@
 // Where the camera stands for each place the stranger names (`tour.ts`). A counter's eye is the first of a set of
-// candidates round it, out before it first, whose lines to each keeper's head and each stall's front clear the node's
+// candidates round it, out before it first, whose lines to its keeper's head and its stall's front clear the node's
 // solids (the blocks the camera's boom keeps clear of) with both in the view. The Hall of the Arts is an interior, so
 // it is seen from inside, up under its roof by its door, down the nave to the three chapels, turning to each house's
 // as she names it. Her farewell is seen from the side, both faces in the view.
@@ -23,15 +23,11 @@ export const HEAD_M = 1.7;
 const FRONT_M = 1;
 /** How near a line may pass a solid, metres. */
 const CLEAR_M = 0.05;
-/** The eye's distances out from a counter, its turns off the counter's facing (degrees) and its heights, tried in turn:
- *  a group's spread adds to the distance and the height, so every counter of it stays in the view. */
+/** The eye's distances out from a counter, its turns off the counter's facing (degrees) and its heights, tried in turn;
+ *  a keeper's height first: a stall's awning, drawn but no solid, hides its keeper from above. */
 const BACKS_M = [11, 8, 14, 5.5];
 const TURNS = [0, 20, -20, 40, -40, 60, -60, 80, -80];
-const UPS_M = [7, 4.5, 10, 3];
-/** A single counter's heights, a keeper's first: a stall's awning, drawn but no solid, hides its keeper from above. */
-const ONE_UPS_M = [2.6, 4.5, 7, 10];
-const SPREAD_BACK = 1.3;
-const SPREAD_HEIGHT = 0.35;
+const UPS_M = [2.6, 4.5, 7, 10];
 /** The height over the ground a counter's eye looks at: over a keeper's head, so their stall's roof is in the view. */
 const LOOK_M = 2.5;
 /** The Hall's eye: how far in from its door (a share of the way past the chapels' middle to it) and how high over its
@@ -110,47 +106,33 @@ function nearest(stations: readonly StationInfo[], kind: string | undefined, [x,
   return stations.filter((station) => station.kind === kind).sort((one, two) => away(one) - away(two))[0];
 }
 
-/** The shot of the counters of `kinds`, the first the one of its kind nearest the player's view (`own`), each other
- *  the one of its kind nearest that, looking at their middle from the first candidate that sees each keeper and each
- *  stall's front. Null where one of the kinds keeps no counter here. */
-export function counterShot(place: Place, kinds: readonly string[], own: Shot): Shot | null {
-  const first = nearest(place.stations, kinds[0], own.eye);
-  const named = kinds.map((kind) => first && nearest(place.stations, kind, first.counter));
-  if (named.length === 0 || named.some((station) => !station)) return null;
-  const found = named as StationInfo[];
-  const mean = (value: (station: StationInfo) => number) =>
-    found.reduce((sum, each) => sum + value(each), 0) / found.length;
-  const [x, y] = [mean((each) => each.counter[0]), mean((each) => each.counter[1])];
+/** The shot of the counter of `kind` nearest the player's view (`own`), looking at it from the first candidate that sees
+ *  its keeper and its stall's front. Null where no counter of the kind stands here. */
+export function counterShot(place: Place, kind: string, own: Shot): Shot | null {
+  const station = nearest(place.stations, kind, own.eye);
+  if (!station) return null;
+  const [x, y] = station.counter;
   const ground = place.groundAt(x, y) ?? own.eye[2];
   // A counter faces the plaza from its keeper: the eye stands out that way, turned from it where it must.
-  const facing = Math.atan2(
-    mean((each) => each.counter[1] - each.keeper[1]),
-    mean((each) => each.counter[0] - each.keeper[0]),
-  );
-  const spread = Math.max(...found.map((each) => Math.hypot(each.counter[0] - x, each.counter[1] - y)));
+  const facing = Math.atan2(y - station.keeper[1], x - station.keeper[0]);
   const target: Point3 = [x, y, ground + LOOK_M];
   const shots = BACKS_M.flatMap((back) =>
     TURNS.flatMap((turn) =>
-      (found.length > 1 ? UPS_M : ONE_UPS_M).map((up) => {
+      UPS_M.map((up) => {
         const bearing = facing + (turn * Math.PI) / 180;
-        const out = back + spread * SPREAD_BACK;
-        const eye: Point3 = [
-          x + Math.cos(bearing) * out,
-          y + Math.sin(bearing) * out,
-          ground + up + spread * SPREAD_HEIGHT,
-        ];
+        const eye: Point3 = [x + Math.cos(bearing) * back, y + Math.sin(bearing) * back, ground + up];
         return looking(own, eye, target);
       }),
     ),
   );
-  const floor = (station: StationInfo) => place.groundAt(...station.keeper) ?? ground;
-  const heads = found.map((station): Point3 => [...station.keeper, floor(station) + HEAD_M]);
-  const fronts = found.map((station): Point3 => [...station.counter, floor(station) + FRONT_M]);
+  const floor = place.groundAt(...station.keeper) ?? ground;
+  const head: Point3 = [...station.keeper, floor + HEAD_M];
+  const front: Point3 = [...station.counter, floor + FRONT_M];
   // A keeper behind a house's front wall (the Vault's: its window is drawn, the wall solid whole) is framed by the
   // counter before it, seen clear, the keeper in the view where the window shows them.
   return (
-    firstSeeing(shots, [...heads, ...fronts], place.blocks) ??
-    shots.find((shot) => sees(shot, fronts, place.blocks) && heads.every((head) => inView(shot, head))) ??
+    firstSeeing(shots, [head, front], place.blocks) ??
+    shots.find((shot) => sees(shot, [front], place.blocks) && inView(shot, head)) ??
     null
   );
 }

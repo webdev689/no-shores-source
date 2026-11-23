@@ -13,7 +13,7 @@ import { setGearScreenOpen } from '../gearScreen.ts';
 import { rosterOf } from '../../rules/roster.ts';
 import { figureOf } from '../../player/dressing.ts';
 import type { Actor } from './actors.ts';
-import { armouredDress, FIRST_LOOK } from './look.ts';
+import { armouredDress, FIRST_LOOK, plainDressOf, unarmed } from './look.ts';
 import { onScreen, type Shot } from '../camera.ts';
 import { Deep } from './deep.ts';
 import { YOU_ID } from './helm.ts';
@@ -176,6 +176,18 @@ test('the throw overboard and the wake cut short say and sound nothing more', ()
   calls.length = 0;
   wake.skip();
   assert.ok(!calls.some((call) => call.includes('thud')), calls.join(' '));
+});
+
+test('the sea takes what the player wore: in the deep they sink in plain clothes, unarmed', () => {
+  const { story } = recorded({}, { look: FIRST_LOOK }, armouredDress(FIRST_LOOK));
+  const beat = new Deep(story, layout, scenery);
+  const dresses = [];
+  for (let since = 0; since < 8; since += 0.5) {
+    const you = beat.frame(tick(0.5)).actors?.find((actor) => actor.id === YOU_ID);
+    if (you) dresses.push(you.dress);
+  }
+  assert.ok(dresses.length > 0, 'the player is seen sinking');
+  for (const dress of dresses) assert.deepEqual(dress, unarmed(plainDressOf(FIRST_LOOK)));
 });
 
 test('the deep cut short says nothing more and flashes no more', () => {
@@ -368,6 +380,24 @@ test('the player felled by Thule is never told they will rise: the boss fight en
   assert.ok(!calls.some((call) => call.includes('Fallen')), 'no death words over the fade');
 });
 
+test("Thule's coming is watched from its own eye: the figures are placed for it, not the player's", async () => {
+  const { story } = recorded(FOOT_VIEW);
+  const run = stillRun({ dead: false }, true);
+  const asked: { eye: readonly number[] }[] = [];
+  const played = run.frame.bind(run);
+  run.frame = (controls, elapsed, clock, ask) => {
+    if (ask.cutscene) asked.push(ask.cutscene);
+    return played(controls, elapsed, clock, ask);
+  };
+  const fight = new WreckFight(story, layout, scenery, Promise.resolve(run), {
+    show: () => undefined,
+  } as unknown as Nameplate);
+  await Promise.resolve();
+  for (let since = 0; since < 1; since += 0.05) fight.frame(tick(0.05));
+  assert.ok(asked.length > 0, 'the push in holds the camera');
+  assert.notDeepEqual(asked.at(-1)?.eye, [0, 0, 5], 'from its eye, pushed in toward him');
+});
+
 test('the crew celebrating the throw overboard stand clear of what stands on its deck', () => {
   const { story } = recorded();
   const course = courseOf(layout);
@@ -456,7 +486,8 @@ test('every figure the wake, the throw overboard and the deep stand is drawn clo
     await readFile(new URL('../../../../target/wasm32-unknown-unknown/release/room_wasm.wasm', import.meta.url)),
   );
   const roster = rosterOf(compiled);
-  const { story } = recorded(FOOT_VIEW, { 'stage.parts.roster': roster }, armouredDress(FIRST_LOOK));
+  const parts = { 'stage.parts.roster': roster, look: FIRST_LOOK };
+  const { story } = recorded(FOOT_VIEW, parts, armouredDress(FIRST_LOOK));
   const actors: Actor[] = [];
   const wake = new Wake(story, layout, scenery, new Promise<WreckRun>(() => undefined));
   for (let since = 0; since < 24; since += 0.5) actors.push(...(wake.frame(tick(0.5)).actors ?? []));

@@ -22,7 +22,8 @@ export interface TourStep {
 const HOUSES = ['stormcallers', 'veiled', 'lamplighters'];
 export const TOUR: readonly TourStep[] = [
   { scene: 'strangerHistory', kinds: [], faces: true },
-  { scene: 'tourSmiths', kinds: ['armorsmith', 'weaponsmith'] },
+  { scene: 'tourSmiths', kinds: ['armorsmith'] },
+  { scene: 'tourWeaponsmith', kinds: ['weaponsmith'] },
   { scene: 'tourMage', kinds: ['mage'] },
   { scene: 'tourVault', kinds: ['vault'] },
   { scene: 'tourTailor', kinds: ['tailor'] },
@@ -117,7 +118,9 @@ export class StrangerWelcome {
       ? facesShot(own, pair.stranger, pair.player, this.place.blocks)
       : kinds.length === 0
         ? null
-        : (hall ? hallShot : counterShot)(this.place, kinds, own);
+        : hall
+          ? hallShot(this.place, kinds, own)
+          : counterShot(this.place, kinds[0] ?? '', own);
     if (kinds.length > 0 && !to) return;
     if (to === null && this.to === null) return;
     [this.from, this.to, this.flown] = [this.last, to, 0];
