@@ -27,6 +27,10 @@ function joinedPort(): void {
   });
 }
 const settled = () => new Promise((done) => setTimeout(done, 5));
+/** Until `done` holds, or a second has passed: a thread's words arrive tasks later, later still on a busy machine. */
+async function until(done: () => boolean): Promise<void> {
+  for (let waited = 0; !done() && waited < 1000; waited += 5) await settled();
+}
 
 test('a sea in the rooms’ worker sends the same snapshots as the same sea in the page', async (context) => {
   context.mock.method(Date, 'now', () => Date.UTC(2026, 10, 21, 12, 0, 0));
@@ -57,6 +61,7 @@ test('a sea in the rooms’ worker sends the same snapshots as the same sea in t
     worker.pump(0.05);
     await settled();
   }
+  await until(() => there.length >= here.length && gearedThere.length >= geared.length);
   assert.ok(here.length > 0, 'the sea ticked');
   assert.deepEqual(there, here, 'tick for tick');
   assert.deepEqual(gearedThere, geared, 'and each word on the gear, if it says any');
@@ -129,7 +134,9 @@ test('a room that fails in the worker is lost, why said, and what it was asked i
   const asked = node.isleWord(1);
   // Bytes no input can be read from: the room's door throws on them in the worker.
   node.send(undefined as unknown as Uint8Array<ArrayBuffer>);
-  await settled();
+  // The worker's word comes back by message, later under a full check's load than one wait: wait for it, two seconds
+  // at most.
+  for (let waited = 0; !node.lost && waited < 400; waited++) await settled();
   assert.ok(node.lost, 'the room is lost');
   assert.equal(await asked, '');
   assert.equal(await node.isleWord(1), '', 'and asked again, answers none');

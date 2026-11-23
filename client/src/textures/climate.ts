@@ -1,7 +1,7 @@
 // Daggerfall files a texture set once per climate and season: a set's archive is its climate's base plus the set,
 // plus 1 for winter or 2 for rain where the set has them. This moves an archive to a climate and season, as
-// Daggerfall Unity's ClimateSwaps.ApplyClimate does. Overlook files its own sets the same way 1000 further on, past
-// every archive Daggerfall has: Daggerfall's 121 and 321 are arches, so Overlook's set 21 cannot take their numbers.
+// Daggerfall Unity's ClimateSwaps.ApplyClimate does. The game files its own sets the same way 1000 further on, past
+// every archive Daggerfall has: Daggerfall's 121 and 321 are arches, so the game's set 21 cannot take their numbers.
 
 export type Climate = 'desert' | 'mountain' | 'temperate' | 'swamp';
 export type Season = 'summer' | 'winter' | 'rain';

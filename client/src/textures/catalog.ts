@@ -1,4 +1,4 @@
-// Every texture archive's records, each its size and frame count, as Daggerfall files them, and from 1000 Overlook's
+// Every texture archive's records, each its size and frame count, as Daggerfall files them, and from 1000 the game's
 // own: `WxH` a record, `fN` its frames when more than one, `*N` for N alike in a row. A painted picture keeps its
 // record's size, so every model's mapping holds.
 

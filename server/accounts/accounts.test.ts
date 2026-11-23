@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { addressKey } from './accounts.ts';
+import { addressKey, guestKey } from './accounts.ts';
 import { HOLD_MS, characters } from './characters.ts';
 import { SESSION_IDLE_MS } from './database.ts';
 import { backTo } from './discord.ts';
@@ -90,7 +90,7 @@ test('one room at a time holds a character; a claim waits for another to let go,
 
   // A second room waits three seconds for the first to let go, then takes the character anyway.
   const second = await kept.claim(token, 'room-b:1');
-  assert.deepEqual(second, { account: first.account, body: '{"xp":5}', from: 'room-a' });
+  assert.deepEqual(second, { account: first.account, body: '{"xp":5}', from: 'room-a', name: null });
   assert.equal(
     waited.reduce((sum, millis) => sum + millis, 0),
     3000,
@@ -101,12 +101,22 @@ test('one room at a time holds a character; a claim waits for another to let go,
   // Let go with a last save, the next claim takes it at once.
   assert.equal(await kept.release(first.account, 'room-b:1', '{"xp":9}'), true);
   waited.length = 0;
-  assert.deepEqual(await kept.claim(token, 'room-a:2'), { account: first.account, body: '{"xp":9}', from: 'room-b' });
+  assert.deepEqual(await kept.claim(token, 'room-a:2'), {
+    account: first.account,
+    body: '{"xp":9}',
+    from: 'room-b',
+    name: null,
+  });
   assert.deepEqual(waited, []);
 
   // A hold its room stopped saving lapses.
   clock.now += HOLD_MS + 1;
-  assert.deepEqual(await kept.claim(token, 'room-c:1'), { account: first.account, body: '{"xp":9}', from: 'room-a' });
+  assert.deepEqual(await kept.claim(token, 'room-c:1'), {
+    account: first.account,
+    body: '{"xp":9}',
+    from: 'room-a',
+    name: null,
+  });
   assert.deepEqual(waited, []);
 
   // Let go untouched (its gate shut), it was never in that room: the next claim comes from the room before.
@@ -161,22 +171,22 @@ test('guesses at one username from many addresses meet a ceiling, but one addres
 });
 
 test('a Discord sign-in comes back only to a page under a listed one, by origin and path', () => {
-  const pages = ['https://lattymoy.github.io/overlook-source/'];
+  const pages = ['https://lattymoy.github.io/no-shores-source/'];
   assert.equal(
-    backTo('https://lattymoy.github.io/overlook-source/?room=live#x', pages),
-    'https://lattymoy.github.io/overlook-source/?room=live',
+    backTo('https://lattymoy.github.io/no-shores-source/?room=live#x', pages),
+    'https://lattymoy.github.io/no-shores-source/?room=live',
   );
   assert.equal(
-    backTo('https://lattymoy.github.io/overlook-source', pages),
-    'https://lattymoy.github.io/overlook-source',
+    backTo('https://lattymoy.github.io/no-shores-source', pages),
+    'https://lattymoy.github.io/no-shores-source',
   );
   assert.equal(backTo('https://lattymoy.github.io/daggerfall-js-source/', pages), null, "another project's page");
-  assert.equal(backTo('https://lattymoy.github.io/overlook-sourced/', pages), null);
-  assert.equal(backTo('https://evil.example/overlook-source/', pages), null);
+  assert.equal(backTo('https://lattymoy.github.io/no-shores-sourced/', pages), null);
+  assert.equal(backTo('https://evil.example/no-shores-source/', pages), null);
   assert.equal(backTo('javascript:alert(1)', pages), null);
 });
 
-test('a session with a way back in lapses after 30 days unseen; a guest is never lost; all may be signed out', async () => {
+test('a session with a way back in lapses after 30 days unseen; a guest in use never lapses; all may be signed out', async () => {
   const { deps, clock, ask } = accounts();
   const kept = characters(deps.database, deps.now, () => Promise.resolve());
   const guest = (await ask('POST', '/v1/guest')).body['token'] as string;
@@ -255,4 +265,57 @@ test('a write that fails is answered as JSON with the usual headers: 409 when an
   assert.deepEqual([failed.status, failed.body], [500, { error: 'Something went wrong. Try again.' }]);
   assert.equal(failed.response.headers.get('Access-Control-Allow-Origin'), '*');
   assert.equal(logged.mock.callCount(), 2, 'each is logged');
+});
+
+test('new guests are 10 an hour from one address and 500 an hour from everywhere at once', async () => {
+  const { clock, ask } = accounts();
+  const from = (address: string) => ask('POST', '/v1/guest', undefined, undefined, { 'CF-Connecting-IP': address });
+  for (let network = 0; network < 50; network += 1) {
+    for (let each = 0; each < 10; each += 1) assert.equal((await from(`198.51.100.${network}`)).status, 200);
+  }
+  assert.equal((await from('198.51.100.0')).status, 429, "one address's ten");
+  const everywhere = await from('192.0.2.7');
+  assert.deepEqual([everywhere.status, everywhere.body['error']], [429, 'Too many new guests.'], 'the 501st anywhere');
+  clock.now += 60 * 60_000;
+  assert.equal((await from('192.0.2.7')).status, 200, 'the next hour');
+});
+
+test('a guest unused for 30 days is deleted with its character as the next guest is made; one in use is kept', async () => {
+  const { deps, clock, ask } = accounts();
+  const kept = characters(deps.database, deps.now, () => Promise.resolve());
+  const guest = async () => (await ask('POST', '/v1/guest')).body['token'] as string;
+  const away = await guest();
+  const claimed = await kept.claim(away, 'room-a:1');
+  assert.ok(claimed);
+  assert.equal(await kept.save(claimed.account, 'room-a:1', '{"xp":5}'), true);
+  assert.equal(await kept.release(claimed.account, 'room-a:1', '{"xp":5}'), true);
+  const gone = await guest();
+  await ask('POST', '/v1/logout', undefined, gone);
+  const playing = await guest();
+  const named = await guest();
+  await ask('POST', '/v1/register', { username: 'Mariner', password: 'long enough' }, named);
+  const rows = async (table: string) =>
+    (await deps.database.prepare(`SELECT COUNT(*) AS n FROM ${table}`).first<{ n: number }>())?.n;
+
+  clock.now += SESSION_IDLE_MS - 60_000;
+  assert.equal((await ask('GET', '/v1/me', undefined, playing)).status, 200);
+  clock.now += 60_000 + 1;
+  await guest();
+  assert.equal((await ask('GET', '/v1/me', undefined, away)).body['error'], 'Not signed in.', '30 days away');
+  assert.equal(await rows('characters'), 0, 'its character with it');
+  assert.equal((await ask('GET', '/v1/me', undefined, playing)).status, 200, 'seen within the month');
+  assert.equal(await rows('accounts'), 3, 'the one in use, the named and the new: the signed-out guest went too');
+  assert.equal((await ask('POST', '/v1/login', { username: 'Mariner', password: 'long enough' })).status, 200);
+});
+
+test("new guests from IPv6 are counted by the /48, so one tunnel's many networks make ten an hour, not ten each", async () => {
+  const { ask } = accounts();
+  const from = (address: string) => ask('POST', '/v1/guest', undefined, undefined, { 'CF-Connecting-IP': address });
+  for (let network = 0; network < 10; network += 1) {
+    assert.equal((await from(`2001:db8:4c::${network.toString(16)}:0:0:1`)).status, 200, `the /64 ${network}`);
+  }
+  assert.equal((await from('2001:db8:4c:ff::1')).status, 429, 'another /64 of the same /48');
+  assert.equal((await from('2001:db8:4d::1')).status, 200, 'another /48');
+  assert.equal(guestKey('2001:db8:4c:ff::1'), '2001:db8:4c::/48');
+  assert.equal(guestKey('203.0.113.9'), '203.0.113.9', 'an IPv4 address whole');
 });

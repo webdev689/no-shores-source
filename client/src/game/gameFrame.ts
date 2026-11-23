@@ -45,14 +45,18 @@ import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
 import type { AfterStory } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
+import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
 import { FIRST_NODE } from './gameBoot.ts';
+import { TOLD_MS } from './tripBack.ts';
 import { type GateWay, gateWay } from './gates.ts';
 import { mooredShips } from './moorings.ts';
 import type { ShipPeople } from './shipPeople.ts';
 import { nodeCardsAt } from './nodeCards.ts';
 import { keeperLit } from './overheadMarks.ts';
 import { HULLS } from '../water/hullMask.ts';
+import { chatAtSea, chatOpen, holdOnPlayer, platedPlayers, socialUp } from './social/social.ts';
+import { uiScale } from '../ui/uiRenderer.ts';
 
 /** The region every island lies in. */
 const REGION = 'The Pale Expanse';
@@ -72,6 +76,8 @@ export interface Playing {
   readonly after: AfterStory;
   /** The houses' roads, shown once the story and the welcome are past. */
   readonly quests: Quests;
+  /** The lore found, toasted as each chapter is. */
+  readonly lore: Lore;
   /** The way through the gate the player stands in, if any. */
   through: GateWay | null;
   seaWord: SeaWord | null;
@@ -79,6 +85,8 @@ export interface Playing {
   drawers: LandDrawers;
   ready: boolean;
   waited: number;
+  /** Why the player is not where their last trip went, shown until `until` (ms, `performance.now`). */
+  told: { readonly words: string; readonly until: number } | null;
   shipScale: number;
 }
 
@@ -170,11 +178,15 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     if (dead && !wasDead) document.exitPointerLock();
     drain.toward(dead);
   };
+  /** The words that tell why the player is not where they went, while they stand. */
+  const toldNow = () => (playing.told && performance.now() < playing.told.until ? [playing.told.words] : []);
 
   const footFrame = (here: Foot, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     if (parts.heed(here)) return true;
     const { flow, helmMap } = playing;
-    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen();
+    const paused = flow.mode !== 'foot' || flow.menu || gearScreenOpen() || socialUp();
+    // Others see three dots over a player in a menu, not over one still behind the loading veil.
+    here.fight.menuOpen = (flow.mode === 'foot' && flow.menu) || gearScreenOpen() || socialUp();
     const aspect = size.width / Math.max(1, size.height);
     // The land's held map is raised from the player's own eyes, and the view goes back as it was once it is lowered.
     const looking = helmMap.looking;
@@ -215,12 +227,19 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     parts.isleFrame();
     const { quests } = playing;
     quests.hear(here.gear?.gear);
+    playing.lore.hear(here.gear?.gear);
     quests.frame(seconds, playing.after.past, paused);
     // The roads' next goal on the compass, and the ward a step defends among the plates, as a companion's.
     const ward = quests.wardPlate(parts.groundAt);
     const foes = ward ? [...shown.fight.foes, ward] : shown.fight.foes;
-    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt } };
+    const players = platedPlayers(here.otherPlayers, [body.x, body.y, body.z]);
+    const questShown = { ...shown, fight: { ...shown.fight, foes, questAt: quests.goalAt, players } };
     const fight = footView.frame(here, questShown, seconds, { size, viewport, groundAt: here.groundAt });
+    // Use held on another player opens their menu, where it does nothing else (a deed or a gate) and no menu or map is up.
+    const offered = !paused && !looking && !here.fallen && !hud.usePrompt.showing && !playing.through;
+    holdOnPlayer(footView.playerPlates, offered, controls.held('use'), clock, {
+      width: size.width / uiScale(devicePixelRatio),
+    });
     // The fight's crosshair, plates and compass give way to the map while it is up.
     if (looking) footView.hideDisplay();
     const water = parts.waterHere();
@@ -271,7 +290,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     hud.marks(looking ? [] : quests.marks(shown.shot, viewport, [body.x, body.y], parts.groundAt, here.node.id));
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
-    hud.toast(...quests.toasts);
+    hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.
@@ -281,7 +300,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
   const seaFrame = (here: Sea, controls: InputFrame, seconds: number, size: { width: number; height: number }) => {
     const { flow, helmMap } = playing;
     const viewport = { width: canvas.clientWidth, height: canvas.clientHeight };
-    const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen();
+    const paused = flow.mode !== 'sea' || flow.menu || gearScreenOpen() || socialUp();
+    chatAtSea(here.waterAt?.(here.position)?.name ?? null);
     // The sea by weather round the ship, reaching as far as the view last looked; the land's swell until it opens.
     const swell = parts.seaWeather()?.follow(here.position, parts.seaView.reachM, seconds) ?? scene.land?.swell;
     parts.eventProps.set([]);
@@ -307,7 +327,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     });
     playing.shipScale = shown.shipScale;
     playing.quests.frame(seconds, playing.after.past, paused);
-    hud.toast(...playing.quests.toasts);
+    playing.lore.hear(playing.sea?.gear?.gear);
+    hud.toast(...toldNow(), ...playing.quests.toasts, ...playing.lore.toasts);
     const herDeck = here.boarding.drawn(footView, seconds, { size, viewport });
     for (const stir of shown.stirs) scene.stir(stir);
     parts.music.atSea(here, seconds);
@@ -405,10 +426,18 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     clock += seconds;
     drain.step(seconds);
     const menuUp = 'menu' in playing.flow && Boolean(playing.flow.menu);
-    const windowUp = menuUp || gearTakesKeys() || creationOpen();
+    const windowUp = menuUp || gearTakesKeys() || creationOpen() || socialUp();
+    // The open chat's field has the keys as a window's would, and the pad plays nothing of the game's under it.
+    const covered = menuUp || socialUp() || chatOpen();
     // The sheet takes the keys and the pad but while it waits for one to bind.
     const tookWheel = ui.hear(seconds, !input.locked, windowUp || hud.controls.takesKeys);
-    const top = hud.controls.open ? 'sheet' : gearTakesKeys() ? 'gear' : creationOpen() ? 'creation' : menuUp && 'menu';
+    const top = hud.controls.open
+      ? 'sheet'
+      : gearTakesKeys()
+        ? 'gear'
+        : creationOpen()
+          ? 'creation'
+          : covered && 'menu';
     input.window(top || null);
     input.context = playing.flow.mode === 'story' && parts.story ? parts.story.context : contextOf(playing);
     const heard = input.frame();
@@ -431,6 +460,8 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
       if (settled || playing.waited > GROUND_WAIT_S) {
         playing.flow = next(playing.flow, { kind: 'loaded' });
         hud.veil(null);
+        // Why the player is not where they went stays its whole time once the veil has lifted.
+        if (playing.told) playing.told = { ...playing.told, until: performance.now() + TOLD_MS };
         // The player arrives on foot as the veil lifts, so their arrival is seen.
         if (playing.flow.mode === 'foot') playing.foot?.arrive(clock);
         parts.syncMenu();

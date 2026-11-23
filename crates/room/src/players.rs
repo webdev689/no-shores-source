@@ -68,7 +68,7 @@ pub struct Shown {
 /// hands hold (`combat::Arms` as its code); the room tick of the last snapshot their screen showed; a foe to stand
 /// before them, or every foe sent away, if they asked (the Test Ground's panel), and the foe's level (0 for none: it
 /// fights by combat's own numbers); whether they ask to respawn, dead past a node's section; an ask of their gear;
-/// and a spell they cast.
+/// a spell they cast; and whether a menu is open on their screen.
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Input {
     pub sequence: u32,
@@ -82,6 +82,7 @@ pub struct Input {
     pub ask: Option<Asked>,
     pub spawn_level: u8,
     pub cast: Option<crate::arts::Cast>,
+    pub menu: bool,
 }
 
 /// What a player asks of the room's foes: one of a type (the roster's number) at a rank (its number; a rank the type
@@ -161,9 +162,8 @@ pub struct Player {
     pub character: Character,
     pub gear_changed: bool,
     pub claimed: bool,
-    /// Where they stood as their gear was last sent: at the Mage, in a social space, and at the counter that signs their
-    /// officers on. All ride the gear
-    /// message and change as they walk, so a change sends it again.
+    /// Where they stood as their gear was last sent: at the Mage, in a social space, and at the counter that signs
+    /// their officers on. All ride the gear message and change as they walk, so a change sends it again.
     pub placed_sent: (bool, bool, bool),
     /// The tick their gear was last sent, and their last ask taken: a room sends one player's gear, and takes their
     /// asks, only so often.
@@ -198,6 +198,11 @@ pub struct Player {
     /// The foes their own blows landed on in the last ten seconds, with the tick of each one's last: each shares its
     /// kill's healing charge with them (`recharge.rs`).
     pub(crate) struck: std::collections::BTreeMap<FighterId, u64>,
+    pub(crate) plate: crate::plates::Plated, // What others read over their head.
+    /// The tick a foe's blow last landed on them: they return to their ship only ten seconds past it (`Asked::ToShip`).
+    pub(crate) struck_at: Option<u64>,
+    /// Where their swings' chain stands (`chain.rs`).
+    pub(crate) chain: crate::chain::Chain,
 }
 
 impl Player {
@@ -250,6 +255,9 @@ impl Player {
             counts: crate::perks::PerkCounts::default(),
             atheric: crate::atheric::AthericCounts::default(),
             struck: std::collections::BTreeMap::new(),
+            plate: crate::plates::Plated::default(),
+            struck_at: None,
+            chain: crate::chain::Chain::default(),
         }
     }
 
@@ -363,6 +371,7 @@ impl Room {
             .collect();
         for id in gone {
             self.foes.remove(&id);
+            self.quests.spoilless.remove(&id);
             self.board.forget(id);
             self.names.remove(&id);
         }
@@ -422,12 +431,6 @@ impl Room {
         true
     }
 
-    /// A player's character as it is kept between sessions.
-    #[must_use]
-    pub fn kept_character(&self, player: PlayerId) -> Option<String> {
-        self.players.get(&player).map(|found| found.character.to_json())
-    }
-
     /// Why the room's gate shuts to a character (`gear::gate`), or none when it may enter.
     #[must_use]
     pub fn shut(&self, character: &gear::Character) -> Option<gear::gate::Shut> {
@@ -441,10 +444,10 @@ impl Room {
         self.shut(&self.carried_forward(player, character.clone()))
     }
 
-    /// A kept character with the story its player already holds in the room carried forward, never put back.
+    /// A kept character with the story and lore its player already holds in the room carried forward, never put back.
     fn carried_forward(&self, player: PlayerId, mut character: gear::Character) -> gear::Character {
         if let Some(found) = self.players.get(&player) {
-            character.story = character.story.merged(&found.character.story);
+            character.carry_forward(&found.character);
         }
         character
     }
@@ -474,6 +477,7 @@ impl Room {
         if let Some(found) = self.players.get_mut(&player) {
             found.fighter = found.armed(found.fighter);
         }
+        self.given_back(player);
         true
     }
 

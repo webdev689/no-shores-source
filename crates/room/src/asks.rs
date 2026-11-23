@@ -34,6 +34,14 @@ pub const STOCK_FULL: u8 = 102;
 pub const NOT_YET: u8 = 103;
 /// A node is not gathered on horseback.
 pub const MOUNTED: u8 = 104;
+/// The player has fallen and waits to stand again: they return to their ship only once standing.
+pub const FALLEN: u8 = 105;
+/// A foe's blow landed on the player within the last ten seconds: they return to their ship only once it is past.
+pub const FIGHTING: u8 = 106;
+/// The player may return to their ship: a yes no other ask gives, so the page never takes another's done for it.
+pub const TO_SHIP: u8 = 107;
+/// How long past a foe's blow a player waits to return to their ship: ten seconds.
+pub const TO_SHIP_AFTER_TICKS: u64 = 10 * 60;
 
 /// What a player asks of their gear.
 #[derive(Clone, Debug, PartialEq)]
@@ -55,6 +63,13 @@ pub enum Asked {
     UsePoint {
         point: u8,
     },
+    /// Finds a chapter of the lore lying in the node, by its number (`lore.rs`).
+    FindLore {
+        chapter: u16,
+    },
+    /// Asks to return to their ship: refused while fallen or within ten seconds of a foe's blow, as the owner chose
+    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]); the page leaves for the sea only on the room's word.
+    ToShip,
     /// Opens one's chest from a public event, by its number among one's drops, within `public::CHEST_REACH`.
     OpenChest {
         chest: u32,
@@ -251,6 +266,18 @@ impl Room {
         self.here(player, &Ask::Identify { vestige: 0 }).social
     }
 
+    /// Whether a player may return to their ship now: `TO_SHIP`, or why not (`FALLEN`, `FIGHTING`).
+    fn to_ship(&self, player: PlayerId) -> u8 {
+        let Some(found) = self.players.get(&player) else { return TO_SHIP };
+        if found.fighter.dead() || matches!(found.standing, Standing::Dead { .. }) {
+            return FALLEN;
+        }
+        if found.struck_at.is_some_and(|struck| self.clock <= struck + TO_SHIP_AFTER_TICKS) {
+            return FIGHTING;
+        }
+        TO_SHIP
+    }
+
     /// A player's dice for one roll: the room's seed, the tick, and the count of rolls made, so no two rolls share
     /// one and none can be foreseen without the seed, which a host keeps secret (`reseed`).
     pub(crate) fn dice(&mut self, player: PlayerId) -> Dice {
@@ -331,6 +358,8 @@ impl Room {
             Asked::Grant(_) => NOT_THE_TEST_GROUND,
             Asked::Art(ask) => self.ask_art(player, ask),
             Asked::UsePoint { point } => self.use_point(player, point),
+            Asked::FindLore { chapter } => self.find_lore(player, chapter),
+            Asked::ToShip => self.to_ship(player),
             Asked::OpenChest { chest } => self.open_chest(player, chest),
         };
         if let Some(found) = self.players.get_mut(&player) {

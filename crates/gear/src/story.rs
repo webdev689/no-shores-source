@@ -31,7 +31,8 @@ impl Story {
 }
 
 impl Character {
-    /// Marks the prologue played. Asked again, it is not refused: a page tells each room that has not kept it.
+    /// Marks the prologue played; the lore found as it ends is kept as every ask ends (`earn_due`). Asked again, it is
+    /// not refused: a page tells each room that has not kept it.
     pub(crate) fn finish_prologue(&mut self) -> Result<Option<Done>, Refusal> {
         self.story.prologue = true;
         Ok(None)

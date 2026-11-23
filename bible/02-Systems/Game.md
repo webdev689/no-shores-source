@@ -17,6 +17,8 @@ code:
   - client/src/game/gameFrame.ts#startFrames
   - client/src/game/pageWaters.ts#watersOnce
   - client/src/game/flow.ts#next
+  - client/src/game/travel.ts#startTravel
+  - client/src/game/tripBack.ts#tripOrBack
   - client/src/game/foot.ts#Foot
   - client/src/game/footView.ts#FootView
   - client/src/game/swingView.ts#SwingView
@@ -111,14 +113,14 @@ the screen reader's announcements.
 `flow.ts` holds where the player is: loading behind a veil, on foot in a node, at sea, or over an island's side
 choosing a landing; on foot and at sea a menu may be open. It is pure: the game hands it what happened and draws what
 it answers. `gameBoot.ts` makes the pieces (the rooms, the modules, the scene, the world and the place arrived at),
-`game.ts` keeps the flow, the travel between places and the player's actions, and `gameFrame.ts` draws each frame of
-the mode the flow is in, a frame on foot first heeding the activities' word (`startActivities`: a gate that shut, a
-company that fell); each mode is its own module.
+`game.ts` keeps the flow, the ways into each place and the player's actions, `travel.ts` the travel between places
+behind the veil, and `gameFrame.ts` draws each frame of the mode the flow is in, a frame on foot first heeding the
+activities' word (`startActivities`: a gate that shut, a company that fell); each mode is its own module.
 
 | From | Happening | To |
 |---|---|---|
 | Arriving | The ground round the spawn is in | On foot in Overlook's social space |
-| On foot | M, then Return to ship | The veil, "Returning to your ship", then at sea |
+| On foot | M, then Return to ship | The room's word first: refused while fallen or within 10 s of a foe's blow, said in a toast (`toShip.ts`, [[The Audit's Leftovers Are Fixed as Claude Suggested]]); else the veil, "Returning to your ship", then at sea |
 | On foot, or behind the veil to land | The room's gate shuts to the character, or it came by no way that leads there | The veil, the room's reason and "Returning to your ship", then at sea |
 | At sea | Enter, L or the offer to dock or go ashore, off a coast | Over the island's side |
 | Over the side | A mark clicked, then clicked again or Enter | The veil, "Landing at" the node, then on foot there |
@@ -131,7 +133,16 @@ A locked node ([[World Map]], "Seen whole, reached by nodes") is never landed at
 only say it is locked.
 
 The veil lifts once the place is ready and the exact ground round the player has come, or after 20 s of wall time.
-A way that fails stays on the veil, saying why, and Enter tries it again.
+
+A trip that fails, its room full or out of reach, puts the player back where they stood before it, joined again:
+aboard their ship, on the island's beach, in the dungeon, or in the node at its arrival spot
+([[The Audit's Leftovers Are Fixed as Claude Suggested]]; `travel.ts`, `tripBack.ts`). Should that fail too, or should
+the trip be one that sent them out of where they stood (a gate shut on them, their company fallen), they are taken
+to the hub, Overlook's social space, its landmass opened first where another is. The veil says why while they go
+("You could not reach The Saltgrass Downs:" and the reason), and once it lifts the same words stand as a toast for
+8 s. Only when the hub fails too does the trip stay on the veil, saying why, and Enter tries it again; so does the
+first arrival, which has nowhere to go back to. A room past its sockets takes the join only to close it, saying the
+room is full, as a browser's WebSocket never reads a refused join's status.
 
 ## Arriving
 
@@ -231,7 +242,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
   or a faction's emblem in the diamond edged in its Art's colour, and none while the keeper is away from the counter
   (the elder on her welcome); over the bounty board in Overlook's hub its gold "!" in the keepers' diamond, over its
   gable (`countersOf`); over Shape on his spot his own; and, as the room's word on the gear names them online,
-  over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
+  over each chapter of the lore lying there for the player a closed book in a brass binding, 0.9 m over where it
+  lies ([[Lore]]); and over each of a patrol's dungeon entrances a door, an arched door of planks banded in iron with a brass ring, 0.2 m
   over its door's lintel and a mark's width out from its face, once the forged props say where its door is. As DFO's, a mark's foot stands 0.2 m over the crown,
   0.32 m across, turned to the eye and hidden by what stands before it, never narrower on the screen than 0.017 radians
   either side so a keeper across the plaza still shows one; it bobs 6 cm once a second on a phase of its own, holding
@@ -256,7 +268,8 @@ third person, the forge's figure and the first person's hands, and the Test Grou
 - **E** uses what is within reach, shown as Destiny shows it, a keycap and the deed low in the middle of the view
   (`UsePrompt`): at a counter, or within 3 m of Shape while he is here, it opens the keeper's screen in the menu
   ([[Interface]], "The social space's counters"), and at the bounty board its bounties, offered as "The Bounty Board:
-  bounties for XP and Aurem"; within 2.5 m of a node it reads "Hold to gather" and its
+  bounties for XP and Aurem"; within 2.5 m of a chapter of the lore lying there for the player it reads "Read" and its
+  book's name, and asks the room to find it ([[Lore]]); within 2.5 m of a node it reads "Hold to gather" and its
   resource, and held it asks the room to gather it (`GatherHold`): a ring traced round the keycap's edge fills over the
   two seconds with the menus' build-up sound; that is all, no tool and no move of the figure's. A sea island's nodes
   are offered and drawn as a patrol's ([[Islands]]). Letting go of E before the ring is full asks the room to stop, as does leaving

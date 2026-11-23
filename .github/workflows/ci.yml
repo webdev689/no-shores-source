@@ -31,6 +31,19 @@ jobs:
           cache: npm
       - name: Install the TypeScript tools
         run: npm ci
+      # The island packs the committed manifest names, for the test that reads every kit's: each is checked against
+      # the hash its key is named by.
+      - name: Fetch the island packs
+        run: |
+          set -euo pipefail
+          packs="$RUNNER_TEMP/island-modules"
+          mkdir -p "$packs"
+          base=$(jq -r .base content/islands/modules.json)
+          jq -r '.kits | to_entries[] | "\(.key) \(.value)"' content/islands/modules.json | while read -r kit key; do
+            curl -sSfo "$packs/$kit.modules" "$base$key"
+            echo "$(basename "$key" .modules)  $packs/$kit.modules" | sha256sum -c --quiet -
+          done
+          echo "ISLAND_MODULES=$packs" >> "$GITHUB_ENV"
       - name: cargo xtask check
         run: cargo xtask check
       # How the Lattice's renders lay into the forge's tables, on the runner's own Python: the wave's frame-cutting
@@ -54,12 +67,14 @@ jobs:
     uses: ./.github/workflows/pages.yml
 
   # Deploys the rooms from main, once this same commit has passed the check, when their code changed: the owner's yes
-  # to a merge covers it. Reading the deployments tells it what was deployed last.
+  # to a merge covers it. Reading the deployments tells it what was deployed last, and reading the checks whether a
+  # commit run by hand passed.
   rooms:
     needs: check
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     permissions:
       contents: read
       deployments: read
+      checks: read
     uses: ./.github/workflows/rooms.yml
     secrets: inherit

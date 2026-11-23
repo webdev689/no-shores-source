@@ -10,6 +10,7 @@ mod atheric;
 pub mod battle;
 pub mod boarding_hands;
 mod bounties;
+mod chain;
 pub mod chart;
 pub mod clash;
 mod clears;
@@ -30,9 +31,12 @@ mod garrison;
 pub mod harbour;
 pub mod island;
 mod judging;
+mod left;
+pub mod lore;
 pub mod patrol;
 mod perks;
 pub mod pirates;
+mod plates;
 mod players;
 mod power;
 pub mod public;
@@ -61,6 +65,7 @@ pub use floor::{Floor, standing_on};
 pub use foes::{CLEAR_FOES, FOES_MOST, FoeSeen, NODE_FOES_MOST, SHIELD_SHIFT};
 pub use judging::{Event, EventKind, How, how_of};
 pub use perks::trim_of;
+pub use plates::Plate;
 pub use players::{
     CATCH_UP, DRESS_LIMIT, GEAR_EVERY_TICKS, GRACE, Input, MOVE_LIMIT, PLAYERS_MOST, PlayerId, Refused, SLACK_TICKS,
     Shown, SpawnAsk, VIEW_LAG, WAITING_LIMIT,
@@ -360,6 +365,7 @@ impl Room {
             found.acknowledged = found.acknowledged.wrapping_add(1);
         }
         found.received = input.sequence;
+        found.plate.menu = input.menu;
         found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
         if found.held {
             // Taken in order, so the next follows on; played as standing still, asking and casting nothing.
@@ -427,7 +433,10 @@ impl Room {
             while taken < CATCH_UP {
                 let Some((mut input, seen)) = self.next_input(id) else { break };
                 taken += 1;
+                // The room says who rides: a player with a horse, never aboard a ship's deck, whatever the page says.
+                let on_deck = matches!(self.floor, Floor::Deck(_));
                 if let Some(found) = self.players.get_mut(&id) {
+                    input.intent.controls.mounted &= found.character.may_ride() && !on_deck;
                     found.mounted = input.intent.controls.mounted;
                 }
                 if let Some(asked) = input.ask.take() {
@@ -449,6 +458,7 @@ impl Room {
                 let view = kept.map_or_else(|| Cow::Owned(self.fighters()), Cow::Borrowed);
                 let Some(found) = self.players.get_mut(&id) else { break };
                 if let Standing::Dead { .. } = found.standing {
+                    found.chain = chain::Chain::default();
                     found.shown = input.shown;
                     found.remember(seen);
                     let (lying, dead) = (players::lying_still(&found.fighter), found.armed(found.fighter));
@@ -469,8 +479,10 @@ impl Room {
                 }
                 let held = found.fighter.holding(allowed_arms(Arms::from_code(input.arms), &found.character));
                 let fighter = found.armed(held);
+                let asked = &mut input.intent.combat.attack;
+                *asked = asked.map(|asked| chain::stroke(found.chain, asked, &fighter, &view));
                 let (next, happening) = player_tick(id, &fighter, &input.intent, &view, &self.blocks, &self.floor);
-                found.fighter = next;
+                (found.fighter, found.chain) = (next, found.chain.after(&next));
                 found.shown = input.shown;
                 found.remember(seen);
                 if let Some(ask) = input.spawn.filter(|_| self.takes_foe_asks) {

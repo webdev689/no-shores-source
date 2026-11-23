@@ -45,6 +45,8 @@ code:
   - client/src/game/bountyGlyphs.ts#bountyGlyphSvg
   - client/src/game/bountyTiles.ts#bountyTileNode
   - client/src/game/journalIcons.ts#iconSvg
+  - client/src/game/compendium/compendiumPage.ts#Compendium
+  - client/src/game/compendium/loreArt.ts#coverPixels
   - client/src/game/entranceCard.ts#EntranceCardView
   - client/src/plus/barLayout.ts#BarLayout
   - client/src/plus/barLayout.ts#PLATES
@@ -182,6 +184,13 @@ code:
   - client/src/face.ts#useMendedFace
   - client/src/face.ts#CANVAS_FACE
   - client/src/trueType.ts#trueType
+  - client/src/combat/playerPlates.ts#PlayerPlates
+  - client/src/combat/playerPlates.ts#aimedPlayer
+  - client/src/combat/playerPlates.ts#levelInk
+  - client/src/game/social/interactMenu.ts#interactRows
+  - client/src/game/social/social.ts#holdOnPlayer
+  - client/src/game/social/inspectWindow.ts#InspectWindow
+  - client/src/game/social/inspectGear.ts#inspectedGear
 ---
 # Interface
 
@@ -220,7 +229,7 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
 - **A tree of the game's own.** Each frame the interface is built afresh as plain nodes (`Node`): a box that is a
   fixed size, fits its content, grows into the room left or takes a share of its parent; lays its children in a row,
   a column or wrapping lines, with padding, gaps and alignment; and shows a role's paint, a fill, an outline, words
-  (spans in their own colours, wrapped at spaces with a paragraph's leading spaces kept and the spaces at a break
+  (spans in their own colours, bold or italic, wrapped at spaces with a paragraph's leading spaces kept and the spaces at a break
   dropped, or kept to one line and cut short with '...', a newline a space there; with a hard shadow or a halo), a picture, or its own
   drawing. A node can float over the rest, against its parent or the screen, clip or scroll its children, and be
   drawn moved or faded. `layout` lays it out after Clay's model, every length in whole CSS pixels.
@@ -324,8 +333,9 @@ The game draws every screen itself, and by the owner's word no HTML is laid over
   and the words typed in it, pictures from SVG (one turned), pixel art and 2D drawing, a scrolled list of tiles, and a
   float on the screen; `screenKeysShot` draws the keys open over it, and `punctuationShot` the face's punctuation at
   each size. `game/journalShots.ts` draws the menu whole as the game starts it, over sample gear and the day's word:
-  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card. A shot may hear its events on a later
-  frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
+  the Journal, its timers down, the bounty board, the Postmaster's letters and a dungeon's entrance card.
+  `game/social/socialShots.ts` draws the plates over players, a player's menu, and the chat open and shut. A shot may
+  hear its events on a later frame (`at`), once a screen has put its focus where it wants it, and take more frames (`frames`) for many pictures
   to come; the page asks for reduced motion, so a screen stands settled.
 
 ## How it works
@@ -664,11 +674,13 @@ font made where the face is read (`useMendedFace`, `trueType.ts`), first in its 
 ## The menu
 
 A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault and Vendors in the Social Space]]):
-the tabs Character (I), Inventory (O), Journal, Ship, Social, Guild and Settings fill the top of its header, each a
-whole number of pixels wide, their words at the names' size (the words' under 1100 px, where they would not fit);
+the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header, each a
+whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
+its tab at the names' size);
 keys on keycaps where the menu is wide enough; Guild
-marked Later, a page saying what it will hold. The chosen tab is a lit brass press; the arrow keys move
-between tabs. At the top line's right stands the account's mark, after DFO's
+marked Later, a page saying what it will hold. The chosen tab is a lit brass press; a tab with something new on it
+(the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
+read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
 face in it, a hooded silhouette until their figure is drawn, and a gem on its rim, filled for an account kept with a
 username or Discord and hollow for a guest's; pressed, it opens Settings. On the Journal its place is DFO's timer
@@ -717,16 +729,20 @@ never while a press is held. Each press is an ask the room answers.
 - **An icon shows its item's state, not words** ([[Text Is Plain]]): a weapon's element as its glyph in the top
   corner; a green gauge along its foot that fills as its nodes are bought ([[The Face Is Mended Whole, and the Gauge Counts Upgrades]]); and, once every node is
   bought, a gilded frame in place of the gauge, as Destiny 2's masterworks are.
-- **Character.** The player's figure large in the middle, under their level and a meter to the next; under it the Melee
-  and Ranged loadouts' Attack, Defense, Prestige and Fruit of Dagon. The Melee and Ranged loadouts, the cloak and the
-  Appearance button stand to its left, under the worn Art's diamond, the armour to its right, each slot its item's picture with its
-  names, the worn Art's diamond first, under the Weapons heading, so each row stands level with the armour's across from
-  it; under the Ranged slot's, the ammunition left of its capacity ("Ammo 18 of 24"), or "No ammo" in the loss colour,
-  at 22 where the menu is wide. A kind is named as the screens name it: Sword & Shield, Double Daggers, Great Axe. A
-  slot's card shows as the pointer moves over it or the keys bring the focus to it; a click opens its flyout of the nine
-  it may carry, toward the figure, upward from each side's two lowest slots; a click there wears one, and F held over
-  one dismantles it. A flyout closes once the mouse is off its slot and itself, a strip over the gap between them
-  keeping it while the mouse crosses, or on a click or Escape; a key's focus in it goes back to its slot.
+- **Character.** The player's figure large in the middle, under two plaques side by side ([[Prestige Stands Beside Level
+  on the Character Tab]], [[The Level and Prestige Plaques Show Their Numbers Alone]]): the level in brass and Prestige
+  in pale steel, each its number alone, and under both the meter to the next level and what it takes; under the figure
+  the Melee and Ranged loadouts' Attack and Defense ([[The Character Tab Shows No Fruit of Dagon]]). The Melee and
+  Ranged loadouts, the cloak and the Appearance button stand to its left, under the worn Art's diamond, the armour to
+  its right, each slot its item's picture with its names, the worn Art's diamond first, then the Weapons heading ([[The
+  Weapons Heading Stands Under the Art]]) level with the Armour heading across, under room as tall as the Art's row, so
+  each row stands level with the armour's across from it; under the Ranged slot's, the ammunition left of its capacity
+  ("Ammo 18 of 24"), or "No ammo" in the loss colour, at 22 where the menu is wide. A kind is named as the screens name
+  it: Sword & Shield, Double Daggers, Great Axe. A slot's card shows as the pointer moves over it or the keys bring the
+  focus to it; a click opens its flyout of the nine it may carry, toward the figure, upward from each side's two lowest
+  slots; a click there wears one, and F held over one dismantles it. A flyout closes once the mouse is off its slot and
+  itself, a strip over the gap between them keeping it while the mouse crosses, or on a click or Escape; a key's focus
+  in it goes back to its slot.
 - **Appearance** ([[The Character Page Opens Appearance From an Icon Button]]). Among the slots stands the
   Appearance button: a wardrobe mark (a coat on a brass hanger) with the worn emblem's sign in its corner. It opens the
   Appearance screen in the page's place, as the Art's diamond opens the Art's screen, the focus on the worn emblem. At
@@ -845,6 +861,35 @@ never while a press is held. Each press is an ask the room answers.
     hourglass, and it goes up as the Journal is left; the page under it rests, dimmed and out of the keys' and the
     pointer's reach.
   - It reads the rules and the last word of the character a room sent, so it reads the same at sea.
+- **Compendium** ([[Lore]], [[The Compendium Holds the Lore Books, After Destiny's]]): the lore books, laid as Destiny's
+  Collections and Lore screens.
+  - **Its front**: "LORE" with how many of its chapters are found of all ("3/6"), then a tile for each category, in rows
+    that fit the menu (176 by 168 px, 224 by 208 where the names are larger): its motif in brass, 64 px (80 px), dim
+    stone while nothing of it is found; its name; how many of its chapters are found, in lit brass once all are; and a
+    bar of that share in brass. Pressed, it opens the category. With no lore in the game it says "No lore has been
+    found. The lore books you find in the world, on quests and in the story are kept here." under three faint stone
+    covers. `compendium/compendiumShots.ts` pictures it over sample lore (`loreForTests.ts`) with `tools/uiShot.mjs`.
+  - **A category open**: "‹ LORE" (a press back to the front, as Escape steps), the category's name in capitals and how
+    much of it is found; then, side by side: its books, covers in rows of three (48 px wide, 96 px larger), each found
+    one a press edged in brass while chosen, one not found an empty slot outlined in dots that does nothing; the book chosen, its
+    cover large (144 px, 192 px) in a column 48 px wider, its name whole on as many lines as it takes (or
+    "Undiscovered"), how much of it is found and a bar of it (under 900 px it is named on a line over its chapter
+    instead, so everything stays in view); and the chapter chosen in a panel as tall as the book beside it, its title in
+    lit brass at the names' larger size and its words block by block at the names' size (bold and italic as the file marks them, a document set in on a darker
+    ground, a break a short brass rule), scrolled within the page's room, with the
+    book's chapters numbered under it (the panel takes the keys' focus, so a screen reader reads the chapter whole), each found one a press (the
+    one shown a lit brass press), one not found dim, its title and words never shown. A category opens at its first
+    book with a chapter unread, else its first found, and a book at its first chapter unread, else its first found; the
+    focus goes to that book, or to "‹ LORE" while nothing of the category is found.
+  - **Covers** are printed as posters and bound, one design for every book in its cloth and with its motif
+    ([[The Lore Books' Covers Are Drawn in Detail]], `coverPixels`), drawn from shapes at the size each stands, a pixel a
+    CSS pixel under 96 and two from there: a spine and the pages' edge under the board; a face banded light to dark
+    with a sunburst and a print's grain; a thin brass frame with corner brackets, diamonds, a chevron and studs; rings
+    about a dark disc rimmed in brass, the motif raised large in its middle. A book whose every chapter is found turns
+    down a gold corner; one not yet found is an empty slot outlined in dots (`slotPixels`).
+  - **New**: Destiny's small diamond in lit brass marks each chapter found and unread, its book's cover and its
+    category's tile, and goes as the chapter is shown, which keeps it read ([[Lore]], "In the browser").
+  - It reads the last word of the character a room sent, as the Journal does, so it reads the same at sea.
 - **Ship.** Two parts on the inventory's shelf tabs ([[Ship Power]], [[Crew]]). Manage: the ship's papers as Manage
   shows them at sea (its hull, canvas, guns, loads and measure, its voyage while it is at sea), its materials and its
   hands, beside its power (its level, a meter to the next, its numbers) and its modules fitted and carried, each a
@@ -942,9 +987,10 @@ Recordings come as they are wanted, as the owner decided areas load ([[Areas Loa
 the short sounds of play (every cue but the ambience's and the story's) once the page's sound wakes, the ambience's and
 the story's the first time each is asked for, silent until it has come (`soundSamples.ts`, `Samples`). A recording
 longer than a chunk (1 MB, about a minute) is fetched a chunk at a time, a stretch of its bytes that decodes on its
-own, its last part shorter than a chunk among them; as one plays, another not held is fetched at random, and each
-play takes a chunk other than the one played last, so every chunk fetched is heard and a bed's minutes are never held
-at once, two chunks at most. A file or chunk that fails to come is asked for again only after 30 s. The page
+own, its last part shorter than a chunk among them; as one plays, the next is fetched, and the chunks play in order,
+the last part too, then from the first again ([[The Audit's Leftovers Are Fixed as Claude Suggested]]). A chunk late
+to come leaves another held to play meanwhile, never the one played last, so a bed's minutes are never held at once,
+two chunks at most. A file or chunk that fails to come is asked for again only after 30 s. The page
 decodes each and keeps it; the worker holds only its shape and how it measures, its level and its loudness over each
 window the game asks (`soundMeasure.ts`). What is held is kept within 192 MB, the ambience and story recordings
 played least lately let go first, never one played in the last two minutes nor a sound of play. Every file and chunk
@@ -1098,6 +1144,43 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
   click takes or turns one in. Before the prologue the tiles, the time and its bar rest grey, and the card holds the
   padlock and "The bounty board opens after the prologue."
 
+## Players
+
+- **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]],
+  [[A Player's Square Shows Their Level, Gold Past 20]]): a square and their username beside it, after the owner's
+  pictures of Destiny's. The square shows their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`,
+  `TONES.brassHi`); while a menu is open on their screen (the pause menu, the menu's window, a player's menu or Inspect)
+  a speech bubble's three dots stand in its place. Square and name are the company's green (`FILLS.green`,
+  `TONES.company`) for a member of the viewer's company, by the Roster the company's display last heard, and the
+  players' blue (`FILLS.ally`, `TONES.ally`) for anyone else; a guest shows the square alone. The room sends each plate
+  once as it changes ([[Server]], "Messages").
+- **Which show**: as DFO showed names over players, every other player within 60 m across the ground whose head the
+  place's blocks and land do not hide, the line tried as a foe's plate's is (`PlateSight`), shrinking with distance by
+  the foes' plates' law (`plateScale`) and laid so none covers another (`BarLayout`); not the cone the foes' plates
+  keep. They stand under the foes' plates, 1.9 m over the feet.
+- **Interact** ([[Holding Use on a Player Opens Their Interact Menu]]): the named player the crosshair rests on within
+  6.4 m of the player's own feet, the nearest of several (`aimedPlayer`), a guest nearer in the line hiding one
+  behind, wears a thin diamond round their body, a chevron in each corner, with Use's key and "Interact" beside it,
+  kept on the screen, wherever Use offers nothing else and no menu, gate's offer or the held map is up. Holding Use
+  0.45 s, its key ringed as it fills and the menus' hold sounding, opens their menu; a tap does nothing. The hold
+  outlasts the crosshair slipping off them for under 0.2 s, and lets go if the frames stop for a quarter second.
+- **Their menu** stands over the view with their plate at its head and six rows: Add friend (or Accept friend, or
+  Cancel friend ask, as the Roster would offer it), Invite to company, Invite to guild, Whisper, Inspect and Mute (or
+  Unmute). Each asks the Roster as its row in the Social tab does ([[Accounts]], "The Roster"); one that cannot be
+  done now stands greyed with why ("Already friends", "In your company", "Only the leader invites", "You are in no
+  guild", and so on), still reached by the keys and read by a screen reader, and without a Roster (a guest, or a page
+  playing alone) only Whisper and Inspect are offered. While an ask is out every row waits, and what it answered stands
+  under the rows. Whisper opens the chat's field to them ([[Chat]]); Mute hides their chat lines
+  ([[A Player May Mute Another]]); Close or Escape shuts the menu. While it is up the player stands as in a menu, the
+  pointer free and the keys the menu's alone.
+- **Inspect** ([[Inspect Opens the Character Tab]], [[Inspect Shows the Player's Emblem Banner]]) shows the player as
+  the menu shows the player's own: their emblem's banner across its head, their name and guild's tag, level, Prestige
+  and Defense over it, and under it the Character tab: their figure in the dress they wear here, each piece they wear in
+  its slot with its card, their level and Prestige, their power and the Art they wear, from what their room kept for
+  others to see. Nothing on it can be asked or changed: no hints, no XP meter and no Appearance. Back or Escape goes
+  back to their menu.
+- **Settings** lists the muted under the blocked, each with Unmute.
+
 ## Emblems
 
 An emblem is a sign 24 cells square and the nameplate it heads, 120 by 24, whose left square is the sign's own ground,
@@ -1105,7 +1188,7 @@ as Destiny's are ([[Cosmetics Follow Destiny, Shown in Many Places]]). Each is d
 and a sign of up to 16 cells (`emblemArt.ts`, `emblemMotifs.ts`), never from a picture, and shown only at whole
 multiples. Behind a row or a header, its band runs the nameplate on, unframed, and the colour it ends in fills on past
 it; the menu's banner carries its pattern the whole way, as Destiny 2's heads its character screen. It shows on the
-Roster's rows, the menu's banner, another player's details, the company on the heads-up display, the Appearance
+Roster's rows, the menu's banner and Inspect's, another player's details, the company on the heads-up display, the Appearance
 button's corner and screen, and the Tailor's wares.
 
 ## Limits
@@ -1157,7 +1240,7 @@ button's corner and screen, and the Tailor's wares.
   720's sizes rather than twice them. A tile's soft glow and a card's drop shadow are drawn as hard light and no
   shadow; a charging picture quivers but does not brighten.
 - A boss's name strikes in by fading alone: the page grew it from 1.6 times its size, which the face's whole steps
-  cannot. The tap's and the title's soft dark glows are not drawn, only their hard shadows. What each of the held
+  cannot. The tap's soft dark glow is not drawn, only its hard shadow. What each of the held
   map's seas does, a tooltip on the page, is told only to a screen reader, in the press's label.
 - The creation's windows wear the kit's window, wells and presses, where the page's sheet had cleared the kit's frames
   to plain light borders.
@@ -1184,7 +1267,8 @@ button's corner and screen, and the Tailor's wares.
   pictures on the player's own figure, which is not theirs.
 - A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
   or at sea, is not reached, and the Roster says so.
-- No names stand over other players' heads yet.
+- A player's plate shows their username from the room their account last claimed their character in: one added
+  meanwhile shows from their next room.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.

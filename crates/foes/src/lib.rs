@@ -1,6 +1,6 @@
 //! How foes think, the same on the server and in every browser: the factions, their enemy types, the roles and ranks
 //! they come in, and the brain each fights with.
-//! DFO's Enhanced AI, its tactics and its telegraphed blows, stands here on Overlook's own fight: foes take turns at a
+//! DFO's Enhanced AI, its tactics and its telegraphed blows, stands here on the game's own fight: foes take turns at a
 //! target and ring it, back off, flee and kite, wind up telegraphed blows, and answer blows at them with the guard, the
 //! parry and the dodge, the riposte and the counter. A brain reads its room and asks its fighter for controls and
 //! buttons, a tick at a time; what it is told happened it notes. It fights only once alert: what it sees and hears

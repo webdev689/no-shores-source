@@ -3,7 +3,7 @@ import { type CosmeticKind, bardingLayer, cosmeticOf, cosmeticRamp, factionRamp 
 import { type Figure, type ForgeBody, type ForgeLooks, HORSE_LAYER, type IndexLook } from '../forge/looks.ts';
 import { ARMOUR_PIECES, type ArmourPiece, type Outfit, outfitLayers } from '../forge/outfit.ts';
 
-/** Overlook's three races: a Human's skin is a tone; Felid and Anole wear the forge's own bodies. */
+/** The game's three races: a Human's skin is a tone; Felid and Anole wear the forge's own bodies. */
 export const RACES = { human: null, felid: 'khajiit', anole: 'argonian' } as const;
 export type Race = keyof typeof RACES;
 

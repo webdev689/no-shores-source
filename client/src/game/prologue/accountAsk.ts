@@ -70,7 +70,7 @@ export async function discordAway(
 }
 
 /** Where the tab marks that its player left the helm for Discord, so the story picks up there when they come back. */
-const HELM_KEY = 'overlook.story.helm';
+const HELM_KEY = 'noshores.story.helm';
 
 export function markHelm(tab: Kept): void {
   try {

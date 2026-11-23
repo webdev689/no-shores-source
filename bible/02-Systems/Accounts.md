@@ -21,6 +21,8 @@ code:
   - server/accounts/social.ts#socialAsk
   - server/accounts/names.ts#refusalOf
   - server/accounts/people.ts#PERSON
+  - server/accounts/chat.ts#ChatHall
+  - server/accounts/chatDeps.ts#hallDeps
   - server/keeping.ts#Keeper
   - server/accounts/finding.ts#Finder
   - server/accounts/finder.ts#CompanyFinder
@@ -65,21 +67,25 @@ they play in holds it while they are there.
   `https://overlook-accounts.mackcothran.workers.dev/v1/discord/callback` as a redirect. Without the app's keys,
   Discord sign-in says it is not set up.
 - **Slowing guesses and floods.** Each limit is kept by address, an IPv6 address by its /64. One address may make 10
-  guests and register 10 times an hour, try 20 sign-ins in ten minutes, and start Discord 20 times in ten minutes;
+  guests an hour (an IPv6 address by its /48 for guests) and every address together 500
+  ([[The Audit's Leftovers Are Fixed as Claude Suggested]]), and one
+  address register 10 times an hour, try 20 sign-ins in ten minutes, and start Discord 20 times in ten minutes;
   one username may be tried 10 times in ten minutes from one address and 100 times from everywhere; one account may
   take 10 Discord tickets in ten minutes. Guessing is held down before a lockout is: a flood of guesses from many
   networks can hold a name's sign-ins for the rest of its ten minutes, while a session already held and Discord still
   sign its owner in. A name no account could hold is refused before it is kept, and a request's body is read only up
   to 2 KB, however it is sent. States, tickets and codes past their time are let go.
-- **Sessions lapse, but never a guest's.** A session of an account with a username or Discord lapses once it has
+- **Sessions lapse, and guests go unused.** A session of an account with a username or Discord lapses once it has
   gone unseen 30 days (each sight, or a room's claim, keeps it a month more); the page then says so and plays on as a
-  guest until its player signs in again. A guest's session never lapses: its token is the only way back to it. An
+  guest until its player signs in again. A guest's session never lapses, its token the only way back to it, but a
+  guest made, seen and saved by nothing for 30 days is deleted with all it holds, its character too, ten at a time as
+  each new guest is made (`accounts.ts`, "POST /v1/guest"); a page whose guest went makes a new one. An
   account with a way back in may sign out everywhere, which ends every session it has; a room already holding its
   character keeps it until that player leaves.
 - **Any page may ask.** The API answers any origin: a session travels only as a bearer token, never a cookie, so no
   page acts as a player without holding their token. A write that fails is logged and answered like any other: 409
   when another ask changed the same rows first, 500 otherwise. Discord sends players back only to pages under those listed in
-  the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/overlook-source/`, and
+  the Worker's `PAGES`, by origin and path: the published game, `https://lattymoy.github.io/no-shores-source/`, and
   under `npm run accounts` the dev server's.
 - **Where a session goes.** The page sends its session only to the deployed accounts and rooms, or to accounts and
   rooms on the player's own machine; a link naming any others plays without one. The deployed accounts' session is
@@ -108,7 +114,7 @@ they play in holds it while they are there.
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room (4001),
   and that page joins no more ([[Server]], "Joining again"). Each claim keeps the room that claims it (`room`, from
-  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]), and a look answers
+  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]) and the account's username (null for a guest), which the room names the player by for their plate, and a look answers
   the room that last held it; a room that lets a character go untouched (its gate shut, or it never gave it) was never
   where it was, so the room before is its last again. The rooms judge where a character comes from by these alone
   ([[Server]], "Where a character comes from").
@@ -143,8 +149,9 @@ username, as a player is found by theirs; a guest is told to add one in Settings
 
 - **A player as shown**: their name, their guild's tag, the emblem they wear and their level (from what their room kept
   of their character, `shown`), and where they play: the room that holds their character, or, at sea, the room's word
-  that they are there, said every 30 seconds and kept a minute. Leaving the sea ends that word at once, and it is kept
-  as when they were last seen.
+  that they are there and in which water, said every 30 seconds and as soon as the water changes, and kept a minute
+  (`presence`). Leaving the sea ends that word at once, and it is kept as when they were last seen. The water is for
+  the chat alone ([[Chat]]); the Roster shows the room.
 - **Friends**, by username: asked, accepted or declined, and ended by either. One row a pair, whoever asked, held so by
   the database, so an ask that crosses one already made accepts it. Each player's count is their friends and the asks
   they made, at most 100, so strangers' asks cannot fill it. Accepting or ending with a name no one holds answers as
@@ -167,6 +174,9 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   as sent and never arrives. A block either way between a player and anyone in a company keeps them out of it, by
   joining or by an invite, answered as a company closed to them. The one blocked sees the blocker's details as a
   stranger does, so the block shows nowhere. A blocked player is unblocked from Settings.
+- **Muting** ([[A Player May Mute Another]]) hides only a player's chat lines and Whispers, one way: nothing else
+  changes, and the one muted is never told. `POST /v1/social/mute` and `unmute` with a name; the Roster lists the
+  muted (`muted`), 200 at most, kept in the `mutes` table, each unmuted from Settings.
 - **Reporting** keeps a player's name, who reported them and why (cheating, a name, harassment, something else) for
   the owner to read in the database, ten a day a player. [[Names]] says how the owner reads and acts on a name.
 - **The room's own**: the Game column lists the players with a name in the same room beside the company, the guests
@@ -203,6 +213,13 @@ never the Abyss Dungeon of the week, whose company forms it.
 - **The page's side** (`findCompany`): it opens `AccountLink.finderAt(base)`, the accounts' own address by `ws://`
   or `wss://`, sends the session's token once open, and takes only a run of the base it asked for. Offline, or with
   no session, it offers none.
+
+## Chat
+
+The chat's one hall is a Durable Object of this Worker too, `ChatHall`, reached at `/v1/chat` by WebSocket ([[Chat]]):
+it signs a socket in with its session's token, asking again once a minute; places Local by the room in `presence` and
+Region by its water; keeps blocks as the Roster does, and mutes; and holds each account to four sockets and two lines a
+second across them, and each address to eight sockets waiting to sign in. Its questions of the database are `hallDeps`.
 
 ## Binds
 

@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-14
-status: in force
+status: replaced
+replaced_by: "[[The Game Is Named No Shores]]"
 ---
 # Private Repo overlook-source
+
+Replaced by [[The Game Is Named No Shores]].
 
 > "A new private repo named overlook-source"
 

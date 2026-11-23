@@ -98,10 +98,11 @@ test('every file the rooms read lies under the rooms’ code, so a change to it 
 });
 
 /** What the `ready` step decides for a commit that changes `changed` over the one last deployed: with the token, from
- *  a merge (or by hand), while the commit is main's head (or after main moved on), and with that deploy found. */
+ *  a merge (or by hand), while the commit is main's head (or after main moved on), with that deploy found, and with
+ *  the commit's CI check passed. */
 function decided(
   changed: string,
-  options: { byHand?: boolean; moved?: boolean; found?: boolean; token?: boolean } = {},
+  options: { byHand?: boolean; moved?: boolean; found?: boolean; token?: boolean; checked?: boolean } = {},
 ): string {
   const root = mkdtempSync(join(tmpdir(), 'rooms-deploy-'));
   const git = (...args: string[]) =>
@@ -122,12 +123,14 @@ function decided(
     git('add', '.');
     git('commit', '-qm', 'merged');
     const head = git('rev-parse', 'HEAD');
-    // The GitHub CLI as the step asks it: main's head, the deployments to `rooms`, and each one's last word.
+    // The GitHub CLI as the step asks it: main's head, the deployments to `rooms`, each one's last word, and whether
+    // the commit passed its check.
     write(
       'bin/gh',
       [
         '#!/bin/bash',
         `case "$2" in`,
+        `  *check-runs?check_name=check) echo ${options.checked === false ? 'false' : 'true'} ;;`,
         `  *commits/main) echo ${options.moved ? 'f'.repeat(40) : head} ;;`,
         `  *environment=rooms*) ${options.found === false ? 'true' : `echo "${deployed} 7"`} ;;`,
         `  */deployments/7/statuses) echo success ;;`,
@@ -165,6 +168,9 @@ test('a merge deploys the rooms when their code changed since the last deploy, a
 
 test('by hand the rooms deploy whatever changed; with no deploy found they deploy; past main’s head they do not', () => {
   assert.equal(decided('bible/Hand-off.md', { byHand: true }), 'deploy=yes');
+  const refused = (thrown: unknown) => String((thrown as { stdout?: Buffer }).stdout).includes('::error::');
+  assert.throws(() => decided('server/worker.ts', { byHand: true, checked: false }), refused, 'by hand, not checked');
+  assert.equal(decided('server/worker.ts', { checked: false }), 'deploy=yes', 'a merge, which its own run checked');
   assert.equal(decided('bible/Hand-off.md', { found: false }), 'deploy=yes');
   assert.equal(decided('server/worker.ts', { moved: true }), 'deploy=no');
   assert.equal(decided('server/worker.ts', { token: false }), 'deploy=blocked', 'the rooms to deploy, with no token');

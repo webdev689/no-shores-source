@@ -1,5 +1,3 @@
-import type * as flatbuffers from 'flatbuffers';
-import { Ask } from '../../../generated/messages/ts/overlook/wire/ask.ts';
 import type { Gear } from '../../../generated/messages/ts/overlook/wire/gear.ts';
 import type { GearItem as GearItemTable } from '../../../generated/messages/ts/overlook/wire/gear-item.ts';
 import type { GearOfficer as GearOfficerTable } from '../../../generated/messages/ts/overlook/wire/gear-officer.ts';
@@ -7,6 +5,7 @@ import type { GearShip as GearShipTable } from '../../../generated/messages/ts/o
 import { type ArtState, artsOf } from './artMessages.ts';
 import { type GearLetter, mailOf } from './mailMessages.ts';
 import { type QuestState, questOf } from './questMessages.ts';
+import { LORE_ASKS, type LoreState, loreOf } from './loreMessages.ts';
 
 /** The asks, by the number an input sends (protocol's gear_wire). */
 export const ASKS = {
@@ -96,6 +95,10 @@ export const ASKS = {
   /** A letter's Vestige or item taken from the mail, the letter by its number in `item`; every letter with room. */
   takeLetter: 71,
   takeAllLetters: 72,
+  ...LORE_ASKS,
+  /** A return to the player's ship, which the room answers (107 yes, or 105 fallen, 106 struck in the last ten
+   *  seconds) before the page leaves for the sea. */
+  toShip: 73,
 } as const;
 
 /** Shape's place while he is away. */
@@ -193,7 +196,7 @@ export interface GearNode {
 /** A player's own gear, as the room sends it to them alone when it changes. `stocks` holds their Weapon and Armor
  *  Fragments, Weapon and Armor Essence and Fruit of Dagon; `answer` is their last ask's (0 done), `identified` the
  *  item a Vestige last opened to, `answered` how many asks have been answered. */
-export interface GearState {
+export interface GearState extends LoreState {
   readonly xp: bigint;
   readonly level: number;
   readonly prestige: number;
@@ -518,6 +521,7 @@ export function gearOf(gear: Gear): GearState {
     bountyXp: gear.bountyXp(),
     bountyAurem: gear.bountyAurem(),
     mail: mailOf(gear, itemOf),
+    ...loreOf(gear),
   };
 }
 
@@ -577,21 +581,4 @@ function nodesOf(numbers: readonly number[]): GearNode[] {
     nodes.push({ index, x, y, resource });
   }
   return nodes;
-}
-
-/** An ask written into an input being built. */
-export function askOffset(builder: flatbuffers.Builder, ask: GearAsk): flatbuffers.Offset {
-  const named = ask.named === undefined ? 0 : builder.createString(ask.named);
-  Ask.startAsk(builder);
-  Ask.addKind(builder, ask.kind);
-  Ask.addItem(builder, ask.item ?? 0);
-  Ask.addSlot(builder, ask.slot ?? 0);
-  Ask.addColumn(builder, ask.column ?? 0);
-  Ask.addNode(builder, ask.node ?? 0);
-  Ask.addRarity(builder, ask.rarity ?? 0);
-  Ask.addLevel(builder, ask.level ?? 0);
-  Ask.addCount(builder, ask.count ?? 0);
-  Ask.addItemKind(builder, ask.itemKind ?? 0);
-  if (named) Ask.addNamed(builder, named);
-  return Ask.endAsk(builder);
 }

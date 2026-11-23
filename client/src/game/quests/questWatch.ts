@@ -9,7 +9,7 @@ import { QUESTS, beginOf, linesBetween } from './questBook.ts';
 import { type Kept, behind, giftsBetween, greetBetween, keptOf, metBetween, momentsBetween } from './questNews.ts';
 
 /** Where the browser keeps, for an account (`<key>.<account>`), the quests whose begin it has said, by id. */
-export const BEGUN_KEY = 'overlook.roads.begun';
+export const BEGUN_KEY = 'noshores.roads.begun';
 
 /** What a look finds new: the scenes to say in order, the moment's lines (said only if none like them waits), and the
  *  toasts. */

@@ -34,12 +34,13 @@ pub const FISSURE_MINUTE: u32 = 15_000;
 pub const RAID_MINUTE: u32 = 15_015;
 const MOST_TICKS: u32 = 9 * 3_600;
 /// Both tests hold these values; a change to the events, the foes or the fight changes them in both, on purpose.
-pub const FISSURE_HASH: &str = "e5e605ee";
-pub const RAID_HASH: &str = "6e6e8358";
+pub const FISSURE_HASH: &str = "0afbaf68";
+pub const RAID_HASH: &str = "cafd3593";
 /// Where each stood as its result first showed, which a change to the fingerprint must account for: the tick, its
-/// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille).
-pub const FISSURE_ENDED: [u32; 3] = [18_598, 2, 28];
-pub const RAID_ENDED: [u32; 3] = [28_800, 3, 746];
+/// stage (the Warden's; Marrow's wave) and its progress (the shards set; the stores' health left, per mille). The
+/// players' swings take the room's chain whatever stroke is asked (`room::chain`).
+pub const FISSURE_ENDED: [u32; 3] = [13_638, 2, 28];
+pub const RAID_ENDED: [u32; 3] = [10_087, 2, 0];
 /// A player strikes a foe within this, squared, swinging every SWING_EVERY ticks; walks to a point to within GOT.
 const STRIKE: f64 = 1.5 * 1.5;
 const SWING_EVERY: u32 = 20;
@@ -168,7 +169,7 @@ fn decide(read: &Read, player: u32, tick: u32) -> (Controls, CombatInput) {
         return (Controls { forward: 1.0, yaw, run: true, ..Controls::default() }, CombatInput::default());
     }
     let swing = strike.is_some() && tick.is_multiple_of(SWING_EVERY);
-    // Each swing the next of the six strokes, as a player varies them, so no guard holds them all.
+    // Each swing asks the next of the six strokes; the room takes the swings' chain whatever is asked.
     let stroke = [Stroke::Down, Stroke::DownLeft, Stroke::Left, Stroke::Right, Stroke::DownRight, Stroke::Up]
         [(tick / SWING_EVERY) as usize % 6];
     let combat =
@@ -237,11 +238,11 @@ fn two_scripted_players_seal_a_heroic_fissure_to_the_same_fingerprint_natively_a
 }
 
 #[test]
-fn two_scripted_players_meet_a_raids_heroic_task_but_run_out_its_clock_to_the_same_fingerprint_natively_as_in_webassembly()
+fn two_scripted_players_meet_a_raids_heroic_task_but_lose_its_stores_to_the_same_fingerprint_natively_as_in_webassembly()
  {
     let (hash, event, at) = play(RAID_MINUTE);
     assert_eq!(event, (2, 3, 2), "the raid failed, its heroic task met");
-    assert_eq!(at, RAID_ENDED, "the tick its clock ran out at, its wave and the stores left");
+    assert_eq!(at, RAID_ENDED, "the tick its stores fell at, its wave and the stores left");
     assert_eq!(hash, RAID_HASH);
 }
 

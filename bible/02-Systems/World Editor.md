@@ -44,7 +44,7 @@ Where the owner paints the nine continents ([[The World Editor Paints in the Bro
 
 ## Using it
 
-Open `https://lattymoy.github.io/overlook-source/editor/` in a browser with WebGPU, such as Chrome
+Open `https://lattymoy.github.io/no-shores-source/editor/` in a browser with WebGPU, such as Chrome
 ([[The World Editor Is on GitHub Pages]]). It opens the layout on `main`. To work on the editor itself, run
 `npm run dev` and open `/editor/`. The map shows the whole frame; the panel on the left holds the tools.
 

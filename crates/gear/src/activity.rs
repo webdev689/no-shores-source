@@ -21,6 +21,9 @@ pub struct Activity {
     pub unknown: crate::character::UnknownKeys,
 }
 
+/// How many islands' nodes gathered today a character keeps.
+pub const ISLES_GATHERED_KEPT: usize = 16;
+
 /// The day's record: the tiers of the dungeon of the day cleared, and each bounty held, by its board place, with its
 /// count so far.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
@@ -33,6 +36,11 @@ pub struct Today {
     /// The board's places turned in today: each pays once.
     #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub turned_in: BTreeSet<u8>,
+    /// The sea islands' resource nodes gathered today, each island by its seed with its nodes' numbers, the latest
+    /// `ISLES_GATHERED_KEPT` islands kept: spent for the character until the day turns
+    /// ([[The Audit's Leftovers Are Fixed as Claude Suggested]]).
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub gathered: Vec<(u64, Vec<u8>)>,
     /// What a later build kept here, kept as it was through a rollback.
     #[serde(flatten)]
     pub unknown: crate::character::UnknownKeys,
@@ -60,6 +68,27 @@ fn known_tiers<'de, D: serde::Deserializer<'de>>(reader: D) -> Result<BTreeSet<D
 }
 
 impl Activity {
+    /// The nodes of the island of `seed` gathered on `day`, none on another day.
+    #[must_use]
+    pub fn gathered_on(&self, day: u64, seed: u64) -> &[u8] {
+        let today = (self.today.day == day).then_some(&self.today.gathered);
+        today.and_then(|isles| isles.iter().find(|(isle, _)| *isle == seed)).map_or(&[], |(_, nodes)| nodes)
+    }
+
+    /// Notes a node of the island of `seed` gathered on `day`, that island now the latest touched: the island touched
+    /// least lately is let go past `ISLES_GATHERED_KEPT`.
+    pub fn gather_on(&mut self, day: u64, seed: u64, node: u8) {
+        let isles = &mut self.today(day).gathered;
+        let mut nodes = isles.iter().position(|(isle, _)| *isle == seed).map_or_else(Vec::new, |at| isles.remove(at).1);
+        if !nodes.contains(&node) {
+            nodes.push(node);
+        }
+        isles.push((seed, nodes));
+        if isles.len() > ISLES_GATHERED_KEPT {
+            isles.remove(0);
+        }
+    }
+
     /// The day's record, begun anew first when `day` is later than the one it holds; never turned back.
     pub fn today(&mut self, day: u64) -> &mut Today {
         if day > self.today.day {

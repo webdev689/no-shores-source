@@ -38,7 +38,7 @@ test('a page makes its player a guest once, keeps the session, and signs in and 
   const back = await link.login('wayfarer', 'long enough');
   assert.equal(typeof back === 'string' ? back : back.id, guest.id);
   assert.notEqual(link.token, token, 'a new session');
-  storage.setItem('overlook.session@https://accounts.test', 'f'.repeat(64));
+  storage.setItem('noshores.session@https://accounts.test', 'f'.repeat(64));
   assert.equal((await link.session())?.guest, true, 'a session gone is a new guest');
 });
 
@@ -55,7 +55,7 @@ test('a page takes back only a code from Discord, never a session, and asks Disc
   assert.equal(to.pathname, '/v1/discord/start');
   assert.equal(to.searchParams.get('back'), 'https://page.test/game/');
   assert.match(to.searchParams.get('ticket') ?? '', /^[0-9a-f]{64}$/);
-  assert.equal(to.searchParams.get('nonce'), storage.getItem('overlook.discord'), 'the tab keeps its nonce');
+  assert.equal(to.searchParams.get('nonce'), storage.getItem('noshores.discord'), 'the tab keeps its nonce');
   assert.equal(link.takeFrom(`#discord=done&code=${'d'.repeat(64)}`), 'came back');
   await link.session();
   assert.equal(link.said, 'This sign-in has run out. Start it again from the game.', 'an unknown code takes nothing');
@@ -65,7 +65,7 @@ test('a page takes back only a code from Discord, never a session, and asks Disc
 test("the deployed accounts' session is kept apart from any other accounts'", () => {
   const { storage } = browser();
   const live = new AccountLink(LIVE_ACCOUNTS, storage);
-  storage.setItem('overlook.session', 'e'.repeat(64));
+  storage.setItem('noshores.session', 'e'.repeat(64));
   const local = new AccountLink('http://127.0.0.1:8788', storage);
   assert.equal(live.token, 'e'.repeat(64));
   assert.equal(local.token, null, "a dev server's accounts never see the live token");

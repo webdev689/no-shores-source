@@ -6,7 +6,7 @@ import type { DiscordApp } from './discord.ts';
 import { sqliteForTests } from './sqliteForTests.ts';
 
 export const API = 'https://accounts.test';
-export const PAGE = 'https://lattymoy.github.io/overlook-source';
+export const PAGE = 'https://lattymoy.github.io/no-shores-source';
 
 /** A world of accounts on a fresh database, its clock where the test sets it. */
 export function accounts(discord: DiscordApp | null = null) {

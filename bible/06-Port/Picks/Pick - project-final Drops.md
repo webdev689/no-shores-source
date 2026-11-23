@@ -29,7 +29,7 @@ a halo, popped out of a body to bounce, settle and hover. The owner approved it 
 
 ## What stays behind
 
-- The drop rolls, the pickup radius, the 30 s it lies, the weapon XP and the gear it opens to: Overlook's rules
+- The drop rolls, the pickup radius, the 30 s it lies, the weapon XP and the gear it opens to: the game's rules
   ([[Gear]], "Drops").
 - The random scatter: the room chooses where a drop rests, and the flight is fitted to land there.
 - The ammo bricks, the cache chest, the Bits shard and the Scraps hex, the WebGL billboards and the atlas files.

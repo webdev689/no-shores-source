@@ -158,6 +158,7 @@ impl Character {
             self.emblem = starting();
         }
         self.earn_cosmetics_due();
+        self.find_lore_due(crate::lore::lore());
     }
 
     /// Wears an emblem the player keeps.

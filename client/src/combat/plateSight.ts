@@ -18,6 +18,9 @@ export const AIM_SWAP_DEGREES = 1;
 export const AIM_SWAP_SHARE = 0.25;
 /** Plates farther than this from the eye, across the ground, are not drawn, in metres. */
 export const PLATE_RANGE_M = 60;
+/** How high over a body's feet its head stands, and its plate's foot just over it, in metres. */
+export const HEAD_M = 1.8;
+export const PLATE_OVER_M = 1.9;
 /** How long the line to a foe's head must stay blocked before its plate goes, in seconds (it comes back at once), and
  *  how far short of the head the line stops, so the ground or a lintel at the head blinds nothing, in metres. */
 export const SIGHT_HOLD_SECONDS = 0.15;

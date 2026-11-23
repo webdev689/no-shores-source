@@ -1,4 +1,4 @@
-//! The roles foes fight in, Overlook's own table: five templates of behaviour, each with its base numbers as a Major
+//! The roles foes fight in, the game's own table: five templates of behaviour, each with its base numbers as a Major
 //! of the role. How much it takes, how quickly and how it answers a blow, and which telegraphed blows it throws; an
 //! enemy type (the roster) gives it its hands and its faction, and its rank scales it.
 

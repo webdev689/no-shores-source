@@ -22,7 +22,7 @@ dfo_commit: 1c0fd681
 
 DFO's own weather and sky: a map of storm systems carried by the wind, fronts that bring the rain in and out, the
 enhanced sky dome with its moons and stars, cloud shadows, lightning and its distant storms, rain and snow round the
-eye, and wet ground. The owner chose them for Overlook, much improved
+eye, and wet ground. The owner chose them for No Shores, much improved
 ([[Weather and Day and Night Come From DFO, Much Improved]]). How it works now is [[Weather]] and [[Sky]].
 
 ## What comes over

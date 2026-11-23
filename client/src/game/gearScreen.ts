@@ -23,7 +23,7 @@ import {
 import { gearKindName, gearName, moduleNode, modulePresses } from './shipGear.ts';
 
 /** The menu's tabs, in the order the header shows them. */
-export const TABS = ['character', 'inventory', 'journal', 'ship', 'social', 'guild', 'settings'] as const;
+export const TABS = ['character', 'inventory', 'journal', 'compendium', 'ship', 'social', 'guild', 'settings'] as const;
 export type Tab = (typeof TABS)[number];
 /** The screens a social space's counters open: the vault, each keeper's (npc/npcScreen.ts), the Harbourmaster's and
  *  the bounty board. */
@@ -103,7 +103,6 @@ export interface Character {
   readonly prestige: number;
   readonly defense: number;
   readonly attack: readonly [number | null, number | null];
-  readonly fruit: number;
   /** How far the next Fruit of Dagon has grown, past level 20's XP; null below it. */
   readonly fruitGrown: number | null;
   readonly slots: readonly { readonly slot: number; readonly name: string; readonly worn: Tile | null }[];
@@ -130,7 +129,6 @@ export function characterOf(state: GearState): Character {
     prestige: state.prestige,
     defense: state.defense,
     attack: [hand(0), hand(1)],
-    fruit: state.stocks[4] ?? 0,
     fruitGrown: state.fruitGrowing ?? null,
     slots: SLOTS.map((name, slot) => {
       const worn = state.items.find((item) => item.at === WORN + slot);

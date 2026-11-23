@@ -38,6 +38,8 @@ const RUN_LINGER_MS = 60_000;
 
 /** How often the sea says again who is there: half of how long the accounts keep its word. */
 const PRESENT_EVERY_MS = 30_000;
+/** How often a player's token, sent again, names them anew at most. */
+const RENAMED_EVERY_MS = 5_000;
 
 /** How long a sea island's dungeon holds a player for the sea's word that they landed: a token's wait, a claim's own
  *  waits, and the sea's answer. */
@@ -55,6 +57,12 @@ const AGAIN = 1013;
 
 /** The most bytes one input may be: an input with the largest dress fits well inside it. */
 const MESSAGE_MOST = 8192;
+
+/** A session token's SHA-256, in hex: what the sea knows a ship played unkept by, never the token itself. */
+async function sessionHash(token: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+}
 
 /** A room's name from its address, `/room/<name>`: lowercase letters, digits and hyphens, spelled as the room's one
  *  name (`canonicalRoom`). */
@@ -95,6 +103,12 @@ export class RoomHost extends DurableObject<Env> {
       token: string | null;
       /** The entrance a player was joined before, until the room learns whether they came out of its dungeon. */
       door: number | null;
+      /** At sea, the water their ship lay in as the accounts last took it (unset till they do), which the chat's Region
+       *  is; and the word on it in flight, so each is said after the last. */
+      water?: string | null;
+      presenting?: Promise<unknown>;
+      /** When their token last came again, naming them anew. */
+      renamed?: number;
     }
   >();
   private keeper: Keeper | null = null;
@@ -148,8 +162,13 @@ export class RoomHost extends DurableObject<Env> {
       this.opened = null;
       return new Response('No such room', { status: 404 });
     }
-    if (this.players.size >= socketsMost(this.name)) return new Response('The room is full', { status: 503 });
     const [client, server] = Object.values(new WebSocketPair()) as [WebSocket, WebSocket];
+    // Past its sockets the room still takes one, to say why it closes: a page never reads a refused upgrade's status.
+    if (this.players.size >= socketsMost(this.name)) {
+      server.accept();
+      server.close(1013, 'the room is full');
+      return new Response(null, { status: 101, webSocket: client });
+    }
     // A join at an entrance that is not one is the room's ordinary join; one at an entrance stays there only once the
     // room keeps the player's character as come out of its dungeon (`outOfDoor`).
     const entrance = entranceOf(request);
@@ -209,6 +228,7 @@ export class RoomHost extends DurableObject<Env> {
         return owned;
       },
       shut: (player: number, kept: string | null) => this.guarded(() => this.room.shut(player, kept), ''),
+      name: (player: number, name: string) => this.guarded(() => this.room.name(player, name), false),
     };
     const characters = {
       look: (token: string) => accounts.look(token),
@@ -234,6 +254,10 @@ export class RoomHost extends DurableObject<Env> {
       const reach = await this.reachOf(reached.id);
       this.keeper.judgingArrivals((from, body) => arrives(name, from, shipOf(body), reach));
     }
+    // Every room on land, and the sea's flotsam and decks, roll their loot from seeds of their own that no player sees:
+    // the sea's own seed shows in its islands'.
+    const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
+    const seeds = [lootLow, lootHigh, worldLow, worldHigh] as const;
     // At sea a player's courses wait for the keeper's word, so a ship comes back where the room last kept it.
     if (seas !== null)
       return (
@@ -242,6 +266,7 @@ export class RoomHost extends DurableObject<Env> {
           crypto.getRandomValues(new Uint32Array(1))[0] ?? 0,
           Date.now() / 1000,
         ) &&
+        this.room.reseed(seeds) &&
         this.room.difficulty(seas) &&
         this.room.keepCharacters()
       );
@@ -249,9 +274,6 @@ export class RoomHost extends DurableObject<Env> {
     const isle = /^isle-(.+)$/.exec(name)?.[1];
     if (isle !== undefined) return this.openIsland(isle);
     const node = /^node-(.+)$/.exec(name)?.[1];
-    // Every room on land rolls its loot from a seed of its own that no player sees.
-    const [lootLow = 0, lootHigh = 0, worldLow = 0, worldHigh = 0] = crypto.getRandomValues(new Uint32Array(4));
-    const seeds = [lootLow, lootHigh, worldLow, worldHigh] as const;
     const ask = runAsk(name, Math.floor(Date.now() / MINUTE_MS));
     if (ask !== null || name.startsWith('sea-dungeon-')) {
       if (name.startsWith('sea-dungeon-') && !(await this.behindDoor(name))) return false;
@@ -352,6 +374,23 @@ export class RoomHost extends DurableObject<Env> {
     else if (socket && dungeon) this.dismiss(socket, AGAIN, 'the sea did not answer');
   }
 
+  /** Tells the accounts a player at sea is here, in `water`: each word after the last, so the last said is the last
+   *  kept; one not taken is said again the next second. */
+  private present(
+    held: { token: string | null; water?: string | null; presenting?: Promise<unknown> },
+    water: string | null,
+  ): void {
+    const token = held.token;
+    if (!token) return;
+    held.water = water;
+    held.presenting = (held.presenting ?? Promise.resolve())
+      .then(() => this.env.ACCOUNTS.present(token, this.name, water))
+      .catch(() => false)
+      .then((took) => {
+        if (!took && held.water === water) delete held.water;
+      });
+  }
+
   private message(socket: WebSocket, message: string | ArrayBuffer): void {
     const held = this.players.get(socket);
     // A flood still arriving when its socket was let go of costs nothing more.
@@ -365,14 +404,17 @@ export class RoomHost extends DurableObject<Env> {
       // Whatever the keeper answers, the sea then sails the course it held: from where it kept the ship, if it did.
       void (this.keeper?.signIn(player, message, Date.now, here) ?? Promise.resolve(false))
         .catch(() => false)
-        .then(() => {
+        .then(async (kept) => {
+          // At sea a ship played unkept is its session's, so a rejoin brings it back where the sea last had it.
+          const owner = !kept && seaRoom(this.name) !== null ? `unkept:${await sessionHash(message)}` : null;
+          if (here() && owner !== null) this.guarded(() => this.room.own(player, owner), undefined);
           if (here()) this.guarded(() => this.room.noneKept(player), undefined);
           this.outOfDoor(socket);
         });
-      // At sea the room also says who is there, for the Roster.
+      // At sea the room also says who is there, for the Roster; the next second says in which water.
       if (seaRoom(this.name) !== null) {
         held.token = message;
-        void this.env.ACCOUNTS.present(message, this.name).catch(() => false);
+        this.present(held, null);
       }
       return;
     }
@@ -384,6 +426,13 @@ export class RoomHost extends DurableObject<Env> {
       this.guarded(() => this.room.noneKept(player), undefined);
     }
     if (!within) return this.dismiss(socket, 1008, 'too many messages');
+    // The token again, from a player who took a username since: they are named anew, once in a while at most.
+    if (typeof message === 'string' && TOKEN.test(message) && held.signed) {
+      if (Date.now() - (held.renamed ?? 0) < RENAMED_EVERY_MS) return;
+      held.renamed = Date.now();
+      void this.keeper?.rename(player, message).catch(() => undefined);
+      return;
+    }
     if (typeof message !== 'string' && message.byteLength > MESSAGE_MOST)
       return this.dismiss(socket, 1009, 'too large');
     const answer =
@@ -406,7 +455,10 @@ export class RoomHost extends DurableObject<Env> {
     if (!held) return;
     this.players.delete(socket);
     this.ashore.delete(held.player);
-    if (held.token) void this.env.ACCOUNTS.present(held.token, null).catch(() => false);
+    const token = held.token;
+    // After any word on the water still in flight, so leaving is the last the accounts hear.
+    if (token)
+      void (held.presenting ?? Promise.resolve()).then(() => this.env.ACCOUNTS.present(token, null)).catch(() => false);
     partFrom(this.room, this.keeper, held.player, (call) => this.guarded(call, undefined));
     const others = this.open().filter((each) => each !== socket);
     if (others.length === 0 && this.ticking) {
@@ -474,12 +526,17 @@ export class RoomHost extends DurableObject<Env> {
         }
       }
       const now = Date.now();
-      // Said again before the last word lapses, for each player at sea.
-      if (now - this.lastPresent >= PRESENT_EVERY_MS) {
-        this.lastPresent = now;
-        for (const held of this.players.values())
-          if (held.token) void this.env.ACCOUNTS.present(held.token, this.name).catch(() => false);
-      }
+      // Said again before the last word lapses, for each player at sea, and at once when their ship crosses into
+      // another water.
+      const again = now - this.lastPresent >= PRESENT_EVERY_MS;
+      if (again) this.lastPresent = now;
+      if (now - this.lastKept >= 1000 || again)
+        for (const held of this.players.values()) {
+          if (!held.token) continue;
+          const water = this.guarded(() => this.room.water(held.player), null);
+          if (!again && water === held.water) continue;
+          this.present(held, water);
+        }
       if (this.island && now - this.island.told >= ASHORE_EVERY_MS) {
         this.island.told = now;
         // An island the sea no longer holds (it faded, or the sea restarted) is not held again, whatever has its

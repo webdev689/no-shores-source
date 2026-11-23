@@ -5,7 +5,7 @@
 // interface's whole scale.
 import type { Box } from './quads.ts';
 import type { Align, Child, Laid, Node, Padding, Size, Span, Text } from './node.ts';
-import { type Face, lineHeight, widthOf, wrapped } from './text.ts';
+import { type Face, lineHeight, styled, widthOf, wrapped } from './text.ts';
 
 /** A node at work: its children in the flow and those floated, its size, the least it can shrink to, and its place. */
 interface Item {
@@ -63,7 +63,7 @@ function cached<Kept>(face: Face, text: Text, width: number | string, make: () =
   const words =
     typeof text.words === 'string'
       ? text.words
-      : text.words.map((span) => `${span.colour ?? ''}\u0001${span.words}`).join('\u0002');
+      : text.words.map((span) => `${span.colour ?? ''}\u0001${span.style ?? ''}\u0001${span.words}`).join('\u0002');
   const how = [text.size, text.tracking, text.wrap, text.ellipsis, text.balance, text.colour].join('|');
   const key = `${width}|${how}|${words}`;
   if (kept.has(key)) return kept.get(key) as Kept;
@@ -80,7 +80,10 @@ const linesOf = (face: Face, text: Text, width: number | null): readonly (readon
 function brokenLines(face: Face, text: Text, width: number | null): Span[][] {
   const size = text.size ?? 1;
   const tracking = text.tracking ?? 1;
-  const spans: readonly Span[] = typeof text.words === 'string' ? [{ words: text.words }] : text.words;
+  const spans: readonly Span[] =
+    typeof text.words === 'string'
+      ? [{ words: text.words }]
+      : text.words.map((span) => (span.style ? { ...span, words: styled(span.words, span.style) } : span));
   // Each character's colour, as the index of its span, by code point.
   const spanAt = spans.flatMap((span, index) => Array.from(span.words, () => index));
   const all = spans.map((span) => span.words).join('');
