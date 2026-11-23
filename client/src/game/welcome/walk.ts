@@ -6,14 +6,15 @@
 // she does once every stop is said. She keeps to the middle of the ways (`life/ways.ts`), which keep clear of every
 // solid and of Shape, and goes round her counter's end clear of the arcade's columns. No drawing and no words here:
 // the welcome (`welcome.ts`) draws her where this says and plays the scene it names.
+import { FULL_WALK } from '../../player/playerMoves.ts';
 import type { WayGraph } from '../life/ways.ts';
 import { type StationInfo, bearingTo } from '../nodes.ts';
 import { type PlazaFrame, inPlaza } from '../townsfolk.ts';
 
 type Point = readonly [number, number];
 
-/** Her pace, metres a second: brisker than the townsfolk's, as she has a plaza to show. */
-export const WALK_M_S = 1.5;
+/** Her pace, metres a second: three quarters of a player's walk, so a walking player gains on her slowly. */
+export const WALK_M_S = FULL_WALK * 0.75;
 /** How near the player she stops on first coming to them, metres. */
 export const MEET_M = 1.8;
 /** How far from the player she starts at least, metres, so she is seen to walk up to them. */

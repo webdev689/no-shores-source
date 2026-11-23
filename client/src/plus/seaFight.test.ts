@@ -3,14 +3,14 @@ import { test } from 'node:test';
 import { type SeaFightModel, seaFightWords } from './seaFight.ts';
 
 const card = {
-  name: 'Pirate Brig',
+  name: 'Tithe Brig',
   sub: 'Brig - 70 m',
   hull: 0.5,
   sail: 1,
   state: 'afloat',
   hostile: true,
   boardKey: null,
-  faction: 2,
+  faction: 1,
   band: 'orange',
 } as const;
 

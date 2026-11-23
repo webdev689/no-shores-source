@@ -3,7 +3,8 @@
 // come, as a server's are.
 import type { ArtState } from './artMessages.ts';
 import type { GearMessage, RoomLink, Snapshot } from './roomConnection.ts';
-import type { FromRooms, Opening, ToRooms } from './roomServe.ts';
+import type { CourseBlock } from '../../../server/roomDoor.ts';
+import type { FromRooms, Opening, StoryAsk, ToRooms } from './roomServe.ts';
 import type { PortInfo } from '../rules/watersRules.ts';
 
 /** How the game's thread reaches the rooms' worker: a worker of its own unless a test says otherwise. */
@@ -24,6 +25,8 @@ const workerPort = (): RoomPort => {
 };
 
 let port: RoomPort | null = null;
+// A worker that failed answers nothing more; every later opening is refused at once with why.
+let portFailed: Error | null = null;
 const rooms = new Map<number, RoomThread>();
 const opening = new Map<number, { resolve: (room: RoomThread) => void; reject: (error: Error) => void }>();
 const words = new Map<number, ((word: string) => void)[]>();
@@ -33,6 +36,7 @@ let next = 1;
 export function roomPort(given?: RoomPort): RoomPort {
   if (given || !port) {
     port = given ?? workerPort();
+    portFailed = null;
     port.hear(heard);
     port.fail(workerFailed);
   }
@@ -48,6 +52,7 @@ function unasked(id: number): void {
 /** The worker failed: every opening still waiting is refused and every room is lost, each told why. */
 function workerFailed(reason: string): void {
   console.error(`the rooms for playing alone failed: ${reason}`);
+  portFailed = new Error(reason);
   for (const [id, waiting] of opening) {
     opening.delete(id);
     waiting.reject(new Error(reason));
@@ -108,6 +113,7 @@ export class RoomThread implements RoomLink {
     snapshot: (snapshot: Snapshot) => void,
     gear: (gear: GearMessage) => void = () => undefined,
   ): Promise<RoomThread> {
+    if (portFailed) return Promise.reject(portFailed);
     const id = next++;
     const opened = new Promise<RoomThread>((resolve, reject) => opening.set(id, { resolve, reject })).then((room) => {
       [room.snapshot, room.gear] = [snapshot, gear];
@@ -175,6 +181,17 @@ export class RoomThread implements RoomLink {
     return RoomThread.open(module, { how: 'island', word, seas }, snapshot);
   }
 
+  /** A wreck's room on its course over the open sea, as `LocalRoom.openOverSea`, the player standing at `spawn`. */
+  static openOverSea(
+    module: WebAssembly.Module,
+    spawn: { readonly x: number; readonly y: number },
+    blocks: readonly CourseBlock[],
+    snapshot: (snapshot: Snapshot) => void,
+    gear: (gear: GearMessage) => void,
+  ): Promise<RoomThread> {
+    return RoomThread.open(module, { how: 'overSea', spawn, blocks }, snapshot, gear);
+  }
+
   /** A snapshot from the worker, handed on. */
   told(snapshot: Snapshot): void {
     this.snapshot(snapshot);
@@ -199,8 +216,19 @@ export class RoomThread implements RoomLink {
 
   /** The word on its island `isle` of the sea this room is, as an island's room opens on it; empty if none stands. */
   isleWord(isle: number): Promise<string> {
+    return this.asked({ kind: 'word', id: this.id, isle });
+  }
+
+  /** One of the story's asks of the room (`StoryAsk`), made in the worker in the order asked, before any tick asked
+   *  after it: its answer, a foe's number, 1 done or given, or 0 refused, as the room was lost or let go too. */
+  async story(story: StoryAsk): Promise<number> {
+    return Number(await this.asked({ kind: 'story', id: this.id, story })) || 0;
+  }
+
+  /** `told` posted, and the word answering it, as the worker answers each room's asks in turn. */
+  private asked(told: ToRooms): Promise<string> {
     const answer = new Promise<string>((resolve) => words.set(this.id, [...(words.get(this.id) ?? []), resolve]));
-    roomPort().post({ kind: 'word', id: this.id, isle });
+    roomPort().post(told);
     return answer;
   }
 

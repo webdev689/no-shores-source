@@ -163,3 +163,24 @@ test("a ground's top takes its pattern from the world, so its pieces join as one
     }
   }
 });
+
+test("the crystal's six-sided columns are cut in flat facets, each lit as one; a stone column stays round", () => {
+  const facetNormals = (material: Solid['material']): number => {
+    const mesh = meshed({ ...solidOf({ shape: 'column', sides: 6, top: 0.8 }, [2, 2, 6]), material });
+    const sides = new Set<string>();
+    for (let vertex = 0; vertex < mesh.normals.length / 3; vertex++) {
+      const normal = mesh.normals.slice(vertex * 3, vertex * 3 + 3);
+      if (Math.abs(normal[2]) < 0.99) sides.add(normal.map((part) => part.toFixed(3)).join());
+    }
+    return sides.size;
+  };
+  assert.equal(facetNormals('crystal'), 6, 'one normal a facet');
+  assert.ok(facetNormals('stone') > 6, 'smooth round its sides');
+  // A body's top is under its tip, so it is not meshed; its foot is, as a shard's may stand clear of what it grows on.
+  const body = meshed({ ...solidOf({ shape: 'column', sides: 6, top: 0.8 }, [2, 2, 6]), material: 'crystal' });
+  const upright = (sign: number) =>
+    Array.from({ length: body.normals.length / 3 }, (_unused, vertex) => body.normals[vertex * 3 + 2] * sign > 0.99);
+  assert.ok(!upright(1).some(Boolean), 'no cap');
+  assert.ok(upright(-1).some(Boolean), 'its foot');
+  assert.equal(body.indices.length / 3, 12 + 4, 'six facets of two triangles, a hexagon under them');
+});

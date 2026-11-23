@@ -48,7 +48,7 @@ export function ambushersFrom(story: Story, inbound: readonly Sailed[]): Ambushe
     return {
       bearing: Math.atan2(Math.sin(bearing), Math.cos(bearing)),
       distanceM: Math.hypot(ship.x - brig.x, ship.y - brig.y),
-      faction: 2,
+      faction: 1,
       rank: 2,
       heading: ship.heading,
       way: ship.underWay ? INBOUND_WAY_M_S : 0,

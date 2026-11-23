@@ -56,6 +56,8 @@ export function listenForControls(game: Controlled): void {
     const { flow, sea } = playing;
     const sailing = flow.mode === 'sea' && !flow.menu;
     const retry = game.retry();
+    // No key breaks a travel's cinematic: the player has the ship again once it has arrived.
+    if (sea?.travelling) return;
     if (playing.helmMap.key(escape ? 'escape' : acts('confirm') ? 'enter' : acts('landMap') ? 'n' : '')) return;
     if (deckKey(acts, escape, sailing ? sea : null, game.respawn)) return;
     if ((pressed('confirm') || pressed('respawn')) && retry) retry();
@@ -106,7 +108,8 @@ export function listenForControls(game: Controlled): void {
     if (playing.flow.mode === 'story' && (pressed.has('jump') || pressed.has('confirm'))) story?.press();
     else if (playing.flow.mode !== 'story' && !covered) act((id) => !escape && pressed.has(id), escape);
     // As the key does, in the story too: the menu itself refuses where the story keeps no gear.
-    if (pressed.has('character') && !hud.controls.open) openGearWindow({ view: 'character', toggle: true });
+    if (pressed.has('character') && !hud.controls.open && !playing.sea?.travelling)
+      openGearWindow({ view: 'character', toggle: true });
     if (pressed.has('controls') && (hud.controls.open || hud.keysOffered) && !gearScreenOpen()) {
       hud.controls.toggle();
       if (hud.controls.open) document.exitPointerLock();

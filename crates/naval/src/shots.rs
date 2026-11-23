@@ -63,7 +63,8 @@ pub enum ShotEvent {
         point: [f64; 3],
         launch: [f64; 3],
     },
-    /// A ball struck it; on its canvas, `sail` is the sail whose box it entered.
+    /// A ball struck it; on its canvas, `sail` is the sail whose box it entered. On its hull, `rigged` is whether
+    /// that ball tore its canvas on the way: one ball, struck twice.
     Hit {
         shooter: ShipId,
         target: ShipId,
@@ -73,6 +74,7 @@ pub enum ShotEvent {
         gun: Gun,
         shot: Shot,
         sail: Option<usize>,
+        rigged: bool,
     },
     Splash {
         shooter: ShipId,
@@ -172,6 +174,7 @@ fn fly_piece(
             gun,
             shot,
             sail: Some(sail),
+            rigged: false,
         });
     }
     if first == f64::INFINITY {
@@ -193,6 +196,7 @@ fn fly_piece(
                 gun,
                 shot,
                 sail: None,
+                rigged: ball.rigged.contains(&target),
             });
         }
         (_, Some((share, true))) => {

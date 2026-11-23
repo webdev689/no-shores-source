@@ -2,6 +2,8 @@
 // second flash), a bolt down to its point for a few frames, and its thunder heard as late as its distance makes it.
 // A story can also call a strike where it wants one, to cover a cut or light a ship coming out of the dark.
 
+import { seeded } from '../seeded.ts';
+
 /** A strike: when it began (seconds), where it came down (world metres) and its seed, for the bolt's fork. */
 interface Strike {
   readonly at: number;
@@ -24,17 +26,6 @@ const BOLT_S = 0.22;
 /** The gap between strikes, seconds, at its least and its most, and how far from the eye they fall, metres. */
 const GAP_S = [4, 11] as const;
 const FAR_M = [400, 4500] as const;
-
-/** A small seeded stream of numbers in [0, 1). */
-function seeded(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let mixed = Math.imul(state ^ (state >>> 15), 1 | state);
-    mixed = (mixed + Math.imul(mixed ^ (mixed >>> 7), 61 | mixed)) ^ mixed;
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 export class Lightning {
   private readonly draw: () => number;

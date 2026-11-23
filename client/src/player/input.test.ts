@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { HOLD_S } from './binds.ts';
-import { BINDS, Input, type InputFrame, axis, keyNameOf } from './input.ts';
+import { BINDS, handsFree, IDLE, Input, type InputFrame, axis, keyNameOf } from './input.ts';
 import type { PadState } from './pad.ts';
 
 /** A page with one standard pad whose buttons `held` are down (a trigger by its pull) and sticks at `axes`, read
@@ -146,6 +146,17 @@ test('the pad pressed makes it the one shown, and a key the keyboard', () => {
   done();
 });
 
+test('played on the pad the game has its controls, its pointer free; a key gives them back to the pointer', () => {
+  const { pad, frame, key, done } = padPage();
+  BINDS.device = 'keys';
+  assert.equal(frame().locked, false, 'on the keys, the pointer not locked');
+  pad.held = { [TRIGGER_R]: 1 };
+  assert.equal(frame().locked, true, 'so the pad swings, guards and drinks without a click');
+  key('w');
+  assert.equal(frame().locked, false);
+  done();
+});
+
 test('B waits for its hold only where a hold of it is bound: in a sea fight it braces as it goes down, held', () => {
   const { input, pad, frame, done } = padPage();
   input.context = 'fight';
@@ -209,4 +220,18 @@ test('a sign is named by its key, Shift or not, and is let go under the name it 
   key('?', 'KeyM', 'keyup');
   assert.equal(frame().held('mount'), false);
   done();
+});
+
+test('the pad fights with the pointer free once the menu is shut; the keys and mouse only with it locked', () => {
+  const device = BINDS.device;
+  try {
+    BINDS.device = 'pad';
+    assert.equal(handsFree({ ...IDLE, locked: false }, false), true, 'the pad, the pointer free');
+    assert.equal(handsFree({ ...IDLE, locked: false }, true), false, 'never under the menu');
+    BINDS.device = 'keys';
+    assert.equal(handsFree({ ...IDLE, locked: false }, false), false, 'a click on a free pointer only locks it');
+    assert.equal(handsFree({ ...IDLE, locked: true }, false), true);
+  } finally {
+    BINDS.device = device;
+  }
 });

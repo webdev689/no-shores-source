@@ -87,12 +87,13 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   whole length even if the button is let go at once, so a tap parries. A blow that lands in the window, from within the
   guard's arc, is parried: it does nothing, its striker staggers for 54 ticks, the parrier's lock turns on it, and the
   parrier's next swing at it within that time is a riposte, twice as hard, which no guard stops (it does not also count
-  the stagger's quarter more). A press within half a second of a window left unused opens none, so mashing the button
-  does not parry. After the window the guard blocks: a blade's guard covers 60 degrees either side, a shield's 80; a
-  blade lets a fifth of the blow through, a shield a twentieth; the guard pays the blow's weight in stamina (a shield
-  six tenths of it), and a blow it cannot pay for breaks it, staggering the fighter for 48 ticks with half the blow
-  through. Guarding, a fighter moves at under half its pace. Iron blows and shots are never parried, iron blows never
-  blocked, and shots blocked only by a shield.
+  the stagger's quarter more), struck through the deflect at once if a swing can start then, else the deflect plays on.
+  A press within half a second of a window left unused opens none, so mashing the button does not parry. After the
+  window the guard blocks: a blade's guard covers 60 degrees either side, a shield's 80; a blade lets a fifth of the
+  blow through, a shield a twentieth; the guard pays the blow's weight in stamina (a shield six tenths of it), and a
+  blow it cannot pay for breaks it, staggering the fighter for 48 ticks with half the blow through. Guarding, a fighter
+  moves at under half its pace. Iron blows and shots are never parried, iron blows never blocked, and shots blocked only
+  by a shield.
 - **The dodge.** A press dodges: a low, fast hop (3 m/s up, 10 m/s along) the way the keys point, or straight back with
   none, landing about 3 m away. It costs 22 stamina, needs the ground under it, and is not taken on horseback. The
   rules face it to the soft lock's target if there is one, so a fighter hops aside still facing its foe, its guard and
@@ -102,7 +103,8 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   strikes half again as hard and twice as heavily. A dodge cancels a swing's wind-up or its follow-through (never the
   blow's own tick), a bow's draw, and a flinch from its eighth tick; a swing, a guard or another dodge may follow it 18
   ticks after the press, as it lands. The movement rules carry the hop with no steering, so it slides along a wall and
-  falls off a ledge, and never catches a lip.
+  falls off a ledge, and never catches a lip. From a crouch under a ceiling too low to stand, the hop stays crouched,
+  as a crouched jump does.
 - **Poise.** A blow that lands fills its fighter's poise meter by its weapon's weight times ten, by its stroke's share,
   half again from behind. Full, the fighter staggers (light 84 ticks, medium 72, heavy 60, massive 48), takes a quarter
   more from every blow, and no new poise stagger begins until three seconds after. The meter drains a quarter a second
@@ -115,8 +117,9 @@ A player's weapon reaches a tenth further than the table's reach; a foe's reache
   can be, and a click in a weapon swap is kept until the swap ends ("The swap", below). The newest press wins over a
   button only held: a click of the attack swings out of a held guard, and a riposte is struck through one. A click that
   cannot swing yet, for want of stamina, riding off the ground or in a swap, holds no guard down: the guard rises and
-  stays up until the swing can start. The guard, held or pressed, cuts a swing's follow-through short once its blow has
-  landed, as the dodge does.
+  stays up until the swing can start. A swing, a guard, a draw or a shot starts only with the hands free, on foot or
+  in the air, never hanging from a lip, climbing a wall or going over one ([[Movement]]). The guard, held or
+  pressed, cuts a swing's follow-through short once its blow has landed, as the dodge does.
 - **What hands hold.** A fighter takes up new arms only at rest: never in the middle of a swing, a guard, a draw or a
   reload. Arms no one could hold (a gun beside a blade, a two-handed weapon with a shield) are bare hands.
 - **The swap.** A weapon changed for another, as one loadout for the other, or put away starts a swap of 24 ticks

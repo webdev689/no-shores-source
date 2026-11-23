@@ -1,11 +1,11 @@
-use super::tests::{met, ticks, vessel_mut};
+use super::tests::{floating_for, met, ticks, vessel_mut};
 use super::*;
 use crate::battle::BoardRefused;
 use crate::players::{Input, SpawnAsk};
 use crate::sea::decks::{HOLD_TICKS, foe_rank};
 use naval::damage::Hurt;
 use naval::fight::{CAPTAIN, PLAYER, Sailor};
-use naval::ranks::{Commission, GREY_TITHE, PIRATES, Rank};
+use naval::ranks::{Commission, GREY_TITHE, Rank};
 
 /// The captain of the player's fight struck where it lies, making no way.
 fn strike(sea: &mut Sea, player: PlayerId) {
@@ -36,7 +36,7 @@ fn each_captains_rank_is_the_same_rank_among_the_foes_so_its_deck_holds_the_crew
         sea.board(player).unwrap();
         let mut ranks: Vec<_> = sea.decks()[0].room.foes.values().map(|foe| foe.brain.rank).collect();
         let mut crew: Vec<_> =
-            ::foes::crews::deck_crew(PIRATES, foe_rank(rank)).into_iter().map(|(_, hand)| hand).collect();
+            ::foes::crews::deck_crew(GREY_TITHE, foe_rank(rank)).into_iter().map(|(_, hand)| hand).collect();
         ranks.sort();
         crew.sort();
         assert_eq!(ranks, crew, "{rank:?}");
@@ -45,15 +45,16 @@ fn each_captains_rank_is_the_same_rank_among_the_foes_so_its_deck_holds_the_crew
 
 #[test]
 fn a_boarding_is_refused_when_its_deck_would_hold_no_crew_and_nothing_is_told() {
-    assert!(::foes::crews::deck_crew(PIRATES, ::foes::Rank::Boss).is_empty(), "the pirates have no deck Boss");
+    // A friendly ship fighting beside the players has no deck crew of the Tithe's: it is never boarded.
     let (mut sea, player) = met(20.0, Rank::Boss);
+    let friendly = naval::ranks::PLAYERS;
+    sea.fights.of_mut(player).unwrap().0.hostiles.get_mut(&CAPTAIN).unwrap().commission.faction = friendly;
     strike(&mut sea, player);
     assert_eq!(sea.board(player), Err(BoardRefused::NoneAlongside));
     assert!(sea.decks().is_empty() && !sea.on_deck(player));
     assert!(sea.fights.of_mut(player).unwrap().0.pending.is_empty(), "no boarding told");
     // The Grey Tithe's Boss has its deck crew: it is boarded.
     let (mut sea, player) = met(20.0, Rank::Boss);
-    sea.fights.of_mut(player).unwrap().0.hostiles.get_mut(&CAPTAIN).unwrap().commission.faction = GREY_TITHE;
     strike(&mut sea, player);
     assert_eq!(sea.board(player), Ok(()));
 }
@@ -126,7 +127,7 @@ fn two_boarders_one_beaten_both_take_its_hold_when_its_crew_falls_and_both_step_
         foe.fighter.action = combat::Action::Dead { elapsed: 0 };
     }
     sea.tick();
-    assert_eq!((sea.flotsam_for(one).count(), sea.flotsam_for(two).count()), (6, 6), "its hold for each");
+    assert_eq!((floating_for(&sea, one).count(), floating_for(&sea, two).count()), (6, 6), "its hold for each");
     ticks(&mut sea, HOLD_TICKS as usize + 1);
     assert!(!sea.on_deck(one) && !sea.on_deck(two));
 }
@@ -140,7 +141,7 @@ fn a_ship_going_down_under_its_boarders_sends_them_home_with_what_floats_once_an
     vessel_mut(&mut sea, player, CAPTAIN).damage.sink_t = naval::damage::SINK_SECONDS - 0.5;
     ticks(&mut sea, 60 * 60);
     assert!(!sea.on_deck(player));
-    assert_eq!(sea.flotsam_for(player).count(), 3, "what floats once, no hold");
+    assert_eq!(floating_for(&sea, player).count(), 3, "what floats once, no hold");
 }
 
 #[test]
@@ -245,20 +246,18 @@ fn road(sea: &Sea, player: PlayerId) -> Option<(usize, usize)> {
 fn a_ship_that_went_down_tells_each_who_fought_it_its_side_and_whether_it_struck_or_was_sunk() {
     let mut sea = super::tests::sea();
     let players: Vec<PlayerId> = (0..3).map(|_| sea.join()).collect();
-    // A Tithe ship beaten any way, one boarded, and a pirate: the Stormcallers', the Veiled's and the Lamplighters'.
+    // A Tithe ship beaten any way, one boarded, and the wreckers' ship: the Stormcallers', the Veiled's and the
+    // Lamplighters'.
     for (player, faction) in players.iter().zip([1, 3, 2]) {
         on_road(&mut sea, *player, faction, 5);
     }
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
-    let tithe = crate::pirates::Pirate::standing(1, 7, commission, [0.0, 0.0], 0.0, false);
-    let sank = |pirate, struck| Sank { pirate, at: [0.0, 0.0], players: players.clone(), wind: [0.0; 2], struck };
+    let tithe = crate::hostiles::Hostile::standing(1, 7, commission, [0.0, 0.0], 0.0, false);
+    let sank = |hostile, struck| Sank { hostile, at: [0.0, 0.0], players: players.clone(), wind: [0.0; 2], struck };
     sea.after_fights(Vec::new(), &[sank(tithe, true)]);
     let roads: Vec<_> = players.iter().map(|player| road(&sea, *player)).collect();
-    assert_eq!(roads, [Some((1, 6)), Some((3, 5)), Some((2, 5))], "struck: not boarded, nor a pirate");
+    assert_eq!(roads, [Some((1, 6)), Some((3, 5)), Some((2, 6))], "struck: not boarded");
     assert!(sea.harbour.changed.contains(&players[0]), "its gear goes out");
-    let pirate = crate::pirates::Pirate { commission: Commission { faction: PIRATES, ..commission }, ..tithe };
-    sea.after_fights(Vec::new(), &[sank(pirate, false)]);
-    assert_eq!((road(&sea, players[1]), road(&sea, players[2])), (Some((3, 5)), Some((2, 6))), "a pirate sunk");
 }
 
 #[test]
@@ -268,8 +267,8 @@ fn a_tithe_ships_deck_taken_tells_its_boarder_it_was_boarded() {
     on_road(&mut sea, player, 3, 5);
     sea.course_anywhere(player, &[[50_000.0, 50_000.0]], 10).unwrap();
     let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
-    let standing = crate::pirates::Pirate::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
-    sea.pirates.sailing.push(crate::pirates::Pirate { level: 9, ..standing });
+    let standing = crate::hostiles::Hostile::standing(1, 7, commission, [50_000.0, 49_980.0], 0.0, true);
+    sea.hostiles.sailing.push(crate::hostiles::Hostile { level: 9, ..standing });
     sea.tick();
     strike(&mut sea, player);
     let ship = sea.fights.of_mut(player).unwrap().1.ship;
@@ -371,7 +370,7 @@ fn a_boarded_decks_loot_rolls_on_the_hosts_own_seed_mixed_by_its_ship() {
         }
         strike(&mut sea, player);
         sea.board(player).unwrap();
-        (sea.decks.boarded[0].room.seed, sea.decks.boarded[0].pirate.id)
+        (sea.decks.boarded[0].room.seed, sea.decks.boarded[0].hostile.id)
     };
     let (unseeded, _) = seed_aboard(false);
     let (seed, ship) = seed_aboard(true);
@@ -411,4 +410,64 @@ fn a_boarder_kept_while_still_aboard_keeps_what_the_sea_gave_them_meanwhile() {
     let kept = gear::Character::from_json(&sea.kept_character(player).expect("kept")).expect("read");
     assert_eq!(kept.crew.officers.len(), 1, "the officer who joined");
     assert_eq!(kept.ship_xp, 500, "the ship's experience");
+}
+
+#[test]
+fn a_boarders_own_ship_takes_no_helm_brace_or_sail_while_they_stand_on_the_struck_deck() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    strike(&mut sea, player);
+    let steer = naval::fight::Orders {
+        helm: sailing::ship::Helm { steer: 0.5, climb: 0 },
+        brace: true,
+        ..crate::battle::QUIET
+    };
+    sea.orders(player, steer).unwrap();
+    let own = vessel_mut(&mut sea, player, PLAYER);
+    (own.ship.rung, own.ship.ahead) = (1, 1.5);
+    sea.board(player).unwrap();
+    // The boarder holds out on the deck while its ship is watched.
+    let boarder = sea.decks.boarded[0].aboard[&player];
+    let fighter = &mut sea.decks.boarded[0].room.players.get_mut(&boarder).unwrap().fighter;
+    (fighter.health, fighter.health_max) = (1e9, 1e9);
+    let was = vessel_mut(&mut sea, player, PLAYER).ship;
+    // Six seconds on the deck: the helm and the sail it had would have it turning past 3 m/s by then.
+    ticks(&mut sea, 360);
+    assert!(sea.on_deck(player), "still on the deck");
+    let own = vessel_mut(&mut sea, player, PLAYER);
+    let moved = libm::hypot(own.ship.x - was.x, own.ship.y - was.y);
+    assert!(moved < 6.0 && libm::hypot(own.ship.ahead, own.ship.abeam) < 1.0, "it drifts to a stop, {moved} m");
+    assert!((own.ship.heading - was.heading).abs() < 0.05, "it holds its heading");
+    assert!(!own.guns.braced, "its brace let go");
+}
+
+#[test]
+fn a_boarder_who_leaves_the_sea_from_the_deck_keeps_the_hands_who_fell_there_lost() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    sea.harbour.characters.entry(player).or_insert_with(gear::Character::starting);
+    strike(&mut sea, player);
+    sea.board(player).unwrap();
+    let crew = |sea: &Sea| gear::Character::from_json(&sea.kept_character(player).unwrap()).unwrap().ship[2];
+    let before = crew(&sea);
+    let room = &mut sea.decks.boarded[0].room;
+    let hand = *room.ashore.hands.keys().next().expect("its hands boarded with it");
+    room.foes.get_mut(&hand).unwrap().fighter.action = combat::Action::Dead { elapsed: 0 };
+    sea.tick();
+    assert!(sea.on_deck(player), "still fighting on the deck");
+    let man = gear::character::SHIP_WHOLE / naval::arms::LARGE_BOAT.crew as u16;
+    assert!(crew(&sea) + man <= before + 1, "the hand who fell is lost: {before} to {}", crew(&sea));
+}
+
+#[test]
+fn a_boarder_back_aboard_finds_their_sails_set_as_they_left_them() {
+    let (mut sea, player) = met(20.0, Rank::Minor);
+    strike(&mut sea, player);
+    vessel_mut(&mut sea, player, PLAYER).ship.rung = 2;
+    sea.board(player).unwrap();
+    assert_eq!(vessel_mut(&mut sea, player, PLAYER).ship.rung, 0, "furled while they stand on its deck");
+    for foe in sea.decks.boarded[0].room.foes.values_mut() {
+        foe.fighter.action = combat::Action::Dead { elapsed: 0 };
+    }
+    sea.tick();
+    sea.leave_deck(player).unwrap();
+    assert_eq!(vessel_mut(&mut sea, player, PLAYER).ship.rung, 2, "set again as they come back aboard");
 }

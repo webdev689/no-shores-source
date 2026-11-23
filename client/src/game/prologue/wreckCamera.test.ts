@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { cameraCourse } from './wreckCamera.ts';
+import { SQUARE_M, squaresOf } from './wreckGround.ts';
+import { readWreck } from './wreckLayout.ts';
 import { WRECK_VERTEX_BYTES, type WreckMesh } from './wreckView.ts';
 
 type Point = readonly [number, number, number];
@@ -114,4 +116,20 @@ test('nothing drawn under a block leaves it as the course has it', () => {
   const away = square(30, 30, 5.2);
   assert.deepEqual(cameraCourse([away], MESH, ORIGIN), [away]);
   assert.deepEqual(cameraCourse([], MESH, ORIGIN), []);
+});
+
+test("every block of the wreck's course keeps every square it stands over, so the camera feels what is drawn under each", () => {
+  // The camera lowers a block by what is drawn over the squares it owns; one that lost its squares to a block listed
+  // after it would keep its full top over the deck.
+  const course = readWreck().course;
+  const squares = squaresOf(course);
+  const owned = new Int32Array(course.length);
+  for (const owner of squares.owner) if (owner >= 0) owned[owner] = (owned[owner] ?? 0) + 1;
+  const squareOf = (value: number, from: number) => Math.floor((value - from) / SQUARE_M + 1e-6);
+  const short = course.filter((block, index) => {
+    const across = squareOf(block.maxX, squares.west) - squareOf(block.minX, squares.west);
+    const down = squareOf(block.maxY, squares.north) - squareOf(block.minY, squares.north);
+    return (owned[index] ?? 0) < across * down;
+  });
+  assert.deepEqual(short, []);
 });

@@ -4,7 +4,7 @@
 import type { Post, Ways } from '../nodes.ts';
 import { type Doing, type Routine, doingAt, keptAt, roundOf } from './routine.ts';
 import { seeded } from './seeded.ts';
-import { walkerRoutines, walkersFor } from './walkers.ts';
+import { LOOP_S, walkerRoutines, walkersFor } from './walkers.ts';
 import { WayGraph } from './ways.ts';
 
 /** The round a post is walked in, if it is a round's. */
@@ -24,10 +24,11 @@ export class TownLife {
         graph,
         posts.filter((post) => roundOfPost(post) === round),
         random,
+        LOOP_S,
       ),
     );
     const visited = posts.filter((post) => post.keep === 'visited');
-    const walkers = walkerRoutines(graph, visited, walkersFor(visited.length), random);
+    const walkers = walkerRoutines(graph, visited, walkersFor(visited.length), random, walked);
     this.routines = [...kept, ...walked, ...walkers];
   }
 

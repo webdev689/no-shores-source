@@ -20,9 +20,10 @@ fn sloop_at(x: f64, y: f64, heading: f64) -> Ship {
     Ship { x, y, heading, ahead: 0.0, abeam: 0.0, turn: 0.0, sail_way: 0.0, rung: 0 }
 }
 
-/// The story's ambush: three pirate Majors set round the player's Sloop, each heading for it.
+/// The story's ambush: three Tithe Majors set round the player's Sloop, each heading for it.
 fn story_ambush() -> Fight {
-    let major = Commission::of(2, Rank::Major).unwrap_or_else(|| panic!("pirates sail Majors"));
+    let major =
+        Commission::of(crate::ranks::GREY_TITHE, Rank::Major).unwrap_or_else(|| panic!("the Tithe sails Majors"));
     let captains = [
         (sloop_at(-240.0, -720.0, 0.3), major, 2),
         (sloop_at(40.0, -820.0, 3.1), major, 3),

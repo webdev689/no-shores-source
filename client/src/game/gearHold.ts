@@ -124,6 +124,12 @@ export class Holds {
     if (!held && pointed) this.begin(id, 'pointer', act, hold);
     else if (!held && keyed && !this.held) this.begin(id, this.keys.has('enter') ? 'enter' : ' ', act, hold);
     else if (held?.by === 'pointer' && !(ui.pressing(id) && ui.hovered(id))) this.letGo();
+    // A key's hold lets go as the focus leaves its press, as the pointer's does as it leaves; the key must be pressed
+    // again, so it never charges the press the focus moved to.
+    else if (held && held.by !== 'pointer' && !ui.focused(id)) {
+      this.keys.delete(held.by);
+      this.letGo();
+    }
     return this.step(id);
   }
 
@@ -159,11 +165,6 @@ export class Holds {
   letGo(): void {
     this.held?.quiet();
     this.held = null;
-  }
-
-  /** Whether a hold is under way, so the menu is not built anew under it. */
-  get holding(): boolean {
-    return this.held !== null;
   }
 
   private begin(id: string, way: Held['by'], act: () => void, hold: HoldWith): void {

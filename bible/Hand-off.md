@@ -125,6 +125,19 @@ each part works is in its system note.
   merged a third time before the merge: the events' fight events 16 to 25 (main's Wiped is 15), the Tithe-Taker 45 after
   main's wardens (21 to 38), the chest's Vestige drawn on main's rank colours (Major plain, Boss heroic), and the
   Lattice laid into main's forge tables again by `lattice.yml`'s run 45048576675.
+- **The third codebase audit, the Grey Tithe in the pirates' place, travel by the held map and the overtaken ruins**
+  (#155, merged on the owner's "I really want to merge the code fixes we did"): an audit of every module and an audit of
+  it, each finding tested before its fix; then, built on it, [[Pirates Are Replaced by the Grey Tithe]] (clashes are a
+  Tithe ship attacking a merchant of the traffic, which a player joins beside),
+  [[The Ruined Cities' Waters Are the Lattice's, and Their Ruins Are Overtaken]] (the held map's Lattice waters, the six
+  ruins grown through with crystal) and [[The Held Map Takes the Ship to Other Waters, Seen Sailing Away]]; Claude's
+  calls in [[The Grey Tithe's Sea, Travel and the Overtaken Ruins as Claude Builds Them]]. Each feature reviewed on its
+  own and its findings fixed; tested offline, the ruins pictured headless; the travel's cinematic not pictured.
+- **The picture driver reads the drawn interface** (#165, merged on the owner's "Yes"): `__ui()` lists what the
+  game's interface shows, the driver's `waitFor`, `clickText` and `press` read it, and a plan's `"noGpu": true` runs
+  the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline: the title, the story's skip and
+  its "begin" driven with no GPU. Proposed next, not yet asked for: a cloud environment whose setup script installs and
+  builds, and a CI check that boots the game and finds its HUD.
 - **Not yet seen or heard.** Sessions test offline and picture headless. Headless Chromium has lost the game's WebGPU
   device about 2 s in when other jobs shared the cores; on an idle container at b81f0c40 the title and the social
   space kept it 80 s. SwiftShader is too slow to show the world, so these wait on a real GPU, an ear or a hand:
@@ -139,17 +152,33 @@ each part works is in its system note.
     other's dyes, horses, faction gear and Veiled figure; Maren's whole walk; a blow on a shield; the walking blows
     frame by frame; the display beside the owner's two pictures (#68); a ware bought at the Quartermaster's, a
     Vestige opened at the Reader's; a faction set worn in the page; the water's order at a coast.
+  - #155's, played by hand: the travel's cinematic from the helm to the arrival, the hover and the prompt on the pad;
+    a clash of a Tithe ship and a merchant, joined; a ruin up close (its buildings' veins and sheets) and its wrecks
+    from the sea at the sea's size.
   - Known and left: at a steep downward look the aiming camera can show the figure's diagonal back view; a crowd's
     dresses are composed ahead only as room comes, small objects are made each frame, and the Test Ground's panels
     run the room while the pointer is free (#68).
 
 ## Waiting on the owner
 
-- **#165, the picture driver reads the drawn interface** (branch `ccr-e371333e-z5ngw9`), for the owner's yes to merge:
-  `__ui()` lists what the game's interface shows, the driver's `waitFor`, `clickText` and new `press` read it, and a
-  plan's `"noGpu": true` runs the game at full speed with nothing drawn ([[Toolkit]], Browser QA). Tested offline:
-  the title, the story's skip and its "begin" driven with no GPU. Proposed next, not yet asked for: a cloud environment
-  whose setup script installs and builds, and a CI check that boots the game and finds its HUD.
+- **The owner's six prologue points, the wreck's room in the worker and a full audit** (#161, branch
+  `claude/gifted-knuth-lijjf2`), for the owner's yes to merge, which deploys the page and the rooms (the naval rules
+  and the protocol's version changed): the wreck's hitches (blood's rays, its sheet drawn behind the wake's shut lids)
+  and its room opened and ticked in the rooms' worker ([[The Wreck's Room Runs in the Rooms' Worker Too]]); the
+  ship's aim after Black Flag from its own deck with a lay that narrows as it is held
+  ([[Aiming a Ship Follows Black Flag, From Its Deck]]); the wreck's arms 8 m out as a loot drop
+  ([[The Wreck's Arms Lie Farther Out, as a Loot Drop]]); the story's one-shots (the crash, the splash) fetched as its
+  sound wakes; the Boarding playing on through a death before Thule; Maren at three quarters of a walk
+  ([[Elder Maren Hale Walks at Three Quarters of a Player's Pace]]); the marks seen faded through walls
+  ([[A Mark Over What a Player Can Use Is Seen Through Walls]]), beside main's lit marks. Then the owner's
+  "comprehensive audit on everything": six read-only auditors (the aim and the naval rules, sound and music, the
+  marks, arms and welcome, the prologue end to end, the bible against the code, the room's move), every finding fixed
+  with a test or written down as a limit in #161's description; among the fixes, the pad has the game's controls
+  without the pointer (a pad alone could not fight on foot), a cut sting no longer holds back the song behind it, and
+  the protocol's version covers the sea fight's numbers. Tested offline (the full check at abd1ad14); the deck eye's
+  framing on each hull, the faded marks, the arms' pop and the sounds are not yet seen on a real GPU, heard or played.
+  Open for the owner: whether each hull's eye frames well (the Brig's stands on its quarterdeck, aft of its battery;
+  the Schooner's under its main boom), and the narrowing's 2x and 1.5 s.
 - **Nameplates, the player menu and chat** (#154, branch `claude/player-nameplates-interaction-3b6cwr`), for the
   owner's yes to merge, which deploys the page, the rooms and the accounts (a new Durable Object, the chat's hall, and
   two migrations: `presence.water` and `mutes`): [[Other Players Wear a Nameplate, Their Level or Prestige in a
@@ -241,6 +270,12 @@ The decisions in [[Open Questions]] are not repeated here.
   refused while fallen or just struck; long recordings in order; the island packs, `runs_everywhere` and the quests'
   lines checked in CI. Tested offline; the split asset workflows are first tested live on their next run, and nothing
   is yet played by hand or in a deployed room.
+- **#155's open points**, each the owner's: a limit on travel (each travel resets the hostile roll to 30 s, so one who
+  keeps travelling meets no hostile ship); whether the healing drink is "a heal" that Exposure halves; whether a lip
+  caught off square is hung square; whether control waits a moment for a run that opens in the wake's last instant;
+  the wreck scene's sunk Sloop, which wears the pirates' colours until `tools/wreck` is rendered again (a push there
+  publishes to R2), and `wreck_level.py`'s comments, which name the pirates' types; a ship the room took off its route
+  still drawn on it from land; the crystal of a ruin's buildings round its plaza, kept clear in its 110 m window.
 - **Open pull requests.** For the owner's yes once their checks pass: #125 (main's
   screens: the Harbourmaster's rows, the menu under 600 px). Drafts: #82
   (the owner's loop); #93 and #114 sit on the merged `claude/waters-from-islands`. Whether to close #112, which #127
@@ -358,9 +393,11 @@ The decisions in [[Open Questions]] are not repeated here.
   migration of each character's room. Known, small: before any gear has come a tier's seas show open, the server
   still refusing them. A change to `tools/dungeon/` or the contracts publishes new packs: take the manifest line from
   the workflow's log into `content/dungeon/modules.json`.
-- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, a room is
-  opened on the game's thread (`localRoom.ts`: the navmesh bake, the sea's generation), with no veil when a voyage's
-  difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
+- **Hitching in the prologue, left by #161**: the aim's view (`AimView`) is made again for every sea fight; the shore's
+  return to Saltmere rebuilds its city in one go. A fleet room's lagging player has their held lay begun again by the
+  room's standing orders while their page keeps counting.
+- **Hitching, after the areas' chunks** ([[Areas Load in Chunks With Proper Caching]]): playing alone, no veil when
+  a voyage's difficulty changes; a city is built in one go after each landmass switch and every 1.5 km (`landDrawers.ts`,
   `cityView.ts`); flora is decoded and its mips made again on every switch; a landmass cannot be prepared before it
   opens, as the land's worker holds one. R2's own `Cache-Control` waits on a test upload (the owner's yes, a write to
   R2). Then the hitching measured on a real GPU. `client/src/ships/shipTags.test.ts` fetches ship meshes from `r2.dev`,

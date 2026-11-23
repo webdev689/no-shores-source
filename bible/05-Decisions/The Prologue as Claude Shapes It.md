@@ -61,3 +61,5 @@ Claude's calls inside the owner's thirteen beats ([[The Game Opens With a Story 
 | Which songs play where | The title over the intro; the storm's song growing from the storm to the sighting; the sea's own fight song in the fight; the calm's flute; the ram's swell in Thule's half step, cut by the crash; silence on waking; the Boarding's first phase through the wreck, until Thule wakes his own; the deep's voices; the shore's song | The game's own music where the story plays the game's fights; the story's own where it tells |
 | Where the shore leads | The shore's song ends on D, which leads into Saltmere's theme in G as the player arrives | The story hands the player to the game in one breath |
 | How long it runs | The intro about 25 s; the whole story about 15 minutes played | A first session's length |
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: the ships that attack first are the Grey Tithe's.

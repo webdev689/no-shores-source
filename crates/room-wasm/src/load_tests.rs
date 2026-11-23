@@ -8,8 +8,8 @@
 use super::*;
 use naval::damage::Hurt;
 use naval::fight::{CAPTAIN, Sailor};
-use naval::ranks::{Commission, PIRATES, Rank};
-use room::pirates::Pirate;
+use naval::ranks::{Commission, GREY_TITHE, Rank};
+use room::hostiles::Hostile;
 use std::time::Instant;
 
 /// The sea's opening, as the host sends it: the world's own layout and its nine port cities.
@@ -84,10 +84,10 @@ fn load_at_sea_among_hostile_ships() {
             for index in 0..count {
                 let [x, y] = spot(index);
                 for k in 0..3 {
-                    let commission = Commission { faction: PIRATES, rank: Rank::Minor };
+                    let commission = Commission { faction: GREY_TITHE, rank: Rank::Minor };
                     let id = 10_000 + (index * 3 + k) as u32;
                     let at = [x + 3_000.0 * (k as f64 + 1.0), y + 2_000.0];
-                    sea.put_to_sea(Pirate::standing(id, id, commission, at, 0.0, false));
+                    sea.put_to_sea(Hostile::standing(id, id, commission, at, 0.0, false));
                 }
             }
         });
@@ -104,12 +104,12 @@ fn load_in_one_fight() {
         let players = open_with(count, |index| [centre[0] + index as f64 * 40.0, centre[1]], 5);
         with_sea(|sea| {
             for k in 0..4 {
-                let commission = Commission { faction: PIRATES, rank: Rank::Elite };
+                let commission = Commission { faction: GREY_TITHE, rank: Rank::Elite };
                 let id = 20_000 + k;
                 let at = [centre[0] + 300.0 * f64::from(k), centre[1] - 600.0];
-                sea.put_to_sea(Pirate {
+                sea.put_to_sea(Hostile {
                     level: 30,
-                    ..Pirate::standing(id, id, commission, at, core::f64::consts::PI, true)
+                    ..Hostile::standing(id, id, commission, at, core::f64::consts::PI, true)
                 });
             }
         });
@@ -129,9 +129,12 @@ fn load_on_decks() {
         with_sea(|sea| {
             for index in 0..count {
                 let [x, y] = spot(index);
-                let commission = Commission { faction: PIRATES, rank: Rank::Miniboss };
+                let commission = Commission { faction: GREY_TITHE, rank: Rank::Miniboss };
                 let id = 30_000 + index as u32;
-                sea.put_to_sea(Pirate { level: 30, ..Pirate::standing(id, id, commission, [x, y - 20.0], 0.0, true) });
+                sea.put_to_sea(Hostile {
+                    level: 30,
+                    ..Hostile::standing(id, id, commission, [x, y - 20.0], 0.0, true)
+                });
             }
         });
         room_tick();

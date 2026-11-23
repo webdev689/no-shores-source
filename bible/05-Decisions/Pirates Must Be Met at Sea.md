@@ -1,9 +1,12 @@
 ---
 type: decision
 date: 2026-11-17
-status: in force
+status: replaced
+replaced_by: "[[Pirates Are Replaced by the Grey Tithe]]"
 ---
 # Pirates Must Be Met at Sea
+
+Replaced by [[Pirates Are Replaced by the Grey Tithe]]: the Grey Tithe's ships are the ones met on the open sea.
 
 > "Also want to add that pirates are spawning on the open sea. All I ever see is one single other sloop, static"
 

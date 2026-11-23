@@ -4,7 +4,7 @@
 //! phases. And a new foe of a type, at a rank.
 
 use crate::brain::Brain;
-use crate::factions::{CREW, GREY_TITHE, LATTICE, PIRATES, faction};
+use crate::factions::{CREW, GREY_TITHE, LATTICE, faction};
 use crate::ranks::{CORVANE, Phase, Rank, THULE, phase, phases, ranked};
 use crate::roles::{Numbers, Role, numbers};
 use Domain::{Deck, Land};
@@ -108,11 +108,11 @@ pub const ROSTER: [FoeType; 45] = [
         boss_phases: &THULE,
         ..row(12, GREY_TITHE, Deck, "Captain Brannoc Thule", Captain, "sword_ebony", "", &[Rank::Boss])
     },
-    row(13, PIRATES, Deck, "Skirmisher", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
-    row(14, PIRATES, Deck, "Swordsman", Swordsman, "sword_steel", "shield_kite_steel", LOW),
-    row(15, PIRATES, Deck, "Brute", Brute, "warhammer_iron", "", HEAVY),
-    row(16, PIRATES, Deck, "Archer", Archer, "bow_short_iron", "", LOW),
-    row(17, PIRATES, Deck, "Captain", Captain, "sword_ebony", "", LEADER),
+    row(13, CREW, Deck, "Skirmisher", Skirmisher, "dagger_iron", "dagger_iron_l", LOW),
+    row(14, CREW, Deck, "Swordsman", Swordsman, "sword_steel", "shield_kite_steel", LOW),
+    row(15, CREW, Deck, "Brute", Brute, "warhammer_iron", "", HEAVY),
+    row(16, CREW, Deck, "Archer", Archer, "bow_short_iron", "", LOW),
+    row(17, CREW, Deck, "Captain", Captain, "sword_ebony", "", LEADER),
     FoeType {
         boss_phases: &CORVANE,
         ..row(

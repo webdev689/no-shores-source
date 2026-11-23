@@ -24,13 +24,16 @@ export interface Actor {
   readonly scale?: number;
   readonly since?: number;
   readonly hold?: boolean;
+  /** Its move's frames a second, where its pace is not the deck's: a walker's, so its feet keep to the ground. */
+  readonly fps?: number;
 }
 
 /** The frame a placed figure's move shows at `clock`: looping, or held on its last once played through. */
-export function actorFrame(actor: Pick<Actor, 'since' | 'hold'>, clock: number, frames: number): number {
+export function actorFrame(actor: Pick<Actor, 'since' | 'hold' | 'fps'>, clock: number, frames: number): number {
   const into = clock - (actor.since ?? 0);
-  if (actor.hold && frames > 0) return Math.min(frames - 1, Math.floor(Math.max(0, into) * LOOP_FPS));
-  return frameAt(into, frames, LOOP_FPS);
+  const fps = actor.fps ?? LOOP_FPS;
+  if (actor.hold && frames > 0) return Math.min(frames - 1, Math.floor(Math.max(0, into) * fps));
+  return frameAt(into, frames, fps);
 }
 
 /** Each actor's card for an eye at `eye`, those whose frame is not composed yet showing their last. */

@@ -15,7 +15,7 @@ const MOST_AHEAD_S = 0.25;
 const GRAVITY = 9.81;
 const LOADS: readonly ShotName[] = ['round', 'grape', 'chain', 'heated'];
 const ZONES = ['hull', 'holed', 'rig'] as const;
-/** The most of the fight's events kept for its feel until taken. */
+/** The most of the fight's events kept for its feel, or for the panel, until taken. */
 export const MOST_FELT = 512;
 const SIDES = ['port', 'starboard'] as const;
 const STATES = ['afloat', 'struck', 'sinking', 'sunk'] as const;
@@ -58,6 +58,9 @@ export class FleetSession {
   private climbs: number[] = [];
   private calls: Pick<SessionInput, 'call' | 'captain'>[] = [];
   private lastLook: FleetLook | null = null;
+  /** How many orders in a row have held a look on its side (starboard or not), counted as the room counts them
+   *  (`Fight::hold_lays`), so the lay shows the spread the room fires at: -1 while none is held. */
+  private held = { starboard: true, orders: -1 };
   /** The load they last asked for and the orders that asked, until the room has taken them. */
   private loadAsked: { readonly load: number; readonly sequence: number } | null = null;
   private latest: Snapshot | null = null;
@@ -171,7 +174,8 @@ export class FleetSession {
       const said = this.fightEvent(event);
       if (said) this.events.push(said);
     }
-    // A session whose feel nobody takes keeps only the latest.
+    // A session whose feel or events nobody takes keeps only the latest.
+    this.events = this.events.slice(-MOST_FELT);
     this.felt = [...this.felt, ...fleetFeel(snapshot.naval)].slice(-MOST_FELT);
   }
 
@@ -207,6 +211,9 @@ export class FleetSession {
         call,
         ...(captain ? { captain } : {}),
       };
+      const starboard = (orders.look?.bearing ?? 0) >= 0;
+      const kept = orders.look && this.held.orders >= 0 && this.held.starboard === starboard;
+      this.held = { starboard, orders: orders.look ? (kept ? this.held.orders + 1 : 0) : -1 };
       const sequence = this.prediction.next(orders);
       if (load !== 0) this.loadAsked = { load, sequence };
       this.link.send(ordersBytes(sequence, orders));
@@ -249,7 +256,9 @@ export class FleetSession {
       pose: [heave, pitch, roll, aground ? 1 : 0],
       afloat: true,
     };
-    return this.rules.lay(own, load, look, this.roomTime(now), this.others().map(sighted));
+    // Held as long as the orders sent have held it, the first order none.
+    const heldS = Math.max(0, this.held.orders) * TICK_SECONDS;
+    return this.rules.lay(own, load, { ...look, heldS }, this.roomTime(now), this.others().map(sighted));
   }
 
   /** A ship's number as the editor's fight words know it. */

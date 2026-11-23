@@ -4,7 +4,7 @@
 
 use crate::PlayerId;
 use crate::battle::{Fights, Sank};
-use crate::pirates::Pirate;
+use crate::hostiles::Hostile;
 use gear::Character;
 use gear::crew::Post;
 use gear::ship::ShipPower;
@@ -52,7 +52,7 @@ pub fn trim_of(trim: &ShipTrim) -> Trim {
 /// A player's ship fitted against each captain in its fight: its balls' harm on it by its Attack and level against
 /// its level, a captain's on it by its Defense, in place of what the captain's level makes of its guns.
 #[must_use]
-pub fn fitting(character: &Character, hostiles: &BTreeMap<ShipId, Pirate>) -> Fitting {
+pub fn fitting(character: &Character, hostiles: &BTreeMap<ShipId, Hostile>) -> Fitting {
     let levels = hostiles.iter().map(|(id, other_ship)| (*id, other_ship.level));
     fitted(character.ship_power(), trim_of(&character.ship_trim()), levels)
 }
@@ -91,12 +91,12 @@ pub fn pay_sinking(
     difficulty: gear::Difficulty,
     characters: &mut BTreeMap<PlayerId, Character>,
 ) -> Vec<PlayerId> {
-    let rank = sank.pirate.commission.rank;
+    let rank = sank.hostile.commission.rank;
     let foe = crate::flotsam::foe_of(rank);
     let mut paid = Vec::new();
     for player in &sank.players {
         let Some(character) = characters.get_mut(player) else { continue };
-        let xp = character.reward_sinking(foe, rank.number(), sank.pirate.level, difficulty);
+        let xp = character.reward_sinking(foe, rank.number(), sank.hostile.level, difficulty);
         character.earn_officer_xp(xp, true);
         paid.push(*player);
     }
@@ -113,9 +113,9 @@ pub fn officers_join(
     let mut joined = Vec::new();
     for player in &won.players {
         let Some(character) = characters.get_mut(player) else { continue };
-        let dice = gear::dice::Dice { seed: u64::from(won.pirate.seed), tick, player: *player };
-        let rank = won.pirate.commission.rank.number();
-        let officer = gear::crew::recruit::taken(rank, won.pirate.level, difficulty.reward(), &dice);
+        let dice = gear::dice::Dice { seed: u64::from(won.hostile.seed), tick, player: *player };
+        let rank = won.hostile.commission.rank.number();
+        let officer = gear::crew::recruit::taken(rank, won.hostile.level, difficulty.reward(), &dice);
         if officer.and_then(|officer| character.sign_on(officer)).is_some() {
             joined.push(*player);
         }

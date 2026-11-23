@@ -95,11 +95,10 @@ pub enum SpawnAsk {
 }
 
 impl SpawnAsk {
-    /// A foe asked for by its role alone (1 skirmisher to 5 captain, no type), as a page from before the roster asks:
-    /// the pirates' type in that role, a Major, or at its first rank if it comes in none (their Captain an Elite).
+    /// A foe asked by role alone (1 to 5), as an older page asks: the Grey Tithe's in that role, a Major or its first.
     #[must_use]
     pub fn by_role(role: u8, shield: u8) -> Option<Self> {
-        let foe_type = ::foes::in_role(::foes::factions::PIRATES, ::foes::Role::from_number(role)?)?;
+        let foe_type = ::foes::in_role(::foes::factions::GREY_TITHE, ::foes::Role::from_number(role)?)?;
         let rank = foe_type.rank_or_first(Some(::foes::Rank::Major)) as u8;
         Some(Self::Foe { foe_type: foe_type.number, rank, shield })
     }
@@ -373,6 +372,7 @@ impl Room {
             self.foes.remove(&id);
             self.quests.spoilless.remove(&id);
             self.board.forget(id);
+            self.quiet.remove(&id);
             self.names.remove(&id);
         }
     }

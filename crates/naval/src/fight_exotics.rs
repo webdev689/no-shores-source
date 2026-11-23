@@ -54,9 +54,15 @@ impl Fight {
     }
 
     /// A ball's strike as the Atherics take it, once its harm is applied and `state` is the target's change: a
-    /// Feeding shooter whose ball sank it reloads at once, a Squall in the target fills, and a Web shooter's ball in
-    /// its rigging slows its turn.
-    pub(super) fn struck_by(&mut self, shooter: ShipId, target: ShipId, zone: Zone, state: Option<State>) {
+    /// Feeding shooter whose ball sank it reloads at once, a Squall in the target fills (once a ball: not again for a
+    /// ball `rigged` that tore its canvas first), and a Web shooter's ball in its rigging slows its turn.
+    pub(super) fn struck_by(
+        &mut self,
+        shooter: ShipId,
+        target: ShipId,
+        (zone, rigged): (Zone, bool),
+        state: Option<State>,
+    ) {
         let clock = self.clock;
         let trim = self.fittings.get(&shooter).map(|fitted| fitted.trim).unwrap_or_default();
         if trim.feeding
@@ -65,7 +71,7 @@ impl Fight {
         {
             vessel.guns.reload_at_once();
         }
-        if let Some(fitted) = self.fittings.get_mut(&target).filter(|fitted| fitted.trim.squall > 0.0) {
+        if let Some(fitted) = self.fittings.get_mut(&target).filter(|fitted| fitted.trim.squall > 0.0 && !rigged) {
             fitted.squalls.push(clock);
         }
         if trim.web > 0.0 && zone == Zone::Rig {

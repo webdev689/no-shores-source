@@ -79,7 +79,12 @@ export class EditorFrame {
   /** Whether the interface takes the pointer at `x`, `y` (CSS pixels of the canvas), as it was last laid: a press there
    *  is the panel's, not the view's. */
   takes(x: number, y: number): boolean {
-    return x < panelCss(devicePixelRatio || 1) || Boolean(this.ui?.takes(x, y));
+    return x < panelCss(this.ratio) || Boolean(this.ui?.takes(x, y));
+  }
+
+  /** The device pixels a CSS pixel is drawn at: the screen's, or fewer where the canvas is shrunk to the GPU's most. */
+  get ratio(): number {
+    return canvasSize(this.canvas.clientWidth, this.canvas.clientHeight, devicePixelRatio || 1).ratio;
   }
 
   /** Whether words are being typed into a field of the panel, so the keys are not the view's. */
@@ -137,7 +142,7 @@ export class EditorFrame {
     const now = performance.now();
     const seconds = Math.min(0.25, (now - this.last) / 1000);
     this.last = now;
-    const ratio = devicePixelRatio || 1;
+    const ratio = size.ratio;
     const view = { width: size.width, height: size.height, scale: uiScale(ratio), ratio };
     ui.frame(view, this.events.take(), seconds, true, this.keys());
     const scale = size.width / Math.max(1, canvas.clientWidth);

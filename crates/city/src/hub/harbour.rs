@@ -25,6 +25,9 @@ const BESIDE_FLIGHT_M: [f64; 2] = [14.0, 4.0];
 const QUAY_REACH_M: f64 = 6.0;
 /// How far in from the pier's end its head is, metres.
 const PIER_HEAD_IN_M: f64 = 6.0;
+/// How far Shape stands from the walkers' line at the pier's head and the middle landing, metres: the 0.7 m a walker
+/// keeps right of a way's middle and 1 m clear of him, and a little more.
+const SHAPE_ASIDE_M: f64 = 2.0;
 /// Ships moored either side of the pier: how far their middles lie from its middle line, and how far out along it
 /// from its root, as shares of its length, metres.
 const MOORED_OFF_M: f64 = 10.5;
@@ -87,7 +90,10 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
                 let [west, north, east, south, _, _] = pier.bounds();
                 rects.push([west, north, east, south]);
                 let head = pier_head(pier, root);
-                laid.spots.push(head);
+                // Shape stands out past the walkers' end of the pier, between the lookers' places and the sea.
+                let out = [head[0] - root[0], head[1] - root[1]];
+                let length = libm::hypot(out[0], out[1]).max(1e-9);
+                laid.spots.push([head[0] + out[0] / length * SHAPE_ASIDE_M, head[1] + out[1] / length * SHAPE_ASIDE_M]);
                 pier_line = Some((root, head));
                 social.moorings = moorings(root, head);
                 for (at, facing) in mooring_posts(root, head) {
@@ -108,7 +114,19 @@ pub fn harbour(social: &mut Social, frame: &Frame, way: &Harboured<'_>) {
             landings.iter().min_by(|one, two| (one.pad.level - middle).abs().total_cmp(&(two.pad.level - middle).abs()))
         {
             let [west, north, east, south] = landing.pad.bounds;
-            laid.spots.push([f64::midpoint(west, east), f64::midpoint(north, south)]);
+            let middle = [f64::midpoint(west, east), f64::midpoint(north, south)];
+            // The walkers cross the landing along its line, so Shape stands aside of it, away from the legs.
+            let [[x0, y0, _], [x1, y1, _]] = landing.line;
+            let length = libm::hypot(x1 - x0, y1 - y0).max(1e-9);
+            let mut aside = [(y0 - y1) / length * SHAPE_ASIDE_M, (x1 - x0) / length * SHAPE_ASIDE_M];
+            if let Some(leg) = ramps.iter().find(|ramp| ramp.piece == Piece::Leg) {
+                let [west, north, east, south] = leg.pad.bounds;
+                let toward = [f64::midpoint(west, east) - middle[0], f64::midpoint(north, south) - middle[1]];
+                if toward[0] * aside[0] + toward[1] * aside[1] > 0.0 {
+                    aside = [-aside[0], -aside[1]];
+                }
+            }
+            laid.spots.push([middle[0] + aside[0], middle[1] + aside[1]]);
         }
     }
     laid.solids.extend(low_walls(way));
@@ -175,20 +193,24 @@ fn walked(
             posts.push(Post { task: Task::Idle, at, facing: bearing, keep: Keep::Visited, reached_from: end });
         }
         let at = ways.points[quay as usize].at;
+        // Beside the way from the quay to the pier's root; where the quay's last point is that root, beside the pier's
+        // way back to it, on the side the hub's walk check finds clear of the quay's pieces.
         let back = [root[0] - at[0], root[1] - at[1]];
+        let back = if libm::hypot(back[0], back[1]) > 1e-6 { back } else { [-out[0], -out[1]] };
         let length = libm::hypot(back[0], back[1]).max(1e-9);
         let side = [-back[1] / length * 3.0, back[0] / length * 3.0];
+        // The drinker and the talker beyond face each other.
         posts.push(Post {
             task: Task::Drink,
             at: [at[0] + side[0], at[1] + side[1]],
-            facing: libm::atan2(-side[0], side[1]),
+            facing: libm::atan2(side[0], -side[1]),
             keep: Keep::Kept,
             reached_from: quay,
         });
         posts.push(Post {
             task: Task::Gesture,
             at: [at[0] + side[0] * 1.6, at[1] + side[1] * 1.6],
-            facing: libm::atan2(side[0], -side[1]),
+            facing: libm::atan2(-side[0], side[1]),
             keep: Keep::Kept,
             reached_from: quay,
         });

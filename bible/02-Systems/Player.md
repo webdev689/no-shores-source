@@ -76,10 +76,14 @@ moves and figure are DFO's ([[The Player Plays as in DFO]]); the Test Ground's n
 - **Gear** (`gear.ts`, `gearLooks.ts`): the gear the room sends, as the screens and the figure read it: its
   rarities' colours, its nodes, what the hands hold (`gearHands`) and what the figure wears (`gearOutfit`, [[Gear]]).
   An item's own picture is the pixels its layers add to the figure, less any speck apart from the piece (`addedBy`).
-- **The crosshair** (`crosshair.ts`) finds where a shot would strike, over the ground and the bodies.
+- **The crosshair** (`crosshair.ts`) finds where a shot would strike, over the ground and the bodies a
+  shot of the player's stops on as the room flies it: living foes, never the dead, companions or other players
+  (`shotBodies`). The player's own arrows stop only on those bodies too.
 - **The input** (`Input`) reads the keys and the mouse on the page's canvas, with the pointer locked to look round,
   and the pad each frame (`PadReader`), each through the player's binds (`binds.ts`, [[Interface]], "The pad" and
-  "Binding a control"): a stick moves and turns as far as it leans, as the keys move and turn the whole way.
+  "Binding a control"): a stick moves and turns as far as it leans, as the keys move and turn the whole way. The game
+  has its controls (a frame's `locked`: the fight's buttons, the teaching's answers) while the pointer is locked, or
+  while the pad was the last played, as a pad's press is never a click on the page.
 
 ## Limits
 

@@ -289,10 +289,14 @@ export class Prologue {
     this.next(() => stage.parts.screen.clear());
   }
 
-  /** The story has ended: the wreck's drawing, if a beat after it never let it go, is let go now. */
+  /** The story has ended: the wreck's drawing and its room, if a beat after it never let them go, are let go now. */
   leave(): void {
     this.carried.scenery?.destroy();
     this.carried.scenery = null;
+    void this.carried.run?.then(
+      (run) => run.leave(),
+      () => undefined,
+    );
     this.carried.run = null;
   }
 }

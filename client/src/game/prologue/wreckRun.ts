@@ -13,9 +13,9 @@ import { WorldSounds } from '../../combat/worldSounds.ts';
 import { FIELD_OF_VIEW } from '../../editor/orbit.ts';
 import type { Gpu } from '../../gpu.ts';
 import type { GearState } from '../../network/gearMessages.ts';
-import { LocalRoom } from '../../network/localRoom.ts';
+import { RoomThread } from '../../network/roomThread.ts';
 import type { CardAt, Cards } from '../../player/cards.ts';
-import { crosshairPoint } from '../../player/crosshair.ts';
+import { crosshairPoint, shotBodies } from '../../player/crosshair.ts';
 import { CARD_NEAREST_M } from '../../player/figures.ts';
 import { handsZoom } from '../../player/playerCamera.ts';
 import type { Dress } from '../../player/dressing.ts';
@@ -35,7 +35,7 @@ import { louder, STORY_FIGHT_GAIN } from './fightSound.ts';
 import type { Arms, Boarder } from './tutorial.ts';
 import { cameraCourse } from './wreckCamera.ts';
 import { WreckCrew } from './wreckCrew.ts';
-import { courseOf, titheCrew, topAt, type WreckLayout } from './wreckLayout.ts';
+import { courseOf, topAt, type WreckLayout } from './wreckLayout.ts';
 import { type Outcome, type Standing, WreckProgress } from './wreckProgress.ts';
 import type { WreckDrawn, WreckScenery } from './wreckScenery.ts';
 import { armsOf, BOARDER, boarderAt, holdingArms, LyingArms } from './wreckTeaching.ts';
@@ -69,7 +69,7 @@ const CAMERA_CLEARANCE_M = 0.3;
 export class WreckRun {
   private readonly context: WreckContext;
   private readonly layout: WreckLayout;
-  private room: LocalRoom | null;
+  private room: RoomThread | null;
   /** The fight, the blocks its blood lies on and the place it stands for, as the view on foot reads a node's: the
    *  wreck's blood is measured from its origin. A room in the page is never joined again. */
   readonly fight: Fighting;
@@ -108,8 +108,14 @@ export class WreckRun {
   private boarderId = 0;
   /** Thule's number in the room, once he stands. */
   private thule = 0;
-  /** The foes stood that no snapshot has shown yet: counted alive, so a wave never outruns the room's word. */
+  /** The foes stood that no snapshot has shown yet: counted alive, so a wave never outruns the room's word. And
+   *  those asked for whose number the room has not yet answered, by their zone: counted alive too. */
   private readonly unseen = new Set<number>();
+  private readonly asking: number[] = [];
+  /** How often the deck has been cleared for the boss: a foe asked for before it, answered after, is not counted. */
+  private cleared = 0;
+  /** The boarder asked for and not yet answered, so it is asked once. */
+  private boarderAsked = false;
   /** Every foe the run has stood, by its number in the room: its wave's foe and zone. */
   private readonly stood = new Map<number, Standing>();
   private readonly crew = new WreckCrew();
@@ -117,7 +123,7 @@ export class WreckRun {
   private constructor(
     context: WreckContext,
     layout: WreckLayout,
-    parts: { room: LocalRoom; fight: Fighting; combat: CombatRules; module: WebAssembly.Module },
+    parts: { room: RoomThread; fight: Fighting; combat: CombatRules; module: WebAssembly.Module },
     drawn: { scenery: WreckScenery; gear: { value: GearState | null }; origin: readonly [number, number] },
   ) {
     this.context = context;
@@ -139,8 +145,9 @@ export class WreckRun {
     for (const zone of this.scenery.standing) this.standGate(zone);
   }
 
-  /** Opens the wreck laid in the world (`layout`, its blocks measured from `origin`): its room in the page on the
-   *  layout's blocks, every heap standing across the way, the player waking where it says, drawn by `scenery`. */
+  /** Opens the wreck laid in the world (`layout`, its blocks measured from `origin`): its room in the rooms' worker on
+   *  the layout's blocks (its navmesh baked and its ticks run off the game's frame), every heap standing across the
+   *  way, the player waking where it says, drawn by `scenery`. */
   static async open(
     context: WreckContext,
     layout: WreckLayout,
@@ -163,7 +170,7 @@ export class WreckRun {
     walker.player = { ...woke, body, previous: body, view: walker.player.view, yaw: facing, facing };
     const gear: { value: GearState | null } = { value: null };
     let fight: Fighting | null = null;
-    const room = LocalRoom.openOverSea(
+    const room = await RoomThread.openOverSea(
       module,
       { x, y },
       course,
@@ -171,15 +178,17 @@ export class WreckRun {
       (sent) => (gear.value = sent),
     );
     // The prologue's player has no Art yet (one comes after it, with the factions), wakes hurt without the sword and
-    // shield the story dressed them in, and meets the boarders as one side.
-    room.storyWreck();
+    // shield the story dressed them in, and meets the boarders as one side: asked before the room's first tick.
+    void room.story({ ask: 'wreck' });
     fight = new Fighting(combat, room);
     return new WreckRun(context, layout, { room, fight, combat, module }, { scenery, gear, origin });
   }
 
   /** The room, while the run is played. */
-  private get openRoom(): LocalRoom {
+  private get openRoom(): RoomThread {
     if (!this.room) throw new Error('the wreck has been left');
+    // Lost in the rooms' worker, nothing is left to fight on: the story goes on past it, as past any beat that fails.
+    if (this.room.lost) throw new Error(`the wreck's room was lost: ${this.room.lost}`);
     return this.room;
   }
 
@@ -211,7 +220,7 @@ export class WreckRun {
     const gate = this.layout.zones[zone]?.gate;
     if (!gate) return;
     this.scenery.standing.add(zone);
-    this.openRoom.standBlock(gate);
+    void this.openRoom.story({ ask: 'block', block: gate, stands: true });
     this.relay();
   }
 
@@ -219,7 +228,7 @@ export class WreckRun {
   private openGate(zone: number): void {
     const gate = this.layout.zones[zone]?.gate;
     if (!gate || !this.scenery.standing.delete(zone)) return;
-    this.openRoom.takeBlock(gate);
+    void this.openRoom.story({ ask: 'block', block: gate, stands: false });
     this.relay();
   }
 
@@ -262,15 +271,19 @@ export class WreckRun {
   /** The boarder met one on one stands at the far end of the quiet deck from the player, facing them, and comes for
    *  them at once, wherever on the wreck they stand. */
   standBoarder(): void {
+    if (this.boarderAsked) return;
     const { body } = this.context.walker.player;
     const { at, facing } = boarderAt(this.layout, body.x, body.y);
     const room = this.openRoom;
-    const id = room.standFoe(BOARDER.type, BOARDER.rank, ...at, facing, this.level);
-    if (id === 0) return;
-    room.storyHunt(id);
-    this.boarderId = id;
-    this.unseen.add(id);
-    this.stood.set(id, { ...BOARDER, at, facing, zone: 0 });
+    this.boarderAsked = true;
+    const asked = { ask: 'stand', ...BOARDER, x: at[0], y: at[1], facing, level: this.level, hunt: true } as const;
+    void room.story(asked).then((id) => {
+      this.boarderAsked = false;
+      if (id === 0 || this.room !== room) return;
+      this.boarderId = id;
+      this.unseen.add(id);
+      this.stood.set(id, { ...BOARDER, at, facing, zone: 0 });
+    });
   }
 
   /** The boarder as the room last showed it, while it stands. */
@@ -279,8 +292,9 @@ export class WreckRun {
     return kept && kept.view.health > 0 ? kept.view : null;
   }
 
-  /** The boarder: not yet come, standing, or fallen. */
+  /** The boarder: not yet come, standing (asked for too), or fallen. */
   get boarder(): Boarder {
+    if (this.boarderAsked) return 'standing';
     if (this.boarderId === 0) return 'none';
     return this.unseen.has(this.boarderId) || this.boarderView ? 'standing' : 'fallen';
   }
@@ -302,7 +316,12 @@ export class WreckRun {
     if (this.arms !== 'lying') this.asked = false;
     if (!this.armsLie) return;
     const { body } = this.context.walker.player;
-    if (this.lying.reached([body.x, body.y, body.z]) && this.openRoom.storyTakeArms()) this.asked = true;
+    if (!this.lying.reached([body.x, body.y, body.z])) return;
+    // Asked once; refused (a pack with no room), they lie there to be asked for again.
+    this.asked = true;
+    void this.openRoom.story({ ask: 'arms' }).then((given) => {
+      if (given === 0) this.asked = false;
+    });
   }
 
   /** The boss fight begins: the heap closes the way into the arena behind the player, every other foe is sent away,
@@ -311,13 +330,18 @@ export class WreckRun {
     if (this.progress.fighting) return;
     this.standGate(this.layout.arena.zone - 1);
     const room = this.openRoom;
-    room.clearFoes();
+    void room.story({ ask: 'clear' });
     this.unseen.clear();
+    this.asking.fill(0);
+    this.cleared += 1;
     this.progress.beginBoss();
     const [x, y] = this.layout.arena.thule;
     const { body } = this.context.walker.player;
     const facing = Math.atan2(body.x - x, -(body.y - y));
-    this.thule = room.standFoe(THULE.type, THULE.rank, x, y, facing, this.level + THULE.over);
+    const level = this.level + THULE.over;
+    void room.story({ ask: 'stand', type: THULE.type, rank: THULE.rank, x, y, facing, level }).then((id) => {
+      this.thule = id;
+    });
   }
 
   /** Thule's health, once he stands. */
@@ -326,13 +350,12 @@ export class WreckRun {
     return kept ? { health: kept.view.health, healthMax: kept.view.healthMax } : null;
   }
 
-  /** World points over heads, for barks: Thule's as 'thule', each wave's foe's by its crew and number,
-   *  'tithe-<number>' or 'pirate-<number>', and each of the Brig's crew's as 'crew-<number>'. */
+  /** World points over heads, for barks: Thule's as 'thule', each wave's foe's as 'tithe-<number>', and each of the
+   *  Brig's crew's as 'crew-<number>'. */
   heads(): ReadonlyMap<string, readonly [number, number, number]> {
     const heads = new Map<string, readonly [number, number, number]>();
     for (const [id, placed] of this.foes.placed) {
-      const foe = this.stood.get(id);
-      const side = this.crew.has(id) ? 'crew' : foe && titheCrew(foe.type) ? 'tithe' : 'pirate';
+      const side = this.crew.has(id) ? 'crew' : 'tithe';
       const name = id === this.thule ? 'thule' : `${side}-${id}`;
       heads.set(name, [placed.x, placed.y, placed.z + OVER_THE_HEAD_M]);
     }
@@ -350,6 +373,7 @@ export class WreckRun {
     for (const id of this.fight.foes.keys()) this.unseen.delete(id);
     for (const kept of this.fight.foes.values()) if (kept.view.health > 0) count(kept.id);
     for (const id of this.unseen) count(id);
+    this.asking.forEach((asked, zone) => (alive[zone] = (alive[zone] ?? 0) + asked));
     return alive;
   }
 
@@ -362,17 +386,24 @@ export class WreckRun {
     const alive = this.aliveByZone();
     const asks = this.progress.frame({ x: body.x, y: body.y, z: body.z, dead, alive, thule: this.boss }, seconds);
     for (const zone of asks.open) this.openGate(zone);
-    if (asks.checkpoint) room.setSpawn(...asks.checkpoint);
-    if (asks.bringBack) room.putPlayer(...asks.bringBack);
+    if (asks.checkpoint) void room.story({ ask: 'spawn', x: asks.checkpoint[0], y: asks.checkpoint[1] });
+    if (asks.bringBack) void room.story({ ask: 'put', x: asks.bringBack[0], y: asks.bringBack[1] });
     const crewRun = { room, figures: this.foes, foes: this.fight.foes, layout: this.layout, level: this.level };
     this.crew.stand(asks.stand, crewRun);
     // The crew still standing regroup at each zone the player reaches, but the arena's: the boss fight is one on one.
     if (asks.checkpoint && this.progress.zone < this.layout.arena.zone) this.crew.regroup(this.progress.zone, crewRun);
     for (const foe of asks.stand) {
-      const id = room.standFoe(foe.type, foe.rank, ...foe.at, foe.facing, this.level);
-      if (id === 0) continue;
-      this.unseen.add(id);
-      this.stood.set(id, foe);
+      const { type, rank, at, facing, zone } = foe;
+      this.asking[zone] = (this.asking[zone] ?? 0) + 1;
+      const cleared = this.cleared;
+      void room.story({ ask: 'stand', type, rank, x: at[0], y: at[1], facing, level: this.level }).then((id) => {
+        // Sent away by the boss fight's start before it was answered, it no longer counts.
+        if (cleared !== this.cleared || this.room !== room) return;
+        this.asking[zone] = (this.asking[zone] ?? 0) - 1;
+        if (id === 0) return;
+        this.unseen.add(id);
+        this.stood.set(id, foe);
+      });
     }
   }
 
@@ -414,7 +445,7 @@ export class WreckRun {
     const shown = this.player.frame(still ? IDLE : { ...controls, locked: true }, this.steps, seconds, clock, {
       running: !held && !frozen,
       hands: hands && !still,
-      markOf: () => crosshairPoint(camera(), aspect, this.course, bodies, groundAt),
+      markOf: () => crosshairPoint(camera(), aspect, this.course, shotBodies(foes.placed, fight.foes), groundAt),
       zoomOf: () => handsZoom(camera(), walker.player.view),
       handsSeconds: feel.shownSeconds(fight.player, seconds),
     });
@@ -463,7 +494,7 @@ export class WreckRun {
         foeFeel,
       ),
     );
-    const lying = this.armsLie ? this.lying.figure(walker.you.dress) : null;
+    const lying = this.armsLie ? this.lying.figure(walker.you.dress, clock) : null;
     if (lying) figures.push(lying);
     const muzzle = walker.muzzle;
     const marks = effects.marks(fight, seconds, {
@@ -495,7 +526,8 @@ export class WreckRun {
       },
       others: new Map(),
       foes: foes.placed,
-      ground: { blocks: this.course, groundAt },
+      // The wreck is timber throughout: every step on it is on planks.
+      ground: { blocks: this.course, wooden: this.course, groundAt },
       landed: [],
       crates: null,
     });
@@ -533,10 +565,10 @@ export class WreckRun {
     // The room raises a fallen player at the last checkpoint by itself: there is no edge to stray past, nothing
     // to press, and the story says what happens.
     const dead = ownView?.action.kind === 'dead';
-    // The story has no menu, so its keys leave the menu's out.
-    const hints = dead
-      ? []
-      : footHints(onFoot(walker, shown, fight, !controls.locked && !still)).filter(([key]) => key !== 'menu');
+    // The story has no menu, so its keys leave the menu's out. Frozen with the pointer free, the click that takes it is
+    // asked for too, as the parry's key does nothing until then.
+    const free = !controls.locked && !paused && !held;
+    const hints = dead ? [] : footHints(onFoot(walker, shown, fight, free)).filter(([key]) => key !== 'menu');
     return {
       shot,
       figures,
@@ -551,11 +583,14 @@ export class WreckRun {
   }
 
   /** Leaves the wreck: the Anima's edge is taken down, as leaving a node does, the wreck's rim taken from the page's
-   *  movement, and the room let go of. */
+   *  movement, and the room let go of in the rooms' worker. */
   leave(): void {
+    // Once: the story's end lets go of a run its beat already left, and the place after it keeps its own heights.
+    if (!this.room) return;
     showAnimaEdge(QUIET);
     this.lying.leave();
     this.context.movement.setHeights(null);
+    this.room?.close();
     this.room = null;
   }
 }

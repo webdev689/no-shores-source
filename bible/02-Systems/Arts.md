@@ -71,8 +71,9 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   the points, the three Arts' diamonds, then its words, kept two lines tall so nothing moves as the Art changes. The
   others stand subdued; the worn one is ringed in brass, a focused one in white, each 2 px over a dark pixel. Pressing
   another asks the room to wear it. To the right, in rows under engraved headings tinted in the element and ticked at
-  their right ends: ANIMA (one large tile, key R), TENETS (two tiles, keys Q and G), and CORE (three slots), the Core's
-  heading counting what is set and owned ("Core · 1 of 3 · 2 owned") and its rule as long as the line above. Under the
+  their right ends: ANIMA (one large tile) and TENETS (two tiles), each over the key bound to cast it (R, Q and G at
+  first; the pad's button drawn on its cap while the pad was played last), and CORE (three slots), the Core's heading
+  counting what is set and owned ("Core · 1 of 3 · 2 owned") and its rule as long as the line above. Under the
   Core, each fragment set is written out: its name in the element's light, what it does after it.
 - **The level** ([[Factions]]): the worn Art's name carries five pips lit to its level, read aloud as "Level n". Under
   the three Arts' diamonds (each with its own small pips, so they never move) its bar fills with the XP its kills
@@ -131,12 +132,12 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   for its outline, it fills with colour a row of cells at a time from the bottom as it charges, and full, the diamond
   glows in the Art's colour. Each Tenet's icon stands in a ring 44 px across, dimmed while it recharges, under a dark
   wedge that sweeps away clockwise from the top in 6-degree steps; with 9 seconds or fewer left, the seconds stand in
-  it, rounded up, the icon stepping back so they read. Ready, its ring is lit in the element. Each key (R, Q, G) stands
-  on a keycap under its icon. A spell just cast flashes its frame white for 0.5 s; while the player cannot cast
-  (staggered, down, drinking or dead), every icon greys under a hatch. At the display's larger step (1500 by 900 and
-  up) the
-  diamond is 102 px and a ring 66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and
-  each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
+  it, rounded up, the icon stepping back so they read. Ready, its ring is lit in the element. Each key stands on a keycap
+  under its icon, and a screen reader hears it after the ability's name: the key bound now (R, Q and G at first), or
+  while the pad was played last its button, drawn on the cap as the ship's bar draws one (`hudKeys`, `capFace`). A
+  spell just cast flashes its frame white for 0.5 s; while the player cannot cast (staggered, down, drinking or dead),
+  every icon greys under a hatch. At the display's larger step (1500 by 900 and up) the diamond is 102 px and a ring
+  66, the keycaps at 22. The bar is worked out from the Art worn, the Anima's charge and each Tenet's recharge, as shares, and drawn afresh each frame by the game. With no Art worn it is not shown. The
   ship's bar in a sea fight is built of the same rings and keycaps (`combat/ringSlot.ts`; [[Interface]], "The sea
   fight's readout").
 
@@ -176,7 +177,8 @@ ability bar on the HUD), how the rules cast each spell, how the browser asks for
   ([[Three Healing Charges, Refilled by Blows and Kills]]), dead or dead past a section's edge. It releases 18 ticks
   (0.3 s) after the tick that took it. If the player is staggered, Charged, drinking, dead or dead past the edge by
   then, it is lost and costs nothing; else its share empties and the spell is cast. Casting is attacking: any spell
-  but Vanish ends the caster's veil as it is cast, though a spell already out, a raven's bolt or a ring, does not.
+  but Vanish ends the caster's veil as it is cast, though a spell already out, a raven's bolt or a ring, does not; and
+  any spell ends the grace of one stood again ([[Server]], "The dead").
 - **Power.** A spell strikes foes alone, never players, in its Art's element: a foe's shield takes three times from a
   matching element and half from another. Its damage is weighed by the power of the Melee loadout's Attack (the Ranged
   one's with no Melee worn) against the foe's level, as a weapon's blow is, then by the statuses, as any blow is
@@ -215,8 +217,9 @@ The numbers are an Art's at level 5.
   for a bolt), caster, Art, where it is, where it heads (the Dawnflare's end, Arc Lash's reach ahead), the foe it
   seeks, its age and life in ticks, and its radius.
 - **The player's own gear** carries `art` (0 where none works), `cores` (three slots an Art in the Arts' order, 255 for none), `anima` and
-  `tenets`, each share as the tick that sent it had it. It is sent whenever a cast releases, a kill gives charge or an
-  ask changes them; between, the browser runs each share on by its recharge (`abilitiesAt`).
+  `tenets`, each share as the tick that sent it had it, and `recharge`, how much longer the room takes to recharge them
+  (1.5 under a run's Trickle, [[Activities]]). It is sent whenever a cast releases, a kill gives charge or an ask
+  changes them; between, the browser runs each share on by its recharge times `recharge` (`abilitiesAt`).
 - **The asks** are numbered 40 (`wearArt`, the Art in `column`), 41 (`setCore`, the Art in `column`, the slot in
   `slot`, the fragment in `node`) and, in the Test Ground alone, 36 (the Anima full and the Tenets ready).
 

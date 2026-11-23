@@ -31,13 +31,15 @@ async function joined() {
       tick: BigInt(tick),
       players: [],
       ships,
-      pirates: [],
+      hostiles: [],
       fights: [],
       flotsam: [],
       kept: [],
       told: told.map((numbers) => ({ player: 1, numbers })),
       decks: [],
       islands: [],
+      taken: [],
+      friendlies: [],
     } as unknown as Snapshot);
   return { room, sent, atTick, link };
 }
@@ -106,4 +108,41 @@ test('back at sea, its ship lies where the room last kept it', async () => {
   const { room, atTick } = await joined();
   atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 2, pace: 0 }], [[23, 5, 61_000, 50_000, 2]]);
   assert.deepEqual(room.takeWashed(), { x: 61_000, y: 50_000, heading: 2 });
+});
+
+test('washed up in the snapshot that lets the fight go, the fight is over as sunk, never as gone', async () => {
+  const { room, atTick } = await joined();
+  Object.assign(room, { fight: { over: null, events: [] } });
+  atTick(5, [{ player: 1, x: 61_000, y: 50_000, heading: 1, pace: 0 }], [[20, 5, 0, 1]]);
+  assert.equal(room.takeFight()?.over, 'sunk');
+});
+
+test('a travel waits its turn as a course does, no course takes its place, and the room’s answer is taken once', async () => {
+  const { room, sent, atTick } = await joined();
+  atTick(1000);
+  room.travel([[550_000, 150_000]], 10);
+  room.course([[60_000, 150_000]], 10);
+  atTick(1045);
+  assert.deepEqual(sent.at(-1), courseBytes([[550_000, 150_000]], 10, true), 'the travel is sent, not the course');
+  assert.equal(room.takeTravelled(), null, 'no answer yet');
+  atTick(1050, [], [[24, 1049, 4]]);
+  assert.equal(room.takeTravelled(), 4, 'refused: the ship’s own water');
+  assert.equal(room.takeTravelled(), null, 'taken once');
+  room.course([[60_000, 150_000]], 10);
+  atTick(1095);
+  assert.deepEqual(sent.at(-1), courseBytes([[60_000, 150_000]], 10), 'courses are sent again once it is answered');
+});
+
+test('a travel given up lets courses through again and forgets any answer, as a new travel does', async () => {
+  const { room, sent, atTick } = await joined();
+  atTick(1000);
+  room.travel([[550_000, 150_000]], 10);
+  atTick(1045);
+  room.forgetTravel();
+  room.course([[60_000, 150_000]], 10);
+  atTick(1090);
+  assert.deepEqual(sent.at(-1), courseBytes([[60_000, 150_000]], 10), 'the course is sent');
+  atTick(1100, [], [[24, 1099, 0]]);
+  room.travel([[550_000, 150_000]], 10);
+  assert.equal(room.takeTravelled(), null, 'a late answer is no answer to the new travel');
 });

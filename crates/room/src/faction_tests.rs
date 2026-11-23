@@ -13,8 +13,8 @@ const COLLECTOR: u8 = 2;
 const PISTOLEER: u8 = 9;
 const DECKHAND: u8 = 7;
 const THULE: u8 = 12;
-const PIRATE_SKIRMISHER: u8 = 13;
-const PIRATE_SWORDSMAN: u8 = 14;
+const HUSK: u8 = ::foes::roster::HUSK;
+const FLICKER: u8 = ::foes::roster::FLICKER;
 
 /// A foe of a type at a rank standing at (x, y) facing `facing`, put straight into the room.
 fn stand(room: &mut Room, number: u8, rank: Rank, x: f64, y: f64, facing: f64) -> FighterId {
@@ -41,20 +41,20 @@ fn between(events: &[Event], striker: FighterId, defender: FighterId) -> impl It
 }
 
 #[test]
-fn a_grey_tithe_foe_and_a_pirate_engage_strike_and_answer_each_other() {
+fn a_grey_tithe_foe_and_a_lattice_foe_engage_strike_and_answer_each_other() {
     // An answer is a chance a quick swing seldom leaves time for, so the fight is fought from a few seeds.
     let mut answered = false;
     for seed in 0..4_u64 {
         let mut room = Room::new(Vec::new(), (0.0, 0.0));
         room.world_seed ^= seed.wrapping_mul(0x9e37_79b9_7f4a_7c15);
         let tithe = stand(&mut room, COLLECTOR, Rank::Major, 0.0, -4.0, PI);
-        let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 4.0, 0.0);
+        let hostile = stand(&mut room, HUSK, Rank::Major, 0.0, 4.0, 0.0);
         let factions: Vec<(FighterId, u8)> = room.foes_seen().map(|foe| (foe.foe, foe.faction)).collect();
-        assert_eq!(factions, [(tithe, 1), (pirate, 2)]);
+        assert_eq!(factions, [(tithe, 1), (hostile, 3)]);
         let events = run(&mut room, 1800);
         let hits = |striker, defender| between(&events, striker, defender).filter(|event| event.kind == EventKind::Hit);
-        assert!(hits(tithe, pirate).count() > 0 && hits(pirate, tithe).count() > 0, "{events:?}");
-        answered |= [(tithe, pirate), (pirate, tithe)].into_iter().any(|(striker, defender)| {
+        assert!(hits(tithe, hostile).count() > 0 && hits(hostile, tithe).count() > 0, "{events:?}");
+        answered |= [(tithe, hostile), (hostile, tithe)].into_iter().any(|(striker, defender)| {
             between(&events, striker, defender).any(|event| {
                 matches!(
                     event.kind,
@@ -67,22 +67,22 @@ fn a_grey_tithe_foe_and_a_pirate_engage_strike_and_answer_each_other() {
 }
 
 #[test]
-fn two_pirates_fight_a_grey_tithe_foe_together_and_never_strike_each_other() {
+fn two_lattice_foes_fight_a_grey_tithe_foe_together_and_never_strike_each_other() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let tithe = stand(&mut room, COLLECTOR, Rank::Major, 0.0, -4.0, PI);
-    let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 4.0, 0.0);
-    let ally = stand(&mut room, PIRATE_SKIRMISHER, Rank::Major, 2.0, 4.0, 0.0);
+    let hostile = stand(&mut room, HUSK, Rank::Major, 0.0, 4.0, 0.0);
+    let ally = stand(&mut room, FLICKER, Rank::Major, 2.0, 4.0, 0.0);
     let events = run(&mut room, 1800);
     assert!(events.iter().any(|event| event.kind == EventKind::Killed && event.defender == tithe), "{events:?}");
-    let among = between(&events, pirate, ally).count() + between(&events, ally, pirate).count();
+    let among = between(&events, hostile, ally).count() + between(&events, ally, hostile).count();
     assert_eq!(among, 0, "allies never strike each other");
 }
 
 #[test]
 fn two_of_one_faction_never_take_each_other_for_a_target() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
-    let first = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, -2.0, PI);
-    let second = stand(&mut room, PIRATE_SKIRMISHER, Rank::Major, 0.0, 2.0, 0.0);
+    let first = stand(&mut room, HUSK, Rank::Major, 0.0, -2.0, PI);
+    let second = stand(&mut room, FLICKER, Rank::Major, 0.0, 2.0, 0.0);
     for _ in 0..300 {
         room.tick();
         assert_eq!((room.foes[&first].brain.target(), room.foes[&second].brain.target()), (None, None));
@@ -94,7 +94,7 @@ fn two_of_one_faction_never_take_each_other_for_a_target() {
 fn a_telegraphed_blow_lands_on_a_foe_of_another_side_and_never_on_an_ally() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let enforcer = stand(&mut room, 4, Rank::Major, 0.0, 0.0, 0.0);
-    let pirate = stand(&mut room, PIRATE_SKIRMISHER, Rank::Major, 0.0, -1.0, PI);
+    let hostile = stand(&mut room, FLICKER, Rank::Major, 0.0, -1.0, PI);
     let ally = stand(&mut room, COLLECTOR, Rank::Major, 0.8, -1.2, PI);
     let brute = *room.fighter(enforcer).unwrap();
     let slam = TelegraphOrder { shape: Shape::Slam, windup: 54, iron: true, feint_at: None, bearing: 0.0, ahead: 0.0 };
@@ -102,7 +102,7 @@ fn a_telegraphed_blow_lands_on_a_foe_of_another_side_and_never_on_an_ally() {
     let events = room.take_events();
     let struck: Vec<FighterId> =
         events.iter().filter(|event| event.kind == EventKind::Hit).map(|event| event.defender).collect();
-    assert_eq!(struck, [pirate], "{events:?}");
+    assert_eq!(struck, [hostile], "{events:?}");
     assert!(!matches!(room.fighter(enforcer).unwrap().action, combat::fighter::Action::Overreach { .. }));
     assert_eq!(room.ended_telegraphs, [(enforcer, false, false)], "found");
     assert!((room.fighter(ally).unwrap().health - room.fighter(ally).unwrap().health_max).abs() < 1e-12);
@@ -120,7 +120,11 @@ fn a_spawn_ask_is_a_type_and_a_rank_and_a_rank_the_type_lacks_takes_its_first() 
     }
     let stood: Vec<(u8, u8, u8, u8)> =
         room.foes_seen().map(|foe| (foe.foe_type, foe.rank, foe.faction, foe.kind)).collect();
-    assert_eq!(stood, [(5, 3, 1, 4), (12, 5, 1, 5), (17, 3, 2, 5), (17, 3, 2, 5)], "no type 99");
+    assert_eq!(
+        stood,
+        [(5, 3, 1, 4), (12, 5, 1, 5), (17, 3, 0, 5), (17, 3, 0, 5)],
+        "no type 99; the crew's on the players' side"
+    );
 }
 
 #[test]
@@ -156,10 +160,10 @@ fn a_boss_in_its_last_stand_calls_two_minor_deckhands_to_its_side_within_the_roo
 fn foes_of_two_factions_left_apart_beyond_sight_find_each_other_and_fight() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let tithe = stand(&mut room, COLLECTOR, Rank::Major, 0.0, -18.0, 0.0);
-    let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 18.0, PI);
+    let hostile = stand(&mut room, HUSK, Rank::Major, 0.0, 18.0, PI);
     let events = run(&mut room, 60 * 60);
     let fought = |striker, defender| between(&events, striker, defender).next().is_some();
-    assert!(fought(tithe, pirate) || fought(pirate, tithe), "36 m apart, back to back, they meet in a minute");
+    assert!(fought(tithe, hostile) || fought(hostile, tithe), "36 m apart, back to back, they meet in a minute");
 }
 
 #[test]
@@ -179,13 +183,13 @@ fn a_boss_killed_in_the_step_its_roar_began_calls_no_crew() {
 fn a_foes_aimed_gunshot_is_heard_by_a_foe_of_another_side_across_the_room() {
     let mut room = Room::new(Vec::new(), (0.0, 0.0));
     let pistoleer = stand(&mut room, PISTOLEER, Rank::Major, 0.0, 0.0, 0.0);
-    let pirate = stand(&mut room, PIRATE_SWORDSMAN, Rank::Major, 0.0, 25.0, PI);
+    let hostile = stand(&mut room, HUSK, Rank::Major, 0.0, 25.0, PI);
     let gunner = *room.fighter(pistoleer).unwrap();
     let aimed =
         TelegraphOrder { shape: Shape::Aimed, windup: 60, iron: false, feint_at: None, bearing: 0.0, ahead: 20.0 };
     room.telegraph_lands(pistoleer, &gunner, &Telegraph::begin(&aimed, [0.0, 0.0, 0.0]));
     room.tell_brains();
-    let alert = |room: &Room| room.foes_seen().find(|seen| seen.foe == pirate).unwrap().alert;
+    let alert = |room: &Room| room.foes_seen().find(|seen| seen.foe == hostile).unwrap().alert;
     assert_eq!(alert(&room), 0, "heard, it stirs at its next thought");
     room.tick();
     assert!(alert(&room) >= 1, "the shot 25 m off, behind it, stirs it");

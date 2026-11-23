@@ -6,6 +6,7 @@ import { aimStation } from './aimStation.ts';
 import { type FightSource, Fighting } from './fighting.ts';
 import type { Sailed } from '../terrain/landClient.ts';
 import { aimOf, Naval } from './naval.ts';
+import { countingGpu } from '../gpuForTests.ts';
 import { cameraOf, type Orbit } from './orbit.ts';
 import { Sailing, type SailSource } from './sailing.ts';
 
@@ -27,8 +28,8 @@ const captain: FightCaptain = {
   ...vessel,
   id: 1,
   ship: [600, 800, 0, 0, 0, 0, 0, 2],
-  name: 'Pirate Sloop',
-  faction: 2,
+  name: 'Tithe Sloop',
+  faction: 1,
   rank: 2,
   mode: 'engage',
   hostile: true,
@@ -116,7 +117,7 @@ test('a captain sent off before it comes is never taken up, nor one called befor
   await letGo();
   assert.equal(naval.fighting, true, 'the second call stands');
   assert.equal(asked.begins, 1, 'only the call that stands reaches the door');
-  assert.ok(naval.lines(0).includes('A Pirate Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
+  assert.ok(naval.lines(0).includes('A Tithe Sloop sighted, 1.0 km off.'), naval.lines(0).join(' | '));
 });
 
 test("it takes each answer's numbers for the Sloop, and none from a fight since ended", async () => {
@@ -161,6 +162,7 @@ const LAID: FightLay = {
     { time: 1, point: [20, 2, 0.1], water: true, strike: null },
   ],
   radius: 1,
+  spread: 1,
   on_target: true,
 };
 
@@ -176,6 +178,20 @@ test("the aim shows each gun's flight to where it stops, a strike where it meets
   assert.deepEqual(aim.strikes, [[5, 0, 3.77]]);
   assert.deepEqual(aim.zone, [[20, 2, 0.1]], 'the struck gun lays no ring');
   assert.equal(aim.radius, 1.6, "DFO's least ring");
+});
+
+test('a lay just taken fans its arcs out as wide as it scatters, and they close in as it settles', () => {
+  const fanned = aimOf({ ...LAID, spread: 2 }, vessel, WINDOW, 1);
+  const settled = aimOf(LAID, vessel, WINDOW, 1);
+  assert.ok(fanned && settled);
+  const fallOf = (aim: typeof fanned, gun: number) => aim.arcs[gun]?.at(-1) ?? [0, 0, 0];
+  // The two falls, settled, lie apart by so much; fanned at twice the spread, twice as far from their middle.
+  const gapOf = (aim: typeof fanned) =>
+    Math.hypot(fallOf(aim, 1)[0] - fallOf(aim, 0)[0], fallOf(aim, 1)[1] - fallOf(aim, 0)[1]);
+  assert.ok(Math.abs(gapOf(fanned) - 2 * gapOf(settled)) < 1e-9, `${gapOf(fanned)} against ${gapOf(settled)}`);
+  assert.deepEqual(fanned.arcs[0]?.[0], settled.arcs[0]?.[0], 'each from its own gun');
+  assert.deepEqual(fanned.zone[0]?.slice(0, 2), fallOf(fanned, 1).slice(0, 2), 'its ring under its fanned fall');
+  assert.deepEqual(fanned.strikes, settled.strikes, 'a strike stays where the ball meets the ship');
 });
 
 test("the aim's tone: hot on target while the side can fire, laid off it, not ready while it loads or braces", () => {
@@ -222,4 +238,14 @@ test("the World Editor's aim eases the eye out to its battery and home again, la
   for (let frame = 0; frame < 240; frame++) seen = naval.aimCamera(orbit, sailing, WINDOW, 1, false, 1 / 60);
   assert.equal(seen, orbit, 'let go, it is home');
   assert.equal(naval.look(), null);
+});
+
+test('fight after fight on one GPU draws the aim with the one set of its buffers, never another left live', () => {
+  const { gpu, live } = countingGpu();
+  const marks = { gpu, drawInto: () => undefined };
+  new Naval(marks);
+  const once = live();
+  assert.ok(once > 0, 'the aim holds its buffers');
+  for (let fight = 0; fight < 3; fight++) new Naval(marks);
+  assert.equal(live(), once);
 });

@@ -1,4 +1,5 @@
 import type { Cell, Tint } from './spray.ts';
+import { seeded } from '../../seeded.ts';
 
 /** The marks' sheet: eight cells a row, one row a kind, each a splat drawn from noise and distance fields at the start
  *  from a fixed seed. Its colour is white ink whose darkness is the film's thickness, its alpha the shape. */
@@ -21,17 +22,6 @@ export const BLOOD_ABSORB = [0.5, 0.95, 0.95] as const;
 export const DISPLAY_GAMMA = 2.2;
 export const BLOOD_ABSORB_ENCODED = BLOOD_ABSORB.map((absorb) => absorb / DISPLAY_GAMMA);
 export const INK_DEPTH = 0.18;
-
-export function mulberry32(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let mixed = state;
-    mixed = Math.imul(mixed ^ (mixed >>> 15), mixed | 1);
-    mixed ^= mixed + Math.imul(mixed ^ (mixed >>> 7), mixed | 61);
-    return ((mixed ^ (mixed >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 const smooth = (edge0: number, edge1: number, value: number): number => {
   const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
@@ -428,7 +418,7 @@ export function atlasCells(size = ATLAS_SIZE, cells = ATLAS_CELLS): Cell[] {
 const BORDER = 2;
 /** Draws the sheet. Its cells are clear for two pixels at each edge, so a sampled edge never bleeds into the next. */
 export function buildAtlas({ size = ATLAS_SIZE, cells = ATLAS_CELLS, seed = ATLAS_SEED } = {}): Atlas {
-  const random = mulberry32(seed);
+  const random = seeded(seed);
   const noise = bloodNoise(random);
   const cell = size / cells;
   const height = cell * ATLAS_KINDS.length;
@@ -458,6 +448,11 @@ export function buildAtlas({ size = ATLAS_SIZE, cells = ATLAS_CELLS, seed = ATLA
   });
   return { colours, width: size, height };
 }
+
+let sheet: Atlas | null = null;
+/** The sheet every fight's blood draws from, drawn once a page: it is seeded, so it is the same each time, and drawing
+ *  it takes a few hundred milliseconds. */
+export const bloodSheet = (): Atlas => (sheet ??= buildAtlas());
 
 /** A droplet in flight: a bead with a tail upward and a glint, in blood's own red. */
 export const DROPLET_SIZE = 16;

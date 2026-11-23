@@ -48,16 +48,21 @@ fn flat_of(vessel: &Vessel) -> Flat {
     }
 }
 
-/// Its pose on the water at `time`, a captain's as it founders.
+/// Its pose on the water at `time`, as it founders: a captain's always, a player's going down.
 fn settle(vessel: &mut Vessel, waters: &impl Waters, time: f64) {
     let afloat = pose_of(&vessel.ship, vessel.hull.hull(), waters, time);
-    vessel.pose = match &vessel.sailor {
-        Sailor::Captain(command) => {
-            let (drop, pitch, roll) = founder(&vessel.damage, command.mind.seed, command.under);
-            Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat }
+    let going_down = matches!(vessel.damage.state, State::Sinking | State::Sunk);
+    // A player's founders as `sail_players` has it, a seed of none saying its side and end.
+    let (seed, under) = match &vessel.sailor {
+        Sailor::Captain(command) => (command.mind.seed, command.under),
+        Sailor::Player if going_down => (0, super::sink_depth(0, vessel.arms())),
+        Sailor::Player => {
+            vessel.pose = afloat;
+            return;
         }
-        Sailor::Player => afloat,
     };
+    let (drop, pitch, roll) = founder(&vessel.damage, seed, under);
+    vessel.pose = Pose { heave: afloat.heave - drop, pitch: afloat.pitch + pitch, roll: afloat.roll + roll, ..afloat };
 }
 
 /// Moves it by `push` and cuts its way by how squarely it drove into it.

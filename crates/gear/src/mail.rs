@@ -130,9 +130,11 @@ impl Character {
         let (mut at, mut took, mut refused) = (0, false, None);
         while at < self.mail.len() {
             let letters = self.mail.len();
+            // A letter whose Vestige and item were taken already (it stays for keys this room does not know) gives none.
+            let holds = self.mail[at].vestige.is_some() || self.mail[at].item.is_some();
             match self.open_letter(at) {
                 Ok(_) => {
-                    took = true;
+                    took |= holds;
                     // A letter that stays (holding what this room does not know) is passed over.
                     at += usize::from(self.mail.len() == letters);
                 }

@@ -17,11 +17,15 @@ const HEAP_LEAST_M = 1.5;
 /** How a building stands in a ruin: fallen, or broken off at a height over its model's origin, metres. */
 export type BuildingRuin = { readonly fallen: true } | { readonly fallen: false; readonly cut: number };
 
+/** A seed from a place in the world (east, south): the place to the centimetre, as whole numbers, so every engine
+ *  seeds the same. */
+export function placeSeed(east: number, south: number): number {
+  return Math.imul(Math.round(east * 100) | 0, 0x9e3779b1) ^ Math.imul(Math.round(south * 100) | 0, 0x85ebca77);
+}
+
 /** A building's ruin from where it stands in the world (east, south, metres) and its hull's base, eaves and ridge. */
 export function buildingRuin(east: number, south: number, hull: Mass): BuildingRuin {
-  // its place to the centimetre, as whole numbers, so every engine seeds the same
-  const seed = Math.imul(Math.round(east * 100) | 0, 0x9e3779b1) ^ Math.imul(Math.round(south * 100) | 0, 0x85ebca77);
-  const draw = randomFromSeed(seed);
+  const draw = randomFromSeed(placeSeed(east, south));
   if (draw.next() < FALLEN_SHARE) return { fallen: true };
   const kept = KEPT_LEAST + (KEPT_MOST - KEPT_LEAST) * draw.next();
   // never over its eaves, so no stub of its roof is left

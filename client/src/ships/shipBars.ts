@@ -10,11 +10,14 @@ import { motionReduced } from '../plus/kit.ts';
 import { FILLS } from '../plus/tones.ts';
 import { rankBand } from '../rules/roster.ts';
 
-/** The factions whose captains sail, by their numbers (crates/naval/src/ranks.rs), each with its Sloop's name. */
+/** The sides whose captains sail, by their numbers (crates/naval/src/ranks.rs), each with its Sloop's name: a friendly
+ *  merchant's of the players' side, and the Grey Tithe's. */
 export const SHIP_FACTIONS = [
+  { faction: 0, name: 'Merchants', ship: 'Merchant Sloop' },
   { faction: 1, name: 'The Grey Tithe', ship: 'Tithe Sloop' },
-  { faction: 2, name: 'Pirates', ship: 'Pirate Sloop' },
 ] as const;
+/** The faction a friendly ship of the traffic fights under: the players'. */
+const FRIENDLY = 0;
 /** The ranks by their numbers, 1 to 5. */
 export const RANKS = ['Minor', 'Major', 'Elite', 'Miniboss', 'Boss'] as const;
 const BOSS = 5;
@@ -26,11 +29,11 @@ export const BAR_OVER_M = 16;
 /** The hulls by their numbers (crates/sailing/src/hull.rs HullKind), as a captain's name says them. */
 const HULL_NAMES = ['Sloop', 'Schooner', 'Brig', 'Frigate'] as const;
 
-/** Their ship's name, by the faction they sail for and its hull (the Sloop unless named): the Tithe's or the pirates'
+/** Their ship's name, by the faction they sail for and its hull (the Sloop unless named): the Tithe's or a merchant's
  *  Sloop, Schooner, Brig or Frigate, as crates/naval/src/ranks.rs names it. */
 export function shipName(faction: number, hull = 0): string {
-  // Any faction but the Tithe's sails as the pirates do, as the rules name it.
-  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Pirate Sloop';
+  // Only the players' side's sails as a merchant; any other as the Tithe does, the one hostile side that sails.
+  const sloop = SHIP_FACTIONS.find((each) => each.faction === faction)?.ship ?? 'Tithe Sloop';
   return sloop.replace(/Sloop$/, HULL_NAMES[hull] ?? 'Sloop');
 }
 
@@ -136,7 +139,8 @@ export function placeShipBars(
     name: bar.name,
     faction: bar.faction,
     rank: bar.rank,
-    colour: rankColour(bar.rank),
+    // A friendly ship fights on the players' side: its plate theirs, whatever its rank.
+    colour: bar.faction === FRIENDLY ? FILLS.ally : rankColour(bar.rank),
     share: Math.max(0, Math.min(1, bar.share)),
   });
   const bossWidth = Math.min(BOSS_PLATE.width, BOSS_PLATE.share * width);

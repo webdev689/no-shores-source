@@ -693,3 +693,24 @@ fn the_gear_message_carries_a_steps_figure_points_ward_clock_and_failures() {
     let gear = flatbuffers::root::<messages::FromRoom>(&defence).expect("a message").gear().expect("the gear");
     assert_eq!(gear.quest_ward().map(|it| it.iter().collect::<Vec<_>>()), Some(vec![0.0, 0.0, 1.0]), "its ward whole");
 }
+
+#[test]
+fn the_gear_message_carries_how_much_longer_an_art_recharges_in_the_room() {
+    let recharge = |room: &Room, player: PlayerId| {
+        let bytes = gear_bytes(room, player).expect("a player of the room");
+        flatbuffers::root::<messages::FromRoom>(&bytes).expect("a message").gear().expect("the gear").recharge()
+    };
+    let mut plain = Room::new(Vec::new(), (0.0, 0.0));
+    let player = plain.join().expect("a room with space");
+    assert!((recharge(&plain, player) - 1.0).abs() < 1e-9, "no run: as tuned");
+    // A day whose modifier is Trickle, its dungeon of the day run at Elite.
+    let day = (0..400).find(|&day| gear::activities::modifier_of_the_day(day) == gear::activities::Modifier::Trickle);
+    let day = day.expect("a Trickle day");
+    let (patrol, number) = gear::activities::dungeon_of_the_day(day, "continent-1").expect("its dungeon");
+    let minute = day * 24 * 60;
+    assert_eq!(gear::clock::day_of(minute), day);
+    let of = room::RunOf::Patrol { patrol: patrol.to_owned(), number };
+    let mut run = Room::dungeon_run(&of, gear::Difficulty::Elite, minute).expect("its run");
+    let player = run.join().expect("a room with space");
+    assert!((recharge(&run, player) - 1.5).abs() < 1e-9, "Trickle: half as long again");
+}

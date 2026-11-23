@@ -29,3 +29,5 @@ status: in force
 | How often they strike | Against a Sloop sailing on or weaving, its hull: a Minor's balls 14 to 33 in a hundred (0.3 to 1.2 hull hits a minute), a Major's about half (1.5 to 8 a minute), an Elite's to a Boss's 44 to 64 in a hundred (5 to 34 a minute); on `main`, 56 to 86 in a hundred (6 to 40 a minute) | "Insane" was nearly every ball landing; a higher rank still shoots better. Whether this is few enough is the owner's to say |
 
 Links: [[Naval Combat]], [[Game]], [[Crew]].
+
+Replaced in part by [[Pirates Are Replaced by the Grey Tithe]]: every hostile ship's people are the Grey Tithe's.

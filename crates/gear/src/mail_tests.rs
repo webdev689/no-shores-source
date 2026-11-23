@@ -221,3 +221,14 @@ fn the_mail_is_kept_with_the_character_and_no_number_is_given_twice() {
     assert!(back.to_json().contains("\"later\":\"kept\""), "a later room's key kept");
     assert!(back.take_id_clear_of(&letters), "a letter's number never given again");
 }
+
+#[test]
+fn take_all_is_refused_when_the_only_letter_it_opens_has_nothing_left_to_give() {
+    let mut character = carrying_ten();
+    character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Magic)));
+    character.mail[0].vestige = None;
+    character.mail[0].unknown.insert("later".to_owned(), serde_json::json!("kept"));
+    character.post(Source::LeftLying, Posted::Vestige(vestige(Rarity::Rare)));
+    assert_eq!(character.ask(Ask::TakeAllLetters, AT_THE_COUNTER, &DICE), Err(Refusal::VestigesFull));
+    assert_eq!(character.mail.len(), 2, "both letters wait");
+}

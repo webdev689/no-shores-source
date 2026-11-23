@@ -6,7 +6,7 @@ import type { CaptainAt } from '../../rules/fightRules.ts';
 import type { LandWorker } from '../../terrain/landClient.ts';
 import type { Line } from '../../speech/cast.ts';
 import { onScreen } from '../camera.ts';
-import { Battle, type Wreck } from './battle.ts';
+import { ambushersFrom, Battle, type Wreck } from './battle.ts';
 import { Calm, DECK_VIEW, onBrig } from './calm.ts';
 import { BRACED_S, IMPACT_S, Ram, RAMMER_SHADE, rammerAway } from './ram.ts';
 import { onDeck } from './sailing.ts';
@@ -61,8 +61,18 @@ test('the inbound ships are where they would be sighted, without playing the sig
   }
   assert.deepEqual(
     ships.map((ship) => ship.crew),
-    [1, 2, 3].map((number) => captainAtSea(`pirate-${number}`, 2, 2)),
-    "each with its pirate Major's people aboard, named as the fight numbers its captains",
+    [1, 2, 3].map((number) => captainAtSea(`tithe-${number}`, 1, 2)),
+    "each with its Grey Tithe Major's people aboard, named as the fight numbers its captains",
+  );
+  const story = { brig } as Parameters<typeof ambushersFrom>[0];
+  assert.deepEqual(
+    ambushersFrom(story, ships).map((ship) => [ship.faction, ship.rank]),
+    [
+      [1, 2],
+      [1, 2],
+      [1, 2],
+    ],
+    'the three that attack first are Sloops of the Grey Tithe, Majors',
   );
 });
 
@@ -348,7 +358,7 @@ test('the fight begins on the story clock, tasks the player with the ships left,
   assert.ok(battle.wrecks?.every((wreck) => !wreck.ship.underWay));
   assert.deepEqual(
     battle.wrecks?.map((wreck) => [wreck.ship.crew?.key, wreck.ship.crew?.state]),
-    [1, 2, 3].map((number) => [`pirate-${number}`, 'struck']),
+    [1, 2, 3].map((number) => [`tithe-${number}`, 'struck']),
     'each with the people the fight left aboard, struck',
   );
 });
@@ -384,7 +394,7 @@ test('a story begun at the fight takes its ships without playing the sighting', 
 
 test('a wreck the fight left far off still reads as the lookout speaks of it', () => {
   const { story, saying, run } = storied();
-  // As far as the pirates were sighted: about 700 m astern.
+  // As far as the hostiles were sighted: about 700 m astern.
   const calm = new Calm(story, FROM, [{ ship: lying('far', 9_550, 20_530, 1), going: null }]);
   run(calm, 4);
   const lookout = (scenes.scenes.calm as readonly Line[]).find((line) => line.who === 'lookout');

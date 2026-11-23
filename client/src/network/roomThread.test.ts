@@ -149,3 +149,12 @@ test('a rooms worker that fails loses every room and refuses every opening still
   fail('the worker could not start');
   await assert.rejects(opening, /the worker could not start/);
 });
+
+test('a rooms worker that failed refuses every later opening at once, saying why', async () => {
+  let fail: (reason: string) => void = () => undefined;
+  roomPort({ post: () => undefined, hear: () => undefined, fail: (failed) => (fail = failed) });
+  fail('the worker could not start');
+  const late = RoomThread.openNode(compiled, glade(), () => undefined);
+  const hung = new Promise((unused, reject) => setTimeout(() => reject(new Error('still waiting')), 50));
+  await assert.rejects(Promise.race([late, hung]), /the worker could not start/);
+});
