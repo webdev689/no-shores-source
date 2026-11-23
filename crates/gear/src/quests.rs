@@ -144,8 +144,8 @@ impl QuestLog {
     }
 
     /// As kept, made whole: a place in every quest (unbegun for one never walked), its task one of its quest's (one
-    /// kept by an id the task had before read as it; the first for a task the file no longer holds), a count for each
-    /// of that task's goals within the goal's own, and a choice count for every Art.
+    /// kept by an id the task had before read as it; the quest's `kept`, else its first, for a task the file does not
+    /// hold), a count for each of that task's goals within the goal's own, and a choice count for every Art.
     #[must_use]
     pub fn kept(self) -> Self {
         self.kept_in(quests())
@@ -164,8 +164,11 @@ impl QuestLog {
             if let Some(now) = quest.tasks.iter().find(|task| task.was.contains(&road.task)) {
                 (road.task, road.counts, road.fought) = (now.id.clone(), Vec::new(), Vec::new());
             }
+            // A task this file does not hold (another build's) reads as a character kept before the quest's tasks
+            // did: a reward before `kept`, such as the stranger's gift, may already be paid.
             if !quest.tasks.iter().any(|task| task.id == road.task) {
-                road.task = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
+                let first = quest.tasks.first().map(|task| task.id.clone()).unwrap_or_default();
+                road.task = quest.kept.clone().unwrap_or(first);
                 road.counts.clear();
                 road.fought.clear();
             }

@@ -168,6 +168,19 @@ fn a_character_already_on_the_houses_is_not_walked_round_again() {
 }
 
 #[test]
+fn a_paid_character_kept_on_an_opening_task_this_room_does_not_know_is_not_given_the_gift_again() {
+    // As a later room might keep it, then a room of this build read it: a task past the stranger's it never had.
+    let mut kept = serde_json::to_value(welcomed()).expect("kept");
+    let opening = quests().quests.iter().find(|quest| quest.faction == 0).expect("the opening");
+    kept["quests"]["roads"][&opening.id]["task"] = serde_json::json!("a-later-task");
+    let mut read = Character::from_json(&kept.to_string()).expect("read");
+    let task = read.quest_now().map(|(quest, task)| quests().quests[quest].tasks[task].id.as_str());
+    assert_eq!(task, Some("hear-three-houses"), "read as one kept before the round");
+    assert_eq!(read.ask(Ask::Speak { keeper: keeper("stranger") }, SOCIAL, &DICE), Err(Refusal::NothingToSay));
+    assert_eq!(read.materials.aurem, 400, "paid once");
+}
+
+#[test]
 fn starter_gear_bought_during_the_round_counts_once_its_task_is_reached() {
     let mut character = welcomed();
     let level = character.level();
