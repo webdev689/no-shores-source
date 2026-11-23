@@ -1,12 +1,14 @@
 /**
- * Guilds, after Destiny's clans: a name, a tag shown in brackets after each member's name, and a motto. Its founder
- * and admins invite players, who accept or decline; the founder promotes members to admin and demotes them, either
- * removes a member below them, and the founder may hand the founding to an admin. A founder leaves only once another
- * founds it, or alone, which ends it. A player is in one guild at most, which holds a hundred.
+ * Guilds, after Destiny's clans: a name, a tag shown in brackets after each member's name, a motto and a banner
+ * (`guildFace.ts`). Its founder and admins invite players, who accept or decline; the founder promotes members to admin
+ * and demotes them, either removes a member below them, and the founder may hand the founding to an admin. A founder
+ * leaves only once another founds it, or alone, which ends it. A player is in one guild at most, which holds a hundred.
  */
 
+import { bannerFrom, bannerOfName, bannerRefusal } from '../../client/src/game/guild/bannerLaw.ts';
 import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
+import { faceAsk, guildPage, type KeptGuild } from './guildFace.ts';
 import { refusalOf, skeleton } from './names.ts';
 import { accountNamed, blocks } from './people.ts';
 
@@ -17,32 +19,33 @@ export const RANKS = ['Founder', 'Admin', 'Member'] as const;
 const [FOUNDER, ADMIN, MEMBER] = [0, 1, 2];
 
 /** A player's guild and rank in it, or null for none. */
-export async function guildOf(
-  database: Db,
-  account: string,
-): Promise<{ id: string; name: string; tag: string; motto: string; rank: number } | null> {
+export async function guildOf(database: Db, account: string): Promise<KeptGuild | null> {
   return database
     .prepare(
-      `SELECT guilds.id, guilds.name, guilds.tag, guilds.motto, guild_members.rank FROM guild_members
-       JOIN guilds ON guilds.id = guild_members.guild_id WHERE guild_members.account_id = ?1`,
+      `SELECT guilds.id, guilds.name, guilds.tag, guilds.motto, guilds.description, guilds.banner, guilds.xp,
+       guild_members.rank FROM guild_members JOIN guilds ON guilds.id = guild_members.guild_id
+       WHERE guild_members.account_id = ?1`,
     )
     .bind(account)
-    .first<{ id: string; name: string; tag: string; motto: string; rank: number }>();
+    .first<KeptGuild>();
 }
 
-/** Founds a guild with its founder its one member. */
+/** Founds a guild with its founder its one member, under the banner they chose or, with none, the one its name draws. */
 async function found(database: Db, own: string, given: Record<string, unknown> | null, now: number): Promise<Answer> {
   const [name, tag] = [given?.['name'], given?.['tag']];
   const unfit = refusalOf('guild', name) ?? refusalOf('tag', tag);
   if (unfit) return said(400, unfit);
+  const chosen = given?.['banner'] === undefined ? bannerOfName(String(name)) : bannerFrom(given['banner']);
+  const badBanner = chosen ? bannerRefusal(chosen, 1) : 'That is not a banner.';
+  if (badBanner) return said(400, badBanner);
   if (await guildOf(database, own)) return said(409, 'Leave your guild first.');
   const [id, look] = [crypto.randomUUID(), skeleton(String(name))];
   const made = await database
     .prepare(
-      `INSERT OR IGNORE INTO guilds (id, name, name_key, tag, tag_key, created_at)
-       VALUES (?1, ?2, ?5, ?3, lower(?3), ?4)`,
+      `INSERT OR IGNORE INTO guilds (id, name, name_key, tag, tag_key, created_at, banner)
+       VALUES (?1, ?2, ?5, ?3, lower(?3), ?4, ?6)`,
     )
-    .bind(id, name, String(tag).toUpperCase(), now, look)
+    .bind(id, name, String(tag).toUpperCase(), now, look, JSON.stringify(chosen))
     .run();
   if (made.meta.changes !== 1) {
     const like = await database
@@ -117,6 +120,8 @@ export async function guildAsk(
     if (left <= 1) await database.prepare('DELETE FROM guilds WHERE id = ?1').bind(mine.id).run();
     return done;
   }
+  const face = await faceAsk(database, own, asked, given, mine);
+  if (face) return face;
   if (asked === 'motto') {
     const motto = given?.['motto'];
     if (mine.rank > ADMIN) return said(403, 'Only the founder and admins can set the motto.');
@@ -186,4 +191,15 @@ export async function guildAsk(
     default:
       return said(404, 'No such page.');
   }
+}
+
+/** The player's guild as the Guild tab shows it, with its members counted, or null in none. */
+export async function guildRead(database: Db, own: string, now: number) {
+  const mine = await guildOf(database, own);
+  if (!mine) return { guild: null };
+  const counted = await database
+    .prepare('SELECT COUNT(*) AS count FROM guild_members WHERE guild_id = ?1')
+    .bind(mine.id)
+    .first<{ count: number }>();
+  return { guild: guildPage(mine, counted?.count ?? 1, now) };
 }

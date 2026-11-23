@@ -148,6 +148,8 @@ export interface RoomDoor {
   own(player: number, account: string): boolean;
   /** Names a player by their account's username, for the plate others read over their head; false on no land. */
   name(player: number, name: string): boolean;
+  /** Gives a player their guild's tag for their plate, or takes it with none (''); false on no land. */
+  tag(player: number, tag: string): boolean;
   /** At sea, the name of the water a player's ship lies in; null off the sea or before it puts to sea. */
   water(player: number): string | null;
   /** Holds a player's inputs, or lets them play: held, each is taken in its order and played as standing still. */
@@ -245,6 +247,7 @@ interface RoomExports {
   room_restore_character(player: number, address: number, length: number): number;
   room_own(player: number, address: number, length: number): number;
   room_name(player: number, address: number, length: number): number;
+  room_tag(player: number, address: number, length: number): number;
   room_water(player: number): bigint;
   room_hold(player: number, held: number): number;
   room_keep_characters(): number;
@@ -404,6 +407,7 @@ export function startRoomDoor(module: WebAssembly.Module): RoomDoor {
       openWith((address, length) => exports.room_restore_character(player, address, length), kept),
     own: (player, account) => openWith((address, length) => exports.room_own(player, address, length), account),
     name: (player, name) => openWith((address, length) => exports.room_name(player, address, length), name),
+    tag: (player, tag) => openWith((address, length) => exports.room_tag(player, address, length), tag),
     water: (player) => {
       const bytes = take(exports.room_water(player));
       return bytes.length === 0 ? null : new TextDecoder().decode(bytes);

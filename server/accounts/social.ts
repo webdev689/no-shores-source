@@ -6,7 +6,7 @@
 
 import type { Db } from './database.ts';
 import { done, friendAsk, said, type Answer } from './friends.ts';
-import { guildAsk } from './guilds.ts';
+import { guildAsk, guildRead } from './guilds.ts';
 import { companyAsk } from './companies.ts';
 import { accountNamed } from './people.ts';
 import { detailsOf, rosterOf } from './roster.ts';
@@ -96,9 +96,10 @@ export async function socialAsk(
   }
 }
 
-/** The Roster, or another player's details. */
+/** The Roster, the player's guild as its tab shows it, or another player's details. */
 export async function socialRead(database: Db, own: string, path: string, now: number): Promise<Answer> {
   if (path === 'roster') return { status: 200, body: await rosterOf(database, own, now) };
+  if (path === 'guild') return { status: 200, body: await guildRead(database, own, now) };
   const name = /^players\/([A-Za-z0-9_]{1,20})$/.exec(path)?.[1];
   const details = name ? await detailsOf(database, own, name, now) : null;
   return details ? { status: 200, body: details } : said(404, 'No one by that name is there.');

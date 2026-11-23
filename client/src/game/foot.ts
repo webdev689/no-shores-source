@@ -35,7 +35,7 @@ import { STORY_BEHIND_ON_FOOT, type Use, dropsLaid, questRings, tellsPrologue } 
 import { GatherHold } from './gatherHold.ts';
 import { markedHere } from './overheadMarks.ts';
 import { nodeText, standOn } from './footGround.ts';
-import { ACCOUNT_CHANGED, type GearHere } from './gearScreen.ts';
+import { ACCOUNT_CHANGED, GUILD_CHANGED, type GearHere } from './gearScreen.ts';
 import { keysShown, onFoot } from './hints.ts';
 import { type Standing, standingOf } from './hudLaw.ts';
 import { windowRect } from './nodes.ts';
@@ -179,10 +179,10 @@ export class Foot {
       boxes: opened.boxes,
       courses: [context.movement, parts.combat],
     });
-    addEventListener(ACCOUNT_CHANGED, this.renamed);
+    for (const changed of [ACCOUNT_CHANGED, GUILD_CHANGED]) addEventListener(changed, this.renamed);
   }
 
-  /** A username taken while here reaches the room, so the player's plate shows it. */
+  /** A username taken while here, or a guild joined or left, reaches the room, so the player's plate shows it. */
   private readonly renamed = () => this.link.named?.();
 
   /** Lands the player in a node at its first spawn, facing `facing`, or before the door of the entrance `arriving`
@@ -584,7 +584,7 @@ export class Foot {
 
   /** Leaves the node: its room lets the player go, and every other player's figure and its people are taken away. */
   leave(): void {
-    removeEventListener(ACCOUNT_CHANGED, this.renamed);
+    for (const changed of [ACCOUNT_CHANGED, GUILD_CHANGED]) removeEventListener(changed, this.renamed);
     this.link.close?.();
     this.otherPlayers.clear();
     this.arrivals.clear();

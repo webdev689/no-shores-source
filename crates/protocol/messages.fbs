@@ -164,13 +164,14 @@ table Dressed {
   dress: string;
 }
 
-// What others read over a player's head: their username (none for a guest), their level, and whether a menu is open
-// on their screen.
+// What others read over a player's head: their username (none for a guest), their level, whether a menu is open on
+// their screen, and their guild's tag (none in no guild).
 table Plate {
   player: uint;
   name: string;
   level: ubyte;
   menu: bool;
+  tag: string;
 }
 
 // The room's welcome: the joining player's number, everyone's dress so far, and in a node's room the node's id and

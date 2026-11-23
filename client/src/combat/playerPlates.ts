@@ -22,6 +22,8 @@ const SIDE = EMBLEM_PIXELS * 2 + 4;
 const MARK = { least: 8, most: 480, step: 8 } as const;
 /** About how wide a letter of a name stands at the plates' size, in CSS pixels: enough to lay plates apart. */
 const LETTER_PX = 7;
+/** How much fainter a guild's tag reads than the name before it. */
+const TAG_OPACITY = 0.72;
 /** The plate's square and name colours: the company's green, everyone else's blue. */
 const COLOURS = {
   company: { fill: FILLS.green, edge: '#173d15', word: TONES.company },
@@ -148,7 +150,7 @@ export class PlayerPlates {
       y,
       depth,
       // The name's letters are drawn whole at any distance: only the square shrinks.
-      width: (SIDE + 6) * scale + player.plate.name.length * LETTER_PX,
+      width: (SIDE + 6) * scale + plateWords(player.plate).length * LETTER_PX,
       height: SIDE * scale,
     }));
     const laid = this.layout.lay(spots, motionReduced() ? Infinity : seconds);
@@ -195,7 +197,13 @@ export class PlayerPlates {
   }
 }
 
-/** A player's plate at `scale`: its square (or the bubble) and their name, in the company's colours or another's. */
+/** What a plate writes after its square: the name, and the guild's tag in brackets after it; none for a guest. */
+function plateWords(plate: PlayerPlate): string {
+  return plate.name === '' ? '' : plate.tag === '' ? plate.name : `${plate.name} [${plate.tag}]`;
+}
+
+/** A player's plate at `scale`: its square (or the bubble), their name and their guild's tag a shade fainter after it,
+ *  in the company's colours or another's. */
 export function plateNode(player: PlatedPlayer, scale: number): Node {
   const colours = player.company ? COLOURS.company : COLOURS.other;
   const side = Math.round(SIDE * scale);
@@ -227,6 +235,11 @@ export function plateNode(player: PlatedPlayer, scale: number): Node {
     children: [
       square,
       plate.name !== '' && { text: { words: plate.name, colour: colours.word, edge: 'halo', wrap: false } },
+      plate.name !== '' &&
+        plate.tag !== '' && {
+          opacity: TAG_OPACITY,
+          text: { words: `[${plate.tag}]`, colour: colours.word, edge: 'halo', wrap: false },
+        },
     ],
   };
 }

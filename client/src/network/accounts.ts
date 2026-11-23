@@ -34,6 +34,10 @@ export interface Roster {
     readonly name: string;
     readonly tag: string;
     readonly motto: string;
+    readonly description?: string;
+    /** Its banner's parts by id, as the banner law reads them; none from accounts before banners. */
+    readonly banner?: Readonly<Record<string, unknown>>;
+    readonly level?: number;
     readonly rank: string;
     readonly members: readonly (Person & { readonly rank: string })[];
     readonly invited: readonly Person[];
@@ -42,6 +46,25 @@ export interface Roster {
   readonly blocked: readonly string[];
   /** Those the player mutes, whose chat lines never reach them; none from accounts before mutes. */
   readonly muted?: readonly string[];
+}
+
+/** The player's guild as the Guild tab shows it (`server/accounts/guildFace.ts`): its face, its rank for the player
+ *  (0 founder, 1 admin, 2 member), its members counted, its level and the XP that brought it and brings the next, and
+ *  the week, numbered, with when it turns in milliseconds. */
+export interface GuildFace {
+  readonly name: string;
+  readonly tag: string;
+  readonly motto: string;
+  readonly description: string;
+  readonly banner: Readonly<Record<string, unknown>>;
+  readonly rank: number;
+  readonly members: number;
+  readonly level: number;
+  readonly xp: number;
+  readonly levelXp: number;
+  readonly nextXp: number | null;
+  readonly week: number;
+  readonly weekEnds: number;
 }
 
 /** A worn piece as others see it, numbered as the gear message numbers it. */
@@ -65,7 +88,14 @@ export interface ShownPiece {
 /** Another player's details, as Destiny's Inspect shows them. */
 export interface Details extends Person {
   readonly playing: boolean;
-  readonly guild: { readonly name: string; readonly tag: string; readonly motto: string; readonly rank: string } | null;
+  readonly guild: {
+    readonly name: string;
+    readonly tag: string;
+    readonly motto: string;
+    readonly rank: string;
+    readonly banner?: Readonly<Record<string, unknown>>;
+    readonly level?: number;
+  } | null;
   readonly shown: {
     readonly level: number;
     readonly defense: number;
@@ -275,6 +305,12 @@ export class AccountLink {
     return typeof answer === 'string' ? answer : (answer as unknown as Roster);
   }
 
+  /** The player's guild as its tab shows it, null in none; or why not. */
+  async guild(): Promise<{ readonly guild: GuildFace | null } | string> {
+    const answer = await this.call('GET', '/v1/guild');
+    return typeof answer === 'string' ? answer : { guild: (answer['guild'] ?? null) as GuildFace | null };
+  }
+
   /** Another player's details, or why not. */
   async details(name: string): Promise<Details | string> {
     const answer = await this.call('GET', `/v1/players/${encodeURIComponent(name)}`);
@@ -282,7 +318,7 @@ export class AccountLink {
   }
 
   /** Asks something of the Roster (`friend/ask`, `company/join`, `guild/promote`, `block`...); why not, if it cannot. */
-  async social(path: string, body: Readonly<Record<string, string | number>> = {}): Promise<string | null> {
+  async social(path: string, body: Readonly<Record<string, unknown>> = {}): Promise<string | null> {
     const answer = await this.call('POST', `/v1/social/${path}`, body);
     return typeof answer === 'string' ? answer : null;
   }

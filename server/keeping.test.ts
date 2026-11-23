@@ -472,6 +472,39 @@ test('a player who takes a username while they play is named anew by their token
   assert.equal(room.named.get(1), 'Mariner');
 });
 
+test("a kept player wears their guild's tag from their claim, and a guild joined or left reaches it at a rename", async () => {
+  const { clock, database, kept, token } = await world();
+  await database.prepare("UPDATE accounts SET username = 'Mariner'").run();
+  const account = (await database.prepare('SELECT id FROM accounts').first<{ id: string }>())?.id ?? '';
+  const join = async (tag: string) => {
+    await database
+      .prepare("INSERT INTO guilds (id, name, name_key, tag, tag_key, created_at) VALUES (?1, ?1, ?1, ?2, lower(?2), 0)")
+      .bind(`guild-${tag}`, tag)
+      .run();
+    await database
+      .prepare('INSERT INTO guild_members (account_id, guild_id, rank, joined_at) VALUES (?1, ?2, 0, 0)')
+      .bind(account, `guild-${tag}`)
+      .run();
+  };
+  await join('SALT');
+  const room = roomOf();
+  room.held.set(1, '{"starting":true}');
+  const keeper = new Keeper(kept, room, 'node-overlook', () => undefined);
+  await keeper.signIn(
+    1,
+    token,
+    () => clock.now,
+    () => true,
+  );
+  assert.equal(room.tagged.get(1), 'SALT');
+  await database.prepare('DELETE FROM guild_members').run();
+  await keeper.rename(1, token);
+  assert.equal(room.tagged.get(1), '', 'a guild left takes the tag away');
+  await join('BW');
+  await keeper.rename(1, token);
+  assert.equal(room.tagged.get(1), 'BW');
+});
+
 test('a room whose gate shuts on an arrival judges before it claims, so the room playing the character keeps it', async () => {
   const { clock, kept, token } = await world();
   const plaza = roomOf();

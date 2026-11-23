@@ -8,7 +8,7 @@
 
 import { companionsOf, launchedFor } from './companies.ts';
 import { type Db, SESSION_IDLE_MS } from './database.ts';
-import { present, usernameOf } from './people.ts';
+import { guildTagOf, present, usernameOf } from './people.ts';
 import { hashOf } from './secrets.ts';
 
 /** How long a hold lasts past its room's last save. */
@@ -20,13 +20,14 @@ const LOOK_MS = 250;
 const BODY_MOST = 1_000_000;
 
 /** A claim answered: the account, its character as last kept (null before a room first keeps one), the room that
- *  held it before (null before any did), and its username, which others read over the player's head (null for a
- *  guest). */
+ *  held it before (null before any did), and its username and its guild's tag, which others read over the player's
+ *  head (null for a guest, and for one in no guild). */
 export interface Claimed {
   readonly account: string;
   readonly body: string | null;
   readonly from: string | null;
   readonly name: string | null;
+  readonly tag: string | null;
 }
 
 /** The account a session's token is for, seen at `now`; null when the token is no session, or one that lapsed. */
@@ -66,7 +67,10 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
           .bind(holder, now() + HOLD_MS, account, now())
     ).first<{ body: string | null; came_from: string | null }>();
   const live = (token: string) => liveAccount(database, token, now());
-  const nameOf = (account: string) => usernameOf(database, account);
+  const namesOf = async (account: string) => ({
+    name: await usernameOf(database, account),
+    tag: await guildTagOf(database, account),
+  });
   return {
     /** Those a player may share a run's room with, whom it lets in beside them: their company's members longest there
      *  first, or the player alone, then those it was found for with them. */
@@ -90,7 +94,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
         .prepare('SELECT body, room FROM characters WHERE account_id = ?1')
         .bind(account)
         .first<{ body: string | null; room: string | null }>();
-      return { account, body: kept?.body ?? null, from: kept?.room ?? null, name: await nameOf(account) };
+      return { account, body: kept?.body ?? null, from: kept?.room ?? null, ...(await namesOf(account)) };
     },
     /** The account a session's token is for, its character held for `holder`; null when the token is no session, or
      *  one that lapsed. */
@@ -100,7 +104,7 @@ export function characters(database: Db, now: () => number, wait: (millis: numbe
       await database.prepare('INSERT OR IGNORE INTO characters (account_id) VALUES (?1)').bind(account).run();
       for (let waited = 0; ; waited += LOOK_MS) {
         const held = await take(account, holder, waited >= WAIT_MS);
-        if (held) return { account, body: held.body, from: held.came_from, name: await nameOf(account) };
+        if (held) return { account, body: held.body, from: held.came_from, ...(await namesOf(account)) };
         await wait(LOOK_MS);
       }
     },

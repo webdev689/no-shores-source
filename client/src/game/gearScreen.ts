@@ -42,6 +42,8 @@ export interface Opening {
 export const OPEN_AT = 'overlook:gear';
 /** The event the account's page sends once the player signs in or takes a username, so the banner names them. */
 export const ACCOUNT_CHANGED = 'overlook:account';
+/** The event sent once a player's guild changes (founded, joined, left), so the room reads their plate's tag again. */
+export const GUILD_CHANGED = 'overlook:guild';
 /** The event the Roster sends with each answer it hears, so the company on the HUD need not ask as well. */
 export const ROSTER_HEARD = 'overlook:roster';
 

@@ -48,6 +48,7 @@ import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import { hush } from './npc/npcSpeech.ts';
 import { isKeeperView, npcChoosing, npcHints, npcOpened, npcStepBack } from './npc/npcScreen.ts';
 import { RosterPage, socialPage } from './rosterTab.ts';
+import { GuildPage, guildPage } from './guild/guildPage.ts';
 import { answerSaid } from './shipGear.ts';
 import { shipTab } from './shipPages.ts';
 import type { ShipPanel } from './shipPanel.ts';
@@ -117,7 +118,7 @@ export function startGearWindow(
   /** The press the menu last built with the focus, and the presses beside it, nearest first. */
   let held: { readonly id: string; readonly beside: readonly string[] } | null = null;
   /** The Roster and the account, asked of the accounts as Social or Settings opens and kept while it shows. */
-  let roster: RosterPage | null = null;
+  let [roster, guild]: [RosterPage | null, GuildPage | null] = [null, null];
   let accountPanel: AccountPanel | null = null;
   let figure: { key: string; picture: Picture | null } = { key: '', picture: null };
   /** The player's name and account, once the accounts give them; and the gear the banner last showed. */
@@ -188,7 +189,8 @@ export function startGearWindow(
    *  either way the hold under way is let go, so a step back never buys what was being held. */
   const stepOnce = () => {
     holds.letGo();
-    if (inspecting === null && view === 'social' && roster?.back()) return play('back');
+    if (inspecting === null && (view === 'social' ? roster : view === 'guild' ? guild : null)?.back())
+      return play('back');
     back();
   };
   const nameAgain = () =>
@@ -206,6 +208,7 @@ export function startGearWindow(
     const later = isTab(shown) ? TAB_PRESSES[shown].later : undefined;
     if (later !== undefined) return laterPage(TAB_PRESSES[shown as Tab].label, later);
     if (shown === 'social') return socialPage(plain, link ? (roster ??= new RosterPage({ link, travel })) : null);
+    if (shown === 'guild') return guildPage(plain, link ? (guild ??= new GuildPage({ link })) : null);
     return settingsPage(plain, link ? (accountPanel ??= new AccountPanel(link)) : null);
   };
 

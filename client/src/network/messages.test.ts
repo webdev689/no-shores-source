@@ -24,8 +24,8 @@ test('a welcome and a snapshot the server wrote read back to the bit', async () 
   const dressed = [{ player: 7, dress: '{"body":"male"}' }];
   // Everyone's plate: a named player at level 20, their Prestige and a menu open, and a guest, nameless.
   const plates = [
-    { player: 7, name: 'Wooden_Osprey', level: 24, menu: true },
-    { player: 9, name: '', level: 6, menu: false },
+    { player: 7, name: 'Wooden_Osprey', level: 24, menu: true, tag: 'SALT' },
+    { player: 9, name: '', level: 6, menu: false, tag: '' },
   ];
   const node = { id: 'overlook-social', bounds: [2_808_986, 1_201_139, 2_809_442, 1_201_455.5] };
   assert.deepEqual(readFromRoom(await written('joined.bin')), {

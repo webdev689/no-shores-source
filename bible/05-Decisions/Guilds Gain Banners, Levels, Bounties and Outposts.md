@@ -39,8 +39,8 @@ and wrote:
   structures that give guild buffs, passive income, guild dungeons, guild bosses, housing decoration and more. A guild
   dungeon is a place for dungeons beside the three in
   [[Dungeons Live in Patrols, on the Sea's Islands and as Elite Dungeons]].
-- **DFO is researched**, and what can be adapted from it comes over ([[Pick - Guilds and Heraldry]],
-  [[Pick - Halls, Works and Decor]]).
+- **DFO is researched** for what can be adapted ([[Pick - Guilds and Heraldry]], [[Pick - Halls, Works and Decor]]);
+  its rows in the [[Pick List]] are the owner's to mark approved.
 - **Claude curates the system**, recording each call in [[Guilds and Outposts as Claude Shapes Them]], and comes back
   when it is complete. The [[Rules]] and [[Ask Before Deploying]] still hold.
 

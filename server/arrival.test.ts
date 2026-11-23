@@ -153,6 +153,7 @@ function roomOf(): KeptRoom & { readonly held: Map<number, string> } {
     restoreCharacter: (player, kept) => held.has(player) && Boolean(held.set(player, kept)),
     own: (player) => held.has(player),
     name: (player) => held.has(player),
+    tag: (player) => held.has(player),
     shut: () => '',
   };
 }

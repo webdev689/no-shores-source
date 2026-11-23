@@ -1,87 +1,16 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Account, AccountLink, Details, Person, Roster } from '../network/accounts.ts';
-import { glyphDrawn } from '../ui/glyphs.ts';
-import type { Child, Node } from '../ui/node.ts';
 import type { Page } from '../ui/page.ts';
-import { QuadList } from '../ui/quads.ts';
-import { type Face, widthOf } from '../ui/text.ts';
-import { Interface, type UiEvent } from '../ui/ui.ts';
-import type { UiRenderer } from '../ui/uiRenderer.ts';
 import { AccountPanel } from './accountTab.ts';
-import { Holds } from './gearHold.ts';
-import { sizesOf } from './gearNodes.ts';
-import type { PlainContext } from './menuPage.ts';
+import { drawn } from './menuForTests.ts';
 import { laterPage, settingsPage, shipPage } from './menuPages.ts';
 import { resolution } from './renderScale.ts';
 import { RosterPage, socialPage } from './rosterTab.ts';
 
-const block = glyphDrawn({ rows: ['##', '##'], advance: 600 });
-const face: Face = { glyph: () => block };
-const VIEW = { width: 1280, height: 720, scale: 1 };
-const ROOM = { width: 1180, height: 520 };
-
-function renderer(): UiRenderer {
-  return {
-    face,
-    quads: new QuadList(),
-    tileTexels: () => null,
-    glyphTexels: () => null,
-    picture: () => undefined,
-    measure: (words: string, size: number) => widthOf(face, words, size),
-  } as unknown as UiRenderer;
-}
-
 // What the pages dispatch to the page around them: heard and counted, never acted on.
 const heard: string[] = [];
 Object.assign(globalThis, { dispatchEvent: (event: Event) => heard.push(event.type) });
-
-/** Every word a tree shows, in order. */
-function wordsOf(node: Child): string[] {
-  if (!node) return [];
-  const own = node.text
-    ? [typeof node.text.words === 'string' ? node.text.words : node.text.words.map((span) => span.words).join('')]
-    : [];
-  return [...own, ...(node.children ?? []).flatMap(wordsOf)];
-}
-
-/** A page drawn frame by frame through the interface, with the clock `now` for its holds. */
-function drawn(page: (context: PlainContext) => Node) {
-  let now = 0;
-  const ui = new Interface(renderer());
-  ui.speak = () => undefined;
-  const holds = new Holds(() => now);
-  const context: PlainContext = { ui, room: ROOM, sizes: sizesOf(VIEW.width, VIEW.height, 1), holds };
-  let last: Node = { children: [] };
-  const frame = (events: UiEvent[] = [], seconds = 1 / 60) => {
-    now += seconds * 1000;
-    ui.frame(VIEW, events, seconds);
-    holds.frame(ui);
-    last = page(context);
-    holds.end();
-    ui.draw({ width: 'grow', height: 'grow', direction: 'column', children: [last] });
-  };
-  const middle = (id: string) => {
-    const box = ui.boxOf(id);
-    assert.ok(box, `${id} is laid`);
-    return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  };
-  const click = (id: string) => {
-    const point = middle(id);
-    frame([
-      { kind: 'pointer', ...point },
-      { kind: 'down', ...point, button: 0 },
-      { kind: 'up', ...point, button: 0 },
-    ]);
-    frame();
-  };
-  const type = (id: string, text: string) => {
-    click(id);
-    frame([{ kind: 'text', text }]);
-  };
-  const shows = () => wordsOf(last).join(' | ');
-  return { ui, frame, click, type, middle, shows };
-}
 
 const settle = () => new Promise((done) => setTimeout(done, 0));
 

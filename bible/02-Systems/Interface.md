@@ -716,8 +716,8 @@ A screen over the game, after Destiny's ([[The Menu Follows Destiny, the Vault a
 the tabs Character (I), Inventory (O), Journal, Compendium, Ship, Social, Guild and Settings fill the top of its header, each a
 whole number of pixels wide, their words at the names' size (the words' under 1100 px, or wherever one would not fit
 its tab at the names' size);
-keys on keycaps where the menu is wide enough; Guild
-marked Later, a page saying what it will hold. The chosen tab is a lit brass press; a tab with something new on it
+keys on keycaps where the menu is wide enough; Guild opens the player's guild after Destiny 2's clan screen
+([[Guilds]]). The chosen tab is a lit brass press; a tab with something new on it
 (the Compendium, while a chapter found waits unread) wears Destiny's small diamond at its top right, and its name is
 read with ", new"; the arrow keys move between tabs. At the top line's right stands the account's mark, after DFO's
 ([[The HUD Drops Its Room Line, and the Account Mark Comes From DFO]]): a round well rimmed in brass with the player's
@@ -1246,7 +1246,8 @@ serves each ask only at its own counter ([[Gear]], "In the rooms"; [[Factions]])
 
 - **A plate over each other player's head** ([[Other Players Wear a Nameplate, Their Level or Prestige in a Square]],
   [[A Player's Square Shows Their Level, Gold Past 20]]): a square and their username beside it, after the owner's
-  pictures of Destiny's. The square shows their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`,
+  pictures of Destiny's, and after it their guild's tag in brackets, a shade fainter ([[Guilds]]). The square shows
+  their level, 21 to 30, the levels Prestige raises, in gold (`levelInk`,
   `TONES.brassHi`); while a menu is open on their screen (the pause menu, the menu's window, a player's menu or Inspect)
   a speech bubble's three dots stand in its place. Square and name are the company's green (`FILLS.green`,
   `TONES.company`) for a member of the viewer's company, by the Roster the company's display last heard, and the
@@ -1360,8 +1361,9 @@ button's corner and screen, and the Tailor's wares.
   pictures on the player's own figure, which is not theirs.
 - A join reaches a company member on foot on the landmass open now, in a patrol's dungeon too; one across the sea,
   or at sea, is not reached, and the Roster says so.
-- A player's plate shows their username from the room their account last claimed their character in: one added
-  meanwhile shows from their next room.
+- A player's plate shows their username and guild's tag from the room their account last claimed their character in,
+  read again when they take a username or their guild changes on the page they play from; a guild changed elsewhere
+  shows from their next room.
 - An item is drawn from the front only, and a piece the forge has no layer for (plain arms) shows its initials.
 - The world's sounds play on foot and on the Test Ground; a deck at sea has none, and the music has
   none yet.

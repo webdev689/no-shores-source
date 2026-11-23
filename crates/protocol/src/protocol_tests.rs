@@ -158,7 +158,7 @@ const DRESSED: [(PlayerId, &str); 1] = [(7, r#"{"body":"male"}"#)];
 
 /// A named player's plate with a menu open, and a guest's with none.
 fn plates() -> Vec<(PlayerId, room::Plate)> {
-    let named = room::Plate { name: "Wooden_Osprey".to_owned(), level: 24, menu: true };
+    let named = room::Plate { name: "Wooden_Osprey".to_owned(), level: 24, menu: true, tag: "SALT".to_owned() };
     vec![(7, named), (9, room::Plate { level: 6, ..room::Plate::default() })]
 }
 

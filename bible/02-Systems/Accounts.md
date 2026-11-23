@@ -115,7 +115,7 @@ they play in holds it while they are there.
   character anyway, and a hold its room stopped saving lapses after a minute. A room that loses a character to
   another learns it from its next save and lets the player go, saying their character joined another room (4001),
   and that page joins no more ([[Server]], "Joining again"). Each claim keeps the room that claims it (`room`, from
-  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]) and the account's username (null for a guest), which the room names the player by for their plate, and a look answers
+  its holder's name) and answers the room that held it before (`came_from`, null before any did; [[The Server Is the Authority Over Everything]]) and the account's username (null for a guest) and its guild's tag (null in none), which the room puts on the player's plate, and a look answers
   the room that last held it; a room that lets a character go untouched (its gate shut, or it never gave it) was never
   where it was, so the room before is its last again. The rooms judge where a character comes from by these alone
   ([[Server]], "Where a character comes from").
@@ -170,7 +170,8 @@ username, as a player is found by theirs; a guest is told to add one in Settings
   direction. Each is judged as [[Names]] says. Its founder and admins invite players with no guild, who accept or
   decline; the founder makes members admins and back, either removes those below them, and the founder hands the
   founding to an admin, who must first be made one, in one write, so two at once cannot make two founders. A founder leaves only once another founds it, or alone, which
-  ends it. A hundred at most.
+  ends it. A hundred at most. Its banner, description and level, and the Guild tab's own read (`GET /v1/guild`), are
+  in [[Guilds]].
 - **Blocking** ends a friendship and its ask and the invites either way. What the one blocked asks after is answered
   as sent and never arrives. A block either way between a player and anyone in a company keeps them out of it, by
   joining or by an invite, answered as a company closed to them. The one blocked sees the blocker's details as a
