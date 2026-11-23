@@ -18,6 +18,14 @@ code:
   - server/accounts/outpostStores.ts#outpostFor
   - server/accounts/migrations/20261123210955_outposts.sql
   - crates/gear/src/guild.rs#Boons
+  - server/outpostHost.ts#OutpostHost
+  - server/keeping.ts#forGuild
+  - server/roomNames.ts#nodeRoom
+  - crates/room/src/outpost.rs
+  - crates/room/src/outpost_boss.rs
+  - crates/room-wasm/src/outpost_door.rs
+  - server/accounts/migrations/20261123230738_outpost_errands.sql
+  - tools/modules/catalogue.py#OUTPOST
 ---
 # Outposts
 
@@ -64,6 +72,19 @@ Them]]). Each island has one outpost site, and each guild that raises an outpost
   red with the law's words where not), raises tiers, takes down, sounds the War Horn and abandons. A change to a plot
   tells the room, and says so on the window. The Treasury page reads the ledger in words and lets a member at an
   outpost put Aurem in ([[Interface]]).
+- **The room.** Each guild plays its outpost at a site in a room of its own, `node-<site>--guild-<key>`, the key its
+  whole id; the bare site is nobody's ([[Server]], "An outpost's room"). Its members come in, and anyone in a company
+  with a member there. The host stands the plot's boxes as the room's blocks (`outpostHost.ts`), and stands them anew
+  when a member changes the plot or a delivery raises a structure; the snapshot counts each plot stood, so the page
+  reads it again. Putting Aurem in, delivering, taking from the stores and sounding the horn are asked of the room,
+  which takes what is given at once and asks the accounts as an errand under an id of its own: asked again, the
+  accounts answer as they did, so nothing is done or given back twice.
+- **The guild boss.** The War Horn, sounded once a week by the founder or an admin, calls a High Assessor and four
+  Majors to the muster ground beyond the plot, at the level of the highest member there, at Normal, Elite or Abyss by
+  the horn's tier. Felled, each player who struck it is paid as a world boss's clear pays, and each member among them
+  takes a guild package once that week.
+- **The models.** Each structure at each tier, the standard on each staff, and a scaffold for each footprint are
+  modules built in Blender ([[Modules]], "The outposts' structures"); unturned, each faces south.
 - **Reading an outpost.** `GET /v1/outposts` gives a member their guild's outposts, its treasury and ledger, and the
   site they stand at; `GET /v1/outposts/<room>` gives anyone signed in the plot and banner a room stands, so a
   member's company draws it too ([[Accounts]]).

@@ -594,7 +594,7 @@ so every decision is Rust and the shell only carries bytes and time.
 
 ## An outpost's room
 
-- **Its name**: `node-<site>--guild-<key>`, `<key>` the guild id's first eight lowercase hex digits (`guildKey`),
+- **Its name**: `node-<site>--guild-<key>`, `<key>` the guild id's 32 lowercase hex digits (`guildKey`),
   only on a bare node (`nodeRoom`'s `guild`). It opens only on a node whose baked file has an `outpost` part; the bare
   `node-<site>` is the wild site, nobody's plot. Both keep characters, and a player walks between them at Normal.
 - **Who comes in** (`Keeper.forGuild`): the guild's members, and anyone in a company with a member playing there;
@@ -605,9 +605,10 @@ so every decision is Rust and the shell only carries bytes and time.
 - **The asks** (76 to 80): the room takes what an ask gives and holds it as an errand; each tick the host takes the
   errands (`room_outpost_errands`), asks the accounts (`deposit`, `deliver`, `takeStores`, `soundHorn`) and gives the
   answer back (`room_outpost_answered`): what was not moved or used goes back, what the stores gave is given, and the
-  player is answered (156 to 162 beside the gear's). An errand the accounts throw on goes back whole; a deposit is
-  asked again first under its one id (`<room>:<host start>:<player>:<errand>`), so one that went through is never also
-  given back. A leaving player's last save waits for their errands in flight, 30 s at most.
+  player is answered (156 to 162 beside the gear's). Each errand has its one id
+  (`<room>:<host start>:<player>:<errand>`), under which the accounts keep their answer in the same write as the
+  errand; one they throw on is asked again under it, so one that went through answers as it did and is never done or
+  given back twice. Only one they throw on every time goes back whole. A leaving player's last save waits for their errands in flight, 30 s at most.
 
 ## The browser's side
 
