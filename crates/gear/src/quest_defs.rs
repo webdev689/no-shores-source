@@ -5,6 +5,7 @@
 
 use crate::arts::arts;
 use crate::factions::factions;
+use crate::kinds::Slot;
 use crate::quest_goals::{Defend, Escort, Goal, GoalDef, Puzzle, Race, Slay, Tail};
 use serde::Deserialize;
 use serde::de::{Deserializer, IgnoredAny, MapAccess, Visitor};
@@ -225,13 +226,9 @@ impl GoalDef {
             Goal::Talk(talk) => {
                 (!(1..=u8::MAX).any(|keeper| keeper_key(keeper) == Some(talk.to.as_str()))).then_some("to")
             }
-            Goal::Pledge(_)
-            | Goal::Reach(_)
-            | Goal::Gather(_)
-            | Goal::Scavenge(_)
-            | Goal::Enter(_)
-            | Goal::Buy(_)
-            | Goal::Wear(_) => None,
+            Goal::Pledge(_) | Goal::Reach(_) | Goal::Gather(_) | Goal::Scavenge(_) | Goal::Enter(_) => None,
+            // Only a weapon's or armour's slot is ever told of a piece bought or worn (`QuestLog::tell_held`).
+            Goal::Buy(goal) | Goal::Wear(goal) => (!Slot::VESTIGE.contains(&goal.slot)).then_some("slot"),
             Goal::Kill(slay) => slain(slay),
             Goal::Cast(cast) => {
                 let spells = arts().arts.iter().flat_map(|art| [&art.anima, &art.tenets[0], &art.tenets[1]]);

@@ -145,6 +145,9 @@ fn a_goal_holding_a_value_none_of_its_own_is_a_problem_naming_the_field() {
         (r#"{ "kind": "unseen", "node": "n", "place": "p", "within": 0, "text": "t" }"#, "within"),
         (r#"{ "kind": "unseen", "node": "n", "place": "p", "within": 40, "text": "t" }"#, "within"),
         (r#"{ "kind": "gather", "count": 0, "text": "t" }"#, "count"),
+        // Only a weapon's or armour's slot is ever told of a piece bought or worn.
+        (r#"{ "kind": "wear", "slot": "mount", "text": "t" }"#, "slot"),
+        (r#"{ "kind": "buy", "slot": "cloak", "text": "t" }"#, "slot"),
     ] {
         let problem = goal(text).expect(text).problem();
         assert!(problem.as_deref().is_some_and(|said| said.contains(field)), "{text}: {problem:?}");
