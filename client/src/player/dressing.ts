@@ -170,13 +170,18 @@ function metalAndDyed(looks: ForgeLooks): { readonly metal: Set<string>; readonl
  *  (HORSE_LAYER) its coat's. Layers that keep their own colours have none. `whole` names the layers a ramp covers, on
  *  every texel by its light, as a shader covers a whole piece, since many of the forge's sets are drawn in colours of
  *  their own that a ramp on greys alone would leave: the armour and padding a worn dye or a faction's colour takes,
- *  and a faction's shield, bow and staff. A blade keeps its metal; a faction's cape wears its faction's dye. */
+ *  and a faction's shield, bow and staff. A faction's blade keeps its metal; `trimmed` names it, its colour on the
+ *  trim the forge marks (coverLight.ts `TRIM_ALPHA`). A faction's cape wears its faction's dye. */
 export function layerRamps(
   gear: readonly string[],
   outfit: Outfit,
   looks: ForgeLooks,
   table: DyeTable,
-): { readonly ramps: Record<string, readonly Rgb[]>; readonly whole: string[] } {
+): {
+  readonly ramps: Record<string, readonly Rgb[]>;
+  readonly whole: string[];
+  readonly trimmed: string[];
+} {
   const { metal, dyed } = metalAndDyed(looks);
   const worn = cosmeticRamp(outfit.dye, table.palette);
   const armour = new Set(ARMOUR_PIECES.map((piece) => `${piece}_${outfit.armour[piece] ?? ''}`));
@@ -187,6 +192,7 @@ export function layerRamps(
   const takesDye = (layer: string) => piece(layer) || (dyed.has(layer) && !metal.has(layer) && !CLOAK.test(layer));
   const ramps: Record<string, readonly Rgb[]> = {};
   const whole: string[] = [];
+  const trimmed: string[] = [];
   for (const layer of gear) {
     const garment = outfit.dyes[layer.replace(HANG, '')] ?? PLAIN_DYE;
     const own = factionRamp(outfit.dyes[layer.replace(PUT_AWAY, '')], table.palette);
@@ -200,8 +206,9 @@ export function layerRamps(
           : undefined);
     if (ramp) ramps[layer] = ramp;
     if (own ? ownWhole(layer) : cosmetic && piece(layer)) whole.push(layer);
+    else if (own && !dyed.has(layer)) trimmed.push(layer);
   }
   const coat = cosmeticRamp(outfit.coat, table.palette);
   if (coat) ramps[HORSE_LAYER] = coat;
-  return { ramps, whole };
+  return { ramps, whole, trimmed };
 }

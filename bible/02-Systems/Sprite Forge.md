@@ -111,6 +111,14 @@ Leather and chain take steel's; the guild sets keep their own colours, unless a 
 which covers every set's armour whole by its light ([[Gear]], "Cosmetics"). A composed frame is then snapped to the
 palette, nearest in OKLab with hue weighed four times light, as DFO's game does.
 
+A weapon's hilt, guard and trim are marked in every strip and picture of it: each such texel is drawn at alpha 254,
+every other drawn texel at 255 (`stage.py` `mark_trim`). The trim is each material of a fitting's, a grip's or an
+accent's class, never a glow (`metals.py` `is_trim`), on every sword, dagger, axe, mace, flail and warhammer layer,
+in hand or sheathed (`layers.py` `TRIMMED`, the large pictures of `weaponart.py`), and the first person's sword and
+dagger (`fplayers.py` `TRIM_MATS`). The page lays a faction's colour on those texels of a faction's blade alone, by
+their light across the trim's own span ([[Gear]], "Looks"); a strip without marks draws as it did. A trimmed layer's
+render key carries the mark, so a figures run draws those strips again and no others.
+
 ## Running it
 
 Blender runs as a Python module: `pip install bpy==5.2.3` on Python 3.13, with `scipy`, `cma` and `pillow`. Run

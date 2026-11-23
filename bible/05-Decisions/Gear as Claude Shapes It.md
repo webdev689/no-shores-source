@@ -231,3 +231,16 @@ Replaced in part by [[Factions and Vendors as Claude Shapes Them]]: each faction
 
 The named Legendaries and Atherics, their perks and words, and the clothing sets are in `content/gear/`. They are
 Overlook's own, read from the sea and the Pale Expanse; none is Destiny's.
+
+### The faction blades' colour
+
+The calls [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]] and [[Faction Weapons Wear Their Colour and
+Roll Their Faction's Perks]] leave open, made on the owner's word that Claude finishes them
+([[Claude Finishes the Gear Calls on Its Own Word]]).
+
+| Choice | Chosen | Why |
+|---|---|---|
+| What the colour lies on | A blade's, head's or haft's hilt work: its fittings and guard, its grip, haft and cords, its accents and inlaid trim. Never its blade or head, a glow, a haft's wood or a dagger's stones | The owner's "hilt and trim", the blade keeping its metal; a glow keeps its fire and a stone its colour |
+| How it is laid | By its light across the trim's own span of light: the darkest of the trim to the colour's first step, the brightest to its last. The figure and the item pictures read the span from the blade as it stands; first person from the blade's first frame in hand | Each hilt is drawn in colours of its own (elven gold, ebony black), as a guild's set is, so a ramp on greys alone would leave it. First person is lit brighter than the figure: the figure's span left its brightest trim one flat step |
+| Which blades | Every sword, dagger, axe, mace, flail and warhammer the forge draws in a metal is marked, in hand and sheathed; the colour lies only on a faction's | One rule for every melee weapon a faction may sell; today they sell an elven sword (Squallbreak) and an ebony dagger (Hushguard) |
+| The Veiled's colour | Nightveil laid as #131313, #35353b, #555560 and #a5a5ae: Daggerfall's cold lavender greys over a black foot | The game's palette has no stronger violet this light; these are the coldest steps it keeps, and they stay as far from the Veiled Dusk dye as a test asks |

@@ -1,6 +1,6 @@
 import { type GlowElement, recolourToGlow } from '../elementGlow.ts';
 import type { Strip } from '../forge/compose.ts';
-import { type CoverSteps, coverSteps, coversOf, lightOf } from '../forge/coverLight.ts';
+import { type CoverSteps, TRIM_ALPHA, coverSteps, coversOf, lightOf } from '../forge/coverLight.ts';
 import type { DyeTable, PaletteSnap, Rgb } from '../forge/dyes.ts';
 import type { ForgeLooks } from '../forge/looks.ts';
 import type { WeaponKind } from './weaponMachine.ts';
@@ -124,14 +124,40 @@ export function metalRamp(dyes: DyeTable, metal: string | null): readonly Rgb[] 
   return dyes.armour[metal ?? 'Steel'] ?? dyes.armour.Steel ?? null;
 }
 
-/** The steps a ramp covering the forge layer `layer` takes by light, read from its set on the player's body, as the
- *  figure's are; each light at its own share of the ramp where the forge's looks or the body are not known. */
-export function pieceCover(source: FrameSource, layer: string): Promise<CoverSteps> {
+/** The steps a ramp covering the forge layer `layer` (its marked trim alone, with `trim`) takes by light, read from
+ *  its set on the player's body, as the figure's are; each light at its own share of the ramp where the forge's looks
+ *  or the body are not known. */
+export function pieceCover(source: FrameSource, layer: string, trim = false): Promise<CoverSteps> {
   const { looks, body } = source;
   if (!looks || !body) return Promise.resolve(coverSteps([]));
-  return coversOf(body, [layer], looks, (path) => source.strip(path)).then(
+  return coversOf(body, [layer], looks, (path) => source.strip(path), trim).then(
     (covers) => covers.get(layer) ?? coverSteps([]),
   );
+}
+
+/** A faction's colour on the hilt, guard and trim the forge marks (coverLight.ts `TRIM_ALPHA`), and the step each
+ *  light takes on it. */
+export interface Trim {
+  readonly ramp: readonly Rgb[];
+  readonly steps: CoverSteps;
+}
+
+/** A faction's blade's colour on its marked trim, in the hand that holds it; none for any other blade. It is laid
+ *  across the trim's span of light in `standing`, the blade's own first frame in hand: the first person is lit
+ *  brighter than the figure, whose span would leave its brightest trim one flat step. With no such frame, it is laid
+ *  by the trim's light on the player's body, as the figure's is. */
+async function trimOf(
+  source: FrameSource,
+  wielded: Wielded,
+  left: boolean,
+  standing: string | null = null,
+): Promise<Trim | null> {
+  const ramp = (left ? source.own?.left : source.own?.right) ?? null;
+  if (!ramp) return null;
+  const first = standing ? await source.strip(standing) : null;
+  if (first) return { ramp, steps: coverSteps([first], true) };
+  const layer = `${wielded.kind}_${(wielded.metal ?? 'Steel').toLowerCase()}`;
+  return { ramp, steps: await pieceCover(source, layer, true) };
 }
 
 /** A picture of the hands or feet in `set` painted: a dye worn or a faction's colour covering the whole piece, laid
@@ -188,18 +214,27 @@ export class FramePainter {
 
   /** The strip's texels painted, clear below half alpha; `ramp` the metal's, or null to snap the greys as any colour.
    *  A ramp that covers the strip (a dye worn or a faction's colour) lies on every texel by its light, where
-   *  `covers` lays it: its set's, as the figure's piece takes it. */
-  paint(strip: Strip, ramp: readonly Rgb[] | null, covers: CoverSteps | null = null): Uint8Array {
+   *  `covers` lays it: its set's, as the figure's piece takes it. A faction's blade's `trim` lies on its marked
+   *  texels alone; a strip with none draws as it did. */
+  paint(
+    strip: Strip,
+    ramp: readonly Rgb[] | null,
+    covers: CoverSteps | null = null,
+    trim: Trim | null = null,
+  ): Uint8Array {
     const pixels = Uint8Array.from(strip.data);
     const dyed: [number, Rgb | undefined][] = [];
     for (let texel = 0; texel < pixels.length; texel += 4) {
+      const marked = !!trim && pixels[texel + 3] === TRIM_ALPHA;
       const drawn = (pixels[texel + 3] ?? 0) >= 128;
       pixels[texel + 3] = drawn ? 255 : 0;
       const grey = pixels[texel] === pixels[texel + 1] && pixels[texel + 1] === pixels[texel + 2];
-      if (drawn && ramp && (grey || covers)) {
-        const colour = covers
-          ? ramp[covers[lightOf(pixels.subarray(texel, texel + 3))] ?? 0]
-          : ramp[this.steps[pixels[texel] ?? 0] ?? 0];
+      const light = () => lightOf(pixels.subarray(texel, texel + 3));
+      if (marked) {
+        dyed.push([texel, trim.ramp[trim.steps[light()] ?? 0]]);
+        pixels[texel + 3] = 0;
+      } else if (drawn && ramp && (grey || covers)) {
+        const colour = covers ? ramp[covers[light()] ?? 0] : ramp[this.steps[pixels[texel] ?? 0] ?? 0];
         dyed.push([texel, colour]);
         pixels[texel + 3] = 0;
       }
@@ -320,6 +355,7 @@ async function layered(
   wielded: Wielded,
   hands: string | null,
   left: boolean,
+  leftHand = left,
 ): Promise<Picture | null> {
   const asks = (own: string | null) => (left ? [...(own ? [`${own}Left`] : []), 'Left'] : looksAsked(own, false));
   const pair = async (layer: 'hand' | 'weapon', own: string | null) => {
@@ -330,7 +366,7 @@ async function layered(
         source.strip(layerPath(archive, record, frame, layer, look, true)),
       ]);
       if (colour && depth && depth.width === colour.width && depth.height === colour.height)
-        return { path, colour, depth };
+        return { path, look, colour, depth };
     }
     return null;
   };
@@ -342,12 +378,19 @@ async function layered(
     hand.colour.width === weapon.colour.width &&
     hand.colour.height === weapon.colour.height &&
     cornerOf(hand.path) === cornerOf(weapon.path);
-  if (!oneCanvas) return left ? layered(source, archive, [record, frame], wielded, hands, false) : null;
+  // The left hand's blade drawn as the right's twin, mirrored by the caller, is still the left hand's.
+  if (!oneCanvas) return left ? layered(source, archive, [record, frame], wielded, hands, false, true) : null;
+  const standing = layerPath(archive, 0, 0, 'weapon', weapon.look);
   const blade = new Uint8Array(hand.colour.width * hand.colour.height);
   const pixels = layByDepth(
     await paintSet(source, hand.colour, hands, 'Iron'),
     hand.depth,
-    source.painter.paint(weapon.colour, metalRamp(source.dyes, wielded.metal)),
+    source.painter.paint(
+      weapon.colour,
+      metalRamp(source.dyes, wielded.metal),
+      null,
+      await trimOf(source, wielded, leftHand, standing),
+    ),
     weapon.depth,
     blade,
   );
@@ -415,7 +458,10 @@ export async function weaponPicture(
   }
   const staff = wielded.metal ? `staff_${wielded.metal.toLowerCase()}` : 'staff';
   const covers = own ? await pieceCover(source, staff) : null;
-  return whole(source, archive, shown, wielded.metal, (strip) => source.painter.paint(strip, ramp, covers), left);
+  // A faction's blade, head or haft keeps its metal, its faction's colour on its marked hilt, guard and trim.
+  const trim = own ? null : await trimOf(source, wielded, left);
+  const paint = (strip: Strip) => source.painter.paint(strip, ramp, covers, trim);
+  return whole(source, archive, shown, wielded.metal, paint, left);
 }
 
 /** Where the running arm's frames lie on the design screen: the right arm's corner, its foot on the bottom edge. */

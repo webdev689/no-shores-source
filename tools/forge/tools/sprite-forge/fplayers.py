@@ -35,6 +35,15 @@ SETS = ('Leather', 'Chain', 'Iron', 'Steel', 'Silver', 'Elven', 'Dwarven', 'Mith
         'Orcish', 'Daedric')
 METALS = ('Steel',) + fpdaggers.METALS
 DEPTH = 10000.0   # depth's units a metre: tenths of a millimetre, sixteen bits reaching past six metres
+# the held weapon's hilt, guard and trim by their materials in the part (fpsword.py, fpdagger.py), marked for a
+# faction's colour as the figure's are (stage.py `mark_trim`): the sword's fittings, its grip and the materials its hilt
+# makes of its own (`sword:`), the dagger's brass, pommel, grip, fittings and accent; never a blade, a glow or a stone
+TRIM_MATS = ('sword_fit', 'sword_grip', 'hilt', 'pommel', 'dagger_grip', 'dagger_fit', 'dagger_accent')
+
+
+def is_trim(name):
+    """Whether the part's material `name` is the held weapon's hilt, guard or trim (`TRIM_MATS`)."""
+    return name in TRIM_MATS or (name.startswith('sword:') and 'glow' not in name)
 
 
 def makes_of(weapon):
@@ -95,20 +104,23 @@ def hand_names(names, weapon='dagger'):
     return tuple(n for n in names if n not in own)
 
 
-def depth_map(eye, pose, part, record, ids):
+def depth_map(eye, pose, part, record, ids, trim_ids=()):
     """Each pixel's distance before the eye of the nearest triangle of materials `ids` (their indices among the
-    weapon's), by the fitter's raster (0 none): where the ray through the pixel's middle meets that triangle's plane."""
+    weapon's), by the fitter's raster (0 none): where the ray through the pixel's middle meets that triangle's plane;
+    and whether that triangle is of the materials `trim_ids`, (depth, trim)."""
     S, _, (v, t, c) = eye.drawn(part, record)
     keep = np.isin(c, [i + 1 for i in ids])
-    t = t[keep]
+    t, trimmed = t[keep], np.isin(c[keep], [i + 1 for i in trim_ids])
     v = fpmodel.posed(eye.weapon, part, v, pose, S)
     M, _ = fpstage.pose_matrix(pose, S, fpmodel.length(eye.weapon, S, part))
     P = v @ M[:3, :3].T + M[:3, 3]
     tri = fpstage.raster(*fpstage.project(P, S), t)
     out = np.zeros(tri.shape)
     on = tri >= 0
+    trim = np.zeros(tri.shape, bool)
     if not on.any():
-        return out
+        return out, trim
+    trim[on] = trimmed[tri[on]]
     ys, xs = np.nonzero(on)
     ray = np.stack([(xs + 0.5 - fpstage.OX - fpstage.CX) / S['focal'], np.ones(len(xs)),
                     -(ys + 0.5 - fpstage.OY - fpstage.CY) / (S['focal'] * S['aspect'])], axis=1)
@@ -118,7 +130,7 @@ def depth_map(eye, pose, part, record, ids):
     den = (n * ray).sum(axis=1)
     y = np.where(np.abs(den) > 1e-12, (n * a).sum(axis=1) / np.where(np.abs(den) > 1e-12, den, 1.0), a[:, 1])
     out[on] = np.clip(y, fpstage.NEAR, None)
-    return out
+    return out, trim
 
 
 def depth_picture(pic, depth):
@@ -144,6 +156,7 @@ def layers(eye, spec, which, records=None, weapon='dagger'):
     own = own_of(weapon)
     only = hand if which == 'hand' else own
     ids = [i for i, n in enumerate(names) if n in only]
+    trim_ids = [i for i in ids if which == 'weapon' and is_trim(names[i])]
     out = {}
 
     def of(r):
@@ -151,14 +164,14 @@ def layers(eye, spec, which, records=None, weapon='dagger'):
             return out[r]
         rec = spec['records'][r]
         if 'mirror' in rec:
-            out[r] = [(fpforge.flipped(p, rec), fpforge.flipped(z, rec)) for p, z in of(rec['mirror'])]
+            out[r] = [tuple(fpforge.flipped(each, rec) for each in frame) for frame in of(rec['mirror'])]
             return out[r]
         frames = []
         fpforge.aim(spec, r)
         for f in range(rec['frames']):
             pose, part = fpforge.FIT[f'{r}:{f}'], fpforge.part_of(spec, rec)
             scr = eye.screen(pose, part, only=only, record=r, solid=own)
-            frames.append((scr, depth_map(eye, pose, part, r, ids)))
+            frames.append((scr, *depth_map(eye, pose, part, r, ids, trim_ids)))
         out[r] = frames
         return out[r]
     for r in range(len(spec['records'])):
@@ -174,8 +187,8 @@ def write(spec, screens, out_dir, stem, records=None):
         if records is not None and r not in records:
             continue
         rec = spec['records'][r]
-        for f, (scr, depth) in enumerate(frames):
-            pic = fpforge.cut(scr, fpforge.out_rect(rec))
+        for f, (scr, depth, trim) in enumerate(frames):
+            pic = stage.mark_trim(fpforge.cut(scr, fpforge.out_rect(rec)), fpforge.cut(trim, fpforge.out_rect(rec)))
             z = depth_picture(pic, fpforge.cut(depth[..., None], fpforge.out_rect(rec))[..., 0])
             name = f"{spec['archive']}_{r}-{f}_{stem}"
             at = fpforge.marks(spec, rec)

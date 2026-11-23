@@ -65,8 +65,12 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
   (`gear.armour`), each layer and the padding under it named for its faction in the outfit's dyes (`gearOutfit`), which
   `layerRamps` lays over any dye worn, covering every texel of the piece by its light (`whole`); the weapons in its metal
   (`gear.metal`), their colour covering a bow, a staff and a shield whole by their light, in hand or put away, while a
-  sword's or a dagger's blade keeps its metal. A faction's cape wears its faction's dye. The dress carries it, so other players see it;
-  first person lays it on the gauntlets, boots, bow, staff and shield.
+  blade (a sword, a dagger, or any melee weapon) keeps its metal and wears the colour on its hilt, guard and trim, the
+  texels the forge marks (`layerRamps` `trimmed`; [[Faction Blades Wear Their Faction's Colour on Hilt and Trim]]).
+  The Stormcallers' Squall, the Lamplighters' Lampglass, and the Veiled's Nightveil, black into a faint cold violet
+  ([[Faction Weapons Wear Their Colour and Roll Their Faction's Perks]]). A faction's cape wears its faction's dye. The
+  dress carries it, so other players see it; first person lays it on the gauntlets, boots, bow, staff, shield and a
+  blade's trim.
 - **An Art's level.** Each Art keeps a level (1 to 5), XP toward the next and the fragments it owns, one bit each
   (`WornArts`). Every kill's XP fills the worn Art's bar (`content/arts/arts.json` `levels.xp`: 8,000, 16,000, 32,000
   and 64,000) and stops when it is full. At the Art's faction's counter a full bar rises a level for its price
@@ -94,6 +98,7 @@ keeps a counter in Overlook's plaza ([[Cities]]), and a lore book its road gives
 ## Limits
 
 - Reputation comes from kills and clears alone: no bounties or activities give it yet, as there are none.
-- A faction's weapons take its colour only where the forge dyes a weapon: a sword's or a dagger's blade keeps its
-  metal, so Squallbreak and Hushguard show it on their shields.
+- A blade's trim shows its faction's colour only once the forge's marked strips are published (forge.yml): until
+  then a faction's blade draws as any other of its metal. The first person's sword and dagger frames are drawn by
+  `fplayers.py`, which no workflow runs. The Lamplighters sell no blade.
 - Destiny 1's rank 25 quest and its exotic class item have no like here.

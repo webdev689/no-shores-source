@@ -27,4 +27,5 @@ Asked how the Veiled's weapons should read, their colour being four neutral grey
 - **The Veiled's colour leans to a faint cold violet**, so their trim reads on a black blade; their armour shifts with
   it.
 
-Its pools are approved: [[Every Perk Stands, the Factions' Nine With Them]].
+Its pools are approved: [[Every Perk Stands, the Factions' Nine With Them]]. The Veiled's colour, Nightveil, is laid
+in the palette's cold lavender greys ([[Gear as Claude Shapes It]], "The faction blades' colour").

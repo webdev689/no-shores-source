@@ -2,8 +2,9 @@
 alone at four times the man's pixels a metre (layers.py), laid level with its business end to the right, seen square
 from the front. It is made as the man's layer in hand is (its size, a bow bent and strung as it is braced), lit by the
 forge's lights, its edges hard and its alpha cut at a half, as the stage's are; then graded as that layer is, its
-set's own grades and all, and a staff's, a bow's and a shield's metal laid grey on the steel band. So the page lays
-the same dye and faction ramps on it as on the layer, and snaps it to the same palette.
+set's own grades and all, and a staff's, a bow's and a shield's metal laid grey on the steel band, and a blade's,
+a head's or a haft's hilt, guard and trim marked (stage.py `mark_trim`). So the page lays the same dye and faction
+ramps on it as on the layer, and snaps it to the same palette.
 
     python -I tools/sprite-forge/weaponart.py --out public/art/weapons [--looks sword_iron,bow_long_elven]
 
@@ -202,8 +203,12 @@ def render(layer, kind, metal, palette, pixels_a_metre, tmp):
     work = stage.render_rgba(tmp)
     names = sorted({m.name.split('.')[0] for ob in obs for m in ob.data.materials if m})
     ids_of = {name: index + 1 for index, name in enumerate(names)}
-    ids = material_ids(obs, lambda m: ids_of.get(m.name.split('.')[0], 0) if m else 0)
+    classify = lambda m: ids_of.get(m.name.split('.')[0], 0) if m else 0   # noqa: E731
+    ids = material_ids(obs, layers.trim_classify(classify) if layers.TRIMMED.match(layer) else classify)
+    trim, ids = ids < 0, np.abs(ids)   # its hilt, guard and trim, marked as the figure's layer marks them
     work = graded(work, ids, names, layer, kind in DYED)
+    if trim.any():
+        work = stage.mark_trim(work, trim)
     for ob in obs:
         bpy.data.objects.remove(ob, do_unlink=True)
     rows, columns = np.nonzero(work[..., 3])
@@ -232,6 +237,14 @@ def check():
     every += [f'sword_{m.lower()}_short' for m in layers.SHORT_METALS]
     assert set(every) <= set(drawn), sorted(set(every) - set(drawn))
     assert set(daggers3p.METALS) == set(blunts3p.METALS) == set(bows.METALS), 'a dagger and a mace in every metal'
+    import metals
+    trims = ('blade.Elven', 'haft.Ebony.black', 'edge.Ebony.trim', 'haft.Elven.dark')
+    plain = ('steel.Elven.blade', 'edge.Daedric.glow', 'edge.Daedric.blade_glow', 'wood.Iron', 'blade')
+    assert all(map(metals.is_trim, trims)) and not any(map(metals.is_trim, plain)), 'a hilt, never a blade or glow'
+    assert layers.TRIMMED.match('sheath_dagger_ebony') and not layers.TRIMMED.match('shield_kite_elven')
+    marked = stage.mark_trim(np.array([[[9, 9, 9, a] for a in (255, 254, 100, 255)]], np.uint8),
+                             np.array([[True, False, True, False]]))
+    assert marked[0, :, 3].tolist() == [254, 255, 100, 255], 'trim marked where drawn, and nothing else at its alpha'
     print(f'weaponart: the layout and {len(drawn)} looks check')
 
 

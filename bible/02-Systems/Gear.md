@@ -626,6 +626,11 @@ to every other player. Every garment is armour ([[Clothing Is Armour, With a War
   and its brightest to the last (a span under 24 keeps the light as it is). A piece takes one shade whatever else is
   worn, in every move, in its item picture, on the Appearance screen and in first person, where the gauntlets, boots,
   bow, staff and shield are laid by the same set's span on the player's body.
+  A faction's blade keeps its metal and wears its faction's colour on the hilt, guard and trim the forge marks
+  ([[Sprite Forge]], "Colours"; `layerRamps` `trimmed`), laid across the span of the trim's light alone, read from
+  the blade in hand and put away as it stands; first person reads it from the blade's first frame in hand. Another
+  content's blade of the same metal keeps its own hilt. Claude's calls in [[Gear as Claude Shapes It]] ("The faction
+  blades' colour").
   The ramp lies in place of the forge's own on every armour piece's layer, its padding and every garment but the cloak;
   never on a weapon, a shield, a sheath, the cloak or the hair. A coat lays its ramp on the horse's hide by its light
   (texels of the hide's hue, 25 to 65 degrees), leaving the saddle, blanket, mane and metal as the forge drew them; the
