@@ -1,0 +1,44 @@
+import type { AccountLink } from '../../network/accounts.ts';
+import { ACCOUNT_CHANGED, GUILD_CHANGED, OUTPOST_CHANGED } from '../gearScreen.ts';
+
+/**
+ * What the page keeps of the player's guild away from its tab: the key its outposts' rooms are named by, its banner
+ * and the sites its outposts stand at, read from the accounts at the start and again whenever the account, the guild
+ * or an outpost changes. A player in no guild, or with no accounts, holds none.
+ */
+export interface Held {
+  readonly key: string;
+  readonly banner: Readonly<Record<string, unknown>>;
+  readonly sites: readonly string[];
+}
+
+let held: Promise<Held | null> = Promise.resolve(null);
+const heard = new Set<() => void>();
+
+/** Reads the guild once from the accounts: null in none, or when the accounts do not answer. */
+async function readGuild(link: AccountLink): Promise<Held | null> {
+  const answer = await link.guild();
+  const guild = typeof answer === 'string' ? null : answer.guild;
+  if (!guild?.key) return null;
+  const outposts = await link.outposts().catch(() => null);
+  const sites = !outposts || typeof outposts === 'string' ? [] : outposts.outposts.map((outpost) => outpost.site);
+  return { key: guild.key, banner: guild.banner, sites };
+}
+
+/** Keeps the player's guild as the accounts say it, now and after each change. */
+export function keepGuild(link: AccountLink): void {
+  const read = () => {
+    held = readGuild(link).catch(() => null);
+    void held.then(() => heard.forEach((listener) => listener()));
+  };
+  read();
+  for (const changed of [ACCOUNT_CHANGED, GUILD_CHANGED, OUTPOST_CHANGED]) addEventListener(changed, read);
+}
+
+/** The player's guild as last read (waiting on a read under way). */
+export const guildHeld = (): Promise<Held | null> => held;
+
+/** Calls `listener` each time a read of the guild lands. */
+export function onGuildHeld(listener: () => void): void {
+  heard.add(listener);
+}

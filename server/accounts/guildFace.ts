@@ -9,6 +9,7 @@ import { type Banner, bannerFrom, bannerOfName, bannerRefusal } from '../../clie
 import { levelOf, nextLevelXp, LEVELS, weekOf, weekStart } from '../../client/src/game/guild/guildLaw.ts';
 import type { Db } from './database.ts';
 import { type Answer, done, said } from './friends.ts';
+import { guildKey } from './outpostStores.ts';
 import { refusalOf } from './names.ts';
 
 /** The most a founder or admin may hold of the guild's ranks: the founder 0, an admin 1. */
@@ -71,11 +72,13 @@ export async function faceAsk(
   return written.meta.changes === 1 ? done : said(403, 'Only the founder and admins can set the description.');
 }
 
-/** The Guild tab's own read of the player's guild: its face, its level and the XP to the next, and the week. */
+/** The Guild tab's own read of the player's guild: its face, its level and the XP to the next, the week, and the key
+ *  its outposts' rooms are named by. */
 export function guildPage(guild: KeptGuild, members: number, now: number) {
   const level = levelOf(guild.xp);
   const week = weekOf(now);
   return {
+    key: guildKey(guild.id),
     name: guild.name,
     tag: guild.tag,
     motto: guild.motto,

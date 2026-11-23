@@ -23,6 +23,9 @@ import type { Use } from './footGear.ts';
 import type { StripHint } from './hints.ts';
 import type { Standing } from './hudLaw.ts';
 import type { Quest } from './tasks.ts';
+import { guildHeld } from './guild/guildHeld.ts';
+import { nodeRoom } from './rooms.ts';
+import type { NodeInfo } from './worldData.ts';
 
 /** What a node on foot needs of the game: the movement rules, the land's worker, the player, the forge's cards, the
  *  rooms (null offline), the room's compiled module, the ground as drawn (to hold the camera over it), the foes to
@@ -57,6 +60,19 @@ export function stand(context: FootContext, x: number, y: number, facing: number
   const { walker, movement } = context;
   const arrived = { ...newPlayer(movement, x, y), view: walker.player.view, yaw: facing, facing };
   walker.player = social ? { ...arrived, pitch: OVER_THE_PARAPET } : arrived;
+}
+
+/** The address of the room a player arriving at a node joins (null offline), at the entrance they come out of: at an
+ *  outpost site, their guild's outpost's room, or the wild site in none. */
+export async function nodeAddress(
+  context: FootContext,
+  node: NodeInfo,
+  seas: Difficulty,
+  arriving?: AtEntrance,
+): Promise<string | null> {
+  if (!context.rooms) return null;
+  const guild = node.kind === 'outpost' ? ((await guildHeld())?.key ?? null) : null;
+  return `${context.rooms(nodeRoom(node, seas, guild))}${arriving ? `?entrance=${arriving.number}` : ''}`;
 }
 
 /** Where a player arrives on a patrol leaving one of its dungeons: before entrance `number`'s door, facing out. */

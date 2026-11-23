@@ -25,6 +25,7 @@ import { landDrawers, loadCityAssets } from './landDrawers.ts';
 import { type Landmass, openLandmass, terrainOf } from './landmass.ts';
 import { accountOf, roomsFrom } from './rooms.ts';
 import { keepBinds } from './bindsKept.ts';
+import { keepGuild } from './guild/guildHeld.ts';
 import { GameScene } from './scene.ts';
 import { roomModuleFrom } from './shipPanel.ts';
 import { arrivalAt, loadWorld } from './worldData.ts';
@@ -58,6 +59,7 @@ export async function bootGame(gpu: Gpu, canvas: HTMLCanvasElement, shipScale: (
   const rooms = roomsFrom(new URLSearchParams(location.search).get('room'));
   const { link, session } = accountOf(location, localStorage, sessionStorage);
   if (link) void keepBinds(link);
+  if (link) keepGuild(link);
   // The sea room's own module, for playing alone, fetched now; and the Sloop's build from it, for Manage's panel.
   const { module: roomModule, sloop: builtSloop } = roomModuleFrom(base);
   const land = startLandWorker();

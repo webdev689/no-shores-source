@@ -52,6 +52,8 @@ export interface Roster {
  *  (0 founder, 1 admin, 2 member), its members counted, its level and the XP that brought it and brings the next, and
  *  the week, numbered, with when it turns in milliseconds. */
 export interface GuildFace {
+  /** The key its outposts' rooms are named by (`node-<site>--guild-<key>`). */
+  readonly key?: string;
   readonly name: string;
   readonly tag: string;
   readonly motto: string;

@@ -48,8 +48,14 @@ export function accountOf(
 }
 
 /** A node's room's name: a patrol, mission, dungeon or boss at a voyage's harder difficulty is its own room
- *  (`node-<id>--elite`); a social space is one for everyone, whatever the difficulty. */
-export function nodeRoom(node: { readonly id: string; readonly kind: string }, difficulty: Difficulty): string {
+ *  (`node-<id>--elite`); a social space is one for everyone, whatever the difficulty; an outpost site is the room of
+ *  the player's guild's outpost there (`node-<id>--guild-<key>`), or the wild site for one in no guild. */
+export function nodeRoom(
+  node: { readonly id: string; readonly kind: string },
+  difficulty: Difficulty,
+  guild: string | null = null,
+): string {
+  if (node.kind === 'outpost') return guild ? `node-${node.id}--guild-${guild}` : `node-${node.id}`;
   return node.kind === 'social' || difficulty === 'normal' ? `node-${node.id}` : `node-${node.id}--${difficulty}`;
 }
 
@@ -68,7 +74,8 @@ export function dungeonRoom(patrol: { readonly id: string }, difficulty: Difficu
 /** Other names for Elite and Abyss, which a place the accounts kept may still carry. */
 const OLD_NAMES: Readonly<Record<string, Difficulty>> = { rough: 'elite', storm: 'abyss' };
 
-/** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`), the patrol's dungeon it is
+/** The node and difficulty a node's room is for (`node-<id>`, `node-<id>--elite`, a guild's outpost's
+ *  `node-<id>--guild-<key>` at Normal), the patrol's dungeon it is
  *  (`--dungeon-<number>` after those, never a node's own name), a playlist's run's foes' level (`--playlist-<level>`),
  *  and its run's instance (`--run-<instance>` last); null for any other room. */
 export function nodeOfRoom(room: string): {
@@ -79,7 +86,7 @@ export function nodeOfRoom(room: string): {
   readonly playlist: number | null;
 } | null {
   const found =
-    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm))?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
+    /^node-([a-z0-9-]+?)(?:--(elite|abyss|rough|storm)|--guild-[0-9a-f]{8})?(?:--dungeon-([0-2]))?(?:--playlist-([1-9][0-9]?)|--(sea))?(?:--run-([a-z0-9]{8}))?$/.exec(
       room,
     );
   if (!found?.[1]) return null;

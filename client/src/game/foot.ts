@@ -42,7 +42,6 @@ import { windowRect } from './nodes.ts';
 import { PlazaLife, countersOf, floorOver } from './plazaLife.ts';
 import { PublicView } from './publicView.ts';
 import { openNodeAlone } from './footNode.ts';
-import { nodeRoom } from './rooms.ts';
 import {
   dungeonPlace,
   heardRun,
@@ -59,7 +58,7 @@ import { worldOutput } from './uiSounds.ts';
 import type { UsePrompt } from './usePrompt.ts';
 import { type Dressed, dressInGear, figureWhere, otherCards, ownCard, strikersOf } from './footFigures.ts';
 import type { AtEntrance, FootContext, FootFight, FootFrame, Heard, Held, Opened, Uses } from './footPlace.ts';
-import { stand } from './footPlace.ts';
+import { nodeAddress, stand } from './footPlace.ts';
 import { hearing, nextOtherId, roomNote, rulesOf } from './footRoom.ts';
 
 export type { AtEntrance, FootContext, FootFight, FootFrame, Uses } from './footPlace.ts';
@@ -201,8 +200,7 @@ export class Foot {
     let { boxes, ground } = await standOn(context, rules.combat, rect);
     const [x, y] = arriving ? [arriving.x, arriving.y] : (node.spawns[0] ?? node.centre);
     stand(context, x, y, arriving?.facing ?? facing, node.kind === 'social');
-    const address =
-      context.rooms && `${context.rooms(nodeRoom(node, seas))}${arriving ? `?entrance=${arriving.number}` : ''}`;
+    const address = await nodeAddress(context, node, seas, arriving);
     return Foot.start(context, node, rules, async (heard, session) => {
       const connection = address ? await RoomConnection.open(address, heard.snapshot, heard.gear, session) : null;
       // The room names the rect its window was cut to; a room baked from older edits is stood on as it stands.
