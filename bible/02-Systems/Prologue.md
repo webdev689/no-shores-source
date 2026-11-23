@@ -445,11 +445,19 @@ the cutscenes, the camera's moves, the nameplate, the fires and the lines are th
     Stormcallers' hounds ("The Six Hounds") comes out of the storm, shown and never explained (`WispScene`), the
     fight held and the tracker hidden: an apple's size of white-blue light in Volt's colours, a white-hot core in
     steps, a soft halo laid as light, a trail of motes falling away and small arcs crackling off it, a low hum
-    trembling and a crackle now and then following it. It drifts in from over the water off the player's left
-    (2.6 s), wanders the quiet deck at a mast's height and round behind them (4.8 s), the camera behind the player
-    following it, the Lookout ("What is that?") and the Bosun ("Don't touch it!") crying out; then, the camera standing
-    off to the player's right, it circles them in rings tightening from 2.6 m to under half a metre, faster and
-    brighter (3.4 s), and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
+    trembling and a crackle now and then following it. Its course is laid on the layout for where the player
+    stands (`wispCourse`): it drifts in (2.6 s) from 32 m out over the sea, of the bearings round the quiet deck's
+    middle with nothing of the wreck within 3 m the one most nearly ahead of the player and to their left; wanders the
+    quiet deck (4.8 s) round its mast (the layout's `masts`: the Brig's mainmast, snapped to a stump in the fallen
+    waist), 2.4 m out and 3.2 to 4.6 m over its deck, then toward the player, the Lookout ("What is that?") and the
+    Bosun ("Don't touch it!") crying out; then circles them in rings tightening from 2.6 m to under half a metre,
+    faster and brighter (3.4 s). Every point of it is lifted 0.35 m clear of the wreck's solids beside or under it
+    (none counts within 0.4 m of the player's feet) and eased up and down at 7 m/s at most, so it goes over a rail or
+    the wheel and never through one. As it comes the camera follows 3.2 m behind it along its way and 1.1 m over it,
+    drawn nearer where the wreck stands between, looking on past it toward the player so the wreck stands in the
+    frame; for the rings it stands where, of the places round the player 3.2 to 8 m out and 1.9 to 7 m up (nearest
+    first to 5.6 m out to their right and 2.5 m up), the player's chest and the wisp at every moment of the rings and
+    the engulfing are seen with nothing of the wreck between (`ringEye`). It and engulfs them (1.4 s): arcs wrap the figure from feet to head, a flash, a ring of Volt
     pushing out 7 m over the deck, a thunderclap; and the camera eases back over the shoulder (1.2 s). With the flash
     the room gives the player the Storm (`Room::story_storm`; [[Arts]]): worn, its Anima and both Tenets earned and
     charged full, the ability bar shown, for the rest of the prologue. Under `npm run dev`, `?prologue=wreck&wisp=1`

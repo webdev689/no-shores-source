@@ -413,8 +413,8 @@ export class WreckFight implements Beat {
       const give = () => run.giveStorm();
       this.wisp = new WispScene(
         this.story,
-        [body.x, body.y, body.z],
-        facing,
+        this.layout,
+        { feet: [body.x, body.y, body.z], facing },
         run.restingShot(),
         give,
         wispAsked() ?? 0,

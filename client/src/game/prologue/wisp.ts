@@ -1,9 +1,8 @@
 // The wisp, one of the Stormcallers' hounds ("The Old Beacon Rolls", "The Six Hounds": the size of an apple, the
-// colour at the heart of a gas flame, drifting as if waiting), shown and never explained. Its course: in from over the
-// water, wandering the quiet deck at a mast's height, then circling the player in tightening rings, faster and
-// brighter, until it engulfs them. Its look, in Volt's colours as the fight's own spells are drawn: a white-blue core,
-// a soft halo, a trail of motes and small arcs crackling off it; and, as it engulfs them, arcs wrapping the figure and
-// a ring of Volt pushing out over the deck.
+// colour at the heart of a gas flame, drifting as if waiting), shown and never explained: how long each part of its
+// coming lasts (where it flies is `wispCourse.ts`), and its look, in Volt's colours as the fight's own spells are
+// drawn: a white-blue core, a soft halo, a trail of motes and small arcs crackling off it; and, as it engulfs them,
+// arcs wrapping the figure and a ring of Volt pushing out over the deck.
 import { boltLine, colourOf, jagged, lineRibbon } from '../../combat/spellLines.ts';
 import { STRIKE_HZ, VOLT } from '../../combat/spellPlaces.ts';
 import {
@@ -32,16 +31,8 @@ export const ENGULF_AT_S = WISP_S.drift + WISP_S.wander + WISP_S.circle;
 export const WISP_LENGTH_S = ENGULF_AT_S + WISP_S.engulf + WISP_S.back;
 /** The flash in the engulfing, seconds into it: the Storm is given then, and the ring of Volt pushes out from it. */
 export const FLASH_IN_S = 0.45;
-/** Where it comes from (metres out over the water from the player, and up), the height it wanders at over the deck,
- *  its rings round the player (widest and narrowest, metres) and how fast they turn (radians a second). */
-const FROM_M = 34;
-const FROM_UP_M = 9;
-const MAST_UP_M = 5.5;
-const RING_M = [2.6, 0.45] as const;
-const TURN = [1.6, 9] as const;
-/** The height of a chest over the feet (metres), where its rings close; a figure's height and its girth, for the
- *  arcs that wrap it; and how far the ring of Volt pushes out over the deck. */
-const CHEST_M = 1.15;
+/** A figure's height and its girth, for the arcs that wrap it; and how far the ring of Volt pushes out over the
+ *  deck. */
 const HEIGHT_M = 1.9;
 const GIRTH_M = 0.42;
 const RING_OUT_M = 7;
@@ -53,108 +44,6 @@ export interface WispNow {
   readonly at: Point;
   readonly part: WispPart;
   readonly glow: number;
-}
-
-/** The course it flies: where it comes from over the water, the places over the deck it wanders by, and the feet of
- *  the player it circles. */
-export interface WispCourse {
-  readonly from: Point;
-  readonly over: readonly Point[];
-  readonly feet: Point;
-}
-
-const eased = (share: number) => {
-  const clamped = Math.min(1, Math.max(0, share));
-  return clamped * clamped * (3 - 2 * clamped);
-};
-const mix = (from: Point, to: Point, share: number): Point => [
-  from[0] + (to[0] - from[0]) * share,
-  from[1] + (to[1] - from[1]) * share,
-  from[2] + (to[2] - from[2]) * share,
-];
-
-/** The course round a player standing at `feet` facing `facing` (radians, 0 north): in from the water off their
- *  left, across before them at a mast's height, behind them and round to their right, low over the deck. */
-export function wispCourse(feet: Point, facing: number): WispCourse {
-  const [ahead, right] = [
-    [Math.sin(facing), -Math.cos(facing)],
-    [Math.cos(facing), Math.sin(facing)],
-  ] as const;
-  const placed = (forward: number, side: number, up: number): Point => [
-    feet[0] + ahead[0] * forward + right[0] * side,
-    feet[1] + ahead[1] * forward + right[1] * side,
-    feet[2] + up,
-  ];
-  return {
-    from: placed(FROM_M * 0.6, -FROM_M * 0.8, FROM_UP_M),
-    over: [
-      placed(7, -4, MAST_UP_M),
-      placed(9, 3, MAST_UP_M + 1),
-      placed(3, 6, 3.5),
-      placed(-4, 3, 4.5),
-      placed(-3, -4, 2.6),
-    ],
-    feet,
-  };
-}
-
-/** A point along a smooth way through `points` (Catmull-Rom), `share` of the way from the first to the last. */
-function along(points: readonly Point[], share: number): Point {
-  const legs = points.length - 1;
-  const place = Math.min(legs, Math.max(0, share * legs));
-  const leg = Math.min(legs - 1, Math.floor(place));
-  const local = place - leg;
-  const point = (index: number): Point => points[Math.min(legs, Math.max(0, index))] ?? [0, 0, 0];
-  const [before, start, end, after] = [point(leg - 1), point(leg), point(leg + 1), point(leg + 2)];
-  const [square, cube] = [local * local, local * local * local];
-  const axis = (index: 0 | 1 | 2) =>
-    0.5 *
-    (2 * start[index] +
-      (end[index] - before[index]) * local +
-      (2 * before[index] - 5 * start[index] + 4 * end[index] - after[index]) * square +
-      (3 * start[index] - before[index] - 3 * end[index] + after[index]) * cube);
-  return [axis(0), axis(1), axis(2)];
-}
-
-/** The wisp `seconds` into its coming on `course`: drifting in as if waiting, a slow bob on it throughout. */
-export function wispAt(course: WispCourse, seconds: number): WispNow {
-  const bob = (amount: number): Point => [
-    Math.sin(seconds * 1.3) * amount * 0.4,
-    Math.cos(seconds * 0.9) * amount * 0.4,
-    Math.sin(seconds * 2.1) * amount,
-  ];
-  const plus = (point: Point, shift: Point): Point => [point[0] + shift[0], point[1] + shift[1], point[2] + shift[2]];
-  const first = course.over[0] ?? course.feet;
-  const last = course.over.at(-1) ?? course.feet;
-  const { drift, wander, circle, engulf } = WISP_S;
-  const chest: Point = [course.feet[0], course.feet[1], course.feet[2] + CHEST_M];
-  if (seconds < drift)
-    return { at: plus(mix(course.from, first, eased(seconds / drift)), bob(0.25)), part: 'drift', glow: 0.55 };
-  if (seconds < drift + wander) {
-    const share = (seconds - drift) / wander;
-    return { at: plus(along(course.over, share), bob(0.3)), part: 'wander', glow: 0.6 + 0.1 * share };
-  }
-  const ringAt = (into: number) => {
-    const share = Math.min(1, into / circle);
-    // Its turn is the integral of a speed climbing from the first to the last, so it never jumps.
-    const turned = TURN[0] * into + ((TURN[1] - TURN[0]) * Math.min(into, circle) ** 2) / (2 * circle);
-    const radius = RING_M[0] + (RING_M[1] - RING_M[0]) * eased(share);
-    const start = Math.atan2(last[1] - chest[1], last[0] - chest[0]);
-    const rise = (1 - share) * (last[2] - chest[2]) + Math.sin(into * 5) * 0.15 * (1 - share);
-    const angle = start + turned;
-    return [chest[0] + Math.cos(angle) * radius, chest[1] + Math.sin(angle) * radius, chest[2] + rise] as Point;
-  };
-  if (seconds < ENGULF_AT_S) {
-    const into = seconds - drift - wander;
-    // Eased in from where it wandered to, so the first ring takes it up where it was.
-    const joined = mix(last, ringAt(into), eased(into / 0.6));
-    return { at: joined, part: 'circle', glow: 0.7 + 0.3 * (into / circle) };
-  }
-  if (seconds < ENGULF_AT_S + engulf) {
-    const into = seconds - ENGULF_AT_S;
-    return { at: mix(ringAt(circle), chest, eased(into / FLASH_IN_S)), part: 'engulf', glow: 1 };
-  }
-  return { at: chest, part: 'gone', glow: 0 };
 }
 
 /** Its core: 11 cells across, white-hot in the middle with flecks of it in Volt's light round it, its body broken and

@@ -50,6 +50,8 @@ export interface WreckLayout {
   readonly zones: readonly Zone[];
   readonly arena: { readonly zone: number; readonly gate: CourseBlock; readonly thule: Point };
   readonly fires: readonly Fire[];
+  /** Where the masts standing over the wreck's decks stand. */
+  readonly masts: readonly Point[];
   readonly dry: readonly HullMask[];
   readonly drawn: { readonly mesh: string; readonly light: string };
 }
@@ -110,6 +112,7 @@ function layoutOf(file: WreckFile): WreckLayout {
       const along = 'along' in fire ? fire.along : null;
       return { at: [x, y, z], size: fire.size, along: along ? [along[0] ?? 0, along[1] ?? 0, along[2] ?? 0] : null };
     }),
+    masts: file.masts.map(pointOf),
     dry: dryFitted(
       file.dry.map(([x = 0, y = 0, heading = 0, halfLength = 0, halfBeam = 0]) => ({
         x,
@@ -151,6 +154,7 @@ export function layoutAt(layout: WreckLayout, [east, south]: Point): WreckLayout
     })),
     arena: { ...layout.arena, gate: block(layout.arena.gate), thule: point(layout.arena.thule) },
     fires: layout.fires.map((fire) => ({ ...fire, at: [fire.at[0] + east, fire.at[1] + south, fire.at[2]] })),
+    masts: layout.masts.map(point),
     dry: layout.dry.map((mask) => ({ ...mask, x: mask.x + east, y: mask.y + south })),
   };
 }

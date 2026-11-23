@@ -1,7 +1,7 @@
 // The wisp's coming, played as a short cutscene on the wreck once the bow is taught, the fight held: the camera
-// follows it in from over the water and about the quiet deck, the Brig's crew crying out at it, then stands back to
-// watch it circle the player and engulf them (a flash, a ring of Volt, a thunderclap), and eases back over the
-// shoulder. As the flash comes the room gives the player the Storm. A hum and a crackle follow it about.
+// follows close behind it in from over the sea and round the quiet deck's mast (`chaseShot`), the Brig's crew crying
+// out at it, then stands off where nothing of the wreck stands between (`ringEye`) to watch it circle the player and
+// engulf them (a flash, a ring of Volt, a thunderclap), and eases back over the shoulder. As the flash comes the room gives the player the Storm. A hum and a crackle follow it about.
 import { Cues } from '../../cinema/cues.ts';
 import { lookAt } from '../../cinema/rail.ts';
 import { Laid } from '../../combat/spellPixels.ts';
@@ -10,26 +10,14 @@ import { playSample } from '../../soundSamples.ts';
 import { panShot, type Shot } from '../camera.ts';
 import { worldOutput } from '../uiSounds.ts';
 import type { Story } from './story.ts';
-import {
-  ENGULF_AT_S,
-  FLASH_IN_S,
-  layEngulf,
-  layWisp,
-  WISP_LENGTH_S,
-  WISP_S,
-  wispAt,
-  wispCourse,
-  type WispCourse,
-  type WispNow,
-} from './wisp.ts';
+import { ENGULF_AT_S, FLASH_IN_S, layEngulf, layWisp, WISP_LENGTH_S, WISP_S, type WispNow } from './wisp.ts';
+import { chaseShot, ringEye, wispAt, wispCourse, type WispCourse } from './wispCourse.ts';
+import type { WreckLayout } from './wreckLayout.ts';
 
 type Point = readonly [number, number, number];
 
-/** How long the camera takes to leave the player's shot for the wisp, seconds; how far behind and over the player
- *  it watches the wisp from, and how far out and up it stands to watch the rings. */
+/** How long the camera takes to leave one shot for the next, seconds. */
 const LEAVE_S = 1.1;
-const WATCH = { back: 3.4, up: 2.6, side: 1.2 } as const;
-const RINGS = { out: 5.6, up: 2.5 } as const;
 /** How far back the trail is kept, seconds, and how often a point of it is kept. */
 const TRAIL_KEPT_S = 1;
 const TRAIL_EVERY_S = 1 / 30;
@@ -51,7 +39,10 @@ export interface WispFrame {
 }
 
 export class WispScene {
+  private readonly layout: WreckLayout;
   private course: WispCourse;
+  /** Where the ring camera stands for the course, worked out with it. */
+  private ringsFrom: Point;
   private readonly facing: number;
   private readonly from: Shot;
   private readonly cues: Cues;
@@ -64,9 +55,18 @@ export class WispScene {
 
   /** The wisp comes for the player standing at `feet` facing `facing`, the camera leaving `from`; `give` gives them
    *  the Storm as it engulfs them. A page under development may begin it `into` seconds on, to picture it. */
-  constructor(story: Story, feet: Point, facing: number, from: Shot, give: () => void, into = 0) {
+  constructor(
+    story: Story,
+    layout: WreckLayout,
+    { feet, facing }: { readonly feet: Point; readonly facing: number },
+    from: Shot,
+    give: () => void,
+    into = 0,
+  ) {
     this.seconds = into;
-    this.course = wispCourse(feet, facing);
+    this.layout = layout;
+    this.course = wispCourse(feet, facing, layout);
+    this.ringsFrom = ringEye(this.course);
     [this.facing, this.from] = [facing, from];
     const { ambience } = story.stage.parts;
     // Begun partway in, what came before is passed over, the crew's cries with it.
@@ -89,12 +89,17 @@ export class WispScene {
    *  a moment after the wisp begins); `back` is the shot over their shoulder it eases back to at its end. */
   frame(seconds: number, clock: number, back: Shot, feet: Point): WispFrame {
     this.seconds += seconds;
-    this.course = wispCourse(feet, this.facing);
+    // Laid again only should the room stand the player elsewhere: it is worked out once for where they stand.
+    const [x, y, z] = this.course.feet;
+    if (Math.hypot(feet[0] - x, feet[1] - y, feet[2] - z) > 0.05) {
+      this.course = wispCourse(feet, this.facing, this.layout);
+      this.ringsFrom = ringEye(this.course);
+    }
     this.cues.step(this.seconds);
     this.flash = Math.max(0, this.flash - seconds * FLASH_FADE);
     const now = wispAt(this.course, this.seconds);
     this.keepTrail(now, seconds);
-    const shot = this.shotOf(now, back);
+    const shot = this.shotOf(back);
     this.laid.clear();
     layWisp(this.laid, now, this.trail, shot.eye, clock);
     layEngulf(this.laid, this.course.feet, shot.eye, this.seconds - ENGULF_AT_S);
@@ -118,39 +123,24 @@ export class WispScene {
     this.trail = this.trail.filter((point) => point.age <= TRAIL_KEPT_S);
   }
 
-  /** The camera: from the player's shot round to watch the wisp from behind them as it comes and wanders; out to one
-   *  side to watch its rings close on them; and back over their shoulder once it has engulfed them. */
-  private shotOf(now: WispNow, back: Shot): Shot {
-    const { feet } = this.course;
-    const chest: Point = [feet[0], feet[1], feet[2] + 1.2];
-    const { facing } = this;
-    const [ahead, right] = [
-      [Math.sin(facing), -Math.cos(facing)],
-      [Math.cos(facing), Math.sin(facing)],
-    ] as const;
+  /** The camera: from the player's shot round to follow the wisp close as it comes and wanders; off to watch its
+   *  rings close on them, nothing of the wreck between; and back over their shoulder once it has engulfed them. */
+  private shotOf(back: Shot): Shot {
+    const [x, y, z] = this.course.feet;
+    const chest: Point = [x, y, z + 1.15];
     const aimed = (eye: Point, target: Point): Shot => ({ ...this.from, eye, ...lookAt(eye, target) });
-    const watching = aimed(
-      [
-        feet[0] - ahead[0] * WATCH.back + right[0] * WATCH.side,
-        feet[1] - ahead[1] * WATCH.back + right[1] * WATCH.side,
-        feet[2] + WATCH.up,
-      ],
-      // Between the player and the wisp: the deck and their back stay in the frame.
-      now.part === 'gone'
-        ? chest
-        : [chest[0] * 0.55 + now.at[0] * 0.45, chest[1] * 0.55 + now.at[1] * 0.45, chest[2] * 0.55 + now.at[2] * 0.45],
-    );
-    const ringEye: Point = [feet[0] + right[0] * RINGS.out, feet[1] + right[1] * RINGS.out, feet[2] + RINGS.up];
-    const rings = aimed(ringEye, chest);
     const into = this.seconds;
     const circleAt = WISP_S.drift + WISP_S.wander;
+    const chase = chaseShot(this.course, Math.min(into, circleAt));
+    const following = aimed(chase.eye, chase.look);
+    const rings = aimed(this.ringsFrom, chest);
     const ease = (share: number) => {
       const clamped = Math.min(1, Math.max(0, share));
       return clamped * clamped * (3 - 2 * clamped);
     };
-    if (into < circleAt) return panShot(this.from, watching, ease(into / LEAVE_S));
+    if (into < circleAt) return panShot(this.from, following, ease(into / LEAVE_S));
     const end = ENGULF_AT_S + WISP_S.engulf;
-    if (into < end) return panShot(watching, rings, ease((into - circleAt) / LEAVE_S));
+    if (into < end) return panShot(following, rings, ease((into - circleAt) / LEAVE_S));
     return panShot(rings, back, ease((into - end) / WISP_S.back));
   }
 }
