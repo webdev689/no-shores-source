@@ -9,7 +9,7 @@ target_file: ["bible/03-Code/Toolkit.md", "tools/claude-toolkit/workers/brief-co
 siblings_checked: "none: the target is the project's toolkit note and brief template, not a skill"
 area: "editing tools"
 date: 2026-11-20
-session_context: "Overlook factions round, second fix pass: the fix-rules worker reported that replace_symbol_body removed a doc comment and #[must_use] it had not repeated; its reviewer caught one lost doc comment; Overlook third audit (2026-11-22): the flow worker's insert_before_symbol on a class put the new function between the class and its doc comment"
+session_context: "Overlook factions round, second fix pass: the fix-rules worker reported that replace_symbol_body removed a doc comment and #[must_use] it had not repeated; its reviewer caught one lost doc comment; Overlook third audit (2026-11-22): the flow worker's insert_before_symbol on a class put the new function between the class and its doc comment; No Shores faction perks worker fperks (2026-11-23): replace_symbol_body dropped a Rust method's doc comment again, caught by its reviewer sub-agent"
 parked_until:
 resolved:
 resolution:
@@ -28,3 +28,5 @@ silent deletions read as the author's.
 
 **Another instance (2026-11-22):** insert_before_symbol on a TypeScript class inserted above the class line but below its
 `/** ... */`, so the class's doc comment then described the inserted function. Caught by the worker on reading back.
+
+**Instance (2026-11-23, worker fperks):** replace_symbol_body on a Rust method in `crates/` dropped its doc comment; the new body did not carry it. The worker's reviewer sub-agent caught it and it was fixed in the worker's second commit. Third occurrence of this failure shape.

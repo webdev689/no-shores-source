@@ -9,7 +9,7 @@ target_file: ["tools/claude-toolkit/install-all.sh", "bible/Hand-off.md"]
 siblings_checked: "family: the kit's keyed MCP servers. context7: same cause, WARN not FAIL (anonymous tier works), noted here. No other keyed server."
 area: "session setup, install-all.sh step 1"
 date: "2026-11-19"
-session_context: "Taking over branch claude/loving-darwin-sw4eae (the prologue) after the earlier session paused; first-step install."
+session_context: "Taking over branch claude/loving-darwin-sw4eae (the prologue) after the earlier session paused; first-step install.; No Shores bible-dungeon-matchmaking pickup (2026-11-23): install-all FAIL for skillsmp (no key) and context7 (mcp.context7.com not reachable); the fperks worker found both refused by the proxy (403)"
 commands_verified: "run: KIT_DIR=$PWD/tools/claude-toolkit REPO_DIR=$PWD bash tools/claude-toolkit/install-all.sh returned 21 PASS, 4 WARN, 1 FAIL"
 ---
 
@@ -26,3 +26,5 @@ the key goes on the cloud environment (Network secrets, host skillsmp.com), or t
 2026-11-21, the codebase audit session (env_01B5thiSk5DV9ZZPHmpEGrYc, a "Default" with no network secrets and no
 variables): SkillsMP FAIL again, and Context7 now FAILs too: its anonymous tier answered "Monthly quota exceeded",
 so the keyless fallback the hand-off relies on is spent for the month. Neither tool was needed for the audit.
+
+**Instance (2026-11-23):** install-all printed FAIL for SkillsMP (no SKILLSMP_API_KEY) and for Context7 (`mcp.context7.com` not reachable: the environment's network policy, not a quota). The fperks worker reported both refused by the proxy (403), so neither tool could be used.
