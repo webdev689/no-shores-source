@@ -53,6 +53,18 @@ export function plantWind(
 }
 /** How much higher than the plants' reach the eye may stand over the ground below before nothing is drawn, metres. */
 const HIGH_MARGIN_M = 2000;
+/** How long after a biome's flora failed to come a view asks for it again, milliseconds. */
+const FLORA_RETRY_MS = 10_000;
+
+/** Whether a view asks for `cast`'s flora at `now` (milliseconds): never asked, asked for another cast, or failed to
+ *  come and waited out FLORA_RETRY_MS (`retryAt`). A biome that has no flora is not asked again. */
+export function asksFlora(
+  loading: { readonly cast: Cast; readonly retryAt: number | null } | null,
+  cast: Cast,
+  now: number,
+): boolean {
+  return loading?.cast !== cast || (loading.retryAt !== null && now >= loading.retryAt);
+}
 const GUST_PER_M = 0.035;
 /** WebGPU's storage usage flag, by the specification's value (gpu.ts names the flags the rest of the client uses). */
 const STORAGE_USAGE = 0x80;
@@ -206,8 +218,9 @@ export class NatureView {
   private readonly pipelines: NaturePipelines;
   private readonly frameBuffer: GPUBuffer;
   private meshes: Meshes | null = null;
-  /** The biome whose flora is loading or loaded, and what came of it: null while it loads or if it failed. */
-  private loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean } | null = null;
+  /** The biome whose flora is loading or loaded, and what came of it: null while it loads or if it failed; a fetch
+   *  that failed is asked for again from `retryAt`. */
+  private loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean; retryAt: number | null } | null = null;
   private readonly sampler: GPUSampler;
   private readonly cutSampler: GPUSampler;
   private readonly slots: Grown = { buffer: null };
@@ -378,11 +391,12 @@ export class NatureView {
       [this.meshes, this.loading, this.bind] = [taken, null, null];
       return true;
     }
-    if (this.loading?.cast !== cast) {
-      const loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean } = {
+    if (asksFlora(this.loading, cast, performance.now())) {
+      const loading: { cast: Cast; loaded: LoadedFlora | null; failed: boolean; retryAt: number | null } = {
         cast,
         loaded: null,
         failed: false,
+        retryAt: null,
       };
       this.loading = loading;
       loadFlora(cast, biome).then(
@@ -394,13 +408,13 @@ export class NatureView {
               [layer.albedo, layer.normal].forEach((picture) => picture.close());
         },
         (error: unknown) => {
-          loading.failed = true;
+          [loading.failed, loading.retryAt] = [true, performance.now() + FLORA_RETRY_MS];
           console.warn(`the ${biome} flora did not load`, error);
         },
       );
     }
-    const loaded = this.loading.loaded;
-    if (!loaded) return false;
+    const loaded = this.loading?.loaded;
+    if (!this.loading || !loaded) return false;
     this.dropMeshes();
     const { device } = this.gpu;
     const forms = formBuffers(cast, loaded);

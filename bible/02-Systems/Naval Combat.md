@@ -813,6 +813,6 @@ room's crate holds the fight, and a browser predicts its own ship through `room-
   than that one's hold allows.
 - A page laying its guns is not told which of a ship's masts have fallen, so its lay may meet rig a ball now passes.
 - A captain cruises on their course until they see a player's ship; DFO's captains wander between waypoints.
-- No magazine blast yet.
+- A magazine's blast is drawn only: it harms no ship.
 - Hulls are kept apart by their boxes on the flat; the player's helm is not refused a turn into another hull, as Come
   Sail Away's was, the ship is pushed back out of it.

@@ -66,6 +66,7 @@ test('the raid running: its wave, the stores standing as its bar, the tithe-take
   assert.equal(shown?.place, 'Moorend');
   assert.equal(shown?.objective, 'Hold the stores: wave 2 of 3');
   assert.deepEqual(shown?.bar, { share: 0.73, label: 'Stores 73%' });
+  assert.equal(bannerOf(raid({ progress: 996 }), 'driftwood-moors')?.bar?.label, 'Stores 99%', 'whole only when whole');
   assert.equal(shown?.heroic?.text, 'Kill the tithe-taker');
   const marrow = bannerOf(raid({ stage: 4, stages: 4, heroic: HEROIC.met }), 'driftwood-moors');
   assert.equal(marrow?.objective, 'Break Reeve Ancel Marrow, the Tithe’s Hand');

@@ -377,7 +377,7 @@ export class MusicDirector {
     const bus = this.bus;
     if (bus) {
       const now = this.clockOf(bus.audio);
-      for (const player of [...this.players, this.stinger]) if (player?.song) player.fade(0, now, 0.1);
+      for (const player of [...this.players, this.stinger]) player?.hush(now);
       this.band.hush(now);
     }
     [this.current, this.holdUntil] = [null, -Infinity];

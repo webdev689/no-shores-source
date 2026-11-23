@@ -72,8 +72,7 @@ pub(crate) fn ticks_from(time: f64, ticks: f64) -> Result<(f64, u32), String> {
 
 /// The request's ship, helm, time, ticks, world time and hull (the Sloop's unless it names one), each number checked.
 fn read(request: &[u8]) -> Result<(Ship, Helm, f64, u32, f64, HullKind), String> {
-    let numbers: Vec<f64> =
-        request.chunks_exact(8).map(|chunk| f64::from_le_bytes(chunk.try_into().unwrap_or_default())).collect();
+    let numbers = super::floats_of(request);
     let fits = |count: usize| request.len() == count * 8 && numbers.len() == count;
     if !fits(REQUEST_FLOATS) && !fits(REQUEST_FLOATS + 1) {
         return Err(format!("a sail request is {REQUEST_FLOATS} numbers, or one more naming its hull"));

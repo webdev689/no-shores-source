@@ -215,6 +215,10 @@ WebAssembly, so names, factions and weapons are read in one place.
 - **The posts** are on a 5 m lattice over the room's navmesh, 10 m inside the section's edge and 5 m inside the
   mesh's square, 20 m apart. Each group draws its post from those left; a Reeve alone and Corvane take the one
   farthest from the nearest spawn. Every foe stands at least 25 m from every spawn, inside the section, idle.
+- **A patrol zone's landing** is a safe place to arrive: no foe starts a fight with a player standing within 15 m of a
+  spawn there, past its boardwalk, stores and signpost and short of every guard, until that player strikes from it; a
+  fight brought into it goes on, so it is somewhere to arrive, not to hide. Its leave comes back once the player has
+  left it and come back (`Room::left_be`, [[Each Patrol Zone Has a Built Landing Site, Its Guards Beyond It]]).
 - **The beats**: every group patrols a beat from its post but a Boss's or a Miniboss's, which holds its post, the
   fight a player seeks out at the node's far end, its phases calling foes about it in a known place. A beat is the
   post and up to three more points of the lattice, each 12 to 30 m from the one before and 10 m from every other,

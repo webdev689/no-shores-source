@@ -3,8 +3,8 @@
 // the role they sit on, as a sheet's `color` passes down; a held press moves its words with it.
 import { TONES } from '../plus/tones.ts';
 import type { FieldState } from './field.ts';
-import { meet } from './layout.ts';
-import type { Laid, Padding, Span } from './node.ts';
+import { meet, sidesOf } from './layout.ts';
+import type { Laid, Span } from './node.ts';
 import { grown, LOOKS, paint, type State } from './paint.ts';
 import { type Box, type Colour, colourOf } from './quads.ts';
 import { type Laid as Glyph, layLine, lineHeight } from './text.ts';
@@ -23,13 +23,6 @@ export interface DrawState {
 const SELECTION = 'rgba(243,207,106,0.35)';
 /** How far past its box the kit paints a node, CSS pixels: a window's frame and the widest shadow. */
 const SHADE_REACH = 12;
-
-const sidesOf = (padding: Padding | undefined): readonly [number, number, number, number] => {
-  if (padding === undefined) return [0, 0, 0, 0];
-  if (typeof padding === 'number') return [padding, padding, padding, padding];
-  if (padding.length === 2) return [padding[0], padding[1], padding[0], padding[1]];
-  return padding;
-};
 
 const faded = (css: string, fade: number): Colour => {
   const [red, green, blue, alpha] = colourOf(css);

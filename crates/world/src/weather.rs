@@ -110,7 +110,8 @@ const FAN: [(f64, f64); 5] = [
 const LEAST_STEP_M: f64 = 500.0;
 
 /// The open water upwind of a point, metres, out to the longest fetch: the distance along the wind's way back to the
-/// first land. Marched by the clearance to the nearest coast, which no step can overshoot.
+/// first land. Marched by the clearance to the nearest coast, never less than LEAST_STEP_M, so land narrower than that
+/// may be stepped over.
 #[must_use]
 pub fn fetch_m(waters: &Waters, point: [f64; 2], wind: [f64; 2]) -> f64 {
     let strength = (wind[0] * wind[0] + wind[1] * wind[1]).sqrt();

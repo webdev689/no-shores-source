@@ -77,9 +77,11 @@ fn in_turn<Item: Send, Made: Send>(
                 })
             })
             .collect();
+        // Every thread joined before any error is answered: one left unjoined after a panic panics the scope.
+        let joined: Vec<_> = handles.into_iter().map(|handle| handle.join()).collect();
         let mut made = Vec::with_capacity(count);
-        for handle in handles {
-            made.extend(handle.join().map_err(|_| "a continent's bake panicked".to_owned())?);
+        for each in joined {
+            made.extend(each.map_err(|_| "a continent's bake panicked".to_owned())?);
         }
         Ok::<_, String>(made)
     })?;
@@ -155,5 +157,10 @@ mod tests {
             number
         });
         assert_eq!(made, Err("a continent's bake panicked".to_owned()));
+        let none = in_turn((0..4).collect(), 2, &|number: i32| {
+            assert!(number < 0, "no continent can be baked");
+            number
+        });
+        assert_eq!(none, Err("a continent's bake panicked".to_owned()), "every thread panicking is one error");
     }
 }

@@ -66,7 +66,7 @@ hands' strike to the left goes up and back down over eight frames, paced the sam
 A bow has two shots ([[Ranged Weapons Aim and Fire]]). Not aimed, a pull of the trigger looses a quick shot at once:
 the bow jumps to its sixth frame, the arrow leaving on it, and plays the rest of its release, a frame every 0.0625 s;
 holding the trigger looses again as it reloads. Aimed, it draws and stays drawn at its fourth frame until a pull
-looses it the same way; letting the aim go lowers it unloosed. The bow then reloads for about half a second.
+looses it the same way; letting the aim go lowers it unloosed. The bow then reloads for about a quarter of a second.
 
 ### Guarding
 

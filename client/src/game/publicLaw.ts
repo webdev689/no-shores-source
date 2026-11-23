@@ -132,7 +132,7 @@ export function bannerOf(
   }
   const fissure = event.kind === PUBLIC_KIND.fissure;
   const share = fissure ? event.progress / Math.max(1, event.needed) : event.progress / 1000;
-  const label = fissure ? `${event.progress} / ${event.needed} shards` : `Stores ${Math.round(event.progress / 10)}%`;
+  const label = fissure ? `${event.progress} / ${event.needed} shards` : `Stores ${Math.floor(event.progress / 10)}%`;
   const heroic =
     event.heroic === HEROIC.offered
       ? { text: HEROIC_TASK[event.kind] ?? '', clock: clockOf(event.heroicTicks), met: false }

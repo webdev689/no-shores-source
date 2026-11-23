@@ -413,3 +413,22 @@ fn failed_with_the_tithe_taker_on_his_round_he_leaves_no_mark_behind() {
         room.tick();
     }
 }
+
+#[test]
+fn the_stores_read_whole_only_while_every_store_is_whole() {
+    let (mut room, _) = room_at(RAID_MINUTE, 1);
+    room.tick();
+    assert_eq!(raid(&room).left(), 1000, "every store whole");
+    let Play::Raid(raid) = &mut running_mut(&mut room).play else { panic!("a raid") };
+    raid.stores[0].1 = 0.9999;
+    assert_eq!(raid.left(), 999, "a store barely touched");
+    raid.stores[0].1 = 0.99;
+    assert_eq!(raid.left(), 996, "a store at 99% of three");
+    for store in &mut raid.stores {
+        store.1 = 0.0;
+    }
+    raid.stores[2].1 = 0.002;
+    assert_eq!(raid.left(), 1, "none but a sliver of one: not every store fell");
+    raid.stores[2].1 = 0.0;
+    assert_eq!(raid.left(), 0, "every store fell");
+}

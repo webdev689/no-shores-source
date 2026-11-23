@@ -1,10 +1,17 @@
 {
-  // Code that runs in Node: the client's tests and the build config. Same strictness, with Node's types, and Vite's
-  // too: a test's type-only import can reach client code that imports a stylesheet.
+  // Code that runs in Node: the client's tests, the build config and the tools that draw with the client's own code.
+  // Same strictness, with Node's types, and Vite's too: a test's type-only import can reach client code that imports a
+  // stylesheet.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "types": ["node", "vite/client"]
   },
-  "include": ["client/**/*.test.ts", "server/**/*.test.ts", "vite.config.ts"],
+  "include": [
+    "client/**/*.test.ts",
+    "server/**/*.test.ts",
+    "vite.config.ts",
+    "tools/ships/ship_pictures.ts",
+    "tools/dungeon/previewPictures.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }

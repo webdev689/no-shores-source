@@ -51,6 +51,13 @@ export type UiEvent =
   | { readonly kind: 'pad'; readonly button: PadButton; readonly up?: boolean }
   | { readonly kind: 'stick'; readonly x: number; readonly y: number; readonly scroll: number };
 
+/** An event from the page in the interface's pixels, `inward` of them to a CSS pixel: where a pointer is, and how far
+ *  a wheel turned. */
+export function inwardOf(event: UiEvent, inward: number): UiEvent {
+  if (event.kind === 'wheel') return { ...event, x: event.x * inward, y: event.y * inward, dy: event.dy * inward };
+  return 'x' in event ? { ...event, x: event.x * inward, y: event.y * inward } : event;
+}
+
 /** The field being typed in, for the page's typing: its words, caret and selection, and its box in the page's CSS
  *  pixels. */
 export interface Typing {

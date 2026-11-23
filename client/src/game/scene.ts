@@ -65,11 +65,6 @@ const MIDDLE_SAMPLES = 513;
 const MIDDLE_STEP_M = 16;
 const MIDDLE_REFRESH_M = 1500;
 
-/**
- * One landmass drawn for the game: its 1 km land in rings round the eye, the exact ground round the player, the
- * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
- * as the terrain and the water read it; everything else is handed world metres.
- */
 /** What an overlay drawn over the finished picture is drawn in: the picture's size and the light at the eye. */
 export interface Overlay {
   readonly width: number;
@@ -88,6 +83,11 @@ function cloudLight(look: SkyLook): readonly [number, number, number] {
   ) as unknown as readonly [number, number, number];
 }
 
+/**
+ * One landmass drawn for the game: its 1 km land in rings round the eye, the exact ground round the player, the
+ * drawers handed in, then the water's sky, haze and surface over all of it. The land is drawn in its window's metres,
+ * as the terrain and the water read it; everything else is handed world metres.
+ */
 export class GameScene {
   readonly gpu: Gpu;
   private readonly water: WaterView;

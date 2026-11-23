@@ -88,11 +88,13 @@ pub(crate) struct Raid {
 }
 
 impl Raid {
-    /// The stores' health left, per mille of all of them whole.
+    /// The stores' health left, per mille of all of them whole, rounded down: 1000 only while every store is whole, and
+    /// 0 only once every store fell, as the page says each.
     #[must_use]
     pub fn left(&self) -> u16 {
         let whole = self.stores.iter().map(|(_, health)| health).sum::<f64>() / self.stores.len().max(1) as f64;
-        (whole * 1000.0).round().clamp(0.0, 1000.0) as u16
+        let left = (whole * 1000.0).floor().clamp(0.0, 1000.0) as u16;
+        if whole > 0.0 { left.max(1) } else { left }
     }
 }
 

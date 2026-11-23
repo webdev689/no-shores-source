@@ -256,3 +256,30 @@ test('the plaza band plays where it is heard in the social space, and nowhere el
   assert.equal(struck(social, band(40)), alone, 'none far off');
   assert.equal(struck(island, band(3)), struck(island, null), 'and none off the social space');
 });
+
+test('silenced mid-fight, its songs stop at once and schedule nothing more while the silence lasts', () => {
+  const { audio, starts } = fakeAudio();
+  let [now, silenced] = [0, false];
+  const out = audio.createGain();
+  const director = new MusicDirector({
+    output: () => (silenced ? null : { audio, out }),
+    duck: () => undefined,
+    timed: false,
+    clock: () => now,
+  });
+  const frames = (hearing: Hearing, seconds: number) => {
+    for (let spent = 0; spent < seconds; spent += 1 / 60) {
+      now += 1 / 60;
+      director.frame(hearing, 1 / 60);
+      director.pump(now);
+    }
+  };
+  const fight = { ...island, foes: [brute({ engaged: true })], struck: true };
+  frames(fight, 4);
+  assert.ok(starts.length > 0, 'the fight plays');
+  silenced = true;
+  frames(fight, 1);
+  const stopped = starts.length;
+  frames(fight, 4);
+  assert.equal(starts.length, stopped, 'though hushed every frame');
+});

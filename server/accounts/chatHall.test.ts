@@ -127,6 +127,17 @@ test('a token signs a socket in and names its player; anything else first is let
   assert.equal(big.closed[0]?.code, 1008, 'a message past its most');
 });
 
+test('a message past its most is let go as it comes, never held while the token before it is asked about', async () => {
+  const { chat } = hall();
+  const held = socket();
+  const number = chat.opened(held, 'home');
+  const signing = chat.heard(number, 'a'.repeat(64));
+  void chat.heard(number, 'x'.repeat(5_000));
+  assert.deepEqual(held.closed, [{ code: 1008, reason: 'not a line' }], 'let go before its turn');
+  await signing;
+  assert.deepEqual(held.sent, [], 'and never welcomed');
+});
+
 test('a socket silent too long, or whose session ended, is let go; one account holds a few sockets at most', async () => {
   const { chat, clock, join, signedOut } = hall();
   const silent = socket();

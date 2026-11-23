@@ -64,10 +64,10 @@ impl Harbours {
             return Harbours::default();
         }
         let waters = world::waters::Waters::new(layout);
-        let traffic = Traffic::new(layout, &waters, ports);
+        let (kept, roadsteads) = Traffic::roadsteads(layout, &waters, ports);
         let roadstead = |point: &world::geometry::Point| [point.x as f64, point.y as f64];
-        let ports = traffic.ports.iter().zip(&traffic.roadsteads).map(|(port, at)| (port.id.clone(), roadstead(at)));
-        Harbours { ports: ports.collect(), ways: Some(SeaWays::new(layout, &waters, &traffic.roadsteads)) }
+        let ports = kept.iter().zip(&roadsteads).map(|(port, at)| (port.id.clone(), roadstead(at)));
+        Harbours { ports: ports.collect(), ways: Some(SeaWays::new(layout, &waters, &roadsteads)) }
     }
 
     /// The port nearest `at` by the sea's way there (round land, as the traffic's routes are planned), by its number

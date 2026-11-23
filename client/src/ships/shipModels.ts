@@ -1,7 +1,7 @@
 // Every hull's model on the GPU, fetched from R2 the first time a ship of that hull is drawn and kept, and a frame's
-import type { ShadowMap } from '../shadow.ts';
 // ships drawn by them: each in its own hull, its side's colours and its rig, a slot of its model each. A hull still
 // coming is drawn as the Sloop, so a ship is never a footprint with nothing over it.
+import type { ShadowMap } from '../shadow.ts';
 import { sphereSeen, viewPlanes } from '../frustum.ts';
 import type { Gpu } from '../gpu.ts';
 import type { ShipLook } from './dress.ts';

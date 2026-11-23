@@ -119,15 +119,19 @@ export class Hall {
   heard(number: number, message: string | ArrayBuffer): Promise<void> {
     const held = this.sockets.get(number);
     if (!held) return Promise.resolve();
+    // Measured as it comes, not in its turn: what no line can be is never held while an ask before it waits.
+    if (typeof message !== 'string' || message.length > MESSAGE_MOST) {
+      this.letGo(number, 1008, 'not a line');
+      return Promise.resolve();
+    }
     const taken = held.taking.then(() => this.take(number, message));
     held.taking = taken.catch(() => undefined);
     return taken;
   }
 
-  private async take(number: number, message: string | ArrayBuffer): Promise<void> {
+  private async take(number: number, message: string): Promise<void> {
     const held = this.sockets.get(number);
     if (!held) return;
-    if (typeof message !== 'string' || message.length > MESSAGE_MOST) return this.letGo(number, 1008, 'not a line');
     if (held.token === '') return this.signIn(number, held, message);
     const said = saidOf(message);
     const speaker = held.speaker;

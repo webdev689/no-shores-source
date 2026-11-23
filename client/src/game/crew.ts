@@ -1,4 +1,4 @@
-// Hands going about a ship's deck: the stand-in crew on the player's Sloop until crew management comes, and every
+// Hands going about a ship's deck: the three figures standing in for the hands on the player's Sloop, and every
 // other ship's hands. Each walks between spots on its deck and pauses at each, each leg one the deck leaves clear, all
 // kept away from its wheel; one posted to a spot (a gun run out) walks there and stands. Seeded, so a voyage's hands
 // move the same however it is drawn. In its own frame.

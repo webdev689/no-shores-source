@@ -121,20 +121,22 @@ export interface RoomDoor {
   furnish(stall: { readonly x: number; readonly y: number } | null, nodes: readonly CourseNode[]): boolean;
   /** A player's own gear's bytes, to send them alone; empty when it has not changed since last asked. */
   gear(player: number): Uint8Array;
-  /** Sets a node's room's difficulty, as its voyage set out: 0 Normal, 1 Elite, 2 Abyss; false if it is no room on land. */
+  /** Sets a node's room's difficulty, as its voyage set out, or the sea's tier: 0 Normal, 1 Elite, 2 Abyss; false in a
+   *  fleet. */
   difficulty(seas: number): boolean;
   /** Sets the minute, counted from the epoch, whose day (`gear::clock`) sets its vendors' wares and whose week sets
-   *  Shape; false if it is no room on land. */
+   *  Shape, or the sea's; false in a fleet. */
   minute(minute: number): boolean;
   /** Sets the wall's time at the room's first tick, milliseconds since 1970: its world time, and its welcome's. */
   epoch(unixMs: number): void;
-  /** Draws a room on land's loot, and apart from it its foes and camps, from seeds the host keeps secret, each as two
-   *  halves; false if it is none. */
+  /** Draws a room's chances from seeds the host keeps secret, each as two halves: a room on land's loot, and apart
+   *  from it its foes and camps, or the sea's flotsam and boarded decks; false in a fleet. */
   reseed(seeds: readonly [number, number, number, number]): boolean;
   /** Sends what still lies for a player to their mail, at sea from the deck they stand on: called as they leave,
    *  before their character is read for its last save. */
   mailLying(player: number): void;
-  /** A player's character as it is kept between sessions (JSON); null at sea or for no such player. */
+  /** A player's character as it is kept between sessions (JSON), at sea with their ship's hurts (a new one until the
+   *  accounts gave theirs); null in a fleet or for no such player. */
   character(player: number): string | null;
   /** Gives a player the character kept for them; false if the text is not one, they are not in, or the gate shuts. */
   restoreCharacter(player: number, kept: string): boolean;
