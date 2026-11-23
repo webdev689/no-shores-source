@@ -285,7 +285,7 @@ fn dungeon_fragment(surface: Surface) -> @location(0) vec4f {
   if water && foul {
     let breath = 0.6 + 0.4 * sin(time * 1.7 + phase);
     let seething = FOUL_BUBBLE * foul_bubbles(surface.point.xy, time);
-    return vec4f(water_at(surface.point, normal, time, mood, sampled) * FOUL_TINT + FOUL_GLOW * breath + seething, 1.0);
+    return vec4f(water_at(surface.point, normal, time, mood, sampled, span) * FOUL_TINT + FOUL_GLOW * breath + seething, 1.0);
   }
   if water {
     return vec4f(water_at(surface.point, normal, time, mood, sampled, span), 1.0);
