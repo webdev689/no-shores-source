@@ -95,8 +95,7 @@ pub enum SpawnAsk {
 }
 
 impl SpawnAsk {
-    /// A foe asked for by its role alone (1 skirmisher to 5 captain, no type), as a page from before the roster asks:
-    /// the Grey Tithe's type in that role, a foe, a Major or at its first rank if it comes in none (its Reeve an Elite).
+    /// A foe asked by role alone (1 to 5), as an older page asks: the Grey Tithe's in that role, a Major or its first.
     #[must_use]
     pub fn by_role(role: u8, shield: u8) -> Option<Self> {
         let foe_type = ::foes::in_role(::foes::factions::GREY_TITHE, ::foes::Role::from_number(role)?)?;

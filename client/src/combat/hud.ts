@@ -169,8 +169,8 @@ export function blockedBy(
 /** The fight's display over the view, kept each frame from a `HudFrame` and drawn as a layer of the interface. */
 export class Hud {
   private readonly vitals = new Vitals();
-  private readonly target = new FoePlate({ poise: true, remembers: 'whole' });
-  private readonly foeBars = new FoeBars();
+  private target = new FoePlate({ poise: true, remembers: 'whole' });
+  private foeBars = new FoeBars();
   /** The plates over other players, and the one the crosshair rests on within reach. */
   readonly playerPlates = new PlayerPlates();
   private readonly crosshair = new Crosshair();

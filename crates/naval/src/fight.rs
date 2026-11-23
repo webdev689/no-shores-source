@@ -35,8 +35,7 @@ pub const DESPAWN_BEYOND: f64 = 1900.0;
 pub const HOSTILE_NEAR_M: f64 = 700.0;
 /// The rest of the volley that made a ship strike, this long after (seconds), cannot sink it.
 pub const STRUCK_GRACE_S: f64 = 2.0;
-/// A captain who struck lies hove to this long (seconds) for a player to board it; with no one aboard by then it is
-/// scuttled.
+/// A captain who struck lies hove to this long (seconds) for a player to board; with no one aboard by then, scuttled.
 pub const STRUCK_HOLD_S: f64 = 90.0;
 /// How much faster every ship sails and rows in a sea fight than at sea (half again, and a fifth on that), and how much
 /// faster it swings and answers its helm, at the owner's word.
@@ -78,7 +77,6 @@ pub struct Command {
 }
 
 impl Vessel {
-    /// The flag it flies: a player's, or its captain's faction's, the players' for a friendly ship.
     #[must_use]
     pub fn flag(&self) -> Flag {
         match &self.sailor {
@@ -414,8 +412,7 @@ impl Fight {
         self.enlist_in(id, ship, (commission, commission.hull()), seed, waters, time);
     }
 
-    /// A captain put into the fight as `enlist` puts one, sailing `hull` rather than its rank's: a friendly ship of the
-    /// traffic keeps its own.
+    /// As `enlist`, a captain sailing `hull` rather than its rank's: a friendly ship of the traffic keeps its own.
     pub fn enlist_in(
         &mut self,
         id: ShipId,

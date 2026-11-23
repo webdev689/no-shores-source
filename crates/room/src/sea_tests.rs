@@ -762,6 +762,8 @@ fn an_ended_fight_is_shown_in_the_next_snapshot_however_many_ticks_ran_before_it
     sea.fights_sent();
     ticks(&mut sea, 2);
     assert!(sea.fight_views().is_empty(), "not twice");
+}
+
 #[test]
 fn a_ships_water_is_named_once_it_puts_to_sea() {
     let mut sea = sea();

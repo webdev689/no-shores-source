@@ -551,9 +551,6 @@ mod puts_in;
 pub mod travel;
 
 #[cfg(test)]
-#[path = "fight_measure_tests.rs"]
-pub(crate) mod fight_measure_tests;
-#[cfg(test)]
 #[path = "sea_tests.rs"]
 mod sea_tests;
 #[path = "sea_waters.rs"]

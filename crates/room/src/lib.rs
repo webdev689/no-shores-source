@@ -370,8 +370,7 @@ impl Room {
         found.plate.menu = input.menu;
         found.shown_tick = found.shown_tick.max(input.seen.min(self.clock));
         if found.held {
-            // Taken in order, so the next follows on; played as standing still, asking and casting nothing. A dress is
-            // kept, as the page sends one only when it changes.
+            // Taken in order, as standing still, asking and casting nothing; its dress kept, sent only when it changes.
             let Input { sequence, seen, shown, arms, dress, .. } = input;
             input = Input { sequence, seen, shown, arms, dress, ..Input::default() };
         }

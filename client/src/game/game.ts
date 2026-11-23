@@ -457,9 +457,8 @@ export async function startGame(gpu: Gpu, canvas: HTMLCanvasElement): Promise<vo
     if (anchored) goIsle(anchored, ashoreWords(anchored));
   };
 
-  /** A destination set on the map: the ship sails for it, or travels there. A voyage set at another difficulty sails
-   *  in that difficulty's sea room; mid-fight the ship stays in the room it fights in; one switch at a time, each
-   *  waiting for the last. A travel's cinematic begins at once, and asks whichever room the ship is in by its fade. */
+  /** A destination set on the map: the ship sails for it or travels there, in its difficulty's sea room (mid-fight the
+   *  one it fights in), one switch at a time; a travel's cinematic asks whichever room holds the ship by its fade. */
   const sailFor = (sail: Point2, seas: Difficulty, travel: MapWater | null) => {
     const sea = playing.sea;
     if (sea) sailOrTravel(sea, sail, travel, () => !charting.waiting(sea.position, playing.landmass.id));

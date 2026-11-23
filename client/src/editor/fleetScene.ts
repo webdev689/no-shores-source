@@ -1,4 +1,4 @@
-import type { FightLay, FightLook } from '../rules/fightRules.ts';
+import type { FightLay } from '../rules/fightRules.ts';
 import { type AimView, aimViewOf } from '../ships/aimView.ts';
 import type { FleetLay, FleetLook } from '../rules/fleetRules.ts';
 import type { LandView } from '../rules/landRules.ts';
