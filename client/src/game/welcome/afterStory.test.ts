@@ -4,7 +4,7 @@ import type { GearAsk, GearState } from '../../network/gearMessages.ts';
 import type { QuestState } from '../../network/questMessages.ts';
 import type { Shot } from '../camera.ts';
 import type { Epilogue } from '../prologue/epilogue.ts';
-import { AfterStory } from './afterStory.ts';
+import { AfterStory, heldHud } from './afterStory.ts';
 import { SOCIAL } from './plazaForTests.ts';
 import { FLY_S, TOUR } from './tour.ts';
 
@@ -122,4 +122,15 @@ test('a gift still owed is asked only once this room holds the player’s own ge
   other.after.leave();
   other.frame(afield);
   assert.deepEqual(other.gifts, [], 'only in a social space');
+});
+
+test('while she speaks the HUD of the player’s own play is hidden, the dialogue box left to her', () => {
+  const shown: string[] = [];
+  const hud = {
+    hints: (hints: readonly unknown[]) => void shown.push(`hints ${hints.length}`),
+    marks: (marks: readonly unknown[]) => void shown.push(`marks ${marks.length}`),
+    tasks: { show: (quest: unknown) => void shown.push(`tracker ${String(quest)}`) },
+  };
+  heldHud(hud, { hideDisplay: () => void shown.push('bars and compass hidden') });
+  assert.deepEqual(shown.sort(), ['bars and compass hidden', 'hints 0', 'marks 0', 'tracker null']);
 });

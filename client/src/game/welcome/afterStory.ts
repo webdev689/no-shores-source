@@ -107,3 +107,19 @@ export class AfterStory {
     return !this.epilogue || this.epilogue.done;
   }
 }
+
+/** The HUD's parts of the player's own play that a cutscene hides. */
+export interface HeldHud {
+  hints(hints: readonly never[]): void;
+  marks(marks: readonly never[]): void;
+  readonly tasks: { show(quest: null): void };
+}
+
+/** The HUD while she speaks, as a cutscene's: the fight's bars and compass, the tracker, the marks and the key strip
+ *  hidden, the dialogue box hers; each comes back on the next frame after, as the game sets them. */
+export function heldHud(hud: HeldHud, display: { hideDisplay(): void }): void {
+  display.hideDisplay();
+  hud.hints([]);
+  hud.marks([]);
+  hud.tasks.show(null);
+}

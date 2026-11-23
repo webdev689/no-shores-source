@@ -43,7 +43,7 @@ import type { SeaShip } from './seaShips.ts';
 import type { SloopBuild } from './shipPanel.ts';
 import { standingDrawers } from './standingDrawers.ts';
 import type { NodeInfo } from './worldData.ts';
-import type { AfterStory } from './welcome/afterStory.ts';
+import { type AfterStory, heldHud } from './welcome/afterStory.ts';
 import type { Quests } from './quests/quests.ts';
 import type { Lore } from './compendium/lore.ts';
 import type { StoryHost } from './prologue/host.ts';
@@ -300,6 +300,7 @@ export function startFrames(parts: FrameParts, playing: Playing): void {
     // The tracker is set once a frame, so a public event's steps stand in it unblinking, in the quest's place.
     hud.tasks.show(shown.quest ?? quests.tracked);
     hud.toast(...toldNow(), ...quests.toasts, ...playing.lore.toasts);
+    if (told) heldHud(hud, footView);
     hideSeaHud(hud);
     hud.note(here.roomNote);
     // A dungeon's floor is all there before the veil lifts; a node waits for the exact ground round the player.

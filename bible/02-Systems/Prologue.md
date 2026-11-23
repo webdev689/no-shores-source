@@ -155,7 +155,8 @@ out toward the player and 50 m up, clear of its walls.
 A flight takes 2.4 s, eased out of rest and into it, from wherever the view stands; a place the plaza lacks keeps the
 view where it is, her words said all the same. From her first word to her farewell no game key acts (no move or
 look, no use, map, menu, chat, character page or respawn) and the view is hers; Space (or the pad's jump or confirm)
-moves her words on a line, and the keys and the view are given back as she finishes. As she bids
+moves her words on a line, and the keys and the view are given back as she finishes. It is a cutscene: the HUD's
+bars, compass, tracker, marks and key strip are hidden from her first word to her last, the dialogue box hers. As she bids
 farewell she gives the player 400 Aurem, the opening quest's first task heard ([[Quests]]); the room gives it once a
 character, so a second hearing, a rejoin or a second tab gives none. Leaving the place mid-welcome ends it at once, the
 view and the keys the player's again, and gives nothing then: a character still owed her gift is given it on its next
