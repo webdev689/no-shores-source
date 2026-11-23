@@ -435,6 +435,10 @@ test('the bow’s and the Storm’s steps name their controls as bound now', () 
       ['Loose an arrow', ['Left button', 'F']],
       ['Back to your sword', ['1']],
     ]);
+    BINDS.device = 'pad';
+    const loose = keysOf('bow', { bow: 'lying' }).find(([text]) => text === 'Loose an arrow');
+    assert.deepEqual(loose, ['Loose an arrow', ['pad:RT']], 'the bow drawn turns the triggers round: RT fires');
+    BINDS.device = 'keys';
     assert.deepEqual(keysOf('storm', { bow: 'worn', storm: true }), [
       ['Cast Arc Lash', ['G']],
       ['Cast Quicken', ['Q']],

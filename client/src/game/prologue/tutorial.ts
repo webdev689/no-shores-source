@@ -92,7 +92,7 @@ const STEPS = {
   takeBow: { text: 'Take up the bow' },
   equipBow: { text: 'Equip it', keys: 'character' },
   draw: { text: 'Draw it', keys: 'ranged' },
-  loose: { text: 'Loose an arrow', keys: 'guard' },
+  loose: { text: 'Loose an arrow', keys: 'guard|swing' },
   sheathe: { text: 'Back to your sword', keys: 'melee' },
   arcLash: { text: 'Cast Arc Lash', keys: 'tenetTwo' },
   quicken: { text: 'Cast Quicken', keys: 'tenetOne' },
